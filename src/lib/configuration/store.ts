@@ -6,7 +6,30 @@ import {
 const STORAGE_KEY = "emsys-user-configuration";
 
 let configurationStore: UserConfiguration = { ...DEFAULT_USER_CONFIGURATION };
+let cachedSnapshot: UserConfiguration = configurationStore;
+const serverSnapshot: UserConfiguration = { ...DEFAULT_USER_CONFIGURATION };
 const listeners = new Set<() => void>();
+
+function configurationsEqual(a: UserConfiguration, b: UserConfiguration): boolean {
+  return (
+    a.username === b.username &&
+    a.password === b.password &&
+    a.displayName === b.displayName &&
+    a.language === b.language &&
+    a.theme === b.theme
+  );
+}
+
+function commitConfigurationStore(next: UserConfiguration, persist: boolean) {
+  configurationStore = { ...next };
+  cachedSnapshot = configurationStore;
+
+  if (persist) {
+    writeStoredConfiguration(configurationStore);
+  }
+
+  emit();
+}
 
 function emit() {
   listeners.forEach((listener) => listener());
@@ -42,23 +65,28 @@ export function subscribeConfigurationStore(listener: () => void): () => void {
 }
 
 export function getConfigurationSnapshot(): UserConfiguration {
-  return { ...configurationStore };
+  return cachedSnapshot;
+}
+
+export function getConfigurationServerSnapshot(): UserConfiguration {
+  return serverSnapshot;
 }
 
 export function initializeConfigurationStore() {
   const stored = readStoredConfiguration();
-  configurationStore = stored ? { ...stored } : { ...DEFAULT_USER_CONFIGURATION };
-  emit();
+  const next = stored ? { ...stored } : { ...DEFAULT_USER_CONFIGURATION };
+
+  if (configurationsEqual(next, configurationStore)) {
+    return;
+  }
+
+  commitConfigurationStore(next, false);
 }
 
 export function setConfigurationStore(next: UserConfiguration) {
-  configurationStore = { ...next };
-  writeStoredConfiguration(configurationStore);
-  emit();
+  commitConfigurationStore(next, true);
 }
 
 export function resetConfigurationStore() {
-  configurationStore = { ...DEFAULT_USER_CONFIGURATION };
-  writeStoredConfiguration(configurationStore);
-  emit();
+  commitConfigurationStore({ ...DEFAULT_USER_CONFIGURATION }, true);
 }

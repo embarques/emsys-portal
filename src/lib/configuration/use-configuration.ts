@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import {
+  getConfigurationServerSnapshot,
   getConfigurationSnapshot,
   initializeConfigurationStore,
   setConfigurationStore,
@@ -11,12 +12,11 @@ import {
 import type { UserConfiguration } from "./types";
 
 export function useConfigurationStore(): UserConfiguration {
-  const subscribe = useCallback((listener: () => void) => subscribeConfigurationStore(listener), []);
-
-  const getSnapshot = useCallback(() => getConfigurationSnapshot(), []);
-  const getServerSnapshot = useCallback(() => getConfigurationSnapshot(), []);
-
-  const configuration = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const configuration = useSyncExternalStore(
+    subscribeConfigurationStore,
+    getConfigurationSnapshot,
+    getConfigurationServerSnapshot
+  );
 
   useEffect(() => {
     initializeConfigurationStore();
