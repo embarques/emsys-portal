@@ -1,7 +1,9 @@
 "use client";
 
-import { Bell, PanelLeftClose, PanelLeftOpen, Presentation, Flag } from "lucide-react";
+import { Bell, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
+import { CalculatorToggleButton } from "@/components/app-shell/floating-calculator";
+import { MemoPadToggleButton } from "@/components/app-shell/floating-memo-pad";
 import { Button } from "@/components/ui/button";
 import { SearchMenu } from "./search-menu";
 import { ThemeToggle } from "./theme-toggle";
@@ -45,15 +47,11 @@ export function Topbar({
       <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
         <SearchMenu />
 
+        <CalculatorToggleButton />
+
+        <MemoPadToggleButton />
+
         <ThemeToggle />
-
-        <Button type="button" variant="ghost" size="icon" aria-label="Flag" className="hidden shrink-0 lg:inline-flex">
-          <Flag className="h-5 w-5" />
-        </Button>
-
-        <Button type="button" variant="ghost" size="icon" aria-label="Display" className="hidden shrink-0 lg:inline-flex">
-          <Presentation className="h-5 w-5" />
-        </Button>
 
         <Button type="button" variant="ghost" size="icon" aria-label="Notifications" className="relative shrink-0">
           <Bell className="h-5 w-5" />

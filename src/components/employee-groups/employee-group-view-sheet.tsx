@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { getEmployeeById } from "@/lib/employees/mock-data";
+import { getEmployeeBranchLabel } from "@/lib/employees/display";
 import { getEmployeeFullName } from "@/lib/employees/types";
 import { formatEmployeeGroupDate, getEmployeeGroupBranchBadgeClass, getEmployeeGroupBranchLabel, truncateEmployeeGroupId } from "@/lib/employee-groups/display";
 import { formatAuditDate } from "@/lib/audit/display";
@@ -84,7 +85,7 @@ export function EmployeeGroupViewSheet({
                         {employee!.department} · {employee!.role}
                       </p>
                     </div>
-                    <Badge variant="outline">{employee!.branch || "—"}</Badge>
+                    <Badge variant="outline">{getEmployeeBranchLabel(employee!.branch)}</Badge>
                   </li>
                 ))}
               </ul>

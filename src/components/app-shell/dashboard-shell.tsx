@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+import { ConfigurationBootstrap } from "@/components/configuration/configuration-bootstrap";
+import { FloatingCalculator } from "@/components/app-shell/floating-calculator";
+import { FloatingMemoPad } from "@/components/app-shell/floating-memo-pad";
 import { DesktopSidebar } from "./desktop-sidebar";
 import { MobileSidebar } from "./mobile-sidebar";
 import { Topbar } from "./topbar";
@@ -39,6 +42,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
+      <ConfigurationBootstrap />
       <DesktopSidebar expanded={sidebarExpanded} />
       <MobileSidebar open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen} />
 
@@ -53,6 +57,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="mx-auto w-full max-w-7xl p-4 md:p-6 lg:p-8">{children}</div>
         </main>
       </div>
+
+      <FloatingCalculator />
+      <FloatingMemoPad />
     </div>
   );
 }

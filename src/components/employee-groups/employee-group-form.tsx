@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import { cloneEmployees } from "@/lib/employees/mock-data";
+import { getEmployeeBranchLabel } from "@/lib/employees/display";
 import { getEmployeeFullName, getEmployeeLabel } from "@/lib/employees/types";
 import {
   createEmptyEmployeeGroupForm,
@@ -165,7 +166,7 @@ export function EmployeeGroupForm({
                       ) : null}
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {employee.department} · {employee.branch || "No branch"}
+                      {employee.department} · {getEmployeeBranchLabel(employee.branch)}
                     </p>
                   </div>
                 </label>

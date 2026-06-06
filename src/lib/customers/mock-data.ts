@@ -68,7 +68,9 @@ export const MOCK_CUSTOMERS: Customer[] = [
     clientType: "sender",
     name: "Blue Coast Foods",
     documentId: "BCF-2201",
-    phones: [{ id: "ph-005", number: "+1 (305) 555-7788", label: "Shipping desk" }],
+    phones: [
+      { id: "ph-005", number: "+1 (305) 555-7788", label: "Shipping desk" },
+    ],
     email: "shipping@bluecoast.example",
     addresses: [
       {
@@ -168,4 +170,8 @@ export function cloneCustomers(): Customer[] {
     phones: customer.phones.map((phone) => ({ ...phone })),
     addresses: customer.addresses.map((address) => ({ ...address })),
   }));
+}
+
+export function getCustomerById(clientId: string): Customer | undefined {
+  return MOCK_CUSTOMERS.find((customer) => customer.clientId === clientId);
 }

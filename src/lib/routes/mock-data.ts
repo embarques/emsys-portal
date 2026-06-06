@@ -72,3 +72,7 @@ export function cloneRoutes(): RouteRecord[] {
     places: route.places.map((place) => ({ ...place })),
   }));
 }
+
+export function getRouteById(routeId: string): RouteRecord | undefined {
+  return MOCK_ROUTES.find((route) => route.routeId === routeId);
+}

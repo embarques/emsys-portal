@@ -1,0 +1,108 @@
+import type { Role } from "./types";
+
+export const MOCK_ROLES: Role[] = [
+  {
+    roleId: "role-001",
+    name: "Admin",
+    permissions: [
+      { id: "perm-001", value: "customers.view" },
+      { id: "perm-002", value: "customers.create" },
+      { id: "perm-003", value: "customers.edit" },
+      { id: "perm-004", value: "customers.delete" },
+      { id: "perm-005", value: "orders.view" },
+      { id: "perm-006", value: "orders.create" },
+      { id: "perm-007", value: "orders.edit" },
+      { id: "perm-008", value: "orders.delete" },
+      { id: "perm-009", value: "invoices.view" },
+      { id: "perm-010", value: "invoices.create" },
+      { id: "perm-011", value: "invoices.edit" },
+      { id: "perm-012", value: "invoices.delete" },
+      { id: "perm-013", value: "labels.view" },
+      { id: "perm-014", value: "labels.create" },
+      { id: "perm-015", value: "labels.update" },
+      { id: "perm-016", value: "inventory.view" },
+      { id: "perm-017", value: "inventory.edit" },
+      { id: "perm-018", value: "routes.view" },
+      { id: "perm-019", value: "routes.manage" },
+      { id: "perm-020", value: "trucks.view" },
+      { id: "perm-021", value: "trucks.manage" },
+      { id: "perm-022", value: "employees.view" },
+      { id: "perm-023", value: "employees.manage" },
+      { id: "perm-024", value: "users.view" },
+      { id: "perm-025", value: "users.manage" },
+      { id: "perm-026", value: "roles.view" },
+      { id: "perm-027", value: "roles.manage" },
+      { id: "perm-028", value: "reports.view" },
+      { id: "perm-029", value: "settings.view" },
+      { id: "perm-030", value: "settings.manage" },
+    ],
+    createdAt: "2024-01-01T08:00:00Z",
+    createdBy: "System",
+    updatedAt: "2026-05-01T10:00:00Z",
+  },
+  {
+    roleId: "role-002",
+    name: "Manager",
+    permissions: [
+      { id: "perm-101", value: "customers.view" },
+      { id: "perm-102", value: "customers.create" },
+      { id: "perm-103", value: "customers.edit" },
+      { id: "perm-104", value: "orders.view" },
+      { id: "perm-105", value: "orders.create" },
+      { id: "perm-106", value: "orders.edit" },
+      { id: "perm-107", value: "invoices.view" },
+      { id: "perm-108", value: "invoices.create" },
+      { id: "perm-109", value: "invoices.edit" },
+      { id: "perm-110", value: "labels.view" },
+      { id: "perm-111", value: "labels.create" },
+      { id: "perm-112", value: "labels.update" },
+      { id: "perm-113", value: "inventory.view" },
+      { id: "perm-114", value: "routes.view" },
+      { id: "perm-115", value: "trucks.view" },
+      { id: "perm-116", value: "employees.view" },
+      { id: "perm-117", value: "reports.view" },
+    ],
+    createdAt: "2024-02-01T09:00:00Z",
+    createdBy: "Admin User",
+    updatedAt: "2026-04-15T11:00:00Z",
+  },
+  {
+    roleId: "role-003",
+    name: "User",
+    permissions: [
+      { id: "perm-201", value: "customers.view" },
+      { id: "perm-202", value: "orders.view" },
+      { id: "perm-203", value: "orders.create" },
+      { id: "perm-204", value: "invoices.view" },
+      { id: "perm-205", value: "labels.view" },
+      { id: "perm-206", value: "labels.update" },
+      { id: "perm-207", value: "inventory.view" },
+    ],
+    createdAt: "2024-03-01T10:00:00Z",
+    createdBy: "Admin User",
+    updatedAt: "2026-03-01T14:00:00Z",
+  },
+  {
+    roleId: "role-004",
+    name: "Viewer",
+    permissions: [
+      { id: "perm-301", value: "customers.view" },
+      { id: "perm-302", value: "orders.view" },
+      { id: "perm-303", value: "invoices.view" },
+      { id: "perm-304", value: "labels.view" },
+      { id: "perm-305", value: "inventory.view" },
+      { id: "perm-306", value: "reports.view" },
+    ],
+    createdAt: "2024-04-01T11:00:00Z",
+    createdBy: "Admin User",
+    updatedAt: "2026-02-01T09:00:00Z",
+  },
+];
+
+export function cloneRoles(): Role[] {
+  return structuredClone(MOCK_ROLES);
+}
+
+export function getRoleById(roleId: string): Role | undefined {
+  return MOCK_ROLES.find((role) => role.roleId === roleId);
+}
