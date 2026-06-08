@@ -26,11 +26,12 @@ function getInitials(displayName: string | null, email: string | null): string {
 
 export function UserMenu() {
   const router = useRouter();
-  const { displayName, email, signOut } = useAuth();
+  const { displayName, email, role, roleLoading, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const initials = getInitials(displayName, email);
   const username = email?.split("@")[0] ?? "user";
+  const roleLabel = roleLoading ? "Loading..." : role;
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -64,7 +65,9 @@ export function UserMenu() {
         </div>
         <div className="hidden text-left sm:block">
           <p className="text-sm font-medium leading-none">{displayName ?? username}</p>
-          <p className="mt-1 text-xs text-muted-foreground">@{username}</p>
+          {roleLabel ? (
+            <p className="mt-1 text-xs text-muted-foreground">{roleLabel}</p>
+          ) : null}
         </div>
       </Button>
 
@@ -72,6 +75,9 @@ export function UserMenu() {
         <div className="absolute right-0 top-12 z-[220] w-64 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl">
           <div className="border-b p-4">
             <p className="text-sm font-semibold">{displayName ?? username}</p>
+            {roleLabel ? (
+              <p className="mt-1 text-xs font-medium text-muted-foreground">{roleLabel}</p>
+            ) : null}
             <p className="mt-1 text-xs text-muted-foreground">{email ?? `@${username}`}</p>
           </div>
 
