@@ -10,7 +10,7 @@ import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import { OrderPartyEditor } from "@/components/orders/order-party-editor";
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
-import { cloneCustomers } from "@/lib/customers/mock-data";
+import { useCustomerPicker } from "@/lib/customers/hooks/use-customers";
 import { cloneContainers } from "@/lib/containers/mock-data";
 import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
 import { cloneRoutes } from "@/lib/routes/mock-data";
@@ -48,7 +48,8 @@ export function OrderForm({
   onFormErrorChange,
   onCancel,
 }: OrderFormProps) {
-  const customers = useMemo(() => cloneCustomers(), []);
+  const { data: customersData } = useCustomerPicker();
+  const customers = customersData?.items ?? [];
   const containers = useMemo(() => cloneContainers(), []);
   const routes = useMemo(() => cloneRoutes(), []);
   const routeAssignments = useMemo(() => cloneRouteAssignments(), []);

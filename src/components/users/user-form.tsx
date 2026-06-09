@@ -121,13 +121,16 @@ export function UserForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name">Display name</Label>
+        <Label htmlFor="name">Full name</Label>
         <Input
           id="name"
           value={values.name}
           onChange={(event) => updateField("name", event.target.value)}
           placeholder="Defaults to username when empty"
         />
+        {!isEditing ? (
+          <p className="text-xs text-muted-foreground">Sent to the API as `fullName`.</p>
+        ) : null}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -212,13 +215,16 @@ export function UserForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">
+            Email {!isEditing ? <span className="text-destructive">*</span> : null}
+          </Label>
           <Input
             id="email"
             type="email"
             value={values.email}
             onChange={(event) => updateField("email", event.target.value)}
             placeholder="name@emsys.example"
+            required={!isEditing}
           />
         </div>
 

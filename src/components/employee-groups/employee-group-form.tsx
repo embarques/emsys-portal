@@ -12,6 +12,7 @@ import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import {
   createEmployeeSearchFilter,
   getEmployeeFullName,
+  getEmployeePortalBranch,
 } from "@/lib/employees/types";
 import {
   createEmptyEmployeeGroupForm,
@@ -150,10 +151,10 @@ export function EmployeeGroupForm({
             <p className="px-2 py-6 text-center text-sm text-muted-foreground">Loading employees…</p>
           ) : employees.length > 0 ? (
             employees.map((employee) => {
-              const checked = values.employeeIds.includes(employee.employeeId);
+              const checked = values.employeeIds.includes(String(employee.id));
               return (
                 <label
-                  key={employee.employeeId}
+                  key={employee.id}
                   className={cn(
                     "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
                     checked ? "border-primary bg-primary/5" : "hover:bg-muted/30"
@@ -162,19 +163,19 @@ export function EmployeeGroupForm({
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={(event) => toggleEmployee(employee.employeeId, event.target.checked)}
+                    onChange={(event) => toggleEmployee(String(employee.id), event.target.checked)}
                     className="mt-1 size-4 rounded border-input"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{getEmployeeFullName(employee)}</span>
-                      <Badge variant="outline">{employee.role}</Badge>
-                      {employee.status === "inactive" ? (
+                      <Badge variant="outline">{employee.title}</Badge>
+                      {!employee.active ? (
                         <Badge variant="secondary">Inactive</Badge>
                       ) : null}
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {employee.department} · {getEmployeeBranchLabel(employee.branch)}
+                      {employee.department} · {getEmployeeBranchLabel(getEmployeePortalBranch(employee))}
                     </p>
                   </div>
                 </label>

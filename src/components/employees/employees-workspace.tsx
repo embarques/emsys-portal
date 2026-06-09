@@ -34,13 +34,15 @@ import { Input } from "@/components/ui/input";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
-  formatEmployeeAddress,
+  formatEmployeeBranchLabel,
+  formatEmployeeBranchs,
   formatEmployeeDate,
+  formatEmployeeId,
+  formatEmployeeMoney,
+  formatEmployeeUsers,
+  getEmployeeActiveBadgeClass,
+  getEmployeeActiveLabel,
   getEmployeeBranchBadgeClass,
-  getEmployeeBranchLabel,
-  getEmployeeStatusBadgeClass,
-  getEmployeeStatusLabel,
-  truncateEmployeeId,
 } from "@/lib/employees/display";
 import {
   useCreateEmployee,
@@ -50,14 +52,14 @@ import {
   useUpdateEmployee,
 } from "@/lib/employees/hooks/use-employees";
 import {
-  EMPLOYEE_BRANCHES,
+  EMPLOYEE_PORTAL_BRANCHES,
   EMPLOYEE_DEPARTMENTS,
   EMPLOYEE_SEARCH_FIELDS,
   EMPLOYEE_SEARCH_OPERATORS,
-  EMPLOYEE_STATUSES,
   createEmployeeSearchFilter,
   createEmptyEmployeeForm,
   employeeToFormValues,
+  getEmployeeSearchSortField,
   type Employee,
   type EmployeeFilterState,
   type EmployeeFormValues,
@@ -71,7 +73,7 @@ const defaultFilters: EmployeeFilterState = {
   searchField: "name",
   searchOperator: "startsWith",
   branch: "all",
-  status: "all",
+  active: "all",
   department: "all",
 };
 
@@ -88,23 +90,27 @@ export function EmployeesWorkspace() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const listParams = useMemo(
-    () => ({
-      page,
-      limit: PAGE_SIZE,
-      sortField: "name",
-      sortDirection: "asc" as const,
-      search: createEmployeeSearchFilter(deferredQuery, filters.searchField, filters.searchOperator),
-      branch: filters.branch,
-      status: filters.status,
-      department: filters.department,
-    }),
+    () => {
+      const search = createEmployeeSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
+
+      return {
+        page,
+        limit: PAGE_SIZE,
+        sortField: search ? getEmployeeSearchSortField(filters.searchField) : "name",
+        sortDirection: "asc" as const,
+        search,
+        branch: filters.branch,
+        active: filters.active,
+        department: filters.department,
+      };
+    },
     [
       deferredQuery,
       filters.branch,
       filters.department,
       filters.searchField,
       filters.searchOperator,
-      filters.status,
+      filters.active,
       page,
     ],
   );
@@ -120,7 +126,7 @@ export function EmployeesWorkspace() {
   const totalPages = Math.max(1, Math.ceil(totalEmployees / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
-    employees.length > 0 && employees.every((employee) => selectedIds.includes(employee.employeeId));
+    employees.length > 0 && employees.every((employee) => selectedIds.includes(String(employee.id)));
   const isSaving =
     createEmployeeMutation.isPending ||
     updateEmployeeMutation.isPending ||
@@ -129,12 +135,12 @@ export function EmployeesWorkspace() {
   function toggleSelectAll(checked: boolean) {
     if (checked) {
       setSelectedIds((current) =>
-        Array.from(new Set([...current, ...employees.map((employee) => employee.employeeId)])),
+        Array.from(new Set([...current, ...employees.map((employee) => String(employee.id))])),
       );
       return;
     }
     setSelectedIds((current) =>
-      current.filter((id) => !employees.some((employee) => employee.employeeId === id)),
+      current.filter((id) => !employees.some((employee) => String(employee.id) === id)),
     );
   }
 
@@ -163,8 +169,8 @@ export function EmployeesWorkspace() {
     try {
       if (formMode === "edit" && editingEmployee) {
         const nextEmployee = await updateEmployeeMutation.mutateAsync({
-          employeeId: editingEmployee.employeeId,
-          values: { ...values, createdBy: editingEmployee.createdBy },
+          employeeId: String(editingEmployee.id),
+          values,
         });
         notifyUpdated("Employee", nextEmployee.name);
       } else {
@@ -184,8 +190,8 @@ export function EmployeesWorkspace() {
     if (!deleteTarget) return;
 
     const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((employee) => employee.employeeId)
-      : [deleteTarget.employeeId];
+      ? deleteTarget.map((employee) => String(employee.id))
+      : [String(deleteTarget.id)];
 
     try {
       await deleteEmployeesMutation.mutateAsync(ids);
@@ -222,12 +228,13 @@ export function EmployeesWorkspace() {
 
   const branchFilters: { value: EmployeeFilterState["branch"]; label: string }[] = [
     { value: "all", label: "All branches" },
-    ...EMPLOYEE_BRANCHES,
+    ...EMPLOYEE_PORTAL_BRANCHES.map((entry) => ({ value: entry.portal, label: entry.label })),
   ];
 
-  const statusFilters: { value: EmployeeFilterState["status"]; label: string }[] = [
-    { value: "all", label: "All statuses" },
-    ...EMPLOYEE_STATUSES,
+  const activeFilters: { value: EmployeeFilterState["active"]; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: true, label: "Active" },
+    { value: false, label: "Inactive" },
   ];
 
   const departmentFilters = [
@@ -237,106 +244,157 @@ export function EmployeesWorkspace() {
 
   const tableColumns: DataTableColumn<Employee>[] = [
     {
-      id: "employeeId",
-      label: "ID",
+      id: "id",
+      label: "id",
       cellClassName: "font-mono text-xs",
-      renderCell: (employee) => truncateEmployeeId(employee.employeeId),
+      renderCell: (employee) => formatEmployeeId(employee.id),
     },
     {
       id: "name",
-      label: "Name",
+      label: "name",
       cellClassName: "font-medium",
       renderCell: (employee) => employee.name,
     },
     {
-      id: "branch",
-      label: "Branch",
+      id: "active",
+      label: "active",
       renderCell: (employee) => (
-        <Badge className={getEmployeeBranchBadgeClass(employee.branch)}>
-          {getEmployeeBranchLabel(employee.branch)}
+        <Badge className={getEmployeeActiveBadgeClass(employee.active)}>
+          {getEmployeeActiveLabel(employee.active)}
         </Badge>
       ),
     },
     {
       id: "department",
-      label: "Department",
+      label: "department",
       renderCell: (employee) => employee.department || "—",
     },
     {
-      id: "role",
-      label: "Role",
-      renderCell: (employee) => employee.role || "—",
+      id: "title",
+      label: "title",
+      renderCell: (employee) => employee.title || "—",
     },
     {
-      id: "address",
-      label: "Address",
-      renderCell: (employee) => employee.address || "—",
-    },
-    {
-      id: "city",
-      label: "City",
-      renderCell: (employee) => employee.city || "—",
-    },
-    {
-      id: "state",
-      label: "State",
-      renderCell: (employee) => employee.state || "—",
-    },
-    {
-      id: "zip",
-      label: "Zip",
-      renderCell: (employee) => employee.zip || "—",
-    },
-    {
-      id: "phone",
-      label: "Phone",
-      renderCell: (employee) => employee.phone || "—",
-    },
-    {
-      id: "email",
-      label: "Email",
-      renderCell: (employee) => employee.email || "—",
-    },
-    {
-      id: "startDate",
-      label: "Started",
-      renderCell: (employee) => (employee.startDate ? formatEmployeeDate(employee.startDate) : "—"),
-    },
-    {
-      id: "endDate",
-      label: "Ended",
-      renderCell: (employee) => (employee.endDate ? formatEmployeeDate(employee.endDate) : "—"),
-    },
-    {
-      id: "status",
-      label: "Status",
+      id: "branch",
+      label: "branch",
       renderCell: (employee) => (
-        <Badge className={getEmployeeStatusBadgeClass(employee.status)}>
-          {getEmployeeStatusLabel(employee.status)}
+        <Badge className={getEmployeeBranchBadgeClass(employee)}>
+          {formatEmployeeBranchLabel(employee)}
         </Badge>
       ),
     },
     {
+      id: "branch.code",
+      label: "branch.code",
+      renderCell: (employee) => employee.branch.code || "—",
+    },
+    {
+      id: "branch.name",
+      label: "branch.name",
+      renderCell: (employee) => employee.branch.name || "—",
+    },
+    {
+      id: "branchs",
+      label: "branchs",
+      renderCell: (employee) => formatEmployeeBranchs(employee),
+    },
+    {
+      id: "address.address1",
+      label: "address.address1",
+      renderCell: (employee) => employee.address.address1 || "—",
+    },
+    {
+      id: "address.address2",
+      label: "address.address2",
+      renderCell: (employee) => employee.address.address2 || "—",
+    },
+    {
+      id: "address.apartment",
+      label: "address.apartment",
+      renderCell: (employee) => employee.address.apartment || "—",
+    },
+    {
+      id: "address.city",
+      label: "address.city",
+      renderCell: (employee) => employee.address.city || "—",
+    },
+    {
+      id: "address.state",
+      label: "address.state",
+      renderCell: (employee) => employee.address.state || "—",
+    },
+    {
+      id: "address.zipcode",
+      label: "address.zipcode",
+      renderCell: (employee) => employee.address.zipcode || "—",
+    },
+    {
+      id: "address.country",
+      label: "address.country",
+      renderCell: (employee) => employee.address.country || "—",
+    },
+    {
+      id: "phone1",
+      label: "phone1",
+      renderCell: (employee) => employee.phone1 || "—",
+    },
+    {
+      id: "phone2",
+      label: "phone2",
+      renderCell: (employee) => employee.phone2 || "—",
+    },
+    {
+      id: "email",
+      label: "email",
+      renderCell: (employee) => employee.email || "—",
+    },
+    {
+      id: "cost",
+      label: "cost",
+      renderCell: (employee) => formatEmployeeMoney(employee.cost),
+    },
+    {
+      id: "loanAmountOwed",
+      label: "loanAmountOwed",
+      renderCell: (employee) => formatEmployeeMoney(employee.loanAmountOwed),
+    },
+    {
+      id: "loanBalanceUpdated",
+      label: "loanBalanceUpdated",
+      renderCell: (employee) =>
+        employee.loanBalanceUpdated ? formatEmployeeDate(employee.loanBalanceUpdated) : "—",
+    },
+    {
+      id: "totalLoanGiven",
+      label: "totalLoanGiven",
+      renderCell: (employee) => formatEmployeeMoney(employee.totalLoanGiven),
+    },
+    {
+      id: "totalPaymentReceived",
+      label: "totalPaymentReceived",
+      renderCell: (employee) => formatEmployeeMoney(employee.totalPaymentReceived),
+    },
+    {
+      id: "user",
+      label: "user",
+      renderCell: (employee) => employee.user?.userName || "—",
+    },
+    {
+      id: "users",
+      label: "users",
+      renderCell: (employee) => formatEmployeeUsers(employee),
+    },
+    {
       id: "createdAt",
-      label: "Date created",
+      label: "createdAt",
       cellClassName: "text-muted-foreground",
       renderCell: (employee) => (employee.createdAt ? formatAuditDate(employee.createdAt) : "—"),
     },
     {
-      id: "createdBy",
-      label: "User created",
-      renderCell: (employee) => employee.createdBy || "—",
-    },
-    {
       id: "updatedAt",
-      label: "Date modified",
+      label: "updatedAt",
       cellClassName: "text-muted-foreground",
       renderCell: (employee) => (employee.updatedAt ? formatAuditDate(employee.updatedAt) : "—"),
-    },
-    {
-      id: "fullAddress",
-      label: "Full address",
-      renderCell: (employee) => formatEmployeeAddress(employee),
     },
     {
       id: "actions",
@@ -374,7 +432,7 @@ export function EmployeesWorkspace() {
     <div>
       <PageHeader
         title="Employees"
-        description="Manage employee records with branch, department, role, contact info, and employment dates."
+        description="Manage employee.Employee records with branch, address, title, loans, and linked users."
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
@@ -406,7 +464,7 @@ export function EmployeesWorkspace() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <CardTitle>Employee directory</CardTitle>
-              <CardDescription>Search and filter employees by branch, department, and status.</CardDescription>
+              <CardDescription>Search and filter employees by branch, department, title, and active.</CardDescription>
             </div>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
               <select
@@ -480,15 +538,15 @@ export function EmployeesWorkspace() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</span>
-            {statusFilters.map((option) => (
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active</span>
+            {activeFilters.map((option) => (
               <Button
-                key={option.value}
+                key={String(option.value)}
                 type="button"
                 size="sm"
-                variant={filters.status === option.value ? "default" : "outline"}
+                variant={filters.active === option.value ? "default" : "outline"}
                 onClick={() => {
-                  setFilters((current) => ({ ...current, status: option.value }));
+                  setFilters((current) => ({ ...current, active: option.value }));
                   setPage(1);
                 }}
               >
@@ -532,7 +590,7 @@ export function EmployeesWorkspace() {
                 size="sm"
                 disabled={isSaving}
                 onClick={() =>
-                  setDeleteTarget(employees.filter((employee) => selectedIds.includes(employee.employeeId)))
+                  setDeleteTarget(employees.filter((employee) => selectedIds.includes(String(employee.id))))
                 }
               >
                 <Trash2 className="h-4 w-4" />
@@ -548,7 +606,7 @@ export function EmployeesWorkspace() {
           <DataTable
             columns={columnVisibility.columns}
             rows={employees}
-            rowKey={(employee) => employee.employeeId}
+            rowKey={(employee) => String(employee.id)}
             rowLabel={(employee) => employee.name}
             columnLayout={columnVisibility}
             minWidth={1800}
@@ -622,22 +680,22 @@ export function EmployeesWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit employee" : "Add employee"}</DialogTitle>
             <DialogDescription>
-              Record branch, department, role, contact details, and employment dates.
+              Fields match the EMSYS employee.Employee API model: active, address, branch, branchs, cost,
+              department, email, loans, name, phone1, phone2, title, user, and users.
             </DialogDescription>
           </DialogHeader>
           <EmployeeForm
-            key={editingEmployee?.employeeId ?? "new"}
+            key={editingEmployee?.id ?? "new"}
             initialValues={
               formMode === "edit" && editingEmployee
                 ? employeeToFormValues(editingEmployee)
                 : createEmptyEmployeeForm()
             }
             isEditing={formMode === "edit"}
-            updatedAt={editingEmployee?.updatedAt}
             submitLabel={formMode === "edit" ? "Save changes" : "Add employee"}
             isSubmitting={isSaving}
             onSubmit={saveEmployee}

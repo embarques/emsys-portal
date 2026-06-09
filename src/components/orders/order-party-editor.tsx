@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatAddressLine } from "@/lib/customers/display";
-import type { Customer } from "@/lib/customers/types";
+import {
+  getCustomerAddresses,
+  getCustomerClientId,
+  getCustomerClientType,
+  getCustomerPhones,
+  type Customer,
+} from "@/lib/customers/types";
 import {
   createEmptyOrderPartyAddress,
   createEmptyOrderPartyPhone,
@@ -30,9 +36,10 @@ type OrderPartyEditorProps = {
 };
 
 export function customerToOrderPartyFormValues(customer: Customer): OrderPartyFormValues {
+  const legacyAddresses = getCustomerAddresses(customer);
   const addresses =
-    customer.addresses.length > 0
-      ? customer.addresses.map((address) => ({
+    legacyAddresses.length > 0
+      ? legacyAddresses.map((address) => ({
           id: address.id,
           streetAddress: address.streetAddress,
           apt: address.apt ?? "",
@@ -44,18 +51,18 @@ export function customerToOrderPartyFormValues(customer: Customer): OrderPartyFo
         }))
       : [createEmptyOrderPartyAddress()];
 
-  const primaryAddress =
-    customer.addresses.find((address) => address.isPrimary) ?? customer.addresses[0] ?? addresses[0];
+  const primaryAddress = legacyAddresses[0] ?? addresses[0];
+  const legacyPhones = getCustomerPhones(customer);
 
   return {
     id: crypto.randomUUID(),
-    clientId: customer.clientId,
+    clientId: getCustomerClientId(customer),
     name: customer.name,
-    documentId: customer.documentId ?? "",
-    email: customer.email ?? "",
+    documentId: "",
+    email: "",
     phones:
-      customer.phones.length > 0
-        ? customer.phones.map((phone) => ({
+      legacyPhones.length > 0
+        ? legacyPhones.map((phone) => ({
             id: phone.id,
             number: phone.number,
             label: phone.label ?? "",
@@ -77,7 +84,7 @@ export function OrderPartyEditor({
 }: OrderPartyEditorProps) {
   const filteredCustomers = customers.filter((customer) => {
     if (customerFilter === "all") return true;
-    return customer.clientType === customerFilter;
+    return getCustomerClientType(customer) === customerFilter;
   });
 
   function updateField<K extends keyof OrderPartyFormValues>(key: K, value: OrderPartyFormValues[K]) {
@@ -130,7 +137,7 @@ export function OrderPartyEditor({
   }
 
   function loadCustomer(clientId: string) {
-    const customer = customers.find((entry) => entry.clientId === clientId);
+    const customer = customers.find((entry) => getCustomerClientId(entry) === clientId);
     if (!customer) return;
     onChange(customerToOrderPartyFormValues(customer));
   }
@@ -180,11 +187,15 @@ export function OrderPartyEditor({
           }}
         >
           <option value="">Enter manually or pick a client</option>
-          {filteredCustomers.map((customer) => (
-            <option key={customer.clientId} value={customer.clientId}>
-              {customer.name} · {customer.clientType}
-            </option>
-          ))}
+          {filteredCustomers.map((customer) => {
+            const clientType = getCustomerClientType(customer);
+            return (
+              <option key={customer.id} value={getCustomerClientId(customer)}>
+                {customer.name}
+                {clientType ? ` · ${clientType}` : ""}
+              </option>
+            );
+          })}
         </select>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -32,206 +32,317 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
-  computeCustomerKpis,
-  customerMatchesQuery,
+  formatAddressSummary,
+  formatCustomerBranchLabel,
   formatPhoneSummary,
   getClientTypeBadgeClass,
   getClientTypeLabel,
-  truncateClientId,
+  getCustomerActiveBadgeClass,
+  getCustomerActiveLabel,
+  getCustomerBranchBadgeClass,
+  getCustomerTypeLabel,
+  truncateCustomerId,
 } from "@/lib/customers/display";
-import { cloneCustomers } from "@/lib/customers/mock-data";
 import {
-  CLIENT_TYPES,
+  useCreateCustomer,
+  useCustomerStats,
+  useCustomers,
+  useDeleteCustomers,
+  useUpdateCustomer,
+} from "@/lib/customers/hooks/use-customers";
+import {
+  CUSTOMER_PORTAL_BRANCHES,
+  CUSTOMER_SEARCH_FIELDS,
+  CUSTOMER_SEARCH_OPERATORS,
+  CUSTOMER_TYPE_OPTIONS,
+  DEFAULT_CUSTOMER_LIST_PARAMS,
+  createCustomerSearchFilter,
   createEmptyCustomerForm,
   customerToFormValues,
-  formValuesToCustomer,
-  getPrimaryAddress,
+  getCustomerClientType,
   type Customer,
   type CustomerFilterState,
   type CustomerFormValues,
 } from "@/lib/customers/types";
 import type { DataTableColumn } from "@/lib/table/types";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = DEFAULT_CUSTOMER_LIST_PARAMS.limit;
 
 const defaultFilters: CustomerFilterState = {
   query: "",
-  clientType: "all",
+  searchField: "name",
+  searchOperator: "startsWith",
+  branch: "all",
+  active: "all",
+  customerType: "all",
 };
 
 export function CustomersWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [customers, setCustomers] = useState<Customer[]>(() => cloneCustomers());
   const [filters, setFilters] = useState<CustomerFilterState>(defaultFilters);
+  const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Customer | Customer[] | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const filteredCustomers = useMemo(() => {
-    return customers.filter((customer) => {
-      if (!customerMatchesQuery(customer, filters.query)) return false;
-      if (filters.clientType !== "all" && customer.clientType !== filters.clientType) return false;
-      return true;
-    });
-  }, [customers, filters]);
+  const listParams = useMemo(() => {
+    const search = createCustomerSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
 
-  const kpis = useMemo(() => computeCustomerKpis(customers), [customers]);
-  const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / PAGE_SIZE));
+    return {
+      ...DEFAULT_CUSTOMER_LIST_PARAMS,
+      page,
+      limit: PAGE_SIZE,
+      search,
+      branch: filters.branch,
+      active: filters.active,
+      customerType: filters.customerType,
+    };
+  }, [
+    deferredQuery,
+    filters.active,
+    filters.branch,
+    filters.customerType,
+    filters.searchField,
+    filters.searchOperator,
+    page,
+  ]);
+
+  const { data, isLoading, isError, error, isFetching } = useCustomers(listParams);
+  const stats = useCustomerStats();
+  const createCustomerMutation = useCreateCustomer();
+  const updateCustomerMutation = useUpdateCustomer();
+  const deleteCustomersMutation = useDeleteCustomers();
+
+  const customers = data?.items ?? [];
+  const totalCustomers = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCustomers / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pageCustomers = filteredCustomers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allPageSelected =
-    pageCustomers.length > 0 && pageCustomers.every((customer) => selectedIds.includes(customer.clientId));
-
-  function toggleSelectAll(checked: boolean) {
-    if (checked) {
-      setSelectedIds((current) =>
-        Array.from(new Set([...current, ...pageCustomers.map((customer) => customer.clientId)]))
-      );
-      return;
-    }
-    setSelectedIds((current) =>
-      current.filter((id) => !pageCustomers.some((customer) => customer.clientId === id))
-    );
-  }
-
-  function toggleSelect(clientId: string, checked: boolean) {
-    setSelectedIds((current) => (checked ? [...current, clientId] : current.filter((entry) => entry !== clientId)));
-  }
+    customers.length > 0 && customers.every((customer) => selectedIds.includes(customer.id));
+  const isSaving =
+    createCustomerMutation.isPending ||
+    updateCustomerMutation.isPending ||
+    deleteCustomersMutation.isPending;
 
   function openAddForm() {
     setEditingCustomer(null);
     setFormMode("add");
+    setFormError(null);
   }
 
   function openEditForm(customer: Customer) {
     setEditingCustomer(customer);
     setFormMode("edit");
     setViewCustomer(null);
+    setFormError(null);
   }
 
-  function saveCustomer(values: CustomerFormValues) {
-    if (formMode === "edit" && editingCustomer) {
-      const nextCustomer = formValuesToCustomer(
-        values,
-        editingCustomer.createdAt,
-        editingCustomer.createdBy,
-        new Date().toISOString()
+  async function saveCustomer(values: CustomerFormValues) {
+    setFormError(null);
+
+    try {
+      if (formMode === "edit" && editingCustomer) {
+        const nextCustomer = await updateCustomerMutation.mutateAsync({
+          customerId: editingCustomer.id,
+          values,
+        });
+        notifyUpdated("Customer", nextCustomer.name);
+      } else {
+        const nextCustomer = await createCustomerMutation.mutateAsync(values);
+        notifyAdded("Customer", nextCustomer.name);
+      }
+
+      setFormMode(null);
+      setEditingCustomer(null);
+      setPage(1);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+
+    const ids = Array.isArray(deleteTarget)
+      ? deleteTarget.map((customer) => customer.id)
+      : [deleteTarget.id];
+
+    try {
+      await deleteCustomersMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
+      setViewCustomer(null);
+      notifyDeleted("Customer", ids.length);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
+      setDeleteTarget(null);
+    }
+  }
+
+  function toggleSelectAll(checked: boolean) {
+    if (checked) {
+      setSelectedIds((current) =>
+        Array.from(new Set([...current, ...customers.map((customer) => customer.id)])),
       );
-      setCustomers((current) =>
-        current.map((customer) => (customer.clientId === editingCustomer.clientId ? nextCustomer : customer))
-      );
-      notifyUpdated("Client", nextCustomer.name);
-    } else {
-      const nextCustomer = formValuesToCustomer(values);
-      setCustomers((current) => [nextCustomer, ...current]);
-      notifyAdded("Client", nextCustomer.name);
+      return;
     }
 
-    setFormMode(null);
-    setEditingCustomer(null);
-    setPage(1);
+    setSelectedIds((current) => current.filter((id) => !customers.some((customer) => customer.id === id)));
   }
 
-  function confirmDelete() {
-    if (!deleteTarget) return;
-    const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((customer) => customer.clientId)
-      : [deleteTarget.clientId];
-    setCustomers((current) => current.filter((customer) => !ids.includes(customer.clientId)));
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewCustomer(null);
-    notifyDeleted("Client", ids.length);
+  function toggleSelect(customerId: string, checked: boolean) {
+    setSelectedIds((current) =>
+      checked ? [...current, customerId] : current.filter((entry) => entry !== customerId),
+    );
   }
 
-  const stats = [
-    { label: "Total clients", value: kpis.total.toString(), description: "Senders and receivers", icon: Users },
-    { label: "Senders", value: kpis.senders.toString(), description: "Outbound party records", icon: UserPlus },
-    { label: "Receivers", value: kpis.receivers.toString(), description: "Delivery party records", icon: UserCheck },
+  const statCards = [
+    { label: "Total customers", value: stats.total.toString(), description: "All customer records", icon: Users },
+    { label: "Active", value: stats.active.toString(), description: "Active customers", icon: UserPlus },
+    { label: "Inactive", value: stats.inactive.toString(), description: "Inactive customers", icon: UserCheck },
     {
-      label: "Missing document ID",
-      value: kpis.missingDocument.toString(),
-      description: "Clients without document on file",
+      label: "Customer type 1",
+      value: stats.type1.toString(),
+      description: "Customers with customerType = 1",
       icon: Search,
     },
   ];
 
-  const clientTypeFilters: { value: CustomerFilterState["clientType"]; label: string }[] = [
+  const branchFilters: { value: CustomerFilterState["branch"]; label: string }[] = [
+    { value: "all", label: "All branches" },
+    ...CUSTOMER_PORTAL_BRANCHES.map((entry) => ({ value: entry.portal, label: entry.label })),
+  ];
+
+  const activeFilters: { value: CustomerFilterState["active"]; label: string }[] = [
     { value: "all", label: "All" },
-    ...CLIENT_TYPES,
+    { value: true, label: "Active" },
+    { value: false, label: "Inactive" },
+  ];
+
+  const customerTypeFilters: { value: CustomerFilterState["customerType"]; label: string }[] = [
+    { value: "all", label: "All types" },
+    ...CUSTOMER_TYPE_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
   ];
 
   const tableColumns: DataTableColumn<Customer>[] = [
     {
-      id: "clientId",
-      label: "Client ID",
+      id: "id",
+      label: "id",
       cellClassName: "font-mono text-xs",
-      renderCell: (customer) => truncateClientId(customer.clientId),
+      renderCell: (customer) => truncateCustomerId(customer.id),
+    },
+    {
+      id: "oldID",
+      label: "oldID",
+      cellClassName: "font-mono text-xs",
+      renderCell: (customer) => (customer.oldID > 0 ? String(customer.oldID) : "—"),
     },
     {
       id: "name",
-      label: "Name",
-      renderCell: (customer) => (
-        <>
-          <div className="font-medium">{customer.name}</div>
-          {customer.documentId ? (
-            <div className="text-xs text-muted-foreground">{customer.documentId}</div>
-          ) : null}
-        </>
-      ),
+      label: "name",
+      cellClassName: "font-medium",
+      renderCell: (customer) => customer.name,
     },
     {
-      id: "type",
-      label: "Type",
+      id: "active",
+      label: "active",
       renderCell: (customer) => (
-        <Badge className={getClientTypeBadgeClass(customer.clientType)}>
-          {getClientTypeLabel(customer.clientType)}
+        <Badge className={getCustomerActiveBadgeClass(customer.active)}>
+          {getCustomerActiveLabel(customer.active)}
         </Badge>
       ),
     },
     {
-      id: "city",
-      label: "City",
+      id: "customerType",
+      label: "customerType",
+      renderCell: (customer) => getCustomerTypeLabel(customer),
+    },
+    {
+      id: "clientType",
+      label: "client type",
+      renderCell: (customer) => {
+        const clientType = getCustomerClientType(customer);
+        if (!clientType) return "—";
+        return (
+          <Badge className={getClientTypeBadgeClass(clientType)}>{getClientTypeLabel(clientType)}</Badge>
+        );
+      },
+    },
+    {
+      id: "branch",
+      label: "branch",
       renderCell: (customer) => (
-        <>
-          {getPrimaryAddress(customer)?.city ?? "—"}
-          {customer.addresses.length > 1 ? (
-            <div className="text-xs text-muted-foreground">+{customer.addresses.length - 1} more</div>
-          ) : null}
-        </>
+        <Badge className={getCustomerBranchBadgeClass(customer)}>{formatCustomerBranchLabel(customer)}</Badge>
       ),
     },
     {
+      id: "branch.code",
+      label: "branch.code",
+      renderCell: (customer) => customer.branch.code || "—",
+    },
+    {
+      id: "phone1",
+      label: "phone1",
+      renderCell: (customer) => customer.phone1 || "—",
+    },
+    {
+      id: "phone2",
+      label: "phone2",
+      renderCell: (customer) => customer.phone2 || "—",
+    },
+    {
       id: "phones",
-      label: "Phone(s)",
+      label: "phones",
       renderCell: (customer) => formatPhoneSummary(customer),
     },
     {
-      id: "email",
-      label: "Email",
-      renderCell: (customer) => customer.email ?? "—",
+      id: "address.address1",
+      label: "address.address1",
+      renderCell: (customer) => customer.address.address1 || "—",
+    },
+    {
+      id: "address.city",
+      label: "address.city",
+      renderCell: (customer) => customer.address.city || "—",
+    },
+    {
+      id: "address.state",
+      label: "address.state",
+      renderCell: (customer) => customer.address.state || "—",
+    },
+    {
+      id: "address.country",
+      label: "address.country",
+      renderCell: (customer) => customer.address.country || "—",
+    },
+    {
+      id: "address",
+      label: "address",
+      renderCell: (customer) => formatAddressSummary(customer),
+    },
+    {
+      id: "createdByID",
+      label: "createdByID",
+      renderCell: (customer) => (customer.createdByID != null ? String(customer.createdByID) : "—"),
     },
     {
       id: "createdAt",
-      label: "Date created",
+      label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (customer) => formatAuditDate(customer.createdAt),
-    },
-    {
-      id: "createdBy",
-      label: "User created",
-      renderCell: (customer) => customer.createdBy,
+      renderCell: (customer) => (customer.createdAt ? formatAuditDate(customer.createdAt) : "—"),
     },
     {
       id: "updatedAt",
-      label: "Date modified",
+      label: "updatedAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (customer) => formatAuditDate(customer.updatedAt),
+      renderCell: (customer) => (customer.updatedAt ? formatAuditDate(customer.updatedAt) : "—"),
     },
     {
       id: "actions",
@@ -240,13 +351,7 @@ export function CustomersWorkspace() {
       stopRowClick: true,
       renderCell: (customer) => (
         <div className="flex gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={`Edit ${customer.name}`}
-            onClick={() => openEditForm(customer)}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={() => openEditForm(customer)}>
             <Pencil className="h-4 w-4" />
             Edit
           </Button>
@@ -255,7 +360,6 @@ export function CustomersWorkspace() {
             variant="ghost"
             size="sm"
             className="text-destructive hover:text-destructive"
-            aria-label={`Delete ${customer.name}`}
             onClick={() => {
               setViewCustomer(null);
               setDeleteTarget(customer);
@@ -270,22 +374,23 @@ export function CustomersWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("customers", tableColumns);
+  const listErrorMessage = isError ? normalizeApiError(error).message : null;
 
   return (
     <div>
       <PageHeader
         title="Customers"
-        description="Manage sender and receiver clients with contact details and primary addresses."
+        description="Customer records from the EMSYS API with branch, address, phones, and customerType."
         actions={
-          <Button onClick={openAddForm}>
+          <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
-            Add client
+            Add customer
           </Button>
         }
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.label}>
@@ -294,7 +399,7 @@ export function CustomersWorkspace() {
                 <Icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="text-2xl font-bold">{stats.isLoading ? "…" : stat.value}</div>
                 <CardDescription className="mt-1">{stat.description}</CardDescription>
               </CardContent>
             </Card>
@@ -306,10 +411,48 @@ export function CustomersWorkspace() {
         <CardHeader className="gap-4 border-b pb-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <CardTitle>Client directory</CardTitle>
-              <CardDescription>Search by name, client ID, phone, email, or address.</CardDescription>
+              <CardTitle>Customer directory</CardTitle>
+              <CardDescription>
+                Server-backed list from GET /customers with pagination, sorting, and API search filters.
+              </CardDescription>
             </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
+              <select
+                aria-label="Search field"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchField}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    searchField: event.target.value as CustomerFilterState["searchField"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                {CUSTOMER_SEARCH_FIELDS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Search operator"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchOperator}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    searchOperator: event.target.value as CustomerFilterState["searchOperator"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                {CUSTOMER_SEARCH_OPERATORS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <div className="relative min-w-[240px] flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -319,7 +462,7 @@ export function CustomersWorkspace() {
                     setPage(1);
                   }}
                   className="pl-9"
-                  placeholder="Search by name, ID, phone, email..."
+                  placeholder="Search customers..."
                 />
               </div>
               <ColumnVisibilityMenu columnLayout={columnVisibility} />
@@ -327,22 +470,61 @@ export function CustomersWorkspace() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Client type</span>
-            {clientTypeFilters.map((option) => (
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
+            {branchFilters.map((option) => (
               <Button
                 key={option.value}
                 type="button"
                 size="sm"
-                variant={filters.clientType === option.value ? "default" : "outline"}
+                variant={filters.branch === option.value ? "default" : "outline"}
                 onClick={() => {
-                  setFilters((current) => ({ ...current, clientType: option.value }));
+                  setFilters((current) => ({ ...current, branch: option.value }));
                   setPage(1);
                 }}
               >
                 {option.label}
               </Button>
             ))}
-            {filters.query || filters.clientType !== "all" ? (
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active</span>
+            {activeFilters.map((option) => (
+              <Button
+                key={String(option.value)}
+                type="button"
+                size="sm"
+                variant={filters.active === option.value ? "default" : "outline"}
+                onClick={() => {
+                  setFilters((current) => ({ ...current, active: option.value }));
+                  setPage(1);
+                }}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer type</span>
+            {customerTypeFilters.map((option) => (
+              <Button
+                key={String(option.value)}
+                type="button"
+                size="sm"
+                variant={filters.customerType === option.value ? "default" : "outline"}
+                onClick={() => {
+                  setFilters((current) => ({ ...current, customerType: option.value }));
+                  setPage(1);
+                }}
+              >
+                {option.label}
+              </Button>
+            ))}
+            {filters.query ||
+            filters.branch !== "all" ||
+            filters.active !== "all" ||
+            filters.customerType !== "all" ? (
               <Button
                 type="button"
                 size="sm"
@@ -358,6 +540,10 @@ export function CustomersWorkspace() {
           </div>
         </CardHeader>
 
+        {listErrorMessage ? (
+          <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
+        ) : null}
+
         {selectedIds.length > 0 ? (
           <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium">{selectedIds.length} selected</p>
@@ -368,8 +554,9 @@ export function CustomersWorkspace() {
               <Button
                 variant="destructive"
                 size="sm"
+                disabled={isSaving}
                 onClick={() =>
-                  setDeleteTarget(customers.filter((customer) => selectedIds.includes(customer.clientId)))
+                  setDeleteTarget(customers.filter((customer) => selectedIds.includes(customer.id)))
                 }
               >
                 <Trash2 className="h-4 w-4" />
@@ -379,39 +566,45 @@ export function CustomersWorkspace() {
           </div>
         ) : null}
 
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={pageCustomers}
-          rowKey={(customer) => customer.clientId}
-          rowLabel={(customer) => customer.name}
-          columnLayout={columnVisibility}
-          minWidth={1100}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={setViewCustomer}
-          emptyState={
-            <>
-              <p className="text-muted-foreground">No customers match your search or filters.</p>
-              <Button className="mt-4" onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                Add client
-              </Button>
-            </>
-          }
-        />
+        {isLoading ? (
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading customers…</div>
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={customers}
+            rowKey={(customer) => customer.id}
+            rowLabel={(customer) => customer.name}
+            columnLayout={columnVisibility}
+            minWidth={1400}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={toggleSelect}
+            onRowClick={setViewCustomer}
+            emptyState={
+              <>
+                <p className="text-muted-foreground">No customers match your search or filters.</p>
+                <Button className="mt-4" onClick={openAddForm}>
+                  <Plus className="h-4 w-4" />
+                  Add customer
+                </Button>
+              </>
+            }
+          />
+        )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {pageCustomers.length} of {filteredCustomers.length} clients
+            {isFetching
+              ? "Refreshing customers…"
+              : `Showing ${customers.length} of ${totalCustomers} customers`}
           </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage <= 1}
+              disabled={currentPage <= 1 || isLoading}
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -423,7 +616,7 @@ export function CustomersWorkspace() {
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage >= totalPages}
+              disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
               Next
@@ -446,47 +639,60 @@ export function CustomersWorkspace() {
         }}
       />
 
-      <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <Dialog
+        open={formMode !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFormMode(null);
+            setFormError(null);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{formMode === "edit" ? "Edit client" : "Add client"}</DialogTitle>
+            <DialogTitle>{formMode === "edit" ? "Edit customer" : "Add customer"}</DialogTitle>
             <DialogDescription>
-              {formMode === "edit"
-                ? "Update client details, contact info, and primary address."
-                : "Create a new sender or receiver with a generated client ID."}
+              Fields match the EMSYS customer API model: active, address, branch, customerType, name, phone1,
+              and phone2.
             </DialogDescription>
           </DialogHeader>
           <CustomerForm
-            key={editingCustomer?.clientId ?? "new"}
+            key={editingCustomer?.id ?? "new"}
             initialValues={
               formMode === "edit" && editingCustomer
                 ? customerToFormValues(editingCustomer)
                 : createEmptyCustomerForm()
             }
             isEditing={formMode === "edit"}
-            updatedAt={editingCustomer?.updatedAt}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add client"}
+            submitLabel={formMode === "edit" ? "Save changes" : "Add customer"}
+            isSubmitting={isSaving}
             onSubmit={saveCustomer}
-            onCancel={() => setFormMode(null)}
+            onCancel={() => {
+              setFormMode(null);
+              setFormError(null);
+            }}
           />
+          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="z-[60]">
           <DialogHeader>
-            <DialogTitle>Delete client{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?</DialogTitle>
+            <DialogTitle>
+              Delete customer{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?
+            </DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected clients. This action cannot be undone.`
-                : `This will permanently remove ${deleteTarget?.name ?? "this client"}. This action cannot be undone.`}
+                ? `This will permanently remove ${deleteTarget.length} selected customers.`
+                : "This will permanently remove this customer. This action cannot be undone."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
               Delete
             </Button>

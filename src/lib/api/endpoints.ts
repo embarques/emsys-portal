@@ -3,4 +3,5 @@ export const API_ENDPOINTS = {
   USER_PERMISSIONS: "/users/permissions",
   USERS: "/users",
   EMPLOYEES: "/employees",
+  CUSTOMERS: "/customers",
 } as const;

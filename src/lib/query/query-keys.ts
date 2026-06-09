@@ -1,3 +1,4 @@
+import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
 
@@ -17,6 +18,16 @@ export const queryKeys = {
     stats: (scope: "all" | "active" | "inactive") =>
       [...queryKeys.employees.all, "stats", scope] as const,
     detail: (employeeId: string) => [...queryKeys.employees.all, "detail", employeeId] as const,
+  },
+  customers: {
+    all: ["customers"] as const,
+    lists: () => [...queryKeys.customers.all, "list"] as const,
+    list: (params: CustomerListParams) => [...queryKeys.customers.lists(), params] as const,
+    search: (search: CustomerSearchFilter | undefined, limit: number) =>
+      [...queryKeys.customers.all, "search", search, limit] as const,
+    stats: (scope: "all" | "active" | "inactive" | "type1") =>
+      [...queryKeys.customers.all, "stats", scope] as const,
+    detail: (customerId: string) => [...queryKeys.customers.all, "detail", customerId] as const,
   },
   users: {
     all: ["users"] as const,

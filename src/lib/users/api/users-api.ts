@@ -28,14 +28,43 @@ type ApiUser = {
   email?: string;
   userName?: string;
   username?: string;
+  user?: string;
+  fullName?: string;
   active?: boolean;
+  accessCode?: number;
   role?: ApiUserRole;
   branch?: ApiUserBranch;
+  branches?: ApiUserBranch[];
   phone?: string;
   language?: string;
+  password?: string;
+  type?: string;
+  startTime?: string;
+  endTime?: string;
   createdAt?: string;
   createdBy?: string;
   updatedAt?: string;
+};
+
+type ApiUserWritePayload = {
+  accessCode: number;
+  active: boolean;
+  branch: { id: number };
+  branches: { id: number }[];
+  email: string;
+  fullName: string;
+  role: { id: number };
+  userName: string;
+  user: string;
+  uid?: string;
+  password?: string;
+  id?: number;
+};
+
+type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
+  success?: boolean;
+  message?: string;
+  error?: string;
 };
 
 const BRANCH_ID_TO_PORTAL: Record<number, UserBranch> = {
@@ -102,12 +131,14 @@ function normalizeUser(raw: unknown): User | null {
   const roleId = readNumericId(item.role?._id ?? item.role?.id) ?? 0;
   const roleName = String(item.role?.name ?? "").trim();
 
+  const fullName = String(item.fullName ?? "").trim();
+
   return {
     userId: String(userId),
     uid: String(item.uid ?? "").trim(),
     username,
     password: "",
-    name: username || email,
+    name: fullName || username || email,
     status: activeToStatus(item.active),
     roleId,
     roleName,
@@ -167,23 +198,131 @@ function buildUsersQuery(params: UserListParams): string {
   return searchParams.toString();
 }
 
-function formValuesToApiPayload(values: UserFormValues, includePassword: boolean): ApiUser {
-  const payload: ApiUser = {
-    userName: values.username.trim(),
-    email: values.email.trim() || values.username.trim(),
+function buildUserWritePayload(
+  values: UserFormValues,
+  options: { userId?: number; requirePassword?: boolean } = {},
+): ApiUserWritePayload {
+  const userName = values.username.trim();
+  const email = values.email.trim() || userName;
+  const fullName = values.name.trim() || userName;
+  const password = values.password.trim();
+  const branchId = portalBranchToId(values.branch);
+
+  if (!userName) {
+    throw new Error("Username is required.");
+  }
+
+  if (options.requirePassword && !password) {
+    throw new Error("Password is required.");
+  }
+
+  if (!values.roleId) {
+    throw new Error("Role is required.");
+  }
+
+  const payload: ApiUserWritePayload = {
+    accessCode: 0,
     active: statusToActive(values.status),
-    uid: values.uid.trim() || undefined,
-    role: { _id: values.roleId },
-    branch: { _id: portalBranchToId(values.branch) },
-    phone: values.phone.trim() || undefined,
-    language: values.language,
+    branch: { id: branchId },
+    branches: [{ id: branchId }],
+    email,
+    fullName,
+    role: { id: values.roleId },
+    userName,
+    user: userName,
   };
 
-  if (includePassword && values.password.trim()) {
-    return { ...payload, password: values.password.trim() } as ApiUser & { password?: string };
+  if (options.userId != null) {
+    payload.id = options.userId;
+  }
+
+  const uid = values.uid.trim();
+  if (uid) {
+    payload.uid = uid;
+  }
+
+  if (password) {
+    payload.password = password;
   }
 
   return payload;
+}
+
+function formValuesToCreateUserPayload(values: UserFormValues): ApiUserWritePayload {
+  return buildUserWritePayload(values, { requirePassword: true });
+}
+
+function formValuesToUpdateUserPayload(values: UserFormValues, userId: number): ApiUserWritePayload {
+  return buildUserWritePayload(values, { userId });
+}
+
+function parseUserPathId(userId: string): number {
+  const numericId = readNumericId(userId);
+  if (numericId == null) {
+    throw new Error("Invalid user ID.");
+  }
+
+  return numericId;
+}
+
+function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackMessage: string) {
+  if (response.success === false) {
+    throw new Error(response.message?.trim() || response.error?.trim() || fallbackMessage);
+  }
+}
+
+function extractUserFromMutationResponse(data: unknown): User | null {
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    return normalizeUser(data);
+  }
+
+  return null;
+}
+
+function extractCreatedUserId(response: ApiMutationEnvelope<unknown>): string | null {
+  const data = response.data;
+
+  if (typeof data === "string" || typeof data === "number") {
+    const id = String(data).trim();
+    return id || null;
+  }
+
+  if (data && typeof data === "object") {
+    const record = data as ApiUser;
+    const id = readNumericId(record._id ?? record.id);
+    if (id != null) {
+      return String(id);
+    }
+  }
+
+  return null;
+}
+
+async function resolveCreatedUser(
+  values: UserFormValues,
+  response: ApiMutationEnvelope<unknown>,
+): Promise<User> {
+  const createdId = extractCreatedUserId(response);
+  if (createdId) {
+    return fetchUserById(createdId);
+  }
+
+  const userName = values.username.trim();
+  if (userName) {
+    const matches = await fetchUsers({
+      page: 1,
+      limit: 1,
+      search: { field: "userName", operator: "equals", value: userName },
+    });
+
+    const matchedUser = matches.items[0];
+    if (matchedUser) {
+      return matchedUser;
+    }
+  }
+
+  const message = response.message || response.error;
+  throw new Error(message?.trim() || "Unable to create user.");
 }
 
 export async function fetchUsers(params: UserListParams = {}): Promise<PaginatedResult<User>> {
@@ -214,45 +353,40 @@ export async function fetchUserById(userId: string): Promise<User> {
 }
 
 export async function createUser(values: UserFormValues): Promise<User> {
-  const response = await apiClient.post<ApiUser | PaginatedApiEnvelope<ApiUser>>(
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.USERS,
-    formValuesToApiPayload(values, true),
+    formValuesToCreateUserPayload(values),
   );
 
-  const raw =
-    response && typeof response === "object" && "data" in response
-      ? (response as PaginatedApiEnvelope<ApiUser>).data
-      : response;
+  assertMutationSuccess(response, "Unable to create user.");
 
-  const user = normalizeUser(raw);
-  if (!user) {
-    throw new Error("Unable to create user.");
-  }
-
-  return user;
+  return resolveCreatedUser(values, response);
 }
 
 export async function updateUser(userId: string, values: UserFormValues): Promise<User> {
-  const response = await apiClient.put<ApiUser | PaginatedApiEnvelope<ApiUser>>(
-    `${API_ENDPOINTS.USERS}/${userId}`,
-    formValuesToApiPayload(values, Boolean(values.password.trim())),
+  const numericId = parseUserPathId(userId);
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.USERS}/${numericId}`,
+    formValuesToUpdateUserPayload(values, numericId),
   );
 
-  const raw =
-    response && typeof response === "object" && "data" in response
-      ? (response as PaginatedApiEnvelope<ApiUser>).data
-      : response;
+  assertMutationSuccess(response, "Unable to update user.");
 
-  const user = normalizeUser(raw);
-  if (!user) {
-    throw new Error("Unable to update user.");
+  const updatedUser = extractUserFromMutationResponse(response.data);
+  if (updatedUser) {
+    return updatedUser;
   }
 
-  return user;
+  return fetchUserById(String(numericId));
 }
 
 export async function deleteUser(userId: string): Promise<void> {
-  await apiClient.delete(`${API_ENDPOINTS.USERS}/${userId}`);
+  const numericId = parseUserPathId(userId);
+  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.USERS}/${numericId}`,
+  );
+
+  assertMutationSuccess(response, "Unable to delete user.");
 }
 
 export async function deleteUsers(userIds: string[]): Promise<void> {

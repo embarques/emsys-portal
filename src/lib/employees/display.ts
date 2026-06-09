@@ -1,26 +1,33 @@
 import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
-import type { Employee, EmployeeBranch, EmployeeStatus } from "./types";
-import { EMPLOYEE_STATUSES } from "./types";
+import type { Employee, EmployeePortalBranch } from "./types";
+import {
+  EMPLOYEE_ACTIVE_OPTIONS,
+  formatEmployeeBranchLabel,
+  formatEmployeePhones,
+  getEmployeePortalBranch,
+} from "./types";
 
-export function getEmployeeBranchLabel(branch: EmployeeBranch): string {
+export function getEmployeeBranchLabel(branch: EmployeePortalBranch): string {
   return getBranchLabel(branch);
 }
 
-export function getEmployeeBranchBadgeClass(branch: EmployeeBranch): string {
-  return getBranchBadgeClass(branch);
+export function getEmployeeBranchBadgeClass(employee: Employee): string {
+  return getBranchBadgeClass(getEmployeePortalBranch(employee));
 }
 
-export function getEmployeeStatusLabel(status: EmployeeStatus): string {
-  return EMPLOYEE_STATUSES.find((entry) => entry.value === status)?.label ?? status;
+export function getEmployeeActiveLabel(active: boolean): string {
+  return EMPLOYEE_ACTIVE_OPTIONS.find((entry) => entry.value === active)?.label ?? (active ? "Active" : "Inactive");
 }
 
-export function getEmployeeStatusBadgeClass(status: EmployeeStatus): string {
-  return status === "active"
+export function getEmployeeActiveBadgeClass(active: boolean): string {
+  return active
     ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
     : "border-transparent bg-muted text-muted-foreground";
 }
 
 export function formatEmployeeDate(date: string): string {
+  if (!date) return "—";
+
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -28,35 +35,61 @@ export function formatEmployeeDate(date: string): string {
   }).format(new Date(`${date.slice(0, 10)}T12:00:00`));
 }
 
-export function truncateEmployeeId(employeeId: string): string {
-  return employeeId.length > 12 ? `${employeeId.slice(0, 8)}…` : employeeId;
+export function formatEmployeeMoney(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+export function formatEmployeeId(id: number): string {
+  const value = String(id);
+  return value.length > 12 ? `${value.slice(0, 8)}…` : value;
 }
 
 export function formatEmployeeAddress(employee: Employee): string {
-  const parts = [employee.address, employee.city, employee.state, employee.zip].filter(Boolean);
+  const parts = [
+    employee.address.address1,
+    employee.address.address2,
+    employee.address.apartment,
+    employee.address.city,
+    employee.address.state,
+    employee.address.zipcode,
+    employee.address.country,
+  ].filter(Boolean);
+
   return parts.length > 0 ? parts.join(", ") : "—";
 }
+
+export {
+  formatEmployeeBranchLabel,
+  formatEmployeeBranchs,
+  formatEmployeePhones,
+  formatEmployeeUsers,
+} from "./types";
 
 export function employeeMatchesQuery(employee: Employee, query: string): boolean {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
 
   return [
-    employee.employeeId,
+    String(employee.id),
     employee.name,
     employee.department,
-    employee.role,
-    getEmployeeBranchLabel(employee.branch),
-    employee.address,
-    employee.city,
-    employee.state,
-    employee.zip,
-    employee.phone,
+    employee.title,
+    formatEmployeeBranchLabel(employee),
+    employee.address.address1,
+    employee.address.address2,
+    employee.address.apartment,
+    employee.address.city,
+    employee.address.state,
+    employee.address.zipcode,
+    employee.address.country,
+    formatEmployeePhones(employee),
     employee.email,
-    formatEmployeeDate(employee.startDate),
-    employee.endDate ? formatEmployeeDate(employee.endDate) : "",
-    getEmployeeStatusLabel(employee.status),
-    employee.createdBy,
+    getEmployeeActiveLabel(employee.active),
+    employee.user?.userName ?? "",
     formatEmployeeAddress(employee),
   ]
     .join(" ")
@@ -67,9 +100,9 @@ export function employeeMatchesQuery(employee: Employee, query: string): boolean
 export function computeEmployeeKpis(employees: Employee[]) {
   return {
     total: employees.length,
-    active: employees.filter((employee) => employee.status === "active").length,
-    inactive: employees.filter((employee) => employee.status === "inactive").length,
-    usa: employees.filter((employee) => employee.branch === "usa").length,
-    dr: employees.filter((employee) => employee.branch === "dr").length,
+    active: employees.filter((employee) => employee.active).length,
+    inactive: employees.filter((employee) => !employee.active).length,
+    usa: employees.filter((employee) => getEmployeePortalBranch(employee) === "usa").length,
+    dr: employees.filter((employee) => getEmployeePortalBranch(employee) === "dr").length,
   };
 }

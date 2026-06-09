@@ -14,12 +14,14 @@ import {
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   formatEmployeeAddress,
+  formatEmployeeBranchLabel,
   formatEmployeeDate,
+  formatEmployeeId,
+  formatEmployeeMoney,
+  formatEmployeePhones,
+  getEmployeeActiveBadgeClass,
+  getEmployeeActiveLabel,
   getEmployeeBranchBadgeClass,
-  getEmployeeBranchLabel,
-  getEmployeeStatusBadgeClass,
-  getEmployeeStatusLabel,
-  truncateEmployeeId,
 } from "@/lib/employees/display";
 import type { Employee } from "@/lib/employees/types";
 
@@ -56,43 +58,60 @@ export function EmployeeViewSheet({
           <SheetTitle>{employee.name}</SheetTitle>
           <SheetDescription className="flex flex-wrap items-center gap-2">
             <span>{employee.department}</span>
-            <Badge className={getEmployeeBranchBadgeClass(employee.branch)}>
-              {getEmployeeBranchLabel(employee.branch)}
+            <Badge className={getEmployeeBranchBadgeClass(employee)}>
+              {formatEmployeeBranchLabel(employee)}
             </Badge>
-            <Badge className={getEmployeeStatusBadgeClass(employee.status)}>
-              {getEmployeeStatusLabel(employee.status)}
+            <Badge className={getEmployeeActiveBadgeClass(employee.active)}>
+              {getEmployeeActiveLabel(employee.active)}
             </Badge>
           </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-4 px-1">
           <div className="rounded-xl border bg-muted/20 px-4">
-            <DetailRow label="Employee ID" value={truncateEmployeeId(employee.employeeId)} />
+            <DetailRow label="ID" value={formatEmployeeId(employee.id)} />
             <DetailRow label="Department" value={employee.department} />
-            <DetailRow label="Role" value={employee.role} />
-            <DetailRow label="Branch" value={getEmployeeBranchLabel(employee.branch)} />
-            <DetailRow label="Status" value={getEmployeeStatusLabel(employee.status)} />
-            <DetailRow label="Date started" value={formatEmployeeDate(employee.startDate)} />
+            <DetailRow label="Title" value={employee.title} />
+            <DetailRow label="Branch" value={formatEmployeeBranchLabel(employee)} />
+            <DetailRow label="Active" value={getEmployeeActiveLabel(employee.active)} />
+            <DetailRow label="Cost" value={formatEmployeeMoney(employee.cost)} />
             <DetailRow
-              label="Date ended"
-              value={employee.endDate ? formatEmployeeDate(employee.endDate) : "—"}
+              label="User"
+              value={employee.user?.userName || (employee.user?.id ? String(employee.user.id) : "—")}
             />
           </div>
 
           <div className="rounded-xl border bg-muted/20 px-4">
-            <DetailRow label="Address" value={employee.address || "—"} />
-            <DetailRow label="City" value={employee.city || "—"} />
-            <DetailRow label="State" value={employee.state || "—"} />
-            <DetailRow label="Zip" value={employee.zip || "—"} />
+            <DetailRow label="Address 1" value={employee.address.address1 || "—"} />
+            <DetailRow label="Address 2" value={employee.address.address2 || "—"} />
+            <DetailRow label="Apartment" value={employee.address.apartment || "—"} />
+            <DetailRow label="City" value={employee.address.city || "—"} />
+            <DetailRow label="State" value={employee.address.state || "—"} />
+            <DetailRow label="Zipcode" value={employee.address.zipcode || "—"} />
+            <DetailRow label="Country" value={employee.address.country || "—"} />
             <DetailRow label="Full address" value={formatEmployeeAddress(employee)} />
-            <DetailRow label="Phone" value={employee.phone || "—"} />
+            <DetailRow label="Phone 1" value={employee.phone1 || "—"} />
+            <DetailRow label="Phone 2" value={employee.phone2 || "—"} />
+            <DetailRow label="Phones" value={formatEmployeePhones(employee)} />
             <DetailRow label="Email" value={employee.email || "—"} />
           </div>
 
           <div className="rounded-xl border bg-muted/20 px-4">
-            <DetailRow label="Date created" value={formatAuditDate(employee.createdAt)} />
-            <DetailRow label="User created" value={employee.createdBy} />
-            <DetailRow label="Date modified" value={formatAuditDate(employee.updatedAt)} />
+            <DetailRow label="Loan amount owed" value={formatEmployeeMoney(employee.loanAmountOwed)} />
+            <DetailRow
+              label="Loan balance updated"
+              value={employee.loanBalanceUpdated ? formatEmployeeDate(employee.loanBalanceUpdated) : "—"}
+            />
+            <DetailRow label="Total loan given" value={formatEmployeeMoney(employee.totalLoanGiven)} />
+            <DetailRow
+              label="Total payment received"
+              value={formatEmployeeMoney(employee.totalPaymentReceived)}
+            />
+          </div>
+
+          <div className="rounded-xl border bg-muted/20 px-4">
+            <DetailRow label="Created at" value={employee.createdAt ? formatAuditDate(employee.createdAt) : "—"} />
+            <DetailRow label="Updated at" value={employee.updatedAt ? formatAuditDate(employee.updatedAt) : "—"} />
           </div>
 
           <div className="flex gap-2">

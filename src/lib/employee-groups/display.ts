@@ -46,7 +46,7 @@ export function employeeGroupMatchesQuery(group: EmployeeGroup, query: string): 
     .filter(Boolean)
     .map((employee) => {
       const full = employee!;
-      return `${getEmployeeFullName(full)} ${full.role} ${full.department}`;
+      return `${getEmployeeFullName(full)} ${full.title} ${full.department}`;
     })
     .join(" ");
 

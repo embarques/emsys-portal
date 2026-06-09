@@ -1,67 +1,124 @@
-import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { createRecordId } from "@/lib/customers/types";
+export type EmployeePortalBranch = "usa" | "dr";
 
-export type EmployeeBranch = "usa" | "dr";
-export type EmployeeStatus = "active" | "inactive";
+export type EmployeeAddress = {
+  address1: string;
+  address2: string;
+  apartment: string;
+  city: string;
+  country: string;
+  state: string;
+  zipcode: string;
+};
+
+export type EmployeeBranchSettings = {
+  defaultLabelStatus: number;
+  imageResampleBy: number;
+  invoiceCreatedThruIncomeStatement: boolean;
+  labelPrefix: string;
+  printLabelCount: boolean;
+  roundDecimalPlaces: number;
+  s3BucketFolder: string;
+  s3BucketName: string;
+  s3Profile: string;
+  s3ShareLinkExpireMinutes: number;
+};
+
+export type EmployeeBranch = {
+  address: EmployeeAddress;
+  code: string;
+  created: string;
+  disclaimer: string;
+  id: number;
+  logo: string;
+  name: string;
+  phone1: string;
+  phone2: string;
+  settings: EmployeeBranchSettings;
+  type: string;
+};
+
+export type EmployeeUser = {
+  id: number;
+  userName: string;
+  email: string;
+  fullName: string;
+  active: boolean;
+};
 
 export type Employee = {
-  employeeId: string;
+  id: number;
   name: string;
   department: string;
-  role: string;
+  title: string;
+  active: boolean;
   branch: EmployeeBranch;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  phone: string;
+  branchs: EmployeeBranch[];
+  address: EmployeeAddress;
+  phone1: string;
+  phone2: string;
   email: string;
-  startDate: string;
-  endDate?: string;
-  status: EmployeeStatus;
+  cost: number;
+  loanAmountOwed: number;
+  loanBalanceUpdated: string;
+  totalLoanGiven: number;
+  totalPaymentReceived: number;
+  user: EmployeeUser | null;
+  users: EmployeeUser[];
   createdAt: string;
-  createdBy: string;
   updatedAt: string;
 };
 
 export type EmployeeFormValues = {
-  employeeId: string;
+  id: number;
   name: string;
   department: string;
-  role: string;
+  title: string;
+  active: boolean;
   branch: EmployeeBranch;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  phone: string;
+  branchs: EmployeeBranch[];
+  address: EmployeeAddress;
+  phone1: string;
+  phone2: string;
   email: string;
-  startDate: string;
-  endDate: string;
-  status: EmployeeStatus;
-  createdBy: string;
+  cost: number;
+  loanAmountOwed: number;
+  loanBalanceUpdated: string;
+  totalLoanGiven: number;
+  totalPaymentReceived: number;
+  user: EmployeeUser | null;
+  users: EmployeeUser[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type EmployeeFilterState = {
   query: string;
   searchField: EmployeeSearchField;
   searchOperator: EmployeeSearchOperator;
-  branch: EmployeeBranch | "all";
-  status: EmployeeStatus | "all";
+  branch: EmployeePortalBranch | "all";
+  active: boolean | "all";
   department: string;
 };
 
 export type EmployeeSearchOperator = "startsWith" | "contains" | "equals" | "endsWith";
 
 export type EmployeeSearchField =
+  | "id"
   | "name"
   | "title"
   | "department"
-  | "phone"
   | "email"
+  | "phone2"
+  | "active"
+  | "address.address1"
+  | "address.address2"
+  | "address.apartment"
   | "address.city"
   | "address.country"
-  | "active";
+  | "address.state"
+  | "address.zipcode"
+  | "branch.code"
+  | "branch.id";
 
 export type EmployeeSearchFilter = {
   field: EmployeeSearchField;
@@ -75,8 +132,8 @@ export type EmployeeListParams = {
   sortField?: string;
   sortDirection?: "asc" | "desc";
   search?: EmployeeSearchFilter;
-  branch?: EmployeeBranch | "all";
-  status?: EmployeeStatus | "all";
+  branch?: EmployeePortalBranch | "all";
+  active?: boolean | "all";
   department?: string;
 };
 
@@ -87,15 +144,52 @@ export type EmployeeListResult = {
   total: number;
 };
 
+const BRANCH_ID_TO_PORTAL: Record<number, EmployeePortalBranch> = {
+  1: "usa",
+  2: "dr",
+};
+
+const BRANCH_CODE_TO_PORTAL: Record<string, EmployeePortalBranch> = {
+  NY: "usa",
+  DR: "dr",
+  DO: "dr",
+};
+
+export const EMPLOYEE_PORTAL_BRANCHES: {
+  portal: EmployeePortalBranch;
+  id: number;
+  label: string;
+  code: string;
+  name: string;
+  country: string;
+}[] = [
+  { portal: "usa", id: 1, label: "USA", code: "NY", name: "New York", country: "US" },
+  { portal: "dr", id: 2, label: "DR", code: "DR", name: "Dominican Republic", country: "DO" },
+];
+
+/** @deprecated Use EMPLOYEE_PORTAL_BRANCHES */
+export const EMPLOYEE_BRANCHES = EMPLOYEE_PORTAL_BRANCHES.map((entry) => ({
+  value: entry.portal,
+  label: entry.label,
+}));
+
 export const EMPLOYEE_SEARCH_FIELDS: { value: EmployeeSearchField; label: string }[] = [
   { value: "name", label: "Name" },
-  { value: "title", label: "Role" },
+  { value: "title", label: "Title" },
   { value: "department", label: "Department" },
-  { value: "phone", label: "Phone" },
   { value: "email", label: "Email" },
-  { value: "address.city", label: "City" },
-  { value: "address.country", label: "Country" },
+  { value: "phone2", label: "Phone 2" },
   { value: "active", label: "Active" },
+  { value: "address.address1", label: "Address 1" },
+  { value: "address.address2", label: "Address 2" },
+  { value: "address.apartment", label: "Apartment" },
+  { value: "address.city", label: "City" },
+  { value: "address.state", label: "State" },
+  { value: "address.country", label: "Country" },
+  { value: "address.zipcode", label: "Zipcode" },
+  { value: "branch.code", label: "Branch code" },
+  { value: "branch.id", label: "Branch ID" },
+  { value: "id", label: "ID" },
 ];
 
 export const EMPLOYEE_SEARCH_OPERATORS: { value: EmployeeSearchOperator; label: string }[] = [
@@ -105,25 +199,9 @@ export const EMPLOYEE_SEARCH_OPERATORS: { value: EmployeeSearchOperator; label: 
   { value: "endsWith", label: "Ends with" },
 ];
 
-export function createEmployeeSearchFilter(
-  value: string,
-  field: EmployeeSearchField = "name",
-  operator: EmployeeSearchOperator = "startsWith",
-): EmployeeSearchFilter | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-
-  return { field, operator, value: trimmed };
-}
-
-export const EMPLOYEE_BRANCHES: { value: EmployeeBranch; label: string }[] = [
-  { value: "usa", label: "USA" },
-  { value: "dr", label: "DR" },
-];
-
-export const EMPLOYEE_STATUSES: { value: EmployeeStatus; label: string }[] = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
+export const EMPLOYEE_ACTIVE_OPTIONS: { value: boolean; label: string }[] = [
+  { value: true, label: "Active" },
+  { value: false, label: "Inactive" },
 ];
 
 export const EMPLOYEE_DEPARTMENTS = [
@@ -133,9 +211,10 @@ export const EMPLOYEE_DEPARTMENTS = [
   "Customer Service",
   "Administration",
   "Accounting",
+  "driver",
 ] as const;
 
-export const EMPLOYEE_ROLES = [
+export const EMPLOYEE_TITLES = [
   "dispatcher",
   "warehouse",
   "driver",
@@ -146,31 +225,142 @@ export const EMPLOYEE_ROLES = [
   "supervisor",
 ] as const;
 
-export function createEmployeeId(): string {
-  return createRecordId();
+/** @deprecated Use EMPLOYEE_TITLES */
+export const EMPLOYEE_ROLES = EMPLOYEE_TITLES;
+
+export function createEmployeeSearchFilter(
+  value: string,
+  field: EmployeeSearchField = "name",
+  operator: EmployeeSearchOperator = "startsWith",
+): EmployeeSearchFilter | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  let normalizedValue = trimmed;
+  if (field === "active") {
+    const lower = trimmed.toLowerCase();
+    if (["active", "true", "yes"].includes(lower)) normalizedValue = "true";
+    if (["inactive", "false", "no"].includes(lower)) normalizedValue = "false";
+  }
+
+  return { field, operator, value: normalizedValue };
 }
 
-export function todayDateInputValue(): string {
-  return new Date().toISOString().slice(0, 10);
+export function getEmployeeSearchSortField(field: EmployeeSearchField): string {
+  switch (field) {
+    case "title":
+      return "title";
+    case "department":
+      return "department";
+    case "email":
+      return "email";
+    case "phone2":
+      return "phone2";
+    case "active":
+      return "active";
+    case "id":
+      return "id";
+    case "branch.code":
+      return "branch.code";
+    case "branch.id":
+      return "branch.id";
+    default:
+      return field;
+  }
 }
 
-export function createEmptyEmployeeForm(createdBy = DEFAULT_CREATED_BY): EmployeeFormValues {
+export function createEmptyEmployeeBranchSettings(): EmployeeBranchSettings {
   return {
-    employeeId: "",
+    defaultLabelStatus: 0,
+    imageResampleBy: 0,
+    invoiceCreatedThruIncomeStatement: false,
+    labelPrefix: "",
+    printLabelCount: false,
+    roundDecimalPlaces: 0,
+    s3BucketFolder: "",
+    s3BucketName: "",
+    s3Profile: "",
+    s3ShareLinkExpireMinutes: 0,
+  };
+}
+
+export function createEmptyEmployeeAddress(country = ""): EmployeeAddress {
+  return {
+    address1: "",
+    address2: "",
+    apartment: "",
+    city: "",
+    country,
+    state: "",
+    zipcode: "",
+  };
+}
+
+export function createEmployeeBranchFromPortal(portal: EmployeePortalBranch): EmployeeBranch {
+  const config = EMPLOYEE_PORTAL_BRANCHES.find((entry) => entry.portal === portal) ?? EMPLOYEE_PORTAL_BRANCHES[0];
+
+  return {
+    address: createEmptyEmployeeAddress(config.country),
+    code: config.code,
+    created: "",
+    disclaimer: "",
+    id: config.id,
+    logo: "",
+    name: config.name,
+    phone1: "",
+    phone2: "",
+    settings: createEmptyEmployeeBranchSettings(),
+    type: "",
+  };
+}
+
+export function getEmployeePortalBranch(employee: Pick<Employee, "branch" | "address">): EmployeePortalBranch {
+  const branchId = employee.branch.id;
+  if (BRANCH_ID_TO_PORTAL[branchId]) {
+    return BRANCH_ID_TO_PORTAL[branchId];
+  }
+
+  const code = employee.branch.code.trim().toUpperCase();
+  if (code && BRANCH_CODE_TO_PORTAL[code]) {
+    return BRANCH_CODE_TO_PORTAL[code];
+  }
+
+  const country = employee.address.country.trim().toUpperCase();
+  if (country === "DO" || country === "DR") {
+    return "dr";
+  }
+
+  return "usa";
+}
+
+export function portalBranchToId(portal: EmployeePortalBranch): number {
+  return EMPLOYEE_PORTAL_BRANCHES.find((entry) => entry.portal === portal)?.id ?? 1;
+}
+
+export function createEmptyEmployeeForm(): EmployeeFormValues {
+  const branch = createEmployeeBranchFromPortal("usa");
+
+  return {
+    id: 0,
     name: "",
     department: EMPLOYEE_DEPARTMENTS[0],
-    role: EMPLOYEE_ROLES[0],
-    branch: "usa",
-    address: "",
-    city: "",
-    state: "",
-    zip: "",
-    phone: "",
+    title: EMPLOYEE_TITLES[0],
+    active: true,
+    branch,
+    branchs: [branch],
+    address: createEmptyEmployeeAddress("US"),
+    phone1: "",
+    phone2: "",
     email: "",
-    startDate: todayDateInputValue(),
-    endDate: "",
-    status: "active",
-    createdBy,
+    cost: 0,
+    loanAmountOwed: 0,
+    loanBalanceUpdated: "",
+    totalLoanGiven: 0,
+    totalPaymentReceived: 0,
+    user: null,
+    users: [],
+    createdAt: "",
+    updatedAt: "",
   };
 }
 
@@ -179,72 +369,56 @@ export function getEmployeeFullName(employee: Employee): string {
 }
 
 export function getEmployeeLabel(employee: Employee): string {
-  return `${employee.name} · ${employee.role}`;
+  return `${employee.name} · ${employee.title}`;
+}
+
+export function formatEmployeeBranchLabel(employee: Employee): string {
+  const portalBranch = getEmployeePortalBranch(employee);
+  const branchLabel =
+    EMPLOYEE_PORTAL_BRANCHES.find((entry) => entry.portal === portalBranch)?.label ?? portalBranch.toUpperCase();
+  const details = [employee.branch.name, employee.branch.code].filter(Boolean).join(" · ");
+  return details ? `${branchLabel} (${details})` : branchLabel;
+}
+
+export function formatEmployeePhones(employee: Employee): string {
+  const phones = [employee.phone1, employee.phone2].map((value) => value.trim()).filter(Boolean);
+  return phones.length > 0 ? phones.join(", ") : "—";
+}
+
+export function formatEmployeeBranchs(employee: Pick<Employee, "branchs">): string {
+  const labels = employee.branchs
+    .map((branch) => [branch.code, branch.name].filter(Boolean).join(" · "))
+    .filter(Boolean);
+
+  return labels.length > 0 ? labels.join(", ") : "—";
+}
+
+export function formatEmployeeUsers(employee: Pick<Employee, "users">): string {
+  const labels = employee.users.map((user) => user.userName || String(user.id)).filter(Boolean);
+  return labels.length > 0 ? labels.join(", ") : "—";
 }
 
 export function employeeToFormValues(employee: Employee): EmployeeFormValues {
   return {
-    employeeId: employee.employeeId,
+    id: employee.id,
     name: employee.name,
     department: employee.department,
-    role: employee.role,
+    title: employee.title,
+    active: employee.active,
     branch: employee.branch,
-    address: employee.address,
-    city: employee.city,
-    state: employee.state,
-    zip: employee.zip,
-    phone: employee.phone,
+    branchs: employee.branchs.length > 0 ? employee.branchs.map((branch) => ({ ...branch })) : [{ ...employee.branch }],
+    address: { ...employee.address },
+    phone1: employee.phone1,
+    phone2: employee.phone2,
     email: employee.email,
-    startDate: employee.startDate.slice(0, 10),
-    endDate: employee.endDate?.slice(0, 10) ?? "",
-    status: employee.status,
-    createdBy: employee.createdBy,
-  };
-}
-
-export function formValuesToEmployee(
-  values: EmployeeFormValues,
-  createdAt?: string,
-  createdBy?: string,
-  updatedAt?: string
-): Employee {
-  if (!values.name.trim()) {
-    throw new Error("Employee name is required.");
-  }
-
-  if (!values.department.trim()) {
-    throw new Error("Department is required.");
-  }
-
-  if (!values.role.trim()) {
-    throw new Error("Role is required.");
-  }
-
-  if (!values.startDate) {
-    throw new Error("Start date is required.");
-  }
-
-  if (values.status === "inactive" && !values.endDate.trim()) {
-    throw new Error("End date is required for inactive employees.");
-  }
-
-  return {
-    employeeId: values.employeeId,
-    name: values.name.trim(),
-    department: values.department.trim(),
-    role: values.role.trim(),
-    branch: values.branch,
-    address: values.address.trim(),
-    city: values.city.trim(),
-    state: values.state.trim(),
-    zip: values.zip.trim(),
-    phone: values.phone.trim(),
-    email: values.email.trim(),
-    startDate: values.startDate,
-    endDate: values.endDate.trim() || undefined,
-    status: values.status,
-    createdAt: createdAt ?? new Date().toISOString(),
-    createdBy: createdBy ?? (values.createdBy.trim() || DEFAULT_CREATED_BY),
-    updatedAt: updatedAt ?? new Date().toISOString(),
+    cost: employee.cost,
+    loanAmountOwed: employee.loanAmountOwed,
+    loanBalanceUpdated: employee.loanBalanceUpdated,
+    totalLoanGiven: employee.totalLoanGiven,
+    totalPaymentReceived: employee.totalPaymentReceived,
+    user: employee.user ? { ...employee.user } : null,
+    users: employee.users.map((user) => ({ ...user })),
+    createdAt: employee.createdAt,
+    updatedAt: employee.updatedAt,
   };
 }

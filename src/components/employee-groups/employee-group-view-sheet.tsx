@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { getEmployeeById } from "@/lib/employees/mock-data";
 import { getEmployeeBranchLabel } from "@/lib/employees/display";
-import { getEmployeeFullName } from "@/lib/employees/types";
+import { getEmployeeFullName, getEmployeePortalBranch } from "@/lib/employees/types";
 import { formatEmployeeGroupDate, getEmployeeGroupBranchBadgeClass, getEmployeeGroupBranchLabel, truncateEmployeeGroupId } from "@/lib/employee-groups/display";
 import { formatAuditDate } from "@/lib/audit/display";
 import type { EmployeeGroup } from "@/lib/employee-groups/types";
@@ -78,14 +78,16 @@ export function EmployeeGroupViewSheet({
             {members.length > 0 ? (
               <ul className="mt-3 space-y-2">
                 {members.map((employee) => (
-                  <li key={employee!.employeeId} className="flex items-center justify-between gap-3 text-sm">
+                  <li key={employee!.id} className="flex items-center justify-between gap-3 text-sm">
                     <div>
                       <p className="font-medium">{getEmployeeFullName(employee!)}</p>
                       <p className="text-xs text-muted-foreground">
-                        {employee!.department} · {employee!.role}
+                        {employee!.department} · {employee!.title}
                       </p>
                     </div>
-                    <Badge variant="outline">{getEmployeeBranchLabel(employee!.branch)}</Badge>
+                    <Badge variant="outline">
+                      {getEmployeeBranchLabel(getEmployeePortalBranch(employee!))}
+                    </Badge>
                   </li>
                 ))}
               </ul>

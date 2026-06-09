@@ -13,10 +13,18 @@ import {
 } from "@/components/ui/sheet";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
-  formatAddressLine,
+  formatCoreAddressLine,
+  formatCustomerBranchLabel,
+  formatPhoneList,
   getClientTypeBadgeClass,
   getClientTypeLabel,
+  getCustomerActiveBadgeClass,
+  getCustomerActiveLabel,
+  getCustomerBranchBadgeClass,
+  getCustomerTypeLabel,
+  truncateCustomerId,
 } from "@/lib/customers/display";
+import { getCustomerClientType } from "@/lib/customers/types";
 import type { Customer } from "@/lib/customers/types";
 
 type CustomerViewSheetProps = {
@@ -36,90 +44,85 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
   );
 }
 
-export function CustomerViewSheet({ customer, open, onOpenChange, onEdit, onDelete }: CustomerViewSheetProps) {
+export function CustomerViewSheet({
+  customer,
+  open,
+  onOpenChange,
+  onEdit,
+  onDelete,
+}: CustomerViewSheetProps) {
   if (!customer) return null;
+
+  const clientType = getCustomerClientType(customer);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full max-w-md overflow-y-auto sm:max-w-lg">
         <SheetHeader className="pr-10">
           <SheetTitle>{customer.name}</SheetTitle>
-          <SheetDescription className="font-mono text-xs">{customer.clientId}</SheetDescription>
+          <SheetDescription className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs">{truncateCustomerId(customer.id)}</span>
+            <Badge className={getCustomerBranchBadgeClass(customer)}>{formatCustomerBranchLabel(customer)}</Badge>
+            <Badge className={getCustomerActiveBadgeClass(customer.active)}>
+              {getCustomerActiveLabel(customer.active)}
+            </Badge>
+            {clientType ? (
+              <Badge className={getClientTypeBadgeClass(clientType)}>{getClientTypeLabel(clientType)}</Badge>
+            ) : null}
+          </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 px-1">
-          <div className="mb-4">
-            <Badge className={getClientTypeBadgeClass(customer.clientType)}>{getClientTypeLabel(customer.clientType)}</Badge>
+        <div className="mt-4 flex gap-2 px-1">
+          <Button type="button" variant="outline" size="sm" onClick={() => onEdit(customer)}>
+            <Pencil className="h-4 w-4" />
+            Edit
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            onClick={() => onDelete(customer)}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </Button>
+        </div>
+
+        <div className="mt-6 space-y-4 px-1">
+          <div className="rounded-xl border bg-muted/20 px-4">
+            <DetailRow label="id" value={customer.id} />
+            <DetailRow label="oldID" value={customer.oldID > 0 ? String(customer.oldID) : "—"} />
+            <DetailRow label="name" value={customer.name} />
+            <DetailRow label="active" value={getCustomerActiveLabel(customer.active)} />
+            <DetailRow label="customerType" value={getCustomerTypeLabel(customer)} />
+            <DetailRow label="createdByID" value={customer.createdByID != null ? String(customer.createdByID) : "—"} />
+            <DetailRow label="createdAt" value={customer.createdAt ? formatAuditDate(customer.createdAt) : "—"} />
+            <DetailRow label="updatedAt" value={customer.updatedAt ? formatAuditDate(customer.updatedAt) : "—"} />
           </div>
 
           <div className="rounded-xl border bg-muted/20 px-4">
-            <DetailRow label="Document ID" value={customer.documentId ?? "—"} />
-            <DetailRow label="Email" value={customer.email ?? "—"} />
-            <DetailRow label="Date created" value={formatAuditDate(customer.createdAt)} />
-            <DetailRow label="User created" value={customer.createdBy} />
-            <DetailRow label="Date modified" value={formatAuditDate(customer.updatedAt)} />
+            <DetailRow label="branch.id" value={String(customer.branch.id)} />
+            <DetailRow label="branch.code" value={customer.branch.code || "—"} />
+            <DetailRow label="branch.name" value={customer.branch.name || "—"} />
+            <DetailRow label="branch.phone1" value={customer.branch.phone1 || "—"} />
           </div>
 
-          <div className="mt-4 rounded-xl border bg-muted/20 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Phone numbers ({customer.phones.length})
-            </p>
-            {customer.phones.length > 0 ? (
-              <ul className="mt-3 space-y-2">
-                {customer.phones.map((phone) => (
-                  <li key={phone.id} className="text-sm">
-                    {phone.label ? <span className="text-muted-foreground">{phone.label}: </span> : null}
-                    <span className="font-medium">{phone.number}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-muted-foreground">No phone numbers on file.</p>
-            )}
+          <div className="rounded-xl border bg-muted/20 px-4">
+            <DetailRow label="phone1" value={customer.phone1 || "—"} />
+            <DetailRow label="phone2" value={customer.phone2 || "—"} />
+            <DetailRow label="phones" value={formatPhoneList(customer)} />
           </div>
 
-          <div className="mt-4 space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Addresses ({customer.addresses.length})
-            </p>
-            {customer.addresses.length > 0 ? (
-              customer.addresses.map((address, index) => (
-                <div key={address.id} className="rounded-xl border bg-muted/20 px-4 py-3">
-                  <div className="mb-2 flex items-center gap-2">
-                    <p className="text-sm font-medium">Address {index + 1}</p>
-                    {address.isPrimary ? (
-                      <Badge variant="secondary" className="rounded-full px-2 py-0 text-[10px]">
-                        Primary
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <p className="text-sm leading-relaxed">{formatAddressLine(address)}</p>
-                  {address.crossStreet ? (
-                    <p className="mt-1 text-xs text-muted-foreground">Cross street: {address.crossStreet}</p>
-                  ) : null}
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">No addresses on file.</p>
-            )}
-          </div>
-
-          {customer.notes ? (
-            <div className="mt-4 rounded-xl border bg-muted/20 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes</p>
-              <p className="mt-2 text-sm leading-relaxed">{customer.notes}</p>
-            </div>
-          ) : null}
-
-          <div className="mt-6 flex gap-2">
-            <Button className="flex-1" onClick={() => onEdit(customer)}>
-              <Pencil className="h-4 w-4" />
-              Edit client
-            </Button>
-            <Button variant="destructive" onClick={() => onDelete(customer)}>
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
+          <div className="rounded-xl border bg-muted/20 px-4">
+            <DetailRow label="address.address1" value={customer.address.address1 || "—"} />
+            <DetailRow label="address.address2" value={customer.address.address2 || "—"} />
+            <DetailRow label="address.apartment" value={customer.address.apartment || "—"} />
+            <DetailRow label="address.city" value={customer.address.city || "—"} />
+            <DetailRow label="address.state" value={customer.address.state || "—"} />
+            <DetailRow label="address.zipcode" value={customer.address.zipcode || "—"} />
+            <DetailRow label="address.country" value={customer.address.country || "—"} />
+            <DetailRow label="address" value={formatCoreAddressLine(customer.address)} />
           </div>
         </div>
       </SheetContent>

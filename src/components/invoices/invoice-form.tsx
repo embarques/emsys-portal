@@ -20,7 +20,7 @@ import {
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
 import { cloneItems } from "@/lib/items/mock-data";
-import { cloneCustomers } from "@/lib/customers/mock-data";
+import { useCustomerPicker } from "@/lib/customers/hooks/use-customers";
 
 const selectClassName =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
@@ -46,7 +46,8 @@ export function InvoiceForm({
   onFormErrorChange,
   onCancel,
 }: InvoiceFormProps) {
-  const customers = useMemo(() => cloneCustomers(), []);
+  const { data: customersData } = useCustomerPicker();
+  const customers = customersData?.items ?? [];
   const containers = useMemo(() => cloneContainers(), []);
   const catalogItems = useMemo(() => cloneItems(), []);
 

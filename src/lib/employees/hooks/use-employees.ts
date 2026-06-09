@@ -48,12 +48,12 @@ export function useEmployeeStats() {
 
   const activeQuery = useQuery({
     queryKey: queryKeys.employees.stats("active"),
-    queryFn: () => fetchEmployees({ page: 1, limit: 1, status: "active" }),
+    queryFn: () => fetchEmployees({ page: 1, limit: 1, active: true }),
   });
 
   const inactiveQuery = useQuery({
     queryKey: queryKeys.employees.stats("inactive"),
-    queryFn: () => fetchEmployees({ page: 1, limit: 1, status: "inactive" }),
+    queryFn: () => fetchEmployees({ page: 1, limit: 1, active: false }),
   });
 
   return {
