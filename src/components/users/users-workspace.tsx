@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -32,27 +32,36 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import type { DataTableColumn } from "@/lib/table/types";
 import {
-  computeUserKpis,
   getUserBranchBadgeClass,
-  getUserBranchLabel,
   getUserLanguageLabel,
   getUserRoleBadgeClass,
   getUserRoleLabel,
   getUserStatusBadgeClass,
   getUserStatusLabel,
+  truncateUid,
   truncateUserId,
-  userMatchesQuery,
 } from "@/lib/users/display";
-import { cloneUsers } from "@/lib/users/mock-data";
+import {
+  useCreateUser,
+  useDeleteUsers,
+  useUsers,
+  useUserStats,
+  useUpdateUser,
+} from "@/lib/users/hooks/use-users";
 import {
   USER_BRANCHES,
-  USER_ROLES,
+  USER_ROLE_OPTIONS,
+  USER_SEARCH_FIELDS,
+  USER_SEARCH_OPERATORS,
   USER_STATUSES,
   createEmptyUserForm,
-  formValuesToUser,
+  createUserSearchFilter,
+  formatUserBranchLabel,
+  getUserSearchSortField,
   maskPassword,
   userToFormValues,
   type User,
@@ -60,19 +69,21 @@ import {
   type UserFormValues,
 } from "@/lib/users/types";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 40;
 
 const defaultFilters: UserFilterState = {
   query: "",
+  searchField: "userName",
+  searchOperator: "startsWith",
   branch: "all",
   status: "all",
-  role: "all",
+  roleId: "all",
 };
 
 export function UsersWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [users, setUsers] = useState<User[]>(() => cloneUsers());
   const [filters, setFilters] = useState<UserFilterState>(defaultFilters);
+  const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [viewUser, setViewUser] = useState<User | null>(null);
@@ -81,38 +92,84 @@ export function UsersWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<User | User[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      if (!userMatchesQuery(user, filters.query)) return false;
-      if (filters.branch !== "all" && user.branch !== filters.branch) return false;
-      if (filters.status !== "all" && user.status !== filters.status) return false;
-      if (filters.role !== "all" && user.role !== filters.role) return false;
-      return true;
-    });
-  }, [users, filters]);
+  const listParams = useMemo(
+    () => {
+      const search = createUserSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
 
-  const kpis = useMemo(() => computeUserKpis(users), [users]);
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+      return {
+        page,
+        limit: PAGE_SIZE,
+        sortField: search ? getUserSearchSortField(filters.searchField) : "userName",
+        sortDirection: "asc" as const,
+        search,
+        branch: filters.branch,
+        status: filters.status,
+        roleId: filters.roleId,
+      };
+    },
+    [
+      deferredQuery,
+      filters.branch,
+      filters.roleId,
+      filters.searchField,
+      filters.searchOperator,
+      filters.status,
+      page,
+    ],
+  );
+
+  const { data, isLoading, isError, error, isFetching } = useUsers(listParams);
+  const stats = useUserStats();
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+  const deleteUsersMutation = useDeleteUsers();
+
+  const users = data?.items ?? [];
+  const totalUsers = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pageUsers = filteredUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageUsers = users;
   const allPageSelected =
     pageUsers.length > 0 && pageUsers.every((user) => selectedIds.includes(user.userId));
+  const isSaving =
+    createUserMutation.isPending || updateUserMutation.isPending || deleteUsersMutation.isPending;
+
+  const roleFilters = useMemo(() => {
+    const discoveredRoles = new Map<number, string>();
+    for (const user of users) {
+      if (user.roleId > 0) {
+        discoveredRoles.set(user.roleId, user.roleName || `Role ${user.roleId}`);
+      }
+    }
+
+    for (const option of USER_ROLE_OPTIONS) {
+      if (!discoveredRoles.has(option.id)) {
+        discoveredRoles.set(option.id, option.label);
+      }
+    }
+
+    return [
+      { value: "all" as const, label: "All roles" },
+      ...Array.from(discoveredRoles.entries()).map(([id, label]) => ({
+        value: id,
+        label,
+      })),
+    ];
+  }, [users]);
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
       setSelectedIds((current) =>
-        Array.from(new Set([...current, ...pageUsers.map((user) => user.userId)]))
+        Array.from(new Set([...current, ...users.map((user) => user.userId)])),
       );
       return;
     }
-    setSelectedIds((current) =>
-      current.filter((id) => !pageUsers.some((user) => user.userId === id))
-    );
+    setSelectedIds((current) => current.filter((id) => !users.some((user) => user.userId === id)));
   }
 
   function toggleSelect(userId: string, checked: boolean) {
     setSelectedIds((current) =>
-      checked ? [...current, userId] : current.filter((entry) => entry !== userId)
+      checked ? [...current, userId] : current.filter((entry) => entry !== userId),
     );
   }
 
@@ -129,51 +186,67 @@ export function UsersWorkspace() {
     setFormError(null);
   }
 
-  function saveUser(values: UserFormValues) {
+  async function saveUser(values: UserFormValues) {
+    setFormError(null);
+
     try {
       if (formMode === "edit" && editingUser) {
-        const nextUser = formValuesToUser(
-          values,
-          editingUser.password,
-          editingUser.createdAt,
-          editingUser.createdBy,
-          new Date().toISOString()
-        );
-        setUsers((current) =>
-          current.map((user) => (user.userId === editingUser.userId ? nextUser : user))
-        );
+        const nextUser = await updateUserMutation.mutateAsync({
+          userId: editingUser.userId,
+          values: { ...values, createdBy: editingUser.createdBy },
+        });
         notifyUpdated("User", nextUser.username);
       } else {
-        const nextUser = formValuesToUser(values);
-        setUsers((current) => [nextUser, ...current]);
+        const nextUser = await createUserMutation.mutateAsync(values);
         notifyAdded("User", nextUser.username);
       }
 
       setFormMode(null);
       setEditingUser(null);
-      setFormError(null);
       setPage(1);
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to save user.");
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
     }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
+
     const ids = Array.isArray(deleteTarget)
       ? deleteTarget.map((user) => user.userId)
       : [deleteTarget.userId];
-    setUsers((current) => current.filter((user) => !ids.includes(user.userId)));
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewUser(null);
-    notifyDeleted("User", ids.length);
+
+    try {
+      await deleteUsersMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
+      setViewUser(null);
+      notifyDeleted("User", ids.length);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
+      setDeleteTarget(null);
+    }
   }
 
-  const stats = [
-    { label: "Total users", value: kpis.total.toString(), description: "Accounts on record", icon: Users },
-    { label: "Active", value: kpis.active.toString(), description: "Currently active", icon: UserCog },
-    { label: "Admins", value: kpis.admin.toString(), description: "Admin role accounts", icon: Shield },
+  const statCards = [
+    {
+      label: "Total users",
+      value: stats.isLoading ? "…" : stats.total.toString(),
+      description: "Accounts on record",
+      icon: Users,
+    },
+    {
+      label: "Active",
+      value: stats.isLoading ? "…" : stats.active.toString(),
+      description: "Currently active",
+      icon: UserCog,
+    },
+    {
+      label: "Admins",
+      value: stats.isLoading ? "…" : stats.admin.toString(),
+      description: "Admin role accounts",
+      icon: Shield,
+    },
   ];
 
   const branchFilters: { value: UserFilterState["branch"]; label: string }[] = [
@@ -186,17 +259,18 @@ export function UsersWorkspace() {
     ...USER_STATUSES,
   ];
 
-  const roleFilters: { value: UserFilterState["role"]; label: string }[] = [
-    { value: "all", label: "All roles" },
-    ...USER_ROLES,
-  ];
-
   const tableColumns: DataTableColumn<User>[] = [
     {
       id: "userId",
       label: "User ID",
       cellClassName: "font-mono text-xs",
       renderCell: (user) => truncateUserId(user.userId),
+    },
+    {
+      id: "uid",
+      label: "UID",
+      cellClassName: "font-mono text-xs text-muted-foreground",
+      renderCell: (user) => (user.uid ? truncateUid(user.uid) : "—"),
     },
     {
       id: "username",
@@ -213,7 +287,7 @@ export function UsersWorkspace() {
     {
       id: "name",
       label: "Name",
-      renderCell: (user) => user.name,
+      renderCell: (user) => user.name || "—",
     },
     {
       id: "status",
@@ -226,7 +300,7 @@ export function UsersWorkspace() {
       id: "role",
       label: "Role",
       renderCell: (user) => (
-        <Badge className={getUserRoleBadgeClass(user.role)}>{getUserRoleLabel(user.role)}</Badge>
+        <Badge className={getUserRoleBadgeClass(user.roleName)}>{getUserRoleLabel(user.roleName)}</Badge>
       ),
     },
     {
@@ -238,7 +312,7 @@ export function UsersWorkspace() {
       id: "branch",
       label: "Branch",
       renderCell: (user) => (
-        <Badge className={getUserBranchBadgeClass(user.branch)}>{getUserBranchLabel(user.branch)}</Badge>
+        <Badge className={getUserBranchBadgeClass(user.branch)}>{formatUserBranchLabel(user)}</Badge>
       ),
     },
     {
@@ -255,18 +329,18 @@ export function UsersWorkspace() {
       id: "createdAt",
       label: "Date created",
       cellClassName: "text-muted-foreground",
-      renderCell: (user) => formatAuditDate(user.createdAt),
+      renderCell: (user) => (user.createdAt ? formatAuditDate(user.createdAt) : "—"),
     },
     {
       id: "createdBy",
       label: "User created",
-      renderCell: (user) => user.createdBy,
+      renderCell: (user) => user.createdBy || "—",
     },
     {
       id: "updatedAt",
       label: "Date modified",
       cellClassName: "text-muted-foreground",
-      renderCell: (user) => formatAuditDate(user.updatedAt),
+      renderCell: (user) => (user.updatedAt ? formatAuditDate(user.updatedAt) : "—"),
     },
     {
       id: "actions",
@@ -298,6 +372,7 @@ export function UsersWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("users", tableColumns);
+  const listErrorMessage = isError ? normalizeApiError(error).message : null;
 
   return (
     <div>
@@ -305,7 +380,7 @@ export function UsersWorkspace() {
         title="Users"
         description="Manage user accounts with credentials, roles, language, and branch access."
         actions={
-          <Button onClick={openAddForm}>
+          <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
             Add user
           </Button>
@@ -313,7 +388,7 @@ export function UsersWorkspace() {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.label}>
@@ -337,7 +412,43 @@ export function UsersWorkspace() {
               <CardTitle>User directory</CardTitle>
               <CardDescription>Search and filter users by branch, status, and role.</CardDescription>
             </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
+              <select
+                aria-label="Search field"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchField}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    searchField: event.target.value as UserFilterState["searchField"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                {USER_SEARCH_FIELDS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Search operator"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchOperator}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    searchOperator: event.target.value as UserFilterState["searchOperator"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                {USER_SEARCH_OPERATORS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <div className="relative min-w-[240px] flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -394,12 +505,12 @@ export function UsersWorkspace() {
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Role</span>
             {roleFilters.map((option) => (
               <Button
-                key={option.value}
+                key={String(option.value)}
                 type="button"
                 size="sm"
-                variant={filters.role === option.value ? "default" : "outline"}
+                variant={filters.roleId === option.value ? "default" : "outline"}
                 onClick={() => {
-                  setFilters((current) => ({ ...current, role: option.value }));
+                  setFilters((current) => ({ ...current, roleId: option.value }));
                   setPage(1);
                 }}
               >
@@ -408,6 +519,10 @@ export function UsersWorkspace() {
             ))}
           </div>
         </CardHeader>
+
+        {listErrorMessage ? (
+          <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
+        ) : null}
 
         {selectedIds.length > 0 ? (
           <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -419,9 +534,8 @@ export function UsersWorkspace() {
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() =>
-                  setDeleteTarget(users.filter((user) => selectedIds.includes(user.userId)))
-                }
+                disabled={isSaving}
+                onClick={() => setDeleteTarget(users.filter((user) => selectedIds.includes(user.userId)))}
               >
                 <Trash2 className="h-4 w-4" />
                 Delete selected
@@ -430,39 +544,43 @@ export function UsersWorkspace() {
           </div>
         ) : null}
 
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={pageUsers}
-          rowKey={(user) => user.userId}
-          rowLabel={(user) => user.username}
-          columnLayout={columnVisibility}
-          minWidth={1600}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={setViewUser}
-          emptyState={
-            <>
-              <p className="text-muted-foreground">No users match your search or filters.</p>
-              <Button className="mt-4" onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                Add user
-              </Button>
-            </>
-          }
-        />
+        {isLoading ? (
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading users…</div>
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={pageUsers}
+            rowKey={(user) => user.userId}
+            rowLabel={(user) => user.username}
+            columnLayout={columnVisibility}
+            minWidth={1700}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={toggleSelect}
+            onRowClick={setViewUser}
+            emptyState={
+              <>
+                <p className="text-muted-foreground">No users match your search or filters.</p>
+                <Button className="mt-4" onClick={openAddForm}>
+                  <Plus className="h-4 w-4" />
+                  Add user
+                </Button>
+              </>
+            }
+          />
+        )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {pageUsers.length} of {filteredUsers.length} users
+            {isFetching ? "Refreshing…" : `Showing ${pageUsers.length} of ${totalUsers} users`}
           </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage <= 1}
+              disabled={currentPage <= 1 || isLoading}
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -474,7 +592,7 @@ export function UsersWorkspace() {
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage >= totalPages}
+              disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
               Next
@@ -521,6 +639,7 @@ export function UsersWorkspace() {
             isEditing={formMode === "edit"}
             updatedAt={editingUser?.updatedAt}
             submitLabel={formMode === "edit" ? "Save changes" : "Add user"}
+            isSubmitting={isSaving}
             onSubmit={saveUser}
             onCancel={() => {
               setFormMode(null);
@@ -542,10 +661,10 @@ export function UsersWorkspace() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
               Delete
             </Button>

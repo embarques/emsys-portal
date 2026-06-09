@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
-import { cloneEmployees } from "@/lib/employees/mock-data";
 import { getEmployeeBranchLabel } from "@/lib/employees/display";
-import { getEmployeeFullName, getEmployeeLabel } from "@/lib/employees/types";
+import { useEmployees } from "@/lib/employees/hooks/use-employees";
+import {
+  createEmployeeSearchFilter,
+  getEmployeeFullName,
+} from "@/lib/employees/types";
 import {
   createEmptyEmployeeGroupForm,
   EMPLOYEE_GROUP_BRANCHES,
@@ -37,12 +40,21 @@ export function EmployeeGroupForm({
   onSubmit,
   onCancel,
 }: EmployeeGroupFormProps) {
-  const employees = useMemo(() => cloneEmployees(), []);
   const [values, setValues] = useState<EmployeeGroupFormValues>(
     initialValues ?? createEmptyEmployeeGroupForm()
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [memberQuery, setMemberQuery] = useState("");
+  const deferredMemberQuery = useDeferredValue(memberQuery);
+  const memberSearch = createEmployeeSearchFilter(deferredMemberQuery, "name", "startsWith");
+  const employeesQuery = useEmployees({
+    page: 1,
+    limit: 40,
+    sortField: "name",
+    sortDirection: "asc",
+    search: memberSearch,
+  });
+  const employees = employeesQuery.data?.items ?? [];
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyEmployeeGroupForm());
@@ -70,12 +82,6 @@ export function EmployeeGroupForm({
 
     onSubmit(values);
   }
-
-  const filteredEmployees = employees.filter((employee) => {
-    const normalized = memberQuery.trim().toLowerCase();
-    if (!normalized) return true;
-    return getEmployeeLabel(employee).toLowerCase().includes(normalized);
-  });
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -140,8 +146,10 @@ export function EmployeeGroupForm({
         />
 
         <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border p-3">
-          {filteredEmployees.length > 0 ? (
-            filteredEmployees.map((employee) => {
+          {employeesQuery.isLoading ? (
+            <p className="px-2 py-6 text-center text-sm text-muted-foreground">Loading employees…</p>
+          ) : employees.length > 0 ? (
+            employees.map((employee) => {
               const checked = values.employeeIds.includes(employee.employeeId);
               return (
                 <label

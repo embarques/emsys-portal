@@ -1,20 +1,21 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { createRecordId } from "@/lib/customers/types";
 
 export type UserBranch = "usa" | "dr";
 export type UserStatus = "active" | "inactive";
-export type UserRole = "admin" | "user" | "manager" | "viewer";
 export type UserLanguage = "en" | "es";
 
 export type User = {
   userId: string;
+  uid: string;
   username: string;
   password: string;
   name: string;
   status: UserStatus;
-  role: UserRole;
+  roleId: number;
+  roleName: string;
   language: UserLanguage;
   branch: UserBranch;
+  branchCode: string;
   email: string;
   phone: string;
   createdAt: string;
@@ -24,11 +25,12 @@ export type User = {
 
 export type UserFormValues = {
   userId: string;
+  uid: string;
   username: string;
   password: string;
   name: string;
   status: UserStatus;
-  role: UserRole;
+  roleId: number;
   language: UserLanguage;
   branch: UserBranch;
   email: string;
@@ -38,10 +40,117 @@ export type UserFormValues = {
 
 export type UserFilterState = {
   query: string;
+  searchField: UserSearchField;
+  searchOperator: UserSearchOperator;
   branch: UserBranch | "all";
   status: UserStatus | "all";
-  role: UserRole | "all";
+  roleId: number | "all";
 };
+
+export type UserSearchOperator = "startsWith" | "contains" | "equals" | "endsWith";
+
+export type UserSearchField =
+  | "_id"
+  | "userName"
+  | "email"
+  | "uid"
+  | "active"
+  | "phone"
+  | "language"
+  | "role.name"
+  | "role._id"
+  | "branch.code"
+  | "branch._id";
+
+export type UserSearchFilter = {
+  field: UserSearchField;
+  operator: UserSearchOperator;
+  value: string;
+};
+
+export type UserListParams = {
+  page?: number;
+  limit?: number;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
+  search?: UserSearchFilter;
+  branch?: UserBranch | "all";
+  status?: UserStatus | "all";
+  roleId?: number | "all";
+};
+
+export type UserListResult = {
+  items: User[];
+  page: number;
+  resultsPerPage: number;
+  total: number;
+};
+
+export const USER_SEARCH_FIELDS: { value: UserSearchField; label: string }[] = [
+  { value: "_id", label: "User ID" },
+  { value: "userName", label: "Username" },
+  { value: "email", label: "Email" },
+  { value: "uid", label: "Firebase UID" },
+  { value: "active", label: "Active" },
+  { value: "phone", label: "Phone" },
+  { value: "language", label: "Language" },
+  { value: "role.name", label: "Role name" },
+  { value: "role._id", label: "Role ID" },
+  { value: "branch.code", label: "Branch code" },
+  { value: "branch._id", label: "Branch ID" },
+];
+
+export const USER_SEARCH_OPERATORS: { value: UserSearchOperator; label: string }[] = [
+  { value: "startsWith", label: "Starts with" },
+  { value: "contains", label: "Contains" },
+  { value: "equals", label: "Equals" },
+  { value: "endsWith", label: "Ends with" },
+];
+
+export function createUserSearchFilter(
+  value: string,
+  field: UserSearchField = "userName",
+  operator: UserSearchOperator = "startsWith",
+): UserSearchFilter | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  let normalizedValue = trimmed;
+  if (field === "active") {
+    const lower = trimmed.toLowerCase();
+    if (["active", "true", "yes"].includes(lower)) normalizedValue = "true";
+    if (["inactive", "false", "no"].includes(lower)) normalizedValue = "false";
+  }
+
+  return { field, operator, value: normalizedValue };
+}
+
+export function getUserSearchSortField(field: UserSearchField): string {
+  switch (field) {
+    case "email":
+      return "email";
+    case "uid":
+      return "uid";
+    case "_id":
+      return "_id";
+    case "role.name":
+      return "role.name";
+    case "role._id":
+      return "role._id";
+    case "branch.code":
+      return "branch.code";
+    case "branch._id":
+      return "branch._id";
+    case "phone":
+      return "phone";
+    case "language":
+      return "language";
+    case "active":
+      return "active";
+    default:
+      return "userName";
+  }
+}
 
 export const USER_BRANCHES: { value: UserBranch; label: string }[] = [
   { value: "usa", label: "USA" },
@@ -53,11 +162,8 @@ export const USER_STATUSES: { value: UserStatus; label: string }[] = [
   { value: "inactive", label: "Inactive" },
 ];
 
-export const USER_ROLES: { value: UserRole; label: string }[] = [
-  { value: "admin", label: "Admin" },
-  { value: "manager", label: "Manager" },
-  { value: "user", label: "User" },
-  { value: "viewer", label: "Viewer" },
+export const USER_ROLE_OPTIONS: { id: number; label: string }[] = [
+  { id: 1, label: "Administrador" },
 ];
 
 export const USER_LANGUAGES: { value: UserLanguage; label: string }[] = [
@@ -65,18 +171,15 @@ export const USER_LANGUAGES: { value: UserLanguage; label: string }[] = [
   { value: "es", label: "Spanish" },
 ];
 
-export function createUserId(): string {
-  return createRecordId();
-}
-
 export function createEmptyUserForm(createdBy = DEFAULT_CREATED_BY): UserFormValues {
   return {
-    userId: createUserId(),
+    userId: "",
+    uid: "",
     username: "",
     password: "",
     name: "",
     status: "active",
-    role: "user",
+    roleId: USER_ROLE_OPTIONS[0]?.id ?? 1,
     language: "en",
     branch: "usa",
     email: "",
@@ -88,11 +191,12 @@ export function createEmptyUserForm(createdBy = DEFAULT_CREATED_BY): UserFormVal
 export function userToFormValues(user: User): UserFormValues {
   return {
     userId: user.userId,
+    uid: user.uid,
     username: user.username,
     password: "",
     name: user.name,
     status: user.status,
-    role: user.role,
+    roleId: user.roleId,
     language: user.language,
     branch: user.branch,
     email: user.email,
@@ -101,43 +205,16 @@ export function userToFormValues(user: User): UserFormValues {
   };
 }
 
-export function formValuesToUser(
-  values: UserFormValues,
-  existingPassword?: string,
-  createdAt?: string,
-  createdBy?: string,
-  updatedAt?: string
-): User {
-  if (!values.username.trim()) {
-    throw new Error("Username is required.");
-  }
-
-  if (!values.name.trim()) {
-    throw new Error("Name is required.");
-  }
-
-  const password = values.password.trim() || existingPassword;
-  if (!password) {
-    throw new Error("Password is required.");
-  }
-
-  return {
-    userId: values.userId,
-    username: values.username.trim(),
-    password,
-    name: values.name.trim(),
-    status: values.status,
-    role: values.role,
-    language: values.language,
-    branch: values.branch,
-    email: values.email.trim(),
-    phone: values.phone.trim(),
-    createdAt: createdAt ?? new Date().toISOString(),
-    createdBy: createdBy ?? (values.createdBy.trim() || DEFAULT_CREATED_BY),
-    updatedAt: updatedAt ?? new Date().toISOString(),
-  };
-}
-
 export function maskPassword(_password: string): string {
   return "••••••••";
+}
+
+export function formatUserBranchLabel(user: User): string {
+  const branchLabel = USER_BRANCHES.find((entry) => entry.value === user.branch)?.label ?? user.branch.toUpperCase();
+  return user.branchCode ? `${branchLabel} (${user.branchCode})` : branchLabel;
+}
+
+export function isAdminRole(roleName: string): boolean {
+  const normalized = roleName.trim().toLowerCase();
+  return normalized.includes("admin") || normalized.includes("administrador");
 }

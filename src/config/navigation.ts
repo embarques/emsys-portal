@@ -20,35 +20,85 @@ import {
   Users,
   UsersRound,
   Wallet,
+  type LucideIcon,
 } from "lucide-react";
 
-export const navigation = [
-  { title: "Workspace", items: [
-    { label: "Dashboard", href: "/", icon: Home },
-    { label: "Customers", href: "/customers", icon: Users },
-    { label: "Orders", href: "/orders", icon: Package },
-    { label: "Invoices", href: "/invoices", icon: FileText },
-    { label: "Labels", href: "/labels", icon: Barcode },
-    { label: "Label Updater", href: "/label-updater", icon: ScanBarcode },
-    { label: "Inventory", href: "/inventory", icon: Boxes },
-    { label: "Items", href: "/items", icon: Tag },
-    { label: "Containers", href: "/containers", icon: Container },
-    { label: "Routes", href: "/routes", icon: Route },
-    { label: "Route Assignments", href: "/route-assignments", icon: ClipboardList },
-    { label: "Trucks", href: "/trucks", icon: Truck },
-    { label: "Deliveries", href: "/deliveries", icon: PackageCheck },
-  ]},
-  { title: "Insights", items: [
-    { label: "Accounting", href: "/accounting", icon: Wallet },
-    { label: "Reports", href: "/reports", icon: FileText },
-    { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  ]},
-  { title: "Admin", items: [
-    { label: "Users", href: "/users", icon: UserCog },
-    { label: "Roles", href: "/roles", icon: KeyRound },
-    { label: "Employees", href: "/employees", icon: UsersRound },
-    { label: "Employee Groups", href: "/employee-groups", icon: UserRound },
-    { label: "Security", href: "/security", icon: ShieldCheck },
-    { label: "Configuration", href: "/settings", icon: Settings },
-  ]},
+import { PERMISSIONS } from "@/lib/auth/permissions";
+import type { Permission } from "@/lib/auth/types/permission";
+
+export type NavigationItem = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  permission?: Permission;
+};
+
+export type NavigationGroup = {
+  title: string;
+  items: NavigationItem[];
+};
+
+export const navigation: NavigationGroup[] = [
+  {
+    title: "Workspace",
+    items: [
+      { label: "Dashboard", href: "/", icon: Home, permission: PERMISSIONS.dashboardView },
+      { label: "Customers", href: "/customers", icon: Users, permission: PERMISSIONS.clientsView },
+      { label: "Orders", href: "/orders", icon: Package, permission: PERMISSIONS.pickupsView },
+      { label: "Invoices", href: "/invoices", icon: FileText, permission: PERMISSIONS.invoicesView },
+      { label: "Labels", href: "/labels", icon: Barcode, permission: PERMISSIONS.packagesView },
+      {
+        label: "Label Updater",
+        href: "/label-updater",
+        icon: ScanBarcode,
+        permission: PERMISSIONS.packagesView,
+      },
+      { label: "Inventory", href: "/inventory", icon: Boxes, permission: PERMISSIONS.inventoryView },
+      { label: "Items", href: "/items", icon: Tag, permission: PERMISSIONS.invoiceItemsView },
+      { label: "Containers", href: "/containers", icon: Container, permission: PERMISSIONS.containersView },
+      { label: "Routes", href: "/routes", icon: Route, permission: PERMISSIONS.routesView },
+      {
+        label: "Route Assignments",
+        href: "/route-assignments",
+        icon: ClipboardList,
+        permission: PERMISSIONS.dispatchView,
+      },
+      { label: "Trucks", href: "/trucks", icon: Truck, permission: PERMISSIONS.trucksView },
+      {
+        label: "Deliveries",
+        href: "/deliveries",
+        icon: PackageCheck,
+        permission: PERMISSIONS.deliveriesView,
+      },
+    ],
+  },
+  {
+    title: "Insights",
+    items: [
+      { label: "Accounting", href: "/accounting", icon: Wallet, permission: PERMISSIONS.incomeView },
+      { label: "Reports", href: "/reports", icon: FileText, permission: PERMISSIONS.reportsView },
+      { label: "Analytics", href: "/analytics", icon: BarChart3, permission: PERMISSIONS.reportsView },
+    ],
+  },
+  {
+    title: "Admin",
+    items: [
+      { label: "Users", href: "/users", icon: UserCog, permission: PERMISSIONS.usersView },
+      { label: "Roles", href: "/roles", icon: KeyRound, permission: PERMISSIONS.rolesView },
+      { label: "Employees", href: "/employees", icon: UsersRound, permission: PERMISSIONS.employeesView },
+      {
+        label: "Employee Groups",
+        href: "/employee-groups",
+        icon: UserRound,
+        permission: PERMISSIONS.employeesView,
+      },
+      { label: "Security", href: "/security", icon: ShieldCheck, permission: PERMISSIONS.usersView },
+      {
+        label: "Configuration",
+        href: "/settings",
+        icon: Settings,
+        permission: PERMISSIONS.accountSettingsView,
+      },
+    ],
+  },
 ];

@@ -14,15 +14,15 @@ import {
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   getUserBranchBadgeClass,
-  getUserBranchLabel,
   getUserLanguageLabel,
   getUserRoleBadgeClass,
   getUserRoleLabel,
   getUserStatusBadgeClass,
   getUserStatusLabel,
+  truncateUid,
   truncateUserId,
 } from "@/lib/users/display";
-import { maskPassword, type User } from "@/lib/users/types";
+import { formatUserBranchLabel, maskPassword, type User } from "@/lib/users/types";
 
 type UserViewSheetProps = {
   user: User | null;
@@ -51,7 +51,7 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Us
           <SheetTitle>{user.name}</SheetTitle>
           <SheetDescription className="flex flex-wrap items-center gap-2">
             <span>@{user.username}</span>
-            <Badge className={getUserRoleBadgeClass(user.role)}>{getUserRoleLabel(user.role)}</Badge>
+            <Badge className={getUserRoleBadgeClass(user.roleName)}>{getUserRoleLabel(user.roleName)}</Badge>
             <Badge className={getUserStatusBadgeClass(user.status)}>{getUserStatusLabel(user.status)}</Badge>
           </SheetDescription>
         </SheetHeader>
@@ -59,17 +59,18 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Us
         <div className="mt-6 space-y-4 px-1">
           <div className="rounded-xl border bg-muted/20 px-4">
             <DetailRow label="User ID" value={truncateUserId(user.userId)} />
+            <DetailRow label="Firebase UID" value={user.uid ? truncateUid(user.uid) : "—"} />
             <DetailRow label="Username" value={user.username} />
             <DetailRow label="Password" value={maskPassword(user.password)} />
             <DetailRow label="Name" value={user.name} />
-            <DetailRow label="Role" value={getUserRoleLabel(user.role)} />
+            <DetailRow label="Role" value={getUserRoleLabel(user.roleName)} />
             <DetailRow label="Status" value={getUserStatusLabel(user.status)} />
             <DetailRow label="Language" value={getUserLanguageLabel(user.language)} />
             <DetailRow
               label="Branch"
               value={
                 <Badge className={getUserBranchBadgeClass(user.branch)}>
-                  {getUserBranchLabel(user.branch)}
+                  {formatUserBranchLabel(user)}
                 </Badge>
               }
             />

@@ -1,18 +1,37 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LogOut, Settings, User, UserCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { getDisplayNameInitials } from "@/lib/configuration/types";
-import { useConfigurationStore } from "@/lib/configuration/use-configuration";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+
+function getInitials(displayName: string | null, email: string | null): string {
+  if (displayName?.trim()) {
+    const parts = displayName.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+    }
+    return displayName.slice(0, 2).toUpperCase();
+  }
+
+  if (email?.trim()) {
+    return email.slice(0, 2).toUpperCase();
+  }
+
+  return "U";
+}
 
 export function UserMenu() {
-  const configuration = useConfigurationStore();
+  const router = useRouter();
+  const { displayName, email, role, roleLoading, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const initials = getDisplayNameInitials(configuration.displayName);
+  const initials = getInitials(displayName, email);
+  const username = email?.split("@")[0] ?? "user";
+  const roleLabel = roleLoading ? "Loading..." : role;
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -24,6 +43,12 @@ export function UserMenu() {
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, []);
+
+  const handleSignOut = async () => {
+    setOpen(false);
+    await signOut();
+    router.replace("/login");
+  };
 
   return (
     <div ref={menuRef} className="relative">
@@ -39,16 +64,21 @@ export function UserMenu() {
           {initials}
         </div>
         <div className="hidden text-left sm:block">
-          <p className="text-sm font-medium leading-none">{configuration.displayName}</p>
-          <p className="mt-1 text-xs text-muted-foreground">@{configuration.username}</p>
+          <p className="text-sm font-medium leading-none">{displayName ?? username}</p>
+          {roleLabel ? (
+            <p className="mt-1 text-xs text-muted-foreground">{roleLabel}</p>
+          ) : null}
         </div>
       </Button>
 
       {open ? (
         <div className="absolute right-0 top-12 z-[220] w-64 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl">
           <div className="border-b p-4">
-            <p className="text-sm font-semibold">{configuration.displayName}</p>
-            <p className="mt-1 text-xs text-muted-foreground">@{configuration.username}</p>
+            <p className="text-sm font-semibold">{displayName ?? username}</p>
+            {roleLabel ? (
+              <p className="mt-1 text-xs font-medium text-muted-foreground">{roleLabel}</p>
+            ) : null}
+            <p className="mt-1 text-xs text-muted-foreground">{email ?? `@${username}`}</p>
           </div>
 
           <div className="p-2">
@@ -81,7 +111,7 @@ export function UserMenu() {
           <div className="border-t p-2">
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={() => void handleSignOut()}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
             >
               <LogOut className="h-4 w-4" />

@@ -20,6 +20,26 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+
+  // Dev-only proxy: browser calls same-origin /api/* → NEXT_PUBLIC_API_BASE_URL/*
+  // Avoids CORS when the remote API does not allow http://localhost:3001.
+  async rewrites() {
+    if (process.env.NODE_ENV !== 'development') {
+      return [];
+    }
+
+    const target = (process.env.NEXT_PUBLIC_API_BASE_URL || '').trim().replace(/\/+$/, '');
+    if (!target.startsWith('http')) {
+      return [];
+    }
+
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${target}/:path*`,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
