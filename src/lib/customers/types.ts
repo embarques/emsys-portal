@@ -114,7 +114,8 @@ export type CustomerFilterState = {
   customerType: number | "all";
 };
 
-export type CustomerSearchOperator = "startsWith" | "contains" | "equals" | "endsWith";
+/** Matches GET /customers filter operators from the API spec. */
+export type CustomerSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 
 export type CustomerSearchField =
   | "id"
@@ -202,8 +203,8 @@ export const CUSTOMER_SEARCH_FIELDS: { value: CustomerSearchField; label: string
 export const CUSTOMER_SEARCH_OPERATORS: { value: CustomerSearchOperator; label: string }[] = [
   { value: "startsWith", label: "Starts with" },
   { value: "contains", label: "Contains" },
-  { value: "equals", label: "Equals" },
-  { value: "endsWith", label: "Ends with" },
+  { value: "eq", label: "Equals" },
+  { value: "neq", label: "Not equals" },
 ];
 
 export const CUSTOMER_ACTIVE_OPTIONS: { value: boolean; label: string }[] = [
