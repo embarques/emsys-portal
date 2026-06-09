@@ -23,7 +23,8 @@ type EmployeeFormProps = {
   isEditing?: boolean;
   updatedAt?: string;
   submitLabel: string;
-  onSubmit: (values: EmployeeFormValues) => void;
+  isSubmitting?: boolean;
+  onSubmit: (values: EmployeeFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
 
@@ -32,6 +33,7 @@ export function EmployeeForm({
   isEditing = false,
   updatedAt,
   submitLabel,
+  isSubmitting = false,
   onSubmit,
   onCancel,
 }: EmployeeFormProps) {
@@ -40,6 +42,11 @@ export function EmployeeForm({
   useEffect(() => {
     setValues(initialValues ?? createEmptyEmployeeForm());
   }, [initialValues]);
+
+  const departmentOptions = Array.from(
+    new Set([...EMPLOYEE_DEPARTMENTS, values.department].filter(Boolean)),
+  );
+  const roleOptions = Array.from(new Set([...EMPLOYEE_ROLES, values.role].filter(Boolean)));
 
   function updateField<K extends keyof EmployeeFormValues>(key: K, value: EmployeeFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -54,8 +61,15 @@ export function EmployeeForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="employeeId">Employee ID</Label>
-        <Input id="employeeId" value={values.employeeId} readOnly className="bg-muted/40 font-mono text-xs" />
-        {!isEditing ? <p className="text-xs text-muted-foreground">Auto-generated ID for new employees.</p> : null}
+        <Input
+          id="employeeId"
+          value={values.employeeId || "Assigned after save"}
+          readOnly
+          className="bg-muted/40 font-mono text-xs"
+        />
+        {!isEditing ? (
+          <p className="text-xs text-muted-foreground">The EMSYS API assigns the employee ID on create.</p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -123,7 +137,7 @@ export function EmployeeForm({
             onChange={(event) => updateField("department", event.target.value)}
             required
           >
-            {EMPLOYEE_DEPARTMENTS.map((department) => (
+            {departmentOptions.map((department) => (
               <option key={department} value={department}>
                 {department}
               </option>
@@ -142,7 +156,7 @@ export function EmployeeForm({
             onChange={(event) => updateField("role", event.target.value)}
             required
           >
-            {EMPLOYEE_ROLES.map((role) => (
+            {roleOptions.map((role) => (
               <option key={role} value={role}>
                 {role}
               </option>
@@ -256,10 +270,12 @@ export function EmployeeForm({
       />
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {submitLabel}
+        </Button>
       </div>
     </form>
   );

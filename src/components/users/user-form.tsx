@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import {
   USER_BRANCHES,
   USER_LANGUAGES,
-  USER_ROLES,
+  USER_ROLE_OPTIONS,
   USER_STATUSES,
   createEmptyUserForm,
   type UserFormValues,
@@ -23,7 +23,8 @@ type UserFormProps = {
   isEditing?: boolean;
   updatedAt?: string;
   submitLabel: string;
-  onSubmit: (values: UserFormValues) => void;
+  isSubmitting?: boolean;
+  onSubmit: (values: UserFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
 
@@ -32,6 +33,7 @@ export function UserForm({
   isEditing = false,
   updatedAt,
   submitLabel,
+  isSubmitting = false,
   onSubmit,
   onCancel,
 }: UserFormProps) {
@@ -40,6 +42,14 @@ export function UserForm({
   useEffect(() => {
     setValues(initialValues ?? createEmptyUserForm());
   }, [initialValues]);
+
+  const roleOptions = useMemo(() => {
+    const options = new Map(USER_ROLE_OPTIONS.map((option) => [option.id, option.label]));
+    if (values.roleId > 0 && !options.has(values.roleId)) {
+      options.set(values.roleId, `Role ${values.roleId}`);
+    }
+    return Array.from(options.entries()).map(([id, label]) => ({ id, label }));
+  }, [values.roleId]);
 
   function updateField<K extends keyof UserFormValues>(key: K, value: UserFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -54,8 +64,26 @@ export function UserForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="userId">User ID</Label>
-        <Input id="userId" value={values.userId} readOnly className="bg-muted/40 font-mono text-xs" />
-        {!isEditing ? <p className="text-xs text-muted-foreground">Auto-generated ID for new users.</p> : null}
+        <Input
+          id="userId"
+          value={values.userId || "Assigned after save"}
+          readOnly
+          className="bg-muted/40 font-mono text-xs"
+        />
+        {!isEditing ? (
+          <p className="text-xs text-muted-foreground">The EMSYS API assigns the user ID on create.</p>
+        ) : null}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="uid">Firebase UID</Label>
+        <Input
+          id="uid"
+          value={values.uid}
+          onChange={(event) => updateField("uid", event.target.value)}
+          placeholder="Firebase authentication UID"
+          className="font-mono text-xs"
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -67,7 +95,7 @@ export function UserForm({
             id="username"
             value={values.username}
             onChange={(event) => updateField("username", event.target.value)}
-            placeholder="jsmith"
+            placeholder="elk@elk.com"
             autoComplete="off"
             required
           />
@@ -93,15 +121,12 @@ export function UserForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name">
-          Name <span className="text-destructive">*</span>
-        </Label>
+        <Label htmlFor="name">Display name</Label>
         <Input
           id="name"
           value={values.name}
           onChange={(event) => updateField("name", event.target.value)}
-          placeholder="John Smith"
-          required
+          placeholder="Defaults to username when empty"
         />
       </div>
 
@@ -126,18 +151,18 @@ export function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="role">
+          <Label htmlFor="roleId">
             Role <span className="text-destructive">*</span>
           </Label>
           <select
-            id="role"
+            id="roleId"
             className={selectClassName}
-            value={values.role}
-            onChange={(event) => updateField("role", event.target.value as UserFormValues["role"])}
+            value={values.roleId}
+            onChange={(event) => updateField("roleId", Number(event.target.value))}
             required
           >
-            {USER_ROLES.map((option) => (
-              <option key={option.value} value={option.value}>
+            {roleOptions.map((option) => (
+              <option key={option.id} value={option.id}>
                 {option.label}
               </option>
             ))}
@@ -216,10 +241,12 @@ export function UserForm({
       />
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {submitLabel}
+        </Button>
       </div>
     </form>
   );
