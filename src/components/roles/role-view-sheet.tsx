@@ -1,16 +1,15 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
-
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  RecordViewSheet,
+  RecordViewSheetActions,
+  RecordViewSheetBody,
+  RecordViewSheetContent,
+  RecordViewSheetDetailRow,
+  RecordViewSheetHeader,
+  RecordViewSheetSection,
+} from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
 import { getPermissionLabel } from "@/lib/roles/permissions-catalog";
 import { truncateRoleId } from "@/lib/roles/display";
@@ -24,35 +23,25 @@ type RoleViewSheetProps = {
   onDelete: (role: Role) => void;
 };
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b py-3 last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="max-w-[60%] text-right text-sm font-medium">{value}</span>
-    </div>
-  );
-}
-
 export function RoleViewSheet({ role, open, onOpenChange, onEdit, onDelete }: RoleViewSheetProps) {
   if (!role) return null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full max-w-md overflow-y-auto sm:max-w-lg">
-        <SheetHeader className="pr-10">
-          <SheetTitle>{role.name}</SheetTitle>
-          <SheetDescription>{role.permissions.length} permissions assigned</SheetDescription>
-        </SheetHeader>
+    <RecordViewSheet open={open} onOpenChange={onOpenChange}>
+      <RecordViewSheetContent>
+        <RecordViewSheetHeader
+          title={role.name}
+          description={`${role.permissions.length} permissions assigned`}
+        />
 
-        <div className="mt-6 space-y-4 px-1">
-          <div className="rounded-xl border bg-muted/20 px-4">
-            <DetailRow label="Role ID" value={truncateRoleId(role.roleId)} />
-            <DetailRow label="Role name" value={role.name} />
-            <DetailRow label="Permission count" value={role.permissions.length} />
-          </div>
+        <RecordViewSheetBody>
+          <RecordViewSheetSection title="Role">
+            <RecordViewSheetDetailRow label="Role ID" value={truncateRoleId(role.roleId)} />
+            <RecordViewSheetDetailRow label="Role name" value={role.name} />
+            <RecordViewSheetDetailRow label="Permission count" value={role.permissions.length} />
+          </RecordViewSheetSection>
 
-          <div className="rounded-xl border bg-muted/20 p-4">
-            <p className="mb-3 text-sm font-medium">Permissions</p>
+          <RecordViewSheetSection title="Permissions" padding="relaxed">
             <div className="flex flex-wrap gap-2">
               {role.permissions.map((permission) => (
                 <Badge key={permission.id} variant="secondary" className="max-w-full whitespace-normal text-left">
@@ -62,26 +51,17 @@ export function RoleViewSheet({ role, open, onOpenChange, onEdit, onDelete }: Ro
                 </Badge>
               ))}
             </div>
-          </div>
+          </RecordViewSheetSection>
 
-          <div className="rounded-xl border bg-muted/20 px-4">
-            <DetailRow label="Date created" value={formatAuditDate(role.createdAt)} />
-            <DetailRow label="User created" value={role.createdBy} />
-            <DetailRow label="Date modified" value={formatAuditDate(role.updatedAt)} />
-          </div>
+          <RecordViewSheetSection title="Audit">
+            <RecordViewSheetDetailRow label="Date created" value={formatAuditDate(role.createdAt)} />
+            <RecordViewSheetDetailRow label="User created" value={role.createdBy} />
+            <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(role.updatedAt)} />
+          </RecordViewSheetSection>
+        </RecordViewSheetBody>
 
-          <div className="flex gap-2">
-            <Button className="flex-1" onClick={() => onEdit(role)}>
-              <Pencil className="h-4 w-4" />
-              Edit role
-            </Button>
-            <Button variant="destructive" onClick={() => onDelete(role)}>
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+        <RecordViewSheetActions editLabel="Edit role" onEdit={() => onEdit(role)} onDelete={() => onDelete(role)} />
+      </RecordViewSheetContent>
+    </RecordViewSheet>
   );
 }

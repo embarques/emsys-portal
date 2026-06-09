@@ -105,11 +105,13 @@ export type CustomerFormValues = {
   updatedAt: string;
 };
 
+export type CustomerBranchFilter = number | "all";
+
 export type CustomerFilterState = {
   query: string;
   searchField: CustomerSearchField;
   searchOperator: CustomerSearchOperator;
-  branch: CustomerPortalBranch | "all";
+  branch: CustomerBranchFilter;
   active: boolean | "all";
   customerType: number | "all";
 };
@@ -147,7 +149,7 @@ export type CustomerListParams = {
   sortField?: string;
   sortDirection?: "asc" | "desc";
   search?: CustomerSearchFilter;
-  branch?: CustomerPortalBranch | "all";
+  branch?: CustomerBranchFilter;
   active?: boolean | "all";
   customerType?: number | "all";
 };

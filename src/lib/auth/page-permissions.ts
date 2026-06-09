@@ -25,6 +25,7 @@ export const PAGE_PERMISSIONS: Record<string, Permission> = {
   "/employee-groups": PERMISSIONS.employeesView,
   "/security": PERMISSIONS.usersView,
   "/settings": PERMISSIONS.accountSettingsView,
+  "/branches": PERMISSIONS.branchesView,
 };
 
 export function permissionForPath(pathname: string): Permission | null {

@@ -25,6 +25,7 @@ export const PERMISSIONS = {
   rolesView: { name: "canViewUser", resourceType: "user" },
   employeesView: { name: "canViewEmployee", resourceType: "employee" },
   accountSettingsView: { name: "canViewSettings", resourceType: "settings" },
+  branchesView: { name: "canViewBranch", resourceType: "branch" },
 } satisfies Record<string, Permission>;
 
 export function permissionKey(permission: Permission): string {
@@ -44,6 +45,7 @@ const PERMISSION_GRANT_ALIASES: Record<string, readonly string[]> = {
   "invoice:canviewinvoice": ["invoiceitem:canviewinvoiceitem"],
   "delivery:canviewdelivery": ["inventory:canviewinventory"],
   "user:canviewuser": ["role:canviewrole"],
+  "branch:canviewbranch": ["settings:canviewsettings"],
 };
 
 /** Permission names that satisfy a required view when resource types differ in legacy data. */
@@ -56,6 +58,7 @@ const VIEW_NAME_ALIASES: Record<string, readonly string[]> = {
   canviewinvoice: ["canviewinvoiceitem"],
   canviewdelivery: ["canviewinventory"],
   canviewuser: ["canviewrole"],
+  canviewbranch: ["canviewsettings", "canviewbranch"],
 };
 
 function grantedByViewName(requiredName: string, grantedKeys: ReadonlySet<string>): boolean {

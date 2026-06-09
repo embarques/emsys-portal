@@ -1,16 +1,15 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
-
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  RecordViewSheet,
+  RecordViewSheetActions,
+  RecordViewSheetBody,
+  RecordViewSheetContent,
+  RecordViewSheetDetailRow,
+  RecordViewSheetHeader,
+  RecordViewSheetSection,
+} from "@/components/app-shell/record-view-sheet";
 import {
   formatPlaceLabel,
   formatRouteDate,
@@ -30,72 +29,56 @@ type RouteViewSheetProps = {
   onDelete: (route: RouteRecord) => void;
 };
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b py-3 last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="max-w-[60%] text-right text-sm font-medium">{value}</span>
-    </div>
-  );
-}
-
 export function RouteViewSheet({ route, open, onOpenChange, onEdit, onDelete }: RouteViewSheetProps) {
   if (!route) return null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full max-w-md overflow-y-auto sm:max-w-lg">
-        <SheetHeader className="pr-10">
-          <SheetTitle>{route.name}</SheetTitle>
-          <SheetDescription className="flex flex-wrap items-center gap-2 font-mono text-xs">
-            <span>{route.routeId}</span>
+    <RecordViewSheet open={open} onOpenChange={onOpenChange}>
+      <RecordViewSheetContent>
+        <RecordViewSheetHeader
+          title={route.name}
+          description={<span className="font-mono text-xs">{route.routeId}</span>}
+          meta={
             <Badge className={getRouteBranchBadgeClass(route.branch)}>{getRouteBranchLabel(route.branch)}</Badge>
-          </SheetDescription>
-        </SheetHeader>
+          }
+        />
 
-        <div className="mt-6 px-1">
-          <div className="rounded-xl border bg-muted/20 px-4">
-            <DetailRow label="Route ID" value={route.routeId} />
-            <DetailRow label="Branch" value={getRouteBranchLabel(route.branch)} />
-            <DetailRow label="Date created" value={formatRouteDate(route.createdAt)} />
-            <DetailRow label="User created" value={route.createdBy} />
-            <DetailRow label="Date modified" value={formatAuditDate(route.updatedAt)} />
-            <DetailRow label="Places" value={route.places.length} />
-          </div>
+        <RecordViewSheetBody>
+          <RecordViewSheetSection title="Route">
+            <RecordViewSheetDetailRow label="Route ID" value={route.routeId} />
+            <RecordViewSheetDetailRow label="Branch" value={getRouteBranchLabel(route.branch)} />
+            <RecordViewSheetDetailRow label="Date created" value={formatRouteDate(route.createdAt)} />
+            <RecordViewSheetDetailRow label="User created" value={route.createdBy} />
+            <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(route.updatedAt)} />
+            <RecordViewSheetDetailRow label="Places" value={route.places.length} />
+          </RecordViewSheetSection>
 
-          <div className="mt-4 rounded-xl border bg-muted/20 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Route content ({route.places.length})
-            </p>
+          <RecordViewSheetSection title={`Route content (${route.places.length})`} padding="relaxed">
             {route.places.length > 0 ? (
-              <ul className="mt-3 space-y-2">
-                {route.places.map((place) => (
-                  <li key={place.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="font-medium">{place.value}</span>
-                    <Badge className={getPlaceKindBadgeClass(place.kind)}>{getPlaceKindLabel(place.kind)}</Badge>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <ul className="space-y-3">
+                  {route.places.map((place) => (
+                    <li
+                      key={place.id}
+                      className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-background/60 px-4 py-3 text-sm"
+                    >
+                      <span className="font-medium">{place.value}</span>
+                      <Badge className={getPlaceKindBadgeClass(place.kind)}>{getPlaceKindLabel(place.kind)}</Badge>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                  {route.places.map((place) => formatPlaceLabel(place)).join(" · ")}
+                </p>
+              </>
             ) : (
-              <p className="mt-2 text-sm text-muted-foreground">No places on this route.</p>
+              <p className="text-sm text-muted-foreground">No places on this route.</p>
             )}
-            <p className="mt-3 text-xs text-muted-foreground">
-              {route.places.map((place) => formatPlaceLabel(place)).join(" · ")}
-            </p>
-          </div>
+          </RecordViewSheetSection>
+        </RecordViewSheetBody>
 
-          <div className="mt-6 flex gap-2">
-            <Button className="flex-1" onClick={() => onEdit(route)}>
-              <Pencil className="h-4 w-4" />
-              Edit route
-            </Button>
-            <Button variant="destructive" onClick={() => onDelete(route)}>
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+        <RecordViewSheetActions editLabel="Edit route" onEdit={() => onEdit(route)} onDelete={() => onDelete(route)} />
+      </RecordViewSheetContent>
+    </RecordViewSheet>
   );
 }

@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Barcode,
+  Building2,
   Boxes,
   ClipboardList,
   Container,
@@ -93,6 +94,7 @@ export const navigation: NavigationGroup[] = [
         permission: PERMISSIONS.employeesView,
       },
       { label: "Security", href: "/security", icon: ShieldCheck, permission: PERMISSIONS.usersView },
+      { label: "Branches", href: "/branches", icon: Building2, permission: PERMISSIONS.branchesView },
       {
         label: "Configuration",
         href: "/settings",

@@ -53,8 +53,9 @@ import {
   useDeleteCustomers,
   useUpdateCustomer,
 } from "@/lib/customers/hooks/use-customers";
+import { formatBranchFilterLabel } from "@/lib/branches/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
-  CUSTOMER_PORTAL_BRANCHES,
   CUSTOMER_SEARCH_FIELDS,
   CUSTOMER_SEARCH_OPERATORS,
   CUSTOMER_TYPE_OPTIONS,
@@ -115,6 +116,7 @@ export function CustomersWorkspace() {
   ]);
 
   const { data, isLoading, isError, error, isFetching } = useCustomers(listParams);
+  const { data: branchesData, isLoading: branchesLoading } = useBranchPicker();
   const stats = useCustomerStats();
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
@@ -215,10 +217,17 @@ export function CustomersWorkspace() {
     },
   ];
 
-  const branchFilters: { value: CustomerFilterState["branch"]; label: string }[] = [
-    { value: "all", label: "All branches" },
-    ...CUSTOMER_PORTAL_BRANCHES.map((entry) => ({ value: entry.portal, label: entry.label })),
-  ];
+  const branchFilters = useMemo(() => {
+    const apiBranches = branchesData?.items ?? [];
+
+    return [
+      { value: "all" as const, label: "All branches" },
+      ...apiBranches.map((branch) => ({
+        value: branch.id,
+        label: formatBranchFilterLabel(branch),
+      })),
+    ];
+  }, [branchesData?.items]);
 
   const activeFilters: { value: CustomerFilterState["active"]; label: string }[] = [
     { value: "all", label: "All" },
@@ -471,12 +480,16 @@ export function CustomersWorkspace() {
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
+            {branchesLoading && branchFilters.length <= 1 ? (
+              <span className="text-sm text-muted-foreground">Loading branches…</span>
+            ) : null}
             {branchFilters.map((option) => (
               <Button
-                key={option.value}
+                key={String(option.value)}
                 type="button"
                 size="sm"
                 variant={filters.branch === option.value ? "default" : "outline"}
+                disabled={branchesLoading && option.value !== "all"}
                 onClick={() => {
                   setFilters((current) => ({ ...current, branch: option.value }));
                   setPage(1);

@@ -10,8 +10,6 @@ import {
   type CustomerFormValues,
   DEFAULT_CUSTOMER_LIST_PARAMS,
   type CustomerListParams,
-  type CustomerPortalBranch,
-  portalBranchToId,
 } from "@/lib/customers/types";
 
 type ApiAddress = {
@@ -243,10 +241,10 @@ function buildCustomersQuery(params: CustomerListParams): string {
     searchParams.set("field", "active");
     searchParams.set("operator", "eq");
     searchParams.set("value", String(params.active));
-  } else if (params.branch && params.branch !== "all") {
+  } else if (params.branch !== undefined && params.branch !== "all") {
     searchParams.set("field", "branch.id");
     searchParams.set("operator", "eq");
-    searchParams.set("value", String(portalBranchToId(params.branch as CustomerPortalBranch)));
+    searchParams.set("value", String(params.branch));
   } else if (params.customerType !== undefined && params.customerType !== "all") {
     searchParams.set("field", "customerType");
     searchParams.set("operator", "eq");
@@ -257,8 +255,8 @@ function buildCustomersQuery(params: CustomerListParams): string {
     searchParams.set("active", String(params.active));
   }
 
-  if (params.branch && params.branch !== "all") {
-    searchParams.set("branchId", String(portalBranchToId(params.branch as CustomerPortalBranch)));
+  if (params.branch !== undefined && params.branch !== "all") {
+    searchParams.set("branchId", String(params.branch));
   }
 
   if (params.customerType !== undefined && params.customerType !== "all") {

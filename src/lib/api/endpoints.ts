@@ -4,4 +4,5 @@ export const API_ENDPOINTS = {
   USERS: "/users",
   EMPLOYEES: "/employees",
   CUSTOMERS: "/customers",
+  BRANCHES: "/branches",
 } as const;

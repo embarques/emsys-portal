@@ -1,3 +1,4 @@
+import type { BranchListParams, BranchSearchFilter } from "@/lib/branches/types";
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
@@ -18,6 +19,15 @@ export const queryKeys = {
     stats: (scope: "all" | "active" | "inactive") =>
       [...queryKeys.employees.all, "stats", scope] as const,
     detail: (employeeId: string) => [...queryKeys.employees.all, "detail", employeeId] as const,
+  },
+  branches: {
+    all: ["branches"] as const,
+    lists: () => [...queryKeys.branches.all, "list"] as const,
+    list: (params: BranchListParams) => [...queryKeys.branches.lists(), params] as const,
+    search: (search: BranchSearchFilter | undefined, limit: number) =>
+      [...queryKeys.branches.all, "search", search, limit] as const,
+    stats: (scope: "all") => [...queryKeys.branches.all, "stats", scope] as const,
+    detail: (branchId: number) => [...queryKeys.branches.all, "detail", branchId] as const,
   },
   customers: {
     all: ["customers"] as const,
