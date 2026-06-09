@@ -19,11 +19,11 @@ import { getContainerLabel } from "@/lib/invoices/display";
 import {
   formatOrderCommentSummary,
   formatOrderDate,
+  formatOrderId,
   getOrderBranchLabel,
   getOrderCompletedLabel,
   getRouteAssignmentLabel,
   getRouteName,
-  truncateOrderId,
 } from "@/lib/orders/display";
 import { cloneRoutes } from "@/lib/routes/mock-data";
 import type { Order } from "@/lib/orders/types";
@@ -88,7 +88,7 @@ export function OrderViewSheet({ order, orders, open, onOpenChange, onEdit, onDe
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={`Order ${truncateOrderId(order.orderId)}`}
+          title={`Order ${formatOrderId(order)}`}
           description={formatOrderDate(order.date)}
           meta={
             <>
@@ -109,7 +109,10 @@ export function OrderViewSheet({ order, orders, open, onOpenChange, onEdit, onDe
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Order">
-            <RecordViewSheetDetailRow label="Order ID" value={order.orderId} />
+            <RecordViewSheetDetailRow label="Pickup #" value={formatOrderId(order)} />
+            <RecordViewSheetDetailRow label="Pickup ID" value={order.orderId} />
+            <RecordViewSheetDetailRow label="Purpose" value={order.purpose || "—"} />
+            <RecordViewSheetDetailRow label="Sector" value={order.sectorName || "—"} />
             <RecordViewSheetDetailRow label="Date" value={formatOrderDate(order.date)} />
             <RecordViewSheetDetailRow label="Container" value={getContainerLabel(order.containerId)} />
             <RecordViewSheetDetailRow label="Pending" value={getOrderBranchLabel(order.pending)} />

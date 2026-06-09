@@ -26,6 +26,11 @@ export function truncateOrderId(orderId: string): string {
   return orderId.length > 12 ? `${orderId.slice(0, 8)}…` : orderId;
 }
 
+export function formatOrderId(order: Pick<Order, "orderId" | "oldID">): string {
+  if (order.oldID > 0) return `#${order.oldID}`;
+  return truncateOrderId(order.orderId);
+}
+
 export function formatOrderPartySummary(party: OrderParty): string {
   const address = getOrderPartyAddress(party);
   const addressLine = address ? formatAddressLine(address) : "—";
@@ -117,6 +122,7 @@ export function computeOrderKpis(orders: Order[]) {
     total: orders.length,
     usa: orders.filter((order) => order.branch === "usa").length,
     dr: orders.filter((order) => order.branch === "dr").length,
+    pending: orders.filter((order) => !order.completed).length,
   };
 }
 

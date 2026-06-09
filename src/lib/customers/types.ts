@@ -289,6 +289,67 @@ export function createEmptyCustomerForm(): CustomerFormValues {
   };
 }
 
+const CUSTOMER_NUMERIC_SEARCH_FIELDS = new Set<CustomerSearchField>([
+  "id",
+  "oldID",
+  "customerType",
+  "branch.id",
+]);
+
+const CUSTOMER_NESTED_STRING_SEARCH_FIELDS = new Set<CustomerSearchField>([
+  "address.address1",
+  "address.address2",
+  "address.apartment",
+  "address.city",
+  "address.state",
+  "address.country",
+  "address.zipcode",
+  "branch.code",
+]);
+
+/** Operators the EMSYS customers list API accepts per field type. */
+export function getCustomerSearchOperatorsForField(field: CustomerSearchField): CustomerSearchOperator[] {
+  if (field === "active" || CUSTOMER_NUMERIC_SEARCH_FIELDS.has(field)) {
+    return ["eq", "neq"];
+  }
+
+  if (CUSTOMER_NESTED_STRING_SEARCH_FIELDS.has(field)) {
+    return ["contains", "eq", "neq"];
+  }
+
+  return ["startsWith", "contains", "eq", "neq"];
+}
+
+export function getDefaultCustomerSearchOperator(field: CustomerSearchField): CustomerSearchOperator {
+  return getCustomerSearchOperatorsForField(field)[0];
+}
+
+/** Map portal search fields to GET /customers filter field names. */
+export function toApiCustomerSearchField(field: CustomerSearchField): string {
+  if (field.startsWith("address.")) {
+    return field.slice("address.".length);
+  }
+
+  if (field === "branch.id") {
+    return "branch._id";
+  }
+
+  return field;
+}
+
+export function normalizeCustomerSearchFilter(search: CustomerSearchFilter): CustomerSearchFilter {
+  const allowedOperators = getCustomerSearchOperatorsForField(search.field);
+  const operator = allowedOperators.includes(search.operator)
+    ? search.operator
+    : getDefaultCustomerSearchOperator(search.field);
+
+  return {
+    field: search.field,
+    operator,
+    value: search.value,
+  };
+}
+
 export function createCustomerSearchFilter(
   value: string,
   field: CustomerSearchField = "name",
@@ -304,7 +365,7 @@ export function createCustomerSearchFilter(
     if (["inactive", "false", "no"].includes(lower)) normalizedValue = "false";
   }
 
-  return { field, operator, value: normalizedValue };
+  return normalizeCustomerSearchFilter({ field, operator, value: normalizedValue });
 }
 
 export function getCustomerSearchSortField(field: CustomerSearchField): string {

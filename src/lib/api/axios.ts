@@ -34,9 +34,12 @@ export type ApiError = {
 export function normalizeApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+    const apiMessage = axiosError.response?.data?.message;
+    const apiError = axiosError.response?.data?.error;
     const message =
-      axiosError.response?.data?.message ||
-      axiosError.response?.data?.error ||
+      (apiMessage && apiMessage !== "Invalid request" ? apiMessage : null) ||
+      apiError ||
+      apiMessage ||
       axiosError.message ||
       "Request failed";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -34,51 +34,67 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
+import { formatBranchFilterLabel } from "@/lib/branches/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
-  computeOrderKpis,
   formatOrderCommentsSummary,
   formatOrderDate,
+  formatOrderId,
   formatOrderPartySummary,
   getOrderBranchLabel,
+  getOrderCompletedLabel,
   getRouteAssignmentLabel,
   getRouteName,
-  orderMatchesQuery,
-  truncateOrderId,
 } from "@/lib/orders/display";
-import { cloneOrders } from "@/lib/orders/mock-data";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
-  ORDER_BRANCHES,
+  useCreateOrder,
+  useDeleteOrders,
+  useOrderStats,
+  useOrders,
+  useUpdateOrder,
+  useUpdateOrderRouteAssignment,
+} from "@/lib/orders/hooks/use-orders";
+import {
+  DEFAULT_ORDER_LIST_PARAMS,
+  ORDER_SEARCH_FIELDS,
   createEmptyOrderForm,
-  formValuesToOrder,
+  createOrderSearchFilter,
+  getDefaultOrderSearchOperator,
+  getOrderSearchOperatorsForField,
   orderToFormValues,
   type Order,
   type OrderFilterState,
-  type OrderFormSubmitResult,
   type OrderFormValues,
 } from "@/lib/orders/types";
-import { cloneRoutes } from "@/lib/routes/mock-data";
 import { formatRouteAssignmentCopyLabel } from "@/lib/route-assignments/display";
 import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
 import type { DataTableColumn } from "@/lib/table/types";
+import { cloneRoutes } from "@/lib/routes/mock-data";
 import { getBranchBadgeClass } from "@/lib/trucks/display";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
 
 const selectClassName =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 const defaultFilters: OrderFilterState = {
   query: "",
+  searchField: "sender.name",
+  searchOperator: "contains",
   branch: "all",
+  completed: "all",
 };
 
 export function OrdersWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { loading: authLoading, companyId } = useAuth();
   const routes = useMemo(() => cloneRoutes(), []);
   const routeAssignments = useMemo(() => cloneRouteAssignments(), []);
-  const [orders, setOrders] = useState<Order[]>(() => cloneOrders());
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
+  const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
@@ -88,29 +104,99 @@ export function OrdersWorkspace() {
   const [formError, setFormError] = useState<string | null>(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignRouteAssignmentId, setAssignRouteAssignmentId] = useState(
-    () => routeAssignments[0]?.routeAssignmentId ?? ""
+    () => routeAssignments[0]?.routeAssignmentId ?? "",
   );
 
-  const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
-      if (!orderMatchesQuery(order, filters.query, routes)) return false;
-      if (filters.branch !== "all" && order.branch !== filters.branch) return false;
-      return true;
-    });
-  }, [filters, orders, routes]);
+  const listParams = useMemo(() => {
+    const search = createOrderSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
 
-  const kpis = useMemo(() => computeOrderKpis(orders), [orders]);
-  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
+    return {
+      ...DEFAULT_ORDER_LIST_PARAMS,
+      page,
+      limit: PAGE_SIZE,
+      search,
+      branch: filters.branch,
+      completed: filters.completed,
+    };
+  }, [
+    deferredQuery,
+    filters.branch,
+    filters.completed,
+    filters.searchField,
+    filters.searchOperator,
+    page,
+  ]);
+
+  const { data, isLoading, isError, error, isFetching } = useOrders(listParams);
+  const { data: branchesData, isLoading: branchesLoading } = useBranchPicker();
+
+  const branchStatsIds = useMemo(() => {
+    const items = branchesData?.items ?? [];
+    const nyBranch = items.find((branch) => branch.code.trim().toUpperCase() === "NY");
+    const drBranch = items.find((branch) => ["RD", "DR"].includes(branch.code.trim().toUpperCase()));
+
+    return {
+      usaBranchId: nyBranch?.id ?? items[0]?.id,
+      drBranchId: drBranch?.id ?? items[1]?.id,
+    };
+  }, [branchesData?.items]);
+
+  const stats = useOrderStats(branchStatsIds);
+  const createOrderMutation = useCreateOrder();
+  const updateOrderMutation = useUpdateOrder();
+  const deleteOrdersMutation = useDeleteOrders();
+  const updateRouteAssignmentMutation = useUpdateOrderRouteAssignment();
+
+  const orders = data?.items ?? [];
+  const totalOrders = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pageOrders = filteredOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const allPageSelected = pageOrders.length > 0 && pageOrders.every((order) => selectedIds.includes(order.orderId));
+  const allPageSelected =
+    orders.length > 0 && orders.every((order) => selectedIds.includes(order.orderId));
+  const isSaving =
+    createOrderMutation.isPending ||
+    updateOrderMutation.isPending ||
+    deleteOrdersMutation.isPending ||
+    updateRouteAssignmentMutation.isPending;
+  const listErrorMessage = isError ? normalizeApiError(error).message : null;
+  const missingCompanyContext = !authLoading && !companyId;
+
+  const searchOperatorOptions = useMemo(
+    () =>
+      getOrderSearchOperatorsForField(filters.searchField).map((operator) => ({
+        value: operator,
+        label:
+          operator === "startsWith"
+            ? "Starts with"
+            : operator === "contains"
+              ? "Contains"
+              : operator === "eq"
+                ? "Equals"
+                : "Not equals",
+      })),
+    [filters.searchField],
+  );
+
+  const branchFilters = useMemo(
+    () => [
+      { value: "all" as const, label: "All" },
+      ...(branchesData?.items ?? []).map((branch) => ({
+        value: branch.id,
+        label: formatBranchFilterLabel(branch),
+      })),
+    ],
+    [branchesData?.items],
+  );
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
-      setSelectedIds((current) => Array.from(new Set([...current, ...pageOrders.map((order) => order.orderId)])));
+      setSelectedIds((current) =>
+        Array.from(new Set([...current, ...orders.map((order) => order.orderId)])),
+      );
       return;
     }
-    setSelectedIds((current) => current.filter((id) => !pageOrders.some((order) => order.orderId === id)));
+
+    setSelectedIds((current) => current.filter((id) => !orders.some((order) => order.orderId === id)));
   }
 
   function toggleSelect(orderId: string, checked: boolean) {
@@ -130,45 +216,49 @@ export function OrdersWorkspace() {
     setFormError(null);
   }
 
-  function saveOrder(values: OrderFormValues): OrderFormSubmitResult {
+  async function saveOrder(values: OrderFormValues) {
+    setFormError(null);
+
     try {
       if (formMode === "edit" && editingOrder) {
-        const nextOrder = formValuesToOrder(
-          { ...values, createdBy: editingOrder.createdBy, completed: values.completed },
-          editingOrder.createdAt,
-          editingOrder.createdBy,
-          new Date().toISOString()
-        );
-        setOrders((current) => current.map((order) => (order.orderId === editingOrder.orderId ? nextOrder : order)));
-        notifyUpdated("Order", truncateOrderId(nextOrder.orderId));
-        setFormMode(null);
-        setEditingOrder(null);
-        setFormError(null);
-        setPage(1);
-        return { error: null };
+        const nextOrder = await updateOrderMutation.mutateAsync({
+          orderId: editingOrder.orderId,
+          values,
+        });
+        notifyUpdated("Order", formatOrderId(nextOrder));
+      } else {
+        const nextOrder = await createOrderMutation.mutateAsync(values);
+        notifyAdded("Order", formatOrderId(nextOrder));
       }
 
-      const nextOrder = formValuesToOrder(values);
-      setOrders((current) => [nextOrder, ...current]);
-      notifyAdded("Order", truncateOrderId(nextOrder.orderId));
-      setFormError(null);
+      setFormMode(null);
+      setEditingOrder(null);
       setPage(1);
       return { error: null };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to save order.";
+    } catch (mutationError) {
+      const message = normalizeApiError(mutationError).message;
       setFormError(message);
       return { error: message };
     }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
-    const ids = Array.isArray(deleteTarget) ? deleteTarget.map((order) => order.orderId) : [deleteTarget.orderId];
-    setOrders((current) => current.filter((order) => !ids.includes(order.orderId)));
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewOrder(null);
-    notifyDeleted("Order", ids.length);
+
+    const ids = Array.isArray(deleteTarget)
+      ? deleteTarget.map((order) => order.orderId)
+      : [deleteTarget.orderId];
+
+    try {
+      await deleteOrdersMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
+      setViewOrder(null);
+      notifyDeleted("Order", ids.length);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
+      setDeleteTarget(null);
+    }
   }
 
   function openAssignDialog() {
@@ -177,48 +267,63 @@ export function OrdersWorkspace() {
     setAssignDialogOpen(true);
   }
 
-  function applyRouteAssignment() {
+  async function applyRouteAssignment() {
     if (!assignRouteAssignmentId || selectedIds.length === 0) return;
 
-    const now = new Date().toISOString();
     const assignmentLabel = getRouteAssignmentLabel(assignRouteAssignmentId);
 
-    setOrders((current) =>
-      current.map((order) =>
-        selectedIds.includes(order.orderId)
-          ? { ...order, routeAssignmentId: assignRouteAssignmentId, updatedAt: now }
-          : order
-      )
-    );
+    try {
+      await Promise.all(
+        selectedIds.map((orderId) =>
+          updateRouteAssignmentMutation.mutateAsync({
+            orderId,
+            routeAssignmentId: assignRouteAssignmentId,
+          }),
+        ),
+      );
 
-    setViewOrder((current) =>
-      current && selectedIds.includes(current.orderId)
-        ? { ...current, routeAssignmentId: assignRouteAssignmentId, updatedAt: now }
-        : current
-    );
-
-    notifyUpdated("Route assignment", `${selectedIds.length} order(s) → ${assignmentLabel}`);
-    setAssignDialogOpen(false);
-    setSelectedIds([]);
+      notifyUpdated("Route assignment", `${selectedIds.length} order(s) → ${assignmentLabel}`);
+      setAssignDialogOpen(false);
+      setSelectedIds([]);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
+      setAssignDialogOpen(false);
+    }
   }
 
-  const stats = [
-    { label: "Total orders", value: kpis.total.toString(), description: "Orders on record", icon: Package },
-    { label: "USA", value: kpis.usa.toString(), description: "United States branch", icon: MapPin },
-    { label: "DR", value: kpis.dr.toString(), description: "Dominican Republic branch", icon: ClipboardList },
+  const statCards = [
+    {
+      label: "Total orders",
+      value: stats.total.toString(),
+      description: "Pickups from GET /pickups",
+      icon: Package,
+    },
+    {
+      label: "USA",
+      value: stats.usa.toString(),
+      description: "Branch NY",
+      icon: MapPin,
+    },
+    {
+      label: "DR",
+      value: stats.dr.toString(),
+      description: "Branch DR",
+      icon: ClipboardList,
+    },
   ];
 
-  const branchFilters: { value: OrderFilterState["branch"]; label: string }[] = [
-    { value: "all", label: "All" },
-    ...ORDER_BRANCHES,
+  const completedFilters: { value: OrderFilterState["completed"]; label: string }[] = [
+    { value: "all", label: "All statuses" },
+    { value: false, label: "Pending" },
+    { value: true, label: "Completed" },
   ];
 
   const tableColumns: DataTableColumn<Order>[] = [
     {
       id: "orderId",
-      label: "Order ID",
+      label: "Pickup #",
       cellClassName: "font-mono text-xs",
-      renderCell: (order) => truncateOrderId(order.orderId),
+      renderCell: (order) => formatOrderId(order),
     },
     {
       id: "date",
@@ -233,27 +338,51 @@ export function OrdersWorkspace() {
       ),
     },
     {
+      id: "status",
+      label: "Status",
+      renderCell: (order) => (
+        <Badge
+          variant="outline"
+          className={
+            order.completed
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+          }
+        >
+          {getOrderCompletedLabel(order.completed)}
+        </Badge>
+      ),
+    },
+    {
       id: "sender",
       label: "Sender",
       renderCell: (order) => formatOrderPartySummary(order.sender),
     },
     {
+      id: "purpose",
+      label: "Purpose",
+      renderCell: (order) => order.purpose || "—",
+    },
+    {
+      id: "sector",
+      label: "Sector",
+      renderCell: (order) => order.sectorName || "—",
+    },
+    {
       id: "receivers",
       label: "Receivers",
       renderCell: (order) =>
-        order.receivers.length > 0
-          ? order.receivers.map((receiver) => receiver.name).join(", ")
-          : "—",
+        order.receivers.length > 0 ? order.receivers.map((receiver) => receiver.name).join(", ") : "—",
     },
     {
       id: "route",
       label: "Route",
-      renderCell: (order) => getRouteName(order.routeId, routes),
+      renderCell: (order) => (order.routeId ? getRouteName(order.routeId, routes) : "—"),
     },
     {
       id: "assignment",
       label: "Assignment",
-      renderCell: (order) => getRouteAssignmentLabel(order.routeAssignmentId),
+      renderCell: (order) => (order.routeAssignmentId ? getRouteAssignmentLabel(order.routeAssignmentId) : "—"),
     },
     {
       id: "comments",
@@ -290,6 +419,7 @@ export function OrdersWorkspace() {
             size="sm"
             aria-label={`Edit order ${order.orderId}`}
             onClick={() => openEditForm(order)}
+            disabled={isSaving}
           >
             <Pencil className="h-4 w-4" />
             Edit
@@ -304,6 +434,7 @@ export function OrdersWorkspace() {
               setViewOrder(null);
               setDeleteTarget(order);
             }}
+            disabled={isSaving}
           >
             <Trash2 className="h-4 w-4" />
             Delete
@@ -319,9 +450,9 @@ export function OrdersWorkspace() {
     <div>
       <PageHeader
         title="Orders"
-        description="Manage orders with sender/receiver parties, route details, and purpose-driven comments."
+        description="Pickup orders from GET /pickups with sender, purpose, comments, branch, and completion status."
         actions={
-          <Button onClick={openAddForm}>
+          <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
             Add order
           </Button>
@@ -329,7 +460,7 @@ export function OrdersWorkspace() {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.label}>
@@ -338,7 +469,7 @@ export function OrdersWorkspace() {
                 <Icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="text-2xl font-bold">{stats.isLoading ? "…" : stat.value}</div>
                 <CardDescription className="mt-1">{stat.description}</CardDescription>
               </CardContent>
             </Card>
@@ -351,9 +482,56 @@ export function OrdersWorkspace() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <CardTitle>Order directory</CardTitle>
-              <CardDescription>Search by order ID, sender, receiver, route, or comments.</CardDescription>
+              <CardDescription>
+                Server-backed list from GET /pickups. Use POST /pickups/search for nested sender filters.
+              </CardDescription>
             </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
+              <select
+                aria-label="Search field"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchField}
+                onChange={(event) => {
+                  const searchField = event.target.value as OrderFilterState["searchField"];
+                  setFilters((current) => {
+                    const allowedOperators = getOrderSearchOperatorsForField(searchField);
+                    const searchOperator = allowedOperators.includes(current.searchOperator)
+                      ? current.searchOperator
+                      : getDefaultOrderSearchOperator(searchField);
+
+                    return {
+                      ...current,
+                      searchField,
+                      searchOperator,
+                    };
+                  });
+                  setPage(1);
+                }}
+              >
+                {ORDER_SEARCH_FIELDS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Search operator"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchOperator}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    searchOperator: event.target.value as OrderFilterState["searchOperator"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                {searchOperatorOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <div className="relative min-w-[240px] flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -372,21 +550,43 @@ export function OrdersWorkspace() {
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
-            {branchFilters.map((option) => (
+            {branchesLoading ? (
+              <span className="text-sm text-muted-foreground">Loading branches…</span>
+            ) : (
+              branchFilters.map((option) => (
+                <Button
+                  key={String(option.value)}
+                  type="button"
+                  size="sm"
+                  variant={filters.branch === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, branch: option.value }));
+                    setPage(1);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</span>
+            {completedFilters.map((option) => (
               <Button
-                key={option.value}
+                key={String(option.value)}
                 type="button"
                 size="sm"
-                variant={filters.branch === option.value ? "default" : "outline"}
+                variant={filters.completed === option.value ? "default" : "outline"}
                 onClick={() => {
-                  setFilters((current) => ({ ...current, branch: option.value }));
+                  setFilters((current) => ({ ...current, completed: option.value }));
                   setPage(1);
                 }}
               >
                 {option.label}
               </Button>
             ))}
-            {filters.query || filters.branch !== "all" ? (
+            {filters.query || filters.branch !== "all" || filters.completed !== "all" ? (
               <Button
                 type="button"
                 size="sm"
@@ -402,11 +602,23 @@ export function OrdersWorkspace() {
           </div>
         </CardHeader>
 
+        {missingCompanyContext ? (
+          <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">
+            Company context is missing for this account. EMSYS API requests require the{" "}
+            <code className="text-xs">x-company-id</code> header. Add <code className="text-xs">companyId</code> to
+            your Firebase user profile or JWT custom claim, then sign in again.
+          </div>
+        ) : null}
+
+        {listErrorMessage ? (
+          <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
+        ) : null}
+
         {selectedIds.length > 0 ? (
           <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium">{selectedIds.length} selected</p>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={openAssignDialog}>
+              <Button variant="outline" size="sm" onClick={openAssignDialog} disabled={isSaving}>
                 <Truck className="h-4 w-4" />
                 Assign to route ({selectedIds.length})
               </Button>
@@ -417,6 +629,7 @@ export function OrdersWorkspace() {
                 variant="destructive"
                 size="sm"
                 onClick={() => setDeleteTarget(orders.filter((order) => selectedIds.includes(order.orderId)))}
+                disabled={isSaving}
               >
                 <Trash2 className="h-4 w-4" />
                 Delete selected
@@ -425,39 +638,45 @@ export function OrdersWorkspace() {
           </div>
         ) : null}
 
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={pageOrders}
-          rowKey={(order) => order.orderId}
-          rowLabel={(order) => order.orderId}
-          columnLayout={columnVisibility}
-          minWidth={1400}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={setViewOrder}
-          emptyState={
-            <>
-              <p className="text-muted-foreground">No orders match your search or filters.</p>
-              <Button className="mt-4" onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                Add order
-              </Button>
-            </>
-          }
-        />
+        {isLoading ? (
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading orders…</div>
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={orders}
+            rowKey={(order) => order.orderId}
+            rowLabel={(order) => formatOrderId(order)}
+            columnLayout={columnVisibility}
+            minWidth={1500}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={toggleSelect}
+            onRowClick={setViewOrder}
+            emptyState={
+              <>
+                <p className="text-muted-foreground">No orders match your search or filters.</p>
+                <Button className="mt-4" onClick={openAddForm}>
+                  <Plus className="h-4 w-4" />
+                  Add order
+                </Button>
+              </>
+            }
+          />
+        )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {pageOrders.length} of {filteredOrders.length} orders
+            {isFetching
+              ? "Refreshing orders…"
+              : `Showing ${orders.length} of ${totalOrders} orders`}
           </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage <= 1}
+              disabled={currentPage <= 1 || isLoading}
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -469,7 +688,7 @@ export function OrdersWorkspace() {
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage >= totalPages}
+              disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
               Next
@@ -543,7 +762,7 @@ export function OrdersWorkspace() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
               Delete
             </Button>
@@ -579,7 +798,7 @@ export function OrdersWorkspace() {
             <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={applyRouteAssignment} disabled={!assignRouteAssignmentId}>
+            <Button onClick={applyRouteAssignment} disabled={!assignRouteAssignmentId || isSaving}>
               Apply assignment
             </Button>
           </DialogFooter>

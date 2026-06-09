@@ -9,6 +9,8 @@ import {
   type CustomerCoreAddress,
   type CustomerFormValues,
   DEFAULT_CUSTOMER_LIST_PARAMS,
+  normalizeCustomerSearchFilter,
+  toApiCustomerSearchField,
   type CustomerListParams,
 } from "@/lib/customers/types";
 
@@ -234,9 +236,14 @@ function buildCustomersQuery(params: CustomerListParams): string {
   });
 
   if (params.search?.value.trim()) {
-    searchParams.set("field", params.search.field);
-    searchParams.set("operator", params.search.operator);
-    searchParams.set("value", params.search.value.trim());
+    const search = normalizeCustomerSearchFilter({
+      ...params.search,
+      value: params.search.value.trim(),
+    });
+
+    searchParams.set("field", toApiCustomerSearchField(search.field));
+    searchParams.set("operator", search.operator);
+    searchParams.set("value", search.value);
   } else if (params.active !== undefined && params.active !== "all") {
     searchParams.set("field", "active");
     searchParams.set("operator", "eq");

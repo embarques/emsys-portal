@@ -33,7 +33,7 @@ type OrderFormProps = {
   isEditing?: boolean;
   updatedAt?: string;
   submitLabel: string;
-  onSubmit: (values: OrderFormValues) => OrderFormSubmitResult;
+  onSubmit: (values: OrderFormValues) => OrderFormSubmitResult | Promise<OrderFormSubmitResult>;
   onFormErrorChange?: (error: string | null) => void;
   onCancel: () => void;
 };
@@ -67,9 +67,9 @@ export function OrderForm({
     setFormError(null);
   }
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const result = onSubmit(values);
+    const result = await onSubmit(values);
     onFormErrorChange?.(result.error);
     if (!result.error && !isEditing) {
       setValues(resetOrderFormForNextEntry(values));

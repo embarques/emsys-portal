@@ -57,13 +57,14 @@ import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   CUSTOMER_SEARCH_FIELDS,
-  CUSTOMER_SEARCH_OPERATORS,
   CUSTOMER_TYPE_OPTIONS,
   DEFAULT_CUSTOMER_LIST_PARAMS,
   createCustomerSearchFilter,
   createEmptyCustomerForm,
   customerToFormValues,
   getCustomerClientType,
+  getCustomerSearchOperatorsForField,
+  getDefaultCustomerSearchOperator,
   type Customer,
   type CustomerFilterState,
   type CustomerFormValues,
@@ -384,6 +385,21 @@ export function CustomersWorkspace() {
 
   const columnVisibility = useColumnVisibility("customers", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
+  const searchOperatorOptions = useMemo(
+    () =>
+      getCustomerSearchOperatorsForField(filters.searchField).map((operator) => ({
+        value: operator,
+        label:
+          operator === "startsWith"
+            ? "Starts with"
+            : operator === "contains"
+              ? "Contains"
+              : operator === "eq"
+                ? "Equals"
+                : "Not equals",
+      })),
+    [filters.searchField],
+  );
 
   return (
     <div>
@@ -431,10 +447,19 @@ export function CustomersWorkspace() {
                 className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                 value={filters.searchField}
                 onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchField: event.target.value as CustomerFilterState["searchField"],
-                  }));
+                  const searchField = event.target.value as CustomerFilterState["searchField"];
+                  setFilters((current) => {
+                    const allowedOperators = getCustomerSearchOperatorsForField(searchField);
+                    const searchOperator = allowedOperators.includes(current.searchOperator)
+                      ? current.searchOperator
+                      : getDefaultCustomerSearchOperator(searchField);
+
+                    return {
+                      ...current,
+                      searchField,
+                      searchOperator,
+                    };
+                  });
                   setPage(1);
                 }}
               >
@@ -456,7 +481,7 @@ export function CustomersWorkspace() {
                   setPage(1);
                 }}
               >
-                {CUSTOMER_SEARCH_OPERATORS.map((option) => (
+                {searchOperatorOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

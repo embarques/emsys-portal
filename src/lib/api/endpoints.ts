@@ -5,4 +5,5 @@ export const API_ENDPOINTS = {
   EMPLOYEES: "/employees",
   CUSTOMERS: "/customers",
   BRANCHES: "/branches",
+  PICKUPS: "/pickups",
 } as const;

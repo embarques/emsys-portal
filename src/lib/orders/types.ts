@@ -44,17 +44,24 @@ export type OrderComment =
   | (OrderCommentBase & { purpose: "general_comment"; text: string });
 
 export type Order = {
+  /** EMSYS pickup id (GET /pickups/{id}). */
   orderId: string;
+  /** Legacy pickup number from the API. */
+  oldID: number;
   sender: OrderParty;
   receivers: OrderParty[];
   date: string;
   containerId: string;
   pending: OrderBranch;
   branch: OrderBranch;
+  branchId: number;
   routeId: string;
   routeAssignmentId: string;
   comments: OrderComment[];
   completed: boolean;
+  purpose: string;
+  sectorId: number | null;
+  sectorName: string;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
@@ -116,15 +123,137 @@ export type OrderFormSubmitResult = {
   error: string | null;
 };
 
+export type OrderBranchFilter = number | "all";
+
+export type OrderCompletedFilter = boolean | "all";
+
+export type OrderSearchOperator = "eq" | "neq" | "contains" | "startsWith";
+
+export type OrderSearchField =
+  | "id"
+  | "oldID"
+  | "date"
+  | "completed"
+  | "purpose"
+  | "sender.name"
+  | "sender.phone1"
+  | "sender.oldID"
+  | "sector.id";
+
+export type OrderSearchFilter = {
+  field: OrderSearchField;
+  operator: OrderSearchOperator;
+  value: string;
+};
+
+export type OrderListParams = {
+  page?: number;
+  limit?: number;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
+  search?: OrderSearchFilter;
+  branch?: OrderBranchFilter;
+  completed?: OrderCompletedFilter;
+};
+
+/** GET /pickups?page=1&start=0&limit=40&sortField=date&sortDirection=asc */
+export const DEFAULT_ORDER_LIST_PARAMS = {
+  page: 1,
+  limit: 40,
+  sortField: "date",
+  sortDirection: "asc",
+} as const satisfies Pick<OrderListParams, "page" | "limit" | "sortField" | "sortDirection">;
+
 export type OrderFilterState = {
   query: string;
-  branch: OrderBranch | "all";
+  searchField: OrderSearchField;
+  searchOperator: OrderSearchOperator;
+  branch: OrderBranchFilter;
+  completed: OrderCompletedFilter;
 };
+
+export const ORDER_SEARCH_FIELDS: { value: OrderSearchField; label: string }[] = [
+  { value: "sender.name", label: "Sender name" },
+  { value: "sender.phone1", label: "Sender phone" },
+  { value: "sender.oldID", label: "Sender old ID" },
+  { value: "oldID", label: "Pickup old ID" },
+  { value: "id", label: "Pickup ID" },
+  { value: "purpose", label: "Purpose" },
+  { value: "completed", label: "Completed" },
+  { value: "date", label: "Date" },
+  { value: "sector.id", label: "Sector ID" },
+];
 
 export const ORDER_BRANCHES: { value: OrderBranch; label: string }[] = [
   { value: "usa", label: "USA" },
   { value: "dr", label: "DR" },
 ];
+
+const BRANCH_ID_TO_PORTAL: Record<number, OrderBranch> = {
+  1: "usa",
+  2: "dr",
+};
+
+const BRANCH_CODE_TO_PORTAL: Record<string, OrderBranch> = {
+  NY: "usa",
+  DR: "dr",
+  DO: "dr",
+};
+
+export const PORTAL_BRANCH_TO_ID: Record<OrderBranch, number> = {
+  usa: 1,
+  dr: 2,
+};
+
+export function branchIdToPortal(branchId: number | undefined, code?: string): OrderBranch {
+  if (branchId != null && BRANCH_ID_TO_PORTAL[branchId]) {
+    return BRANCH_ID_TO_PORTAL[branchId];
+  }
+
+  const normalizedCode = code?.trim().toUpperCase();
+  if (normalizedCode && BRANCH_CODE_TO_PORTAL[normalizedCode]) {
+    return BRANCH_CODE_TO_PORTAL[normalizedCode];
+  }
+
+  return "usa";
+}
+
+export function getOrderSearchOperatorsForField(field: OrderSearchField): OrderSearchOperator[] {
+  if (field === "completed" || field === "id" || field === "oldID" || field === "sender.oldID" || field === "sector.id") {
+    return ["eq", "neq"];
+  }
+
+  if (field === "date") {
+    return ["eq", "neq", "contains"];
+  }
+
+  return ["contains", "startsWith", "eq", "neq"];
+}
+
+export function getDefaultOrderSearchOperator(field: OrderSearchField): OrderSearchOperator {
+  return getOrderSearchOperatorsForField(field)[0];
+}
+
+export function createOrderSearchFilter(
+  value: string,
+  field: OrderSearchField = "sender.name",
+  operator: OrderSearchOperator = "contains",
+): OrderSearchFilter | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const allowedOperators = getOrderSearchOperatorsForField(field);
+  const normalizedOperator = allowedOperators.includes(operator) ? operator : getDefaultOrderSearchOperator(field);
+
+  let normalizedValue = trimmed;
+  if (field === "completed") {
+    const lower = trimmed.toLowerCase();
+    if (["completed", "true", "yes"].includes(lower)) normalizedValue = "true";
+    if (["pending", "false", "no", "incomplete"].includes(lower)) normalizedValue = "false";
+  }
+
+  return { field, operator: normalizedOperator, value: normalizedValue };
+}
 
 export const ORDER_COMMENT_PURPOSES: {
   value: OrderCommentPurpose;
@@ -426,16 +555,21 @@ export function formValuesToOrder(
 
   return {
     orderId: values.orderId,
+    oldID: 0,
     sender,
     receivers,
     date: values.date,
     containerId: values.containerId,
     pending: values.pending,
     branch: values.branch,
+    branchId: PORTAL_BRANCH_TO_ID[values.branch],
     routeId: values.routeId,
     routeAssignmentId: values.routeAssignmentId,
     comments,
     completed: values.completed,
+    purpose: "",
+    sectorId: null,
+    sectorName: "",
     createdAt: createdAt ?? new Date().toISOString(),
     createdBy: createdBy ?? (values.createdBy.trim() || DEFAULT_CREATED_BY),
     updatedAt: updatedAt ?? new Date().toISOString(),
