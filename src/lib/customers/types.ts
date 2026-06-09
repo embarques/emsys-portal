@@ -120,22 +120,13 @@ export type CustomerFilterState = {
 export type CustomerSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 
 export type CustomerSearchField =
-  | "id"
-  | "oldID"
   | "name"
   | "phone1"
   | "phone2"
   | "active"
   | "customerType"
-  | "address.address1"
-  | "address.address2"
-  | "address.apartment"
-  | "address.city"
-  | "address.state"
-  | "address.country"
-  | "address.zipcode"
-  | "branch.code"
-  | "branch.id";
+  | "branch.id"
+  | "oldID";
 
 export type CustomerSearchFilter = {
   field: CustomerSearchField;
@@ -183,24 +174,26 @@ export const CUSTOMER_PORTAL_BRANCHES: {
   { portal: "dr", id: 2, label: "DR", code: "DR" },
 ];
 
-export const CUSTOMER_SEARCH_FIELDS: { value: CustomerSearchField; label: string }[] = [
-  { value: "name", label: "Name" },
-  { value: "phone1", label: "Phone 1" },
-  { value: "phone2", label: "Phone 2" },
-  { value: "active", label: "Active" },
-  { value: "customerType", label: "Customer type" },
-  { value: "address.address1", label: "Address 1" },
-  { value: "address.address2", label: "Address 2" },
-  { value: "address.apartment", label: "Apartment" },
-  { value: "address.city", label: "City" },
-  { value: "address.state", label: "State" },
-  { value: "address.country", label: "Country" },
-  { value: "address.zipcode", label: "Zipcode" },
-  { value: "branch.code", label: "Branch code" },
-  { value: "branch.id", label: "Branch ID" },
-  { value: "id", label: "ID" },
-  { value: "oldID", label: "Old ID" },
+/**
+ * GET /customers field + operator pairs verified against the live API.
+ * Nested address / branch.code / id filters return 400 on GET — use POST /customers/search instead.
+ */
+export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
+  field: CustomerSearchField;
+  label: string;
+  operators: CustomerSearchOperator[];
+}[] = [
+  { field: "name", label: "Name", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "phone1", label: "Phone 1", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "phone2", label: "Phone 2", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "active", label: "Active", operators: ["eq", "neq"] },
+  { field: "customerType", label: "Customer type", operators: ["eq", "neq"] },
+  { field: "branch.id", label: "Branch ID", operators: ["eq", "neq"] },
+  { field: "oldID", label: "Old ID", operators: ["eq", "neq"] },
 ];
+
+export const CUSTOMER_SEARCH_FIELDS: { value: CustomerSearchField; label: string }[] =
+  CUSTOMER_GET_SEARCH_CAPABILITIES.map(({ field, label }) => ({ value: field, label }));
 
 export const CUSTOMER_SEARCH_OPERATORS: { value: CustomerSearchOperator; label: string }[] = [
   { value: "startsWith", label: "Starts with" },
@@ -289,51 +282,17 @@ export function createEmptyCustomerForm(): CustomerFormValues {
   };
 }
 
-const CUSTOMER_NUMERIC_SEARCH_FIELDS = new Set<CustomerSearchField>([
-  "id",
-  "oldID",
-  "customerType",
-  "branch.id",
-]);
-
-const CUSTOMER_NESTED_STRING_SEARCH_FIELDS = new Set<CustomerSearchField>([
-  "address.address1",
-  "address.address2",
-  "address.apartment",
-  "address.city",
-  "address.state",
-  "address.country",
-  "address.zipcode",
-  "branch.code",
-]);
-
-/** Operators the EMSYS customers list API accepts per field type. */
+/** Operators allowed for a GET /customers search field (verified API combinations only). */
 export function getCustomerSearchOperatorsForField(field: CustomerSearchField): CustomerSearchOperator[] {
-  if (field === "active" || CUSTOMER_NUMERIC_SEARCH_FIELDS.has(field)) {
-    return ["eq", "neq"];
-  }
-
-  if (CUSTOMER_NESTED_STRING_SEARCH_FIELDS.has(field)) {
-    return ["contains", "eq", "neq"];
-  }
-
-  return ["startsWith", "contains", "eq", "neq"];
+  return CUSTOMER_GET_SEARCH_CAPABILITIES.find((entry) => entry.field === field)?.operators ?? ["eq"];
 }
 
 export function getDefaultCustomerSearchOperator(field: CustomerSearchField): CustomerSearchOperator {
   return getCustomerSearchOperatorsForField(field)[0];
 }
 
-/** Map portal search fields to GET /customers filter field names. */
+/** GET /customers filter field name (same as portal field for supported searches). */
 export function toApiCustomerSearchField(field: CustomerSearchField): string {
-  if (field.startsWith("address.")) {
-    return field.slice("address.".length);
-  }
-
-  if (field === "branch.id") {
-    return "branch._id";
-  }
-
   return field;
 }
 
@@ -380,14 +339,10 @@ export function getCustomerSearchSortField(field: CustomerSearchField): string {
       return "active";
     case "customerType":
       return "customerType";
-    case "branch.code":
-      return "branch.code";
     case "branch.id":
       return "branch.id";
-    case "id":
-      return "id";
     default:
-      return field;
+      return "name";
   }
 }
 
