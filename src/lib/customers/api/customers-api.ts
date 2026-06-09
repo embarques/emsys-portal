@@ -11,7 +11,6 @@ import {
   DEFAULT_CUSTOMER_LIST_PARAMS,
   type CustomerListParams,
   type CustomerPortalBranch,
-  type CustomerSearchFilter,
   portalBranchToId,
 } from "@/lib/customers/types";
 
@@ -224,49 +223,7 @@ function normalizePaginatedCustomers(
   };
 }
 
-type ApiListFilter = {
-  field: string;
-  operator: CustomerSearchFilter["operator"];
-  value: string;
-};
-
-function buildApiListFilter(params: CustomerListParams): ApiListFilter | undefined {
-  if (params.search?.value.trim()) {
-    return {
-      field: params.search.field,
-      operator: params.search.operator,
-      value: params.search.value.trim(),
-    };
-  }
-
-  if (params.active !== undefined && params.active !== "all") {
-    return {
-      field: "active",
-      operator: "eq",
-      value: String(params.active),
-    };
-  }
-
-  if (params.branch && params.branch !== "all") {
-    return {
-      field: "branch.id",
-      operator: "eq",
-      value: String(portalBranchToId(params.branch as CustomerPortalBranch)),
-    };
-  }
-
-  if (params.customerType !== undefined && params.customerType !== "all") {
-    return {
-      field: "customerType",
-      operator: "eq",
-      value: String(params.customerType),
-    };
-  }
-
-  return undefined;
-}
-
-/** GET /customers — Stripe-style list with optional field/operator/value filter and pagination. */
+/** GET /customers — list with field/operator/value search plus optional chip filters. */
 function buildCustomersQuery(params: CustomerListParams): string {
   const page = params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page;
   const limit = params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit;
@@ -278,11 +235,34 @@ function buildCustomersQuery(params: CustomerListParams): string {
     sortDirection: params.sortDirection ?? DEFAULT_CUSTOMER_LIST_PARAMS.sortDirection,
   });
 
-  const filter = buildApiListFilter(params);
-  if (filter) {
-    searchParams.set("field", filter.field);
-    searchParams.set("operator", filter.operator);
-    searchParams.set("value", filter.value);
+  if (params.search?.value.trim()) {
+    searchParams.set("field", params.search.field);
+    searchParams.set("operator", params.search.operator);
+    searchParams.set("value", params.search.value.trim());
+  } else if (params.active !== undefined && params.active !== "all") {
+    searchParams.set("field", "active");
+    searchParams.set("operator", "eq");
+    searchParams.set("value", String(params.active));
+  } else if (params.branch && params.branch !== "all") {
+    searchParams.set("field", "branch.id");
+    searchParams.set("operator", "eq");
+    searchParams.set("value", String(portalBranchToId(params.branch as CustomerPortalBranch)));
+  } else if (params.customerType !== undefined && params.customerType !== "all") {
+    searchParams.set("field", "customerType");
+    searchParams.set("operator", "eq");
+    searchParams.set("value", String(params.customerType));
+  }
+
+  if (params.active !== undefined && params.active !== "all") {
+    searchParams.set("active", String(params.active));
+  }
+
+  if (params.branch && params.branch !== "all") {
+    searchParams.set("branchId", String(portalBranchToId(params.branch as CustomerPortalBranch)));
+  }
+
+  if (params.customerType !== undefined && params.customerType !== "all") {
+    searchParams.set("customerType", String(params.customerType));
   }
 
   return searchParams.toString();
