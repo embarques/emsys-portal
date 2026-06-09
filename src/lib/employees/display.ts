@@ -4,6 +4,7 @@ import {
   EMPLOYEE_ACTIVE_OPTIONS,
   formatEmployeeBranchLabel,
   formatEmployeePhones,
+  formatEmployeeUserLabel,
   getEmployeePortalBranch,
 } from "./types";
 
@@ -32,7 +33,7 @@ export function formatEmployeeDate(date: string): string {
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(`${date.slice(0, 10)}T12:00:00`));
+  }).format(new Date(date));
 }
 
 export function formatEmployeeMoney(value: number): string {
@@ -64,9 +65,8 @@ export function formatEmployeeAddress(employee: Employee): string {
 
 export {
   formatEmployeeBranchLabel,
-  formatEmployeeBranchs,
   formatEmployeePhones,
-  formatEmployeeUsers,
+  formatEmployeeUserLabel,
 } from "./types";
 
 export function employeeMatchesQuery(employee: Employee, query: string): boolean {
@@ -78,6 +78,8 @@ export function employeeMatchesQuery(employee: Employee, query: string): boolean
     employee.name,
     employee.department,
     employee.title,
+    employee.startDate,
+    employee.endDate,
     formatEmployeeBranchLabel(employee),
     employee.address.address1,
     employee.address.address2,
@@ -89,7 +91,7 @@ export function employeeMatchesQuery(employee: Employee, query: string): boolean
     formatEmployeePhones(employee),
     employee.email,
     getEmployeeActiveLabel(employee.active),
-    employee.user?.userName ?? "",
+    formatEmployeeUserLabel(employee),
     formatEmployeeAddress(employee),
   ]
     .join(" ")

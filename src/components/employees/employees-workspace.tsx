@@ -32,14 +32,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { normalizeApiError } from "@/lib/api/axios";
+import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { formatAuditDate } from "@/lib/audit/display";
+import { formatBranchFilterLabel } from "@/lib/branches/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   formatEmployeeBranchLabel,
-  formatEmployeeBranchs,
   formatEmployeeDate,
   formatEmployeeId,
   formatEmployeeMoney,
-  formatEmployeeUsers,
+  formatEmployeeUserLabel,
   getEmployeeActiveBadgeClass,
   getEmployeeActiveLabel,
   getEmployeeBranchBadgeClass,
@@ -52,13 +54,14 @@ import {
   useUpdateEmployee,
 } from "@/lib/employees/hooks/use-employees";
 import {
-  EMPLOYEE_PORTAL_BRANCHES,
+  DEFAULT_EMPLOYEE_LIST_PARAMS,
   EMPLOYEE_DEPARTMENTS,
   EMPLOYEE_SEARCH_FIELDS,
-  EMPLOYEE_SEARCH_OPERATORS,
   createEmployeeSearchFilter,
   createEmptyEmployeeForm,
   employeeToFormValues,
+  getDefaultEmployeeSearchOperator,
+  getEmployeeSearchOperatorsForField,
   getEmployeeSearchSortField,
   type Employee,
   type EmployeeFilterState,
@@ -66,7 +69,7 @@ import {
 } from "@/lib/employees/types";
 import type { DataTableColumn } from "@/lib/table/types";
 
-const PAGE_SIZE = 40;
+const PAGE_SIZE = DEFAULT_EMPLOYEE_LIST_PARAMS.limit;
 
 const defaultFilters: EmployeeFilterState = {
   query: "",
@@ -94,10 +97,10 @@ export function EmployeesWorkspace() {
       const search = createEmployeeSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
 
       return {
+        ...DEFAULT_EMPLOYEE_LIST_PARAMS,
         page,
         limit: PAGE_SIZE,
         sortField: search ? getEmployeeSearchSortField(filters.searchField) : "name",
-        sortDirection: "asc" as const,
         search,
         branch: filters.branch,
         active: filters.active,
@@ -116,6 +119,7 @@ export function EmployeesWorkspace() {
   );
 
   const { data, isLoading, isError, error, isFetching } = useEmployees(listParams);
+  const { data: branchesData } = useBranchPicker();
   const stats = useEmployeeStats();
   const createEmployeeMutation = useCreateEmployee();
   const updateEmployeeMutation = useUpdateEmployee();
@@ -226,10 +230,17 @@ export function EmployeesWorkspace() {
     },
   ];
 
-  const branchFilters: { value: EmployeeFilterState["branch"]; label: string }[] = [
-    { value: "all", label: "All branches" },
-    ...EMPLOYEE_PORTAL_BRANCHES.map((entry) => ({ value: entry.portal, label: entry.label })),
-  ];
+  const branchFilters = useMemo(() => {
+    const apiBranches = branchesData?.items ?? [];
+
+    return [
+      { value: "all" as const, label: "All branches" },
+      ...apiBranches.map((branch) => ({
+        value: branch.id,
+        label: formatBranchFilterLabel(branch),
+      })),
+    ];
+  }, [branchesData?.items]);
 
   const activeFilters: { value: EmployeeFilterState["active"]; label: string }[] = [
     { value: "all", label: "All" },
@@ -256,6 +267,16 @@ export function EmployeesWorkspace() {
       renderCell: (employee) => employee.name,
     },
     {
+      id: "title",
+      label: "title",
+      renderCell: (employee) => employee.title || "—",
+    },
+    {
+      id: "department",
+      label: "department",
+      renderCell: (employee) => employee.department || "—",
+    },
+    {
       id: "active",
       label: "active",
       renderCell: (employee) => (
@@ -265,14 +286,16 @@ export function EmployeesWorkspace() {
       ),
     },
     {
-      id: "department",
-      label: "department",
-      renderCell: (employee) => employee.department || "—",
+      id: "startDate",
+      label: "startDate",
+      cellClassName: "text-muted-foreground",
+      renderCell: (employee) => (employee.startDate ? formatAuditDate(employee.startDate) : "—"),
     },
     {
-      id: "title",
-      label: "title",
-      renderCell: (employee) => employee.title || "—",
+      id: "endDate",
+      label: "endDate",
+      cellClassName: "text-muted-foreground",
+      renderCell: (employee) => (employee.endDate ? formatAuditDate(employee.endDate) : "—"),
     },
     {
       id: "branch",
@@ -294,24 +317,24 @@ export function EmployeesWorkspace() {
       renderCell: (employee) => employee.branch.name || "—",
     },
     {
-      id: "branchs",
-      label: "branchs",
-      renderCell: (employee) => formatEmployeeBranchs(employee),
+      id: "phone1",
+      label: "phone1",
+      renderCell: (employee) => formatPhoneDisplayOrDash(employee.phone1),
+    },
+    {
+      id: "phone2",
+      label: "phone2",
+      renderCell: (employee) => formatPhoneDisplayOrDash(employee.phone2),
+    },
+    {
+      id: "email",
+      label: "email",
+      renderCell: (employee) => employee.email || "—",
     },
     {
       id: "address.address1",
       label: "address.address1",
       renderCell: (employee) => employee.address.address1 || "—",
-    },
-    {
-      id: "address.address2",
-      label: "address.address2",
-      renderCell: (employee) => employee.address.address2 || "—",
-    },
-    {
-      id: "address.apartment",
-      label: "address.apartment",
-      renderCell: (employee) => employee.address.apartment || "—",
     },
     {
       id: "address.city",
@@ -324,34 +347,24 @@ export function EmployeesWorkspace() {
       renderCell: (employee) => employee.address.state || "—",
     },
     {
-      id: "address.zipcode",
-      label: "address.zipcode",
-      renderCell: (employee) => employee.address.zipcode || "—",
-    },
-    {
       id: "address.country",
       label: "address.country",
       renderCell: (employee) => employee.address.country || "—",
     },
     {
-      id: "phone1",
-      label: "phone1",
-      renderCell: (employee) => employee.phone1 || "—",
-    },
-    {
-      id: "phone2",
-      label: "phone2",
-      renderCell: (employee) => employee.phone2 || "—",
-    },
-    {
-      id: "email",
-      label: "email",
-      renderCell: (employee) => employee.email || "—",
-    },
-    {
       id: "cost",
       label: "cost",
       renderCell: (employee) => formatEmployeeMoney(employee.cost),
+    },
+    {
+      id: "totalLoanGiven",
+      label: "totalLoanGiven",
+      renderCell: (employee) => formatEmployeeMoney(employee.totalLoanGiven),
+    },
+    {
+      id: "totalPaymentReceived",
+      label: "totalPaymentReceived",
+      renderCell: (employee) => formatEmployeeMoney(employee.totalPaymentReceived),
     },
     {
       id: "loanAmountOwed",
@@ -365,24 +378,20 @@ export function EmployeesWorkspace() {
         employee.loanBalanceUpdated ? formatEmployeeDate(employee.loanBalanceUpdated) : "—",
     },
     {
-      id: "totalLoanGiven",
-      label: "totalLoanGiven",
-      renderCell: (employee) => formatEmployeeMoney(employee.totalLoanGiven),
-    },
-    {
-      id: "totalPaymentReceived",
-      label: "totalPaymentReceived",
-      renderCell: (employee) => formatEmployeeMoney(employee.totalPaymentReceived),
-    },
-    {
       id: "user",
       label: "user",
-      renderCell: (employee) => employee.user?.userName || "—",
+      renderCell: (employee) => formatEmployeeUserLabel(employee),
     },
     {
-      id: "users",
-      label: "users",
-      renderCell: (employee) => formatEmployeeUsers(employee),
+      id: "user.id",
+      label: "user.id",
+      cellClassName: "font-mono text-xs",
+      renderCell: (employee) => (employee.user?.id ? String(employee.user.id) : "—"),
+    },
+    {
+      id: "user.userName",
+      label: "user.userName",
+      renderCell: (employee) => employee.user?.userName || "—",
     },
     {
       id: "createdAt",
@@ -427,12 +436,27 @@ export function EmployeesWorkspace() {
 
   const columnVisibility = useColumnVisibility("employees", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
+  const searchOperatorOptions = useMemo(
+    () =>
+      getEmployeeSearchOperatorsForField(filters.searchField).map((operator) => ({
+        value: operator,
+        label:
+          operator === "startsWith"
+            ? "Starts with"
+            : operator === "contains"
+              ? "Contains"
+              : operator === "eq"
+                ? "Equals"
+                : "Not equals",
+      })),
+    [filters.searchField],
+  );
 
   return (
     <div>
       <PageHeader
         title="Employees"
-        description="Manage employee.Employee records with branch, address, title, loans, and linked users."
+        description="Manage employee records with branch, address, schedule, loans, and linked users."
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
@@ -472,10 +496,19 @@ export function EmployeesWorkspace() {
                 className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                 value={filters.searchField}
                 onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchField: event.target.value as EmployeeFilterState["searchField"],
-                  }));
+                  const searchField = event.target.value as EmployeeFilterState["searchField"];
+                  setFilters((current) => {
+                    const allowedOperators = getEmployeeSearchOperatorsForField(searchField);
+                    const searchOperator = allowedOperators.includes(current.searchOperator)
+                      ? current.searchOperator
+                      : getDefaultEmployeeSearchOperator(searchField);
+
+                    return {
+                      ...current,
+                      searchField,
+                      searchOperator,
+                    };
+                  });
                   setPage(1);
                 }}
               >
@@ -497,7 +530,7 @@ export function EmployeesWorkspace() {
                   setPage(1);
                 }}
               >
-                {EMPLOYEE_SEARCH_OPERATORS.map((option) => (
+                {searchOperatorOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -523,7 +556,7 @@ export function EmployeesWorkspace() {
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
             {branchFilters.map((option) => (
               <Button
-                key={option.value}
+                key={String(option.value)}
                 type="button"
                 size="sm"
                 variant={filters.branch === option.value ? "default" : "outline"}
@@ -609,7 +642,7 @@ export function EmployeesWorkspace() {
             rowKey={(employee) => String(employee.id)}
             rowLabel={(employee) => employee.name}
             columnLayout={columnVisibility}
-            minWidth={1800}
+            minWidth={2400}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}
@@ -684,8 +717,8 @@ export function EmployeesWorkspace() {
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit employee" : "Add employee"}</DialogTitle>
             <DialogDescription>
-              Fields match the EMSYS employee.Employee API model: active, address, branch, branchs, cost,
-              department, email, loans, name, phone1, phone2, title, user, and users.
+              Fields match the EMSYS Employee API model: name, title, department, active, startDate, endDate,
+              branch, address, contact, loans, cost, and linked user.
             </DialogDescription>
           </DialogHeader>
           <EmployeeForm

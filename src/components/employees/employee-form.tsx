@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatEmployeeDate, formatEmployeeMoney } from "@/lib/employees/display";
@@ -14,8 +15,7 @@ import {
   EMPLOYEE_TITLES,
   createEmployeeBranchFromPortal,
   createEmptyEmployeeForm,
-  formatEmployeeBranchs,
-  formatEmployeeUsers,
+  formatEmployeeUserLabel,
   getEmployeePortalBranch,
   type EmployeeAddress,
   type EmployeeFormValues,
@@ -81,13 +81,14 @@ export function EmployeeForm({
 
   function updateBranchPortal(portal: EmployeePortalBranch) {
     const template = createEmployeeBranchFromPortal(portal);
+    const config = EMPLOYEE_PORTAL_BRANCHES.find((entry) => entry.portal === portal) ?? EMPLOYEE_PORTAL_BRANCHES[0];
+
     setValues((current) => ({
       ...current,
       branch: template,
-      branchs: [template],
       address: {
         ...current.address,
-        country: template.address.country,
+        country: config.country,
       },
     }));
   }
@@ -99,7 +100,7 @@ export function EmployeeForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <FormSection title="employee.Employee">
+      <FormSection title="Employee">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="id">id</Label>
@@ -184,6 +185,28 @@ export function EmployeeForm({
           </div>
         </div>
 
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="startDate">startDate</Label>
+            <Input
+              id="startDate"
+              value={values.startDate}
+              onChange={(event) => updateField("startDate", event.target.value)}
+              placeholder="2026-06-09T00:00:00Z"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="endDate">endDate</Label>
+            <Input
+              id="endDate"
+              value={values.endDate}
+              onChange={(event) => updateField("endDate", event.target.value)}
+              placeholder="2026-06-09T00:00:00Z"
+            />
+          </div>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="cost">cost</Label>
           <Input
@@ -197,7 +220,7 @@ export function EmployeeForm({
         </div>
       </FormSection>
 
-      <FormSection title="branch" description="Primary branch assignment.">
+      <FormSection title="branch">
         <div className="space-y-2">
           <Label htmlFor="branch-portal">
             Branch <span className="text-destructive">*</span>
@@ -233,15 +256,7 @@ export function EmployeeForm({
         </div>
       </FormSection>
 
-      <FormSection title="branchs" description="Additional branch assignments from the API.">
-        <Input
-          value={formatEmployeeBranchs({ branchs: values.branchs })}
-          readOnly
-          className={readOnlyClassName}
-        />
-      </FormSection>
-
-      <FormSection title="address" description="core.Address">
+      <FormSection title="address">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="address-address1">address.address1</Label>
@@ -319,20 +334,18 @@ export function EmployeeForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="phone1">phone1</Label>
-            <Input
+            <PhoneInput
               id="phone1"
               value={values.phone1}
-              onChange={(event) => updateField("phone1", event.target.value)}
-              placeholder="+1 (718) 555-0142"
+              onChange={(nextValue) => updateField("phone1", nextValue)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone2">phone2</Label>
-            <Input
+            <PhoneInput
               id="phone2"
               value={values.phone2}
-              onChange={(event) => updateField("phone2", event.target.value)}
-              placeholder="+1 (718) 555-0142"
+              onChange={(nextValue) => updateField("phone2", nextValue)}
             />
           </div>
         </div>
@@ -390,22 +403,58 @@ export function EmployeeForm({
         </div>
       </FormSection>
 
-      <FormSection title="user / users" description="Linked EMSYS users from the API.">
+      <FormSection title="user" description="Linked EMSYS user from the API.">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="user">user</Label>
             <Input
               id="user"
-              value={values.user?.userName || (values.user?.id ? String(values.user.id) : "—")}
+              value={formatEmployeeUserLabel({ user: values.user })}
               readOnly
               className={readOnlyClassName}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="users">users</Label>
+            <Label htmlFor="user-id">user.id</Label>
             <Input
-              id="users"
-              value={formatEmployeeUsers({ users: values.users })}
+              id="user-id"
+              value={values.user?.id ? String(values.user.id) : "—"}
+              readOnly
+              className={readOnlyClassName}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="user-userName">user.userName</Label>
+            <Input
+              id="user-userName"
+              value={values.user?.userName || "—"}
+              readOnly
+              className={readOnlyClassName}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="user-fullName">user.fullName</Label>
+            <Input
+              id="user-fullName"
+              value={values.user?.fullName || "—"}
+              readOnly
+              className={readOnlyClassName}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="user-email">user.email</Label>
+            <Input
+              id="user-email"
+              value={values.user?.email || "—"}
+              readOnly
+              className={readOnlyClassName}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="user-active">user.active</Label>
+            <Input
+              id="user-active"
+              value={values.user != null ? String(values.user.active) : "—"}
               readOnly
               className={readOnlyClassName}
             />

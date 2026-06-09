@@ -1,4 +1,5 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 export type CustomerPortalBranch = "usa" | "dr";
 
@@ -42,12 +43,19 @@ export type Customer = {
   customerType: number | null;
   phone1: string;
   phone2: string;
+  email: string;
   active: boolean;
+  IDNumber: string;
   createdAt: string;
   updatedAt: string;
+  notes: string;
+  accountBalance: number;
   branch: CustomerBranch;
   createdByID: number | null;
+  /** Primary address from the API `address` field. */
   address: CustomerCoreAddress;
+  /** Additional addresses from the API `addresses` array. */
+  addresses: CustomerCoreAddress[];
 };
 
 /** Legacy phone shape used by orders and party editors. */
@@ -97,13 +105,32 @@ export type CustomerFormValues = {
   customerType: number | null;
   phone1: string;
   phone2: string;
+  email: string;
   active: boolean;
+  IDNumber: string;
+  notes: string;
+  accountBalance: number;
   branch: CustomerBranch;
   address: CustomerCoreAddress;
+  addresses: CustomerCoreAddress[];
   createdByID: number | null;
   createdAt: string;
   updatedAt: string;
 };
+
+export function validateCustomerFormValues(values: CustomerFormValues): void {
+  if (!values.name.trim()) {
+    throw new Error("name is required.");
+  }
+
+  if (!values.phone1.trim()) {
+    throw new Error("phone1 is required.");
+  }
+
+  if (!values.branch?.id || values.branch.id <= 0) {
+    throw new Error("branch is required.");
+  }
+}
 
 export type CustomerBranchFilter = number | "all";
 
@@ -123,6 +150,8 @@ export type CustomerSearchField =
   | "name"
   | "phone1"
   | "phone2"
+  | "email"
+  | "IDNumber"
   | "active"
   | "customerType"
   | "branch.id"
@@ -186,6 +215,8 @@ export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   { field: "name", label: "Name", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "phone1", label: "Phone 1", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "phone2", label: "Phone 2", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "email", label: "Email", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "IDNumber", label: "ID number", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "active", label: "Active", operators: ["eq", "neq"] },
   { field: "customerType", label: "Customer type", operators: ["eq", "neq"] },
   { field: "branch.id", label: "Branch ID", operators: ["eq", "neq"] },
@@ -265,6 +296,7 @@ export function createCustomerBranchFromPortal(portal: CustomerPortalBranch): Cu
 
 export function createEmptyCustomerForm(): CustomerFormValues {
   const branch = createCustomerBranchFromPortal("usa");
+  const address = createEmptyCustomerCoreAddress("US");
 
   return {
     id: "",
@@ -273,9 +305,14 @@ export function createEmptyCustomerForm(): CustomerFormValues {
     customerType: null,
     phone1: "",
     phone2: "",
+    email: "",
     active: true,
+    IDNumber: "",
+    notes: "",
+    accountBalance: 0,
     branch,
-    address: createEmptyCustomerCoreAddress("US"),
+    address,
+    addresses: [address],
     createdByID: null,
     createdAt: "",
     updatedAt: "",
@@ -335,6 +372,10 @@ export function getCustomerSearchSortField(field: CustomerSearchField): string {
       return "phone1";
     case "phone2":
       return "phone2";
+    case "email":
+      return "email";
+    case "IDNumber":
+      return "IDNumber";
     case "active":
       return "active";
     case "customerType":
@@ -388,9 +429,8 @@ export function getCustomerPhones(customer: Pick<Customer, "phone1" | "phone2">)
   return phones;
 }
 
-export function getCustomerAddresses(customer: Pick<Customer, "id" | "address">): CustomerAddress[] {
-  const { address } = customer;
-  const hasAddress = [
+function coreAddressHasContent(address: CustomerCoreAddress): boolean {
+  return [
     address.address1,
     address.address2,
     address.apartment,
@@ -399,38 +439,81 @@ export function getCustomerAddresses(customer: Pick<Customer, "id" | "address">)
     address.zipcode,
     address.country,
   ].some((value) => value.trim());
+}
 
-  if (!hasAddress) return [];
+function coreAddressToLegacyAddress(
+  customerId: string,
+  address: CustomerCoreAddress,
+  index: number,
+  isPrimary: boolean,
+): CustomerAddress {
+  return {
+    id: `${customerId}-address-${index}`,
+    streetAddress: address.address1,
+    apt: address.apartment || address.address2 || undefined,
+    crossStreet: address.address2 || undefined,
+    city: address.city,
+    state: address.state || undefined,
+    provinceCountry: address.country || undefined,
+    zipCode: address.zipcode || undefined,
+    isPrimary,
+  };
+}
 
-  return [
-    {
-      id: `${customer.id}-address`,
-      streetAddress: address.address1,
-      apt: address.apartment || address.address2 || undefined,
-      crossStreet: address.address2 || undefined,
-      city: address.city,
-      state: address.state || undefined,
-      provinceCountry: address.country || undefined,
-      zipCode: address.zipcode || undefined,
-      isPrimary: true,
-    },
-  ];
+export function getCustomerAddresses(
+  customer: Pick<Customer, "id" | "address" | "addresses">,
+): CustomerAddress[] {
+  const source =
+    customer.addresses.length > 0
+      ? customer.addresses
+      : coreAddressHasContent(customer.address)
+        ? [customer.address]
+        : [];
+
+  return source
+    .filter(coreAddressHasContent)
+    .map((address, index) => coreAddressToLegacyAddress(customer.id, address, index, index === 0));
 }
 
 export function customerToFormValues(customer: Customer): CustomerFormValues {
+  const addresses =
+    customer.addresses.length > 0
+      ? customer.addresses.map((entry) => ({ ...entry }))
+      : [{ ...customer.address }];
+
   return {
     id: customer.id,
     oldID: customer.oldID,
     name: customer.name,
     customerType: customer.customerType,
-    phone1: customer.phone1,
-    phone2: customer.phone2,
+    phone1: normalizeStoredPhone(customer.phone1),
+    phone2: normalizeStoredPhone(customer.phone2),
+    email: customer.email,
     active: customer.active,
+    IDNumber: customer.IDNumber,
+    notes: customer.notes,
+    accountBalance: customer.accountBalance,
     branch: { ...customer.branch, address: { ...customer.branch.address } },
     address: { ...customer.address },
+    addresses,
     createdByID: customer.createdByID,
     createdAt: customer.createdAt,
     updatedAt: customer.updatedAt,
+  };
+}
+
+export function syncCustomerFormAddresses(values: CustomerFormValues): CustomerFormValues {
+  const addresses =
+    values.addresses.length > 0
+      ? values.addresses.map((entry, index) =>
+          index === 0 ? { ...values.address } : { ...entry },
+        )
+      : [{ ...values.address }];
+
+  return {
+    ...values,
+    address: { ...addresses[0] },
+    addresses,
   };
 }
 

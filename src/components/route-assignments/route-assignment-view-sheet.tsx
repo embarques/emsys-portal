@@ -12,8 +12,9 @@ import {
 import {
   formatRouteAssignmentDate,
   formatRouteAssignmentTimestamp,
-  getEmployeeGroupLabel,
-  getTruckName,
+  getEmployeeGroupRefLabel,
+  getTruckRefLabel,
+  truncateObjectId,
   truncateRouteAssignmentId,
 } from "@/lib/route-assignments/display";
 import { formatAuditDate } from "@/lib/audit/display";
@@ -46,16 +47,37 @@ export function RouteAssignmentViewSheet({
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Assignment">
+            <RecordViewSheetDetailRow label="id" value={truncateObjectId(assignment.id)} />
             <RecordViewSheetDetailRow
-              label="Assignment ID"
+              label="routeAssignmentId"
               value={truncateRouteAssignmentId(assignment.routeAssignmentId)}
             />
-            <RecordViewSheetDetailRow label="Assignment date" value={formatRouteAssignmentDate(assignment.date)} />
-            <RecordViewSheetDetailRow label="Truck" value={getTruckName(assignment.truckId)} />
-            <RecordViewSheetDetailRow label="Employee group" value={getEmployeeGroupLabel(assignment.employeeGroupId)} />
-            <RecordViewSheetDetailRow label="Date created" value={formatRouteAssignmentTimestamp(assignment.createdAt)} />
-            <RecordViewSheetDetailRow label="User created" value={assignment.createdBy} />
-            <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(assignment.updatedAt)} />
+            <RecordViewSheetDetailRow label="name" value={assignment.name} />
+            <RecordViewSheetDetailRow label="date" value={formatRouteAssignmentDate(assignment.date)} />
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection title="Truck">
+            <RecordViewSheetDetailRow label="truck.id" value={assignment.truck.id || "—"} />
+            <RecordViewSheetDetailRow label="truck.name" value={assignment.truck.name || "—"} />
+            <RecordViewSheetDetailRow label="truck" value={getTruckRefLabel(assignment.truck)} />
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection title="Employee group">
+            <RecordViewSheetDetailRow label="employeeGroup.id" value={assignment.employeeGroup.id || "—"} />
+            <RecordViewSheetDetailRow label="employeeGroup.name" value={assignment.employeeGroup.name || "—"} />
+            <RecordViewSheetDetailRow label="employeeGroup" value={getEmployeeGroupRefLabel(assignment.employeeGroup)} />
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection title="Audit">
+            <RecordViewSheetDetailRow
+              label="createdAt"
+              value={assignment.createdAt ? formatRouteAssignmentTimestamp(assignment.createdAt) : "—"}
+            />
+            <RecordViewSheetDetailRow label="createdBy" value={assignment.createdBy || "—"} />
+            <RecordViewSheetDetailRow
+              label="updatedAt"
+              value={assignment.updatedAt ? formatAuditDate(assignment.updatedAt) : "—"}
+            />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 

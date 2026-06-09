@@ -18,6 +18,7 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAddressLine } from "@/lib/customers/display";
+import { formatPhoneForDisplay } from "@/lib/utils/phone";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   formatInvoiceDate,
@@ -52,8 +53,13 @@ function PartySection({ title, party }: { title: string; party: Invoice["sender"
       {party.documentId ? <p className="mt-1 text-xs text-muted-foreground">Doc: {party.documentId}</p> : null}
       {party.email ? <p className="text-xs text-muted-foreground">{party.email}</p> : null}
       <p className="mt-3 text-xs text-muted-foreground">
-        {party.phones.map((phone) => (phone.label ? `${phone.label}: ${phone.number}` : phone.number)).join(" · ") ||
-          "—"}
+        {party.phones
+          .map((phone) => {
+            const formatted = formatPhoneForDisplay(phone.number);
+            return phone.label ? `${phone.label}: ${formatted}` : formatted;
+          })
+          .filter(Boolean)
+          .join(" · ") || "—"}
       </p>
       <div className="mt-4">
         <p className="text-xs font-medium text-primary">Invoice address</p>

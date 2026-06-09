@@ -4,6 +4,9 @@ import type { Permission } from "@/lib/auth/types/permission";
 export const PERMISSIONS = {
   dashboardView: { name: "canViewSettings", resourceType: "settings" },
   clientsView: { name: "canViewCustomer", resourceType: "customer" },
+  clientsCreate: { name: "canCreateCustomer", resourceType: "customer" },
+  clientsUpdate: { name: "canUpdateCustomer", resourceType: "customer" },
+  clientsDelete: { name: "canDeleteCustomer", resourceType: "customer" },
   pickupsView: { name: "canViewPickup", resourceType: "pickup" },
   /** Pickups submenu — API has no route/truck/dispatch seed; gate with pickup view. */
   routesView: { name: "canViewPickup", resourceType: "pickup" },
@@ -39,6 +42,9 @@ export function permissionKey(permission: Permission): string {
 const PERMISSION_GRANT_ALIASES: Record<string, readonly string[]> = {
   "settings:canviewsettings": ["settings:canviewdashboard", "dashboard:canviewdashboard"],
   "customer:canviewcustomer": ["client:canviewclient"],
+  "customer:cancreatecustomer": ["client:cancreateclient"],
+  "customer:canupdatecustomer": ["client:canupdateclient"],
+  "customer:candeletecustomer": ["client:candeleteclient"],
   "income_statement:canviewincomestatement": ["income:canviewincome"],
   "chart_account:canviewchartaccount": ["account:canviewaccount"],
   "pickup:canviewpickup": ["route:canviewroute", "truck:canviewtruck", "dispatch:canviewdispatch"],
@@ -52,6 +58,9 @@ const PERMISSION_GRANT_ALIASES: Record<string, readonly string[]> = {
 const VIEW_NAME_ALIASES: Record<string, readonly string[]> = {
   canviewsettings: ["canviewdashboard", "canviewsettings"],
   canviewcustomer: ["canviewclient", "canviewcustomer"],
+  cancreatecustomer: ["cancreateclient", "cancreatecustomer"],
+  canupdatecustomer: ["canupdateclient", "canupdatecustomer"],
+  candeletecustomer: ["candeleteclient", "candeletecustomer"],
   canviewincomestatement: ["canviewincome", "canviewincomestatement"],
   canviewchartaccount: ["canviewaccount", "canviewchartaccount"],
   canviewpickup: ["canviewroute", "canviewtruck", "canviewdispatch"],

@@ -10,9 +10,11 @@ import {
   type CustomerFormValues,
   DEFAULT_CUSTOMER_LIST_PARAMS,
   normalizeCustomerSearchFilter,
+  validateCustomerFormValues,
   toApiCustomerSearchField,
   type CustomerListParams,
 } from "@/lib/customers/types";
+import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 type ApiAddress = {
   address1?: string;
@@ -64,12 +66,17 @@ type ApiCustomer = {
   customerType?: number;
   phone1?: string;
   phone2?: string;
+  email?: string;
   active?: boolean;
+  IDNumber?: string;
   createdAt?: string;
   updatedAt?: string;
+  notes?: string;
+  accountBalance?: number;
   branch?: ApiBranch;
   createdByID?: number;
   address?: ApiAddress;
+  addresses?: ApiAddress[];
 };
 
 type ApiAddressWritePayload = {
@@ -108,12 +115,17 @@ type ApiBranchWritePayload = {
 type ApiCustomerWritePayload = {
   active: boolean;
   address: ApiAddressWritePayload;
+  addresses: ApiAddressWritePayload[];
   branch: ApiBranchWritePayload;
   customerType?: number;
   createdAt: string;
   createdByID: number;
+  email: string;
+  IDNumber: string;
   id: string;
   name: string;
+  notes: string;
+  accountBalance: number;
   oldID: number;
   phone1: string;
   phone2: string;
@@ -176,13 +188,25 @@ function normalizeBranch(raw?: ApiBranch, fallbackCountry?: string): CustomerBra
     name: String(branch.name ?? defaults.label).trim(),
     code: String(branch.code ?? defaults.code).trim(),
     address: normalizeAddress(branch.address ?? { country: fallbackCountry }),
-    phone1: String(branch.phone1 ?? "").trim(),
+    phone1: normalizeStoredPhone(String(branch.phone1 ?? "")),
     logo: String(branch.logo ?? "").trim(),
     settings: normalizeBranchSettings(branch.settings),
   };
 }
 
-function normalizeCustomer(raw: unknown): Customer | null {
+function coreAddressHasContent(address: CustomerCoreAddress): boolean {
+  return [
+    address.address1,
+    address.address2,
+    address.apartment,
+    address.city,
+    address.state,
+    address.zipcode,
+    address.country,
+  ].some((value) => value.trim());
+}
+
+export function normalizeApiCustomer(raw: unknown): Customer | null {
   if (!raw || typeof raw !== "object") return null;
 
   const item = raw as ApiCustomer;
@@ -190,21 +214,32 @@ function normalizeCustomer(raw: unknown): Customer | null {
   if (!id) return null;
 
   const address = normalizeAddress(item.address);
-  const branch = normalizeBranch(item.branch, address.country);
+  const addresses = Array.isArray(item.addresses)
+    ? item.addresses.map(normalizeAddress).filter(coreAddressHasContent)
+    : coreAddressHasContent(address)
+      ? [address]
+      : [];
+  const primaryAddress = addresses[0] ?? address;
+  const branch = normalizeBranch(item.branch, primaryAddress.country);
 
   return {
     id,
     oldID: readNumericId(item.oldID) ?? 0,
     name: String(item.name ?? "").trim(),
     customerType: readNumericId(item.customerType) ?? null,
-    phone1: String(item.phone1 ?? "").trim(),
-    phone2: String(item.phone2 ?? "").trim(),
+    phone1: normalizeStoredPhone(String(item.phone1 ?? "")),
+    phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
+    email: String(item.email ?? "").trim(),
     active: item.active !== false,
+    IDNumber: String(item.IDNumber ?? "").trim(),
     createdAt: item.createdAt ?? "",
     updatedAt: item.updatedAt ?? "",
+    notes: String(item.notes ?? "").trim(),
+    accountBalance: Number(item.accountBalance ?? 0),
     branch,
     createdByID: readNumericId(item.createdByID) ?? null,
-    address,
+    address: primaryAddress,
+    addresses,
   };
 }
 
@@ -212,7 +247,7 @@ function normalizePaginatedCustomers(
   payload: PaginatedApiEnvelope<unknown[]>,
 ): PaginatedResult<Customer> {
   const items = Array.isArray(payload.data)
-    ? payload.data.map(normalizeCustomer).filter((customer): customer is Customer => customer != null)
+    ? payload.data.map(normalizeApiCustomer).filter((customer): customer is Customer => customer != null)
     : [];
 
   return {
@@ -317,7 +352,7 @@ function buildBranchWritePayload(branch: CustomerBranch): ApiBranchWritePayload 
     name: branch.name,
     code: branch.code,
     address: buildAddressWritePayload(branch.address),
-    phone1: branch.phone1,
+    phone1: normalizeStoredPhone(branch.phone1),
     logo: branch.logo,
     settings: buildBranchSettingsWritePayload(branch.settings),
   };
@@ -327,21 +362,31 @@ function buildCustomerWritePayload(
   values: CustomerFormValues,
   options: { customerId?: string } = {},
 ): ApiCustomerWritePayload {
+  validateCustomerFormValues(values);
+
   const name = values.name.trim();
 
-  if (!name) throw new Error("Customer name is required.");
+  const addresses =
+    values.addresses.length > 0
+      ? values.addresses.map(buildAddressWritePayload)
+      : [buildAddressWritePayload(values.address)];
 
   const payload: ApiCustomerWritePayload = {
     active: values.active,
-    address: buildAddressWritePayload(values.address),
+    address: addresses[0] ?? buildAddressWritePayload(values.address),
+    addresses,
     branch: buildBranchWritePayload(values.branch),
     createdAt: values.createdAt,
     createdByID: values.createdByID ?? 0,
+    email: values.email.trim(),
+    IDNumber: values.IDNumber.trim(),
     id: options.customerId ?? "",
     name,
+    notes: values.notes.trim(),
+    accountBalance: Number.isFinite(values.accountBalance) ? values.accountBalance : 0,
     oldID: values.oldID,
-    phone1: values.phone1.trim(),
-    phone2: values.phone2.trim(),
+    phone1: normalizeStoredPhone(values.phone1),
+    phone2: normalizeStoredPhone(values.phone2),
     updatedAt: values.updatedAt,
   };
 
@@ -360,7 +405,7 @@ function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackM
 
 function extractCustomerFromMutationResponse(data: unknown): Customer | null {
   if (data && typeof data === "object" && !Array.isArray(data)) {
-    return normalizeCustomer(data);
+    return normalizeApiCustomer(data);
   }
 
   return null;
@@ -462,7 +507,7 @@ export async function fetchCustomerById(customerId: string): Promise<Customer> {
       ? (response as PaginatedApiEnvelope<ApiCustomer>).data
       : response;
 
-  const customer = normalizeCustomer(raw);
+  const customer = normalizeApiCustomer(raw);
   if (!customer) {
     throw new Error("Customer not found.");
   }

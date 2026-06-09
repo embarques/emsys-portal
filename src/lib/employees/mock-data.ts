@@ -8,8 +8,9 @@ export const MOCK_EMPLOYEES: Employee[] = [
     department: "driver",
     title: "supervisor",
     active: true,
+    startDate: "2024-01-01T08:00:00Z",
+    endDate: "",
     branch: createEmployeeBranchFromPortal("usa"),
-    branchs: [createEmployeeBranchFromPortal("usa")],
     address: {
       ...createEmptyEmployeeAddress("US"),
       city: "NEW YORK",
@@ -23,7 +24,6 @@ export const MOCK_EMPLOYEES: Employee[] = [
     totalLoanGiven: 0,
     totalPaymentReceived: 0,
     user: null,
-    users: [],
     createdAt: "",
     updatedAt: "",
   },

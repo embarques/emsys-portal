@@ -11,7 +11,6 @@ import {
   Plus,
   Search,
   Trash2,
-  Truck,
 } from "lucide-react";
 
 import { OrderForm } from "@/components/orders/order-form";
@@ -33,20 +32,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
+  formatCustomerPartySummary,
+  formatEmployeeSummary,
   formatOrderCommentsSummary,
   formatOrderDate,
   formatOrderId,
-  formatOrderPartySummary,
+  formatUserSummary,
   getOrderBranchLabel,
   getOrderCompletedLabel,
-  getRouteAssignmentLabel,
-  getRouteName,
 } from "@/lib/orders/display";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
@@ -55,7 +53,6 @@ import {
   useOrderStats,
   useOrders,
   useUpdateOrder,
-  useUpdateOrderRouteAssignment,
 } from "@/lib/orders/hooks/use-orders";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
@@ -63,22 +60,17 @@ import {
   createEmptyOrderForm,
   createOrderSearchFilter,
   getDefaultOrderSearchOperator,
+  getOrderRecordId,
   getOrderSearchOperatorsForField,
   orderToFormValues,
   type Order,
   type OrderFilterState,
   type OrderFormValues,
 } from "@/lib/orders/types";
-import { formatRouteAssignmentCopyLabel } from "@/lib/route-assignments/display";
-import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
 import type { DataTableColumn } from "@/lib/table/types";
-import { cloneRoutes } from "@/lib/routes/mock-data";
 import { getBranchBadgeClass } from "@/lib/trucks/display";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 const defaultFilters: OrderFilterState = {
   query: "",
@@ -91,8 +83,6 @@ const defaultFilters: OrderFilterState = {
 export function OrdersWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const { loading: authLoading, companyId } = useAuth();
-  const routes = useMemo(() => cloneRoutes(), []);
-  const routeAssignments = useMemo(() => cloneRouteAssignments(), []);
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -102,11 +92,6 @@ export function OrdersWorkspace() {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Order | Order[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [assignRouteAssignmentId, setAssignRouteAssignmentId] = useState(
-    () => routeAssignments[0]?.routeAssignmentId ?? "",
-  );
-
   const listParams = useMemo(() => {
     const search = createOrderSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
 
@@ -145,19 +130,16 @@ export function OrdersWorkspace() {
   const createOrderMutation = useCreateOrder();
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
-  const updateRouteAssignmentMutation = useUpdateOrderRouteAssignment();
-
   const orders = data?.items ?? [];
   const totalOrders = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
-    orders.length > 0 && orders.every((order) => selectedIds.includes(order.orderId));
+    orders.length > 0 && orders.every((order) => selectedIds.includes(getOrderRecordId(order)));
   const isSaving =
     createOrderMutation.isPending ||
     updateOrderMutation.isPending ||
-    deleteOrdersMutation.isPending ||
-    updateRouteAssignmentMutation.isPending;
+    deleteOrdersMutation.isPending;
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const missingCompanyContext = !authLoading && !companyId;
 
@@ -191,12 +173,14 @@ export function OrdersWorkspace() {
   function toggleSelectAll(checked: boolean) {
     if (checked) {
       setSelectedIds((current) =>
-        Array.from(new Set([...current, ...orders.map((order) => order.orderId)])),
+        Array.from(new Set([...current, ...orders.map((order) => getOrderRecordId(order))])),
       );
       return;
     }
 
-    setSelectedIds((current) => current.filter((id) => !orders.some((order) => order.orderId === id)));
+    setSelectedIds((current) =>
+      current.filter((id) => !orders.some((order) => getOrderRecordId(order) === id)),
+    );
   }
 
   function toggleSelect(orderId: string, checked: boolean) {
@@ -222,7 +206,7 @@ export function OrdersWorkspace() {
     try {
       if (formMode === "edit" && editingOrder) {
         const nextOrder = await updateOrderMutation.mutateAsync({
-          orderId: editingOrder.orderId,
+          orderId: getOrderRecordId(editingOrder),
           values,
         });
         notifyUpdated("Order", formatOrderId(nextOrder));
@@ -246,8 +230,8 @@ export function OrdersWorkspace() {
     if (!deleteTarget) return;
 
     const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((order) => order.orderId)
-      : [deleteTarget.orderId];
+      ? deleteTarget.map((order) => getOrderRecordId(order))
+      : [getOrderRecordId(deleteTarget)];
 
     try {
       await deleteOrdersMutation.mutateAsync(ids);
@@ -258,36 +242,6 @@ export function OrdersWorkspace() {
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);
-    }
-  }
-
-  function openAssignDialog() {
-    if (selectedIds.length === 0) return;
-    setAssignRouteAssignmentId(routeAssignments[0]?.routeAssignmentId ?? "");
-    setAssignDialogOpen(true);
-  }
-
-  async function applyRouteAssignment() {
-    if (!assignRouteAssignmentId || selectedIds.length === 0) return;
-
-    const assignmentLabel = getRouteAssignmentLabel(assignRouteAssignmentId);
-
-    try {
-      await Promise.all(
-        selectedIds.map((orderId) =>
-          updateRouteAssignmentMutation.mutateAsync({
-            orderId,
-            routeAssignmentId: assignRouteAssignmentId,
-          }),
-        ),
-      );
-
-      notifyUpdated("Route assignment", `${selectedIds.length} order(s) → ${assignmentLabel}`);
-      setAssignDialogOpen(false);
-      setSelectedIds([]);
-    } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
-      setAssignDialogOpen(false);
     }
   }
 
@@ -320,26 +274,25 @@ export function OrdersWorkspace() {
 
   const tableColumns: DataTableColumn<Order>[] = [
     {
-      id: "orderId",
-      label: "Pickup #",
+      id: "id",
+      label: "id",
       cellClassName: "font-mono text-xs",
-      renderCell: (order) => formatOrderId(order),
+      renderCell: (order) => (order.oldID > 0 ? order.oldID : order.id),
+    },
+    {
+      id: "oldID",
+      label: "oldID",
+      cellClassName: "font-mono text-xs",
+      renderCell: (order) => (order.oldID > 0 ? order.oldID : "—"),
     },
     {
       id: "date",
-      label: "Date",
+      label: "date",
       renderCell: (order) => formatOrderDate(order.date),
     },
     {
-      id: "branch",
-      label: "Branch",
-      renderCell: (order) => (
-        <Badge className={getBranchBadgeClass(order.branch)}>{getOrderBranchLabel(order.branch)}</Badge>
-      ),
-    },
-    {
-      id: "status",
-      label: "Status",
+      id: "completed",
+      label: "completed",
       renderCell: (order) => (
         <Badge
           variant="outline"
@@ -354,55 +307,56 @@ export function OrdersWorkspace() {
       ),
     },
     {
+      id: "branch",
+      label: "branch",
+      renderCell: (order) => (
+        <Badge className={getBranchBadgeClass(order.branch.code)}>{getOrderBranchLabel(order.branch)}</Badge>
+      ),
+    },
+    {
       id: "sender",
-      label: "Sender",
-      renderCell: (order) => formatOrderPartySummary(order.sender),
+      label: "sender",
+      renderCell: (order) => formatCustomerPartySummary(order.sender),
+    },
+    {
+      id: "receiver",
+      label: "receiver",
+      renderCell: (order) => (order.receiver ? order.receiver.name : "—"),
     },
     {
       id: "purpose",
-      label: "Purpose",
+      label: "purpose",
       renderCell: (order) => order.purpose || "—",
     },
     {
       id: "sector",
-      label: "Sector",
-      renderCell: (order) => order.sectorName || "—",
+      label: "sector",
+      renderCell: (order) => (order.sector ? `${order.sector.id} · ${order.sector.name}` : "—"),
     },
     {
-      id: "receivers",
-      label: "Receivers",
-      renderCell: (order) =>
-        order.receivers.length > 0 ? order.receivers.map((receiver) => receiver.name).join(", ") : "—",
+      id: "employee",
+      label: "employee",
+      renderCell: (order) => formatEmployeeSummary(order.employee),
     },
     {
-      id: "route",
-      label: "Route",
-      renderCell: (order) => (order.routeId ? getRouteName(order.routeId, routes) : "—"),
-    },
-    {
-      id: "assignment",
-      label: "Assignment",
-      renderCell: (order) => (order.routeAssignmentId ? getRouteAssignmentLabel(order.routeAssignmentId) : "—"),
+      id: "user",
+      label: "user",
+      renderCell: (order) => formatUserSummary(order.user),
     },
     {
       id: "comments",
-      label: "Comments",
+      label: "comments",
       renderCell: (order) => formatOrderCommentsSummary(order),
     },
     {
       id: "createdAt",
-      label: "Date created",
+      label: "createdAt",
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDate(order.createdAt),
     },
     {
-      id: "createdBy",
-      label: "User created",
-      renderCell: (order) => order.createdBy,
-    },
-    {
       id: "updatedAt",
-      label: "Date modified",
+      label: "updatedAt",
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDate(order.updatedAt),
     },
@@ -417,7 +371,7 @@ export function OrdersWorkspace() {
             type="button"
             variant="ghost"
             size="sm"
-            aria-label={`Edit order ${order.orderId}`}
+            aria-label={`Edit pickup ${getOrderRecordId(order)}`}
             onClick={() => openEditForm(order)}
             disabled={isSaving}
           >
@@ -429,7 +383,7 @@ export function OrdersWorkspace() {
             variant="ghost"
             size="sm"
             className="text-destructive hover:text-destructive"
-            aria-label={`Delete order ${order.orderId}`}
+            aria-label={`Delete pickup ${getOrderRecordId(order)}`}
             onClick={() => {
               setViewOrder(null);
               setDeleteTarget(order);
@@ -450,7 +404,7 @@ export function OrdersWorkspace() {
     <div>
       <PageHeader
         title="Orders"
-        description="Pickup orders from GET /pickups with sender, purpose, comments, branch, and completion status."
+        description="Pickups from GET /pickups aligned to id, user, branch, employee, sender, receiver, purpose, comments, and sector."
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
@@ -618,17 +572,15 @@ export function OrdersWorkspace() {
           <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium">{selectedIds.length} selected</p>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={openAssignDialog} disabled={isSaving}>
-                <Truck className="h-4 w-4" />
-                Assign to route ({selectedIds.length})
-              </Button>
               <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
                 Clear selection
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => setDeleteTarget(orders.filter((order) => selectedIds.includes(order.orderId)))}
+                onClick={() =>
+                  setDeleteTarget(orders.filter((order) => selectedIds.includes(getOrderRecordId(order))))
+                }
                 disabled={isSaving}
               >
                 <Trash2 className="h-4 w-4" />
@@ -644,7 +596,7 @@ export function OrdersWorkspace() {
           <DataTable
             columns={columnVisibility.columns}
             rows={orders}
-            rowKey={(order) => order.orderId}
+            rowKey={(order) => getOrderRecordId(order)}
             rowLabel={(order) => formatOrderId(order)}
             columnLayout={columnVisibility}
             minWidth={1500}
@@ -725,11 +677,11 @@ export function OrdersWorkspace() {
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit order" : "Add order"}</DialogTitle>
             <DialogDescription>
-              Manage sender and receivers with phones, addresses, and order-specific address selection.
+              Manage pickup fields: date, branch, employee, sender, receiver, purpose, and comments.
             </DialogDescription>
           </DialogHeader>
           <OrderForm
-            key={editingOrder?.orderId ?? "new"}
+            key={editingOrder ? getOrderRecordId(editingOrder) : "new"}
             allOrders={orders}
             initialValues={
               formMode === "edit" && editingOrder ? orderToFormValues(editingOrder) : createEmptyOrderForm()
@@ -770,40 +722,6 @@ export function OrdersWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign to route assignment</DialogTitle>
-            <DialogDescription>
-              Update the route assignment for {selectedIds.length} selected order
-              {selectedIds.length === 1 ? "" : "s"}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="bulkRouteAssignment">Route assignment</Label>
-            <select
-              id="bulkRouteAssignment"
-              className={selectClassName}
-              value={assignRouteAssignmentId}
-              onChange={(event) => setAssignRouteAssignmentId(event.target.value)}
-            >
-              {routeAssignments.map((assignment) => (
-                <option key={assignment.routeAssignmentId} value={assignment.routeAssignmentId}>
-                  {formatRouteAssignmentCopyLabel(assignment)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={applyRouteAssignment} disabled={!assignRouteAssignmentId || isSaving}>
-              Apply assignment
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

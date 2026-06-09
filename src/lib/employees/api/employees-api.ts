@@ -2,18 +2,16 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
-  EMPLOYEE_PORTAL_BRANCHES,
-  createEmptyEmployeeBranchSettings,
+  DEFAULT_EMPLOYEE_LIST_PARAMS,
+  normalizeEmployeeSearchFilter,
   type Employee,
   type EmployeeAddress,
   type EmployeeBranch,
-  type EmployeeBranchSettings,
   type EmployeeFormValues,
   type EmployeeListParams,
-  type EmployeePortalBranch,
-  type EmployeeUser,
-  portalBranchToId,
 } from "@/lib/employees/types";
+import { normalizeApiUser } from "@/lib/users/api/users-api";
+import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 type ApiAddress = {
   address1?: string;
@@ -35,93 +33,16 @@ type ApiAddressWritePayload = {
   zipcode: string;
 };
 
-type ApiBranchSettings = {
-  defaultLabelStatus: number;
-  imageResampleBy: number;
-  invoiceCreatedThruIncomeStatement: boolean;
-  labelPrefix: string;
-  printLabelCount: boolean;
-  roundDecimalPlaces: number;
-  s3BucketFolder: string;
-  s3BucketName: string;
-  s3Profile: string;
-  s3ShareLinkExpireMinutes: number;
-};
-
-type ApiBranchWritePayload = {
-  address: ApiAddressWritePayload;
-  code: string;
-  created: string;
-  disclaimer: string;
-  id: number;
-  logo: string;
-  name: string;
-  phone1: string;
-  phone2: string;
-  settings: ApiBranchSettings;
-  type: string;
-};
-
-type ApiPermissionWritePayload = {
-  create: boolean;
-  delete: boolean;
-  id: number;
-  name: string;
-  print: boolean;
-  resourceType: string;
-  update: boolean;
-  view: boolean;
-};
-
-type ApiRoleWritePayload = {
-  active: boolean;
-  createdAt: string;
-  id: number;
-  name: string;
-  permissions: ApiPermissionWritePayload[];
-  updatedAt: string;
-};
-
-type ApiUserWritePayload = {
-  accessCode: number;
-  active: boolean;
-  branch: ApiBranchWritePayload;
-  branches: ApiBranchWritePayload[];
-  createdAt: string;
-  email: string;
-  endTime: string;
-  fullName: string;
-  id: number;
-  password: string;
-  role: ApiRoleWritePayload;
-  startTime: string;
-  type: string;
-  uid: string;
-  updatedAt: string;
-  user: string;
-  userName: string;
-};
-
 type ApiBranch = {
   id?: number;
   code?: string;
   name?: string;
-  address?: ApiAddress;
-  created?: string;
-  disclaimer?: string;
-  logo?: string;
-  phone1?: string;
-  phone2?: string;
-  settings?: Partial<ApiBranchSettings>;
-  type?: string;
 };
 
-type ApiUserRef = {
-  id?: number;
-  userName?: string;
-  email?: string;
-  fullName?: string;
-  active?: boolean;
+type ApiBranchWritePayload = {
+  id: number;
+  name: string;
+  code: string;
 };
 
 type ApiEmployee = {
@@ -130,9 +51,10 @@ type ApiEmployee = {
   title?: string;
   department?: string;
   active?: boolean;
+  startDate?: string;
+  endDate?: string;
   address?: ApiAddress;
   branch?: ApiBranch;
-  branchs?: ApiBranch[];
   cost?: number;
   loanAmountOwed?: number;
   loanBalanceUpdated?: string;
@@ -141,8 +63,7 @@ type ApiEmployee = {
   email?: string;
   totalLoanGiven?: number;
   totalPaymentReceived?: number;
-  user?: ApiUserRef;
-  users?: ApiUserRef[];
+  user?: unknown;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -151,23 +72,23 @@ type ApiEmployeeWritePayload = {
   active: boolean;
   address: ApiAddressWritePayload;
   branch: ApiBranchWritePayload;
-  branchs: ApiBranchWritePayload[];
   cost: number;
   createdAt: string;
   department: string;
   email: string;
+  endDate: string;
   id: number;
   loanAmountOwed: number;
   loanBalanceUpdated: string;
   name: string;
   phone1: string;
   phone2: string;
+  startDate: string;
   title: string;
   totalLoanGiven: number;
   totalPaymentReceived: number;
   updatedAt: string;
-  user: ApiUserWritePayload;
-  users: ApiUserWritePayload[];
+  user?: { id: number } | null;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -176,130 +97,19 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
-function buildDefaultBranchSettings(): ApiBranchSettings {
-  return createEmptyEmployeeBranchSettings();
-}
-
-function buildAddressWritePayload(address?: Partial<EmployeeAddress>): ApiAddressWritePayload {
-  return {
-    address1: address?.address1?.trim() ?? "",
-    address2: address?.address2?.trim() ?? "",
-    apartment: address?.apartment?.trim() ?? "",
-    city: address?.city?.trim() ?? "",
-    country: address?.country?.trim() ?? "",
-    state: address?.state?.trim() ?? "",
-    zipcode: address?.zipcode?.trim() ?? "",
-  };
-}
-
-function buildBranchWritePayload(branch: EmployeeBranch): ApiBranchWritePayload {
-  return {
-    address: buildAddressWritePayload(branch.address),
-    code: branch.code,
-    created: branch.created,
-    disclaimer: branch.disclaimer,
-    id: branch.id,
-    logo: branch.logo,
-    name: branch.name,
-    phone1: branch.phone1,
-    phone2: branch.phone2,
-    settings: branch.settings,
-    type: branch.type,
-  };
-}
-
-function buildDefaultRolePayload(): ApiRoleWritePayload {
-  return {
-    active: true,
-    createdAt: "",
-    id: 0,
-    name: "",
-    permissions: [],
-    updatedAt: "",
-  };
-}
-
-function buildUserWritePayload(
-  branch: EmployeeBranch,
-  overrides: { id?: number; userName?: string } = {},
-): ApiUserWritePayload {
-  const branchPayload = buildBranchWritePayload(branch);
-  const userName = overrides.userName?.trim() ?? "";
-
-  return {
-    accessCode: 0,
-    active: true,
-    branch: branchPayload,
-    branches: [branchPayload],
-    createdAt: "",
-    email: "",
-    endTime: "",
-    fullName: "",
-    id: overrides.id ?? 0,
-    password: "",
-    role: buildDefaultRolePayload(),
-    startTime: "",
-    type: "",
-    uid: "",
-    updatedAt: "",
-    user: userName,
-    userName,
-  };
-}
-
 function readNumericId(value: number | string | undefined): number | undefined {
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function normalizeBranchSettings(raw?: Partial<ApiBranchSettings>): EmployeeBranchSettings {
-  const settings = raw ?? {};
-
-  return {
-    defaultLabelStatus: Number(settings.defaultLabelStatus ?? 0),
-    imageResampleBy: Number(settings.imageResampleBy ?? 0),
-    invoiceCreatedThruIncomeStatement: settings.invoiceCreatedThruIncomeStatement === true,
-    labelPrefix: String(settings.labelPrefix ?? "").trim(),
-    printLabelCount: settings.printLabelCount === true,
-    roundDecimalPlaces: Number(settings.roundDecimalPlaces ?? 0),
-    s3BucketFolder: String(settings.s3BucketFolder ?? "").trim(),
-    s3BucketName: String(settings.s3BucketName ?? "").trim(),
-    s3Profile: String(settings.s3Profile ?? "").trim(),
-    s3ShareLinkExpireMinutes: Number(settings.s3ShareLinkExpireMinutes ?? 0),
-  };
-}
-
-function normalizeBranch(raw?: ApiBranch, fallbackCountry?: string): EmployeeBranch {
+function normalizeBranch(raw?: ApiBranch): EmployeeBranch {
   const branch = raw ?? {};
-  const id = readNumericId(branch.id) ?? 1;
-  const defaults = EMPLOYEE_PORTAL_BRANCHES.find((entry) => entry.id === id) ?? EMPLOYEE_PORTAL_BRANCHES[0];
 
   return {
-    address: normalizeAddress(branch.address ?? { country: fallbackCountry ?? defaults.country }),
-    code: String(branch.code ?? defaults.code).trim(),
-    created: String(branch.created ?? "").trim(),
-    disclaimer: String(branch.disclaimer ?? "").trim(),
-    id,
-    logo: String(branch.logo ?? "").trim(),
-    name: String(branch.name ?? defaults.name).trim(),
-    phone1: String(branch.phone1 ?? "").trim(),
-    phone2: String(branch.phone2 ?? "").trim(),
-    settings: normalizeBranchSettings(branch.settings),
-    type: String(branch.type ?? "").trim(),
-  };
-}
-
-function normalizeUser(raw?: ApiUserRef): EmployeeUser | null {
-  const id = readNumericId(raw?.id);
-  if (id == null) return null;
-
-  return {
-    id,
-    userName: String(raw?.userName ?? "").trim(),
-    email: String(raw?.email ?? "").trim(),
-    fullName: String(raw?.fullName ?? "").trim(),
-    active: raw?.active !== false,
+    id: readNumericId(branch.id) ?? 0,
+    name: String(branch.name ?? "").trim(),
+    code: String(branch.code ?? "").trim(),
   };
 }
 
@@ -319,13 +129,11 @@ function normalizeAddress(raw: ApiAddress | undefined): EmployeeAddress {
 
 function normalizePhone1(raw: ApiEmployee["phone1"]): string {
   if (Array.isArray(raw)) {
-    return raw
-      .map((entry) => String(entry).trim())
-      .filter(Boolean)
-      .join(", ");
+    const first = raw.map((entry) => String(entry).trim()).find(Boolean);
+    return first ? normalizeStoredPhone(first) : "";
   }
 
-  return String(raw ?? "").trim();
+  return normalizeStoredPhone(String(raw ?? ""));
 }
 
 function normalizeEmployee(raw: unknown): Employee | null {
@@ -335,15 +143,7 @@ function normalizeEmployee(raw: unknown): Employee | null {
   const employeeId = readNumericId(item.id);
   if (employeeId == null) return null;
 
-  const address = normalizeAddress(item.address);
-  const branch = normalizeBranch(item.branch, address.country);
-  const branchs = Array.isArray(item.branchs)
-    ? item.branchs.map((entry) => normalizeBranch(entry))
-    : [];
-  const user = normalizeUser(item.user);
-  const users = Array.isArray(item.users)
-    ? item.users.map((entry) => normalizeUser(entry)).filter((entry): entry is EmployeeUser => entry != null)
-    : [];
+  const user = item.user != null ? normalizeApiUser(item.user) : null;
 
   return {
     id: employeeId,
@@ -351,11 +151,12 @@ function normalizeEmployee(raw: unknown): Employee | null {
     department: String(item.department ?? "").trim(),
     title: String(item.title ?? "").trim(),
     active: item.active !== false,
-    branch,
-    branchs,
-    address,
+    startDate: item.startDate ?? "",
+    endDate: item.endDate ?? "",
+    branch: normalizeBranch(item.branch),
+    address: normalizeAddress(item.address),
     phone1: normalizePhone1(item.phone1),
-    phone2: String(item.phone2 ?? "").trim(),
+    phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
     email: String(item.email ?? "").trim(),
     cost: Number(item.cost ?? 0),
     loanAmountOwed: Number(item.loanAmountOwed ?? 0),
@@ -363,7 +164,6 @@ function normalizeEmployee(raw: unknown): Employee | null {
     totalLoanGiven: Number(item.totalLoanGiven ?? 0),
     totalPaymentReceived: Number(item.totalPaymentReceived ?? 0),
     user,
-    users,
     createdAt: item.createdAt ?? "",
     updatedAt: item.updatedAt ?? "",
   };
@@ -387,20 +187,25 @@ function normalizePaginatedEmployees(
 }
 
 function buildEmployeesQuery(params: EmployeeListParams): string {
-  const page = params.page ?? 1;
-  const limit = params.limit ?? 40;
+  const page = params.page ?? DEFAULT_EMPLOYEE_LIST_PARAMS.page;
+  const limit = params.limit ?? DEFAULT_EMPLOYEE_LIST_PARAMS.limit;
   const searchParams = new URLSearchParams({
     page: String(page),
     start: String((page - 1) * limit),
     limit: String(limit),
-    sortField: params.sortField ?? "name",
-    sortDirection: params.sortDirection ?? "asc",
+    sortField: params.sortField ?? DEFAULT_EMPLOYEE_LIST_PARAMS.sortField,
+    sortDirection: params.sortDirection ?? DEFAULT_EMPLOYEE_LIST_PARAMS.sortDirection,
   });
 
   if (params.search?.value.trim()) {
-    searchParams.set("field", params.search.field);
-    searchParams.set("operator", params.search.operator);
-    searchParams.set("value", params.search.value.trim());
+    const search = normalizeEmployeeSearchFilter({
+      ...params.search,
+      value: params.search.value.trim(),
+    });
+
+    searchParams.set("field", search.field);
+    searchParams.set("operator", search.operator);
+    searchParams.set("value", search.value);
   }
 
   if (params.department && params.department !== "all") {
@@ -412,10 +217,30 @@ function buildEmployeesQuery(params: EmployeeListParams): string {
   }
 
   if (params.branch && params.branch !== "all") {
-    searchParams.set("branchId", String(portalBranchToId(params.branch as EmployeePortalBranch)));
+    searchParams.set("branchId", String(params.branch));
   }
 
   return searchParams.toString();
+}
+
+function buildAddressWritePayload(address?: Partial<EmployeeAddress>): ApiAddressWritePayload {
+  return {
+    address1: address?.address1?.trim() ?? "",
+    address2: address?.address2?.trim() ?? "",
+    apartment: address?.apartment?.trim() ?? "",
+    city: address?.city?.trim() ?? "",
+    country: address?.country?.trim() ?? "",
+    state: address?.state?.trim() ?? "",
+    zipcode: address?.zipcode?.trim() ?? "",
+  };
+}
+
+function buildBranchWritePayload(branch: EmployeeBranch): ApiBranchWritePayload {
+  return {
+    id: branch.id,
+    name: branch.name,
+    code: branch.code,
+  };
 }
 
 function buildEmployeeWritePayload(
@@ -425,54 +250,42 @@ function buildEmployeeWritePayload(
   const name = values.name.trim();
   const department = values.department.trim();
   const title = values.title.trim();
-  const branchPayload = buildBranchWritePayload(values.branch);
 
   if (!name) throw new Error("Employee name is required.");
   if (!department) throw new Error("Department is required.");
   if (!title) throw new Error("Title is required.");
 
-  const primaryUser =
-    values.user != null
-      ? buildUserWritePayload(values.branch, {
-          id: values.user.id,
-          userName: values.user.userName,
-        })
-      : buildUserWritePayload(values.branch);
+  if (!values.branch.id) {
+    throw new Error("Branch is required.");
+  }
 
-  const linkedUsers = values.users.map((linkedUser) =>
-    buildUserWritePayload(values.branch, {
-      id: linkedUser.id,
-      userName: linkedUser.userName,
-    }),
-  );
-
-  const branchsPayload =
-    values.branchs.length > 0
-      ? values.branchs.map((branch) => buildBranchWritePayload(branch))
-      : [branchPayload];
-
-  return {
+  const payload: ApiEmployeeWritePayload = {
     active: values.active,
     address: buildAddressWritePayload(values.address),
-    branch: branchPayload,
-    branchs: branchsPayload,
+    branch: buildBranchWritePayload(values.branch),
     cost: Number(values.cost) || 0,
-    createdAt: values.createdAt,
+    createdAt: values.createdAt || options.existing?.createdAt || new Date().toISOString(),
     department,
     email: values.email.trim(),
+    endDate: values.endDate,
     id: options.id ?? 0,
     loanAmountOwed: values.loanAmountOwed,
     loanBalanceUpdated: values.loanBalanceUpdated,
     name,
-    phone1: values.phone1.trim(),
-    phone2: values.phone2.trim(),
+    phone1: normalizeStoredPhone(values.phone1),
+    phone2: normalizeStoredPhone(values.phone2),
+    startDate: values.startDate,
     title,
     totalLoanGiven: values.totalLoanGiven,
     totalPaymentReceived: values.totalPaymentReceived,
-    updatedAt: values.updatedAt,
-    user: primaryUser,
-    users: linkedUsers,
+    updatedAt: values.updatedAt || new Date().toISOString(),
   };
+
+  if (values.user?.id) {
+    payload.user = { id: values.user.id };
+  }
+
+  return payload;
 }
 
 function parseEmployeePathId(employeeId: string): number {
@@ -529,7 +342,7 @@ async function resolveCreatedEmployee(
     const matches = await fetchEmployees({
       page: 1,
       limit: 1,
-      search: { field: "name", operator: "equals", value: name },
+      search: { field: "name", operator: "eq", value: name },
     });
 
     const matchedEmployee = matches.items[0];

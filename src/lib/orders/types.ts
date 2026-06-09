@@ -1,122 +1,66 @@
-import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import type { CustomerAddress, CustomerPhone } from "@/lib/customers/types";
+import type { Customer, CustomerAddress, CustomerPhone } from "@/lib/customers/types";
+import { normalizeStoredPhone } from "@/lib/utils/phone";
 import { createRecordId } from "@/lib/customers/types";
+import type { Employee } from "@/lib/employees/types";
+import type { User } from "@/lib/users/types";
 
-export type OrderBranch = "usa" | "dr";
-
-export type OrderCommentPurpose =
-  | "make_estimate"
-  | "collect_payment"
-  | "take_box"
-  | "take_barrel"
-  | "take_tape"
-  | "take_other"
-  | "pickup_box"
-  | "pickup_barrel"
-  | "pickup_other"
-  | "general_comment";
-
-export type OrderParty = {
-  id: string;
-  clientId?: string;
+export type PickupBranch = {
+  id: number;
   name: string;
-  documentId?: string;
-  email?: string;
-  phones: CustomerPhone[];
-  addresses: CustomerAddress[];
-  orderAddressId: string;
+  code: string;
 };
 
-export type OrderCommentBase = {
-  id: string;
+export type PickupSector = {
+  id: number;
+  name: string;
 };
 
-export type OrderComment =
-  | (OrderCommentBase & { purpose: "make_estimate"; note?: string })
-  | (OrderCommentBase & { purpose: "collect_payment"; note?: string })
-  | (OrderCommentBase & { purpose: "take_box"; quantity: number })
-  | (OrderCommentBase & { purpose: "take_barrel"; quantity: number })
-  | (OrderCommentBase & { purpose: "take_tape"; quantity: number })
-  | (OrderCommentBase & { purpose: "take_other"; quantity: number; description?: string })
-  | (OrderCommentBase & { purpose: "pickup_box"; quantity: number })
-  | (OrderCommentBase & { purpose: "pickup_barrel"; quantity: number })
-  | (OrderCommentBase & { purpose: "pickup_other"; quantity: number; description?: string })
-  | (OrderCommentBase & { purpose: "general_comment"; text: string });
-
-export type Order = {
-  /** EMSYS pickup id (GET /pickups/{id}). */
-  orderId: string;
-  /** Legacy pickup number from the API. */
-  oldID: number;
-  sender: OrderParty;
-  receivers: OrderParty[];
-  date: string;
-  containerId: string;
-  pending: OrderBranch;
-  branch: OrderBranch;
-  branchId: number;
-  routeId: string;
-  routeAssignmentId: string;
-  comments: OrderComment[];
-  completed: boolean;
+export type PickupComment = {
   purpose: string;
-  sectorId: number | null;
-  sectorName: string;
+  unit: string;
+  quantity: number;
+  description: string;
+};
+
+/** EMSYS pickup record from GET /pickups. */
+export type Order = {
+  id: number;
+  oldID: number;
+  date: string;
   createdAt: string;
-  createdBy: string;
   updatedAt: string;
-};
-
-export type OrderPartyPhoneFormValues = {
-  id: string;
-  number: string;
-  label: string;
-};
-
-export type OrderPartyAddressFormValues = {
-  id: string;
-  streetAddress: string;
-  apt: string;
-  crossStreet: string;
-  city: string;
-  state: string;
-  provinceCountry: string;
-  zipCode: string;
-};
-
-export type OrderPartyFormValues = {
-  id: string;
-  clientId: string;
-  name: string;
-  documentId: string;
-  email: string;
-  phones: OrderPartyPhoneFormValues[];
-  addresses: OrderPartyAddressFormValues[];
-  orderAddressId: string;
+  completed: boolean;
+  user: User | null;
+  branch: PickupBranch;
+  employee: Employee | null;
+  sender: Customer;
+  receiver: Customer | null;
+  purpose: string;
+  comments: PickupComment[];
+  sector: PickupSector | null;
 };
 
 export type OrderCommentFormValues = {
-  id: string;
-  purpose: OrderCommentPurpose;
-  note: string;
+  purpose: string;
+  unit: string;
   quantity: string;
   description: string;
-  text: string;
 };
 
 export type OrderFormValues = {
-  orderId: string;
-  sender: OrderPartyFormValues;
-  receivers: OrderPartyFormValues[];
+  id: number;
+  oldID: number;
   date: string;
-  containerId: string;
-  pending: OrderBranch;
-  branch: OrderBranch;
-  routeId: string;
-  routeAssignmentId: string;
-  comments: OrderCommentFormValues[];
   completed: boolean;
-  createdBy: string;
+  purpose: string;
+  branchId: number;
+  senderId: string;
+  receiverId: string;
+  sender: Customer | null;
+  receiver: Customer | null;
+  employeeId: number | "";
+  sectorId: number | "";
+  comments: OrderCommentFormValues[];
 };
 
 export type OrderFormSubmitResult = {
@@ -138,7 +82,13 @@ export type OrderSearchField =
   | "sender.name"
   | "sender.phone1"
   | "sender.oldID"
-  | "sector.id";
+  | "receiver.name"
+  | "receiver.phone1"
+  | "receiver.oldID"
+  | "sector.id"
+  | "branch.id"
+  | "employee.id"
+  | "user.id";
 
 export type OrderSearchFilter = {
   field: OrderSearchField;
@@ -156,11 +106,6 @@ export type OrderListParams = {
   completed?: OrderCompletedFilter;
 };
 
-/**
- * Default list intent: page 1, 40 rows, oldest pickup date first.
- * GET /pickups omits sortField=date when limit > 1 (API rejects it); server default order is date asc.
- * With a field filter: GET ...&field=completed&operator=eq&value=false&sortField=date&sortDirection=asc
- */
 export const DEFAULT_ORDER_LIST_PARAMS = {
   page: 1,
   limit: 40,
@@ -177,53 +122,39 @@ export type OrderFilterState = {
 };
 
 export const ORDER_SEARCH_FIELDS: { value: OrderSearchField; label: string }[] = [
-  { value: "sender.name", label: "Sender name" },
-  { value: "sender.phone1", label: "Sender phone" },
-  { value: "sender.oldID", label: "Sender old ID" },
-  { value: "oldID", label: "Pickup old ID" },
-  { value: "id", label: "Pickup ID" },
-  { value: "purpose", label: "Purpose" },
-  { value: "completed", label: "Completed" },
-  { value: "date", label: "Date" },
-  { value: "sector.id", label: "Sector ID" },
+  { value: "id", label: "id" },
+  { value: "oldID", label: "oldID" },
+  { value: "date", label: "date" },
+  { value: "completed", label: "completed" },
+  { value: "purpose", label: "purpose" },
+  { value: "sender.name", label: "sender.name" },
+  { value: "sender.phone1", label: "sender.phone1" },
+  { value: "sender.oldID", label: "sender.oldID" },
+  { value: "receiver.name", label: "receiver.name" },
+  { value: "receiver.phone1", label: "receiver.phone1" },
+  { value: "receiver.oldID", label: "receiver.oldID" },
+  { value: "sector.id", label: "sector.id" },
+  { value: "branch.id", label: "branch.id" },
+  { value: "employee.id", label: "employee.id" },
+  { value: "user.id", label: "user.id" },
 ];
 
-export const ORDER_BRANCHES: { value: OrderBranch; label: string }[] = [
-  { value: "usa", label: "USA" },
-  { value: "dr", label: "DR" },
-];
-
-const BRANCH_ID_TO_PORTAL: Record<number, OrderBranch> = {
-  1: "usa",
-  2: "dr",
-};
-
-const BRANCH_CODE_TO_PORTAL: Record<string, OrderBranch> = {
-  NY: "usa",
-  DR: "dr",
-  DO: "dr",
-};
-
-export const PORTAL_BRANCH_TO_ID: Record<OrderBranch, number> = {
-  usa: 1,
-  dr: 2,
-};
-
-export function branchIdToPortal(branchId: number | undefined, code?: string): OrderBranch {
-  if (branchId != null && BRANCH_ID_TO_PORTAL[branchId]) {
-    return BRANCH_ID_TO_PORTAL[branchId];
-  }
-
-  const normalizedCode = code?.trim().toUpperCase();
-  if (normalizedCode && BRANCH_CODE_TO_PORTAL[normalizedCode]) {
-    return BRANCH_CODE_TO_PORTAL[normalizedCode];
-  }
-
-  return "usa";
+export function getOrderRecordId(order: Pick<Order, "id">): string {
+  return String(order.id);
 }
 
 export function getOrderSearchOperatorsForField(field: OrderSearchField): OrderSearchOperator[] {
-  if (field === "completed" || field === "id" || field === "oldID" || field === "sender.oldID" || field === "sector.id") {
+  if (
+    field === "completed" ||
+    field === "id" ||
+    field === "oldID" ||
+    field === "sender.oldID" ||
+    field === "receiver.oldID" ||
+    field === "sector.id" ||
+    field === "branch.id" ||
+    field === "employee.id" ||
+    field === "user.id"
+  ) {
     return ["eq", "neq"];
   }
 
@@ -259,29 +190,135 @@ export function createOrderSearchFilter(
   return { field, operator: normalizedOperator, value: normalizedValue };
 }
 
-export const ORDER_COMMENT_PURPOSES: {
-  value: OrderCommentPurpose;
-  label: string;
-  requiresQuantity: boolean;
-  requiresDescription: boolean;
-  requiresText: boolean;
-  allowsNote: boolean;
-}[] = [
-  { value: "make_estimate", label: "Make an estimate", requiresQuantity: false, requiresDescription: false, requiresText: false, allowsNote: true },
-  { value: "collect_payment", label: "Collect payment", requiresQuantity: false, requiresDescription: false, requiresText: false, allowsNote: true },
-  { value: "take_box", label: "Take box", requiresQuantity: true, requiresDescription: false, requiresText: false, allowsNote: false },
-  { value: "take_barrel", label: "Take barrel", requiresQuantity: true, requiresDescription: false, requiresText: false, allowsNote: false },
-  { value: "take_tape", label: "Take tape", requiresQuantity: true, requiresDescription: false, requiresText: false, allowsNote: false },
-  { value: "take_other", label: "Take other", requiresQuantity: true, requiresDescription: false, requiresText: false, allowsNote: false },
-  { value: "pickup_box", label: "Pickup box", requiresQuantity: true, requiresDescription: false, requiresText: false, allowsNote: false },
-  { value: "pickup_barrel", label: "Pickup barrel", requiresQuantity: true, requiresDescription: false, requiresText: false, allowsNote: false },
-  { value: "pickup_other", label: "Pickup other", requiresQuantity: true, requiresDescription: false, requiresText: false, allowsNote: false },
-  { value: "general_comment", label: "Comment only", requiresQuantity: false, requiresDescription: false, requiresText: true, allowsNote: false },
-];
-
-export function createOrderId(): string {
-  return createRecordId();
+export function createEmptyOrderComment(): OrderCommentFormValues {
+  return {
+    purpose: "",
+    unit: "",
+    quantity: "0",
+    description: "",
+  };
 }
+
+export function todayDateInputValue(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function createEmptyOrderForm(): OrderFormValues {
+  return {
+    id: 0,
+    oldID: 0,
+    date: todayDateInputValue(),
+    completed: false,
+    purpose: "",
+    branchId: 1,
+    senderId: "",
+    receiverId: "",
+    sender: null,
+    receiver: null,
+    employeeId: "",
+    sectorId: "",
+    comments: [],
+  };
+}
+
+export function resetOrderFormForNextEntry(previous: OrderFormValues): OrderFormValues {
+  const empty = createEmptyOrderForm();
+
+  return {
+    ...empty,
+    date: previous.date,
+    branchId: previous.branchId,
+    employeeId: previous.employeeId,
+    sectorId: previous.sectorId,
+  };
+}
+
+export function orderCommentToFormValues(comment: PickupComment): OrderCommentFormValues {
+  return {
+    purpose: comment.purpose,
+    unit: comment.unit,
+    quantity: String(comment.quantity),
+    description: comment.description,
+  };
+}
+
+export function orderToFormValues(order: Order): OrderFormValues {
+  return {
+    id: order.id,
+    oldID: order.oldID,
+    date: order.date.slice(0, 10),
+    completed: order.completed,
+    purpose: order.purpose,
+    branchId: order.branch.id,
+    senderId: order.sender.id,
+    receiverId: order.receiver?.id ?? "",
+    sender: order.sender,
+    receiver: order.receiver,
+    employeeId: order.employee?.id ?? "",
+    sectorId: order.sector?.id ?? "",
+    comments: order.comments.map(orderCommentToFormValues),
+  };
+}
+
+export function ordersShareSender(
+  a: Pick<Customer, "id" | "name">,
+  b: Pick<Customer, "id" | "name">,
+): boolean {
+  if (a.id && b.id && a.id === b.id) return true;
+  return a.name.trim().toLowerCase() === b.name.trim().toLowerCase();
+}
+
+export function getSenderOrderHistory(
+  orders: Order[],
+  sender: Pick<Customer, "id" | "name">,
+): Order[] {
+  return orders
+    .filter((order) => ordersShareSender(order.sender, sender))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+// --- Legacy party types used by invoices ---
+
+export type OrderBranch = "usa" | "dr";
+
+export type OrderParty = {
+  id: string;
+  clientId?: string;
+  name: string;
+  documentId?: string;
+  email?: string;
+  phones: CustomerPhone[];
+  addresses: CustomerAddress[];
+  orderAddressId: string;
+};
+
+export type OrderPartyPhoneFormValues = {
+  id: string;
+  number: string;
+  label: string;
+};
+
+export type OrderPartyAddressFormValues = {
+  id: string;
+  streetAddress: string;
+  apt: string;
+  crossStreet: string;
+  city: string;
+  state: string;
+  provinceCountry: string;
+  zipCode: string;
+};
+
+export type OrderPartyFormValues = {
+  id: string;
+  clientId: string;
+  name: string;
+  documentId: string;
+  email: string;
+  phones: OrderPartyPhoneFormValues[];
+  addresses: OrderPartyAddressFormValues[];
+  orderAddressId: string;
+};
 
 export function createEmptyOrderPartyPhone(): OrderPartyPhoneFormValues {
   return { id: createRecordId(), number: "", label: "" };
@@ -314,54 +351,11 @@ export function createEmptyOrderParty(): OrderPartyFormValues {
   };
 }
 
-export function createEmptyOrderComment(): OrderCommentFormValues {
-  return {
-    id: createRecordId(),
-    purpose: "make_estimate",
-    note: "",
-    quantity: "1",
-    description: "",
-    text: "",
-  };
-}
-
-export function todayDateInputValue(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-export function createEmptyOrderForm(createdBy = DEFAULT_CREATED_BY): OrderFormValues {
-  return {
-    orderId: createOrderId(),
-    sender: createEmptyOrderParty(),
-    receivers: [],
-    date: todayDateInputValue(),
-    containerId: "",
-    pending: "usa",
-    branch: "usa",
-    routeId: "",
-    routeAssignmentId: "",
-    comments: [],
-    completed: false,
-    createdBy,
-  };
-}
-
-export function resetOrderFormForNextEntry(previous: OrderFormValues): OrderFormValues {
-  const empty = createEmptyOrderForm(previous.createdBy);
-
-  return {
-    ...empty,
-    date: previous.date,
-    containerId: previous.containerId,
-    pending: previous.pending,
-  };
-}
-
 function normalizePartyPhones(phones: OrderPartyPhoneFormValues[]): CustomerPhone[] {
   return phones
     .map((phone) => ({
       id: phone.id,
-      number: phone.number.trim(),
+      number: normalizeStoredPhone(phone.number),
       label: phone.label.trim() || undefined,
     }))
     .filter((phone) => phone.number.length > 0);
@@ -415,42 +409,6 @@ export function normalizeOrderParty(values: OrderPartyFormValues, label: string)
   };
 }
 
-function normalizeOrderComment(values: OrderCommentFormValues): OrderComment {
-  const meta = ORDER_COMMENT_PURPOSES.find((entry) => entry.value === values.purpose)!;
-
-  if (meta.requiresText && !values.text.trim()) {
-    throw new Error("Comment text is required for comment-only entries.");
-  }
-
-  if (meta.requiresQuantity) {
-    const quantity = Number(values.quantity);
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      throw new Error(`Quantity is required for "${meta.label}".`);
-    }
-
-    if (values.purpose === "take_other" || values.purpose === "pickup_other") {
-      return {
-        id: values.id,
-        purpose: values.purpose,
-        quantity,
-        description: values.description.trim() || undefined,
-      };
-    }
-
-    return { id: values.id, purpose: values.purpose, quantity } as OrderComment;
-  }
-
-  if (values.purpose === "general_comment") {
-    return { id: values.id, purpose: values.purpose, text: values.text.trim() };
-  }
-
-  return {
-    id: values.id,
-    purpose: values.purpose,
-    note: values.note.trim() || undefined,
-  } as OrderComment;
-}
-
 export function orderPartyToFormValues(party: OrderParty): OrderPartyFormValues {
   return {
     id: party.id,
@@ -462,7 +420,7 @@ export function orderPartyToFormValues(party: OrderParty): OrderPartyFormValues 
       party.phones.length > 0
         ? party.phones.map((phone) => ({
             id: phone.id,
-            number: phone.number,
+            number: normalizeStoredPhone(phone.number),
             label: phone.label ?? "",
           }))
         : [createEmptyOrderPartyPhone()],
@@ -486,111 +444,6 @@ export function orderPartyToFormValues(party: OrderParty): OrderPartyFormValues 
   };
 }
 
-export function orderCommentToFormValues(comment: OrderComment): OrderCommentFormValues {
-  const base = {
-    id: comment.id,
-    purpose: comment.purpose,
-    note: "",
-    quantity: "1",
-    description: "",
-    text: "",
-  };
-
-  switch (comment.purpose) {
-    case "make_estimate":
-    case "collect_payment":
-      return { ...base, note: comment.note ?? "" };
-    case "take_box":
-    case "take_barrel":
-    case "take_tape":
-    case "pickup_box":
-    case "pickup_barrel":
-      return { ...base, quantity: String(comment.quantity) };
-    case "take_other":
-    case "pickup_other":
-      return { ...base, quantity: String(comment.quantity), description: comment.description ?? "" };
-    case "general_comment":
-      return { ...base, text: comment.text };
-    default:
-      return base;
-  }
-}
-
-export function orderToFormValues(order: Order): OrderFormValues {
-  return {
-    orderId: order.orderId,
-    sender: orderPartyToFormValues(order.sender),
-    receivers: order.receivers.map(orderPartyToFormValues),
-    date: order.date.slice(0, 10),
-    containerId: order.containerId,
-    pending: order.pending,
-    branch: order.branch,
-    routeId: order.routeId,
-    routeAssignmentId: order.routeAssignmentId,
-    comments: order.comments.map(orderCommentToFormValues),
-    completed: order.completed,
-    createdBy: order.createdBy,
-  };
-}
-
-export function formValuesToOrder(
-  values: OrderFormValues,
-  createdAt?: string,
-  createdBy?: string,
-  updatedAt?: string
-): Order {
-  if (!values.routeId) {
-    throw new Error("A route is required.");
-  }
-
-  if (!values.routeAssignmentId) {
-    throw new Error("A route assignment is required.");
-  }
-
-  if (!values.containerId) {
-    throw new Error("A container is required.");
-  }
-
-  const sender = normalizeOrderParty(values.sender, "Sender");
-  const receivers = values.receivers.map((receiver, index) =>
-    normalizeOrderParty(receiver, `Receiver ${index + 1}`)
-  );
-  const comments = values.comments.map(normalizeOrderComment);
-
-  return {
-    orderId: values.orderId,
-    oldID: 0,
-    sender,
-    receivers,
-    date: values.date,
-    containerId: values.containerId,
-    pending: values.pending,
-    branch: values.branch,
-    branchId: PORTAL_BRANCH_TO_ID[values.branch],
-    routeId: values.routeId,
-    routeAssignmentId: values.routeAssignmentId,
-    comments,
-    completed: values.completed,
-    purpose: "",
-    sectorId: null,
-    sectorName: "",
-    createdAt: createdAt ?? new Date().toISOString(),
-    createdBy: createdBy ?? (values.createdBy.trim() || DEFAULT_CREATED_BY),
-    updatedAt: updatedAt ?? new Date().toISOString(),
-  };
-}
-
 export function getOrderPartyAddress(party: OrderParty): CustomerAddress | undefined {
   return party.addresses.find((address) => address.id === party.orderAddressId) ?? party.addresses[0];
-}
-
-export function ordersShareSender(a: OrderParty, b: OrderParty): boolean {
-  if (a.clientId && b.clientId && a.clientId === b.clientId) return true;
-  return a.name.trim().toLowerCase() === b.name.trim().toLowerCase();
-}
-
-export function getSenderOrderHistory(orders: Order[], sender: OrderParty): Order[] {
-  return orders
-    .filter((order) => ordersShareSender(order.sender, sender))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }

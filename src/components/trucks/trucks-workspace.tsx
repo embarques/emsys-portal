@@ -38,15 +38,20 @@ import {
   getBranchLabel,
   getFuelTypeBadgeClass,
   getFuelTypeLabel,
+  truncateObjectId,
   truncateTruckId,
-  truckMatchesQuery,
+  truckMatchesSearch,
 } from "@/lib/trucks/display";
 import { cloneTrucks } from "@/lib/trucks/mock-data";
 import {
-  FUEL_TYPES,
-  TRUCK_BRANCHES,
+  TRUCK_BRANCH_OPTIONS,
+  TRUCK_FUEL_TYPES,
+  TRUCK_SEARCH_FIELDS,
   createEmptyTruckForm,
+  createTruckSearchFilter,
   formValuesToTruck,
+  getDefaultTruckSearchOperator,
+  getTruckSearchOperatorsForField,
   truckToFormValues,
   type Truck,
   type TruckFilterState,
@@ -58,6 +63,8 @@ const PAGE_SIZE = 8;
 
 const defaultFilters: TruckFilterState = {
   query: "",
+  searchField: "name",
+  searchOperator: "startsWith",
   fuelType: "all",
   branch: "all",
 };
@@ -74,10 +81,14 @@ export function TrucksWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Truck | Truck[] | null>(null);
 
   const filteredTrucks = useMemo(() => {
+    const search = createTruckSearchFilter(filters.query, filters.searchField, filters.searchOperator);
+
     return trucks.filter((truck) => {
-      if (!truckMatchesQuery(truck, filters.query)) return false;
-      if (filters.fuelType !== "all" && truck.fuelType !== filters.fuelType) return false;
-      if (filters.branch !== "all" && truck.branch !== filters.branch) return false;
+      if (search && !truckMatchesSearch(truck, search)) return false;
+      if (filters.fuelType !== "all" && truck.fuelType.trim().toLowerCase() !== filters.fuelType) return false;
+      if (filters.branch !== "all" && truck.branch.trim().toLowerCase() !== filters.branch.toLowerCase()) {
+        return false;
+      }
       return true;
     });
   }, [filters, trucks]);
@@ -86,14 +97,14 @@ export function TrucksWorkspace() {
   const totalPages = Math.max(1, Math.ceil(filteredTrucks.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageTrucks = filteredTrucks.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const allPageSelected = pageTrucks.length > 0 && pageTrucks.every((truck) => selectedIds.includes(truck.truckId));
+  const allPageSelected = pageTrucks.length > 0 && pageTrucks.every((truck) => selectedIds.includes(truck.id));
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
-      setSelectedIds((current) => Array.from(new Set([...current, ...pageTrucks.map((truck) => truck.truckId)])));
+      setSelectedIds((current) => Array.from(new Set([...current, ...pageTrucks.map((truck) => truck.id)])));
       return;
     }
-    setSelectedIds((current) => current.filter((id) => !pageTrucks.some((truck) => truck.truckId === id)));
+    setSelectedIds((current) => current.filter((id) => !pageTrucks.some((truck) => truck.id === id)));
   }
 
   function toggleSelect(truckId: string, checked: boolean) {
@@ -117,11 +128,10 @@ export function TrucksWorkspace() {
         values,
         editingTruck.createdAt,
         editingTruck.createdBy,
-        new Date().toISOString()
+        new Date().toISOString(),
+        editingTruck.id,
       );
-      setTrucks((current) =>
-        current.map((truck) => (truck.truckId === editingTruck.truckId ? nextTruck : truck))
-      );
+      setTrucks((current) => current.map((truck) => (truck.id === editingTruck.id ? nextTruck : truck)));
       notifyUpdated("Truck", nextTruck.name);
     } else {
       const nextTruck = formValuesToTruck(values);
@@ -136,8 +146,8 @@ export function TrucksWorkspace() {
 
   function confirmDelete() {
     if (!deleteTarget) return;
-    const ids = Array.isArray(deleteTarget) ? deleteTarget.map((truck) => truck.truckId) : [deleteTarget.truckId];
-    setTrucks((current) => current.filter((truck) => !ids.includes(truck.truckId)));
+    const ids = Array.isArray(deleteTarget) ? deleteTarget.map((truck) => truck.id) : [deleteTarget.id];
+    setTrucks((current) => current.filter((truck) => !ids.includes(truck.id)));
     setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
     setDeleteTarget(null);
     setViewTruck(null);
@@ -152,68 +162,90 @@ export function TrucksWorkspace() {
 
   const fuelTypeFilters: { value: TruckFilterState["fuelType"]; label: string }[] = [
     { value: "all", label: "All" },
-    ...FUEL_TYPES,
+    ...TRUCK_FUEL_TYPES,
   ];
 
   const branchFilters: { value: TruckFilterState["branch"]; label: string }[] = [
     { value: "all", label: "All" },
-    ...TRUCK_BRANCHES,
+    ...TRUCK_BRANCH_OPTIONS,
   ];
+
+  const searchOperatorOptions = useMemo(
+    () =>
+      getTruckSearchOperatorsForField(filters.searchField).map((operator) => ({
+        value: operator,
+        label:
+          operator === "startsWith"
+            ? "Starts with"
+            : operator === "contains"
+              ? "Contains"
+              : operator === "eq"
+                ? "Equals"
+                : "Not equals",
+      })),
+    [filters.searchField],
+  );
 
   const tableColumns: DataTableColumn<Truck>[] = [
     {
+      id: "id",
+      label: "id",
+      cellClassName: "font-mono text-xs",
+      renderCell: (truck) => truncateObjectId(truck.id),
+    },
+    {
       id: "truckId",
-      label: "Truck ID",
+      label: "truckId",
       cellClassName: "font-mono text-xs",
       renderCell: (truck) => truncateTruckId(truck.truckId),
     },
     {
       id: "name",
-      label: "Name",
+      label: "name",
       cellClassName: "font-medium",
       renderCell: (truck) => truck.name,
     },
     {
       id: "vin",
-      label: "VIN",
+      label: "vin",
       cellClassName: "font-mono text-xs",
       renderCell: (truck) => truck.vin,
     },
     {
       id: "year",
-      label: "Year",
+      label: "year",
       renderCell: (truck) => truck.year,
     },
     {
       id: "fuelType",
-      label: "Fuel type",
+      label: "fuelType",
       renderCell: (truck) => (
         <Badge className={getFuelTypeBadgeClass(truck.fuelType)}>{getFuelTypeLabel(truck.fuelType)}</Badge>
       ),
     },
     {
       id: "branch",
-      label: "Branch",
+      label: "branch",
       renderCell: (truck) => (
         <Badge className={getBranchBadgeClass(truck.branch)}>{getBranchLabel(truck.branch)}</Badge>
       ),
     },
     {
       id: "createdAt",
-      label: "Date created",
+      label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (truck) => formatAuditDate(truck.createdAt),
+      renderCell: (truck) => (truck.createdAt ? formatAuditDate(truck.createdAt) : "—"),
     },
     {
       id: "createdBy",
-      label: "User created",
-      renderCell: (truck) => truck.createdBy,
+      label: "createdBy",
+      renderCell: (truck) => truck.createdBy || "—",
     },
     {
       id: "updatedAt",
-      label: "Date modified",
+      label: "updatedAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (truck) => formatAuditDate(truck.updatedAt),
+      renderCell: (truck) => (truck.updatedAt ? formatAuditDate(truck.updatedAt) : "—"),
     },
     {
       id: "actions",
@@ -257,7 +289,7 @@ export function TrucksWorkspace() {
     <div>
       <PageHeader
         title="Trucks"
-        description="Manage fleet trucks with VIN, year, fuel type, and branch details."
+        description="Manage fleet trucks with id, truckId, VIN, year, fuel type, and branch."
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
@@ -289,9 +321,54 @@ export function TrucksWorkspace() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <CardTitle>Fleet directory</CardTitle>
-              <CardDescription>Search by truck name, ID, VIN, year, or branch.</CardDescription>
+              <CardDescription>Search by id, truckId, name, VIN, fuel type, or branch.</CardDescription>
             </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
+              <select
+                aria-label="Search field"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchField}
+                onChange={(event) => {
+                  const searchField = event.target.value as TruckFilterState["searchField"];
+                  setFilters((current) => {
+                    const allowedOperators = getTruckSearchOperatorsForField(searchField);
+                    const searchOperator = allowedOperators.includes(current.searchOperator)
+                      ? current.searchOperator
+                      : getDefaultTruckSearchOperator(searchField);
+
+                    return {
+                      ...current,
+                      searchField,
+                      searchOperator,
+                    };
+                  });
+                  setPage(1);
+                }}
+              >
+                {TRUCK_SEARCH_FIELDS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Search operator"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchOperator}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    searchOperator: event.target.value as TruckFilterState["searchOperator"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                {searchOperatorOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <div className="relative min-w-[240px] flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -309,7 +386,7 @@ export function TrucksWorkspace() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fuel type</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">fuelType</span>
             {fuelTypeFilters.map((option) => (
               <Button
                 key={option.value}
@@ -327,7 +404,7 @@ export function TrucksWorkspace() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">branch</span>
             {branchFilters.map((option) => (
               <Button
                 key={option.value}
@@ -368,7 +445,7 @@ export function TrucksWorkspace() {
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => setDeleteTarget(trucks.filter((truck) => selectedIds.includes(truck.truckId)))}
+                onClick={() => setDeleteTarget(trucks.filter((truck) => selectedIds.includes(truck.id)))}
               >
                 <Trash2 className="h-4 w-4" />
                 Delete selected
@@ -380,10 +457,10 @@ export function TrucksWorkspace() {
         <DataTable
           columns={columnVisibility.columns}
           rows={pageTrucks}
-          rowKey={(truck) => truck.truckId}
+          rowKey={(truck) => truck.id}
           rowLabel={(truck) => truck.name}
           columnLayout={columnVisibility}
-          minWidth={1000}
+          minWidth={1200}
           selectable
           selectedIds={selectedIds}
           allPageSelected={allPageSelected}
@@ -449,18 +526,15 @@ export function TrucksWorkspace() {
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit truck" : "Add truck"}</DialogTitle>
             <DialogDescription>
-              {formMode === "edit"
-                ? "Update truck name, VIN, year, and fuel type."
-                : "Register a new fleet truck with a generated truck ID."}
+              Fields match the EMSYS Truck API model: id, truckId, name, vin, year, fuelType, and branch.
             </DialogDescription>
           </DialogHeader>
           <TruckForm
-            key={editingTruck?.truckId ?? "new"}
+            key={editingTruck?.id ?? "new"}
             initialValues={
               formMode === "edit" && editingTruck ? truckToFormValues(editingTruck) : createEmptyTruckForm()
             }
             isEditing={formMode === "edit"}
-            updatedAt={editingTruck?.updatedAt}
             submitLabel={formMode === "edit" ? "Save changes" : "Add truck"}
             onSubmit={saveTruck}
             onCancel={() => setFormMode(null)}

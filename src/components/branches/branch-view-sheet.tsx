@@ -11,6 +11,7 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
+import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import {
   formatBranchAddress,
   formatBranchId,
@@ -63,8 +64,8 @@ export function BranchViewSheet({ branch, open, onOpenChange, onEdit, onDelete }
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Contact">
-            <RecordViewSheetDetailRow label="Phone 1" value={branch.phone1 || "—"} />
-            <RecordViewSheetDetailRow label="Phone 2" value={branch.phone2 || "—"} />
+            <RecordViewSheetDetailRow label="Phone 1" value={formatPhoneDisplayOrDash(branch.phone1)} />
+            <RecordViewSheetDetailRow label="Phone 2" value={formatPhoneDisplayOrDash(branch.phone2)} />
             <RecordViewSheetDetailRow label="Phones" value={formatBranchPhones(branch)} />
           </RecordViewSheetSection>
 

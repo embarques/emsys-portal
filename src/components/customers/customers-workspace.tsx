@@ -33,8 +33,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { normalizeApiError } from "@/lib/api/axios";
+import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
+  formatAccountBalance,
   formatAddressSummary,
   formatCustomerBranchLabel,
   formatPhoneSummary,
@@ -53,6 +55,8 @@ import {
   useDeleteCustomers,
   useUpdateCustomer,
 } from "@/lib/customers/hooks/use-customers";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
@@ -82,8 +86,17 @@ const defaultFilters: CustomerFilterState = {
   customerType: "all",
 };
 
+type CustomerDeleteTarget =
+  | { mode: "single"; customer: Customer }
+  | { mode: "bulk"; ids: string[] };
+
 export function CustomersWorkspace() {
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { hasPermission } = useAuth();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifyError, notifySuccess } = useFeedback();
+  const canDeleteCustomers = hasPermission(
+    PERMISSIONS.clientsDelete.name,
+    PERMISSIONS.clientsDelete.resourceType,
+  );
   const [filters, setFilters] = useState<CustomerFilterState>(defaultFilters);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -91,8 +104,19 @@ export function CustomersWorkspace() {
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Customer | Customer[] | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CustomerDeleteTarget | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  function openDeleteTarget(target: CustomerDeleteTarget) {
+    setDeleteError(null);
+    setDeleteTarget(target);
+  }
+
+  function closeDeleteDialog() {
+    setDeleteTarget(null);
+    setDeleteError(null);
+  }
 
   const listParams = useMemo(() => {
     const search = createCustomerSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
@@ -116,7 +140,7 @@ export function CustomersWorkspace() {
     page,
   ]);
 
-  const { data, isLoading, isError, error, isFetching } = useCustomers(listParams);
+  const { data, isLoading, isError, error, isFetching, isPending } = useCustomers(listParams);
   const { data: branchesData, isLoading: branchesLoading } = useBranchPicker();
   const stats = useCustomerStats();
   const createCustomerMutation = useCreateCustomer();
@@ -125,6 +149,7 @@ export function CustomersWorkspace() {
 
   const customers = data?.items ?? [];
   const totalCustomers = data?.total ?? 0;
+  const showInitialTableLoading = isPending && customers.length === 0;
   const totalPages = Math.max(1, Math.ceil(totalCustomers / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
@@ -166,26 +191,41 @@ export function CustomersWorkspace() {
       setEditingCustomer(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      const { message, status } = normalizeApiError(mutationError);
+      const detail =
+        status === 403
+          ? formMode === "edit"
+            ? `${message} Ask an admin to enable customer update (canUpdateCustomer) on your role.`
+            : `${message} Ask an admin to enable customer create (canCreateCustomer) on your role.`
+          : message;
+      setFormError(detail);
     }
   }
 
   async function confirmDelete() {
     if (!deleteTarget) return;
 
-    const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((customer) => customer.id)
-      : [deleteTarget.id];
+    const ids = deleteTarget.mode === "bulk" ? deleteTarget.ids : [deleteTarget.customer.id];
 
     try {
       await deleteCustomersMutation.mutateAsync(ids);
       setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
+      closeDeleteDialog();
       setViewCustomer(null);
-      notifyDeleted("Customer", ids.length);
+
+      if (deleteTarget.mode === "single") {
+        notifySuccess(`Customer "${deleteTarget.customer.name}" was deleted.`);
+      } else {
+        notifyDeleted("Customer", ids.length);
+      }
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
-      setDeleteTarget(null);
+      const { message, status } = normalizeApiError(mutationError);
+      const detail =
+        status === 403
+          ? `${message} Ask an admin to enable customer delete (canDeleteCustomer) on your role.`
+          : message;
+      setDeleteError(detail);
+      notifyError(detail);
     }
   }
 
@@ -300,17 +340,38 @@ export function CustomersWorkspace() {
     {
       id: "phone1",
       label: "phone1",
-      renderCell: (customer) => customer.phone1 || "—",
+      renderCell: (customer) => formatPhoneDisplayOrDash(customer.phone1),
     },
     {
       id: "phone2",
       label: "phone2",
-      renderCell: (customer) => customer.phone2 || "—",
+      renderCell: (customer) => formatPhoneDisplayOrDash(customer.phone2),
+    },
+    {
+      id: "email",
+      label: "email",
+      renderCell: (customer) => customer.email || "—",
+    },
+    {
+      id: "IDNumber",
+      label: "IDNumber",
+      renderCell: (customer) => customer.IDNumber || "—",
     },
     {
       id: "phones",
       label: "phones",
       renderCell: (customer) => formatPhoneSummary(customer),
+    },
+    {
+      id: "accountBalance",
+      label: "accountBalance",
+      renderCell: (customer) => formatAccountBalance(customer.accountBalance),
+    },
+    {
+      id: "notes",
+      label: "notes",
+      cellClassName: "max-w-[240px] truncate",
+      renderCell: (customer) => customer.notes || "—",
     },
     {
       id: "address.address1",
@@ -365,19 +426,21 @@ export function CustomersWorkspace() {
             <Pencil className="h-4 w-4" />
             Edit
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            onClick={() => {
-              setViewCustomer(null);
-              setDeleteTarget(customer);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
+          {canDeleteCustomers ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              onClick={() => {
+                setViewCustomer(null);
+                openDeleteTarget({ mode: "single", customer });
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          ) : null}
         </div>
       ),
     },
@@ -405,7 +468,7 @@ export function CustomersWorkspace() {
     <div>
       <PageHeader
         title="Customers"
-        description="Customer records from the EMSYS API with branch, address, phones, and customerType."
+        description="Customer records from the EMSYS API with contact info, addresses, account balance, and branch."
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
@@ -589,22 +652,22 @@ export function CustomersWorkspace() {
               <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
                 Clear selection
               </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={isSaving}
-                onClick={() =>
-                  setDeleteTarget(customers.filter((customer) => selectedIds.includes(customer.id)))
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
+              {canDeleteCustomers ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={isSaving}
+                  onClick={() => openDeleteTarget({ mode: "bulk", ids: [...selectedIds] })}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete selected
+                </Button>
+              ) : null}
             </div>
           </div>
         ) : null}
 
-        {isLoading ? (
+        {showInitialTableLoading ? (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading customers…</div>
         ) : (
           <DataTable
@@ -613,7 +676,7 @@ export function CustomersWorkspace() {
             rowKey={(customer) => customer.id}
             rowLabel={(customer) => customer.name}
             columnLayout={columnVisibility}
-            minWidth={1400}
+            minWidth={1680}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}
@@ -667,13 +730,14 @@ export function CustomersWorkspace() {
       <CustomerViewSheet
         customer={viewCustomer}
         open={Boolean(viewCustomer)}
+        canDelete={canDeleteCustomers}
         onOpenChange={(open) => {
           if (!open) setViewCustomer(null);
         }}
         onEdit={openEditForm}
         onDelete={(customer) => {
           setViewCustomer(null);
-          setDeleteTarget(customer);
+          openDeleteTarget({ mode: "single", customer });
         }}
       />
 
@@ -690,8 +754,8 @@ export function CustomersWorkspace() {
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit customer" : "Add customer"}</DialogTitle>
             <DialogDescription>
-              Fields match the EMSYS customer API model: active, address, branch, customerType, name, phone1,
-              and phone2.
+              Fields match the EMSYS customer API model: name, contact info, addresses, branch, customerType,
+              notes, and account balance.
             </DialogDescription>
           </DialogHeader>
           <CustomerForm
@@ -714,25 +778,29 @@ export function CustomersWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && closeDeleteDialog()}>
         <DialogContent className="z-[60]">
           <DialogHeader>
             <DialogTitle>
-              Delete customer{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?
+              Delete customer
+              {deleteTarget?.mode === "bulk" && deleteTarget.ids.length > 1 ? "s" : ""}?
             </DialogTitle>
             <DialogDescription>
-              {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected customers.`
-                : "This will permanently remove this customer. This action cannot be undone."}
+              {deleteTarget?.mode === "bulk"
+                ? `This will permanently remove ${deleteTarget.ids.length} selected customer${deleteTarget.ids.length === 1 ? "" : "s"}. This action cannot be undone.`
+                : deleteTarget?.mode === "single"
+                  ? `This will permanently remove "${deleteTarget.customer.name}". This action cannot be undone.`
+                  : null}
             </DialogDescription>
           </DialogHeader>
+          {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
+            <Button variant="outline" onClick={closeDeleteDialog} disabled={isSaving}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
-              Delete
+              {isSaving ? "Deleting…" : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

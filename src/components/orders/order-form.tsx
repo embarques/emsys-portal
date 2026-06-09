@@ -1,23 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
-import { OrderPartyEditor } from "@/components/orders/order-party-editor";
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useCustomerPicker } from "@/lib/customers/hooks/use-customers";
-import { cloneContainers } from "@/lib/containers/mock-data";
-import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
-import { cloneRoutes } from "@/lib/routes/mock-data";
+import { useEmployees } from "@/lib/employees/hooks/use-employees";
+import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
 import {
-  ORDER_BRANCHES,
   createEmptyOrderForm,
-  createEmptyOrderParty,
   resetOrderFormForNextEntry,
   type OrderFormSubmitResult,
   type OrderFormValues,
@@ -49,10 +44,12 @@ export function OrderForm({
   onCancel,
 }: OrderFormProps) {
   const { data: customersData } = useCustomerPicker();
+  const { data: branchesData } = useBranchPicker();
+  const employeesQuery = useEmployees({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, limit: 200 });
+
   const customers = customersData?.items ?? [];
-  const containers = useMemo(() => cloneContainers(), []);
-  const routes = useMemo(() => cloneRoutes(), []);
-  const routeAssignments = useMemo(() => cloneRouteAssignments(), []);
+  const branches = branchesData?.items ?? [];
+  const employees = employeesQuery.data?.items ?? [];
 
   const [values, setValues] = useState<OrderFormValues>(initialValues ?? createEmptyOrderForm());
   const [formError, setFormError] = useState<string | null>(null);
@@ -62,13 +59,38 @@ export function OrderForm({
     setFormError(null);
   }, [initialValues]);
 
+  const senderOptions = useMemo(
+    () => customers.filter((customer) => customer.active),
+    [customers],
+  );
+
   function updateField<K extends keyof OrderFormValues>(key: K, value: OrderFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
     setFormError(null);
   }
 
+  function updateSenderId(senderId: string) {
+    const sender = senderOptions.find((customer) => customer.id === senderId) ?? null;
+    updateField("senderId", senderId);
+    updateField("sender", sender);
+  }
+
+  function updateReceiverId(receiverId: string) {
+    const receiver = senderOptions.find((customer) => customer.id === receiverId) ?? null;
+    updateField("receiverId", receiverId);
+    updateField("receiver", receiver);
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+
+    if (!values.sender) {
+      const message = "sender is required.";
+      setFormError(message);
+      onFormErrorChange?.(message);
+      return;
+    }
+
     const result = await onSubmit(values);
     onFormErrorChange?.(result.error);
     if (!result.error && !isEditing) {
@@ -76,20 +98,25 @@ export function OrderForm({
     }
   }
 
-  const filteredRoutes = routes.filter((route) => route.branch === values.branch);
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="orderId">Order ID</Label>
-          <Input id="orderId" value={values.orderId} readOnly className="bg-muted/40 font-mono text-xs" />
-          {!isEditing ? <p className="text-xs text-muted-foreground">Auto-generated ID for new orders.</p> : null}
-        </div>
+        {isEditing ? (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="id">id</Label>
+              <Input id="id" value={values.id} readOnly className="bg-muted/40 font-mono text-xs" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="oldID">oldID</Label>
+              <Input id="oldID" value={values.oldID} readOnly className="bg-muted/40 font-mono text-xs" />
+            </div>
+          </>
+        ) : null}
 
         <div className="space-y-2">
           <Label htmlFor="date">
-            Date <span className="text-destructive">*</span>
+            date <span className="text-destructive">*</span>
           </Label>
           <Input
             id="date"
@@ -101,105 +128,63 @@ export function OrderForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="containerId">
-            Container <span className="text-destructive">*</span>
+          <Label htmlFor="purpose">purpose</Label>
+          <Input
+            id="purpose"
+            value={values.purpose}
+            onChange={(event) => updateField("purpose", event.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="branchId">
+            branch.id <span className="text-destructive">*</span>
           </Label>
           <select
-            id="containerId"
+            id="branchId"
             className={selectClassName}
-            value={values.containerId}
-            onChange={(event) => updateField("containerId", event.target.value)}
+            value={values.branchId}
+            onChange={(event) => updateField("branchId", Number(event.target.value))}
             required
           >
-            <option value="">Select a container</option>
-            {containers.map((container) => (
-              <option key={container.containerId} value={container.containerId}>
-                {container.containerCode} · {container.containerNumber}
+            {branches.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name} · {branch.code}
               </option>
             ))}
           </select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="pending">
-            Pending <span className="text-destructive">*</span>
-          </Label>
+          <Label htmlFor="employeeId">employee.id</Label>
           <select
-            id="pending"
+            id="employeeId"
             className={selectClassName}
-            value={values.pending}
+            value={values.employeeId}
             onChange={(event) =>
-              updateField("pending", event.target.value as OrderFormValues["pending"])
+              updateField("employeeId", event.target.value ? Number(event.target.value) : "")
             }
-            required
           >
-            {ORDER_BRANCHES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            <option value="">No employee</option>
+            {employees.map((employee) => (
+              <option key={employee.id} value={employee.id}>
+                {employee.name} · {employee.department}
               </option>
             ))}
           </select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="branch">
-            Branch <span className="text-destructive">*</span>
-          </Label>
-          <select
-            id="branch"
-            className={selectClassName}
-            value={values.branch}
+          <Label htmlFor="sectorId">sector.id</Label>
+          <Input
+            id="sectorId"
+            type="number"
+            min="0"
+            value={values.sectorId}
             onChange={(event) =>
-              updateField("branch", event.target.value as OrderFormValues["branch"])
+              updateField("sectorId", event.target.value ? Number(event.target.value) : "")
             }
-            required
-          >
-            {ORDER_BRANCHES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="routeId">
-            Route <span className="text-destructive">*</span>
-          </Label>
-          <select
-            id="routeId"
-            className={selectClassName}
-            value={values.routeId}
-            onChange={(event) => updateField("routeId", event.target.value)}
-            required
-          >
-            <option value="">Select a route</option>
-            {filteredRoutes.map((route) => (
-              <option key={route.routeId} value={route.routeId}>
-                {route.name} · {route.branch.toUpperCase()}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="routeAssignmentId">
-            Route assignment <span className="text-destructive">*</span>
-          </Label>
-          <select
-            id="routeAssignmentId"
-            className={selectClassName}
-            value={values.routeAssignmentId}
-            onChange={(event) => updateField("routeAssignmentId", event.target.value)}
-            required
-          >
-            <option value="">Select a route assignment</option>
-            {routeAssignments.map((assignment) => (
-              <option key={assignment.routeAssignmentId} value={assignment.routeAssignmentId}>
-                {assignment.name} · {assignment.date}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         <div className="space-y-2 sm:col-span-2">
@@ -210,91 +195,65 @@ export function OrderForm({
               onChange={(event) => updateField("completed", event.target.checked)}
               className="size-4 rounded border-input"
             />
-            Mark order as completed
+            completed
           </label>
         </div>
       </div>
 
-      <OrderPartyEditor
-        title="Sender"
-        description="Manage sender phones and addresses. Select the address used for this order."
-        values={values.sender}
-        customers={customers}
-        customerFilter="sender"
-        onChange={(sender) => updateField("sender", sender)}
-      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="senderId">
+            sender <span className="text-destructive">*</span>
+          </Label>
+          <select
+            id="senderId"
+            className={selectClassName}
+            value={values.senderId}
+            onChange={(event) => updateSenderId(event.target.value)}
+            required
+          >
+            <option value="">Select sender</option>
+            {senderOptions.map((customer) => (
+              <option key={customer.id} value={customer.id}>
+                {customer.name}
+                {customer.oldID > 0 ? ` · oldID ${customer.oldID}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {values.sender.name.trim() ? (
+        <div className="space-y-2">
+          <Label htmlFor="receiverId">receiver</Label>
+          <select
+            id="receiverId"
+            className={selectClassName}
+            value={values.receiverId}
+            onChange={(event) => updateReceiverId(event.target.value)}
+          >
+            <option value="">No receiver</option>
+            {senderOptions.map((customer) => (
+              <option key={customer.id} value={customer.id}>
+                {customer.name}
+                {customer.oldID > 0 ? ` · oldID ${customer.oldID}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {values.sender ? (
         <SenderOrderHistorySection
-          sender={{
-            id: values.sender.id,
-            clientId: values.sender.clientId || undefined,
-            name: values.sender.name,
-            documentId: values.sender.documentId || undefined,
-            email: values.sender.email || undefined,
-            phones: [],
-            addresses: [],
-            orderAddressId: values.sender.orderAddressId,
-          }}
+          sender={values.sender}
           orders={allOrders}
-          currentOrderId={values.orderId}
+          currentOrderId={values.id > 0 ? String(values.id) : undefined}
         />
       ) : null}
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold">Receivers</h3>
-            <p className="text-sm text-muted-foreground">Add zero or more receivers with their own order addresses.</p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => updateField("receivers", [...values.receivers, createEmptyOrderParty()])}
-          >
-            <Plus className="h-4 w-4" />
-            Add receiver
-          </Button>
-        </div>
-
-        {values.receivers.length === 0 ? (
-          <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-            No receivers on this order.
-          </p>
-        ) : (
-          values.receivers.map((receiver, index) => (
-            <OrderPartyEditor
-              key={receiver.id}
-              title={`Receiver ${index + 1}`}
-              values={receiver}
-              customers={customers}
-              customerFilter="receiver"
-              onChange={(nextReceiver) =>
-                updateField(
-                  "receivers",
-                  values.receivers.map((entry, entryIndex) => (entryIndex === index ? nextReceiver : entry))
-                )
-              }
-              onRemove={() =>
-                updateField(
-                  "receivers",
-                  values.receivers.filter((_, entryIndex) => entryIndex !== index)
-                )
-              }
-            />
-          ))
-        )}
-      </section>
-
       <OrderCommentsEditor comments={values.comments} onChange={(comments) => updateField("comments", comments)} />
 
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => updateField("createdBy", value)}
-      />
+      {isEditing && updatedAt ? (
+        <p className="text-xs text-muted-foreground">updatedAt: {updatedAt}</p>
+      ) : null}
 
       {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
 

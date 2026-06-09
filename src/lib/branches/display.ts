@@ -1,4 +1,5 @@
 import type { Branch } from "@/lib/branches/types";
+import { formatPhoneForDisplay } from "@/lib/utils/phone";
 
 export function formatBranchFilterLabel(branch: Pick<Branch, "id" | "name" | "code">): string {
   const name = branch.name.trim();
@@ -28,7 +29,9 @@ export function formatBranchAddress(branch: Pick<Branch, "address">): string {
 }
 
 export function formatBranchPhones(branch: Pick<Branch, "phone1" | "phone2">): string {
-  const phones = [branch.phone1, branch.phone2].map((phone) => phone.trim()).filter(Boolean);
+  const phones = [branch.phone1, branch.phone2]
+    .map((phone) => formatPhoneForDisplay(phone))
+    .filter(Boolean);
   return phones.length > 0 ? phones.join(" · ") : "—";
 }
 

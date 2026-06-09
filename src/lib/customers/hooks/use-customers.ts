@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   createCustomer,
@@ -40,6 +40,7 @@ export function useCustomers(params: CustomerListParams) {
   return useQuery({
     queryKey: queryKeys.customers.list(params),
     queryFn: () => fetchCustomers(params),
+    placeholderData: keepPreviousData,
   });
 }
 

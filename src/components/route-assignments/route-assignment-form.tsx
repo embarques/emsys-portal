@@ -6,10 +6,12 @@ import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
+import { formatAuditDate } from "@/lib/audit/display";
 import { cloneEmployeeGroups } from "@/lib/employee-groups/mock-data";
-import { getEmployeeGroupBranchLabel } from "@/lib/employee-groups/display";
-import { formatRouteAssignmentCopyLabel } from "@/lib/route-assignments/display";
+import {
+  formatEmployeeGroupRefName,
+  formatRouteAssignmentCopyLabel,
+} from "@/lib/route-assignments/display";
 import {
   copyRouteAssignmentFormValues,
   createEmptyRouteAssignmentForm,
@@ -22,11 +24,12 @@ import { getBranchLabel } from "@/lib/trucks/display";
 const selectClassName =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
+const readOnlyClassName = "bg-muted/40";
+
 type RouteAssignmentFormProps = {
   initialValues?: RouteAssignmentFormValues;
   copySources?: RouteAssignment[];
   isEditing?: boolean;
-  updatedAt?: string;
   submitLabel: string;
   onSubmit: (values: RouteAssignmentFormValues) => void;
   onCancel: () => void;
@@ -36,7 +39,6 @@ export function RouteAssignmentForm({
   initialValues,
   copySources = [],
   isEditing = false,
-  updatedAt,
   submitLabel,
   onSubmit,
   onCancel,
@@ -44,7 +46,7 @@ export function RouteAssignmentForm({
   const trucks = useMemo(() => cloneTrucks(), []);
   const employeeGroups = useMemo(() => cloneEmployeeGroups(), []);
   const [values, setValues] = useState<RouteAssignmentFormValues>(
-    initialValues ?? createEmptyRouteAssignmentForm()
+    initialValues ?? createEmptyRouteAssignmentForm(),
   );
   const [copyFromId, setCopyFromId] = useState("");
 
@@ -55,6 +57,22 @@ export function RouteAssignmentForm({
 
   function updateField<K extends keyof RouteAssignmentFormValues>(key: K, value: RouteAssignmentFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function handleTruckChange(truckRecordId: string) {
+    const truck = trucks.find((entry) => entry.id === truckRecordId);
+    updateField("truck", {
+      id: truckRecordId,
+      name: truck?.name ?? "",
+    });
+  }
+
+  function handleEmployeeGroupChange(groupId: string) {
+    const group = employeeGroups.find((entry) => entry.employeeGroupId === groupId);
+    updateField("employeeGroup", {
+      id: groupId,
+      name: group ? formatEmployeeGroupRefName(group) : "",
+    });
   }
 
   function handleCopyFrom(sourceId: string) {
@@ -105,19 +123,35 @@ export function RouteAssignmentForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="routeAssignmentId">Route assignment ID</Label>
+          <Label htmlFor="id">id</Label>
+          <Input
+            id="id"
+            value={values.id || "Assigned after save"}
+            readOnly
+            className={`font-mono text-xs ${readOnlyClassName}`}
+          />
+          {!isEditing ? (
+            <p className="text-xs text-muted-foreground">The EMSYS API assigns the record id on create.</p>
+          ) : null}
+        </div>
+
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="routeAssignmentId">
+            routeAssignmentId <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="routeAssignmentId"
             value={values.routeAssignmentId}
-            readOnly
-            className="bg-muted/40 font-mono text-xs"
+            onChange={(event) => updateField("routeAssignmentId", event.target.value)}
+            placeholder="ras-001"
+            className="font-mono text-xs"
+            required
           />
-          {!isEditing ? <p className="text-xs text-muted-foreground">Auto-generated ID for new assignments.</p> : null}
         </div>
 
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="name">
-            Route assignment name <span className="text-destructive">*</span>
+            name <span className="text-destructive">*</span>
           </Label>
           <Input
             id="name"
@@ -130,7 +164,7 @@ export function RouteAssignmentForm({
 
         <div className="space-y-2">
           <Label htmlFor="date">
-            Assignment date <span className="text-destructive">*</span>
+            date <span className="text-destructive">*</span>
           </Label>
           <Input
             id="date"
@@ -143,18 +177,18 @@ export function RouteAssignmentForm({
 
         <div className="space-y-2">
           <Label htmlFor="truckId">
-            Truck <span className="text-destructive">*</span>
+            truck.id <span className="text-destructive">*</span>
           </Label>
           <select
             id="truckId"
             className={selectClassName}
-            value={values.truckId}
-            onChange={(event) => updateField("truckId", event.target.value)}
+            value={values.truck.id}
+            onChange={(event) => handleTruckChange(event.target.value)}
             required
           >
             <option value="">Select a truck</option>
             {trucks.map((truck) => (
-              <option key={truck.truckId} value={truck.truckId}>
+              <option key={truck.id} value={truck.id}>
                 {truck.name} · {getBranchLabel(truck.branch)}
               </option>
             ))}
@@ -162,33 +196,62 @@ export function RouteAssignmentForm({
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="truckName">truck.name</Label>
+          <Input
+            id="truckName"
+            value={values.truck.name}
+            readOnly
+            className={readOnlyClassName}
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="employeeGroupId">
-            Employee group <span className="text-destructive">*</span>
+            employeeGroup.id <span className="text-destructive">*</span>
           </Label>
           <select
             id="employeeGroupId"
             className={selectClassName}
-            value={values.employeeGroupId}
-            onChange={(event) => updateField("employeeGroupId", event.target.value)}
+            value={values.employeeGroup.id}
+            onChange={(event) => handleEmployeeGroupChange(event.target.value)}
             required
           >
             <option value="">Select an employee group</option>
             {employeeGroups.map((group) => (
               <option key={group.employeeGroupId} value={group.employeeGroupId}>
-                {group.employeeGroupId} · {getEmployeeGroupBranchLabel(group.branch)} · {group.employeeIds.length}{" "}
-                employees
+                {formatEmployeeGroupRefName(group)}
               </option>
             ))}
           </select>
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="employeeGroupName">employeeGroup.name</Label>
+          <Input
+            id="employeeGroupName"
+            value={values.employeeGroup.name}
+            readOnly
+            className={readOnlyClassName}
+          />
+        </div>
       </div>
 
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => updateField("createdBy", value)}
-      />
+      {isEditing ? (
+        <div className="grid gap-4 rounded-md border bg-muted/20 p-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">createdAt</p>
+            <p className="text-sm">{values.createdAt ? formatAuditDate(values.createdAt) : "—"}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">updatedAt</p>
+            <p className="text-sm">{values.updatedAt ? formatAuditDate(values.updatedAt) : "—"}</p>
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">createdBy</p>
+            <p className="text-sm">{values.createdBy || "—"}</p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>

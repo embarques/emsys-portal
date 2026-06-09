@@ -25,7 +25,7 @@ type UserSearchOptions = {
   enabled?: boolean;
   limit?: number;
   branch?: UserListParams["branch"];
-  status?: UserListParams["status"];
+  active?: UserListParams["active"];
   roleId?: UserListParams["roleId"];
 };
 
@@ -33,7 +33,7 @@ function buildUserSearchParams(
   search: UserSearchFilter | undefined,
   options: UserSearchOptions = {},
 ): UserListParams {
-  const { limit = 40, branch, status, roleId } = options;
+  const { limit = 40, branch, active, roleId } = options;
 
   return {
     page: 1,
@@ -42,7 +42,7 @@ function buildUserSearchParams(
     sortDirection: "asc",
     search,
     branch,
-    status,
+    active,
     roleId,
   };
 }
@@ -92,7 +92,7 @@ export function useUserStats(adminRoleId = 1) {
 
   const activeQuery = useQuery({
     queryKey: queryKeys.users.stats("active"),
-    queryFn: () => fetchUsers({ page: 1, limit: 1, status: "active" }),
+    queryFn: () => fetchUsers({ page: 1, limit: 1, active: true }),
   });
 
   const adminQuery = useQuery({
@@ -109,11 +109,11 @@ export function useUserStats(adminRoleId = 1) {
   };
 }
 
-export function useUser(userId: string | null, enabled = true) {
+export function useUser(userId: string | number | null, enabled = true) {
   return useQuery({
-    queryKey: queryKeys.users.detail(userId ?? ""),
+    queryKey: queryKeys.users.detail(String(userId ?? "")),
     queryFn: () => fetchUserById(userId!),
-    enabled: enabled && Boolean(userId),
+    enabled: enabled && userId != null && String(userId).trim() !== "",
   });
 }
 
@@ -134,11 +134,11 @@ export function useUpdateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ userId, values }: { userId: string; values: UserFormValues }) =>
+    mutationFn: ({ userId, values }: { userId: string | number; values: UserFormValues }) =>
       updateUser(userId, values),
     onSuccess: (_data, variables) => {
       invalidateUsers(queryClient);
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(variables.userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(String(variables.userId)) });
     },
   });
 }
@@ -147,7 +147,7 @@ export function useDeleteUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (userId: string) => deleteUser(userId),
+    mutationFn: (userId: string | number) => deleteUser(userId),
     onSuccess: () => invalidateUsers(queryClient),
   });
 }
@@ -156,7 +156,7 @@ export function useDeleteUsers() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (userIds: string[]) => deleteUsers(userIds),
+    mutationFn: (userIds: Array<string | number>) => deleteUsers(userIds),
     onSuccess: () => invalidateUsers(queryClient),
   });
 }

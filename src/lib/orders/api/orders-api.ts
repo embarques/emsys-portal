@@ -1,22 +1,23 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
+import { normalizeApiCustomer } from "@/lib/customers/api/customers-api";
+import type { Customer, CustomerCoreAddress } from "@/lib/customers/types";
+import { CUSTOMER_PORTAL_BRANCHES } from "@/lib/customers/types";
+import type { Employee } from "@/lib/employees/types";
+import { normalizeApiUser } from "@/lib/users/api/users-api";
+import type { User } from "@/lib/users/types";
+import { normalizeStoredPhone } from "@/lib/utils/phone";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
-  PORTAL_BRANCH_TO_ID,
-  branchIdToPortal,
   type Order,
-  type OrderComment,
-  type OrderCommentPurpose,
   type OrderFormValues,
   type OrderListParams,
-  type OrderParty,
-  type OrderPartyFormValues,
-  type OrderSearchFilter,
   type OrderSearchOperator,
+  type PickupBranch,
+  type PickupComment,
+  type PickupSector,
 } from "@/lib/orders/types";
-import { createRecordId } from "@/lib/customers/types";
-import type { CustomerAddress, CustomerPhone } from "@/lib/customers/types";
 
 type ApiAddress = {
   address1?: string;
@@ -39,22 +40,6 @@ type ApiSectorRef = {
   name?: string;
 };
 
-type ApiUserRef = {
-  id?: number;
-  name?: string;
-};
-
-type ApiSender = {
-  id?: string;
-  oldID?: number;
-  name?: string;
-  customerType?: number;
-  phone1?: string;
-  phone2?: string;
-  email?: string;
-  address?: ApiAddress;
-};
-
 type ApiComment = {
   purpose?: string;
   unit?: string;
@@ -69,39 +54,37 @@ type ApiPickup = {
   createdAt?: string;
   updatedAt?: string;
   completed?: boolean;
-  user?: ApiUserRef;
+  user?: Record<string, unknown>;
   branch?: ApiBranchRef;
   employee?: Record<string, unknown>;
-  sender?: ApiSender;
-  receivers?: ApiSender[];
+  sender?: Record<string, unknown>;
+  receiver?: Record<string, unknown>;
+  receivers?: Record<string, unknown>[];
   purpose?: string;
   comments?: ApiComment[];
   sector?: ApiSectorRef;
-  containerId?: string;
-  routeId?: string;
-  dispatchId?: string;
+};
+
+type ApiCustomerWriteRef = {
+  id?: string;
+  oldID?: number;
+  name: string;
+  phone1?: string;
+  phone2?: string;
+  email?: string;
+  address?: ApiAddress;
 };
 
 type ApiPickupWritePayload = {
   date: string;
   completed: boolean;
   branch: { id: number };
-  sender: {
-    id?: string;
-    oldID?: number;
-    name: string;
-    phone1?: string;
-    phone2?: string;
-    email?: string;
-    address: ApiAddress;
-  };
-  receivers?: ApiPickupWritePayload["sender"][];
+  sender: ApiCustomerWriteRef;
+  receiver?: ApiCustomerWriteRef;
   purpose: string;
   comments: ApiComment[];
-  sector: { id: number };
-  containerId?: string;
-  routeId?: string;
-  dispatchId?: string;
+  sector?: { id: number };
+  employee?: { id: number };
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -127,7 +110,60 @@ type ApiSearchBody = {
   };
 };
 
-const EMPTY_CUSTOMER_ID = "000000000000000000000000";
+const EMPTY_CUSTOMER: Customer = {
+  id: "",
+  oldID: 0,
+  name: "—",
+  customerType: null,
+  phone1: "",
+  phone2: "",
+  email: "",
+  active: true,
+  IDNumber: "",
+  createdAt: "",
+  updatedAt: "",
+  notes: "",
+  accountBalance: 0,
+  branch: {
+    id: 1,
+    name: "USA",
+    code: "NY",
+    address: {
+      address1: "",
+      address2: "",
+      apartment: "",
+      city: "",
+      state: "",
+      zipcode: "",
+      country: "US",
+    },
+    phone1: "",
+    logo: "",
+    settings: {
+      labelPrefix: "",
+      invoiceCreatedThruIncomeStatement: false,
+      printLabelCount: false,
+      roundDecimalPlaces: 0,
+      defaultLabelStatus: 0,
+      s3Profile: "",
+      s3BucketName: "",
+      s3BucketFolder: "",
+      s3ShareLinkExpireMinutes: 0,
+      imageResampleBy: 0,
+    },
+  },
+  createdByID: null,
+  address: {
+    address1: "",
+    address2: "",
+    apartment: "",
+    city: "",
+    state: "",
+    zipcode: "",
+    country: "US",
+  },
+  addresses: [],
+};
 
 function readNumericId(value: number | string | undefined): number | undefined {
   if (value == null) return undefined;
@@ -136,115 +172,106 @@ function readNumericId(value: number | string | undefined): number | undefined {
 }
 
 function normalizeIsoDate(value: string | undefined): string {
-  const trimmed = String(value ?? "").trim();
-  if (!trimmed) return "";
-  return trimmed;
+  return String(value ?? "").trim();
 }
 
-function normalizeSenderAddress(raw?: ApiAddress, fallbackId?: string): CustomerAddress {
-  const address = raw ?? {};
-  const id = fallbackId ?? createRecordId();
+function normalizePickupBranch(raw?: ApiBranchRef): PickupBranch {
+  const branch = raw ?? {};
+  const id = readNumericId(branch.id) ?? 1;
+  const defaults = CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.id === id) ?? CUSTOMER_PORTAL_BRANCHES[0];
 
   return {
     id,
-    streetAddress: String(address.address1 ?? "").trim(),
-    apt: String(address.apartment ?? address.address2 ?? "").trim() || undefined,
-    city: String(address.city ?? "").trim(),
-    state: String(address.state ?? "").trim() || undefined,
-    provinceCountry: String(address.country ?? "").trim() || undefined,
-    zipCode: String(address.zipcode ?? "").trim() || undefined,
-    isPrimary: true,
+    name: String(branch.name ?? defaults.label).trim(),
+    code: String(branch.code ?? defaults.code).trim(),
   };
 }
 
-function normalizeSenderPhones(sender: ApiSender): CustomerPhone[] {
-  const phones: CustomerPhone[] = [];
-
-  if (sender.phone1?.trim()) {
-    phones.push({ id: createRecordId(), number: sender.phone1.trim(), label: "Phone 1" });
-  }
-
-  if (sender.phone2?.trim()) {
-    phones.push({ id: createRecordId(), number: sender.phone2.trim(), label: "Phone 2" });
-  }
-
-  return phones;
-}
-
-function isLinkedCustomerId(value: string | undefined): value is string {
-  const trimmed = value?.trim();
-  return Boolean(trimmed && trimmed !== EMPTY_CUSTOMER_ID);
-}
-
-function normalizeOrderParty(sender: ApiSender, label: string): OrderParty {
-  const address = normalizeSenderAddress(sender.address);
-  const phones = normalizeSenderPhones(sender);
-  const name = String(sender.name ?? "").trim() || label;
+function normalizePickupSector(raw?: ApiSectorRef): PickupSector | null {
+  const id = readNumericId(raw?.id);
+  if (id == null || id <= 0) return null;
 
   return {
-    id: createRecordId(),
-    clientId: isLinkedCustomerId(sender.id) ? sender.id : undefined,
-    name,
-    documentId: sender.oldID ? String(sender.oldID) : undefined,
-    email: sender.email?.trim() || undefined,
-    phones: phones.length > 0 ? phones : [{ id: createRecordId(), number: "—" }],
-    addresses: [address],
-    orderAddressId: address.id,
+    id,
+    name: String(raw?.name ?? "").trim() || "—",
   };
 }
 
-function mapApiCommentPurpose(raw?: string): OrderCommentPurpose {
-  const purpose = raw?.trim().toLowerCase();
-
-  switch (purpose) {
-    case "estimate":
-      return "make_estimate";
-    case "payment":
-      return "collect_payment";
-    case "pickup":
-      return "pickup_box";
-    case "take":
-      return "take_box";
-    case "comment":
-    default:
-      return "general_comment";
-  }
+function normalizePickupComment(raw: ApiComment): PickupComment {
+  return {
+    purpose: String(raw.purpose ?? "").trim(),
+    unit: String(raw.unit ?? "").trim(),
+    quantity: Number(raw.quantity ?? 0),
+    description: String(raw.description ?? "").trim(),
+  };
 }
 
-function normalizeOrderComment(raw: ApiComment, index: number): OrderComment {
-  const id = createRecordId();
-  const purpose = mapApiCommentPurpose(raw.purpose);
-  const description = String(raw.description ?? "").trim();
-  const quantity = Number(raw.quantity ?? 0);
-  const unit = String(raw.unit ?? "").trim().toLowerCase();
+function normalizePickupCustomer(raw: unknown, fallbackName: string): Customer {
+  const customer = normalizeApiCustomer(raw);
+  if (customer) return customer;
 
-  if (purpose === "general_comment" || description) {
-    return { id, purpose: "general_comment", text: description || unit || "—" };
+  if (!raw || typeof raw !== "object") {
+    return { ...EMPTY_CUSTOMER, name: fallbackName };
   }
 
-  if (quantity > 0) {
-    if (unit.includes("barrel")) {
-      return purpose === "pickup_box"
-        ? { id, purpose: "pickup_barrel", quantity }
-        : { id, purpose: "take_barrel", quantity };
-    }
+  const item = raw as Record<string, unknown>;
+  const name = String(item.name ?? fallbackName).trim() || fallbackName;
 
-    if (unit.includes("tape")) {
-      return { id, purpose: "take_tape", quantity };
-    }
+  return {
+    ...EMPTY_CUSTOMER,
+    id: String(item.id ?? "").trim(),
+    oldID: readNumericId(item.oldID as number | string | undefined) ?? 0,
+    name,
+    phone1: normalizeStoredPhone(String(item.phone1 ?? "")),
+    phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
+    email: String(item.email ?? "").trim(),
+  };
+}
 
-    if (unit.includes("other")) {
-      return purpose === "pickup_box"
-        ? { id, purpose: "pickup_other", quantity, description: description || undefined }
-        : { id, purpose: "take_other", quantity, description: description || undefined };
-    }
+function normalizePickupEmployee(raw: unknown): Employee | null {
+  if (!raw || typeof raw !== "object") return null;
 
-    return purpose === "pickup_box"
-      ? { id, purpose: "pickup_box", quantity }
-      : { id, purpose: "take_box", quantity };
-  }
+  const item = raw as Record<string, unknown>;
+  const id = readNumericId(item.id as number | string | undefined);
+  if (id == null || id <= 0) return null;
 
-  return { id, purpose: "make_estimate", note: description || undefined };
+  const branch = normalizePickupBranch(item.branch as ApiBranchRef | undefined);
+
+  return {
+    id,
+    name: String(item.name ?? "").trim(),
+    title: String(item.title ?? "").trim(),
+    department: String(item.department ?? "").trim(),
+    phone1: normalizeStoredPhone(String(item.phone1 ?? "")),
+    phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
+    email: String(item.email ?? "").trim(),
+    active: item.active !== false,
+    startDate: String(item.startDate ?? "").trim(),
+    endDate: String(item.endDate ?? "").trim(),
+    createdAt: String(item.createdAt ?? "").trim(),
+    updatedAt: String(item.updatedAt ?? "").trim(),
+    branch,
+    user: item.user != null ? normalizeApiUser(item.user) : null,
+    address: {
+      address1: "",
+      address2: "",
+      apartment: "",
+      city: "",
+      state: "",
+      zipcode: "",
+      country: "",
+    },
+    totalLoanGiven: 0,
+    totalPaymentReceived: 0,
+    loanAmountOwed: 0,
+    loanBalanceUpdated: "",
+    cost: 0,
+  };
+}
+
+function normalizePickupUser(raw: unknown): User | null {
+  if (!raw || typeof raw !== "object") return null;
+  return normalizeApiUser(raw);
 }
 
 function normalizeOrder(raw: unknown): Order | null {
@@ -254,36 +281,24 @@ function normalizeOrder(raw: unknown): Order | null {
   const id = readNumericId(item.id);
   if (id == null || id <= 0) return null;
 
-  const branchId = readNumericId(item.branch?.id) ?? 1;
-  const branch = branchIdToPortal(branchId, item.branch?.code);
-  const sender = item.sender ? normalizeOrderParty(item.sender, "Sender") : normalizeOrderParty({}, "Sender");
-  const receivers = Array.isArray(item.receivers)
-    ? item.receivers.map((receiver, index) => normalizeOrderParty(receiver, `Receiver ${index + 1}`))
-    : [];
-  const comments = Array.isArray(item.comments)
-    ? item.comments.map((comment, index) => normalizeOrderComment(comment, index))
-    : [];
+  const receiverRaw = item.receiver ?? (Array.isArray(item.receivers) ? item.receivers[0] : null);
+  const comments = Array.isArray(item.comments) ? item.comments.map(normalizePickupComment) : [];
 
   return {
-    orderId: String(id),
+    id,
     oldID: readNumericId(item.oldID) ?? 0,
-    sender,
-    receivers,
     date: normalizeIsoDate(item.date),
-    containerId: String(item.containerId ?? "").trim(),
-    pending: branch,
-    branch,
-    branchId,
-    routeId: String(item.routeId ?? "").trim(),
-    routeAssignmentId: String(item.dispatchId ?? "").trim(),
-    comments,
-    completed: item.completed === true,
-    purpose: String(item.purpose ?? "").trim(),
-    sectorId: readNumericId(item.sector?.id) ?? null,
-    sectorName: String(item.sector?.name ?? "").trim(),
     createdAt: normalizeIsoDate(item.createdAt),
-    createdBy: String(item.user?.name ?? "").trim() || "—",
     updatedAt: normalizeIsoDate(item.updatedAt),
+    completed: item.completed === true,
+    user: normalizePickupUser(item.user),
+    branch: normalizePickupBranch(item.branch),
+    employee: normalizePickupEmployee(item.employee),
+    sender: normalizePickupCustomer(item.sender, "Sender"),
+    receiver: receiverRaw ? normalizePickupCustomer(receiverRaw, "Receiver") : null,
+    purpose: String(item.purpose ?? "").trim(),
+    comments,
+    sector: normalizePickupSector(item.sector),
   };
 }
 
@@ -340,21 +355,24 @@ function hasGetFieldTriplet(params: OrderListParams): boolean {
   );
 }
 
-/** Nested sender/purpose filters must use POST /pickups/search. */
 function shouldUsePickupSearch(params: OrderListParams): boolean {
-  if (params.search?.value.trim()) {
-    return ["sender.name", "sender.phone1", "sender.oldID", "purpose"].includes(
-      params.search.field,
-    );
-  }
+  if (!params.search?.value.trim()) return false;
 
-  return false;
+  return [
+    "sender.name",
+    "sender.phone1",
+    "sender.oldID",
+    "receiver.name",
+    "receiver.phone1",
+    "receiver.oldID",
+    "purpose",
+    "sector.id",
+    "branch.id",
+    "employee.id",
+    "user.id",
+  ].includes(params.search.field);
 }
 
-/**
- * EMSYS GET /pickups rejects sortField=date when limit > 1 unless field/operator/value
- * is also present. Omit date sort in that case — the API default order matches date asc.
- */
 function appendGetSortParams(searchParams: URLSearchParams, params: OrderListParams): void {
   const limit = params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit;
   const sortField = params.sortField ?? DEFAULT_ORDER_LIST_PARAMS.sortField;
@@ -433,129 +451,70 @@ export async function fetchOrders(params: OrderListParams = {}): Promise<Paginat
   return normalizePaginatedOrders(response);
 }
 
-function buildApiAddressFromParty(party: OrderParty | OrderPartyFormValues): ApiAddress {
-  const address = party.addresses.find((entry) => entry.id === party.orderAddressId) ?? party.addresses[0];
-
+function buildApiAddressFromCustomer(address: CustomerCoreAddress): ApiAddress {
   return {
-    address1: address?.streetAddress?.trim() ?? "",
-    apartment: address?.apt?.trim() ?? "",
-    city: address?.city?.trim() ?? "",
-    state: address?.state?.trim() ?? "",
-    zipcode: address?.zipCode?.trim() ?? "",
-    country: address?.provinceCountry?.trim() ?? "US",
+    address1: address.address1.trim(),
+    apartment: address.apartment.trim(),
+    city: address.city.trim(),
+    state: address.state.trim(),
+    zipcode: address.zipcode.trim(),
+    country: address.country.trim() || "US",
   };
 }
 
-function buildPurposeFromFormValues(values: OrderFormValues): string {
-  const purposes = new Set<string>();
-
-  for (const comment of values.comments) {
-    switch (comment.purpose) {
-      case "make_estimate":
-        purposes.add("ESTIMATE");
-        break;
-      case "collect_payment":
-        purposes.add("PAYMENT");
-        break;
-      case "general_comment":
-        purposes.add("COMMENT");
-        break;
-      case "take_box":
-      case "take_barrel":
-      case "take_tape":
-      case "take_other":
-        purposes.add("TAKE");
-        break;
-      case "pickup_box":
-      case "pickup_barrel":
-      case "pickup_other":
-        purposes.add("PICKUP");
-        break;
-      default:
-        break;
-    }
-  }
-
-  if (purposes.size === 0) {
-    purposes.add("PICKUP");
-  }
-
-  return Array.from(purposes).join(",");
+function buildApiCustomerRef(customer: Customer): ApiCustomerWriteRef {
+  return {
+    id: customer.id.trim() || undefined,
+    oldID: customer.oldID > 0 ? customer.oldID : undefined,
+    name: customer.name.trim(),
+    phone1: normalizeStoredPhone(customer.phone1) || undefined,
+    phone2: normalizeStoredPhone(customer.phone2) || undefined,
+    email: customer.email.trim() || undefined,
+    address: buildApiAddressFromCustomer(customer.address),
+  };
 }
 
 function buildApiCommentsFromFormValues(values: OrderFormValues): ApiComment[] {
   if (values.comments.length === 0) {
-    return [{ purpose: "comment", unit: "", quantity: 0, description: "" }];
+    return [{ purpose: "", unit: "", quantity: 0, description: "" }];
   }
 
-  return values.comments.map((comment) => {
-    if (comment.purpose === "general_comment") {
-      return {
-        purpose: "comment",
-        unit: "",
-        quantity: 0,
-        description: comment.text.trim(),
-      };
-    }
-
-    if (comment.purpose === "make_estimate" || comment.purpose === "collect_payment") {
-      return {
-        purpose: comment.purpose === "make_estimate" ? "estimate" : "payment",
-        unit: "",
-        quantity: 0,
-        description: comment.note.trim(),
-      };
-    }
-
-    const quantity = Number(comment.quantity);
-    const unit = comment.purpose.includes("barrel")
-      ? "barrel"
-      : comment.purpose.includes("tape")
-        ? "tape"
-        : comment.purpose.includes("other")
-          ? "other"
-          : "box";
-
-    return {
-      purpose: comment.purpose.startsWith("pickup") ? "pickup" : "take",
-      unit,
-      quantity: Number.isFinite(quantity) ? quantity : 0,
-      description: comment.description.trim(),
-    };
-  });
+  return values.comments.map((comment) => ({
+    purpose: comment.purpose.trim(),
+    unit: comment.unit.trim(),
+    quantity: Number.isFinite(Number(comment.quantity)) ? Number(comment.quantity) : 0,
+    description: comment.description.trim(),
+  }));
 }
 
 function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload {
-  const branchId = PORTAL_BRANCH_TO_ID[values.branch] ?? 1;
-  const date = values.date ? `${values.date}T00:00:00Z` : new Date().toISOString();
+  if (!values.sender) {
+    throw new Error("Sender is required.");
+  }
 
-  return {
+  const date = values.date ? `${values.date}T00:00:00Z` : new Date().toISOString();
+  const payload: ApiPickupWritePayload = {
     date,
     completed: values.completed,
-    branch: { id: branchId },
-    sender: {
-      id: values.sender.clientId.trim() || undefined,
-      name: values.sender.name.trim(),
-      phone1: values.sender.phones[0]?.number?.trim() ?? "",
-      phone2: values.sender.phones[1]?.number?.trim() ?? "",
-      email: values.sender.email.trim() || undefined,
-      address: buildApiAddressFromParty(values.sender),
-    },
-    receivers: values.receivers.map((receiver) => ({
-      id: receiver.clientId.trim() || undefined,
-      name: receiver.name.trim(),
-      phone1: receiver.phones[0]?.number?.trim() ?? "",
-      phone2: receiver.phones[1]?.number?.trim() ?? "",
-      email: receiver.email.trim() || undefined,
-      address: buildApiAddressFromParty(receiver),
-    })),
-    purpose: buildPurposeFromFormValues(values),
+    branch: { id: values.branchId },
+    sender: buildApiCustomerRef(values.sender),
+    purpose: values.purpose.trim(),
     comments: buildApiCommentsFromFormValues(values),
-    sector: { id: 1 },
-    containerId: values.containerId.trim() || undefined,
-    routeId: values.routeId.trim() || undefined,
-    dispatchId: values.routeAssignmentId.trim() || undefined,
   };
+
+  if (values.receiver) {
+    payload.receiver = buildApiCustomerRef(values.receiver);
+  }
+
+  if (values.sectorId !== "" && values.sectorId > 0) {
+    payload.sector = { id: values.sectorId };
+  }
+
+  if (values.employeeId !== "" && values.employeeId > 0) {
+    payload.employee = { id: values.employeeId };
+  }
+
+  return payload;
 }
 
 function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackMessage: string) {
@@ -581,7 +540,7 @@ function extractCreatedOrderId(response: ApiMutationEnvelope<unknown>): string |
   }
 
   const order = extractOrderFromMutationResponse(data);
-  return order?.orderId ?? null;
+  return order ? String(order.id) : null;
 }
 
 async function resolveCreatedOrder(values: OrderFormValues, response: ApiMutationEnvelope<unknown>): Promise<Order> {
@@ -595,23 +554,26 @@ async function resolveCreatedOrder(values: OrderFormValues, response: ApiMutatio
     return order;
   }
 
-  const matches = await fetchOrders({
-    page: 1,
-    limit: 1,
-    search: {
-      field: "sender.name",
-      operator: "eq",
-      value: values.sender.name.trim(),
-    },
-  });
+  const senderName = values.sender?.name.trim();
+  if (senderName) {
+    const matches = await fetchOrders({
+      page: 1,
+      limit: 1,
+      search: {
+        field: "sender.name",
+        operator: "eq",
+        value: senderName,
+      },
+    });
 
-  const matchedOrder = matches.items[0];
-  if (matchedOrder) {
-    return matchedOrder;
+    const matchedOrder = matches.items[0];
+    if (matchedOrder) {
+      return matchedOrder;
+    }
   }
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to create order.");
+  throw new Error(message?.trim() || "Unable to create pickup.");
 }
 
 export async function fetchOrderById(orderId: string): Promise<Order> {
@@ -626,7 +588,7 @@ export async function fetchOrderById(orderId: string): Promise<Order> {
 
   const order = normalizeOrder(raw);
   if (!order) {
-    throw new Error("Order not found.");
+    throw new Error("Pickup not found.");
   }
 
   return order;
@@ -638,7 +600,7 @@ export async function createOrder(values: OrderFormValues): Promise<Order> {
     buildPickupWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create order.");
+  assertMutationSuccess(response, "Unable to create pickup.");
 
   return resolveCreatedOrder(values, response);
 }
@@ -649,29 +611,19 @@ export async function updateOrder(orderId: string, values: OrderFormValues): Pro
     buildPickupWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to update order.");
+  assertMutationSuccess(response, "Unable to update pickup.");
 
   const updatedOrder = extractOrderFromMutationResponse(response.data);
   if (updatedOrder) {
-    return fetchOrderById(updatedOrder.orderId);
+    return fetchOrderById(String(updatedOrder.id));
   }
-
-  return fetchOrderById(orderId);
-}
-
-export async function updateOrderRouteAssignment(orderId: string, routeAssignmentId: string): Promise<Order> {
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(`${API_ENDPOINTS.PICKUPS}/${orderId}`, {
-    dispatchId: routeAssignmentId,
-  });
-
-  assertMutationSuccess(response, "Unable to update route assignment.");
 
   return fetchOrderById(orderId);
 }
 
 export async function deleteOrder(orderId: string): Promise<void> {
   const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(`${API_ENDPOINTS.PICKUPS}/${orderId}`);
-  assertMutationSuccess(response, "Unable to delete order.");
+  assertMutationSuccess(response, "Unable to delete pickup.");
 }
 
 export async function deleteOrders(orderIds: string[]): Promise<void> {

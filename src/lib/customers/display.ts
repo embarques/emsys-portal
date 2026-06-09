@@ -1,4 +1,5 @@
 import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
+import { formatPhoneForDisplay } from "@/lib/utils/phone";
 import type { ClientType, Customer, CustomerAddress, CustomerCoreAddress, CustomerPortalBranch } from "./types";
 import {
   CLIENT_TYPES,
@@ -80,8 +81,30 @@ export function formatAddressLine(address: CustomerAddress): string {
   return parts.join(", ");
 }
 
+function getCustomerCoreAddresses(customer: Customer): CustomerCoreAddress[] {
+  const source = customer.addresses.length > 0 ? customer.addresses : [customer.address];
+
+  return source.filter((address) =>
+    [address.address1, address.address2, address.apartment, address.city, address.state, address.zipcode, address.country].some(
+      (value) => value.trim(),
+    ),
+  );
+}
+
 export function formatAddressSummary(customer: Customer): string {
-  return formatCoreAddressLine(customer.address);
+  const addresses = getCustomerCoreAddresses(customer);
+  if (addresses.length === 0) return "—";
+
+  const first = formatCoreAddressLine(addresses[0]);
+  const suffix = addresses.length > 1 ? ` (+${addresses.length - 1})` : "";
+  return `${first}${suffix}`;
+}
+
+export function formatAccountBalance(balance: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(balance);
 }
 
 export function formatPhoneSummary(customer: Customer): string {
@@ -91,7 +114,7 @@ export function formatPhoneSummary(customer: Customer): string {
   const first = phones[0];
   const label = first.label ? `${first.label}: ` : "";
   const suffix = phones.length > 1 ? ` (+${phones.length - 1})` : "";
-  return `${label}${first.number}${suffix}`;
+  return `${label}${formatPhoneForDisplay(first.number)}${suffix}`;
 }
 
 export function formatPhoneList(customer: Customer): string {
@@ -99,7 +122,10 @@ export function formatPhoneList(customer: Customer): string {
   if (phones.length === 0) return "—";
 
   return phones
-    .map((phone) => (phone.label ? `${phone.label}: ${phone.number}` : phone.number))
+    .map((phone) => {
+      const formatted = formatPhoneForDisplay(phone.number);
+      return phone.label ? `${phone.label}: ${formatted}` : formatted;
+    })
     .join(" · ");
 }
 
@@ -123,19 +149,27 @@ export function customerMatchesQuery(customer: Customer, query: string): boolean
 
   const clientType = getCustomerClientType(customer);
 
+  const addressFields = getCustomerCoreAddresses(customer).flatMap((address) => [
+    address.address1,
+    address.address2,
+    address.apartment,
+    address.city,
+    address.state,
+    address.zipcode,
+    address.country,
+  ]);
+
   return [
     customer.id,
     String(customer.oldID),
     customer.name,
     customer.phone1,
     customer.phone2,
-    customer.address.address1,
-    customer.address.address2,
-    customer.address.apartment,
-    customer.address.city,
-    customer.address.state,
-    customer.address.zipcode,
-    customer.address.country,
+    customer.email,
+    customer.IDNumber,
+    customer.notes,
+    String(customer.accountBalance),
+    ...addressFields,
     customer.branch.code,
     customer.branch.name,
     clientType ? getClientTypeLabel(clientType) : "",

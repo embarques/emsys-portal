@@ -6,7 +6,7 @@ import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOpera
 
 type OrderSearchQueryOptions = Pick<OrderListParams, "branch" | "completed">;
 
-type UserSearchQueryOptions = Pick<UserListParams, "branch" | "status" | "roleId">;
+type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
 
 export const queryKeys = {
   permissions: {

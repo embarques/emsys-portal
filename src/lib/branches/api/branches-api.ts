@@ -10,6 +10,7 @@ import {
   type BranchListParams,
   type BranchSettings,
 } from "@/lib/branches/types";
+import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 type ApiAddress = {
   address1?: string;
@@ -154,8 +155,8 @@ function normalizeBranch(raw: unknown): Branch | null {
     name: String(item.name ?? "").trim(),
     code: String(item.code ?? "").trim(),
     type: String(item.type ?? "").trim(),
-    phone1: String(item.phone1 ?? "").trim(),
-    phone2: String(item.phone2 ?? "").trim(),
+    phone1: normalizeStoredPhone(String(item.phone1 ?? "")),
+    phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
     logo: String(item.logo ?? "").trim(),
     disclaimer: String(item.disclaimer ?? "").trim(),
     created: String(item.created ?? "").trim(),
@@ -232,8 +233,8 @@ function buildBranchWritePayload(
     id: options.branchId ?? values.id ?? 0,
     logo: values.logo.trim(),
     name,
-    phone1: values.phone1.trim(),
-    phone2: values.phone2.trim(),
+    phone1: normalizeStoredPhone(values.phone1),
+    phone2: normalizeStoredPhone(values.phone2),
     settings: { ...values.settings },
     type: values.type.trim(),
   };

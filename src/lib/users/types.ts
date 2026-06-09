@@ -1,66 +1,90 @@
-import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+export type UserPortalBranch = "usa" | "dr";
 
-export type UserBranch = "usa" | "dr";
-export type UserStatus = "active" | "inactive";
-export type UserLanguage = "en" | "es";
-
-export type User = {
-  userId: string;
-  uid: string;
-  username: string;
-  password: string;
+export type UserPermission = {
+  id: number;
   name: string;
-  status: UserStatus;
-  roleId: number;
-  roleName: string;
-  language: UserLanguage;
-  branch: UserBranch;
-  branchCode: string;
-  email: string;
-  phone: string;
+  resourceType: string;
+  create: boolean;
+  view: boolean;
+  update: boolean;
+  delete: boolean;
+  print: boolean;
+};
+
+export type UserRole = {
+  id: number;
+  name: string;
+  active: boolean;
+  permissions: UserPermission[];
   createdAt: string;
-  createdBy: string;
   updatedAt: string;
 };
 
-export type UserFormValues = {
-  userId: string;
-  uid: string;
-  username: string;
-  password: string;
+export type UserBranch = {
+  id: number;
   name: string;
-  status: UserStatus;
-  roleId: number;
-  language: UserLanguage;
-  branch: UserBranch;
+  code: string;
+};
+
+export type User = {
+  id: number;
+  uid: string;
   email: string;
-  phone: string;
-  createdBy: string;
+  userName: string;
+  fullName: string;
+  password: string;
+  active: boolean;
+  branch: UserBranch;
+  startTime: string;
+  endTime: string;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+  user: string | null;
+  accessCode: number;
+  type: string;
+};
+
+export type UserFormValues = {
+  id: number;
+  uid: string;
+  email: string;
+  userName: string;
+  fullName: string;
+  password: string;
+  active: boolean;
+  branch: UserBranch;
+  startTime: string;
+  endTime: string;
+  role: Pick<UserRole, "id" | "name">;
+  accessCode: number;
+  type: string;
+  user: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type UserFilterState = {
   query: string;
   searchField: UserSearchField;
   searchOperator: UserSearchOperator;
-  branch: UserBranch | "all";
-  status: UserStatus | "all";
+  branch: number | "all";
+  active: boolean | "all";
   roleId: number | "all";
 };
 
-export type UserSearchOperator = "startsWith" | "contains" | "equals" | "endsWith";
+/** Matches GET /users filter operators from the API spec. */
+export type UserSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 
 export type UserSearchField =
-  | "_id"
   | "userName"
+  | "fullName"
   | "email"
   | "uid"
   | "active"
-  | "phone"
-  | "language"
+  | "type"
   | "role.name"
-  | "role._id"
-  | "branch.code"
-  | "branch._id";
+  | "branch.id";
 
 export type UserSearchFilter = {
   field: UserSearchField;
@@ -74,8 +98,8 @@ export type UserListParams = {
   sortField?: string;
   sortDirection?: "asc" | "desc";
   search?: UserSearchFilter;
-  branch?: UserBranch | "all";
-  status?: UserStatus | "all";
+  branch?: number | "all";
+  active?: boolean | "all";
   roleId?: number | "all";
 };
 
@@ -86,26 +110,90 @@ export type UserListResult = {
   total: number;
 };
 
-export const USER_SEARCH_FIELDS: { value: UserSearchField; label: string }[] = [
-  { value: "_id", label: "User ID" },
-  { value: "userName", label: "Username" },
-  { value: "email", label: "Email" },
-  { value: "uid", label: "Firebase UID" },
-  { value: "active", label: "Active" },
-  { value: "phone", label: "Phone" },
-  { value: "language", label: "Language" },
-  { value: "role.name", label: "Role name" },
-  { value: "role._id", label: "Role ID" },
-  { value: "branch.code", label: "Branch code" },
-  { value: "branch._id", label: "Branch ID" },
+/** GET /users?page=1&start=0&limit=40&sortField=userName&sortDirection=asc */
+export const DEFAULT_USER_LIST_PARAMS = {
+  page: 1,
+  limit: 40,
+  sortField: "userName",
+  sortDirection: "asc",
+} as const satisfies Pick<UserListParams, "page" | "limit" | "sortField" | "sortDirection">;
+
+const BRANCH_ID_TO_PORTAL: Record<number, UserPortalBranch> = {
+  1: "usa",
+  2: "dr",
+};
+
+const BRANCH_CODE_TO_PORTAL: Record<string, UserPortalBranch> = {
+  NY: "usa",
+  DR: "dr",
+  DO: "dr",
+};
+
+export const USER_PORTAL_BRANCHES: {
+  portal: UserPortalBranch;
+  id: number;
+  label: string;
+  code: string;
+}[] = [
+  { portal: "usa", id: 1, label: "USA", code: "NY" },
+  { portal: "dr", id: 2, label: "DR", code: "DR" },
 ];
+
+/**
+ * GET /users field + operator pairs verified against the live API.
+ * Nested branch/role._id/_id filters return 400 on GET — use POST /users/search instead.
+ */
+export const USER_GET_SEARCH_CAPABILITIES: {
+  field: UserSearchField;
+  label: string;
+  operators: UserSearchOperator[];
+}[] = [
+  { field: "userName", label: "userName", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "fullName", label: "fullName", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "email", label: "email", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "uid", label: "uid", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "active", label: "active", operators: ["eq", "neq"] },
+  { field: "type", label: "type", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "role.name", label: "role.name", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "branch.id", label: "branch.id", operators: ["eq", "neq"] },
+];
+
+export const USER_SEARCH_FIELDS: { value: UserSearchField; label: string }[] =
+  USER_GET_SEARCH_CAPABILITIES.map(({ field, label }) => ({ value: field, label }));
 
 export const USER_SEARCH_OPERATORS: { value: UserSearchOperator; label: string }[] = [
   { value: "startsWith", label: "Starts with" },
   { value: "contains", label: "Contains" },
-  { value: "equals", label: "Equals" },
-  { value: "endsWith", label: "Ends with" },
+  { value: "eq", label: "Equals" },
+  { value: "neq", label: "Not equals" },
 ];
+
+export const USER_ACTIVE_OPTIONS: { value: boolean; label: string }[] = [
+  { value: true, label: "Active" },
+  { value: false, label: "Inactive" },
+];
+
+export const USER_ROLE_OPTIONS: { id: number; label: string }[] = [
+  { id: 1, label: "Administrador" },
+];
+
+/** Operators allowed for a GET /users search field (verified API combinations only). */
+export function getUserSearchOperatorsForField(field: UserSearchField): UserSearchOperator[] {
+  return USER_GET_SEARCH_CAPABILITIES.find((entry) => entry.field === field)?.operators ?? ["eq"];
+}
+
+export function getDefaultUserSearchOperator(field: UserSearchField): UserSearchOperator {
+  return getUserSearchOperatorsForField(field)[0];
+}
+
+export function normalizeUserSearchFilter(search: UserSearchFilter): UserSearchFilter {
+  const allowedOperators = getUserSearchOperatorsForField(search.field);
+  const operator = allowedOperators.includes(search.operator)
+    ? search.operator
+    : getDefaultUserSearchOperator(search.field);
+
+  return { field: search.field, operator, value: search.value };
+}
 
 export function createUserSearchFilter(
   value: string,
@@ -122,96 +210,121 @@ export function createUserSearchFilter(
     if (["inactive", "false", "no"].includes(lower)) normalizedValue = "false";
   }
 
-  return { field, operator, value: normalizedValue };
+  return normalizeUserSearchFilter({ field, operator, value: normalizedValue });
 }
 
 export function getUserSearchSortField(field: UserSearchField): string {
   switch (field) {
+    case "fullName":
+      return "fullName";
     case "email":
       return "email";
     case "uid":
       return "uid";
-    case "_id":
-      return "_id";
+    case "type":
+      return "type";
     case "role.name":
       return "role.name";
-    case "role._id":
-      return "role._id";
-    case "branch.code":
-      return "branch.code";
-    case "branch._id":
-      return "branch._id";
-    case "phone":
-      return "phone";
-    case "language":
-      return "language";
     case "active":
       return "active";
+    case "branch.id":
+      return "branch.id";
     default:
       return "userName";
   }
 }
 
-export const USER_BRANCHES: { value: UserBranch; label: string }[] = [
-  { value: "usa", label: "USA" },
-  { value: "dr", label: "DR" },
-];
-
-export const USER_STATUSES: { value: UserStatus; label: string }[] = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-];
-
-export const USER_ROLE_OPTIONS: { id: number; label: string }[] = [
-  { id: 1, label: "Administrador" },
-];
-
-export const USER_LANGUAGES: { value: UserLanguage; label: string }[] = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-];
-
-export function createEmptyUserForm(createdBy = DEFAULT_CREATED_BY): UserFormValues {
+export function createEmptyUserRole(): UserRole {
   return {
-    userId: "",
-    uid: "",
-    username: "",
-    password: "",
+    id: 0,
     name: "",
-    status: "active",
-    roleId: USER_ROLE_OPTIONS[0]?.id ?? 1,
-    language: "en",
-    branch: "usa",
+    active: true,
+    permissions: [],
+    createdAt: "",
+    updatedAt: "",
+  };
+}
+
+export function createUserBranchFromPortal(portal: UserPortalBranch): UserBranch {
+  const config = USER_PORTAL_BRANCHES.find((entry) => entry.portal === portal) ?? USER_PORTAL_BRANCHES[0];
+
+  return {
+    id: config.id,
+    name: config.label,
+    code: config.code,
+  };
+}
+
+export function getUserPortalBranch(user: Pick<User, "branch">): UserPortalBranch {
+  if (BRANCH_ID_TO_PORTAL[user.branch.id]) {
+    return BRANCH_ID_TO_PORTAL[user.branch.id];
+  }
+
+  const code = user.branch.code.trim().toUpperCase();
+  if (code && BRANCH_CODE_TO_PORTAL[code]) {
+    return BRANCH_CODE_TO_PORTAL[code];
+  }
+
+  return "usa";
+}
+
+export function portalBranchToId(portal: UserPortalBranch): number {
+  return USER_PORTAL_BRANCHES.find((entry) => entry.portal === portal)?.id ?? 1;
+}
+
+export function createEmptyUserForm(): UserFormValues {
+  const branch = createUserBranchFromPortal("usa");
+  const defaultRole = USER_ROLE_OPTIONS[0];
+
+  return {
+    id: 0,
+    uid: "",
     email: "",
-    phone: "",
-    createdBy,
+    userName: "",
+    fullName: "",
+    password: "",
+    active: true,
+    branch,
+    startTime: "",
+    endTime: "",
+    role: {
+      id: defaultRole?.id ?? 1,
+      name: defaultRole?.label ?? "",
+    },
+    accessCode: 0,
+    type: "",
+    user: null,
+    createdAt: "",
+    updatedAt: "",
   };
 }
 
 export function userToFormValues(user: User): UserFormValues {
   return {
-    userId: user.userId,
+    id: user.id,
     uid: user.uid,
-    username: user.username,
+    userName: user.userName,
     password: "",
-    name: user.name,
-    status: user.status,
-    roleId: user.roleId,
-    language: user.language,
-    branch: user.branch,
+    fullName: user.fullName,
+    active: user.active,
+    role: {
+      id: user.role.id,
+      name: user.role.name,
+    },
+    branch: { ...user.branch },
+    startTime: user.startTime,
+    endTime: user.endTime,
     email: user.email,
-    phone: user.phone,
-    createdBy: user.createdBy,
+    accessCode: user.accessCode,
+    type: user.type,
+    user: user.user,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 
 export function maskPassword(_password: string): string {
   return "••••••••";
-}
-
-export function formatUserBranchLabel(user: User): string {
-  const branchLabel = USER_BRANCHES.find((entry) => entry.value === user.branch)?.label ?? user.branch.toUpperCase();
-  return user.branchCode ? `${branchLabel} (${user.branchCode})` : branchLabel;
 }
 
 export function isAdminRole(roleName: string): boolean {

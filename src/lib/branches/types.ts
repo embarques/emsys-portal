@@ -1,3 +1,5 @@
+import { normalizeStoredPhone } from "@/lib/utils/phone";
+
 export type BranchAddress = {
   address1: string;
   address2: string;
@@ -179,8 +181,8 @@ export function branchToFormValues(branch: Branch): BranchFormValues {
     name: branch.name,
     code: branch.code,
     type: branch.type,
-    phone1: branch.phone1,
-    phone2: branch.phone2,
+    phone1: normalizeStoredPhone(branch.phone1),
+    phone2: normalizeStoredPhone(branch.phone2),
     logo: branch.logo,
     disclaimer: branch.disclaimer,
     created: branch.created,

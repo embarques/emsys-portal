@@ -37,16 +37,21 @@ import {
   computeRouteAssignmentKpis,
   formatRouteAssignmentDate,
   formatRouteAssignmentTimestamp,
-  getEmployeeGroupLabel,
-  getTruckName,
-  routeAssignmentMatchesQuery,
+  getEmployeeGroupRefLabel,
+  getTruckRefLabel,
+  routeAssignmentMatchesSearch,
+  truncateObjectId,
   truncateRouteAssignmentId,
 } from "@/lib/route-assignments/display";
 import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
 import {
   createEmptyRouteAssignmentForm,
+  createRouteAssignmentSearchFilter,
   formValuesToRouteAssignment,
+  getDefaultRouteAssignmentSearchOperator,
+  getRouteAssignmentSearchOperatorsForField,
   routeAssignmentToFormValues,
+  ROUTE_ASSIGNMENT_SEARCH_FIELDS,
   type RouteAssignment,
   type RouteAssignmentFilterState,
   type RouteAssignmentFormValues,
@@ -57,6 +62,8 @@ const PAGE_SIZE = 8;
 
 const defaultFilters: RouteAssignmentFilterState = {
   query: "",
+  searchField: "name",
+  searchOperator: "startsWith",
 };
 
 export function RouteAssignmentsWorkspace() {
@@ -71,32 +78,36 @@ export function RouteAssignmentsWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<RouteAssignment | RouteAssignment[] | null>(null);
 
   const filteredAssignments = useMemo(() => {
-    return assignments.filter((assignment) => routeAssignmentMatchesQuery(assignment, filters.query));
-  }, [assignments, filters.query]);
+    const search = createRouteAssignmentSearchFilter(filters.query, filters.searchField, filters.searchOperator);
+
+    return assignments.filter((assignment) => {
+      if (search && !routeAssignmentMatchesSearch(assignment, search)) return false;
+      return true;
+    });
+  }, [assignments, filters.query, filters.searchField, filters.searchOperator]);
 
   const kpis = useMemo(() => computeRouteAssignmentKpis(assignments), [assignments]);
   const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageAssignments = filteredAssignments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allPageSelected =
-    pageAssignments.length > 0 &&
-    pageAssignments.every((assignment) => selectedIds.includes(assignment.routeAssignmentId));
+    pageAssignments.length > 0 && pageAssignments.every((assignment) => selectedIds.includes(assignment.id));
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
       setSelectedIds((current) =>
-        Array.from(new Set([...current, ...pageAssignments.map((assignment) => assignment.routeAssignmentId)]))
+        Array.from(new Set([...current, ...pageAssignments.map((assignment) => assignment.id)])),
       );
       return;
     }
     setSelectedIds((current) =>
-      current.filter((id) => !pageAssignments.some((assignment) => assignment.routeAssignmentId === id))
+      current.filter((id) => !pageAssignments.some((assignment) => assignment.id === id)),
     );
   }
 
-  function toggleSelect(routeAssignmentId: string, checked: boolean) {
+  function toggleSelect(assignmentId: string, checked: boolean) {
     setSelectedIds((current) =>
-      checked ? [...current, routeAssignmentId] : current.filter((entry) => entry !== routeAssignmentId)
+      checked ? [...current, assignmentId] : current.filter((entry) => entry !== assignmentId),
     );
   }
 
@@ -116,12 +127,11 @@ export function RouteAssignmentsWorkspace() {
       const nextAssignment = formValuesToRouteAssignment(
         { ...values, createdBy: editingAssignment.createdBy },
         editingAssignment.createdAt,
-        new Date().toISOString()
+        new Date().toISOString(),
+        editingAssignment.id,
       );
       setAssignments((current) =>
-        current.map((assignment) =>
-          assignment.routeAssignmentId === editingAssignment.routeAssignmentId ? nextAssignment : assignment
-        )
+        current.map((assignment) => (assignment.id === editingAssignment.id ? nextAssignment : assignment)),
       );
       notifyUpdated("Route assignment", nextAssignment.name);
     } else {
@@ -138,9 +148,9 @@ export function RouteAssignmentsWorkspace() {
   function confirmDelete() {
     if (!deleteTarget) return;
     const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((assignment) => assignment.routeAssignmentId)
-      : [deleteTarget.routeAssignmentId];
-    setAssignments((current) => current.filter((assignment) => !ids.includes(assignment.routeAssignmentId)));
+      ? deleteTarget.map((assignment) => assignment.id)
+      : [deleteTarget.id];
+    setAssignments((current) => current.filter((assignment) => !ids.includes(assignment.id)));
     setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
     setDeleteTarget(null);
     setViewAssignment(null);
@@ -168,22 +178,44 @@ export function RouteAssignmentsWorkspace() {
     },
   ];
 
+  const searchOperatorOptions = useMemo(
+    () =>
+      getRouteAssignmentSearchOperatorsForField(filters.searchField).map((operator) => ({
+        value: operator,
+        label:
+          operator === "startsWith"
+            ? "Starts with"
+            : operator === "contains"
+              ? "Contains"
+              : operator === "eq"
+                ? "Equals"
+                : "Not equals",
+      })),
+    [filters.searchField],
+  );
+
   const tableColumns: DataTableColumn<RouteAssignment>[] = [
     {
       id: "id",
-      label: "ID",
+      label: "id",
+      cellClassName: "font-mono text-xs",
+      renderCell: (assignment) => truncateObjectId(assignment.id),
+    },
+    {
+      id: "routeAssignmentId",
+      label: "routeAssignmentId",
       cellClassName: "font-mono text-xs",
       renderCell: (assignment) => truncateRouteAssignmentId(assignment.routeAssignmentId),
     },
     {
       id: "name",
-      label: "Name",
+      label: "name",
       cellClassName: "font-medium",
       renderCell: (assignment) => assignment.name,
     },
     {
       id: "date",
-      label: "Date",
+      label: "date",
       renderCell: (assignment) => (
         <div className="flex items-center gap-1.5">
           <CalendarRange className="h-3.5 w-3.5 text-muted-foreground" />
@@ -192,31 +224,54 @@ export function RouteAssignmentsWorkspace() {
       ),
     },
     {
+      id: "truck.id",
+      label: "truck.id",
+      cellClassName: "font-mono text-xs",
+      renderCell: (assignment) => assignment.truck.id || "—",
+    },
+    {
+      id: "truck.name",
+      label: "truck.name",
+      renderCell: (assignment) => assignment.truck.name || "—",
+    },
+    {
       id: "truck",
-      label: "Truck",
-      renderCell: (assignment) => getTruckName(assignment.truckId),
+      label: "truck",
+      renderCell: (assignment) => getTruckRefLabel(assignment.truck),
+    },
+    {
+      id: "employeeGroup.id",
+      label: "employeeGroup.id",
+      cellClassName: "font-mono text-xs",
+      renderCell: (assignment) => assignment.employeeGroup.id || "—",
+    },
+    {
+      id: "employeeGroup.name",
+      label: "employeeGroup.name",
+      renderCell: (assignment) => assignment.employeeGroup.name || "—",
     },
     {
       id: "employeeGroup",
-      label: "Employee group",
-      renderCell: (assignment) => getEmployeeGroupLabel(assignment.employeeGroupId),
+      label: "employeeGroup",
+      renderCell: (assignment) => getEmployeeGroupRefLabel(assignment.employeeGroup),
     },
     {
       id: "createdAt",
-      label: "Date created",
+      label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (assignment) => formatRouteAssignmentTimestamp(assignment.createdAt),
+      renderCell: (assignment) =>
+        assignment.createdAt ? formatRouteAssignmentTimestamp(assignment.createdAt) : "—",
     },
     {
       id: "createdBy",
-      label: "User created",
-      renderCell: (assignment) => assignment.createdBy,
+      label: "createdBy",
+      renderCell: (assignment) => assignment.createdBy || "—",
     },
     {
       id: "updatedAt",
-      label: "Date modified",
+      label: "updatedAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (assignment) => formatAuditDate(assignment.updatedAt),
+      renderCell: (assignment) => (assignment.updatedAt ? formatAuditDate(assignment.updatedAt) : "—"),
     },
     {
       id: "actions",
@@ -294,13 +349,58 @@ export function RouteAssignmentsWorkspace() {
               <CardTitle>Assignment directory</CardTitle>
               <CardDescription>Search by name, truck, employee group, or creator.</CardDescription>
             </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
+              <select
+                aria-label="Search field"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchField}
+                onChange={(event) => {
+                  const searchField = event.target.value as RouteAssignmentFilterState["searchField"];
+                  setFilters((current) => {
+                    const allowedOperators = getRouteAssignmentSearchOperatorsForField(searchField);
+                    const searchOperator = allowedOperators.includes(current.searchOperator)
+                      ? current.searchOperator
+                      : getDefaultRouteAssignmentSearchOperator(searchField);
+
+                    return {
+                      ...current,
+                      searchField,
+                      searchOperator,
+                    };
+                  });
+                  setPage(1);
+                }}
+              >
+                {ROUTE_ASSIGNMENT_SEARCH_FIELDS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Search operator"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchOperator}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    searchOperator: event.target.value as RouteAssignmentFilterState["searchOperator"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                {searchOperatorOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <div className="relative min-w-[240px] flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={filters.query}
                   onChange={(event) => {
-                    setFilters({ query: event.target.value });
+                    setFilters((current) => ({ ...current, query: event.target.value }));
                     setPage(1);
                   }}
                   className="pl-9"
@@ -323,7 +423,7 @@ export function RouteAssignmentsWorkspace() {
                 variant="destructive"
                 size="sm"
                 onClick={() =>
-                  setDeleteTarget(assignments.filter((assignment) => selectedIds.includes(assignment.routeAssignmentId)))
+                  setDeleteTarget(assignments.filter((assignment) => selectedIds.includes(assignment.id)))
                 }
               >
                 <Trash2 className="h-4 w-4" />
@@ -336,10 +436,10 @@ export function RouteAssignmentsWorkspace() {
         <DataTable
           columns={columnVisibility.columns}
           rows={pageAssignments}
-          rowKey={(assignment) => assignment.routeAssignmentId}
+          rowKey={(assignment) => assignment.id}
           rowLabel={(assignment) => assignment.name}
           columnLayout={columnVisibility}
-          minWidth={1100}
+          minWidth={1500}
           selectable
           selectedIds={selectedIds}
           allPageSelected={allPageSelected}
@@ -405,13 +505,12 @@ export function RouteAssignmentsWorkspace() {
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit route assignment" : "Add route assignment"}</DialogTitle>
             <DialogDescription>
-              {formMode === "edit"
-                ? "Update the assignment date, truck, and employee group."
-                : "Create a new assignment or copy truck and group settings from a previous one."}
+              Fields match the EMSYS Route Assignment API model: id, routeAssignmentId, name, date, truck, and
+              employeeGroup.
             </DialogDescription>
           </DialogHeader>
           <RouteAssignmentForm
-            key={editingAssignment?.routeAssignmentId ?? "new"}
+            key={editingAssignment?.id ?? "new"}
             initialValues={
               formMode === "edit" && editingAssignment
                 ? routeAssignmentToFormValues(editingAssignment)
@@ -419,7 +518,6 @@ export function RouteAssignmentsWorkspace() {
             }
             copySources={formMode === "add" ? assignments : []}
             isEditing={formMode === "edit"}
-            updatedAt={editingAssignment?.updatedAt}
             submitLabel={formMode === "edit" ? "Save changes" : "Add assignment"}
             onSubmit={saveAssignment}
             onCancel={() => setFormMode(null)}

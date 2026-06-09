@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { normalizeApiError } from "@/lib/api/axios";
+import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   formatBranchAddress,
@@ -222,12 +223,12 @@ export function BranchesWorkspace() {
     {
       id: "phone1",
       label: "phone1",
-      renderCell: (branch) => branch.phone1 || "—",
+      renderCell: (branch) => formatPhoneDisplayOrDash(branch.phone1),
     },
     {
       id: "phone2",
       label: "phone2",
-      renderCell: (branch) => branch.phone2 || "—",
+      renderCell: (branch) => formatPhoneDisplayOrDash(branch.phone2),
     },
     {
       id: "phones",

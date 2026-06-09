@@ -16,6 +16,8 @@ import {
   getBranchLabel,
   getFuelTypeBadgeClass,
   getFuelTypeLabel,
+  truncateObjectId,
+  truncateTruckId,
 } from "@/lib/trucks/display";
 import type { Truck } from "@/lib/trucks/types";
 
@@ -45,15 +47,26 @@ export function TruckViewSheet({ truck, open, onOpenChange, onEdit, onDelete }: 
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title="Details">
-            <RecordViewSheetDetailRow label="Truck ID" value={truck.truckId} />
-            <RecordViewSheetDetailRow label="VIN" value={truck.vin} />
-            <RecordViewSheetDetailRow label="Year" value={truck.year} />
-            <RecordViewSheetDetailRow label="Fuel type" value={getFuelTypeLabel(truck.fuelType)} />
-            <RecordViewSheetDetailRow label="Branch" value={getBranchLabel(truck.branch)} />
-            <RecordViewSheetDetailRow label="Date created" value={formatAuditDate(truck.createdAt)} />
-            <RecordViewSheetDetailRow label="User created" value={truck.createdBy} />
-            <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(truck.updatedAt)} />
+          <RecordViewSheetSection title="Truck">
+            <RecordViewSheetDetailRow label="id" value={truncateObjectId(truck.id)} />
+            <RecordViewSheetDetailRow label="truckId" value={truncateTruckId(truck.truckId)} />
+            <RecordViewSheetDetailRow label="name" value={truck.name} />
+            <RecordViewSheetDetailRow label="vin" value={truck.vin} />
+            <RecordViewSheetDetailRow label="year" value={truck.year} />
+            <RecordViewSheetDetailRow label="fuelType" value={getFuelTypeLabel(truck.fuelType)} />
+            <RecordViewSheetDetailRow label="branch" value={truck.branch || "—"} />
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection title="Audit">
+            <RecordViewSheetDetailRow
+              label="createdAt"
+              value={truck.createdAt ? formatAuditDate(truck.createdAt) : "—"}
+            />
+            <RecordViewSheetDetailRow label="createdBy" value={truck.createdBy || "—"} />
+            <RecordViewSheetDetailRow
+              label="updatedAt"
+              value={truck.updatedAt ? formatAuditDate(truck.updatedAt) : "—"}
+            />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 

@@ -1,3 +1,6 @@
+import type { User } from "@/lib/users/types";
+import { formatPhoneForDisplay, normalizeStoredPhone } from "@/lib/utils/phone";
+
 export type EmployeePortalBranch = "usa" | "dr";
 
 export type EmployeeAddress = {
@@ -10,83 +13,54 @@ export type EmployeeAddress = {
   zipcode: string;
 };
 
-export type EmployeeBranchSettings = {
-  defaultLabelStatus: number;
-  imageResampleBy: number;
-  invoiceCreatedThruIncomeStatement: boolean;
-  labelPrefix: string;
-  printLabelCount: boolean;
-  roundDecimalPlaces: number;
-  s3BucketFolder: string;
-  s3BucketName: string;
-  s3Profile: string;
-  s3ShareLinkExpireMinutes: number;
-};
-
 export type EmployeeBranch = {
-  address: EmployeeAddress;
-  code: string;
-  created: string;
-  disclaimer: string;
   id: number;
-  logo: string;
   name: string;
-  phone1: string;
-  phone2: string;
-  settings: EmployeeBranchSettings;
-  type: string;
-};
-
-export type EmployeeUser = {
-  id: number;
-  userName: string;
-  email: string;
-  fullName: string;
-  active: boolean;
+  code: string;
 };
 
 export type Employee = {
   id: number;
   name: string;
-  department: string;
   title: string;
-  active: boolean;
-  branch: EmployeeBranch;
-  branchs: EmployeeBranch[];
-  address: EmployeeAddress;
+  department: string;
   phone1: string;
   phone2: string;
   email: string;
-  cost: number;
-  loanAmountOwed: number;
-  loanBalanceUpdated: string;
-  totalLoanGiven: number;
-  totalPaymentReceived: number;
-  user: EmployeeUser | null;
-  users: EmployeeUser[];
+  active: boolean;
+  startDate: string;
+  endDate: string;
   createdAt: string;
   updatedAt: string;
+  branch: EmployeeBranch;
+  user: User | null;
+  address: EmployeeAddress;
+  totalLoanGiven: number;
+  totalPaymentReceived: number;
+  loanAmountOwed: number;
+  loanBalanceUpdated: string;
+  cost: number;
 };
 
 export type EmployeeFormValues = {
   id: number;
   name: string;
-  department: string;
   title: string;
-  active: boolean;
-  branch: EmployeeBranch;
-  branchs: EmployeeBranch[];
-  address: EmployeeAddress;
+  department: string;
   phone1: string;
   phone2: string;
   email: string;
+  active: boolean;
+  startDate: string;
+  endDate: string;
+  branch: EmployeeBranch;
+  address: EmployeeAddress;
   cost: number;
   loanAmountOwed: number;
   loanBalanceUpdated: string;
   totalLoanGiven: number;
   totalPaymentReceived: number;
-  user: EmployeeUser | null;
-  users: EmployeeUser[];
+  user: User | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -95,12 +69,13 @@ export type EmployeeFilterState = {
   query: string;
   searchField: EmployeeSearchField;
   searchOperator: EmployeeSearchOperator;
-  branch: EmployeePortalBranch | "all";
+  branch: number | "all";
   active: boolean | "all";
   department: string;
 };
 
-export type EmployeeSearchOperator = "startsWith" | "contains" | "equals" | "endsWith";
+/** Matches GET /employees filter operators from the API spec. */
+export type EmployeeSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 
 export type EmployeeSearchField =
   | "id"
@@ -108,8 +83,11 @@ export type EmployeeSearchField =
   | "title"
   | "department"
   | "email"
+  | "phone1"
   | "phone2"
   | "active"
+  | "startDate"
+  | "endDate"
   | "address.address1"
   | "address.address2"
   | "address.apartment"
@@ -132,7 +110,7 @@ export type EmployeeListParams = {
   sortField?: string;
   sortDirection?: "asc" | "desc";
   search?: EmployeeSearchFilter;
-  branch?: EmployeePortalBranch | "all";
+  branch?: number | "all";
   active?: boolean | "all";
   department?: string;
 };
@@ -143,6 +121,14 @@ export type EmployeeListResult = {
   resultsPerPage: number;
   total: number;
 };
+
+/** GET /employees?page=1&start=0&limit=40&sortField=name&sortDirection=asc */
+export const DEFAULT_EMPLOYEE_LIST_PARAMS = {
+  page: 1,
+  limit: 40,
+  sortField: "name",
+  sortDirection: "asc",
+} as const satisfies Pick<EmployeeListParams, "page" | "limit" | "sortField" | "sortDirection">;
 
 const BRANCH_ID_TO_PORTAL: Record<number, EmployeePortalBranch> = {
   1: "usa",
@@ -173,30 +159,44 @@ export const EMPLOYEE_BRANCHES = EMPLOYEE_PORTAL_BRANCHES.map((entry) => ({
   label: entry.label,
 }));
 
-export const EMPLOYEE_SEARCH_FIELDS: { value: EmployeeSearchField; label: string }[] = [
-  { value: "name", label: "Name" },
-  { value: "title", label: "Title" },
-  { value: "department", label: "Department" },
-  { value: "email", label: "Email" },
-  { value: "phone2", label: "Phone 2" },
-  { value: "active", label: "Active" },
-  { value: "address.address1", label: "Address 1" },
-  { value: "address.address2", label: "Address 2" },
-  { value: "address.apartment", label: "Apartment" },
-  { value: "address.city", label: "City" },
-  { value: "address.state", label: "State" },
-  { value: "address.country", label: "Country" },
-  { value: "address.zipcode", label: "Zipcode" },
-  { value: "branch.code", label: "Branch code" },
-  { value: "branch.id", label: "Branch ID" },
-  { value: "id", label: "ID" },
+/**
+ * GET /employees field + operator pairs verified against the live API.
+ * Nested address / branch.code / user filters may require POST /employees/search instead.
+ */
+export const EMPLOYEE_GET_SEARCH_CAPABILITIES: {
+  field: EmployeeSearchField;
+  label: string;
+  operators: EmployeeSearchOperator[];
+}[] = [
+  { field: "name", label: "name", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "title", label: "title", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "department", label: "department", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "email", label: "email", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "phone1", label: "phone1", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "phone2", label: "phone2", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "active", label: "active", operators: ["eq", "neq"] },
+  { field: "startDate", label: "startDate", operators: ["eq", "neq"] },
+  { field: "endDate", label: "endDate", operators: ["eq", "neq"] },
+  { field: "address.address1", label: "address.address1", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "address.address2", label: "address.address2", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "address.apartment", label: "address.apartment", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "address.city", label: "address.city", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "address.state", label: "address.state", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "address.country", label: "address.country", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "address.zipcode", label: "address.zipcode", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "branch.code", label: "branch.code", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "branch.id", label: "branch.id", operators: ["eq", "neq"] },
+  { field: "id", label: "id", operators: ["eq", "neq"] },
 ];
+
+export const EMPLOYEE_SEARCH_FIELDS: { value: EmployeeSearchField; label: string }[] =
+  EMPLOYEE_GET_SEARCH_CAPABILITIES.map(({ field, label }) => ({ value: field, label }));
 
 export const EMPLOYEE_SEARCH_OPERATORS: { value: EmployeeSearchOperator; label: string }[] = [
   { value: "startsWith", label: "Starts with" },
   { value: "contains", label: "Contains" },
-  { value: "equals", label: "Equals" },
-  { value: "endsWith", label: "Ends with" },
+  { value: "eq", label: "Equals" },
+  { value: "neq", label: "Not equals" },
 ];
 
 export const EMPLOYEE_ACTIVE_OPTIONS: { value: boolean; label: string }[] = [
@@ -228,6 +228,23 @@ export const EMPLOYEE_TITLES = [
 /** @deprecated Use EMPLOYEE_TITLES */
 export const EMPLOYEE_ROLES = EMPLOYEE_TITLES;
 
+export function getEmployeeSearchOperatorsForField(field: EmployeeSearchField): EmployeeSearchOperator[] {
+  return EMPLOYEE_GET_SEARCH_CAPABILITIES.find((entry) => entry.field === field)?.operators ?? ["eq"];
+}
+
+export function getDefaultEmployeeSearchOperator(field: EmployeeSearchField): EmployeeSearchOperator {
+  return getEmployeeSearchOperatorsForField(field)[0];
+}
+
+export function normalizeEmployeeSearchFilter(search: EmployeeSearchFilter): EmployeeSearchFilter {
+  const allowedOperators = getEmployeeSearchOperatorsForField(search.field);
+  const operator = allowedOperators.includes(search.operator)
+    ? search.operator
+    : getDefaultEmployeeSearchOperator(search.field);
+
+  return { field: search.field, operator, value: search.value };
+}
+
 export function createEmployeeSearchFilter(
   value: string,
   field: EmployeeSearchField = "name",
@@ -243,7 +260,7 @@ export function createEmployeeSearchFilter(
     if (["inactive", "false", "no"].includes(lower)) normalizedValue = "false";
   }
 
-  return { field, operator, value: normalizedValue };
+  return normalizeEmployeeSearchFilter({ field, operator, value: normalizedValue });
 }
 
 export function getEmployeeSearchSortField(field: EmployeeSearchField): string {
@@ -254,10 +271,16 @@ export function getEmployeeSearchSortField(field: EmployeeSearchField): string {
       return "department";
     case "email":
       return "email";
+    case "phone1":
+      return "phone1";
     case "phone2":
       return "phone2";
     case "active":
       return "active";
+    case "startDate":
+      return "startDate";
+    case "endDate":
+      return "endDate";
     case "id":
       return "id";
     case "branch.code":
@@ -267,21 +290,6 @@ export function getEmployeeSearchSortField(field: EmployeeSearchField): string {
     default:
       return field;
   }
-}
-
-export function createEmptyEmployeeBranchSettings(): EmployeeBranchSettings {
-  return {
-    defaultLabelStatus: 0,
-    imageResampleBy: 0,
-    invoiceCreatedThruIncomeStatement: false,
-    labelPrefix: "",
-    printLabelCount: false,
-    roundDecimalPlaces: 0,
-    s3BucketFolder: "",
-    s3BucketName: "",
-    s3Profile: "",
-    s3ShareLinkExpireMinutes: 0,
-  };
 }
 
 export function createEmptyEmployeeAddress(country = ""): EmployeeAddress {
@@ -300,24 +308,15 @@ export function createEmployeeBranchFromPortal(portal: EmployeePortalBranch): Em
   const config = EMPLOYEE_PORTAL_BRANCHES.find((entry) => entry.portal === portal) ?? EMPLOYEE_PORTAL_BRANCHES[0];
 
   return {
-    address: createEmptyEmployeeAddress(config.country),
-    code: config.code,
-    created: "",
-    disclaimer: "",
     id: config.id,
-    logo: "",
     name: config.name,
-    phone1: "",
-    phone2: "",
-    settings: createEmptyEmployeeBranchSettings(),
-    type: "",
+    code: config.code,
   };
 }
 
 export function getEmployeePortalBranch(employee: Pick<Employee, "branch" | "address">): EmployeePortalBranch {
-  const branchId = employee.branch.id;
-  if (BRANCH_ID_TO_PORTAL[branchId]) {
-    return BRANCH_ID_TO_PORTAL[branchId];
+  if (BRANCH_ID_TO_PORTAL[employee.branch.id]) {
+    return BRANCH_ID_TO_PORTAL[employee.branch.id];
   }
 
   const code = employee.branch.code.trim().toUpperCase();
@@ -346,8 +345,9 @@ export function createEmptyEmployeeForm(): EmployeeFormValues {
     department: EMPLOYEE_DEPARTMENTS[0],
     title: EMPLOYEE_TITLES[0],
     active: true,
+    startDate: "",
+    endDate: "",
     branch,
-    branchs: [branch],
     address: createEmptyEmployeeAddress("US"),
     phone1: "",
     phone2: "",
@@ -358,7 +358,6 @@ export function createEmptyEmployeeForm(): EmployeeFormValues {
     totalLoanGiven: 0,
     totalPaymentReceived: 0,
     user: null,
-    users: [],
     createdAt: "",
     updatedAt: "",
   };
@@ -381,21 +380,13 @@ export function formatEmployeeBranchLabel(employee: Employee): string {
 }
 
 export function formatEmployeePhones(employee: Employee): string {
-  const phones = [employee.phone1, employee.phone2].map((value) => value.trim()).filter(Boolean);
+  const phones = [employee.phone1, employee.phone2].map((value) => formatPhoneForDisplay(value)).filter(Boolean);
   return phones.length > 0 ? phones.join(", ") : "—";
 }
 
-export function formatEmployeeBranchs(employee: Pick<Employee, "branchs">): string {
-  const labels = employee.branchs
-    .map((branch) => [branch.code, branch.name].filter(Boolean).join(" · "))
-    .filter(Boolean);
-
-  return labels.length > 0 ? labels.join(", ") : "—";
-}
-
-export function formatEmployeeUsers(employee: Pick<Employee, "users">): string {
-  const labels = employee.users.map((user) => user.userName || String(user.id)).filter(Boolean);
-  return labels.length > 0 ? labels.join(", ") : "—";
+export function formatEmployeeUserLabel(employee: Pick<Employee, "user">): string {
+  if (!employee.user) return "—";
+  return employee.user.userName || employee.user.fullName || String(employee.user.id);
 }
 
 export function employeeToFormValues(employee: Employee): EmployeeFormValues {
@@ -405,11 +396,12 @@ export function employeeToFormValues(employee: Employee): EmployeeFormValues {
     department: employee.department,
     title: employee.title,
     active: employee.active,
-    branch: employee.branch,
-    branchs: employee.branchs.length > 0 ? employee.branchs.map((branch) => ({ ...branch })) : [{ ...employee.branch }],
+    startDate: employee.startDate,
+    endDate: employee.endDate,
+    branch: { ...employee.branch },
     address: { ...employee.address },
-    phone1: employee.phone1,
-    phone2: employee.phone2,
+    phone1: normalizeStoredPhone(employee.phone1),
+    phone2: normalizeStoredPhone(employee.phone2),
     email: employee.email,
     cost: employee.cost,
     loanAmountOwed: employee.loanAmountOwed,
@@ -417,7 +409,6 @@ export function employeeToFormValues(employee: Employee): EmployeeFormValues {
     totalLoanGiven: employee.totalLoanGiven,
     totalPaymentReceived: employee.totalPaymentReceived,
     user: employee.user ? { ...employee.user } : null,
-    users: employee.users.map((user) => ({ ...user })),
     createdAt: employee.createdAt,
     updatedAt: employee.updatedAt,
   };

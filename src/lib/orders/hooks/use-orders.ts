@@ -10,7 +10,6 @@ import {
   fetchOrderById,
   fetchOrders,
   updateOrder,
-  updateOrderRouteAssignment,
 } from "@/lib/orders/api/orders-api";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
@@ -147,16 +146,6 @@ export function useUpdateOrder() {
         queryKey: queryKeys.orders.detail(variables.orderId),
       });
     },
-  });
-}
-
-export function useUpdateOrderRouteAssignment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ orderId, routeAssignmentId }: { orderId: string; routeAssignmentId: string }) =>
-      updateOrderRouteAssignment(orderId, routeAssignmentId),
-    onSuccess: () => invalidateOrders(queryClient),
   });
 }
 

@@ -34,14 +34,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
+import { formatBranchFilterLabel } from "@/lib/branches/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import type { DataTableColumn } from "@/lib/table/types";
 import {
+  formatUserBranchLabel,
+  getUserActiveBadgeClass,
+  getUserActiveLabel,
   getUserBranchBadgeClass,
-  getUserLanguageLabel,
   getUserRoleBadgeClass,
   getUserRoleLabel,
-  getUserStatusBadgeClass,
-  getUserStatusLabel,
   truncateUid,
   truncateUserId,
 } from "@/lib/users/display";
@@ -53,14 +55,13 @@ import {
   useUpdateUser,
 } from "@/lib/users/hooks/use-users";
 import {
-  USER_BRANCHES,
+  DEFAULT_USER_LIST_PARAMS,
   USER_ROLE_OPTIONS,
   USER_SEARCH_FIELDS,
-  USER_SEARCH_OPERATORS,
-  USER_STATUSES,
   createEmptyUserForm,
   createUserSearchFilter,
-  formatUserBranchLabel,
+  getDefaultUserSearchOperator,
+  getUserSearchOperatorsForField,
   getUserSearchSortField,
   maskPassword,
   userToFormValues,
@@ -69,14 +70,14 @@ import {
   type UserFormValues,
 } from "@/lib/users/types";
 
-const PAGE_SIZE = 40;
+const PAGE_SIZE = DEFAULT_USER_LIST_PARAMS.limit;
 
 const defaultFilters: UserFilterState = {
   query: "",
   searchField: "userName",
   searchOperator: "startsWith",
   branch: "all",
-  status: "all",
+  active: "all",
   roleId: "all",
 };
 
@@ -97,28 +98,29 @@ export function UsersWorkspace() {
       const search = createUserSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
 
       return {
+        ...DEFAULT_USER_LIST_PARAMS,
         page,
         limit: PAGE_SIZE,
         sortField: search ? getUserSearchSortField(filters.searchField) : "userName",
-        sortDirection: "asc" as const,
         search,
         branch: filters.branch,
-        status: filters.status,
+        active: filters.active,
         roleId: filters.roleId,
       };
     },
     [
       deferredQuery,
+      filters.active,
       filters.branch,
       filters.roleId,
       filters.searchField,
       filters.searchOperator,
-      filters.status,
       page,
     ],
   );
 
   const { data, isLoading, isError, error, isFetching } = useUsers(listParams);
+  const { data: branchesData } = useBranchPicker();
   const stats = useUserStats();
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
@@ -130,15 +132,15 @@ export function UsersWorkspace() {
   const currentPage = Math.min(page, totalPages);
   const pageUsers = users;
   const allPageSelected =
-    pageUsers.length > 0 && pageUsers.every((user) => selectedIds.includes(user.userId));
+    pageUsers.length > 0 && pageUsers.every((user) => selectedIds.includes(String(user.id)));
   const isSaving =
     createUserMutation.isPending || updateUserMutation.isPending || deleteUsersMutation.isPending;
 
   const roleFilters = useMemo(() => {
     const discoveredRoles = new Map<number, string>();
     for (const user of users) {
-      if (user.roleId > 0) {
-        discoveredRoles.set(user.roleId, user.roleName || `Role ${user.roleId}`);
+      if (user.role.id > 0) {
+        discoveredRoles.set(user.role.id, user.role.name || `Role ${user.role.id}`);
       }
     }
 
@@ -157,14 +159,32 @@ export function UsersWorkspace() {
     ];
   }, [users]);
 
+  const branchFilters = useMemo(() => {
+    const apiBranches = branchesData?.items ?? [];
+
+    return [
+      { value: "all" as const, label: "All branches" },
+      ...apiBranches.map((branch) => ({
+        value: branch.id,
+        label: formatBranchFilterLabel(branch),
+      })),
+    ];
+  }, [branchesData?.items]);
+
+  const activeFilters: { value: UserFilterState["active"]; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: true, label: "Active" },
+    { value: false, label: "Inactive" },
+  ];
+
   function toggleSelectAll(checked: boolean) {
     if (checked) {
       setSelectedIds((current) =>
-        Array.from(new Set([...current, ...users.map((user) => user.userId)])),
+        Array.from(new Set([...current, ...users.map((user) => String(user.id))])),
       );
       return;
     }
-    setSelectedIds((current) => current.filter((id) => !users.some((user) => user.userId === id)));
+    setSelectedIds((current) => current.filter((id) => !users.some((user) => String(user.id) === id)));
   }
 
   function toggleSelect(userId: string, checked: boolean) {
@@ -192,13 +212,13 @@ export function UsersWorkspace() {
     try {
       if (formMode === "edit" && editingUser) {
         const nextUser = await updateUserMutation.mutateAsync({
-          userId: editingUser.userId,
-          values: { ...values, createdBy: editingUser.createdBy },
+          userId: editingUser.id,
+          values,
         });
-        notifyUpdated("User", nextUser.username);
+        notifyUpdated("User", nextUser.userName);
       } else {
         const nextUser = await createUserMutation.mutateAsync(values);
-        notifyAdded("User", nextUser.username);
+        notifyAdded("User", nextUser.userName);
       }
 
       setFormMode(null);
@@ -213,12 +233,12 @@ export function UsersWorkspace() {
     if (!deleteTarget) return;
 
     const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((user) => user.userId)
-      : [deleteTarget.userId];
+      ? deleteTarget.map((user) => user.id)
+      : [deleteTarget.id];
 
     try {
       await deleteUsersMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setSelectedIds((current) => current.filter((id) => !ids.map(String).includes(id)));
       setDeleteTarget(null);
       setViewUser(null);
       notifyDeleted("User", ids.length);
@@ -249,96 +269,113 @@ export function UsersWorkspace() {
     },
   ];
 
-  const branchFilters: { value: UserFilterState["branch"]; label: string }[] = [
-    { value: "all", label: "All branches" },
-    ...USER_BRANCHES,
-  ];
-
-  const statusFilters: { value: UserFilterState["status"]; label: string }[] = [
-    { value: "all", label: "All statuses" },
-    ...USER_STATUSES,
-  ];
-
   const tableColumns: DataTableColumn<User>[] = [
     {
-      id: "userId",
-      label: "User ID",
+      id: "id",
+      label: "id",
       cellClassName: "font-mono text-xs",
-      renderCell: (user) => truncateUserId(user.userId),
+      renderCell: (user) => truncateUserId(user.id),
     },
     {
       id: "uid",
-      label: "UID",
+      label: "uid",
       cellClassName: "font-mono text-xs text-muted-foreground",
       renderCell: (user) => (user.uid ? truncateUid(user.uid) : "—"),
     },
     {
-      id: "username",
-      label: "Username",
+      id: "userName",
+      label: "userName",
       cellClassName: "font-medium",
-      renderCell: (user) => user.username,
+      renderCell: (user) => user.userName,
+    },
+    {
+      id: "fullName",
+      label: "fullName",
+      renderCell: (user) => user.fullName || "—",
     },
     {
       id: "password",
-      label: "Password",
+      label: "password",
       cellClassName: "font-mono text-muted-foreground",
       renderCell: (user) => maskPassword(user.password),
     },
     {
-      id: "name",
-      label: "Name",
-      renderCell: (user) => user.name || "—",
-    },
-    {
-      id: "status",
-      label: "Status",
+      id: "active",
+      label: "active",
       renderCell: (user) => (
-        <Badge className={getUserStatusBadgeClass(user.status)}>{getUserStatusLabel(user.status)}</Badge>
+        <Badge className={getUserActiveBadgeClass(user.active)}>{getUserActiveLabel(user.active)}</Badge>
       ),
     },
     {
-      id: "role",
-      label: "Role",
+      id: "role.name",
+      label: "role.name",
       renderCell: (user) => (
-        <Badge className={getUserRoleBadgeClass(user.roleName)}>{getUserRoleLabel(user.roleName)}</Badge>
+        <Badge className={getUserRoleBadgeClass(user.role.name)}>{getUserRoleLabel(user.role.name)}</Badge>
       ),
     },
     {
-      id: "language",
-      label: "Language",
-      renderCell: (user) => getUserLanguageLabel(user.language),
+      id: "role.id",
+      label: "role.id",
+      cellClassName: "font-mono text-xs",
+      renderCell: (user) => (user.role.id > 0 ? String(user.role.id) : "—"),
     },
     {
       id: "branch",
-      label: "Branch",
+      label: "branch",
       renderCell: (user) => (
-        <Badge className={getUserBranchBadgeClass(user.branch)}>{formatUserBranchLabel(user)}</Badge>
+        <Badge className={getUserBranchBadgeClass(user)}>{formatUserBranchLabel(user)}</Badge>
       ),
     },
     {
+      id: "branch.code",
+      label: "branch.code",
+      renderCell: (user) => user.branch.code || "—",
+    },
+    {
+      id: "branch.name",
+      label: "branch.name",
+      renderCell: (user) => user.branch.name || "—",
+    },
+    {
+      id: "startTime",
+      label: "startTime",
+      renderCell: (user) => user.startTime || "—",
+    },
+    {
+      id: "endTime",
+      label: "endTime",
+      renderCell: (user) => user.endTime || "—",
+    },
+    {
+      id: "type",
+      label: "type",
+      renderCell: (user) => user.type || "—",
+    },
+    {
+      id: "accessCode",
+      label: "accessCode",
+      cellClassName: "font-mono text-xs",
+      renderCell: (user) => String(user.accessCode),
+    },
+    {
+      id: "user",
+      label: "user",
+      renderCell: (user) => user.user || "—",
+    },
+    {
       id: "email",
-      label: "Email",
+      label: "email",
       renderCell: (user) => user.email || "—",
     },
     {
-      id: "phone",
-      label: "Phone number",
-      renderCell: (user) => user.phone || "—",
-    },
-    {
       id: "createdAt",
-      label: "Date created",
+      label: "createdAt",
       cellClassName: "text-muted-foreground",
       renderCell: (user) => (user.createdAt ? formatAuditDate(user.createdAt) : "—"),
     },
     {
-      id: "createdBy",
-      label: "User created",
-      renderCell: (user) => user.createdBy || "—",
-    },
-    {
       id: "updatedAt",
-      label: "Date modified",
+      label: "updatedAt",
       cellClassName: "text-muted-foreground",
       renderCell: (user) => (user.updatedAt ? formatAuditDate(user.updatedAt) : "—"),
     },
@@ -373,12 +410,27 @@ export function UsersWorkspace() {
 
   const columnVisibility = useColumnVisibility("users", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
+  const searchOperatorOptions = useMemo(
+    () =>
+      getUserSearchOperatorsForField(filters.searchField).map((operator) => ({
+        value: operator,
+        label:
+          operator === "startsWith"
+            ? "Starts with"
+            : operator === "contains"
+              ? "Contains"
+              : operator === "eq"
+                ? "Equals"
+                : "Not equals",
+      })),
+    [filters.searchField],
+  );
 
   return (
     <div>
       <PageHeader
         title="Users"
-        description="Manage user accounts with credentials, roles, language, and branch access."
+        description="Manage user accounts with credentials, roles, branch access, and schedule windows."
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
@@ -410,7 +462,7 @@ export function UsersWorkspace() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <CardTitle>User directory</CardTitle>
-              <CardDescription>Search and filter users by branch, status, and role.</CardDescription>
+              <CardDescription>Search and filter users by branch, active status, and role.</CardDescription>
             </div>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
               <select
@@ -418,10 +470,19 @@ export function UsersWorkspace() {
                 className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                 value={filters.searchField}
                 onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchField: event.target.value as UserFilterState["searchField"],
-                  }));
+                  const searchField = event.target.value as UserFilterState["searchField"];
+                  setFilters((current) => {
+                    const allowedOperators = getUserSearchOperatorsForField(searchField);
+                    const searchOperator = allowedOperators.includes(current.searchOperator)
+                      ? current.searchOperator
+                      : getDefaultUserSearchOperator(searchField);
+
+                    return {
+                      ...current,
+                      searchField,
+                      searchOperator,
+                    };
+                  });
                   setPage(1);
                 }}
               >
@@ -443,7 +504,7 @@ export function UsersWorkspace() {
                   setPage(1);
                 }}
               >
-                {USER_SEARCH_OPERATORS.map((option) => (
+                {searchOperatorOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -469,7 +530,7 @@ export function UsersWorkspace() {
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
             {branchFilters.map((option) => (
               <Button
-                key={option.value}
+                key={String(option.value)}
                 type="button"
                 size="sm"
                 variant={filters.branch === option.value ? "default" : "outline"}
@@ -484,15 +545,15 @@ export function UsersWorkspace() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</span>
-            {statusFilters.map((option) => (
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active</span>
+            {activeFilters.map((option) => (
               <Button
-                key={option.value}
+                key={String(option.value)}
                 type="button"
                 size="sm"
-                variant={filters.status === option.value ? "default" : "outline"}
+                variant={filters.active === option.value ? "default" : "outline"}
                 onClick={() => {
-                  setFilters((current) => ({ ...current, status: option.value }));
+                  setFilters((current) => ({ ...current, active: option.value }));
                   setPage(1);
                 }}
               >
@@ -535,7 +596,9 @@ export function UsersWorkspace() {
                 variant="destructive"
                 size="sm"
                 disabled={isSaving}
-                onClick={() => setDeleteTarget(users.filter((user) => selectedIds.includes(user.userId)))}
+                onClick={() =>
+                  setDeleteTarget(users.filter((user) => selectedIds.includes(String(user.id))))
+                }
               >
                 <Trash2 className="h-4 w-4" />
                 Delete selected
@@ -550,10 +613,10 @@ export function UsersWorkspace() {
           <DataTable
             columns={columnVisibility.columns}
             rows={pageUsers}
-            rowKey={(user) => user.userId}
-            rowLabel={(user) => user.username}
+            rowKey={(user) => String(user.id)}
+            rowLabel={(user) => user.userName}
             columnLayout={columnVisibility}
-            minWidth={1700}
+            minWidth={2200}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}
@@ -628,16 +691,15 @@ export function UsersWorkspace() {
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit user" : "Add user"}</DialogTitle>
             <DialogDescription>
-              Set login credentials, role, language preference, and branch access.
+              Set login credentials, role, branch access, schedule, and account metadata.
             </DialogDescription>
           </DialogHeader>
           <UserForm
-            key={editingUser?.userId ?? "new"}
+            key={editingUser?.id ?? "new"}
             initialValues={
               formMode === "edit" && editingUser ? userToFormValues(editingUser) : createEmptyUserForm()
             }
             isEditing={formMode === "edit"}
-            updatedAt={editingUser?.updatedAt}
             submitLabel={formMode === "edit" ? "Save changes" : "Add user"}
             isSubmitting={isSaving}
             onSubmit={saveUser}

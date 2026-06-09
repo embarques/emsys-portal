@@ -5,14 +5,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
+import { formatAuditDate } from "@/lib/audit/display";
 import {
-  USER_BRANCHES,
-  USER_LANGUAGES,
+  USER_ACTIVE_OPTIONS,
+  USER_PORTAL_BRANCHES,
   USER_ROLE_OPTIONS,
-  USER_STATUSES,
   createEmptyUserForm,
+  createUserBranchFromPortal,
+  getUserPortalBranch,
   type UserFormValues,
+  type UserPortalBranch,
 } from "@/lib/users/types";
 
 const selectClassName =
@@ -21,7 +23,6 @@ const selectClassName =
 type UserFormProps = {
   initialValues?: UserFormValues;
   isEditing?: boolean;
-  updatedAt?: string;
   submitLabel: string;
   isSubmitting?: boolean;
   onSubmit: (values: UserFormValues) => void | Promise<void>;
@@ -31,7 +32,6 @@ type UserFormProps = {
 export function UserForm({
   initialValues,
   isEditing = false,
-  updatedAt,
   submitLabel,
   isSubmitting = false,
   onSubmit,
@@ -43,16 +43,33 @@ export function UserForm({
     setValues(initialValues ?? createEmptyUserForm());
   }, [initialValues]);
 
+  const selectedPortalBranch = getUserPortalBranch({ branch: values.branch });
+
   const roleOptions = useMemo(() => {
     const options = new Map(USER_ROLE_OPTIONS.map((option) => [option.id, option.label]));
-    if (values.roleId > 0 && !options.has(values.roleId)) {
-      options.set(values.roleId, `Role ${values.roleId}`);
+    if (values.role.id > 0 && !options.has(values.role.id)) {
+      options.set(values.role.id, values.role.name || `Role ${values.role.id}`);
     }
     return Array.from(options.entries()).map(([id, label]) => ({ id, label }));
-  }, [values.roleId]);
+  }, [values.role.id, values.role.name]);
 
   function updateField<K extends keyof UserFormValues>(key: K, value: UserFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function handlePortalBranchChange(portal: UserPortalBranch) {
+    setValues((current) => ({
+      ...current,
+      branch: createUserBranchFromPortal(portal),
+    }));
+  }
+
+  function handleRoleChange(roleId: number) {
+    const label = roleOptions.find((option) => option.id === roleId)?.label ?? "";
+    setValues((current) => ({
+      ...current,
+      role: { id: roleId, name: label },
+    }));
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -63,20 +80,20 @@ export function UserForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="userId">User ID</Label>
+        <Label htmlFor="id">id</Label>
         <Input
-          id="userId"
-          value={values.userId || "Assigned after save"}
+          id="id"
+          value={values.id > 0 ? String(values.id) : "Assigned after save"}
           readOnly
           className="bg-muted/40 font-mono text-xs"
         />
         {!isEditing ? (
-          <p className="text-xs text-muted-foreground">The EMSYS API assigns the user ID on create.</p>
+          <p className="text-xs text-muted-foreground">The EMSYS API assigns the user id on create.</p>
         ) : null}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="uid">Firebase UID</Label>
+        <Label htmlFor="uid">uid</Label>
         <Input
           id="uid"
           value={values.uid}
@@ -88,13 +105,13 @@ export function UserForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="username">
-            Username <span className="text-destructive">*</span>
+          <Label htmlFor="userName">
+            userName <span className="text-destructive">*</span>
           </Label>
           <Input
-            id="username"
-            value={values.username}
-            onChange={(event) => updateField("username", event.target.value)}
+            id="userName"
+            value={values.userName}
+            onChange={(event) => updateField("userName", event.target.value)}
             placeholder="elk@elk.com"
             autoComplete="off"
             required
@@ -103,7 +120,7 @@ export function UserForm({
 
         <div className="space-y-2">
           <Label htmlFor="password">
-            Password {!isEditing ? <span className="text-destructive">*</span> : null}
+            password {!isEditing ? <span className="text-destructive">*</span> : null}
           </Label>
           <Input
             id="password"
@@ -121,32 +138,29 @@ export function UserForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name">Full name</Label>
+        <Label htmlFor="fullName">fullName</Label>
         <Input
-          id="name"
-          value={values.name}
-          onChange={(event) => updateField("name", event.target.value)}
-          placeholder="Defaults to username when empty"
+          id="fullName"
+          value={values.fullName}
+          onChange={(event) => updateField("fullName", event.target.value)}
+          placeholder="Defaults to userName when empty"
         />
-        {!isEditing ? (
-          <p className="text-xs text-muted-foreground">Sent to the API as `fullName`.</p>
-        ) : null}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="status">
-            Status <span className="text-destructive">*</span>
+          <Label htmlFor="active">
+            active <span className="text-destructive">*</span>
           </Label>
           <select
-            id="status"
+            id="active"
             className={selectClassName}
-            value={values.status}
-            onChange={(event) => updateField("status", event.target.value as UserFormValues["status"])}
+            value={String(values.active)}
+            onChange={(event) => updateField("active", event.target.value === "true")}
             required
           >
-            {USER_STATUSES.map((option) => (
-              <option key={option.value} value={option.value}>
+            {USER_ACTIVE_OPTIONS.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
                 {option.label}
               </option>
             ))}
@@ -155,13 +169,13 @@ export function UserForm({
 
         <div className="space-y-2">
           <Label htmlFor="roleId">
-            Role <span className="text-destructive">*</span>
+            role.id <span className="text-destructive">*</span>
           </Label>
           <select
             id="roleId"
             className={selectClassName}
-            value={values.roleId}
-            onChange={(event) => updateField("roleId", Number(event.target.value))}
+            value={values.role.id}
+            onChange={(event) => handleRoleChange(Number(event.target.value))}
             required
           >
             {roleOptions.map((option) => (
@@ -175,18 +189,18 @@ export function UserForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="language">
-            Language <span className="text-destructive">*</span>
+          <Label htmlFor="branch">
+            branch <span className="text-destructive">*</span>
           </Label>
           <select
-            id="language"
+            id="branch"
             className={selectClassName}
-            value={values.language}
-            onChange={(event) => updateField("language", event.target.value as UserFormValues["language"])}
+            value={selectedPortalBranch}
+            onChange={(event) => handlePortalBranchChange(event.target.value as UserPortalBranch)}
             required
           >
-            {USER_LANGUAGES.map((option) => (
-              <option key={option.value} value={option.value}>
+            {USER_PORTAL_BRANCHES.map((option) => (
+              <option key={option.portal} value={option.portal}>
                 {option.label}
               </option>
             ))}
@@ -194,29 +208,42 @@ export function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="branch">
-            Branch <span className="text-destructive">*</span>
-          </Label>
-          <select
-            id="branch"
-            className={selectClassName}
-            value={values.branch}
-            onChange={(event) => updateField("branch", event.target.value as UserFormValues["branch"])}
-            required
-          >
-            {USER_BRANCHES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <Label htmlFor="type">type</Label>
+          <Input
+            id="type"
+            value={values.type}
+            onChange={(event) => updateField("type", event.target.value)}
+            placeholder="User type"
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="startTime">startTime</Label>
+          <Input
+            id="startTime"
+            value={values.startTime}
+            onChange={(event) => updateField("startTime", event.target.value)}
+            placeholder="Shift start time"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="endTime">endTime</Label>
+          <Input
+            id="endTime"
+            value={values.endTime}
+            onChange={(event) => updateField("endTime", event.target.value)}
+            placeholder="Shift end time"
+          />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="email">
-            Email {!isEditing ? <span className="text-destructive">*</span> : null}
+            email {!isEditing ? <span className="text-destructive">*</span> : null}
           </Label>
           <Input
             id="email"
@@ -229,22 +256,38 @@ export function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone number</Label>
+          <Label htmlFor="accessCode">accessCode</Label>
           <Input
-            id="phone"
-            value={values.phone}
-            onChange={(event) => updateField("phone", event.target.value)}
-            placeholder="+1 (212) 555-0100"
+            id="accessCode"
+            type="number"
+            value={values.accessCode}
+            onChange={(event) => updateField("accessCode", Number(event.target.value) || 0)}
           />
         </div>
       </div>
 
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => updateField("createdBy", value)}
-      />
+      <div className="space-y-2">
+        <Label htmlFor="user">user</Label>
+        <Input
+          id="user"
+          value={values.user ?? ""}
+          onChange={(event) => updateField("user", event.target.value.trim() || null)}
+          placeholder="Defaults to userName when empty"
+        />
+      </div>
+
+      {isEditing ? (
+        <div className="grid gap-4 rounded-md border bg-muted/20 p-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">createdAt</p>
+            <p className="text-sm">{values.createdAt ? formatAuditDate(values.createdAt) : "—"}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">updatedAt</p>
+            <p className="text-sm">{values.updatedAt ? formatAuditDate(values.updatedAt) : "—"}</p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>

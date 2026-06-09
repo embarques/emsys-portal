@@ -11,3 +11,7 @@ export function deletedMessage(entityLabel: string, count = 1): string {
     ? `${entityLabel} was deleted.`
     : `${count} ${entityLabel.toLowerCase()}${count === 1 ? "" : "s"} were deleted.`;
 }
+
+export function errorMessage(message: string): string {
+  return message.trim() || "Something went wrong.";
+}

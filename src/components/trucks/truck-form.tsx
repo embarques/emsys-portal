@@ -5,8 +5,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
-import { FUEL_TYPES, TRUCK_BRANCHES, createEmptyTruckForm, type TruckFormValues } from "@/lib/trucks/types";
+import { formatAuditDate } from "@/lib/audit/display";
+import {
+  TRUCK_BRANCH_OPTIONS,
+  TRUCK_FUEL_TYPES,
+  createEmptyTruckForm,
+  type TruckFormValues,
+} from "@/lib/trucks/types";
 
 const selectClassName =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
@@ -14,13 +19,18 @@ const selectClassName =
 type TruckFormProps = {
   initialValues?: TruckFormValues;
   isEditing?: boolean;
-  updatedAt?: string;
   submitLabel: string;
   onSubmit: (values: TruckFormValues) => void;
   onCancel: () => void;
 };
 
-export function TruckForm({ initialValues, isEditing = false, updatedAt, submitLabel, onSubmit, onCancel }: TruckFormProps) {
+export function TruckForm({
+  initialValues,
+  isEditing = false,
+  submitLabel,
+  onSubmit,
+  onCancel,
+}: TruckFormProps) {
   const [values, setValues] = useState<TruckFormValues>(initialValues ?? createEmptyTruckForm());
 
   useEffect(() => {
@@ -39,14 +49,35 @@ export function TruckForm({ initialValues, isEditing = false, updatedAt, submitL
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="truckId">Truck ID</Label>
-        <Input id="truckId" value={values.truckId} readOnly className="bg-muted/40 font-mono text-xs" />
-        {!isEditing ? <p className="text-xs text-muted-foreground">Auto-generated ID for new trucks.</p> : null}
+        <Label htmlFor="id">id</Label>
+        <Input
+          id="id"
+          value={values.id || "Assigned after save"}
+          readOnly
+          className="bg-muted/40 font-mono text-xs"
+        />
+        {!isEditing ? (
+          <p className="text-xs text-muted-foreground">The EMSYS API assigns the record id on create.</p>
+        ) : null}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="truckId">
+          truckId <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="truckId"
+          value={values.truckId}
+          onChange={(event) => updateField("truckId", event.target.value)}
+          placeholder="trk-001"
+          className="font-mono text-xs"
+          required
+        />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="name">
-          Truck name <span className="text-destructive">*</span>
+          name <span className="text-destructive">*</span>
         </Label>
         <Input
           id="name"
@@ -59,13 +90,14 @@ export function TruckForm({ initialValues, isEditing = false, updatedAt, submitL
 
       <div className="space-y-2">
         <Label htmlFor="vin">
-          VIN <span className="text-destructive">*</span>
+          vin <span className="text-destructive">*</span>
         </Label>
         <Input
           id="vin"
           value={values.vin}
           onChange={(event) => updateField("vin", event.target.value.toUpperCase())}
           placeholder="1FUJGLDR57LM12345"
+          className="font-mono text-xs"
           required
         />
       </div>
@@ -73,7 +105,7 @@ export function TruckForm({ initialValues, isEditing = false, updatedAt, submitL
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="year">
-            Year <span className="text-destructive">*</span>
+            year <span className="text-destructive">*</span>
           </Label>
           <Input
             id="year"
@@ -88,49 +120,63 @@ export function TruckForm({ initialValues, isEditing = false, updatedAt, submitL
 
         <div className="space-y-2">
           <Label htmlFor="fuelType">
-            Fuel type <span className="text-destructive">*</span>
+            fuelType <span className="text-destructive">*</span>
           </Label>
-          <select
+          <Input
             id="fuelType"
-            className={selectClassName}
+            list="truck-fuel-types"
             value={values.fuelType}
-            onChange={(event) => updateField("fuelType", event.target.value as TruckFormValues["fuelType"])}
+            onChange={(event) => updateField("fuelType", event.target.value)}
+            placeholder="diesel"
             required
-          >
-            {FUEL_TYPES.map((option) => (
+          />
+          <datalist id="truck-fuel-types">
+            {TRUCK_FUEL_TYPES.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
-          </select>
+          </datalist>
         </div>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="branch">
-          Branch <span className="text-destructive">*</span>
+          branch <span className="text-destructive">*</span>
         </Label>
-        <select
+        <Input
           id="branch"
-          className={selectClassName}
+          list="truck-branch-options"
           value={values.branch}
-          onChange={(event) => updateField("branch", event.target.value as TruckFormValues["branch"])}
+          onChange={(event) => updateField("branch", event.target.value)}
+          placeholder="usa"
           required
-        >
-          {TRUCK_BRANCHES.map((option) => (
+        />
+        <datalist id="truck-branch-options">
+          {TRUCK_BRANCH_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}
-        </select>
+        </datalist>
       </div>
 
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => updateField("createdBy", value)}
-      />
+      {isEditing ? (
+        <div className="grid gap-4 rounded-md border bg-muted/20 p-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">createdAt</p>
+            <p className="text-sm">{values.createdAt ? formatAuditDate(values.createdAt) : "—"}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">updatedAt</p>
+            <p className="text-sm">{values.updatedAt ? formatAuditDate(values.updatedAt) : "—"}</p>
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">createdBy</p>
+            <p className="text-sm">{values.createdBy || "—"}</p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>

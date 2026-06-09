@@ -4,6 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { formatAddressLine } from "@/lib/customers/display";
 import {
@@ -21,6 +22,7 @@ import {
   type OrderPartyPhoneFormValues,
 } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
+import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 const selectClassName =
   "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
@@ -64,7 +66,7 @@ export function customerToOrderPartyFormValues(customer: Customer): OrderPartyFo
       legacyPhones.length > 0
         ? legacyPhones.map((phone) => ({
             id: phone.id,
-            number: phone.number,
+            number: normalizeStoredPhone(phone.number),
             label: phone.label ?? "",
           }))
         : [createEmptyOrderPartyPhone()],
@@ -273,11 +275,10 @@ export function OrderPartyEditor({
                 <Label htmlFor={`${phone.id}-number`}>
                   Number {index === 0 ? <span className="text-destructive">*</span> : null}
                 </Label>
-                <Input
+                <PhoneInput
                   id={`${phone.id}-number`}
-                  type="tel"
                   value={phone.number}
-                  onChange={(event) => updatePhone(index, { number: event.target.value })}
+                  onChange={(nextValue) => updatePhone(index, { number: nextValue })}
                 />
               </div>
             </div>

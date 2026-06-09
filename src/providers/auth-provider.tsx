@@ -18,6 +18,7 @@ import React, {
   useState,
 } from "react";
 
+import { clearIdTokenProvider, registerIdTokenProvider } from "@/lib/api/auth-transport";
 import { getFirebaseAuth } from "@/lib/auth/firebase/firebase-config";
 import {
   mergeFirebaseUserProfile,
@@ -472,6 +473,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const refreshToken = useCallback(() => getIdToken(true), [getIdToken]);
+
+  useEffect(() => {
+    registerIdTokenProvider((forceRefresh) => getIdToken(forceRefresh));
+    return () => clearIdTokenProvider();
+  }, [getIdToken]);
 
   const email = profile?.email ?? user?.email ?? null;
   const displayName = profile?.name ?? user?.displayName ?? null;

@@ -1,23 +1,43 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
-import type {
-  User,
-  UserBranch,
-  UserFormValues,
-  UserListParams,
-  UserStatus,
+import {
+  createEmptyUserRole,
+  normalizeUserSearchFilter,
+  type User,
+  type UserBranch,
+  type UserFormValues,
+  type UserListParams,
+  type UserPermission,
+  type UserRole,
 } from "@/lib/users/types";
+
+type ApiUserPermission = {
+  _id?: number;
+  id?: number;
+  name?: string;
+  resourceType?: string;
+  create?: boolean;
+  view?: boolean;
+  update?: boolean;
+  delete?: boolean;
+  print?: boolean;
+};
 
 type ApiUserRole = {
   _id?: number;
   id?: number;
   name?: string;
+  active?: boolean;
+  permissions?: ApiUserPermission[];
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type ApiUserBranch = {
   _id?: number;
   id?: number;
+  name?: string;
   code?: string;
 };
 
@@ -28,21 +48,18 @@ type ApiUser = {
   email?: string;
   userName?: string;
   username?: string;
-  user?: string;
+  user?: string | null;
   fullName?: string;
   active?: boolean;
   accessCode?: number;
   role?: ApiUserRole;
   branch?: ApiUserBranch;
   branches?: ApiUserBranch[];
-  phone?: string;
-  language?: string;
   password?: string;
   type?: string;
   startTime?: string;
   endTime?: string;
   createdAt?: string;
-  createdBy?: string;
   updatedAt?: string;
 };
 
@@ -59,6 +76,9 @@ type ApiUserWritePayload = {
   uid?: string;
   password?: string;
   id?: number;
+  type?: string;
+  startTime?: string;
+  endTime?: string;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -67,89 +87,94 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
-const BRANCH_ID_TO_PORTAL: Record<number, UserBranch> = {
-  1: "usa",
-  2: "dr",
-};
-
-const PORTAL_BRANCH_TO_ID: Record<UserBranch, number> = {
-  usa: 1,
-  dr: 2,
-};
-
-const BRANCH_CODE_TO_PORTAL: Record<string, UserBranch> = {
-  NY: "usa",
-  DR: "dr",
-  DO: "dr",
-};
-
 function readNumericId(value: number | string | undefined): number | undefined {
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function branchToPortal(branch: ApiUserBranch | undefined): UserBranch {
-  const branchId = readNumericId(branch?._id ?? branch?.id);
-  if (branchId != null && BRANCH_ID_TO_PORTAL[branchId]) {
-    return BRANCH_ID_TO_PORTAL[branchId];
+function normalizePermission(raw: unknown): UserPermission | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const item = raw as ApiUserPermission;
+  const id = readNumericId(item._id ?? item.id);
+  if (id == null) return null;
+
+  return {
+    id,
+    name: String(item.name ?? "").trim(),
+    resourceType: String(item.resourceType ?? "").trim(),
+    create: item.create === true,
+    view: item.view === true,
+    update: item.update === true,
+    delete: item.delete === true,
+    print: item.print === true,
+  };
+}
+
+function normalizeRole(raw: unknown): UserRole {
+  if (!raw || typeof raw !== "object") {
+    return createEmptyUserRole();
   }
 
-  const code = branch?.code?.trim().toUpperCase();
-  if (code && BRANCH_CODE_TO_PORTAL[code]) {
-    return BRANCH_CODE_TO_PORTAL[code];
+  const item = raw as ApiUserRole;
+  const permissions = Array.isArray(item.permissions)
+    ? item.permissions.map(normalizePermission).filter((entry): entry is UserPermission => entry != null)
+    : [];
+
+  return {
+    id: readNumericId(item._id ?? item.id) ?? 0,
+    name: String(item.name ?? "").trim(),
+    active: item.active !== false,
+    permissions,
+    createdAt: item.createdAt ?? "",
+    updatedAt: item.updatedAt ?? "",
+  };
+}
+
+function normalizeBranch(raw: unknown): UserBranch {
+  if (!raw || typeof raw !== "object") {
+    return { id: 0, name: "", code: "" };
   }
 
-  return "usa";
-}
+  const item = raw as ApiUserBranch;
 
-function portalBranchToId(branch: UserBranch): number {
-  return PORTAL_BRANCH_TO_ID[branch];
-}
-
-function activeToStatus(active: boolean | undefined): UserStatus {
-  return active === false ? "inactive" : "active";
-}
-
-function statusToActive(status: UserStatus): boolean {
-  return status === "active";
-}
-
-function normalizeLanguage(value: string | undefined): User["language"] {
-  return value === "es" ? "es" : "en";
+  return {
+    id: readNumericId(item._id ?? item.id) ?? 0,
+    name: String(item.name ?? "").trim(),
+    code: String(item.code ?? "").trim(),
+  };
 }
 
 function normalizeUser(raw: unknown): User | null {
   if (!raw || typeof raw !== "object") return null;
 
   const item = raw as ApiUser;
-  const userId = readNumericId(item._id ?? item.id);
-  if (userId == null) return null;
+  const id = readNumericId(item._id ?? item.id);
+  if (id == null) return null;
 
-  const username = String(item.userName ?? item.username ?? "").trim();
+  const userName = String(item.userName ?? item.username ?? "").trim();
   const email = String(item.email ?? "").trim();
-  const roleId = readNumericId(item.role?._id ?? item.role?.id) ?? 0;
-  const roleName = String(item.role?.name ?? "").trim();
-
   const fullName = String(item.fullName ?? "").trim();
+  const role = normalizeRole(item.role);
 
   return {
-    userId: String(userId),
+    id,
     uid: String(item.uid ?? "").trim(),
-    username,
-    password: "",
-    name: fullName || username || email,
-    status: activeToStatus(item.active),
-    roleId,
-    roleName,
-    language: normalizeLanguage(item.language),
-    branch: branchToPortal(item.branch),
-    branchCode: String(item.branch?.code ?? "").trim(),
+    userName,
     email,
-    phone: String(item.phone ?? "").trim(),
+    fullName: fullName || userName || email,
+    password: "",
+    active: item.active !== false,
+    role,
+    branch: normalizeBranch(item.branch),
+    startTime: String(item.startTime ?? "").trim(),
+    endTime: String(item.endTime ?? "").trim(),
     createdAt: item.createdAt ?? "",
-    createdBy: String(item.createdBy ?? "").trim(),
     updatedAt: item.updatedAt ?? "",
+    user: item.user != null ? String(item.user).trim() || null : null,
+    accessCode: Number(item.accessCode ?? 0),
+    type: String(item.type ?? "").trim(),
   };
 }
 
@@ -178,17 +203,22 @@ function buildUsersQuery(params: UserListParams): string {
   });
 
   if (params.search?.value.trim()) {
-    searchParams.set("field", params.search.field);
-    searchParams.set("operator", params.search.operator);
-    searchParams.set("value", params.search.value.trim());
+    const search = normalizeUserSearchFilter({
+      ...params.search,
+      value: params.search.value.trim(),
+    });
+
+    searchParams.set("field", search.field);
+    searchParams.set("operator", search.operator);
+    searchParams.set("value", search.value);
   }
 
-  if (params.status && params.status !== "all") {
-    searchParams.set("active", String(params.status === "active"));
+  if (params.active !== undefined && params.active !== "all") {
+    searchParams.set("active", String(params.active));
   }
 
   if (params.branch && params.branch !== "all") {
-    searchParams.set("branchId", String(portalBranchToId(params.branch)));
+    searchParams.set("branchId", String(params.branch));
   }
 
   if (params.roleId && params.roleId !== "all") {
@@ -202,11 +232,11 @@ function buildUserWritePayload(
   values: UserFormValues,
   options: { userId?: number; requirePassword?: boolean } = {},
 ): ApiUserWritePayload {
-  const userName = values.username.trim();
+  const userName = values.userName.trim();
   const email = values.email.trim() || userName;
-  const fullName = values.name.trim() || userName;
+  const fullName = values.fullName.trim() || userName;
   const password = values.password.trim();
-  const branchId = portalBranchToId(values.branch);
+  const branchId = values.branch.id;
 
   if (!userName) {
     throw new Error("Username is required.");
@@ -216,20 +246,24 @@ function buildUserWritePayload(
     throw new Error("Password is required.");
   }
 
-  if (!values.roleId) {
+  if (!values.role.id) {
     throw new Error("Role is required.");
   }
 
+  if (!branchId) {
+    throw new Error("Branch is required.");
+  }
+
   const payload: ApiUserWritePayload = {
-    accessCode: 0,
-    active: statusToActive(values.status),
+    accessCode: values.accessCode,
+    active: values.active,
     branch: { id: branchId },
     branches: [{ id: branchId }],
     email,
     fullName,
-    role: { id: values.roleId },
+    role: { id: values.role.id },
     userName,
-    user: userName,
+    user: values.user?.trim() || userName,
   };
 
   if (options.userId != null) {
@@ -245,6 +279,21 @@ function buildUserWritePayload(
     payload.password = password;
   }
 
+  const type = values.type.trim();
+  if (type) {
+    payload.type = type;
+  }
+
+  const startTime = values.startTime.trim();
+  if (startTime) {
+    payload.startTime = startTime;
+  }
+
+  const endTime = values.endTime.trim();
+  if (endTime) {
+    payload.endTime = endTime;
+  }
+
   return payload;
 }
 
@@ -256,7 +305,7 @@ function formValuesToUpdateUserPayload(values: UserFormValues, userId: number): 
   return buildUserWritePayload(values, { userId });
 }
 
-function parseUserPathId(userId: string): number {
+function parseUserPathId(userId: string | number): number {
   const numericId = readNumericId(userId);
   if (numericId == null) {
     throw new Error("Invalid user ID.");
@@ -307,12 +356,12 @@ async function resolveCreatedUser(
     return fetchUserById(createdId);
   }
 
-  const userName = values.username.trim();
+  const userName = values.userName.trim();
   if (userName) {
     const matches = await fetchUsers({
       page: 1,
       limit: 1,
-      search: { field: "userName", operator: "equals", value: userName },
+      search: { field: "userName", operator: "eq", value: userName },
     });
 
     const matchedUser = matches.items[0];
@@ -325,6 +374,10 @@ async function resolveCreatedUser(
   throw new Error(message?.trim() || "Unable to create user.");
 }
 
+export function normalizeApiUser(raw: unknown): User | null {
+  return normalizeUser(raw);
+}
+
 export async function fetchUsers(params: UserListParams = {}): Promise<PaginatedResult<User>> {
   const query = buildUsersQuery(params);
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
@@ -334,7 +387,7 @@ export async function fetchUsers(params: UserListParams = {}): Promise<Paginated
   return normalizePaginatedUsers(response);
 }
 
-export async function fetchUserById(userId: string): Promise<User> {
+export async function fetchUserById(userId: string | number): Promise<User> {
   const response = await apiClient.get<ApiUser | PaginatedApiEnvelope<ApiUser>>(
     `${API_ENDPOINTS.USERS}/${userId}`,
   );
@@ -363,7 +416,7 @@ export async function createUser(values: UserFormValues): Promise<User> {
   return resolveCreatedUser(values, response);
 }
 
-export async function updateUser(userId: string, values: UserFormValues): Promise<User> {
+export async function updateUser(userId: string | number, values: UserFormValues): Promise<User> {
   const numericId = parseUserPathId(userId);
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.USERS}/${numericId}`,
@@ -377,10 +430,10 @@ export async function updateUser(userId: string, values: UserFormValues): Promis
     return updatedUser;
   }
 
-  return fetchUserById(String(numericId));
+  return fetchUserById(numericId);
 }
 
-export async function deleteUser(userId: string): Promise<void> {
+export async function deleteUser(userId: string | number): Promise<void> {
   const numericId = parseUserPathId(userId);
   const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.USERS}/${numericId}`,
@@ -389,6 +442,6 @@ export async function deleteUser(userId: string): Promise<void> {
   assertMutationSuccess(response, "Unable to delete user.");
 }
 
-export async function deleteUsers(userIds: string[]): Promise<void> {
+export async function deleteUsers(userIds: Array<string | number>): Promise<void> {
   await Promise.all(userIds.map((userId) => deleteUser(userId)));
 }
