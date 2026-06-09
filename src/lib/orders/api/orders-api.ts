@@ -13,6 +13,7 @@ import {
   type OrderParty,
   type OrderPartyFormValues,
   type OrderSearchFilter,
+  type OrderSearchOperator,
 } from "@/lib/orders/types";
 import { createRecordId } from "@/lib/customers/types";
 import type { CustomerAddress, CustomerPhone } from "@/lib/customers/types";
@@ -109,6 +110,12 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
+type ApiPickupSearchFilter = {
+  field: string;
+  operator: OrderSearchOperator;
+  value: string;
+};
+
 type ApiSearchBody = {
   page: number;
   start: number;
@@ -116,10 +123,8 @@ type ApiSearchBody = {
   sortField: string;
   sortDirection: "asc" | "desc";
   query?: {
-    and: OrderSearchFilter[];
+    and: ApiPickupSearchFilter[];
   };
-  branchId?: number;
-  completed?: boolean;
 };
 
 const EMPTY_CUSTOMER_ID = "000000000000000000000000";
@@ -298,8 +303,8 @@ function normalizePaginatedOrders(payload: PaginatedApiEnvelope<unknown[] | unkn
   };
 }
 
-function buildSearchFilters(params: OrderListParams): OrderSearchFilter[] {
-  const filters: OrderSearchFilter[] = [];
+function buildSearchFilters(params: OrderListParams): ApiPickupSearchFilter[] {
+  const filters: ApiPickupSearchFilter[] = [];
 
   if (params.search?.value.trim()) {
     filters.push({
@@ -317,20 +322,50 @@ function buildSearchFilters(params: OrderListParams): OrderSearchFilter[] {
     });
   }
 
+  if (params.branch !== undefined && params.branch !== "all") {
+    filters.push({
+      field: "branch.id",
+      operator: "eq",
+      value: String(params.branch),
+    });
+  }
+
   return filters;
 }
 
-function shouldUsePickupSearch(params: OrderListParams): boolean {
-  const filters = buildSearchFilters(params);
-  if (filters.length === 0) return false;
+function hasGetFieldTriplet(params: OrderListParams): boolean {
+  return (
+    Boolean(params.search?.value.trim()) ||
+    (params.completed !== undefined && params.completed !== "all")
+  );
+}
 
-  if (filters.length === 1 && filters[0].field === "completed") {
-    return false;
+/** Nested sender/purpose filters must use POST /pickups/search. */
+function shouldUsePickupSearch(params: OrderListParams): boolean {
+  if (params.search?.value.trim()) {
+    return ["sender.name", "sender.phone1", "sender.oldID", "purpose"].includes(
+      params.search.field,
+    );
   }
 
-  return filters.some((filter) =>
-    ["sender.name", "sender.phone1", "sender.oldID", "purpose"].includes(filter.field),
-  );
+  return false;
+}
+
+/**
+ * EMSYS GET /pickups rejects sortField=date when limit > 1 unless field/operator/value
+ * is also present. Omit date sort in that case — the API default order matches date asc.
+ */
+function appendGetSortParams(searchParams: URLSearchParams, params: OrderListParams): void {
+  const limit = params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit;
+  const sortField = params.sortField ?? DEFAULT_ORDER_LIST_PARAMS.sortField;
+  const sortDirection = params.sortDirection ?? DEFAULT_ORDER_LIST_PARAMS.sortDirection;
+
+  if (sortField === "date" && limit > 1 && !hasGetFieldTriplet(params)) {
+    return;
+  }
+
+  searchParams.set("sortField", sortField);
+  searchParams.set("sortDirection", sortDirection);
 }
 
 function buildOrdersQuery(params: OrderListParams): string {
@@ -340,9 +375,9 @@ function buildOrdersQuery(params: OrderListParams): string {
     page: String(page),
     start: String((page - 1) * limit),
     limit: String(limit),
-    sortField: params.sortField ?? DEFAULT_ORDER_LIST_PARAMS.sortField,
-    sortDirection: params.sortDirection ?? DEFAULT_ORDER_LIST_PARAMS.sortDirection,
   });
+
+  appendGetSortParams(searchParams, params);
 
   if (params.search?.value.trim()) {
     searchParams.set("field", params.search.field);
@@ -352,10 +387,6 @@ function buildOrdersQuery(params: OrderListParams): string {
     searchParams.set("field", "completed");
     searchParams.set("operator", "eq");
     searchParams.set("value", String(params.completed));
-  } else if (params.branch !== undefined && params.branch !== "all") {
-    searchParams.set("field", "branch.id");
-    searchParams.set("operator", "eq");
-    searchParams.set("value", String(params.branch));
   }
 
   if (params.branch !== undefined && params.branch !== "all") {
@@ -380,14 +411,6 @@ function buildSearchBody(params: OrderListParams): ApiSearchBody {
   const filters = buildSearchFilters(params);
   if (filters.length > 0) {
     body.query = { and: filters };
-  }
-
-  if (params.branch !== undefined && params.branch !== "all") {
-    body.branchId = params.branch;
-  }
-
-  if (params.completed !== undefined && params.completed !== "all") {
-    body.completed = params.completed;
   }
 
   return body;

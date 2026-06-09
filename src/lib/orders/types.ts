@@ -156,7 +156,11 @@ export type OrderListParams = {
   completed?: OrderCompletedFilter;
 };
 
-/** GET /pickups?page=1&start=0&limit=40&sortField=date&sortDirection=asc */
+/**
+ * Default list intent: page 1, 40 rows, oldest pickup date first.
+ * GET /pickups omits sortField=date when limit > 1 (API rejects it); server default order is date asc.
+ * With a field filter: GET ...&field=completed&operator=eq&value=false&sortField=date&sortDirection=asc
+ */
 export const DEFAULT_ORDER_LIST_PARAMS = {
   page: 1,
   limit: 40,

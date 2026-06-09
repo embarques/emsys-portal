@@ -18,11 +18,7 @@ export function getConfiguredApiBaseUrl(): string {
 export function getApiBaseUrl(): string {
   const configured = getConfiguredApiBaseUrl();
 
-  if (
-    typeof window !== "undefined" &&
-    process.env.NODE_ENV === "development" &&
-    configured.startsWith("http")
-  ) {
+  if (typeof window !== "undefined" && configured.startsWith("http")) {
     return DEV_API_PROXY_PREFIX;
   }
 

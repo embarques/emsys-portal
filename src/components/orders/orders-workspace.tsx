@@ -141,7 +141,7 @@ export function OrdersWorkspace() {
     };
   }, [branchesData?.items]);
 
-  const stats = useOrderStats(branchStatsIds);
+  const stats = useOrderStats({ ...branchStatsIds, branchesReady: !branchesLoading });
   const createOrderMutation = useCreateOrder();
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();

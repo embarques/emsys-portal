@@ -15,11 +15,20 @@ export function getCommentPurposeLabel(purpose: OrderCommentPurpose): string {
 }
 
 export function formatOrderDate(date: string): string {
+  const trimmed = date?.trim();
+  if (!trimmed) return "—";
+
+  const parsed = trimmed.includes("T")
+    ? new Date(trimmed)
+    : new Date(`${trimmed.slice(0, 10)}T12:00:00`);
+
+  if (Number.isNaN(parsed.getTime())) return "—";
+
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(`${date}T12:00:00`));
+  }).format(parsed);
 }
 
 export function truncateOrderId(orderId: string): string {

@@ -67,11 +67,12 @@ export function useOrderSearch(
 type OrderStatsOptions = {
   usaBranchId?: number;
   drBranchId?: number;
+  branchesReady?: boolean;
 };
 
 export function useOrderStats(options: OrderStatsOptions = {}) {
-  const { usaBranchId, drBranchId } = options;
-  const queryEnabled = useOrdersQueryEnabled();
+  const { usaBranchId, drBranchId, branchesReady = true } = options;
+  const queryEnabled = useOrdersQueryEnabled() && branchesReady;
 
   const totalQuery = useQuery({
     queryKey: queryKeys.orders.stats("all"),

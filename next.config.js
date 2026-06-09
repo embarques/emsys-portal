@@ -21,13 +21,8 @@ const nextConfig = {
     root: __dirname,
   },
 
-  // Dev-only proxy: browser calls same-origin /api/* → NEXT_PUBLIC_API_BASE_URL/*
-  // Avoids CORS when the remote API does not allow http://localhost:3001.
+  // Browser calls same-origin /api/* → NEXT_PUBLIC_API_BASE_URL/* (dev + production).
   async rewrites() {
-    if (process.env.NODE_ENV !== 'development') {
-      return [];
-    }
-
     const target = (process.env.NEXT_PUBLIC_API_BASE_URL || '').trim().replace(/\/+$/, '');
     if (!target.startsWith('http')) {
       return [];
