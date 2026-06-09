@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -31,9 +31,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
-  computeEmployeeKpis,
   formatEmployeeAddress,
   formatEmployeeDate,
   getEmployeeBranchBadgeClass,
@@ -41,26 +41,35 @@ import {
   getEmployeeStatusBadgeClass,
   getEmployeeStatusLabel,
   truncateEmployeeId,
-  employeeMatchesQuery,
 } from "@/lib/employees/display";
-import { cloneEmployees } from "@/lib/employees/mock-data";
+import {
+  useCreateEmployee,
+  useDeleteEmployees,
+  useEmployeeStats,
+  useEmployees,
+  useUpdateEmployee,
+} from "@/lib/employees/hooks/use-employees";
 import {
   EMPLOYEE_BRANCHES,
   EMPLOYEE_DEPARTMENTS,
+  EMPLOYEE_SEARCH_FIELDS,
+  EMPLOYEE_SEARCH_OPERATORS,
   EMPLOYEE_STATUSES,
+  createEmployeeSearchFilter,
   createEmptyEmployeeForm,
   employeeToFormValues,
-  formValuesToEmployee,
   type Employee,
   type EmployeeFilterState,
   type EmployeeFormValues,
 } from "@/lib/employees/types";
 import type { DataTableColumn } from "@/lib/table/types";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 40;
 
 const defaultFilters: EmployeeFilterState = {
   query: "",
+  searchField: "name",
+  searchOperator: "startsWith",
   branch: "all",
   status: "all",
   department: "all",
@@ -68,8 +77,8 @@ const defaultFilters: EmployeeFilterState = {
 
 export function EmployeesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [employees, setEmployees] = useState<Employee[]>(() => cloneEmployees());
   const [filters, setFilters] = useState<EmployeeFilterState>(defaultFilters);
+  const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
@@ -78,38 +87,60 @@ export function EmployeesWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Employee | Employee[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((employee) => {
-      if (!employeeMatchesQuery(employee, filters.query)) return false;
-      if (filters.branch !== "all" && employee.branch !== filters.branch) return false;
-      if (filters.status !== "all" && employee.status !== filters.status) return false;
-      if (filters.department !== "all" && employee.department !== filters.department) return false;
-      return true;
-    });
-  }, [employees, filters]);
+  const listParams = useMemo(
+    () => ({
+      page,
+      limit: PAGE_SIZE,
+      sortField: "name",
+      sortDirection: "asc" as const,
+      search: createEmployeeSearchFilter(deferredQuery, filters.searchField, filters.searchOperator),
+      branch: filters.branch,
+      status: filters.status,
+      department: filters.department,
+    }),
+    [
+      deferredQuery,
+      filters.branch,
+      filters.department,
+      filters.searchField,
+      filters.searchOperator,
+      filters.status,
+      page,
+    ],
+  );
 
-  const kpis = useMemo(() => computeEmployeeKpis(employees), [employees]);
-  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / PAGE_SIZE));
+  const { data, isLoading, isError, error, isFetching } = useEmployees(listParams);
+  const stats = useEmployeeStats();
+  const createEmployeeMutation = useCreateEmployee();
+  const updateEmployeeMutation = useUpdateEmployee();
+  const deleteEmployeesMutation = useDeleteEmployees();
+
+  const employees = data?.items ?? [];
+  const totalEmployees = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalEmployees / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pageEmployees = filteredEmployees.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allPageSelected =
-    pageEmployees.length > 0 && pageEmployees.every((employee) => selectedIds.includes(employee.employeeId));
+    employees.length > 0 && employees.every((employee) => selectedIds.includes(employee.employeeId));
+  const isSaving =
+    createEmployeeMutation.isPending ||
+    updateEmployeeMutation.isPending ||
+    deleteEmployeesMutation.isPending;
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
       setSelectedIds((current) =>
-        Array.from(new Set([...current, ...pageEmployees.map((employee) => employee.employeeId)]))
+        Array.from(new Set([...current, ...employees.map((employee) => employee.employeeId)])),
       );
       return;
     }
     setSelectedIds((current) =>
-      current.filter((id) => !pageEmployees.some((employee) => employee.employeeId === id))
+      current.filter((id) => !employees.some((employee) => employee.employeeId === id)),
     );
   }
 
   function toggleSelect(employeeId: string, checked: boolean) {
     setSelectedIds((current) =>
-      checked ? [...current, employeeId] : current.filter((entry) => entry !== employeeId)
+      checked ? [...current, employeeId] : current.filter((entry) => entry !== employeeId),
     );
   }
 
@@ -126,52 +157,67 @@ export function EmployeesWorkspace() {
     setFormError(null);
   }
 
-  function saveEmployee(values: EmployeeFormValues) {
+  async function saveEmployee(values: EmployeeFormValues) {
+    setFormError(null);
+
     try {
       if (formMode === "edit" && editingEmployee) {
-        const nextEmployee = formValuesToEmployee(
-          { ...values, createdBy: editingEmployee.createdBy },
-          editingEmployee.createdAt,
-          editingEmployee.createdBy,
-          new Date().toISOString()
-        );
-        setEmployees((current) =>
-          current.map((employee) =>
-            employee.employeeId === editingEmployee.employeeId ? nextEmployee : employee
-          )
-        );
+        const nextEmployee = await updateEmployeeMutation.mutateAsync({
+          employeeId: editingEmployee.employeeId,
+          values: { ...values, createdBy: editingEmployee.createdBy },
+        });
         notifyUpdated("Employee", nextEmployee.name);
       } else {
-        const nextEmployee = formValuesToEmployee(values);
-        setEmployees((current) => [nextEmployee, ...current]);
+        const nextEmployee = await createEmployeeMutation.mutateAsync(values);
         notifyAdded("Employee", nextEmployee.name);
       }
 
       setFormMode(null);
       setEditingEmployee(null);
-      setFormError(null);
       setPage(1);
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to save employee.");
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
     }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
+
     const ids = Array.isArray(deleteTarget)
       ? deleteTarget.map((employee) => employee.employeeId)
       : [deleteTarget.employeeId];
-    setEmployees((current) => current.filter((employee) => !ids.includes(employee.employeeId)));
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewEmployee(null);
-    notifyDeleted("Employee", ids.length);
+
+    try {
+      await deleteEmployeesMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
+      setViewEmployee(null);
+      notifyDeleted("Employee", ids.length);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
+      setDeleteTarget(null);
+    }
   }
 
-  const stats = [
-    { label: "Total employees", value: kpis.total.toString(), description: "Employees on record", icon: Users },
-    { label: "Active", value: kpis.active.toString(), description: "Currently active", icon: UserRound },
-    { label: "Inactive", value: kpis.inactive.toString(), description: "No longer active", icon: UserRound },
+  const statCards = [
+    {
+      label: "Total employees",
+      value: stats.isLoading ? "…" : stats.total.toString(),
+      description: "Employees on record",
+      icon: Users,
+    },
+    {
+      label: "Active",
+      value: stats.isLoading ? "…" : stats.active.toString(),
+      description: "Currently active",
+      icon: UserRound,
+    },
+    {
+      label: "Inactive",
+      value: stats.isLoading ? "…" : stats.inactive.toString(),
+      description: "No longer active",
+      icon: UserRound,
+    },
   ];
 
   const branchFilters: { value: EmployeeFilterState["branch"]; label: string }[] = [
@@ -214,12 +260,12 @@ export function EmployeesWorkspace() {
     {
       id: "department",
       label: "Department",
-      renderCell: (employee) => employee.department,
+      renderCell: (employee) => employee.department || "—",
     },
     {
       id: "role",
       label: "Role",
-      renderCell: (employee) => employee.role,
+      renderCell: (employee) => employee.role || "—",
     },
     {
       id: "address",
@@ -254,7 +300,7 @@ export function EmployeesWorkspace() {
     {
       id: "startDate",
       label: "Started",
-      renderCell: (employee) => formatEmployeeDate(employee.startDate),
+      renderCell: (employee) => (employee.startDate ? formatEmployeeDate(employee.startDate) : "—"),
     },
     {
       id: "endDate",
@@ -274,18 +320,18 @@ export function EmployeesWorkspace() {
       id: "createdAt",
       label: "Date created",
       cellClassName: "text-muted-foreground",
-      renderCell: (employee) => formatAuditDate(employee.createdAt),
+      renderCell: (employee) => (employee.createdAt ? formatAuditDate(employee.createdAt) : "—"),
     },
     {
       id: "createdBy",
       label: "User created",
-      renderCell: (employee) => employee.createdBy,
+      renderCell: (employee) => employee.createdBy || "—",
     },
     {
       id: "updatedAt",
       label: "Date modified",
       cellClassName: "text-muted-foreground",
-      renderCell: (employee) => formatAuditDate(employee.updatedAt),
+      renderCell: (employee) => (employee.updatedAt ? formatAuditDate(employee.updatedAt) : "—"),
     },
     {
       id: "fullAddress",
@@ -322,6 +368,7 @@ export function EmployeesWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("employees", tableColumns);
+  const listErrorMessage = isError ? normalizeApiError(error).message : null;
 
   return (
     <div>
@@ -329,7 +376,7 @@ export function EmployeesWorkspace() {
         title="Employees"
         description="Manage employee records with branch, department, role, contact info, and employment dates."
         actions={
-          <Button onClick={openAddForm}>
+          <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
             Add employee
           </Button>
@@ -337,7 +384,7 @@ export function EmployeesWorkspace() {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.label}>
@@ -361,7 +408,43 @@ export function EmployeesWorkspace() {
               <CardTitle>Employee directory</CardTitle>
               <CardDescription>Search and filter employees by branch, department, and status.</CardDescription>
             </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
+              <select
+                aria-label="Search field"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchField}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    searchField: event.target.value as EmployeeFilterState["searchField"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                {EMPLOYEE_SEARCH_FIELDS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Search operator"
+                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                value={filters.searchOperator}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    searchOperator: event.target.value as EmployeeFilterState["searchOperator"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                {EMPLOYEE_SEARCH_OPERATORS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <div className="relative min-w-[240px] flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -433,6 +516,10 @@ export function EmployeesWorkspace() {
           </div>
         </CardHeader>
 
+        {listErrorMessage ? (
+          <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
+        ) : null}
+
         {selectedIds.length > 0 ? (
           <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium">{selectedIds.length} selected</p>
@@ -443,6 +530,7 @@ export function EmployeesWorkspace() {
               <Button
                 variant="destructive"
                 size="sm"
+                disabled={isSaving}
                 onClick={() =>
                   setDeleteTarget(employees.filter((employee) => selectedIds.includes(employee.employeeId)))
                 }
@@ -454,39 +542,43 @@ export function EmployeesWorkspace() {
           </div>
         ) : null}
 
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={pageEmployees}
-          rowKey={(employee) => employee.employeeId}
-          rowLabel={(employee) => employee.name}
-          columnLayout={columnVisibility}
-          minWidth={1800}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={setViewEmployee}
-          emptyState={
-            <>
-              <p className="text-muted-foreground">No employees match your search or filters.</p>
-              <Button className="mt-4" onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                Add employee
-              </Button>
-            </>
-          }
-        />
+        {isLoading ? (
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading employees…</div>
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={employees}
+            rowKey={(employee) => employee.employeeId}
+            rowLabel={(employee) => employee.name}
+            columnLayout={columnVisibility}
+            minWidth={1800}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={toggleSelect}
+            onRowClick={setViewEmployee}
+            emptyState={
+              <>
+                <p className="text-muted-foreground">No employees match your search or filters.</p>
+                <Button className="mt-4" onClick={openAddForm}>
+                  <Plus className="h-4 w-4" />
+                  Add employee
+                </Button>
+              </>
+            }
+          />
+        )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {pageEmployees.length} of {filteredEmployees.length} employees
+            {isFetching ? "Refreshing…" : `Showing ${employees.length} of ${totalEmployees} employees`}
           </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage <= 1}
+              disabled={currentPage <= 1 || isLoading}
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -498,7 +590,7 @@ export function EmployeesWorkspace() {
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage >= totalPages}
+              disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
               Next
@@ -547,6 +639,7 @@ export function EmployeesWorkspace() {
             isEditing={formMode === "edit"}
             updatedAt={editingEmployee?.updatedAt}
             submitLabel={formMode === "edit" ? "Save changes" : "Add employee"}
+            isSubmitting={isSaving}
             onSubmit={saveEmployee}
             onCancel={() => {
               setFormMode(null);
@@ -570,10 +663,10 @@ export function EmployeesWorkspace() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
               Delete
             </Button>

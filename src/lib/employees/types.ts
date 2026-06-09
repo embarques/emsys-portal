@@ -44,10 +44,77 @@ export type EmployeeFormValues = {
 
 export type EmployeeFilterState = {
   query: string;
+  searchField: EmployeeSearchField;
+  searchOperator: EmployeeSearchOperator;
   branch: EmployeeBranch | "all";
   status: EmployeeStatus | "all";
   department: string;
 };
+
+export type EmployeeSearchOperator = "startsWith" | "contains" | "equals" | "endsWith";
+
+export type EmployeeSearchField =
+  | "name"
+  | "title"
+  | "department"
+  | "phone"
+  | "email"
+  | "address.city"
+  | "address.country"
+  | "active";
+
+export type EmployeeSearchFilter = {
+  field: EmployeeSearchField;
+  operator: EmployeeSearchOperator;
+  value: string;
+};
+
+export type EmployeeListParams = {
+  page?: number;
+  limit?: number;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
+  search?: EmployeeSearchFilter;
+  branch?: EmployeeBranch | "all";
+  status?: EmployeeStatus | "all";
+  department?: string;
+};
+
+export type EmployeeListResult = {
+  items: Employee[];
+  page: number;
+  resultsPerPage: number;
+  total: number;
+};
+
+export const EMPLOYEE_SEARCH_FIELDS: { value: EmployeeSearchField; label: string }[] = [
+  { value: "name", label: "Name" },
+  { value: "title", label: "Role" },
+  { value: "department", label: "Department" },
+  { value: "phone", label: "Phone" },
+  { value: "email", label: "Email" },
+  { value: "address.city", label: "City" },
+  { value: "address.country", label: "Country" },
+  { value: "active", label: "Active" },
+];
+
+export const EMPLOYEE_SEARCH_OPERATORS: { value: EmployeeSearchOperator; label: string }[] = [
+  { value: "startsWith", label: "Starts with" },
+  { value: "contains", label: "Contains" },
+  { value: "equals", label: "Equals" },
+  { value: "endsWith", label: "Ends with" },
+];
+
+export function createEmployeeSearchFilter(
+  value: string,
+  field: EmployeeSearchField = "name",
+  operator: EmployeeSearchOperator = "startsWith",
+): EmployeeSearchFilter | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  return { field, operator, value: trimmed };
+}
 
 export const EMPLOYEE_BRANCHES: { value: EmployeeBranch; label: string }[] = [
   { value: "usa", label: "USA" },
@@ -89,7 +156,7 @@ export function todayDateInputValue(): string {
 
 export function createEmptyEmployeeForm(createdBy = DEFAULT_CREATED_BY): EmployeeFormValues {
   return {
-    employeeId: createEmployeeId(),
+    employeeId: "",
     name: "",
     department: EMPLOYEE_DEPARTMENTS[0],
     role: EMPLOYEE_ROLES[0],
