@@ -100,6 +100,7 @@ export type OrderSearchFilter = {
 export type OrderListParams = {
   page?: number;
   limit?: number;
+  offset?: number;
   sort?: ApiListSortInput;
   search?: OrderSearchFilter;
   branch?: OrderBranchFilter;

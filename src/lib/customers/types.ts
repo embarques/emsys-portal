@@ -167,6 +167,7 @@ export type CustomerSearchFilter = {
 export type CustomerListParams = {
   page?: number;
   limit?: number;
+  offset?: number;
   /** e.g. `name:asc` or `[{ field: "name", direction: "asc" }, { field: "createdAt", direction: "desc" }]` */
   sort?: ApiListSortInput;
   search?: CustomerSearchFilter;
@@ -175,7 +176,7 @@ export type CustomerListParams = {
   customerType?: number | "all";
 };
 
-/** GET /customers?page=1&limit=40&sort=name:asc */
+/** GET /customers?page=1&limit=40&offset=0&sort=name:asc */
 export const DEFAULT_CUSTOMER_LIST_PARAMS = {
   page: 1,
   limit: 40,

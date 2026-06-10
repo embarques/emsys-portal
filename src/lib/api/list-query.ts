@@ -17,6 +17,7 @@ export type ApiListFieldFilter = {
 export type BuildApiListQueryOptions = {
   page?: number;
   limit?: number;
+  offset?: number;
   sort?: ApiListSortInput;
   filter?: ApiListFieldFilter | null;
 };
@@ -83,12 +84,16 @@ export function getPrimarySortField(sort?: ApiListSortInput): string | undefined
 
 /**
  * Builds EMSYS list query strings:
- * `?page=1&limit=40&sort=name:asc&field=createdAt&operator=eq&value=2026-06-01`
+ * `?page=1&limit=40&offset=0&sort=name:asc&field=createdAt&operator=eq&value=2026-06-01`
  */
 export function buildApiListQuery(options: BuildApiListQueryOptions): string {
+  const page = options.page ?? 1;
+  const limit = options.limit ?? 40;
+  const offset = options.offset ?? (page - 1) * limit;
   const searchParams = new URLSearchParams({
-    page: String(options.page ?? 1),
-    limit: String(options.limit ?? 40),
+    page: String(page),
+    limit: String(limit),
+    offset: String(offset),
   });
 
   const sort = resolveApiListSort(options.sort);

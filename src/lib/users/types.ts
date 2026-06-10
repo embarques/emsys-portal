@@ -97,6 +97,7 @@ export type UserSearchFilter = {
 export type UserListParams = {
   page?: number;
   limit?: number;
+  offset?: number;
   sort?: ApiListSortInput;
   search?: UserSearchFilter;
   branch?: number | "all";
@@ -111,7 +112,7 @@ export type UserListResult = {
   total: number;
 };
 
-/** GET /users?page=1&limit=40&sort=userName:asc */
+/** GET /users?page=1&limit=40&offset=0&sort=userName:asc */
 export const DEFAULT_USER_LIST_PARAMS = {
   page: 1,
   limit: 40,

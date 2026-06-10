@@ -88,12 +88,13 @@ export type BranchFilterState = {
 export type BranchListParams = {
   page?: number;
   limit?: number;
+  offset?: number;
   sort?: ApiListSortInput;
   search?: BranchSearchFilter;
   type?: string;
 };
 
-/** GET /branches?page=1&limit=40&sort=name:asc */
+/** GET /branches?page=1&limit=40&offset=0&sort=name:asc */
 export const DEFAULT_BRANCH_LIST_PARAMS = {
   page: 1,
   limit: 40,

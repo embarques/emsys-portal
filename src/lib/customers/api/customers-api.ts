@@ -266,6 +266,7 @@ function buildCustomersQuery(params: CustomerListParams): string {
   return buildApiListQuery({
     page: params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit,
+    offset: params.offset,
     sort: params.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort,
     filter: resolveCustomerListFilter(params),
   });

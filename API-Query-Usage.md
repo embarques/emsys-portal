@@ -72,21 +72,26 @@ List endpoints use query string parameters built with `URLSearchParams`.
 Standard list query shape:
 
 ```txt
-GET /customers?page=1&start=0&limit=40&sortField=name&sortDirection=asc
+GET /customers?page=1&limit=40&offset=0&sort=name:asc
 ```
 
-Use `page` and `limit` to compute `start`:
+`page` is 1-based. `limit` is the page size. `offset` is the MongoDB skip value.
+
+By default, the frontend calculates `offset` from `page` and `limit`.
+If `offset` is provided explicitly, it overrides the calculated value.
+
+Build pagination parameters like this:
 
 ```ts
 const page = params.page ?? 1;
 const limit = params.limit ?? 40;
+const offset = params.offset ?? (page - 1) * limit;
 
 const searchParams = new URLSearchParams({
   page: String(page),
-  start: String((page - 1) * limit),
   limit: String(limit),
-  sortField: params.sortField ?? "name",
-  sortDirection: params.sortDirection ?? "asc",
+  offset: String(offset),
+  sort: params.sort ?? "name:asc",
 });
 ```
 
@@ -113,7 +118,7 @@ value=<search-value>
 Example:
 
 ```txt
-GET /customers?page=1&start=0&limit=40&sortField=name&sortDirection=asc&field=name&operator=startsWith&value=Acme
+GET /customers?page=1&limit=40&offset=0&sort=name:asc&field=name&operator=startsWith&value=Acme
 ```
 
 Construct it like this:
@@ -144,7 +149,7 @@ Chip filters can be represented as explicit query params and, when needed by the
 Example customer filters:
 
 ```txt
-GET /customers?page=1&start=0&limit=40&sortField=name&sortDirection=asc&active=true&branchId=1&customerType=1
+GET /customers?page=1&limit=40&offset=0&sort=name:asc&active=true&branchId=1&customerType=1
 ```
 
 Example construction:
@@ -168,25 +173,25 @@ if (params.customerType !== undefined && params.customerType !== "all") {
 Customers:
 
 ```txt
-GET /customers?page=1&start=0&limit=40&sortField=name&sortDirection=asc
-GET /customers?page=1&start=0&limit=40&sortField=name&sortDirection=asc&field=name&operator=contains&value=Maria
-GET /customers?page=1&start=0&limit=40&sortField=name&sortDirection=asc&active=true&branchId=1
+GET /customers?page=1&limit=40&offset=0&sort=name:asc
+GET /customers?page=1&limit=40&offset=0&sort=name:asc&field=name&operator=contains&value=Maria
+GET /customers?page=1&limit=40&offset=0&sort=name:asc&active=true&branchId=1
 ```
 
 Users:
 
 ```txt
-GET /users?page=1&start=0&limit=40&sortField=userName&sortDirection=asc
-GET /users?page=1&start=0&limit=40&sortField=userName&sortDirection=asc&field=userName&operator=startsWith&value=jdoe
-GET /users?page=1&start=0&limit=40&sortField=userName&sortDirection=asc&active=true&branchId=1&roleId=1
+GET /users?page=1&limit=40&offset=0&sort=userName:asc
+GET /users?page=1&limit=40&offset=0&sort=userName:asc&field=userName&operator=startsWith&value=jdoe
+GET /users?page=1&limit=40&offset=0&sort=userName:asc&active=true&branchId=1&roleId=1
 ```
 
 Pickups:
 
 ```txt
-GET /pickups?page=1&start=0&limit=40
-GET /pickups?page=1&start=0&limit=40&field=completed&operator=eq&value=false
-GET /pickups?page=1&start=0&limit=40&branchId=1
+GET /pickups?page=1&limit=40&offset=0
+GET /pickups?page=1&limit=40&offset=0&field=completed&operator=eq&value=false
+GET /pickups?page=1&limit=40&offset=0&branchId=1
 ```
 
 ## Advanced Search Endpoints
@@ -204,10 +209,9 @@ Body:
 ```json
 {
   "page": 1,
-  "start": 0,
   "limit": 40,
-  "sortField": "date",
-  "sortDirection": "asc",
+  "offset": 0,
+  "sort": "date:asc",
   "query": {
     "and": [
       {
@@ -236,13 +240,13 @@ Build the body in the feature API file:
 function buildSearchBody(params: OrderListParams) {
   const page = params.page ?? 1;
   const limit = params.limit ?? 40;
+  const offset = params.offset ?? (page - 1) * limit;
 
   const body = {
     page,
-    start: (page - 1) * limit,
     limit,
-    sortField: params.sortField ?? "date",
-    sortDirection: params.sortDirection ?? "asc",
+    offset,
+    sort: params.sort ?? "date:asc",
   };
 
   const filters = buildSearchFilters(params);

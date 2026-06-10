@@ -108,6 +108,7 @@ export type EmployeeSearchFilter = {
 export type EmployeeListParams = {
   page?: number;
   limit?: number;
+  offset?: number;
   sort?: ApiListSortInput;
   search?: EmployeeSearchFilter;
   branch?: number | "all";
@@ -122,7 +123,7 @@ export type EmployeeListResult = {
   total: number;
 };
 
-/** GET /employees?page=1&limit=40&sort=name:asc */
+/** GET /employees?page=1&limit=40&offset=0&sort=name:asc */
 export const DEFAULT_EMPLOYEE_LIST_PARAMS = {
   page: 1,
   limit: 40,

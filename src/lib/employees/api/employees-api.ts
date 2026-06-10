@@ -211,6 +211,7 @@ function buildEmployeesQuery(params: EmployeeListParams): string {
   return buildApiListQuery({
     page: params.page ?? DEFAULT_EMPLOYEE_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_EMPLOYEE_LIST_PARAMS.limit,
+    offset: params.offset,
     sort: params.sort ?? DEFAULT_EMPLOYEE_LIST_PARAMS.sort,
     filter: resolveEmployeeListFilter(params),
   });

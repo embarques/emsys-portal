@@ -124,6 +124,7 @@ type ApiPickupSearchFilter = {
 type ApiSearchBody = {
   page: number;
   limit: number;
+  offset: number;
   sort?: string;
   query?: {
     and: ApiPickupSearchFilter[];
@@ -432,6 +433,7 @@ function buildOrdersQuery(params: OrderListParams): string {
   return buildApiListQuery({
     page: params.page ?? DEFAULT_ORDER_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
+    offset: params.offset,
     sort: resolveOrdersSort(params),
     filter: resolveOrderListFilter(params),
   });
@@ -440,10 +442,12 @@ function buildOrdersQuery(params: OrderListParams): string {
 function buildSearchBody(params: OrderListParams): ApiSearchBody {
   const page = params.page ?? DEFAULT_ORDER_LIST_PARAMS.page;
   const limit = params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit;
+  const offset = params.offset ?? (page - 1) * limit;
 
   const body: ApiSearchBody = {
     page,
     limit,
+    offset,
     sort: resolveOrdersSort(params),
   };
 
