@@ -15,6 +15,8 @@ import { EmployeeViewSheet } from "@/components/employees/employee-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
@@ -418,7 +420,6 @@ export function EmployeesWorkspace() {
     <div>
       <PageHeader
         title="Employees"
-        description="Manage employee records with branch, address, schedule, loans, and linked users."
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
@@ -427,7 +428,7 @@ export function EmployeesWorkspace() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <StatCardsGrid>
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -443,12 +444,10 @@ export function EmployeesWorkspace() {
             </Card>
           );
         })}
-      </div>
+      </StatCardsGrid>
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <CardTitle>Employee directory</CardTitle>
-
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
@@ -635,10 +634,6 @@ export function EmployeesWorkspace() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit employee" : "Add employee"}</DialogTitle>
-            <DialogDescription>
-              Fields match the EMSYS Employee API model: name, title, department, active, startDate, endDate,
-              branch, address, contact, loans, cost, and linked user.
-            </DialogDescription>
           </DialogHeader>
           <EmployeeForm
             key={editingEmployee?.id ?? "new"}

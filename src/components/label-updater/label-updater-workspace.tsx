@@ -96,10 +96,7 @@ export function LabelUpdaterWorkspace() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Label Updater"
-        description="Scan or enter barcodes to update status, container, and route assignment. Press Enter after each barcode."
-      />
+      <PageHeader title="Label Updater" />
 
       <Card>
         <CardHeader>

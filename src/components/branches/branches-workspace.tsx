@@ -14,6 +14,7 @@ import { BranchViewSheet } from "@/components/branches/branch-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
@@ -278,7 +279,6 @@ export function BranchesWorkspace() {
     <div>
       <PageHeader
         title="Branches"
-        description="Manage core.Branch records with address, settings, and contact details from the EMSYS API."
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
@@ -287,7 +287,7 @@ export function BranchesWorkspace() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <StatCardsGrid>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total branches</CardTitle>
@@ -298,12 +298,10 @@ export function BranchesWorkspace() {
             <CardDescription className="mt-1">Branches on record</CardDescription>
           </CardContent>
         </Card>
-      </div>
+      </StatCardsGrid>
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <CardTitle>Branch directory</CardTitle>
-
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
@@ -459,10 +457,6 @@ export function BranchesWorkspace() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit branch" : "Add branch"}</DialogTitle>
-            <DialogDescription>
-              Fields match the EMSYS core.Branch API model: address, code, disclaimer, logo, name, phone1,
-              phone2, settings, and type.
-            </DialogDescription>
           </DialogHeader>
           <BranchForm
             key={editingBranch?.id ?? "new"}

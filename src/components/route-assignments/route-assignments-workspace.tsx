@@ -17,6 +17,8 @@ import { RouteAssignmentViewSheet } from "@/components/route-assignments/route-a
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
@@ -259,7 +261,6 @@ export function RouteAssignmentsWorkspace() {
     <div>
       <PageHeader
         title="Route Assignments"
-        description="Assign trucks and employee groups to routes by date."
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
@@ -268,7 +269,7 @@ export function RouteAssignmentsWorkspace() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <StatCardsGrid>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -284,12 +285,10 @@ export function RouteAssignmentsWorkspace() {
             </Card>
           );
         })}
-      </div>
+      </StatCardsGrid>
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <CardTitle>Assignment directory</CardTitle>
-
           <TableDirectoryToolbar
             showFilterToggle={false}
             columnLayout={columnVisibility}
@@ -392,10 +391,6 @@ export function RouteAssignmentsWorkspace() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit route assignment" : "Add route assignment"}</DialogTitle>
-            <DialogDescription>
-              Fields match the EMSYS Route Assignment API model: id, routeAssignmentId, name, date, truck, and
-              employeeGroup.
-            </DialogDescription>
           </DialogHeader>
           <RouteAssignmentForm
             key={editingAssignment?.id ?? "new"}

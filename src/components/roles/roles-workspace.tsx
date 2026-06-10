@@ -15,6 +15,8 @@ import { RoleViewSheet } from "@/components/roles/role-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
@@ -214,7 +216,6 @@ export function RolesWorkspace() {
     <div>
       <PageHeader
         title="Roles"
-        description="Define roles and manage their permission sets. Copy from an existing role when creating a new one."
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
@@ -223,7 +224,7 @@ export function RolesWorkspace() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <StatCardsGrid>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -239,12 +240,10 @@ export function RolesWorkspace() {
             </Card>
           );
         })}
-      </div>
+      </StatCardsGrid>
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <CardTitle>Role directory</CardTitle>
-
           <TableDirectoryToolbar
             showFilterToggle={false}
             columnLayout={columnVisibility}

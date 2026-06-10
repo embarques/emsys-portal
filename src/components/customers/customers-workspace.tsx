@@ -16,6 +16,7 @@ import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
@@ -441,7 +442,6 @@ export function CustomersWorkspace() {
     <div>
       <PageHeader
         title="Customers"
-        description="Customer records from the EMSYS API with contact info, addresses, account balance, and branch."
         actions={
           canCreateCustomers ? (
             <Button onClick={openAddForm} disabled={isSaving}>
@@ -452,7 +452,7 @@ export function CustomersWorkspace() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <StatCardsGrid>
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -470,12 +470,10 @@ export function CustomersWorkspace() {
             </Card>
           );
         })}
-      </div>
+      </StatCardsGrid>
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <CardTitle>Customer directory</CardTitle>
-
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
@@ -634,10 +632,6 @@ export function CustomersWorkspace() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit customer" : "Add customer"}</DialogTitle>
-            <DialogDescription>
-              Fields match the EMSYS customer API model: name, contact info, addresses, branch, customerType,
-              notes, and account balance.
-            </DialogDescription>
           </DialogHeader>
           <CustomerForm
             key={editingCustomer?.id ?? "new"}

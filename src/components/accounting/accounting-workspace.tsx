@@ -12,6 +12,8 @@ import { InvoiceDiscountsSection } from "@/components/accounting/invoice-discoun
 import { NewInvoicePaymentsSection } from "@/components/accounting/new-invoice-payments-section";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -173,12 +175,9 @@ export function AccountingWorkspace() {
 
   return (
     <div>
-      <PageHeader
-        title="Accounting"
-        description="Select a route assignment, then register payments, discounts, expenses, and income. Each entry appears in its section list immediately."
-      />
+      <PageHeader title="Accounting" />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <StatCardsGrid>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -194,7 +193,7 @@ export function AccountingWorkspace() {
             </Card>
           );
         })}
-      </div>
+      </StatCardsGrid>
 
       <AccountingRouteAssignmentSelector
         routeAssignments={routeAssignments}

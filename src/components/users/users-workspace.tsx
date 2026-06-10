@@ -16,6 +16,8 @@ import { UserViewSheet } from "@/components/users/user-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
@@ -392,7 +394,6 @@ export function UsersWorkspace() {
     <div>
       <PageHeader
         title="Users"
-        description="Manage user accounts with credentials, roles, branch access, and schedule windows."
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
@@ -401,7 +402,7 @@ export function UsersWorkspace() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <StatCardsGrid>
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -417,12 +418,10 @@ export function UsersWorkspace() {
             </Card>
           );
         })}
-      </div>
+      </StatCardsGrid>
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <CardTitle>User directory</CardTitle>
-
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}

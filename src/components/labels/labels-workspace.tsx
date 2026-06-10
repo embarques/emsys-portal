@@ -17,6 +17,7 @@ import {
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import {
   TableDirectoryToolbar,
@@ -420,12 +421,9 @@ export function LabelsWorkspace() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Labels"
-        description="Stage invoices, generate shipping labels, update status, and track activity."
-      />
+      <PageHeader title="Labels" />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <StatCardsGrid>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total labels</CardTitle>
@@ -458,7 +456,7 @@ export function LabelsWorkspace() {
             <p className="text-2xl font-bold">{kpis.inTransit}</p>
           </CardContent>
         </Card>
-      </div>
+      </StatCardsGrid>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
@@ -640,8 +638,6 @@ export function LabelsWorkspace() {
 
       <Card>
         <CardHeader className="gap-4 border-b pb-4">
-          <CardTitle>Label directory</CardTitle>
-
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}

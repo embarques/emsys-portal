@@ -75,10 +75,7 @@ export function ConfigurationWorkspace() {
 
   return (
     <div>
-      <PageHeader
-        title="Configuration"
-        description="Manage your appearance, account credentials, and language preference."
-      />
+      <PageHeader title="Configuration" />
 
       <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6">
         <Card>

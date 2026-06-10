@@ -15,6 +15,8 @@ import { TruckViewSheet } from "@/components/trucks/truck-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
@@ -242,7 +244,6 @@ export function TrucksWorkspace() {
     <div>
       <PageHeader
         title="Trucks"
-        description="Manage fleet trucks with id, truckId, VIN, year, fuel type, and branch."
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
@@ -251,7 +252,7 @@ export function TrucksWorkspace() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <StatCardsGrid>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -267,12 +268,10 @@ export function TrucksWorkspace() {
             </Card>
           );
         })}
-      </div>
+      </StatCardsGrid>
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <CardTitle>Fleet directory</CardTitle>
-
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
@@ -422,9 +421,6 @@ export function TrucksWorkspace() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit truck" : "Add truck"}</DialogTitle>
-            <DialogDescription>
-              Fields match the EMSYS Truck API model: id, truckId, name, vin, year, fuelType, and branch.
-            </DialogDescription>
           </DialogHeader>
           <TruckForm
             key={editingTruck?.id ?? "new"}

@@ -15,6 +15,8 @@ import { EmployeeGroupViewSheet } from "@/components/employee-groups/employee-gr
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import {
@@ -214,7 +216,6 @@ export function EmployeeGroupsWorkspace() {
     <div>
       <PageHeader
         title="Employee Groups"
-        description="Organize employees into groups by branch with created-by audit details."
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
@@ -223,7 +224,7 @@ export function EmployeeGroupsWorkspace() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <StatCardsGrid>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -239,12 +240,10 @@ export function EmployeeGroupsWorkspace() {
             </Card>
           );
         })}
-      </div>
+      </StatCardsGrid>
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <CardTitle>Group directory</CardTitle>
-
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}

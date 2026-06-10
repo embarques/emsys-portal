@@ -16,6 +16,8 @@ import { ContainerViewSheet } from "@/components/containers/container-view-sheet
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
@@ -247,7 +249,6 @@ export function ContainersWorkspace() {
     <div>
       <PageHeader
         title="Containers"
-        description="Track shipping containers with booking, seal, broker, and transport details."
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
@@ -256,7 +257,7 @@ export function ContainersWorkspace() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <StatCardsGrid>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -272,12 +273,10 @@ export function ContainersWorkspace() {
             </Card>
           );
         })}
-      </div>
+      </StatCardsGrid>
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <CardTitle>Container directory</CardTitle>
-
           <TableDirectoryToolbar
             showFilterToggle={false}
             columnLayout={columnVisibility}
