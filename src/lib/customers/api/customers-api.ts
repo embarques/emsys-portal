@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   CUSTOMER_PORTAL_BRANCHES,
@@ -258,54 +259,43 @@ function normalizePaginatedCustomers(
   };
 }
 
-/** GET /customers — list with field/operator/value search plus optional chip filters. */
-function buildCustomersQuery(params: CustomerListParams): string {
-  const page = params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page;
-  const limit = params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit;
-  const searchParams = new URLSearchParams({
-    page: String(page),
-    start: String((page - 1) * limit),
-    limit: String(limit),
-    sortField: params.sortField ?? DEFAULT_CUSTOMER_LIST_PARAMS.sortField,
-    sortDirection: params.sortDirection ?? DEFAULT_CUSTOMER_LIST_PARAMS.sortDirection,
-  });
-
+function resolveCustomerListFilter(params: CustomerListParams): ApiListFieldFilter | undefined {
   if (params.search?.value.trim()) {
     const search = normalizeCustomerSearchFilter({
       ...params.search,
       value: params.search.value.trim(),
     });
 
-    searchParams.set("field", toApiCustomerSearchField(search.field));
-    searchParams.set("operator", search.operator);
-    searchParams.set("value", search.value);
-  } else if (params.active !== undefined && params.active !== "all") {
-    searchParams.set("field", "active");
-    searchParams.set("operator", "eq");
-    searchParams.set("value", String(params.active));
-  } else if (params.branch !== undefined && params.branch !== "all") {
-    searchParams.set("field", "branch.id");
-    searchParams.set("operator", "eq");
-    searchParams.set("value", String(params.branch));
-  } else if (params.customerType !== undefined && params.customerType !== "all") {
-    searchParams.set("field", "customerType");
-    searchParams.set("operator", "eq");
-    searchParams.set("value", String(params.customerType));
+    return {
+      field: toApiCustomerSearchField(search.field),
+      operator: search.operator,
+      value: search.value,
+    };
   }
 
   if (params.active !== undefined && params.active !== "all") {
-    searchParams.set("active", String(params.active));
+    return { field: "active", operator: "eq", value: String(params.active) };
   }
 
   if (params.branch !== undefined && params.branch !== "all") {
-    searchParams.set("branchId", String(params.branch));
+    return { field: "branch.id", operator: "eq", value: String(params.branch) };
   }
 
   if (params.customerType !== undefined && params.customerType !== "all") {
-    searchParams.set("customerType", String(params.customerType));
+    return { field: "customerType", operator: "eq", value: String(params.customerType) };
   }
 
-  return searchParams.toString();
+  return undefined;
+}
+
+/** GET /customers — page, limit, sort, and optional field/operator/value filter. */
+function buildCustomersQuery(params: CustomerListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit,
+    sort: params.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort,
+    filter: resolveCustomerListFilter(params),
+  });
 }
 
 export async function fetchCustomers(

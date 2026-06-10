@@ -51,8 +51,7 @@ export function EmployeeGroupForm({
   const employeesQuery = useEmployees({
     page: 1,
     limit: 40,
-    sortField: "name",
-    sortDirection: "asc",
+    sort: "name:asc",
     search: memberSearch,
   });
   const employees = employeesQuery.data?.items ?? [];

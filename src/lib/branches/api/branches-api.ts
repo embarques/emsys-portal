@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   DEFAULT_BRANCH_LIST_PARAMS,
@@ -178,32 +179,29 @@ function normalizePaginatedBranches(payload: PaginatedApiEnvelope<unknown[]>): P
   };
 }
 
-function buildBranchesQuery(params: BranchListParams): string {
-  const page = params.page ?? DEFAULT_BRANCH_LIST_PARAMS.page;
-  const limit = params.limit ?? DEFAULT_BRANCH_LIST_PARAMS.limit;
-  const searchParams = new URLSearchParams({
-    page: String(page),
-    start: String((page - 1) * limit),
-    limit: String(limit),
-    sortField: params.sortField ?? DEFAULT_BRANCH_LIST_PARAMS.sortField,
-    sortDirection: params.sortDirection ?? DEFAULT_BRANCH_LIST_PARAMS.sortDirection,
-  });
-
+function resolveBranchListFilter(params: BranchListParams): ApiListFieldFilter | undefined {
   if (params.search?.value.trim()) {
-    searchParams.set("field", params.search.field);
-    searchParams.set("operator", params.search.operator);
-    searchParams.set("value", params.search.value.trim());
-  } else if (params.type && params.type !== "all") {
-    searchParams.set("field", "type");
-    searchParams.set("operator", "eq");
-    searchParams.set("value", params.type);
+    return {
+      field: params.search.field,
+      operator: params.search.operator,
+      value: params.search.value.trim(),
+    };
   }
 
   if (params.type && params.type !== "all") {
-    searchParams.set("type", params.type);
+    return { field: "type", operator: "eq", value: params.type };
   }
 
-  return searchParams.toString();
+  return undefined;
+}
+
+function buildBranchesQuery(params: BranchListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_BRANCH_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_BRANCH_LIST_PARAMS.limit,
+    sort: params.sort ?? DEFAULT_BRANCH_LIST_PARAMS.sort,
+    filter: resolveBranchListFilter(params),
+  });
 }
 
 function buildAddressWritePayload(address: BranchAddress): ApiAddressWritePayload {

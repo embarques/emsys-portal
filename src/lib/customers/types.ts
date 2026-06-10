@@ -1,3 +1,4 @@
+import type { ApiListSortInput } from "@/lib/api/list-query";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 
@@ -166,21 +167,20 @@ export type CustomerSearchFilter = {
 export type CustomerListParams = {
   page?: number;
   limit?: number;
-  sortField?: string;
-  sortDirection?: "asc" | "desc";
+  /** e.g. `name:asc` or `[{ field: "name", direction: "asc" }, { field: "createdAt", direction: "desc" }]` */
+  sort?: ApiListSortInput;
   search?: CustomerSearchFilter;
   branch?: CustomerBranchFilter;
   active?: boolean | "all";
   customerType?: number | "all";
 };
 
-/** GET /customers?page=1&start=0&limit=40&sortField=name&sortDirection=asc */
+/** GET /customers?page=1&limit=40&sort=name:asc */
 export const DEFAULT_CUSTOMER_LIST_PARAMS = {
   page: 1,
   limit: 40,
-  sortField: "name",
-  sortDirection: "asc",
-} as const satisfies Pick<CustomerListParams, "page" | "limit" | "sortField" | "sortDirection">;
+  sort: "name:asc",
+} as const satisfies Pick<CustomerListParams, "page" | "limit" | "sort">;
 
 const BRANCH_ID_TO_PORTAL: Record<number, CustomerPortalBranch> = {
   1: "usa",
@@ -364,26 +364,29 @@ export function createCustomerSearchFilter(
   return normalizeCustomerSearchFilter({ field, operator, value: normalizedValue });
 }
 
-export function getCustomerSearchSortField(field: CustomerSearchField): string {
+export function getCustomerSearchSort(
+  field: CustomerSearchField,
+  direction: "asc" | "desc" = "asc",
+): string {
   switch (field) {
     case "oldID":
-      return "oldID";
+      return `oldID:${direction}`;
     case "phone1":
-      return "phone1";
+      return `phone1:${direction}`;
     case "phone2":
-      return "phone2";
+      return `phone2:${direction}`;
     case "email":
-      return "email";
+      return `email:${direction}`;
     case "IDNumber":
-      return "IDNumber";
+      return `IDNumber:${direction}`;
     case "active":
-      return "active";
+      return `active:${direction}`;
     case "customerType":
-      return "customerType";
+      return `customerType:${direction}`;
     case "branch.id":
-      return "branch.id";
+      return `branch.id:${direction}`;
     default:
-      return "name";
+      return `name:${direction}`;
   }
 }
 

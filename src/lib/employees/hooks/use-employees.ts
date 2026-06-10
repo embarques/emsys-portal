@@ -10,7 +10,12 @@ import {
   fetchEmployees,
   updateEmployee,
 } from "@/lib/employees/api/employees-api";
-import type { EmployeeFormValues, EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
+import {
+  DEFAULT_EMPLOYEE_LIST_PARAMS,
+  type EmployeeFormValues,
+  type EmployeeListParams,
+  type EmployeeSearchFilter,
+} from "@/lib/employees/types";
 import { queryKeys } from "@/lib/query/query-keys";
 
 export function useEmployeeSearch(
@@ -25,8 +30,7 @@ export function useEmployeeSearch(
       fetchEmployees({
         page: 1,
         limit,
-        sortField: "name",
-        sortDirection: "asc",
+        sort: DEFAULT_EMPLOYEE_LIST_PARAMS.sort,
         search,
       }),
     enabled: enabled && Boolean(search?.value.trim()),

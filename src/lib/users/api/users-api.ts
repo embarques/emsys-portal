@@ -1,8 +1,10 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   createEmptyUserRole,
+  DEFAULT_USER_LIST_PARAMS,
   normalizeUserSearchFilter,
   type User,
   type UserBranch,
@@ -191,41 +193,42 @@ function normalizePaginatedUsers(payload: PaginatedApiEnvelope<unknown[]>): Pagi
   };
 }
 
-function buildUsersQuery(params: UserListParams): string {
-  const page = params.page ?? 1;
-  const limit = params.limit ?? 40;
-  const searchParams = new URLSearchParams({
-    page: String(page),
-    start: String((page - 1) * limit),
-    limit: String(limit),
-    sortField: params.sortField ?? "userName",
-    sortDirection: params.sortDirection ?? "asc",
-  });
-
+function resolveUserListFilter(params: UserListParams): ApiListFieldFilter | undefined {
   if (params.search?.value.trim()) {
     const search = normalizeUserSearchFilter({
       ...params.search,
       value: params.search.value.trim(),
     });
 
-    searchParams.set("field", search.field);
-    searchParams.set("operator", search.operator);
-    searchParams.set("value", search.value);
+    return {
+      field: search.field,
+      operator: search.operator,
+      value: search.value,
+    };
   }
 
   if (params.active !== undefined && params.active !== "all") {
-    searchParams.set("active", String(params.active));
+    return { field: "active", operator: "eq", value: String(params.active) };
   }
 
   if (params.branch && params.branch !== "all") {
-    searchParams.set("branchId", String(params.branch));
+    return { field: "branch.id", operator: "eq", value: String(params.branch) };
   }
 
   if (params.roleId && params.roleId !== "all") {
-    searchParams.set("roleId", String(params.roleId));
+    return { field: "role.id", operator: "eq", value: String(params.roleId) };
   }
 
-  return searchParams.toString();
+  return undefined;
+}
+
+function buildUsersQuery(params: UserListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_USER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
+    sort: params.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
+    filter: resolveUserListFilter(params),
+  });
 }
 
 function buildUserWritePayload(

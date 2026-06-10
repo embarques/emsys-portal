@@ -1,5 +1,11 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import {
+  buildApiListQuery,
+  getPrimarySortField,
+  resolveApiListSort,
+  type ApiListFieldFilter,
+} from "@/lib/api/list-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { normalizeApiCustomer } from "@/lib/customers/api/customers-api";
 import type { Customer, CustomerCoreAddress } from "@/lib/customers/types";
@@ -101,10 +107,8 @@ type ApiPickupSearchFilter = {
 
 type ApiSearchBody = {
   page: number;
-  start: number;
   limit: number;
-  sortField: string;
-  sortDirection: "asc" | "desc";
+  sort?: string;
   query?: {
     and: ApiPickupSearchFilter[];
   };
@@ -373,45 +377,48 @@ function shouldUsePickupSearch(params: OrderListParams): boolean {
   ].includes(params.search.field);
 }
 
-function appendGetSortParams(searchParams: URLSearchParams, params: OrderListParams): void {
+function shouldOmitOrdersSort(params: OrderListParams): boolean {
   const limit = params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit;
-  const sortField = params.sortField ?? DEFAULT_ORDER_LIST_PARAMS.sortField;
-  const sortDirection = params.sortDirection ?? DEFAULT_ORDER_LIST_PARAMS.sortDirection;
+  const primarySort = getPrimarySortField(params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort);
 
-  if (sortField === "date" && limit > 1 && !hasGetFieldTriplet(params)) {
-    return;
-  }
-
-  searchParams.set("sortField", sortField);
-  searchParams.set("sortDirection", sortDirection);
+  return primarySort === "date" && limit > 1 && !hasGetFieldTriplet(params);
 }
 
-function buildOrdersQuery(params: OrderListParams): string {
-  const page = params.page ?? DEFAULT_ORDER_LIST_PARAMS.page;
-  const limit = params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit;
-  const searchParams = new URLSearchParams({
-    page: String(page),
-    start: String((page - 1) * limit),
-    limit: String(limit),
-  });
-
-  appendGetSortParams(searchParams, params);
-
+function resolveOrderListFilter(params: OrderListParams): ApiListFieldFilter | undefined {
   if (params.search?.value.trim()) {
-    searchParams.set("field", params.search.field);
-    searchParams.set("operator", params.search.operator);
-    searchParams.set("value", params.search.value.trim());
-  } else if (params.completed !== undefined && params.completed !== "all") {
-    searchParams.set("field", "completed");
-    searchParams.set("operator", "eq");
-    searchParams.set("value", String(params.completed));
+    return {
+      field: params.search.field,
+      operator: params.search.operator,
+      value: params.search.value.trim(),
+    };
+  }
+
+  if (params.completed !== undefined && params.completed !== "all") {
+    return { field: "completed", operator: "eq", value: String(params.completed) };
   }
 
   if (params.branch !== undefined && params.branch !== "all") {
-    searchParams.set("branchId", String(params.branch));
+    return { field: "branch.id", operator: "eq", value: String(params.branch) };
   }
 
-  return searchParams.toString();
+  return undefined;
+}
+
+function resolveOrdersSort(params: OrderListParams): string | undefined {
+  if (shouldOmitOrdersSort(params)) {
+    return undefined;
+  }
+
+  return resolveApiListSort(params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort);
+}
+
+function buildOrdersQuery(params: OrderListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_ORDER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
+    sort: resolveOrdersSort(params),
+    filter: resolveOrderListFilter(params),
+  });
 }
 
 function buildSearchBody(params: OrderListParams): ApiSearchBody {
@@ -420,10 +427,8 @@ function buildSearchBody(params: OrderListParams): ApiSearchBody {
 
   const body: ApiSearchBody = {
     page,
-    start: (page - 1) * limit,
     limit,
-    sortField: params.sortField ?? DEFAULT_ORDER_LIST_PARAMS.sortField,
-    sortDirection: params.sortDirection ?? DEFAULT_ORDER_LIST_PARAMS.sortDirection,
+    sort: resolveOrdersSort(params),
   };
 
   const filters = buildSearchFilters(params);
