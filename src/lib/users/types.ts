@@ -1,3 +1,5 @@
+import type { ApiListSortInput } from "@/lib/api/list-query";
+
 export type UserPortalBranch = "usa" | "dr";
 
 export type UserPermission = {
@@ -95,8 +97,7 @@ export type UserSearchFilter = {
 export type UserListParams = {
   page?: number;
   limit?: number;
-  sortField?: string;
-  sortDirection?: "asc" | "desc";
+  sort?: ApiListSortInput;
   search?: UserSearchFilter;
   branch?: number | "all";
   active?: boolean | "all";
@@ -110,13 +111,12 @@ export type UserListResult = {
   total: number;
 };
 
-/** GET /users?page=1&start=0&limit=40&sortField=userName&sortDirection=asc */
+/** GET /users?page=1&limit=40&sort=userName:asc */
 export const DEFAULT_USER_LIST_PARAMS = {
   page: 1,
   limit: 40,
-  sortField: "userName",
-  sortDirection: "asc",
-} as const satisfies Pick<UserListParams, "page" | "limit" | "sortField" | "sortDirection">;
+  sort: "userName:asc",
+} as const satisfies Pick<UserListParams, "page" | "limit" | "sort">;
 
 const BRANCH_ID_TO_PORTAL: Record<number, UserPortalBranch> = {
   1: "usa",
@@ -213,24 +213,24 @@ export function createUserSearchFilter(
   return normalizeUserSearchFilter({ field, operator, value: normalizedValue });
 }
 
-export function getUserSearchSortField(field: UserSearchField): string {
+export function getUserSearchSort(field: UserSearchField, direction: "asc" | "desc" = "asc"): string {
   switch (field) {
     case "fullName":
-      return "fullName";
+      return `fullName:${direction}`;
     case "email":
-      return "email";
+      return `email:${direction}`;
     case "uid":
-      return "uid";
+      return `uid:${direction}`;
     case "type":
-      return "type";
+      return `type:${direction}`;
     case "role.name":
-      return "role.name";
+      return `role.name:${direction}`;
     case "active":
-      return "active";
+      return `active:${direction}`;
     case "branch.id":
-      return "branch.id";
+      return `branch.id:${direction}`;
     default:
-      return "userName";
+      return `userName:${direction}`;
   }
 }
 

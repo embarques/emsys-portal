@@ -1,5 +1,12 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
+import {
+  buildApiAddressPayload,
+  buildApiBranchDto,
+  type ApiAddressPayload,
+  type ApiBranchDtoPayload,
+} from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   CUSTOMER_PORTAL_BRANCHES,
@@ -79,57 +86,24 @@ type ApiCustomer = {
   addresses?: ApiAddress[];
 };
 
-type ApiAddressWritePayload = {
-  address1: string;
-  address2: string;
-  apartment: string;
-  city: string;
-  state: string;
-  zipcode: string;
-  country: string;
-};
-
-type ApiBranchSettingsWritePayload = {
-  LabelPrefix: string;
-  InvoiceCreatedThruIncomeStatement: boolean;
-  PrintLabelCount: boolean;
-  RoundDecimalPlaces: number;
-  DefaultLabelStatus: number;
-  S3Profile: string;
-  S3BucketName: string;
-  S3BucketFolder: string;
-  S3ShareLinkExpireMinutes: number;
-  ImageResampleBy: number;
-};
-
-type ApiBranchWritePayload = {
-  id: number;
-  name: string;
-  code: string;
-  address: ApiAddressWritePayload;
-  phone1: string;
-  logo: string;
-  settings: ApiBranchSettingsWritePayload;
-};
-
+/** POST/PUT /customers — see API_PAYLOADS.md */
 type ApiCustomerWritePayload = {
-  active: boolean;
-  address: ApiAddressWritePayload;
-  addresses: ApiAddressWritePayload[];
-  branch: ApiBranchWritePayload;
-  customerType?: number;
-  createdAt: string;
-  createdByID: number;
-  email: string;
-  IDNumber: string;
-  id: string;
   name: string;
-  notes: string;
-  accountBalance: number;
-  oldID: number;
+  customerType: number;
   phone1: string;
-  phone2: string;
-  updatedAt: string;
+  active: boolean;
+  email?: string;
+  IDNumber?: string;
+  phone2?: string;
+  notes?: string;
+  accountBalance?: number;
+  address?: ApiAddressPayload;
+  branch: ApiBranchDtoPayload;
+  id?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdByID?: number;
+  oldID?: number;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -258,54 +232,43 @@ function normalizePaginatedCustomers(
   };
 }
 
-/** GET /customers — list with field/operator/value search plus optional chip filters. */
-function buildCustomersQuery(params: CustomerListParams): string {
-  const page = params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page;
-  const limit = params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit;
-  const searchParams = new URLSearchParams({
-    page: String(page),
-    start: String((page - 1) * limit),
-    limit: String(limit),
-    sortField: params.sortField ?? DEFAULT_CUSTOMER_LIST_PARAMS.sortField,
-    sortDirection: params.sortDirection ?? DEFAULT_CUSTOMER_LIST_PARAMS.sortDirection,
-  });
-
+function resolveCustomerListFilter(params: CustomerListParams): ApiListFieldFilter | undefined {
   if (params.search?.value.trim()) {
     const search = normalizeCustomerSearchFilter({
       ...params.search,
       value: params.search.value.trim(),
     });
 
-    searchParams.set("field", toApiCustomerSearchField(search.field));
-    searchParams.set("operator", search.operator);
-    searchParams.set("value", search.value);
-  } else if (params.active !== undefined && params.active !== "all") {
-    searchParams.set("field", "active");
-    searchParams.set("operator", "eq");
-    searchParams.set("value", String(params.active));
-  } else if (params.branch !== undefined && params.branch !== "all") {
-    searchParams.set("field", "branch.id");
-    searchParams.set("operator", "eq");
-    searchParams.set("value", String(params.branch));
-  } else if (params.customerType !== undefined && params.customerType !== "all") {
-    searchParams.set("field", "customerType");
-    searchParams.set("operator", "eq");
-    searchParams.set("value", String(params.customerType));
+    return {
+      field: toApiCustomerSearchField(search.field),
+      operator: search.operator,
+      value: search.value,
+    };
   }
 
   if (params.active !== undefined && params.active !== "all") {
-    searchParams.set("active", String(params.active));
+    return { field: "active", operator: "eq", value: String(params.active) };
   }
 
   if (params.branch !== undefined && params.branch !== "all") {
-    searchParams.set("branchId", String(params.branch));
+    return { field: "branch.id", operator: "eq", value: String(params.branch) };
   }
 
   if (params.customerType !== undefined && params.customerType !== "all") {
-    searchParams.set("customerType", String(params.customerType));
+    return { field: "customerType", operator: "eq", value: String(params.customerType) };
   }
 
-  return searchParams.toString();
+  return undefined;
+}
+
+/** GET /customers — page, limit, sort, and optional field/operator/value filter. */
+function buildCustomersQuery(params: CustomerListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit,
+    sort: params.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort,
+    filter: resolveCustomerListFilter(params),
+  });
 }
 
 export async function fetchCustomers(
@@ -319,45 +282,6 @@ export async function fetchCustomers(
   return normalizePaginatedCustomers(response);
 }
 
-function buildAddressWritePayload(address: CustomerCoreAddress): ApiAddressWritePayload {
-  return {
-    address1: address.address1.trim(),
-    address2: address.address2.trim(),
-    apartment: address.apartment.trim(),
-    city: address.city.trim(),
-    state: address.state.trim(),
-    zipcode: address.zipcode.trim(),
-    country: address.country.trim(),
-  };
-}
-
-function buildBranchSettingsWritePayload(settings: CustomerBranchSettings): ApiBranchSettingsWritePayload {
-  return {
-    LabelPrefix: settings.labelPrefix,
-    InvoiceCreatedThruIncomeStatement: settings.invoiceCreatedThruIncomeStatement,
-    PrintLabelCount: settings.printLabelCount,
-    RoundDecimalPlaces: settings.roundDecimalPlaces,
-    DefaultLabelStatus: settings.defaultLabelStatus,
-    S3Profile: settings.s3Profile,
-    S3BucketName: settings.s3BucketName,
-    S3BucketFolder: settings.s3BucketFolder,
-    S3ShareLinkExpireMinutes: settings.s3ShareLinkExpireMinutes,
-    ImageResampleBy: settings.imageResampleBy,
-  };
-}
-
-function buildBranchWritePayload(branch: CustomerBranch): ApiBranchWritePayload {
-  return {
-    id: branch.id,
-    name: branch.name,
-    code: branch.code,
-    address: buildAddressWritePayload(branch.address),
-    phone1: normalizeStoredPhone(branch.phone1),
-    logo: branch.logo,
-    settings: buildBranchSettingsWritePayload(branch.settings),
-  };
-}
-
 function buildCustomerWritePayload(
   values: CustomerFormValues,
   options: { customerId?: string } = {},
@@ -365,33 +289,65 @@ function buildCustomerWritePayload(
   validateCustomerFormValues(values);
 
   const name = values.name.trim();
-
-  const addresses =
-    values.addresses.length > 0
-      ? values.addresses.map(buildAddressWritePayload)
-      : [buildAddressWritePayload(values.address)];
+  const phone1 = normalizeStoredPhone(values.phone1);
+  const phone2 = normalizeStoredPhone(values.phone2);
+  const email = values.email.trim();
+  const idNumber = values.IDNumber.trim();
+  const notes = values.notes.trim();
+  const primaryAddress = buildApiAddressPayload(values.address);
 
   const payload: ApiCustomerWritePayload = {
-    active: values.active,
-    address: addresses[0] ?? buildAddressWritePayload(values.address),
-    addresses,
-    branch: buildBranchWritePayload(values.branch),
-    createdAt: values.createdAt,
-    createdByID: values.createdByID ?? 0,
-    email: values.email.trim(),
-    IDNumber: values.IDNumber.trim(),
-    id: options.customerId ?? "",
     name,
-    notes: values.notes.trim(),
-    accountBalance: Number.isFinite(values.accountBalance) ? values.accountBalance : 0,
-    oldID: values.oldID,
-    phone1: normalizeStoredPhone(values.phone1),
-    phone2: normalizeStoredPhone(values.phone2),
-    updatedAt: values.updatedAt,
+    customerType: values.customerType ?? 1,
+    phone1,
+    active: values.active,
+    branch: buildApiBranchDto(values.branch),
   };
 
-  if (values.customerType != null) {
-    payload.customerType = values.customerType;
+  if (email) {
+    payload.email = email;
+  }
+
+  if (idNumber) {
+    payload.IDNumber = idNumber;
+  }
+
+  if (phone2) {
+    payload.phone2 = phone2;
+  }
+
+  if (notes) {
+    payload.notes = notes;
+  }
+
+  if (Number.isFinite(values.accountBalance) && values.accountBalance !== 0) {
+    payload.accountBalance = values.accountBalance;
+  }
+
+  if (primaryAddress) {
+    payload.address = primaryAddress;
+  }
+
+  if (options.customerId) {
+    payload.id = options.customerId;
+  }
+
+  if (values.createdByID != null && values.createdByID > 0) {
+    payload.createdByID = values.createdByID;
+  }
+
+  if (values.oldID > 0) {
+    payload.oldID = values.oldID;
+  }
+
+  if (options.customerId) {
+    if (values.createdAt.trim()) {
+      payload.createdAt = values.createdAt;
+    }
+
+    if (values.updatedAt.trim()) {
+      payload.updatedAt = values.updatedAt;
+    }
   }
 
   return payload;

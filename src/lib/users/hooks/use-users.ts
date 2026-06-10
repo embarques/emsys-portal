@@ -12,7 +12,7 @@ import {
 } from "@/lib/users/api/users-api";
 import {
   createUserSearchFilter,
-  getUserSearchSortField,
+  getUserSearchSort,
   type UserFormValues,
   type UserListParams,
   type UserSearchField,
@@ -38,8 +38,7 @@ function buildUserSearchParams(
   return {
     page: 1,
     limit,
-    sortField: search ? getUserSearchSortField(search.field) : "userName",
-    sortDirection: "asc",
+    sort: search ? getUserSearchSort(search.field) : "userName:asc",
     search,
     branch,
     active,

@@ -1,3 +1,4 @@
+import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { User } from "@/lib/users/types";
 import { formatPhoneForDisplay, normalizeStoredPhone } from "@/lib/utils/phone";
 
@@ -107,8 +108,7 @@ export type EmployeeSearchFilter = {
 export type EmployeeListParams = {
   page?: number;
   limit?: number;
-  sortField?: string;
-  sortDirection?: "asc" | "desc";
+  sort?: ApiListSortInput;
   search?: EmployeeSearchFilter;
   branch?: number | "all";
   active?: boolean | "all";
@@ -122,13 +122,12 @@ export type EmployeeListResult = {
   total: number;
 };
 
-/** GET /employees?page=1&start=0&limit=40&sortField=name&sortDirection=asc */
+/** GET /employees?page=1&limit=40&sort=name:asc */
 export const DEFAULT_EMPLOYEE_LIST_PARAMS = {
   page: 1,
   limit: 40,
-  sortField: "name",
-  sortDirection: "asc",
-} as const satisfies Pick<EmployeeListParams, "page" | "limit" | "sortField" | "sortDirection">;
+  sort: "name:asc",
+} as const satisfies Pick<EmployeeListParams, "page" | "limit" | "sort">;
 
 const BRANCH_ID_TO_PORTAL: Record<number, EmployeePortalBranch> = {
   1: "usa",
@@ -263,32 +262,35 @@ export function createEmployeeSearchFilter(
   return normalizeEmployeeSearchFilter({ field, operator, value: normalizedValue });
 }
 
-export function getEmployeeSearchSortField(field: EmployeeSearchField): string {
+export function getEmployeeSearchSort(
+  field: EmployeeSearchField,
+  direction: "asc" | "desc" = "asc",
+): string {
   switch (field) {
     case "title":
-      return "title";
+      return `title:${direction}`;
     case "department":
-      return "department";
+      return `department:${direction}`;
     case "email":
-      return "email";
+      return `email:${direction}`;
     case "phone1":
-      return "phone1";
+      return `phone1:${direction}`;
     case "phone2":
-      return "phone2";
+      return `phone2:${direction}`;
     case "active":
-      return "active";
+      return `active:${direction}`;
     case "startDate":
-      return "startDate";
+      return `startDate:${direction}`;
     case "endDate":
-      return "endDate";
+      return `endDate:${direction}`;
     case "id":
-      return "id";
+      return `id:${direction}`;
     case "branch.code":
-      return "branch.code";
+      return `branch.code:${direction}`;
     case "branch.id":
-      return "branch.id";
+      return `branch.id:${direction}`;
     default:
-      return field;
+      return `name:${direction}`;
   }
 }
 

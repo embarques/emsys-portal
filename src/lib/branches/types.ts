@@ -1,3 +1,4 @@
+import type { ApiListSortInput } from "@/lib/api/list-query";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 export type BranchAddress = {
@@ -87,19 +88,17 @@ export type BranchFilterState = {
 export type BranchListParams = {
   page?: number;
   limit?: number;
-  sortField?: string;
-  sortDirection?: "asc" | "desc";
+  sort?: ApiListSortInput;
   search?: BranchSearchFilter;
   type?: string;
 };
 
-/** GET /branches?page=1&start=0&limit=40&sortField=name&sortDirection=asc */
+/** GET /branches?page=1&limit=40&sort=name:asc */
 export const DEFAULT_BRANCH_LIST_PARAMS = {
   page: 1,
   limit: 40,
-  sortField: "name",
-  sortDirection: "asc",
-} as const satisfies Pick<BranchListParams, "page" | "limit" | "sortField" | "sortDirection">;
+  sort: "name:asc",
+} as const satisfies Pick<BranchListParams, "page" | "limit" | "sort">;
 
 export const BRANCH_SEARCH_FIELDS: { value: BranchSearchField; label: string }[] = [
   { value: "name", label: "Name" },

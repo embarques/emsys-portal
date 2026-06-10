@@ -1,3 +1,4 @@
+import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { Customer, CustomerAddress, CustomerPhone } from "@/lib/customers/types";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 import { createRecordId } from "@/lib/customers/types";
@@ -99,8 +100,7 @@ export type OrderSearchFilter = {
 export type OrderListParams = {
   page?: number;
   limit?: number;
-  sortField?: string;
-  sortDirection?: "asc" | "desc";
+  sort?: ApiListSortInput;
   search?: OrderSearchFilter;
   branch?: OrderBranchFilter;
   completed?: OrderCompletedFilter;
@@ -109,9 +109,8 @@ export type OrderListParams = {
 export const DEFAULT_ORDER_LIST_PARAMS = {
   page: 1,
   limit: 40,
-  sortField: "date",
-  sortDirection: "asc",
-} as const satisfies Pick<OrderListParams, "page" | "limit" | "sortField" | "sortDirection">;
+  sort: "date:asc",
+} as const satisfies Pick<OrderListParams, "page" | "limit" | "sort">;
 
 export type OrderFilterState = {
   query: string;
