@@ -13,7 +13,9 @@ Use this document when wiring the Next.js client to `emsys-api`.
 | Users | `src/lib/users/api/users-api.ts` |
 | Branches | `src/lib/branches/api/branches-api.ts` |
 | Pickups (orders) | `src/lib/orders/api/orders-api.ts` |
-| Dev API proxy (`/api/*`) | `src/app/api/[...path]/route.ts` |
+| API base URL | `src/lib/api/base-url.ts` (`NEXT_PUBLIC_API_BASE_URL`) |
+
+The portal calls the API **directly** from the browser (no Next.js `/api` proxy). Ensure API CORS allows your portal origin.
 
 Modules not yet on the API (invoices, containers, etc.) should follow the payloads in this file when migrated.
 

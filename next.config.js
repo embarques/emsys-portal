@@ -6,11 +6,11 @@ const nextConfig = {
   // Add your current LAN IP here if it changes.
   allowedDevOrigins: [
     '10.1.5.142',
-    '10.1.5.142:3001',
+    '10.1.5.142:3000',
     'localhost',
-    'localhost:3001',
+    'localhost:3000',
     '127.0.0.1',
-    '127.0.0.1:3001',
+    '127.0.0.1:3000',
   ],
 
   // Prevents Next.js from selecting /Users/hectorm as the workspace root
@@ -20,8 +20,6 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
-
-  // API proxy: src/app/api/[...path]/route.ts forwards /api/* to NEXT_PUBLIC_API_BASE_URL.
 };
 
 module.exports = nextConfig;

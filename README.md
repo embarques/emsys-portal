@@ -62,15 +62,9 @@ Start your local EMSYS API first, then:
 npm run dev:local
 ```
 
-### Why `/api/*` in the browser?
+### Direct API calls (no Next.js proxy)
 
-In development, the browser calls same-origin URLs like:
-
-```txt
-http://localhost:3001/api/users/permissions
-```
-
-The Route Handler at `src/app/api/[...path]/route.ts` proxies those requests to the configured API base URL (for example `https://api.embarqueros.com/v1` or `http://localhost:8080/v1`). This avoids CORS blocks when the portal (`localhost:3001`) and the API are on different origins, and forwards POST/PUT bodies and auth headers reliably.
+The browser calls `NEXT_PUBLIC_API_BASE_URL` directly (for example `https://api.embarqueros.com/v1/customers`). The EMSYS API must allow the portal origin in CORS (for local dev: `http://localhost:3000`).
 
 ### Env files
 
