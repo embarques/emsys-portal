@@ -70,7 +70,7 @@ In development, the browser calls same-origin URLs like:
 http://localhost:3001/api/users/permissions
 ```
 
-Next.js proxies those requests to the configured API base URL (for example `https://api.embarqueros.com/v1` or `http://localhost:8080/v1`). This avoids CORS blocks when the portal (`localhost:3001`) and the API are on different origins.
+The Route Handler at `src/app/api/[...path]/route.ts` proxies those requests to the configured API base URL (for example `https://api.embarqueros.com/v1` or `http://localhost:8080/v1`). This avoids CORS blocks when the portal (`localhost:3001`) and the API are on different origins, and forwards POST/PUT bodies and auth headers reliably.
 
 ### Env files
 
@@ -82,6 +82,16 @@ Next.js proxies those requests to the configured API base URL (for example `http
 Copy `.env.local.example` to `.env.local` if you need local-only auth settings.
 
 Restart the dev server after changing env files.
+
+### API developer docs
+
+| Doc | Purpose |
+|-----|---------|
+| [`API_PAYLOADS.md`](./API_PAYLOADS.md) | POST/PUT request bodies for every EMSYS endpoint (canonical copy/paste reference) |
+| [`API-List-Query.md`](./API-List-Query.md) | GET list query format (`page`, `limit`, `sort`, filters) |
+| [`API-Permission.md`](./API-Permission.md) | Route permissions and sidebar gating |
+
+Write payload builders live in `src/lib/api/payloads.ts` and each feature's `src/lib/<feature>/api/*-api.ts` file.
 
 ## Included
 

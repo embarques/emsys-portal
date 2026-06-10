@@ -1,4 +1,4 @@
-/** Same-origin dev proxy prefix (see next.config.js rewrites). */
+/** Same-origin dev proxy prefix (see src/app/api/[...path]/route.ts). */
 export const DEV_API_PROXY_PREFIX = "/api";
 
 function normalizeBaseUrl(url: string): string {

@@ -1,6 +1,11 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
+import {
+  buildApiAddressPayload,
+  type ApiAddressPayload,
+  type ApiBranchSettingsPayload,
+} from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   DEFAULT_BRANCH_LIST_PARAMS,
@@ -60,41 +65,18 @@ type ApiBranch = {
   settings?: ApiBranchSettings;
 };
 
-type ApiAddressWritePayload = {
-  address1: string;
-  address2: string;
-  apartment: string;
-  city: string;
-  country: string;
-  state: string;
-  zipcode: string;
-};
-
-type ApiBranchSettingsWritePayload = {
-  defaultLabelStatus: number;
-  imageResampleBy: number;
-  invoiceCreatedThruIncomeStatement: boolean;
-  labelPrefix: string;
-  printLabelCount: boolean;
-  roundDecimalPlaces: number;
-  s3BucketFolder: string;
-  s3BucketName: string;
-  s3Profile: string;
-  s3ShareLinkExpireMinutes: number;
-};
-
+/** POST/PUT /branches — see API_PAYLOADS.md */
 type ApiBranchWritePayload = {
-  address: ApiAddressWritePayload;
-  code: string;
-  created: string;
-  disclaimer: string;
-  id: number;
-  logo: string;
   name: string;
-  phone1: string;
-  phone2: string;
-  settings: ApiBranchSettingsWritePayload;
   type: string;
+  code: string;
+  phone1: string;
+  phone2?: string;
+  disclaimer?: string;
+  logo?: string;
+  address?: ApiAddressPayload;
+  settings?: ApiBranchSettingsPayload;
+  id?: number;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -204,16 +186,50 @@ function buildBranchesQuery(params: BranchListParams): string {
   });
 }
 
-function buildAddressWritePayload(address: BranchAddress): ApiAddressWritePayload {
-  return {
-    address1: address.address1.trim(),
-    address2: address.address2.trim(),
-    apartment: address.apartment.trim(),
-    city: address.city.trim(),
-    country: address.country.trim(),
-    state: address.state.trim(),
-    zipcode: address.zipcode.trim(),
-  };
+function buildBranchSettingsPayload(settings: BranchSettings): ApiBranchSettingsPayload | undefined {
+  const payload: ApiBranchSettingsPayload = {};
+
+  if (settings.labelPrefix.trim()) {
+    payload.labelPrefix = settings.labelPrefix.trim();
+  }
+
+  if (settings.roundDecimalPlaces > 0) {
+    payload.roundDecimalPlaces = settings.roundDecimalPlaces;
+  }
+
+  if (settings.defaultLabelStatus > 0) {
+    payload.defaultLabelStatus = settings.defaultLabelStatus;
+  }
+
+  if (settings.invoiceCreatedThruIncomeStatement) {
+    payload.invoiceCreatedThruIncomeStatement = true;
+  }
+
+  if (settings.printLabelCount) {
+    payload.printLabelCount = true;
+  }
+
+  if (settings.imageResampleBy > 0) {
+    payload.imageResampleBy = settings.imageResampleBy;
+  }
+
+  if (settings.s3Profile.trim()) {
+    payload.s3Profile = settings.s3Profile.trim();
+  }
+
+  if (settings.s3BucketName.trim()) {
+    payload.s3BucketName = settings.s3BucketName.trim();
+  }
+
+  if (settings.s3BucketFolder.trim()) {
+    payload.s3BucketFolder = settings.s3BucketFolder.trim();
+  }
+
+  if (settings.s3ShareLinkExpireMinutes > 0) {
+    payload.s3ShareLinkExpireMinutes = settings.s3ShareLinkExpireMinutes;
+  }
+
+  return Object.keys(payload).length > 0 ? payload : undefined;
 }
 
 function buildBranchWritePayload(
@@ -223,19 +239,44 @@ function buildBranchWritePayload(
   const name = values.name.trim();
   if (!name) throw new Error("Branch name is required.");
 
-  return {
-    address: buildAddressWritePayload(values.address),
-    code: values.code.trim(),
-    created: values.created,
-    disclaimer: values.disclaimer.trim(),
-    id: options.branchId ?? values.id ?? 0,
-    logo: values.logo.trim(),
+  const phone2 = normalizeStoredPhone(values.phone2);
+  const disclaimer = values.disclaimer.trim();
+  const logo = values.logo.trim();
+  const address = buildApiAddressPayload(values.address);
+  const settings = buildBranchSettingsPayload(values.settings);
+
+  const payload: ApiBranchWritePayload = {
     name,
-    phone1: normalizeStoredPhone(values.phone1),
-    phone2: normalizeStoredPhone(values.phone2),
-    settings: { ...values.settings },
     type: values.type.trim(),
+    code: values.code.trim(),
+    phone1: normalizeStoredPhone(values.phone1),
   };
+
+  if (options.branchId != null) {
+    payload.id = options.branchId;
+  }
+
+  if (phone2) {
+    payload.phone2 = phone2;
+  }
+
+  if (disclaimer) {
+    payload.disclaimer = disclaimer;
+  }
+
+  if (logo) {
+    payload.logo = logo;
+  }
+
+  if (address) {
+    payload.address = address;
+  }
+
+  if (settings) {
+    payload.settings = settings;
+  }
+
+  return payload;
 }
 
 function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackMessage: string) {

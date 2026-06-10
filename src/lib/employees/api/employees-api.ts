@@ -1,6 +1,12 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
+import {
+  buildApiAddressPayload,
+  buildApiBranchRef,
+  type ApiAddressPayload,
+  type ApiBranchRefPayload,
+} from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   DEFAULT_EMPLOYEE_LIST_PARAMS,
@@ -24,26 +30,10 @@ type ApiAddress = {
   zipcode?: string;
 };
 
-type ApiAddressWritePayload = {
-  address1: string;
-  address2: string;
-  apartment: string;
-  city: string;
-  country: string;
-  state: string;
-  zipcode: string;
-};
-
 type ApiBranch = {
   id?: number;
   code?: string;
   name?: string;
-};
-
-type ApiBranchWritePayload = {
-  id: number;
-  name: string;
-  code: string;
 };
 
 type ApiEmployee = {
@@ -69,27 +59,28 @@ type ApiEmployee = {
   updatedAt?: string;
 };
 
+/** POST/PUT /employees — see API_PAYLOADS.md */
 type ApiEmployeeWritePayload = {
-  active: boolean;
-  address: ApiAddressWritePayload;
-  branch: ApiBranchWritePayload;
-  cost: number;
-  createdAt: string;
-  department: string;
-  email: string;
-  endDate: string;
-  id: number;
-  loanAmountOwed: number;
-  loanBalanceUpdated: string;
   name: string;
-  phone1: string;
-  phone2: string;
-  startDate: string;
   title: string;
-  totalLoanGiven: number;
-  totalPaymentReceived: number;
-  updatedAt: string;
-  user?: { id: number } | null;
+  department: string;
+  phone1: string;
+  active: boolean;
+  branch: ApiBranchRefPayload;
+  email?: string;
+  phone2?: string;
+  address?: ApiAddressPayload;
+  cost?: number;
+  startDate?: string;
+  endDate?: string;
+  loanAmountOwed?: number;
+  loanBalanceUpdated?: string;
+  totalLoanGiven?: number;
+  totalPaymentReceived?: number;
+  user?: { id: number };
+  id?: number;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -225,26 +216,6 @@ function buildEmployeesQuery(params: EmployeeListParams): string {
   });
 }
 
-function buildAddressWritePayload(address?: Partial<EmployeeAddress>): ApiAddressWritePayload {
-  return {
-    address1: address?.address1?.trim() ?? "",
-    address2: address?.address2?.trim() ?? "",
-    apartment: address?.apartment?.trim() ?? "",
-    city: address?.city?.trim() ?? "",
-    country: address?.country?.trim() ?? "",
-    state: address?.state?.trim() ?? "",
-    zipcode: address?.zipcode?.trim() ?? "",
-  };
-}
-
-function buildBranchWritePayload(branch: EmployeeBranch): ApiBranchWritePayload {
-  return {
-    id: branch.id,
-    name: branch.name,
-    code: branch.code,
-  };
-}
-
 function buildEmployeeWritePayload(
   values: EmployeeFormValues,
   options: { id?: number; existing?: Employee } = {},
@@ -252,6 +223,9 @@ function buildEmployeeWritePayload(
   const name = values.name.trim();
   const department = values.department.trim();
   const title = values.title.trim();
+  const email = values.email.trim();
+  const phone1 = normalizeStoredPhone(values.phone1);
+  const phone2 = normalizeStoredPhone(values.phone2);
 
   if (!name) throw new Error("Employee name is required.");
   if (!department) throw new Error("Department is required.");
@@ -262,29 +236,71 @@ function buildEmployeeWritePayload(
   }
 
   const payload: ApiEmployeeWritePayload = {
-    active: values.active,
-    address: buildAddressWritePayload(values.address),
-    branch: buildBranchWritePayload(values.branch),
-    cost: Number(values.cost) || 0,
-    createdAt: values.createdAt || options.existing?.createdAt || new Date().toISOString(),
-    department,
-    email: values.email.trim(),
-    endDate: values.endDate,
-    id: options.id ?? 0,
-    loanAmountOwed: values.loanAmountOwed,
-    loanBalanceUpdated: values.loanBalanceUpdated,
     name,
-    phone1: normalizeStoredPhone(values.phone1),
-    phone2: normalizeStoredPhone(values.phone2),
-    startDate: values.startDate,
     title,
-    totalLoanGiven: values.totalLoanGiven,
-    totalPaymentReceived: values.totalPaymentReceived,
-    updatedAt: values.updatedAt || new Date().toISOString(),
+    department,
+    phone1,
+    active: values.active,
+    branch: buildApiBranchRef(values.branch),
   };
+
+  if (email) {
+    payload.email = email;
+  }
+
+  if (phone2) {
+    payload.phone2 = phone2;
+  }
+
+  const address = buildApiAddressPayload(values.address ?? {});
+  if (address) {
+    payload.address = address;
+  }
+
+  if (options.id != null) {
+    payload.id = options.id;
+  }
+
+  if (Number.isFinite(values.cost) && values.cost !== 0) {
+    payload.cost = values.cost;
+  }
+
+  if (values.startDate.trim()) {
+    payload.startDate = values.startDate;
+  }
+
+  if (values.endDate.trim()) {
+    payload.endDate = values.endDate;
+  }
+
+  if (values.loanAmountOwed !== 0) {
+    payload.loanAmountOwed = values.loanAmountOwed;
+  }
+
+  if (values.loanBalanceUpdated.trim()) {
+    payload.loanBalanceUpdated = values.loanBalanceUpdated;
+  }
+
+  if (values.totalLoanGiven !== 0) {
+    payload.totalLoanGiven = values.totalLoanGiven;
+  }
+
+  if (values.totalPaymentReceived !== 0) {
+    payload.totalPaymentReceived = values.totalPaymentReceived;
+  }
 
   if (values.user?.id) {
     payload.user = { id: values.user.id };
+  }
+
+  if (options.id != null) {
+    if (values.createdAt.trim() || options.existing?.createdAt) {
+      payload.createdAt = values.createdAt || options.existing?.createdAt;
+    }
+
+    if (values.updatedAt.trim()) {
+      payload.updatedAt = values.updatedAt;
+    }
   }
 
   return payload;

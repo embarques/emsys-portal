@@ -6,9 +6,15 @@ import {
   resolveApiListSort,
   type ApiListFieldFilter,
 } from "@/lib/api/list-query";
+import {
+  buildApiAddressPayload,
+  buildApiBranchRef,
+  type ApiAddressPayload,
+  type ApiBranchRefPayload,
+} from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { normalizeApiCustomer } from "@/lib/customers/api/customers-api";
-import type { Customer, CustomerCoreAddress } from "@/lib/customers/types";
+import type { Customer } from "@/lib/customers/types";
 import { CUSTOMER_PORTAL_BRANCHES } from "@/lib/customers/types";
 import type { Employee } from "@/lib/employees/types";
 import { normalizeApiUser } from "@/lib/users/api/users-api";
@@ -71,26 +77,36 @@ type ApiPickup = {
   sector?: ApiSectorRef;
 };
 
-type ApiCustomerWriteRef = {
+type ApiPickupCustomerRef = {
+  name: string;
+  customerType: number;
+  phone1: string;
+  email?: string;
+  IDNumber?: string;
+  phone2?: string;
   id?: string;
   oldID?: number;
-  name: string;
-  phone1?: string;
-  phone2?: string;
-  email?: string;
-  address?: ApiAddress;
+  address?: ApiAddressPayload;
 };
 
+type ApiPickupEmployeeRef = {
+  id: number;
+  name?: string;
+  phone1?: string;
+  active?: boolean;
+};
+
+/** POST/PUT /pickups — see API_PAYLOADS.md */
 type ApiPickupWritePayload = {
   date: string;
-  completed: boolean;
-  branch: { id: number };
-  sender: ApiCustomerWriteRef;
-  receiver?: ApiCustomerWriteRef;
-  purpose: string;
-  comments: ApiComment[];
-  sector?: { id: number };
-  employee?: { id: number };
+  branch: ApiBranchRefPayload;
+  sender: ApiPickupCustomerRef;
+  receiver?: ApiPickupCustomerRef;
+  purpose?: string;
+  comments?: ApiComment[];
+  sector?: { id: number; name?: string };
+  employee?: ApiPickupEmployeeRef;
+  completed?: boolean;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -456,27 +472,52 @@ export async function fetchOrders(params: OrderListParams = {}): Promise<Paginat
   return normalizePaginatedOrders(response);
 }
 
-function buildApiAddressFromCustomer(address: CustomerCoreAddress): ApiAddress {
-  return {
-    address1: address.address1.trim(),
-    apartment: address.apartment.trim(),
-    city: address.city.trim(),
-    state: address.state.trim(),
-    zipcode: address.zipcode.trim(),
-    country: address.country.trim() || "US",
-  };
+function resolvePickupBranchRef(branchId: number): ApiBranchRefPayload {
+  const config =
+    CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.id === branchId) ?? CUSTOMER_PORTAL_BRANCHES[0];
+
+  return buildApiBranchRef({ id: config.id, code: config.code });
 }
 
-function buildApiCustomerRef(customer: Customer): ApiCustomerWriteRef {
-  return {
-    id: customer.id.trim() || undefined,
-    oldID: customer.oldID > 0 ? customer.oldID : undefined,
-    name: customer.name.trim(),
-    phone1: normalizeStoredPhone(customer.phone1) || undefined,
-    phone2: normalizeStoredPhone(customer.phone2) || undefined,
-    email: customer.email.trim() || undefined,
-    address: buildApiAddressFromCustomer(customer.address),
+function buildPickupCustomerRef(customer: Customer): ApiPickupCustomerRef {
+  const name = customer.name.trim();
+  const phone1 = normalizeStoredPhone(customer.phone1);
+  const email = customer.email.trim();
+  const idNumber = customer.IDNumber.trim();
+  const phone2 = normalizeStoredPhone(customer.phone2);
+  const address = buildApiAddressPayload(customer.address);
+
+  const payload: ApiPickupCustomerRef = {
+    name,
+    customerType: customer.customerType ?? 1,
+    phone1,
   };
+
+  if (customer.id.trim()) {
+    payload.id = customer.id.trim();
+  }
+
+  if (customer.oldID > 0) {
+    payload.oldID = customer.oldID;
+  }
+
+  if (email) {
+    payload.email = email;
+  }
+
+  if (idNumber) {
+    payload.IDNumber = idNumber;
+  }
+
+  if (phone2) {
+    payload.phone2 = phone2;
+  }
+
+  if (address) {
+    payload.address = address;
+  }
+
+  return payload;
 }
 
 function buildApiCommentsFromFormValues(values: OrderFormValues): ApiComment[] {
@@ -497,18 +538,26 @@ function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload
     throw new Error("Sender is required.");
   }
 
-  const date = values.date ? `${values.date}T00:00:00Z` : new Date().toISOString();
+  const date = values.date.trim() || new Date().toISOString().slice(0, 10);
+  const purpose = values.purpose.trim();
+  const comments = buildApiCommentsFromFormValues(values);
+
   const payload: ApiPickupWritePayload = {
     date,
-    completed: values.completed,
-    branch: { id: values.branchId },
-    sender: buildApiCustomerRef(values.sender),
-    purpose: values.purpose.trim(),
-    comments: buildApiCommentsFromFormValues(values),
+    branch: resolvePickupBranchRef(values.branchId),
+    sender: buildPickupCustomerRef(values.sender),
   };
 
+  if (purpose) {
+    payload.purpose = purpose;
+  }
+
+  if (comments.length > 0) {
+    payload.comments = comments;
+  }
+
   if (values.receiver) {
-    payload.receiver = buildApiCustomerRef(values.receiver);
+    payload.receiver = buildPickupCustomerRef(values.receiver);
   }
 
   if (values.sectorId !== "" && values.sectorId > 0) {
@@ -517,6 +566,10 @@ function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload
 
   if (values.employeeId !== "" && values.employeeId > 0) {
     payload.employee = { id: values.employeeId };
+  }
+
+  if (values.id > 0) {
+    payload.completed = values.completed;
   }
 
   return payload;

@@ -21,20 +21,7 @@ const nextConfig = {
     root: __dirname,
   },
 
-  // Browser calls same-origin /api/* → NEXT_PUBLIC_API_BASE_URL/* (dev + production).
-  async rewrites() {
-    const target = (process.env.NEXT_PUBLIC_API_BASE_URL || '').trim().replace(/\/+$/, '');
-    if (!target.startsWith('http')) {
-      return [];
-    }
-
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${target}/:path*`,
-      },
-    ];
-  },
+  // API proxy: src/app/api/[...path]/route.ts forwards /api/* to NEXT_PUBLIC_API_BASE_URL.
 };
 
 module.exports = nextConfig;

@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
+import { buildApiBranchDto, buildApiRoleRef } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   createEmptyUserRole,
@@ -65,19 +66,18 @@ type ApiUser = {
   updatedAt?: string;
 };
 
+/** POST/PUT /users — see API_PAYLOADS.md */
 type ApiUserWritePayload = {
-  accessCode: number;
-  active: boolean;
-  branch: { id: number };
-  branches: { id: number }[];
-  email: string;
-  fullName: string;
-  role: { id: number };
-  userName: string;
-  user: string;
   uid?: string;
+  email: string;
+  userName: string;
+  fullName: string;
+  active: boolean;
+  branch: ReturnType<typeof buildApiBranchDto>;
+  role: ReturnType<typeof buildApiRoleRef>;
   password?: string;
   id?: number;
+  accessCode?: number;
   type?: string;
   startTime?: string;
   endTime?: string;
@@ -258,15 +258,12 @@ function buildUserWritePayload(
   }
 
   const payload: ApiUserWritePayload = {
-    accessCode: values.accessCode,
-    active: values.active,
-    branch: { id: branchId },
-    branches: [{ id: branchId }],
     email,
-    fullName,
-    role: { id: values.role.id },
     userName,
-    user: values.user?.trim() || userName,
+    fullName,
+    active: values.active,
+    branch: buildApiBranchDto(values.branch),
+    role: buildApiRoleRef(values.role),
   };
 
   if (options.userId != null) {
@@ -280,6 +277,10 @@ function buildUserWritePayload(
 
   if (password) {
     payload.password = password;
+  }
+
+  if (values.accessCode > 0) {
+    payload.accessCode = values.accessCode;
   }
 
   const type = values.type.trim();
