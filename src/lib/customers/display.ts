@@ -1,9 +1,9 @@
 import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
 import { formatPhoneForDisplay } from "@/lib/utils/phone";
 import type { ClientType, Customer, CustomerAddress, CustomerCoreAddress, CustomerPortalBranch } from "./types";
+import { isCustomerReceiverType, isCustomerSenderType } from "./customer-type";
 import {
   CLIENT_TYPES,
-  CUSTOMER_ACTIVE_OPTIONS,
   getCustomerAddresses,
   getCustomerClientType,
   getCustomerPhones,
@@ -16,24 +16,13 @@ export function getClientTypeLabel(clientType: ClientType): string {
 }
 
 export function getCustomerTypeLabel(customer: Customer): string {
-  if (customer.customerType == null) return "—";
-  return `Type ${customer.customerType}`;
+  return isCustomerReceiverType(customer.customerType) ? "Receiver" : "Sender";
 }
 
 export function getClientTypeBadgeClass(clientType: ClientType): string {
   return clientType === "sender"
     ? "border-transparent bg-primary/15 text-primary"
     : "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
-}
-
-export function getCustomerActiveLabel(active: boolean): string {
-  return CUSTOMER_ACTIVE_OPTIONS.find((entry) => entry.value === active)?.label ?? (active ? "Active" : "Inactive");
-}
-
-export function getCustomerActiveBadgeClass(active: boolean): string {
-  return active
-    ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-    : "border-transparent bg-muted text-muted-foreground";
 }
 
 export function getCustomerBranchLabel(branch: CustomerPortalBranch): string {
@@ -136,6 +125,13 @@ export function formatCustomerBranchLabel(customer: Customer): string {
   return details ? `${branchLabel} (${details})` : branchLabel;
 }
 
+export function formatReceiversSummary(customer: Pick<Customer, "receivers">): string {
+  if (customer.receivers.length === 0) return "—";
+  if (customer.receivers.length === 1) return truncateCustomerId(customer.receivers[0]!);
+
+  return `${customer.receivers.length} linked`;
+}
+
 export function truncateCustomerId(customerId: string): string {
   return customerId.length > 12 ? `${customerId.slice(0, 8)}…` : customerId;
 }
@@ -173,8 +169,8 @@ export function customerMatchesQuery(customer: Customer, query: string): boolean
     customer.branch.code,
     customer.branch.name,
     clientType ? getClientTypeLabel(clientType) : "",
-    getCustomerActiveLabel(customer.active),
     customer.customerType != null ? String(customer.customerType) : "",
+    ...customer.receivers,
   ]
     .join(" ")
     .toLowerCase()
@@ -184,9 +180,7 @@ export function customerMatchesQuery(customer: Customer, query: string): boolean
 export function computeCustomerKpis(customers: Customer[]) {
   return {
     total: customers.length,
-    active: customers.filter((customer) => customer.active).length,
-    inactive: customers.filter((customer) => !customer.active).length,
-    type1: customers.filter((customer) => customer.customerType === 1).length,
+    senders: customers.filter((customer) => isCustomerSenderType(customer.customerType)).length,
   };
 }
 

@@ -48,7 +48,7 @@ export const queryKeys = {
     list: (params: CustomerListParams) => [...queryKeys.customers.lists(), params] as const,
     search: (search: CustomerSearchFilter | undefined, limit: number) =>
       [...queryKeys.customers.all, "search", search, limit] as const,
-    stats: (scope: "all" | "active" | "inactive" | "type1") =>
+    stats: (scope: "all" | "active" | "inactive" | "senders" | "receivers") =>
       [...queryKeys.customers.all, "stats", scope] as const,
     detail: (customerId: string) => [...queryKeys.customers.all, "detail", customerId] as const,
   },

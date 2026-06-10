@@ -6,19 +6,23 @@ import {
   ChevronRight,
   DollarSign,
   FileText,
-  Pencil,
   Plus,
   Receipt,
-  Search,
   Trash2,
 } from "lucide-react";
 
 import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+  TableFilterSection,
+} from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,7 +35,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeInvoiceKpis,
@@ -90,6 +93,7 @@ export function InvoicesWorkspace() {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | Invoice[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const suggestedInvoiceNumber = useMemo(() => suggestNextInvoiceNumber(invoices), [invoices]);
 
@@ -373,43 +377,12 @@ export function InvoicesWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (invoice) => formatAuditDate(invoice.updatedAt),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (invoice) => (
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={`Edit invoice ${invoice.invoiceNumber}`}
-            onClick={() => openEditForm(invoice)}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            aria-label={`Delete invoice ${invoice.invoiceNumber}`}
-            onClick={() => {
-              setViewInvoice(null);
-              setDeleteTarget(invoice);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("invoices", tableColumns);
+  const activeFilterCount = filters.paymentLocation !== "all" ? 1 : 0;
+  const hasActiveFilters =
+    Boolean(filters.query.trim()) || filters.paymentLocation !== "all";
 
   return (
     <div>
@@ -444,84 +417,73 @@ export function InvoicesWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Invoice directory</CardTitle>
-              <CardDescription>Search by invoice number, container, parties, or line items.</CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
-                    setPage(1);
-                  }}
-                  className="pl-9"
-                  placeholder="Search invoices..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+          <CardTitle>Invoice directory</CardTitle>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Paid at</span>
-            {paymentFilters.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                size="sm"
-                variant={filters.paymentLocation === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, paymentLocation: option.value }));
+          <TableDirectoryToolbar
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-              >
-                {option.label}
-              </Button>
-            ))}
-            {filters.query || filters.paymentLocation !== "all" ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setFilters(defaultFilters);
-                  setPage(1);
-                }}
-              >
-                Clear search & filters
-              </Button>
-            ) : null}
-          </div>
-        </CardHeader>
-
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() =>
-                  setDeleteTarget(invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)))
+                placeholder="Search invoices..."
+              />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${filteredInvoices.length} of ${invoices.length} invoices`}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
                 }
               >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+            <TableFilterSection label="Paid at">
+              {paymentFilters.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant={filters.paymentLocation === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, paymentLocation: option.value }));
+                    setPage(1);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
+              </TableFilterPanel>
+            }
+          />
+        </CardHeader>
+
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={pageInvoices.map((invoice) => invoice.invoiceId)}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const invoice = pageInvoices.find((entry) => entry.invoiceId === selectedIds[0]);
+            if (invoice) openEditForm(invoice);
+          }}
+          onDelete={() =>
+            setDeleteTarget(invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)))
+          }
+        />
 
         <DataTable
           columns={columnVisibility.columns}
           rows={pageInvoices}
+          page={currentPage}
           rowKey={(invoice) => invoice.invoiceId}
           rowLabel={(invoice) => invoice.invoiceNumber}
           columnLayout={columnVisibility}
@@ -532,6 +494,7 @@ export function InvoicesWorkspace() {
           onToggleSelectAll={toggleSelectAll}
           onToggleSelect={toggleSelect}
           onRowClick={setViewInvoice}
+          onRowDoubleClick={openEditForm}
           emptyState={
             <>
               <p className="text-muted-foreground">No invoices match your search or filters.</p>

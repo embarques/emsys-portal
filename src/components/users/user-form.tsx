@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatAuditDate } from "@/lib/audit/display";
 import {
   USER_ACTIVE_OPTIONS,
   USER_PORTAL_BRANCHES,
@@ -80,7 +79,7 @@ export function UserForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="id">id</Label>
+        <Label htmlFor="id">User ID</Label>
         <Input
           id="id"
           value={values.id > 0 ? String(values.id) : "Assigned after save"}
@@ -275,19 +274,6 @@ export function UserForm({
           placeholder="Defaults to userName when empty"
         />
       </div>
-
-      {isEditing ? (
-        <div className="grid gap-4 rounded-md border bg-muted/20 p-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">createdAt</p>
-            <p className="text-sm">{values.createdAt ? formatAuditDate(values.createdAt) : "—"}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">updatedAt</p>
-            <p className="text-sm">{values.updatedAt ? formatAuditDate(values.updatedAt) : "—"}</p>
-          </div>
-        </div>
-      ) : null}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>

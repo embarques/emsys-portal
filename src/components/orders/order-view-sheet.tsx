@@ -14,6 +14,7 @@ import {
 import { formatCoreAddressLine } from "@/lib/customers/display";
 import { formatPhoneForDisplay } from "@/lib/utils/phone";
 import { formatAuditDate } from "@/lib/audit/display";
+import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import {
   formatCustomerPartySummary,
   formatEmployeeSummary,
@@ -88,20 +89,20 @@ export function OrderViewSheet({ order, orders, open, onOpenChange, onEdit, onDe
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Pickup">
-            <RecordViewSheetDetailRow label="id" value={String(order.id)} />
-            <RecordViewSheetDetailRow label="oldID" value={order.oldID > 0 ? String(order.oldID) : "—"} />
-            <RecordViewSheetDetailRow label="date" value={formatOrderDate(order.date)} />
-            <RecordViewSheetDetailRow label="completed" value={getOrderCompletedLabel(order.completed)} />
-            <RecordViewSheetDetailRow label="purpose" value={order.purpose || "—"} />
-            <RecordViewSheetDetailRow label="branch.id" value={String(order.branch.id)} />
-            <RecordViewSheetDetailRow label="branch.name" value={order.branch.name || "—"} />
-            <RecordViewSheetDetailRow label="branch.code" value={order.branch.code || "—"} />
-            <RecordViewSheetDetailRow label="sector.id" value={order.sector ? String(order.sector.id) : "—"} />
-            <RecordViewSheetDetailRow label="sector.name" value={order.sector?.name || "—"} />
-            <RecordViewSheetDetailRow label="employee" value={formatEmployeeSummary(order.employee)} />
-            <RecordViewSheetDetailRow label="user" value={formatUserSummary(order.user)} />
-            <RecordViewSheetDetailRow label="createdAt" value={formatAuditDate(order.createdAt)} />
-            <RecordViewSheetDetailRow label="updatedAt" value={formatAuditDate(order.updatedAt)} />
+            <RecordViewSheetDetailRow label="Order ID" value={String(order.id)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("oldID")} value={order.oldID > 0 ? String(order.oldID) : "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("date")} value={formatOrderDate(order.date)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("completed")} value={getOrderCompletedLabel(order.completed)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("purpose")} value={order.purpose || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.id")} value={String(order.branch.id)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.name")} value={order.branch.name || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.code")} value={order.branch.code || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("sector.id")} value={order.sector ? String(order.sector.id) : "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("sector.name")} value={order.sector?.name || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("employee")} value={formatEmployeeSummary(order.employee)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("user")} value={formatUserSummary(order.user)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("createdAt")} value={formatAuditDate(order.createdAt)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("updatedAt")} value={formatAuditDate(order.updatedAt)} />
           </RecordViewSheetSection>
 
           <CustomerCard title="sender" customer={order.sender} />

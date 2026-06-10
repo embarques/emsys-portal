@@ -11,6 +11,7 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
+import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import {
   formatUserBranchLabel,
   getUserActiveBadgeClass,
@@ -50,33 +51,33 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Us
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Account">
-            <RecordViewSheetDetailRow label="id" value={truncateUserId(user.id)} />
-            <RecordViewSheetDetailRow label="uid" value={user.uid ? truncateUid(user.uid) : "—"} />
-            <RecordViewSheetDetailRow label="userName" value={user.userName} />
-            <RecordViewSheetDetailRow label="password" value={maskPassword(user.password)} />
-            <RecordViewSheetDetailRow label="fullName" value={user.fullName || "—"} />
-            <RecordViewSheetDetailRow label="active" value={getUserActiveLabel(user.active)} />
-            <RecordViewSheetDetailRow label="type" value={user.type || "—"} />
-            <RecordViewSheetDetailRow label="accessCode" value={String(user.accessCode)} />
-            <RecordViewSheetDetailRow label="user" value={user.user || "—"} />
+            <RecordViewSheetDetailRow label="User ID" value={truncateUserId(user.id)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("uid")} value={user.uid ? truncateUid(user.uid) : "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("userName")} value={user.userName} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("password")} value={maskPassword(user.password)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("fullName")} value={user.fullName || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("active")} value={getUserActiveLabel(user.active)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("type")} value={user.type || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("accessCode")} value={String(user.accessCode)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("user")} value={user.user || "—"} />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Role">
-            <RecordViewSheetDetailRow label="role.id" value={user.role.id > 0 ? String(user.role.id) : "—"} />
-            <RecordViewSheetDetailRow label="role.name" value={getUserRoleLabel(user.role.name)} />
-            <RecordViewSheetDetailRow label="role.active" value={getUserActiveLabel(user.role.active)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("role.id")} value={user.role.id > 0 ? String(user.role.id) : "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("role.name")} value={getUserRoleLabel(user.role.name)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("role.active")} value={getUserActiveLabel(user.role.active)} />
             <RecordViewSheetDetailRow
-              label="role.permissions"
+              label={formatTableColumnLabel("role.permissions")}
               value={user.role.permissions.length > 0 ? String(user.role.permissions.length) : "—"}
             />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Branch">
-            <RecordViewSheetDetailRow label="branch.id" value={user.branch.id > 0 ? String(user.branch.id) : "—"} />
-            <RecordViewSheetDetailRow label="branch.name" value={user.branch.name || "—"} />
-            <RecordViewSheetDetailRow label="branch.code" value={user.branch.code || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.id")} value={user.branch.id > 0 ? String(user.branch.id) : "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.name")} value={user.branch.name || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.code")} value={user.branch.code || "—"} />
             <RecordViewSheetDetailRow
-              label="branch"
+              label={formatTableColumnLabel("branch")}
               value={
                 <Badge className={getUserBranchBadgeClass(user)}>{formatUserBranchLabel(user)}</Badge>
               }
@@ -84,29 +85,29 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Us
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Schedule">
-            <RecordViewSheetDetailRow label="startTime" value={user.startTime || "—"} />
-            <RecordViewSheetDetailRow label="endTime" value={user.endTime || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("startTime")} value={user.startTime || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("endTime")} value={user.endTime || "—"} />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Contact">
-            <RecordViewSheetDetailRow label="email" value={user.email || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("email")} value={user.email || "—"} />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Audit">
             <RecordViewSheetDetailRow
-              label="createdAt"
+              label={formatTableColumnLabel("createdAt")}
               value={user.createdAt ? formatAuditDate(user.createdAt) : "—"}
             />
             <RecordViewSheetDetailRow
-              label="updatedAt"
+              label={formatTableColumnLabel("updatedAt")}
               value={user.updatedAt ? formatAuditDate(user.updatedAt) : "—"}
             />
             <RecordViewSheetDetailRow
-              label="role.createdAt"
+              label={formatTableColumnLabel("role.createdAt")}
               value={user.role.createdAt ? formatAuditDate(user.role.createdAt) : "—"}
             />
             <RecordViewSheetDetailRow
-              label="role.updatedAt"
+              label={formatTableColumnLabel("role.updatedAt")}
               value={user.role.updatedAt ? formatAuditDate(user.role.updatedAt) : "—"}
             />
           </RecordViewSheetSection>

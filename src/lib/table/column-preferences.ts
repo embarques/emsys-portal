@@ -11,7 +11,11 @@ export type TableColumnPreferences = {
 };
 
 export function buildDefaultVisibility(columns: ColumnVisibilityDefinition[]): Record<string, boolean> {
-  return Object.fromEntries(columns.filter((column) => column.hideable !== false).map((column) => [column.id, true]));
+  return Object.fromEntries(
+    columns
+      .filter((column) => column.hideable !== false)
+      .map((column) => [column.id, column.defaultVisible !== false]),
+  );
 }
 
 export function buildDefaultOrder(columns: ColumnVisibilityDefinition[]): string[] {

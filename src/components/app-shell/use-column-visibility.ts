@@ -14,6 +14,7 @@ import {
   sortColumnsByOrder,
   type TableColumnPreferences,
 } from "@/lib/table/column-preferences";
+import { clampAutoFitColumnWidth } from "@/lib/table/measure-column-width";
 import type { ColumnVisibilityDefinition } from "@/lib/table/types";
 
 export function useColumnVisibility<T extends ColumnVisibilityDefinition>(
@@ -76,6 +77,30 @@ export function useColumnVisibility<T extends ColumnVisibilityDefinition>(
     [persist, preferences]
   );
 
+  const fitColumnWidth = useCallback(
+    (id: string, width: number) => {
+      persist({
+        ...preferences,
+        widths: { ...preferences.widths, [id]: clampAutoFitColumnWidth(width) },
+      });
+    },
+    [persist, preferences]
+  );
+
+  const fitColumnWidths = useCallback(
+    (widths: Record<string, number>) => {
+      const nextWidths = { ...preferences.widths };
+      for (const [id, width] of Object.entries(widths)) {
+        nextWidths[id] = clampAutoFitColumnWidth(width);
+      }
+      persist({
+        ...preferences,
+        widths: nextWidths,
+      });
+    },
+    [persist, preferences]
+  );
+
   const reorderColumns = useCallback(
     (sourceId: string, targetId: string) => {
       persist({
@@ -123,6 +148,8 @@ export function useColumnVisibility<T extends ColumnVisibilityDefinition>(
     getColumnWidth,
     setColumnVisible,
     setColumnWidth,
+    fitColumnWidth,
+    fitColumnWidths,
     reorderColumns,
     moveColumn,
     showAllColumns,

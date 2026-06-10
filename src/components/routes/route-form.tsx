@@ -6,7 +6,6 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import {
   ROUTE_BRANCHES,
   ROUTE_PLACE_KINDS,
@@ -186,13 +185,6 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
           })}
         </div>
       </section>
-
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => updateField("createdBy", value)}
-      />
 
       {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
 

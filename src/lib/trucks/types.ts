@@ -30,8 +30,6 @@ export type TruckFormValues = {
 
 export type TruckFilterState = {
   query: string;
-  searchField: TruckSearchField;
-  searchOperator: TruckSearchOperator;
   fuelType: string | "all";
   branch: string | "all";
 };
@@ -67,7 +65,7 @@ export const TRUCK_GET_SEARCH_CAPABILITIES: {
   { field: "branch", label: "branch", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "createdBy", label: "createdBy", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "year", label: "year", operators: ["eq", "neq"] },
-  { field: "id", label: "id", operators: ["eq", "neq"] },
+  { field: "id", label: "Truck ID", operators: ["eq", "neq"] },
 ];
 
 export const TRUCK_SEARCH_FIELDS: { value: TruckSearchField; label: string }[] =
@@ -115,24 +113,11 @@ export function getDefaultTruckSearchOperator(field: TruckSearchField): TruckSea
   return getTruckSearchOperatorsForField(field)[0];
 }
 
-export function normalizeTruckSearchFilter(search: TruckSearchFilter): TruckSearchFilter {
-  const allowedOperators = getTruckSearchOperatorsForField(search.field);
-  const operator = allowedOperators.includes(search.operator)
-    ? search.operator
-    : getDefaultTruckSearchOperator(search.field);
-
-  return { field: search.field, operator, value: search.value };
-}
-
-export function createTruckSearchFilter(
-  value: string,
-  field: TruckSearchField = "name",
-  operator: TruckSearchOperator = "startsWith",
-): TruckSearchFilter | undefined {
+export function createTruckSearchFilter(value: string): TruckSearchFilter | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
 
-  return normalizeTruckSearchFilter({ field, operator, value: trimmed });
+  return { field: "name", operator: "contains", value: trimmed };
 }
 
 export function getTruckPortalBranch(branch: string): TruckPortalBranch {

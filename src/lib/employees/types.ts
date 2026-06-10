@@ -1,4 +1,5 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
+import { createApiListTextSearch, createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import type { User } from "@/lib/users/types";
 import { formatPhoneForDisplay, normalizeStoredPhone } from "@/lib/utils/phone";
 
@@ -68,8 +69,6 @@ export type EmployeeFormValues = {
 
 export type EmployeeFilterState = {
   query: string;
-  searchField: EmployeeSearchField;
-  searchOperator: EmployeeSearchOperator;
   branch: number | "all";
   active: boolean | "all";
   department: string;
@@ -99,11 +98,7 @@ export type EmployeeSearchField =
   | "branch.code"
   | "branch.id";
 
-export type EmployeeSearchFilter = {
-  field: EmployeeSearchField;
-  operator: EmployeeSearchOperator;
-  value: string;
-};
+export type EmployeeSearchFilter = ApiListTextSearch;
 
 export type EmployeeListParams = {
   page?: number;
@@ -186,7 +181,7 @@ export const EMPLOYEE_GET_SEARCH_CAPABILITIES: {
   { field: "address.zipcode", label: "address.zipcode", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "branch.code", label: "branch.code", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "branch.id", label: "branch.id", operators: ["eq", "neq"] },
-  { field: "id", label: "id", operators: ["eq", "neq"] },
+  { field: "id", label: "Employee ID", operators: ["eq", "neq"] },
 ];
 
 export const EMPLOYEE_SEARCH_FIELDS: { value: EmployeeSearchField; label: string }[] =
@@ -236,31 +231,12 @@ export function getDefaultEmployeeSearchOperator(field: EmployeeSearchField): Em
   return getEmployeeSearchOperatorsForField(field)[0];
 }
 
-export function normalizeEmployeeSearchFilter(search: EmployeeSearchFilter): EmployeeSearchFilter {
-  const allowedOperators = getEmployeeSearchOperatorsForField(search.field);
-  const operator = allowedOperators.includes(search.operator)
-    ? search.operator
-    : getDefaultEmployeeSearchOperator(search.field);
-
-  return { field: search.field, operator, value: search.value };
-}
-
 export function createEmployeeSearchFilter(
   value: string,
-  field: EmployeeSearchField = "name",
-  operator: EmployeeSearchOperator = "startsWith",
+  field?: EmployeeSearchField,
+  operator: EmployeeSearchOperator = "contains",
 ): EmployeeSearchFilter | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-
-  let normalizedValue = trimmed;
-  if (field === "active") {
-    const lower = trimmed.toLowerCase();
-    if (["active", "true", "yes"].includes(lower)) normalizedValue = "true";
-    if (["inactive", "false", "no"].includes(lower)) normalizedValue = "false";
-  }
-
-  return normalizeEmployeeSearchFilter({ field, operator, value: normalizedValue });
+  return createApiListTextSearch(value, field, operator);
 }
 
 export function getEmployeeSearchSort(

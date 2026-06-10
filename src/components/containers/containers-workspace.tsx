@@ -6,19 +6,19 @@ import {
   ChevronRight,
   Container,
   DollarSign,
-  Pencil,
   Plus,
-  Search,
   Ship,
   Trash2,
 } from "lucide-react";
 
 import { ContainerForm } from "@/components/containers/container-form";
 import { ContainerViewSheet } from "@/components/containers/container-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeContainerKpis,
@@ -240,40 +239,6 @@ export function ContainersWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (container) => formatAuditDate(container.updatedAt),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (container) => (
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={`Edit container ${container.containerCode}`}
-            onClick={() => openEditForm(container)}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            aria-label={`Delete container ${container.containerCode}`}
-            onClick={() => {
-              setViewContainer(null);
-              setDeleteTarget(container);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("containers", tableColumns);
@@ -311,55 +276,41 @@ export function ContainersWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Container directory</CardTitle>
-              <CardDescription>
-                Search by container code, number, booking, seal, broker, or transport company.
-              </CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters({ query: event.target.value });
-                    setPage(1);
-                  }}
-                  className="pl-9"
-                  placeholder="Search containers..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+          <CardTitle>Container directory</CardTitle>
+
+          <TableDirectoryToolbar
+            showFilterToggle={false}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters({ query });
+                  setPage(1);
+                }}
+                placeholder="Search containers..."
+              />
+            }
+          />
         </CardHeader>
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() =>
-                  setDeleteTarget(containers.filter((container) => selectedIds.includes(container.containerId)))
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={pageContainers.map((container) => container.containerId)}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const container = pageContainers.find((entry) => entry.containerId === selectedIds[0]);
+            if (container) openEditForm(container);
+          }}
+          onDelete={() =>
+            setDeleteTarget(containers.filter((container) => selectedIds.includes(container.containerId)))
+          }
+        />
 
         <DataTable
           columns={columnVisibility.columns}
           rows={pageContainers}
+          page={currentPage}
           rowKey={(container) => container.containerId}
           rowLabel={(container) => container.containerCode}
           columnLayout={columnVisibility}
@@ -370,6 +321,7 @@ export function ContainersWorkspace() {
           onToggleSelectAll={toggleSelectAll}
           onToggleSelect={toggleSelect}
           onRowClick={setViewContainer}
+          onRowDoubleClick={openEditForm}
           emptyState={
             <>
               <p className="text-muted-foreground">No containers match your search.</p>

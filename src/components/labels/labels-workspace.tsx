@@ -14,10 +14,15 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+  TableFilterSection,
+} from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,6 +98,7 @@ export function LabelsWorkspace() {
   const [selectedStagedKeys, setSelectedStagedKeys] = useState<string[]>([]);
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<LabelFilterState>(defaultFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
 
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -409,6 +415,8 @@ export function LabelsWorkspace() {
     { value: "all", label: "All" },
     ...LABEL_STATUSES,
   ];
+  const activeFilterCount = filters.status !== "all" ? 1 : 0;
+  const hasActiveFilters = Boolean(filters.query.trim()) || filters.status !== "all";
 
   return (
     <div className="space-y-6">
@@ -632,50 +640,70 @@ export function LabelsWorkspace() {
 
       <Card>
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Label directory</CardTitle>
-              <CardDescription>Filter, update status, change container, and print labels.</CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:justify-end">
-              <div className="relative min-w-[200px] flex-1 lg:max-w-xs">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
-                    setPage(1);
-                  }}
-                  className="pl-9"
-                  placeholder="Search labels..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+          <CardTitle>Label directory</CardTitle>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</span>
-            {statusFilters.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                size="sm"
-                variant={filters.status === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, status: option.value }));
+          <TableDirectoryToolbar
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
+                placeholder="Search labels..."
+              />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${filteredLabels.length} of ${labels.length} labels`}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
               >
-                {option.label}
-              </Button>
-            ))}
-          </div>
+            <TableFilterSection label="Status">
+              {statusFilters.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant={filters.status === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, status: option.value }));
+                    setPage(1);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
+              </TableFilterPanel>
+            }
+          />
+        </CardHeader>
 
-          {selectedLabelIds.length > 0 ? (
-            <div className="flex flex-wrap gap-2 pt-2">
+        {selectedLabelIds.length > 0 ? (
+          <div className="flex flex-col gap-3 border-b border-primary/15 bg-primary/5 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex min-w-[5.5rem] items-center justify-center rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold tracking-wide text-primary">
+                {selectedLabelIds.length} selected
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setSelectedLabelIds([])}>
+                Clear selection
+              </Button>
               <Button size="sm" variant="outline" onClick={openStatusDialog}>
-                Change status ({selectedLabelIds.length})
+                Change status
               </Button>
               <Button
                 size="sm"
@@ -703,18 +731,16 @@ export function LabelsWorkspace() {
               </Button>
               <Button size="sm" onClick={printSelectedLabels}>
                 <Printer className="h-4 w-4" />
-                Print ({selectedLabelIds.length})
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setSelectedLabelIds([])}>
-                Clear selection
+                Print
               </Button>
             </div>
-          ) : null}
-        </CardHeader>
+          </div>
+        ) : null}
 
         <DataTable
           columns={columnVisibility.columns}
           rows={pageLabels}
+          page={currentPage}
           rowKey={(label) => label.labelId}
           rowLabel={(label) => label.barcode}
           columnLayout={columnVisibility}

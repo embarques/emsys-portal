@@ -2,6 +2,14 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import {
+  buildApiSearchBody,
+  createTextSearchFilter,
+  hasListTextSearch,
+  resolveSearchField,
+  resolveSearchOperator,
+  type ApiSearchFilter,
+} from "@/lib/api/search-query";
+import {
   buildApiAddressPayload,
   buildApiBranchRef,
   type ApiAddressPayload,
@@ -10,7 +18,6 @@ import {
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   DEFAULT_EMPLOYEE_LIST_PARAMS,
-  normalizeEmployeeSearchFilter,
   type Employee,
   type EmployeeAddress,
   type EmployeeBranch,
@@ -18,6 +25,8 @@ import {
   type EmployeeListParams,
 } from "@/lib/employees/types";
 import { normalizeApiUser } from "@/lib/users/api/users-api";
+
+const EMPLOYEE_LIST_SEARCH_FIELD = "name";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 type ApiAddress = {
@@ -178,20 +187,36 @@ function normalizePaginatedEmployees(
   };
 }
 
-function resolveEmployeeListFilter(params: EmployeeListParams): ApiListFieldFilter | undefined {
-  if (params.search?.value.trim()) {
-    const search = normalizeEmployeeSearchFilter({
-      ...params.search,
-      value: params.search.value.trim(),
-    });
+function buildEmployeeSearchFilters(params: EmployeeListParams): ApiSearchFilter[] {
+  const filters: ApiSearchFilter[] = [];
 
-    return {
-      field: search.field,
-      operator: search.operator,
-      value: search.value,
-    };
+  if (params.search?.value.trim()) {
+    const textFilter = createTextSearchFilter(
+      resolveSearchField(params.search, EMPLOYEE_LIST_SEARCH_FIELD),
+      params.search.value,
+      resolveSearchOperator(params.search),
+    );
+    if (textFilter) {
+      filters.push(textFilter);
+    }
   }
 
+  if (params.department && params.department !== "all") {
+    filters.push({ field: "department", operator: "eq", value: params.department });
+  }
+
+  if (params.active !== undefined && params.active !== "all") {
+    filters.push({ field: "active", operator: "eq", value: String(params.active) });
+  }
+
+  if (params.branch && params.branch !== "all") {
+    filters.push({ field: "branch.id", operator: "eq", value: String(params.branch) });
+  }
+
+  return filters;
+}
+
+function resolveEmployeeListFilter(params: EmployeeListParams): ApiListFieldFilter | undefined {
   if (params.department && params.department !== "all") {
     return { field: "department", operator: "eq", value: params.department };
   }
@@ -374,9 +399,28 @@ async function resolveCreatedEmployee(
   throw new Error(message?.trim() || "Unable to create employee.");
 }
 
+function buildEmployeeSearchBody(params: EmployeeListParams) {
+  return buildApiSearchBody({
+    page: params.page ?? DEFAULT_EMPLOYEE_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_EMPLOYEE_LIST_PARAMS.limit,
+    offset: params.offset,
+    sort: params.sort ?? DEFAULT_EMPLOYEE_LIST_PARAMS.sort,
+    filters: buildEmployeeSearchFilters(params),
+  });
+}
+
 export async function fetchEmployees(
   params: EmployeeListParams = {},
 ): Promise<PaginatedResult<Employee>> {
+  if (hasListTextSearch(params.search)) {
+    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+      `${API_ENDPOINTS.EMPLOYEES}/search`,
+      buildEmployeeSearchBody(params),
+    );
+
+    return normalizePaginatedEmployees(response);
+  }
+
   const query = buildEmployeesQuery(params);
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
     `${API_ENDPOINTS.EMPLOYEES}?${query}`,

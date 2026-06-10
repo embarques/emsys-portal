@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
-import { formatAuditDate } from "@/lib/audit/display";
 import { formatEmployeeDate, formatEmployeeMoney } from "@/lib/employees/display";
 import {
   EMPLOYEE_ACTIVE_OPTIONS,
@@ -103,7 +102,7 @@ export function EmployeeForm({
       <FormSection title="Employee">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="id">id</Label>
+            <Label htmlFor="id">Employee ID</Label>
             <Input
               id="id"
               value={values.id > 0 ? String(values.id) : "Assigned after save"}
@@ -461,31 +460,6 @@ export function EmployeeForm({
           </div>
         </div>
       </FormSection>
-
-      {isEditing ? (
-        <FormSection title="Timestamps">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="createdAt">createdAt</Label>
-              <Input
-                id="createdAt"
-                value={values.createdAt ? formatAuditDate(values.createdAt) : "—"}
-                readOnly
-                className={readOnlyClassName}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="updatedAt">updatedAt</Label>
-              <Input
-                id="updatedAt"
-                value={values.updatedAt ? formatAuditDate(values.updatedAt) : "—"}
-                readOnly
-                className={readOnlyClassName}
-              />
-            </div>
-          </div>
-        </FormSection>
-      ) : null}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>

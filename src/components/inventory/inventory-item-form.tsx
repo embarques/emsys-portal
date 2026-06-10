@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import {
   INVENTORY_CATEGORIES,
   INVENTORY_LOCATIONS,
@@ -166,13 +165,6 @@ export function InventoryItemForm({
           placeholder="Optional notes about stock, vendor, or recounts"
         />
       </div>
-
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => setValues((current) => ({ ...current, createdBy: value }))}
-      />
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>

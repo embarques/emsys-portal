@@ -4,9 +4,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Pencil,
   Plus,
-  Search,
   Trash2,
   UserRound,
   Users,
@@ -14,10 +12,10 @@ import {
 
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { EmployeeViewSheet } from "@/components/employees/employee-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +28,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+  TableFilterSection,
+} from "@/components/app-shell/table-directory-toolbar";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { formatAuditDate } from "@/lib/audit/display";
@@ -56,13 +59,9 @@ import {
 import {
   DEFAULT_EMPLOYEE_LIST_PARAMS,
   EMPLOYEE_DEPARTMENTS,
-  EMPLOYEE_SEARCH_FIELDS,
   createEmployeeSearchFilter,
   createEmptyEmployeeForm,
   employeeToFormValues,
-  getDefaultEmployeeSearchOperator,
-  getEmployeeSearchOperatorsForField,
-  getEmployeeSearchSort,
   type Employee,
   type EmployeeFilterState,
   type EmployeeFormValues,
@@ -73,8 +72,6 @@ const PAGE_SIZE = DEFAULT_EMPLOYEE_LIST_PARAMS.limit;
 
 const defaultFilters: EmployeeFilterState = {
   query: "",
-  searchField: "name",
-  searchOperator: "startsWith",
   branch: "all",
   active: "all",
   department: "all",
@@ -83,6 +80,7 @@ const defaultFilters: EmployeeFilterState = {
 export function EmployeesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<EmployeeFilterState>(defaultFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
@@ -94,13 +92,12 @@ export function EmployeesWorkspace() {
 
   const listParams = useMemo(
     () => {
-      const search = createEmployeeSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
+      const search = createEmployeeSearchFilter(deferredQuery);
 
       return {
         ...DEFAULT_EMPLOYEE_LIST_PARAMS,
         page,
         limit: PAGE_SIZE,
-        sort: search ? getEmployeeSearchSort(filters.searchField) : DEFAULT_EMPLOYEE_LIST_PARAMS.sort,
         search,
         branch: filters.branch,
         active: filters.active,
@@ -111,8 +108,6 @@ export function EmployeesWorkspace() {
       deferredQuery,
       filters.branch,
       filters.department,
-      filters.searchField,
-      filters.searchOperator,
       filters.active,
       page,
     ],
@@ -256,7 +251,7 @@ export function EmployeesWorkspace() {
   const tableColumns: DataTableColumn<Employee>[] = [
     {
       id: "id",
-      label: "id",
+      label: "Employee ID",
       cellClassName: "font-mono text-xs",
       renderCell: (employee) => formatEmployeeId(employee.id),
     },
@@ -405,52 +400,19 @@ export function EmployeesWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (employee) => (employee.updatedAt ? formatAuditDate(employee.updatedAt) : "—"),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (employee) => (
-        <div className="flex gap-1">
-          <Button type="button" variant="ghost" size="sm" onClick={() => openEditForm(employee)}>
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            onClick={() => {
-              setViewEmployee(null);
-              setDeleteTarget(employee);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("employees", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
-  const searchOperatorOptions = useMemo(
-    () =>
-      getEmployeeSearchOperatorsForField(filters.searchField).map((operator) => ({
-        value: operator,
-        label:
-          operator === "startsWith"
-            ? "Starts with"
-            : operator === "contains"
-              ? "Contains"
-              : operator === "eq"
-                ? "Equals"
-                : "Not equals",
-      })),
-    [filters.searchField],
-  );
+  const activeFilterCount =
+    (filters.branch !== "all" ? 1 : 0) +
+    (filters.active !== "all" ? 1 : 0) +
+    (filters.department !== "all" ? 1 : 0);
+  const hasActiveFilters =
+    Boolean(filters.query.trim()) ||
+    filters.branch !== "all" ||
+    filters.active !== "all" ||
+    filters.department !== "all";
 
   return (
     <div>
@@ -485,153 +447,107 @@ export function EmployeesWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Employee directory</CardTitle>
-              <CardDescription>Search and filter employees by branch, department, title, and active.</CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
-              <select
-                aria-label="Search field"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchField}
-                onChange={(event) => {
-                  const searchField = event.target.value as EmployeeFilterState["searchField"];
-                  setFilters((current) => {
-                    const allowedOperators = getEmployeeSearchOperatorsForField(searchField);
-                    const searchOperator = allowedOperators.includes(current.searchOperator)
-                      ? current.searchOperator
-                      : getDefaultEmployeeSearchOperator(searchField);
+          <CardTitle>Employee directory</CardTitle>
 
-                    return {
-                      ...current,
-                      searchField,
-                      searchOperator,
-                    };
-                  });
+          <TableDirectoryToolbar
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
+                placeholder="Search employees..."
+              />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${employees.length} of ${totalEmployees} employees`}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
               >
-                {EMPLOYEE_SEARCH_FIELDS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Search operator"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchOperator}
-                onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchOperator: event.target.value as EmployeeFilterState["searchOperator"],
-                  }));
-                  setPage(1);
-                }}
-              >
-                {searchOperatorOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
+            <TableFilterSection label="Branch">
+              {branchFilters.map((option) => (
+                <Button
+                  key={String(option.value)}
+                  type="button"
+                  size="sm"
+                  variant={filters.branch === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, branch: option.value }));
                     setPage(1);
                   }}
-                  className="pl-9"
-                  placeholder="Search employees..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
-            {branchFilters.map((option) => (
-              <Button
-                key={String(option.value)}
-                type="button"
-                size="sm"
-                variant={filters.branch === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, branch: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
+            <TableFilterSection label="Active">
+              {activeFilters.map((option) => (
+                <Button
+                  key={String(option.value)}
+                  type="button"
+                  size="sm"
+                  variant={filters.active === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, active: option.value }));
+                    setPage(1);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active</span>
-            {activeFilters.map((option) => (
-              <Button
-                key={String(option.value)}
-                type="button"
-                size="sm"
-                variant={filters.active === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, active: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Department</span>
-            {departmentFilters.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                size="sm"
-                variant={filters.department === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, department: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
+            <TableFilterSection label="Department">
+              {departmentFilters.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant={filters.department === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, department: option.value }));
+                    setPage(1);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
+              </TableFilterPanel>
+            }
+          />
         </CardHeader>
 
         {listErrorMessage ? (
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : null}
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={isSaving}
-                onClick={() =>
-                  setDeleteTarget(employees.filter((employee) => selectedIds.includes(String(employee.id))))
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={employees.map((employee) => String(employee.id))}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const employee = employees.find((entry) => String(entry.id) === selectedIds[0]);
+            if (employee) openEditForm(employee);
+          }}
+          onDelete={() =>
+            setDeleteTarget(employees.filter((employee) => selectedIds.includes(String(employee.id))))
+          }
+          deleteDisabled={isSaving}
+        />
 
         {isLoading ? (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading employees…</div>
@@ -639,6 +555,8 @@ export function EmployeesWorkspace() {
           <DataTable
             columns={columnVisibility.columns}
             rows={employees}
+            page={currentPage}
+            isPageDataPending={isFetching}
             rowKey={(employee) => String(employee.id)}
             rowLabel={(employee) => employee.name}
             columnLayout={columnVisibility}
@@ -649,6 +567,7 @@ export function EmployeesWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
             onRowClick={setViewEmployee}
+            onRowDoubleClick={openEditForm}
             emptyState={
               <>
                 <p className="text-muted-foreground">No employees match your search or filters.</p>

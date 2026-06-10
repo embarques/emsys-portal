@@ -89,19 +89,28 @@ function ToastCard({
   return (
     <div
       className={cn(
-        "pointer-events-auto flex items-start gap-3 rounded-xl border bg-background p-4 shadow-lg",
+        "pointer-events-auto flex items-start gap-3 rounded-xl border p-4 shadow-lg",
         "animate-in slide-in-from-bottom-4 fade-in duration-300",
-        tone === "error" && "border-destructive/30",
+        tone === "success" && "border-emerald-500/30 bg-emerald-500/10",
+        tone === "error" && "border-destructive/30 bg-destructive/10",
       )}
-      role="status"
-      aria-live="polite"
+      role={tone === "error" ? "alert" : "status"}
+      aria-live={tone === "error" ? "assertive" : "polite"}
     >
       {tone === "error" ? (
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
       ) : (
-        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
       )}
-      <p className="flex-1 text-sm font-medium">{message}</p>
+      <p
+        className={cn(
+          "flex-1 text-sm font-medium",
+          tone === "success" && "text-emerald-950 dark:text-emerald-50",
+          tone === "error" && "text-destructive",
+        )}
+      >
+        {message}
+      </p>
       <button
         type="button"
         onClick={onDismiss}

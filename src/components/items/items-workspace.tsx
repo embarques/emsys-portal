@@ -5,19 +5,19 @@ import {
   ChevronLeft,
   ChevronRight,
   DollarSign,
-  Pencil,
   Plus,
-  Search,
   Tag,
   Trash2,
 } from "lucide-react";
 
 import { ItemForm } from "@/components/items/item-form";
 import { ItemViewSheet } from "@/components/items/item-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeItemKpis,
@@ -189,40 +188,6 @@ export function ItemsWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (item) => formatAuditDate(item.updatedAt),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (item) => (
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={`Edit item ${item.itemId}`}
-            onClick={() => openEditForm(item)}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            aria-label={`Delete item ${item.itemId}`}
-            onClick={() => {
-              setViewItem(null);
-              setDeleteTarget(item);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("items", tableColumns);
@@ -260,51 +225,39 @@ export function ItemsWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Item directory</CardTitle>
-              <CardDescription>Search by item ID, description, price, or creator.</CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters({ query: event.target.value });
-                    setPage(1);
-                  }}
-                  className="pl-9"
-                  placeholder="Search items..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+          <CardTitle>Item directory</CardTitle>
+
+          <TableDirectoryToolbar
+            showFilterToggle={false}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters({ query });
+                  setPage(1);
+                }}
+                placeholder="Search items..."
+              />
+            }
+          />
         </CardHeader>
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setDeleteTarget(items.filter((item) => selectedIds.includes(item.itemId)))}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={pageItems.map((item) => item.itemId)}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const item = pageItems.find((entry) => entry.itemId === selectedIds[0]);
+            if (item) openEditForm(item);
+          }}
+          onDelete={() => setDeleteTarget(items.filter((item) => selectedIds.includes(item.itemId)))}
+        />
 
         <DataTable
           columns={columnVisibility.columns}
           rows={pageItems}
+          page={currentPage}
           rowKey={(item) => item.itemId}
           rowLabel={(item) => item.description}
           columnLayout={columnVisibility}
@@ -315,6 +268,7 @@ export function ItemsWorkspace() {
           onToggleSelectAll={toggleSelectAll}
           onToggleSelect={toggleSelect}
           onRowClick={setViewItem}
+          onRowDoubleClick={openEditForm}
           emptyState={
             <>
               <p className="text-muted-foreground">No items match your search.</p>

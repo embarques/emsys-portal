@@ -1,4 +1,5 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
+import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 export type BranchAddress = {
@@ -72,16 +73,10 @@ export type BranchSearchField =
   | "address.zipcode"
   | "settings.labelPrefix";
 
-export type BranchSearchFilter = {
-  field: BranchSearchField;
-  operator: BranchSearchOperator;
-  value: string;
-};
+export type BranchSearchFilter = ApiListTextSearch;
 
 export type BranchFilterState = {
   query: string;
-  searchField: BranchSearchField;
-  searchOperator: BranchSearchOperator;
   type: string;
 };
 
@@ -112,7 +107,7 @@ export const BRANCH_SEARCH_FIELDS: { value: BranchSearchField; label: string }[]
   { value: "address.state", label: "State" },
   { value: "address.country", label: "Country" },
   { value: "settings.labelPrefix", label: "Label prefix" },
-  { value: "id", label: "ID" },
+  { value: "id", label: "Branch ID" },
 ];
 
 export const BRANCH_SEARCH_OPERATORS: { value: BranchSearchOperator; label: string }[] = [
@@ -165,14 +160,8 @@ export function createEmptyBranchForm(): BranchFormValues {
   };
 }
 
-export function createBranchSearchFilter(
-  value: string,
-  field: BranchSearchField = "name",
-  operator: BranchSearchOperator = "startsWith",
-): BranchSearchFilter | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  return { field, operator, value: trimmed };
+export function createBranchSearchFilter(value: string): BranchSearchFilter | undefined {
+  return createListTextSearch(value);
 }
 
 export function branchToFormValues(branch: Branch): BranchFormValues {

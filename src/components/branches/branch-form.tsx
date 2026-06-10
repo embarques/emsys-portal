@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
-import { formatAuditDate } from "@/lib/audit/display";
 import {
   type BranchAddress,
   type BranchFormValues,
@@ -81,7 +80,7 @@ export function BranchForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <FormSection title="Branch" description="core.Branch identity fields.">
         <div className="space-y-2">
-          <Label htmlFor="id">id</Label>
+          <Label htmlFor="id">Branch ID</Label>
           <Input
             id="id"
             value={values.id > 0 ? String(values.id) : "Assigned after save"}
@@ -321,20 +320,6 @@ export function BranchForm({
           </div>
         </div>
       </FormSection>
-
-      {isEditing ? (
-        <FormSection title="Audit">
-          <div className="space-y-2">
-            <Label htmlFor="created">created</Label>
-            <Input
-              id="created"
-              value={values.created ? formatAuditDate(values.created) : "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-        </FormSection>
-      ) : null}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>

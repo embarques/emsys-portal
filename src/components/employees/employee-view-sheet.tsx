@@ -11,6 +11,7 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
+import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import {
   formatEmployeeAddress,
@@ -63,11 +64,11 @@ export function EmployeeViewSheet({
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Employee">
-            <RecordViewSheetDetailRow label="id" value={formatEmployeeId(employee.id)} />
-            <RecordViewSheetDetailRow label="name" value={employee.name} />
-            <RecordViewSheetDetailRow label="title" value={employee.title || "—"} />
-            <RecordViewSheetDetailRow label="department" value={employee.department || "—"} />
-            <RecordViewSheetDetailRow label="active" value={getEmployeeActiveLabel(employee.active)} />
+            <RecordViewSheetDetailRow label="Employee ID" value={formatEmployeeId(employee.id)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("name")} value={employee.name} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("title")} value={employee.title || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("department")} value={employee.department || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("active")} value={getEmployeeActiveLabel(employee.active)} />
             <RecordViewSheetDetailRow
               label="startDate"
               value={employee.startDate ? formatAuditDate(employee.startDate) : "—"}
@@ -76,32 +77,32 @@ export function EmployeeViewSheet({
               label="endDate"
               value={employee.endDate ? formatAuditDate(employee.endDate) : "—"}
             />
-            <RecordViewSheetDetailRow label="cost" value={formatEmployeeMoney(employee.cost)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("cost")} value={formatEmployeeMoney(employee.cost)} />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Branch">
-            <RecordViewSheetDetailRow label="branch.id" value={employee.branch.id > 0 ? String(employee.branch.id) : "—"} />
-            <RecordViewSheetDetailRow label="branch.name" value={employee.branch.name || "—"} />
-            <RecordViewSheetDetailRow label="branch.code" value={employee.branch.code || "—"} />
-            <RecordViewSheetDetailRow label="branch" value={formatEmployeeBranchLabel(employee)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.id")} value={employee.branch.id > 0 ? String(employee.branch.id) : "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.name")} value={employee.branch.name || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.code")} value={employee.branch.code || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch")} value={formatEmployeeBranchLabel(employee)} />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Contact">
-            <RecordViewSheetDetailRow label="phone1" value={formatPhoneDisplayOrDash(employee.phone1)} />
-            <RecordViewSheetDetailRow label="phone2" value={formatPhoneDisplayOrDash(employee.phone2)} />
-            <RecordViewSheetDetailRow label="phones" value={formatEmployeePhones(employee)} />
-            <RecordViewSheetDetailRow label="email" value={employee.email || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("phone1")} value={formatPhoneDisplayOrDash(employee.phone1)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("phone2")} value={formatPhoneDisplayOrDash(employee.phone2)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("phones")} value={formatEmployeePhones(employee)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("email")} value={employee.email || "—"} />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Address">
-            <RecordViewSheetDetailRow label="address.address1" value={employee.address.address1 || "—"} />
-            <RecordViewSheetDetailRow label="address.address2" value={employee.address.address2 || "—"} />
-            <RecordViewSheetDetailRow label="address.apartment" value={employee.address.apartment || "—"} />
-            <RecordViewSheetDetailRow label="address.city" value={employee.address.city || "—"} />
-            <RecordViewSheetDetailRow label="address.state" value={employee.address.state || "—"} />
-            <RecordViewSheetDetailRow label="address.zipcode" value={employee.address.zipcode || "—"} />
-            <RecordViewSheetDetailRow label="address.country" value={employee.address.country || "—"} />
-            <RecordViewSheetDetailRow label="address" value={formatEmployeeAddress(employee)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("address.address1")} value={employee.address.address1 || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("address.address2")} value={employee.address.address2 || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("address.apartment")} value={employee.address.apartment || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("address.city")} value={employee.address.city || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("address.state")} value={employee.address.state || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("address.zipcode")} value={employee.address.zipcode || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("address.country")} value={employee.address.country || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("address")} value={formatEmployeeAddress(employee)} />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Loans">
@@ -119,25 +120,25 @@ export function EmployeeViewSheet({
 
           {employee.user ? (
             <RecordViewSheetSection title="User">
-              <RecordViewSheetDetailRow label="user" value={formatEmployeeUserLabel(employee)} />
-              <RecordViewSheetDetailRow label="user.id" value={String(employee.user.id)} />
-              <RecordViewSheetDetailRow label="user.userName" value={employee.user.userName || "—"} />
-              <RecordViewSheetDetailRow label="user.fullName" value={employee.user.fullName || "—"} />
-              <RecordViewSheetDetailRow label="user.email" value={employee.user.email || "—"} />
-              <RecordViewSheetDetailRow label="user.active" value={String(employee.user.active)} />
-              <RecordViewSheetDetailRow label="user.uid" value={employee.user.uid || "—"} />
-              <RecordViewSheetDetailRow label="user.type" value={employee.user.type || "—"} />
-              <RecordViewSheetDetailRow label="user.role.name" value={employee.user.role.name || "—"} />
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("user")} value={formatEmployeeUserLabel(employee)} />
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.id")} value={String(employee.user.id)} />
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.userName")} value={employee.user.userName || "—"} />
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.fullName")} value={employee.user.fullName || "—"} />
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.email")} value={employee.user.email || "—"} />
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.active")} value={String(employee.user.active)} />
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.uid")} value={employee.user.uid || "—"} />
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.type")} value={employee.user.type || "—"} />
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.role.name")} value={employee.user.role.name || "—"} />
             </RecordViewSheetSection>
           ) : null}
 
           <RecordViewSheetSection title="Audit">
             <RecordViewSheetDetailRow
-              label="createdAt"
+              label={formatTableColumnLabel("createdAt")}
               value={employee.createdAt ? formatAuditDate(employee.createdAt) : "—"}
             />
             <RecordViewSheetDetailRow
-              label="updatedAt"
+              label={formatTableColumnLabel("updatedAt")}
               value={employee.updatedAt ? formatAuditDate(employee.updatedAt) : "—"}
             />
           </RecordViewSheetSection>

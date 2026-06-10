@@ -36,10 +36,11 @@ export function useBranchSearch(
   });
 }
 
-export function useBranches(params: BranchListParams) {
+export function useBranches(params: BranchListParams, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: queryKeys.branches.list(params),
     queryFn: () => fetchBranches(params),
+    enabled: options.enabled ?? true,
   });
 }
 
@@ -64,11 +65,14 @@ export function useBranch(branchId: number | null, enabled = true) {
   });
 }
 
-export function useBranchPicker(limit = 200) {
-  return useBranches({
-    ...DEFAULT_BRANCH_LIST_PARAMS,
-    limit,
-  });
+export function useBranchPicker(limit = 200, options: { enabled?: boolean } = {}) {
+  return useBranches(
+    {
+      ...DEFAULT_BRANCH_LIST_PARAMS,
+      limit,
+    },
+    options,
+  );
 }
 
 function invalidateBranches(queryClient: ReturnType<typeof useQueryClient>) {

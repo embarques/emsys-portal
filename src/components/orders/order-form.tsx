@@ -104,7 +104,7 @@ export function OrderForm({
         {isEditing ? (
           <>
             <div className="space-y-2">
-              <Label htmlFor="id">id</Label>
+        <Label htmlFor="id">Order ID</Label>
               <Input id="id" value={values.id} readOnly className="bg-muted/40 font-mono text-xs" />
             </div>
             <div className="space-y-2">
@@ -250,10 +250,6 @@ export function OrderForm({
       ) : null}
 
       <OrderCommentsEditor comments={values.comments} onChange={(comments) => updateField("comments", comments)} />
-
-      {isEditing && updatedAt ? (
-        <p className="text-xs text-muted-foreground">updatedAt: {updatedAt}</p>
-      ) : null}
 
       {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
 

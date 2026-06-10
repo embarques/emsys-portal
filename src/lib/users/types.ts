@@ -1,4 +1,5 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
+import { createApiListTextSearch, createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 
 export type UserPortalBranch = "usa" | "dr";
 
@@ -68,8 +69,6 @@ export type UserFormValues = {
 
 export type UserFilterState = {
   query: string;
-  searchField: UserSearchField;
-  searchOperator: UserSearchOperator;
   branch: number | "all";
   active: boolean | "all";
   roleId: number | "all";
@@ -88,11 +87,7 @@ export type UserSearchField =
   | "role.name"
   | "branch.id";
 
-export type UserSearchFilter = {
-  field: UserSearchField;
-  operator: UserSearchOperator;
-  value: string;
-};
+export type UserSearchFilter = ApiListTextSearch;
 
 export type UserListParams = {
   page?: number;
@@ -187,31 +182,12 @@ export function getDefaultUserSearchOperator(field: UserSearchField): UserSearch
   return getUserSearchOperatorsForField(field)[0];
 }
 
-export function normalizeUserSearchFilter(search: UserSearchFilter): UserSearchFilter {
-  const allowedOperators = getUserSearchOperatorsForField(search.field);
-  const operator = allowedOperators.includes(search.operator)
-    ? search.operator
-    : getDefaultUserSearchOperator(search.field);
-
-  return { field: search.field, operator, value: search.value };
-}
-
 export function createUserSearchFilter(
   value: string,
-  field: UserSearchField = "userName",
-  operator: UserSearchOperator = "startsWith",
+  field?: UserSearchField,
+  operator: UserSearchOperator = "contains",
 ): UserSearchFilter | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-
-  let normalizedValue = trimmed;
-  if (field === "active") {
-    const lower = trimmed.toLowerCase();
-    if (["active", "true", "yes"].includes(lower)) normalizedValue = "true";
-    if (["inactive", "false", "no"].includes(lower)) normalizedValue = "false";
-  }
-
-  return normalizeUserSearchFilter({ field, operator, value: normalizedValue });
+  return createApiListTextSearch(value, field, operator);
 }
 
 export function getUserSearchSort(field: UserSearchField, direction: "asc" | "desc" = "asc"): string {

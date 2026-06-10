@@ -5,19 +5,23 @@ import {
   ChevronLeft,
   ChevronRight,
   MapPin,
-  Pencil,
   Plus,
   Route as RouteIcon,
-  Search,
   Trash2,
 } from "lucide-react";
 
 import { RouteForm } from "@/components/routes/route-form";
 import { RouteViewSheet } from "@/components/routes/route-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+  TableFilterSection,
+} from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +34,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeRouteKpis,
@@ -74,6 +77,7 @@ export function RoutesWorkspace() {
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingRoute, setEditingRoute] = useState<RouteRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RouteRecord | RouteRecord[] | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const filteredRoutes = useMemo(() => {
     return routes.filter((route) => {
@@ -222,43 +226,13 @@ export function RoutesWorkspace() {
         </div>
       ),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (route) => (
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={`Edit ${route.name}`}
-            onClick={() => openEditForm(route)}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            aria-label={`Delete ${route.name}`}
-            onClick={() => {
-              setViewRoute(null);
-              setDeleteTarget(route);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("routes", tableColumns);
+  const activeFilterCount =
+    (filters.branch !== "all" ? 1 : 0) + (filters.placeKind !== "all" ? 1 : 0);
+  const hasActiveFilters =
+    Boolean(filters.query.trim()) || filters.branch !== "all" || filters.placeKind !== "all";
 
   return (
     <div>
@@ -293,100 +267,88 @@ export function RoutesWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Route directory</CardTitle>
-              <CardDescription>Search by route name, ID, branch, or place content.</CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
+          <CardTitle>Route directory</CardTitle>
+
+          <TableDirectoryToolbar
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
+                  setPage(1);
+                }}
+                placeholder="Search routes..."
+              />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${filteredRoutes.length} of ${routes.length} routes`}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              >
+            <TableFilterSection label="Branch">
+              {branchFilters.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant={filters.branch === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, branch: option.value }));
                     setPage(1);
                   }}
-                  className="pl-9"
-                  placeholder="Search routes..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
-            {branchFilters.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                size="sm"
-                variant={filters.branch === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, branch: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contains</span>
-            {placeKindFilters.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                size="sm"
-                variant={filters.placeKind === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, placeKind: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-            {filters.query || filters.placeKind !== "all" || filters.branch !== "all" ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setFilters(defaultFilters);
-                  setPage(1);
-                }}
-              >
-                Clear search & filters
-              </Button>
-            ) : null}
-          </div>
+            <TableFilterSection label="Contains">
+              {placeKindFilters.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant={filters.placeKind === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, placeKind: option.value }));
+                    setPage(1);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
+              </TableFilterPanel>
+            }
+          />
         </CardHeader>
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setDeleteTarget(routes.filter((route) => selectedIds.includes(route.routeId)))}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={pageRoutes.map((route) => route.routeId)}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const route = pageRoutes.find((entry) => entry.routeId === selectedIds[0]);
+            if (route) openEditForm(route);
+          }}
+          onDelete={() => setDeleteTarget(routes.filter((route) => selectedIds.includes(route.routeId)))}
+        />
 
         <DataTable
           columns={columnVisibility.columns}
           rows={pageRoutes}
+          page={currentPage}
           rowKey={(route) => route.routeId}
           rowLabel={(route) => route.name}
           columnLayout={columnVisibility}
@@ -397,6 +359,7 @@ export function RoutesWorkspace() {
           onToggleSelectAll={toggleSelectAll}
           onToggleSelect={toggleSelect}
           onRowClick={setViewRoute}
+          onRowDoubleClick={openEditForm}
           emptyState={
             <>
               <p className="text-muted-foreground">No routes match your search or filters.</p>

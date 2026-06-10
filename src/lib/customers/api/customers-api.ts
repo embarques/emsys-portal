@@ -2,25 +2,49 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import {
+  buildApiFilterNodeFromTableRows,
+  buildApiSearchPaginationQuery,
+  createOrTextSearchFilterGroup,
+  createTextSearchFilter,
+  hasListTextSearch,
+  isApiSearchFilter,
+  resolveApiSearchSort,
+  resolveSearchField,
+  resolveSearchOperator,
+  type ApiSearchFilterGroup,
+  type ApiSearchFilterNode,
+  type ApiSearchSortSpec,
+} from "@/lib/api/search-query";
+import { isCompleteFilterRow } from "@/lib/table/filter-builder";
+import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
+import {
+  coerceCustomerTypeFromApi,
+  expandCustomerTypeSearchNode,
+  appendCustomerTypeFilterGroup,
+  isCustomerTypeFilterActive,
+  portalCustomerTypeToApiFilterValue,
+  portalCustomerTypeToApiWriteValue,
+} from "@/lib/customers/customer-type";
+import {
   buildApiAddressPayload,
   buildApiBranchDto,
   type ApiAddressPayload,
   type ApiBranchDtoPayload,
 } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
+import { resolvePaginatedListTotal } from "@/lib/api/types";
 import {
   CUSTOMER_PORTAL_BRANCHES,
   type Customer,
   type CustomerBranch,
-  type CustomerBranchSettings,
   type CustomerCoreAddress,
   type CustomerFormValues,
   DEFAULT_CUSTOMER_LIST_PARAMS,
-  normalizeCustomerSearchFilter,
+  normalizeCustomerType,
   validateCustomerFormValues,
-  toApiCustomerSearchField,
   type CustomerListParams,
 } from "@/lib/customers/types";
+import { CUSTOMER_BAR_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 type ApiAddress = {
@@ -33,37 +57,10 @@ type ApiAddress = {
   country?: string;
 };
 
-type ApiBranchSettings = {
-  LabelPrefix?: string;
-  InvoiceCreatedThruIncomeStatement?: boolean;
-  PrintLabelCount?: boolean;
-  RoundDecimalPlaces?: number;
-  DefaultLabelStatus?: number;
-  S3Profile?: string;
-  S3BucketName?: string;
-  S3BucketFolder?: string;
-  S3ShareLinkExpireMinutes?: number;
-  ImageResampleBy?: number;
-  labelPrefix?: string;
-  invoiceCreatedThruIncomeStatement?: boolean;
-  printLabelCount?: boolean;
-  roundDecimalPlaces?: number;
-  defaultLabelStatus?: number;
-  s3Profile?: string;
-  s3BucketName?: string;
-  s3BucketFolder?: string;
-  s3ShareLinkExpireMinutes?: number;
-  imageResampleBy?: number;
-};
-
 type ApiBranch = {
   id?: number;
   name?: string;
   code?: string;
-  address?: ApiAddress;
-  phone1?: string;
-  logo?: string;
-  settings?: ApiBranchSettings;
 };
 
 type ApiCustomer = {
@@ -71,6 +68,7 @@ type ApiCustomer = {
   oldID?: number;
   name?: string;
   customerType?: number;
+  CustomerType?: number;
   phone1?: string;
   phone2?: string;
   email?: string;
@@ -84,6 +82,7 @@ type ApiCustomer = {
   createdByID?: number;
   address?: ApiAddress;
   addresses?: ApiAddress[];
+  receivers?: string[];
 };
 
 /** POST/PUT /customers — see API_PAYLOADS.md */
@@ -99,6 +98,7 @@ type ApiCustomerWritePayload = {
   accountBalance?: number;
   address?: ApiAddressPayload;
   branch: ApiBranchDtoPayload;
+  receivers?: string[];
   id?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -118,6 +118,14 @@ function readNumericId(value: number | string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function readCustomerTypeFromApi(raw?: ApiCustomer): number | null {
+  const value = raw?.customerType ?? raw?.CustomerType;
+  if (value == null) return null;
+
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function normalizeAddress(raw?: ApiAddress): CustomerCoreAddress {
   const address = raw ?? {};
 
@@ -132,27 +140,7 @@ function normalizeAddress(raw?: ApiAddress): CustomerCoreAddress {
   };
 }
 
-function normalizeBranchSettings(raw?: ApiBranchSettings): CustomerBranchSettings {
-  const settings = raw ?? {};
-
-  return {
-    labelPrefix: String(settings.LabelPrefix ?? settings.labelPrefix ?? "").trim(),
-    invoiceCreatedThruIncomeStatement:
-      settings.InvoiceCreatedThruIncomeStatement === true || settings.invoiceCreatedThruIncomeStatement === true,
-    printLabelCount: settings.PrintLabelCount === true || settings.printLabelCount === true,
-    roundDecimalPlaces: Number(settings.RoundDecimalPlaces ?? settings.roundDecimalPlaces ?? 0),
-    defaultLabelStatus: Number(settings.DefaultLabelStatus ?? settings.defaultLabelStatus ?? 0),
-    s3Profile: String(settings.S3Profile ?? settings.s3Profile ?? "").trim(),
-    s3BucketName: String(settings.S3BucketName ?? settings.s3BucketName ?? "").trim(),
-    s3BucketFolder: String(settings.S3BucketFolder ?? settings.s3BucketFolder ?? "").trim(),
-    s3ShareLinkExpireMinutes: Number(
-      settings.S3ShareLinkExpireMinutes ?? settings.s3ShareLinkExpireMinutes ?? 0,
-    ),
-    imageResampleBy: Number(settings.ImageResampleBy ?? settings.imageResampleBy ?? 0),
-  };
-}
-
-function normalizeBranch(raw?: ApiBranch, fallbackCountry?: string): CustomerBranch {
+function normalizeBranch(raw?: ApiBranch): CustomerBranch {
   const branch = raw ?? {};
   const id = readNumericId(branch.id) ?? 1;
   const defaults = CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.id === id) ?? CUSTOMER_PORTAL_BRANCHES[0];
@@ -161,11 +149,15 @@ function normalizeBranch(raw?: ApiBranch, fallbackCountry?: string): CustomerBra
     id,
     name: String(branch.name ?? defaults.label).trim(),
     code: String(branch.code ?? defaults.code).trim(),
-    address: normalizeAddress(branch.address ?? { country: fallbackCountry }),
-    phone1: normalizeStoredPhone(String(branch.phone1 ?? "")),
-    logo: String(branch.logo ?? "").trim(),
-    settings: normalizeBranchSettings(branch.settings),
   };
+}
+
+function normalizeReceivers(raw?: string[]): string[] {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .map((entry) => String(entry ?? "").trim())
+    .filter(Boolean);
 }
 
 function coreAddressHasContent(address: CustomerCoreAddress): boolean {
@@ -194,13 +186,13 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
       ? [address]
       : [];
   const primaryAddress = addresses[0] ?? address;
-  const branch = normalizeBranch(item.branch, primaryAddress.country);
+  const branch = normalizeBranch(item.branch);
 
   return {
     id,
     oldID: readNumericId(item.oldID) ?? 0,
     name: String(item.name ?? "").trim(),
-    customerType: readNumericId(item.customerType) ?? null,
+    customerType: readCustomerTypeFromApi(item),
     phone1: normalizeStoredPhone(String(item.phone1 ?? "")),
     phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
     email: String(item.email ?? "").trim(),
@@ -214,11 +206,13 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
     createdByID: readNumericId(item.createdByID) ?? null,
     address: primaryAddress,
     addresses,
+    receivers: normalizeReceivers(item.receivers),
   };
 }
 
 function normalizePaginatedCustomers(
   payload: PaginatedApiEnvelope<unknown[]>,
+  options: { isFiltered?: boolean } = {},
 ): PaginatedResult<Customer> {
   const items = Array.isArray(payload.data)
     ? payload.data.map(normalizeApiCustomer).filter((customer): customer is Customer => customer != null)
@@ -228,59 +222,211 @@ function normalizePaginatedCustomers(
     items,
     page: payload.page ?? 1,
     resultsPerPage: payload.resultsPerPage ?? items.length,
-    total: payload.total ?? items.length,
+    total: resolvePaginatedListTotal(payload, items.length, options),
   };
 }
 
-function resolveCustomerListFilter(params: CustomerListParams): ApiListFieldFilter | undefined {
-  if (params.search?.value.trim()) {
-    const search = normalizeCustomerSearchFilter({
-      ...params.search,
-      value: params.search.value.trim(),
-    });
-
-    return {
-      field: toApiCustomerSearchField(search.field),
-      operator: search.operator,
-      value: search.value,
-    };
-  }
-
-  if (params.active !== undefined && params.active !== "all") {
-    return { field: "active", operator: "eq", value: String(params.active) };
-  }
-
-  if (params.branch !== undefined && params.branch !== "all") {
-    return { field: "branch.id", operator: "eq", value: String(params.branch) };
-  }
-
-  if (params.customerType !== undefined && params.customerType !== "all") {
-    return { field: "customerType", operator: "eq", value: String(params.customerType) };
-  }
-
-  return undefined;
+function hasCustomerChipFilters(params: CustomerListParams): boolean {
+  return (
+    (params.branch !== undefined && params.branch !== "all") ||
+    isCustomerTypeFilterActive(params.customerType)
+  );
 }
 
-/** GET /customers — page, limit, sort, and optional field/operator/value filter. */
+function resolveCustomerTypeListFilter(params: CustomerListParams): ApiListFieldFilter | undefined {
+  if (!isCustomerTypeFilterActive(params.customerType)) return undefined;
+
+  return {
+    field: "customerType",
+    operator: "eq",
+    value: String(portalCustomerTypeToApiFilterValue(params.customerType)),
+  };
+}
+
+function resolveCustomerGetFilter(params: CustomerListParams): ApiListFieldFilter | undefined {
+  const completeRows = (params.filterRows ?? []).filter(isCompleteFilterRow);
+  if (completeRows.length !== 1) return undefined;
+
+  const rowFilterNode = buildApiFilterNodeFromTableRows(completeRows, CUSTOMER_TABLE_FILTER_FIELDS);
+  if (!rowFilterNode) return undefined;
+
+  const expanded = expandCustomerTypeSearchNode(rowFilterNode);
+  if (!isApiSearchFilter(expanded)) return undefined;
+
+  return {
+    field: expanded.field,
+    operator: expanded.operator,
+    value: String(expanded.value),
+  };
+}
+
+function shouldUseCustomerPostSearch(params: CustomerListParams): boolean {
+  if (hasListTextSearch(params.search)) return true;
+
+  const completeRows = (params.filterRows ?? []).filter(isCompleteFilterRow);
+
+  if (completeRows.length > 1) return true;
+
+  if (completeRows.length === 1) {
+    const rowFilterNode = buildApiFilterNodeFromTableRows(completeRows, CUSTOMER_TABLE_FILTER_FIELDS);
+    if (!rowFilterNode) return false;
+    const expanded = expandCustomerTypeSearchNode(rowFilterNode);
+    return !isApiSearchFilter(expanded);
+  }
+
+  return false;
+}
+
+function hasCustomerListFilters(params: CustomerListParams): boolean {
+  return (
+    hasListTextSearch(params.search) ||
+    (params.filterRows ?? []).some(isCompleteFilterRow) ||
+    hasCustomerChipFilters(params)
+  );
+}
+
+function buildCustomerSearchFilterGroups(params: CustomerListParams): ApiSearchFilterGroup[] {
+  const groups: ApiSearchFilterGroup[] = [];
+
+  if (params.search?.value.trim()) {
+    if (params.search.field) {
+      const explicitFilter = createTextSearchFilter(
+        resolveSearchField(params.search, "name"),
+        params.search.value,
+        resolveSearchOperator(params.search),
+      );
+      if (explicitFilter) {
+        groups.push({ operator: "and", filters: [explicitFilter] });
+      }
+    } else {
+      const orGroup = createOrTextSearchFilterGroup(
+        params.search.value,
+        [...CUSTOMER_BAR_OR_SEARCH_FIELDS],
+        "contains",
+      );
+      if (orGroup) {
+        groups.push(orGroup);
+      }
+    }
+  }
+
+  const rowFilterNode = buildApiFilterNodeFromTableRows(
+    params.filterRows ?? [],
+    CUSTOMER_TABLE_FILTER_FIELDS,
+  );
+  const expandedRowFilter = rowFilterNode ? expandCustomerTypeSearchNode(rowFilterNode) : null;
+  const chipFilters: ApiSearchFilterNode[] = [];
+
+  if (expandedRowFilter) {
+    if (isApiSearchFilter(expandedRowFilter)) {
+      groups.push({ operator: "and", filters: [expandedRowFilter] });
+    } else {
+      groups.push(expandedRowFilter);
+    }
+  } else {
+    if (params.branch !== undefined && params.branch !== "all") {
+      chipFilters.push({ field: "branch.id", operator: "eq", value: String(params.branch) });
+    }
+
+    if (isCustomerTypeFilterActive(params.customerType)) {
+      appendCustomerTypeFilterGroup(groups, params.customerType);
+    }
+
+    if (chipFilters.length > 0) {
+      groups.push({ operator: "and", filters: chipFilters });
+    }
+  }
+
+  return groups;
+}
+
+/** POST /customers/search — Stripe-style body (filters + sort array). Pagination in URL query. */
+type ApiCustomerSearchBody = {
+  field?: string;
+  operator?: string;
+  value?: string | number | boolean;
+  filters?: ApiSearchFilterGroup[];
+  sort?: ApiSearchSortSpec[];
+};
+
+function buildCustomerSearchBody(params: CustomerListParams): ApiCustomerSearchBody {
+  const filterGroups = buildCustomerSearchFilterGroups(params);
+  const body: ApiCustomerSearchBody = {};
+
+  const sortSpecs = resolveApiSearchSort(params.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort);
+  if (sortSpecs) {
+    body.sort = sortSpecs;
+  }
+
+  if (filterGroups.length === 0) {
+    return body;
+  }
+
+  body.filters = filterGroups;
+
+  if (
+    filterGroups.length === 1 &&
+    filterGroups[0].operator === "and" &&
+    filterGroups[0].filters.length === 1 &&
+    isApiSearchFilter(filterGroups[0].filters[0])
+  ) {
+    const onlyFilter = filterGroups[0].filters[0];
+    body.field = onlyFilter.field;
+    body.operator = onlyFilter.operator;
+    body.value = onlyFilter.value;
+  }
+
+  return body;
+}
+
+function appendCustomerChipParams(query: string, params: CustomerListParams): string {
+  const searchParams = new URLSearchParams(query);
+
+  if (params.branch !== undefined && params.branch !== "all") {
+    searchParams.set("branchId", String(params.branch));
+  }
+
+  return searchParams.toString();
+}
+
+/** GET /customers — page, limit, sort, optional field/operator/value filter, chip params. */
 function buildCustomersQuery(params: CustomerListParams): string {
-  return buildApiListQuery({
+  const query = buildApiListQuery({
     page: params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit,
     offset: params.offset,
     sort: params.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort,
-    filter: resolveCustomerListFilter(params),
+    filter: resolveCustomerGetFilter(params) ?? resolveCustomerTypeListFilter(params),
   });
+
+  return appendCustomerChipParams(query, params);
 }
 
 export async function fetchCustomers(
   params: CustomerListParams = {},
 ): Promise<PaginatedResult<Customer>> {
+  const isFiltered = hasCustomerListFilters(params);
+
+  if (shouldUseCustomerPostSearch(params)) {
+    const page = params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page;
+    const limit = params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit;
+    const offset = params.offset ?? (page - 1) * limit;
+    const paginationQuery = buildApiSearchPaginationQuery({ page, limit, offset });
+
+    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+      `${API_ENDPOINTS.CUSTOMERS}/search?${paginationQuery}`,
+      buildCustomerSearchBody(params),
+    );
+
+    return normalizePaginatedCustomers(response, { isFiltered: true });
+  }
+
   const query = buildCustomersQuery(params);
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
     `${API_ENDPOINTS.CUSTOMERS}?${query}`,
   );
 
-  return normalizePaginatedCustomers(response);
+  return normalizePaginatedCustomers(response, { isFiltered });
 }
 
 function buildCustomerWritePayload(
@@ -299,9 +445,9 @@ function buildCustomerWritePayload(
 
   const payload: ApiCustomerWritePayload = {
     name,
-    customerType: values.customerType ?? 1,
+    customerType: portalCustomerTypeToApiWriteValue(normalizeCustomerType(values.customerType)),
     phone1,
-    active: values.active,
+    active: true,
     branch: buildApiBranchDto(values.branch),
   };
 
@@ -319,10 +465,6 @@ function buildCustomerWritePayload(
 
   if (notes) {
     payload.notes = notes;
-  }
-
-  if (Number.isFinite(values.accountBalance) && values.accountBalance !== 0) {
-    payload.accountBalance = values.accountBalance;
   }
 
   if (primaryAddress) {

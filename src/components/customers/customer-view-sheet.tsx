@@ -19,8 +19,6 @@ import {
   formatPhoneList,
   getClientTypeBadgeClass,
   getClientTypeLabel,
-  getCustomerActiveBadgeClass,
-  getCustomerActiveLabel,
   getCustomerBranchBadgeClass,
   getCustomerTypeLabel,
   truncateCustomerId,
@@ -34,6 +32,7 @@ type CustomerViewSheetProps = {
   onOpenChange: (open: boolean) => void;
   onEdit: (customer: Customer) => void;
   onDelete: (customer: Customer) => void;
+  canEdit?: boolean;
   canDelete?: boolean;
 };
 
@@ -43,6 +42,7 @@ export function CustomerViewSheet({
   onOpenChange,
   onEdit,
   onDelete,
+  canEdit = true,
   canDelete = true,
 }: CustomerViewSheetProps) {
   if (!customer) return null;
@@ -60,9 +60,6 @@ export function CustomerViewSheet({
           meta={
             <>
               <Badge className={getCustomerBranchBadgeClass(customer)}>{formatCustomerBranchLabel(customer)}</Badge>
-              <Badge className={getCustomerActiveBadgeClass(customer.active)}>
-                {getCustomerActiveLabel(customer.active)}
-              </Badge>
               {clientType ? (
                 <Badge className={getClientTypeBadgeClass(clientType)}>{getClientTypeLabel(clientType)}</Badge>
               ) : null}
@@ -72,11 +69,13 @@ export function CustomerViewSheet({
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="General">
-            <RecordViewSheetDetailRow label="ID" value={customer.id} />
-            <RecordViewSheetDetailRow label="Old ID" value={customer.oldID > 0 ? String(customer.oldID) : "—"} />
             <RecordViewSheetDetailRow label="Name" value={customer.name} />
-            <RecordViewSheetDetailRow label="Active" value={getCustomerActiveLabel(customer.active)} />
             <RecordViewSheetDetailRow label="Customer type" value={getCustomerTypeLabel(customer)} />
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection title="System information">
+            <RecordViewSheetDetailRow label="Customer ID" value={customer.id} />
+            <RecordViewSheetDetailRow label="Old ID" value={customer.oldID > 0 ? String(customer.oldID) : "—"} />
             <RecordViewSheetDetailRow
               label="Created by"
               value={customer.createdByID != null ? String(customer.createdByID) : "—"}
@@ -95,10 +94,6 @@ export function CustomerViewSheet({
             <RecordViewSheetDetailRow label="Branch ID" value={String(customer.branch.id)} />
             <RecordViewSheetDetailRow label="Branch code" value={customer.branch.code || "—"} />
             <RecordViewSheetDetailRow label="Branch name" value={customer.branch.name || "—"} />
-            <RecordViewSheetDetailRow
-              label="Branch phone"
-              value={formatPhoneDisplayOrDash(customer.branch.phone1)}
-            />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Contact">
@@ -136,7 +131,7 @@ export function CustomerViewSheet({
 
         <RecordViewSheetActions
           editLabel="Edit customer"
-          onEdit={() => onEdit(customer)}
+          onEdit={canEdit ? () => onEdit(customer) : undefined}
           onDelete={canDelete ? () => onDelete(customer) : undefined}
         />
       </RecordViewSheetContent>

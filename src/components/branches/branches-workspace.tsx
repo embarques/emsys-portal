@@ -5,18 +5,16 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  Pencil,
   Plus,
-  Search,
   Trash2,
 } from "lucide-react";
 
 import { BranchForm } from "@/components/branches/branch-form";
 import { BranchViewSheet } from "@/components/branches/branch-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +27,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+  TableFilterSection,
+} from "@/components/app-shell/table-directory-toolbar";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { formatAuditDate } from "@/lib/audit/display";
@@ -47,8 +50,6 @@ import {
   useUpdateBranch,
 } from "@/lib/branches/hooks/use-branches";
 import {
-  BRANCH_SEARCH_FIELDS,
-  BRANCH_SEARCH_OPERATORS,
   DEFAULT_BRANCH_LIST_PARAMS,
   branchToFormValues,
   createBranchSearchFilter,
@@ -63,14 +64,13 @@ const PAGE_SIZE = DEFAULT_BRANCH_LIST_PARAMS.limit;
 
 const defaultFilters: BranchFilterState = {
   query: "",
-  searchField: "name",
-  searchOperator: "startsWith",
   type: "all",
 };
 
 export function BranchesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<BranchFilterState>(defaultFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [page, setPage] = useState(1);
@@ -81,7 +81,7 @@ export function BranchesWorkspace() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const listParams = useMemo(() => {
-    const search = createBranchSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
+    const search = createBranchSearchFilter(deferredQuery);
 
     return {
       ...DEFAULT_BRANCH_LIST_PARAMS,
@@ -90,7 +90,7 @@ export function BranchesWorkspace() {
       search,
       type: filters.type,
     };
-  }, [deferredQuery, filters.searchField, filters.searchOperator, filters.type, page]);
+  }, [deferredQuery, filters.type, page]);
 
   const { data, isLoading, isError, error, isFetching } = useBranches(listParams);
   const stats = useBranchStats();
@@ -195,7 +195,7 @@ export function BranchesWorkspace() {
   const tableColumns: DataTableColumn<Branch>[] = [
     {
       id: "id",
-      label: "id",
+      label: "Branch ID",
       cellClassName: "font-mono text-xs",
       renderCell: (branch) => formatBranchId(branch.id),
     },
@@ -266,37 +266,13 @@ export function BranchesWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (branch) => (branch.created ? formatAuditDate(branch.created) : "—"),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (branch) => (
-        <div className="flex gap-1">
-          <Button type="button" variant="ghost" size="sm" onClick={() => openEditForm(branch)}>
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            onClick={() => {
-              setViewBranch(null);
-              setDeleteTarget(branch);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("branches", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
+  const hasTypeFilters = typeFilters.length > 1;
+  const activeFilterCount = filters.type !== "all" ? 1 : 0;
+  const hasActiveFilters = Boolean(filters.query.trim()) || filters.type !== "all";
 
   return (
     <div>
@@ -326,125 +302,74 @@ export function BranchesWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Branch directory</CardTitle>
-              <CardDescription>
-                Server-backed list from GET /branches with pagination, sorting, and API search filters.
-              </CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
-              <select
-                aria-label="Search field"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchField}
-                onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchField: event.target.value as BranchFilterState["searchField"],
-                  }));
-                  setPage(1);
-                }}
-              >
-                {BRANCH_SEARCH_FIELDS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Search operator"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchOperator}
-                onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchOperator: event.target.value as BranchFilterState["searchOperator"],
-                  }));
-                  setPage(1);
-                }}
-              >
-                {BRANCH_SEARCH_OPERATORS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
-                    setPage(1);
-                  }}
-                  className="pl-9"
-                  placeholder="Search branches..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+          <CardTitle>Branch directory</CardTitle>
 
-          {typeFilters.length > 1 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Type</span>
-              {typeFilters.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  size="sm"
-                  variant={filters.type === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, type: option.value }));
-                    setPage(1);
-                  }}
+          <TableDirectoryToolbar
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            showFilterToggle={hasTypeFilters}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
+                  setPage(1);
+                }}
+                placeholder="Search branches..."
+              />
+            }
+            filterPanel={
+              hasTypeFilters ? (
+                <TableFilterPanel
+                  resultSummary={`Showing ${branches.length} of ${totalBranches} branches`}
+                  onClearAll={
+                    hasActiveFilters
+                      ? () => {
+                          setFilters(defaultFilters);
+                          setPage(1);
+                        }
+                      : undefined
+                  }
                 >
-                  {option.label}
-                </Button>
-              ))}
-              {filters.query || filters.type !== "all" ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setFilters(defaultFilters);
-                    setPage(1);
-                  }}
-                >
-                  Clear search & filters
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
+                  <TableFilterSection label="Type">
+                    {typeFilters.map((option) => (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        size="sm"
+                        variant={filters.type === option.value ? "default" : "outline"}
+                        onClick={() => {
+                          setFilters((current) => ({ ...current, type: option.value }));
+                          setPage(1);
+                        }}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </TableFilterSection>
+                </TableFilterPanel>
+              ) : undefined
+            }
+          />
         </CardHeader>
 
         {listErrorMessage ? (
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : null}
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={isSaving}
-                onClick={() =>
-                  setDeleteTarget(branches.filter((branch) => selectedIds.includes(branch.id)))
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds.map(String)}
+          pageRowIds={branches.map((branch) => String(branch.id))}
+          onSelectedIdsChange={(ids) => setSelectedIds(ids.map(Number))}
+          onEdit={() => {
+            const branch = branches.find((entry) => entry.id === selectedIds[0]);
+            if (branch) openEditForm(branch);
+          }}
+          onDelete={() => setDeleteTarget(branches.filter((branch) => selectedIds.includes(branch.id)))}
+          deleteDisabled={isSaving}
+        />
 
         {isLoading ? (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading branches…</div>
@@ -452,6 +377,8 @@ export function BranchesWorkspace() {
           <DataTable
             columns={columnVisibility.columns}
             rows={branches}
+            page={currentPage}
+            isPageDataPending={isFetching}
             rowKey={(branch) => String(branch.id)}
             rowLabel={(branch) => branch.name}
             columnLayout={columnVisibility}
@@ -462,6 +389,7 @@ export function BranchesWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={(id, checked) => toggleSelect(Number(id), checked)}
             onRowClick={setViewBranch}
+            onRowDoubleClick={openEditForm}
             emptyState={
               <>
                 <p className="text-muted-foreground">No branches match your search or filters.</p>

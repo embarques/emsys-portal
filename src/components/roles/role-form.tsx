@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 import { RolePermissionsEditor } from "@/components/roles/role-permissions-editor";
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,13 +91,6 @@ export function RoleForm({
         currentRoleId={values.roleId}
         showCopyFrom={!isEditing}
         onChange={(permissions) => updateField("permissions", permissions)}
-      />
-
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => updateField("createdBy", value)}
       />
 
       {formError ? <p className="text-sm text-destructive">{formError}</p> : null}

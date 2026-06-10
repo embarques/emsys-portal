@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
+import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import { cn } from "@/lib/utils";
 
 type ColumnVisibilityMenuProps = {
@@ -39,7 +40,12 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
 
   return (
     <>
-      <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        variant="outline"
+        className="h-9 shrink-0 gap-2 px-3 text-sm font-medium shadow-xs"
+        onClick={() => setOpen(true)}
+      >
         <Columns3 className="h-4 w-4" />
         Columns
       </Button>
@@ -56,6 +62,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
           <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
             {columns.map((column, index) => {
               const locked = column.hideable === false;
+              const columnLabel = formatTableColumnLabel(column.label);
 
               return (
                 <div
@@ -86,7 +93,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
                   <button
                     type="button"
                     className="cursor-grab rounded p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing"
-                    aria-label={`Drag to reorder ${column.label}`}
+                    aria-label={`Drag to reorder ${columnLabel}`}
                   >
                     <GripVertical className="h-4 w-4" />
                   </button>
@@ -97,10 +104,10 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
                     disabled={locked}
                     onChange={(event) => setColumnVisible(column.id, event.target.checked)}
                     className="size-4 rounded border-input disabled:opacity-60"
-                    aria-label={`Toggle ${column.label}`}
+                    aria-label={`Toggle ${columnLabel}`}
                   />
 
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{column.label}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{columnLabel}</span>
 
                   <div className="flex items-center gap-0.5">
                     <Button
@@ -109,7 +116,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
                       size="icon"
                       className="h-8 w-8"
                       disabled={index === 0}
-                      aria-label={`Move ${column.label} up`}
+                      aria-label={`Move ${columnLabel} up`}
                       onClick={() => moveColumn(column.id, "up")}
                     >
                       <ChevronUp className="h-4 w-4" />
@@ -120,7 +127,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
                       size="icon"
                       className="h-8 w-8"
                       disabled={index === columns.length - 1}
-                      aria-label={`Move ${column.label} down`}
+                      aria-label={`Move ${columnLabel} down`}
                       onClick={() => moveColumn(column.id, "down")}
                     >
                       <ChevronDown className="h-4 w-4" />

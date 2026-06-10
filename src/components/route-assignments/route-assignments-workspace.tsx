@@ -6,9 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
-  Pencil,
   Plus,
-  Search,
   Trash2,
   Truck,
   UsersRound,
@@ -16,10 +14,10 @@ import {
 
 import { RouteAssignmentForm } from "@/components/route-assignments/route-assignment-form";
 import { RouteAssignmentViewSheet } from "@/components/route-assignments/route-assignment-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +29,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeRouteAssignmentKpis,
@@ -48,10 +47,7 @@ import {
   createEmptyRouteAssignmentForm,
   createRouteAssignmentSearchFilter,
   formValuesToRouteAssignment,
-  getDefaultRouteAssignmentSearchOperator,
-  getRouteAssignmentSearchOperatorsForField,
   routeAssignmentToFormValues,
-  ROUTE_ASSIGNMENT_SEARCH_FIELDS,
   type RouteAssignment,
   type RouteAssignmentFilterState,
   type RouteAssignmentFormValues,
@@ -62,8 +58,6 @@ const PAGE_SIZE = 8;
 
 const defaultFilters: RouteAssignmentFilterState = {
   query: "",
-  searchField: "name",
-  searchOperator: "startsWith",
 };
 
 export function RouteAssignmentsWorkspace() {
@@ -78,13 +72,13 @@ export function RouteAssignmentsWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<RouteAssignment | RouteAssignment[] | null>(null);
 
   const filteredAssignments = useMemo(() => {
-    const search = createRouteAssignmentSearchFilter(filters.query, filters.searchField, filters.searchOperator);
+    const search = createRouteAssignmentSearchFilter(filters.query);
 
     return assignments.filter((assignment) => {
       if (search && !routeAssignmentMatchesSearch(assignment, search)) return false;
       return true;
     });
-  }, [assignments, filters.query, filters.searchField, filters.searchOperator]);
+  }, [assignments, filters.query]);
 
   const kpis = useMemo(() => computeRouteAssignmentKpis(assignments), [assignments]);
   const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / PAGE_SIZE));
@@ -178,26 +172,10 @@ export function RouteAssignmentsWorkspace() {
     },
   ];
 
-  const searchOperatorOptions = useMemo(
-    () =>
-      getRouteAssignmentSearchOperatorsForField(filters.searchField).map((operator) => ({
-        value: operator,
-        label:
-          operator === "startsWith"
-            ? "Starts with"
-            : operator === "contains"
-              ? "Contains"
-              : operator === "eq"
-                ? "Equals"
-                : "Not equals",
-      })),
-    [filters.searchField],
-  );
-
   const tableColumns: DataTableColumn<RouteAssignment>[] = [
     {
       id: "id",
-      label: "id",
+      label: "Assignment ID",
       cellClassName: "font-mono text-xs",
       renderCell: (assignment) => truncateObjectId(assignment.id),
     },
@@ -273,40 +251,6 @@ export function RouteAssignmentsWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (assignment) => (assignment.updatedAt ? formatAuditDate(assignment.updatedAt) : "—"),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (assignment) => (
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={`Edit ${assignment.name}`}
-            onClick={() => openEditForm(assignment)}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            aria-label={`Delete ${assignment.name}`}
-            onClick={() => {
-              setViewAssignment(null);
-              setDeleteTarget(assignment);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("route-assignments", tableColumns);
@@ -344,98 +288,41 @@ export function RouteAssignmentsWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Assignment directory</CardTitle>
-              <CardDescription>Search by name, truck, employee group, or creator.</CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
-              <select
-                aria-label="Search field"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchField}
-                onChange={(event) => {
-                  const searchField = event.target.value as RouteAssignmentFilterState["searchField"];
-                  setFilters((current) => {
-                    const allowedOperators = getRouteAssignmentSearchOperatorsForField(searchField);
-                    const searchOperator = allowedOperators.includes(current.searchOperator)
-                      ? current.searchOperator
-                      : getDefaultRouteAssignmentSearchOperator(searchField);
+          <CardTitle>Assignment directory</CardTitle>
 
-                    return {
-                      ...current,
-                      searchField,
-                      searchOperator,
-                    };
-                  });
+          <TableDirectoryToolbar
+            showFilterToggle={false}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-              >
-                {ROUTE_ASSIGNMENT_SEARCH_FIELDS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Search operator"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchOperator}
-                onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchOperator: event.target.value as RouteAssignmentFilterState["searchOperator"],
-                  }));
-                  setPage(1);
-                }}
-              >
-                {searchOperatorOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
-                    setPage(1);
-                  }}
-                  className="pl-9"
-                  placeholder="Search route assignments..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+                placeholder="Search route assignments..."
+              />
+            }
+          />
         </CardHeader>
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() =>
-                  setDeleteTarget(assignments.filter((assignment) => selectedIds.includes(assignment.id)))
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={pageAssignments.map((assignment) => assignment.id)}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const assignment = pageAssignments.find((entry) => entry.id === selectedIds[0]);
+            if (assignment) openEditForm(assignment);
+          }}
+          onDelete={() =>
+            setDeleteTarget(assignments.filter((assignment) => selectedIds.includes(assignment.id)))
+          }
+        />
 
         <DataTable
           columns={columnVisibility.columns}
           rows={pageAssignments}
+          page={currentPage}
           rowKey={(assignment) => assignment.id}
           rowLabel={(assignment) => assignment.name}
           columnLayout={columnVisibility}
@@ -446,6 +333,7 @@ export function RouteAssignmentsWorkspace() {
           onToggleSelectAll={toggleSelectAll}
           onToggleSelect={toggleSelect}
           onRowClick={setViewAssignment}
+          onRowDoubleClick={openEditForm}
           emptyState={
             <>
               <p className="text-muted-foreground">No route assignments match your search.</p>

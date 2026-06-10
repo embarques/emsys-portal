@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import { getEmployeeBranchLabel } from "@/lib/employees/display";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import {
@@ -185,13 +184,6 @@ export function EmployeeGroupForm({
           )}
         </div>
       </section>
-
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => setValues((current) => ({ ...current, createdBy: value }))}
-      />
 
       {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
 

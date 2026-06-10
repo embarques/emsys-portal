@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GripVertical } from "lucide-react";
 
 import { ScrollableTable } from "@/components/app-shell/scrollable-table";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
+import { formatTableColumnLabel } from "@/lib/table/column-labels";
+import { measureTableColumnContentWidth } from "@/lib/table/measure-column-width";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +24,12 @@ type DataTableProps<T> = {
   onToggleSelect?: (id: string, checked: boolean) => void;
   rowLabel?: (row: T) => string;
   onRowClick?: (row: T) => void;
+  onRowDoubleClick?: (row: T) => void;
+  /** When set, visible columns auto-fit on first load and whenever this page changes. */
+  page?: number;
+  /** When true, auto-fit waits until fresh page data is shown (e.g. while refetching). */
+  isPageDataPending?: boolean;
+  autoFitColumns?: boolean;
 };
 
 export function DataTable<T>({
@@ -38,14 +46,88 @@ export function DataTable<T>({
   onToggleSelect,
   rowLabel,
   onRowClick,
+  onRowDoubleClick,
+  page,
+  isPageDataPending = false,
+  autoFitColumns = true,
 }: DataTableProps<T>) {
-  const { isVisible, getColumnWidth, setColumnWidth, reorderColumns } = columnLayout;
+  const { isVisible, getColumnWidth, setColumnWidth, fitColumnWidth, fitColumnWidths, reorderColumns } =
+    columnLayout;
 
   const visibleColumns = columns.filter((column) => isVisible(column.id));
+  const visibleColumnKey = visibleColumns.map((column) => column.id).join("\0");
   const colSpan = visibleColumns.length + (selectable ? 1 : 0);
   const [draggingHeaderId, setDraggingHeaderId] = useState<string | null>(null);
   const [dragOverHeaderId, setDragOverHeaderId] = useState<string | null>(null);
   const [resizingColumnId, setResizingColumnId] = useState<string | null>(null);
+  const pendingRowClickRef = useRef<number | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const lastAutoFitPageRef = useRef<number | null>(null);
+
+  const delaySingleClick = Boolean(onRowClick && onRowDoubleClick);
+
+  function handleRowClick(row: T) {
+    if (!onRowClick) return;
+
+    if (!delaySingleClick) {
+      onRowClick(row);
+      return;
+    }
+
+    if (pendingRowClickRef.current != null) {
+      window.clearTimeout(pendingRowClickRef.current);
+    }
+
+    pendingRowClickRef.current = window.setTimeout(() => {
+      pendingRowClickRef.current = null;
+      onRowClick(row);
+    }, 250);
+  }
+
+  function handleRowDoubleClick(row: T) {
+    if (pendingRowClickRef.current != null) {
+      window.clearTimeout(pendingRowClickRef.current);
+      pendingRowClickRef.current = null;
+    }
+
+    onRowDoubleClick?.(row);
+  }
+
+  function autoFitColumnWidth(columnId: string, columnIndex: number) {
+    if (!tableRef.current) return;
+    const width = measureTableColumnContentWidth(tableRef.current, columnIndex);
+    fitColumnWidth(columnId, width);
+  }
+
+  function autoFitAllVisibleColumns() {
+    if (!tableRef.current) return;
+
+    const nextWidths: Record<string, number> = {};
+
+    visibleColumns.forEach((column, columnIndex) => {
+      const tableColumnIndex = columnIndex + (selectable ? 1 : 0);
+      nextWidths[column.id] = measureTableColumnContentWidth(tableRef.current!, tableColumnIndex);
+    });
+
+    fitColumnWidths(nextWidths);
+  }
+
+  useEffect(() => {
+    if (!autoFitColumns || rows.length === 0 || isPageDataPending) return;
+
+    const pageKey = page ?? -1;
+    const isInitialLoad = lastAutoFitPageRef.current === null;
+    const isPageChange = page !== undefined && lastAutoFitPageRef.current !== pageKey;
+
+    if (!isInitialLoad && !isPageChange) return;
+
+    const frame = requestAnimationFrame(() => {
+      autoFitAllVisibleColumns();
+      lastAutoFitPageRef.current = pageKey;
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [autoFitColumns, page, rows, isPageDataPending, selectable, visibleColumnKey]);
 
   function startColumnResize(columnId: string, startX: number) {
     const startWidth = getColumnWidth(columnId);
@@ -84,9 +166,9 @@ export function DataTable<T>({
 
   return (
     <ScrollableTable minWidth={tableMinWidth}>
-      <table className="w-full table-fixed text-sm">
+      <table ref={tableRef} className="w-full table-fixed text-sm">
         <thead>
-          <tr className="border-b bg-muted/50 text-left text-muted-foreground">
+          <tr className="border-b bg-muted/40 text-left">
             {selectable ? (
               <th className="w-12 px-4 py-3">
                 <input
@@ -98,15 +180,17 @@ export function DataTable<T>({
                 />
               </th>
             ) : null}
-            {visibleColumns.map((column) => {
+            {visibleColumns.map((column, columnIndex) => {
               const width = getColumnWidth(column.id);
+              const headerLabel = formatTableColumnLabel(column.label);
+              const tableColumnIndex = columnIndex + (selectable ? 1 : 0);
 
               return (
                 <th
                   key={column.id}
                   style={{ width }}
                   className={cn(
-                    "group relative select-none px-2 py-3 font-medium",
+                    "group relative select-none px-3 py-3.5",
                     column.headerClassName,
                     dragOverHeaderId === column.id && draggingHeaderId !== column.id && "bg-primary/10",
                     resizingColumnId === column.id && "bg-primary/5"
@@ -133,30 +217,39 @@ export function DataTable<T>({
                         setDragOverHeaderId(null);
                       }}
                       className="cursor-grab rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 active:cursor-grabbing"
-                      aria-label={`Drag to reorder ${column.label}`}
+                      aria-label={`Drag to reorder ${headerLabel}`}
                       onClick={(event) => event.stopPropagation()}
                     >
                       <GripVertical className="h-3.5 w-3.5" />
                     </button>
 
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium sm:text-sm" title={column.label}>
-                      {column.label}
+                    <span
+                      className="min-w-0 flex-1 truncate text-xs font-semibold leading-tight tracking-wide text-foreground/70"
+                      title={headerLabel}
+                    >
+                      {headerLabel}
                     </span>
                   </div>
 
                   <div
                     role="separator"
                     aria-orientation="vertical"
-                    aria-label={`Resize ${column.label}`}
+                    aria-label={`Resize ${headerLabel}. Double-click to fit content.`}
                     className={cn(
                       "absolute right-0 top-0 z-10 h-full w-2 cursor-col-resize touch-none",
                       "opacity-0 transition-opacity group-hover:opacity-100",
                       resizingColumnId === column.id && "opacity-100"
                     )}
                     onMouseDown={(event) => {
+                      if (event.detail > 1) return;
                       event.preventDefault();
                       event.stopPropagation();
                       startColumnResize(column.id, event.clientX);
+                    }}
+                    onDoubleClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      autoFitColumnWidth(column.id, tableColumnIndex);
                     }}
                   >
                     <div className="absolute right-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-full bg-border group-hover:bg-primary/50" />
@@ -176,11 +269,12 @@ export function DataTable<T>({
                 <tr
                   key={id}
                   className={cn(
-                    onRowClick && "cursor-pointer",
+                    (onRowClick || onRowDoubleClick) && "cursor-pointer",
                     "border-b transition-colors last:border-0 hover:bg-muted/30",
                     selected && "bg-accent/40"
                   )}
-                  onClick={() => onRowClick?.(row)}
+                  onClick={() => handleRowClick(row)}
+                  onDoubleClick={() => handleRowDoubleClick(row)}
                 >
                   {selectable ? (
                     <td className="px-4 py-4" onClick={(event) => event.stopPropagation()}>

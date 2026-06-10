@@ -30,6 +30,18 @@ axiosInstance.interceptors.request.use(async (config: InternalAxiosRequestConfig
     config.headers.set("x-company-id", companyId);
   }
 
+  if (process.env.NODE_ENV === "development" && config.method?.toLowerCase() === "post") {
+    const url = String(config.url ?? "");
+    if (url.includes("/search")) {
+      console.debug("[EMSYS API search request]", {
+        method: config.method?.toUpperCase(),
+        url: `${config.baseURL ?? ""}${url}`,
+        params: config.params,
+        body: config.data,
+      });
+    }
+  }
+
   return config;
 });
 

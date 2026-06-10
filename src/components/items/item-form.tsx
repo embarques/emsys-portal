@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import { createEmptyItemForm, type ItemFormValues } from "@/lib/items/types";
 
 const textareaClassName =
@@ -81,13 +80,6 @@ export function ItemForm({
           required
         />
       </div>
-
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => updateField("createdBy", value)}
-      />
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>

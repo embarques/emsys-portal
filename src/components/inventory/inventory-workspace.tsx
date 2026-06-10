@@ -6,20 +6,24 @@ import {
   Boxes,
   ChevronLeft,
   ChevronRight,
-  Filter,
   PackageCheck,
   Plus,
-  Search,
   Trash2,
   Warehouse,
 } from "lucide-react";
 
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventoryViewSheet } from "@/components/inventory/inventory-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+  TableFilterSection,
+} from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +36,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeInventoryKpis,
@@ -253,6 +256,11 @@ export function InventoryWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("inventory", tableColumns);
+  const hasActiveFilters =
+    Boolean(filters.query.trim()) ||
+    filters.status !== "all" ||
+    filters.location !== "all" ||
+    filters.category !== "all";
 
   return (
     <div>
@@ -287,68 +295,113 @@ export function InventoryWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Stock lookup</CardTitle>
-              <CardDescription>Search by SKU, item name, location, or notes.</CardDescription>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <div className="relative min-w-[240px] flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={filters.query}
-                    onChange={(event) => {
-                      setFilters((current) => ({ ...current, query: event.target.value }));
-                      setPage(1);
-                    }}
-                    className="pl-9"
-                    placeholder="Search inventory..."
-                  />
-                </div>
-                <ColumnVisibilityMenu columnLayout={columnVisibility} />
-              </div>
-              <Button variant="outline" onClick={() => setFiltersOpen(true)}>
-                <Filter className="h-4 w-4" />
-                Filters
-                {activeFilterCount > 0 ? (
-                  <Badge variant="secondary" className="ml-1 rounded-full px-2 py-0">
-                    {activeFilterCount}
-                  </Badge>
-                ) : null}
-              </Button>
-            </div>
-          </div>
+          <CardTitle>Stock lookup</CardTitle>
+
+          <TableDirectoryToolbar
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
+                  setPage(1);
+                }}
+                placeholder="Search inventory..."
+              />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${filteredItems.length} of ${items.length} items`}
+                onClearAll={hasActiveFilters ? resetFilters : undefined}
+              >
+            <TableFilterSection label="Status">
+              <select
+                id="filter-status"
+                className={cn(selectClassName, "min-w-[12rem]")}
+                value={filters.status}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    status: event.target.value as InventoryFilterState["status"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                <option value="all">All statuses</option>
+                {INVENTORY_STATUSES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </TableFilterSection>
+
+            <TableFilterSection label="Location">
+              <select
+                id="filter-location"
+                className={cn(selectClassName, "min-w-[12rem]")}
+                value={filters.location}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    location: event.target.value as InventoryFilterState["location"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                <option value="all">All locations</option>
+                {INVENTORY_LOCATIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </TableFilterSection>
+
+            <TableFilterSection label="Category">
+              <select
+                id="filter-category"
+                className={cn(selectClassName, "min-w-[12rem]")}
+                value={filters.category}
+                onChange={(event) => {
+                  setFilters((current) => ({
+                    ...current,
+                    category: event.target.value as InventoryFilterState["category"],
+                  }));
+                  setPage(1);
+                }}
+              >
+                <option value="all">All categories</option>
+                {INVENTORY_CATEGORIES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </TableFilterSection>
+              </TableFilterPanel>
+            }
+          />
         </CardHeader>
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedIds([])}
-              >
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() =>
-                  setDeleteTarget(items.filter((item) => selectedIds.includes(item.id)))
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={pageItems.map((item) => item.id)}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const item = pageItems.find((entry) => entry.id === selectedIds[0]);
+            if (item) openEditForm(item);
+          }}
+          onDelete={() => setDeleteTarget(items.filter((item) => selectedIds.includes(item.id)))}
+        />
 
         <DataTable
           columns={columnVisibility.columns}
           rows={pageItems}
+          page={currentPage}
           rowKey={(item) => item.id}
           rowLabel={(item) => item.sku}
           columnLayout={columnVisibility}
@@ -359,6 +412,7 @@ export function InventoryWorkspace() {
           onToggleSelectAll={toggleSelectAll}
           onToggleSelect={toggleSelect}
           onRowClick={setViewItem}
+          onRowDoubleClick={openEditForm}
           emptyState={
             <p className="text-muted-foreground">No inventory items match your search or filters.</p>
           }
@@ -423,86 +477,6 @@ export function InventoryWorkspace() {
             onSubmit={saveItem}
             onCancel={() => setFormMode(null)}
           />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Filter inventory</DialogTitle>
-            <DialogDescription>Refine the table by status, location, and category.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="filter-status">
-                Status
-              </label>
-              <select
-                id="filter-status"
-                className={cn(selectClassName, "w-full")}
-                value={filters.status}
-                onChange={(event) => {
-                  setFilters((current) => ({ ...current, status: event.target.value as InventoryFilterState["status"] }));
-                  setPage(1);
-                }}
-              >
-                <option value="all">All statuses</option>
-                {INVENTORY_STATUSES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="filter-location">
-                Location
-              </label>
-              <select
-                id="filter-location"
-                className={cn(selectClassName, "w-full")}
-                value={filters.location}
-                onChange={(event) => {
-                  setFilters((current) => ({ ...current, location: event.target.value as InventoryFilterState["location"] }));
-                  setPage(1);
-                }}
-              >
-                <option value="all">All locations</option>
-                {INVENTORY_LOCATIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="filter-category">
-                Category
-              </label>
-              <select
-                id="filter-category"
-                className={cn(selectClassName, "w-full")}
-                value={filters.category}
-                onChange={(event) => {
-                  setFilters((current) => ({ ...current, category: event.target.value as InventoryFilterState["category"] }));
-                  setPage(1);
-                }}
-              >
-                <option value="all">All categories</option>
-                {INVENTORY_CATEGORIES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={resetFilters}>
-              Reset filters
-            </Button>
-            <Button onClick={() => setFiltersOpen(false)}>Apply</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

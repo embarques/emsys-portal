@@ -4,9 +4,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Pencil,
   Plus,
-  Search,
   Shield,
   Trash2,
   UserCog,
@@ -15,10 +13,10 @@ import {
 
 import { UserForm } from "@/components/users/user-form";
 import { UserViewSheet } from "@/components/users/user-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,7 +29,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+  TableFilterSection,
+} from "@/components/app-shell/table-directory-toolbar";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
@@ -57,12 +60,8 @@ import {
 import {
   DEFAULT_USER_LIST_PARAMS,
   USER_ROLE_OPTIONS,
-  USER_SEARCH_FIELDS,
   createEmptyUserForm,
   createUserSearchFilter,
-  getDefaultUserSearchOperator,
-  getUserSearchOperatorsForField,
-  getUserSearchSort,
   maskPassword,
   userToFormValues,
   type User,
@@ -74,8 +73,6 @@ const PAGE_SIZE = DEFAULT_USER_LIST_PARAMS.limit;
 
 const defaultFilters: UserFilterState = {
   query: "",
-  searchField: "userName",
-  searchOperator: "startsWith",
   branch: "all",
   active: "all",
   roleId: "all",
@@ -84,6 +81,7 @@ const defaultFilters: UserFilterState = {
 export function UsersWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<UserFilterState>(defaultFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
@@ -95,13 +93,12 @@ export function UsersWorkspace() {
 
   const listParams = useMemo(
     () => {
-      const search = createUserSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
+      const search = createUserSearchFilter(deferredQuery);
 
       return {
         ...DEFAULT_USER_LIST_PARAMS,
         page,
         limit: PAGE_SIZE,
-        sort: search ? getUserSearchSort(filters.searchField) : DEFAULT_USER_LIST_PARAMS.sort,
         search,
         branch: filters.branch,
         active: filters.active,
@@ -113,8 +110,6 @@ export function UsersWorkspace() {
       filters.active,
       filters.branch,
       filters.roleId,
-      filters.searchField,
-      filters.searchOperator,
       page,
     ],
   );
@@ -272,7 +267,7 @@ export function UsersWorkspace() {
   const tableColumns: DataTableColumn<User>[] = [
     {
       id: "id",
-      label: "id",
+      label: "User ID",
       cellClassName: "font-mono text-xs",
       renderCell: (user) => truncateUserId(user.id),
     },
@@ -379,52 +374,19 @@ export function UsersWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (user) => (user.updatedAt ? formatAuditDate(user.updatedAt) : "—"),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (user) => (
-        <div className="flex gap-1">
-          <Button type="button" variant="ghost" size="sm" onClick={() => openEditForm(user)}>
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            onClick={() => {
-              setViewUser(null);
-              setDeleteTarget(user);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("users", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
-  const searchOperatorOptions = useMemo(
-    () =>
-      getUserSearchOperatorsForField(filters.searchField).map((operator) => ({
-        value: operator,
-        label:
-          operator === "startsWith"
-            ? "Starts with"
-            : operator === "contains"
-              ? "Contains"
-              : operator === "eq"
-                ? "Equals"
-                : "Not equals",
-      })),
-    [filters.searchField],
-  );
+  const activeFilterCount =
+    (filters.branch !== "all" ? 1 : 0) +
+    (filters.active !== "all" ? 1 : 0) +
+    (filters.roleId !== "all" ? 1 : 0);
+  const hasActiveFilters =
+    Boolean(filters.query.trim()) ||
+    filters.branch !== "all" ||
+    filters.active !== "all" ||
+    filters.roleId !== "all";
 
   return (
     <div>
@@ -459,153 +421,105 @@ export function UsersWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>User directory</CardTitle>
-              <CardDescription>Search and filter users by branch, active status, and role.</CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
-              <select
-                aria-label="Search field"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchField}
-                onChange={(event) => {
-                  const searchField = event.target.value as UserFilterState["searchField"];
-                  setFilters((current) => {
-                    const allowedOperators = getUserSearchOperatorsForField(searchField);
-                    const searchOperator = allowedOperators.includes(current.searchOperator)
-                      ? current.searchOperator
-                      : getDefaultUserSearchOperator(searchField);
+          <CardTitle>User directory</CardTitle>
 
-                    return {
-                      ...current,
-                      searchField,
-                      searchOperator,
-                    };
-                  });
+          <TableDirectoryToolbar
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
+                placeholder="Search users..."
+              />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${pageUsers.length} of ${totalUsers} users`}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
               >
-                {USER_SEARCH_FIELDS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Search operator"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchOperator}
-                onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchOperator: event.target.value as UserFilterState["searchOperator"],
-                  }));
-                  setPage(1);
-                }}
-              >
-                {searchOperatorOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
+            <TableFilterSection label="Branch">
+              {branchFilters.map((option) => (
+                <Button
+                  key={String(option.value)}
+                  type="button"
+                  size="sm"
+                  variant={filters.branch === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, branch: option.value }));
                     setPage(1);
                   }}
-                  className="pl-9"
-                  placeholder="Search users..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
-            {branchFilters.map((option) => (
-              <Button
-                key={String(option.value)}
-                type="button"
-                size="sm"
-                variant={filters.branch === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, branch: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
+            <TableFilterSection label="Active">
+              {activeFilters.map((option) => (
+                <Button
+                  key={String(option.value)}
+                  type="button"
+                  size="sm"
+                  variant={filters.active === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, active: option.value }));
+                    setPage(1);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active</span>
-            {activeFilters.map((option) => (
-              <Button
-                key={String(option.value)}
-                type="button"
-                size="sm"
-                variant={filters.active === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, active: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Role</span>
-            {roleFilters.map((option) => (
-              <Button
-                key={String(option.value)}
-                type="button"
-                size="sm"
-                variant={filters.roleId === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, roleId: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
+            <TableFilterSection label="Role">
+              {roleFilters.map((option) => (
+                <Button
+                  key={String(option.value)}
+                  type="button"
+                  size="sm"
+                  variant={filters.roleId === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, roleId: option.value }));
+                    setPage(1);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
+              </TableFilterPanel>
+            }
+          />
         </CardHeader>
 
         {listErrorMessage ? (
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : null}
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={isSaving}
-                onClick={() =>
-                  setDeleteTarget(users.filter((user) => selectedIds.includes(String(user.id))))
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={pageUsers.map((user) => String(user.id))}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const user = pageUsers.find((entry) => String(entry.id) === selectedIds[0]);
+            if (user) openEditForm(user);
+          }}
+          onDelete={() => setDeleteTarget(users.filter((user) => selectedIds.includes(String(user.id))))}
+          deleteDisabled={isSaving}
+        />
 
         {isLoading ? (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading users…</div>
@@ -613,6 +527,8 @@ export function UsersWorkspace() {
           <DataTable
             columns={columnVisibility.columns}
             rows={pageUsers}
+            page={currentPage}
+            isPageDataPending={isFetching}
             rowKey={(user) => String(user.id)}
             rowLabel={(user) => user.userName}
             columnLayout={columnVisibility}
@@ -623,6 +539,7 @@ export function UsersWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
             onRowClick={setViewUser}
+            onRowDoubleClick={openEditForm}
             emptyState={
               <>
                 <p className="text-muted-foreground">No users match your search or filters.</p>

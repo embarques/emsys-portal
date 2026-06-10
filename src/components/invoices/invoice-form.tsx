@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import { InvoiceLineItemsEditor } from "@/components/invoices/invoice-line-items-editor";
 import { OrderPartyEditor } from "@/components/orders/order-party-editor";
 import { cloneContainers } from "@/lib/containers/mock-data";
@@ -235,13 +234,6 @@ export function InvoiceForm({
           </div>
         </div>
       </section>
-
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => updateField("createdBy", value)}
-      />
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>

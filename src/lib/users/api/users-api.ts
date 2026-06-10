@@ -1,12 +1,19 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
+import {
+  buildApiSearchBody,
+  createTextSearchFilter,
+  hasListTextSearch,
+  resolveSearchField,
+  resolveSearchOperator,
+  type ApiSearchFilter,
+} from "@/lib/api/search-query";
 import { buildApiBranchDto, buildApiRoleRef } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   createEmptyUserRole,
   DEFAULT_USER_LIST_PARAMS,
-  normalizeUserSearchFilter,
   type User,
   type UserBranch,
   type UserFormValues,
@@ -14,6 +21,8 @@ import {
   type UserPermission,
   type UserRole,
 } from "@/lib/users/types";
+
+const USER_LIST_SEARCH_FIELD = "userName";
 
 type ApiUserPermission = {
   _id?: number;
@@ -193,20 +202,36 @@ function normalizePaginatedUsers(payload: PaginatedApiEnvelope<unknown[]>): Pagi
   };
 }
 
-function resolveUserListFilter(params: UserListParams): ApiListFieldFilter | undefined {
-  if (params.search?.value.trim()) {
-    const search = normalizeUserSearchFilter({
-      ...params.search,
-      value: params.search.value.trim(),
-    });
+function buildUserSearchFilters(params: UserListParams): ApiSearchFilter[] {
+  const filters: ApiSearchFilter[] = [];
 
-    return {
-      field: search.field,
-      operator: search.operator,
-      value: search.value,
-    };
+  if (params.search?.value.trim()) {
+    const textFilter = createTextSearchFilter(
+      resolveSearchField(params.search, USER_LIST_SEARCH_FIELD),
+      params.search.value,
+      resolveSearchOperator(params.search),
+    );
+    if (textFilter) {
+      filters.push(textFilter);
+    }
   }
 
+  if (params.active !== undefined && params.active !== "all") {
+    filters.push({ field: "active", operator: "eq", value: String(params.active) });
+  }
+
+  if (params.branch && params.branch !== "all") {
+    filters.push({ field: "branch.id", operator: "eq", value: String(params.branch) });
+  }
+
+  if (params.roleId && params.roleId !== "all") {
+    filters.push({ field: "role.id", operator: "eq", value: String(params.roleId) });
+  }
+
+  return filters;
+}
+
+function resolveUserListFilter(params: UserListParams): ApiListFieldFilter | undefined {
   if (params.active !== undefined && params.active !== "all") {
     return { field: "active", operator: "eq", value: String(params.active) };
   }
@@ -220,6 +245,16 @@ function resolveUserListFilter(params: UserListParams): ApiListFieldFilter | und
   }
 
   return undefined;
+}
+
+function buildUserSearchBody(params: UserListParams) {
+  return buildApiSearchBody({
+    page: params.page ?? DEFAULT_USER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
+    offset: params.offset,
+    sort: params.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
+    filters: buildUserSearchFilters(params),
+  });
 }
 
 function buildUsersQuery(params: UserListParams): string {
@@ -384,6 +419,15 @@ export function normalizeApiUser(raw: unknown): User | null {
 }
 
 export async function fetchUsers(params: UserListParams = {}): Promise<PaginatedResult<User>> {
+  if (hasListTextSearch(params.search)) {
+    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+      `${API_ENDPOINTS.USERS}/search`,
+      buildUserSearchBody(params),
+    );
+
+    return normalizePaginatedUsers(response);
+  }
+
   const query = buildUsersQuery(params);
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
     `${API_ENDPOINTS.USERS}?${query}`,

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { AuditMetaFields } from "@/components/app-shell/audit-meta-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -710,15 +709,6 @@ export function AccountingEntryForm({
             ))}
           </select>
         </div>
-      ) : null}
-
-      {!isInline ? (
-      <AuditMetaFields
-        createdBy={values.createdBy}
-        isEditing={isEditing}
-        updatedAt={updatedAt}
-        onCreatedByChange={(value) => updateField("createdBy", value)}
-      />
       ) : null}
 
       <div className={`flex gap-2 ${isInline ? "justify-start pt-1" : "justify-end pt-2"}`}>

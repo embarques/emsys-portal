@@ -5,19 +5,19 @@ import {
   ChevronLeft,
   ChevronRight,
   KeyRound,
-  Pencil,
   Plus,
-  Search,
   Shield,
   Trash2,
 } from "lucide-react";
 
 import { RoleForm } from "@/components/roles/role-form";
 import { RoleViewSheet } from "@/components/roles/role-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { formatAuditDate } from "@/lib/audit/display";
 import type { DataTableColumn } from "@/lib/table/types";
 import {
@@ -207,33 +206,6 @@ export function RolesWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (role) => formatAuditDate(role.updatedAt),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (role) => (
-        <div className="flex gap-1">
-          <Button type="button" variant="ghost" size="sm" onClick={() => openEditForm(role)}>
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            onClick={() => {
-              setViewRole(null);
-              setDeleteTarget(role);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("roles", tableColumns);
@@ -271,51 +243,39 @@ export function RolesWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Role directory</CardTitle>
-              <CardDescription>Search roles by name, ID, or permission.</CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-md lg:justify-end">
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
-                    setPage(1);
-                  }}
-                  className="pl-9"
-                  placeholder="Search roles..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+          <CardTitle>Role directory</CardTitle>
+
+          <TableDirectoryToolbar
+            showFilterToggle={false}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
+                  setPage(1);
+                }}
+                placeholder="Search roles..."
+              />
+            }
+          />
         </CardHeader>
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setDeleteTarget(roles.filter((role) => selectedIds.includes(role.roleId)))}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={pageRoles.map((role) => role.roleId)}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const role = pageRoles.find((entry) => entry.roleId === selectedIds[0]);
+            if (role) openEditForm(role);
+          }}
+          onDelete={() => setDeleteTarget(roles.filter((role) => selectedIds.includes(role.roleId)))}
+        />
 
         <DataTable
           columns={columnVisibility.columns}
           rows={pageRoles}
+          page={currentPage}
           rowKey={(role) => role.roleId}
           rowLabel={(role) => role.name}
           columnLayout={columnVisibility}
@@ -326,6 +286,7 @@ export function RolesWorkspace() {
           onToggleSelectAll={toggleSelectAll}
           onToggleSelect={toggleSelect}
           onRowClick={setViewRole}
+          onRowDoubleClick={openEditForm}
           emptyState={
             <>
               <p className="text-muted-foreground">No roles match your search.</p>

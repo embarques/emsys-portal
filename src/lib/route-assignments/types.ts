@@ -37,8 +37,6 @@ export type RouteAssignmentFormValues = {
 
 export type RouteAssignmentFilterState = {
   query: string;
-  searchField: RouteAssignmentSearchField;
-  searchOperator: RouteAssignmentSearchOperator;
 };
 
 export type RouteAssignmentSearchOperator = "eq" | "neq" | "contains" | "startsWith";
@@ -73,7 +71,7 @@ export const ROUTE_ASSIGNMENT_GET_SEARCH_CAPABILITIES: {
   { field: "employeeGroup.id", label: "employeeGroup.id", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "employeeGroup.name", label: "employeeGroup.name", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "createdBy", label: "createdBy", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "id", label: "id", operators: ["eq", "neq"] },
+  { field: "id", label: "Assignment ID", operators: ["eq", "neq"] },
 ];
 
 export const ROUTE_ASSIGNMENT_SEARCH_FIELDS: { value: RouteAssignmentSearchField; label: string }[] =
@@ -96,24 +94,11 @@ export function getDefaultRouteAssignmentSearchOperator(field: RouteAssignmentSe
   return getRouteAssignmentSearchOperatorsForField(field)[0];
 }
 
-export function normalizeRouteAssignmentSearchFilter(search: RouteAssignmentSearchFilter): RouteAssignmentSearchFilter {
-  const allowedOperators = getRouteAssignmentSearchOperatorsForField(search.field);
-  const operator = allowedOperators.includes(search.operator)
-    ? search.operator
-    : getDefaultRouteAssignmentSearchOperator(search.field);
-
-  return { field: search.field, operator, value: search.value };
-}
-
-export function createRouteAssignmentSearchFilter(
-  value: string,
-  field: RouteAssignmentSearchField = "name",
-  operator: RouteAssignmentSearchOperator = "startsWith",
-): RouteAssignmentSearchFilter | undefined {
+export function createRouteAssignmentSearchFilter(value: string): RouteAssignmentSearchFilter | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
 
-  return normalizeRouteAssignmentSearchFilter({ field, operator, value: trimmed });
+  return { field: "name", operator: "contains", value: trimmed };
 }
 
 export function createEmptyTruckRef(): RouteAssignmentTruckRef {

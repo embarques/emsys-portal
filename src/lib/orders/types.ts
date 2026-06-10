@@ -1,4 +1,5 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
+import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import type { Customer, CustomerAddress, CustomerPhone } from "@/lib/customers/types";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 import { createRecordId } from "@/lib/customers/types";
@@ -91,10 +92,12 @@ export type OrderSearchField =
   | "employee.id"
   | "user.id";
 
-export type OrderSearchFilter = {
-  field: OrderSearchField;
-  operator: OrderSearchOperator;
-  value: string;
+export type OrderSearchFilter = ApiListTextSearch;
+
+export type OrderFilterState = {
+  query: string;
+  branch: OrderBranchFilter;
+  completed: OrderCompletedFilter;
 };
 
 export type OrderListParams = {
@@ -113,16 +116,8 @@ export const DEFAULT_ORDER_LIST_PARAMS = {
   sort: "date:asc",
 } as const satisfies Pick<OrderListParams, "page" | "limit" | "sort">;
 
-export type OrderFilterState = {
-  query: string;
-  searchField: OrderSearchField;
-  searchOperator: OrderSearchOperator;
-  branch: OrderBranchFilter;
-  completed: OrderCompletedFilter;
-};
-
 export const ORDER_SEARCH_FIELDS: { value: OrderSearchField; label: string }[] = [
-  { value: "id", label: "id" },
+  { value: "id", label: "Order ID" },
   { value: "oldID", label: "oldID" },
   { value: "date", label: "date" },
   { value: "completed", label: "completed" },
@@ -169,25 +164,8 @@ export function getDefaultOrderSearchOperator(field: OrderSearchField): OrderSea
   return getOrderSearchOperatorsForField(field)[0];
 }
 
-export function createOrderSearchFilter(
-  value: string,
-  field: OrderSearchField = "sender.name",
-  operator: OrderSearchOperator = "contains",
-): OrderSearchFilter | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-
-  const allowedOperators = getOrderSearchOperatorsForField(field);
-  const normalizedOperator = allowedOperators.includes(operator) ? operator : getDefaultOrderSearchOperator(field);
-
-  let normalizedValue = trimmed;
-  if (field === "completed") {
-    const lower = trimmed.toLowerCase();
-    if (["completed", "true", "yes"].includes(lower)) normalizedValue = "true";
-    if (["pending", "false", "no", "incomplete"].includes(lower)) normalizedValue = "false";
-  }
-
-  return { field, operator: normalizedOperator, value: normalizedValue };
+export function createOrderSearchFilter(value: string): OrderSearchFilter | undefined {
+  return createListTextSearch(value);
 }
 
 export function createEmptyOrderComment(): OrderCommentFormValues {

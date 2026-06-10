@@ -51,7 +51,7 @@ export function BranchViewSheet({ branch, open, onOpenChange, onEdit, onDelete }
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Branch">
-            <RecordViewSheetDetailRow label="ID" value={formatBranchId(branch.id)} />
+            <RecordViewSheetDetailRow label="Branch ID" value={formatBranchId(branch.id)} />
             <RecordViewSheetDetailRow label="Name" value={branch.name} />
             <RecordViewSheetDetailRow label="Code" value={branch.code || "—"} />
             <RecordViewSheetDetailRow label="Type" value={branch.type || "—"} />

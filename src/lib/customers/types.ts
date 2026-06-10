@@ -1,4 +1,12 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
+import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import {
+  CUSTOMER_TYPE_RECEIVER,
+  CUSTOMER_TYPE_SENDER,
+  coerceCustomerTypeFromApi,
+  isCustomerReceiverType,
+} from "@/lib/customers/customer-type";
+import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 
@@ -14,27 +22,11 @@ export type CustomerCoreAddress = {
   country: string;
 };
 
-export type CustomerBranchSettings = {
-  labelPrefix: string;
-  invoiceCreatedThruIncomeStatement: boolean;
-  printLabelCount: boolean;
-  roundDecimalPlaces: number;
-  defaultLabelStatus: number;
-  s3Profile: string;
-  s3BucketName: string;
-  s3BucketFolder: string;
-  s3ShareLinkExpireMinutes: number;
-  imageResampleBy: number;
-};
-
+/** customer.Customer.branch — core.BranchDTO */
 export type CustomerBranch = {
   id: number;
   name: string;
   code: string;
-  address: CustomerCoreAddress;
-  phone1: string;
-  logo: string;
-  settings: CustomerBranchSettings;
 };
 
 export type Customer = {
@@ -57,6 +49,8 @@ export type Customer = {
   address: CustomerCoreAddress;
   /** Additional addresses from the API `addresses` array. */
   addresses: CustomerCoreAddress[];
+  /** Linked receiver customer IDs. */
+  receivers: string[];
 };
 
 /** Legacy phone shape used by orders and party editors. */
@@ -114,6 +108,7 @@ export type CustomerFormValues = {
   branch: CustomerBranch;
   address: CustomerCoreAddress;
   addresses: CustomerCoreAddress[];
+  receivers: string[];
   createdByID: number | null;
   createdAt: string;
   updatedAt: string;
@@ -131,16 +126,23 @@ export function validateCustomerFormValues(values: CustomerFormValues): void {
   if (!values.branch?.id || values.branch.id <= 0) {
     throw new Error("branch is required.");
   }
+
+  if (values.customerType !== CUSTOMER_TYPE_SENDER && values.customerType !== CUSTOMER_TYPE_RECEIVER) {
+    throw new Error("customerType is required.");
+  }
 }
 
 export type CustomerBranchFilter = number | "all";
 
 export type CustomerFilterState = {
   query: string;
-  searchField: CustomerSearchField;
-  searchOperator: CustomerSearchOperator;
+  rows: TableFilterRowState[];
+};
+
+/** @deprecated Chip filters — use CustomerFilterState.rows instead. */
+export type CustomerLegacyChipFilterState = {
+  query: string;
   branch: CustomerBranchFilter;
-  active: boolean | "all";
   customerType: number | "all";
 };
 
@@ -153,16 +155,12 @@ export type CustomerSearchField =
   | "phone2"
   | "email"
   | "IDNumber"
-  | "active"
+  | "address.address1"
   | "customerType"
   | "branch.id"
   | "oldID";
 
-export type CustomerSearchFilter = {
-  field: CustomerSearchField;
-  operator: CustomerSearchOperator;
-  value: string;
-};
+export type CustomerSearchFilter = ApiListTextSearch;
 
 export type CustomerListParams = {
   page?: number;
@@ -171,8 +169,8 @@ export type CustomerListParams = {
   /** e.g. `name:asc` or `[{ field: "name", direction: "asc" }, { field: "createdAt", direction: "desc" }]` */
   sort?: ApiListSortInput;
   search?: CustomerSearchFilter;
+  filterRows?: TableFilterRowState[];
   branch?: CustomerBranchFilter;
-  active?: boolean | "all";
   customerType?: number | "all";
 };
 
@@ -206,7 +204,7 @@ export const CUSTOMER_PORTAL_BRANCHES: {
 
 /**
  * GET /customers field + operator pairs verified against the live API.
- * Nested address / branch.code / id filters return 400 on GET — use POST /customers/search instead.
+ * Branch and customerType chips use query params (branchId, customerType).
  */
 export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   field: CustomerSearchField;
@@ -218,9 +216,8 @@ export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   { field: "phone2", label: "Phone 2", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "email", label: "Email", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "IDNumber", label: "ID number", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "active", label: "Active", operators: ["eq", "neq"] },
+  { field: "address.address1", label: "Address 1", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "customerType", label: "Customer type", operators: ["eq", "neq"] },
-  { field: "branch.id", label: "Branch ID", operators: ["eq", "neq"] },
   { field: "oldID", label: "Old ID", operators: ["eq", "neq"] },
 ];
 
@@ -234,15 +231,25 @@ export const CUSTOMER_SEARCH_OPERATORS: { value: CustomerSearchOperator; label: 
   { value: "neq", label: "Not equals" },
 ];
 
-export const CUSTOMER_ACTIVE_OPTIONS: { value: boolean; label: string }[] = [
-  { value: true, label: "Active" },
-  { value: false, label: "Inactive" },
-];
+export { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/customer-type";
 
 export const CUSTOMER_TYPE_OPTIONS: { value: number; label: string }[] = [
-  { value: 1, label: "Type 1" },
-  { value: 2, label: "Type 2" },
+  { value: CUSTOMER_TYPE_SENDER, label: "Sender" },
+  { value: CUSTOMER_TYPE_RECEIVER, label: "Receiver" },
 ];
+
+export function normalizeCustomerType(value: number | null | undefined): number {
+  return coerceCustomerTypeFromApi(value);
+}
+
+export function normalizeCustomerFormValues(values: CustomerFormValues): CustomerFormValues {
+  return applyCustomerTypeBranch({
+    ...values,
+    active: true,
+    customerType: normalizeCustomerType(values.customerType),
+    receivers: values.receivers.map((entry) => entry.trim()).filter(Boolean),
+  });
+}
 
 /** @deprecated Use customerType from the API. */
 export const CLIENT_TYPES: { value: ClientType; label: string }[] = [
@@ -266,21 +273,6 @@ export function createEmptyCustomerCoreAddress(country = ""): CustomerCoreAddres
   };
 }
 
-export function createEmptyCustomerBranchSettings(): CustomerBranchSettings {
-  return {
-    labelPrefix: "",
-    invoiceCreatedThruIncomeStatement: false,
-    printLabelCount: false,
-    roundDecimalPlaces: 0,
-    defaultLabelStatus: 0,
-    s3Profile: "",
-    s3BucketName: "",
-    s3BucketFolder: "",
-    s3ShareLinkExpireMinutes: 0,
-    imageResampleBy: 0,
-  };
-}
-
 export function createCustomerBranchFromPortal(portal: CustomerPortalBranch): CustomerBranch {
   const config = CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.portal === portal) ?? CUSTOMER_PORTAL_BRANCHES[0];
 
@@ -288,11 +280,31 @@ export function createCustomerBranchFromPortal(portal: CustomerPortalBranch): Cu
     id: config.id,
     name: config.label,
     code: config.code,
-    address: createEmptyCustomerCoreAddress(portal === "dr" ? "DO" : "US"),
-    phone1: "",
-    logo: "",
-    settings: createEmptyCustomerBranchSettings(),
   };
+}
+
+/** Sender → USA branch; receiver → DR branch. */
+export function getPortalBranchForCustomerType(customerType: number | null | undefined): CustomerPortalBranch {
+  return isCustomerReceiverType(customerType) ? "dr" : "usa";
+}
+
+export function getDefaultCountryForPortalBranch(portal: CustomerPortalBranch): string {
+  return portal === "dr" ? "DO" : "US";
+}
+
+export function applyCustomerTypeBranch(values: CustomerFormValues): CustomerFormValues {
+  const portal = getPortalBranchForCustomerType(values.customerType);
+  const branch = createCustomerBranchFromPortal(portal);
+  const defaultCountry = getDefaultCountryForPortalBranch(portal);
+
+  return syncCustomerFormAddresses({
+    ...values,
+    branch,
+    address: {
+      ...values.address,
+      country: values.address.country.trim() || defaultCountry,
+    },
+  });
 }
 
 export function createEmptyCustomerForm(): CustomerFormValues {
@@ -303,7 +315,7 @@ export function createEmptyCustomerForm(): CustomerFormValues {
     id: "",
     oldID: 0,
     name: "",
-    customerType: null,
+    customerType: CUSTOMER_TYPE_SENDER,
     phone1: "",
     phone2: "",
     email: "",
@@ -314,6 +326,7 @@ export function createEmptyCustomerForm(): CustomerFormValues {
     branch,
     address,
     addresses: [address],
+    receivers: [],
     createdByID: null,
     createdAt: "",
     updatedAt: "",
@@ -334,35 +347,34 @@ export function toApiCustomerSearchField(field: CustomerSearchField): string {
   return field;
 }
 
-export function normalizeCustomerSearchFilter(search: CustomerSearchFilter): CustomerSearchFilter {
-  const allowedOperators = getCustomerSearchOperatorsForField(search.field);
-  const operator = allowedOperators.includes(search.operator)
-    ? search.operator
-    : getDefaultCustomerSearchOperator(search.field);
-
-  return {
-    field: search.field,
-    operator,
-    value: search.value,
-  };
+export function createCustomerSearchFilter(value: string): CustomerSearchFilter | undefined {
+  return createListTextSearch(value);
 }
 
-export function createCustomerSearchFilter(
-  value: string,
-  field: CustomerSearchField = "name",
-  operator: CustomerSearchOperator = "startsWith",
-): CustomerSearchFilter | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
+/** Plain list params for GET /customers — search and filterRows only when the user applies them. */
+export function buildCustomerListParams(input: {
+  page: number;
+  limit?: number;
+  query: string;
+  rows: TableFilterRowState[];
+}): CustomerListParams {
+  const params: CustomerListParams = {
+    ...DEFAULT_CUSTOMER_LIST_PARAMS,
+    page: input.page,
+    limit: input.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit,
+  };
 
-  let normalizedValue = trimmed;
-  if (field === "active") {
-    const lower = trimmed.toLowerCase();
-    if (["active", "true", "yes"].includes(lower)) normalizedValue = "true";
-    if (["inactive", "false", "no"].includes(lower)) normalizedValue = "false";
+  const search = createCustomerSearchFilter(input.query);
+  if (search) {
+    params.search = search;
   }
 
-  return normalizeCustomerSearchFilter({ field, operator, value: normalizedValue });
+  const completeRows = input.rows.filter(isCompleteFilterRow);
+  if (completeRows.length > 0) {
+    params.filterRows = completeRows;
+  }
+
+  return params;
 }
 
 export function getCustomerSearchSort(
@@ -380,8 +392,6 @@ export function getCustomerSearchSort(
       return `email:${direction}`;
     case "IDNumber":
       return `IDNumber:${direction}`;
-    case "active":
-      return `active:${direction}`;
     case "customerType":
       return `customerType:${direction}`;
     case "branch.id":
@@ -414,8 +424,8 @@ export function portalBranchToId(portal: CustomerPortalBranch): number {
 }
 
 export function getCustomerClientType(customer: Pick<Customer, "customerType">): ClientType | null {
-  if (customer.customerType === 1) return "sender";
-  if (customer.customerType === 2) return "receiver";
+  if (isCustomerReceiverType(customer.customerType)) return "receiver";
+  if (customer.customerType === CUSTOMER_TYPE_SENDER || customer.customerType == null) return "sender";
   return null;
 }
 
@@ -485,7 +495,7 @@ export function customerToFormValues(customer: Customer): CustomerFormValues {
       ? customer.addresses.map((entry) => ({ ...entry }))
       : [{ ...customer.address }];
 
-  return {
+  return normalizeCustomerFormValues({
     id: customer.id,
     oldID: customer.oldID,
     name: customer.name,
@@ -497,13 +507,14 @@ export function customerToFormValues(customer: Customer): CustomerFormValues {
     IDNumber: customer.IDNumber,
     notes: customer.notes,
     accountBalance: customer.accountBalance,
-    branch: { ...customer.branch, address: { ...customer.branch.address } },
+    branch: { ...customer.branch },
     address: { ...customer.address },
     addresses,
+    receivers: [...customer.receivers],
     createdByID: customer.createdByID,
     createdAt: customer.createdAt,
     updatedAt: customer.updatedAt,
-  };
+  });
 }
 
 export function syncCustomerFormAddresses(values: CustomerFormValues): CustomerFormValues {

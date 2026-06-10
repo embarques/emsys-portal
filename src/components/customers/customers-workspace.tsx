@@ -1,24 +1,22 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Pencil,
   Plus,
   Search,
   Trash2,
   UserCheck,
-  UserPlus,
   Users,
 } from "lucide-react";
 
 import { CustomerForm } from "@/components/customers/customer-form";
 import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,19 +29,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+} from "@/components/app-shell/table-directory-toolbar";
+import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { formatFilteredCountSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   formatAccountBalance,
-  formatAddressSummary,
   formatCustomerBranchLabel,
-  formatPhoneSummary,
   getClientTypeBadgeClass,
-  getClientTypeLabel,
-  getCustomerActiveBadgeClass,
-  getCustomerActiveLabel,
   getCustomerBranchBadgeClass,
   getCustomerTypeLabel,
   truncateCustomerId,
@@ -60,30 +61,27 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
-  CUSTOMER_SEARCH_FIELDS,
-  CUSTOMER_TYPE_OPTIONS,
   DEFAULT_CUSTOMER_LIST_PARAMS,
-  createCustomerSearchFilter,
+  buildCustomerListParams,
   createEmptyCustomerForm,
   customerToFormValues,
+  CUSTOMER_TYPE_OPTIONS,
+  CUSTOMER_TYPE_RECEIVER,
+  CUSTOMER_TYPE_SENDER,
   getCustomerClientType,
-  getCustomerSearchOperatorsForField,
-  getDefaultCustomerSearchOperator,
   type Customer,
   type CustomerFilterState,
   type CustomerFormValues,
 } from "@/lib/customers/types";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const PAGE_SIZE = DEFAULT_CUSTOMER_LIST_PARAMS.limit;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: CustomerFilterState = {
   query: "",
-  searchField: "name",
-  searchOperator: "startsWith",
-  branch: "all",
-  active: "all",
-  customerType: "all",
+  rows: [],
 };
 
 type CustomerDeleteTarget =
@@ -93,12 +91,22 @@ type CustomerDeleteTarget =
 export function CustomersWorkspace() {
   const { hasPermission } = useAuth();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifyError, notifySuccess } = useFeedback();
+  const canCreateCustomers = hasPermission(
+    PERMISSIONS.clientsCreate.name,
+    PERMISSIONS.clientsCreate.resourceType,
+  );
+  const canUpdateCustomers = hasPermission(
+    PERMISSIONS.clientsUpdate.name,
+    PERMISSIONS.clientsUpdate.resourceType,
+  );
   const canDeleteCustomers = hasPermission(
     PERMISSIONS.clientsDelete.name,
     PERMISSIONS.clientsDelete.resourceType,
   );
   const [filters, setFilters] = useState<CustomerFilterState>(defaultFilters);
-  const deferredQuery = useDeferredValue(filters.query);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
@@ -118,30 +126,21 @@ export function CustomersWorkspace() {
     setDeleteError(null);
   }
 
-  const listParams = useMemo(() => {
-    const search = createCustomerSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
-
-    return {
-      ...DEFAULT_CUSTOMER_LIST_PARAMS,
-      page,
-      limit: PAGE_SIZE,
-      search,
-      branch: filters.branch,
-      active: filters.active,
-      customerType: filters.customerType,
-    };
-  }, [
-    deferredQuery,
-    filters.active,
-    filters.branch,
-    filters.customerType,
-    filters.searchField,
-    filters.searchOperator,
-    page,
-  ]);
+  const listParams = useMemo(
+    () =>
+      buildCustomerListParams({
+        page,
+        limit: PAGE_SIZE,
+        query: debouncedQuery,
+        rows: filters.rows,
+      }),
+    [debouncedQuery, filters.rows, page],
+  );
 
   const { data, isLoading, isError, error, isFetching, isPending } = useCustomers(listParams);
-  const { data: branchesData, isLoading: branchesLoading } = useBranchPicker();
+  const { data: branchesData, isLoading: branchesLoading } = useBranchPicker(200, {
+    enabled: filtersOpen,
+  });
   const stats = useCustomerStats();
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
@@ -247,95 +246,70 @@ export function CustomersWorkspace() {
   }
 
   const statCards = [
-    { label: "Total customers", value: stats.total.toString(), description: "All customer records", icon: Users },
-    { label: "Active", value: stats.active.toString(), description: "Active customers", icon: UserPlus },
-    { label: "Inactive", value: stats.inactive.toString(), description: "Inactive customers", icon: UserCheck },
     {
-      label: "Customer type 1",
-      value: stats.type1.toString(),
-      description: "Customers with customerType = 1",
+      label: "Total customers",
+      value: stats.total,
+      description: "All customer records",
+      icon: Users,
+    },
+    {
+      label: "Senders",
+      value: stats.senders,
+      description: "Customers who send shipments",
       icon: Search,
+    },
+    {
+      label: "Receivers",
+      value: stats.receivers,
+      description: "Customers who receive shipments",
+      icon: UserCheck,
     },
   ];
 
-  const branchFilters = useMemo(() => {
-    const apiBranches = branchesData?.items ?? [];
-
-    return [
-      { value: "all" as const, label: "All branches" },
-      ...apiBranches.map((branch) => ({
-        value: branch.id,
-        label: formatBranchFilterLabel(branch),
-      })),
-    ];
+  const branchFilterOptions = useMemo(() => {
+    return (branchesData?.items ?? []).map((branch) => ({
+      value: String(branch.id),
+      label: formatBranchFilterLabel(branch),
+    }));
   }, [branchesData?.items]);
 
-  const activeFilters: { value: CustomerFilterState["active"]; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: true, label: "Active" },
-    { value: false, label: "Inactive" },
-  ];
+  const customerTypeFilterOptions = useMemo(() => {
+    return CUSTOMER_TYPE_OPTIONS.map((option) => {
+      const count =
+        option.value === CUSTOMER_TYPE_SENDER
+          ? stats.senders
+          : option.value === CUSTOMER_TYPE_RECEIVER
+            ? stats.receivers
+            : 0;
 
-  const customerTypeFilters: { value: CustomerFilterState["customerType"]; label: string }[] = [
-    { value: "all", label: "All types" },
-    ...CUSTOMER_TYPE_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
-  ];
+      return {
+        value: String(option.value),
+        label: stats.isLoading ? option.label : `${option.label} (${count.toLocaleString()})`,
+      };
+    });
+  }, [stats.isLoading, stats.receivers, stats.senders]);
 
   const tableColumns: DataTableColumn<Customer>[] = [
     {
-      id: "id",
-      label: "id",
-      cellClassName: "font-mono text-xs",
-      renderCell: (customer) => truncateCustomerId(customer.id),
+      id: "customerType",
+      label: "customerType",
+      renderCell: (customer) => {
+        const clientType = getCustomerClientType(customer) ?? "sender";
+        return (
+          <Badge className={getClientTypeBadgeClass(clientType)}>{getCustomerTypeLabel(customer)}</Badge>
+        );
+      },
     },
     {
-      id: "oldID",
-      label: "oldID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (customer) => (customer.oldID > 0 ? String(customer.oldID) : "—"),
+      id: "IDNumber",
+      label: "IDNumber",
+      renderCell: (customer) => customer.IDNumber || "—",
     },
     {
       id: "name",
       label: "name",
       cellClassName: "font-medium",
       renderCell: (customer) => customer.name,
-    },
-    {
-      id: "active",
-      label: "active",
-      renderCell: (customer) => (
-        <Badge className={getCustomerActiveBadgeClass(customer.active)}>
-          {getCustomerActiveLabel(customer.active)}
-        </Badge>
-      ),
-    },
-    {
-      id: "customerType",
-      label: "customerType",
-      renderCell: (customer) => getCustomerTypeLabel(customer),
-    },
-    {
-      id: "clientType",
-      label: "client type",
-      renderCell: (customer) => {
-        const clientType = getCustomerClientType(customer);
-        if (!clientType) return "—";
-        return (
-          <Badge className={getClientTypeBadgeClass(clientType)}>{getClientTypeLabel(clientType)}</Badge>
-        );
-      },
-    },
-    {
-      id: "branch",
-      label: "branch",
-      renderCell: (customer) => (
-        <Badge className={getCustomerBranchBadgeClass(customer)}>{formatCustomerBranchLabel(customer)}</Badge>
-      ),
-    },
-    {
-      id: "branch.code",
-      label: "branch.code",
-      renderCell: (customer) => customer.branch.code || "—",
     },
     {
       id: "phone1",
@@ -348,35 +322,14 @@ export function CustomersWorkspace() {
       renderCell: (customer) => formatPhoneDisplayOrDash(customer.phone2),
     },
     {
-      id: "email",
-      label: "email",
-      renderCell: (customer) => customer.email || "—",
-    },
-    {
-      id: "IDNumber",
-      label: "IDNumber",
-      renderCell: (customer) => customer.IDNumber || "—",
-    },
-    {
-      id: "phones",
-      label: "phones",
-      renderCell: (customer) => formatPhoneSummary(customer),
-    },
-    {
-      id: "accountBalance",
-      label: "accountBalance",
-      renderCell: (customer) => formatAccountBalance(customer.accountBalance),
-    },
-    {
-      id: "notes",
-      label: "notes",
-      cellClassName: "max-w-[240px] truncate",
-      renderCell: (customer) => customer.notes || "—",
-    },
-    {
       id: "address.address1",
       label: "address.address1",
       renderCell: (customer) => customer.address.address1 || "—",
+    },
+    {
+      id: "address.address2",
+      label: "address.address2",
+      renderCell: (customer) => customer.address.address2 || "—",
     },
     {
       id: "address.city",
@@ -389,14 +342,37 @@ export function CustomersWorkspace() {
       renderCell: (customer) => customer.address.state || "—",
     },
     {
+      id: "address.zipcode",
+      label: "address.zipcode",
+      renderCell: (customer) => customer.address.zipcode || "—",
+    },
+    {
       id: "address.country",
       label: "address.country",
       renderCell: (customer) => customer.address.country || "—",
     },
     {
-      id: "address",
-      label: "address",
-      renderCell: (customer) => formatAddressSummary(customer),
+      id: "branch",
+      label: "branch",
+      renderCell: (customer) => (
+        <Badge className={getCustomerBranchBadgeClass(customer)}>{formatCustomerBranchLabel(customer)}</Badge>
+      ),
+    },
+    {
+      id: "email",
+      label: "email",
+      renderCell: (customer) => customer.email || "—",
+    },
+    {
+      id: "accountBalance",
+      label: "accountBalance",
+      renderCell: (customer) => formatAccountBalance(customer.accountBalance),
+    },
+    {
+      id: "notes",
+      label: "notes",
+      cellClassName: "max-w-[240px] truncate",
+      renderCell: (customer) => customer.notes || "—",
     },
     {
       id: "createdByID",
@@ -416,53 +392,50 @@ export function CustomersWorkspace() {
       renderCell: (customer) => (customer.updatedAt ? formatAuditDate(customer.updatedAt) : "—"),
     },
     {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (customer) => (
-        <div className="flex gap-1">
-          <Button type="button" variant="ghost" size="sm" onClick={() => openEditForm(customer)}>
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          {canDeleteCustomers ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={() => {
-                setViewCustomer(null);
-                openDeleteTarget({ mode: "single", customer });
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
-          ) : null}
-        </div>
-      ),
+      id: "oldID",
+      label: "oldID",
+      cellClassName: "font-mono text-xs",
+      renderCell: (customer) => (customer.oldID > 0 ? String(customer.oldID) : "—"),
+    },
+    {
+      id: "id",
+      label: "Customer ID",
+      cellClassName: "font-mono text-xs",
+      renderCell: (customer) => truncateCustomerId(customer.id),
     },
   ];
 
+  const isListFiltered =
+    Boolean(debouncedQuery.trim()) || countCompleteFilterRows(filters.rows) > 0;
+
+  const searchResultHint = filters.query.trim()
+    ? isSearchPending
+      ? "Searching customers…"
+      : formatFilteredCountSummary({
+          matched: totalCustomers,
+          catalogTotal: stats.total,
+          noun: "customers",
+          isLoading: isFetching && customers.length === 0,
+          catalogLoading: stats.isLoading,
+        })
+    : null;
+
+  const listSummary = formatPaginatedListSummary({
+    itemCountOnPage: customers.length,
+    page: currentPage,
+    pageSize: PAGE_SIZE,
+    total: totalCustomers,
+    noun: "customers",
+    isFiltered: isListFiltered,
+    isLoading: isFetching,
+    catalogTotal: stats.total,
+    catalogLoading: stats.isLoading,
+  });
+
   const columnVisibility = useColumnVisibility("customers", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
-  const searchOperatorOptions = useMemo(
-    () =>
-      getCustomerSearchOperatorsForField(filters.searchField).map((operator) => ({
-        value: operator,
-        label:
-          operator === "startsWith"
-            ? "Starts with"
-            : operator === "contains"
-              ? "Contains"
-              : operator === "eq"
-                ? "Equals"
-                : "Not equals",
-      })),
-    [filters.searchField],
-  );
+  const activeFilterCount = countCompleteFilterRows(filters.rows);
+  const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
 
   return (
     <div>
@@ -470,10 +443,12 @@ export function CustomersWorkspace() {
         title="Customers"
         description="Customer records from the EMSYS API with contact info, addresses, account balance, and branch."
         actions={
-          <Button onClick={openAddForm} disabled={isSaving}>
-            <Plus className="h-4 w-4" />
-            Add customer
-          </Button>
+          canCreateCustomers ? (
+            <Button onClick={openAddForm} disabled={isSaving}>
+              <Plus className="h-4 w-4" />
+              Add customer
+            </Button>
+          ) : null
         }
       />
 
@@ -487,7 +462,9 @@ export function CustomersWorkspace() {
                 <Icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.isLoading ? "…" : stat.value}</div>
+                <div className="text-2xl font-bold">
+                  {stats.isLoading ? "…" : stat.value.toLocaleString()}
+                </div>
                 <CardDescription className="mt-1">{stat.description}</CardDescription>
               </CardContent>
             </Card>
@@ -497,175 +474,77 @@ export function CustomersWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Customer directory</CardTitle>
-              <CardDescription>
-                Server-backed list from GET /customers with pagination, sorting, and API search filters.
-              </CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
-              <select
-                aria-label="Search field"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchField}
-                onChange={(event) => {
-                  const searchField = event.target.value as CustomerFilterState["searchField"];
-                  setFilters((current) => {
-                    const allowedOperators = getCustomerSearchOperatorsForField(searchField);
-                    const searchOperator = allowedOperators.includes(current.searchOperator)
-                      ? current.searchOperator
-                      : getDefaultCustomerSearchOperator(searchField);
+          <CardTitle>Customer directory</CardTitle>
 
-                    return {
-                      ...current,
-                      searchField,
-                      searchOperator,
-                    };
-                  });
-                  setPage(1);
-                }}
-              >
-                {CUSTOMER_SEARCH_FIELDS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Search operator"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchOperator}
-                onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchOperator: event.target.value as CustomerFilterState["searchOperator"],
-                  }));
-                  setPage(1);
-                }}
-              >
-                {searchOperatorOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
+          <TableDirectoryToolbar
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            columnLayout={columnVisibility}
+            search={
+              <>
+                <TableSearchInput
                   value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
+                  onChange={(query) => {
+                    setFilters((current) => ({ ...current, query }));
                     setPage(1);
                   }}
-                  className="pl-9"
                   placeholder="Search customers..."
                 />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
-            {branchesLoading && branchFilters.length <= 1 ? (
-              <span className="text-sm text-muted-foreground">Loading branches…</span>
-            ) : null}
-            {branchFilters.map((option) => (
-              <Button
-                key={String(option.value)}
-                type="button"
-                size="sm"
-                variant={filters.branch === option.value ? "default" : "outline"}
-                disabled={branchesLoading && option.value !== "all"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, branch: option.value }));
-                  setPage(1);
-                }}
+                {searchResultHint ? (
+                  <p className="pl-1 text-xs text-muted-foreground" aria-live="polite">
+                    {searchResultHint}
+                  </p>
+                ) : null}
+              </>
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={listSummary}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
               >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active</span>
-            {activeFilters.map((option) => (
-              <Button
-                key={String(option.value)}
-                type="button"
-                size="sm"
-                variant={filters.active === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, active: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer type</span>
-            {customerTypeFilters.map((option) => (
-              <Button
-                key={String(option.value)}
-                type="button"
-                size="sm"
-                variant={filters.customerType === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, customerType: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-            {filters.query ||
-            filters.branch !== "all" ||
-            filters.active !== "all" ||
-            filters.customerType !== "all" ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setFilters(defaultFilters);
-                  setPage(1);
-                }}
-              >
-                Clear search & filters
-              </Button>
-            ) : null}
-          </div>
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={CUSTOMER_TABLE_FILTER_FIELDS}
+                  dynamicOptions={{
+                    branches: branchesLoading ? [] : branchFilterOptions,
+                    customerTypes: customerTypeFilterOptions,
+                  }}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  }}
+                />
+              </TableFilterPanel>
+            }
+          />
         </CardHeader>
 
         {listErrorMessage ? (
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : null}
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              {canDeleteCustomers ? (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={isSaving}
-                  onClick={() => openDeleteTarget({ mode: "bulk", ids: [...selectedIds] })}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete selected
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={customers.map((customer) => customer.id)}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const customer = customers.find((entry) => entry.id === selectedIds[0]);
+            if (customer) openEditForm(customer);
+          }}
+          canEdit={canUpdateCustomers}
+          onDelete={() => openDeleteTarget({ mode: "bulk", ids: [...selectedIds] })}
+          canDelete={canDeleteCustomers}
+          deleteDisabled={isSaving}
+        />
 
         {showInitialTableLoading ? (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading customers…</div>
@@ -673,6 +552,8 @@ export function CustomersWorkspace() {
           <DataTable
             columns={columnVisibility.columns}
             rows={customers}
+            page={currentPage}
+            isPageDataPending={isFetching}
             rowKey={(customer) => customer.id}
             rowLabel={(customer) => customer.name}
             columnLayout={columnVisibility}
@@ -683,24 +564,23 @@ export function CustomersWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
             onRowClick={setViewCustomer}
+            onRowDoubleClick={canUpdateCustomers ? openEditForm : undefined}
             emptyState={
               <>
                 <p className="text-muted-foreground">No customers match your search or filters.</p>
-                <Button className="mt-4" onClick={openAddForm}>
-                  <Plus className="h-4 w-4" />
-                  Add customer
-                </Button>
+                {canCreateCustomers ? (
+                  <Button className="mt-4" onClick={openAddForm}>
+                    <Plus className="h-4 w-4" />
+                    Add customer
+                  </Button>
+                ) : null}
               </>
             }
           />
         )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {isFetching
-              ? "Refreshing customers…"
-              : `Showing ${customers.length} of ${totalCustomers} customers`}
-          </p>
+          <p className="text-sm text-muted-foreground">{listSummary}</p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -731,6 +611,7 @@ export function CustomersWorkspace() {
         customer={viewCustomer}
         open={Boolean(viewCustomer)}
         canDelete={canDeleteCustomers}
+        canEdit={canUpdateCustomers}
         onOpenChange={(open) => {
           if (!open) setViewCustomer(null);
         }}

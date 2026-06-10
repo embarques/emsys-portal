@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { Input } from "@/components/ui/input";
-import { formatPhoneDisplay, sanitizePhoneDigits } from "@/lib/utils/phone";
+import { formatPhoneDisplay, normalizeStoredPhone } from "@/lib/utils/phone";
 
 type PhoneInputProps = Omit<React.ComponentProps<typeof Input>, "type" | "value" | "onChange" | "inputMode"> & {
   value: string;
@@ -13,7 +13,7 @@ type PhoneInputProps = Omit<React.ComponentProps<typeof Input>, "type" | "value"
 const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
   ({ value, onChange, placeholder = "555-123-4567", maxLength = 12, ...props }, ref) => {
     function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
-      onChange(sanitizePhoneDigits(event.target.value));
+      onChange(normalizeStoredPhone(event.target.value));
     }
 
     return (

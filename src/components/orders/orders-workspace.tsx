@@ -7,18 +7,16 @@ import {
   ClipboardList,
   MapPin,
   Package,
-  Pencil,
   Plus,
-  Search,
   Trash2,
 } from "lucide-react";
 
 import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,7 +29,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+  TableFilterSection,
+} from "@/components/app-shell/table-directory-toolbar";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
@@ -56,12 +59,9 @@ import {
 } from "@/lib/orders/hooks/use-orders";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
-  ORDER_SEARCH_FIELDS,
   createEmptyOrderForm,
   createOrderSearchFilter,
-  getDefaultOrderSearchOperator,
   getOrderRecordId,
-  getOrderSearchOperatorsForField,
   orderToFormValues,
   type Order,
   type OrderFilterState,
@@ -74,8 +74,6 @@ const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
 
 const defaultFilters: OrderFilterState = {
   query: "",
-  searchField: "sender.name",
-  searchOperator: "contains",
   branch: "all",
   completed: "all",
 };
@@ -84,6 +82,7 @@ export function OrdersWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const { loading: authLoading, companyId } = useAuth();
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
@@ -93,7 +92,7 @@ export function OrdersWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Order | Order[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const listParams = useMemo(() => {
-    const search = createOrderSearchFilter(deferredQuery, filters.searchField, filters.searchOperator);
+    const search = createOrderSearchFilter(deferredQuery);
 
     return {
       ...DEFAULT_ORDER_LIST_PARAMS,
@@ -107,8 +106,6 @@ export function OrdersWorkspace() {
     deferredQuery,
     filters.branch,
     filters.completed,
-    filters.searchField,
-    filters.searchOperator,
     page,
   ]);
 
@@ -142,22 +139,6 @@ export function OrdersWorkspace() {
     deleteOrdersMutation.isPending;
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const missingCompanyContext = !authLoading && !companyId;
-
-  const searchOperatorOptions = useMemo(
-    () =>
-      getOrderSearchOperatorsForField(filters.searchField).map((operator) => ({
-        value: operator,
-        label:
-          operator === "startsWith"
-            ? "Starts with"
-            : operator === "contains"
-              ? "Contains"
-              : operator === "eq"
-                ? "Equals"
-                : "Not equals",
-      })),
-    [filters.searchField],
-  );
 
   const branchFilters = useMemo(
     () => [
@@ -275,7 +256,7 @@ export function OrdersWorkspace() {
   const tableColumns: DataTableColumn<Order>[] = [
     {
       id: "id",
-      label: "id",
+      label: "Order ID",
       cellClassName: "font-mono text-xs",
       renderCell: (order) => (order.oldID > 0 ? order.oldID : order.id),
     },
@@ -360,45 +341,13 @@ export function OrdersWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDate(order.updatedAt),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (order) => (
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={`Edit pickup ${getOrderRecordId(order)}`}
-            onClick={() => openEditForm(order)}
-            disabled={isSaving}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            aria-label={`Delete pickup ${getOrderRecordId(order)}`}
-            onClick={() => {
-              setViewOrder(null);
-              setDeleteTarget(order);
-            }}
-            disabled={isSaving}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("orders", tableColumns);
+  const activeFilterCount =
+    (filters.branch !== "all" ? 1 : 0) + (filters.completed !== "all" ? 1 : 0);
+  const hasActiveFilters =
+    Boolean(filters.query.trim()) || filters.branch !== "all" || filters.completed !== "all";
 
   return (
     <div>
@@ -433,127 +382,75 @@ export function OrdersWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Order directory</CardTitle>
-              <CardDescription>
-                Server-backed list from GET /pickups. Use POST /pickups/search for nested sender filters.
-              </CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
-              <select
-                aria-label="Search field"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchField}
-                onChange={(event) => {
-                  const searchField = event.target.value as OrderFilterState["searchField"];
-                  setFilters((current) => {
-                    const allowedOperators = getOrderSearchOperatorsForField(searchField);
-                    const searchOperator = allowedOperators.includes(current.searchOperator)
-                      ? current.searchOperator
-                      : getDefaultOrderSearchOperator(searchField);
+          <CardTitle>Order directory</CardTitle>
 
-                    return {
-                      ...current,
-                      searchField,
-                      searchOperator,
-                    };
-                  });
+          <TableDirectoryToolbar
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
+                placeholder="Search orders by sender..."
+              />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${orders.length} of ${totalOrders} orders`}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
               >
-                {ORDER_SEARCH_FIELDS.map((option) => (
-                  <option key={option.value} value={option.value}>
+            <TableFilterSection label="Branch">
+              {branchesLoading ? (
+                <span className="text-sm text-muted-foreground">Loading branches…</span>
+              ) : (
+                branchFilters.map((option) => (
+                  <Button
+                    key={String(option.value)}
+                    type="button"
+                    size="sm"
+                    variant={filters.branch === option.value ? "default" : "outline"}
+                    onClick={() => {
+                      setFilters((current) => ({ ...current, branch: option.value }));
+                      setPage(1);
+                    }}
+                  >
                     {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Search operator"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchOperator}
-                onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchOperator: event.target.value as OrderFilterState["searchOperator"],
-                  }));
-                  setPage(1);
-                }}
-              >
-                {searchOperatorOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
-                    setPage(1);
-                  }}
-                  className="pl-9"
-                  placeholder="Search orders..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+                  </Button>
+                ))
+              )}
+            </TableFilterSection>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Branch</span>
-            {branchesLoading ? (
-              <span className="text-sm text-muted-foreground">Loading branches…</span>
-            ) : (
-              branchFilters.map((option) => (
+            <TableFilterSection label="Status">
+              {completedFilters.map((option) => (
                 <Button
                   key={String(option.value)}
                   type="button"
                   size="sm"
-                  variant={filters.branch === option.value ? "default" : "outline"}
+                  variant={filters.completed === option.value ? "default" : "outline"}
                   onClick={() => {
-                    setFilters((current) => ({ ...current, branch: option.value }));
+                    setFilters((current) => ({ ...current, completed: option.value }));
                     setPage(1);
                   }}
                 >
                   {option.label}
                 </Button>
-              ))
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</span>
-            {completedFilters.map((option) => (
-              <Button
-                key={String(option.value)}
-                type="button"
-                size="sm"
-                variant={filters.completed === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, completed: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-            {filters.query || filters.branch !== "all" || filters.completed !== "all" ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setFilters(defaultFilters);
-                  setPage(1);
-                }}
-              >
-                Clear search & filters
-              </Button>
-            ) : null}
-          </div>
+              ))}
+            </TableFilterSection>
+              </TableFilterPanel>
+            }
+          />
         </CardHeader>
 
         {missingCompanyContext ? (
@@ -568,27 +465,19 @@ export function OrdersWorkspace() {
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : null}
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() =>
-                  setDeleteTarget(orders.filter((order) => selectedIds.includes(getOrderRecordId(order))))
-                }
-                disabled={isSaving}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={orders.map((order) => getOrderRecordId(order))}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const order = orders.find((entry) => getOrderRecordId(entry) === selectedIds[0]);
+            if (order) openEditForm(order);
+          }}
+          onDelete={() =>
+            setDeleteTarget(orders.filter((order) => selectedIds.includes(getOrderRecordId(order))))
+          }
+          deleteDisabled={isSaving}
+        />
 
         {isLoading ? (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading orders…</div>
@@ -596,6 +485,8 @@ export function OrdersWorkspace() {
           <DataTable
             columns={columnVisibility.columns}
             rows={orders}
+            page={currentPage}
+            isPageDataPending={isFetching}
             rowKey={(order) => getOrderRecordId(order)}
             rowLabel={(order) => formatOrderId(order)}
             columnLayout={columnVisibility}
@@ -606,6 +497,7 @@ export function OrdersWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
             onRowClick={setViewOrder}
+            onRowDoubleClick={openEditForm}
             emptyState={
               <>
                 <p className="text-muted-foreground">No orders match your search or filters.</p>

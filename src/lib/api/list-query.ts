@@ -1,3 +1,5 @@
+import { normalizeApiSearchValueForField } from "@/lib/utils/phone";
+
 export type SortDirection = "asc" | "desc";
 
 export type ApiListSortSpec = {
@@ -105,7 +107,10 @@ export function buildApiListQuery(options: BuildApiListQueryOptions): string {
   if (filter?.field.trim() && filter.value !== "") {
     searchParams.set("field", filter.field);
     searchParams.set("operator", filter.operator);
-    searchParams.set("value", filter.value);
+    searchParams.set(
+      "value",
+      normalizeApiSearchValueForField(filter.field, filter.value),
+    );
   }
 
   return searchParams.toString();

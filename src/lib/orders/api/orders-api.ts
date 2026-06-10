@@ -7,6 +7,14 @@ import {
   type ApiListFieldFilter,
 } from "@/lib/api/list-query";
 import {
+  buildApiSearchBody,
+  createTextSearchFilter,
+  hasListTextSearch,
+  resolveSearchField,
+  resolveSearchOperator,
+  type ApiSearchFilter,
+} from "@/lib/api/search-query";
+import {
   buildApiAddressPayload,
   buildApiBranchRef,
   type ApiAddressPayload,
@@ -14,6 +22,7 @@ import {
 } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { normalizeApiCustomer } from "@/lib/customers/api/customers-api";
+import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
 import type { Customer } from "@/lib/customers/types";
 import { CUSTOMER_PORTAL_BRANCHES } from "@/lib/customers/types";
 import type { Employee } from "@/lib/employees/types";
@@ -25,7 +34,6 @@ import {
   type Order,
   type OrderFormValues,
   type OrderListParams,
-  type OrderSearchOperator,
   type PickupBranch,
   type PickupComment,
   type PickupSector,
@@ -115,21 +123,7 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
-type ApiPickupSearchFilter = {
-  field: string;
-  operator: OrderSearchOperator;
-  value: string;
-};
-
-type ApiSearchBody = {
-  page: number;
-  limit: number;
-  offset: number;
-  sort?: string;
-  query?: {
-    and: ApiPickupSearchFilter[];
-  };
-};
+const ORDER_LIST_SEARCH_FIELD = "sender.name";
 
 const EMPTY_CUSTOMER: Customer = {
   id: "",
@@ -149,29 +143,6 @@ const EMPTY_CUSTOMER: Customer = {
     id: 1,
     name: "USA",
     code: "NY",
-    address: {
-      address1: "",
-      address2: "",
-      apartment: "",
-      city: "",
-      state: "",
-      zipcode: "",
-      country: "US",
-    },
-    phone1: "",
-    logo: "",
-    settings: {
-      labelPrefix: "",
-      invoiceCreatedThruIncomeStatement: false,
-      printLabelCount: false,
-      roundDecimalPlaces: 0,
-      defaultLabelStatus: 0,
-      s3Profile: "",
-      s3BucketName: "",
-      s3BucketFolder: "",
-      s3ShareLinkExpireMinutes: 0,
-      imageResampleBy: 0,
-    },
   },
   createdByID: null,
   address: {
@@ -184,6 +155,7 @@ const EMPTY_CUSTOMER: Customer = {
     country: "US",
   },
   addresses: [],
+  receivers: [],
 };
 
 function readNumericId(value: number | string | undefined): number | undefined {
@@ -339,15 +311,18 @@ function normalizePaginatedOrders(payload: PaginatedApiEnvelope<unknown[] | unkn
   };
 }
 
-function buildSearchFilters(params: OrderListParams): ApiPickupSearchFilter[] {
-  const filters: ApiPickupSearchFilter[] = [];
+function buildSearchFilters(params: OrderListParams): ApiSearchFilter[] {
+  const filters: ApiSearchFilter[] = [];
 
   if (params.search?.value.trim()) {
-    filters.push({
-      field: params.search.field,
-      operator: params.search.operator,
-      value: params.search.value.trim(),
-    });
+    const textFilter = createTextSearchFilter(
+      resolveSearchField(params.search, ORDER_LIST_SEARCH_FIELD),
+      params.search.value,
+      resolveSearchOperator(params.search),
+    );
+    if (textFilter) {
+      filters.push(textFilter);
+    }
   }
 
   if (params.completed !== undefined && params.completed !== "all") {
@@ -377,21 +352,7 @@ function hasGetFieldTriplet(params: OrderListParams): boolean {
 }
 
 function shouldUsePickupSearch(params: OrderListParams): boolean {
-  if (!params.search?.value.trim()) return false;
-
-  return [
-    "sender.name",
-    "sender.phone1",
-    "sender.oldID",
-    "receiver.name",
-    "receiver.phone1",
-    "receiver.oldID",
-    "purpose",
-    "sector.id",
-    "branch.id",
-    "employee.id",
-    "user.id",
-  ].includes(params.search.field);
+  return hasListTextSearch(params.search);
 }
 
 function shouldOmitOrdersSort(params: OrderListParams): boolean {
@@ -402,14 +363,6 @@ function shouldOmitOrdersSort(params: OrderListParams): boolean {
 }
 
 function resolveOrderListFilter(params: OrderListParams): ApiListFieldFilter | undefined {
-  if (params.search?.value.trim()) {
-    return {
-      field: params.search.field,
-      operator: params.search.operator,
-      value: params.search.value.trim(),
-    };
-  }
-
   if (params.completed !== undefined && params.completed !== "all") {
     return { field: "completed", operator: "eq", value: String(params.completed) };
   }
@@ -439,24 +392,18 @@ function buildOrdersQuery(params: OrderListParams): string {
   });
 }
 
-function buildSearchBody(params: OrderListParams): ApiSearchBody {
+function buildSearchBody(params: OrderListParams) {
   const page = params.page ?? DEFAULT_ORDER_LIST_PARAMS.page;
   const limit = params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit;
   const offset = params.offset ?? (page - 1) * limit;
 
-  const body: ApiSearchBody = {
+  return buildApiSearchBody({
     page,
     limit,
     offset,
     sort: resolveOrdersSort(params),
-  };
-
-  const filters = buildSearchFilters(params);
-  if (filters.length > 0) {
-    body.query = { and: filters };
-  }
-
-  return body;
+    filters: buildSearchFilters(params),
+  });
 }
 
 export async function fetchOrders(params: OrderListParams = {}): Promise<PaginatedResult<Order>> {
@@ -493,7 +440,7 @@ function buildPickupCustomerRef(customer: Customer): ApiPickupCustomerRef {
 
   const payload: ApiPickupCustomerRef = {
     name,
-    customerType: customer.customerType ?? 1,
+    customerType: coerceCustomerTypeFromApi(customer.customerType),
     phone1,
   };
 

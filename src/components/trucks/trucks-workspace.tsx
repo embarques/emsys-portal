@@ -5,19 +5,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Fuel,
-  Pencil,
   Plus,
-  Search,
   Trash2,
   Truck as TruckIcon,
 } from "lucide-react";
 
 import { TruckForm } from "@/components/trucks/truck-form";
 import { TruckViewSheet } from "@/components/trucks/truck-view-sheet";
-import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +28,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+  TableFilterSection,
+} from "@/components/app-shell/table-directory-toolbar";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeTruckKpis,
@@ -46,12 +49,9 @@ import { cloneTrucks } from "@/lib/trucks/mock-data";
 import {
   TRUCK_BRANCH_OPTIONS,
   TRUCK_FUEL_TYPES,
-  TRUCK_SEARCH_FIELDS,
   createEmptyTruckForm,
   createTruckSearchFilter,
   formValuesToTruck,
-  getDefaultTruckSearchOperator,
-  getTruckSearchOperatorsForField,
   truckToFormValues,
   type Truck,
   type TruckFilterState,
@@ -63,8 +63,6 @@ const PAGE_SIZE = 8;
 
 const defaultFilters: TruckFilterState = {
   query: "",
-  searchField: "name",
-  searchOperator: "startsWith",
   fuelType: "all",
   branch: "all",
 };
@@ -73,6 +71,7 @@ export function TrucksWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [trucks, setTrucks] = useState<Truck[]>(() => cloneTrucks());
   const [filters, setFilters] = useState<TruckFilterState>(defaultFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [viewTruck, setViewTruck] = useState<Truck | null>(null);
@@ -81,7 +80,7 @@ export function TrucksWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Truck | Truck[] | null>(null);
 
   const filteredTrucks = useMemo(() => {
-    const search = createTruckSearchFilter(filters.query, filters.searchField, filters.searchOperator);
+    const search = createTruckSearchFilter(filters.query);
 
     return trucks.filter((truck) => {
       if (search && !truckMatchesSearch(truck, search)) return false;
@@ -170,26 +169,10 @@ export function TrucksWorkspace() {
     ...TRUCK_BRANCH_OPTIONS,
   ];
 
-  const searchOperatorOptions = useMemo(
-    () =>
-      getTruckSearchOperatorsForField(filters.searchField).map((operator) => ({
-        value: operator,
-        label:
-          operator === "startsWith"
-            ? "Starts with"
-            : operator === "contains"
-              ? "Contains"
-              : operator === "eq"
-                ? "Equals"
-                : "Not equals",
-      })),
-    [filters.searchField],
-  );
-
   const tableColumns: DataTableColumn<Truck>[] = [
     {
       id: "id",
-      label: "id",
+      label: "Record ID",
       cellClassName: "font-mono text-xs",
       renderCell: (truck) => truncateObjectId(truck.id),
     },
@@ -247,43 +230,13 @@ export function TrucksWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (truck) => (truck.updatedAt ? formatAuditDate(truck.updatedAt) : "—"),
     },
-    {
-      id: "actions",
-      label: "Actions",
-      hideable: false,
-      stopRowClick: true,
-      renderCell: (truck) => (
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={`Edit ${truck.name}`}
-            onClick={() => openEditForm(truck)}
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            aria-label={`Delete ${truck.name}`}
-            onClick={() => {
-              setViewTruck(null);
-              setDeleteTarget(truck);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("trucks", tableColumns);
+  const activeFilterCount =
+    (filters.fuelType !== "all" ? 1 : 0) + (filters.branch !== "all" ? 1 : 0);
+  const hasActiveFilters =
+    Boolean(filters.query.trim()) || filters.fuelType !== "all" || filters.branch !== "all";
 
   return (
     <div>
@@ -318,145 +271,88 @@ export function TrucksWorkspace() {
 
       <Card className="mt-6">
         <CardHeader className="gap-4 border-b pb-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Fleet directory</CardTitle>
-              <CardDescription>Search by id, truckId, name, VIN, fuel type, or branch.</CardDescription>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-3xl lg:justify-end">
-              <select
-                aria-label="Search field"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchField}
-                onChange={(event) => {
-                  const searchField = event.target.value as TruckFilterState["searchField"];
-                  setFilters((current) => {
-                    const allowedOperators = getTruckSearchOperatorsForField(searchField);
-                    const searchOperator = allowedOperators.includes(current.searchOperator)
-                      ? current.searchOperator
-                      : getDefaultTruckSearchOperator(searchField);
+          <CardTitle>Fleet directory</CardTitle>
 
-                    return {
-                      ...current,
-                      searchField,
-                      searchOperator,
-                    };
-                  });
+          <TableDirectoryToolbar
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
+            columnLayout={columnVisibility}
+            search={
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
+                placeholder="Search trucks..."
+              />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${filteredTrucks.length} of ${trucks.length} trucks`}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
               >
-                {TRUCK_SEARCH_FIELDS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Search operator"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                value={filters.searchOperator}
-                onChange={(event) => {
-                  setFilters((current) => ({
-                    ...current,
-                    searchOperator: event.target.value as TruckFilterState["searchOperator"],
-                  }));
-                  setPage(1);
-                }}
-              >
-                {searchOperatorOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="relative min-w-[240px] flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={filters.query}
-                  onChange={(event) => {
-                    setFilters((current) => ({ ...current, query: event.target.value }));
+            <TableFilterSection label="Fuel type">
+              {fuelTypeFilters.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant={filters.fuelType === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, fuelType: option.value }));
                     setPage(1);
                   }}
-                  className="pl-9"
-                  placeholder="Search trucks..."
-                />
-              </div>
-              <ColumnVisibilityMenu columnLayout={columnVisibility} />
-            </div>
-          </div>
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">fuelType</span>
-            {fuelTypeFilters.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                size="sm"
-                variant={filters.fuelType === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, fuelType: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">branch</span>
-            {branchFilters.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                size="sm"
-                variant={filters.branch === option.value ? "default" : "outline"}
-                onClick={() => {
-                  setFilters((current) => ({ ...current, branch: option.value }));
-                  setPage(1);
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-            {filters.query || filters.fuelType !== "all" || filters.branch !== "all" ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setFilters(defaultFilters);
-                  setPage(1);
-                }}
-              >
-                Clear search & filters
-              </Button>
-            ) : null}
-          </div>
+            <TableFilterSection label="Branch">
+              {branchFilters.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant={filters.branch === option.value ? "default" : "outline"}
+                  onClick={() => {
+                    setFilters((current) => ({ ...current, branch: option.value }));
+                    setPage(1);
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </TableFilterSection>
+              </TableFilterPanel>
+            }
+          />
         </CardHeader>
 
-        {selectedIds.length > 0 ? (
-          <div className="flex flex-col gap-3 border-b bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium">{selectedIds.length} selected</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
-                Clear selection
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setDeleteTarget(trucks.filter((truck) => selectedIds.includes(truck.id)))}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete selected
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        <TableSelectionBar
+          selectedIds={selectedIds}
+          pageRowIds={pageTrucks.map((truck) => truck.id)}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const truck = pageTrucks.find((entry) => entry.id === selectedIds[0]);
+            if (truck) openEditForm(truck);
+          }}
+          onDelete={() => setDeleteTarget(trucks.filter((truck) => selectedIds.includes(truck.id)))}
+        />
 
         <DataTable
           columns={columnVisibility.columns}
           rows={pageTrucks}
+          page={currentPage}
           rowKey={(truck) => truck.id}
           rowLabel={(truck) => truck.name}
           columnLayout={columnVisibility}
@@ -467,6 +363,7 @@ export function TrucksWorkspace() {
           onToggleSelectAll={toggleSelectAll}
           onToggleSelect={toggleSelect}
           onRowClick={setViewTruck}
+          onRowDoubleClick={openEditForm}
           emptyState={
             <>
               <p className="text-muted-foreground">No trucks match your search or filters.</p>
