@@ -2,6 +2,8 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
+import { isAuthBypassEnabled } from "@/lib/auth/utils/auth-bypass";
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
@@ -14,27 +16,45 @@ const firebaseConfig = {
 let app: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
 let dbInstance: Firestore | null = null;
+let initFailed = false;
+
+function isFirebaseConfigValid(): boolean {
+  return Boolean(
+    firebaseConfig.apiKey &&
+      firebaseConfig.authDomain &&
+      firebaseConfig.projectId &&
+      firebaseConfig.appId,
+  );
+}
 
 function initializeFirebase() {
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined" || isAuthBypassEnabled() || initFailed) {
+    return { app: null, auth: null, db: null };
+  }
+
+  if (!isFirebaseConfigValid()) {
     return { app: null, auth: null, db: null };
   }
 
   if (!app) {
-    if (!getApps().length) {
-      app = initializeApp(firebaseConfig);
-    } else {
-      app = getApps()[0];
+    try {
+      if (!getApps().length) {
+        app = initializeApp(firebaseConfig);
+      } else {
+        app = getApps()[0];
+      }
+      authInstance = getAuth(app);
+      dbInstance = getFirestore(app);
+    } catch (error) {
+      initFailed = true;
+      console.error("Failed to initialize Firebase:", error);
+      app = null;
+      authInstance = null;
+      dbInstance = null;
     }
-    authInstance = getAuth(app);
-    dbInstance = getFirestore(app);
   }
 
   return { app, auth: authInstance, db: dbInstance };
-}
-
-if (typeof window !== "undefined") {
-  initializeFirebase();
 }
 
 export function getFirebaseAuth(): Auth | null {
@@ -46,8 +66,5 @@ export function getFirebaseDb(): Firestore | null {
   const { db } = initializeFirebase();
   return db;
 }
-
-export const auth = typeof window !== "undefined" ? initializeFirebase().auth : null;
-export const db = typeof window !== "undefined" ? initializeFirebase().db : null;
 
 export default app;
