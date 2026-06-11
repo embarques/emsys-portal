@@ -342,10 +342,8 @@ function buildCustomerSearchFilterGroups(params: CustomerListParams): ApiSearchF
 
 /** POST /customers/search — Stripe-style body (filters + sort array). Pagination in URL query. */
 type ApiCustomerSearchBody = {
-  field?: string;
-  operator?: string;
-  value?: string | number | boolean;
-  filters?: ApiSearchFilterGroup[];
+  operator?: "and" | "or";
+  filters?: ApiSearchFilterNode[];
   sort?: ApiSearchSortSpec[];
 };
 
@@ -362,19 +360,14 @@ function buildCustomerSearchBody(params: CustomerListParams): ApiCustomerSearchB
     return body;
   }
 
-  body.filters = filterGroups;
-
-  if (
-    filterGroups.length === 1 &&
-    filterGroups[0].operator === "and" &&
-    filterGroups[0].filters.length === 1 &&
-    isApiSearchFilter(filterGroups[0].filters[0])
-  ) {
-    const onlyFilter = filterGroups[0].filters[0];
-    body.field = onlyFilter.field;
-    body.operator = onlyFilter.operator;
-    body.value = onlyFilter.value;
+  if (filterGroups.length === 1 && filterGroups[0].operator === "and") {
+    body.operator = filterGroups[0].operator;
+    body.filters = filterGroups[0].filters;
+    return body;
   }
+
+  body.operator = "and";
+  body.filters = filterGroups;
 
   return body;
 }
