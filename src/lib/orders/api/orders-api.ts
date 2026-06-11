@@ -25,10 +25,10 @@ import { normalizeApiCustomer } from "@/lib/customers/api/customers-api";
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
 import type { Customer } from "@/lib/customers/types";
 import { CUSTOMER_PORTAL_BRANCHES } from "@/lib/customers/types";
+import { createDefaultRecordPhones, getPhoneAtDisplayIndex, getPrimaryPhoneNumber, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
 import type { Employee } from "@/lib/employees/types";
 import { normalizeApiUser } from "@/lib/users/api/users-api";
 import type { User } from "@/lib/users/types";
-import { normalizeStoredPhone } from "@/lib/utils/phone";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
   type Order,
@@ -130,8 +130,7 @@ const EMPTY_CUSTOMER: Customer = {
   oldID: 0,
   name: "—",
   customerType: null,
-  phone1: "",
-  phone2: "",
+  phones: createDefaultRecordPhones(),
   email: "",
   active: true,
   IDNumber: "",
@@ -215,8 +214,7 @@ function normalizePickupCustomer(raw: unknown, fallbackName: string): Customer {
     id: String(item.id ?? "").trim(),
     oldID: readNumericId(item.oldID as number | string | undefined) ?? 0,
     name,
-    phone1: normalizeStoredPhone(String(item.phone1 ?? "")),
-    phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
+    phones: normalizeRecordPhonesFromApi(item),
     email: String(item.email ?? "").trim(),
   };
 }
@@ -235,8 +233,7 @@ function normalizePickupEmployee(raw: unknown): Employee | null {
     name: String(item.name ?? "").trim(),
     title: String(item.title ?? "").trim(),
     department: String(item.department ?? "").trim(),
-    phone1: normalizeStoredPhone(String(item.phone1 ?? "")),
-    phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
+    phones: normalizeRecordPhonesFromApi(item),
     email: String(item.email ?? "").trim(),
     active: item.active !== false,
     startDate: String(item.startDate ?? "").trim(),
@@ -432,10 +429,10 @@ function resolvePickupBranchRef(branchId: number): ApiBranchRefPayload {
 
 function buildPickupCustomerRef(customer: Customer): ApiPickupCustomerRef {
   const name = customer.name.trim();
-  const phone1 = normalizeStoredPhone(customer.phone1);
+  const phone1 = getPrimaryPhoneNumber(customer.phones);
   const email = customer.email.trim();
   const idNumber = customer.IDNumber.trim();
-  const phone2 = normalizeStoredPhone(customer.phone2);
+  const phone2 = getPhoneAtDisplayIndex(customer.phones, 1);
   const address = buildApiAddressPayload(customer.address);
 
   const payload: ApiPickupCustomerRef = {

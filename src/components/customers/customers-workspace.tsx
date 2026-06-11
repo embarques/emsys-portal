@@ -41,6 +41,7 @@ import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { formatFilteredCountSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
+import { getPrimaryPhoneNumber } from "@/lib/phones/phones";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   formatAccountBalance,
@@ -313,14 +314,9 @@ export function CustomersWorkspace() {
       renderCell: (customer) => customer.name,
     },
     {
-      id: "phone1",
-      label: "phone1",
-      renderCell: (customer) => formatPhoneDisplayOrDash(customer.phone1),
-    },
-    {
-      id: "phone2",
-      label: "phone2",
-      renderCell: (customer) => formatPhoneDisplayOrDash(customer.phone2),
+      id: "phone",
+      label: "Phone",
+      renderCell: (customer) => formatPhoneDisplayOrDash(getPrimaryPhoneNumber(customer.phones)),
     },
     {
       id: "address.address1",

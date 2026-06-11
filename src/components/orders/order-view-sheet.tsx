@@ -11,8 +11,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatCoreAddressLine } from "@/lib/customers/display";
-import { formatPhoneForDisplay } from "@/lib/utils/phone";
+import { formatCoreAddressLine, formatPhoneList } from "@/lib/customers/display";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import {
@@ -49,10 +48,7 @@ function CustomerCard({ title, customer }: { title: string; customer: Customer }
         <p className="text-xs text-muted-foreground">IDNumber: {customer.IDNumber}</p>
       ) : null}
       {customer.email ? <p className="text-xs text-muted-foreground">{customer.email}</p> : null}
-      <p className="mt-3 text-xs text-muted-foreground">
-        {[customer.phone1, customer.phone2].map((phone) => formatPhoneForDisplay(phone)).filter(Boolean).join(" · ") ||
-          "—"}
-      </p>
+      <p className="mt-3 text-xs text-muted-foreground">{formatPhoneList(customer)}</p>
       <div className="mt-4 space-y-1">
         <p className="text-xs font-medium text-primary">address</p>
         <p className="text-sm leading-relaxed">{formatCoreAddressLine(customer.address) || "—"}</p>

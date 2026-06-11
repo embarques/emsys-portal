@@ -54,7 +54,9 @@ export function TableFilterToggle({
         onClick={() => onOpenChange(!open)}
       >
         {hasActiveFilters ? (
-          <span className="text-xs font-semibold tabular-nums text-primary">{activeCount}</span>
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none tabular-nums text-primary-foreground">
+            {activeCount}
+          </span>
         ) : (
           <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
         )}

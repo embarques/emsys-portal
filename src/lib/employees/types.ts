@@ -1,7 +1,11 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import type { User } from "@/lib/users/types";
-import { formatPhoneForDisplay, normalizeStoredPhone } from "@/lib/utils/phone";
+import {
+  createDefaultRecordPhones,
+  formatRecordPhoneList,
+} from "@/lib/phones/phones";
+import type { RecordPhone } from "@/lib/phones/types";
 
 export type EmployeePortalBranch = "usa" | "dr";
 
@@ -26,8 +30,7 @@ export type Employee = {
   name: string;
   title: string;
   department: string;
-  phone1: string;
-  phone2: string;
+  phones: RecordPhone[];
   email: string;
   active: boolean;
   startDate: string;
@@ -49,8 +52,7 @@ export type EmployeeFormValues = {
   name: string;
   title: string;
   department: string;
-  phone1: string;
-  phone2: string;
+  phones: RecordPhone[];
   email: string;
   active: boolean;
   startDate: string;
@@ -83,8 +85,7 @@ export type EmployeeSearchField =
   | "title"
   | "department"
   | "email"
-  | "phone1"
-  | "phone2"
+  | "phones.number"
   | "active"
   | "startDate"
   | "endDate"
@@ -167,8 +168,7 @@ export const EMPLOYEE_GET_SEARCH_CAPABILITIES: {
   { field: "title", label: "title", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "department", label: "department", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "email", label: "email", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "phone1", label: "phone1", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "phone2", label: "phone2", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "phones.number", label: "Phone", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "active", label: "active", operators: ["eq", "neq"] },
   { field: "startDate", label: "startDate", operators: ["eq", "neq"] },
   { field: "endDate", label: "endDate", operators: ["eq", "neq"] },
@@ -250,10 +250,8 @@ export function getEmployeeSearchSort(
       return `department:${direction}`;
     case "email":
       return `email:${direction}`;
-    case "phone1":
-      return `phone1:${direction}`;
-    case "phone2":
-      return `phone2:${direction}`;
+    case "phones.number":
+      return `phones.number:${direction}`;
     case "active":
       return `active:${direction}`;
     case "startDate":
@@ -328,8 +326,7 @@ export function createEmptyEmployeeForm(): EmployeeFormValues {
     endDate: "",
     branch,
     address: createEmptyEmployeeAddress("US"),
-    phone1: "",
-    phone2: "",
+    phones: createDefaultRecordPhones(),
     email: "",
     cost: 0,
     loanAmountOwed: 0,
@@ -359,8 +356,7 @@ export function formatEmployeeBranchLabel(employee: Employee): string {
 }
 
 export function formatEmployeePhones(employee: Employee): string {
-  const phones = [employee.phone1, employee.phone2].map((value) => formatPhoneForDisplay(value)).filter(Boolean);
-  return phones.length > 0 ? phones.join(", ") : "—";
+  return formatRecordPhoneList(employee.phones);
 }
 
 export function formatEmployeeUserLabel(employee: Pick<Employee, "user">): string {
@@ -379,8 +375,7 @@ export function employeeToFormValues(employee: Employee): EmployeeFormValues {
     endDate: employee.endDate,
     branch: { ...employee.branch },
     address: { ...employee.address },
-    phone1: normalizeStoredPhone(employee.phone1),
-    phone2: normalizeStoredPhone(employee.phone2),
+    phones: employee.phones.map((phone) => ({ ...phone })),
     email: employee.email,
     cost: employee.cost,
     loanAmountOwed: employee.loanAmountOwed,

@@ -38,6 +38,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
+import { getPrimaryPhoneNumber } from "@/lib/phones/phones";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -314,14 +315,9 @@ export function EmployeesWorkspace() {
       renderCell: (employee) => employee.branch.name || "—",
     },
     {
-      id: "phone1",
-      label: "phone1",
-      renderCell: (employee) => formatPhoneDisplayOrDash(employee.phone1),
-    },
-    {
-      id: "phone2",
-      label: "phone2",
-      renderCell: (employee) => formatPhoneDisplayOrDash(employee.phone2),
+      id: "phone",
+      label: "Phone",
+      renderCell: (employee) => formatPhoneDisplayOrDash(getPrimaryPhoneNumber(employee.phones)),
     },
     {
       id: "email",

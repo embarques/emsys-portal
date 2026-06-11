@@ -1,23 +1,64 @@
-const PHONE_DIGIT_LIMIT = 10;
+const E164_MAX_DIGITS = 15;
 
-const PHONE_API_FIELD_KEYS = new Set(["phone1", "phone2", "number"]);
+const PHONE_API_FIELD_KEYS = new Set(["phone1", "phone2", "number", "phones.number"]);
 
-/** Strip non-digits and cap at 10 characters. */
-export function sanitizePhoneDigits(value: string): string {
-  return value.replace(/\D/g, "").slice(0, PHONE_DIGIT_LIMIT);
-}
-
-/** Format digits as xxx-xxx-xxxx for display and storage. */
-export function formatPhoneDisplay(digits: string): string {
-  const cleaned = sanitizePhoneDigits(digits);
-  if (cleaned.length <= 3) return cleaned;
-  if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-}
-
-/** Canonical phone format for API save, load, and query values. */
+/** Strip formatting characters; preserve a leading + and digits only for API storage. */
 export function normalizeStoredPhone(value: string): string {
-  return formatPhoneDisplay(value);
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const hasPlus = trimmed.startsWith("+");
+  const digits = trimmed.replace(/\D/g, "").slice(0, E164_MAX_DIGITS);
+  if (!digits) return "";
+
+  return hasPlus ? `+${digits}` : digits;
+}
+
+/** Strip non-digits, capped at E.164 length. */
+export function sanitizePhoneDigits(value: string): string {
+  return value.replace(/\D/g, "").slice(0, E164_MAX_DIGITS);
+}
+
+function formatUsNationalDigits(digits: string): string {
+  const national = digits.replace(/\D/g, "").slice(-10);
+  if (national.length <= 3) return national;
+  if (national.length <= 6) return `${national.slice(0, 3)}-${national.slice(3)}`;
+  return `${national.slice(0, 3)}-${national.slice(3, 6)}-${national.slice(6)}`;
+}
+
+/** Format a stored phone value for UI display (adds dashes; does not mutate storage). */
+export function formatPhoneForDisplay(value: string): string {
+  const stored = normalizeStoredPhone(value);
+  if (!stored) return "";
+
+  const digits = stored.replace(/\D/g, "");
+  const hasPlus = stored.startsWith("+");
+
+  if (digits.length === 11 && digits.startsWith("1")) {
+    const national = formatUsNationalDigits(digits.slice(1));
+    return hasPlus ? `+1 ${national}` : `1-${national}`;
+  }
+
+  if (digits.length === 10) {
+    return formatUsNationalDigits(digits);
+  }
+
+  if (hasPlus && digits.length > 10) {
+    const national = formatUsNationalDigits(digits.slice(-10));
+    const country = digits.slice(0, -10);
+    return `+${country} ${national}`;
+  }
+
+  if (digits.length > 3) {
+    return formatUsNationalDigits(digits);
+  }
+
+  return digits;
+}
+
+/** Format a stored phone for input controls while editing. */
+export function formatPhoneDisplay(value: string): string {
+  return formatPhoneForDisplay(value);
 }
 
 /** Whether an API field name represents a phone value. */
@@ -31,11 +72,6 @@ export function normalizeApiSearchValueForField(field: string, value: string): s
   const trimmed = value.trim();
   if (!trimmed) return trimmed;
   return isPhoneApiField(field) ? normalizeStoredPhone(trimmed) : trimmed;
-}
-
-/** Format a stored or raw phone value for UI display. */
-export function formatPhoneForDisplay(value: string): string {
-  return normalizeStoredPhone(value);
 }
 
 /** Format a phone for tables and detail views, using em dash when empty. */

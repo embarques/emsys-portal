@@ -8,7 +8,12 @@ import {
 } from "@/lib/customers/customer-type";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { normalizeStoredPhone } from "@/lib/utils/phone";
+import {
+  createDefaultRecordPhones,
+  normalizeRecordPhonesFormValues,
+  validateRecordPhones,
+} from "@/lib/phones/phones";
+import type { RecordPhone } from "@/lib/phones/types";
 
 export type CustomerPortalBranch = "usa" | "dr";
 
@@ -34,8 +39,7 @@ export type Customer = {
   oldID: number;
   name: string;
   customerType: number | null;
-  phone1: string;
-  phone2: string;
+  phones: RecordPhone[];
   email: string;
   active: boolean;
   IDNumber: string;
@@ -98,8 +102,7 @@ export type CustomerFormValues = {
   oldID: number;
   name: string;
   customerType: number | null;
-  phone1: string;
-  phone2: string;
+  phones: RecordPhone[];
   email: string;
   active: boolean;
   IDNumber: string;
@@ -119,9 +122,7 @@ export function validateCustomerFormValues(values: CustomerFormValues): void {
     throw new Error("name is required.");
   }
 
-  if (!values.phone1.trim()) {
-    throw new Error("phone1 is required.");
-  }
+  validateRecordPhones(values.phones);
 
   if (!values.branch?.id || values.branch.id <= 0) {
     throw new Error("branch is required.");
@@ -151,8 +152,7 @@ export type CustomerSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 
 export type CustomerSearchField =
   | "name"
-  | "phone1"
-  | "phone2"
+  | "phones.number"
   | "email"
   | "IDNumber"
   | "address.address1"
@@ -212,8 +212,7 @@ export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   operators: CustomerSearchOperator[];
 }[] = [
   { field: "name", label: "Name", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "phone1", label: "Phone 1", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "phone2", label: "Phone 2", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "phones.number", label: "Phone", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "email", label: "Email", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "IDNumber", label: "ID number", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "address.address1", label: "Address 1", operators: ["startsWith", "contains", "eq", "neq"] },
@@ -247,6 +246,7 @@ export function normalizeCustomerFormValues(values: CustomerFormValues): Custome
     ...values,
     active: true,
     customerType: normalizeCustomerType(values.customerType),
+    phones: normalizeRecordPhonesFormValues(values.phones),
     receivers: values.receivers.map((entry) => entry.trim()).filter(Boolean),
   });
 }
@@ -316,8 +316,7 @@ export function createEmptyCustomerForm(): CustomerFormValues {
     oldID: 0,
     name: "",
     customerType: CUSTOMER_TYPE_SENDER,
-    phone1: "",
-    phone2: "",
+    phones: createDefaultRecordPhones(),
     email: "",
     active: true,
     IDNumber: "",
@@ -384,10 +383,8 @@ export function getCustomerSearchSort(
   switch (field) {
     case "oldID":
       return `oldID:${direction}`;
-    case "phone1":
-      return `phone1:${direction}`;
-    case "phone2":
-      return `phone2:${direction}`;
+    case "phones.number":
+      return `phones.number:${direction}`;
     case "email":
       return `email:${direction}`;
     case "IDNumber":
@@ -429,18 +426,14 @@ export function getCustomerClientType(customer: Pick<Customer, "customerType">):
   return null;
 }
 
-export function getCustomerPhones(customer: Pick<Customer, "phone1" | "phone2">): CustomerPhone[] {
-  const phones: CustomerPhone[] = [];
-
-  if (customer.phone1.trim()) {
-    phones.push({ id: "phone1", number: customer.phone1.trim(), label: "Phone 1" });
-  }
-
-  if (customer.phone2.trim()) {
-    phones.push({ id: "phone2", number: customer.phone2.trim(), label: "Phone 2" });
-  }
-
-  return phones;
+export function getCustomerPhones(customer: Pick<Customer, "phones">): CustomerPhone[] {
+  return customer.phones
+    .filter((phone) => phone.number.trim())
+    .map((phone, index) => ({
+      id: `phone-${index}`,
+      number: phone.number.trim(),
+      label: phone.isPrimary ? "Primary" : phone.type,
+    }));
 }
 
 function coreAddressHasContent(address: CustomerCoreAddress): boolean {
@@ -500,8 +493,7 @@ export function customerToFormValues(customer: Customer): CustomerFormValues {
     oldID: customer.oldID,
     name: customer.name,
     customerType: customer.customerType,
-    phone1: normalizeStoredPhone(customer.phone1),
-    phone2: normalizeStoredPhone(customer.phone2),
+    phones: customer.phones.map((phone) => ({ ...phone })),
     email: customer.email,
     active: customer.active,
     IDNumber: customer.IDNumber,

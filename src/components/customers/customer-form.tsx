@@ -3,9 +3,9 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { CUSTOMER_ADDRESS_FIELD_LABELS } from "@/lib/customers/form-labels";
 import {
@@ -234,26 +234,14 @@ export function CustomerForm({
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="phone1">
-            Phone 1 <span className="text-destructive">*</span>
-          </Label>
-          <PhoneInput
-            id="phone1"
-            value={values.phone1}
-            onChange={(nextValue) => updateField("phone1", nextValue)}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone2">Phone 2</Label>
-          <PhoneInput
-            id="phone2"
-            value={values.phone2}
-            onChange={(nextValue) => updateField("phone2", nextValue)}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label>Phones</Label>
+        <PhoneListEditor
+          idPrefix="customer-phone"
+          phones={values.phones}
+          required
+          onChange={(phones) => updateField("phones", phones)}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

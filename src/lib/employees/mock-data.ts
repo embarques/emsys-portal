@@ -1,3 +1,4 @@
+import { createDefaultRecordPhones } from "@/lib/phones/phones";
 import type { Employee } from "./types";
 import { createEmployeeBranchFromPortal, createEmptyEmployeeAddress } from "./types";
 
@@ -15,8 +16,7 @@ export const MOCK_EMPLOYEES: Employee[] = [
       ...createEmptyEmployeeAddress("US"),
       city: "NEW YORK",
     },
-    phone1: "",
-    phone2: "",
+    phones: createDefaultRecordPhones(),
     email: "",
     cost: 0,
     loanAmountOwed: 0,

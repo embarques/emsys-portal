@@ -8,7 +8,7 @@ const TEXT_FIELDS = new Set(["name", "email", "IDNumber", "oldID", "address.addr
 const TEXT_FILTER_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
 
 const PHONE_FILTER_OPERATORS =
-  CUSTOMER_GET_SEARCH_CAPABILITIES.find((entry) => entry.field === "phone1")?.operators ?? [
+  CUSTOMER_GET_SEARCH_CAPABILITIES.find((entry) => entry.field === "phones.number")?.operators ?? [
     "startsWith",
     "contains",
     "eq",
@@ -70,7 +70,7 @@ export const CUSTOMER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: PHONE_FILTER_OPERATORS,
     valueType: "text",
     placeholder: "Enter phone…",
-    queryFields: ["phone1", "phone2"],
+    queryFields: ["phones.number"],
   },
   {
     field: "customerType",

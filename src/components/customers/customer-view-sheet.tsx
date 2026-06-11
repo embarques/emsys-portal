@@ -11,12 +11,15 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
-import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
+import {
+  formatRecordPhoneTypeLabel,
+  getOrderedRecordPhones,
+} from "@/lib/phones/phones";
+import { formatPhoneForDisplay } from "@/lib/utils/phone";
 import {
   formatAccountBalance,
   formatCoreAddressLine,
   formatCustomerBranchLabel,
-  formatPhoneList,
   getClientTypeBadgeClass,
   getClientTypeLabel,
   getCustomerBranchBadgeClass,
@@ -97,9 +100,21 @@ export function CustomerViewSheet({
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Contact">
-            <RecordViewSheetDetailRow label="Phone 1" value={formatPhoneDisplayOrDash(customer.phone1)} />
-            <RecordViewSheetDetailRow label="Phone 2" value={formatPhoneDisplayOrDash(customer.phone2)} />
-            <RecordViewSheetDetailRow label="All phones" value={formatPhoneList(customer)} />
+            {getOrderedRecordPhones(customer.phones).length === 0 ? (
+              <RecordViewSheetDetailRow label="Phones" value="—" />
+            ) : (
+              getOrderedRecordPhones(customer.phones).map((phone, index) => (
+                <RecordViewSheetDetailRow
+                  key={`phone-${index}`}
+                  label={
+                    phone.isPrimary
+                      ? `${formatRecordPhoneTypeLabel(phone.type)} (primary)`
+                      : formatRecordPhoneTypeLabel(phone.type)
+                  }
+                  value={formatPhoneForDisplay(phone.number)}
+                />
+              ))
+            )}
             <RecordViewSheetDetailRow label="Email" value={customer.email || "—"} />
             <RecordViewSheetDetailRow label="ID number" value={customer.IDNumber || "—"} />
           </RecordViewSheetSection>

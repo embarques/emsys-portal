@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { formatEmployeeDate, formatEmployeeMoney } from "@/lib/employees/display";
 import {
@@ -330,24 +330,11 @@ export function EmployeeForm({
       </FormSection>
 
       <FormSection title="Contact">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="phone1">phone1</Label>
-            <PhoneInput
-              id="phone1"
-              value={values.phone1}
-              onChange={(nextValue) => updateField("phone1", nextValue)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone2">phone2</Label>
-            <PhoneInput
-              id="phone2"
-              value={values.phone2}
-              onChange={(nextValue) => updateField("phone2", nextValue)}
-            />
-          </div>
-        </div>
+        <PhoneListEditor
+          idPrefix="employee-phone"
+          phones={values.phones}
+          onChange={(phones) => updateField("phones", phones)}
+        />
 
         <div className="space-y-2">
           <Label htmlFor="email">email</Label>

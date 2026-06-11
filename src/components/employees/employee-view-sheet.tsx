@@ -11,15 +11,18 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
+import {
+  formatRecordPhoneTypeLabel,
+  getOrderedRecordPhones,
+} from "@/lib/phones/phones";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
-import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
+import { formatPhoneForDisplay } from "@/lib/utils/phone";
 import {
   formatEmployeeAddress,
   formatEmployeeBranchLabel,
   formatEmployeeDate,
   formatEmployeeId,
   formatEmployeeMoney,
-  formatEmployeePhones,
   formatEmployeeUserLabel,
   getEmployeeActiveBadgeClass,
   getEmployeeActiveLabel,
@@ -88,9 +91,21 @@ export function EmployeeViewSheet({
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Contact">
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("phone1")} value={formatPhoneDisplayOrDash(employee.phone1)} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("phone2")} value={formatPhoneDisplayOrDash(employee.phone2)} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("phones")} value={formatEmployeePhones(employee)} />
+            {getOrderedRecordPhones(employee.phones).length === 0 ? (
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("phones")} value="—" />
+            ) : (
+              getOrderedRecordPhones(employee.phones).map((phone, index) => (
+                <RecordViewSheetDetailRow
+                  key={`phone-${index}`}
+                  label={
+                    phone.isPrimary
+                      ? `${formatRecordPhoneTypeLabel(phone.type)} (primary)`
+                      : formatRecordPhoneTypeLabel(phone.type)
+                  }
+                  value={formatPhoneForDisplay(phone.number)}
+                />
+              ))
+            )}
             <RecordViewSheetDetailRow label={formatTableColumnLabel("email")} value={employee.email || "—"} />
           </RecordViewSheetSection>
 

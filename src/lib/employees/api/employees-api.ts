@@ -25,9 +25,10 @@ import {
   type EmployeeListParams,
 } from "@/lib/employees/types";
 import { normalizeApiUser } from "@/lib/users/api/users-api";
+import { buildApiPhonesPayload, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
+import type { RecordPhone } from "@/lib/phones/types";
 
 const EMPLOYEE_LIST_SEARCH_FIELD = "name";
-import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 type ApiAddress = {
   address1?: string;
@@ -60,6 +61,7 @@ type ApiEmployee = {
   loanBalanceUpdated?: string;
   phone1?: string[] | string | number;
   phone2?: string;
+  phones?: RecordPhone[];
   email?: string;
   totalLoanGiven?: number;
   totalPaymentReceived?: number;
@@ -73,11 +75,10 @@ type ApiEmployeeWritePayload = {
   name: string;
   title: string;
   department: string;
-  phone1: string;
+  phones: RecordPhone[];
   active: boolean;
   branch: ApiBranchRefPayload;
   email?: string;
-  phone2?: string;
   address?: ApiAddressPayload;
   cost?: number;
   startDate?: string;
@@ -128,15 +129,6 @@ function normalizeAddress(raw: ApiAddress | undefined): EmployeeAddress {
   };
 }
 
-function normalizePhone1(raw: ApiEmployee["phone1"]): string {
-  if (Array.isArray(raw)) {
-    const first = raw.map((entry) => String(entry).trim()).find(Boolean);
-    return first ? normalizeStoredPhone(first) : "";
-  }
-
-  return normalizeStoredPhone(String(raw ?? ""));
-}
-
 function normalizeEmployee(raw: unknown): Employee | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -156,8 +148,7 @@ function normalizeEmployee(raw: unknown): Employee | null {
     endDate: item.endDate ?? "",
     branch: normalizeBranch(item.branch),
     address: normalizeAddress(item.address),
-    phone1: normalizePhone1(item.phone1),
-    phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
+    phones: normalizeRecordPhonesFromApi(item),
     email: String(item.email ?? "").trim(),
     cost: Number(item.cost ?? 0),
     loanAmountOwed: Number(item.loanAmountOwed ?? 0),
@@ -250,8 +241,7 @@ function buildEmployeeWritePayload(
   const department = values.department.trim();
   const title = values.title.trim();
   const email = values.email.trim();
-  const phone1 = normalizeStoredPhone(values.phone1);
-  const phone2 = normalizeStoredPhone(values.phone2);
+  const phones = buildApiPhonesPayload(values.phones);
 
   if (!name) throw new Error("Employee name is required.");
   if (!department) throw new Error("Department is required.");
@@ -265,17 +255,13 @@ function buildEmployeeWritePayload(
     name,
     title,
     department,
-    phone1,
+    phones,
     active: values.active,
     branch: buildApiBranchRef(values.branch),
   };
 
   if (email) {
     payload.email = email;
-  }
-
-  if (phone2) {
-    payload.phone2 = phone2;
   }
 
   const address = buildApiAddressPayload(values.address ?? {});

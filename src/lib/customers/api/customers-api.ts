@@ -45,7 +45,8 @@ import {
   type CustomerListParams,
 } from "@/lib/customers/types";
 import { CUSTOMER_BAR_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
-import { normalizeStoredPhone } from "@/lib/utils/phone";
+import { buildApiPhonesPayload, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
+import type { RecordPhone } from "@/lib/phones/types";
 
 type ApiAddress = {
   address1?: string;
@@ -71,6 +72,7 @@ type ApiCustomer = {
   CustomerType?: number;
   phone1?: string;
   phone2?: string;
+  phones?: RecordPhone[];
   email?: string;
   active?: boolean;
   IDNumber?: string;
@@ -89,11 +91,10 @@ type ApiCustomer = {
 type ApiCustomerWritePayload = {
   name: string;
   customerType: number;
-  phone1: string;
+  phones: RecordPhone[];
   active: boolean;
   email?: string;
   IDNumber?: string;
-  phone2?: string;
   notes?: string;
   accountBalance?: number;
   address?: ApiAddressPayload;
@@ -193,8 +194,7 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
     oldID: readNumericId(item.oldID) ?? 0,
     name: String(item.name ?? "").trim(),
     customerType: readCustomerTypeFromApi(item),
-    phone1: normalizeStoredPhone(String(item.phone1 ?? "")),
-    phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
+    phones: normalizeRecordPhonesFromApi(item),
     email: String(item.email ?? "").trim(),
     active: item.active !== false,
     IDNumber: String(item.IDNumber ?? "").trim(),
@@ -429,8 +429,7 @@ function buildCustomerWritePayload(
   validateCustomerFormValues(values);
 
   const name = values.name.trim();
-  const phone1 = normalizeStoredPhone(values.phone1);
-  const phone2 = normalizeStoredPhone(values.phone2);
+  const phones = buildApiPhonesPayload(values.phones);
   const email = values.email.trim();
   const idNumber = values.IDNumber.trim();
   const notes = values.notes.trim();
@@ -439,7 +438,7 @@ function buildCustomerWritePayload(
   const payload: ApiCustomerWritePayload = {
     name,
     customerType: portalCustomerTypeToApiWriteValue(normalizeCustomerType(values.customerType)),
-    phone1,
+    phones,
     active: true,
     branch: buildApiBranchDto(values.branch),
   };
@@ -450,10 +449,6 @@ function buildCustomerWritePayload(
 
   if (idNumber) {
     payload.IDNumber = idNumber;
-  }
-
-  if (phone2) {
-    payload.phone2 = phone2;
   }
 
   if (notes) {
