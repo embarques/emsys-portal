@@ -19,6 +19,7 @@ type TruckFormProps = {
   initialValues?: TruckFormValues;
   isEditing?: boolean;
   submitLabel: string;
+  isSubmitting?: boolean;
   onSubmit: (values: TruckFormValues) => void;
   onCancel: () => void;
 };
@@ -27,6 +28,7 @@ export function TruckForm({
   initialValues,
   isEditing = false,
   submitLabel,
+  isSubmitting = false,
   onSubmit,
   onCancel,
 }: TruckFormProps) {
@@ -88,24 +90,19 @@ export function TruckForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="vin">
-          vin <span className="text-destructive">*</span>
-        </Label>
+        <Label htmlFor="vin">vin</Label>
         <Input
           id="vin"
           value={values.vin}
           onChange={(event) => updateField("vin", event.target.value.toUpperCase())}
           placeholder="1FUJGLDR57LM12345"
           className="font-mono text-xs"
-          required
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="year">
-            year <span className="text-destructive">*</span>
-          </Label>
+          <Label htmlFor="year">year</Label>
           <Input
             id="year"
             type="number"
@@ -113,21 +110,17 @@ export function TruckForm({
             max={new Date().getFullYear() + 1}
             value={values.year}
             onChange={(event) => updateField("year", event.target.value)}
-            required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="fuelType">
-            fuelType <span className="text-destructive">*</span>
-          </Label>
+          <Label htmlFor="fuelType">fuelType</Label>
           <Input
             id="fuelType"
             list="truck-fuel-types"
             value={values.fuelType}
             onChange={(event) => updateField("fuelType", event.target.value)}
             placeholder="diesel"
-            required
           />
           <datalist id="truck-fuel-types">
             {TRUCK_FUEL_TYPES.map((option) => (
@@ -140,16 +133,13 @@ export function TruckForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="branch">
-          branch <span className="text-destructive">*</span>
-        </Label>
+        <Label htmlFor="branch">branch</Label>
         <Input
           id="branch"
           list="truck-branch-options"
           value={values.branch}
           onChange={(event) => updateField("branch", event.target.value)}
           placeholder="usa"
-          required
         />
         <datalist id="truck-branch-options">
           {TRUCK_BRANCH_OPTIONS.map((option) => (
@@ -161,10 +151,12 @@ export function TruckForm({
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {submitLabel}
+        </Button>
       </div>
     </form>
   );

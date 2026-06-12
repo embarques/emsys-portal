@@ -5,7 +5,7 @@ export const MOCK_INVOICES: Invoice[] = [
     invoiceId: "inv-001",
     invoiceNumber: "INV-2026-0001",
     date: "2026-02-05",
-    containerId: "cnt-001",
+    containerId: "1",
     paymentLocation: "usa",
     sender: {
       id: "party-is-001",
@@ -178,7 +178,7 @@ export const MOCK_INVOICES: Invoice[] = [
     invoiceId: "inv-002",
     invoiceNumber: "INV-2026-0002",
     date: "2026-03-01",
-    containerId: "cnt-002",
+    containerId: "2",
     paymentLocation: "dr",
     sender: {
       id: "party-is-002",
@@ -293,7 +293,7 @@ export const MOCK_INVOICES: Invoice[] = [
     invoiceId: "inv-003",
     invoiceNumber: "INV-2026-0003",
     date: "2026-04-10",
-    containerId: "cnt-003",
+    containerId: "3",
     paymentLocation: "usa",
     sender: {
       id: "party-is-003",

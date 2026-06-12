@@ -13,6 +13,7 @@ import {
 import { EmployeeGroupForm } from "@/components/employee-groups/employee-group-form";
 import { EmployeeGroupViewSheet } from "@/components/employee-groups/employee-group-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -178,15 +179,25 @@ export function EmployeeGroupsWorkspace() {
     {
       id: "count",
       label: "Count",
-      renderCell: (group) => <Badge variant="outline">{group.employeeIds.length}</Badge>,
+      truncateCell: false,
+      cellClassName: "overflow-visible",
+      renderCell: (group) => (
+        <UniformWidthPill columnKey="count">
+          <Badge variant="outline">{group.employeeIds.length}</Badge>
+        </UniformWidthPill>
+      ),
     },
     {
       id: "branch",
       label: "Branch",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (group) => (
-        <Badge className={getEmployeeGroupBranchBadgeClass(group.branch)}>
-          {getEmployeeGroupBranchLabel(group.branch)}
-        </Badge>
+        <UniformWidthPill columnKey="branch">
+          <Badge className={getEmployeeGroupBranchBadgeClass(group.branch)}>
+            {getEmployeeGroupBranchLabel(group.branch)}
+          </Badge>
+        </UniformWidthPill>
       ),
     },
     {

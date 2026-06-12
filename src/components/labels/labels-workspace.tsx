@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { DataTable } from "@/components/app-shell/data-table";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -40,7 +41,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { formatAuditDate } from "@/lib/audit/display";
-import { cloneContainers } from "@/lib/containers/mock-data";
+import { formatContainerLabel } from "@/lib/containers/display";
+import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { formatInvoiceDate } from "@/lib/invoices/display";
 import { cloneInvoices } from "@/lib/invoices/mock-data";
 import { getRouteAssignmentLabel } from "@/lib/orders/display";
@@ -88,7 +90,8 @@ export function LabelsWorkspace() {
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { labels, activityLog } = useLabelsStore();
   const invoices = useMemo(() => cloneInvoices(), []);
-  const containers = useMemo(() => cloneContainers(), []);
+  const { data: containersData } = useContainerPicker();
+  const containers = containersData?.items ?? [];
   const routeAssignments = useMemo(() => cloneRouteAssignments(), []);
 
   const [stagedInvoiceIds, setStagedInvoiceIds] = useState<string[]>([]);
@@ -251,7 +254,7 @@ export function LabelsWorkspace() {
 
   function openContainerDialog() {
     if (selectedLabelIds.length === 0 && !targetInvoiceIdForContainer) return;
-    setNewContainerId(containers[0]?.containerId ?? "");
+    setNewContainerId(containers[0] ? String(containers[0].id) : "");
     setContainerDialogOpen(true);
   }
 
@@ -361,8 +364,12 @@ export function LabelsWorkspace() {
     {
       id: "status",
       label: "Status",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (label) => (
-        <Badge className={getLabelStatusBadgeClass(label.status)}>{getLabelStatusLabel(label.status)}</Badge>
+        <UniformWidthPill columnKey="status">
+          <Badge className={getLabelStatusBadgeClass(label.status)}>{getLabelStatusLabel(label.status)}</Badge>
+        </UniformWidthPill>
       ),
     },
     {
@@ -874,8 +881,8 @@ export function LabelsWorkspace() {
               onChange={(event) => setNewContainerId(event.target.value)}
             >
               {containers.map((container) => (
-                <option key={container.containerId} value={container.containerId}>
-                  {container.containerCode} · {container.containerNumber}
+                <option key={container.id} value={String(container.id)}>
+                  {formatContainerLabel(container)}
                 </option>
               ))}
             </select>

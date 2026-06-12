@@ -1,3 +1,7 @@
+import type { ApiListSortInput } from "@/lib/api/list-query";
+import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
+import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRecordId } from "@/lib/customers/types";
 import {
@@ -76,9 +80,15 @@ export type InvoicePaymentInput = {
 export type Invoice = {
   invoiceId: string;
   invoiceNumber: string;
+  oldID?: number;
   date: string;
   containerId: string;
+  containerName?: string;
   paymentLocation: InvoicePaymentLocation;
+  paidRegion?: string;
+  paidStatus?: string;
+  cost?: number;
+  branch?: InvoiceBranch;
   sender: OrderParty;
   receiver: OrderParty;
   lineItems: InvoiceLineItem[];
@@ -87,9 +97,16 @@ export type Invoice = {
   payments: InvoicePayment[];
   discount: number;
   amountPaid: number;
+  balance?: number;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
+};
+
+export type InvoiceBranch = {
+  id: number;
+  name: string;
+  code: string;
 };
 
 export type InvoiceLineItemFormValues = {
@@ -117,8 +134,141 @@ export type InvoiceFormValues = {
 
 export type InvoiceFilterState = {
   query: string;
+  rows: TableFilterRowState[];
   paymentLocation: InvoicePaymentLocation | "all";
 };
+
+export type InvoiceSearchFilter = ApiListTextSearch;
+
+export type InvoiceListParams = {
+  page?: number;
+  limit?: number;
+  offset?: number;
+  sort?: ApiListSortInput;
+  search?: InvoiceSearchFilter;
+  filterRows?: TableFilterRowState[];
+  paymentLocation?: InvoicePaymentLocation | "all";
+};
+
+/** GET /invoices?page=1&limit=40&offset=0&sort=number:desc */
+export const DEFAULT_INVOICE_LIST_PARAMS = {
+  page: 1,
+  limit: 40,
+  sort: "number:desc",
+} as const satisfies Pick<InvoiceListParams, "page" | "limit" | "sort">;
+
+export function getInvoiceRecordId(invoice: Pick<Invoice, "invoiceId">): string {
+  return invoice.invoiceId;
+}
+
+export function createInvoiceSearchFilter(value: string): InvoiceSearchFilter | undefined {
+  return createListTextSearch(value);
+}
+
+export function buildInvoiceListParams(input: {
+  page: number;
+  limit?: number;
+  query: string;
+  rows: TableFilterRowState[];
+  paymentLocation: InvoiceFilterState["paymentLocation"];
+}): InvoiceListParams {
+  const params: InvoiceListParams = {
+    ...DEFAULT_INVOICE_LIST_PARAMS,
+    page: input.page,
+    limit: input.limit ?? DEFAULT_INVOICE_LIST_PARAMS.limit,
+  };
+
+  const search = createInvoiceSearchFilter(input.query);
+  if (search) {
+    params.search = search;
+  }
+
+  const completeRows = input.rows.filter((row) =>
+    isCompleteFilterRow(row, INVOICE_TABLE_FILTER_FIELDS),
+  );
+  if (completeRows.length > 0) {
+    params.filterRows = completeRows;
+  }
+
+  if (input.paymentLocation !== "all") {
+    params.paymentLocation = input.paymentLocation;
+  }
+
+  return params;
+}
+
+export function mapPaidRegionToPaymentLocation(paidRegion: string): InvoicePaymentLocation {
+  const normalized = paidRegion.trim().toLowerCase();
+  if (normalized === "rd" || normalized === "dr" || normalized === "do") {
+    return "dr";
+  }
+  return "usa";
+}
+
+export function mapPaymentLocationToPaidRegion(location: InvoicePaymentLocation): string {
+  return location === "dr" ? "RD" : "NY";
+}
+
+export function getInvoiceTotal(invoice: Invoice): number {
+  if (invoice.lineItems.length > 0) {
+    return computeInvoiceSubtotal(invoice.lineItems);
+  }
+  return Number(invoice.cost ?? 0);
+}
+
+function readApiMoney(value: unknown): number | undefined {
+  if (value == null || value === "") return undefined;
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return undefined;
+  return Math.round(amount * 100) / 100;
+}
+
+/** Maps EMSYS list/detail money fields (`payment` vs `balance`) into portal totals. */
+export function normalizeApiInvoiceMoney(input: {
+  cost?: unknown;
+  discount?: unknown;
+  payment?: unknown;
+  balance?: unknown;
+}): { cost: number; discount: number; amountPaid: number; balance: number } {
+  const cost = readApiMoney(input.cost) ?? 0;
+  const discount = readApiMoney(input.discount) ?? 0;
+  const payment = readApiMoney(input.payment);
+  const apiBalance = readApiMoney(input.balance);
+
+  if (payment != null && apiBalance != null) {
+    return {
+      cost,
+      discount,
+      amountPaid: payment,
+      balance: Math.max(0, apiBalance),
+    };
+  }
+
+  if (payment != null) {
+    return {
+      cost,
+      discount,
+      amountPaid: payment,
+      balance: Math.max(0, computeInvoiceBalance(cost, discount, payment)),
+    };
+  }
+
+  if (apiBalance != null) {
+    const balance = Math.max(0, apiBalance);
+    const amountPaid = Math.max(0, Math.round((cost - discount - balance) * 100) / 100);
+    return { cost, discount, amountPaid, balance };
+  }
+
+  const balance = Math.max(0, computeInvoiceBalance(cost, discount, 0));
+  return { cost, discount, amountPaid: 0, balance };
+}
+
+export function getInvoiceBalanceAmount(invoice: Invoice): number {
+  if (invoice.balance != null && Number.isFinite(invoice.balance)) {
+    return Math.max(0, Math.round(invoice.balance * 100) / 100);
+  }
+  return Math.max(0, computeInvoiceBalance(getInvoiceTotal(invoice), invoice.discount, invoice.amountPaid));
+}
 
 export const INVOICE_PAYMENT_LOCATIONS: { value: InvoicePaymentLocation; label: string }[] = [
   { value: "usa", label: "USA" },

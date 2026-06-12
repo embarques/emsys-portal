@@ -12,18 +12,18 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
-  formatContainerCost,
   formatContainerDate,
-  truncateContainerId,
+  formatContainerId,
+  formatOptionalContainerCost,
 } from "@/lib/containers/display";
-import type { ContainerRecord } from "@/lib/containers/types";
+import type { Container } from "@/lib/containers/types";
 
 type ContainerViewSheetProps = {
-  container: ContainerRecord | null;
+  container: Container | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (container: ContainerRecord) => void;
-  onDelete: (container: ContainerRecord) => void;
+  onEdit: (container: Container) => void;
+  onDelete: (container: Container) => void;
 };
 
 export function ContainerViewSheet({
@@ -39,30 +39,33 @@ export function ContainerViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={container.containerCode}
+          title={container.name}
           description={<span className="font-mono text-xs">{container.containerNumber}</span>}
           meta={
             <>
-              <Badge variant="outline">{container.transportCompany || "No carrier"}</Badge>
-              <Badge variant="secondary">{formatContainerCost(container.cost)}</Badge>
+              <Badge variant="outline">{container.company || "No carrier"}</Badge>
+              <Badge variant="secondary">{formatOptionalContainerCost(container.cost)}</Badge>
             </>
           }
         />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Shipping">
-            <RecordViewSheetDetailRow label="Container ID" value={truncateContainerId(container.containerId)} />
-            <RecordViewSheetDetailRow label="Container" value={container.containerCode} />
-            <RecordViewSheetDetailRow label="Container number" value={container.containerNumber} />
-            <RecordViewSheetDetailRow label="Booking number" value={container.bookingNumber} />
+            <RecordViewSheetDetailRow label="Container ID" value={formatContainerId(container.id)} />
+            <RecordViewSheetDetailRow label="Container" value={container.name} />
+            <RecordViewSheetDetailRow label="Container number" value={container.containerNumber || "—"} />
+            <RecordViewSheetDetailRow label="Booking number" value={container.booking} />
             <RecordViewSheetDetailRow label="Seal number" value={container.sealNumber || "—"} />
             <RecordViewSheetDetailRow label="Broker" value={container.broker || "—"} />
-            <RecordViewSheetDetailRow label="Transport company" value={container.transportCompany || "—"} />
-            <RecordViewSheetDetailRow label="Cost" value={formatContainerCost(container.cost)} />
+            <RecordViewSheetDetailRow label="Transport company" value={container.company || "—"} />
+            <RecordViewSheetDetailRow label="Cost" value={formatOptionalContainerCost(container.cost)} />
+            <RecordViewSheetDetailRow
+              label="Barcode sequence"
+              value={container.barcodeSequence > 0 ? container.barcodeSequence : "—"}
+            />
             <RecordViewSheetDetailRow label="Departure date" value={formatContainerDate(container.departureDate)} />
             <RecordViewSheetDetailRow label="Arrival date" value={formatContainerDate(container.arrivalDate)} />
             <RecordViewSheetDetailRow label="Date created" value={formatAuditDate(container.createdAt)} />
-            <RecordViewSheetDetailRow label="User created" value={container.createdBy} />
             <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(container.updatedAt)} />
           </RecordViewSheetSection>
         </RecordViewSheetBody>

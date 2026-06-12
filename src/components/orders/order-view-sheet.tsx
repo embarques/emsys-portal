@@ -96,7 +96,7 @@ export function OrderViewSheet({ order, orders, open, onOpenChange, onEdit, onDe
             <RecordViewSheetDetailRow label={formatTableColumnLabel("sector.id")} value={order.sector ? String(order.sector.id) : "—"} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("sector.name")} value={order.sector?.name || "—"} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("employee")} value={formatEmployeeSummary(order.employee)} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("user")} value={formatUserSummary(order.user)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("createdBy")} value={formatUserSummary(order.user)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("createdAt")} value={formatAuditDate(order.createdAt)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("updatedAt")} value={formatAuditDate(order.updatedAt)} />
           </RecordViewSheetSection>

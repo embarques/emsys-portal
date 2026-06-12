@@ -17,7 +17,7 @@ import {
   type RouteAssignment,
   type RouteAssignmentFormValues,
 } from "@/lib/route-assignments/types";
-import { cloneTrucks } from "@/lib/trucks/mock-data";
+import { useTruckPicker } from "@/lib/trucks/hooks/use-trucks";
 import { getBranchLabel } from "@/lib/trucks/display";
 
 const selectClassName =
@@ -42,7 +42,8 @@ export function RouteAssignmentForm({
   onSubmit,
   onCancel,
 }: RouteAssignmentFormProps) {
-  const trucks = useMemo(() => cloneTrucks(), []);
+  const { data: trucksData } = useTruckPicker();
+  const trucks = trucksData?.items ?? [];
   const employeeGroups = useMemo(() => cloneEmployeeGroups(), []);
   const [values, setValues] = useState<RouteAssignmentFormValues>(
     initialValues ?? createEmptyRouteAssignmentForm(),

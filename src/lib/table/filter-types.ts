@@ -30,7 +30,7 @@ export type TableFilterFieldDefinition = {
   field: string;
   label: string;
   operators: TableFilterOperator[];
-  valueType: "text" | "select";
+  valueType: "text" | "select" | "range";
   options?: TableFilterFieldOption[];
   /** Load options from workspace context (e.g. branches from API). */
   optionsSource?: string;

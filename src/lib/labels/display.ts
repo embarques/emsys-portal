@@ -1,3 +1,4 @@
+import { formatContainerLabel } from "@/lib/containers/display";
 import { getContainerById } from "@/lib/containers/mock-data";
 import type { LabelActivityEntry, LabelStatus, ShipmentLabel } from "./types";
 import { LABEL_STATUSES } from "./types";
@@ -39,7 +40,7 @@ export function formatLabelTimestamp(iso: string): string {
 export function getLabelContainerLabel(containerId: string): string {
   const container = getContainerById(containerId);
   if (!container) return "Unknown container";
-  return `${container.containerCode} · ${container.containerNumber}`;
+  return formatContainerLabel(container);
 }
 
 export function truncateBarcode(barcode: string): string {

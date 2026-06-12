@@ -12,6 +12,7 @@ import {
 import { BranchForm } from "@/components/branches/branch-form";
 import { BranchViewSheet } from "@/components/branches/branch-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -214,9 +215,13 @@ export function BranchesWorkspace() {
     {
       id: "type",
       label: "type",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (branch) =>
         branch.type ? (
-          <Badge className={getBranchTypeBadgeClass(branch.type)}>{branch.type}</Badge>
+          <UniformWidthPill columnKey="type">
+            <Badge className={getBranchTypeBadgeClass(branch.type)}>{branch.type}</Badge>
+          </UniformWidthPill>
         ) : (
           "—"
         ),

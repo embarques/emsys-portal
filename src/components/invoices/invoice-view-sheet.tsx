@@ -24,10 +24,13 @@ import {
   formatInvoiceDate,
   formatInvoiceMoney,
   formatLineItemSummary,
-  getContainerLabel,
+  getContainerLabelForInvoice,
   getInvoiceBalance,
+  getInvoicePaidStatusBadgeClass,
+  getInvoicePaidStatusLabel,
   getInvoiceSubtotal,
   getPaymentLocationLabel,
+  resolveInvoicePaidStatus,
   truncateInvoiceId,
 } from "@/lib/invoices/display";
 import type { Invoice, InvoicePaymentInput } from "@/lib/invoices/types";
@@ -87,6 +90,8 @@ export function InvoiceViewSheet({
 
   if (!invoice || !totals) return null;
 
+  const paidStatus = resolveInvoicePaidStatus(invoice);
+
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
@@ -94,17 +99,26 @@ export function InvoiceViewSheet({
           title={invoice.invoiceNumber}
           description={formatInvoiceDate(invoice.date)}
           meta={
-            <Badge className={getBranchBadgeClass(invoice.paymentLocation)}>
-              {getPaymentLocationLabel(invoice.paymentLocation)}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className={getBranchBadgeClass(invoice.paymentLocation)}>
+                {getPaymentLocationLabel(invoice.paymentLocation)}
+              </Badge>
+              <Badge className={getInvoicePaidStatusBadgeClass(paidStatus)}>
+                {getInvoicePaidStatusLabel(paidStatus)}
+              </Badge>
+            </div>
           }
         />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Invoice">
             <RecordViewSheetDetailRow label="Invoice ID" value={truncateInvoiceId(invoice.invoiceId)} />
-            <RecordViewSheetDetailRow label="Container" value={getContainerLabel(invoice.containerId)} />
+            <RecordViewSheetDetailRow label="Container" value={getContainerLabelForInvoice(invoice)} />
             <RecordViewSheetDetailRow label="Paid at" value={getPaymentLocationLabel(invoice.paymentLocation)} />
+            <RecordViewSheetDetailRow
+              label="Paid status"
+              value={getInvoicePaidStatusLabel(paidStatus)}
+            />
             <RecordViewSheetDetailRow label="Date created" value={formatAuditDate(invoice.createdAt)} />
             <RecordViewSheetDetailRow label="User created" value={invoice.createdBy} />
             <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(invoice.updatedAt)} />

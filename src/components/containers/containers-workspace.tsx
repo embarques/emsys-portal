@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,7 +17,6 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
-
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
@@ -32,27 +31,36 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeContainerKpis,
   formatContainerCost,
   formatContainerDate,
-  containerMatchesQuery,
-  truncateContainerId,
+  formatContainerId,
+  formatOptionalContainerCost,
 } from "@/lib/containers/display";
-import { cloneContainers } from "@/lib/containers/mock-data";
 import {
+  useContainerKpis,
+  useContainerStats,
+  useContainers,
+  useCreateContainer,
+  useDeleteContainers,
+  useUpdateContainer,
+} from "@/lib/containers/hooks/use-containers";
+import {
+  DEFAULT_CONTAINER_LIST_PARAMS,
   containerToFormValues,
+  createContainerSearchFilter,
   createEmptyContainerForm,
-  formValuesToContainer,
-  suggestNextContainerCode,
+  suggestNextContainerName,
+  type Container as ContainerRecord,
   type ContainerFilterState,
   type ContainerFormValues,
-  type ContainerRecord,
 } from "@/lib/containers/types";
 import type { DataTableColumn } from "@/lib/table/types";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = DEFAULT_CONTAINER_LIST_PARAMS.limit;
 
 const defaultFilters: ContainerFilterState = {
   query: "",
@@ -60,9 +68,9 @@ const defaultFilters: ContainerFilterState = {
 
 export function ContainersWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [containers, setContainers] = useState<ContainerRecord[]>(() => cloneContainers());
   const [filters, setFilters] = useState<ContainerFilterState>(defaultFilters);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const deferredQuery = useDeferredValue(filters.query);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [page, setPage] = useState(1);
   const [viewContainer, setViewContainer] = useState<ContainerRecord | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
@@ -70,36 +78,54 @@ export function ContainersWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<ContainerRecord | ContainerRecord[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const suggestedContainerCode = useMemo(
-    () => suggestNextContainerCode(containers),
-    [containers]
+  const listParams = useMemo(() => {
+    const search = createContainerSearchFilter(deferredQuery);
+
+    return {
+      ...DEFAULT_CONTAINER_LIST_PARAMS,
+      page,
+      limit: PAGE_SIZE,
+      search,
+    };
+  }, [deferredQuery, page]);
+
+  const { data, isLoading, isError, error, isFetching } = useContainers(listParams);
+  const stats = useContainerStats();
+  const kpiQuery = useContainerKpis();
+  const createContainerMutation = useCreateContainer();
+  const updateContainerMutation = useUpdateContainer();
+  const deleteContainersMutation = useDeleteContainers();
+
+  const containers = data?.items ?? [];
+  const totalContainers = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalContainers / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const allPageSelected =
+    containers.length > 0 && containers.every((container) => selectedIds.includes(container.id));
+  const isSaving =
+    createContainerMutation.isPending ||
+    updateContainerMutation.isPending ||
+    deleteContainersMutation.isPending;
+
+  const suggestedContainerName = useMemo(
+    () => suggestNextContainerName(containers),
+    [containers],
   );
 
-  const filteredContainers = useMemo(() => {
-    return containers.filter((container) => containerMatchesQuery(container, filters.query));
-  }, [containers, filters.query]);
-
-  const kpis = useMemo(() => computeContainerKpis(containers), [containers]);
-  const totalPages = Math.max(1, Math.ceil(filteredContainers.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pageContainers = filteredContainers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const allPageSelected =
-    pageContainers.length > 0 && pageContainers.every((container) => selectedIds.includes(container.containerId));
+  const kpis = useMemo(() => computeContainerKpis(kpiQuery.items), [kpiQuery.items]);
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
-      setSelectedIds((current) =>
-        Array.from(new Set([...current, ...pageContainers.map((container) => container.containerId)]))
-      );
+      setSelectedIds((current) => Array.from(new Set([...current, ...containers.map((container) => container.id)])));
       return;
     }
-    setSelectedIds((current) =>
-      current.filter((id) => !pageContainers.some((container) => container.containerId === id))
-    );
+    setSelectedIds((current) => current.filter((id) => !containers.some((container) => container.id === id)));
   }
 
-  function toggleSelect(containerId: string, checked: boolean) {
-    setSelectedIds((current) => (checked ? [...current, containerId] : current.filter((entry) => entry !== containerId)));
+  function toggleSelect(containerId: number, checked: boolean) {
+    setSelectedIds((current) =>
+      checked ? [...current, containerId] : current.filter((entry) => entry !== containerId),
+    );
   }
 
   function openAddForm() {
@@ -115,54 +141,64 @@ export function ContainersWorkspace() {
     setFormError(null);
   }
 
-  function saveContainer(values: ContainerFormValues) {
+  async function saveContainer(values: ContainerFormValues) {
+    setFormError(null);
+
     try {
       if (formMode === "edit" && editingContainer) {
-        const nextContainer = formValuesToContainer(
-          { ...values, createdBy: editingContainer.createdBy },
-          editingContainer.createdAt,
-          editingContainer.createdBy,
-          new Date().toISOString()
-        );
-        setContainers((current) =>
-          current.map((container) =>
-            container.containerId === editingContainer.containerId ? nextContainer : container
-          )
-        );
-        notifyUpdated("Container", nextContainer.containerCode);
+        const nextContainer = await updateContainerMutation.mutateAsync({
+          containerId: editingContainer.id,
+          values,
+        });
+        notifyUpdated("Container", nextContainer.name);
       } else {
-        const nextContainer = formValuesToContainer(values);
-        setContainers((current) => [nextContainer, ...current]);
-        notifyAdded("Container", nextContainer.containerCode);
+        const nextContainer = await createContainerMutation.mutateAsync(values);
+        notifyAdded("Container", nextContainer.name);
       }
 
       setFormMode(null);
       setEditingContainer(null);
-      setFormError(null);
       setPage(1);
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to save container.");
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
     }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
+
     const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((container) => container.containerId)
-      : [deleteTarget.containerId];
-    setContainers((current) => current.filter((container) => !ids.includes(container.containerId)));
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewContainer(null);
-    notifyDeleted("Container", ids.length);
+      ? deleteTarget.map((container) => container.id)
+      : [deleteTarget.id];
+
+    try {
+      await deleteContainersMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
+      setViewContainer(null);
+      notifyDeleted("Container", ids.length);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
+      setDeleteTarget(null);
+    }
   }
 
-  const stats = [
-    { label: "Total containers", value: kpis.total.toString(), description: "Containers on record", icon: Container },
-    { label: "In transit", value: kpis.inTransit.toString(), description: "Arrival date not yet passed", icon: Ship },
+  const statCards = [
+    {
+      label: "Total containers",
+      value: stats.isLoading ? "…" : stats.total.toString(),
+      description: "Containers on record",
+      icon: Container,
+    },
+    {
+      label: "In transit",
+      value: kpiQuery.isLoading ? "…" : kpis.inTransit.toString(),
+      description: "Arrival date not yet passed",
+      icon: Ship,
+    },
     {
       label: "Total cost",
-      value: formatContainerCost(kpis.totalCost),
+      value: kpiQuery.isLoading ? "…" : formatContainerCost(kpis.totalCost),
       description: "Combined container costs",
       icon: DollarSign,
     },
@@ -170,27 +206,27 @@ export function ContainersWorkspace() {
 
   const tableColumns: DataTableColumn<ContainerRecord>[] = [
     {
-      id: "containerId",
-      label: "Container ID",
+      id: "id",
+      label: "#",
       cellClassName: "font-mono text-xs",
-      renderCell: (container) => truncateContainerId(container.containerId),
+      renderCell: (container) => formatContainerId(container.id),
     },
     {
-      id: "containerCode",
+      id: "container",
       label: "Container",
       cellClassName: "font-medium",
-      renderCell: (container) => container.containerCode,
+      renderCell: (container) => container.name,
     },
     {
       id: "containerNumber",
       label: "Container number",
       cellClassName: "font-mono text-xs",
-      renderCell: (container) => container.containerNumber,
+      renderCell: (container) => container.containerNumber || "—",
     },
     {
-      id: "bookingNumber",
+      id: "booking",
       label: "Booking number",
-      renderCell: (container) => container.bookingNumber,
+      renderCell: (container) => container.booking,
     },
     {
       id: "sealNumber",
@@ -203,14 +239,14 @@ export function ContainersWorkspace() {
       renderCell: (container) => container.broker || "—",
     },
     {
-      id: "transportCompany",
+      id: "company",
       label: "Transport company",
-      renderCell: (container) => container.transportCompany || "—",
+      renderCell: (container) => container.company || "—",
     },
     {
       id: "cost",
       label: "Cost",
-      renderCell: (container) => formatContainerCost(container.cost),
+      renderCell: (container) => formatOptionalContainerCost(container.cost),
     },
     {
       id: "departureDate",
@@ -225,25 +261,29 @@ export function ContainersWorkspace() {
       renderCell: (container) => formatContainerDate(container.arrivalDate),
     },
     {
+      id: "barcodeSequence",
+      label: "Barcode seq.",
+      defaultVisible: false,
+      cellClassName: "font-mono text-xs text-muted-foreground",
+      renderCell: (container) => (container.barcodeSequence > 0 ? container.barcodeSequence : "—"),
+    },
+    {
       id: "createdAt",
       label: "Date created",
+      defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (container) => formatAuditDate(container.createdAt),
     },
     {
-      id: "createdBy",
-      label: "User created",
-      renderCell: (container) => container.createdBy,
-    },
-    {
       id: "updatedAt",
       label: "Date modified",
+      defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (container) => formatAuditDate(container.updatedAt),
     },
   ];
 
-  const columnVisibility = useColumnVisibility("containers", tableColumns);
+  const columnVisibility = useColumnVisibility("containers-v2", tableColumns);
 
   return (
     <div>
@@ -258,7 +298,7 @@ export function ContainersWorkspace() {
       />
 
       <StatCardsGrid>
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.label}>
@@ -294,53 +334,62 @@ export function ContainersWorkspace() {
         </CardHeader>
 
         <TableSelectionBar
-          selectedIds={selectedIds}
-          pageRowIds={pageContainers.map((container) => container.containerId)}
-          onSelectedIdsChange={setSelectedIds}
+          selectedIds={selectedIds.map(String)}
+          pageRowIds={containers.map((container) => String(container.id))}
+          onSelectedIdsChange={(ids) => setSelectedIds(ids.map(Number))}
           onEdit={() => {
-            const container = pageContainers.find((entry) => entry.containerId === selectedIds[0]);
+            const container = containers.find((entry) => entry.id === selectedIds[0]);
             if (container) openEditForm(container);
           }}
           onDelete={() =>
-            setDeleteTarget(containers.filter((container) => selectedIds.includes(container.containerId)))
+            setDeleteTarget(containers.filter((container) => selectedIds.includes(container.id)))
           }
         />
 
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={pageContainers}
-          page={currentPage}
-          rowKey={(container) => container.containerId}
-          rowLabel={(container) => container.containerCode}
-          columnLayout={columnVisibility}
-          minWidth={1400}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={setViewContainer}
-          onRowDoubleClick={openEditForm}
-          emptyState={
-            <>
-              <p className="text-muted-foreground">No containers match your search.</p>
-              <Button className="mt-4" onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                Add container
-              </Button>
-            </>
-          }
-        />
+        {isError ? (
+          <div className="px-6 py-8 text-sm text-destructive">
+            {normalizeApiError(error).message}
+          </div>
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={containers}
+            page={currentPage}
+            isPageDataPending={isFetching}
+            rowKey={(container) => String(container.id)}
+            rowLabel={(container) => container.name}
+            columnLayout={columnVisibility}
+            minWidth={1400}
+            selectable
+            selectedIds={selectedIds.map(String)}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={(id, checked) => toggleSelect(Number(id), checked)}
+            onRowClick={setViewContainer}
+            onRowDoubleClick={openEditForm}
+            emptyState={
+              <>
+                <p className="text-muted-foreground">
+                  {filters.query.trim() ? "No containers match your search." : "No containers yet."}
+                </p>
+                <Button className="mt-4" onClick={openAddForm}>
+                  <Plus className="h-4 w-4" />
+                  Add container
+                </Button>
+              </>
+            }
+          />
+        )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {pageContainers.length} of {filteredContainers.length} containers
+            Showing {containers.length} of {totalContainers} containers
           </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage <= 1}
+              disabled={currentPage <= 1 || isLoading}
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -352,7 +401,7 @@ export function ContainersWorkspace() {
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage >= totalPages}
+              disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
               Next
@@ -394,21 +443,21 @@ export function ContainersWorkspace() {
             </DialogDescription>
           </DialogHeader>
           <ContainerForm
-            key={editingContainer?.containerId ?? "new"}
+            key={editingContainer?.id ?? "new"}
             initialValues={
               formMode === "edit" && editingContainer
                 ? containerToFormValues(editingContainer)
                 : createEmptyContainerForm()
             }
             isEditing={formMode === "edit"}
-            updatedAt={editingContainer?.updatedAt}
-            suggestedContainerCode={formMode === "add" ? suggestedContainerCode : undefined}
+            suggestedContainerName={formMode === "add" ? suggestedContainerName : undefined}
             submitLabel={formMode === "edit" ? "Save changes" : "Add container"}
             onSubmit={saveContainer}
             onCancel={() => {
               setFormMode(null);
               setFormError(null);
             }}
+            isSubmitting={isSaving}
           />
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
@@ -423,14 +472,14 @@ export function ContainersWorkspace() {
             <DialogDescription>
               {Array.isArray(deleteTarget)
                 ? `This will permanently remove ${deleteTarget.length} selected containers. This action cannot be undone.`
-                : `This will permanently remove container ${deleteTarget?.containerCode ?? ""}. This action cannot be undone.`}
+                : `This will permanently remove container ${deleteTarget?.name ?? ""}. This action cannot be undone.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
               Delete
             </Button>

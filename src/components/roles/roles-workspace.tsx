@@ -13,6 +13,7 @@ import {
 import { RoleForm } from "@/components/roles/role-form";
 import { RoleViewSheet } from "@/components/roles/role-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -182,9 +183,13 @@ export function RolesWorkspace() {
     {
       id: "permissions",
       label: "Permissions",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (role) => (
         <div className="space-y-1">
-          <Badge variant="secondary">{role.permissions.length} permissions</Badge>
+          <UniformWidthPill columnKey="permissions">
+            <Badge variant="secondary">{role.permissions.length} permissions</Badge>
+          </UniformWidthPill>
           <p className="max-w-[320px] truncate text-xs text-muted-foreground">
             {formatPermissionsSummary(role, 4)}
           </p>

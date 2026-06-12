@@ -14,6 +14,7 @@ import {
 import { UserForm } from "@/components/users/user-form";
 import { UserViewSheet } from "@/components/users/user-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -299,15 +300,23 @@ export function UsersWorkspace() {
     {
       id: "active",
       label: "active",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (user) => (
-        <Badge className={getUserActiveBadgeClass(user.active)}>{getUserActiveLabel(user.active)}</Badge>
+        <UniformWidthPill columnKey="active">
+          <Badge className={getUserActiveBadgeClass(user.active)}>{getUserActiveLabel(user.active)}</Badge>
+        </UniformWidthPill>
       ),
     },
     {
       id: "role.name",
       label: "role.name",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (user) => (
-        <Badge className={getUserRoleBadgeClass(user.role.name)}>{getUserRoleLabel(user.role.name)}</Badge>
+        <UniformWidthPill columnKey="role.name">
+          <Badge className={getUserRoleBadgeClass(user.role.name)}>{getUserRoleLabel(user.role.name)}</Badge>
+        </UniformWidthPill>
       ),
     },
     {
@@ -319,8 +328,12 @@ export function UsersWorkspace() {
     {
       id: "branch",
       label: "branch",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (user) => (
-        <Badge className={getUserBranchBadgeClass(user)}>{formatUserBranchLabel(user)}</Badge>
+        <UniformWidthPill columnKey="branch">
+          <Badge className={getUserBranchBadgeClass(user)}>{formatUserBranchLabel(user)}</Badge>
+        </UniformWidthPill>
       ),
     },
     {

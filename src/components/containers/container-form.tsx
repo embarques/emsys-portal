@@ -13,9 +13,9 @@ import {
 type ContainerFormProps = {
   initialValues?: ContainerFormValues;
   isEditing?: boolean;
-  updatedAt?: string;
-  suggestedContainerCode?: string;
+  suggestedContainerName?: string;
   submitLabel: string;
+  isSubmitting?: boolean;
   onSubmit: (values: ContainerFormValues) => void;
   onCancel: () => void;
 };
@@ -23,9 +23,9 @@ type ContainerFormProps = {
 export function ContainerForm({
   initialValues,
   isEditing = false,
-  updatedAt,
-  suggestedContainerCode,
+  suggestedContainerName,
   submitLabel,
+  isSubmitting = false,
   onSubmit,
   onCancel,
 }: ContainerFormProps) {
@@ -34,11 +34,11 @@ export function ContainerForm({
   useEffect(() => {
     const base = initialValues ?? createEmptyContainerForm();
     setValues(
-      !isEditing && suggestedContainerCode && !base.containerCode
-        ? { ...base, containerCode: suggestedContainerCode }
-        : base
+      !isEditing && suggestedContainerName && !base.name
+        ? { ...base, name: suggestedContainerName }
+        : base,
     );
-  }, [initialValues, isEditing, suggestedContainerCode]);
+  }, [initialValues, isEditing, suggestedContainerName]);
 
   function updateField<K extends keyof ContainerFormValues>(key: K, value: ContainerFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -51,21 +51,22 @@ export function ContainerForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="containerId">Container ID</Label>
-        <Input id="containerId" value={values.containerId} readOnly className="bg-muted/40 font-mono text-xs" />
-        {!isEditing ? <p className="text-xs text-muted-foreground">Auto-generated ID for new containers.</p> : null}
-      </div>
+      {isEditing ? (
+        <div className="space-y-2">
+          <Label htmlFor="id">Container ID</Label>
+          <Input id="id" value={values.id || "—"} readOnly className="bg-muted/40 font-mono text-xs" />
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="containerCode">
+          <Label htmlFor="name">
             Container <span className="text-destructive">*</span>
           </Label>
           <Input
-            id="containerCode"
-            value={values.containerCode}
-            onChange={(event) => updateField("containerCode", event.target.value)}
+            id="name"
+            value={values.name}
+            onChange={(event) => updateField("name", event.target.value)}
             placeholder="01-26"
             required
           />
@@ -73,27 +74,24 @@ export function ContainerForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="containerNumber">
-            Container number <span className="text-destructive">*</span>
-          </Label>
+          <Label htmlFor="containerNumber">Container number</Label>
           <Input
             id="containerNumber"
             value={values.containerNumber}
             onChange={(event) => updateField("containerNumber", event.target.value.toUpperCase())}
             placeholder="SMLUD320939203"
             className="font-mono text-xs"
-            required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="bookingNumber">
+          <Label htmlFor="booking">
             Booking number <span className="text-destructive">*</span>
           </Label>
           <Input
-            id="bookingNumber"
-            value={values.bookingNumber}
-            onChange={(event) => updateField("bookingNumber", event.target.value)}
+            id="booking"
+            value={values.booking}
+            onChange={(event) => updateField("booking", event.target.value)}
             placeholder="BKG-2026-00421"
             required
           />
@@ -120,19 +118,17 @@ export function ContainerForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="transportCompany">Transport company</Label>
+          <Label htmlFor="company">Transport company</Label>
           <Input
-            id="transportCompany"
-            value={values.transportCompany}
-            onChange={(event) => updateField("transportCompany", event.target.value)}
+            id="company"
+            value={values.company}
+            onChange={(event) => updateField("company", event.target.value)}
             placeholder="Shipping line or carrier"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="cost">
-            Cost <span className="text-destructive">*</span>
-          </Label>
+          <Label htmlFor="cost">Cost</Label>
           <Input
             id="cost"
             type="number"
@@ -141,42 +137,37 @@ export function ContainerForm({
             value={values.cost}
             onChange={(event) => updateField("cost", event.target.value)}
             placeholder="0.00"
-            required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="departureDate">
-            Departure date <span className="text-destructive">*</span>
-          </Label>
+          <Label htmlFor="departureDate">Departure date</Label>
           <Input
             id="departureDate"
             type="date"
             value={values.departureDate}
             onChange={(event) => updateField("departureDate", event.target.value)}
-            required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="arrivalDate">
-            Arrival date <span className="text-destructive">*</span>
-          </Label>
+          <Label htmlFor="arrivalDate">Arrival date</Label>
           <Input
             id="arrivalDate"
             type="date"
             value={values.arrivalDate}
             onChange={(event) => updateField("arrivalDate", event.target.value)}
-            required
           />
         </div>
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {submitLabel}
+        </Button>
       </div>
     </form>
   );

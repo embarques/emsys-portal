@@ -14,6 +14,7 @@ import {
 import { CustomerForm } from "@/components/customers/customer-form";
 import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -293,21 +294,6 @@ export function CustomersWorkspace() {
 
   const tableColumns: DataTableColumn<Customer>[] = [
     {
-      id: "customerType",
-      label: "customerType",
-      renderCell: (customer) => {
-        const clientType = getCustomerClientType(customer) ?? "sender";
-        return (
-          <Badge className={getClientTypeBadgeClass(clientType)}>{getCustomerTypeLabel(customer)}</Badge>
-        );
-      },
-    },
-    {
-      id: "IDNumber",
-      label: "IDNumber",
-      renderCell: (customer) => customer.IDNumber || "—",
-    },
-    {
       id: "name",
       label: "name",
       cellClassName: "font-medium",
@@ -317,6 +303,25 @@ export function CustomersWorkspace() {
       id: "phone",
       label: "Phone",
       renderCell: (customer) => formatPhoneDisplayOrDash(getPrimaryPhoneNumber(customer.phones)),
+    },
+    {
+      id: "customerType",
+      label: "customerType",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
+      renderCell: (customer) => {
+        const clientType = getCustomerClientType(customer) ?? "sender";
+        return (
+          <UniformWidthPill columnKey="customerType">
+            <Badge className={getClientTypeBadgeClass(clientType)}>{getCustomerTypeLabel(customer)}</Badge>
+          </UniformWidthPill>
+        );
+      },
+    },
+    {
+      id: "IDNumber",
+      label: "IDNumber",
+      renderCell: (customer) => customer.IDNumber || "—",
     },
     {
       id: "address.address1",
@@ -351,8 +356,12 @@ export function CustomersWorkspace() {
     {
       id: "branch",
       label: "branch",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (customer) => (
-        <Badge className={getCustomerBranchBadgeClass(customer)}>{formatCustomerBranchLabel(customer)}</Badge>
+        <UniformWidthPill columnKey="branch">
+          <Badge className={getCustomerBranchBadgeClass(customer)}>{formatCustomerBranchLabel(customer)}</Badge>
+        </UniformWidthPill>
       ),
     },
     {
@@ -389,12 +398,6 @@ export function CustomersWorkspace() {
       renderCell: (customer) => (customer.updatedAt ? formatAuditDate(customer.updatedAt) : "—"),
     },
     {
-      id: "oldID",
-      label: "oldID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (customer) => (customer.oldID > 0 ? String(customer.oldID) : "—"),
-    },
-    {
       id: "id",
       label: "Customer ID",
       cellClassName: "font-mono text-xs",
@@ -429,7 +432,7 @@ export function CustomersWorkspace() {
     catalogLoading: stats.isLoading,
   });
 
-  const columnVisibility = useColumnVisibility("customers", tableColumns);
+  const columnVisibility = useColumnVisibility("customers-v2", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
@@ -475,22 +478,16 @@ export function CustomersWorkspace() {
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
+            searchSummary={searchResultHint ?? undefined}
             search={
-              <>
-                <TableSearchInput
-                  value={filters.query}
-                  onChange={(query) => {
-                    setFilters((current) => ({ ...current, query }));
-                    setPage(1);
-                  }}
-                  placeholder="Search customers..."
-                />
-                {searchResultHint ? (
-                  <p className="pl-1 text-xs text-muted-foreground" aria-live="polite">
-                    {searchResultHint}
-                  </p>
-                ) : null}
-              </>
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
+                  setPage(1);
+                }}
+                placeholder="Search by name, phone, or address…"
+              />
             }
             filterPanel={
               <TableFilterPanel

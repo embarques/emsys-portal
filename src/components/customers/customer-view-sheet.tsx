@@ -78,7 +78,6 @@ export function CustomerViewSheet({
 
           <RecordViewSheetSection title="System information">
             <RecordViewSheetDetailRow label="Customer ID" value={customer.id} />
-            <RecordViewSheetDetailRow label="Old ID" value={customer.oldID > 0 ? String(customer.oldID) : "—"} />
             <RecordViewSheetDetailRow
               label="Created by"
               value={customer.createdByID != null ? String(customer.createdByID) : "—"}

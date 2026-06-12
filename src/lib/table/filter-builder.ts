@@ -33,12 +33,42 @@ export function createDefaultFilterRows(): TableFilterRowState[] {
   return [];
 }
 
-export function isCompleteFilterRow(row: TableFilterRowState): boolean {
-  return Boolean(row.field.trim() && row.operator.trim() && row.value.trim());
+export function isCompleteFilterRow(
+  row: TableFilterRowState,
+  fields?: TableFilterFieldDefinition[],
+): boolean {
+  let operator = row.operator.trim();
+
+  if (!operator && fields) {
+    const definition = resolveFilterFieldDefinition(fields, row.field);
+    if (definition && definition.operators.length === 1) {
+      operator = resolveDefaultFilterOperator(definition);
+    }
+  }
+
+  return Boolean(row.field.trim() && operator && row.value.trim());
 }
 
-export function countCompleteFilterRows(rows: TableFilterRowState[]): number {
-  return rows.filter(isCompleteFilterRow).length;
+export function countCompleteFilterRows(
+  rows: TableFilterRowState[],
+  fields?: TableFilterFieldDefinition[],
+): number {
+  return rows.filter((row) => isCompleteFilterRow(row, fields)).length;
+}
+
+export function resolveDefaultFilterOperator(definition: TableFilterFieldDefinition): string {
+  return definition.operators[0] ?? "eq";
+}
+
+export function resolveFilterOperatorLabel(
+  definition: TableFilterFieldDefinition | undefined,
+  operator: string,
+): string {
+  if (!definition) return operator;
+  if (definition.valueType === "range") return "in range";
+
+  const operatorKey = operator as TableFilterOperator;
+  return (FILTER_OPERATOR_LABELS[operatorKey] ?? operator).toLowerCase();
 }
 
 export function formatTableFilterRowsLogic(
@@ -49,12 +79,11 @@ export function formatTableFilterRowsLogic(
   const parts: string[] = [];
 
   rows.forEach((row) => {
-    if (!isCompleteFilterRow(row)) return;
+    if (!isCompleteFilterRow(row, fields)) return;
 
     const definition = resolveFilterFieldDefinition(fields, row.field);
     const fieldLabel = definition?.label ?? row.field;
-    const operatorKey = row.operator as TableFilterOperator;
-    const operatorLabel = (FILTER_OPERATOR_LABELS[operatorKey] ?? row.operator).toLowerCase();
+    const operatorLabel = resolveFilterOperatorLabel(definition, row.operator);
 
     let valueLabel = row.value;
     const valueOptions = resolveFilterRowOptions(definition, dynamicOptions);
@@ -112,7 +141,7 @@ export function normalizeFilterRowForField(
   return {
     ...row,
     field: definition.field,
-    operator: "",
+    operator: definition.operators.length === 1 ? resolveDefaultFilterOperator(definition) : "",
     value: "",
   };
 }

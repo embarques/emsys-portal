@@ -13,6 +13,7 @@ import {
 import { RouteForm } from "@/components/routes/route-form";
 import { RouteViewSheet } from "@/components/routes/route-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -186,8 +187,12 @@ export function RoutesWorkspace() {
     {
       id: "branch",
       label: "Branch",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (route) => (
-        <Badge className={getRouteBranchBadgeClass(route.branch)}>{getRouteBranchLabel(route.branch)}</Badge>
+        <UniformWidthPill columnKey="branch">
+          <Badge className={getRouteBranchBadgeClass(route.branch)}>{getRouteBranchLabel(route.branch)}</Badge>
+        </UniformWidthPill>
       ),
     },
     {
@@ -215,15 +220,21 @@ export function RoutesWorkspace() {
     {
       id: "places",
       label: "Places",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (route) => (
         <div className="flex flex-wrap gap-1">
           {route.places.slice(0, 2).map((place) => (
-            <Badge key={place.id} className={getPlaceKindBadgeClass(place.kind)}>
-              {getPlaceKindLabel(place.kind)}
-            </Badge>
+            <UniformWidthPill key={place.id} columnKey="places">
+              <Badge className={getPlaceKindBadgeClass(place.kind)}>
+                {getPlaceKindLabel(place.kind)}
+              </Badge>
+            </UniformWidthPill>
           ))}
           {route.places.length > 2 ? (
-            <Badge variant="outline">+{route.places.length - 2}</Badge>
+            <UniformWidthPill columnKey="places">
+              <Badge variant="outline">+{route.places.length - 2}</Badge>
+            </UniformWidthPill>
           ) : null}
         </div>
       ),

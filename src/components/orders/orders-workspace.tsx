@@ -2,11 +2,11 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import {
+  ArrowDownToLine,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
-  MapPin,
-  Package,
+  Clock,
+  PackageOpen,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -14,6 +14,7 @@ import {
 import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -32,23 +33,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
   TableDirectoryToolbar,
   TableFilterPanel,
-  TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
+import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
-import { formatBranchFilterLabel } from "@/lib/branches/display";
-import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   formatCustomerPartySummary,
-  formatEmployeeSummary,
   formatOrderCommentsSummary,
   formatOrderDate,
   formatOrderId,
+  formatOrderRouteAssignment,
   formatUserSummary,
-  getOrderBranchLabel,
+  buildOrderCreatedByFilterOptions,
+  getCustomerPhone,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
@@ -61,23 +63,22 @@ import {
 } from "@/lib/orders/hooks/use-orders";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
+  buildOrderListParams,
   createEmptyOrderForm,
-  createOrderSearchFilter,
   getOrderRecordId,
   orderToFormValues,
   type Order,
   type OrderFilterState,
   type OrderFormValues,
 } from "@/lib/orders/types";
+import { useUsers } from "@/lib/users/hooks/use-users";
 import type { DataTableColumn } from "@/lib/table/types";
-import { getBranchBadgeClass } from "@/lib/trucks/display";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
 
 const defaultFilters: OrderFilterState = {
   query: "",
-  branch: "all",
-  completed: "all",
+  rows: [],
 };
 
 export function OrdersWorkspace() {
@@ -93,39 +94,25 @@ export function OrdersWorkspace() {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Order | Order[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const listParams = useMemo(() => {
-    const search = createOrderSearchFilter(deferredQuery);
-
-    return {
-      ...DEFAULT_ORDER_LIST_PARAMS,
-      page,
-      limit: PAGE_SIZE,
-      search,
-      branch: filters.branch,
-      completed: filters.completed,
-    };
-  }, [
-    deferredQuery,
-    filters.branch,
-    filters.completed,
-    page,
-  ]);
+  const listParams = useMemo(
+    () =>
+      buildOrderListParams({
+        page,
+        limit: PAGE_SIZE,
+        query: deferredQuery,
+        rows: filters.rows,
+      }),
+    [deferredQuery, filters.rows, page],
+  );
 
   const { data, isLoading, isError, error, isFetching } = useOrders(listParams);
-  const { data: branchesData, isLoading: branchesLoading } = useBranchPicker();
+  const { data: usersData, isLoading: usersLoading } = useUsers({
+    page: 1,
+    limit: 100,
+    sort: "fullName:asc",
+  });
 
-  const branchStatsIds = useMemo(() => {
-    const items = branchesData?.items ?? [];
-    const nyBranch = items.find((branch) => branch.code.trim().toUpperCase() === "NY");
-    const drBranch = items.find((branch) => ["RD", "DR"].includes(branch.code.trim().toUpperCase()));
-
-    return {
-      usaBranchId: nyBranch?.id ?? items[0]?.id,
-      drBranchId: drBranch?.id ?? items[1]?.id,
-    };
-  }, [branchesData?.items]);
-
-  const stats = useOrderStats({ ...branchStatsIds, branchesReady: !branchesLoading });
+  const stats = useOrderStats();
   const createOrderMutation = useCreateOrder();
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
@@ -142,15 +129,9 @@ export function OrdersWorkspace() {
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const missingCompanyContext = !authLoading && !companyId;
 
-  const branchFilters = useMemo(
-    () => [
-      { value: "all" as const, label: "All" },
-      ...(branchesData?.items ?? []).map((branch) => ({
-        value: branch.id,
-        label: formatBranchFilterLabel(branch),
-      })),
-    ],
-    [branchesData?.items],
+  const userFilterOptions = useMemo(
+    () => buildOrderCreatedByFilterOptions(usersData?.items ?? []),
+    [usersData?.items],
   );
 
   function toggleSelectAll(checked: boolean) {
@@ -230,29 +211,22 @@ export function OrdersWorkspace() {
 
   const statCards = [
     {
-      label: "Total orders",
-      value: stats.total.toString(),
-      description: "Pickups from GET /pickups",
-      icon: Package,
+      label: "Pending",
+      value: stats.pending.toString(),
+      description: "Not yet completed",
+      icon: Clock,
     },
     {
-      label: "USA",
-      value: stats.usa.toString(),
-      description: "Branch NY",
-      icon: MapPin,
+      label: "Pending pickups",
+      value: stats.pendingPickups.toString(),
+      icon: PackageOpen,
     },
     {
-      label: "DR",
-      value: stats.dr.toString(),
-      description: "Branch DR",
-      icon: ClipboardList,
+      label: "Pending takes",
+      value: stats.pendingTakes.toString(),
+      description: "Purpose contains take · not completed",
+      icon: ArrowDownToLine,
     },
-  ];
-
-  const completedFilters: { value: OrderFilterState["completed"]; label: string }[] = [
-    { value: "all", label: "All statuses" },
-    { value: false, label: "Pending" },
-    { value: true, label: "Completed" },
   ];
 
   const tableColumns: DataTableColumn<Order>[] = [
@@ -263,12 +237,6 @@ export function OrdersWorkspace() {
       renderCell: (order) => (order.oldID > 0 ? order.oldID : order.id),
     },
     {
-      id: "oldID",
-      label: "oldID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (order) => (order.oldID > 0 ? order.oldID : "—"),
-    },
-    {
       id: "date",
       label: "date",
       renderCell: (order) => formatOrderDate(order.date),
@@ -276,40 +244,91 @@ export function OrdersWorkspace() {
     {
       id: "completed",
       label: "completed",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (order) => (
-        <Badge
-          variant="outline"
-          className={
-            order.completed
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-              : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-          }
-        >
-          {getOrderCompletedLabel(order.completed)}
-        </Badge>
+        <UniformWidthPill columnKey="completed">
+          <Badge
+            variant="outline"
+            className={
+              order.completed
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+            }
+          >
+            {getOrderCompletedLabel(order.completed)}
+          </Badge>
+        </UniformWidthPill>
       ),
     },
     {
-      id: "branch",
-      label: "branch",
-      renderCell: (order) => (
-        <Badge className={getBranchBadgeClass(order.branch.code)}>{getOrderBranchLabel(order.branch)}</Badge>
-      ),
+      id: "createdAt",
+      label: "createdAt",
+      cellClassName: "text-muted-foreground",
+      renderCell: (order) => formatAuditDate(order.createdAt),
     },
     {
-      id: "sender",
-      label: "sender",
-      renderCell: (order) => formatCustomerPartySummary(order.sender),
+      id: "sender.name",
+      label: "sender.name",
+      cellClassName: "font-medium",
+      renderCell: (order) => order.sender.name.trim() || "—",
     },
     {
-      id: "receiver",
-      label: "receiver",
-      renderCell: (order) => (order.receiver ? order.receiver.name : "—"),
+      id: "sender.address.address1",
+      label: "sender.address.address1",
+      renderCell: (order) => order.sender.address.address1.trim() || "—",
+    },
+    {
+      id: "sender.address.city",
+      label: "sender.address.city",
+      renderCell: (order) => order.sender.address.city.trim() || "—",
+    },
+    {
+      id: "sender.address.state",
+      label: "sender.address.state",
+      renderCell: (order) => order.sender.address.state.trim() || "—",
+    },
+    {
+      id: "sender.address.zipcode",
+      label: "sender.address.zipcode",
+      renderCell: (order) => order.sender.address.zipcode.trim() || "—",
+    },
+    {
+      id: "sender.phone1",
+      label: "sender.phone1",
+      renderCell: (order) => getCustomerPhone(order.sender),
     },
     {
       id: "purpose",
       label: "purpose",
       renderCell: (order) => order.purpose || "—",
+    },
+    {
+      id: "comments",
+      label: "comments",
+      renderCell: (order) => formatOrderCommentsSummary(order),
+    },
+    {
+      id: "routeAssignment",
+      label: "routeAssignment",
+      renderCell: (order) => formatOrderRouteAssignment(order),
+    },
+    {
+      id: "receiver",
+      label: "receiver",
+      renderCell: (order) =>
+        order.receiver ? formatCustomerPartySummary(order.receiver) : "—",
+    },
+    {
+      id: "user",
+      label: "createdBy",
+      renderCell: (order) => formatUserSummary(order.user),
+    },
+    {
+      id: "updatedAt",
+      label: "updatedAt",
+      cellClassName: "text-muted-foreground",
+      renderCell: (order) => formatAuditDate(order.updatedAt),
     },
     {
       id: "sector",
@@ -319,37 +338,21 @@ export function OrdersWorkspace() {
     {
       id: "employee",
       label: "employee",
-      renderCell: (order) => formatEmployeeSummary(order.employee),
+      defaultVisible: false,
+      renderCell: (order) => order.employee?.name.trim() || "—",
     },
     {
-      id: "user",
-      label: "user",
-      renderCell: (order) => formatUserSummary(order.user),
-    },
-    {
-      id: "comments",
-      label: "comments",
-      renderCell: (order) => formatOrderCommentsSummary(order),
-    },
-    {
-      id: "createdAt",
-      label: "createdAt",
-      cellClassName: "text-muted-foreground",
-      renderCell: (order) => formatAuditDate(order.createdAt),
-    },
-    {
-      id: "updatedAt",
-      label: "updatedAt",
-      cellClassName: "text-muted-foreground",
-      renderCell: (order) => formatAuditDate(order.updatedAt),
+      id: "oldID",
+      label: "oldID",
+      defaultVisible: false,
+      cellClassName: "font-mono text-xs",
+      renderCell: (order) => (order.oldID > 0 ? order.oldID : "—"),
     },
   ];
 
-  const columnVisibility = useColumnVisibility("orders", tableColumns);
-  const activeFilterCount =
-    (filters.branch !== "all" ? 1 : 0) + (filters.completed !== "all" ? 1 : 0);
-  const hasActiveFilters =
-    Boolean(filters.query.trim()) || filters.branch !== "all" || filters.completed !== "all";
+  const columnVisibility = useColumnVisibility("orders-v2", tableColumns);
+  const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
+  const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
 
   return (
     <div>
@@ -395,7 +398,7 @@ export function OrdersWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search orders by sender..."
+                placeholder="Search by sender/receiver name, phone, or address…"
               />
             }
             filterPanel={
@@ -410,43 +413,18 @@ export function OrdersWorkspace() {
                     : undefined
                 }
               >
-            <TableFilterSection label="Branch">
-              {branchesLoading ? (
-                <span className="text-sm text-muted-foreground">Loading branches…</span>
-              ) : (
-                branchFilters.map((option) => (
-                  <Button
-                    key={String(option.value)}
-                    type="button"
-                    size="sm"
-                    variant={filters.branch === option.value ? "default" : "outline"}
-                    onClick={() => {
-                      setFilters((current) => ({ ...current, branch: option.value }));
-                      setPage(1);
-                    }}
-                  >
-                    {option.label}
-                  </Button>
-                ))
-              )}
-            </TableFilterSection>
-
-            <TableFilterSection label="Status">
-              {completedFilters.map((option) => (
-                <Button
-                  key={String(option.value)}
-                  type="button"
-                  size="sm"
-                  variant={filters.completed === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, completed: option.value }));
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={ORDER_TABLE_FILTER_FIELDS}
+                  dynamicOptions={{
+                    users: usersLoading ? [] : userFilterOptions,
+                  }}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
                     setPage(1);
                   }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
+                />
               </TableFilterPanel>
             }
           />

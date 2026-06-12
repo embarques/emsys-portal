@@ -12,6 +12,11 @@ import {
   updateOrder,
 } from "@/lib/orders/api/orders-api";
 import {
+  buildOrderStatsCountParams,
+  buildPendingOrderStatsFilterRows,
+  buildPendingPurposeStatsFilterRows,
+} from "@/lib/orders/order-stats";
+import {
   DEFAULT_ORDER_LIST_PARAMS,
   type OrderFormValues,
   type OrderListParams,
@@ -44,70 +49,67 @@ export function useOrders(params: OrderListParams) {
 
 export function useOrderSearch(
   search: OrderSearchFilter | undefined,
-  options: { enabled?: boolean; limit?: number; branch?: OrderListParams["branch"]; completed?: OrderListParams["completed"] } = {},
+  options: { enabled?: boolean; limit?: number } = {},
 ) {
-  const { enabled = true, limit = 40, branch, completed } = options;
+  const { enabled = true, limit = 40 } = options;
   const queryEnabled = useOrdersQueryEnabled();
 
   return useQuery({
-    queryKey: queryKeys.orders.search(search, limit, { branch, completed }),
+    queryKey: queryKeys.orders.search(search, limit),
     queryFn: () =>
       fetchOrders({
         ...DEFAULT_ORDER_LIST_PARAMS,
         limit,
         search,
-        branch,
-        completed,
       }),
     enabled: queryEnabled && enabled && Boolean(search?.value.trim()),
   });
 }
 
 type OrderStatsOptions = {
-  usaBranchId?: number;
-  drBranchId?: number;
-  branchesReady?: boolean;
+  enabled?: boolean;
 };
 
 export function useOrderStats(options: OrderStatsOptions = {}) {
-  const { usaBranchId, drBranchId, branchesReady = true } = options;
-  const queryEnabled = useOrdersQueryEnabled() && branchesReady;
-
-  const totalQuery = useQuery({
-    queryKey: queryKeys.orders.stats("all"),
-    queryFn: () => fetchOrders({ ...DEFAULT_ORDER_LIST_PARAMS, limit: 1 }),
-    enabled: queryEnabled,
-  });
-
-  const usaQuery = useQuery({
-    queryKey: queryKeys.orders.stats("usa", usaBranchId),
-    queryFn: () =>
-      fetchOrders({ ...DEFAULT_ORDER_LIST_PARAMS, limit: 1, branch: usaBranchId }),
-    enabled: queryEnabled && usaBranchId != null && usaBranchId > 0,
-  });
-
-  const drQuery = useQuery({
-    queryKey: queryKeys.orders.stats("dr", drBranchId),
-    queryFn: () =>
-      fetchOrders({ ...DEFAULT_ORDER_LIST_PARAMS, limit: 1, branch: drBranchId }),
-    enabled: queryEnabled && drBranchId != null && drBranchId > 0,
-  });
+  const { enabled = true } = options;
+  const queryEnabled = useOrdersQueryEnabled() && enabled;
 
   const pendingQuery = useQuery({
     queryKey: queryKeys.orders.stats("pending"),
-    queryFn: () => fetchOrders({ ...DEFAULT_ORDER_LIST_PARAMS, limit: 1, completed: false }),
+    queryFn: () => fetchOrders(buildOrderStatsCountParams(buildPendingOrderStatsFilterRows())),
     enabled: queryEnabled,
   });
 
+  const pendingPickupsQuery = useQuery({
+    queryKey: queryKeys.orders.stats("pending-pickups"),
+    queryFn: () =>
+      fetchOrders(buildOrderStatsCountParams(buildPendingPurposeStatsFilterRows("pickup"))),
+    enabled: queryEnabled,
+  });
+
+  const pendingTakesQuery = useQuery({
+    queryKey: queryKeys.orders.stats("pending-takes"),
+    queryFn: () =>
+      fetchOrders(buildOrderStatsCountParams(buildPendingPurposeStatsFilterRows("take"))),
+    enabled: queryEnabled,
+  });
+
+  const pending = pendingQuery.data?.total ?? 0;
+  const pendingPickups = pendingPickupsQuery.data?.total ?? 0;
+  const pendingTakes = pendingTakesQuery.data?.total ?? 0;
+
   return {
-    total: totalQuery.data?.total ?? 0,
-    usa: usaQuery.data?.total ?? 0,
-    dr: drQuery.data?.total ?? 0,
-    pending: pendingQuery.data?.total ?? 0,
+    pending,
+    pendingPickups,
+    pendingTakes,
     isLoading:
-      totalQuery.isLoading || usaQuery.isLoading || drQuery.isLoading || pendingQuery.isLoading,
+      pendingQuery.isLoading ||
+      pendingPickupsQuery.isLoading ||
+      pendingTakesQuery.isLoading,
     isError:
-      totalQuery.isError || usaQuery.isError || drQuery.isError || pendingQuery.isError,
+      pendingQuery.isError ||
+      pendingPickupsQuery.isError ||
+      pendingTakesQuery.isError,
   };
 }
 

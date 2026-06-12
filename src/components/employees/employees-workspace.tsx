@@ -13,6 +13,7 @@ import {
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { EmployeeViewSheet } from "@/components/employees/employee-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -277,10 +278,14 @@ export function EmployeesWorkspace() {
     {
       id: "active",
       label: "active",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (employee) => (
-        <Badge className={getEmployeeActiveBadgeClass(employee.active)}>
-          {getEmployeeActiveLabel(employee.active)}
-        </Badge>
+        <UniformWidthPill columnKey="active">
+          <Badge className={getEmployeeActiveBadgeClass(employee.active)}>
+            {getEmployeeActiveLabel(employee.active)}
+          </Badge>
+        </UniformWidthPill>
       ),
     },
     {
@@ -298,10 +303,14 @@ export function EmployeesWorkspace() {
     {
       id: "branch",
       label: "branch",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (employee) => (
-        <Badge className={getEmployeeBranchBadgeClass(employee)}>
-          {formatEmployeeBranchLabel(employee)}
-        </Badge>
+        <UniformWidthPill columnKey="branch">
+          <Badge className={getEmployeeBranchBadgeClass(employee)}>
+            {formatEmployeeBranchLabel(employee)}
+          </Badge>
+        </UniformWidthPill>
       ),
     },
     {

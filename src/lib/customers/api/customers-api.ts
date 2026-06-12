@@ -4,16 +4,15 @@ import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query
 import {
   buildApiFilterNodeFromTableRows,
   buildApiSearchPaginationQuery,
+  buildStripeStyleSearchBody,
   createOrTextSearchFilterGroup,
   createTextSearchFilter,
   hasListTextSearch,
   isApiSearchFilter,
-  resolveApiSearchSort,
   resolveSearchField,
   resolveSearchOperator,
   type ApiSearchFilterGroup,
   type ApiSearchFilterNode,
-  type ApiSearchSortSpec,
 } from "@/lib/api/search-query";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
@@ -25,6 +24,7 @@ import {
   portalCustomerTypeToApiFilterValue,
   portalCustomerTypeToApiWriteValue,
 } from "@/lib/customers/customer-type";
+import { expandCustomerCountrySearchNode } from "@/lib/customers/customer-country";
 import {
   buildApiAddressPayload,
   buildApiBranchDto,
@@ -112,6 +112,10 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   message?: string;
   error?: string;
 };
+
+function expandCustomerSearchNode(node: ApiSearchFilterNode): ApiSearchFilterNode {
+  return expandCustomerCountrySearchNode(expandCustomerTypeSearchNode(node));
+}
 
 function readNumericId(value: number | string | undefined): number | undefined {
   if (value == null) return undefined;
@@ -244,13 +248,13 @@ function resolveCustomerTypeListFilter(params: CustomerListParams): ApiListField
 }
 
 function resolveCustomerGetFilter(params: CustomerListParams): ApiListFieldFilter | undefined {
-  const completeRows = (params.filterRows ?? []).filter(isCompleteFilterRow);
+  const completeRows = (params.filterRows ?? []).filter((row) => isCompleteFilterRow(row));
   if (completeRows.length !== 1) return undefined;
 
   const rowFilterNode = buildApiFilterNodeFromTableRows(completeRows, CUSTOMER_TABLE_FILTER_FIELDS);
   if (!rowFilterNode) return undefined;
 
-  const expanded = expandCustomerTypeSearchNode(rowFilterNode);
+  const expanded = expandCustomerSearchNode(rowFilterNode);
   if (!isApiSearchFilter(expanded)) return undefined;
 
   return {
@@ -263,14 +267,14 @@ function resolveCustomerGetFilter(params: CustomerListParams): ApiListFieldFilte
 function shouldUseCustomerPostSearch(params: CustomerListParams): boolean {
   if (hasListTextSearch(params.search)) return true;
 
-  const completeRows = (params.filterRows ?? []).filter(isCompleteFilterRow);
+  const completeRows = (params.filterRows ?? []).filter((row) => isCompleteFilterRow(row));
 
   if (completeRows.length > 1) return true;
 
   if (completeRows.length === 1) {
     const rowFilterNode = buildApiFilterNodeFromTableRows(completeRows, CUSTOMER_TABLE_FILTER_FIELDS);
     if (!rowFilterNode) return false;
-    const expanded = expandCustomerTypeSearchNode(rowFilterNode);
+    const expanded = expandCustomerSearchNode(rowFilterNode);
     return !isApiSearchFilter(expanded);
   }
 
@@ -280,7 +284,7 @@ function shouldUseCustomerPostSearch(params: CustomerListParams): boolean {
 function hasCustomerListFilters(params: CustomerListParams): boolean {
   return (
     hasListTextSearch(params.search) ||
-    (params.filterRows ?? []).some(isCompleteFilterRow) ||
+    (params.filterRows ?? []).some((row) => isCompleteFilterRow(row)) ||
     hasCustomerChipFilters(params)
   );
 }
@@ -314,7 +318,7 @@ function buildCustomerSearchFilterGroups(params: CustomerListParams): ApiSearchF
     params.filterRows ?? [],
     CUSTOMER_TABLE_FILTER_FIELDS,
   );
-  const expandedRowFilter = rowFilterNode ? expandCustomerTypeSearchNode(rowFilterNode) : null;
+  const expandedRowFilter = rowFilterNode ? expandCustomerSearchNode(rowFilterNode) : null;
   const chipFilters: ApiSearchFilterNode[] = [];
 
   if (expandedRowFilter) {
@@ -340,36 +344,12 @@ function buildCustomerSearchFilterGroups(params: CustomerListParams): ApiSearchF
   return groups;
 }
 
-/** POST /customers/search — Stripe-style body (filters + sort array). Pagination in URL query. */
-type ApiCustomerSearchBody = {
-  operator?: "and" | "or";
-  filters?: ApiSearchFilterNode[];
-  sort?: ApiSearchSortSpec[];
-};
-
-function buildCustomerSearchBody(params: CustomerListParams): ApiCustomerSearchBody {
-  const filterGroups = buildCustomerSearchFilterGroups(params);
-  const body: ApiCustomerSearchBody = {};
-
-  const sortSpecs = resolveApiSearchSort(params.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort);
-  if (sortSpecs) {
-    body.sort = sortSpecs;
-  }
-
-  if (filterGroups.length === 0) {
-    return body;
-  }
-
-  if (filterGroups.length === 1 && filterGroups[0].operator === "and") {
-    body.operator = filterGroups[0].operator;
-    body.filters = filterGroups[0].filters;
-    return body;
-  }
-
-  body.operator = "and";
-  body.filters = filterGroups;
-
-  return body;
+/** POST /customers/search — Stripe-style body. Pagination in URL query. */
+function buildCustomerSearchBody(params: CustomerListParams) {
+  return buildStripeStyleSearchBody({
+    sort: params.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort,
+    filterGroups: buildCustomerSearchFilterGroups(params),
+  });
 }
 
 function appendCustomerChipParams(query: string, params: CustomerListParams): string {

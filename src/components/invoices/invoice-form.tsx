@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InvoiceLineItemsEditor } from "@/components/invoices/invoice-line-items-editor";
 import { OrderPartyEditor } from "@/components/orders/order-party-editor";
-import { cloneContainers } from "@/lib/containers/mock-data";
+import { formatContainerLabel } from "@/lib/containers/display";
+import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
   INVOICE_PAYMENT_LOCATIONS,
@@ -47,7 +48,8 @@ export function InvoiceForm({
 }: InvoiceFormProps) {
   const { data: customersData } = useCustomerPicker();
   const customers = customersData?.items ?? [];
-  const containers = useMemo(() => cloneContainers(), []);
+  const { data: containersData } = useContainerPicker();
+  const containers = containersData?.items ?? [];
   const catalogItems = useMemo(() => cloneItems(), []);
 
   const [values, setValues] = useState<InvoiceFormValues>(initialValues ?? createEmptyInvoiceForm());
@@ -134,8 +136,8 @@ export function InvoiceForm({
           >
             <option value="">Select a container</option>
             {containers.map((container) => (
-              <option key={container.containerId} value={container.containerId}>
-                {container.containerCode} · {container.containerNumber}
+              <option key={container.id} value={String(container.id)}>
+                {formatContainerLabel(container)}
               </option>
             ))}
           </select>

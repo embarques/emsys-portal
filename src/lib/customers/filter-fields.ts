@@ -1,9 +1,10 @@
 import {
   CUSTOMER_GET_SEARCH_CAPABILITIES,
 } from "@/lib/customers/types";
+import { CUSTOMER_ADDRESS_COUNTRY_FILTER_OPTIONS } from "@/lib/customers/customer-country";
 import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 
-const TEXT_FIELDS = new Set(["name", "email", "IDNumber", "oldID", "address.address1"]);
+const TEXT_FIELDS = new Set(["name", "email", "IDNumber", "id", "address.address1"]);
 
 const TEXT_FILTER_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
 
@@ -47,9 +48,9 @@ const CUSTOMER_ADDRESS_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
     field: "address.country",
     label: "Country",
-    operators: [...TEXT_FILTER_OPERATORS],
-    valueType: "text",
-    placeholder: "Enter country…",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    options: CUSTOMER_ADDRESS_COUNTRY_FILTER_OPTIONS,
   },
 ];
 

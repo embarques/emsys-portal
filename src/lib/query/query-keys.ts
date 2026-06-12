@@ -1,10 +1,11 @@
 import type { BranchListParams, BranchSearchFilter } from "@/lib/branches/types";
+import type { ContainerListParams, ContainerSearchFilter } from "@/lib/containers/types";
+import type { InvoiceListParams, InvoiceSearchFilter } from "@/lib/invoices/types";
+import type { TruckListParams, TruckSearchFilter } from "@/lib/trucks/types";
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
-
-type OrderSearchQueryOptions = Pick<OrderListParams, "branch" | "completed">;
 
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
 
@@ -23,6 +24,33 @@ export const queryKeys = {
       [...queryKeys.employees.all, "stats", scope] as const,
     detail: (employeeId: string) => [...queryKeys.employees.all, "detail", employeeId] as const,
   },
+  trucks: {
+    all: ["trucks"] as const,
+    lists: () => [...queryKeys.trucks.all, "list"] as const,
+    list: (params: TruckListParams) => [...queryKeys.trucks.lists(), params] as const,
+    search: (search: TruckSearchFilter | undefined, limit: number) =>
+      [...queryKeys.trucks.all, "search", search, limit] as const,
+    stats: (scope: "all" | "kpis") => [...queryKeys.trucks.all, "stats", scope] as const,
+    detail: (truckId: string) => [...queryKeys.trucks.all, "detail", truckId] as const,
+  },
+  containers: {
+    all: ["containers"] as const,
+    lists: () => [...queryKeys.containers.all, "list"] as const,
+    list: (params: ContainerListParams) => [...queryKeys.containers.lists(), params] as const,
+    search: (search: ContainerSearchFilter | undefined, limit: number) =>
+      [...queryKeys.containers.all, "search", search, limit] as const,
+    stats: (scope: "all" | "kpis") => [...queryKeys.containers.all, "stats", scope] as const,
+    detail: (containerId: number) => [...queryKeys.containers.all, "detail", containerId] as const,
+  },
+  invoices: {
+    all: ["invoices"] as const,
+    lists: () => [...queryKeys.invoices.all, "list"] as const,
+    list: (params: InvoiceListParams) => [...queryKeys.invoices.lists(), params] as const,
+    search: (search: InvoiceSearchFilter | undefined, limit: number) =>
+      [...queryKeys.invoices.all, "search", search, limit] as const,
+    stats: (scope: "outstanding") => [...queryKeys.invoices.all, "stats", scope] as const,
+    detail: (invoiceId: string) => [...queryKeys.invoices.all, "detail", invoiceId] as const,
+  },
   branches: {
     all: ["branches"] as const,
     lists: () => [...queryKeys.branches.all, "list"] as const,
@@ -36,9 +64,9 @@ export const queryKeys = {
     all: ["orders"] as const,
     lists: () => [...queryKeys.orders.all, "list"] as const,
     list: (params: OrderListParams) => [...queryKeys.orders.lists(), params] as const,
-    search: (search: OrderSearchFilter | undefined, limit: number, options: OrderSearchQueryOptions = {}) =>
-      [...queryKeys.orders.all, "search", search, limit, options] as const,
-    stats: (scope: "all" | "usa" | "dr" | "pending", branchId?: number) =>
+    search: (search: OrderSearchFilter | undefined, limit: number) =>
+      [...queryKeys.orders.all, "search", search, limit] as const,
+    stats: (scope: "pending" | "pending-pickups" | "pending-takes", branchId?: number) =>
       [...queryKeys.orders.all, "stats", scope, branchId] as const,
     detail: (orderId: string) => [...queryKeys.orders.all, "detail", orderId] as const,
   },

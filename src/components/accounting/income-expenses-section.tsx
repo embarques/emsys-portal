@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { AccountingEntryForm } from "@/components/accounting/accounting-entry-form";
 import { AccountingSectionRowActions } from "@/components/accounting/accounting-section-row-actions";
+import { UniformPillWidthProvider, UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -109,60 +110,64 @@ export function IncomeExpensesSection({
           />
         </div>
 
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-[1100px] text-left text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
-                <th className="px-4 py-3 font-medium">Type</th>
-                <th className="px-4 py-3 font-medium">Category</th>
-                <th className="px-4 py-3 font-medium">Payment method</th>
-                <th className="px-4 py-3 font-medium">Amount paid</th>
-                <th className="px-4 py-3 font-medium">Description</th>
-                <th className="px-4 py-3 font-medium">Date</th>
-                <th className="px-4 py-3 font-medium">Reference number</th>
-                <th className="px-4 py-3 font-medium text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ledgerEntries.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
-                    No income or expense entries yet. Add one above.
-                  </td>
+        <UniformPillWidthProvider resetKey={ledgerEntries.map((entry) => entry.entryId).join(",")}>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[1100px] text-left text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">Type</th>
+                  <th className="px-4 py-3 font-medium">Category</th>
+                  <th className="px-4 py-3 font-medium">Payment method</th>
+                  <th className="px-4 py-3 font-medium">Amount paid</th>
+                  <th className="px-4 py-3 font-medium">Description</th>
+                  <th className="px-4 py-3 font-medium">Date</th>
+                  <th className="px-4 py-3 font-medium">Reference number</th>
+                  <th className="px-4 py-3 font-medium text-right">Actions</th>
                 </tr>
-              ) : (
-                ledgerEntries.map((entry) => (
-                  <tr
-                    key={entry.entryId}
-                    className="border-b last:border-0 hover:bg-muted/30"
-                    onClick={() => onRowClick?.(entry)}
-                    role={onRowClick ? "button" : undefined}
-                    tabIndex={onRowClick ? 0 : undefined}
-                  >
-                    <td className="px-4 py-3">
-                      <Badge className={getAccountingEntryTypeBadgeClass(entry.type)}>
-                        {getAccountingEntryTypeLabel(entry.type)}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">{formatAccountingCategory(entry)}</td>
-                    <td className="px-4 py-3">
-                      {entry.paymentMethod ? getPaymentMethodLabel(entry.paymentMethod) : "—"}
-                    </td>
-                    <td className="px-4 py-3 font-medium">
-                      {formatAccountingMoney(entry.amountPaid ?? entry.amount)}
-                    </td>
-                    <td className="max-w-[240px] truncate px-4 py-3">{entry.description}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatAccountingDate(entry.date)}</td>
-                    <td className="px-4 py-3 font-mono text-xs">{entry.referenceNumber ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      <AccountingSectionRowActions entry={entry} onEdit={onEdit} onDelete={onDelete} />
+              </thead>
+              <tbody>
+                {ledgerEntries.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                      No income or expense entries yet. Add one above.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  ledgerEntries.map((entry) => (
+                    <tr
+                      key={entry.entryId}
+                      className="border-b last:border-0 hover:bg-muted/30"
+                      onClick={() => onRowClick?.(entry)}
+                      role={onRowClick ? "button" : undefined}
+                      tabIndex={onRowClick ? 0 : undefined}
+                    >
+                      <td className="px-4 py-3">
+                        <UniformWidthPill columnKey="type">
+                          <Badge className={getAccountingEntryTypeBadgeClass(entry.type)}>
+                            {getAccountingEntryTypeLabel(entry.type)}
+                          </Badge>
+                        </UniformWidthPill>
+                      </td>
+                      <td className="px-4 py-3">{formatAccountingCategory(entry)}</td>
+                      <td className="px-4 py-3">
+                        {entry.paymentMethod ? getPaymentMethodLabel(entry.paymentMethod) : "—"}
+                      </td>
+                      <td className="px-4 py-3 font-medium">
+                        {formatAccountingMoney(entry.amountPaid ?? entry.amount)}
+                      </td>
+                      <td className="max-w-[240px] truncate px-4 py-3">{entry.description}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatAccountingDate(entry.date)}</td>
+                      <td className="px-4 py-3 font-mono text-xs">{entry.referenceNumber ?? "—"}</td>
+                      <td className="px-4 py-3">
+                        <AccountingSectionRowActions entry={entry} onEdit={onEdit} onDelete={onDelete} />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </UniformPillWidthProvider>
       </CardContent>
     </Card>
   );

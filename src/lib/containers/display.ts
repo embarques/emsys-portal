@@ -1,11 +1,15 @@
-import type { ContainerRecord } from "./types";
+import type { Container } from "./types";
+import { toFormDate } from "./types";
 
 export function formatContainerDate(date: string): string {
+  const normalized = toFormDate(date);
+  if (!normalized) return "—";
+
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(`${date}T12:00:00`));
+  }).format(new Date(`${normalized}T12:00:00`));
 }
 
 export function formatContainerCost(cost: number): string {
@@ -15,37 +19,27 @@ export function formatContainerCost(cost: number): string {
   }).format(cost);
 }
 
-export function truncateContainerId(containerId: string): string {
-  return containerId.length > 12 ? `${containerId.slice(0, 8)}…` : containerId;
+export function formatOptionalContainerCost(cost: number): string {
+  if (!Number.isFinite(cost) || cost <= 0) return "—";
+  return formatContainerCost(cost);
 }
 
-export function containerMatchesQuery(container: ContainerRecord, query: string): boolean {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) return true;
-
-  return [
-    container.containerId,
-    container.containerCode,
-    container.containerNumber,
-    container.bookingNumber,
-    container.sealNumber,
-    container.broker,
-    container.transportCompany,
-    formatContainerCost(container.cost),
-    formatContainerDate(container.departureDate),
-    formatContainerDate(container.arrivalDate),
-    container.createdBy,
-  ]
-    .join(" ")
-    .toLowerCase()
-    .includes(normalized);
+export function formatContainerId(containerId: number): string {
+  return String(containerId);
 }
 
-export function computeContainerKpis(containers: ContainerRecord[]) {
-  const totalCost = containers.reduce((sum, container) => sum + container.cost, 0);
-  const inTransit = containers.filter(
-    (container) => new Date(`${container.arrivalDate}T23:59:59`) >= new Date()
-  ).length;
+export function formatContainerLabel(container: Pick<Container, "name" | "containerNumber">): string {
+  const number = container.containerNumber.trim();
+  return number ? `${container.name} · ${number}` : container.name;
+}
+
+export function computeContainerKpis(containers: Container[]) {
+  const totalCost = containers.reduce((sum, container) => sum + (container.cost > 0 ? container.cost : 0), 0);
+  const inTransit = containers.filter((container) => {
+    const arrival = toFormDate(container.arrivalDate);
+    if (!arrival) return false;
+    return new Date(`${arrival}T23:59:59`) >= new Date();
+  }).length;
 
   return {
     total: containers.length,

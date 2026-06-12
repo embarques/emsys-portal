@@ -67,9 +67,10 @@ export function TableAdvancedFilterBuilder({
         const definition = row.field ? resolveFilterFieldDefinition(fields, row.field) : undefined;
         const operators = definition?.operators ?? [];
         const valueOptions = resolveFilterRowOptions(definition, dynamicOptions);
+        const usesRange = definition?.valueType === "range";
         const usesSelect = definition?.valueType === "select";
-        const canPickOperator = Boolean(definition);
-        const canPickValue = Boolean(definition && row.operator);
+        const canPickOperator = Boolean(definition) && !usesRange;
+        const canPickValue = Boolean(definition && (usesRange || row.operator));
 
         return (
           <div key={row.id} className="flex flex-wrap items-center gap-2">
@@ -100,19 +101,25 @@ export function TableAdvancedFilterBuilder({
               onChange={(value) => updateRow(row.id, { field: value })}
             />
 
-            <TableFilterSelect
-              aria-label={`Filter condition ${index + 1}`}
-              className="min-w-[8.5rem] max-w-[11rem]"
-              value={row.operator}
-              placeholder="Condition"
-              mutedWhenEmpty
-              disabled={!canPickOperator}
-              options={operators.map((operator) => ({
-                value: operator,
-                label: FILTER_OPERATOR_LABELS[operator],
-              }))}
-              onChange={(value) => updateRow(row.id, { operator: value })}
-            />
+            {usesRange ? (
+              <span className="inline-flex h-9 min-w-[8.5rem] max-w-[11rem] shrink-0 items-center rounded-md border border-input bg-muted/40 px-3 text-xs font-medium text-muted-foreground">
+                In range
+              </span>
+            ) : (
+              <TableFilterSelect
+                aria-label={`Filter condition ${index + 1}`}
+                className="min-w-[8.5rem] max-w-[11rem]"
+                value={row.operator}
+                placeholder="Condition"
+                mutedWhenEmpty
+                disabled={!canPickOperator}
+                options={operators.map((operator) => ({
+                  value: operator,
+                  label: FILTER_OPERATOR_LABELS[operator],
+                }))}
+                onChange={(value) => updateRow(row.id, { operator: value })}
+              />
+            )}
 
             {usesSelect ? (
               <TableFilterSelect

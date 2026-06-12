@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Filter } from "lucide-react";
 
 import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
@@ -74,14 +75,53 @@ type TableFilterDropdownProps = {
 
 function TableFilterDropdown({ open, onOpenChange, activeCount = 0, children }: TableFilterDropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [panelPosition, setPanelPosition] = useState<{ top: number; left: number; width: number } | null>(
+    null,
+  );
+
+  useLayoutEffect(() => {
+    if (!open || !containerRef.current) {
+      setPanelPosition(null);
+      return;
+    }
+
+    function updatePosition() {
+      if (!containerRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const width = Math.min(704, window.innerWidth - 16);
+      const top = rect.bottom + 6;
+      let left = rect.left;
+
+      if (left + width > window.innerWidth - 8) {
+        left = window.innerWidth - 8 - width;
+      }
+
+      left = Math.max(8, left);
+      setPanelPosition({ top, left, width });
+    }
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
 
     function handlePointerDown(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        onOpenChange(false);
+      const target = event.target as Node;
+      if (containerRef.current?.contains(target) || panelRef.current?.contains(target)) {
+        return;
       }
+
+      onOpenChange(false);
     }
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -99,26 +139,41 @@ function TableFilterDropdown({ open, onOpenChange, activeCount = 0, children }: 
     };
   }, [open, onOpenChange]);
 
-  return (
-    <div ref={containerRef} className="relative shrink-0">
-      <TableFilterToggle open={open} onOpenChange={onOpenChange} activeCount={activeCount} />
+  const panel =
+    open && children && panelPosition && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={panelRef}
+            id="table-filter-panel"
+            role="dialog"
+            aria-label="Table filters"
+            className="fixed z-[100]"
+            style={{
+              top: panelPosition.top,
+              left: panelPosition.left,
+              width: panelPosition.width,
+            }}
+          >
+            {children}
+          </div>,
+          document.body,
+        )
+      : null;
 
-      {open && children ? (
-        <div
-          id="table-filter-panel"
-          className="absolute left-0 top-[calc(100%+0.375rem)] z-50 w-[min(44rem,calc(100vw-2rem))]"
-          role="dialog"
-          aria-label="Table filters"
-        >
-          {children}
-        </div>
-      ) : null}
-    </div>
+  return (
+    <>
+      <div ref={containerRef} className="relative shrink-0">
+        <TableFilterToggle open={open} onOpenChange={onOpenChange} activeCount={activeCount} />
+      </div>
+      {panel}
+    </>
   );
 }
 
 type TableDirectoryToolbarProps = {
   search: ReactNode;
+  /** Compact count/summary shown inline beside search (keeps toolbar one row tall). */
+  searchSummary?: string;
   filtersOpen?: boolean;
   onFiltersOpenChange?: (open: boolean) => void;
   activeFilterCount?: number;
@@ -129,6 +184,7 @@ type TableDirectoryToolbarProps = {
 
 export function TableDirectoryToolbar({
   search,
+  searchSummary,
   filtersOpen = false,
   onFiltersOpenChange,
   activeFilterCount = 0,
@@ -137,9 +193,17 @@ export function TableDirectoryToolbar({
   columnLayout,
 }: TableDirectoryToolbarProps) {
   return (
-    <div className="flex w-full flex-wrap items-start justify-between gap-2">
-      <div className="flex min-w-0 items-start gap-2">
-        <div className="flex min-w-0 flex-col gap-1">{search}</div>
+    <div className="flex w-full items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="min-w-0 flex-1 max-w-[32rem] lg:max-w-[40rem]">{search}</div>
+        {searchSummary ? (
+          <p
+            className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block"
+            aria-live="polite"
+          >
+            {searchSummary}
+          </p>
+        ) : null}
         {showFilterToggle && onFiltersOpenChange ? (
           <TableFilterDropdown
             open={filtersOpen}
@@ -200,7 +264,7 @@ export function TableFilterPanel({
       </div>
 
       <div
-        className="max-h-[min(24rem,70vh)] space-y-4 overflow-y-auto p-4"
+        className="max-h-[min(24rem,70vh)] space-y-4 overflow-x-auto overflow-y-auto p-4"
         onMouseDown={(event) => event.stopPropagation()}
       >
         {children}

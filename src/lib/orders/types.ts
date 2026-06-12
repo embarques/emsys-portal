@@ -4,6 +4,8 @@ import type { Customer, CustomerAddress, CustomerPhone } from "@/lib/customers/t
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 import { createRecordId } from "@/lib/customers/types";
 import type { Employee } from "@/lib/employees/types";
+import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
+import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import type { User } from "@/lib/users/types";
 
 export type PickupBranch = {
@@ -40,6 +42,7 @@ export type Order = {
   purpose: string;
   comments: PickupComment[];
   sector: PickupSector | null;
+  routeAssignmentId?: string;
 };
 
 export type OrderCommentFormValues = {
@@ -90,14 +93,13 @@ export type OrderSearchField =
   | "sector.id"
   | "branch.id"
   | "employee.id"
-  | "user.id";
+  | "user.name";
 
 export type OrderSearchFilter = ApiListTextSearch;
 
 export type OrderFilterState = {
   query: string;
-  branch: OrderBranchFilter;
-  completed: OrderCompletedFilter;
+  rows: TableFilterRowState[];
 };
 
 export type OrderListParams = {
@@ -106,15 +108,17 @@ export type OrderListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: OrderSearchFilter;
-  branch?: OrderBranchFilter;
-  completed?: OrderCompletedFilter;
+  filterRows?: TableFilterRowState[];
 };
+
+/** Optional sort for pickups list/search when explicitly requested. */
+export const DEFAULT_ORDER_LIST_SORT =
+  "sender.address.city:asc,sender.address.address1:asc" as const;
 
 export const DEFAULT_ORDER_LIST_PARAMS = {
   page: 1,
   limit: 40,
-  sort: "date:asc",
-} as const satisfies Pick<OrderListParams, "page" | "limit" | "sort">;
+} as const satisfies Pick<OrderListParams, "page" | "limit">;
 
 export const ORDER_SEARCH_FIELDS: { value: OrderSearchField; label: string }[] = [
   { value: "id", label: "Order ID" },
@@ -131,7 +135,7 @@ export const ORDER_SEARCH_FIELDS: { value: OrderSearchField; label: string }[] =
   { value: "sector.id", label: "sector.id" },
   { value: "branch.id", label: "branch.id" },
   { value: "employee.id", label: "employee.id" },
-  { value: "user.id", label: "user.id" },
+  { value: "user.name", label: "user.name" },
 ];
 
 export function getOrderRecordId(order: Pick<Order, "id">): string {
@@ -147,8 +151,7 @@ export function getOrderSearchOperatorsForField(field: OrderSearchField): OrderS
     field === "receiver.oldID" ||
     field === "sector.id" ||
     field === "branch.id" ||
-    field === "employee.id" ||
-    field === "user.id"
+    field === "employee.id"
   ) {
     return ["eq", "neq"];
   }
@@ -166,6 +169,32 @@ export function getDefaultOrderSearchOperator(field: OrderSearchField): OrderSea
 
 export function createOrderSearchFilter(value: string): OrderSearchFilter | undefined {
   return createListTextSearch(value);
+}
+
+export function buildOrderListParams(input: {
+  page: number;
+  limit?: number;
+  query: string;
+  rows: TableFilterRowState[];
+}): OrderListParams {
+  const params: OrderListParams = {
+    page: input.page,
+    limit: input.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
+  };
+
+  const search = createOrderSearchFilter(input.query);
+  if (search) {
+    params.search = search;
+  }
+
+  const completeRows = input.rows.filter((row) =>
+    isCompleteFilterRow(row, ORDER_TABLE_FILTER_FIELDS),
+  );
+  if (completeRows.length > 0) {
+    params.filterRows = completeRows;
+  }
+
+  return params;
 }
 
 export function createEmptyOrderComment(): OrderCommentFormValues {

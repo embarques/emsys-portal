@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { GripVertical } from "lucide-react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { ScrollableTable } from "@/components/app-shell/scrollable-table";
+import { UniformPillWidthProvider } from "@/components/app-shell/uniform-width-pill";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import { measureTableColumnContentWidth } from "@/lib/table/measure-column-width";
@@ -32,7 +32,7 @@ type DataTableProps<T> = {
   autoFitColumns?: boolean;
 };
 
-export function DataTable<T>({
+function DataTableContent<T>({
   columns,
   rows,
   rowKey,
@@ -62,7 +62,9 @@ export function DataTable<T>({
   const [resizingColumnId, setResizingColumnId] = useState<string | null>(null);
   const pendingRowClickRef = useRef<number | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
-  const lastAutoFitPageRef = useRef<number | null>(null);
+  const lastAutoFitSignatureRef = useRef<string | null>(null);
+  const autoFitPassRef = useRef(0);
+  const autoFitContextRef = useRef({ pageKey: -1, visibleColumnKey: "" });
 
   const delaySingleClick = Boolean(onRowClick && onRowDoubleClick);
 
@@ -112,21 +114,42 @@ export function DataTable<T>({
     fitColumnWidths(nextWidths);
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!autoFitColumns || rows.length === 0 || isPageDataPending) return;
 
     const pageKey = page ?? -1;
-    const isInitialLoad = lastAutoFitPageRef.current === null;
-    const isPageChange = page !== undefined && lastAutoFitPageRef.current !== pageKey;
+    if (
+      autoFitContextRef.current.pageKey !== pageKey ||
+      autoFitContextRef.current.visibleColumnKey !== visibleColumnKey
+    ) {
+      autoFitContextRef.current = { pageKey, visibleColumnKey };
+      lastAutoFitSignatureRef.current = null;
+      autoFitPassRef.current = 0;
+    }
 
-    if (!isInitialLoad && !isPageChange) return;
+    const signature = `${pageKey}\0${visibleColumnKey}`;
 
-    const frame = requestAnimationFrame(() => {
-      autoFitAllVisibleColumns();
-      lastAutoFitPageRef.current = pageKey;
+    if (lastAutoFitSignatureRef.current === signature) return;
+    if (autoFitPassRef.current >= 2) return;
+
+    let cancelled = false;
+    let frame = 0;
+    let innerFrame = 0;
+
+    frame = requestAnimationFrame(() => {
+      innerFrame = requestAnimationFrame(() => {
+        if (cancelled) return;
+        autoFitAllVisibleColumns();
+        lastAutoFitSignatureRef.current = signature;
+        autoFitPassRef.current += 1;
+      });
     });
 
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(innerFrame);
+    };
   }, [autoFitColumns, page, rows, isPageDataPending, selectable, visibleColumnKey]);
 
   function startColumnResize(columnId: string, startX: number) {
@@ -170,7 +193,7 @@ export function DataTable<T>({
         <thead>
           <tr className="border-b bg-muted/40 text-left">
             {selectable ? (
-              <th className="w-12 px-4 py-3">
+              <th className="w-12 px-3 py-3">
                 <input
                   type="checkbox"
                   aria-label="Select all rows on this page"
@@ -188,13 +211,29 @@ export function DataTable<T>({
               return (
                 <th
                   key={column.id}
+                  draggable
                   style={{ width }}
                   className={cn(
-                    "group relative select-none px-3 py-3.5",
+                    "group relative cursor-grab select-none px-3 py-3.5 text-left active:cursor-grabbing",
                     column.headerClassName,
+                    draggingHeaderId === column.id && "cursor-grabbing opacity-60",
                     dragOverHeaderId === column.id && draggingHeaderId !== column.id && "bg-primary/10",
                     resizingColumnId === column.id && "bg-primary/5"
                   )}
+                  aria-label={`${headerLabel} column. Drag to reorder.`}
+                  onDragStart={(event) => {
+                    if ((event.target as HTMLElement).closest('[role="separator"]')) {
+                      event.preventDefault();
+                      return;
+                    }
+
+                    setDraggingHeaderId(column.id);
+                    event.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragEnd={() => {
+                    setDraggingHeaderId(null);
+                    setDragOverHeaderId(null);
+                  }}
                   onDragOver={(event) => {
                     event.preventDefault();
                     setDragOverHeaderId(column.id);
@@ -207,24 +246,9 @@ export function DataTable<T>({
                     handleHeaderDrop(column.id);
                   }}
                 >
-                  <div className="flex items-center gap-1 pr-3">
-                    <button
-                      type="button"
-                      draggable
-                      onDragStart={() => setDraggingHeaderId(column.id)}
-                      onDragEnd={() => {
-                        setDraggingHeaderId(null);
-                        setDragOverHeaderId(null);
-                      }}
-                      className="cursor-grab rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 active:cursor-grabbing"
-                      aria-label={`Drag to reorder ${headerLabel}`}
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <GripVertical className="h-3.5 w-3.5" />
-                    </button>
-
+                  <div className="relative flex items-center justify-start pr-2">
                     <span
-                      className="min-w-0 flex-1 truncate text-xs font-semibold leading-tight tracking-wide text-foreground/70"
+                      className="min-w-0 truncate text-left text-xs font-semibold leading-tight tracking-wide text-foreground/70"
                       title={headerLabel}
                     >
                       {headerLabel}
@@ -277,7 +301,7 @@ export function DataTable<T>({
                   onDoubleClick={() => handleRowDoubleClick(row)}
                 >
                   {selectable ? (
-                    <td className="px-4 py-4" onClick={(event) => event.stopPropagation()}>
+                    <td className="px-3 py-4" onClick={(event) => event.stopPropagation()}>
                       <input
                         type="checkbox"
                         aria-label={`Select ${rowLabel?.(row) ?? id}`}
@@ -291,10 +315,14 @@ export function DataTable<T>({
                     <td
                       key={column.id}
                       style={{ width: getColumnWidth(column.id) }}
-                      className={cn("overflow-hidden px-4 py-4", column.cellClassName)}
+                      className={cn("overflow-hidden px-3 py-4", column.cellClassName)}
                       onClick={column.stopRowClick ? (event) => event.stopPropagation() : undefined}
                     >
-                      <div className="truncate">{column.renderCell(row)}</div>
+                      {column.truncateCell === false ? (
+                        column.renderCell(row)
+                      ) : (
+                        <div className="truncate">{column.renderCell(row)}</div>
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -302,7 +330,7 @@ export function DataTable<T>({
             })
           ) : (
             <tr>
-              <td colSpan={colSpan} className="px-6 py-12 text-center">
+              <td colSpan={colSpan} className="px-0 py-12 text-center">
                 {emptyState}
               </td>
             </tr>
@@ -310,5 +338,18 @@ export function DataTable<T>({
         </tbody>
       </table>
     </ScrollableTable>
+  );
+}
+
+export function DataTable<T>(props: DataTableProps<T>) {
+  const pillResetKey = useMemo(
+    () => `${props.page ?? 0}:${props.rows.map(props.rowKey).join(",")}`,
+    [props.page, props.rows, props.rowKey],
+  );
+
+  return (
+    <UniformPillWidthProvider resetKey={pillResetKey}>
+      <DataTableContent {...props} />
+    </UniformPillWidthProvider>
   );
 }

@@ -2,18 +2,24 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import {
   buildApiListQuery,
-  getPrimarySortField,
   resolveApiListSort,
-  type ApiListFieldFilter,
 } from "@/lib/api/list-query";
 import {
-  buildApiSearchBody,
+  buildApiSearchPaginationQuery,
+  buildStripeStyleSearchBody,
+  createOrTextSearchFilterGroup,
   createTextSearchFilter,
   hasListTextSearch,
+  isApiSearchFilter,
   resolveSearchField,
   resolveSearchOperator,
-  type ApiSearchFilter,
+  buildApiFilterNodeFromTableRows,
+  type ApiSearchFilterGroup,
 } from "@/lib/api/search-query";
+import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
+import { expandOrderFilterNode } from "@/lib/orders/order-filters";
+import { ORDER_BAR_OR_SEARCH_FIELDS } from "@/lib/orders/search-fields";
+import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import {
   buildApiAddressPayload,
   buildApiBranchRef,
@@ -83,6 +89,7 @@ type ApiPickup = {
   purpose?: string;
   comments?: ApiComment[];
   sector?: ApiSectorRef;
+  routeAssignmentId?: string;
 };
 
 type ApiPickupCustomerRef = {
@@ -261,7 +268,22 @@ function normalizePickupEmployee(raw: unknown): Employee | null {
 
 function normalizePickupUser(raw: unknown): User | null {
   if (!raw || typeof raw !== "object") return null;
-  return normalizeApiUser(raw);
+
+  const item = raw as Record<string, unknown>;
+  const pickupName = String(item.name ?? "").trim();
+  const user = normalizeApiUser(raw);
+
+  if (!user) return null;
+
+  if (!pickupName || user.fullName.trim() || user.userName.trim()) {
+    return user;
+  }
+
+  return {
+    ...user,
+    userName: pickupName,
+    fullName: pickupName,
+  };
 }
 
 function normalizeOrder(raw: unknown): Order | null {
@@ -289,6 +311,7 @@ function normalizeOrder(raw: unknown): Order | null {
     purpose: String(item.purpose ?? "").trim(),
     comments,
     sector: normalizePickupSector(item.sector),
+    routeAssignmentId: String(item.routeAssignmentId ?? "").trim() || undefined,
   };
 }
 
@@ -308,75 +331,61 @@ function normalizePaginatedOrders(payload: PaginatedApiEnvelope<unknown[] | unkn
   };
 }
 
-function buildSearchFilters(params: OrderListParams): ApiSearchFilter[] {
-  const filters: ApiSearchFilter[] = [];
+function buildOrderSearchFilterGroups(params: OrderListParams): ApiSearchFilterGroup[] {
+  const groups: ApiSearchFilterGroup[] = [];
 
   if (params.search?.value.trim()) {
-    const textFilter = createTextSearchFilter(
-      resolveSearchField(params.search, ORDER_LIST_SEARCH_FIELD),
-      params.search.value,
-      resolveSearchOperator(params.search),
-    );
-    if (textFilter) {
-      filters.push(textFilter);
+    if (params.search.field) {
+      const explicitFilter = createTextSearchFilter(
+        resolveSearchField(params.search, ORDER_LIST_SEARCH_FIELD),
+        params.search.value,
+        resolveSearchOperator(params.search),
+      );
+      if (explicitFilter) {
+        groups.push({ operator: "and", filters: [explicitFilter] });
+      }
+    } else {
+      const orGroup = createOrTextSearchFilterGroup(
+        params.search.value,
+        [...ORDER_BAR_OR_SEARCH_FIELDS],
+        "contains",
+      );
+      if (orGroup) {
+        groups.push(orGroup);
+      }
     }
   }
 
-  if (params.completed !== undefined && params.completed !== "all") {
-    filters.push({
-      field: "completed",
-      operator: "eq",
-      value: String(params.completed),
-    });
+  const rowFilterNode = buildApiFilterNodeFromTableRows(
+    params.filterRows ?? [],
+    ORDER_TABLE_FILTER_FIELDS,
+  );
+  const expandedRowFilter = rowFilterNode ? expandOrderFilterNode(rowFilterNode) : null;
+
+  if (expandedRowFilter) {
+    if (isApiSearchFilter(expandedRowFilter)) {
+      groups.push({ operator: "and", filters: [expandedRowFilter] });
+    } else {
+      groups.push(expandedRowFilter);
+    }
   }
 
-  if (params.branch !== undefined && params.branch !== "all") {
-    filters.push({
-      field: "branch.id",
-      operator: "eq",
-      value: String(params.branch),
-    });
-  }
-
-  return filters;
+  return groups;
 }
 
-function hasGetFieldTriplet(params: OrderListParams): boolean {
+function hasOrderListFilters(params: OrderListParams): boolean {
   return (
-    Boolean(params.search?.value.trim()) ||
-    (params.completed !== undefined && params.completed !== "all")
+    hasListTextSearch(params.search) ||
+    (params.filterRows ?? []).some((row) => isCompleteFilterRow(row, ORDER_TABLE_FILTER_FIELDS))
   );
 }
 
 function shouldUsePickupSearch(params: OrderListParams): boolean {
-  return hasListTextSearch(params.search);
-}
-
-function shouldOmitOrdersSort(params: OrderListParams): boolean {
-  const limit = params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit;
-  const primarySort = getPrimarySortField(params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort);
-
-  return primarySort === "date" && limit > 1 && !hasGetFieldTriplet(params);
-}
-
-function resolveOrderListFilter(params: OrderListParams): ApiListFieldFilter | undefined {
-  if (params.completed !== undefined && params.completed !== "all") {
-    return { field: "completed", operator: "eq", value: String(params.completed) };
-  }
-
-  if (params.branch !== undefined && params.branch !== "all") {
-    return { field: "branch.id", operator: "eq", value: String(params.branch) };
-  }
-
-  return undefined;
+  return hasOrderListFilters(params);
 }
 
 function resolveOrdersSort(params: OrderListParams): string | undefined {
-  if (shouldOmitOrdersSort(params)) {
-    return undefined;
-  }
-
-  return resolveApiListSort(params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort);
+  return resolveApiListSort(params.sort);
 }
 
 function buildOrdersQuery(params: OrderListParams): string {
@@ -385,29 +394,32 @@ function buildOrdersQuery(params: OrderListParams): string {
     limit: params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
     offset: params.offset,
     sort: resolveOrdersSort(params),
-    filter: resolveOrderListFilter(params),
   });
 }
 
-function buildSearchBody(params: OrderListParams) {
-  const page = params.page ?? DEFAULT_ORDER_LIST_PARAMS.page;
-  const limit = params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit;
-  const offset = params.offset ?? (page - 1) * limit;
-
-  return buildApiSearchBody({
-    page,
-    limit,
-    offset,
-    sort: resolveOrdersSort(params),
-    filters: buildSearchFilters(params),
+function buildPickupSearchBody(params: OrderListParams) {
+  return buildStripeStyleSearchBody({
+    sort: params.sort,
+    filterGroups: buildOrderSearchFilterGroups(params),
   });
 }
 
+/**
+ * List pickups from EMSYS API.
+ * - Unfiltered: GET /pickups?page&offset&limit
+ * - Search/filters: POST /pickups/search?page&offset&limit with Stripe-style body
+ *   (operator + filters + sort). See API-Query-Usage.md.
+ */
 export async function fetchOrders(params: OrderListParams = {}): Promise<PaginatedResult<Order>> {
   if (shouldUsePickupSearch(params)) {
+    const page = params.page ?? DEFAULT_ORDER_LIST_PARAMS.page;
+    const limit = params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit;
+    const offset = params.offset ?? (page - 1) * limit;
+    const paginationQuery = buildApiSearchPaginationQuery({ page, limit, offset });
+
     const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.PICKUPS}/search`,
-      buildSearchBody(params),
+      `${API_ENDPOINTS.PICKUPS}/search?${paginationQuery}`,
+      buildPickupSearchBody(params),
     );
     return normalizePaginatedOrders(response);
   }
@@ -516,8 +528,8 @@ function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload
     payload.employee = { id: values.employeeId };
   }
 
-  if (values.id > 0) {
-    payload.completed = values.completed;
+  if (values.id > 0 && values.completed) {
+    payload.completed = true;
   }
 
   return payload;

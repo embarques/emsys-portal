@@ -6,4 +6,7 @@ export const API_ENDPOINTS = {
   CUSTOMERS: "/customers",
   BRANCHES: "/branches",
   PICKUPS: "/pickups",
+  CONTAINERS: "/containers",
+  TRUCKS: "/trucks",
+  INVOICES: "/invoices",
 } as const;

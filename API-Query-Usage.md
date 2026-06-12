@@ -196,78 +196,76 @@ GET /pickups?page=1&limit=40&offset=0&branchId=1
 
 ## Advanced Search Endpoints
 
-Use advanced search endpoints when the API requires a request body, when multiple filters need to be combined, or when searching nested fields that are not reliable on the plain GET endpoint.
+Use `POST /<resource>/search` when filters must be combined, nested AND/OR groups are needed, or nested fields are not reliable on the plain GET endpoint.
 
-Advanced search shape:
+### Pickups — `POST /pickups/search`
+
+Pagination goes in the **URL query** (`page`, `offset`, `limit`). The body carries optional filters and sort.
 
 ```txt
-POST /pickups/search
+POST /pickups/search?page=1&offset=0&limit=40
 ```
 
-Body:
+Body (Stripe-style nested filters):
 
 ```json
 {
-  "page": 1,
-  "limit": 40,
-  "offset": 0,
-  "sort": "date:asc",
-  "query": {
-    "and": [
-      {
-        "field": "sender.name",
-        "operator": "contains",
-        "value": "Maria"
-      },
-      {
-        "field": "completed",
-        "operator": "eq",
-        "value": "false"
-      },
-      {
-        "field": "branch.id",
-        "operator": "eq",
-        "value": "1"
-      }
-    ]
-  }
+  "operator": "and",
+  "filters": [
+    {
+      "field": "sender.name",
+      "operator": "contains",
+      "value": "Maria"
+    },
+    {
+      "field": "completed",
+      "operator": "eq",
+      "value": true
+    }
+  ],
+  "sort": [{ "field": "date", "direction": "asc" }]
 }
 ```
 
-Build the body in the feature API file:
+Pending pickup stats example (purpose contains pickup, not completed):
+
+```json
+{
+  "operator": "and",
+  "filters": [
+    { "field": "purpose", "operator": "contains", "value": "pickup" },
+    { "field": "completed", "operator": "neq", "value": true }
+  ]
+}
+```
+
+Build the body with the shared helper:
 
 ```ts
-function buildSearchBody(params: OrderListParams) {
-  const page = params.page ?? 1;
-  const limit = params.limit ?? 40;
-  const offset = params.offset ?? (page - 1) * limit;
+import { buildStripeStyleSearchBody, buildApiSearchPaginationQuery } from "@/lib/api/search-query";
 
-  const body = {
-    page,
-    limit,
-    offset,
-    sort: params.sort ?? "date:asc",
-  };
-
-  const filters = buildSearchFilters(params);
-
-  if (filters.length > 0) {
-    return {
-      ...body,
-      query: { and: filters },
-    };
-  }
-
-  return body;
+function buildPickupSearchBody(params: OrderListParams) {
+  return buildStripeStyleSearchBody({
+    sort: params.sort,
+    filterGroups: buildOrderSearchFilterGroups(params),
+  });
 }
 ```
 
-Call the advanced endpoint through `apiClient.post`:
+Call through `apiClient.post`:
 
 ```ts
 export async function fetchOrders(params: OrderListParams = {}) {
   if (shouldUsePickupSearch(params)) {
-    return apiClient.post(`${API_ENDPOINTS.PICKUPS}/search`, buildSearchBody(params));
+    const page = params.page ?? 1;
+    const limit = params.limit ?? 40;
+    const offset = params.offset ?? (page - 1) * limit;
+    const paginationQuery = buildApiSearchPaginationQuery({ page, limit, offset });
+
+    return apiClient.post(
+      `${API_ENDPOINTS.PICKUPS}/search?${paginationQuery}`,
+      buildPickupSearchBody(params),
+    );
   }
 
   const query = buildOrdersQuery(params);
@@ -275,12 +273,23 @@ export async function fetchOrders(params: OrderListParams = {}) {
 }
 ```
 
-Current pickup fields that use `POST /pickups/search`:
+Unfiltered list (no search bar, no filter rows):
+
+```txt
+GET /pickups?page=1&offset=0&limit=40
+```
+
+Filtered list, stat cards, and advanced filter panel all use `POST /pickups/search`.
+
+Current pickup fields commonly used in search filters:
 
 ```txt
 sender.name
 sender.phone1
 sender.oldID
+sender.address.city
+sender.address.state
+sender.address.zipcode
 receiver.name
 receiver.phone1
 receiver.oldID
@@ -288,7 +297,10 @@ purpose
 sector.id
 branch.id
 employee.id
-user.id
+user.name
+completed
+date
+createdAt
 ```
 
 ## CRUD Operations

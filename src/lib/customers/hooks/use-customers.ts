@@ -31,7 +31,7 @@ function hasCustomerChipFilters(params: CustomerListParams): boolean {
 }
 
 function isCustomerListFiltered(params: CustomerListParams): boolean {
-  const hasRowFilters = (params.filterRows ?? []).some(isCompleteFilterRow);
+  const hasRowFilters = (params.filterRows ?? []).some((row) => isCompleteFilterRow(row));
   return hasListTextSearch(params.search) || hasRowFilters || hasCustomerChipFilters(params);
 }
 

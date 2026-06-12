@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Barcode } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { UniformPillWidthProvider, UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import {
   getLabelStatusBadgeClass,
   getLabelStatusLabel,
@@ -58,7 +59,8 @@ export function InvoiceLabelStatusesSection({ invoice }: InvoiceLabelStatusesSec
             : "This invoice has no label counts on its line items."}
         </p>
       ) : (
-        <div className="mt-4 space-y-4">
+        <UniformPillWidthProvider resetKey={invoiceLabels.map((label) => label.labelId).join(",")}>
+          <div className="mt-4 space-y-4">
           {invoice.lineItems
             .filter((lineItem) => lineItem.labelCount > 0)
             .map((lineItem) => {
@@ -95,9 +97,11 @@ export function InvoiceLabelStatusesSection({ invoice }: InvoiceLabelStatusesSec
                                 {truncateBarcode(label.barcode)}
                               </td>
                               <td className="px-3 py-2">
-                                <Badge className={getLabelStatusBadgeClass(label.status)}>
-                                  {getLabelStatusLabel(label.status)}
-                                </Badge>
+                                <UniformWidthPill columnKey="status">
+                                  <Badge className={getLabelStatusBadgeClass(label.status)}>
+                                    {getLabelStatusLabel(label.status)}
+                                  </Badge>
+                                </UniformWidthPill>
                               </td>
                             </tr>
                           ))}
@@ -140,9 +144,11 @@ export function InvoiceLabelStatusesSection({ invoice }: InvoiceLabelStatusesSec
                             {truncateBarcode(label.barcode)}
                           </td>
                           <td className="px-3 py-2">
-                            <Badge className={getLabelStatusBadgeClass(label.status)}>
-                              {getLabelStatusLabel(label.status)}
-                            </Badge>
+                            <UniformWidthPill columnKey="status">
+                              <Badge className={getLabelStatusBadgeClass(label.status)}>
+                                {getLabelStatusLabel(label.status)}
+                              </Badge>
+                            </UniformWidthPill>
                           </td>
                         </tr>
                       ))}
@@ -151,7 +157,8 @@ export function InvoiceLabelStatusesSection({ invoice }: InvoiceLabelStatusesSec
               </div>
             </div>
           ) : null}
-        </div>
+          </div>
+        </UniformPillWidthProvider>
       )}
     </div>
   );

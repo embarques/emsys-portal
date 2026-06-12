@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  CircleAlert,
   DollarSign,
   FileText,
   Plus,
@@ -11,7 +12,6 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -19,6 +19,8 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import {
   TableDirectoryToolbar,
@@ -37,92 +39,149 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { normalizeApiError } from "@/lib/api/axios";
+import { formatBranchFilterLabel } from "@/lib/branches/display";
+import { useBranches } from "@/lib/branches/hooks/use-branches";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeInvoiceKpis,
   formatInvoiceDate,
-  formatInvoiceLineItemsSummary,
   formatInvoiceMoney,
   formatInvoicePartySummary,
-  getContainerLabel,
+  getContainerLabelForInvoice,
   getInvoiceBalance,
+  getInvoiceBalanceMoneyClass,
+  getInvoiceDiscountMoneyClass,
+  getInvoicePaidMoneyClass,
+  getInvoicePaidStatusBadgeClass,
+  getInvoicePaidStatusLabel,
   getInvoiceSubtotal,
+  getInvoiceTotalMoneyClass,
   getPaymentLocationLabel,
-  invoiceMatchesQuery,
-  truncateInvoiceId,
+  resolveInvoicePaidStatus,
 } from "@/lib/invoices/display";
-import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { cloneInvoices } from "@/lib/invoices/mock-data";
 import {
   buildInvoiceCommentActivity,
-  buildInvoiceCreatedActivities,
-  buildInvoiceUpdateActivities,
   buildPaymentRecordedActivity,
 } from "@/lib/invoices/activity";
 import {
+  useDeleteInvoices,
+  useInvoice,
+  useInvoiceStats,
+  useInvoices,
+} from "@/lib/invoices/hooks/use-invoices";
+import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
+import { buildOrderCreatedByFilterOptions } from "@/lib/orders/display";
+import { useUsers } from "@/lib/users/hooks/use-users";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
   INVOICE_PAYMENT_LOCATIONS,
-  createEmptyInvoiceForm,
+  buildInvoiceListParams,
   createInvoiceComment,
   createInvoicePayment,
   computeTotalPayments,
-  formValuesToInvoice,
-  invoiceToFormValues,
-  suggestNextInvoiceNumber,
+  DEFAULT_INVOICE_LIST_PARAMS,
   type Invoice,
   type InvoiceFilterState,
-  type InvoiceFormSubmitResult,
-  type InvoiceFormValues,
   type InvoicePaymentInput,
 } from "@/lib/invoices/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { getBranchBadgeClass } from "@/lib/trucks/display";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
 
 const defaultFilters: InvoiceFilterState = {
   query: "",
+  rows: [],
   paymentLocation: "all",
 };
 
 export function InvoicesWorkspace() {
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [invoices, setInvoices] = useState<Invoice[]>(() => cloneInvoices());
+  const { notifyAdded, notifyDeleted, notifyError } = useFeedback();
   const [filters, setFilters] = useState<InvoiceFilterState>(defaultFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
-  const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
-  const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
-  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
+  const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | Invoice[] | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const suggestedInvoiceNumber = useMemo(() => suggestNextInvoiceNumber(invoices), [invoices]);
+  const listParams = useMemo(
+    () =>
+      buildInvoiceListParams({
+        page,
+        limit: PAGE_SIZE,
+        query: deferredQuery,
+        rows: filters.rows,
+        paymentLocation: filters.paymentLocation,
+      }),
+    [deferredQuery, filters.paymentLocation, filters.rows, page],
+  );
 
-  const filteredInvoices = useMemo(() => {
-    return invoices.filter((invoice) => {
-      if (!invoiceMatchesQuery(invoice, filters.query)) return false;
-      if (filters.paymentLocation !== "all" && invoice.paymentLocation !== filters.paymentLocation) return false;
-      return true;
-    });
-  }, [filters, invoices]);
+  const { data, isLoading, isError, error, isFetching } = useInvoices(listParams);
+  const invoiceStats = useInvoiceStats();
+  const { data: usersData, isLoading: usersLoading } = useUsers({
+    page: 1,
+    limit: 100,
+    sort: "fullName:asc",
+  });
+  const { data: branchesData, isLoading: branchesLoading } = useBranches({
+    page: 1,
+    limit: 100,
+    sort: "name:asc",
+  });
+  const deleteInvoicesMutation = useDeleteInvoices();
+  const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
+
+  const invoices = data?.items ?? [];
+  const totalInvoices = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalInvoices / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const allPageSelected =
+    invoices.length > 0 && invoices.every((invoice) => selectedIds.includes(invoice.invoiceId));
+  const isDeleting = deleteInvoicesMutation.isPending;
+
+  const viewInvoice = useMemo(() => {
+    if (!viewInvoiceId) return null;
+    const base =
+      detailInvoice ?? invoices.find((invoice) => invoice.invoiceId === viewInvoiceId) ?? null;
+    if (!base) return null;
+    if (!viewOverlay) return base;
+
+    return {
+      ...base,
+      comments: [...base.comments, ...(viewOverlay.comments ?? [])],
+      activity: [...base.activity, ...(viewOverlay.activity ?? [])],
+      payments: [...base.payments, ...(viewOverlay.payments ?? [])],
+      amountPaid: viewOverlay.amountPaid ?? base.amountPaid,
+      updatedAt: viewOverlay.updatedAt ?? base.updatedAt,
+    };
+  }, [detailInvoice, invoices, viewInvoiceId, viewOverlay]);
 
   const kpis = useMemo(() => computeInvoiceKpis(invoices), [invoices]);
-  const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pageInvoices = filteredInvoices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const allPageSelected =
-    pageInvoices.length > 0 && pageInvoices.every((invoice) => selectedIds.includes(invoice.invoiceId));
+
+  const userFilterOptions = useMemo(
+    () => buildOrderCreatedByFilterOptions(usersData?.items ?? []),
+    [usersData?.items],
+  );
+
+  const branchFilterOptions = useMemo(() => {
+    return (branchesData?.items ?? []).map((branch) => ({
+      value: String(branch.id),
+      label: formatBranchFilterLabel(branch),
+    }));
+  }, [branchesData?.items]);
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
       setSelectedIds((current) =>
-        Array.from(new Set([...current, ...pageInvoices.map((invoice) => invoice.invoiceId)]))
+        Array.from(new Set([...current, ...invoices.map((invoice) => invoice.invoiceId)])),
       );
       return;
     }
     setSelectedIds((current) =>
-      current.filter((id) => !pageInvoices.some((invoice) => invoice.invoiceId === id))
+      current.filter((id) => !invoices.some((invoice) => invoice.invoiceId === id)),
     );
   }
 
@@ -130,79 +189,14 @@ export function InvoicesWorkspace() {
     setSelectedIds((current) => (checked ? [...current, invoiceId] : current.filter((entry) => entry !== invoiceId)));
   }
 
-  function openAddForm() {
-    setEditingInvoice(null);
-    setFormMode("add");
-    setFormError(null);
+  function openView(invoice: Invoice) {
+    setViewInvoiceId(invoice.invoiceId);
+    setViewOverlay(null);
   }
 
-  function openEditForm(invoice: Invoice) {
-    setEditingInvoice(invoice);
-    setFormMode("edit");
-    setViewInvoice(null);
-    setFormError(null);
-  }
-
-  function saveInvoice(values: InvoiceFormValues): InvoiceFormSubmitResult {
-    try {
-      if (formMode === "edit" && editingInvoice) {
-        const timestamp = new Date().toISOString();
-        const nextInvoiceBase = formValuesToInvoice(
-          { ...values, createdBy: editingInvoice.createdBy },
-          editingInvoice.createdAt,
-          editingInvoice.createdBy,
-          timestamp,
-          editingInvoice.comments,
-          editingInvoice.activity,
-          editingInvoice.payments
-        );
-        const nextInvoice = formValuesToInvoice(
-          { ...values, createdBy: editingInvoice.createdBy },
-          editingInvoice.createdAt,
-          editingInvoice.createdBy,
-          timestamp,
-          editingInvoice.comments,
-          [
-            ...editingInvoice.activity,
-            ...buildInvoiceUpdateActivities(editingInvoice, nextInvoiceBase, DEFAULT_CREATED_BY),
-          ],
-          editingInvoice.payments
-        );
-        setInvoices((current) =>
-          current.map((invoice) => (invoice.invoiceId === editingInvoice.invoiceId ? nextInvoice : invoice))
-        );
-        if (viewInvoice?.invoiceId === nextInvoice.invoiceId) {
-          setViewInvoice(nextInvoice);
-        }
-        notifyUpdated("Invoice", nextInvoice.invoiceNumber);
-        setFormMode(null);
-        setEditingInvoice(null);
-        setFormError(null);
-        setPage(1);
-        return { error: null };
-      }
-
-      const baseInvoice = formValuesToInvoice(values, undefined, undefined, undefined, [], [], []);
-      const nextInvoice = formValuesToInvoice(
-        values,
-        baseInvoice.createdAt,
-        baseInvoice.createdBy,
-        baseInvoice.updatedAt,
-        [],
-        buildInvoiceCreatedActivities(baseInvoice),
-        []
-      );
-      const nextList = [nextInvoice, ...invoices];
-      setInvoices(nextList);
-      notifyAdded("Invoice", nextInvoice.invoiceNumber);
-      setFormError(null);
-      setPage(1);
-      return { error: null, nextInvoiceNumber: suggestNextInvoiceNumber(nextList) };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to save invoice.";
-      setFormError(message);
-      return { error: message };
-    }
+  function closeView() {
+    setViewInvoiceId(null);
+    setViewOverlay(null);
   }
 
   function addInvoiceComment(invoiceId: string, description: string) {
@@ -212,32 +206,15 @@ export function InvoicesWorkspace() {
       invoiceId,
       description,
       comment.createdBy,
-      timestamp
+      timestamp,
     );
 
-    setInvoices((current) =>
-      current.map((invoice) =>
-        invoice.invoiceId === invoiceId
-          ? {
-              ...invoice,
-              comments: [...invoice.comments, comment],
-              activity: [...invoice.activity, activityEntry],
-              updatedAt: timestamp,
-            }
-          : invoice
-      )
-    );
-
-    setViewInvoice((current) =>
-      current?.invoiceId === invoiceId
-        ? {
-            ...current,
-            comments: [...current.comments, comment],
-            activity: [...current.activity, activityEntry],
-            updatedAt: timestamp,
-          }
-        : current
-    );
+    setViewOverlay((current) => ({
+      ...current,
+      comments: [...(current?.comments ?? []), comment],
+      activity: [...(current?.activity ?? []), activityEntry],
+      updatedAt: timestamp,
+    }));
 
     notifyAdded("Comment");
   }
@@ -245,53 +222,62 @@ export function InvoicesWorkspace() {
   function recordInvoicePayment(invoiceId: string, input: InvoicePaymentInput) {
     const payment = createInvoicePayment(invoiceId, input);
 
-    function appendPayment(invoice: Invoice): Invoice {
-      const payments = [...invoice.payments, payment];
+    setViewOverlay((current) => {
+      const payments = [...(current?.payments ?? []), payment];
       const amountPaid = computeTotalPayments(payments);
       return {
-        ...invoice,
+        ...current,
         payments,
         amountPaid,
-        activity: [...invoice.activity, buildPaymentRecordedActivity(payment, amountPaid)],
+        activity: [...(current?.activity ?? []), buildPaymentRecordedActivity(payment, amountPaid)],
         updatedAt: payment.createdAt,
       };
-    }
-
-    setInvoices((current) =>
-      current.map((invoice) => (invoice.invoiceId === invoiceId ? appendPayment(invoice) : invoice))
-    );
-
-    setViewInvoice((current) =>
-      current?.invoiceId === invoiceId ? appendPayment(current) : current
-    );
+    });
 
     notifyAdded("Payment", formatInvoiceMoney(payment.amount));
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
+
     const ids = Array.isArray(deleteTarget)
       ? deleteTarget.map((invoice) => invoice.invoiceId)
       : [deleteTarget.invoiceId];
-    setInvoices((current) => current.filter((invoice) => !ids.includes(invoice.invoiceId)));
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewInvoice(null);
-    notifyDeleted("Invoice", ids.length);
+
+    try {
+      await deleteInvoicesMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
+      closeView();
+      notifyDeleted("Invoice", ids.length);
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
   }
 
   const stats = [
-    { label: "Total invoices", value: kpis.total.toString(), description: "Invoices on record", icon: FileText },
+    {
+      label: "Total invoices",
+      value: isLoading ? "…" : totalInvoices.toString(),
+      description: "Invoices on record",
+      icon: FileText,
+    },
+    {
+      label: "Outstanding invoices",
+      value: invoiceStats.isLoading ? "…" : invoiceStats.outstanding.toString(),
+      description: "Invoices with open balance",
+      icon: CircleAlert,
+    },
     {
       label: "Outstanding",
-      value: formatInvoiceMoney(kpis.outstanding),
-      description: "Total balance left",
+      value: isLoading ? "…" : formatInvoiceMoney(kpis.outstanding),
+      description: "Balance on this page",
       icon: Receipt,
     },
     {
       label: "Collected",
-      value: formatInvoiceMoney(kpis.collected),
-      description: "Total amount paid",
+      value: isLoading ? "…" : formatInvoiceMoney(kpis.collected),
+      description: "Paid on this page",
       icon: DollarSign,
     },
   ];
@@ -316,15 +302,35 @@ export function InvoicesWorkspace() {
     {
       id: "container",
       label: "Container",
-      renderCell: (invoice) => getContainerLabel(invoice.containerId),
+      renderCell: (invoice) => getContainerLabelForInvoice(invoice),
+    },
+    {
+      id: "paidStatus",
+      label: "Status",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
+      renderCell: (invoice) => {
+        const status = resolveInvoicePaidStatus(invoice);
+        return (
+          <UniformWidthPill columnKey="paidStatus">
+            <Badge className={getInvoicePaidStatusBadgeClass(status)}>
+              {getInvoicePaidStatusLabel(status)}
+            </Badge>
+          </UniformWidthPill>
+        );
+      },
     },
     {
       id: "paymentLocation",
       label: "Paid at",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (invoice) => (
-        <Badge className={getBranchBadgeClass(invoice.paymentLocation)}>
-          {getPaymentLocationLabel(invoice.paymentLocation)}
-        </Badge>
+        <UniformWidthPill columnKey="paymentLocation">
+          <Badge className={getBranchBadgeClass(invoice.paymentLocation)}>
+            {getPaymentLocationLabel(invoice.paymentLocation)}
+          </Badge>
+        </UniformWidthPill>
       ),
     },
     {
@@ -338,29 +344,54 @@ export function InvoicesWorkspace() {
       renderCell: (invoice) => formatInvoicePartySummary(invoice.receiver),
     },
     {
-      id: "description",
-      label: "Description",
-      renderCell: (invoice) => formatInvoiceLineItemsSummary(invoice),
-    },
-    {
       id: "total",
       label: "Invoice total",
-      renderCell: (invoice) => formatInvoiceMoney(getInvoiceSubtotal(invoice)),
+      truncateCell: false,
+      renderCell: (invoice) => {
+        const amount = getInvoiceSubtotal(invoice);
+        return (
+          <UniformWidthPill columnKey="total">
+            <span className={getInvoiceTotalMoneyClass()}>{formatInvoiceMoney(amount)}</span>
+          </UniformWidthPill>
+        );
+      },
     },
     {
       id: "discount",
       label: "Discount",
-      renderCell: (invoice) => formatInvoiceMoney(invoice.discount),
+      truncateCell: false,
+      renderCell: (invoice) => (
+        <UniformWidthPill columnKey="discount">
+          <span className={getInvoiceDiscountMoneyClass(invoice.discount)}>
+            {formatInvoiceMoney(invoice.discount)}
+          </span>
+        </UniformWidthPill>
+      ),
     },
     {
       id: "amountPaid",
       label: "Paid",
-      renderCell: (invoice) => formatInvoiceMoney(invoice.amountPaid),
+      truncateCell: false,
+      renderCell: (invoice) => (
+        <UniformWidthPill columnKey="amountPaid">
+          <span className={getInvoicePaidMoneyClass(invoice.amountPaid)}>
+            {formatInvoiceMoney(invoice.amountPaid)}
+          </span>
+        </UniformWidthPill>
+      ),
     },
     {
       id: "balance",
       label: "Balance",
-      renderCell: (invoice) => formatInvoiceMoney(getInvoiceBalance(invoice)),
+      truncateCell: false,
+      renderCell: (invoice) => {
+        const amount = getInvoiceBalance(invoice);
+        return (
+          <UniformWidthPill columnKey="balance">
+            <span className={getInvoiceBalanceMoneyClass(amount)}>{formatInvoiceMoney(amount)}</span>
+          </UniformWidthPill>
+        );
+      },
     },
     {
       id: "createdAt",
@@ -381,17 +412,18 @@ export function InvoicesWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("invoices", tableColumns);
-  const activeFilterCount = filters.paymentLocation !== "all" ? 1 : 0;
+  const columnVisibility = useColumnVisibility("invoices-v2", tableColumns);
+  const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
+  const activeFilterCount = advancedFilterCount + (filters.paymentLocation !== "all" ? 1 : 0);
   const hasActiveFilters =
-    Boolean(filters.query.trim()) || filters.paymentLocation !== "all";
+    Boolean(filters.query.trim()) || advancedFilterCount > 0 || filters.paymentLocation !== "all";
 
   return (
     <div>
       <PageHeader
         title="Invoices"
         actions={
-          <Button onClick={openAddForm}>
+          <Button disabled title="Invoice create via API is not available yet.">
             <Plus className="h-4 w-4" />
             Add invoice
           </Button>
@@ -430,12 +462,12 @@ export function InvoicesWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search invoices..."
+                placeholder="Search by sender, receiver, address, phone, or invoice number…"
               />
             }
             filterPanel={
               <TableFilterPanel
-                resultSummary={`Showing ${filteredInvoices.length} of ${invoices.length} invoices`}
+                resultSummary={`Showing ${invoices.length} of ${totalInvoices} invoices`}
                 onClearAll={
                   hasActiveFilters
                     ? () => {
@@ -445,35 +477,50 @@ export function InvoicesWorkspace() {
                     : undefined
                 }
               >
-            <TableFilterSection label="Paid at">
-              {paymentFilters.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  size="sm"
-                  variant={filters.paymentLocation === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, paymentLocation: option.value }));
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={INVOICE_TABLE_FILTER_FIELDS}
+                  dynamicOptions={{
+                    users: usersLoading ? [] : userFilterOptions,
+                    branches: branchesLoading ? [] : branchFilterOptions,
+                  }}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
                     setPage(1);
                   }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
+                />
+                <TableFilterSection label="Paid at">
+                  {paymentFilters.map((option) => (
+                    <Button
+                      key={option.value}
+                      type="button"
+                      size="sm"
+                      variant={filters.paymentLocation === option.value ? "default" : "outline"}
+                      onClick={() => {
+                        setFilters((current) => ({ ...current, paymentLocation: option.value }));
+                        setPage(1);
+                      }}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </TableFilterSection>
               </TableFilterPanel>
             }
           />
         </CardHeader>
 
+        {isError ? (
+          <div className="px-6 py-8 text-sm text-destructive">
+            {normalizeApiError(error).message}
+          </div>
+        ) : null}
+
         <TableSelectionBar
           selectedIds={selectedIds}
-          pageRowIds={pageInvoices.map((invoice) => invoice.invoiceId)}
+          pageRowIds={invoices.map((invoice) => invoice.invoiceId)}
           onSelectedIdsChange={setSelectedIds}
-          onEdit={() => {
-            const invoice = pageInvoices.find((entry) => entry.invoiceId === selectedIds[0]);
-            if (invoice) openEditForm(invoice);
-          }}
           onDelete={() =>
             setDeleteTarget(invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)))
           }
@@ -481,7 +528,7 @@ export function InvoicesWorkspace() {
 
         <DataTable
           columns={columnVisibility.columns}
-          rows={pageInvoices}
+          rows={invoices}
           page={currentPage}
           rowKey={(invoice) => invoice.invoiceId}
           rowLabel={(invoice) => invoice.invoiceNumber}
@@ -492,28 +539,27 @@ export function InvoicesWorkspace() {
           allPageSelected={allPageSelected}
           onToggleSelectAll={toggleSelectAll}
           onToggleSelect={toggleSelect}
-          onRowClick={setViewInvoice}
-          onRowDoubleClick={openEditForm}
+          onRowClick={openView}
           emptyState={
-            <>
-              <p className="text-muted-foreground">No invoices match your search or filters.</p>
-              <Button className="mt-4" onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                Add invoice
-              </Button>
-            </>
+            isLoading || isFetching ? (
+              <p className="text-muted-foreground">Loading invoices…</p>
+            ) : (
+              <>
+                <p className="text-muted-foreground">No invoices match your search or filters.</p>
+              </>
+            )
           }
         />
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {pageInvoices.length} of {filteredInvoices.length} invoices
+            Showing {invoices.length} of {totalInvoices} invoices
           </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage <= 1}
+              disabled={currentPage <= 1 || isLoading}
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -525,7 +571,7 @@ export function InvoicesWorkspace() {
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage >= totalPages}
+              disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
               Next
@@ -537,56 +583,18 @@ export function InvoicesWorkspace() {
 
       <InvoiceViewSheet
         invoice={viewInvoice}
-        open={Boolean(viewInvoice)}
+        open={Boolean(viewInvoiceId)}
         onOpenChange={(open) => {
-          if (!open) setViewInvoice(null);
+          if (!open) closeView();
         }}
-        onEdit={openEditForm}
+        onEdit={() => undefined}
         onDelete={(invoice) => {
-          setViewInvoice(null);
+          closeView();
           setDeleteTarget(invoice);
         }}
         onAddComment={addInvoiceComment}
         onRecordPayment={recordInvoicePayment}
       />
-
-      <Dialog
-        open={formMode !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setFormMode(null);
-            setFormError(null);
-          }
-        }}
-      >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{formMode === "edit" ? "Edit invoice" : "Add invoice"}</DialogTitle>
-            <DialogDescription>
-              Manage line items, sender/receiver parties, and invoice totals.
-            </DialogDescription>
-          </DialogHeader>
-          <InvoiceForm
-            key={editingInvoice?.invoiceId ?? "new"}
-            initialValues={
-              formMode === "edit" && editingInvoice
-                ? invoiceToFormValues(editingInvoice)
-                : createEmptyInvoiceForm()
-            }
-            isEditing={formMode === "edit"}
-            updatedAt={editingInvoice?.updatedAt}
-            suggestedInvoiceNumber={formMode === "add" ? suggestedInvoiceNumber : undefined}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add invoice"}
-            onSubmit={saveInvoice}
-            onFormErrorChange={setFormError}
-            onCancel={() => {
-              setFormMode(null);
-              setFormError(null);
-            }}
-          />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="z-[60]">
@@ -601,12 +609,12 @@ export function InvoicesWorkspace() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
               <Trash2 className="h-4 w-4" />
-              Delete
+              {isDeleting ? "Deleting…" : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

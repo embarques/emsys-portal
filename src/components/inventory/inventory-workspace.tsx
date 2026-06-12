@@ -15,6 +15,7 @@ import {
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventoryViewSheet } from "@/components/inventory/inventory-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -234,8 +235,12 @@ export function InventoryWorkspace() {
     {
       id: "status",
       label: "Status",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
       renderCell: (item) => (
-        <Badge className={getStatusBadgeClass(item.status)}>{getStatusLabel(item.status)}</Badge>
+        <UniformWidthPill columnKey="status">
+          <Badge className={getStatusBadgeClass(item.status)}>{getStatusLabel(item.status)}</Badge>
+        </UniformWidthPill>
       ),
     },
     {

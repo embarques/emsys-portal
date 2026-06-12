@@ -3,8 +3,7 @@ import {
   type ApiListSortInput,
   type SortDirection,
 } from "@/lib/api/list-query";
-import { isCompleteFilterRow } from "@/lib/table/filter-builder";
-import type { TableFilterFieldDefinition, TableFilterRowState } from "@/lib/table/filter-types";
+import type { TableFilterFieldDefinition, TableFilterRowState } from "@/lib/table/filter-builder";
 import { normalizeApiSearchValueForField } from "@/lib/utils/phone";
 
 export type ApiSearchOperator =
@@ -231,6 +230,52 @@ function filterGroupsToQuery(groups: ApiSearchFilterGroup[]): ApiSearchQuery | u
   };
 }
 
+/**
+ * POST /<resource>/search body — nested AND/OR filter groups (Stripe-style).
+ * Pagination is passed via URL query (`page`, `offset`, `limit`).
+ * See API-Query-Usage.md and API_PAYLOADS.md.
+ */
+export type StripeStyleSearchBody = {
+  field?: string;
+  operator?: "and" | "or";
+  value?: string | number | boolean;
+  filters?: ApiSearchFilterNode[];
+  pagination?: {
+    page: number;
+    offset: number;
+    limit: number;
+  };
+  sort?: ApiSearchSortSpec[];
+};
+
+export function buildStripeStyleSearchBody(options: {
+  sort?: ApiListSortInput;
+  filterGroups?: ApiSearchFilterGroup[];
+}): StripeStyleSearchBody {
+  const body: StripeStyleSearchBody = {};
+
+  const sortSpecs = resolveApiSearchSort(options.sort);
+  if (sortSpecs) {
+    body.sort = sortSpecs;
+  }
+
+  const filterGroups = options.filterGroups ?? [];
+  if (filterGroups.length === 0) {
+    return body;
+  }
+
+  if (filterGroups.length === 1 && filterGroups[0].operator === "and") {
+    body.operator = filterGroups[0].operator;
+    body.filters = filterGroups[0].filters;
+    return body;
+  }
+
+  body.operator = "and";
+  body.filters = filterGroups;
+
+  return body;
+}
+
 export function buildApiSearchPaginationQuery(options: {
   page?: number;
   limit?: number;
@@ -325,11 +370,13 @@ function resolveTableFilterRowToApiNode(
   row: TableFilterRowState,
   fieldDefinitions?: TableFilterFieldDefinition[],
 ): ApiSearchFilterNode | null {
-  if (!isCompleteFilterRow(row)) return null;
-
-  const operator = row.operator.trim();
   const fieldKey = row.field.trim();
   const definition = fieldDefinitions?.find((entry) => entry.field === fieldKey);
+  const operator =
+    row.operator.trim() ||
+    (definition && definition.operators.length === 1 ? definition.operators[0] : "");
+
+  if (!fieldKey || !operator || !row.value.trim()) return null;
 
   if (definition?.queryFields?.length) {
     const filters: ApiSearchFilter[] = definition.queryFields.map((field) => ({

@@ -4,6 +4,8 @@ import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { getRouteAssignmentById } from "@/lib/route-assignments/mock-data";
 import { getBranchLabel } from "@/lib/trucks/display";
 import type { Customer } from "@/lib/customers/types";
+import type { TableFilterFieldOption } from "@/lib/table/filter-types";
+import type { User } from "@/lib/users/types";
 import type { Order, PickupComment } from "./types";
 
 export function getOrderBranchLabel(branch: Order["branch"]): string {
@@ -40,19 +42,28 @@ export function formatCustomerPartySummary(customer: Customer): string {
 export function getRouteAssignmentLabel(routeAssignmentId: string): string {
   if (!routeAssignmentId) return "—";
   const assignment = getRouteAssignmentById(routeAssignmentId);
-  if (!assignment) return "Unknown assignment";
+  if (!assignment) return routeAssignmentId;
   return `${assignment.name} · ${formatOrderDate(assignment.date)} · ${assignment.truck.name || assignment.truck.id}`;
 }
 
+export function formatOrderRouteAssignment(order: Pick<Order, "routeAssignmentId">): string {
+  if (!order.routeAssignmentId) return "—";
+  return getRouteAssignmentLabel(order.routeAssignmentId);
+}
+
 export function formatPickupCommentSummary(comment: PickupComment): string {
-  const parts = [
-    comment.purpose || "comment",
+  const description = comment.description.trim();
+  if (description) return description;
+
+  const purpose = comment.purpose.trim();
+  if (purpose && purpose.toLowerCase() !== "comment") return purpose;
+
+  const metadata = [
     comment.unit ? `unit: ${comment.unit}` : "",
     comment.quantity > 0 ? `qty: ${comment.quantity}` : "",
-    comment.description,
   ].filter(Boolean);
 
-  return parts.join(" · ") || "—";
+  return metadata.join(" · ") || "—";
 }
 
 export function formatOrderCommentsSummary(order: Order, limit = 2): string {
@@ -62,9 +73,35 @@ export function formatOrderCommentsSummary(order: Order, limit = 2): string {
   return `${visible.join("; ")}${suffix}`;
 }
 
+export function getOrderUserDisplayName(user: Order["user"]): string {
+  if (!user) return "";
+  return user.fullName.trim() || user.userName.trim();
+}
+
 export function formatUserSummary(user: Order["user"]): string {
+  const name = getOrderUserDisplayName(user);
+  if (name) return name;
   if (!user) return "—";
-  return user.fullName.trim() || user.userName.trim() || String(user.id);
+  return String(user.id);
+}
+
+/** Created-by filter options for POST /pickups/search (`user.name` field). */
+export function buildOrderCreatedByFilterOptions(users: User[]): TableFilterFieldOption[] {
+  const seen = new Set<string>();
+  const options: TableFilterFieldOption[] = [];
+
+  for (const user of users) {
+    const name = getOrderUserDisplayName(user);
+    if (!name) continue;
+
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    options.push({ value: name, label: name });
+  }
+
+  return options;
 }
 
 export function formatEmployeeSummary(employee: Order["employee"]): string {

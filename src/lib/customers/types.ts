@@ -151,14 +151,14 @@ export type CustomerLegacyChipFilterState = {
 export type CustomerSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 
 export type CustomerSearchField =
+  | "id"
   | "name"
   | "phones.number"
   | "email"
   | "IDNumber"
   | "address.address1"
   | "customerType"
-  | "branch.id"
-  | "oldID";
+  | "branch.id";
 
 export type CustomerSearchFilter = ApiListTextSearch;
 
@@ -217,7 +217,7 @@ export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   { field: "IDNumber", label: "ID number", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "address.address1", label: "Address 1", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "customerType", label: "Customer type", operators: ["eq", "neq"] },
-  { field: "oldID", label: "Old ID", operators: ["eq", "neq"] },
+  { field: "id", label: "Customer ID", operators: ["eq", "neq"] },
 ];
 
 export const CUSTOMER_SEARCH_FIELDS: { value: CustomerSearchField; label: string }[] =
@@ -368,7 +368,7 @@ export function buildCustomerListParams(input: {
     params.search = search;
   }
 
-  const completeRows = input.rows.filter(isCompleteFilterRow);
+  const completeRows = input.rows.filter((row) => isCompleteFilterRow(row));
   if (completeRows.length > 0) {
     params.filterRows = completeRows;
   }
@@ -381,8 +381,8 @@ export function getCustomerSearchSort(
   direction: "asc" | "desc" = "asc",
 ): string {
   switch (field) {
-    case "oldID":
-      return `oldID:${direction}`;
+    case "id":
+      return `id:${direction}`;
     case "phones.number":
       return `phones.number:${direction}`;
     case "email":

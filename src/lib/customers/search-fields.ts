@@ -4,13 +4,9 @@
  */
 export const CUSTOMER_BAR_OR_SEARCH_FIELDS = [
   "name",
-  "email",
-  "IDNumber",
   "phones.number",
   "address.address1",
-  "address.city",
-  "address.state",
-  "address.zipcode",
+  "address.address2",
 ] as const;
 
 export type CustomerBarOrSearchField = (typeof CUSTOMER_BAR_OR_SEARCH_FIELDS)[number];

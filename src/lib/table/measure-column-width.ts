@@ -4,6 +4,10 @@ import { MIN_COLUMN_WIDTH } from "@/lib/table/column-preferences";
 export const AUTO_FIT_MAX_COLUMN_WIDTH = 1200;
 
 export function clampAutoFitColumnWidth(width: number): number {
+  if (!Number.isFinite(width)) {
+    return MIN_COLUMN_WIDTH;
+  }
+
   return Math.min(AUTO_FIT_MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, Math.round(width)));
 }
 
@@ -39,6 +43,27 @@ function hasComplexCellContent(content: HTMLElement): boolean {
   );
 }
 
+/** Measure natural width without table or uniform-pill width constraints. */
+function stripMeasuredWidthConstraints(element: HTMLElement): void {
+  element.classList.remove("truncate", "w-full", "max-w-full", "min-w-0");
+  element.style.overflow = "visible";
+  element.style.textOverflow = "clip";
+  element.style.whiteSpace = "nowrap";
+  element.style.width = "auto";
+  element.style.minWidth = "0";
+  element.style.maxWidth = "none";
+
+  element.querySelectorAll<HTMLElement>("*").forEach((node) => {
+    node.classList.remove("truncate", "w-full", "max-w-full", "min-w-0");
+    node.style.width = "auto";
+    node.style.minWidth = "0";
+    node.style.maxWidth = "none";
+    node.style.overflow = "visible";
+    node.style.textOverflow = "clip";
+    node.style.whiteSpace = "nowrap";
+  });
+}
+
 function measureComplexContent(cell: HTMLElement, content: HTMLElement): number {
   const padding = getHorizontalPadding(cell);
   const container = document.createElement("div");
@@ -51,12 +76,7 @@ function measureComplexContent(cell: HTMLElement, content: HTMLElement): number 
   container.style.whiteSpace = "nowrap";
 
   const clone = content.cloneNode(true) as HTMLElement;
-  clone.classList.remove("truncate");
-  clone.style.overflow = "visible";
-  clone.style.textOverflow = "clip";
-  clone.style.whiteSpace = "nowrap";
-  clone.style.maxWidth = "none";
-  clone.style.width = "auto";
+  stripMeasuredWidthConstraints(clone);
   container.appendChild(clone);
   document.body.appendChild(container);
 
@@ -86,16 +106,9 @@ function measureHeaderCell(cell: HTMLTableCellElement): number {
   const padding = getHorizontalPadding(cell);
   const label = cell.querySelector("span");
   const labelWidth = label ? measureTextWidth(label.textContent ?? "", label) : 0;
+  const resizeHandleWidth = 8;
 
-  const grip = cell.querySelector("button");
-  const gripWidth = grip ? grip.getBoundingClientRect().width : 0;
-
-  const inner = cell.querySelector(":scope > .flex");
-  const innerStyles = inner instanceof HTMLElement ? window.getComputedStyle(inner) : null;
-  const innerGap = innerStyles ? parseFloat(innerStyles.columnGap || innerStyles.gap || "0") : 4;
-  const innerPaddingRight = innerStyles ? parseFloat(innerStyles.paddingRight) : 12;
-
-  return padding + gripWidth + innerGap + labelWidth + innerPaddingRight + 4;
+  return padding + labelWidth + resizeHandleWidth + 4;
 }
 
 /** Measures the minimum width needed to fit header + row content without truncation. */

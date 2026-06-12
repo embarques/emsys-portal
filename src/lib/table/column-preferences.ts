@@ -45,7 +45,17 @@ export function reorderColumnIds(order: string[], sourceId: string, targetId: st
 }
 
 export function clampColumnWidth(width: number): number {
+  if (!Number.isFinite(width)) {
+    return DEFAULT_COLUMN_WIDTH;
+  }
+
   return Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, Math.round(width)));
+}
+
+function sanitizeColumnWidths(widths: Record<string, number>): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(widths).map(([id, width]) => [id, clampColumnWidth(width)]),
+  );
 }
 
 function mergeRecord<T extends Record<string, unknown>>(defaults: T, saved: Partial<T> | undefined): T {
@@ -85,7 +95,7 @@ export function loadTableColumnPreferences(
       return {
         visibility: mergeRecord(defaults.visibility, prefs.visibility),
         order: normalizeColumnOrder(prefs.order ?? defaults.order, columns),
-        widths: mergeRecord(defaults.widths, prefs.widths),
+        widths: sanitizeColumnWidths(mergeRecord(defaults.widths, prefs.widths)),
       };
     }
 

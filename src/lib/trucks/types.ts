@@ -1,4 +1,5 @@
-import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import type { ApiListSortInput } from "@/lib/api/list-query";
+import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 
 export type TruckPortalBranch = "usa" | "dr";
 
@@ -23,8 +24,8 @@ export type TruckFormValues = {
   year: string;
   fuelType: string;
   branch: string;
-  createdBy: string;
   createdAt: string;
+  createdBy: string;
   updatedAt: string;
 };
 
@@ -47,11 +48,24 @@ export type TruckSearchField =
   | "branch"
   | "createdBy";
 
-export type TruckSearchFilter = {
-  field: TruckSearchField;
-  operator: TruckSearchOperator;
-  value: string;
+export type TruckSearchFilter = ApiListTextSearch;
+
+export type TruckListParams = {
+  page?: number;
+  limit?: number;
+  offset?: number;
+  sort?: ApiListSortInput;
+  search?: TruckSearchFilter;
+  fuelType?: string;
+  branch?: string;
 };
+
+/** GET /trucks?page=1&limit=40&offset=0&sort=name:asc */
+export const DEFAULT_TRUCK_LIST_PARAMS = {
+  page: 1,
+  limit: 40,
+  sort: "name:asc",
+} as const satisfies Pick<TruckListParams, "page" | "limit" | "sort">;
 
 export const TRUCK_GET_SEARCH_CAPABILITIES: {
   field: TruckSearchField;
@@ -114,10 +128,7 @@ export function getDefaultTruckSearchOperator(field: TruckSearchField): TruckSea
 }
 
 export function createTruckSearchFilter(value: string): TruckSearchFilter | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-
-  return { field: "name", operator: "contains", value: trimmed };
+  return createListTextSearch(value);
 }
 
 export function getTruckPortalBranch(branch: string): TruckPortalBranch {
@@ -132,7 +143,7 @@ export function createMockObjectId(): string {
   return Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
 }
 
-export function createEmptyTruckForm(createdBy = DEFAULT_CREATED_BY): TruckFormValues {
+export function createEmptyTruckForm(): TruckFormValues {
   return {
     id: "",
     truckId: "",
@@ -141,8 +152,8 @@ export function createEmptyTruckForm(createdBy = DEFAULT_CREATED_BY): TruckFormV
     year: String(new Date().getFullYear()),
     fuelType: "diesel",
     branch: "usa",
-    createdBy,
     createdAt: "",
+    createdBy: "",
     updatedAt: "",
   };
 }
@@ -153,32 +164,28 @@ export function truckToFormValues(truck: Truck): TruckFormValues {
     truckId: truck.truckId,
     name: truck.name,
     vin: truck.vin,
-    year: String(truck.year),
+    year: truck.year > 0 ? String(truck.year) : "",
     fuelType: truck.fuelType,
     branch: truck.branch,
-    createdBy: truck.createdBy,
     createdAt: truck.createdAt,
+    createdBy: truck.createdBy,
     updatedAt: truck.updatedAt,
   };
 }
 
-export function formValuesToTruck(
-  values: TruckFormValues,
-  createdAt?: string,
-  createdBy?: string,
-  updatedAt?: string,
-  id?: string,
-): Truck {
-  return {
-    id: id ?? (values.id.trim() || createMockObjectId()),
-    truckId: values.truckId.trim(),
-    name: values.name.trim(),
-    vin: values.vin.trim().toUpperCase(),
-    year: Number(values.year),
-    fuelType: values.fuelType.trim(),
-    branch: values.branch.trim(),
-    createdAt: createdAt ?? (values.createdAt || new Date().toISOString()),
-    createdBy: createdBy ?? (values.createdBy.trim() || DEFAULT_CREATED_BY),
-    updatedAt: updatedAt ?? (values.updatedAt || new Date().toISOString()),
-  };
+export function validateTruckFormValues(values: TruckFormValues): void {
+  if (!values.truckId.trim()) {
+    throw new Error("Truck ID is required.");
+  }
+
+  if (!values.name.trim()) {
+    throw new Error("Truck name is required.");
+  }
+
+  if (values.year.trim()) {
+    const year = Number(values.year);
+    if (!Number.isFinite(year) || year < 1900) {
+      throw new Error("Year must be a valid number.");
+    }
+  }
 }

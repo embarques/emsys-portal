@@ -1,132 +1,162 @@
-import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import type { ApiListSortInput } from "@/lib/api/list-query";
+import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 
-export type ContainerRecord = {
-  containerId: string;
-  containerCode: string;
+export type Container = {
+  id: number;
+  name: string;
   containerNumber: string;
-  bookingNumber: string;
+  booking: string;
   sealNumber: string;
+  seal: string;
   broker: string;
-  transportCompany: string;
+  company: string;
   cost: number;
   departureDate: string;
   arrivalDate: string;
+  barcodeSequence: number;
+  deliverySequence: number;
   createdAt: string;
-  createdBy: string;
   updatedAt: string;
 };
 
+/** @deprecated Use `Container` — kept for gradual migration of dependent modules. */
+export type ContainerRecord = Container;
+
 export type ContainerFormValues = {
-  containerId: string;
-  containerCode: string;
+  id: number;
+  name: string;
   containerNumber: string;
-  bookingNumber: string;
+  booking: string;
   sealNumber: string;
   broker: string;
-  transportCompany: string;
+  company: string;
   cost: string;
   departureDate: string;
   arrivalDate: string;
-  createdBy: string;
 };
+
+export type ContainerSearchOperator = "eq" | "neq" | "contains" | "startsWith";
+
+export type ContainerSearchField =
+  | "id"
+  | "name"
+  | "containerNumber"
+  | "booking"
+  | "sealNumber"
+  | "seal"
+  | "broker"
+  | "company";
+
+export type ContainerSearchFilter = ApiListTextSearch;
 
 export type ContainerFilterState = {
   query: string;
 };
 
-export function createContainerId(): string {
-  return crypto.randomUUID();
-}
+export type ContainerListParams = {
+  page?: number;
+  limit?: number;
+  offset?: number;
+  sort?: ApiListSortInput;
+  search?: ContainerSearchFilter;
+};
 
-export function createEmptyContainerForm(createdBy = DEFAULT_CREATED_BY): ContainerFormValues {
+/** GET /containers?page=1&limit=40&offset=0&sort=name:desc */
+export const DEFAULT_CONTAINER_LIST_PARAMS = {
+  page: 1,
+  limit: 40,
+  sort: "name:desc",
+} as const satisfies Pick<ContainerListParams, "page" | "limit" | "sort">;
+
+export const CONTAINER_SEARCH_FIELDS: { value: ContainerSearchField; label: string }[] = [
+  { value: "name", label: "Container" },
+  { value: "containerNumber", label: "Container number" },
+  { value: "booking", label: "Booking number" },
+  { value: "sealNumber", label: "Seal number" },
+  { value: "broker", label: "Broker" },
+  { value: "company", label: "Transport company" },
+  { value: "id", label: "Container ID" },
+];
+
+export const CONTAINER_SEARCH_OPERATORS: { value: ContainerSearchOperator; label: string }[] = [
+  { value: "startsWith", label: "Starts with" },
+  { value: "contains", label: "Contains" },
+  { value: "eq", label: "Equals" },
+  { value: "neq", label: "Not equals" },
+];
+
+export function createEmptyContainerForm(): ContainerFormValues {
   return {
-    containerId: createContainerId(),
-    containerCode: "",
+    id: 0,
+    name: "",
     containerNumber: "",
-    bookingNumber: "",
+    booking: "",
     sealNumber: "",
     broker: "",
-    transportCompany: "",
+    company: "",
     cost: "",
     departureDate: "",
     arrivalDate: "",
-    createdBy,
   };
 }
 
-export function containerToFormValues(container: ContainerRecord): ContainerFormValues {
+export function createContainerSearchFilter(value: string): ContainerSearchFilter | undefined {
+  return createListTextSearch(value);
+}
+
+export function containerToFormValues(container: Container): ContainerFormValues {
   return {
-    containerId: container.containerId,
-    containerCode: container.containerCode,
+    id: container.id,
+    name: container.name,
     containerNumber: container.containerNumber,
-    bookingNumber: container.bookingNumber,
+    booking: container.booking,
     sealNumber: container.sealNumber,
     broker: container.broker,
-    transportCompany: container.transportCompany,
-    cost: container.cost.toFixed(2),
-    departureDate: container.departureDate.slice(0, 10),
-    arrivalDate: container.arrivalDate.slice(0, 10),
-    createdBy: container.createdBy,
+    company: container.company,
+    cost: container.cost > 0 ? container.cost.toFixed(2) : "",
+    departureDate: toFormDate(container.departureDate),
+    arrivalDate: toFormDate(container.arrivalDate),
   };
 }
 
-export function formValuesToContainer(
-  values: ContainerFormValues,
-  createdAt?: string,
-  createdBy?: string,
-  updatedAt?: string
-): ContainerRecord {
-  const cost = Number(values.cost);
-
-  if (!values.containerCode.trim()) {
-    throw new Error("Container code is required (e.g. 01-26).");
-  }
-
-  if (!values.containerNumber.trim()) {
-    throw new Error("Container number is required.");
-  }
-
-  if (!values.bookingNumber.trim()) {
-    throw new Error("Booking number is required.");
-  }
-
-  if (!values.departureDate) {
-    throw new Error("Departure date is required.");
-  }
-
-  if (!values.arrivalDate) {
-    throw new Error("Arrival date is required.");
-  }
-
-  if (!Number.isFinite(cost) || cost < 0) {
-    throw new Error("Cost must be a valid number greater than or equal to 0.");
-  }
-
-  return {
-    containerId: values.containerId,
-    containerCode: values.containerCode.trim(),
-    containerNumber: values.containerNumber.trim().toUpperCase(),
-    bookingNumber: values.bookingNumber.trim(),
-    sealNumber: values.sealNumber.trim(),
-    broker: values.broker.trim(),
-    transportCompany: values.transportCompany.trim(),
-    cost,
-    departureDate: values.departureDate,
-    arrivalDate: values.arrivalDate,
-    createdAt: createdAt ?? new Date().toISOString(),
-    createdBy: createdBy ?? (values.createdBy.trim() || DEFAULT_CREATED_BY),
-    updatedAt: updatedAt ?? new Date().toISOString(),
-  };
-}
-
-export function suggestNextContainerCode(existing: ContainerRecord[], date = new Date()): string {
+export function suggestNextContainerName(existing: Container[], date = new Date()): string {
   const yearSuffix = String(date.getFullYear()).slice(-2);
   const sameYearCodes = existing
-    .map((entry) => entry.containerCode)
+    .map((entry) => entry.name)
     .filter((code) => code.endsWith(`-${yearSuffix}`))
     .map((code) => Number.parseInt(code.split("-")[0] ?? "0", 10))
     .filter((value) => Number.isFinite(value));
 
   const nextSequence = (sameYearCodes.length > 0 ? Math.max(...sameYearCodes) : 0) + 1;
   return `${String(nextSequence).padStart(2, "0")}-${yearSuffix}`;
+}
+
+export function toFormDate(value: string): string {
+  if (!value) return "";
+  return value.slice(0, 10);
+}
+
+export function toApiDate(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new Error("Date is required.");
+  }
+  return trimmed.includes("T") ? trimmed : `${trimmed}T00:00:00Z`;
+}
+
+export function validateContainerFormValues(values: ContainerFormValues): void {
+  if (!values.name.trim()) {
+    throw new Error("Container name is required (e.g. 01-26).");
+  }
+
+  if (!values.booking.trim()) {
+    throw new Error("Booking number is required.");
+  }
+
+  if (values.cost.trim()) {
+    const cost = Number(values.cost);
+    if (!Number.isFinite(cost) || cost < 0) {
+      throw new Error("Cost must be a valid number greater than or equal to 0.");
+    }
+  }
 }

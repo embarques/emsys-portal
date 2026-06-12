@@ -157,7 +157,6 @@ export function customerMatchesQuery(customer: Customer, query: string): boolean
 
   return [
     customer.id,
-    String(customer.oldID),
     customer.name,
     ...customer.phones.map((phone) => phone.number),
     customer.email,

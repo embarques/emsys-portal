@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cloneContainers } from "@/lib/containers/mock-data";
+import { formatContainerLabel } from "@/lib/containers/display";
+import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { applyLabelBarcodeUpdate } from "@/lib/labels/updater";
 import { LABEL_STATUSES, type LabelStatus, type LabelUpdateResult } from "@/lib/labels/types";
 import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
@@ -24,7 +25,8 @@ function ResultCell({ value }: { value?: string | number }) {
 }
 
 export function LabelUpdaterWorkspace() {
-  const containers = useMemo(() => cloneContainers(), []);
+  const { data: containersData } = useContainerPicker();
+  const containers = containersData?.items ?? [];
   const routeAssignments = useMemo(() => cloneRouteAssignments(), []);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,7 +34,7 @@ export function LabelUpdaterWorkspace() {
   const [changeContainer, setChangeContainer] = useState(false);
   const [changeRouteAssignment, setChangeRouteAssignment] = useState(false);
   const [newStatus, setNewStatus] = useState<LabelStatus>("in_transit");
-  const [newContainerId, setNewContainerId] = useState(containers[0]?.containerId ?? "");
+  const [newContainerId, setNewContainerId] = useState("");
   const [newRouteAssignmentId, setNewRouteAssignmentId] = useState(routeAssignments[0]?.routeAssignmentId ?? "");
   const [barcodeInput, setBarcodeInput] = useState("");
   const [bulkBarcodes, setBulkBarcodes] = useState("");
@@ -41,6 +43,12 @@ export function LabelUpdaterWorkspace() {
   useEffect(() => {
     barcodeInputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (!newContainerId && containers[0]) {
+      setNewContainerId(String(containers[0].id));
+    }
+  }, [containers, newContainerId]);
 
   function focusBarcodeInput() {
     requestAnimationFrame(() => barcodeInputRef.current?.focus());
@@ -151,8 +159,8 @@ export function LabelUpdaterWorkspace() {
                   onChange={(event) => setNewContainerId(event.target.value)}
                 >
                   {containers.map((container) => (
-                    <option key={container.containerId} value={container.containerId}>
-                      {container.containerCode} · {container.containerNumber}
+                    <option key={container.id} value={String(container.id)}>
+                      {formatContainerLabel(container)}
                     </option>
                   ))}
                 </select>
