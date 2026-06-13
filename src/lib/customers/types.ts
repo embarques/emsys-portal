@@ -203,8 +203,8 @@ export const CUSTOMER_PORTAL_BRANCHES: {
 ];
 
 /**
- * GET /customers field + operator pairs verified against the live API.
- * Branch and customerType chips use query params (branchId, customerType).
+ * Customer search field + operator pairs verified against the live API.
+ * Customer list filters use POST /customers/search with the standard advanced-search body.
  */
 export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   field: CustomerSearchField;

@@ -265,20 +265,7 @@ function resolveCustomerGetFilter(params: CustomerListParams): ApiListFieldFilte
 }
 
 function shouldUseCustomerPostSearch(params: CustomerListParams): boolean {
-  if (hasListTextSearch(params.search)) return true;
-
-  const completeRows = (params.filterRows ?? []).filter((row) => isCompleteFilterRow(row));
-
-  if (completeRows.length > 1) return true;
-
-  if (completeRows.length === 1) {
-    const rowFilterNode = buildApiFilterNodeFromTableRows(completeRows, CUSTOMER_TABLE_FILTER_FIELDS);
-    if (!rowFilterNode) return false;
-    const expanded = expandCustomerSearchNode(rowFilterNode);
-    return !isApiSearchFilter(expanded);
-  }
-
-  return false;
+  return hasCustomerListFilters(params);
 }
 
 function hasCustomerListFilters(params: CustomerListParams): boolean {
@@ -327,24 +314,24 @@ function buildCustomerSearchFilterGroups(params: CustomerListParams): ApiSearchF
     } else {
       groups.push(expandedRowFilter);
     }
-  } else {
-    if (params.branch !== undefined && params.branch !== "all") {
-      chipFilters.push({ field: "branch.id", operator: "eq", value: String(params.branch) });
-    }
+  }
 
-    if (isCustomerTypeFilterActive(params.customerType)) {
-      appendCustomerTypeFilterGroup(groups, params.customerType);
-    }
+  if (params.branch !== undefined && params.branch !== "all") {
+    chipFilters.push({ field: "branch.id", operator: "eq", value: String(params.branch) });
+  }
 
-    if (chipFilters.length > 0) {
-      groups.push({ operator: "and", filters: chipFilters });
-    }
+  if (isCustomerTypeFilterActive(params.customerType)) {
+    appendCustomerTypeFilterGroup(groups, params.customerType);
+  }
+
+  if (chipFilters.length > 0) {
+    groups.push({ operator: "and", filters: chipFilters });
   }
 
   return groups;
 }
 
-/** POST /customers/search — Stripe-style body. Pagination in URL query. */
+/** POST /customers/search — filters + sort in body; pagination in URL query. */
 function buildCustomerSearchBody(params: CustomerListParams) {
   return buildStripeStyleSearchBody({
     sort: params.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort,
@@ -362,7 +349,7 @@ function appendCustomerChipParams(query: string, params: CustomerListParams): st
   return searchParams.toString();
 }
 
-/** GET /customers — page, limit, sort, optional field/operator/value filter, chip params. */
+/** GET /customers — unfiltered list and legacy single-filter fallback. */
 function buildCustomersQuery(params: CustomerListParams): string {
   const query = buildApiListQuery({
     page: params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page,

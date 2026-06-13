@@ -1,5 +1,4 @@
 import {
-  resolveApiListSort,
   type ApiListSortInput,
   type SortDirection,
 } from "@/lib/api/list-query";
@@ -31,29 +30,10 @@ export type ApiSearchFilterGroup = {
 
 export type ApiSearchFilterNode = ApiSearchFilter | ApiSearchFilterGroup;
 
-export type ApiSearchQueryNode = ApiSearchFilter | ApiSearchQuery;
-
-/** EMSYS POST /search query tree — see API-Query-Usage.md */
-export type ApiSearchQuery = {
-  and?: ApiSearchQueryNode[];
-  or?: ApiSearchQueryNode[];
-};
-
 /** POST /<resource>/search body — see API-Query-Usage.md and API_PAYLOADS.md */
-export type ApiSearchBody = {
-  page?: number;
-  limit?: number;
-  offset?: number;
-  sort?: string;
-  query?: ApiSearchQuery;
-  /** Legacy flat filter for single-field searches. */
-  field?: string;
-  operator?: string;
-  value?: string | number | boolean;
-  /** Nested AND/OR filter groups — see API_PAYLOADS.md POST /search. */
-  filters?: ApiSearchFilterGroup[];
-  /** @deprecated Prefer page/limit/offset query params. */
+export type ApiSearchBody = ApiSearchFilterGroup & {
   pagination?: { page: number; offset: number; limit: number };
+  sort?: ApiSearchSortSpec[];
 };
 
 export type ListTextSearch = {
@@ -73,7 +53,7 @@ export type BuildApiSearchBodyOptions = {
   sort?: ApiListSortInput;
   /** Flat leaf filters combined with AND in a single group. */
   filters?: ApiSearchFilter[];
-  /** Stripe-style nested filter groups (ANDed together at the root). */
+  /** Nested filter groups converted to the EMSYS advanced-search body. */
   filterGroups?: ApiSearchFilterGroup[];
 };
 
@@ -114,11 +94,13 @@ export function createTextSearchFilter(
 ): ApiSearchFilter | null {
   const trimmed = value.trim();
   if (!trimmed || !field.trim()) return null;
+  const normalizedValue = normalizeApiSearchValueForField(field, trimmed);
+  if (!normalizedValue) return null;
 
   return {
     field: field.trim(),
     operator,
-    value: normalizeApiSearchValueForField(field, trimmed),
+    value: normalizedValue,
   };
 }
 
@@ -147,10 +129,13 @@ export function createOrTextSearchFilterGroup(
       continue;
     }
 
+    const normalizedValue = normalizeApiSearchValueForField(normalizedField, trimmed);
+    if (!normalizedValue) continue;
+
     filters.push({
       field: normalizedField,
       operator,
-      value: normalizeApiSearchValueForField(normalizedField, trimmed),
+      value: normalizedValue,
     });
   }
 
@@ -206,45 +191,14 @@ export type ApiSearchSortSpec = {
   direction?: SortDirection;
 };
 
-function filterNodeToQueryNode(node: ApiSearchFilterNode): ApiSearchQueryNode {
-  if (isApiSearchFilter(node)) {
-    return {
-      field: node.field,
-      operator: node.operator,
-      value: node.value,
-    };
-  }
-
-  const children = node.filters.map(filterNodeToQueryNode);
-  return node.operator === "or" ? { or: children } : { and: children };
-}
-
-function filterGroupsToQuery(groups: ApiSearchFilterGroup[]): ApiSearchQuery | undefined {
-  if (groups.length === 0) return undefined;
-  if (groups.length === 1) {
-    return filterNodeToQueryNode(groups[0]) as ApiSearchQuery;
-  }
-
-  return {
-    and: groups.map((group) => filterNodeToQueryNode(group) as ApiSearchQuery),
-  };
-}
-
 /**
- * POST /<resource>/search body — nested AND/OR filter groups (Stripe-style).
+ * POST /<resource>/search body — nested AND/OR filter groups.
  * Pagination is passed via URL query (`page`, `offset`, `limit`).
  * See API-Query-Usage.md and API_PAYLOADS.md.
  */
 export type StripeStyleSearchBody = {
-  field?: string;
   operator?: "and" | "or";
-  value?: string | number | boolean;
   filters?: ApiSearchFilterNode[];
-  pagination?: {
-    page: number;
-    offset: number;
-    limit: number;
-  };
   sort?: ApiSearchSortSpec[];
 };
 
@@ -303,17 +257,6 @@ export function buildApiSearchBody(options: BuildApiSearchBodyOptions): ApiSearc
   const limit = options.limit ?? 40;
   const offset = options.offset ?? (page - 1) * limit;
 
-  const body: ApiSearchBody = {
-    page,
-    limit,
-    offset,
-  };
-
-  const sort = resolveApiListSort(options.sort);
-  if (sort) {
-    body.sort = sort;
-  }
-
   const leafFilters = (options.filters ?? []).filter(
     (filter) => filter.field.trim() && hasApiSearchFilterValue(filter.value),
   );
@@ -324,25 +267,22 @@ export function buildApiSearchBody(options: BuildApiSearchBodyOptions): ApiSearc
     filterGroups.push({ operator: "and", filters: leafFilters });
   }
 
-  const query = filterGroupsToQuery(filterGroups);
-  if (!query) {
-    return body;
+  const rootGroup: ApiSearchFilterGroup =
+    filterGroups.length === 1 && filterGroups[0].operator === "and"
+      ? filterGroups[0]
+      : { operator: "and", filters: filterGroups };
+
+  const body: ApiSearchBody = {
+    operator: rootGroup.operator,
+    filters: rootGroup.filters,
+    pagination: { page, offset, limit },
+  };
+
+  const sort = resolveApiSearchSort(options.sort);
+  if (sort) {
+    body.sort = sort;
   }
 
-  if (
-    filterGroups.length === 1 &&
-    filterGroups[0].operator === "and" &&
-    filterGroups[0].filters.length === 1 &&
-    isApiSearchFilter(filterGroups[0].filters[0])
-  ) {
-    const onlyFilter = filterGroups[0].filters[0];
-    body.field = onlyFilter.field;
-    body.operator = onlyFilter.operator;
-    body.value = onlyFilter.value;
-  }
-
-  body.query = query;
-  body.filters = filterGroups;
   return body;
 }
 
@@ -379,11 +319,16 @@ function resolveTableFilterRowToApiNode(
   if (!fieldKey || !operator || !row.value.trim()) return null;
 
   if (definition?.queryFields?.length) {
-    const filters: ApiSearchFilter[] = definition.queryFields.map((field) => ({
-      field,
-      operator,
-      value: normalizeApiSearchValueForField(field, row.value),
-    }));
+    const filters: ApiSearchFilter[] = definition.queryFields.flatMap((field) => {
+      const normalizedValue = normalizeApiSearchValueForField(field, row.value);
+      if (!normalizedValue) return [];
+
+      return [{
+        field,
+        operator,
+        value: normalizedValue,
+      }];
+    });
 
     if (filters.length === 0) return null;
     if (filters.length === 1) return filters[0];

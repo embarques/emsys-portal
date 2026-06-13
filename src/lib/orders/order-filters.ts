@@ -64,18 +64,18 @@ function expandCompletedFilter(filter: ApiSearchFilter): ApiSearchFilter {
   if (filter.operator === "eq") {
     return wantsCompleted
       ? { field: "completed", operator: "eq", value: true }
-      : { field: "completed", operator: "neq", value: true };
+      : { field: "completed", operator: "eq", value: false };
   }
 
   if (filter.operator === "neq") {
     return wantsCompleted
-      ? { field: "completed", operator: "neq", value: true }
+      ? { field: "completed", operator: "eq", value: false }
       : { field: "completed", operator: "eq", value: true };
   }
 
   return wantsCompleted
     ? { field: "completed", operator: "eq", value: true }
-    : { field: "completed", operator: "neq", value: true };
+    : { field: "completed", operator: "eq", value: false };
 }
 
 function expandOrderLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | null {

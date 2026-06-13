@@ -407,8 +407,8 @@ function buildPickupSearchBody(params: OrderListParams) {
 /**
  * List pickups from EMSYS API.
  * - Unfiltered: GET /pickups?page&offset&limit
- * - Search/filters: POST /pickups/search?page&offset&limit with Stripe-style body
- *   (operator + filters + sort). See API-Query-Usage.md.
+ * - Search/filters: POST /pickups/search with standard advanced-search body.
+ *   See API-Query-Usage.md.
  */
 export async function fetchOrders(params: OrderListParams = {}): Promise<PaginatedResult<Order>> {
   if (shouldUsePickupSearch(params)) {

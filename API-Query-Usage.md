@@ -144,7 +144,7 @@ Only use operators supported by the field. For example, boolean and numeric ID f
 
 ## Chip Filters
 
-Chip filters can be represented as explicit query params and, when needed by the API, as a field/operator/value triplet.
+Chip filters should be represented as standard advanced-search filters when using POST `/search`.
 
 Example customer filters:
 
@@ -200,13 +200,13 @@ Use `POST /<resource>/search` when filters must be combined, nested AND/OR group
 
 ### Pickups — `POST /pickups/search`
 
-Pagination goes in the **URL query** (`page`, `offset`, `limit`). The body carries optional filters and sort.
+Pagination goes in the **JSON body**. The body root is always a filter group with `operator`, `filters`, optional `pagination`, and optional `sort`.
 
 ```txt
-POST /pickups/search?page=1&offset=0&limit=40
+POST /pickups/search
 ```
 
-Body (Stripe-style nested filters):
+Body (advanced-search filters):
 
 ```json
 {
@@ -223,6 +223,7 @@ Body (Stripe-style nested filters):
       "value": true
     }
   ],
+  "pagination": { "page": 1, "offset": 0, "limit": 40 },
   "sort": [{ "field": "date", "direction": "asc" }]
 }
 ```
@@ -234,18 +235,22 @@ Pending pickup stats example (purpose contains pickup, not completed):
   "operator": "and",
   "filters": [
     { "field": "purpose", "operator": "contains", "value": "pickup" },
-    { "field": "completed", "operator": "neq", "value": true }
-  ]
+    { "field": "completed", "operator": "eq", "value": false }
+  ],
+  "pagination": { "page": 1, "offset": 0, "limit": 1 }
 }
 ```
 
 Build the body with the shared helper:
 
 ```ts
-import { buildStripeStyleSearchBody, buildApiSearchPaginationQuery } from "@/lib/api/search-query";
+import { buildStripeStyleSearchBody } from "@/lib/api/search-query";
 
 function buildPickupSearchBody(params: OrderListParams) {
   return buildStripeStyleSearchBody({
+    page: params.page,
+    limit: params.limit,
+    offset: params.offset,
     sort: params.sort,
     filterGroups: buildOrderSearchFilterGroups(params),
   });
@@ -257,13 +262,8 @@ Call through `apiClient.post`:
 ```ts
 export async function fetchOrders(params: OrderListParams = {}) {
   if (shouldUsePickupSearch(params)) {
-    const page = params.page ?? 1;
-    const limit = params.limit ?? 40;
-    const offset = params.offset ?? (page - 1) * limit;
-    const paginationQuery = buildApiSearchPaginationQuery({ page, limit, offset });
-
     return apiClient.post(
-      `${API_ENDPOINTS.PICKUPS}/search?${paginationQuery}`,
+      `${API_ENDPOINTS.PICKUPS}/search`,
       buildPickupSearchBody(params),
     );
   }
