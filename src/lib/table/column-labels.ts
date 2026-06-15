@@ -1,5 +1,4 @@
 const EXACT_LABELS: Record<string, string> = {
-  oldID: "Old ID",
   uid: "UID",
   vin: "VIN",
   sku: "SKU",

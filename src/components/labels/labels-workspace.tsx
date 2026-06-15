@@ -72,6 +72,7 @@ import {
   type StagedLineItem,
 } from "@/lib/labels/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 10;
@@ -425,6 +426,13 @@ export function LabelsWorkspace() {
   ];
   const activeFilterCount = filters.status !== "all" ? 1 : 0;
   const hasActiveFilters = Boolean(filters.query.trim()) || filters.status !== "all";
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    matched: filteredLabels.length,
+    catalogTotal: labels.length,
+    noun: "labels",
+  });
 
   return (
     <div className="space-y-6">
@@ -644,12 +652,13 @@ export function LabelsWorkspace() {
       </div>
 
       <Card>
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}

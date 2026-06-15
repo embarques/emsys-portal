@@ -11,11 +11,11 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
+import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import {
   formatRecordPhoneTypeLabel,
   getOrderedRecordPhones,
 } from "@/lib/phones/phones";
-import { formatPhoneForDisplay } from "@/lib/utils/phone";
 import {
   formatAccountBalance,
   formatCoreAddressLine,
@@ -53,6 +53,7 @@ export function CustomerViewSheet({
   const clientType = getCustomerClientType(customer);
   const addresses =
     customer.addresses.length > 0 ? customer.addresses : customer.address.address1 ? [customer.address] : [];
+  const phones = getOrderedRecordPhones(customer.phones);
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -74,56 +75,26 @@ export function CustomerViewSheet({
           <RecordViewSheetSection title="General">
             <RecordViewSheetDetailRow label="Name" value={customer.name} />
             <RecordViewSheetDetailRow label="Customer type" value={getCustomerTypeLabel(customer)} />
+            <RecordViewSheetDetailRow label="Email" value={customer.email || "—"} />
+            <RecordViewSheetDetailRow label="ID number" value={customer.IDNumber || "—"} />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title="System information">
-            <RecordViewSheetDetailRow label="Customer ID" value={customer.id} />
-            <RecordViewSheetDetailRow
-              label="Created by"
-              value={customer.createdByID != null ? String(customer.createdByID) : "—"}
-            />
-            <RecordViewSheetDetailRow
-              label="Created at"
-              value={customer.createdAt ? formatAuditDate(customer.createdAt) : "—"}
-            />
-            <RecordViewSheetDetailRow
-              label="Updated at"
-              value={customer.updatedAt ? formatAuditDate(customer.updatedAt) : "—"}
-            />
-          </RecordViewSheetSection>
-
-          <RecordViewSheetSection title="Branch">
-            <RecordViewSheetDetailRow label="Branch ID" value={String(customer.branch.id)} />
-            <RecordViewSheetDetailRow label="Branch code" value={customer.branch.code || "—"} />
-            <RecordViewSheetDetailRow label="Branch name" value={customer.branch.name || "—"} />
-          </RecordViewSheetSection>
-
-          <RecordViewSheetSection title="Contact">
-            {getOrderedRecordPhones(customer.phones).length === 0 ? (
+          <RecordViewSheetSection title="Phones">
+            {phones.length === 0 ? (
               <RecordViewSheetDetailRow label="Phones" value="—" />
             ) : (
-              getOrderedRecordPhones(customer.phones).map((phone, index) => (
-                <RecordViewSheetDetailRow
+              phones.map((phone, index) => (
+                <PhoneActionRow
                   key={`phone-${index}`}
                   label={
                     phone.isPrimary
                       ? `${formatRecordPhoneTypeLabel(phone.type)} (primary)`
                       : formatRecordPhoneTypeLabel(phone.type)
                   }
-                  value={formatPhoneForDisplay(phone.number)}
+                  number={phone.number}
                 />
               ))
             )}
-            <RecordViewSheetDetailRow label="Email" value={customer.email || "—"} />
-            <RecordViewSheetDetailRow label="ID number" value={customer.IDNumber || "—"} />
-          </RecordViewSheetSection>
-
-          <RecordViewSheetSection title="Account">
-            <RecordViewSheetDetailRow
-              label="Account balance"
-              value={formatAccountBalance(customer.accountBalance)}
-            />
-            <RecordViewSheetDetailRow label="Notes" value={customer.notes || "—"} />
           </RecordViewSheetSection>
 
           {addresses.map((address, index) => (
@@ -141,6 +112,36 @@ export function CustomerViewSheet({
               <RecordViewSheetDetailRow label="Full address" value={formatCoreAddressLine(address)} />
             </RecordViewSheetSection>
           ))}
+
+          <RecordViewSheetSection title="Account">
+            <RecordViewSheetDetailRow
+              label="Account balance"
+              value={formatAccountBalance(customer.accountBalance)}
+            />
+            <RecordViewSheetDetailRow label="Notes" value={customer.notes || "—"} />
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection title="Branch">
+            <RecordViewSheetDetailRow label="Branch ID" value={String(customer.branch.id)} />
+            <RecordViewSheetDetailRow label="Branch code" value={customer.branch.code || "—"} />
+            <RecordViewSheetDetailRow label="Branch name" value={customer.branch.name || "—"} />
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection title="System information">
+            <RecordViewSheetDetailRow label="Customer ID" value={customer.id} />
+            <RecordViewSheetDetailRow
+              label="Created by"
+              value={customer.createdByID != null ? String(customer.createdByID) : "—"}
+            />
+            <RecordViewSheetDetailRow
+              label="Created at"
+              value={customer.createdAt ? formatAuditDate(customer.createdAt) : "—"}
+            />
+            <RecordViewSheetDetailRow
+              label="Updated at"
+              value={customer.updatedAt ? formatAuditDate(customer.updatedAt) : "—"}
+            />
+          </RecordViewSheetSection>
         </RecordViewSheetBody>
 
         <RecordViewSheetActions

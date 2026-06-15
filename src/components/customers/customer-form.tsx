@@ -275,51 +275,58 @@ export function CustomerForm({
         />
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <Label>Address</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addAddress}>
+      <div className="space-y-2">
+        <Label>Address</Label>
+
+        <div className="space-y-3">
+          <div className="space-y-4 rounded-lg border border-border/60 p-4">
+            <p className="text-sm font-medium">Primary address</p>
+            <AddressFieldGrid
+              idPrefix="primary"
+              address={values.address}
+              onChange={(field, value) => updateAddressField(field, value)}
+            />
+          </div>
+
+          {values.addresses.slice(1).map((address, index) => {
+            const addressIndex = index + 1;
+
+            return (
+              <div key={addressIndex} className="space-y-4 rounded-lg border border-border/60 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium">Additional address {addressIndex}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => removeAddress(addressIndex)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remove
+                  </Button>
+                </div>
+
+                <AddressFieldGrid
+                  idPrefix={`additional-${addressIndex}`}
+                  address={address}
+                  onChange={(field, value) => updateAdditionalAddressField(addressIndex, field, value)}
+                />
+              </div>
+            );
+          })}
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+            onClick={addAddress}
+          >
             <Plus className="h-4 w-4" />
             Add address
           </Button>
         </div>
-
-        <div className="space-y-4 rounded-lg border border-border/60 p-4">
-          <p className="text-sm font-medium">Primary address</p>
-          <AddressFieldGrid
-            idPrefix="primary"
-            address={values.address}
-            onChange={(field, value) => updateAddressField(field, value)}
-          />
-        </div>
-
-        {values.addresses.slice(1).map((address, index) => {
-          const addressIndex = index + 1;
-
-          return (
-            <div key={addressIndex} className="space-y-4 rounded-lg border border-border/60 p-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium">Additional address {addressIndex}</p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => removeAddress(addressIndex)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Remove
-                </Button>
-              </div>
-
-              <AddressFieldGrid
-                idPrefix={`additional-${addressIndex}`}
-                address={address}
-                onChange={(field, value) => updateAdditionalAddressField(addressIndex, field, value)}
-              />
-            </div>
-          );
-        })}
       </div>
 
       {formError ? <p className="text-sm text-destructive">{formError}</p> : null}

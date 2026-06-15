@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   createContainer,
@@ -10,6 +10,9 @@ import {
   fetchContainers,
   updateContainer,
 } from "@/lib/containers/api/containers-api";
+import { hasListTextSearch } from "@/lib/api/search-query";
+import { CONTAINER_TABLE_FILTER_FIELDS } from "@/lib/containers/filter-fields";
+import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import {
   DEFAULT_CONTAINER_LIST_PARAMS,
   type ContainerFormValues,
@@ -17,6 +20,14 @@ import {
   type ContainerSearchFilter,
 } from "@/lib/containers/types";
 import { queryKeys } from "@/lib/query/query-keys";
+
+function isContainerListFiltered(params: ContainerListParams): boolean {
+  const hasRowFilters = (params.filterRows ?? []).some((row) =>
+    isCompleteFilterRow(row, CONTAINER_TABLE_FILTER_FIELDS),
+  );
+
+  return hasListTextSearch(params.search) || hasRowFilters;
+}
 
 export function useContainerSearch(
   search: ContainerSearchFilter | undefined,
@@ -37,10 +48,14 @@ export function useContainerSearch(
 }
 
 export function useContainers(params: ContainerListParams, options: { enabled?: boolean } = {}) {
+  const isFiltered = isContainerListFiltered(params);
+
   return useQuery({
     queryKey: queryKeys.containers.list(params),
     queryFn: () => fetchContainers(params),
     enabled: options.enabled ?? true,
+    placeholderData: keepPreviousData,
+    staleTime: isFiltered ? 0 : 60_000,
   });
 }
 

@@ -20,6 +20,32 @@ export function formatFilteredCountSummary(input: {
   return `${matchedLabel} of ${catalogTotal.toLocaleString()} ${noun}`;
 }
 
+/** Compact toolbar badge: search + filter on the left, this summary + columns on the right. */
+export function buildToolbarSearchSummary(input: {
+  isFiltered: boolean;
+  query?: string;
+  isSearchPending?: boolean;
+  matched: number;
+  catalogTotal?: number;
+  noun: string;
+  isLoading?: boolean;
+  catalogLoading?: boolean;
+}): string | undefined {
+  if (!input.isFiltered) return undefined;
+
+  if (input.query?.trim() && input.isSearchPending) {
+    return `Searching ${input.noun}…`;
+  }
+
+  return formatFilteredCountSummary({
+    matched: input.matched,
+    catalogTotal: input.catalogTotal,
+    noun: input.noun,
+    isLoading: input.isLoading,
+    catalogLoading: input.catalogLoading,
+  });
+}
+
 export function formatPaginatedListSummary(input: {
   itemCountOnPage: number;
   page: number;

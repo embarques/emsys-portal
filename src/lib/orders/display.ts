@@ -29,8 +29,7 @@ export function formatOrderDate(date: string): string {
   }).format(parsed);
 }
 
-export function formatOrderId(order: Pick<Order, "id" | "oldID">): string {
-  if (order.oldID > 0) return `#${order.oldID}`;
+export function formatOrderId(order: Pick<Order, "id">): string {
   return String(order.id);
 }
 

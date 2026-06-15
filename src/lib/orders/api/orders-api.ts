@@ -134,7 +134,6 @@ const ORDER_LIST_SEARCH_FIELD = "sender.name";
 
 const EMPTY_CUSTOMER: Customer = {
   id: "",
-  oldID: 0,
   name: "—",
   customerType: null,
   phones: createDefaultRecordPhones(),
@@ -219,7 +218,6 @@ function normalizePickupCustomer(raw: unknown, fallbackName: string): Customer {
   return {
     ...EMPTY_CUSTOMER,
     id: String(item.id ?? "").trim(),
-    oldID: readNumericId(item.oldID as number | string | undefined) ?? 0,
     name,
     phones: normalizeRecordPhonesFromApi(item),
     email: String(item.email ?? "").trim(),
@@ -298,7 +296,6 @@ function normalizeOrder(raw: unknown): Order | null {
 
   return {
     id,
-    oldID: readNumericId(item.oldID) ?? 0,
     date: normalizeIsoDate(item.date),
     createdAt: normalizeIsoDate(item.createdAt),
     updatedAt: normalizeIsoDate(item.updatedAt),
@@ -455,10 +452,6 @@ function buildPickupCustomerRef(customer: Customer): ApiPickupCustomerRef {
 
   if (customer.id.trim()) {
     payload.id = customer.id.trim();
-  }
-
-  if (customer.oldID > 0) {
-    payload.oldID = customer.oldID;
   }
 
   if (email) {

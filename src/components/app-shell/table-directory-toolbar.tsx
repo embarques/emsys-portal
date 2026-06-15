@@ -192,19 +192,14 @@ export function TableDirectoryToolbar({
   filterPanel,
   columnLayout,
 }: TableDirectoryToolbarProps) {
+  const showFilter = showFilterToggle && onFiltersOpenChange;
+  const showRightCluster = searchSummary || columnLayout;
+
   return (
-    <div className="flex w-full items-center justify-between gap-3">
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        <div className="min-w-0 flex-1 max-w-[32rem] lg:max-w-[40rem]">{search}</div>
-        {searchSummary ? (
-          <p
-            className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block"
-            aria-live="polite"
-          >
-            {searchSummary}
-          </p>
-        ) : null}
-        {showFilterToggle && onFiltersOpenChange ? (
+    <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="flex min-w-0 flex-1 items-center gap-2 basis-[min(100%,18rem)]">
+        <div className="min-w-0 w-full sm:max-w-sm md:max-w-md">{search}</div>
+        {showFilter ? (
           <TableFilterDropdown
             open={filtersOpen}
             onOpenChange={onFiltersOpenChange}
@@ -214,9 +209,18 @@ export function TableDirectoryToolbar({
           </TableFilterDropdown>
         ) : null}
       </div>
-      {columnLayout ? (
-        <div className="shrink-0">
-          <ColumnVisibilityMenu columnLayout={columnLayout} />
+
+      {showRightCluster ? (
+        <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
+          {searchSummary ? (
+            <span
+              className="hidden shrink-0 items-center rounded-full border border-border/70 bg-muted/50 px-2.5 py-1 text-xs font-medium tabular-nums text-muted-foreground sm:inline-flex"
+              aria-live="polite"
+            >
+              {searchSummary}
+            </span>
+          ) : null}
+          {columnLayout ? <ColumnVisibilityMenu columnLayout={columnLayout} /> : null}
         </div>
       ) : null}
     </div>

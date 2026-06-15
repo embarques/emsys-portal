@@ -1,5 +1,6 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 
 export type TruckPortalBranch = "usa" | "dr";
 
@@ -31,8 +32,7 @@ export type TruckFormValues = {
 
 export type TruckFilterState = {
   query: string;
-  fuelType: string | "all";
-  branch: string | "all";
+  rows: TableFilterRowState[];
 };
 
 /** Matches GET /trucks filter operators from the API spec. */
@@ -56,8 +56,7 @@ export type TruckListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: TruckSearchFilter;
-  fuelType?: string;
-  branch?: string;
+  filterRows?: TableFilterRowState[];
 };
 
 /** GET /trucks?page=1&limit=40&offset=0&sort=name:asc */
@@ -129,6 +128,31 @@ export function getDefaultTruckSearchOperator(field: TruckSearchField): TruckSea
 
 export function createTruckSearchFilter(value: string): TruckSearchFilter | undefined {
   return createListTextSearch(value);
+}
+
+export function buildTruckListParams(input: {
+  page: number;
+  limit?: number;
+  query: string;
+  rows: TableFilterRowState[];
+}): TruckListParams {
+  const params: TruckListParams = {
+    ...DEFAULT_TRUCK_LIST_PARAMS,
+    page: input.page,
+    limit: input.limit ?? DEFAULT_TRUCK_LIST_PARAMS.limit,
+  };
+
+  const search = createTruckSearchFilter(input.query);
+  if (search) {
+    params.search = search;
+  }
+
+  const completeRows = input.rows.filter((row) => isCompleteFilterRow(row));
+  if (completeRows.length > 0) {
+    params.filterRows = completeRows;
+  }
+
+  return params;
 }
 
 export function getTruckPortalBranch(branch: string): TruckPortalBranch {

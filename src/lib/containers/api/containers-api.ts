@@ -1,14 +1,14 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
-  buildApiSearchBody,
-  createTextSearchFilter,
-  hasListTextSearch,
-  resolveSearchField,
-  resolveSearchOperator,
-  type ApiSearchFilter,
+  buildResourceSearchFilterGroups,
+  buildStripeStyleSearchBody,
+  hasResourceListFilters,
 } from "@/lib/api/search-query";
+import { CONTAINER_TABLE_FILTER_FIELDS } from "@/lib/containers/filter-fields";
+import { CONTAINER_BAR_OR_SEARCH_FIELDS } from "@/lib/containers/search-fields";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   DEFAULT_CONTAINER_LIST_PARAMS,
@@ -19,7 +19,34 @@ import {
   type ContainerListParams,
 } from "@/lib/containers/types";
 
-const CONTAINER_LIST_SEARCH_FIELD = "name";
+function hasContainerListFilters(params: ContainerListParams): boolean {
+  return hasResourceListFilters({
+    search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: CONTAINER_TABLE_FILTER_FIELDS,
+  });
+}
+
+function buildContainerSearchBody(params: ContainerListParams) {
+  return buildStripeStyleSearchBody({
+    sort: params.sort ?? DEFAULT_CONTAINER_LIST_PARAMS.sort,
+    filterGroups: buildResourceSearchFilterGroups({
+      search: params.search,
+      barOrSearchFields: CONTAINER_BAR_OR_SEARCH_FIELDS,
+      filterRows: params.filterRows,
+      tableFilterFields: CONTAINER_TABLE_FILTER_FIELDS,
+    }),
+  });
+}
+
+function buildContainersQuery(params: ContainerListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_CONTAINER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_CONTAINER_LIST_PARAMS.limit,
+    offset: params.offset,
+    sort: params.sort ?? DEFAULT_CONTAINER_LIST_PARAMS.sort,
+  });
+}
 
 type ApiContainer = {
   id?: number;
@@ -102,42 +129,6 @@ function normalizePaginatedContainers(payload: PaginatedApiEnvelope<unknown[]>):
     resultsPerPage: payload.resultsPerPage ?? items.length,
     total: payload.total ?? items.length,
   };
-}
-
-function buildContainerSearchFilters(params: ContainerListParams): ApiSearchFilter[] {
-  const filters: ApiSearchFilter[] = [];
-
-  if (params.search?.value.trim()) {
-    const textFilter = createTextSearchFilter(
-      resolveSearchField(params.search, CONTAINER_LIST_SEARCH_FIELD),
-      params.search.value,
-      resolveSearchOperator(params.search),
-    );
-    if (textFilter) {
-      filters.push(textFilter);
-    }
-  }
-
-  return filters;
-}
-
-function buildContainersQuery(params: ContainerListParams): string {
-  return buildApiListQuery({
-    page: params.page ?? DEFAULT_CONTAINER_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_CONTAINER_LIST_PARAMS.limit,
-    offset: params.offset,
-    sort: params.sort ?? DEFAULT_CONTAINER_LIST_PARAMS.sort,
-  });
-}
-
-function buildContainerSearchBody(params: ContainerListParams) {
-  return buildApiSearchBody({
-    page: params.page ?? DEFAULT_CONTAINER_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_CONTAINER_LIST_PARAMS.limit,
-    offset: params.offset,
-    sort: params.sort ?? DEFAULT_CONTAINER_LIST_PARAMS.sort,
-    filters: buildContainerSearchFilters(params),
-  });
 }
 
 function buildContainerWritePayload(
@@ -262,21 +253,16 @@ async function resolveCreatedContainer(
 }
 
 export async function fetchContainers(params: ContainerListParams = {}): Promise<PaginatedResult<Container>> {
-  if (hasListTextSearch(params.search)) {
-    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.CONTAINERS}/search`,
-      buildContainerSearchBody(params),
-    );
-
-    return normalizePaginatedContainers(response);
-  }
-
-  const query = buildContainersQuery(params);
-  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
-    `${API_ENDPOINTS.CONTAINERS}?${query}`,
-  );
-
-  return normalizePaginatedContainers(response);
+  return fetchPaginatedResourceList({
+    endpoint: API_ENDPOINTS.CONTAINERS,
+    page: params.page ?? DEFAULT_CONTAINER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_CONTAINER_LIST_PARAMS.limit,
+    offset: params.offset,
+    isFiltered: hasContainerListFilters(params),
+    buildGetQuery: () => buildContainersQuery(params),
+    buildSearchBody: () => buildContainerSearchBody(params),
+    normalize: normalizePaginatedContainers,
+  });
 }
 
 export async function fetchContainerById(containerId: string | number): Promise<Container> {

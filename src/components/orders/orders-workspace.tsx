@@ -40,6 +40,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
@@ -234,7 +235,7 @@ export function OrdersWorkspace() {
       id: "id",
       label: "Order ID",
       cellClassName: "font-mono text-xs",
-      renderCell: (order) => (order.oldID > 0 ? order.oldID : order.id),
+      renderCell: (order) => order.id,
     },
     {
       id: "date",
@@ -341,18 +342,20 @@ export function OrdersWorkspace() {
       defaultVisible: false,
       renderCell: (order) => order.employee?.name.trim() || "—",
     },
-    {
-      id: "oldID",
-      label: "oldID",
-      defaultVisible: false,
-      cellClassName: "font-mono text-xs",
-      renderCell: (order) => (order.oldID > 0 ? order.oldID : "—"),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("orders-v2", tableColumns);
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
+  const isSearchPending = filters.query.trim() !== deferredQuery.trim();
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    isSearchPending,
+    matched: totalOrders,
+    noun: "orders",
+    isLoading: isFetching && orders.length === 0,
+  });
 
   return (
     <div>
@@ -385,12 +388,13 @@ export function OrdersWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}

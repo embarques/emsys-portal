@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   createTruck,
@@ -10,6 +10,9 @@ import {
   fetchTrucks,
   updateTruck,
 } from "@/lib/trucks/api/trucks-api";
+import { hasListTextSearch } from "@/lib/api/search-query";
+import { TRUCK_TABLE_FILTER_FIELDS } from "@/lib/trucks/filter-fields";
+import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import {
   DEFAULT_TRUCK_LIST_PARAMS,
   type TruckFormValues,
@@ -17,6 +20,14 @@ import {
   type TruckSearchFilter,
 } from "@/lib/trucks/types";
 import { queryKeys } from "@/lib/query/query-keys";
+
+function isTruckListFiltered(params: TruckListParams): boolean {
+  const hasRowFilters = (params.filterRows ?? []).some((row) =>
+    isCompleteFilterRow(row, TRUCK_TABLE_FILTER_FIELDS),
+  );
+
+  return hasListTextSearch(params.search) || hasRowFilters;
+}
 
 export function useTruckSearch(
   search: TruckSearchFilter | undefined,
@@ -37,10 +48,14 @@ export function useTruckSearch(
 }
 
 export function useTrucks(params: TruckListParams, options: { enabled?: boolean } = {}) {
+  const isFiltered = isTruckListFiltered(params);
+
   return useQuery({
     queryKey: queryKeys.trucks.list(params),
     queryFn: () => fetchTrucks(params),
     enabled: options.enabled ?? true,
+    placeholderData: keepPreviousData,
+    staleTime: isFiltered ? 0 : 60_000,
   });
 }
 

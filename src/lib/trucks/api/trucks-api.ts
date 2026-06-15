@@ -1,14 +1,14 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
-  buildApiSearchBody,
-  createTextSearchFilter,
-  hasListTextSearch,
-  resolveSearchField,
-  resolveSearchOperator,
-  type ApiSearchFilter,
+  buildResourceSearchFilterGroups,
+  buildStripeStyleSearchBody,
+  hasResourceListFilters,
 } from "@/lib/api/search-query";
+import { TRUCK_TABLE_FILTER_FIELDS } from "@/lib/trucks/filter-fields";
+import { TRUCK_BAR_OR_SEARCH_FIELDS } from "@/lib/trucks/search-fields";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   DEFAULT_TRUCK_LIST_PARAMS,
@@ -18,7 +18,34 @@ import {
   type TruckListParams,
 } from "@/lib/trucks/types";
 
-const TRUCK_LIST_SEARCH_FIELD = "name";
+function hasTruckListFilters(params: TruckListParams): boolean {
+  return hasResourceListFilters({
+    search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: TRUCK_TABLE_FILTER_FIELDS,
+  });
+}
+
+function buildTruckSearchBody(params: TruckListParams) {
+  return buildStripeStyleSearchBody({
+    sort: params.sort ?? DEFAULT_TRUCK_LIST_PARAMS.sort,
+    filterGroups: buildResourceSearchFilterGroups({
+      search: params.search,
+      barOrSearchFields: TRUCK_BAR_OR_SEARCH_FIELDS,
+      filterRows: params.filterRows,
+      tableFilterFields: TRUCK_TABLE_FILTER_FIELDS,
+    }),
+  });
+}
+
+function buildTrucksQuery(params: TruckListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_TRUCK_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_TRUCK_LIST_PARAMS.limit,
+    offset: params.offset,
+    sort: params.sort ?? DEFAULT_TRUCK_LIST_PARAMS.sort,
+  });
+}
 
 type ApiTruck = {
   id?: string;
@@ -91,58 +118,6 @@ function normalizePaginatedTrucks(payload: PaginatedApiEnvelope<unknown[]>): Pag
     resultsPerPage: payload.resultsPerPage ?? items.length,
     total: payload.total ?? items.length,
   };
-}
-
-function buildTruckSearchFilters(params: TruckListParams): ApiSearchFilter[] {
-  const filters: ApiSearchFilter[] = [];
-
-  if (params.search?.value.trim()) {
-    const textFilter = createTextSearchFilter(
-      resolveSearchField(params.search, TRUCK_LIST_SEARCH_FIELD),
-      params.search.value,
-      resolveSearchOperator(params.search),
-    );
-    if (textFilter) {
-      filters.push(textFilter);
-    }
-  }
-
-  if (params.fuelType && params.fuelType !== "all") {
-    filters.push({ field: "fuelType", operator: "eq", value: params.fuelType });
-  }
-
-  if (params.branch && params.branch !== "all") {
-    filters.push({ field: "branch", operator: "eq", value: params.branch });
-  }
-
-  return filters;
-}
-
-function shouldUseTruckSearch(params: TruckListParams): boolean {
-  return (
-    hasListTextSearch(params.search) ||
-    Boolean(params.fuelType && params.fuelType !== "all") ||
-    Boolean(params.branch && params.branch !== "all")
-  );
-}
-
-function buildTrucksQuery(params: TruckListParams): string {
-  return buildApiListQuery({
-    page: params.page ?? DEFAULT_TRUCK_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_TRUCK_LIST_PARAMS.limit,
-    offset: params.offset,
-    sort: params.sort ?? DEFAULT_TRUCK_LIST_PARAMS.sort,
-  });
-}
-
-function buildTruckSearchBody(params: TruckListParams) {
-  return buildApiSearchBody({
-    page: params.page ?? DEFAULT_TRUCK_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_TRUCK_LIST_PARAMS.limit,
-    offset: params.offset,
-    sort: params.sort ?? DEFAULT_TRUCK_LIST_PARAMS.sort,
-    filters: buildTruckSearchFilters(params),
-  });
 }
 
 function buildTruckWritePayload(
@@ -244,21 +219,16 @@ async function resolveCreatedTruck(
 }
 
 export async function fetchTrucks(params: TruckListParams = {}): Promise<PaginatedResult<Truck>> {
-  if (shouldUseTruckSearch(params)) {
-    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.TRUCKS}/search`,
-      buildTruckSearchBody(params),
-    );
-
-    return normalizePaginatedTrucks(response);
-  }
-
-  const query = buildTrucksQuery(params);
-  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
-    `${API_ENDPOINTS.TRUCKS}?${query}`,
-  );
-
-  return normalizePaginatedTrucks(response);
+  return fetchPaginatedResourceList({
+    endpoint: API_ENDPOINTS.TRUCKS,
+    page: params.page ?? DEFAULT_TRUCK_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_TRUCK_LIST_PARAMS.limit,
+    offset: params.offset,
+    isFiltered: hasTruckListFilters(params),
+    buildGetQuery: () => buildTrucksQuery(params),
+    buildSearchBody: () => buildTruckSearchBody(params),
+    normalize: normalizePaginatedTrucks,
+  });
 }
 
 export async function fetchTruckById(truckId: string): Promise<Truck> {

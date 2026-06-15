@@ -1,5 +1,6 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 
 export type UserPortalBranch = "usa" | "dr";
 
@@ -69,9 +70,7 @@ export type UserFormValues = {
 
 export type UserFilterState = {
   query: string;
-  branch: number | "all";
-  active: boolean | "all";
-  roleId: number | "all";
+  rows: TableFilterRowState[];
 };
 
 /** Matches GET /users filter operators from the API spec. */
@@ -95,6 +94,8 @@ export type UserListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: UserSearchFilter;
+  filterRows?: TableFilterRowState[];
+  /** @deprecated Use filterRows — kept for stats queries */
   branch?: number | "all";
   active?: boolean | "all";
   roleId?: number | "all";
@@ -187,7 +188,36 @@ export function createUserSearchFilter(
   field?: UserSearchField,
   operator: UserSearchOperator = "contains",
 ): UserSearchFilter | undefined {
-  return createApiListTextSearch(value, field, operator);
+  if (field) {
+    return createApiListTextSearch(value, field, operator);
+  }
+
+  return createListTextSearch(value);
+}
+
+export function buildUserListParams(input: {
+  page: number;
+  limit?: number;
+  query: string;
+  rows: TableFilterRowState[];
+}): UserListParams {
+  const params: UserListParams = {
+    ...DEFAULT_USER_LIST_PARAMS,
+    page: input.page,
+    limit: input.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
+  };
+
+  const search = createUserSearchFilter(input.query);
+  if (search) {
+    params.search = search;
+  }
+
+  const completeRows = input.rows.filter((row) => isCompleteFilterRow(row));
+  if (completeRows.length > 0) {
+    params.filterRows = completeRows;
+  }
+
+  return params;
 }
 
 export function getUserSearchSort(field: UserSearchField, direction: "asc" | "desc" = "asc"): string {

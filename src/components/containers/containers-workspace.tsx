@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -19,7 +19,14 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+} from "@/components/app-shell/table-directory-toolbar";
+import { CONTAINER_TABLE_FILTER_FIELDS } from "@/lib/containers/filter-fields";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,8 +57,8 @@ import {
 } from "@/lib/containers/hooks/use-containers";
 import {
   DEFAULT_CONTAINER_LIST_PARAMS,
+  buildContainerListParams,
   containerToFormValues,
-  createContainerSearchFilter,
   createEmptyContainerForm,
   suggestNextContainerName,
   type Container as ContainerRecord,
@@ -59,17 +66,22 @@ import {
   type ContainerFormValues,
 } from "@/lib/containers/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_CONTAINER_LIST_PARAMS.limit;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: ContainerFilterState = {
   query: "",
+  rows: [],
 };
 
 export function ContainersWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<ContainerFilterState>(defaultFilters);
-  const deferredQuery = useDeferredValue(filters.query);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [page, setPage] = useState(1);
   const [viewContainer, setViewContainer] = useState<ContainerRecord | null>(null);
@@ -78,16 +90,16 @@ export function ContainersWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<ContainerRecord | ContainerRecord[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const listParams = useMemo(() => {
-    const search = createContainerSearchFilter(deferredQuery);
-
-    return {
-      ...DEFAULT_CONTAINER_LIST_PARAMS,
-      page,
-      limit: PAGE_SIZE,
-      search,
-    };
-  }, [deferredQuery, page]);
+  const listParams = useMemo(
+    () =>
+      buildContainerListParams({
+        page,
+        limit: PAGE_SIZE,
+        query: debouncedQuery,
+        rows: filters.rows,
+      }),
+    [debouncedQuery, filters.rows, page],
+  );
 
   const { data, isLoading, isError, error, isFetching } = useContainers(listParams);
   const stats = useContainerStats();
@@ -284,6 +296,18 @@ export function ContainersWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("containers-v2", tableColumns);
+  const activeFilterCount = countCompleteFilterRows(filters.rows, CONTAINER_TABLE_FILTER_FIELDS);
+  const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    isSearchPending,
+    matched: totalContainers,
+    catalogTotal: stats.total,
+    noun: "containers",
+    isLoading: isFetching && containers.length === 0,
+    catalogLoading: stats.isLoading,
+  });
 
   return (
     <div>
@@ -316,19 +340,45 @@ export function ContainersWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}
                 onChange={(query) => {
-                  setFilters({ query });
+                  setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
                 placeholder="Search containers..."
               />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${containers.length} of ${totalContainers} containers`}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              >
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={CONTAINER_TABLE_FILTER_FIELDS}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  }}
+                />
+              </TableFilterPanel>
             }
           />
         </CardHeader>

@@ -78,3 +78,22 @@ export function normalizeApiSearchValueForField(field: string, value: string): s
 export function formatPhoneDisplayOrDash(value: string): string {
   return formatPhoneForDisplay(value) || "—";
 }
+
+/** Digits only, suitable for tel: and wa.me links. */
+export function getPhoneDialDigits(value: string): string {
+  return normalizeStoredPhone(value).replace(/\D/g, "");
+}
+
+/** Build a tel: href for calling, or null when the number is empty. */
+export function buildTelHref(value: string): string | null {
+  const digits = getPhoneDialDigits(value);
+  if (!digits) return null;
+  return `tel:+${digits}`;
+}
+
+/** Build a WhatsApp chat href, or null when the number is empty. */
+export function buildWhatsAppHref(value: string): string | null {
+  const digits = getPhoneDialDigits(value);
+  if (!digits) return null;
+  return `https://wa.me/${digits}`;
+}

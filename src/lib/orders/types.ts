@@ -29,7 +29,6 @@ export type PickupComment = {
 /** EMSYS pickup record from GET /pickups. */
 export type Order = {
   id: number;
-  oldID: number;
   date: string;
   createdAt: string;
   updatedAt: string;
@@ -54,7 +53,6 @@ export type OrderCommentFormValues = {
 
 export type OrderFormValues = {
   id: number;
-  oldID: number;
   date: string;
   completed: boolean;
   purpose: string;
@@ -80,16 +78,13 @@ export type OrderSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 
 export type OrderSearchField =
   | "id"
-  | "oldID"
   | "date"
   | "completed"
   | "purpose"
   | "sender.name"
   | "sender.phone1"
-  | "sender.oldID"
   | "receiver.name"
   | "receiver.phone1"
-  | "receiver.oldID"
   | "sector.id"
   | "branch.id"
   | "employee.id"
@@ -122,16 +117,13 @@ export const DEFAULT_ORDER_LIST_PARAMS = {
 
 export const ORDER_SEARCH_FIELDS: { value: OrderSearchField; label: string }[] = [
   { value: "id", label: "Order ID" },
-  { value: "oldID", label: "oldID" },
   { value: "date", label: "date" },
   { value: "completed", label: "completed" },
   { value: "purpose", label: "purpose" },
   { value: "sender.name", label: "sender.name" },
   { value: "sender.phone1", label: "sender.phone1" },
-  { value: "sender.oldID", label: "sender.oldID" },
   { value: "receiver.name", label: "receiver.name" },
   { value: "receiver.phone1", label: "receiver.phone1" },
-  { value: "receiver.oldID", label: "receiver.oldID" },
   { value: "sector.id", label: "sector.id" },
   { value: "branch.id", label: "branch.id" },
   { value: "employee.id", label: "employee.id" },
@@ -146,9 +138,6 @@ export function getOrderSearchOperatorsForField(field: OrderSearchField): OrderS
   if (
     field === "completed" ||
     field === "id" ||
-    field === "oldID" ||
-    field === "sender.oldID" ||
-    field === "receiver.oldID" ||
     field === "sector.id" ||
     field === "branch.id" ||
     field === "employee.id"
@@ -213,7 +202,6 @@ export function todayDateInputValue(): string {
 export function createEmptyOrderForm(): OrderFormValues {
   return {
     id: 0,
-    oldID: 0,
     date: todayDateInputValue(),
     completed: false,
     purpose: "",
@@ -252,7 +240,6 @@ export function orderCommentToFormValues(comment: PickupComment): OrderCommentFo
 export function orderToFormValues(order: Order): OrderFormValues {
   return {
     id: order.id,
-    oldID: order.oldID,
     date: order.date.slice(0, 10),
     completed: order.completed,
     purpose: order.purpose,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -33,16 +33,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
   TableDirectoryToolbar,
   TableFilterPanel,
-  TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
+import { USER_TABLE_FILTER_FIELDS } from "@/lib/users/filter-fields";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import type { DataTableColumn } from "@/lib/table/types";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
   formatUserBranchLabel,
   getUserActiveBadgeClass,
@@ -62,9 +66,8 @@ import {
 } from "@/lib/users/hooks/use-users";
 import {
   DEFAULT_USER_LIST_PARAMS,
-  USER_ROLE_OPTIONS,
+  buildUserListParams,
   createEmptyUserForm,
-  createUserSearchFilter,
   maskPassword,
   userToFormValues,
   type User,
@@ -73,19 +76,19 @@ import {
 } from "@/lib/users/types";
 
 const PAGE_SIZE = DEFAULT_USER_LIST_PARAMS.limit;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: UserFilterState = {
   query: "",
-  branch: "all",
-  active: "all",
-  roleId: "all",
+  rows: [],
 };
 
 export function UsersWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<UserFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const deferredQuery = useDeferredValue(filters.query);
+  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [viewUser, setViewUser] = useState<User | null>(null);
@@ -95,30 +98,20 @@ export function UsersWorkspace() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const listParams = useMemo(
-    () => {
-      const search = createUserSearchFilter(deferredQuery);
-
-      return {
-        ...DEFAULT_USER_LIST_PARAMS,
+    () =>
+      buildUserListParams({
         page,
         limit: PAGE_SIZE,
-        search,
-        branch: filters.branch,
-        active: filters.active,
-        roleId: filters.roleId,
-      };
-    },
-    [
-      deferredQuery,
-      filters.active,
-      filters.branch,
-      filters.roleId,
-      page,
-    ],
+        query: debouncedQuery,
+        rows: filters.rows,
+      }),
+    [debouncedQuery, filters.rows, page],
   );
 
   const { data, isLoading, isError, error, isFetching } = useUsers(listParams);
-  const { data: branchesData } = useBranchPicker();
+  const { data: branchesData, isLoading: branchesLoading } = useBranchPicker(200, {
+    enabled: filtersOpen,
+  });
   const stats = useUserStats();
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
@@ -134,46 +127,14 @@ export function UsersWorkspace() {
   const isSaving =
     createUserMutation.isPending || updateUserMutation.isPending || deleteUsersMutation.isPending;
 
-  const roleFilters = useMemo(() => {
-    const discoveredRoles = new Map<number, string>();
-    for (const user of users) {
-      if (user.role.id > 0) {
-        discoveredRoles.set(user.role.id, user.role.name || `Role ${user.role.id}`);
-      }
-    }
-
-    for (const option of USER_ROLE_OPTIONS) {
-      if (!discoveredRoles.has(option.id)) {
-        discoveredRoles.set(option.id, option.label);
-      }
-    }
-
-    return [
-      { value: "all" as const, label: "All roles" },
-      ...Array.from(discoveredRoles.entries()).map(([id, label]) => ({
-        value: id,
-        label,
-      })),
-    ];
-  }, [users]);
-
-  const branchFilters = useMemo(() => {
+  const branchFilterOptions = useMemo(() => {
     const apiBranches = branchesData?.items ?? [];
 
-    return [
-      { value: "all" as const, label: "All branches" },
-      ...apiBranches.map((branch) => ({
-        value: branch.id,
-        label: formatBranchFilterLabel(branch),
-      })),
-    ];
+    return apiBranches.map((branch) => ({
+      value: String(branch.id),
+      label: formatBranchFilterLabel(branch),
+    }));
   }, [branchesData?.items]);
-
-  const activeFilters: { value: UserFilterState["active"]; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: true, label: "Active" },
-    { value: false, label: "Inactive" },
-  ];
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -393,15 +354,18 @@ export function UsersWorkspace() {
 
   const columnVisibility = useColumnVisibility("users", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
-  const activeFilterCount =
-    (filters.branch !== "all" ? 1 : 0) +
-    (filters.active !== "all" ? 1 : 0) +
-    (filters.roleId !== "all" ? 1 : 0);
-  const hasActiveFilters =
-    Boolean(filters.query.trim()) ||
-    filters.branch !== "all" ||
-    filters.active !== "all" ||
-    filters.roleId !== "all";
+  const activeFilterCount = countCompleteFilterRows(filters.rows, USER_TABLE_FILTER_FIELDS);
+  const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    isSearchPending,
+    matched: totalUsers,
+    catalogTotal: stats.total,
+    noun: "users",
+    isLoading: isFetching && users.length === 0,
+    catalogLoading: stats.isLoading,
+  });
 
   return (
     <div>
@@ -434,12 +398,13 @@ export function UsersWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}
@@ -462,56 +427,18 @@ export function UsersWorkspace() {
                     : undefined
                 }
               >
-            <TableFilterSection label="Branch">
-              {branchFilters.map((option) => (
-                <Button
-                  key={String(option.value)}
-                  type="button"
-                  size="sm"
-                  variant={filters.branch === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, branch: option.value }));
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={USER_TABLE_FILTER_FIELDS}
+                  dynamicOptions={{
+                    branches: branchesLoading ? [] : branchFilterOptions,
+                  }}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
                     setPage(1);
                   }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
-
-            <TableFilterSection label="Active">
-              {activeFilters.map((option) => (
-                <Button
-                  key={String(option.value)}
-                  type="button"
-                  size="sm"
-                  variant={filters.active === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, active: option.value }));
-                    setPage(1);
-                  }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
-
-            <TableFilterSection label="Role">
-              {roleFilters.map((option) => (
-                <Button
-                  key={String(option.value)}
-                  type="button"
-                  size="sm"
-                  variant={filters.roleId === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, roleId: option.value }));
-                    setPage(1);
-                  }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
+                />
               </TableFilterPanel>
             }
           />

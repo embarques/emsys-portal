@@ -36,7 +36,6 @@ export type CustomerBranch = {
 
 export type Customer = {
   id: string;
-  oldID: number;
   name: string;
   customerType: number | null;
   phones: RecordPhone[];
@@ -99,7 +98,6 @@ export type CustomerAddressFormValues = {
 
 export type CustomerFormValues = {
   id: string;
-  oldID: number;
   name: string;
   customerType: number | null;
   phones: RecordPhone[];
@@ -313,7 +311,6 @@ export function createEmptyCustomerForm(): CustomerFormValues {
 
   return {
     id: "",
-    oldID: 0,
     name: "",
     customerType: CUSTOMER_TYPE_SENDER,
     phones: createDefaultRecordPhones(),
@@ -490,7 +487,6 @@ export function customerToFormValues(customer: Customer): CustomerFormValues {
 
   return normalizeCustomerFormValues({
     id: customer.id,
-    oldID: customer.oldID,
     name: customer.name,
     customerType: customer.customerType,
     phones: customer.phones.map((phone) => ({ ...phone })),

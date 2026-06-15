@@ -1,14 +1,15 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
-import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
+import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
+import { buildApiListQuery } from "@/lib/api/list-query";
 import {
-  buildApiSearchBody,
-  createTextSearchFilter,
-  hasListTextSearch,
-  resolveSearchField,
-  resolveSearchOperator,
+  buildResourceSearchFilterGroups,
+  buildStripeStyleSearchBody,
+  hasResourceListFilters,
   type ApiSearchFilter,
 } from "@/lib/api/search-query";
+import { BRANCH_TABLE_FILTER_FIELDS } from "@/lib/branches/filter-fields";
+import { BRANCH_BAR_OR_SEARCH_FIELDS } from "@/lib/branches/search-fields";
 import {
   buildApiAddressPayload,
   type ApiAddressPayload,
@@ -26,7 +27,44 @@ import {
 } from "@/lib/branches/types";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 
-const BRANCH_LIST_SEARCH_FIELD = "name";
+function buildBranchChipFilters(params: BranchListParams): ApiSearchFilter[] {
+  if (params.type && params.type !== "all") {
+    return [{ field: "type", operator: "eq", value: params.type }];
+  }
+
+  return [];
+}
+
+function hasBranchListFilters(params: BranchListParams): boolean {
+  return hasResourceListFilters({
+    search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: BRANCH_TABLE_FILTER_FIELDS,
+    hasChipFilters: buildBranchChipFilters(params).length > 0,
+  });
+}
+
+function buildBranchSearchBody(params: BranchListParams) {
+  return buildStripeStyleSearchBody({
+    sort: params.sort ?? DEFAULT_BRANCH_LIST_PARAMS.sort,
+    filterGroups: buildResourceSearchFilterGroups({
+      search: params.search,
+      barOrSearchFields: BRANCH_BAR_OR_SEARCH_FIELDS,
+      filterRows: params.filterRows,
+      tableFilterFields: BRANCH_TABLE_FILTER_FIELDS,
+      chipFilters: buildBranchChipFilters(params),
+    }),
+  });
+}
+
+function buildBranchesQuery(params: BranchListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_BRANCH_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_BRANCH_LIST_PARAMS.limit,
+    offset: params.offset,
+    sort: params.sort ?? DEFAULT_BRANCH_LIST_PARAMS.sort,
+  });
+}
 
 type ApiAddress = {
   address1?: string;
@@ -169,45 +207,6 @@ function normalizePaginatedBranches(payload: PaginatedApiEnvelope<unknown[]>): P
     resultsPerPage: payload.resultsPerPage ?? items.length,
     total: payload.total ?? items.length,
   };
-}
-
-function buildBranchSearchFilters(params: BranchListParams): ApiSearchFilter[] {
-  const filters: ApiSearchFilter[] = [];
-
-  if (params.search?.value.trim()) {
-    const textFilter = createTextSearchFilter(
-      resolveSearchField(params.search, BRANCH_LIST_SEARCH_FIELD),
-      params.search.value,
-      resolveSearchOperator(params.search),
-    );
-    if (textFilter) {
-      filters.push(textFilter);
-    }
-  }
-
-  if (params.type && params.type !== "all") {
-    filters.push({ field: "type", operator: "eq", value: params.type });
-  }
-
-  return filters;
-}
-
-function resolveBranchListFilter(params: BranchListParams): ApiListFieldFilter | undefined {
-  if (params.type && params.type !== "all") {
-    return { field: "type", operator: "eq", value: params.type };
-  }
-
-  return undefined;
-}
-
-function buildBranchesQuery(params: BranchListParams): string {
-  return buildApiListQuery({
-    page: params.page ?? DEFAULT_BRANCH_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_BRANCH_LIST_PARAMS.limit,
-    offset: params.offset,
-    sort: params.sort ?? DEFAULT_BRANCH_LIST_PARAMS.sort,
-    filter: resolveBranchListFilter(params),
-  });
 }
 
 function buildBranchSettingsPayload(settings: BranchSettings): ApiBranchSettingsPayload | undefined {
@@ -372,32 +371,17 @@ async function resolveCreatedBranch(
   throw new Error(message?.trim() || "Unable to create branch.");
 }
 
-function buildBranchSearchBody(params: BranchListParams) {
-  return buildApiSearchBody({
+export async function fetchBranches(params: BranchListParams = {}): Promise<PaginatedResult<Branch>> {
+  return fetchPaginatedResourceList({
+    endpoint: API_ENDPOINTS.BRANCHES,
     page: params.page ?? DEFAULT_BRANCH_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_BRANCH_LIST_PARAMS.limit,
     offset: params.offset,
-    sort: params.sort ?? DEFAULT_BRANCH_LIST_PARAMS.sort,
-    filters: buildBranchSearchFilters(params),
+    isFiltered: hasBranchListFilters(params),
+    buildGetQuery: () => buildBranchesQuery(params),
+    buildSearchBody: () => buildBranchSearchBody(params),
+    normalize: normalizePaginatedBranches,
   });
-}
-
-export async function fetchBranches(params: BranchListParams = {}): Promise<PaginatedResult<Branch>> {
-  if (hasListTextSearch(params.search)) {
-    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.BRANCHES}/search`,
-      buildBranchSearchBody(params),
-    );
-
-    return normalizePaginatedBranches(response);
-  }
-
-  const query = buildBranchesQuery(params);
-  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
-    `${API_ENDPOINTS.BRANCHES}?${query}`,
-  );
-
-  return normalizePaginatedBranches(response);
 }
 
 export async function fetchBranchById(branchId: string | number): Promise<Branch> {

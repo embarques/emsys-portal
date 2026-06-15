@@ -1,5 +1,6 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 export type BranchAddress = {
@@ -77,7 +78,7 @@ export type BranchSearchFilter = ApiListTextSearch;
 
 export type BranchFilterState = {
   query: string;
-  type: string;
+  rows: TableFilterRowState[];
 };
 
 export type BranchListParams = {
@@ -86,6 +87,8 @@ export type BranchListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: BranchSearchFilter;
+  filterRows?: TableFilterRowState[];
+  /** @deprecated Use filterRows */
   type?: string;
 };
 
@@ -162,6 +165,31 @@ export function createEmptyBranchForm(): BranchFormValues {
 
 export function createBranchSearchFilter(value: string): BranchSearchFilter | undefined {
   return createListTextSearch(value);
+}
+
+export function buildBranchListParams(input: {
+  page: number;
+  limit?: number;
+  query: string;
+  rows: TableFilterRowState[];
+}): BranchListParams {
+  const params: BranchListParams = {
+    ...DEFAULT_BRANCH_LIST_PARAMS,
+    page: input.page,
+    limit: input.limit ?? DEFAULT_BRANCH_LIST_PARAMS.limit,
+  };
+
+  const search = createBranchSearchFilter(input.query);
+  if (search) {
+    params.search = search;
+  }
+
+  const completeRows = input.rows.filter((row) => isCompleteFilterRow(row));
+  if (completeRows.length > 0) {
+    params.filterRows = completeRows;
+  }
+
+  return params;
 }
 
 export function branchToFormValues(branch: Branch): BranchFormValues {

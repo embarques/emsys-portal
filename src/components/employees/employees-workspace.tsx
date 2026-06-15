@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -32,11 +32,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
   TableDirectoryToolbar,
   TableFilterPanel,
-  TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
+import { EMPLOYEE_TABLE_FILTER_FIELDS } from "@/lib/employees/filter-fields";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { getPrimaryPhoneNumber } from "@/lib/phones/phones";
@@ -62,8 +65,7 @@ import {
 } from "@/lib/employees/hooks/use-employees";
 import {
   DEFAULT_EMPLOYEE_LIST_PARAMS,
-  EMPLOYEE_DEPARTMENTS,
-  createEmployeeSearchFilter,
+  buildEmployeeListParams,
   createEmptyEmployeeForm,
   employeeToFormValues,
   type Employee,
@@ -71,21 +73,22 @@ import {
   type EmployeeFormValues,
 } from "@/lib/employees/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_EMPLOYEE_LIST_PARAMS.limit;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: EmployeeFilterState = {
   query: "",
-  branch: "all",
-  active: "all",
-  department: "all",
+  rows: [],
 };
 
 export function EmployeesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<EmployeeFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const deferredQuery = useDeferredValue(filters.query);
+  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
@@ -95,30 +98,20 @@ export function EmployeesWorkspace() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const listParams = useMemo(
-    () => {
-      const search = createEmployeeSearchFilter(deferredQuery);
-
-      return {
-        ...DEFAULT_EMPLOYEE_LIST_PARAMS,
+    () =>
+      buildEmployeeListParams({
         page,
         limit: PAGE_SIZE,
-        search,
-        branch: filters.branch,
-        active: filters.active,
-        department: filters.department,
-      };
-    },
-    [
-      deferredQuery,
-      filters.branch,
-      filters.department,
-      filters.active,
-      page,
-    ],
+        query: debouncedQuery,
+        rows: filters.rows,
+      }),
+    [debouncedQuery, filters.rows, page],
   );
 
   const { data, isLoading, isError, error, isFetching } = useEmployees(listParams);
-  const { data: branchesData } = useBranchPicker();
+  const { data: branchesData, isLoading: branchesLoading } = useBranchPicker(200, {
+    enabled: filtersOpen,
+  });
   const stats = useEmployeeStats();
   const createEmployeeMutation = useCreateEmployee();
   const updateEmployeeMutation = useUpdateEmployee();
@@ -229,28 +222,14 @@ export function EmployeesWorkspace() {
     },
   ];
 
-  const branchFilters = useMemo(() => {
+  const branchFilterOptions = useMemo(() => {
     const apiBranches = branchesData?.items ?? [];
 
-    return [
-      { value: "all" as const, label: "All branches" },
-      ...apiBranches.map((branch) => ({
-        value: branch.id,
-        label: formatBranchFilterLabel(branch),
-      })),
-    ];
+    return apiBranches.map((branch) => ({
+      value: String(branch.id),
+      label: formatBranchFilterLabel(branch),
+    }));
   }, [branchesData?.items]);
-
-  const activeFilters: { value: EmployeeFilterState["active"]; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: true, label: "Active" },
-    { value: false, label: "Inactive" },
-  ];
-
-  const departmentFilters = [
-    { value: "all", label: "All departments" },
-    ...EMPLOYEE_DEPARTMENTS.map((department) => ({ value: department, label: department })),
-  ];
 
   const tableColumns: DataTableColumn<Employee>[] = [
     {
@@ -411,15 +390,18 @@ export function EmployeesWorkspace() {
 
   const columnVisibility = useColumnVisibility("employees", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
-  const activeFilterCount =
-    (filters.branch !== "all" ? 1 : 0) +
-    (filters.active !== "all" ? 1 : 0) +
-    (filters.department !== "all" ? 1 : 0);
-  const hasActiveFilters =
-    Boolean(filters.query.trim()) ||
-    filters.branch !== "all" ||
-    filters.active !== "all" ||
-    filters.department !== "all";
+  const activeFilterCount = countCompleteFilterRows(filters.rows, EMPLOYEE_TABLE_FILTER_FIELDS);
+  const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    isSearchPending,
+    matched: totalEmployees,
+    catalogTotal: stats.total,
+    noun: "employees",
+    isLoading: isFetching && employees.length === 0,
+    catalogLoading: stats.isLoading,
+  });
 
   return (
     <div>
@@ -452,12 +434,13 @@ export function EmployeesWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}
@@ -480,56 +463,18 @@ export function EmployeesWorkspace() {
                     : undefined
                 }
               >
-            <TableFilterSection label="Branch">
-              {branchFilters.map((option) => (
-                <Button
-                  key={String(option.value)}
-                  type="button"
-                  size="sm"
-                  variant={filters.branch === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, branch: option.value }));
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={EMPLOYEE_TABLE_FILTER_FIELDS}
+                  dynamicOptions={{
+                    branches: branchesLoading ? [] : branchFilterOptions,
+                  }}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
                     setPage(1);
                   }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
-
-            <TableFilterSection label="Active">
-              {activeFilters.map((option) => (
-                <Button
-                  key={String(option.value)}
-                  type="button"
-                  size="sm"
-                  variant={filters.active === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, active: option.value }));
-                    setPage(1);
-                  }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
-
-            <TableFilterSection label="Department">
-              {departmentFilters.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  size="sm"
-                  variant={filters.department === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, department: option.value }));
-                    setPage(1);
-                  }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
+                />
               </TableFilterPanel>
             }
           />

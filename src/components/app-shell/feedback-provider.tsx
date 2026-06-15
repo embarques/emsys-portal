@@ -58,7 +58,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   return (
     <FeedbackContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[300] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0">
+      <div className="pointer-events-none fixed right-4 top-4 z-[300] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0">
         {toasts.map((toast) => (
           <ToastCard
             key={toast.id}
@@ -89,32 +89,31 @@ function ToastCard({
   return (
     <div
       className={cn(
-        "pointer-events-auto flex items-start gap-3 rounded-xl border p-4 shadow-lg",
-        "animate-in slide-in-from-bottom-4 fade-in duration-300",
-        tone === "success" && "border-emerald-500/30 bg-emerald-500/10",
-        tone === "error" && "border-destructive/30 bg-destructive/10",
+        "pointer-events-auto flex items-start gap-3 rounded-xl border p-4 shadow-xl backdrop-blur-sm",
+        "animate-in slide-in-from-top-4 fade-in duration-300",
+        tone === "success" &&
+          "border-emerald-300 bg-emerald-50 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-50",
+        tone === "error" &&
+          "border-destructive/50 bg-red-50 text-destructive dark:border-destructive/60 dark:bg-red-950/95 dark:text-red-50",
       )}
       role={tone === "error" ? "alert" : "status"}
       aria-live={tone === "error" ? "assertive" : "polite"}
     >
       {tone === "error" ? (
-        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive dark:text-red-300" />
       ) : (
         <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
       )}
-      <p
-        className={cn(
-          "flex-1 text-sm font-medium",
-          tone === "success" && "text-emerald-950 dark:text-emerald-50",
-          tone === "error" && "text-destructive",
-        )}
-      >
-        {message}
-      </p>
+      <p className="flex-1 text-sm font-medium">{message}</p>
       <button
         type="button"
         onClick={onDismiss}
-        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className={cn(
+          "rounded-md p-1 transition-colors",
+          tone === "success" &&
+            "text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-900",
+          tone === "error" && "text-destructive hover:bg-red-100 dark:text-red-300 dark:hover:bg-red-900",
+        )}
         aria-label="Dismiss notification"
       >
         <X className="h-4 w-4" />

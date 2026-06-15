@@ -80,7 +80,6 @@ export type InvoicePaymentInput = {
 export type Invoice = {
   invoiceId: string;
   invoiceNumber: string;
-  oldID?: number;
   date: string;
   containerId: string;
   containerName?: string;

@@ -41,9 +41,6 @@ function CustomerCard({ title, customer }: { title: string; customer: Customer }
   return (
     <RecordViewSheetSection title={title} padding="relaxed">
       <p className="text-sm font-medium">{customer.name}</p>
-      {customer.oldID > 0 ? (
-        <p className="mt-1 text-xs text-muted-foreground">oldID: {customer.oldID}</p>
-      ) : null}
       {customer.IDNumber ? (
         <p className="text-xs text-muted-foreground">IDNumber: {customer.IDNumber}</p>
       ) : null}
@@ -86,7 +83,6 @@ export function OrderViewSheet({ order, orders, open, onOpenChange, onEdit, onDe
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Pickup">
             <RecordViewSheetDetailRow label="Order ID" value={String(order.id)} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("oldID")} value={order.oldID > 0 ? String(order.oldID) : "—"} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("date")} value={formatOrderDate(order.date)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("completed")} value={getOrderCompletedLabel(order.completed)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("purpose")} value={order.purpose || "—"} />

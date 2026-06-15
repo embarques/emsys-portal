@@ -1,5 +1,6 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import type { User } from "@/lib/users/types";
 import {
   createDefaultRecordPhones,
@@ -71,9 +72,7 @@ export type EmployeeFormValues = {
 
 export type EmployeeFilterState = {
   query: string;
-  branch: number | "all";
-  active: boolean | "all";
-  department: string;
+  rows: TableFilterRowState[];
 };
 
 /** Matches GET /employees filter operators from the API spec. */
@@ -107,6 +106,8 @@ export type EmployeeListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: EmployeeSearchFilter;
+  filterRows?: TableFilterRowState[];
+  /** @deprecated Use filterRows — kept for stats queries */
   branch?: number | "all";
   active?: boolean | "all";
   department?: string;
@@ -236,7 +237,36 @@ export function createEmployeeSearchFilter(
   field?: EmployeeSearchField,
   operator: EmployeeSearchOperator = "contains",
 ): EmployeeSearchFilter | undefined {
-  return createApiListTextSearch(value, field, operator);
+  if (field) {
+    return createApiListTextSearch(value, field, operator);
+  }
+
+  return createListTextSearch(value);
+}
+
+export function buildEmployeeListParams(input: {
+  page: number;
+  limit?: number;
+  query: string;
+  rows: TableFilterRowState[];
+}): EmployeeListParams {
+  const params: EmployeeListParams = {
+    ...DEFAULT_EMPLOYEE_LIST_PARAMS,
+    page: input.page,
+    limit: input.limit ?? DEFAULT_EMPLOYEE_LIST_PARAMS.limit,
+  };
+
+  const search = createEmployeeSearchFilter(input.query);
+  if (search) {
+    params.search = search;
+  }
+
+  const completeRows = input.rows.filter((row) => isCompleteFilterRow(row));
+  if (completeRows.length > 0) {
+    params.filterRows = completeRows;
+  }
+
+  return params;
 }
 
 export function getEmployeeSearchSort(

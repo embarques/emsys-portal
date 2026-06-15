@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -31,11 +31,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
   TableDirectoryToolbar,
   TableFilterPanel,
-  TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
+import { TRUCK_TABLE_FILTER_FIELDS } from "@/lib/trucks/filter-fields";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
@@ -55,30 +58,30 @@ import {
 } from "@/lib/trucks/hooks/use-trucks";
 import {
   DEFAULT_TRUCK_LIST_PARAMS,
-  TRUCK_BRANCH_OPTIONS,
-  TRUCK_FUEL_TYPES,
+  buildTruckListParams,
   createEmptyTruckForm,
-  createTruckSearchFilter,
   truckToFormValues,
   type Truck,
   type TruckFilterState,
   type TruckFormValues,
 } from "@/lib/trucks/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_TRUCK_LIST_PARAMS.limit;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: TruckFilterState = {
   query: "",
-  fuelType: "all",
-  branch: "all",
+  rows: [],
 };
 
 export function TrucksWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<TruckFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const deferredQuery = useDeferredValue(filters.query);
+  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [viewTruck, setViewTruck] = useState<Truck | null>(null);
@@ -87,20 +90,16 @@ export function TrucksWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Truck | Truck[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const listParams = useMemo(() => {
-    const hasSearch = Boolean(deferredQuery.trim());
-    const hasFuelFilter = filters.fuelType !== "all";
-    const hasBranchFilter = filters.branch !== "all";
-
-    return {
-      ...DEFAULT_TRUCK_LIST_PARAMS,
-      page,
-      limit: PAGE_SIZE,
-      ...(hasSearch ? { search: createTruckSearchFilter(deferredQuery) } : {}),
-      ...(hasFuelFilter ? { fuelType: filters.fuelType } : {}),
-      ...(hasBranchFilter ? { branch: filters.branch } : {}),
-    };
-  }, [deferredQuery, filters.branch, filters.fuelType, page]);
+  const listParams = useMemo(
+    () =>
+      buildTruckListParams({
+        page,
+        limit: PAGE_SIZE,
+        query: debouncedQuery,
+        rows: filters.rows,
+      }),
+    [debouncedQuery, filters.rows, page],
+  );
 
   const { data, isLoading, isError, error, isFetching } = useTrucks(listParams);
   const createTruckMutation = useCreateTruck();
@@ -203,16 +202,6 @@ export function TrucksWorkspace() {
     }
   }
 
-  const fuelTypeFilters: { value: TruckFilterState["fuelType"]; label: string }[] = [
-    { value: "all", label: "All" },
-    ...TRUCK_FUEL_TYPES,
-  ];
-
-  const branchFilters: { value: TruckFilterState["branch"]; label: string }[] = [
-    { value: "all", label: "All" },
-    ...TRUCK_BRANCH_OPTIONS,
-  ];
-
   const tableColumns: DataTableColumn<Truck>[] = [
     {
       id: "id",
@@ -287,10 +276,16 @@ export function TrucksWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("trucks-v2", tableColumns);
-  const activeFilterCount =
-    (filters.fuelType !== "all" ? 1 : 0) + (filters.branch !== "all" ? 1 : 0);
-  const hasActiveFilters =
-    Boolean(filters.query.trim()) || filters.fuelType !== "all" || filters.branch !== "all";
+  const activeFilterCount = countCompleteFilterRows(filters.rows, TRUCK_TABLE_FILTER_FIELDS);
+  const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    isSearchPending,
+    matched: totalTrucks,
+    noun: "trucks",
+    isLoading: isFetching && trucks.length === 0,
+  });
 
   return (
     <div>
@@ -323,12 +318,13 @@ export function TrucksWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}
@@ -351,39 +347,15 @@ export function TrucksWorkspace() {
                     : undefined
                 }
               >
-                <TableFilterSection label="Fuel type">
-                  {fuelTypeFilters.map((option) => (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      size="sm"
-                      variant={filters.fuelType === option.value ? "default" : "outline"}
-                      onClick={() => {
-                        setFilters((current) => ({ ...current, fuelType: option.value }));
-                        setPage(1);
-                      }}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </TableFilterSection>
-
-                <TableFilterSection label="Branch">
-                  {branchFilters.map((option) => (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      size="sm"
-                      variant={filters.branch === option.value ? "default" : "outline"}
-                      onClick={() => {
-                        setFilters((current) => ({ ...current, branch: option.value }));
-                        setPage(1);
-                      }}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </TableFilterSection>
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={TRUCK_TABLE_FILTER_FIELDS}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  }}
+                />
               </TableFilterPanel>
             }
           />

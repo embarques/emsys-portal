@@ -78,7 +78,7 @@ export function SenderOrderHistorySection({
                       )}
                     >
                       <td className="px-3 py-2 font-mono text-xs">
-                        {order.oldID > 0 ? order.oldID : order.id}
+                        {order.id}
                         {isCurrent ? (
                           <span className="ml-2 text-[10px] font-sans text-primary">Current</span>
                         ) : null}

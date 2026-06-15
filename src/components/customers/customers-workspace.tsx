@@ -39,7 +39,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
-import { formatFilteredCountSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { getPrimaryPhoneNumber } from "@/lib/phones/phones";
@@ -408,17 +408,16 @@ export function CustomersWorkspace() {
   const isListFiltered =
     Boolean(debouncedQuery.trim()) || countCompleteFilterRows(filters.rows) > 0;
 
-  const searchResultHint = filters.query.trim()
-    ? isSearchPending
-      ? "Searching customers…"
-      : formatFilteredCountSummary({
-          matched: totalCustomers,
-          catalogTotal: stats.total,
-          noun: "customers",
-          isLoading: isFetching && customers.length === 0,
-          catalogLoading: stats.isLoading,
-        })
-    : null;
+  const searchResultHint = buildToolbarSearchSummary({
+    isFiltered: isListFiltered,
+    query: filters.query,
+    isSearchPending,
+    matched: totalCustomers,
+    catalogTotal: stats.total,
+    noun: "customers",
+    isLoading: isFetching && customers.length === 0,
+    catalogLoading: stats.isLoading,
+  });
 
   const listSummary = formatPaginatedListSummary({
     itemCountOnPage: customers.length,
@@ -472,7 +471,7 @@ export function CustomersWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}

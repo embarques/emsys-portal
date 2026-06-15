@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   createUser,
@@ -10,6 +10,9 @@ import {
   fetchUsers,
   updateUser,
 } from "@/lib/users/api/users-api";
+import { hasListTextSearch } from "@/lib/api/search-query";
+import { USER_TABLE_FILTER_FIELDS } from "@/lib/users/filter-fields";
+import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import {
   createUserSearchFilter,
   DEFAULT_USER_LIST_PARAMS,
@@ -20,6 +23,18 @@ import {
   type UserSearchOperator,
 } from "@/lib/users/types";
 import { queryKeys } from "@/lib/query/query-keys";
+
+function isUserListFiltered(params: UserListParams): boolean {
+  const hasRowFilters = (params.filterRows ?? []).some((row) =>
+    isCompleteFilterRow(row, USER_TABLE_FILTER_FIELDS),
+  );
+  const hasChipFilters =
+    (params.branch !== undefined && params.branch !== "all") ||
+    (params.active !== undefined && params.active !== "all") ||
+    (params.roleId !== undefined && params.roleId !== "all");
+
+  return hasListTextSearch(params.search) || hasRowFilters || hasChipFilters;
+}
 
 type UserSearchOptions = {
   enabled?: boolean;
@@ -77,9 +92,13 @@ export function useUserAutocomplete(
 }
 
 export function useUsers(params: UserListParams) {
+  const isFiltered = isUserListFiltered(params);
+
   return useQuery({
     queryKey: queryKeys.users.list(params),
     queryFn: () => fetchUsers(params),
+    placeholderData: keepPreviousData,
+    staleTime: isFiltered ? 0 : 60_000,
   });
 }
 

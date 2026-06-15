@@ -2,7 +2,11 @@ import {
   type ApiListSortInput,
   type SortDirection,
 } from "@/lib/api/list-query";
-import type { TableFilterFieldDefinition, TableFilterRowState } from "@/lib/table/filter-builder";
+import {
+  isCompleteFilterRow,
+  type TableFilterFieldDefinition,
+  type TableFilterRowState,
+} from "@/lib/table/filter-builder";
 import { normalizeApiSearchValueForField } from "@/lib/utils/phone";
 
 export type ApiSearchOperator =
@@ -121,13 +125,6 @@ export function createOrTextSearchFilterGroup(
   for (const field of fields) {
     const normalizedField = field.trim();
     if (!normalizedField) continue;
-
-    if (normalizedField === "oldID") {
-      if (/^\d+$/.test(trimmed)) {
-        filters.push({ field: normalizedField, operator: "eq", value: trimmed });
-      }
-      continue;
-    }
 
     const normalizedValue = normalizeApiSearchValueForField(normalizedField, trimmed);
     if (!normalizedValue) continue;
@@ -387,4 +384,72 @@ export function buildApiFilterNodeFromTableRows(
   }
 
   return result;
+}
+
+export function hasResourceListFilters(input: {
+  search?: ListTextSearch;
+  filterRows?: TableFilterRowState[];
+  tableFilterFields?: TableFilterFieldDefinition[];
+  hasChipFilters?: boolean;
+}): boolean {
+  return (
+    hasListTextSearch(input.search) ||
+    (input.filterRows ?? []).some((row) => isCompleteFilterRow(row, input.tableFilterFields)) ||
+    Boolean(input.hasChipFilters)
+  );
+}
+
+export function buildResourceSearchFilterGroups(input: {
+  search?: ApiListTextSearch;
+  barOrSearchFields: readonly string[];
+  filterRows?: TableFilterRowState[];
+  tableFilterFields: TableFilterFieldDefinition[];
+  chipFilters?: ApiSearchFilter[];
+  expandNode?: (node: ApiSearchFilterNode) => ApiSearchFilterNode;
+}): ApiSearchFilterGroup[] {
+  const groups: ApiSearchFilterGroup[] = [];
+  const expandNode = input.expandNode ?? ((node) => node);
+
+  if (input.search?.value.trim()) {
+    if (input.search.field) {
+      const explicitFilter = createTextSearchFilter(
+        resolveSearchField(input.search, input.barOrSearchFields[0] ?? "name"),
+        input.search.value,
+        resolveSearchOperator(input.search),
+      );
+      if (explicitFilter) {
+        groups.push({ operator: "and", filters: [explicitFilter] });
+      }
+    } else {
+      const orGroup = createOrTextSearchFilterGroup(
+        input.search.value,
+        [...input.barOrSearchFields],
+        "contains",
+      );
+      if (orGroup) {
+        groups.push(orGroup);
+      }
+    }
+  }
+
+  const rowFilterNode = buildApiFilterNodeFromTableRows(
+    input.filterRows ?? [],
+    input.tableFilterFields,
+  );
+  const expandedRowFilter = rowFilterNode ? expandNode(rowFilterNode) : null;
+
+  if (expandedRowFilter) {
+    if (isApiSearchFilter(expandedRowFilter)) {
+      groups.push({ operator: "and", filters: [expandedRowFilter] });
+    } else {
+      groups.push(expandedRowFilter);
+    }
+  }
+
+  const chipFilters = input.chipFilters ?? [];
+  if (chipFilters.length > 0) {
+    groups.push({ operator: "and", filters: chipFilters });
+  }
+
+  return groups;
 }

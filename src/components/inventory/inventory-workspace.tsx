@@ -59,6 +59,7 @@ import {
   type InventoryItem,
 } from "@/lib/inventory/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 8;
@@ -268,6 +269,13 @@ export function InventoryWorkspace() {
     filters.status !== "all" ||
     filters.location !== "all" ||
     filters.category !== "all";
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    matched: filteredItems.length,
+    catalogTotal: items.length,
+    noun: "items",
+  });
 
   return (
     <div>
@@ -300,12 +308,13 @@ export function InventoryWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}

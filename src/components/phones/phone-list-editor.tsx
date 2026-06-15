@@ -57,7 +57,13 @@ export function PhoneListEditor({
           <div className="mb-3 flex items-center justify-between gap-2">
             <p className="text-sm font-medium">Phone {index + 1}</p>
             {entries.length > 1 ? (
-              <Button type="button" variant="ghost" size="sm" onClick={() => removePhone(index)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => removePhone(index)}
+              >
                 <Trash2 className="size-4" />
                 Remove
               </Button>
@@ -106,7 +112,13 @@ export function PhoneListEditor({
         </div>
       ))}
 
-      <Button type="button" variant="outline" size="sm" onClick={addPhone}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+        onClick={addPhone}
+      >
         <Plus className="size-4" />
         Add phone
       </Button>

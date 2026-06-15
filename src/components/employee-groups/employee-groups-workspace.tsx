@@ -58,6 +58,7 @@ import {
   type EmployeeGroupFormValues,
 } from "@/lib/employee-groups/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = 8;
 
@@ -222,6 +223,13 @@ export function EmployeeGroupsWorkspace() {
   const columnVisibility = useColumnVisibility("employee-groups", tableColumns);
   const activeFilterCount = filters.branch !== "all" ? 1 : 0;
   const hasActiveFilters = Boolean(filters.query.trim()) || filters.branch !== "all";
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    matched: filteredGroups.length,
+    catalogTotal: groups.length,
+    noun: "groups",
+  });
 
   return (
     <div>
@@ -254,12 +262,13 @@ export function EmployeeGroupsWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}

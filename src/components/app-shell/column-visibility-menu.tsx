@@ -43,7 +43,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
       <Button
         type="button"
         variant="outline"
-        className="h-9 shrink-0 gap-2 px-3 text-sm font-medium shadow-xs"
+        className="h-9 shrink-0 gap-2 border-input px-3 text-sm font-medium shadow-xs"
         onClick={() => setOpen(true)}
       >
         <Columns3 className="h-4 w-4" />

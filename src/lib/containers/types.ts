@@ -1,5 +1,6 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 
 export type Container = {
   id: number;
@@ -51,6 +52,7 @@ export type ContainerSearchFilter = ApiListTextSearch;
 
 export type ContainerFilterState = {
   query: string;
+  rows: TableFilterRowState[];
 };
 
 export type ContainerListParams = {
@@ -59,6 +61,7 @@ export type ContainerListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: ContainerSearchFilter;
+  filterRows?: TableFilterRowState[];
 };
 
 /** GET /containers?page=1&limit=40&offset=0&sort=name:desc */
@@ -102,6 +105,31 @@ export function createEmptyContainerForm(): ContainerFormValues {
 
 export function createContainerSearchFilter(value: string): ContainerSearchFilter | undefined {
   return createListTextSearch(value);
+}
+
+export function buildContainerListParams(input: {
+  page: number;
+  limit?: number;
+  query: string;
+  rows: TableFilterRowState[];
+}): ContainerListParams {
+  const params: ContainerListParams = {
+    ...DEFAULT_CONTAINER_LIST_PARAMS,
+    page: input.page,
+    limit: input.limit ?? DEFAULT_CONTAINER_LIST_PARAMS.limit,
+  };
+
+  const search = createContainerSearchFilter(input.query);
+  if (search) {
+    params.search = search;
+  }
+
+  const completeRows = input.rows.filter((row) => isCompleteFilterRow(row));
+  if (completeRows.length > 0) {
+    params.filterRows = completeRows;
+  }
+
+  return params;
 }
 
 export function containerToFormValues(container: Container): ContainerFormValues {

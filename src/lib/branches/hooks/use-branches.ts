@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   createBranch,
@@ -10,6 +10,9 @@ import {
   fetchBranches,
   updateBranch,
 } from "@/lib/branches/api/branches-api";
+import { hasListTextSearch } from "@/lib/api/search-query";
+import { BRANCH_TABLE_FILTER_FIELDS } from "@/lib/branches/filter-fields";
+import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import {
   DEFAULT_BRANCH_LIST_PARAMS,
   type BranchFormValues,
@@ -17,6 +20,15 @@ import {
   type BranchSearchFilter,
 } from "@/lib/branches/types";
 import { queryKeys } from "@/lib/query/query-keys";
+
+function isBranchListFiltered(params: BranchListParams): boolean {
+  const hasRowFilters = (params.filterRows ?? []).some((row) =>
+    isCompleteFilterRow(row, BRANCH_TABLE_FILTER_FIELDS),
+  );
+  const hasChipFilters = Boolean(params.type && params.type !== "all");
+
+  return hasListTextSearch(params.search) || hasRowFilters || hasChipFilters;
+}
 
 export function useBranchSearch(
   search: BranchSearchFilter | undefined,
@@ -37,10 +49,14 @@ export function useBranchSearch(
 }
 
 export function useBranches(params: BranchListParams, options: { enabled?: boolean } = {}) {
+  const isFiltered = isBranchListFiltered(params);
+
   return useQuery({
     queryKey: queryKeys.branches.list(params),
     queryFn: () => fetchBranches(params),
     enabled: options.enabled ?? true,
+    placeholderData: keepPreviousData,
+    staleTime: isFiltered ? 0 : 60_000,
   });
 }
 

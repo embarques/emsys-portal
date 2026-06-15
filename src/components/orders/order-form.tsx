@@ -102,16 +102,10 @@ export function OrderForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         {isEditing ? (
-          <>
-            <div className="space-y-2">
-        <Label htmlFor="id">Order ID</Label>
-              <Input id="id" value={values.id} readOnly className="bg-muted/40 font-mono text-xs" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="oldID">oldID</Label>
-              <Input id="oldID" value={values.oldID} readOnly className="bg-muted/40 font-mono text-xs" />
-            </div>
-          </>
+          <div className="space-y-2">
+            <Label htmlFor="id">Order ID</Label>
+            <Input id="id" value={values.id} readOnly className="bg-muted/40 font-mono text-xs" />
+          </div>
         ) : null}
 
         <div className="space-y-2">
@@ -216,7 +210,6 @@ export function OrderForm({
             {senderOptions.map((customer) => (
               <option key={customer.id} value={customer.id}>
                 {customer.name}
-                {customer.oldID > 0 ? ` · oldID ${customer.oldID}` : ""}
               </option>
             ))}
           </select>
@@ -234,7 +227,6 @@ export function OrderForm({
             {senderOptions.map((customer) => (
               <option key={customer.id} value={customer.id}>
                 {customer.name}
-                {customer.oldID > 0 ? ` · oldID ${customer.oldID}` : ""}
               </option>
             ))}
           </select>

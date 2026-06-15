@@ -153,7 +153,7 @@ function normalizeApiInvoiceParty(raw: unknown): OrderParty {
 
   return {
     id,
-    clientId: party.oldID != null ? String(party.oldID) : undefined,
+    clientId: id,
     name: String(party.name ?? "").trim() || "—",
     phones: [],
     addresses,
@@ -195,7 +195,6 @@ function normalizeInvoice(raw: unknown): Invoice | null {
   return {
     invoiceId,
     invoiceNumber: String(item.number ?? "").trim(),
-    oldID: item.oldID,
     date: toInvoiceDateValue(String(item.date ?? "")),
     containerId: item.container?.id != null ? String(item.container.id) : "",
     containerName: String(item.container?.name ?? "").trim() || undefined,

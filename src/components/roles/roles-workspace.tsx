@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatAuditDate } from "@/lib/audit/display";
 import type { DataTableColumn } from "@/lib/table/types";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
   computeRoleKpis,
   formatPermissionsSummary,
@@ -216,6 +217,14 @@ export function RolesWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("roles", tableColumns);
+  const hasActiveFilters = Boolean(filters.query.trim());
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    matched: filteredRoles.length,
+    catalogTotal: roles.length,
+    noun: "roles",
+  });
 
   return (
     <div>
@@ -248,10 +257,11 @@ export function RolesWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             showFilterToggle={false}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}

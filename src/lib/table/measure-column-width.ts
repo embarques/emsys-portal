@@ -85,6 +85,11 @@ function measureComplexContent(cell: HTMLElement, content: HTMLElement): number 
   return padding + width;
 }
 
+function isPlaceholderCellText(text: string): boolean {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  return normalized === "" || normalized === "—" || normalized === "-";
+}
+
 function measureBodyCell(cell: HTMLTableCellElement): number {
   const content =
     cell.querySelector(":scope > .truncate") ??
@@ -92,14 +97,23 @@ function measureBodyCell(cell: HTMLTableCellElement): number {
     cell;
 
   if (!(content instanceof HTMLElement)) {
-    return getHorizontalPadding(cell) + measureTextWidth(cell.textContent ?? "", cell);
+    const text = cell.textContent ?? "";
+    if (isPlaceholderCellText(text)) {
+      return clampAutoFitColumnWidth(getHorizontalPadding(cell) + 36);
+    }
+    return getHorizontalPadding(cell) + measureTextWidth(text, cell);
   }
 
   if (hasComplexCellContent(content)) {
     return measureComplexContent(cell, content);
   }
 
-  return getHorizontalPadding(cell) + measureTextWidth(content.textContent ?? "", content);
+  const text = content.textContent ?? "";
+  if (isPlaceholderCellText(text)) {
+    return clampAutoFitColumnWidth(getHorizontalPadding(cell) + 36);
+  }
+
+  return getHorizontalPadding(cell) + measureTextWidth(text, content);
 }
 
 function measureHeaderCell(cell: HTMLTableCellElement): number {

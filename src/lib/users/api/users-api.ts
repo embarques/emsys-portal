@@ -1,14 +1,15 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
-import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
+import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
+import { buildApiListQuery } from "@/lib/api/list-query";
 import {
-  buildApiSearchBody,
-  createTextSearchFilter,
-  hasListTextSearch,
-  resolveSearchField,
-  resolveSearchOperator,
+  buildResourceSearchFilterGroups,
+  buildStripeStyleSearchBody,
+  hasResourceListFilters,
   type ApiSearchFilter,
 } from "@/lib/api/search-query";
+import { USER_TABLE_FILTER_FIELDS } from "@/lib/users/filter-fields";
+import { USER_BAR_OR_SEARCH_FIELDS } from "@/lib/users/search-fields";
 import { buildApiBranchDto, buildApiRoleRef } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
@@ -22,7 +23,54 @@ import {
   type UserRole,
 } from "@/lib/users/types";
 
-const USER_LIST_SEARCH_FIELD = "userName";
+function buildUserChipFilters(params: UserListParams): ApiSearchFilter[] {
+  const filters: ApiSearchFilter[] = [];
+
+  if (params.active !== undefined && params.active !== "all") {
+    filters.push({ field: "active", operator: "eq", value: String(params.active) });
+  }
+
+  if (params.branch && params.branch !== "all") {
+    filters.push({ field: "branch.id", operator: "eq", value: String(params.branch) });
+  }
+
+  if (params.roleId && params.roleId !== "all") {
+    filters.push({ field: "role.id", operator: "eq", value: String(params.roleId) });
+  }
+
+  return filters;
+}
+
+function hasUserListFilters(params: UserListParams): boolean {
+  return hasResourceListFilters({
+    search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: USER_TABLE_FILTER_FIELDS,
+    hasChipFilters: buildUserChipFilters(params).length > 0,
+  });
+}
+
+function buildUserSearchBody(params: UserListParams) {
+  return buildStripeStyleSearchBody({
+    sort: params.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
+    filterGroups: buildResourceSearchFilterGroups({
+      search: params.search,
+      barOrSearchFields: USER_BAR_OR_SEARCH_FIELDS,
+      filterRows: params.filterRows,
+      tableFilterFields: USER_TABLE_FILTER_FIELDS,
+      chipFilters: buildUserChipFilters(params),
+    }),
+  });
+}
+
+function buildUsersQuery(params: UserListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_USER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
+    offset: params.offset,
+    sort: params.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
+  });
+}
 
 type ApiUserPermission = {
   _id?: number;
@@ -202,71 +250,6 @@ function normalizePaginatedUsers(payload: PaginatedApiEnvelope<unknown[]>): Pagi
   };
 }
 
-function buildUserSearchFilters(params: UserListParams): ApiSearchFilter[] {
-  const filters: ApiSearchFilter[] = [];
-
-  if (params.search?.value.trim()) {
-    const textFilter = createTextSearchFilter(
-      resolveSearchField(params.search, USER_LIST_SEARCH_FIELD),
-      params.search.value,
-      resolveSearchOperator(params.search),
-    );
-    if (textFilter) {
-      filters.push(textFilter);
-    }
-  }
-
-  if (params.active !== undefined && params.active !== "all") {
-    filters.push({ field: "active", operator: "eq", value: String(params.active) });
-  }
-
-  if (params.branch && params.branch !== "all") {
-    filters.push({ field: "branch.id", operator: "eq", value: String(params.branch) });
-  }
-
-  if (params.roleId && params.roleId !== "all") {
-    filters.push({ field: "role.id", operator: "eq", value: String(params.roleId) });
-  }
-
-  return filters;
-}
-
-function resolveUserListFilter(params: UserListParams): ApiListFieldFilter | undefined {
-  if (params.active !== undefined && params.active !== "all") {
-    return { field: "active", operator: "eq", value: String(params.active) };
-  }
-
-  if (params.branch && params.branch !== "all") {
-    return { field: "branch.id", operator: "eq", value: String(params.branch) };
-  }
-
-  if (params.roleId && params.roleId !== "all") {
-    return { field: "role.id", operator: "eq", value: String(params.roleId) };
-  }
-
-  return undefined;
-}
-
-function buildUserSearchBody(params: UserListParams) {
-  return buildApiSearchBody({
-    page: params.page ?? DEFAULT_USER_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
-    offset: params.offset,
-    sort: params.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
-    filters: buildUserSearchFilters(params),
-  });
-}
-
-function buildUsersQuery(params: UserListParams): string {
-  return buildApiListQuery({
-    page: params.page ?? DEFAULT_USER_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
-    offset: params.offset,
-    sort: params.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
-    filter: resolveUserListFilter(params),
-  });
-}
-
 function buildUserWritePayload(
   values: UserFormValues,
   options: { userId?: number; requirePassword?: boolean } = {},
@@ -419,21 +402,16 @@ export function normalizeApiUser(raw: unknown): User | null {
 }
 
 export async function fetchUsers(params: UserListParams = {}): Promise<PaginatedResult<User>> {
-  if (hasListTextSearch(params.search)) {
-    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.USERS}/search`,
-      buildUserSearchBody(params),
-    );
-
-    return normalizePaginatedUsers(response);
-  }
-
-  const query = buildUsersQuery(params);
-  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
-    `${API_ENDPOINTS.USERS}?${query}`,
-  );
-
-  return normalizePaginatedUsers(response);
+  return fetchPaginatedResourceList({
+    endpoint: API_ENDPOINTS.USERS,
+    page: params.page ?? DEFAULT_USER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
+    offset: params.offset,
+    isFiltered: hasUserListFilters(params),
+    buildGetQuery: () => buildUsersQuery(params),
+    buildSearchBody: () => buildUserSearchBody(params),
+    normalize: normalizePaginatedUsers,
+  });
 }
 
 export async function fetchUserById(userId: string | number): Promise<User> {

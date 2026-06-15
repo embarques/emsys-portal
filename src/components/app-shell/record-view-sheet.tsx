@@ -46,6 +46,16 @@ type RecordViewSheetDetailRowProps = {
   value: React.ReactNode;
 };
 
+function isPlaceholderValue(value: React.ReactNode): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed === "" || trimmed === "—" || trimmed === "-";
+  }
+
+  return false;
+}
+
 type RecordViewSheetActionsProps = {
   onEdit?: () => void;
   onDelete?: () => void;
@@ -78,13 +88,15 @@ export function RecordViewSheetContent({ children, className }: RecordViewSheetC
 
 export function RecordViewSheetHeader({ title, description, meta }: RecordViewSheetHeaderProps) {
   return (
-    <div className="shrink-0 border-b bg-muted/20 px-6 pb-5 pt-6">
-      <SheetHeader className="space-y-3 pr-10 text-left">
-        <SheetTitle className="text-xl leading-tight">{title}</SheetTitle>
+    <div className="shrink-0 border-b border-border bg-card px-6 pb-4 pt-6">
+      <SheetHeader className="space-y-2.5 pr-10 text-left">
+        <SheetTitle className="text-xl font-semibold leading-tight tracking-tight">{title}</SheetTitle>
         {description ? (
-          <SheetDescription className="text-sm leading-relaxed">{description}</SheetDescription>
+          <SheetDescription className="text-sm leading-relaxed text-muted-foreground">
+            {description}
+          </SheetDescription>
         ) : null}
-        {meta ? <div className="flex flex-wrap items-center gap-2 pt-0.5">{meta}</div> : null}
+        {meta ? <div className="flex flex-wrap items-center gap-2 pt-1">{meta}</div> : null}
       </SheetHeader>
     </div>
   );
@@ -92,7 +104,7 @@ export function RecordViewSheetHeader({ title, description, meta }: RecordViewSh
 
 export function RecordViewSheetBody({ children, className }: RecordViewSheetBodyProps) {
   return (
-    <div className={cn("flex-1 space-y-5 overflow-y-auto px-6 py-5", className)}>{children}</div>
+    <div className={cn("flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", className)}>{children}</div>
   );
 }
 
@@ -105,27 +117,35 @@ export function RecordViewSheetSection({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-xl border border-border/70 bg-muted/15 shadow-sm",
+        "overflow-hidden rounded-lg border border-border bg-card shadow-sm",
         className,
       )}
     >
       {title ? (
-        <div className="border-b border-border/60 bg-muted/25 px-5 py-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="flex items-center gap-2.5 border-b border-border bg-muted/50 px-4 py-2.5">
+          <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-primary/80" aria-hidden />
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-foreground/75">
             {title}
           </h3>
         </div>
       ) : null}
-      <div className={cn(padding === "relaxed" ? "p-5" : "px-0 py-1")}>{children}</div>
+      <div className={cn(padding === "relaxed" ? "p-4" : "px-0 py-0")}>{children}</div>
     </section>
   );
 }
 
 export function RecordViewSheetDetailRow({ label, value }: RecordViewSheetDetailRowProps) {
+  const empty = isPlaceholderValue(value);
+
   return (
-    <div className="flex items-start justify-between gap-6 border-b border-border/50 px-5 py-3 last:border-b-0">
-      <span className="min-w-0 shrink-0 text-sm text-muted-foreground">{label}</span>
-      <span className="min-w-0 max-w-[58%] break-words text-right text-sm font-medium leading-snug">
+    <div className="grid grid-cols-[minmax(6.5rem,38%)_1fr] items-baseline gap-x-4 border-b border-border/80 px-4 py-2.5 last:border-b-0 odd:bg-muted/25">
+      <span className="text-xs font-medium leading-snug text-muted-foreground">{label}</span>
+      <span
+        className={cn(
+          "min-w-0 break-words text-sm leading-snug",
+          empty ? "font-normal text-muted-foreground/65" : "font-medium text-foreground",
+        )}
+      >
         {value}
       </span>
     </div>
@@ -142,8 +162,8 @@ export function RecordViewSheetActions({
   if (!onEdit && !onDelete) return null;
 
   return (
-    <div className="shrink-0 border-t bg-background px-6 py-4">
-      <div className="flex gap-3">
+    <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+      <div className="flex gap-2">
         {onEdit ? (
           <Button className="flex-1" onClick={onEdit} disabled={isDisabled}>
             <Pencil className="h-4 w-4" />
@@ -151,7 +171,12 @@ export function RecordViewSheetActions({
           </Button>
         ) : null}
         {onDelete ? (
-          <Button variant="destructive" onClick={onDelete} disabled={isDisabled}>
+          <Button
+            variant="outline"
+            disabled={isDisabled}
+            className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={onDelete}
+          >
             <Trash2 className="h-4 w-4" />
             {deleteLabel}
           </Button>

@@ -195,7 +195,6 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
 
   return {
     id,
-    oldID: readNumericId(item.oldID) ?? 0,
     name: String(item.name ?? "").trim(),
     customerType: readCustomerTypeFromApi(item),
     phones: normalizeRecordPhonesFromApi(item),
@@ -432,10 +431,6 @@ function buildCustomerWritePayload(
 
   if (values.createdByID != null && values.createdByID > 0) {
     payload.createdByID = values.createdByID;
-  }
-
-  if (values.oldID > 0) {
-    payload.oldID = values.oldID;
   }
 
   if (options.customerId) {

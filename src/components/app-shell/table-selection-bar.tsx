@@ -38,36 +38,43 @@ export function TableSelectionBar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 border-b border-primary/15 bg-primary/5 px-6 py-3 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-primary/15 bg-primary/[0.04] px-4 py-2 sm:px-6",
         className,
       )}
     >
-      <div className="flex items-center gap-2">
-        <span className="inline-flex min-w-[5.5rem] items-center justify-center rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold tracking-wide text-primary">
-          {selectedIds.length} selected
-        </span>
-      </div>
+      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
+        {selectedIds.length} selected
+      </span>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => onSelectedIdsChange([])}>
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <Button variant="ghost" size="sm" onClick={() => onSelectedIdsChange([])}>
           Clear selection
         </Button>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={!othersAvailable}
           onClick={() => onSelectedIdsChange(selectAllOthers(pageRowIds, selectedIds))}
         >
           Select all others
         </Button>
+        {showEdit || showDelete ? (
+          <span className="mx-0.5 hidden h-5 w-px bg-border sm:block" aria-hidden />
+        ) : null}
         {showEdit ? (
-          <Button variant="secondary" size="sm" onClick={onEdit}>
+          <Button variant="outline" size="sm" onClick={onEdit}>
             <Pencil className="h-4 w-4" />
             Edit
           </Button>
         ) : null}
         {showDelete ? (
-          <Button variant="destructive" size="sm" disabled={deleteDisabled} onClick={onDelete}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={deleteDisabled}
+            className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={onDelete}
+          >
             <Trash2 className="h-4 w-4" />
             Delete selected
           </Button>

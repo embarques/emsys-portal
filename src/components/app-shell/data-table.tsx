@@ -191,7 +191,7 @@ function DataTableContent<T>({
     <ScrollableTable minWidth={tableMinWidth}>
       <table ref={tableRef} className="w-full table-fixed text-sm">
         <thead>
-          <tr className="border-b bg-muted/40 text-left">
+          <tr className="border-b bg-muted/30 text-left">
             {selectable ? (
               <th className="w-12 px-3 py-3">
                 <input
@@ -214,7 +214,7 @@ function DataTableContent<T>({
                   draggable
                   style={{ width }}
                   className={cn(
-                    "group relative cursor-grab select-none px-3 py-3.5 text-left active:cursor-grabbing",
+                    "group relative cursor-grab select-none px-3 py-3 text-left active:cursor-grabbing",
                     column.headerClassName,
                     draggingHeaderId === column.id && "cursor-grabbing opacity-60",
                     dragOverHeaderId === column.id && draggingHeaderId !== column.id && "bg-primary/10",
@@ -294,14 +294,14 @@ function DataTableContent<T>({
                   key={id}
                   className={cn(
                     (onRowClick || onRowDoubleClick) && "cursor-pointer",
-                    "border-b transition-colors last:border-0 hover:bg-muted/30",
-                    selected && "bg-accent/40"
+                    "border-b transition-colors last:border-0 hover:bg-muted/25",
+                    selected && "bg-primary/[0.06]"
                   )}
                   onClick={() => handleRowClick(row)}
                   onDoubleClick={() => handleRowDoubleClick(row)}
                 >
                   {selectable ? (
-                    <td className="px-3 py-4" onClick={(event) => event.stopPropagation()}>
+                    <td className="px-3 py-3" onClick={(event) => event.stopPropagation()}>
                       <input
                         type="checkbox"
                         aria-label={`Select ${rowLabel?.(row) ?? id}`}
@@ -311,20 +311,29 @@ function DataTableContent<T>({
                       />
                     </td>
                   ) : null}
-                  {visibleColumns.map((column) => (
+                  {visibleColumns.map((column) => {
+                    const cellContent = column.renderCell(row);
+                    const cellText =
+                      typeof cellContent === "string" || typeof cellContent === "number"
+                        ? String(cellContent)
+                        : undefined;
+
+                    return (
                     <td
                       key={column.id}
                       style={{ width: getColumnWidth(column.id) }}
-                      className={cn("overflow-hidden px-3 py-4", column.cellClassName)}
+                      className={cn("overflow-hidden px-3 py-3", column.cellClassName)}
                       onClick={column.stopRowClick ? (event) => event.stopPropagation() : undefined}
+                      title={column.truncateCell !== false && cellText ? cellText : undefined}
                     >
                       {column.truncateCell === false ? (
-                        column.renderCell(row)
+                        cellContent
                       ) : (
-                        <div className="truncate">{column.renderCell(row)}</div>
+                        <div className="truncate">{cellContent}</div>
                       )}
                     </td>
-                  ))}
+                    );
+                  })}
                 </tr>
               );
             })

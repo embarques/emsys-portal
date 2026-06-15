@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Building2,
   ChevronLeft,
@@ -30,11 +30,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
   TableDirectoryToolbar,
   TableFilterPanel,
-  TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
+import { BRANCH_TABLE_FILTER_FIELDS } from "@/lib/branches/filter-fields";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { formatAuditDate } from "@/lib/audit/display";
@@ -53,27 +56,30 @@ import {
 } from "@/lib/branches/hooks/use-branches";
 import {
   DEFAULT_BRANCH_LIST_PARAMS,
+  buildBranchListParams,
   branchToFormValues,
-  createBranchSearchFilter,
   createEmptyBranchForm,
   type Branch,
   type BranchFilterState,
   type BranchFormValues,
 } from "@/lib/branches/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_BRANCH_LIST_PARAMS.limit;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: BranchFilterState = {
   query: "",
-  type: "all",
+  rows: [],
 };
 
 export function BranchesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<BranchFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const deferredQuery = useDeferredValue(filters.query);
+  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [page, setPage] = useState(1);
   const [viewBranch, setViewBranch] = useState<Branch | null>(null);
@@ -82,17 +88,16 @@ export function BranchesWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Branch | Branch[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const listParams = useMemo(() => {
-    const search = createBranchSearchFilter(deferredQuery);
-
-    return {
-      ...DEFAULT_BRANCH_LIST_PARAMS,
-      page,
-      limit: PAGE_SIZE,
-      search,
-      type: filters.type,
-    };
-  }, [deferredQuery, filters.type, page]);
+  const listParams = useMemo(
+    () =>
+      buildBranchListParams({
+        page,
+        limit: PAGE_SIZE,
+        query: debouncedQuery,
+        rows: filters.rows,
+      }),
+    [debouncedQuery, filters.rows, page],
+  );
 
   const { data, isLoading, isError, error, isFetching } = useBranches(listParams);
   const stats = useBranchStats();
@@ -110,20 +115,6 @@ export function BranchesWorkspace() {
     createBranchMutation.isPending ||
     updateBranchMutation.isPending ||
     deleteBranchesMutation.isPending;
-
-  const typeFilters = useMemo(() => {
-    const discovered = new Set<string>();
-    for (const branch of branches) {
-      if (branch.type.trim()) discovered.add(branch.type.trim());
-    }
-
-    return [
-      { value: "all", label: "All types" },
-      ...Array.from(discovered)
-        .sort((a, b) => a.localeCompare(b))
-        .map((type) => ({ value: type, label: type })),
-    ];
-  }, [branches]);
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -276,9 +267,18 @@ export function BranchesWorkspace() {
 
   const columnVisibility = useColumnVisibility("branches", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
-  const hasTypeFilters = typeFilters.length > 1;
-  const activeFilterCount = filters.type !== "all" ? 1 : 0;
-  const hasActiveFilters = Boolean(filters.query.trim()) || filters.type !== "all";
+  const activeFilterCount = countCompleteFilterRows(filters.rows, BRANCH_TABLE_FILTER_FIELDS);
+  const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    isSearchPending,
+    matched: totalBranches,
+    catalogTotal: stats.total,
+    noun: "branches",
+    isLoading: isFetching && branches.length === 0,
+    catalogLoading: stats.isLoading,
+  });
 
   return (
     <div>
@@ -306,13 +306,13 @@ export function BranchesWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
-            showFilterToggle={hasTypeFilters}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}
@@ -324,36 +324,27 @@ export function BranchesWorkspace() {
               />
             }
             filterPanel={
-              hasTypeFilters ? (
-                <TableFilterPanel
-                  resultSummary={`Showing ${branches.length} of ${totalBranches} branches`}
-                  onClearAll={
-                    hasActiveFilters
-                      ? () => {
-                          setFilters(defaultFilters);
-                          setPage(1);
-                        }
-                      : undefined
-                  }
-                >
-                  <TableFilterSection label="Type">
-                    {typeFilters.map((option) => (
-                      <Button
-                        key={option.value}
-                        type="button"
-                        size="sm"
-                        variant={filters.type === option.value ? "default" : "outline"}
-                        onClick={() => {
-                          setFilters((current) => ({ ...current, type: option.value }));
-                          setPage(1);
-                        }}
-                      >
-                        {option.label}
-                      </Button>
-                    ))}
-                  </TableFilterSection>
-                </TableFilterPanel>
-              ) : undefined
+              <TableFilterPanel
+                resultSummary={`Showing ${branches.length} of ${totalBranches} branches`}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              >
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={BRANCH_TABLE_FILTER_FIELDS}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  }}
+                />
+              </TableFilterPanel>
             }
           />
         </CardHeader>

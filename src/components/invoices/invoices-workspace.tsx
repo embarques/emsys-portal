@@ -74,6 +74,7 @@ import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { buildOrderCreatedByFilterOptions } from "@/lib/orders/display";
 import { useUsers } from "@/lib/users/hooks/use-users";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
   INVOICE_PAYMENT_LOCATIONS,
   buildInvoiceListParams,
@@ -417,6 +418,15 @@ export function InvoicesWorkspace() {
   const activeFilterCount = advancedFilterCount + (filters.paymentLocation !== "all" ? 1 : 0);
   const hasActiveFilters =
     Boolean(filters.query.trim()) || advancedFilterCount > 0 || filters.paymentLocation !== "all";
+  const isSearchPending = filters.query.trim() !== deferredQuery.trim();
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    isSearchPending,
+    matched: totalInvoices,
+    noun: "invoices",
+    isLoading: isFetching && invoices.length === 0,
+  });
 
   return (
     <div>
@@ -449,12 +459,13 @@ export function InvoicesWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}

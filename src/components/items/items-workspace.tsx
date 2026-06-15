@@ -49,6 +49,7 @@ import {
   type ItemFormValues,
 } from "@/lib/items/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = 8;
 
@@ -193,6 +194,14 @@ export function ItemsWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("items", tableColumns);
+  const hasActiveFilters = Boolean(filters.query.trim());
+  const searchSummary = buildToolbarSearchSummary({
+    isFiltered: hasActiveFilters,
+    query: filters.query,
+    matched: filteredItems.length,
+    catalogTotal: items.length,
+    noun: "items",
+  });
 
   return (
     <div>
@@ -225,10 +234,11 @@ export function ItemsWorkspace() {
       </StatCardsGrid>
 
       <Card className="mt-6">
-        <CardHeader className="gap-4 border-b pb-4">
+        <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             showFilterToggle={false}
             columnLayout={columnVisibility}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}

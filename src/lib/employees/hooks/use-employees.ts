@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   createEmployee,
@@ -10,6 +10,9 @@ import {
   fetchEmployees,
   updateEmployee,
 } from "@/lib/employees/api/employees-api";
+import { hasListTextSearch } from "@/lib/api/search-query";
+import { EMPLOYEE_TABLE_FILTER_FIELDS } from "@/lib/employees/filter-fields";
+import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import {
   DEFAULT_EMPLOYEE_LIST_PARAMS,
   type EmployeeFormValues,
@@ -17,6 +20,18 @@ import {
   type EmployeeSearchFilter,
 } from "@/lib/employees/types";
 import { queryKeys } from "@/lib/query/query-keys";
+
+function isEmployeeListFiltered(params: EmployeeListParams): boolean {
+  const hasRowFilters = (params.filterRows ?? []).some((row) =>
+    isCompleteFilterRow(row, EMPLOYEE_TABLE_FILTER_FIELDS),
+  );
+  const hasChipFilters =
+    (params.branch !== undefined && params.branch !== "all") ||
+    (params.active !== undefined && params.active !== "all") ||
+    Boolean(params.department && params.department !== "all");
+
+  return hasListTextSearch(params.search) || hasRowFilters || hasChipFilters;
+}
 
 export function useEmployeeSearch(
   search: EmployeeSearchFilter | undefined,
@@ -38,9 +53,13 @@ export function useEmployeeSearch(
 }
 
 export function useEmployees(params: EmployeeListParams) {
+  const isFiltered = isEmployeeListFiltered(params);
+
   return useQuery({
     queryKey: queryKeys.employees.list(params),
     queryFn: () => fetchEmployees(params),
+    placeholderData: keepPreviousData,
+    staleTime: isFiltered ? 0 : 60_000,
   });
 }
 

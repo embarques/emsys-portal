@@ -14,13 +14,6 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter invoice number…",
   },
   {
-    field: "oldID",
-    label: "Legacy ID",
-    operators: ["eq", "neq", "gte", "lte"],
-    valueType: "text",
-    placeholder: "Enter legacy ID…",
-  },
-  {
     field: "date",
     label: "Invoice date",
     operators: [...DATE_OPERATORS],
