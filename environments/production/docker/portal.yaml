@@ -18,5 +18,7 @@ services:
     restart: unless-stopped
     expose:
       - "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
     networks:
       - emsys-net

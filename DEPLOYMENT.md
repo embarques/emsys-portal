@@ -39,10 +39,13 @@ docker compose \
 The API repository owns Caddy. Its production Caddy configuration routes:
 
 - `https://api.embarqueros.com` to `emsys-api:8080`
-- `https://sistem.embarqueros.com` to `emsys-portal:3000`
+- `https://sistema.embarqueros.com` to `emsys-portal:3000`
 
 Both repositories must run their production Compose projects on the same Docker
 host and attach their services to `emsys-net`. Only Caddy publishes host ports.
+
+The production portal also binds `127.0.0.1:3000` for loopback-only access from
+the deployment host. It is not exposed on the host's public network interfaces.
 
 The `NEXT_PUBLIC_*` values are compiled into the Next.js browser bundle during
 `docker compose ... up --build`; rebuild the image after changing them.
