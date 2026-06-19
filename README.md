@@ -43,7 +43,7 @@ The portal can talk to either the **remote development API** or a **local API** 
 Set the remote API URL in `.env`:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://api.dev.embarqueros.com/v1
+NEXT_PUBLIC_API_BASE_URL=https://api.embarqueros.com/v1
 ```
 
 Use `npm run dev:local` only when pointing at a local API on port 8080.
@@ -64,7 +64,7 @@ npm run dev:local
 
 ### Direct API calls (no Next.js proxy)
 
-The browser calls `NEXT_PUBLIC_API_BASE_URL` directly (for example `https://api.dev.embarqueros.com/v1/customers`). The EMSYS API must allow the portal origin in CORS (for local dev: `http://localhost:3000`).
+The browser calls `NEXT_PUBLIC_API_BASE_URL` directly (for example `https://api.embarqueros.com/v1/customers`). The EMSYS API must allow the portal origin in CORS (for local dev: `http://localhost:3000`).
 
 ### Env files
 

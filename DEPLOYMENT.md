@@ -38,8 +38,8 @@ docker compose \
 
 The API repository owns Caddy. Its production Caddy configuration routes:
 
-- `https://api.dev.embarqueros.com` to `emsys-api:8080`
-- `https://sistema.dev.embarqueros.com` to `emsys-portal:3000`
+- `https://api.embarqueros.com` to `emsys-api:8080`
+- `https://sistem.embarqueros.com` to `emsys-portal:3000`
 
 Both repositories must run their production Compose projects on the same Docker
 host and attach their services to `emsys-net`. Only Caddy publishes host ports.

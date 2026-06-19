@@ -21,7 +21,7 @@ const nextConfig = {
   async rewrites() {
     const apiBase =
       normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL) ||
-      'https://api.dev.embarqueros.com/v1';
+      'https://api.embarqueros.com/v1';
 
     return [
       {
