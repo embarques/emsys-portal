@@ -13,10 +13,12 @@ export type {
   TableFilterRowState,
 } from "@/lib/table/filter-types";
 
+import { createRandomId } from "@/lib/utils/id";
+
 export { FILTER_OPERATOR_LABELS, TABLE_FILTER_JOIN_OPTIONS } from "@/lib/table/filter-types";
 
 export function createFilterRowId(): string {
-  return crypto.randomUUID();
+  return createRandomId();
 }
 
 export function createEmptyFilterRow(): TableFilterRowState {

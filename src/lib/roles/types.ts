@@ -1,5 +1,6 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRecordId } from "@/lib/customers/types";
+import { createRandomId } from "@/lib/utils/id";
 
 export type RolePermission = {
   id: string;
@@ -36,7 +37,7 @@ export function createRoleId(): string {
 }
 
 export function createPermissionId(): string {
-  return crypto.randomUUID();
+  return createRandomId();
 }
 
 export function createEmptyPermission(): RolePermissionFormValues {

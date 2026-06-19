@@ -1,4 +1,5 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import { createRandomId } from "@/lib/utils/id";
 
 export type RoutePlaceKind = "city" | "state" | "zip" | "zip_range";
 
@@ -53,7 +54,7 @@ export const ROUTE_PLACE_KINDS: { value: RoutePlaceKind; label: string; placehol
 ];
 
 export function createRecordId(): string {
-  return crypto.randomUUID();
+  return createRandomId();
 }
 
 export function createRouteId(): string {

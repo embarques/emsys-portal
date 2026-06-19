@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import { addedMessage, deletedMessage, errorMessage, updatedMessage } from "@/lib/feedback/messages";
 import { cn } from "@/lib/utils";
+import { createRandomId } from "@/lib/utils/id";
 
 type ToastTone = "success" | "error";
 
@@ -32,7 +33,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const pushToast = useCallback((message: string, tone: ToastTone) => {
-    const id = crypto.randomUUID();
+    const id = createRandomId();
     setToasts((current) => [...current, { id, message, tone }]);
   }, []);
 

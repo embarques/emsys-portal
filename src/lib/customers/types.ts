@@ -8,6 +8,7 @@ import {
 } from "@/lib/customers/customer-type";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import { createRandomId } from "@/lib/utils/id";
 import {
   createDefaultRecordPhones,
   normalizeRecordPhonesFormValues,
@@ -256,7 +257,7 @@ export const CLIENT_TYPES: { value: ClientType; label: string }[] = [
 ];
 
 export function createRecordId(): string {
-  return crypto.randomUUID();
+  return createRandomId();
 }
 
 export function createEmptyCustomerCoreAddress(country = ""): CustomerCoreAddress {

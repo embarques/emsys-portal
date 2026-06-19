@@ -22,6 +22,7 @@ import {
   type OrderPartyPhoneFormValues,
 } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
+import { createRandomId } from "@/lib/utils/id";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 const selectClassName =
@@ -57,7 +58,7 @@ export function customerToOrderPartyFormValues(customer: Customer): OrderPartyFo
   const legacyPhones = getCustomerPhones(customer);
 
   return {
-    id: crypto.randomUUID(),
+    id: createRandomId(),
     clientId: getCustomerClientId(customer),
     name: customer.name,
     documentId: "",
