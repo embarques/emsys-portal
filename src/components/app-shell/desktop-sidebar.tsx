@@ -11,6 +11,16 @@ import { SidebarNav } from "./sidebar-nav";
 
 const flatNavigation = navigation.flatMap((group) => group.items);
 
+const sidebarShellClassName =
+  "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-card text-card-foreground shadow-lg";
+
+const sidebarSectionClassName = "border-border";
+
+const iconNavLinkClassName =
+  "flex h-12 w-12 items-center justify-center rounded-2xl text-muted-foreground transition hover:bg-accent hover:text-accent-foreground";
+
+const iconNavLinkActiveClassName = "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary";
+
 type DesktopSidebarProps = {
   expanded: boolean;
 };
@@ -20,12 +30,12 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
 
   if (!expanded) {
     return (
-      <aside className="fixed inset-y-0 left-0 z-50 flex w-20 flex-col border-r border-white/10 bg-slate-950 text-white shadow-2xl">
-        <div className="flex h-20 shrink-0 items-center justify-center border-b border-white/10">
+      <aside className={cn(sidebarShellClassName, "w-20")}>
+        <div className={cn("flex h-20 shrink-0 items-center justify-center border-b", sidebarSectionClassName)}>
           <Link
             href="/"
             aria-label="Dashboard"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
           >
             <Boxes className="h-6 w-6" />
           </Link>
@@ -41,10 +51,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
                 key={item.href}
                 href={item.href}
                 title={item.label}
-                className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-2xl text-white/80 transition hover:bg-white/10 hover:text-white",
-                  active && "bg-white/10 text-white"
-                )}
+                className={cn(iconNavLinkClassName, active && iconNavLinkActiveClassName)}
               >
                 <Icon className="h-6 w-6" />
               </Link>
@@ -52,13 +59,13 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
           })}
         </nav>
 
-        <div className="shrink-0 border-t border-white/10 p-3">
+        <div className={cn("shrink-0 border-t p-3", sidebarSectionClassName)}>
           <Link
             href="/settings"
             title="Profile"
-            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 transition hover:bg-white/15"
+            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60 transition hover:bg-muted"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-slate-100 to-slate-500 text-sm font-bold text-slate-950">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/40 text-sm font-bold text-primary">
               HJ
             </div>
           </Link>
@@ -68,12 +75,12 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
   }
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-50 flex w-20 flex-col border-r border-white/10 bg-slate-950 text-white shadow-2xl xl:w-72">
-      <div className="flex h-20 shrink-0 items-center justify-center border-b border-white/10 xl:hidden">
+    <aside className={cn(sidebarShellClassName, "w-20 xl:w-72")}>
+      <div className={cn("flex h-20 shrink-0 items-center justify-center border-b xl:hidden", sidebarSectionClassName)}>
         <Link
           href="/"
           aria-label="Dashboard"
-          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
         >
           <Boxes className="h-6 w-6" />
         </Link>
@@ -89,10 +96,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
               key={item.href}
               href={item.href}
               title={item.label}
-              className={cn(
-                "flex h-12 w-12 items-center justify-center rounded-2xl text-white/80 transition hover:bg-white/10 hover:text-white",
-                active && "bg-white/10 text-white"
-              )}
+              className={cn(iconNavLinkClassName, active && iconNavLinkActiveClassName)}
             >
               <Icon className="h-6 w-6" />
             </Link>
@@ -100,29 +104,29 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
         })}
       </nav>
 
-      <div className="shrink-0 border-t border-white/10 p-3 xl:hidden">
+      <div className={cn("shrink-0 border-t p-3 xl:hidden", sidebarSectionClassName)}>
         <Link
           href="/settings"
           title="Profile"
-          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 transition hover:bg-white/15"
+          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60 transition hover:bg-muted"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-slate-100 to-slate-500 text-sm font-bold text-slate-950">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/40 text-sm font-bold text-primary">
             HJ
           </div>
         </Link>
       </div>
 
-      <div className="hidden h-20 shrink-0 items-center gap-3 border-b border-white/10 px-5 xl:flex">
+      <div className={cn("hidden h-20 shrink-0 items-center gap-3 border-b px-5 xl:flex", sidebarSectionClassName)}>
         <Link
           href="/"
           aria-label="Dashboard"
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
         >
           <Boxes className="h-6 w-6" />
         </Link>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold leading-none text-white">{siteConfig.name}</p>
-          <p className="mt-1 truncate text-xs text-white/60">{siteConfig.company}</p>
+          <p className="truncate text-sm font-semibold leading-none text-foreground">{siteConfig.name}</p>
+          <p className="mt-1 truncate text-xs text-muted-foreground">{siteConfig.company}</p>
         </div>
       </div>
 
@@ -130,17 +134,17 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
         <SidebarNav />
       </div>
 
-      <div className="hidden shrink-0 border-t border-white/10 p-3 xl:block">
+      <div className={cn("hidden shrink-0 border-t p-3 xl:block", sidebarSectionClassName)}>
         <Link
           href="/settings"
-          className="flex items-center gap-3 rounded-xl bg-white/10 p-3 transition hover:bg-white/15"
+          className="flex items-center gap-3 rounded-xl bg-muted/60 p-3 transition hover:bg-muted"
         >
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-100 to-slate-500 text-sm font-bold text-slate-950">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/40 text-sm font-bold text-primary">
             HJ
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-white">Hector Mejia</p>
-            <p className="truncate text-xs text-white/60">Administrator</p>
+            <p className="truncate text-sm font-medium text-foreground">Hector Mejia</p>
+            <p className="truncate text-xs text-muted-foreground">Administrator</p>
           </div>
         </Link>
       </div>

@@ -3,16 +3,15 @@
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
 
-import { initializeConfigurationStore, getConfigurationSnapshot } from "@/lib/configuration/store";
+import { useConfigurationStore } from "@/lib/configuration/use-configuration";
 
 export function ConfigurationBootstrap() {
   const { setTheme } = useTheme();
+  const configuration = useConfigurationStore();
 
   useEffect(() => {
-    initializeConfigurationStore();
-    const configuration = getConfigurationSnapshot();
     setTheme(configuration.theme);
-  }, [setTheme]);
+  }, [configuration.theme]);
 
   return null;
 }

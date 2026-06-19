@@ -87,6 +87,11 @@ export function setConfigurationStore(next: UserConfiguration) {
   commitConfigurationStore(next, true);
 }
 
+export function updateConfigurationTheme(theme: UserConfiguration["theme"]) {
+  if (configurationStore.theme === theme) return;
+  commitConfigurationStore({ ...configurationStore, theme }, true);
+}
+
 export function resetConfigurationStore() {
   commitConfigurationStore({ ...DEFAULT_USER_CONFIGURATION }, true);
 }

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { updateConfigurationTheme } from "@/lib/configuration/store";
 import {
   CONFIGURATION_LANGUAGES,
   CONFIGURATION_THEMES,
@@ -49,7 +50,9 @@ export function ConfigurationWorkspace() {
     setFormError(null);
 
     if (key === "theme") {
-      setTheme(value as ThemePreference);
+      const theme = value as ThemePreference;
+      setTheme(theme);
+      updateConfigurationTheme(theme);
     }
   }
 
