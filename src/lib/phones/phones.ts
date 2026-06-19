@@ -159,6 +159,10 @@ export function getPrimaryPhoneDisplayNumber(phones: RecordPhone[]): string {
   return primary ? getRecordPhoneDisplayNumber(primary) : "";
 }
 
+export function formatPrimaryPhonesDisplayOrDash(phones: RecordPhone[]): string {
+  return getPrimaryPhoneDisplayNumber(phones) || "—";
+}
+
 export function formatRecordPhoneDisplayOrDash(phone: Pick<RecordPhone, "number" | "displayNumber">): string {
   return getRecordPhoneDisplayNumber(phone) || "—";
 }

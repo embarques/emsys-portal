@@ -11,10 +11,10 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
+import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import {
   formatRecordPhoneTypeLabel,
   getOrderedRecordPhones,
-  getRecordPhoneDisplayNumber,
 } from "@/lib/phones/phones";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import {
@@ -95,14 +95,15 @@ export function EmployeeViewSheet({
               <RecordViewSheetDetailRow label={formatTableColumnLabel("phones")} value="—" />
             ) : (
               getOrderedRecordPhones(employee.phones).map((phone, index) => (
-                <RecordViewSheetDetailRow
+                <PhoneActionRow
                   key={`phone-${index}`}
                   label={
                     phone.isPrimary
                       ? `${formatRecordPhoneTypeLabel(phone.type)} (primary)`
                       : formatRecordPhoneTypeLabel(phone.type)
                   }
-                  value={getRecordPhoneDisplayNumber(phone)}
+                  number={phone.number}
+                  displayNumber={phone.displayNumber}
                 />
               ))
             )}

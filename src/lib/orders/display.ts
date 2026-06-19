@@ -1,5 +1,5 @@
 import { formatCoreAddressLine } from "@/lib/customers/display";
-import { getPhoneDisplayAtIndex, getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
+import { formatPrimaryPhonesDisplayOrDash, getPhoneDisplayAtIndex } from "@/lib/phones/phones";
 import { getRouteAssignmentById } from "@/lib/route-assignments/mock-data";
 import { getBranchLabel } from "@/lib/trucks/display";
 import type { Customer } from "@/lib/customers/types";
@@ -112,10 +112,11 @@ export function getCustomerAddressLine(customer: Customer): string {
 }
 
 export function getCustomerPhone(customer: Customer, index = 0): string {
-  const display =
-    index === 0
-      ? getPrimaryPhoneDisplayNumber(customer.phones)
-      : getPhoneDisplayAtIndex(customer.phones, index);
+  if (index === 0) {
+    return formatPrimaryPhonesDisplayOrDash(customer.phones);
+  }
+
+  const display = getPhoneDisplayAtIndex(customer.phones, index);
   return display || "—";
 }
 

@@ -41,7 +41,7 @@ import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
-import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
+import { formatPrimaryPhonesDisplayOrDash } from "@/lib/phones/phones";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   formatAccountBalance,
@@ -301,7 +301,7 @@ export function CustomersWorkspace() {
     {
       id: "phone",
       label: "Phone",
-      renderCell: (customer) => getPrimaryPhoneDisplayNumber(customer.phones) || "—",
+      renderCell: (customer) => formatPrimaryPhonesDisplayOrDash(customer.phones),
     },
     {
       id: "customerType",

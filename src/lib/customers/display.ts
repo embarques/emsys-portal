@@ -1,12 +1,16 @@
 import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
+import {
+  formatRecordPhoneTypeLabel,
+  getOrderedRecordPhones,
+  getRecordPhoneDisplayNumber,
+} from "@/lib/phones/phones";
 import { resolvePhoneDisplayValue } from "@/lib/utils/phone";
-import type { ClientType, Customer, CustomerAddress, CustomerCoreAddress, CustomerPortalBranch } from "./types";
+import type { ClientType, Customer, CustomerAddress, CustomerCoreAddress, CustomerPhone, CustomerPortalBranch } from "./types";
 import { isCustomerReceiverType, isCustomerSenderType } from "./customer-type";
 import {
   CLIENT_TYPES,
   getCustomerAddresses,
   getCustomerClientType,
-  getCustomerPhones,
   getCustomerPortalBranch,
   getPrimaryAddress,
 } from "./types";
@@ -97,25 +101,41 @@ export function formatAccountBalance(balance: number): string {
 }
 
 export function formatPhoneSummary(customer: Customer): string {
-  const phones = getCustomerPhones(customer);
+  const phones = getOrderedRecordPhones(customer.phones);
   if (phones.length === 0) return "—";
 
-  const first = phones[0];
-  const label = first.label ? `${first.label}: ` : "";
+  const first = phones[0]!;
+  const label = formatRecordPhoneTypeLabel(first.type);
   const suffix = phones.length > 1 ? ` (+${phones.length - 1})` : "";
-  return `${label}${resolvePhoneDisplayValue(first.number, first.displayNumber)}${suffix}`;
+  return `${label}: ${getRecordPhoneDisplayNumber(first)}${suffix}`;
 }
 
 export function formatPhoneList(customer: Customer): string {
-  const phones = getCustomerPhones(customer);
+  const phones = getOrderedRecordPhones(customer.phones);
   if (phones.length === 0) return "—";
 
   return phones
     .map((phone) => {
-      const formatted = resolvePhoneDisplayValue(phone.number, phone.displayNumber);
-      return phone.label ? `${phone.label}: ${formatted}` : formatted;
+      const formatted = getRecordPhoneDisplayNumber(phone);
+      const label = formatRecordPhoneTypeLabel(phone.type);
+      const suffix = phone.isPrimary ? " (primary)" : "";
+      return `${label}${suffix}: ${formatted}`;
     })
     .join(" · ");
+}
+
+export function formatPartyPhoneList(phones: CustomerPhone[]): string {
+  if (phones.length === 0) return "—";
+
+  return (
+    phones
+      .map((phone) => {
+        const formatted = resolvePhoneDisplayValue(phone.number, phone.displayNumber);
+        return phone.label ? `${phone.label}: ${formatted}` : formatted;
+      })
+      .filter(Boolean)
+      .join(" · ") || "—"
+  );
 }
 
 export function formatCustomerBranchLabel(customer: Customer): string {
