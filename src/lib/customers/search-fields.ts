@@ -1,7 +1,6 @@
 /**
  * Customer directory search bar — POST /customers/search OR + contains.
- * Standard advanced-search body with `operator`, `filters`, and `sort`.
- * Pagination is passed via URL query params.
+ * Pagination, filters, and sort in body (same pattern as all directory views).
  */
 export const CUSTOMER_BAR_OR_SEARCH_FIELDS = [
   "name",

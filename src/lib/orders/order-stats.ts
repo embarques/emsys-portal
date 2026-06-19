@@ -9,6 +9,7 @@ export function buildOrderStatsCountParams(filterRows: TableFilterRowState[]): O
   return {
     ...DEFAULT_ORDER_LIST_PARAMS,
     limit: ORDER_STATS_COUNT_LIMIT,
+    sort: DEFAULT_ORDER_LIST_PARAMS.sort,
     filterRows,
   };
 }

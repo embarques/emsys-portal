@@ -2,9 +2,8 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import {
+  buildAdvancedSearchBody,
   buildApiFilterNodeFromTableRows,
-  buildApiSearchPaginationQuery,
-  buildStripeStyleSearchBody,
   createOrTextSearchFilterGroup,
   createTextSearchFilter,
   hasListTextSearch,
@@ -330,9 +329,11 @@ function buildCustomerSearchFilterGroups(params: CustomerListParams): ApiSearchF
   return groups;
 }
 
-/** POST /customers/search — filters + sort in body; pagination in URL query. */
+/** POST /customers/search — unified advanced-search body. */
 function buildCustomerSearchBody(params: CustomerListParams) {
-  return buildStripeStyleSearchBody({
+  return buildAdvancedSearchBody({
+    page: params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit,
     sort: params.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort,
     filterGroups: buildCustomerSearchFilterGroups(params),
   });
@@ -367,13 +368,8 @@ export async function fetchCustomers(
   const isFiltered = hasCustomerListFilters(params);
 
   if (shouldUseCustomerPostSearch(params)) {
-    const page = params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page;
-    const limit = params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit;
-    const offset = params.offset ?? (page - 1) * limit;
-    const paginationQuery = buildApiSearchPaginationQuery({ page, limit, offset });
-
     const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.CUSTOMERS}/search?${paginationQuery}`,
+      `${API_ENDPOINTS.CUSTOMERS}/search`,
       buildCustomerSearchBody(params),
     );
 

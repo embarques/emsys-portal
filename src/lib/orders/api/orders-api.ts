@@ -5,8 +5,7 @@ import {
   resolveApiListSort,
 } from "@/lib/api/list-query";
 import {
-  buildApiSearchPaginationQuery,
-  buildStripeStyleSearchBody,
+  buildAdvancedSearchBody,
   createOrTextSearchFilterGroup,
   createTextSearchFilter,
   hasListTextSearch,
@@ -390,13 +389,15 @@ function buildOrdersQuery(params: OrderListParams): string {
     page: params.page ?? DEFAULT_ORDER_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
     offset: params.offset,
-    sort: resolveOrdersSort(params),
+    sort: resolveOrdersSort(params) ?? DEFAULT_ORDER_LIST_PARAMS.sort,
   });
 }
 
 function buildPickupSearchBody(params: OrderListParams) {
-  return buildStripeStyleSearchBody({
-    sort: params.sort,
+  return buildAdvancedSearchBody({
+    page: params.page ?? DEFAULT_ORDER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
+    sort: params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort,
     filterGroups: buildOrderSearchFilterGroups(params),
   });
 }
@@ -404,18 +405,12 @@ function buildPickupSearchBody(params: OrderListParams) {
 /**
  * List pickups from EMSYS API.
  * - Unfiltered: GET /pickups?page&offset&limit
- * - Search/filters: POST /pickups/search with standard advanced-search body.
- *   See API-Query-Usage.md.
+ * - Search/filters: POST /pickups/search
  */
 export async function fetchOrders(params: OrderListParams = {}): Promise<PaginatedResult<Order>> {
   if (shouldUsePickupSearch(params)) {
-    const page = params.page ?? DEFAULT_ORDER_LIST_PARAMS.page;
-    const limit = params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit;
-    const offset = params.offset ?? (page - 1) * limit;
-    const paginationQuery = buildApiSearchPaginationQuery({ page, limit, offset });
-
     const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.PICKUPS}/search?${paginationQuery}`,
+      `${API_ENDPOINTS.PICKUPS}/search`,
       buildPickupSearchBody(params),
     );
     return normalizePaginatedOrders(response);

@@ -107,13 +107,13 @@ export type OrderListParams = {
 };
 
 /** Optional sort for pickups list/search when explicitly requested. */
-export const DEFAULT_ORDER_LIST_SORT =
-  "sender.address.city:asc,sender.address.address1:asc" as const;
+export const DEFAULT_ORDER_LIST_SORT = "date:desc" as const;
 
 export const DEFAULT_ORDER_LIST_PARAMS = {
   page: 1,
   limit: 40,
-} as const satisfies Pick<OrderListParams, "page" | "limit">;
+  sort: DEFAULT_ORDER_LIST_SORT,
+} as const satisfies Pick<OrderListParams, "page" | "limit" | "sort">;
 
 export const ORDER_SEARCH_FIELDS: { value: OrderSearchField; label: string }[] = [
   { value: "id", label: "Order ID" },

@@ -2,9 +2,8 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { buildApiListQuery, resolveApiListSort } from "@/lib/api/list-query";
 import {
+  buildAdvancedSearchBody,
   buildApiFilterNodeFromTableRows,
-  buildApiSearchPaginationQuery,
-  buildStripeStyleSearchBody,
   createTextSearchFilter,
   hasListTextSearch,
   isApiSearchFilter,
@@ -308,7 +307,9 @@ function buildInvoicesQuery(params: InvoiceListParams): string {
 }
 
 function buildInvoiceSearchBody(params: InvoiceListParams) {
-  return buildStripeStyleSearchBody({
+  return buildAdvancedSearchBody({
+    page: params.page ?? DEFAULT_INVOICE_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_INVOICE_LIST_PARAMS.limit,
     sort: params.sort,
     filterGroups: buildInvoiceSearchFilterGroups(params),
   });
@@ -330,13 +331,8 @@ function parseInvoicePathId(invoiceId: string): string {
 
 export async function fetchInvoices(params: InvoiceListParams = {}): Promise<PaginatedResult<Invoice>> {
   if (shouldUseInvoiceSearch(params)) {
-    const page = params.page ?? DEFAULT_INVOICE_LIST_PARAMS.page;
-    const limit = params.limit ?? DEFAULT_INVOICE_LIST_PARAMS.limit;
-    const offset = params.offset ?? (page - 1) * limit;
-    const paginationQuery = buildApiSearchPaginationQuery({ page, limit, offset });
-
     const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.INVOICES}/search?${paginationQuery}`,
+      `${API_ENDPOINTS.INVOICES}/search`,
       buildInvoiceSearchBody(params),
     );
 

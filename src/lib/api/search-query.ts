@@ -34,9 +34,48 @@ export type ApiSearchFilterGroup = {
 
 export type ApiSearchFilterNode = ApiSearchFilter | ApiSearchFilterGroup;
 
-/** POST /<resource>/search body — see API-Query-Usage.md and API_PAYLOADS.md */
-export type ApiSearchBody = ApiSearchFilterGroup & {
-  pagination?: { page: number; offset: number; limit: number };
+export type ApiSearchSortSpec = {
+  field: string;
+  direction?: SortDirection;
+};
+
+export type AdvancedSearchPagination = {
+  page: number;
+  limit: number;
+  offset: number;
+};
+
+/** POST /<resource>/search request body — same shape for every route. */
+export type AdvancedSearchBody = {
+  operator: "and";
+  filters: ApiSearchFilterNode[];
+  pagination: AdvancedSearchPagination;
+  sort: ApiSearchSortSpec[];
+};
+
+export type BuildAdvancedSearchBodyOptions = {
+  page?: number;
+  limit?: number;
+  sort?: ApiListSortInput;
+  /** Flat leaf filters combined with AND in a single group. */
+  filters?: ApiSearchFilter[];
+  /** Nested filter groups combined at the root `filters` array. */
+  filterGroups?: ApiSearchFilterGroup[];
+};
+
+/** @deprecated Use AdvancedSearchBody */
+export type ApiSearchBody = AdvancedSearchBody;
+
+/** @deprecated Use BuildAdvancedSearchBodyOptions */
+export type BuildApiSearchBodyOptions = BuildAdvancedSearchBodyOptions;
+
+/**
+ * POST /<resource>/search body when pagination is passed via URL query.
+ * Used by fetchPaginatedResourceList (branches, trucks, etc.).
+ */
+export type StripeStyleSearchBody = {
+  operator?: "and" | "or";
+  filters?: ApiSearchFilterNode[];
   sort?: ApiSearchSortSpec[];
 };
 
@@ -50,16 +89,98 @@ export type ApiListTextSearch = ListTextSearch & {
   operator?: ApiSearchOperator;
 };
 
-export type BuildApiSearchBodyOptions = {
+function hasApiSearchFilterValue(value: string | number | boolean): boolean {
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "boolean") return true;
+  return value !== "";
+}
+
+function resolveAdvancedSearchFilters(options: BuildAdvancedSearchBodyOptions): ApiSearchFilterNode[] {
+  const leafFilters = (options.filters ?? []).filter(
+    (filter) => filter.field.trim() && hasApiSearchFilterValue(filter.value),
+  );
+
+  const filterGroups: ApiSearchFilterGroup[] = [...(options.filterGroups ?? [])];
+
+  if (leafFilters.length > 0) {
+    filterGroups.push({ operator: "and", filters: leafFilters });
+  }
+
+  if (filterGroups.length === 0) {
+    return [];
+  }
+
+  if (filterGroups.length === 1 && filterGroups[0].operator === "and") {
+    return filterGroups[0].filters;
+  }
+
+  return filterGroups;
+}
+
+/** POST /<resource>/search body — unified signature for all routes. */
+export function buildAdvancedSearchBody(
+  options: BuildAdvancedSearchBodyOptions,
+): AdvancedSearchBody {
+  const page = options.page ?? 1;
+  const limit = options.limit ?? 40;
+  const offset = (page - 1) * limit;
+
+  return {
+    operator: "and",
+    filters: resolveAdvancedSearchFilters(options),
+    pagination: { page, limit, offset },
+    sort: resolveApiSearchSort(options.sort) ?? [],
+  };
+}
+
+export function buildStripeStyleSearchBody(options: {
+  sort?: ApiListSortInput;
+  filterGroups?: ApiSearchFilterGroup[];
+}): StripeStyleSearchBody {
+  const body: StripeStyleSearchBody = {};
+
+  const sortSpecs = resolveApiSearchSort(options.sort);
+  if (sortSpecs) {
+    body.sort = sortSpecs;
+  }
+
+  const filterGroups = options.filterGroups ?? [];
+  if (filterGroups.length === 0) {
+    return body;
+  }
+
+  if (filterGroups.length === 1 && filterGroups[0].operator === "and") {
+    body.operator = filterGroups[0].operator;
+    body.filters = filterGroups[0].filters;
+    return body;
+  }
+
+  body.operator = "and";
+  body.filters = filterGroups;
+
+  return body;
+}
+
+export function buildApiSearchPaginationQuery(options: {
   page?: number;
   limit?: number;
   offset?: number;
-  sort?: ApiListSortInput;
-  /** Flat leaf filters combined with AND in a single group. */
-  filters?: ApiSearchFilter[];
-  /** Nested filter groups converted to the EMSYS advanced-search body. */
-  filterGroups?: ApiSearchFilterGroup[];
-};
+}): string {
+  const page = options.page ?? 1;
+  const limit = options.limit ?? 40;
+  const offset = options.offset ?? (page - 1) * limit;
+
+  return new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    offset: String(offset),
+  }).toString();
+}
+
+/** @deprecated Use buildAdvancedSearchBody */
+export function buildApiSearchBody(options: BuildAdvancedSearchBodyOptions): AdvancedSearchBody {
+  return buildAdvancedSearchBody(options);
+}
 
 export function createListTextSearch(value: string): ListTextSearch | undefined {
   const trimmed = value.trim();
@@ -181,106 +302,6 @@ export function resolveApiSearchSort(sort?: ApiListSortInput): ApiSearchSortSpec
   }
 
   return specs.length > 0 ? specs : undefined;
-}
-
-export type ApiSearchSortSpec = {
-  field: string;
-  direction?: SortDirection;
-};
-
-/**
- * POST /<resource>/search body — nested AND/OR filter groups.
- * Pagination is passed via URL query (`page`, `offset`, `limit`).
- * See API-Query-Usage.md and API_PAYLOADS.md.
- */
-export type StripeStyleSearchBody = {
-  operator?: "and" | "or";
-  filters?: ApiSearchFilterNode[];
-  sort?: ApiSearchSortSpec[];
-};
-
-export function buildStripeStyleSearchBody(options: {
-  sort?: ApiListSortInput;
-  filterGroups?: ApiSearchFilterGroup[];
-}): StripeStyleSearchBody {
-  const body: StripeStyleSearchBody = {};
-
-  const sortSpecs = resolveApiSearchSort(options.sort);
-  if (sortSpecs) {
-    body.sort = sortSpecs;
-  }
-
-  const filterGroups = options.filterGroups ?? [];
-  if (filterGroups.length === 0) {
-    return body;
-  }
-
-  if (filterGroups.length === 1 && filterGroups[0].operator === "and") {
-    body.operator = filterGroups[0].operator;
-    body.filters = filterGroups[0].filters;
-    return body;
-  }
-
-  body.operator = "and";
-  body.filters = filterGroups;
-
-  return body;
-}
-
-export function buildApiSearchPaginationQuery(options: {
-  page?: number;
-  limit?: number;
-  offset?: number;
-}): string {
-  const page = options.page ?? 1;
-  const limit = options.limit ?? 40;
-  const offset = options.offset ?? (page - 1) * limit;
-
-  return new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-    offset: String(offset),
-  }).toString();
-}
-
-function hasApiSearchFilterValue(value: string | number | boolean): boolean {
-  if (typeof value === "number") return Number.isFinite(value);
-  if (typeof value === "boolean") return true;
-  return value !== "";
-}
-
-export function buildApiSearchBody(options: BuildApiSearchBodyOptions): ApiSearchBody {
-  const page = options.page ?? 1;
-  const limit = options.limit ?? 40;
-  const offset = options.offset ?? (page - 1) * limit;
-
-  const leafFilters = (options.filters ?? []).filter(
-    (filter) => filter.field.trim() && hasApiSearchFilterValue(filter.value),
-  );
-
-  const filterGroups: ApiSearchFilterGroup[] = [...(options.filterGroups ?? [])];
-
-  if (leafFilters.length > 0) {
-    filterGroups.push({ operator: "and", filters: leafFilters });
-  }
-
-  const rootGroup: ApiSearchFilterGroup =
-    filterGroups.length === 1 && filterGroups[0].operator === "and"
-      ? filterGroups[0]
-      : { operator: "and", filters: filterGroups };
-
-  const body: ApiSearchBody = {
-    operator: rootGroup.operator,
-    filters: rootGroup.filters,
-    pagination: { page, offset, limit },
-  };
-
-  const sort = resolveApiSearchSort(options.sort);
-  if (sort) {
-    body.sort = sort;
-  }
-
-  return body;
 }
 
 export function hasListTextSearch(search: ListTextSearch | undefined): boolean {

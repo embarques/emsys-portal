@@ -12,14 +12,14 @@ export const INVOICE_BAR_OR_SEARCH_FIELDS = [
   "number",
   "sender.name",
   "receiver.name",
-  "sender.address.address1",
-  "sender.address.address2",
-  "receiver.address.address1",
-  "receiver.address.address2",
-  "sender.phones.number",
   "sender.phone1",
-  "receiver.phones.number",
   "receiver.phone1",
+  "sender.address.city",
+  "sender.address.state",
+  "sender.address.zipcode",
+  "receiver.address.city",
+  "receiver.address.state",
+  "receiver.address.zipcode",
 ] as const;
 
 export type InvoiceBarOrSearchField = (typeof INVOICE_BAR_OR_SEARCH_FIELDS)[number];
