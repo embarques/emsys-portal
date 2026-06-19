@@ -141,17 +141,16 @@ function AddressFieldGrid({ idPrefix, address, onChange }: AddressFieldGridProps
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-country`}>{labels.country}</Label>
-          <Input
-            id={`${idPrefix}-country`}
-            value={address.country}
-            readOnly
-            disabled
-            aria-readonly
-            className="bg-muted/60"
-            title="Country is set automatically by the customer type"
-          />
-          <p className="text-xs text-muted-foreground">Set automatically by customer type.</p>
-        </div>
+            <Input
+              id={`${idPrefix}-country`}
+              value={address.country}
+              readOnly
+              disabled
+              aria-readonly
+              className="bg-muted/60"
+              title="Country is set automatically by the customer type"
+            />
+          </div>
       </div>
     </div>
   );
@@ -243,10 +242,6 @@ export function CustomerForm({
   }
 
   const selectedType = normalizeCustomerType(values.customerType);
-  const branchHint =
-    CUSTOMER_TYPE_OPTIONS.find((option) => option.value === selectedType)?.label === "Receiver"
-      ? "Receivers are assigned to the DR branch."
-      : "Senders are assigned to the USA branch.";
 
   return (
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
@@ -283,7 +278,6 @@ export function CustomerForm({
                 </option>
               ))}
             </select>
-            <p className="text-xs text-muted-foreground">{branchHint}</p>
           </div>
         </FormSection>
 
