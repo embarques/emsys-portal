@@ -12,13 +12,13 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
+import { AddressActionRow } from "@/components/addresses/address-action-row";
 import {
   formatRecordPhoneTypeLabel,
   getOrderedRecordPhones,
 } from "@/lib/phones/phones";
 import {
   formatAccountBalance,
-  formatCoreAddressLine,
   formatCustomerBranchLabel,
   getClientTypeBadgeClass,
   getClientTypeLabel,
@@ -98,21 +98,17 @@ export function CustomerViewSheet({
             )}
           </RecordViewSheetSection>
 
-          {addresses.map((address, index) => (
-            <RecordViewSheetSection
-              key={index}
-              title={index === 0 ? "Primary address" : `Additional address ${index}`}
-            >
-              <RecordViewSheetDetailRow label="Address 1" value={address.address1 || "—"} />
-              <RecordViewSheetDetailRow label="Address 2" value={address.address2 || "—"} />
-              <RecordViewSheetDetailRow label="Apartment" value={address.apartment || "—"} />
-              <RecordViewSheetDetailRow label="City" value={address.city || "—"} />
-              <RecordViewSheetDetailRow label="State" value={address.state || "—"} />
-              <RecordViewSheetDetailRow label="Zipcode" value={address.zipcode || "—"} />
-              <RecordViewSheetDetailRow label="Country" value={address.country || "—"} />
-              <RecordViewSheetDetailRow label="Full address" value={formatCoreAddressLine(address)} />
+          {addresses.length > 0 ? (
+            <RecordViewSheetSection title="Addresses">
+              {addresses.map((address, index) => (
+                <AddressActionRow
+                  key={index}
+                  label={index === 0 ? "Primary address" : `Additional address ${index}`}
+                  address={address}
+                />
+              ))}
             </RecordViewSheetSection>
-          ))}
+          ) : null}
 
           <RecordViewSheetSection title="Account">
             <RecordViewSheetDetailRow
@@ -130,6 +126,10 @@ export function CustomerViewSheet({
 
           <RecordViewSheetSection title="System information">
             <RecordViewSheetDetailRow label="Customer ID" value={customer.id} />
+            <RecordViewSheetDetailRow
+              label="Legacy ID"
+              value={customer.oldID != null ? String(customer.oldID) : "—"}
+            />
             <RecordViewSheetDetailRow
               label="Created by"
               value={customer.createdByID != null ? String(customer.createdByID) : "—"}

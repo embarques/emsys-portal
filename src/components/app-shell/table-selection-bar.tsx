@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { ListChecks, Pencil, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
@@ -47,15 +47,23 @@ export function TableSelectionBar({
       </span>
 
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        <Button variant="ghost" size="sm" onClick={() => onSelectedIdsChange([])}>
-          Clear selection
-        </Button>
         <Button
           variant="ghost"
           size="sm"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={() => onSelectedIdsChange([])}
+        >
+          <X className="h-4 w-4" />
+          Clear selection
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
           disabled={!othersAvailable}
           onClick={() => onSelectedIdsChange(selectAllOthers(pageRowIds, selectedIds))}
         >
+          <ListChecks className="h-4 w-4" />
           Select all others
         </Button>
         {showEdit || showDelete ? (

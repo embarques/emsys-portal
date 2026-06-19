@@ -6,6 +6,7 @@ import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatEmployeeDate, formatEmployeeMoney } from "@/lib/employees/display";
 import {
   EMPLOYEE_ACTIVE_OPTIONS,
@@ -20,9 +21,6 @@ import {
   type EmployeeFormValues,
   type EmployeePortalBranch,
 } from "@/lib/employees/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 const readOnlyClassName = "bg-muted/40";
 
@@ -115,19 +113,17 @@ export function EmployeeForm({
             <Label htmlFor="active">
               active <span className="text-destructive">*</span>
             </Label>
-            <select
+            <SearchableSelect
               id="active"
-              className={selectClassName}
+              searchable={false}
               value={values.active ? "true" : "false"}
-              onChange={(event) => updateField("active", event.target.value === "true")}
+              onValueChange={(next) => updateField("active", next === "true")}
               required
-            >
-              {EMPLOYEE_ACTIVE_OPTIONS.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              options={EMPLOYEE_ACTIVE_OPTIONS.map((option) => ({
+                value: String(option.value),
+                label: option.label,
+              }))}
+            />
           </div>
         </div>
 
@@ -149,38 +145,28 @@ export function EmployeeForm({
             <Label htmlFor="department">
               department <span className="text-destructive">*</span>
             </Label>
-            <select
+            <SearchableSelect
               id="department"
-              className={selectClassName}
               value={values.department}
-              onChange={(event) => updateField("department", event.target.value)}
+              onValueChange={(next) => updateField("department", next)}
+              searchPlaceholder="Search departments…"
               required
-            >
-              {departmentOptions.map((department) => (
-                <option key={department} value={department}>
-                  {department}
-                </option>
-              ))}
-            </select>
+              options={departmentOptions.map((department) => ({ value: department, label: department }))}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="title">
               title <span className="text-destructive">*</span>
             </Label>
-            <select
+            <SearchableSelect
               id="title"
-              className={selectClassName}
               value={values.title}
-              onChange={(event) => updateField("title", event.target.value)}
+              onValueChange={(next) => updateField("title", next)}
+              searchPlaceholder="Search titles…"
               required
-            >
-              {titleOptions.map((title) => (
-                <option key={title} value={title}>
-                  {title}
-                </option>
-              ))}
-            </select>
+              options={titleOptions.map((title) => ({ value: title, label: title }))}
+            />
           </div>
         </div>
 
@@ -224,19 +210,17 @@ export function EmployeeForm({
           <Label htmlFor="branch-portal">
             Branch <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="branch-portal"
-            className={selectClassName}
             value={selectedPortalBranch}
-            onChange={(event) => updateBranchPortal(event.target.value as EmployeePortalBranch)}
+            onValueChange={(next) => updateBranchPortal(next as EmployeePortalBranch)}
+            searchPlaceholder="Search branches…"
             required
-          >
-            {EMPLOYEE_PORTAL_BRANCHES.map((option) => (
-              <option key={option.portal} value={option.portal}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            options={EMPLOYEE_PORTAL_BRANCHES.map((option) => ({
+              value: option.portal,
+              label: option.label,
+            }))}
+          />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">

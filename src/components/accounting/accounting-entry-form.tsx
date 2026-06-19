@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   formatAccountingMoney,
   getAccountingEntryTypeLabel,
@@ -31,8 +32,15 @@ import { INVOICE_PAYMENT_METHODS, type Invoice } from "@/lib/invoices/types";
 import { formatRouteAssignmentCopyLabel } from "@/lib/route-assignments/display";
 import type { RouteAssignment } from "@/lib/route-assignments/types";
 
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
+const PAYMENT_METHOD_OPTIONS = INVOICE_PAYMENT_METHODS.map((option) => ({
+  value: option.value,
+  label: option.label,
+}));
+
+const BRANCH_OPTIONS = ACCOUNTING_BRANCHES.map((option) => ({
+  value: option.value,
+  label: option.label,
+}));
 
 type AccountingEntryFormProps = {
   initialValues?: AccountingFormValues;
@@ -162,6 +170,14 @@ export function AccountingEntryForm({
         ? EXPENSE_CATEGORIES
         : [];
 
+  const invoiceOptions = [
+    { value: "", label: "Select invoice…" },
+    ...invoices.map((invoice) => ({
+      value: invoice.invoiceId,
+      label: `${invoice.invoiceNumber} · ${invoice.sender.name}`,
+    })),
+  ];
+
   const isNewInvoicePayment = isNewInvoicePaymentType(values.type);
   const isExistingInvoicePayment = isExistingInvoicePaymentType(values.type);
   const isInvoiceDiscount = isInvoiceDiscountType(values.type);
@@ -182,20 +198,17 @@ export function AccountingEntryForm({
         <Label htmlFor="type">
           Entry type <span className="text-destructive">*</span>
         </Label>
-        <select
+        <SearchableSelect
           id="type"
-          className={selectClassName}
           value={values.type}
-          onChange={(event) => handleTypeChange(event.target.value as AccountingFormValues["type"])}
+          onValueChange={(next) => handleTypeChange(next as AccountingFormValues["type"])}
           disabled={isEditing}
           required
-        >
-          {ACCOUNTING_ENTRY_TYPES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={ACCOUNTING_ENTRY_TYPES.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+        />
         {typeMeta ? <p className="text-xs text-muted-foreground">{typeMeta.description}</p> : null}
       </div>
       ) : null}
@@ -219,19 +232,13 @@ export function AccountingEntryForm({
           <Label htmlFor="branch">
             Branch <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="branch"
-            className={selectClassName}
             value={values.branch}
-            onChange={(event) => updateField("branch", event.target.value as AccountingFormValues["branch"])}
+            onValueChange={(next) => updateField("branch", next as AccountingFormValues["branch"])}
             required
-          >
-            {ACCOUNTING_BRANCHES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            options={BRANCH_OPTIONS}
+          />
         </div>
       </div>
       ) : null}
@@ -305,21 +312,15 @@ export function AccountingEntryForm({
             <Label htmlFor="paymentMethod">
               Payment type <span className="text-destructive">*</span>
             </Label>
-            <select
+            <SearchableSelect
               id="paymentMethod"
-              className={selectClassName}
               value={values.paymentMethod}
-              onChange={(event) =>
-                updateField("paymentMethod", event.target.value as AccountingFormValues["paymentMethod"])
+              onValueChange={(next) =>
+                updateField("paymentMethod", next as AccountingFormValues["paymentMethod"])
               }
               required
-            >
-              {INVOICE_PAYMENT_METHODS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              options={PAYMENT_METHOD_OPTIONS}
+            />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -362,20 +363,15 @@ export function AccountingEntryForm({
             <Label htmlFor="invoiceIdExisting">
               Invoice <span className="text-destructive">*</span>
             </Label>
-            <select
+            <SearchableSelect
               id="invoiceIdExisting"
-              className={selectClassName}
               value={values.invoiceId}
-              onChange={(event) => handleInvoiceSelect(event.target.value)}
+              onValueChange={handleInvoiceSelect}
+              placeholder="Select invoice…"
+              searchPlaceholder="Search invoices…"
               required
-            >
-              <option value="">Select invoice…</option>
-              {invoices.map((invoice) => (
-                <option key={invoice.invoiceId} value={invoice.invoiceId}>
-                  {invoice.invoiceNumber} · {invoice.sender.name}
-                </option>
-              ))}
-            </select>
+              options={invoiceOptions}
+            />
           </div>
 
           {selectedInvoice ? (
@@ -435,21 +431,15 @@ export function AccountingEntryForm({
               <Label htmlFor="paymentMethodExisting">
                 Payment method <span className="text-destructive">*</span>
               </Label>
-              <select
+              <SearchableSelect
                 id="paymentMethodExisting"
-                className={selectClassName}
                 value={values.paymentMethod}
-                onChange={(event) =>
-                  updateField("paymentMethod", event.target.value as AccountingFormValues["paymentMethod"])
+                onValueChange={(next) =>
+                  updateField("paymentMethod", next as AccountingFormValues["paymentMethod"])
                 }
                 required
-              >
-                {INVOICE_PAYMENT_METHODS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                options={PAYMENT_METHOD_OPTIONS}
+              />
             </div>
           </div>
         </div>
@@ -461,20 +451,15 @@ export function AccountingEntryForm({
             <Label htmlFor="invoiceIdDiscount">
               Invoice <span className="text-destructive">*</span>
             </Label>
-            <select
+            <SearchableSelect
               id="invoiceIdDiscount"
-              className={selectClassName}
               value={values.invoiceId}
-              onChange={(event) => handleInvoiceSelect(event.target.value)}
+              onValueChange={handleInvoiceSelect}
+              placeholder="Select invoice…"
+              searchPlaceholder="Search invoices…"
               required
-            >
-              <option value="">Select invoice…</option>
-              {invoices.map((invoice) => (
-                <option key={invoice.invoiceId} value={invoice.invoiceId}>
-                  {invoice.invoiceNumber} · {invoice.sender.name}
-                </option>
-              ))}
-            </select>
+              options={invoiceOptions}
+            />
           </div>
 
           {selectedInvoice ? (
@@ -534,21 +519,15 @@ export function AccountingEntryForm({
               <Label htmlFor="paymentMethodDiscount">
                 Payment method <span className="text-destructive">*</span>
               </Label>
-              <select
+              <SearchableSelect
                 id="paymentMethodDiscount"
-                className={selectClassName}
                 value={values.paymentMethod}
-                onChange={(event) =>
-                  updateField("paymentMethod", event.target.value as AccountingFormValues["paymentMethod"])
+                onValueChange={(next) =>
+                  updateField("paymentMethod", next as AccountingFormValues["paymentMethod"])
                 }
                 required
-              >
-                {INVOICE_PAYMENT_METHODS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                options={PAYMENT_METHOD_OPTIONS}
+              />
             </div>
           </div>
         </div>
@@ -561,19 +540,14 @@ export function AccountingEntryForm({
               {values.type === "income" ? "Income" : "Expense"} category{" "}
               <span className="text-destructive">*</span>
             </Label>
-            <select
+            <SearchableSelect
               id="category"
-              className={selectClassName}
               value={values.category}
-              onChange={(event) => updateField("category", event.target.value)}
+              onValueChange={(next) => updateField("category", next)}
+              searchPlaceholder="Search categories…"
               required
-            >
-              {categoryOptions.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+              options={categoryOptions.map((category) => ({ value: category, label: category }))}
+            />
           </div>
 
           {values.category === "Other" ? (
@@ -596,21 +570,15 @@ export function AccountingEntryForm({
               <Label htmlFor="paymentMethodCategory">
                 Payment method <span className="text-destructive">*</span>
               </Label>
-              <select
+              <SearchableSelect
                 id="paymentMethodCategory"
-                className={selectClassName}
                 value={values.paymentMethod}
-                onChange={(event) =>
-                  updateField("paymentMethod", event.target.value as AccountingFormValues["paymentMethod"])
+                onValueChange={(next) =>
+                  updateField("paymentMethod", next as AccountingFormValues["paymentMethod"])
                 }
                 required
-              >
-                {INVOICE_PAYMENT_METHODS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                options={PAYMENT_METHOD_OPTIONS}
+              />
             </div>
 
             <div className="space-y-2">
@@ -661,19 +629,13 @@ export function AccountingEntryForm({
               <Label htmlFor="branchCategory">
                 Branch <span className="text-destructive">*</span>
               </Label>
-              <select
+              <SearchableSelect
                 id="branchCategory"
-                className={selectClassName}
                 value={values.branch}
-                onChange={(event) => updateField("branch", event.target.value as AccountingFormValues["branch"])}
+                onValueChange={(next) => updateField("branch", next as AccountingFormValues["branch"])}
                 required
-              >
-                {ACCOUNTING_BRANCHES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                options={BRANCH_OPTIONS}
+              />
             </div>
           </div>
 
@@ -694,20 +656,21 @@ export function AccountingEntryForm({
           <Label htmlFor="routeAssignmentId">
             Route assignment <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="routeAssignmentId"
-            className={selectClassName}
             value={values.routeAssignmentId}
-            onChange={(event) => updateField("routeAssignmentId", event.target.value)}
+            onValueChange={(next) => updateField("routeAssignmentId", next)}
+            placeholder="Select a route assignment…"
+            searchPlaceholder="Search route assignments…"
             required
-          >
-            <option value="">Select a route assignment…</option>
-            {routeAssignments.map((assignment) => (
-              <option key={assignment.routeAssignmentId} value={assignment.routeAssignmentId}>
-                {formatRouteAssignmentCopyLabel(assignment)}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "Select a route assignment…" },
+              ...routeAssignments.map((assignment) => ({
+                value: assignment.routeAssignmentId,
+                label: formatRouteAssignmentCopyLabel(assignment),
+              })),
+            ]}
+          />
         </div>
       ) : null}
 

@@ -133,6 +133,7 @@ const ORDER_LIST_SEARCH_FIELD = "sender.name";
 
 const EMPTY_CUSTOMER: Customer = {
   id: "",
+  oldID: null,
   name: "—",
   customerType: null,
   phones: createDefaultRecordPhones(),

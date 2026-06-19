@@ -61,6 +61,32 @@ export function formatCoreAddressLine(address: CustomerCoreAddress): string {
   return parts.length > 0 ? parts.join(", ") : "—";
 }
 
+/** Human-friendly address grouped into a few display lines (street / city-state-zip / country). */
+export function formatCoreAddressLines(address: CustomerCoreAddress): string[] {
+  const streetParts = [address.address1, address.apartment || address.address2].filter(Boolean);
+  const cityLineParts = [address.city, [address.state, address.zipcode].filter(Boolean).join(" ")].filter(Boolean);
+
+  return [
+    streetParts.join(", "),
+    cityLineParts.join(", "),
+    address.country,
+  ].filter((line) => line.trim().length > 0);
+}
+
+/** Single-line query string suitable for Google Maps search/directions URLs. */
+export function buildCoreAddressMapsQuery(address: CustomerCoreAddress): string {
+  return [
+    address.address1,
+    address.apartment || address.address2,
+    address.city,
+    address.state,
+    address.zipcode,
+    address.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
 export function formatAddressLine(address: CustomerAddress): string {
   const parts = [
     address.streetAddress,

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getEmployeeBranchLabel } from "@/lib/employees/display";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import {
@@ -19,9 +20,6 @@ import {
   type EmployeeGroupFormValues,
 } from "@/lib/employee-groups/types";
 import { cn } from "@/lib/utils";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type EmployeeGroupFormProps = {
   initialValues?: EmployeeGroupFormValues;
@@ -109,24 +107,22 @@ export function EmployeeGroupForm({
           <Label htmlFor="branch">
             Branch <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="branch"
-            className={selectClassName}
             value={values.branch}
-            onChange={(event) =>
+            onValueChange={(next) =>
               setValues((current) => ({
                 ...current,
-                branch: event.target.value as EmployeeGroupFormValues["branch"],
+                branch: next as EmployeeGroupFormValues["branch"],
               }))
             }
+            searchPlaceholder="Search branches…"
             required
-          >
-            {EMPLOYEE_GROUP_BRANCHES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            options={EMPLOYEE_GROUP_BRANCHES.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+          />
         </div>
       </div>
 

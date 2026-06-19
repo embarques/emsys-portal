@@ -5,15 +5,13 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   createDefaultRecordPhones,
   createEmptyRecordPhone,
   ensureSinglePrimaryPhone,
 } from "@/lib/phones/phones";
 import { RECORD_PHONE_TYPE_OPTIONS, type RecordPhone } from "@/lib/phones/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type PhoneListEditorProps = {
   idPrefix?: string;
@@ -73,18 +71,16 @@ export function PhoneListEditor({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor={`${idPrefix}-type-${index}`}>Type</Label>
-              <select
+              <SearchableSelect
                 id={`${idPrefix}-type-${index}`}
-                className={selectClassName}
                 value={phone.type}
-                onChange={(event) => updatePhone(index, { type: event.target.value as RecordPhone["type"] })}
-              >
-                {RECORD_PHONE_TYPE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(next) => updatePhone(index, { type: next as RecordPhone["type"] })}
+                searchPlaceholder="Search types…"
+                options={RECORD_PHONE_TYPE_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
+              />
             </div>
 
             <div className="space-y-2">

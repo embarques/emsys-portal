@@ -1,6 +1,7 @@
 "use client";
 
 import { ApiUnavailableBanner } from "@/components/app-shell/api-unavailable-banner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/providers/auth-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { ReduxProvider } from "@/providers/redux-provider";
@@ -12,8 +13,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       <ReduxProvider>
         <ThemeProvider>
           <AuthProvider>
-            <ApiUnavailableBanner />
-            {children}
+            <TooltipProvider delayDuration={200}>
+              <ApiUnavailableBanner />
+              {children}
+            </TooltipProvider>
           </AuthProvider>
         </ThemeProvider>
       </ReduxProvider>

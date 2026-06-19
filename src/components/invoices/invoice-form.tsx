@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { InvoiceLineItemsEditor } from "@/components/invoices/invoice-line-items-editor";
 import { OrderPartyEditor } from "@/components/orders/order-party-editor";
 import { formatContainerLabel } from "@/lib/containers/display";
@@ -21,9 +22,6 @@ import {
 } from "@/lib/invoices/types";
 import { cloneItems } from "@/lib/items/mock-data";
 import { useCustomerPicker } from "@/lib/customers/hooks/use-customers";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type InvoiceFormProps = {
   initialValues?: InvoiceFormValues;
@@ -127,41 +125,39 @@ export function InvoiceForm({
           <Label htmlFor="containerId">
             Container <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="containerId"
-            className={selectClassName}
             value={values.containerId}
-            onChange={(event) => updateField("containerId", event.target.value)}
+            onValueChange={(next) => updateField("containerId", next)}
+            placeholder="Select a container"
+            searchPlaceholder="Search containers…"
             required
-          >
-            <option value="">Select a container</option>
-            {containers.map((container) => (
-              <option key={container.id} value={String(container.id)}>
-                {formatContainerLabel(container)}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "Select a container" },
+              ...containers.map((container) => ({
+                value: String(container.id),
+                label: formatContainerLabel(container),
+              })),
+            ]}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="paymentLocation">
             Pending <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="paymentLocation"
-            className={selectClassName}
             value={values.paymentLocation}
-            onChange={(event) =>
-              updateField("paymentLocation", event.target.value as InvoiceFormValues["paymentLocation"])
+            onValueChange={(next) =>
+              updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
             }
             required
-          >
-            {INVOICE_PAYMENT_LOCATIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            options={INVOICE_PAYMENT_LOCATIONS.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+          />
         </div>
       </div>
 
