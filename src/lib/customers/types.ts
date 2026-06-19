@@ -325,8 +325,9 @@ export function applyCustomerTypeBranch(values: CustomerFormValues): CustomerFor
     branch,
     address: {
       ...values.address,
-      country: values.address.country.trim() || defaultCountry,
+      country: defaultCountry,
     },
+    addresses: values.addresses.map((entry) => ({ ...entry, country: defaultCountry })),
   });
 }
 

@@ -144,8 +144,13 @@ function AddressFieldGrid({ idPrefix, address, onChange }: AddressFieldGridProps
           <Input
             id={`${idPrefix}-country`}
             value={address.country}
-            onChange={(event) => onChange("country", event.target.value.toUpperCase())}
+            readOnly
+            disabled
+            aria-readonly
+            className="bg-muted/60"
+            title="Country is set automatically by the customer type"
           />
+          <p className="text-xs text-muted-foreground">Set automatically by customer type.</p>
         </div>
       </div>
     </div>
