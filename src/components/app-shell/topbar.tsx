@@ -23,7 +23,7 @@ export function Topbar({
         variant="outline"
         size="icon"
         className="h-14 w-14 shrink-0 rounded-full border-blue-500/70 bg-background shadow-[0_0_0_6px_rgba(37,99,235,0.20)] touch-manipulation"
-        aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
+        aria-label={expanded ? "Collapse sidebar" : "Open sidebar menu"}
         onClick={onToggleSidebar}
         onTouchStart={(event) => {
           event.preventDefault();
@@ -34,7 +34,12 @@ export function Topbar({
           event.stopPropagation();
         }}
       >
-        {expanded ? <PanelLeftClose className="h-6 w-6" /> : <PanelLeftOpen className="h-6 w-6" />}
+        <PanelLeftOpen className="h-6 w-6 md:hidden" />
+        {expanded ? (
+          <PanelLeftClose className="hidden h-6 w-6 md:block" />
+        ) : (
+          <PanelLeftOpen className="hidden h-6 w-6 md:block" />
+        )}
       </Button>
 
       <nav className="hidden items-center gap-7 text-sm font-medium lg:flex">

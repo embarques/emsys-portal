@@ -8,6 +8,7 @@ import { navigation } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { SidebarNav } from "./sidebar-nav";
+import { SidebarProfileMenu } from "./sidebar-profile-menu";
 
 const flatNavigation = navigation.flatMap((group) => group.items);
 
@@ -30,7 +31,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
 
   if (!expanded) {
     return (
-      <aside className={cn(sidebarShellClassName, "w-20")}>
+      <aside className={cn(sidebarShellClassName, "hidden w-20 md:flex")}>
         <div className={cn("flex h-20 shrink-0 items-center justify-center border-b", sidebarSectionClassName)}>
           <Link
             href="/"
@@ -59,23 +60,15 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
           })}
         </nav>
 
-        <div className={cn("shrink-0 border-t p-3", sidebarSectionClassName)}>
-          <Link
-            href="/settings"
-            title="Profile"
-            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60 transition hover:bg-muted"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/40 text-sm font-bold text-primary">
-              HJ
-            </div>
-          </Link>
+        <div className={cn("relative flex shrink-0 justify-center border-t p-3", sidebarSectionClassName)}>
+          <SidebarProfileMenu compact />
         </div>
       </aside>
     );
   }
 
   return (
-    <aside className={cn(sidebarShellClassName, "w-20 xl:w-72")}>
+    <aside className={cn(sidebarShellClassName, "hidden w-20 md:flex xl:w-72")}>
       <div className={cn("flex h-20 shrink-0 items-center justify-center border-b xl:hidden", sidebarSectionClassName)}>
         <Link
           href="/"
@@ -104,16 +97,8 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
         })}
       </nav>
 
-      <div className={cn("shrink-0 border-t p-3 xl:hidden", sidebarSectionClassName)}>
-        <Link
-          href="/settings"
-          title="Profile"
-          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60 transition hover:bg-muted"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/40 text-sm font-bold text-primary">
-            HJ
-          </div>
-        </Link>
+      <div className={cn("relative flex shrink-0 justify-center border-t p-3 xl:hidden", sidebarSectionClassName)}>
+        <SidebarProfileMenu compact />
       </div>
 
       <div className={cn("hidden h-20 shrink-0 items-center gap-3 border-b px-5 xl:flex", sidebarSectionClassName)}>
@@ -134,19 +119,8 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
         <SidebarNav />
       </div>
 
-      <div className={cn("hidden shrink-0 border-t p-3 xl:block", sidebarSectionClassName)}>
-        <Link
-          href="/settings"
-          className="flex items-center gap-3 rounded-xl bg-muted/60 p-3 transition hover:bg-muted"
-        >
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/40 text-sm font-bold text-primary">
-            HJ
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">Hector Mejia</p>
-            <p className="truncate text-xs text-muted-foreground">Administrator</p>
-          </div>
-        </Link>
+      <div className={cn("relative hidden shrink-0 border-t p-3 xl:block", sidebarSectionClassName)}>
+        <SidebarProfileMenu />
       </div>
     </aside>
   );

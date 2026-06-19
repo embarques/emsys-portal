@@ -48,8 +48,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <div
         className={cn(
-          "min-h-screen transition-[padding] duration-300 pl-20",
-          sidebarExpanded && "xl:pl-72"
+          "min-h-screen transition-[padding] duration-300 max-md:pl-0 md:pl-20",
+          sidebarExpanded && "xl:pl-72",
         )}
       >
         <Topbar expanded={sidebarExpanded} onToggleSidebar={toggleSidebar} />
