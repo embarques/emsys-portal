@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import {
   buildTelHref,
   buildWhatsAppHref,
-  formatPhoneForDisplay,
+  resolvePhoneDisplayValue,
 } from "@/lib/utils/phone";
 import { cn } from "@/lib/utils";
 
 type PhoneActionRowProps = {
   label: string;
   number: string;
+  displayNumber?: string;
   className?: string;
 };
 
@@ -30,9 +31,9 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function PhoneActionRow({ label, number, className }: PhoneActionRowProps) {
+export function PhoneActionRow({ label, number, displayNumber, className }: PhoneActionRowProps) {
   const { notifySuccess, notifyError } = useFeedback();
-  const display = formatPhoneForDisplay(number);
+  const display = resolvePhoneDisplayValue(number, displayNumber);
   const telHref = buildTelHref(number);
   const whatsAppHref = buildWhatsAppHref(number);
 

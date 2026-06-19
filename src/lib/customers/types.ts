@@ -61,6 +61,7 @@ export type Customer = {
 export type CustomerPhone = {
   id: string;
   number: string;
+  displayNumber?: string;
   label?: string;
 };
 
@@ -430,6 +431,7 @@ export function getCustomerPhones(customer: Pick<Customer, "phones">): CustomerP
     .map((phone, index) => ({
       id: `phone-${index}`,
       number: phone.number.trim(),
+      ...(phone.displayNumber?.trim() ? { displayNumber: phone.displayNumber.trim() } : {}),
       label: phone.isPrimary ? "Primary" : phone.type,
     }));
 }

@@ -4,11 +4,13 @@ import {
   RECORD_PHONE_TYPE_OPTIONS,
   type RecordPhone,
   type RecordPhoneType,
+  type RecordPhoneWritePayload,
 } from "./types";
 
 type ApiPhoneRaw = {
   type?: string;
   number?: string;
+  displayNumber?: string;
   isPrimary?: boolean;
 };
 
@@ -41,9 +43,12 @@ function normalizeApiPhoneEntry(raw: unknown): RecordPhone | null {
   const number = normalizeStoredPhone(String(entry.number ?? ""));
   if (!number) return null;
 
+  const displayNumber = String(entry.displayNumber ?? "").trim();
+
   return {
     type: coercePhoneType(entry.type),
     number,
+    ...(displayNumber ? { displayNumber } : {}),
     isPrimary: Boolean(entry.isPrimary),
   };
 }
@@ -122,7 +127,7 @@ export function validateRecordPhones(
   }
 }
 
-export function buildApiPhonesPayload(phones: RecordPhone[]): RecordPhone[] {
+export function buildApiPhonesPayload(phones: RecordPhone[]): RecordPhoneWritePayload[] {
   return normalizeRecordPhonesFormValues(phones).map(({ type, number, isPrimary }) => ({
     type,
     number,
@@ -141,6 +146,23 @@ export function getPrimaryPhoneNumber(phones: RecordPhone[]): string {
   return getPrimaryRecordPhone(phones)?.number ?? "";
 }
 
+export function getRecordPhoneDisplayNumber(
+  phone: Pick<RecordPhone, "number" | "displayNumber">,
+): string {
+  const display = phone.displayNumber?.trim();
+  if (display) return display;
+  return formatPhoneForDisplay(phone.number);
+}
+
+export function getPrimaryPhoneDisplayNumber(phones: RecordPhone[]): string {
+  const primary = getPrimaryRecordPhone(phones);
+  return primary ? getRecordPhoneDisplayNumber(primary) : "";
+}
+
+export function formatRecordPhoneDisplayOrDash(phone: Pick<RecordPhone, "number" | "displayNumber">): string {
+  return getRecordPhoneDisplayNumber(phone) || "—";
+}
+
 export function getOrderedRecordPhones(phones: RecordPhone[]): RecordPhone[] {
   const withNumbers = phones.filter((phone) => phone.number.trim());
   const primary = withNumbers.filter((phone) => phone.isPrimary);
@@ -151,6 +173,11 @@ export function getOrderedRecordPhones(phones: RecordPhone[]): RecordPhone[] {
 
 export function getPhoneAtDisplayIndex(phones: RecordPhone[], index: number): string {
   return getOrderedRecordPhones(phones)[index]?.number ?? "";
+}
+
+export function getPhoneDisplayAtIndex(phones: RecordPhone[], index: number): string {
+  const phone = getOrderedRecordPhones(phones)[index];
+  return phone ? getRecordPhoneDisplayNumber(phone) : "";
 }
 
 export function formatRecordPhoneTypeLabel(type: RecordPhoneType): string {
@@ -165,7 +192,7 @@ export function formatRecordPhoneList(phones: RecordPhone[]): string {
     .map((phone) => {
       const label = formatRecordPhoneTypeLabel(phone.type);
       const suffix = phone.isPrimary ? " (primary)" : "";
-      return `${label}: ${formatPhoneForDisplay(phone.number)}${suffix}`;
+      return `${label}: ${getRecordPhoneDisplayNumber(phone)}${suffix}`;
     })
     .join(" · ");
 }
@@ -175,7 +202,7 @@ export function formatRecordPhonesCompact(phones: RecordPhone[]): string {
   if (entries.length === 0) return "—";
 
   const first = entries[0];
-  const formatted = formatPhoneForDisplay(first.number);
+  const formatted = getRecordPhoneDisplayNumber(first);
   const suffix = entries.length > 1 ? ` (+${entries.length - 1})` : "";
   return `${formatted}${suffix}`;
 }

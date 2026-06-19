@@ -1,7 +1,5 @@
 const E164_MAX_DIGITS = 15;
 
-const PHONE_API_FIELD_KEYS = new Set(["phone1", "phone2", "number", "phones.number"]);
-
 /** Strip formatting characters; preserve a leading + and digits only for API storage. */
 export function normalizeStoredPhone(value: string): string {
   const trimmed = value.trim();
@@ -61,10 +59,19 @@ export function formatPhoneDisplay(value: string): string {
   return formatPhoneForDisplay(value);
 }
 
+/** Prefer API displayNumber when present; otherwise format the stored number locally. */
+export function resolvePhoneDisplayValue(number: string, displayNumber?: string): string {
+  const display = displayNumber?.trim();
+  if (display) return display;
+  return formatPhoneForDisplay(number);
+}
+
 /** Whether an API field name represents a phone value. */
 export function isPhoneApiField(field: string): boolean {
-  const leaf = field.split(".").pop()?.trim() ?? field.trim();
-  return PHONE_API_FIELD_KEYS.has(leaf);
+  const normalized = field.trim().toLowerCase();
+  if (normalized === "phone1" || normalized === "phone2") return true;
+  if (normalized.endsWith(".phone1") || normalized.endsWith(".phone2")) return true;
+  return normalized.includes(".phones.") || normalized.endsWith(".phones.number");
 }
 
 /** Normalize a search/filter value based on the target API field. */
@@ -75,8 +82,8 @@ export function normalizeApiSearchValueForField(field: string, value: string): s
 }
 
 /** Format a phone for tables and detail views, using em dash when empty. */
-export function formatPhoneDisplayOrDash(value: string): string {
-  return formatPhoneForDisplay(value) || "—";
+export function formatPhoneDisplayOrDash(value: string, displayNumber?: string): string {
+  return resolvePhoneDisplayValue(value, displayNumber) || "—";
 }
 
 /** Digits only, suitable for tel: and wa.me links. */

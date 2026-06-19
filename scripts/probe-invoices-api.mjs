@@ -193,3 +193,43 @@ if (detailId) {
     console.log(JSON.stringify(detail.json, null, 2));
   }
 }
+
+const searchTerm = process.env.EMSYS_SEARCH_TERM?.trim() ?? "a";
+const searchFields = [
+  "number",
+  "sender.name",
+  "receiver.name",
+  "sender.address.address1",
+  "sender.address.address2",
+  "receiver.address.address1",
+  "receiver.address.address2",
+];
+
+const orFilters = searchFields.map((field) => ({
+  field,
+  operator: "contains",
+  value: searchTerm,
+}));
+
+const searchBody = {
+  sort: [{ field: "number", direction: "desc" }],
+  filters: [{ operator: "or", filters: orFilters }],
+};
+
+console.log("\n=== POST /invoices/search?page=1&limit=3&offset=0 (OR contains, URL pagination) ===");
+const search = await request(
+  "POST",
+  `/invoices/search?page=1&limit=3&offset=0`,
+  searchBody,
+);
+console.log("status:", search.status);
+console.log("request body:", JSON.stringify(searchBody, null, 2));
+console.log(JSON.stringify(search.json, null, 2));
+
+console.log("\n=== POST /invoices/search — single field sender.name ===");
+const singleField = await request("POST", `/invoices/search?page=1&limit=3&offset=0`, {
+  sort: [{ field: "number", direction: "desc" }],
+  filters: [{ operator: "or", filters: [{ field: "sender.name", operator: "contains", value: searchTerm }] }],
+});
+console.log("status:", singleField.status);
+console.log(JSON.stringify(singleField.json, null, 2));

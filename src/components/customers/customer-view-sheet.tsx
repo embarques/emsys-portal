@@ -92,6 +92,7 @@ export function CustomerViewSheet({
                       : formatRecordPhoneTypeLabel(phone.type)
                   }
                   number={phone.number}
+                  displayNumber={phone.displayNumber}
                 />
               ))
             )}

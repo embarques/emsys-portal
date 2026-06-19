@@ -18,7 +18,7 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAddressLine } from "@/lib/customers/display";
-import { formatPhoneForDisplay } from "@/lib/utils/phone";
+import { resolvePhoneDisplayValue } from "@/lib/utils/phone";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   formatInvoiceDate,
@@ -58,7 +58,7 @@ function PartySection({ title, party }: { title: string; party: Invoice["sender"
       <p className="mt-3 text-xs text-muted-foreground">
         {party.phones
           .map((phone) => {
-            const formatted = formatPhoneForDisplay(phone.number);
+            const formatted = resolvePhoneDisplayValue(phone.number, phone.displayNumber);
             return phone.label ? `${phone.label}: ${formatted}` : formatted;
           })
           .filter(Boolean)

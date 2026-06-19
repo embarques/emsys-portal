@@ -1,5 +1,5 @@
 import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
-import { formatPhoneForDisplay } from "@/lib/utils/phone";
+import { resolvePhoneDisplayValue } from "@/lib/utils/phone";
 import type { ClientType, Customer, CustomerAddress, CustomerCoreAddress, CustomerPortalBranch } from "./types";
 import { isCustomerReceiverType, isCustomerSenderType } from "./customer-type";
 import {
@@ -103,7 +103,7 @@ export function formatPhoneSummary(customer: Customer): string {
   const first = phones[0];
   const label = first.label ? `${first.label}: ` : "";
   const suffix = phones.length > 1 ? ` (+${phones.length - 1})` : "";
-  return `${label}${formatPhoneForDisplay(first.number)}${suffix}`;
+  return `${label}${resolvePhoneDisplayValue(first.number, first.displayNumber)}${suffix}`;
 }
 
 export function formatPhoneList(customer: Customer): string {
@@ -112,7 +112,7 @@ export function formatPhoneList(customer: Customer): string {
 
   return phones
     .map((phone) => {
-      const formatted = formatPhoneForDisplay(phone.number);
+      const formatted = resolvePhoneDisplayValue(phone.number, phone.displayNumber);
       return phone.label ? `${phone.label}: ${formatted}` : formatted;
     })
     .join(" · ");

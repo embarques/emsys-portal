@@ -14,9 +14,9 @@ import { formatAuditDate } from "@/lib/audit/display";
 import {
   formatRecordPhoneTypeLabel,
   getOrderedRecordPhones,
+  getRecordPhoneDisplayNumber,
 } from "@/lib/phones/phones";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
-import { formatPhoneForDisplay } from "@/lib/utils/phone";
 import {
   formatEmployeeAddress,
   formatEmployeeBranchLabel,
@@ -102,7 +102,7 @@ export function EmployeeViewSheet({
                       ? `${formatRecordPhoneTypeLabel(phone.type)} (primary)`
                       : formatRecordPhoneTypeLabel(phone.type)
                   }
-                  value={formatPhoneForDisplay(phone.number)}
+                  value={getRecordPhoneDisplayNumber(phone)}
                 />
               ))
             )}

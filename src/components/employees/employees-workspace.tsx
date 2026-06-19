@@ -41,8 +41,7 @@ import { EMPLOYEE_TABLE_FILTER_FIELDS } from "@/lib/employees/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
-import { getPrimaryPhoneNumber } from "@/lib/phones/phones";
+import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -305,7 +304,7 @@ export function EmployeesWorkspace() {
     {
       id: "phone",
       label: "Phone",
-      renderCell: (employee) => formatPhoneDisplayOrDash(getPrimaryPhoneNumber(employee.phones)),
+      renderCell: (employee) => getPrimaryPhoneDisplayNumber(employee.phones) || "—",
     },
     {
       id: "email",
