@@ -1,0 +1,9 @@
+name: emsys-portal-production
+
+include:
+  - ./portal.yaml
+
+networks:
+  emsys-net:
+    external: true
+    name: emsys-net
