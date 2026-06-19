@@ -28,7 +28,7 @@ export type CustomerCoreAddress = {
   country: string;
 };
 
-/** customer.Customer.branch — core.BranchDTO */
+/** customer.Customer.branch — core.BranchDTO (list responses may omit `id`). */
 export type CustomerBranch = {
   id: number;
   name: string;
@@ -37,6 +37,8 @@ export type CustomerBranch = {
 
 export type Customer = {
   id: string;
+  /** Legacy numeric customer ID from the EMSYS API. */
+  oldID: number | null;
   name: string;
   customerType: number | null;
   phones: RecordPhone[];
@@ -100,6 +102,7 @@ export type CustomerAddressFormValues = {
 
 export type CustomerFormValues = {
   id: string;
+  oldID: number | null;
   name: string;
   customerType: number | null;
   phones: RecordPhone[];
@@ -201,6 +204,26 @@ export const CUSTOMER_PORTAL_BRANCHES: {
   { portal: "usa", id: 1, label: "USA", code: "NY" },
   { portal: "dr", id: 2, label: "DR", code: "DR" },
 ];
+
+/** Resolve branch id when the API returns only `name` and `code`. */
+export function resolveCustomerBranchId(input: { id?: number | null; code?: string | null } = {}): number {
+  const explicitId = input.id;
+  if (typeof explicitId === "number" && Number.isFinite(explicitId) && explicitId > 0) {
+    return explicitId;
+  }
+
+  const normalizedCode = String(input.code ?? "").trim().toUpperCase();
+  if (normalizedCode) {
+    const byCode = CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.code.toUpperCase() === normalizedCode);
+    if (byCode) return byCode.id;
+
+    if (normalizedCode === "DO") {
+      return CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.portal === "dr")?.id ?? 2;
+    }
+  }
+
+  return CUSTOMER_PORTAL_BRANCHES[0]!.id;
+}
 
 /**
  * Customer search field + operator pairs verified against the live API.
@@ -313,6 +336,7 @@ export function createEmptyCustomerForm(): CustomerFormValues {
 
   return {
     id: "",
+    oldID: null,
     name: "",
     customerType: CUSTOMER_TYPE_SENDER,
     phones: createDefaultRecordPhones(),
@@ -490,6 +514,7 @@ export function customerToFormValues(customer: Customer): CustomerFormValues {
 
   return normalizeCustomerFormValues({
     id: customer.id,
+    oldID: customer.oldID,
     name: customer.name,
     customerType: customer.customerType,
     phones: customer.phones.map((phone) => ({ ...phone })),

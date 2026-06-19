@@ -40,6 +40,7 @@ import {
   type CustomerFormValues,
   DEFAULT_CUSTOMER_LIST_PARAMS,
   normalizeCustomerType,
+  resolveCustomerBranchId,
   validateCustomerFormValues,
   type CustomerListParams,
 } from "@/lib/customers/types";
@@ -146,7 +147,7 @@ function normalizeAddress(raw?: ApiAddress): CustomerCoreAddress {
 
 function normalizeBranch(raw?: ApiBranch): CustomerBranch {
   const branch = raw ?? {};
-  const id = readNumericId(branch.id) ?? 1;
+  const id = resolveCustomerBranchId({ id: readNumericId(branch.id), code: branch.code });
   const defaults = CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.id === id) ?? CUSTOMER_PORTAL_BRANCHES[0];
 
   return {
@@ -194,6 +195,7 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
 
   return {
     id,
+    oldID: readNumericId(item.oldID) ?? null,
     name: String(item.name ?? "").trim(),
     customerType: readCustomerTypeFromApi(item),
     phones: normalizeRecordPhonesFromApi(item),
@@ -423,6 +425,10 @@ function buildCustomerWritePayload(
 
   if (options.customerId) {
     payload.id = options.customerId;
+  }
+
+  if (values.oldID != null && values.oldID > 0) {
+    payload.oldID = values.oldID;
   }
 
   if (values.createdByID != null && values.createdByID > 0) {

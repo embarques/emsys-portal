@@ -620,9 +620,14 @@ export function CustomersWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit customer" : "Add customer"}</DialogTitle>
+            <DialogDescription>
+              {formMode === "edit"
+                ? "Update this customer's details and addresses."
+                : "Create a new customer with contact details and addresses."}
+            </DialogDescription>
           </DialogHeader>
           <CustomerForm
             key={editingCustomer?.id ?? "new"}
@@ -634,13 +639,13 @@ export function CustomersWorkspace() {
             isEditing={formMode === "edit"}
             submitLabel={formMode === "edit" ? "Save changes" : "Add customer"}
             isSubmitting={isSaving}
+            externalError={formError}
             onSubmit={saveCustomer}
             onCancel={() => {
               setFormMode(null);
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

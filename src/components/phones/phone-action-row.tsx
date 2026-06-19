@@ -4,6 +4,7 @@ import { Copy, Phone } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   buildTelHref,
   buildWhatsAppHref,
@@ -61,44 +62,59 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          aria-label={`Copy ${label}`}
-          onClick={handleCopy}
-        >
-          <Copy className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              aria-label={`Copy ${label}`}
+              onClick={handleCopy}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Copy number</TooltipContent>
+        </Tooltip>
         {telHref ? (
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            <a href={telHref} aria-label={`Call ${label}`}>
-              <Phone className="h-4 w-4" />
-            </a>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              >
+                <a href={telHref} aria-label={`Call ${label}`}>
+                  <Phone className="h-4 w-4" />
+                </a>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Call</TooltipContent>
+          </Tooltip>
         ) : null}
         {whatsAppHref ? (
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-[#25D366]"
-          >
-            <a
-              href={whatsAppHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`WhatsApp ${label}`}
-            >
-              <WhatsAppIcon />
-            </a>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-[#25D366]"
+              >
+                <a
+                  href={whatsAppHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`WhatsApp ${label}`}
+                >
+                  <WhatsAppIcon />
+                </a>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Message on WhatsApp</TooltipContent>
+          </Tooltip>
         ) : null}
       </div>
     </div>

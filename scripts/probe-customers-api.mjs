@@ -71,7 +71,7 @@ const sample = Array.isArray(list.json?.data) ? list.json.data[0] : null;
 if (sample) {
   console.log("\n=== Sample customer keys ===");
   console.log(Object.keys(sample));
-  console.log("\n=== customerType value (0=sender, 1=receiver) ===", sample.customerType ?? sample.CustomerType);
+  console.log("\n=== customerType value (1=sender, 2=receiver) ===", sample.customerType ?? sample.CustomerType);
   console.log("=== address shape ===", sample.address);
 }
 

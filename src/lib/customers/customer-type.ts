@@ -1,9 +1,9 @@
 import type { ApiSearchFilterNode } from "@/lib/api/search-query";
 import { isApiSearchFilter } from "@/lib/api/search-query";
 
-/** API wire values: 0 = Sender, 1 = Receiver. */
-export const CUSTOMER_TYPE_SENDER = 0;
-export const CUSTOMER_TYPE_RECEIVER = 1;
+/** API wire values: 1 = Sender, 2 = Receiver. */
+export const CUSTOMER_TYPE_SENDER = 1;
+export const CUSTOMER_TYPE_RECEIVER = 2;
 
 export function isCustomerTypeFilterActive(value: number | "all" | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
