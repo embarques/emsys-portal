@@ -6,6 +6,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   ROUTE_BRANCHES,
   ROUTE_PLACE_KINDS,
@@ -14,9 +15,6 @@ import {
   type RouteFormValues,
   type RoutePlaceFormValues,
 } from "@/lib/routes/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type RouteFormProps = {
   initialValues?: RouteFormValues;
@@ -98,19 +96,14 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
           <Label htmlFor="branch">
             Branch <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="branch"
-            className={selectClassName}
             value={values.branch}
-            onChange={(event) => updateField("branch", event.target.value as RouteFormValues["branch"])}
+            onValueChange={(next) => updateField("branch", next as RouteFormValues["branch"])}
+            searchPlaceholder="Search branches…"
             required
-          >
-            {ROUTE_BRANCHES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            options={ROUTE_BRANCHES.map((option) => ({ value: option.value, label: option.label }))}
+          />
         </div>
       </div>
 
@@ -152,20 +145,18 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor={`place-kind-${place.id}`}>Type</Label>
-                    <select
+                    <SearchableSelect
                       id={`place-kind-${place.id}`}
-                      className={selectClassName}
                       value={place.kind}
-                      onChange={(event) =>
-                        updatePlace(index, { kind: event.target.value as RoutePlaceFormValues["kind"] })
+                      onValueChange={(next) =>
+                        updatePlace(index, { kind: next as RoutePlaceFormValues["kind"] })
                       }
-                    >
-                      {ROUTE_PLACE_KINDS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                      searchPlaceholder="Search types…"
+                      options={ROUTE_PLACE_KINDS.map((option) => ({
+                        value: option.value,
+                        label: option.label,
+                      }))}
+                    />
                   </div>
 
                   <div className="space-y-2">

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   getPermissionCatalogGroups,
   getPermissionLabel,
@@ -18,9 +19,6 @@ import {
   type Role,
   type RolePermissionFormValues,
 } from "@/lib/roles/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type RolePermissionsEditorProps = {
   permissions: RolePermissionFormValues[];
@@ -109,19 +107,20 @@ export function RolePermissionsEditor({
                   Start with another role&apos;s permissions, then add, edit, or remove as needed.
                 </p>
               </div>
-              <select
+              <SearchableSelect
                 id="copyFromRole"
-                className={selectClassName}
                 value={copyFromRoleId}
-                onChange={(event) => handleCopyFromRole(event.target.value)}
-              >
-                <option value="">Select a role to copy…</option>
-                {copySourceRoles.map((role) => (
-                  <option key={role.roleId} value={role.roleId}>
-                    {role.name} ({role.permissions.length} permissions)
-                  </option>
-                ))}
-              </select>
+                onValueChange={handleCopyFromRole}
+                placeholder="Select a role to copy…"
+                searchPlaceholder="Search roles…"
+                options={[
+                  { value: "", label: "Select a role to copy…" },
+                  ...copySourceRoles.map((role) => ({
+                    value: role.roleId,
+                    label: `${role.name} (${role.permissions.length} permissions)`,
+                  })),
+                ]}
+              />
             </div>
           </div>
         </div>

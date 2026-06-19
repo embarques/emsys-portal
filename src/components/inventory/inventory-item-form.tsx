@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   INVENTORY_CATEGORIES,
   INVENTORY_LOCATIONS,
@@ -13,9 +14,6 @@ import {
   deriveInventoryStatus,
   type InventoryFormValues,
 } from "@/lib/inventory/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type InventoryItemFormProps = {
   initialValues?: InventoryFormValues;
@@ -76,48 +74,33 @@ export function InventoryItemForm({
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <select
+          <SearchableSelect
             id="category"
-            className={selectClassName}
             value={values.category}
-            onChange={(event) => updateField("category", event.target.value as InventoryFormValues["category"])}
-          >
-            {INVENTORY_CATEGORIES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            onValueChange={(next) => updateField("category", next as InventoryFormValues["category"])}
+            searchPlaceholder="Search categories…"
+            options={INVENTORY_CATEGORIES.map((option) => ({ value: option.value, label: option.label }))}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="location">Location</Label>
-          <select
+          <SearchableSelect
             id="location"
-            className={selectClassName}
             value={values.location}
-            onChange={(event) => updateField("location", event.target.value as InventoryFormValues["location"])}
-          >
-            {INVENTORY_LOCATIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            onValueChange={(next) => updateField("location", next as InventoryFormValues["location"])}
+            searchPlaceholder="Search locations…"
+            options={INVENTORY_LOCATIONS.map((option) => ({ value: option.value, label: option.label }))}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <select
+          <SearchableSelect
             id="status"
-            className={selectClassName}
             value={values.status}
-            onChange={(event) => updateField("status", event.target.value as InventoryFormValues["status"])}
-          >
-            {INVENTORY_STATUSES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            onValueChange={(next) => updateField("status", next as InventoryFormValues["status"])}
+            searchPlaceholder="Search statuses…"
+            options={INVENTORY_STATUSES.map((option) => ({ value: option.value, label: option.label }))}
+          />
         </div>
       </div>
 

@@ -16,6 +16,7 @@ import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 import { CUSTOMER_ADDRESS_FIELD_LABELS } from "@/lib/customers/form-labels";
 import {
@@ -30,9 +31,6 @@ import {
   type CustomerCoreAddress,
   type CustomerFormValues,
 } from "@/lib/customers/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 const textareaClassName =
   "flex min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
@@ -265,19 +263,16 @@ export function CustomerForm({
             <Label htmlFor="customerType">
               Customer type <span className="text-destructive">*</span>
             </Label>
-            <select
+            <SearchableSelect
               id="customerType"
-              className={selectClassName}
-              value={selectedType}
-              onChange={(event) => updateField("customerType", Number(event.target.value))}
+              value={String(selectedType)}
+              onValueChange={(next) => updateField("customerType", Number(next))}
+              options={CUSTOMER_TYPE_OPTIONS.map((option) => ({
+                value: String(option.value),
+                label: option.label,
+              }))}
               required
-            >
-              {CUSTOMER_TYPE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </FormSection>
 

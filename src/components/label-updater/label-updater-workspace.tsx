@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { applyLabelBarcodeUpdate } from "@/lib/labels/updater";
@@ -15,9 +16,6 @@ import { LABEL_STATUSES, type LabelStatus, type LabelUpdateResult } from "@/lib/
 import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
 import { formatRouteAssignmentCopyLabel } from "@/lib/route-assignments/display";
 import { cn } from "@/lib/utils";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 function ResultCell({ value }: { value?: string | number }) {
   if (value === undefined || value === "") return <span className="text-muted-foreground">—</span>;
@@ -125,18 +123,16 @@ export function LabelUpdaterWorkspace() {
             {changeStatus ? (
               <div className="space-y-2">
                 <Label htmlFor="newStatus">New status</Label>
-                <select
+                <SearchableSelect
                   id="newStatus"
-                  className={selectClassName}
                   value={newStatus}
-                  onChange={(event) => setNewStatus(event.target.value as LabelStatus)}
-                >
-                  {LABEL_STATUSES.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(next) => setNewStatus(next as LabelStatus)}
+                  searchPlaceholder="Search statuses…"
+                  options={LABEL_STATUSES.map((option) => ({
+                    value: option.value,
+                    label: option.label,
+                  }))}
+                />
               </div>
             ) : null}
 
@@ -152,18 +148,16 @@ export function LabelUpdaterWorkspace() {
             {changeContainer ? (
               <div className="space-y-2">
                 <Label htmlFor="newContainer">New container</Label>
-                <select
+                <SearchableSelect
                   id="newContainer"
-                  className={selectClassName}
                   value={newContainerId}
-                  onChange={(event) => setNewContainerId(event.target.value)}
-                >
-                  {containers.map((container) => (
-                    <option key={container.id} value={String(container.id)}>
-                      {formatContainerLabel(container)}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={setNewContainerId}
+                  searchPlaceholder="Search containers…"
+                  options={containers.map((container) => ({
+                    value: String(container.id),
+                    label: formatContainerLabel(container),
+                  }))}
+                />
               </div>
             ) : null}
 
@@ -179,18 +173,16 @@ export function LabelUpdaterWorkspace() {
             {changeRouteAssignment ? (
               <div className="space-y-2">
                 <Label htmlFor="newRouteAssignment">New route assignment</Label>
-                <select
+                <SearchableSelect
                   id="newRouteAssignment"
-                  className={selectClassName}
                   value={newRouteAssignmentId}
-                  onChange={(event) => setNewRouteAssignmentId(event.target.value)}
-                >
-                  {routeAssignments.map((assignment) => (
-                    <option key={assignment.routeAssignmentId} value={assignment.routeAssignmentId}>
-                      {formatRouteAssignmentCopyLabel(assignment)}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={setNewRouteAssignmentId}
+                  searchPlaceholder="Search route assignments…"
+                  options={routeAssignments.map((assignment) => ({
+                    value: assignment.routeAssignmentId,
+                    label: formatRouteAssignmentCopyLabel(assignment),
+                  }))}
+                />
               </div>
             ) : null}
           </div>

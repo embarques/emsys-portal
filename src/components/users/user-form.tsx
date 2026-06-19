@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   USER_ACTIVE_OPTIONS,
   USER_PORTAL_BRANCHES,
@@ -15,9 +16,6 @@ import {
   type UserFormValues,
   type UserPortalBranch,
 } from "@/lib/users/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type UserFormProps = {
   initialValues?: UserFormValues;
@@ -151,38 +149,34 @@ export function UserForm({
           <Label htmlFor="active">
             active <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="active"
-            className={selectClassName}
+            searchable={false}
             value={String(values.active)}
-            onChange={(event) => updateField("active", event.target.value === "true")}
+            onValueChange={(next) => updateField("active", next === "true")}
             required
-          >
-            {USER_ACTIVE_OPTIONS.map((option) => (
-              <option key={String(option.value)} value={String(option.value)}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            options={USER_ACTIVE_OPTIONS.map((option) => ({
+              value: String(option.value),
+              label: option.label,
+            }))}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="roleId">
             role.id <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="roleId"
-            className={selectClassName}
-            value={values.role.id}
-            onChange={(event) => handleRoleChange(Number(event.target.value))}
+            value={String(values.role.id)}
+            onValueChange={(next) => handleRoleChange(Number(next))}
+            searchPlaceholder="Search roles…"
             required
-          >
-            {roleOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            options={roleOptions.map((option) => ({
+              value: String(option.id),
+              label: option.label,
+            }))}
+          />
         </div>
       </div>
 
@@ -191,19 +185,17 @@ export function UserForm({
           <Label htmlFor="branch">
             branch <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="branch"
-            className={selectClassName}
             value={selectedPortalBranch}
-            onChange={(event) => handlePortalBranchChange(event.target.value as UserPortalBranch)}
+            onValueChange={(next) => handlePortalBranchChange(next as UserPortalBranch)}
+            searchPlaceholder="Search branches…"
             required
-          >
-            {USER_PORTAL_BRANCHES.map((option) => (
-              <option key={option.portal} value={option.portal}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            options={USER_PORTAL_BRANCHES.map((option) => ({
+              value: option.portal,
+              label: option.label,
+            }))}
+          />
         </div>
 
         <div className="space-y-2">

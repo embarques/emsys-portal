@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -18,9 +19,6 @@ import {
   type OrderFormValues,
 } from "@/lib/orders/types";
 import type { Order } from "@/lib/orders/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type OrderFormProps = {
   initialValues?: OrderFormValues;
@@ -134,38 +132,35 @@ export function OrderForm({
           <Label htmlFor="branchId">
             branch.id <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="branchId"
-            className={selectClassName}
-            value={values.branchId}
-            onChange={(event) => updateField("branchId", Number(event.target.value))}
+            value={String(values.branchId)}
+            onValueChange={(next) => updateField("branchId", Number(next))}
+            searchPlaceholder="Search branches…"
             required
-          >
-            {branches.map((branch) => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name} · {branch.code}
-              </option>
-            ))}
-          </select>
+            options={branches.map((branch) => ({
+              value: String(branch.id),
+              label: `${branch.name} · ${branch.code}`,
+            }))}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="employeeId">employee.id</Label>
-          <select
+          <SearchableSelect
             id="employeeId"
-            className={selectClassName}
-            value={values.employeeId}
-            onChange={(event) =>
-              updateField("employeeId", event.target.value ? Number(event.target.value) : "")
-            }
-          >
-            <option value="">No employee</option>
-            {employees.map((employee) => (
-              <option key={employee.id} value={employee.id}>
-                {employee.name} · {employee.department}
-              </option>
-            ))}
-          </select>
+            value={String(values.employeeId)}
+            onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
+            placeholder="No employee"
+            searchPlaceholder="Search employees…"
+            options={[
+              { value: "", label: "No employee" },
+              ...employees.map((employee) => ({
+                value: String(employee.id),
+                label: `${employee.name} · ${employee.department}`,
+              })),
+            ]}
+          />
         </div>
 
         <div className="space-y-2">
@@ -199,37 +194,39 @@ export function OrderForm({
           <Label htmlFor="senderId">
             sender <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="senderId"
-            className={selectClassName}
             value={values.senderId}
-            onChange={(event) => updateSenderId(event.target.value)}
+            onValueChange={updateSenderId}
+            placeholder="Select sender"
+            searchPlaceholder="Search senders…"
             required
-          >
-            <option value="">Select sender</option>
-            {senderOptions.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.name}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "Select sender" },
+              ...senderOptions.map((customer) => ({
+                value: customer.id,
+                label: customer.name,
+              })),
+            ]}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="receiverId">receiver</Label>
-          <select
+          <SearchableSelect
             id="receiverId"
-            className={selectClassName}
             value={values.receiverId}
-            onChange={(event) => updateReceiverId(event.target.value)}
-          >
-            <option value="">No receiver</option>
-            {senderOptions.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.name}
-              </option>
-            ))}
-          </select>
+            onValueChange={updateReceiverId}
+            placeholder="No receiver"
+            searchPlaceholder="Search receivers…"
+            options={[
+              { value: "", label: "No receiver" },
+              ...senderOptions.map((customer) => ({
+                value: customer.id,
+                label: customer.name,
+              })),
+            ]}
+          />
         </div>
       </div>
 

@@ -39,6 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeInventoryKpis,
@@ -60,12 +61,8 @@ import {
 } from "@/lib/inventory/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
-import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 8;
-
-const selectClassName =
-  "h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 const defaultFilters: InventoryFilterState = {
   query: "",
@@ -331,69 +328,63 @@ export function InventoryWorkspace() {
                 onClearAll={hasActiveFilters ? resetFilters : undefined}
               >
             <TableFilterSection label="Status">
-              <select
-                id="filter-status"
-                className={cn(selectClassName, "min-w-[12rem]")}
+              <SearchableSelect
+                aria-label="Filter by status"
+                className="min-w-[12rem]"
                 value={filters.status}
-                onChange={(event) => {
+                onValueChange={(next) => {
                   setFilters((current) => ({
                     ...current,
-                    status: event.target.value as InventoryFilterState["status"],
+                    status: next as InventoryFilterState["status"],
                   }));
                   setPage(1);
                 }}
-              >
-                <option value="all">All statuses</option>
-                {INVENTORY_STATUSES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                searchPlaceholder="Search statuses…"
+                options={[
+                  { value: "all", label: "All statuses" },
+                  ...INVENTORY_STATUSES.map((option) => ({ value: option.value, label: option.label })),
+                ]}
+              />
             </TableFilterSection>
 
             <TableFilterSection label="Location">
-              <select
-                id="filter-location"
-                className={cn(selectClassName, "min-w-[12rem]")}
+              <SearchableSelect
+                aria-label="Filter by location"
+                className="min-w-[12rem]"
                 value={filters.location}
-                onChange={(event) => {
+                onValueChange={(next) => {
                   setFilters((current) => ({
                     ...current,
-                    location: event.target.value as InventoryFilterState["location"],
+                    location: next as InventoryFilterState["location"],
                   }));
                   setPage(1);
                 }}
-              >
-                <option value="all">All locations</option>
-                {INVENTORY_LOCATIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                searchPlaceholder="Search locations…"
+                options={[
+                  { value: "all", label: "All locations" },
+                  ...INVENTORY_LOCATIONS.map((option) => ({ value: option.value, label: option.label })),
+                ]}
+              />
             </TableFilterSection>
 
             <TableFilterSection label="Category">
-              <select
-                id="filter-category"
-                className={cn(selectClassName, "min-w-[12rem]")}
+              <SearchableSelect
+                aria-label="Filter by category"
+                className="min-w-[12rem]"
                 value={filters.category}
-                onChange={(event) => {
+                onValueChange={(next) => {
                   setFilters((current) => ({
                     ...current,
-                    category: event.target.value as InventoryFilterState["category"],
+                    category: next as InventoryFilterState["category"],
                   }));
                   setPage(1);
                 }}
-              >
-                <option value="all">All categories</option>
-                {INVENTORY_CATEGORIES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                searchPlaceholder="Search categories…"
+                options={[
+                  { value: "all", label: "All categories" },
+                  ...INVENTORY_CATEGORIES.map((option) => ({ value: option.value, label: option.label })),
+                ]}
+              />
             </TableFilterSection>
               </TableFilterPanel>
             }

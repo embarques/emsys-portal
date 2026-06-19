@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { updateConfigurationTheme } from "@/lib/configuration/store";
 import {
   CONFIGURATION_LANGUAGES,
@@ -21,9 +22,6 @@ import {
 } from "@/lib/configuration/types";
 import { useConfigurationStore, useSaveConfiguration } from "@/lib/configuration/use-configuration";
 import { cn } from "@/lib/utils";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 export function ConfigurationWorkspace() {
   const { notifySuccess } = useFeedback();
@@ -189,21 +187,18 @@ export function ConfigurationWorkspace() {
               <Label htmlFor="language">
                 Language <span className="text-destructive">*</span>
               </Label>
-              <select
+              <SearchableSelect
                 id="language"
-                className={selectClassName}
                 value={values.language}
-                onChange={(event) =>
-                  updateField("language", event.target.value as UserConfigurationFormValues["language"])
+                onValueChange={(next) =>
+                  updateField("language", next as UserConfigurationFormValues["language"])
                 }
                 required
-              >
-                {CONFIGURATION_LANGUAGES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                options={CONFIGURATION_LANGUAGES.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
+              />
             </div>
           </CardContent>
         </Card>

@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
   computeLineTotal,
@@ -12,9 +13,6 @@ import {
   type InvoiceLineItemFormValues,
 } from "@/lib/invoices/types";
 import type { Item } from "@/lib/items/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type InvoiceLineItemsEditorProps = {
   lineItems: InvoiceLineItemFormValues[];
@@ -101,19 +99,20 @@ export function InvoiceLineItemsEditor({ lineItems, catalogItems, onChange }: In
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor={`${item.id}-catalog`}>Load from item catalog</Label>
-                  <select
+                  <SearchableSelect
                     id={`${item.id}-catalog`}
-                    className={selectClassName}
                     value={item.itemId}
-                    onChange={(event) => loadCatalogItem(index, event.target.value)}
-                  >
-                    <option value="">Select catalog item or enter manually</option>
-                    {catalogItems.map((catalogItem) => (
-                      <option key={catalogItem.itemId} value={catalogItem.itemId}>
-                        {catalogItem.description} · {formatInvoiceMoney(catalogItem.price)}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(next) => loadCatalogItem(index, next)}
+                    placeholder="Select catalog item or enter manually"
+                    searchPlaceholder="Search catalog items…"
+                    options={[
+                      { value: "", label: "Select catalog item or enter manually" },
+                      ...catalogItems.map((catalogItem) => ({
+                        value: catalogItem.itemId,
+                        label: `${catalogItem.description} · ${formatInvoiceMoney(catalogItem.price)}`,
+                      })),
+                    ]}
+                  />
                 </div>
 
                 <div className="space-y-2 sm:col-span-2">

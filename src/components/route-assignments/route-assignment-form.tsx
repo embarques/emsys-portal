@@ -6,6 +6,7 @@ import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cloneEmployeeGroups } from "@/lib/employee-groups/mock-data";
 import {
   formatEmployeeGroupRefName,
@@ -19,9 +20,6 @@ import {
 } from "@/lib/route-assignments/types";
 import { useTruckPicker } from "@/lib/trucks/hooks/use-trucks";
 import { getBranchLabel } from "@/lib/trucks/display";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 const readOnlyClassName = "bg-muted/40";
 
@@ -103,19 +101,20 @@ export function RouteAssignmentForm({
                   Prefill truck and employee group from a previous assignment with today&apos;s date.
                 </p>
               </div>
-              <select
+              <SearchableSelect
                 id="copyFrom"
-                className={selectClassName}
                 value={copyFromId}
-                onChange={(event) => handleCopyFrom(event.target.value)}
-              >
-                <option value="">Start from scratch</option>
-                {copySources.map((assignment) => (
-                  <option key={assignment.routeAssignmentId} value={assignment.routeAssignmentId}>
-                    {formatRouteAssignmentCopyLabel(assignment)}
-                  </option>
-                ))}
-              </select>
+                onValueChange={handleCopyFrom}
+                placeholder="Start from scratch"
+                searchPlaceholder="Search assignments…"
+                options={[
+                  { value: "", label: "Start from scratch" },
+                  ...copySources.map((assignment) => ({
+                    value: assignment.routeAssignmentId,
+                    label: formatRouteAssignmentCopyLabel(assignment),
+                  })),
+                ]}
+              />
             </div>
           </div>
         </section>
@@ -179,20 +178,21 @@ export function RouteAssignmentForm({
           <Label htmlFor="truckId">
             truck.id <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="truckId"
-            className={selectClassName}
             value={values.truck.id}
-            onChange={(event) => handleTruckChange(event.target.value)}
+            onValueChange={handleTruckChange}
+            placeholder="Select a truck"
+            searchPlaceholder="Search trucks…"
             required
-          >
-            <option value="">Select a truck</option>
-            {trucks.map((truck) => (
-              <option key={truck.id} value={truck.id}>
-                {truck.name} · {getBranchLabel(truck.branch)}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "Select a truck" },
+              ...trucks.map((truck) => ({
+                value: truck.id,
+                label: `${truck.name} · ${getBranchLabel(truck.branch)}`,
+              })),
+            ]}
+          />
         </div>
 
         <div className="space-y-2">
@@ -209,20 +209,21 @@ export function RouteAssignmentForm({
           <Label htmlFor="employeeGroupId">
             employeeGroup.id <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="employeeGroupId"
-            className={selectClassName}
             value={values.employeeGroup.id}
-            onChange={(event) => handleEmployeeGroupChange(event.target.value)}
+            onValueChange={handleEmployeeGroupChange}
+            placeholder="Select an employee group"
+            searchPlaceholder="Search employee groups…"
             required
-          >
-            <option value="">Select an employee group</option>
-            {employeeGroups.map((group) => (
-              <option key={group.employeeGroupId} value={group.employeeGroupId}>
-                {formatEmployeeGroupRefName(group)}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "Select an employee group" },
+              ...employeeGroups.map((group) => ({
+                value: group.employeeGroupId,
+                label: formatEmployeeGroupRefName(group),
+              })),
+            ]}
+          />
         </div>
 
         <div className="space-y-2">

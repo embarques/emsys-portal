@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   type BranchAddress,
   type BranchFormValues,
@@ -13,10 +14,12 @@ import {
   createEmptyBranchForm,
 } from "@/lib/branches/types";
 
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
-
 const readOnlyClassName = "bg-muted/40";
+
+const BOOLEAN_OPTIONS = [
+  { value: "false", label: "false" },
+  { value: "true", label: "true" },
+];
 
 type BranchFormProps = {
   initialValues?: BranchFormValues;
@@ -294,29 +297,25 @@ export function BranchForm({
             <Label htmlFor="settings-invoiceCreatedThruIncomeStatement">
               settings.invoiceCreatedThruIncomeStatement
             </Label>
-            <select
+            <SearchableSelect
               id="settings-invoiceCreatedThruIncomeStatement"
-              className={selectClassName}
+              searchable={false}
               value={values.settings.invoiceCreatedThruIncomeStatement ? "true" : "false"}
-              onChange={(event) =>
-                updateSettingsField("invoiceCreatedThruIncomeStatement", event.target.value === "true")
+              onValueChange={(next) =>
+                updateSettingsField("invoiceCreatedThruIncomeStatement", next === "true")
               }
-            >
-              <option value="false">false</option>
-              <option value="true">true</option>
-            </select>
+              options={BOOLEAN_OPTIONS}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="settings-printLabelCount">settings.printLabelCount</Label>
-            <select
+            <SearchableSelect
               id="settings-printLabelCount"
-              className={selectClassName}
+              searchable={false}
               value={values.settings.printLabelCount ? "true" : "false"}
-              onChange={(event) => updateSettingsField("printLabelCount", event.target.value === "true")}
-            >
-              <option value="false">false</option>
-              <option value="true">true</option>
-            </select>
+              onValueChange={(next) => updateSettingsField("printLabelCount", next === "true")}
+              options={BOOLEAN_OPTIONS}
+            />
           </div>
         </div>
       </FormSection>

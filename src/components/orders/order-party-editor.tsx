@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { formatAddressLine } from "@/lib/customers/display";
 import {
   getCustomerAddresses,
@@ -24,9 +25,6 @@ import {
 import { cn } from "@/lib/utils";
 import { createRandomId } from "@/lib/utils/id";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type OrderPartyEditorProps = {
   title: string;
@@ -176,30 +174,28 @@ export function OrderPartyEditor({
 
       <div className="space-y-2">
         <Label htmlFor={`${values.id}-customer`}>Load from client directory</Label>
-        <select
+        <SearchableSelect
           id={`${values.id}-customer`}
-          className={selectClassName}
           value={values.clientId}
-          onChange={(event) => {
-            const clientId = event.target.value;
+          onValueChange={(clientId) => {
             if (!clientId) {
               updateField("clientId", "");
               return;
             }
             loadCustomer(clientId);
           }}
-        >
-          <option value="">Enter manually or pick a client</option>
-          {filteredCustomers.map((customer) => {
-            const clientType = getCustomerClientType(customer);
-            return (
-              <option key={customer.id} value={getCustomerClientId(customer)}>
-                {customer.name}
-                {clientType ? ` · ${clientType}` : ""}
-              </option>
-            );
-          })}
-        </select>
+          searchPlaceholder="Search clients…"
+          options={[
+            { value: "", label: "Enter manually or pick a client" },
+            ...filteredCustomers.map((customer): SearchableSelectOption => {
+              const clientType = getCustomerClientType(customer);
+              return {
+                value: getCustomerClientId(customer),
+                label: `${customer.name}${clientType ? ` · ${clientType}` : ""}`,
+              };
+            }),
+          ]}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

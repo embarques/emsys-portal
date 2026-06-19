@@ -4,12 +4,10 @@ import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatRouteAssignmentCopyLabel } from "@/lib/route-assignments/display";
 import type { RouteAssignment } from "@/lib/route-assignments/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type AccountingRouteAssignmentSelectorProps = {
   routeAssignments: RouteAssignment[];
@@ -38,20 +36,21 @@ export function AccountingRouteAssignmentSelector({
           <Label htmlFor="activeRouteAssignment">
             Route assignment <span className="text-destructive">*</span>
           </Label>
-          <select
+          <SearchableSelect
             id="activeRouteAssignment"
-            className={selectClassName}
             value={value}
-            onChange={(event) => onChange(event.target.value)}
+            onValueChange={onChange}
+            placeholder="Select a route assignment…"
+            searchPlaceholder="Search route assignments…"
             required
-          >
-            <option value="">Select a route assignment…</option>
-            {routeAssignments.map((assignment) => (
-              <option key={assignment.routeAssignmentId} value={assignment.routeAssignmentId}>
-                {formatRouteAssignmentCopyLabel(assignment)}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "Select a route assignment…" },
+              ...routeAssignments.map((assignment) => ({
+                value: assignment.routeAssignmentId,
+                label: formatRouteAssignmentCopyLabel(assignment),
+              })),
+            ]}
+          />
           {!value ? (
             <p className="text-sm text-destructive">
               Choose a route assignment to unlock the forms below.
