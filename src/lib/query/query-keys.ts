@@ -10,6 +10,9 @@ import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOpera
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
 
 export const queryKeys = {
+  api: {
+    health: () => ["api", "health"] as const,
+  },
   permissions: {
     all: ["permissions"] as const,
     user: () => [...queryKeys.permissions.all, "user"] as const,

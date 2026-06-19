@@ -1,5 +1,6 @@
 "use client";
 
+import { ApiUnavailableBanner } from "@/components/app-shell/api-unavailable-banner";
 import { AuthProvider } from "@/providers/auth-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { ReduxProvider } from "@/providers/redux-provider";
@@ -10,7 +11,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <QueryProvider>
       <ReduxProvider>
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <ApiUnavailableBanner />
+            {children}
+          </AuthProvider>
         </ThemeProvider>
       </ReduxProvider>
     </QueryProvider>
