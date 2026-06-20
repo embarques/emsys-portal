@@ -11,6 +11,7 @@ type Journal = {
   employee?: { id: number; name: string };
   account?: { id: number; name: string; displayName: string };
   paymentMethod?: { id: number; name: string };
+  accounts?: Array<{ id: number; name: string; type: string; debit: number; credit: number }>;
 };
 
 type Account = {
@@ -35,6 +36,7 @@ const employeesPayload = {
 };
 
 export async function installAccountingApi(page: Page) {
+  let statementDate = "2026-06-20";
   let journals: Journal[] = [
     {
       id: "journal-1",
@@ -47,6 +49,39 @@ export async function installAccountingApi(page: Page) {
       employee: { id: 1, name: "Hector Mejia" },
       account: { id: 101, name: "Sales", displayName: "Sales" },
       paymentMethod: { id: 1, name: "Cash" },
+      accounts: [
+        { id: 1, name: "CASH ON HAND", type: "ASSET", debit: 350, credit: 0 },
+        { id: 101, name: "Sales", type: "REVENUE", debit: 0, credit: 350 },
+      ],
+    },
+    {
+      id: "journal-2",
+      incomeStatementId: 12,
+      date: "2026-06-20",
+      transactionType: "EXPENSE",
+      amount: 505.5,
+      refNumber: "EXP-1001",
+      description: "Operating expenses",
+      employee: { id: 1, name: "Hector Mejia" },
+      accounts: [
+        { id: 201, name: "OPERATING EXPENSE", type: "EXPENSE", debit: 505.5, credit: 0 },
+        { id: 1, name: "CASH ON HAND", type: "ASSET", debit: 0, credit: 505.5 },
+      ],
+    },
+    {
+      id: "journal-3",
+      incomeStatementId: 12,
+      date: "2026-06-20",
+      transactionType: "PAYMENT",
+      amount: 170,
+      refNumber: "PAY-1001",
+      description: "Invoice payment",
+      employee: { id: 1, name: "Hector Mejia" },
+      paymentMethod: { id: 1, name: "Cash" },
+      accounts: [
+        { id: 1, name: "CASH ON HAND", type: "ASSET", debit: 170, credit: 0 },
+        { id: 2, name: "ACCOUNTS RECEIVABLE", type: "ASSET", debit: 0, credit: 170 },
+      ],
     },
   ];
 
@@ -122,51 +157,41 @@ export async function installAccountingApi(page: Page) {
       });
     }
 
-    if (path === "/accounting/paymentmethods") {
-      return json(route, { response: [{ id: 1, name: "Cash" }, { id: 2, name: "Check" }] });
-    }
-
-    if (path === "/accounting/incomestatements" && method === "GET") {
+    if (path === "/income-statements/search" && method === "POST") {
+      const body = request.postDataJSON() as { filters?: Array<{ field: string; value: unknown }> };
+      const requestedDate = String(body.filters?.find((filter) => filter.field === "date")?.value ?? "");
+      const matches = requestedDate === statementDate;
       return json(route, {
-        response: [{ id: 12, date: "2026-06-20", status: "OPEN", branch, currency: "DOLLAR", rate: 1 }],
+        data: matches ? [{ id: 12, date: `${statementDate}T00:00:00Z`, status: "OPEN", branch, currency: "USD", rate: 1 }] : [],
         page: 1,
         resultsPerPage: 1,
-        total: 1,
+        total: matches ? 1 : 0,
       });
     }
 
-    if (path === "/accounting/journals" && method === "GET") {
+    if (path === "/income-statements" && method === "POST") {
+      const body = request.postDataJSON() as { date: string; branch: typeof branch; currency: string; rate: number };
+      statementDate = body.date.slice(0, 10);
+      return json(route, { success: true, data: { id: 12, ...body, status: "OPEN" } }, 201);
+    }
+
+    if (path === "/journals/search" && method === "POST") {
       return json(route, {
-        response: [{
-          journals,
-          summary: {
-            totalGeneral: 675,
-            invoice: 170,
-            accountsReceivable: 155,
-            totalIncome: 350,
-            expense: 505.5,
-            totalCash: 180,
-            cash: 180,
-            check: 0,
-            creditCard: 0,
-            deposit: 0,
-            zelle: 0,
-          },
-        }],
+        data: journals,
         page: 1,
         resultsPerPage: 20,
         total: journals.length,
       });
     }
 
-    if (path === "/accounting/journal" && method === "POST") {
+    if (path === "/journals" && method === "POST") {
       const body = request.postDataJSON() as Journal;
       const created = { ...body, id: `journal-${journals.length + 1}` };
       journals = [created, ...journals];
-      return json(route, { success: true, response: [created] });
+      return json(route, { success: true, data: created }, 201);
     }
 
-    const journalId = path.match(/^\/accounting\/journal\/(.+)$/)?.[1];
+    const journalId = path.match(/^\/journals\/(.+)$/)?.[1];
     if (journalId && method === "PUT") {
       const body = request.postDataJSON() as Journal;
       journals = journals.map((journal) => journal.id === journalId ? { ...journal, ...body, id: journalId } : journal);
@@ -205,9 +230,9 @@ export async function installAccountingApi(page: Page) {
   });
 }
 
-function json(route: Route, body: unknown) {
+function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
-    status: 200,
+    status,
     contentType: "application/json",
     body: JSON.stringify(body),
   });

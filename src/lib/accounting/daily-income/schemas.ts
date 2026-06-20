@@ -4,6 +4,7 @@ export const dailyIncomeStatementSchema = z.object({
   date: z.string().min(1, "Date is required."),
   branchId: z.number().positive("Branch is required."),
   branchCode: z.string().min(1, "Branch is required."),
+  branchName: z.string().min(1, "Branch is required."),
   currency: z.string().min(1, "Currency is required."),
   rate: z.number().min(0, "Rate cannot be negative."),
 });
@@ -16,7 +17,7 @@ export const dailyIncomeJournalSchema = z.object({
     "SURCHARGE",
     "EXPENSE",
     "SALES",
-    "ACCOUNT-TRANSFER",
+    "TRANSFER",
     "LOAN",
   ]),
   amount: z.number().positive("Amount must be greater than zero."),
@@ -26,8 +27,10 @@ export const dailyIncomeJournalSchema = z.object({
   employeeName: z.string().optional(),
   accountId: z.number().optional(),
   accountName: z.string().optional(),
+  accountType: z.string().optional(),
   sourceAccountId: z.number().optional(),
   sourceAccountName: z.string().optional(),
+  sourceAccountType: z.string().optional(),
   invoiceId: z.string().optional(),
   invoiceNumber: z.string().optional(),
   paymentMethodId: z.number().optional(),
@@ -41,16 +44,16 @@ export const dailyIncomeJournalSchema = z.object({
   if (invoiceRelated && !values.invoiceId) {
     context.addIssue({ code: "custom", path: ["invoiceId"], message: "Invoice is required." });
   }
-  if (invoiceRelated && !values.paymentMethodId) {
+  if ((invoiceRelated || values.transactionType === "SALES") && !values.paymentMethodId) {
     context.addIssue({ code: "custom", path: ["paymentMethodId"], message: "Payment method is required." });
   }
 
-  const accountRelated = ["EXPENSE", "SALES", "ACCOUNT-TRANSFER", "LOAN"].includes(values.transactionType);
+  const accountRelated = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(values.transactionType);
   if (accountRelated && !values.accountId) {
     context.addIssue({ code: "custom", path: ["accountId"], message: "Account is required." });
   }
 
-  const sourceAccountRelated = ["EXPENSE", "ACCOUNT-TRANSFER", "LOAN"].includes(values.transactionType);
+  const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType);
   if (sourceAccountRelated && !values.sourceAccountId) {
     context.addIssue({ code: "custom", path: ["sourceAccountId"], message: "Source account is required." });
   }

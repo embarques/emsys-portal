@@ -27,11 +27,11 @@ import type {
 } from "@/lib/accounting/daily-income/types";
 import { queryKeys } from "@/lib/query/query-keys";
 
-export function useIncomeStatement(branchCode: string, date: string) {
+export function useIncomeStatement(branchId: number, date: string) {
   return useQuery({
-    queryKey: queryKeys.accounting.incomeStatement(branchCode, date),
-    queryFn: () => fetchIncomeStatement(branchCode, date),
-    enabled: Boolean(branchCode && date),
+    queryKey: queryKeys.accounting.incomeStatement(String(branchId), date),
+    queryFn: () => fetchIncomeStatement(branchId, date),
+    enabled: branchId > 0 && Boolean(date),
   });
 }
 

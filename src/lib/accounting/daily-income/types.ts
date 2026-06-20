@@ -38,7 +38,7 @@ export type JournalTransactionType =
   | "SURCHARGE"
   | "EXPENSE"
   | "SALES"
-  | "ACCOUNT-TRANSFER"
+  | "TRANSFER"
   | "LOAN";
 
 export type DailyIncomeJournal = {
@@ -62,6 +62,13 @@ export type DailyIncomeJournal = {
     balance?: number;
   };
   paymentMethod?: AccountingLookup;
+  accounts: Array<{
+    id: number;
+    name: string;
+    type: string;
+    debit: number;
+    credit: number;
+  }>;
   createdAt?: string;
 };
 
@@ -85,6 +92,7 @@ export type DailyIncomeStatementValues = {
   date: string;
   branchId: number;
   branchCode: string;
+  branchName: string;
   currency: string;
   rate: number;
 };
@@ -98,8 +106,10 @@ export type DailyIncomeJournalValues = {
   employeeName?: string;
   accountId?: number;
   accountName?: string;
+  accountType?: string;
   sourceAccountId?: number;
   sourceAccountName?: string;
+  sourceAccountType?: string;
   invoiceId?: string;
   invoiceNumber?: string;
   paymentMethodId?: number;

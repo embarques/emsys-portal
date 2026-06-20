@@ -87,7 +87,7 @@ function normalizeIncomeStatement(value: unknown): DailyIncomeStatement | null {
     date: stringValue(raw.date).slice(0, 10),
     status: status === "CLOSED" || status === "CLOSE" ? "CLOSED" : "OPEN",
     branch: normalizeLookup(raw.branch),
-    currency: stringValue(raw.currency) || "DOLLAR",
+    currency: stringValue(raw.currency) || "USD",
     rate: numberValue(raw.rate),
     container: normalizeLookup(raw.container),
   };
@@ -98,20 +98,35 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const id = stringValue(firstDefined(raw.id, raw._id));
   if (!id) return null;
   const invoice = objectValue(raw.invoice);
+  const accountLines = Array.isArray(raw.accounts)
+    ? raw.accounts.map((value) => {
+        const account = objectValue(value);
+        return {
+          id: numberValue(firstDefined(account.id, account._id)),
+          name: stringValue(account.name),
+          type: stringValue(account.type),
+          debit: numberValue(account.debit),
+          credit: numberValue(account.credit),
+        };
+      })
+    : [];
+  const primaryLine = accountLines.find((account) => !["CASH ON HAND", "ACCOUNTS RECEIVABLE"].includes(account.name));
+  const sourceLine = accountLines.find((account) => account.credit > 0 && account.id !== primaryLine?.id);
   return {
     id,
     incomeStatementId: numberValue(firstDefined(raw.incomeStatementId, objectValue(raw.incomeStatement).id)),
     date: stringValue(raw.date).slice(0, 10),
     transactionType: (stringValue(firstDefined(raw.transactionType, raw.transType)) || "SALES") as JournalTransactionType,
-    amount: numberValue(raw.amount),
+    amount: numberValue(firstDefined(raw.transactionAmount, raw.amount)),
     refNumber: stringValue(raw.refNumber),
     description: stringValue(raw.description),
     currency: stringValue(raw.currency),
     rate: numberValue(raw.rate),
     employee: normalizeLookup(raw.employee),
-    account: normalizeLookup(raw.account),
-    sourceAccount: normalizeLookup(raw.sourceAccount),
+    account: normalizeLookup(raw.account) ?? (primaryLine ? normalizeLookup(primaryLine) : undefined),
+    sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
     paymentMethod: normalizeLookup(raw.paymentMethod),
+    accounts: accountLines,
     invoice: Object.keys(invoice).length
       ? {
           id: firstDefined(invoice.id, invoice._id) as string | number | undefined,
@@ -129,17 +144,56 @@ function normalizeSummary(value: unknown): DailyIncomeSummary {
   const raw = objectValue(value);
   return {
     totalGeneral: numberValue(raw.totalGeneral),
-    invoice: numberValue(raw.invoice),
-    accountsReceivable: numberValue(raw.accountsReceivable),
+    invoice: numberValue(firstDefined(raw.invoice, raw.invoicePayments, raw.invoices)),
+    accountsReceivable: numberValue(firstDefined(raw.accountsReceivable, raw.accountReceivables)),
     totalIncome: numberValue(raw.totalIncome),
-    expense: numberValue(raw.expense),
+    expense: numberValue(firstDefined(raw.expense, raw.expenses)),
     totalCash: numberValue(raw.totalCash),
     cash: numberValue(raw.cash),
     check: numberValue(raw.check),
-    creditCard: numberValue(raw.creditCard),
-    deposit: numberValue(raw.deposit),
+    creditCard: numberValue(firstDefined(raw.creditCard, raw.creditCards)),
+    deposit: numberValue(firstDefined(raw.deposit, raw.deposits)),
     zelle: numberValue(raw.zelle),
   };
+}
+
+function computeJournalSummary(items: DailyIncomeJournal[]): DailyIncomeSummary {
+  const summary = { ...EMPTY_DAILY_INCOME_SUMMARY };
+
+  for (const item of items) {
+    if (item.transactionType === "INITIAL-PAYMENT" || item.transactionType === "PAYMENT") {
+      summary.invoice += item.amount;
+    }
+
+    const expenseLines = item.accounts.filter((account) => account.type === "EXPENSE");
+    if (expenseLines.length > 0) {
+      summary.expense += expenseLines.reduce((total, account) => total + account.debit, 0);
+    } else if (item.transactionType === "EXPENSE") {
+      summary.expense += item.amount;
+    }
+
+    for (const account of item.accounts) {
+      if (account.name === "ACCOUNTS RECEIVABLE") {
+        summary.accountsReceivable += account.debit - account.credit;
+      }
+    }
+
+    if (!["INITIAL-PAYMENT", "PAYMENT", "SALES"].includes(item.transactionType)) {
+      continue;
+    }
+
+    const paymentMethod = item.paymentMethod?.name.trim().replaceAll("_", "-").toUpperCase();
+    if (paymentMethod === "CASH") summary.cash += item.amount;
+    else if (paymentMethod === "CHECK") summary.check += item.amount;
+    else if (paymentMethod === "DEPOSIT") summary.deposit += item.amount;
+    else if (paymentMethod === "ZELLE") summary.zelle += item.amount;
+    else summary.creditCard += item.amount;
+  }
+
+  summary.totalIncome = summary.cash + summary.check + summary.deposit + summary.zelle + summary.creditCard;
+  summary.totalGeneral = summary.invoice + summary.accountsReceivable;
+  summary.totalCash = summary.cash - summary.expense;
+  return summary;
 }
 
 function normalizeAccount(value: unknown): ChartAccount | null {
@@ -168,23 +222,31 @@ function queryString(values: Record<string, string | number | undefined>) {
   return query.toString();
 }
 
-export async function fetchIncomeStatement(branchCode: string, date: string) {
-  if (!branchCode || !date) return null;
+export async function fetchIncomeStatement(branchId: number, date: string) {
+  if (!branchId || !date) return null;
   const query = queryString({
     page: 1,
-    results_per_page: 1,
-    date: `eq:${date}:date`,
-    "branch.code": branchCode,
+    limit: 1,
+    offset: 0,
   });
-  const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}?${query}`);
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/search?${query}`,
+    {
+      operator: "and",
+      filters: [
+        { field: "branch._id", operator: "eq", value: branchId },
+        { field: "date", operator: "eq", value: date },
+      ],
+      sort: [{ field: "date", direction: "desc" }],
+    },
+  );
   return normalizeIncomeStatement(unwrapArray(payload)[0]);
 }
 
 function incomeStatementPayload(values: DailyIncomeStatementValues) {
   return {
-    date: values.date,
-    status: "OPEN",
-    branch: { id: values.branchId, code: values.branchCode },
+    date: `${values.date}T00:00:00Z`,
+    branch: { id: values.branchId, code: values.branchCode, name: values.branchName },
     currency: values.currency,
     rate: values.rate,
   };
@@ -211,9 +273,8 @@ export async function updateIncomeStatement(id: number, values: DailyIncomeState
 }
 
 export async function setIncomeStatementStatus(statement: DailyIncomeStatement, open: boolean) {
-  const payload = await apiClient.put<ApiEnvelope>(
-    `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENT}/status/${statement.id}`,
-    { id: statement.id, date: statement.date, status: open ? "open" : "close" },
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENT}/${statement.id}/${open ? "open" : "close"}`,
   );
   assertMutation(payload, `Unable to ${open ? "open" : "close"} daily income statement.`);
   return normalizeIncomeStatement(unwrapArray(payload)[0] ?? unwrap(payload));
@@ -227,22 +288,32 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
   const limit = params.limit ?? 20;
   const query = queryString({
     page,
-    results_per_page: limit,
-    "incomeStatement._id": `eq:${params.incomeStatementId}:num`,
-    "employee._id": params.employeeId ? `eq:${params.employeeId}:num` : undefined,
-    search: params.query?.trim() || undefined,
-    sort_by: "createdAt",
-    order: "desc",
+    limit,
+    offset: (page - 1) * limit,
   });
-  const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_JOURNALS}?${query}`);
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search?${query}`,
+    {
+      operator: "and",
+      filters: [{ field: "incomeStatement._id", operator: "eq", value: params.incomeStatementId }],
+      sort: [{ field: "createdAt", direction: "desc" }],
+    },
+  );
   const envelope = objectValue(payload);
   const unwrapped = unwrap(payload);
   const first = Array.isArray(unwrapped) ? objectValue(unwrapped[0]) : objectValue(unwrapped);
   const rows = Array.isArray(first.journals) ? first.journals : Array.isArray(unwrapped) ? unwrapped : [];
-  const items = rows.map(normalizeJournal).filter((item): item is DailyIncomeJournal => item != null);
+  let items = rows.map(normalizeJournal).filter((item): item is DailyIncomeJournal => item != null);
+  const search = params.query?.trim().toLowerCase();
+  if (search) {
+    items = items.filter((item) =>
+      [item.refNumber, item.description, item.transactionType, item.employee?.name, item.invoice?.number]
+        .some((value) => value?.toLowerCase().includes(search)),
+    );
+  }
   return {
     items,
-    summary: first.summary ? normalizeSummary(first.summary) : EMPTY_DAILY_INCOME_SUMMARY,
+    summary: first.summary ? normalizeSummary(first.summary) : computeJournalSummary(items),
     page: numberValue(envelope.page, page),
     resultsPerPage: numberValue(firstDefined(envelope.resultsPerPage, envelope.results_per_page), limit),
     total: numberValue(firstDefined(envelope.total, first.total), items.length),
@@ -251,26 +322,23 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
 
 function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJournalValues) {
   const invoiceRelated = ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(values.transactionType);
-  const accountRelated = ["EXPENSE", "SALES", "ACCOUNT-TRANSFER", "LOAN"].includes(values.transactionType);
-  const sourceAccountRelated = ["EXPENSE", "ACCOUNT-TRANSFER", "LOAN"].includes(values.transactionType);
+  const accountRelated = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(values.transactionType);
+  const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType);
 
   return {
-    incomeStatementId: statement.id,
     date: statement.date,
     transactionType: values.transactionType,
     amount: values.amount,
     refNumber: values.refNumber,
     description: values.description,
-    currency: statement.currency,
-    rate: statement.rate,
-    employee: values.employeeId ? { id: values.employeeId, name: values.employeeName } : undefined,
+    employeeId: values.employeeId,
     account: accountRelated && values.accountId
-      ? { id: values.accountId, name: values.accountName, displayName: values.accountName }
+      ? { id: values.accountId, name: values.accountName, type: values.accountType }
       : undefined,
     sourceAccount: sourceAccountRelated && values.sourceAccountId
-      ? { id: values.sourceAccountId, name: values.sourceAccountName, displayName: values.sourceAccountName }
+      ? { id: values.sourceAccountId, name: values.sourceAccountName, type: values.sourceAccountType }
       : undefined,
-    invoice: invoiceRelated && values.invoiceId ? { id: values.invoiceId, number: values.invoiceNumber } : undefined,
+    invoiceId: invoiceRelated && values.invoiceId ? values.invoiceId : undefined,
     paymentMethod: values.paymentMethodId
       ? { id: values.paymentMethodId, name: values.paymentMethodName }
       : undefined,
@@ -319,11 +387,13 @@ export async function fetchChartAccounts(params: ChartAccountListParams = {}): P
 }
 
 export async function fetchAccountingPaymentMethods(): Promise<AccountingLookup[]> {
-  const query = queryString({ page: 1, results_per_page: 200 });
-  const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_PAYMENT_METHODS}?${query}`);
-  return unwrapArray(payload)
-    .map(normalizeLookup)
-    .filter((item): item is AccountingLookup => item != null);
+  return [
+    { id: 1, name: "CASH" },
+    { id: 2, name: "DEPOSIT" },
+    { id: 3, name: "CHECK" },
+    { id: 4, name: "ZELLE" },
+    { id: 5, name: "CREDIT-CARD" },
+  ];
 }
 
 function accountPayload(values: ChartAccountValues) {

@@ -42,11 +42,11 @@ const selectClassName = "flex h-9 min-w-44 rounded-md border border-input bg-bac
 function today() { return new Date().toISOString().slice(0, 10); }
 function money(value: number) { return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value); }
 function transactionLabel(value: string) {
-  return ({ "INITIAL-PAYMENT": "Invoice", PAYMENT: "Payment", DISCOUNT: "Discount", SURCHARGE: "Surcharge", EXPENSE: "Expense", SALES: "Income", "ACCOUNT-TRANSFER": "Transfer", LOAN: "Loan" } as Record<string, string>)[value] ?? value;
+  return ({ "INITIAL-PAYMENT": "Invoice", PAYMENT: "Payment", DISCOUNT: "Discount", SURCHARGE: "Surcharge", EXPENSE: "Expense", SALES: "Income", TRANSFER: "Transfer", LOAN: "Loan" } as Record<string, string>)[value] ?? value;
 }
 function emptyTransaction(): DailyIncomeJournalValues { return { transactionType: "INITIAL-PAYMENT", amount: 0, refNumber: "", description: "" }; }
 function journalValues(row: DailyIncomeJournal): DailyIncomeJournalValues {
-  return { transactionType: row.transactionType, amount: row.amount, refNumber: row.refNumber, description: row.description, employeeId: row.employee?.id, employeeName: row.employee?.name, accountId: row.account?.id, accountName: row.account?.displayName ?? row.account?.name, sourceAccountId: row.sourceAccount?.id, sourceAccountName: row.sourceAccount?.displayName ?? row.sourceAccount?.name, invoiceId: row.invoice?.id != null ? String(row.invoice.id) : "", invoiceNumber: row.invoice?.number, paymentMethodId: row.paymentMethod?.id, paymentMethodName: row.paymentMethod?.name };
+  return { transactionType: row.transactionType, amount: row.amount, refNumber: row.refNumber, description: row.description, employeeId: row.employee?.id, employeeName: row.employee?.name, accountId: row.account?.id, accountName: row.account?.displayName ?? row.account?.name, accountType: row.accounts.find((account) => account.id === row.account?.id)?.type, sourceAccountId: row.sourceAccount?.id, sourceAccountName: row.sourceAccount?.displayName ?? row.sourceAccount?.name, sourceAccountType: row.accounts.find((account) => account.id === row.sourceAccount?.id)?.type, invoiceId: row.invoice?.id != null ? String(row.invoice.id) : "", invoiceNumber: row.invoice?.number, paymentMethodId: row.paymentMethod?.id, paymentMethodName: row.paymentMethod?.name };
 }
 
 export function DailyIncomeWorkspace() {
@@ -65,7 +65,8 @@ export function DailyIncomeWorkspace() {
   const branchesQuery = useBranchPicker(200);
   const branches = branchesQuery.data?.items ?? [];
   useEffect(() => { if (!branchCode && branches[0]?.code) setBranchCode(branches[0].code); }, [branchCode, branches]);
-  const statementQuery = useIncomeStatement(branchCode, date);
+  const selectedBranch = branches.find((branch) => branch.code === branchCode);
+  const statementQuery = useIncomeStatement(selectedBranch?.id ?? 0, date);
   const statement = statementQuery.data ?? null;
   const journalsQuery = useDailyIncomeJournals({ incomeStatementId: statement?.id ?? 0, page, limit: PAGE_SIZE, query: deferredQuery });
   const employeesQuery = useEmployees({ page: 1, limit: 200, active: true, sort: "name:asc" });
@@ -100,8 +101,7 @@ export function DailyIncomeWorkspace() {
     { label: "Net (income − expenses)", value: money((summary?.totalIncome ?? 0) - (summary?.expense ?? 0)), description: "Non-invoice ledger net", icon: Wallet },
     { label: "Invoice payments", value: money(summary?.invoice ?? 0), description: "Payments registered", icon: Receipt },
   ];
-  const selectedBranch = branches.find((branch) => branch.code === branchCode);
-  const statementValues: DailyIncomeStatementValues = { date, branchId: selectedBranch?.id ?? 0, branchCode, currency: statement?.currency ?? "DOLLAR", rate: statement?.rate ?? 0 };
+  const statementValues: DailyIncomeStatementValues = { date, branchId: selectedBranch?.id ?? 0, branchCode, branchName: selectedBranch?.name ?? "", currency: statement?.currency ?? "USD", rate: statement?.rate ?? 1 };
   const mutationPending = createStatement.isPending || updateStatement.isPending;
 
   function saveStatement(values: DailyIncomeStatementValues) {

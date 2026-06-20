@@ -13,11 +13,11 @@ test.beforeEach(async ({ page }) => {
 test("renders closeout totals and its paginated transaction directory", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Daily Income" })).toBeVisible();
   await expect(page.getByText("Total income")).toBeVisible();
-  await expect(page.getByText("$350.00", { exact: true })).toHaveCount(2);
+  await expect(page.getByText("$520.00", { exact: true })).toBeVisible();
   await expect(page.getByText("Total expenses")).toBeVisible();
-  await expect(page.getByText("$505.50", { exact: true })).toBeVisible();
-  await expect(page.getByText("-$155.50", { exact: true })).toBeVisible();
-  await expect(page.getByText("$170.00", { exact: true })).toBeVisible();
+  await expect(page.getByText("$505.50", { exact: true })).toHaveCount(2);
+  await expect(page.getByText("$14.50", { exact: true })).toBeVisible();
+  await expect(page.getByText("$170.00", { exact: true })).toHaveCount(2);
   await expect(page.getByText("Transactions", { exact: true })).toBeVisible();
   await expect(page.getByText("INC-1001", { exact: true })).toBeVisible();
   await expect(page.getByText("Page 1 of 1")).toBeVisible();
@@ -30,16 +30,32 @@ test("creates an income transaction through the accounting API", async ({ page }
   await dialog.getByLabel("Transaction", { exact: true }).selectOption("SALES");
   await dialog.getByLabel("Employee", { exact: true }).selectOption("1");
   await dialog.getByLabel("Account", { exact: true }).selectOption("101");
+  await dialog.getByLabel("Payment method", { exact: true }).selectOption("1");
   await dialog.getByLabel("Amount", { exact: true }).fill("125.50");
   await dialog.getByLabel("Reference number", { exact: true }).fill("INC-2002");
   await dialog.getByLabel("Description", { exact: true }).fill("Warehouse income");
 
   const response = page.waitForResponse((candidate) =>
-    candidate.url().endsWith("/accounting/journal") && candidate.request().method() === "POST",
+    candidate.url().endsWith("/journals") && candidate.request().method() === "POST",
   );
   await page.getByRole("button", { name: "Save transaction" }).click();
   await response;
 
   await expect(page.getByText("INC-2002", { exact: true })).toBeVisible();
   await expect(page.getByText("Transaction created.")).toBeVisible();
+});
+
+test("creates a daily closeout through the current income-statements API", async ({ page }) => {
+  await page.locator("#daily-date").fill("2026-06-21");
+  await expect(page.getByText("No closeout for this date", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Create closeout" }).click();
+
+  const response = page.waitForResponse((candidate) =>
+    candidate.url().endsWith("/income-statements") && candidate.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Save daily income" }).click();
+  expect((await response).status()).toBe(201);
+
+  await expect(page.getByText("Daily income created.")).toBeVisible();
+  await expect(page.getByText("OPEN · #00012")).toBeVisible();
 });

@@ -44,6 +44,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
               const branch = branches.find((item) => item.id === Number(event.target.value));
               setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
               setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
+              setValue("branchName", branch?.name ?? "", { shouldValidate: true });
             }}
           >
             <option value="">Select branch</option>
@@ -59,8 +60,8 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
         <div className="space-y-2">
           <Label htmlFor="statement-currency">Currency</Label>
           <select id="statement-currency" className={selectClassName} {...register("currency")}>
-            <option value="DOLLAR">Dollar</option>
-            <option value="PESO">Peso</option>
+            <option value="USD">Dollar</option>
+            <option value="DOP">Peso</option>
           </select>
         </div>
         <div className="space-y-2">
@@ -71,6 +72,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
       </div>
       <input type="hidden" {...register("branchId", { valueAsNumber: true })} />
       <input type="hidden" {...register("branchCode")} />
+      <input type="hidden" {...register("branchName")} />
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <div className="flex justify-end gap-2 border-t pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>

@@ -20,7 +20,7 @@ const TRANSACTION_TYPES: { value: JournalTransactionType; label: string }[] = [
   { value: "SALES", label: "Register income" },
   { value: "DISCOUNT", label: "Apply discount" },
   { value: "SURCHARGE", label: "Apply surcharge" },
-  { value: "ACCOUNT-TRANSFER", label: "Transfer account" },
+  { value: "TRANSFER", label: "Transfer account" },
   { value: "LOAN", label: "Register loan" },
 ];
 
@@ -43,7 +43,7 @@ export function DailyIncomeTransactionForm({ initialValues, employees, accounts,
   useEffect(() => reset(initialValues), [initialValues, reset]);
   const type = watch("transactionType");
   const needsInvoice = ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(type);
-  const needsAccount = ["EXPENSE", "SALES", "ACCOUNT-TRANSFER", "LOAN"].includes(type);
+  const needsAccount = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(type);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -84,18 +84,18 @@ export function DailyIncomeTransactionForm({ initialValues, employees, accounts,
           <Label htmlFor="journal-account">Account</Label>
           <select id="journal-account" className={selectClassName} onChange={(event) => {
             const account = accounts.find((item) => item.id === Number(event.target.value));
-            setValue("accountId", account?.id); setValue("accountName", account?.displayName ?? "");
+            setValue("accountId", account?.id); setValue("accountName", account?.displayName ?? ""); setValue("accountType", account?.type);
           }} defaultValue={initialValues.accountId ?? ""}>
             <option value="">Select account</option>
             {accounts.map((account) => <option key={account.id} value={account.id}>{account.displayName}</option>)}
           </select>
           {errors.accountId ? <p className="text-sm text-destructive">{errors.accountId.message}</p> : null}
         </div> : null}
-        {type === "ACCOUNT-TRANSFER" || type === "EXPENSE" || type === "LOAN" ? <div className="space-y-2">
+        {type === "TRANSFER" || type === "EXPENSE" || type === "LOAN" ? <div className="space-y-2">
           <Label htmlFor="journal-source">Source account</Label>
           <select id="journal-source" className={selectClassName} onChange={(event) => {
             const account = accounts.find((item) => item.id === Number(event.target.value));
-            setValue("sourceAccountId", account?.id); setValue("sourceAccountName", account?.displayName ?? "");
+            setValue("sourceAccountId", account?.id); setValue("sourceAccountName", account?.displayName ?? ""); setValue("sourceAccountType", account?.type);
           }} defaultValue={initialValues.sourceAccountId ?? ""}>
             <option value="">Select source account</option>
             {accounts.map((account) => <option key={account.id} value={account.id}>{account.displayName}</option>)}
