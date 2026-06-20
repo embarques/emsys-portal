@@ -86,11 +86,13 @@ export function RoleForm({
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </div>
 
-      <div className="flex shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>{submitLabel}</Button>
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>{submitLabel}</Button>
+        </div>
       </div>
     </form>
   );

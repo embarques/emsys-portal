@@ -580,8 +580,8 @@ export function EmployeesWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit employee" : "Add employee"}</DialogTitle>
           </DialogHeader>
           <EmployeeForm
@@ -594,13 +594,13 @@ export function EmployeesWorkspace() {
             isEditing={formMode === "edit"}
             submitLabel={formMode === "edit" ? "Save changes" : "Add employee"}
             isSubmitting={isSaving}
+            externalError={formError}
             onSubmit={saveEmployee}
             onCancel={() => {
               setFormMode(null);
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

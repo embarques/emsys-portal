@@ -1,5 +1,6 @@
 "use client";
 
+import { Building2, MapPin, Phone, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -8,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { formatEmployeeDate, formatEmployeeMoney } from "@/lib/employees/display";
 import {
   EMPLOYEE_ACTIVE_OPTIONS,
   EMPLOYEE_DEPARTMENTS,
@@ -16,30 +16,38 @@ import {
   EMPLOYEE_TITLES,
   createEmployeeBranchFromPortal,
   createEmptyEmployeeForm,
-  formatEmployeeUserLabel,
   getEmployeePortalBranch,
   type EmployeeAddress,
   type EmployeeFormValues,
   type EmployeePortalBranch,
 } from "@/lib/employees/types";
 
-const readOnlyClassName = "bg-muted/40";
-
 type EmployeeFormProps = {
   initialValues?: EmployeeFormValues;
   isEditing?: boolean;
   submitLabel: string;
   isSubmitting?: boolean;
+  externalError?: string | null;
   onSubmit: (values: EmployeeFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
 
-function FormSection({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function FormSection({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="space-y-3 rounded-xl border bg-muted/10 p-4">
-      <div>
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
+      <div className="flex items-center gap-2.5">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <Icon className="size-4" />
+        </span>
+        <h3 className="text-sm font-semibold leading-none text-foreground">{title}</h3>
       </div>
       {children}
     </section>
@@ -51,6 +59,7 @@ export function EmployeeForm({
   isEditing = false,
   submitLabel,
   isSubmitting = false,
+  externalError = null,
   onSubmit,
   onCancel,
 }: EmployeeFormProps) {
@@ -98,22 +107,13 @@ export function EmployeeForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-4">
-      <FormSection title="Employee">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+      <FormSection icon={User} title="Employee">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="id">Employee ID</Label>
-            <Input
-              id="id"
-              value={values.id > 0 ? String(values.id) : "Assigned after save"}
-              readOnly
-              className={`font-mono text-xs ${readOnlyClassName}`}
-            />
-          </div>
-
-          <div className="space-y-2">
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="active">
-              active <span className="text-destructive">*</span>
+              Active <span className="text-destructive">*</span>
             </Label>
             <SearchableSelect
               id="active"
@@ -131,7 +131,7 @@ export function EmployeeForm({
 
         <div className="space-y-2">
           <Label htmlFor="name">
-            name <span className="text-destructive">*</span>
+            Name <span className="text-destructive">*</span>
           </Label>
           <Input
             id="name"
@@ -145,7 +145,7 @@ export function EmployeeForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="department">
-              department <span className="text-destructive">*</span>
+              Department <span className="text-destructive">*</span>
             </Label>
             <SearchableSelect
               id="department"
@@ -159,7 +159,7 @@ export function EmployeeForm({
 
           <div className="space-y-2">
             <Label htmlFor="title">
-              title <span className="text-destructive">*</span>
+              Title <span className="text-destructive">*</span>
             </Label>
             <SearchableSelect
               id="title"
@@ -174,7 +174,7 @@ export function EmployeeForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="startDate">startDate</Label>
+            <Label htmlFor="startDate">Start date</Label>
             <Input
               id="startDate"
               value={values.startDate}
@@ -184,7 +184,7 @@ export function EmployeeForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="endDate">endDate</Label>
+            <Label htmlFor="endDate">End date</Label>
             <Input
               id="endDate"
               value={values.endDate}
@@ -195,7 +195,7 @@ export function EmployeeForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="cost">cost</Label>
+          <Label htmlFor="cost">Cost</Label>
           <Input
             id="cost"
             type="number"
@@ -207,7 +207,7 @@ export function EmployeeForm({
         </div>
       </FormSection>
 
-      <FormSection title="branch">
+      <FormSection icon={Building2} title="branch">
         <div className="space-y-2">
           <Label htmlFor="branch-portal">
             Branch <span className="text-destructive">*</span>
@@ -225,26 +225,12 @@ export function EmployeeForm({
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="branch-id">branch.id</Label>
-            <Input id="branch-id" value={String(values.branch.id)} readOnly className={readOnlyClassName} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="branch-code">branch.code</Label>
-            <Input id="branch-code" value={values.branch.code} readOnly className={readOnlyClassName} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="branch-name">branch.name</Label>
-            <Input id="branch-name" value={values.branch.name} readOnly className={readOnlyClassName} />
-          </div>
-        </div>
       </FormSection>
 
-      <FormSection title="address">
+      <FormSection icon={MapPin} title="address">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="address-address1">address.address1</Label>
+            <Label htmlFor="address-address1">Address line 1</Label>
             <Input
               id="address-address1"
               value={values.address.address1}
@@ -253,7 +239,7 @@ export function EmployeeForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address-address2">address.address2</Label>
+            <Label htmlFor="address-address2">Address line 2</Label>
             <Input
               id="address-address2"
               value={values.address.address2}
@@ -265,7 +251,7 @@ export function EmployeeForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="address-apartment">address.apartment</Label>
+            <Label htmlFor="address-apartment">Apartment / suite</Label>
             <Input
               id="address-apartment"
               value={values.address.apartment}
@@ -274,7 +260,7 @@ export function EmployeeForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address-city">address.city</Label>
+            <Label htmlFor="address-city">City</Label>
             <Input
               id="address-city"
               value={values.address.city}
@@ -286,7 +272,7 @@ export function EmployeeForm({
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="address-state">address.state</Label>
+            <Label htmlFor="address-state">State / province</Label>
             <Input
               id="address-state"
               value={values.address.state}
@@ -295,7 +281,7 @@ export function EmployeeForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address-zipcode">address.zipcode</Label>
+            <Label htmlFor="address-zipcode">Zip / postal code</Label>
             <Input
               id="address-zipcode"
               value={values.address.zipcode}
@@ -304,7 +290,7 @@ export function EmployeeForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address-country">address.country</Label>
+            <Label htmlFor="address-country">Country</Label>
             <Input
               id="address-country"
               value={values.address.country}
@@ -315,7 +301,7 @@ export function EmployeeForm({
         </div>
       </FormSection>
 
-      <FormSection title="Contact">
+      <FormSection icon={Phone} title="Contact">
         <PhoneListEditor
           idPrefix="employee-phone"
           phones={values.phones}
@@ -323,7 +309,7 @@ export function EmployeeForm({
         />
 
         <div className="space-y-2">
-          <Label htmlFor="email">email</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
             id="email"
             type="email"
@@ -333,114 +319,20 @@ export function EmployeeForm({
           />
         </div>
       </FormSection>
+      </div>
 
-      <FormSection title="Loans" description="Loan balances are managed by the EMSYS API and shown read-only here.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="loanAmountOwed">loanAmountOwed</Label>
-            <Input
-              id="loanAmountOwed"
-              value={formatEmployeeMoney(values.loanAmountOwed)}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="loanBalanceUpdated">loanBalanceUpdated</Label>
-            <Input
-              id="loanBalanceUpdated"
-              value={values.loanBalanceUpdated ? formatEmployeeDate(values.loanBalanceUpdated) : "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="totalLoanGiven">totalLoanGiven</Label>
-            <Input
-              id="totalLoanGiven"
-              value={formatEmployeeMoney(values.totalLoanGiven)}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="totalPaymentReceived">totalPaymentReceived</Label>
-            <Input
-              id="totalPaymentReceived"
-              value={formatEmployeeMoney(values.totalPaymentReceived)}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        {externalError ? (
+          <p className="mb-3 text-sm text-destructive">{externalError}</p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {submitLabel}
+          </Button>
         </div>
-      </FormSection>
-
-      <FormSection title="user" description="Linked EMSYS user from the API.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="user">user</Label>
-            <Input
-              id="user"
-              value={formatEmployeeUserLabel({ user: values.user })}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-id">user.id</Label>
-            <Input
-              id="user-id"
-              value={values.user?.id ? String(values.user.id) : "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-userName">user.userName</Label>
-            <Input
-              id="user-userName"
-              value={values.user?.userName || "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-fullName">user.fullName</Label>
-            <Input
-              id="user-fullName"
-              value={values.user?.fullName || "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-email">user.email</Label>
-            <Input
-              id="user-email"
-              value={values.user?.email || "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-active">user.active</Label>
-            <Input
-              id="user-active"
-              value={values.user != null ? String(values.user.active) : "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-        </div>
-      </FormSection>
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {submitLabel}
-        </Button>
       </div>
     </form>
   );

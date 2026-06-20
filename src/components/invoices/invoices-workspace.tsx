@@ -89,7 +89,7 @@ import {
   type InvoicePaymentInput,
 } from "@/lib/invoices/types";
 import type { DataTableColumn } from "@/lib/table/types";
-import { getBranchBadgeClass } from "@/lib/trucks/display";
+import { getBranchBadgeClass } from "@/lib/vehicles/display";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
 

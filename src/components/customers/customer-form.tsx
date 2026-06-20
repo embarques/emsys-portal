@@ -266,7 +266,7 @@ export function CustomerForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-7 overflow-y-auto px-6 py-5">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
         <FormSection icon={User} title="General">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">

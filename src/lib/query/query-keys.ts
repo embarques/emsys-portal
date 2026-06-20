@@ -1,7 +1,7 @@
 import type { BranchListParams, BranchSearchFilter } from "@/lib/branches/types";
 import type { ContainerListParams, ContainerSearchFilter } from "@/lib/containers/types";
 import type { InvoiceListParams, InvoiceSearchFilter } from "@/lib/invoices/types";
-import type { TruckListParams, TruckSearchFilter } from "@/lib/trucks/types";
+import type { VehicleListParams, VehicleSearchFilter } from "@/lib/vehicles/types";
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
@@ -33,14 +33,15 @@ export const queryKeys = {
       [...queryKeys.employees.all, "stats", scope] as const,
     detail: (employeeId: string) => [...queryKeys.employees.all, "detail", employeeId] as const,
   },
-  trucks: {
-    all: ["trucks"] as const,
-    lists: () => [...queryKeys.trucks.all, "list"] as const,
-    list: (params: TruckListParams) => [...queryKeys.trucks.lists(), params] as const,
-    search: (search: TruckSearchFilter | undefined, limit: number) =>
-      [...queryKeys.trucks.all, "search", search, limit] as const,
-    stats: (scope: "all" | "kpis") => [...queryKeys.trucks.all, "stats", scope] as const,
-    detail: (truckId: string) => [...queryKeys.trucks.all, "detail", truckId] as const,
+  vehicles: {
+    all: ["vehicles"] as const,
+    lists: () => [...queryKeys.vehicles.all, "list"] as const,
+    list: (params: VehicleListParams) => [...queryKeys.vehicles.lists(), params] as const,
+    search: (search: VehicleSearchFilter | undefined, limit: number) =>
+      [...queryKeys.vehicles.all, "search", search, limit] as const,
+    stats: (scope: "all" | "kpis" | `branch:${string}`) =>
+      [...queryKeys.vehicles.all, "stats", scope] as const,
+    detail: (vehicleId: string) => [...queryKeys.vehicles.all, "detail", vehicleId] as const,
   },
   containers: {
     all: ["containers"] as const,

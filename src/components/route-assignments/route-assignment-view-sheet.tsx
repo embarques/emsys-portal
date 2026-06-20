@@ -57,7 +57,7 @@ export function RouteAssignmentViewSheet({
             <RecordViewSheetDetailRow label={formatTableColumnLabel("date")} value={formatRouteAssignmentDate(assignment.date)} />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title="Truck">
+          <RecordViewSheetSection title="Vehicle">
             <RecordViewSheetDetailRow label={formatTableColumnLabel("truck.id")} value={assignment.truck.id || "—"} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("truck.name")} value={assignment.truck.name || "—"} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("truck")} value={getTruckRefLabel(assignment.truck)} />

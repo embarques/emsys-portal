@@ -359,12 +359,9 @@ export function ItemsWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit item" : "Add item"}</DialogTitle>
-            <DialogDescription>
-              {formMode === "edit" ? "Update the item description and price." : "Create a new catalog item."}
-            </DialogDescription>
           </DialogHeader>
           <ItemForm
             key={editingItem?.itemId ?? "new"}
@@ -374,13 +371,13 @@ export function ItemsWorkspace() {
             isEditing={formMode === "edit"}
             updatedAt={editingItem?.updatedAt}
             submitLabel={formMode === "edit" ? "Save changes" : "Add item"}
+            externalError={formError}
             onSubmit={saveItem}
             onCancel={() => {
               setFormMode(null);
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

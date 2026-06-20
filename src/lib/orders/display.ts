@@ -1,7 +1,7 @@
 import { formatCoreAddressLine } from "@/lib/customers/display";
 import { formatPrimaryPhonesDisplayOrDash, getPhoneDisplayAtIndex } from "@/lib/phones/phones";
 import { getRouteAssignmentById } from "@/lib/route-assignments/mock-data";
-import { getBranchLabel } from "@/lib/trucks/display";
+import { getBranchLabel } from "@/lib/vehicles/display";
 import type { Customer } from "@/lib/customers/types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import type { User } from "@/lib/users/types";

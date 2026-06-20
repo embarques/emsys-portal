@@ -1,5 +1,6 @@
 "use client";
 
+import { Building2, MapPin, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -15,8 +16,6 @@ import {
   createEmptyBranchForm,
 } from "@/lib/branches/types";
 
-const readOnlyClassName = "bg-muted/40";
-
 const BOOLEAN_OPTIONS = [
   { value: "false", label: "false" },
   { value: "true", label: "true" },
@@ -27,16 +26,27 @@ type BranchFormProps = {
   isEditing?: boolean;
   submitLabel: string;
   isSubmitting?: boolean;
+  externalError?: string | null;
   onSubmit: (values: BranchFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
 
-function FormSection({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function FormSection({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="space-y-3 rounded-xl border bg-muted/10 p-4">
-      <div>
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
+      <div className="flex items-center gap-2.5">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <Icon className="size-4" />
+        </span>
+        <h3 className="text-sm font-semibold leading-none text-foreground">{title}</h3>
       </div>
       {children}
     </section>
@@ -48,6 +58,7 @@ export function BranchForm({
   isEditing = false,
   submitLabel,
   isSubmitting = false,
+  externalError = null,
   onSubmit,
   onCancel,
 }: BranchFormProps) {
@@ -82,22 +93,13 @@ export function BranchForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-4">
-      <FormSection title="Branch" description="core.Branch identity fields.">
-        <div className="space-y-2">
-          <Label htmlFor="id">Branch ID</Label>
-          <Input
-            id="id"
-            value={values.id > 0 ? String(values.id) : "Assigned after save"}
-            readOnly
-            className={readOnlyClassName}
-          />
-        </div>
-
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+      <FormSection icon={Building2} title="Branch">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="name">
-              name <span className="text-destructive">*</span>
+              Name <span className="text-destructive">*</span>
             </Label>
             <Input
               id="name"
@@ -107,35 +109,35 @@ export function BranchForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="code">code</Label>
+            <Label htmlFor="code">Code</Label>
             <Input id="code" value={values.code} onChange={(event) => updateField("code", event.target.value)} />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="type">type</Label>
+            <Label htmlFor="type">Type</Label>
             <Input id="type" value={values.type} onChange={(event) => updateField("type", event.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="logo">logo</Label>
+            <Label htmlFor="logo">Logo URL</Label>
             <Input id="logo" value={values.logo} onChange={(event) => updateField("logo", event.target.value)} />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="phone1">phone1</Label>
+            <Label htmlFor="phone1">Phone 1</Label>
             <PhoneInput id="phone1" value={values.phone1} onChange={(nextValue) => updateField("phone1", nextValue)} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone2">phone2</Label>
+            <Label htmlFor="phone2">Phone 2</Label>
             <PhoneInput id="phone2" value={values.phone2} onChange={(nextValue) => updateField("phone2", nextValue)} />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="disclaimer">disclaimer</Label>
+          <Label htmlFor="disclaimer">Disclaimer</Label>
           <Input
             id="disclaimer"
             value={values.disclaimer}
@@ -144,10 +146,10 @@ export function BranchForm({
         </div>
       </FormSection>
 
-      <FormSection title="address" description="core.Address nested object.">
+      <FormSection icon={MapPin} title="address">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="address-address1">address.address1</Label>
+            <Label htmlFor="address-address1">Address line 1</Label>
             <Input
               id="address-address1"
               value={values.address.address1}
@@ -155,7 +157,7 @@ export function BranchForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address-address2">address.address2</Label>
+            <Label htmlFor="address-address2">Address line 2</Label>
             <Input
               id="address-address2"
               value={values.address.address2}
@@ -166,7 +168,7 @@ export function BranchForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="address-apartment">address.apartment</Label>
+            <Label htmlFor="address-apartment">Apartment / suite</Label>
             <Input
               id="address-apartment"
               value={values.address.apartment}
@@ -174,7 +176,7 @@ export function BranchForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address-city">address.city</Label>
+            <Label htmlFor="address-city">City</Label>
             <Input
               id="address-city"
               value={values.address.city}
@@ -185,7 +187,7 @@ export function BranchForm({
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="address-state">address.state</Label>
+            <Label htmlFor="address-state">State / province</Label>
             <Input
               id="address-state"
               value={values.address.state}
@@ -193,7 +195,7 @@ export function BranchForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address-zipcode">address.zipcode</Label>
+            <Label htmlFor="address-zipcode">Zip / postal code</Label>
             <Input
               id="address-zipcode"
               value={values.address.zipcode}
@@ -201,7 +203,7 @@ export function BranchForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address-country">address.country</Label>
+            <Label htmlFor="address-country">Country</Label>
             <Input
               id="address-country"
               value={values.address.country}
@@ -211,10 +213,10 @@ export function BranchForm({
         </div>
       </FormSection>
 
-      <FormSection title="settings" description="core.BranchSetting nested object.">
+      <FormSection icon={Settings} title="settings">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="settings-labelPrefix">settings.labelPrefix</Label>
+            <Label htmlFor="settings-labelPrefix">Label prefix</Label>
             <Input
               id="settings-labelPrefix"
               value={values.settings.labelPrefix}
@@ -222,7 +224,7 @@ export function BranchForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="settings-roundDecimalPlaces">settings.roundDecimalPlaces</Label>
+            <Label htmlFor="settings-roundDecimalPlaces">Round decimal places</Label>
             <Input
               id="settings-roundDecimalPlaces"
               type="number"
@@ -234,7 +236,7 @@ export function BranchForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="settings-defaultLabelStatus">settings.defaultLabelStatus</Label>
+            <Label htmlFor="settings-defaultLabelStatus">Default label status</Label>
             <Input
               id="settings-defaultLabelStatus"
               type="number"
@@ -243,7 +245,7 @@ export function BranchForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="settings-imageResampleBy">settings.imageResampleBy</Label>
+            <Label htmlFor="settings-imageResampleBy">Image resample by</Label>
             <Input
               id="settings-imageResampleBy"
               type="number"
@@ -255,7 +257,7 @@ export function BranchForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="settings-s3Profile">settings.s3Profile</Label>
+            <Label htmlFor="settings-s3Profile">S3 profile</Label>
             <Input
               id="settings-s3Profile"
               value={values.settings.s3Profile}
@@ -263,7 +265,7 @@ export function BranchForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="settings-s3BucketName">settings.s3BucketName</Label>
+            <Label htmlFor="settings-s3BucketName">S3 bucket name</Label>
             <Input
               id="settings-s3BucketName"
               value={values.settings.s3BucketName}
@@ -274,7 +276,7 @@ export function BranchForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="settings-s3BucketFolder">settings.s3BucketFolder</Label>
+            <Label htmlFor="settings-s3BucketFolder">S3 bucket folder</Label>
             <Input
               id="settings-s3BucketFolder"
               value={values.settings.s3BucketFolder}
@@ -282,7 +284,7 @@ export function BranchForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="settings-s3ShareLinkExpireMinutes">settings.s3ShareLinkExpireMinutes</Label>
+            <Label htmlFor="settings-s3ShareLinkExpireMinutes">S3 share link expiry (minutes)</Label>
             <Input
               id="settings-s3ShareLinkExpireMinutes"
               type="number"
@@ -297,7 +299,7 @@ export function BranchForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="settings-invoiceCreatedThruIncomeStatement">
-              settings.invoiceCreatedThruIncomeStatement
+              Invoice created through income statement
             </Label>
             <SearchableSelect
               id="settings-invoiceCreatedThruIncomeStatement"
@@ -310,7 +312,7 @@ export function BranchForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="settings-printLabelCount">settings.printLabelCount</Label>
+            <Label htmlFor="settings-printLabelCount">Print label count</Label>
             <SearchableSelect
               id="settings-printLabelCount"
               searchable={false}
@@ -321,14 +323,20 @@ export function BranchForm({
           </div>
         </div>
       </FormSection>
+      </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {submitLabel}
-        </Button>
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        {externalError ? (
+          <p className="mb-3 text-sm text-destructive">{externalError}</p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {submitLabel}
+          </Button>
+        </div>
       </div>
     </form>
   );

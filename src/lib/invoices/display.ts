@@ -1,7 +1,7 @@
 import { formatContainerLabel } from "@/lib/containers/display";
 import { getContainerById } from "@/lib/containers/mock-data";
 import { formatItemPrice } from "@/lib/items/display";
-import { getBranchLabel } from "@/lib/trucks/display";
+import { getBranchLabel } from "@/lib/vehicles/display";
 import type { Invoice, InvoiceLineItem, InvoicePaymentLocation, InvoicePaymentMethod } from "./types";
 import { INVOICE_PAYMENT_METHODS, getInvoiceBalanceAmount, getInvoiceTotal } from "./types";
 import { getOrderPartyAddress } from "./types";

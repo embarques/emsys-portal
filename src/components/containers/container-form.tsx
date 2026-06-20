@@ -17,6 +17,7 @@ type ContainerFormProps = {
   suggestedContainerName?: string;
   submitLabel: string;
   isSubmitting?: boolean;
+  externalError?: string | null;
   onSubmit: (values: ContainerFormValues) => void;
   onCancel: () => void;
 };
@@ -27,6 +28,7 @@ export function ContainerForm({
   suggestedContainerName,
   submitLabel,
   isSubmitting = false,
+  externalError = null,
   onSubmit,
   onCancel,
 }: ContainerFormProps) {
@@ -52,14 +54,8 @@ export function ContainerForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-4">
-      {isEditing ? (
-        <div className="space-y-2">
-          <Label htmlFor="id">Container ID</Label>
-          <Input id="id" value={values.id || "—"} readOnly className="bg-muted/40 font-mono text-xs" />
-        </div>
-      ) : null}
-
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">
@@ -72,7 +68,6 @@ export function ContainerForm({
             placeholder="01-26"
             required
           />
-          <p className="text-xs text-muted-foreground">Sequence and year, e.g. 01-26, 02-26.</p>
         </div>
 
         <div className="space-y-2">
@@ -163,13 +158,20 @@ export function ContainerForm({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {submitLabel}
-        </Button>
+      </div>
+
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        {externalError ? (
+          <p className="mb-3 text-sm text-destructive">{externalError}</p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {submitLabel}
+          </Button>
+        </div>
       </div>
     </form>
   );

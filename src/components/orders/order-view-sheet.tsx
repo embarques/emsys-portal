@@ -26,7 +26,7 @@ import {
 } from "@/lib/orders/display";
 import type { Customer } from "@/lib/customers/types";
 import type { Order } from "@/lib/orders/types";
-import { getBranchBadgeClass } from "@/lib/trucks/display";
+import { getBranchBadgeClass } from "@/lib/vehicles/display";
 
 type OrderViewSheetProps = {
   order: Order | null;

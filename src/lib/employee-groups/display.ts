@@ -1,6 +1,6 @@
 import { getEmployeeById } from "@/lib/employees/mock-data";
 import { getEmployeeFullName } from "@/lib/employees/types";
-import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
+import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
 import type { EmployeeGroup, EmployeeGroupBranch } from "./types";
 import { EMPLOYEE_GROUP_BRANCHES } from "./types";
 

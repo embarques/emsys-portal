@@ -23,6 +23,7 @@ type UserFormProps = {
   isEditing?: boolean;
   submitLabel: string;
   isSubmitting?: boolean;
+  externalError?: string | null;
   onSubmit: (values: UserFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
@@ -32,6 +33,7 @@ export function UserForm({
   isEditing = false,
   submitLabel,
   isSubmitting = false,
+  externalError = null,
   onSubmit,
   onCancel,
 }: UserFormProps) {
@@ -77,22 +79,10 @@ export function UserForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-4">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       <div className="space-y-2">
-        <Label htmlFor="id">User ID</Label>
-        <Input
-          id="id"
-          value={values.id > 0 ? String(values.id) : "Assigned after save"}
-          readOnly
-          className="bg-muted/40 font-mono text-xs"
-        />
-        {!isEditing ? (
-          <p className="text-xs text-muted-foreground">The EMSYS API assigns the user id on create.</p>
-        ) : null}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="uid">uid</Label>
+        <Label htmlFor="uid">Firebase UID</Label>
         <Input
           id="uid"
           value={values.uid}
@@ -105,7 +95,7 @@ export function UserForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="userName">
-            userName <span className="text-destructive">*</span>
+            Username <span className="text-destructive">*</span>
           </Label>
           <Input
             id="userName"
@@ -119,7 +109,7 @@ export function UserForm({
 
         <div className="space-y-2">
           <Label htmlFor="password">
-            password {!isEditing ? <span className="text-destructive">*</span> : null}
+            Password {!isEditing ? <span className="text-destructive">*</span> : null}
           </Label>
           <Input
             id="password"
@@ -130,14 +120,11 @@ export function UserForm({
             autoComplete="new-password"
             required={!isEditing}
           />
-          {isEditing ? (
-            <p className="text-xs text-muted-foreground">Leave blank to keep the current password.</p>
-          ) : null}
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="fullName">fullName</Label>
+        <Label htmlFor="fullName">Full name</Label>
         <Input
           id="fullName"
           value={values.fullName}
@@ -149,7 +136,7 @@ export function UserForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="active">
-            active <span className="text-destructive">*</span>
+            Active <span className="text-destructive">*</span>
           </Label>
           <SearchableSelect
             id="active"
@@ -166,7 +153,7 @@ export function UserForm({
 
         <div className="space-y-2">
           <Label htmlFor="roleId">
-            role.id <span className="text-destructive">*</span>
+            Role <span className="text-destructive">*</span>
           </Label>
           <SearchableSelect
             id="roleId"
@@ -185,7 +172,7 @@ export function UserForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="branch">
-            branch <span className="text-destructive">*</span>
+            Branch <span className="text-destructive">*</span>
           </Label>
           <SearchableSelect
             id="branch"
@@ -201,7 +188,7 @@ export function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="type">type</Label>
+          <Label htmlFor="type">User type</Label>
           <Input
             id="type"
             value={values.type}
@@ -213,7 +200,7 @@ export function UserForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="startTime">startTime</Label>
+          <Label htmlFor="startTime">Start time</Label>
           <Input
             id="startTime"
             value={values.startTime}
@@ -223,7 +210,7 @@ export function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="endTime">endTime</Label>
+          <Label htmlFor="endTime">End time</Label>
           <Input
             id="endTime"
             value={values.endTime}
@@ -236,7 +223,7 @@ export function UserForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="email">
-            email {!isEditing ? <span className="text-destructive">*</span> : null}
+            Email {!isEditing ? <span className="text-destructive">*</span> : null}
           </Label>
           <Input
             id="email"
@@ -249,7 +236,7 @@ export function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="accessCode">accessCode</Label>
+          <Label htmlFor="accessCode">Access code</Label>
           <Input
             id="accessCode"
             type="number"
@@ -260,7 +247,7 @@ export function UserForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="user">user</Label>
+        <Label htmlFor="user">User</Label>
         <Input
           id="user"
           value={values.user ?? ""}
@@ -269,13 +256,20 @@ export function UserForm({
         />
       </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {submitLabel}
-        </Button>
+      </div>
+
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        {externalError ? (
+          <p className="mb-3 text-sm text-destructive">{externalError}</p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {submitLabel}
+          </Button>
+        </div>
       </div>
     </form>
   );

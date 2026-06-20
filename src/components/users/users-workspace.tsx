@@ -543,12 +543,9 @@ export function UsersWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit user" : "Add user"}</DialogTitle>
-            <DialogDescription>
-              Set login credentials, role, branch access, schedule, and account metadata.
-            </DialogDescription>
           </DialogHeader>
           <UserForm
             key={editingUser?.id ?? "new"}
@@ -558,13 +555,13 @@ export function UsersWorkspace() {
             isEditing={formMode === "edit"}
             submitLabel={formMode === "edit" ? "Save changes" : "Add user"}
             isSubmitting={isSaving}
+            externalError={formError}
             onSubmit={saveUser}
             onCancel={() => {
               setFormMode(null);
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

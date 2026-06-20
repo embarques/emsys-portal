@@ -56,7 +56,8 @@ export function InventoryItemForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-4">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="sku">SKU</Label>
@@ -150,12 +151,15 @@ export function InventoryItemForm({
           placeholder="Optional notes about stock, vendor, or recounts"
         />
       </div>
+      </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{submitLabel}</Button>
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">{submitLabel}</Button>
+        </div>
       </div>
     </form>
   );

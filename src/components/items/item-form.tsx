@@ -16,6 +16,7 @@ type ItemFormProps = {
   isEditing?: boolean;
   updatedAt?: string;
   submitLabel: string;
+  externalError?: string | null;
   onSubmit: (values: ItemFormValues) => void;
   onCancel: () => void;
 };
@@ -25,6 +26,7 @@ export function ItemForm({
   isEditing = false,
   updatedAt,
   submitLabel,
+  externalError = null,
   onSubmit,
   onCancel,
 }: ItemFormProps) {
@@ -45,13 +47,8 @@ export function ItemForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="itemId">Item ID</Label>
-        <Input id="itemId" value={values.itemId} readOnly className="bg-muted/40 font-mono text-xs" />
-        {!isEditing ? <p className="text-xs text-muted-foreground">Auto-generated ID for new items.</p> : null}
-      </div>
-
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       <div className="space-y-2">
         <Label htmlFor="description">
           Description <span className="text-destructive">*</span>
@@ -83,11 +80,18 @@ export function ItemForm({
         />
       </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{submitLabel}</Button>
+      </div>
+
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        {externalError ? (
+          <p className="mb-3 text-sm text-destructive">{externalError}</p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">{submitLabel}</Button>
+        </div>
       </div>
     </form>
   );

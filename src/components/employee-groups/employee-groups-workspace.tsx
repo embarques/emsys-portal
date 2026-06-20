@@ -395,14 +395,9 @@ export function EmployeeGroupsWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit employee group" : "Add employee group"}</DialogTitle>
-            <DialogDescription>
-              {formMode === "edit"
-                ? "Update the employees assigned to this group."
-                : "Create a new employee group with a generated group ID."}
-            </DialogDescription>
           </DialogHeader>
           <EmployeeGroupForm
             key={editingGroup?.employeeGroupId ?? "new"}

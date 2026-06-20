@@ -83,21 +83,9 @@ export function EmployeeGroupForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-6">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="employeeGroupId">Employee group ID</Label>
-          <Input
-            id="employeeGroupId"
-            value={values.employeeGroupId}
-            readOnly
-            className="bg-muted/40 font-mono text-xs"
-          />
-          {!isEditing ? (
-            <p className="text-xs text-muted-foreground">Auto-generated ID for new groups.</p>
-          ) : null}
-        </div>
-
         <div className="space-y-2">
           <Label>Selected employees</Label>
           <div className="flex h-9 items-center rounded-md border bg-muted/20 px-3 text-sm">
@@ -133,7 +121,6 @@ export function EmployeeGroupForm({
           <h3 className="text-sm font-semibold">
             Employees <span className="text-destructive">*</span>
           </h3>
-          <p className="text-sm text-muted-foreground">Select one or more employees for this group.</p>
         </div>
 
         <Input
@@ -182,14 +169,16 @@ export function EmployeeGroupForm({
           )}
         </div>
       </section>
+      </div>
 
-      {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{submitLabel}</Button>
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        {formError ? <p className="mb-3 text-sm text-destructive">{formError}</p> : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">{submitLabel}</Button>
+        </div>
       </div>
     </form>
   );

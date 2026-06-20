@@ -30,6 +30,7 @@ type InvoiceFormProps = {
   updatedAt?: string;
   suggestedInvoiceNumber?: string;
   submitLabel: string;
+  externalError?: string | null;
   onSubmit: (values: InvoiceFormValues) => InvoiceFormSubmitResult;
   onFormErrorChange?: (error: string | null) => void;
   onCancel: () => void;
@@ -41,6 +42,7 @@ export function InvoiceForm({
   updatedAt,
   suggestedInvoiceNumber,
   submitLabel,
+  externalError = null,
   onSubmit,
   onFormErrorChange,
   onCancel,
@@ -90,13 +92,9 @@ export function InvoiceForm({
   const balance = computeInvoiceBalance(subtotal, discount, amountPaid);
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-6">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="invoiceId">Invoice ID</Label>
-          <Input id="invoiceId" value={values.invoiceId} readOnly className="bg-muted/40 font-mono text-xs" />
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="invoiceNumber">
             Invoice number <span className="text-destructive">*</span>
@@ -146,7 +144,7 @@ export function InvoiceForm({
 
         <div className="space-y-2">
           <Label htmlFor="paymentLocation">
-            Pending <span className="text-destructive">*</span>
+            Payment location <span className="text-destructive">*</span>
           </Label>
           <SearchableSelect
             id="paymentLocation"
@@ -165,7 +163,6 @@ export function InvoiceForm({
 
       <OrderPartyEditor
         title="Sender"
-        description="Manage sender phones, addresses, and the address used on this invoice."
         values={values.sender}
         customers={customers}
         customerFilter="sender"
@@ -174,7 +171,6 @@ export function InvoiceForm({
 
       <OrderPartyEditor
         title="Receiver"
-        description="Manage receiver phones, addresses, and the address used on this invoice."
         values={values.receiver}
         customers={customers}
         customerFilter="receiver"
@@ -209,9 +205,6 @@ export function InvoiceForm({
               readOnly
               className="bg-muted/40"
             />
-            <p className="text-xs text-muted-foreground">
-              Record individual payments when viewing the invoice after it is saved.
-            </p>
           </div>
         </div>
 
@@ -234,12 +227,18 @@ export function InvoiceForm({
           </div>
         </div>
       </section>
+      </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{submitLabel}</Button>
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        {externalError ? (
+          <p className="mb-3 text-sm text-destructive">{externalError}</p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">{submitLabel}</Button>
+        </div>
       </div>
     </form>
   );

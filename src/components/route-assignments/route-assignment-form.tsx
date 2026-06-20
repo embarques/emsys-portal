@@ -19,10 +19,8 @@ import {
   type RouteAssignment,
   type RouteAssignmentFormValues,
 } from "@/lib/route-assignments/types";
-import { useTruckPicker } from "@/lib/trucks/hooks/use-trucks";
-import { getBranchLabel } from "@/lib/trucks/display";
-
-const readOnlyClassName = "bg-muted/40";
+import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
+import { getBranchLabel } from "@/lib/vehicles/display";
 
 type RouteAssignmentFormProps = {
   initialValues?: RouteAssignmentFormValues;
@@ -41,8 +39,8 @@ export function RouteAssignmentForm({
   onSubmit,
   onCancel,
 }: RouteAssignmentFormProps) {
-  const { data: trucksData } = useTruckPicker();
-  const trucks = trucksData?.items ?? [];
+  const { data: vehiclesData } = useVehiclePicker();
+  const vehicles = vehiclesData?.items ?? [];
   const employeeGroups = useMemo(() => cloneEmployeeGroups(), []);
   const [values, setValues] = useState<RouteAssignmentFormValues>(
     initialValues ?? createEmptyRouteAssignmentForm(),
@@ -59,11 +57,11 @@ export function RouteAssignmentForm({
     setValues((current) => ({ ...current, [key]: value }));
   }
 
-  function handleTruckChange(truckRecordId: string) {
-    const truck = trucks.find((entry) => entry.id === truckRecordId);
+  function handleVehicleChange(vehicleRecordId: string) {
+    const vehicle = vehicles.find((entry) => entry.id === vehicleRecordId);
     updateField("truck", {
-      id: truckRecordId,
-      name: truck?.name ?? "",
+      id: vehicleRecordId,
+      name: vehicle?.name ?? "",
     });
   }
 
@@ -91,7 +89,8 @@ export function RouteAssignmentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-6">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       {!isEditing && copySources.length > 0 ? (
         <section className="rounded-xl border border-dashed bg-muted/10 p-4">
           <div className="flex items-start gap-3">
@@ -99,9 +98,6 @@ export function RouteAssignmentForm({
             <div className="flex-1 space-y-2">
               <div>
                 <Label htmlFor="copyFrom">Copy from existing assignment</Label>
-                <p className="text-xs text-muted-foreground">
-                  Prefill truck and employee group from a previous assignment with today&apos;s date.
-                </p>
               </div>
               <SearchableSelect
                 id="copyFrom"
@@ -124,21 +120,8 @@ export function RouteAssignmentForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="id">Assignment ID</Label>
-          <Input
-            id="id"
-            value={values.id || "Assigned after save"}
-            readOnly
-            className={`font-mono text-xs ${readOnlyClassName}`}
-          />
-          {!isEditing ? (
-            <p className="text-xs text-muted-foreground">The EMSYS API assigns the record id on create.</p>
-          ) : null}
-        </div>
-
-        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="routeAssignmentId">
-            routeAssignmentId <span className="text-destructive">*</span>
+            Assignment number <span className="text-destructive">*</span>
           </Label>
           <Input
             id="routeAssignmentId"
@@ -152,7 +135,7 @@ export function RouteAssignmentForm({
 
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="name">
-            name <span className="text-destructive">*</span>
+            Name <span className="text-destructive">*</span>
           </Label>
           <Input
             id="name"
@@ -165,7 +148,7 @@ export function RouteAssignmentForm({
 
         <div className="space-y-2">
           <Label htmlFor="date">
-            date <span className="text-destructive">*</span>
+            Date <span className="text-destructive">*</span>
           </Label>
           <Input
             id="date"
@@ -177,39 +160,29 @@ export function RouteAssignmentForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="truckId">
-            truck.id <span className="text-destructive">*</span>
+          <Label htmlFor="vehicleId">
+            Vehicle <span className="text-destructive">*</span>
           </Label>
           <SearchableSelect
-            id="truckId"
+            id="vehicleId"
             value={values.truck.id}
-            onValueChange={handleTruckChange}
-            placeholder="Select a truck"
-            searchPlaceholder="Search trucks…"
+            onValueChange={handleVehicleChange}
+            placeholder="Select a vehicle"
+            searchPlaceholder="Search vehicles…"
             required
             options={[
-              { value: "", label: "Select a truck" },
-              ...trucks.map((truck) => ({
-                value: truck.id,
-                label: `${truck.name} · ${getBranchLabel(truck.branch)}`,
+              { value: "", label: "Select a vehicle" },
+              ...vehicles.map((vehicle) => ({
+                value: vehicle.id,
+                label: `${vehicle.name} · ${getBranchLabel(vehicle.branch)}`,
               })),
             ]}
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="truckName">truck.name</Label>
-          <Input
-            id="truckName"
-            value={values.truck.name}
-            readOnly
-            className={readOnlyClassName}
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="employeeGroupId">
-            employeeGroup.id <span className="text-destructive">*</span>
+            Employee group <span className="text-destructive">*</span>
           </Label>
           <SearchableSelect
             id="employeeGroupId"
@@ -228,22 +201,16 @@ export function RouteAssignmentForm({
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="employeeGroupName">employeeGroup.name</Label>
-          <Input
-            id="employeeGroupName"
-            value={values.employeeGroup.name}
-            readOnly
-            className={readOnlyClassName}
-          />
-        </div>
+      </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{submitLabel}</Button>
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">{submitLabel}</Button>
+        </div>
       </div>
     </form>
   );

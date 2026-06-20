@@ -450,8 +450,8 @@ export function BranchesWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit branch" : "Add branch"}</DialogTitle>
           </DialogHeader>
           <BranchForm
@@ -464,13 +464,13 @@ export function BranchesWorkspace() {
             isEditing={formMode === "edit"}
             submitLabel={formMode === "edit" ? "Save changes" : "Add branch"}
             isSubmitting={isSaving}
+            externalError={formError}
             onSubmit={saveBranch}
             onCancel={() => {
               setFormMode(null);
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

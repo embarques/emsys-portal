@@ -1,4 +1,4 @@
-import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
+import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
 import {
   formatRecordPhoneTypeLabel,
   getOrderedRecordPhones,

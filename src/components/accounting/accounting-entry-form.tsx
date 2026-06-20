@@ -52,6 +52,7 @@ type AccountingEntryFormProps = {
   variant?: "dialog" | "inline";
   fixedType?: AccountingFormValues["type"];
   submitLabel: string;
+  externalError?: string | null;
   onSubmit: (values: AccountingFormValues) => string | null;
   onFormErrorChange?: (error: string | null) => void;
   onCancel?: () => void;
@@ -66,6 +67,7 @@ export function AccountingEntryForm({
   variant = "dialog",
   fixedType,
   submitLabel,
+  externalError = null,
   onSubmit,
   onFormErrorChange,
   onCancel,
@@ -90,13 +92,6 @@ export function AccountingEntryForm({
     () => invoices.find((invoice) => invoice.invoiceId === values.invoiceId),
     [invoices, values.invoiceId]
   );
-
-  const matchedInvoiceByNumber = useMemo(
-    () => findInvoiceByNumber(invoices, values.invoiceNumber),
-    [invoices, values.invoiceNumber]
-  );
-
-  const typeMeta = ACCOUNTING_ENTRY_TYPES.find((entry) => entry.value === values.type);
 
   const previewBalance = useMemo(() => {
     if (!isNewInvoicePaymentType(values.type)) return null;
@@ -187,14 +182,12 @@ export function AccountingEntryForm({
   const showGlobalDateBranch = isNewInvoicePayment || isExistingInvoicePayment;
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className={isInline ? "space-y-3" : "space-y-4"}>
-      {!isInline ? (
-      <div className="space-y-2">
-        <Label htmlFor="entryId">Entry ID</Label>
-        <Input id="entryId" value={values.entryId} readOnly className="bg-muted/40 font-mono text-xs" />
-      </div>
-      ) : null}
-
+    <form
+      onSubmit={handleSubmit}
+      onKeyDown={handleEnterNavigation}
+      className={isInline ? "space-y-3" : "flex min-h-0 flex-1 flex-col"}
+    >
+      <div className={isInline ? "space-y-3" : "flex-1 space-y-6 overflow-y-auto px-6 py-5"}>
       {!isInline && !fixedType ? (
       <div className="space-y-2">
         <Label htmlFor="type">
@@ -211,7 +204,6 @@ export function AccountingEntryForm({
             label: option.label,
           }))}
         />
-        {typeMeta ? <p className="text-xs text-muted-foreground">{typeMeta.description}</p> : null}
       </div>
       ) : null}
 
@@ -262,11 +254,6 @@ export function AccountingEntryForm({
               placeholder="INV-2026-0001"
               required
             />
-            {matchedInvoiceByNumber ? (
-              <p className="text-xs text-muted-foreground">
-                Matched invoice — sender and receiver filled automatically.
-              </p>
-            ) : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -676,14 +663,27 @@ export function AccountingEntryForm({
         </div>
       ) : null}
 
-      <div className={`flex gap-2 ${isInline ? "justify-start pt-1" : "justify-end pt-2"}`}>
-        {!isInline && onCancel ? (
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        ) : null}
-        <Button type="submit">{submitLabel}</Button>
       </div>
+
+      {isInline ? (
+        <div className="flex justify-start gap-2 pt-1">
+          <Button type="submit">{submitLabel}</Button>
+        </div>
+      ) : (
+        <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+          {externalError ? (
+            <p className="mb-3 text-sm text-destructive">{externalError}</p>
+          ) : null}
+          <div className="flex justify-end gap-2">
+            {onCancel ? (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+            ) : null}
+            <Button type="submit">{submitLabel}</Button>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

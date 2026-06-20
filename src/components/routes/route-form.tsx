@@ -73,14 +73,9 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
   }
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-6">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="routeId">Route ID</Label>
-          <Input id="routeId" value={values.routeId} readOnly className="bg-muted/40 font-mono text-xs" />
-          {!isEditing ? <p className="text-xs text-muted-foreground">Auto-generated ID for new routes.</p> : null}
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="name">
             Route name <span className="text-destructive">*</span>
@@ -113,9 +108,6 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold">Route content</h3>
-            <p className="text-sm text-muted-foreground">
-              At least one place is required. Add cities, states, zip codes, or zip ranges.
-            </p>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={addPlace}>
             <Plus className="h-4 w-4" />
@@ -178,14 +170,16 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
           })}
         </div>
       </section>
+      </div>
 
-      {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{submitLabel}</Button>
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        {formError ? <p className="mb-3 text-sm text-destructive">{formError}</p> : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">{submitLabel}</Button>
+        </div>
       </div>
     </form>
   );

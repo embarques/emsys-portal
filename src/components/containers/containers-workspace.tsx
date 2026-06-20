@@ -493,14 +493,9 @@ export function ContainersWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit container" : "Add container"}</DialogTitle>
-            <DialogDescription>
-              {formMode === "edit"
-                ? "Update container shipping and logistics details."
-                : "Create a new container record with booking and transport information."}
-            </DialogDescription>
           </DialogHeader>
           <ContainerForm
             key={editingContainer?.id ?? "new"}
@@ -512,6 +507,7 @@ export function ContainersWorkspace() {
             isEditing={formMode === "edit"}
             suggestedContainerName={formMode === "add" ? suggestedContainerName : undefined}
             submitLabel={formMode === "edit" ? "Save changes" : "Add container"}
+            externalError={formError}
             onSubmit={saveContainer}
             onCancel={() => {
               setFormMode(null);
@@ -519,7 +515,6 @@ export function ContainersWorkspace() {
             }}
             isSubmitting={isSaving}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

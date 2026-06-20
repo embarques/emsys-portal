@@ -322,13 +322,6 @@ export function OrderForm({
       <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       <FormSection icon={CalendarDays} title="Pickup date" required>
         <div className="grid gap-4 sm:grid-cols-2">
-          {isEditing ? (
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="id">Order ID</Label>
-              <Input id="id" value={values.id} readOnly className="bg-muted/40 font-mono text-xs" />
-            </div>
-          ) : null}
-
           <div className="space-y-2">
             <div className="relative">
               <button

@@ -10,6 +10,6 @@ export const API_ENDPOINTS = {
   BRANCHES: "/branches",
   PICKUPS: "/pickups",
   CONTAINERS: "/containers",
-  TRUCKS: "/trucks",
+  VEHICLES: "/trucks",
   INVOICES: "/invoices",
 } as const;
