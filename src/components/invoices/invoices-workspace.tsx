@@ -14,6 +14,7 @@ import {
 
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -522,12 +523,6 @@ export function InvoicesWorkspace() {
           />
         </CardHeader>
 
-        {isError ? (
-          <div className="px-6 py-8 text-sm text-destructive">
-            {normalizeApiError(error).message}
-          </div>
-        ) : null}
-
         <TableSelectionBar
           selectedIds={selectedIds}
           pageRowIds={invoices.map((invoice) => invoice.invoiceId)}
@@ -537,59 +532,71 @@ export function InvoicesWorkspace() {
           }
         />
 
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={invoices}
-          page={currentPage}
-          rowKey={(invoice) => invoice.invoiceId}
-          rowLabel={(invoice) => invoice.invoiceNumber}
-          columnLayout={columnVisibility}
-          minWidth={1500}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={openView}
-          emptyState={
-            isLoading || isFetching ? (
-              <p className="text-muted-foreground">Loading invoices…</p>
-            ) : (
-              <>
-                <p className="text-muted-foreground">No invoices match your search or filters.</p>
-              </>
-            )
-          }
-        />
-
-        <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {invoices.length} of {totalInvoices} invoices
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1 || isLoading}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages || isLoading}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+        {isError ? (
+          <div className="px-6 py-8 text-sm text-destructive">
+            {normalizeApiError(error).message}
           </div>
-        </div>
+        ) : isLoading ? (
+          <DirectoryTableLoader
+            icon={Receipt}
+            title="Loading invoices"
+            description="Syncing customers, balances, and payment status…"
+            columns={["Invoice", "Date", "Customer", "Status", "Balance"]}
+          />
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={invoices}
+            page={currentPage}
+            isPageDataPending={isFetching}
+            rowKey={(invoice) => invoice.invoiceId}
+            rowLabel={(invoice) => invoice.invoiceNumber}
+            columnLayout={columnVisibility}
+            minWidth={1500}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={toggleSelect}
+            onRowClick={openView}
+            emptyState={
+              <p className="text-muted-foreground">No invoices match your search or filters.</p>
+            }
+          />
+        )}
+
+        {!isLoading && !isError ? (
+          <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {isFetching
+                ? "Refreshing invoices…"
+                : `Showing ${invoices.length} of ${totalInvoices} invoices`}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <span className="px-2 text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </Card>
 
       <InvoiceViewSheet

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Boxes,
@@ -15,6 +15,7 @@ import {
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventoryViewSheet } from "@/components/inventory/inventory-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -89,6 +90,7 @@ function itemToFormValues(item: InventoryItem): InventoryFormValues {
 
 export function InventoryWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [items, setItems] = useState<InventoryItem[]>(() => cloneInventoryItems());
   const [filters, setFilters] = useState<InventoryFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -115,6 +117,11 @@ export function InventoryWorkspace() {
   const pageItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allPageSelected = pageItems.length > 0 && pageItems.every((item) => selectedIds.includes(item.id));
   const activeFilterCount = [filters.status, filters.location, filters.category].filter((value) => value !== "all").length;
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsInitialLoading(false), 600);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -402,6 +409,14 @@ export function InventoryWorkspace() {
           onDelete={() => setDeleteTarget(items.filter((item) => selectedIds.includes(item.id)))}
         />
 
+        {isInitialLoading ? (
+          <DirectoryTableLoader
+            icon={Warehouse}
+            title="Loading inventory"
+            description="Counting available stock, reservations, and warehouse locations…"
+            columns={["SKU", "Item", "Category", "Available", "Location"]}
+          />
+        ) : (
         <DataTable
           columns={columnVisibility.columns}
           rows={pageItems}
@@ -421,7 +436,9 @@ export function InventoryWorkspace() {
             <p className="text-muted-foreground">No inventory items match your search or filters.</p>
           }
         />
+        )}
 
+        {!isInitialLoading ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {pageItems.length} of {filteredItems.length} items
@@ -450,6 +467,7 @@ export function InventoryWorkspace() {
             </Button>
           </div>
         </div>
+        ) : null}
       </Card>
 
       <InventoryViewSheet

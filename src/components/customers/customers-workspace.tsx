@@ -14,6 +14,7 @@ import {
 import { CustomerForm } from "@/components/customers/customer-form";
 import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -536,7 +537,12 @@ export function CustomersWorkspace() {
         />
 
         {showInitialTableLoading ? (
-          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading customers…</div>
+          <DirectoryTableLoader
+            icon={Users}
+            title="Loading customers"
+            description="Gathering profiles, contact details, and account balances…"
+            columns={["Customer", "Type", "Phone", "Branch", "Balance"]}
+          />
         ) : (
           <DataTable
             columns={columnVisibility.columns}
@@ -568,6 +574,7 @@ export function CustomersWorkspace() {
           />
         )}
 
+        {!showInitialTableLoading ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">{listSummary}</p>
           <div className="flex items-center gap-2">
@@ -594,6 +601,7 @@ export function CustomersWorkspace() {
             </Button>
           </div>
         </div>
+        ) : null}
       </Card>
 
       <CustomerViewSheet

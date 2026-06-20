@@ -7,12 +7,16 @@ import {
 /**
  * Invoice directory search bar — POST /invoices/search OR + contains.
  * Pagination in URL; body is filters + sort only (same as customers/trucks).
- * Invoice parties expose name + address only (no phone fields on the API model).
+ * Phone searches include normalized phones and legacy phone1 snapshots.
  */
 export const INVOICE_BAR_OR_SEARCH_FIELDS = [
   "number",
   "sender.name",
+  "sender.phones.number",
+  "sender.phone1",
   "receiver.name",
+  "receiver.phones.number",
+  "receiver.phone1",
   "sender.address.address1",
   "sender.address.address2",
   "receiver.address.address1",
@@ -50,7 +54,9 @@ export function createInvoiceBarSearchFilterGroup(value: string): ApiSearchFilte
 
   const searchFields = /\d/.test(trimmed)
     ? [...INVOICE_BAR_OR_SEARCH_FIELDS]
-    : INVOICE_BAR_OR_SEARCH_FIELDS.filter((field) => field !== "number");
+    : INVOICE_BAR_OR_SEARCH_FIELDS.filter(
+        (field) => field !== "number" && !field.includes("phone"),
+      );
 
   return createOrTextSearchFilterGroup(trimmed, searchFields, "contains");
 }

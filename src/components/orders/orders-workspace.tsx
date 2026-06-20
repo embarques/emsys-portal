@@ -14,6 +14,7 @@ import {
 import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -461,7 +462,12 @@ export function OrdersWorkspace() {
         />
 
         {isLoading ? (
-          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading orders…</div>
+          <DirectoryTableLoader
+            icon={PackageOpen}
+            title="Loading orders"
+            description="Coordinating customers, routes, packages, and delivery status…"
+            columns={["Order", "Date", "Sender", "Receiver", "Status"]}
+          />
         ) : (
           <DataTable
             columns={columnVisibility.columns}
@@ -491,6 +497,7 @@ export function OrdersWorkspace() {
           />
         )}
 
+        {!isLoading ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             {isFetching
@@ -521,6 +528,7 @@ export function OrdersWorkspace() {
             </Button>
           </div>
         </div>
+        ) : null}
       </Card>
 
       <OrderViewSheet

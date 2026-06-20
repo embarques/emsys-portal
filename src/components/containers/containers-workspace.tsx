@@ -14,6 +14,7 @@ import {
 import { ContainerForm } from "@/components/containers/container-form";
 import { ContainerViewSheet } from "@/components/containers/container-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -400,6 +401,13 @@ export function ContainersWorkspace() {
           <div className="px-6 py-8 text-sm text-destructive">
             {normalizeApiError(error).message}
           </div>
+        ) : isLoading ? (
+          <DirectoryTableLoader
+            icon={Container}
+            title="Loading containers"
+            description="Tracking shipments, capacity, costs, and departure schedules…"
+            columns={["Container", "Status", "Departure", "Capacity", "Cost"]}
+          />
         ) : (
           <DataTable
             columns={columnVisibility.columns}
@@ -431,6 +439,7 @@ export function ContainersWorkspace() {
           />
         )}
 
+        {!isLoading && !isError ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {containers.length} of {totalContainers} containers
@@ -459,6 +468,7 @@ export function ContainersWorkspace() {
             </Button>
           </div>
         </div>
+        ) : null}
       </Card>
 
       <ContainerViewSheet
