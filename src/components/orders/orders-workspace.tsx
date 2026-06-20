@@ -6,6 +6,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  DollarSign,
+  FileText,
   PackageOpen,
   Plus,
   Trash2,
@@ -24,7 +26,7 @@ import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -213,9 +215,8 @@ export function OrdersWorkspace() {
 
   const statCards = [
     {
-      label: "Pending",
+      label: "Pending orders",
       value: stats.pending.toString(),
-      description: "Not yet completed",
       icon: Clock,
     },
     {
@@ -226,8 +227,17 @@ export function OrdersWorkspace() {
     {
       label: "Pending takes",
       value: stats.pendingTakes.toString(),
-      description: "Purpose contains take · not completed",
       icon: ArrowDownToLine,
+    },
+    {
+      label: "Pending estimates",
+      value: stats.pendingEstimates.toString(),
+      icon: FileText,
+    },
+    {
+      label: "Pending payments",
+      value: stats.pendingPayments.toString(),
+      icon: DollarSign,
     },
   ];
 
@@ -381,7 +391,6 @@ export function OrdersWorkspace() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.isLoading ? "…" : stat.value}</div>
-                <CardDescription className="mt-1">{stat.description}</CardDescription>
               </CardContent>
             </Card>
           );
@@ -554,8 +563,8 @@ export function OrdersWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit order" : "Add order"}</DialogTitle>
           </DialogHeader>
           <OrderForm
@@ -574,7 +583,6 @@ export function OrdersWorkspace() {
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

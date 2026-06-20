@@ -94,22 +94,44 @@ export function useOrderStats(options: OrderStatsOptions = {}) {
     enabled: queryEnabled,
   });
 
+  const pendingEstimatesQuery = useQuery({
+    queryKey: queryKeys.orders.stats("pending-estimates"),
+    queryFn: () =>
+      fetchOrders(buildOrderStatsCountParams(buildPendingPurposeStatsFilterRows("estimate"))),
+    enabled: queryEnabled,
+  });
+
+  const pendingPaymentsQuery = useQuery({
+    queryKey: queryKeys.orders.stats("pending-payments"),
+    queryFn: () =>
+      fetchOrders(buildOrderStatsCountParams(buildPendingPurposeStatsFilterRows("payment"))),
+    enabled: queryEnabled,
+  });
+
   const pending = pendingQuery.data?.total ?? 0;
   const pendingPickups = pendingPickupsQuery.data?.total ?? 0;
   const pendingTakes = pendingTakesQuery.data?.total ?? 0;
+  const pendingEstimates = pendingEstimatesQuery.data?.total ?? 0;
+  const pendingPayments = pendingPaymentsQuery.data?.total ?? 0;
 
   return {
     pending,
     pendingPickups,
     pendingTakes,
+    pendingEstimates,
+    pendingPayments,
     isLoading:
       pendingQuery.isLoading ||
       pendingPickupsQuery.isLoading ||
-      pendingTakesQuery.isLoading,
+      pendingTakesQuery.isLoading ||
+      pendingEstimatesQuery.isLoading ||
+      pendingPaymentsQuery.isLoading,
     isError:
       pendingQuery.isError ||
       pendingPickupsQuery.isError ||
-      pendingTakesQuery.isError,
+      pendingTakesQuery.isError ||
+      pendingEstimatesQuery.isError ||
+      pendingPaymentsQuery.isError,
   };
 }
 

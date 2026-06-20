@@ -41,6 +41,8 @@ type CustomerFormProps = {
   submitLabel: string;
   isSubmitting?: boolean;
   externalError?: string | null;
+  /** Lock the customer type (e.g. when adding a sender/receiver from the order form). */
+  lockCustomerType?: boolean;
   onSubmit: (values: CustomerFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
@@ -48,32 +50,19 @@ type CustomerFormProps = {
 type FormSectionProps = {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
-  description?: string;
   children: React.ReactNode;
 };
 
-function FormSection({
-  icon: Icon,
-  title,
-  description,
-  children,
-}: FormSectionProps) {
+function FormSection({ icon: Icon, title, children }: FormSectionProps) {
   return (
     <section className="space-y-3">
-      <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+      <div className="flex items-center gap-2.5">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
           <Icon className="size-4" />
         </span>
-        <div className="space-y-0.5">
-          <h3 className="text-sm font-semibold leading-none text-foreground">
-            {title}
-          </h3>
-          {description ? (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          ) : null}
-        </div>
+        <h3 className="text-sm font-semibold leading-none text-foreground">{title}</h3>
       </div>
-      <div className="space-y-4 pl-[2.375rem]">{children}</div>
+      <div className="space-y-4">{children}</div>
     </section>
   );
 }
@@ -175,6 +164,7 @@ export function CustomerForm({
   submitLabel,
   isSubmitting = false,
   externalError = null,
+  lockCustomerType = false,
   onSubmit,
   onCancel,
 }: CustomerFormProps) {
@@ -277,11 +267,7 @@ export function CustomerForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <div className="flex-1 space-y-7 overflow-y-auto px-6 py-5">
-        <FormSection
-          icon={User}
-          title="General"
-          description="Basic identity, contact, and reference details for this customer."
-        >
+        <FormSection icon={User} title="General">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="customerType">
@@ -297,6 +283,7 @@ export function CustomerForm({
                   value: String(option.value),
                   label: option.label,
                 }))}
+                disabled={lockCustomerType}
                 required
               />
             </div>
@@ -341,11 +328,7 @@ export function CustomerForm({
 
         <div className="border-t border-border/60" />
 
-        <FormSection
-          icon={StickyNote}
-          title="Notes"
-          description="Internal customer notes visible to your team."
-        >
+        <FormSection icon={StickyNote} title="Notes">
           <textarea
             id="notes"
             value={values.notes}
@@ -358,11 +341,7 @@ export function CustomerForm({
 
         <div className="border-t border-border/60" />
 
-        <FormSection
-          icon={PhoneIcon}
-          title="Phones"
-          description="At least one phone number is required. Mark one as primary."
-        >
+        <FormSection icon={PhoneIcon} title="Phones">
           <PhoneListEditor
             idPrefix="customer-phone"
             phones={values.phones}
@@ -373,11 +352,7 @@ export function CustomerForm({
 
         <div className="border-t border-border/60" />
 
-        <FormSection
-          icon={MapPin}
-          title="Addresses"
-          description="Primary address is used for shipping and directions."
-        >
+        <FormSection icon={MapPin} title="Addresses">
           <div className="space-y-3">
             <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">

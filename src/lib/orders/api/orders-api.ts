@@ -39,6 +39,7 @@ import {
   deriveOrderPurpose,
   orderCommentPurposeRequiresItem,
   resolveOrderCommentUnit,
+  toApiCommentPurpose,
   type Order,
   type OrderFormValues,
   type OrderListParams,
@@ -473,16 +474,19 @@ function buildPickupCustomerRef(customer: Customer): ApiPickupCustomerRef {
 }
 
 function buildApiCommentsFromFormValues(values: OrderFormValues): ApiComment[] {
-  if (values.comments.length === 0) {
+  // Skip blank rows (e.g. the empty comment the editor pre-focuses for the next entry).
+  const comments = values.comments.filter((comment) => comment.purpose.trim());
+
+  if (comments.length === 0) {
     return [{ purpose: "", unit: "", quantity: 0, description: "" }];
   }
 
-  return values.comments.map((comment) => {
+  return comments.map((comment) => {
     const requiresItem = orderCommentPurposeRequiresItem(comment.purpose);
     const quantity = Number(comment.quantity);
 
     return {
-      purpose: comment.purpose.trim(),
+      purpose: toApiCommentPurpose(comment.purpose),
       unit: resolveOrderCommentUnit(comment),
       quantity: requiresItem && Number.isFinite(quantity) ? quantity : 0,
       description: requiresItem ? "" : comment.description.trim(),

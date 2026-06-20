@@ -66,9 +66,34 @@ export type OrderCommentItemType = (typeof ORDER_COMMENT_ITEM_TYPES)[number]["va
 const ITEM_PURPOSES = new Set<string>(["TAKE", "PICKUP"]);
 const KNOWN_ITEM_VALUES = new Set<string>(["box", "barrel", "tape"]);
 
+/** Map any stored/legacy comment purpose keyword onto a canonical dropdown value. */
+const COMMENT_PURPOSE_BY_KEYWORD: Record<string, OrderCommentPurpose> = {
+  PAYMENT: "PAYMENT",
+  ESTIMATE: "ESTIMATE",
+  TAKE: "TAKE",
+  PICKUP: "PICKUP",
+  OTHER: "OTHER",
+  COMMENT: "OTHER",
+};
+
 /** TAKE and PICKUP describe a physical item; other purposes only carry free-text comments. */
 export function orderCommentPurposeRequiresItem(purpose: string): boolean {
   return ITEM_PURPOSES.has(purpose.trim().toUpperCase());
+}
+
+/** Normalize an incoming comment purpose (e.g. legacy lowercase "comment") to a dropdown value. */
+export function normalizeOrderCommentPurpose(purpose: string): OrderCommentPurpose | "" {
+  const keyword = purpose.trim().toUpperCase();
+  if (!keyword) return "";
+  return COMMENT_PURPOSE_BY_KEYWORD[keyword] ?? "OTHER";
+}
+
+/** Wire value for a comment purpose: the backend stores free-text comments as lowercase "comment". */
+export function toApiCommentPurpose(purpose: string): string {
+  const keyword = purpose.trim().toUpperCase();
+  if (!keyword) return "";
+  if (keyword === "OTHER" || keyword === "COMMENT") return "comment";
+  return keyword.toLowerCase();
 }
 
 export type OrderCommentFormValues = {
@@ -307,7 +332,7 @@ export function orderCommentToFormValues(comment: PickupComment): OrderCommentFo
   }
 
   return {
-    purpose: comment.purpose,
+    purpose: normalizeOrderCommentPurpose(comment.purpose),
     itemType,
     customItem,
     quantity: comment.quantity > 0 ? String(comment.quantity) : "",

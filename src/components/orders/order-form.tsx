@@ -1,7 +1,7 @@
 "use client";
 
-import { Package, Pencil, UserPlus, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, Pencil, UserPlus, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { CustomerForm } from "@/components/customers/customer-form";
@@ -19,8 +19,10 @@ import {
   SearchableSelect,
   type SearchableSelectOption,
 } from "@/components/ui/searchable-select";
+import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
+import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
@@ -36,6 +38,7 @@ import {
   type Customer,
   type CustomerFormValues,
 } from "@/lib/customers/types";
+import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/customer-type";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
 import {
@@ -60,23 +63,23 @@ type OrderFormProps = {
 type FormSectionProps = {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
-  description?: string;
+  required?: boolean;
   children: React.ReactNode;
 };
 
-function FormSection({ icon: Icon, title, description, children }: FormSectionProps) {
+function FormSection({ icon: Icon, title, required, children }: FormSectionProps) {
   return (
     <section className="space-y-3">
-      <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+      <div className="flex items-center gap-2.5">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
           <Icon className="size-4" />
         </span>
-        <div className="space-y-0.5">
-          <h3 className="text-sm font-semibold leading-none text-foreground">{title}</h3>
-          {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
-        </div>
+        <h3 className="text-sm font-semibold leading-none text-foreground">
+          {title}
+          {required ? <span className="text-destructive"> *</span> : null}
+        </h3>
       </div>
-      <div className="space-y-4 pl-[2.375rem]">{children}</div>
+      <div className="space-y-4">{children}</div>
     </section>
   );
 }
@@ -102,10 +105,18 @@ function buildCustomerSearchKeywords(customer: Customer): string[] {
   return keywords;
 }
 
+/** Surface the primary phone and street on their own rows so neither is cut off. */
+function buildCustomerOptionDescriptionLines(customer: Customer): string[] {
+  const phone = getPrimaryPhoneDisplayNumber(customer.phones);
+  const address1 = customer.address.address1.trim();
+  return [phone, address1].filter((line) => line.trim());
+}
+
 function customerToSelectOption(customer: Customer): SearchableSelectOption {
   return {
     value: customer.id,
     label: customer.name,
+    descriptionLines: buildCustomerOptionDescriptionLines(customer),
     keywords: buildCustomerSearchKeywords(customer),
   };
 }
@@ -168,6 +179,7 @@ export function OrderForm({
   const branches = branchesData?.items ?? [];
   const employees = employeesQuery.data?.items ?? [];
 
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [values, setValues] = useState<OrderFormValues>(initialValues ?? createEmptyOrderForm());
   const [formError, setFormError] = useState<string | null>(null);
   const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
@@ -180,28 +192,34 @@ export function OrderForm({
     setFormError(null);
   }, [initialValues]);
 
-  const senderOptions = useMemo(
-    () => customers.filter((customer) => customer.active),
+  // Senders are customerType 1, receivers are customerType 2 — keep each picker scoped.
+  const senderCustomers = useMemo(
+    () => customers.filter((customer) => customer.active && isCustomerSenderType(customer.customerType)),
+    [customers],
+  );
+
+  const receiverCustomers = useMemo(
+    () => customers.filter((customer) => customer.active && isCustomerReceiverType(customer.customerType)),
     [customers],
   );
 
   // Keep the currently selected party visible even if it isn't part of the loaded picker page
   // (e.g. a customer that was just created or edited inline).
   const senderSelectOptions = useMemo(() => {
-    const options = senderOptions.map(customerToSelectOption);
-    if (values.sender && !senderOptions.some((customer) => customer.id === values.sender!.id)) {
+    const options = senderCustomers.map(customerToSelectOption);
+    if (values.sender && !senderCustomers.some((customer) => customer.id === values.sender!.id)) {
       options.unshift(customerToSelectOption(values.sender));
     }
     return options;
-  }, [senderOptions, values.sender]);
+  }, [senderCustomers, values.sender]);
 
   const receiverSelectOptions = useMemo(() => {
-    const options = senderOptions.map(customerToSelectOption);
-    if (values.receiver && !senderOptions.some((customer) => customer.id === values.receiver!.id)) {
+    const options = receiverCustomers.map(customerToSelectOption);
+    if (values.receiver && !receiverCustomers.some((customer) => customer.id === values.receiver!.id)) {
       options.unshift(customerToSelectOption(values.receiver));
     }
     return options;
-  }, [senderOptions, values.receiver]);
+  }, [receiverCustomers, values.receiver]);
 
   function updateField<K extends keyof OrderFormValues>(key: K, value: OrderFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -209,13 +227,17 @@ export function OrderForm({
   }
 
   function updateSenderId(senderId: string) {
-    const sender = senderOptions.find((customer) => customer.id === senderId) ?? null;
+    const sender =
+      senderCustomers.find((customer) => customer.id === senderId) ??
+      (values.sender?.id === senderId ? values.sender : null);
     updateField("senderId", senderId);
     updateField("sender", sender);
   }
 
   function updateReceiverId(receiverId: string) {
-    const receiver = senderOptions.find((customer) => customer.id === receiverId) ?? null;
+    const receiver =
+      receiverCustomers.find((customer) => customer.id === receiverId) ??
+      (values.receiver?.id === receiverId ? values.receiver : null);
     updateField("receiverId", receiverId);
     updateField("receiver", receiver);
   }
@@ -296,8 +318,9 @@ export function OrderForm({
 
   return (
     <>
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-7">
-      <FormSection icon={Package} title="Pickup details">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+      <FormSection icon={CalendarDays} title="Pickup date" required>
         <div className="grid gap-4 sm:grid-cols-2">
           {isEditing ? (
             <div className="space-y-2 sm:col-span-2">
@@ -307,16 +330,25 @@ export function OrderForm({
           ) : null}
 
           <div className="space-y-2">
-            <Label htmlFor="date">
-              Date <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="date"
-              type="date"
-              value={values.date}
-              onChange={(event) => updateField("date", event.target.value)}
-              required
-            />
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Open date picker"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                onClick={() => dateInputRef.current?.showPicker?.()}
+              >
+                <CalendarDays className="size-4" />
+              </button>
+              <Input
+                ref={dateInputRef}
+                id="date"
+                type="date"
+                value={values.date}
+                onChange={(event) => updateField("date", event.target.value)}
+                required
+                className="pl-9 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+              />
+            </div>
           </div>
 
           {isEditing ? (
@@ -375,11 +407,8 @@ export function OrderForm({
 
       <div className="border-t border-border/60" />
 
-      <FormSection
-        icon={Users}
-        title="Sender & receiver"
-        description="Who is sending and receiving this pickup."
-      >
+      <FormSection icon={Users} title="Sender & receiver">
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
@@ -401,6 +430,7 @@ export function OrderForm({
               required
               options={[{ value: "", label: "Select sender" }, ...senderSelectOptions]}
             />
+            {values.sender ? <CustomerContactSummary customer={values.sender} /> : null}
           </div>
 
           <div className="space-y-2">
@@ -420,6 +450,7 @@ export function OrderForm({
               searchPlaceholder="Search by name, phone, or address…"
               options={[{ value: "", label: "No receiver" }, ...receiverSelectOptions]}
             />
+            {values.receiver ? <CustomerContactSummary customer={values.receiver} /> : null}
           </div>
         </div>
       </FormSection>
@@ -435,14 +466,16 @@ export function OrderForm({
       <div className="border-t border-border/60" />
 
       <OrderCommentsEditor comments={values.comments} onChange={(comments) => updateField("comments", comments)} />
+      </div>
 
-      {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{submitLabel}</Button>
+      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
+        {formError ? <p className="mb-3 text-sm text-destructive">{formError}</p> : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">{submitLabel}</Button>
+        </div>
       </div>
     </form>
 
@@ -478,6 +511,7 @@ export function OrderForm({
               submitLabel={customerDialog.mode === "edit" ? "Save changes" : "Add customer"}
               isSubmitting={isSavingCustomer}
               externalError={customerFormError}
+              lockCustomerType
               onSubmit={handleCustomerSubmit}
               onCancel={closeCustomerDialog}
             />

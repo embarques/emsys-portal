@@ -21,6 +21,9 @@ import {
 export type SearchableSelectOption = {
   value: string;
   label: string;
+  description?: string;
+  /** Extra muted lines rendered below the label, each on its own row. */
+  descriptionLines?: string[];
   keywords?: string[];
   disabled?: boolean;
 };
@@ -40,12 +43,31 @@ type SearchableSelectProps = {
   className?: string;
   contentClassName?: string;
   align?: "start" | "center" | "end";
+  autoFocus?: boolean;
+  defaultOpen?: boolean;
+  onClose?: () => void;
   "aria-label"?: string;
   "aria-labelledby"?: string;
 };
 
 const popoverContentClassName =
-  "w-[var(--radix-popover-trigger-width)] min-w-[12rem] overflow-hidden border-muted-foreground/25 p-0 shadow-lg";
+  // pointer-events-auto keeps the list interactive when opened inside a Radix modal (Dialog),
+  // which disables pointer events on the body and would otherwise block hover/scroll/click.
+  "pointer-events-auto w-[var(--radix-popover-trigger-width)] min-w-[12rem] overflow-hidden border-muted-foreground/25 p-0 shadow-lg";
+
+/**
+ * Keep wheel/touch scrolling working when the list is portaled out of a Radix modal (Dialog).
+ * The Dialog's scroll-lock cancels scroll events that bubble up to `document` from outside its
+ * subtree; stopping propagation on the list itself lets the native overflow scroll happen.
+ */
+function useScrollIsolation() {
+  return React.useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    const stop = (event: Event) => event.stopPropagation();
+    node.addEventListener("wheel", stop, { passive: true });
+    node.addEventListener("touchmove", stop, { passive: true });
+  }, []);
+}
 
 export function SearchableSelect({
   options,
@@ -62,12 +84,25 @@ export function SearchableSelect({
   className,
   contentClassName,
   align = "start",
+  autoFocus = false,
+  defaultOpen = false,
+  onClose,
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
 }: SearchableSelectProps) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = React.useState(defaultOpen);
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const scrollIsolationRef = useScrollIsolation();
+
+  function handleOpenChange(next: boolean) {
+    if (disabled) return;
+    setOpen(next);
+    if (!next) {
+      setQuery("");
+      onClose?.();
+    }
+  }
 
   const selectedOption = options.find((option) => option.value === value);
 
@@ -91,27 +126,45 @@ export function SearchableSelect({
     setOpen(false);
   }
 
-  const optionItems = options.map((option) => (
-    <CommandItem
-      key={option.value}
-      value={option.value}
-      keywords={[option.label, ...(option.keywords ?? [])]}
-      disabled={option.disabled}
-      onMouseDown={(event) => event.preventDefault()}
-      onSelect={() => handleSelect(option.value)}
-    >
-      <Check
-        className={cn("size-4 shrink-0", option.value === value ? "opacity-100" : "opacity-0")}
-      />
-      <span className="truncate">{option.label}</span>
-    </CommandItem>
-  ));
+  const optionItems = options.map((option) => {
+    const detailLines = [option.description, ...(option.descriptionLines ?? [])].filter(
+      (line): line is string => Boolean(line && line.trim()),
+    );
+
+    return (
+      <CommandItem
+        key={option.value}
+        value={option.value}
+        keywords={[option.label, ...(option.keywords ?? [])]}
+        disabled={option.disabled}
+        onMouseDown={(event) => event.preventDefault()}
+        onSelect={() => handleSelect(option.value)}
+        className={cn(detailLines.length > 0 && "items-start")}
+      >
+        <Check
+          className={cn(
+            "size-4 shrink-0",
+            detailLines.length > 0 && "mt-0.5",
+            option.value === value ? "opacity-100" : "opacity-0",
+          )}
+        />
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate">{option.label}</span>
+          {detailLines.map((line, lineIndex) => (
+            <span key={lineIndex} className="truncate text-xs text-muted-foreground">
+              {line}
+            </span>
+          ))}
+        </span>
+      </CommandItem>
+    );
+  });
 
   // Plain select: trigger is a button, no inline typing.
   if (!searchable) {
     return (
       <div className="relative">
-        <Popover open={open} onOpenChange={disabled ? undefined : setOpen} modal>
+        <Popover open={open} onOpenChange={handleOpenChange} modal>
           <PopoverTrigger asChild>
             <button
               type="button"
@@ -120,6 +173,7 @@ export function SearchableSelect({
               aria-expanded={open}
               aria-label={ariaLabel}
               aria-labelledby={ariaLabelledBy}
+              autoFocus={autoFocus}
               disabled={disabled}
               className={cn(
                 "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors",
@@ -135,7 +189,7 @@ export function SearchableSelect({
           </PopoverTrigger>
           <PopoverContent align={align} className={cn(popoverContentClassName, contentClassName)}>
             <Command>
-              <CommandList>
+              <CommandList ref={scrollIsolationRef}>
                 <CommandEmpty>{emptyMessage}</CommandEmpty>
                 {optionItems}
               </CommandList>
@@ -208,7 +262,7 @@ export function SearchableSelect({
             onCloseAutoFocus={(event) => event.preventDefault()}
             className={cn(popoverContentClassName, contentClassName)}
           >
-            <CommandList>
+            <CommandList ref={scrollIsolationRef}>
               <CommandEmpty>{emptyMessage}</CommandEmpty>
               {optionItems}
             </CommandList>
