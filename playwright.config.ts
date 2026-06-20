@@ -25,7 +25,8 @@ export default defineConfig({
   webServer: {
     command: `npx next dev -H 127.0.0.1 -p ${port}`,
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    // Always boot with Playwright env so auth bypass + mock API base URL are present.
+    reuseExistingServer: false,
     timeout: 120_000,
     env: {
       NEXT_PUBLIC_API_BASE_URL: `${baseURL}/api/e2e`,

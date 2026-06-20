@@ -27,6 +27,13 @@ type Account = {
 
 const branch = { id: 1, code: "NY", name: "New York", type: "office" };
 
+const employeesPayload = {
+  data: [{ id: 1, name: "Hector Mejia", active: true, branch }],
+  page: 1,
+  resultsPerPage: 200,
+  total: 1,
+};
+
 export async function installAccountingApi(page: Page) {
   let journals: Journal[] = [
     {
@@ -72,6 +79,16 @@ export async function installAccountingApi(page: Page) {
     const path = url.pathname.replace(/^\/api\/e2e/, "");
     const method = request.method();
 
+    if (path === "/auth/token" && method === "POST") {
+      return json(route, {
+        data: {
+          idToken: "playwright-id-token",
+          email: "playwright@emsys.test",
+          expiresIn: 3600,
+        },
+      });
+    }
+
     if (path === "/users/permissions") {
       return json(route, {
         data: {
@@ -88,13 +105,12 @@ export async function installAccountingApi(page: Page) {
       return json(route, { data: [branch], page: 1, resultsPerPage: 200, total: 1 });
     }
 
-    if (path === "/employees") {
-      return json(route, {
-        data: [{ id: 1, name: "Hector Mejia", active: true, branch }],
-        page: 1,
-        resultsPerPage: 200,
-        total: 1,
-      });
+    if (path === "/employees" && method === "GET") {
+      return json(route, employeesPayload);
+    }
+
+    if (path === "/employees/search" && method === "POST") {
+      return json(route, employeesPayload);
     }
 
     if (path === "/invoices") {

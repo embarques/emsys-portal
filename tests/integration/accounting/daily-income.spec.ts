@@ -1,10 +1,13 @@
 import { expect, test } from "@playwright/test";
 
+import { ensureAuthenticated, installDevAuth } from "../auth.fixture";
 import { installAccountingApi } from "./accounting-api.fixture";
 
 test.beforeEach(async ({ page }) => {
+  await installDevAuth(page);
   await installAccountingApi(page);
   await page.goto("/accounting/daily-income");
+  await ensureAuthenticated(page);
 });
 
 test("renders closeout totals and its paginated transaction directory", async ({ page }) => {
@@ -22,12 +25,14 @@ test("renders closeout totals and its paginated transaction directory", async ({
 
 test("creates an income transaction through the accounting API", async ({ page }) => {
   await page.getByRole("button", { name: "Add transaction" }).click();
-  await page.getByLabel("Transaction").selectOption("SALES");
-  await page.getByLabel("Employee").selectOption("1");
-  await page.getByLabel("Account", { exact: true }).selectOption("101");
-  await page.getByLabel("Amount").fill("125.50");
-  await page.getByLabel("Reference number").fill("INC-2002");
-  await page.getByLabel("Description").fill("Warehouse income");
+
+  const dialog = page.getByRole("dialog", { name: "Add transaction" });
+  await dialog.getByLabel("Transaction", { exact: true }).selectOption("SALES");
+  await dialog.getByLabel("Employee", { exact: true }).selectOption("1");
+  await dialog.getByLabel("Account", { exact: true }).selectOption("101");
+  await dialog.getByLabel("Amount", { exact: true }).fill("125.50");
+  await dialog.getByLabel("Reference number", { exact: true }).fill("INC-2002");
+  await dialog.getByLabel("Description", { exact: true }).fill("Warehouse income");
 
   const response = page.waitForResponse((candidate) =>
     candidate.url().endsWith("/accounting/journal") && candidate.request().method() === "POST",

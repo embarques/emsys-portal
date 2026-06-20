@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",
+    "pretest:integration": "playwright install chromium",
     "test:integration": "playwright test",
     "test:integration:accounting": "playwright test tests/integration/accounting",
     "test:integration:accounting:daily-income": "playwright test tests/integration/accounting/daily-income.spec.ts",
