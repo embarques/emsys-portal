@@ -62,6 +62,8 @@ type RecordViewSheetActionsProps = {
   editLabel?: string;
   deleteLabel?: string;
   isDisabled?: boolean;
+  editDisabled?: boolean;
+  deleteDisabled?: boolean;
 };
 
 export function RecordViewSheet({ open, onOpenChange, children }: RecordViewSheetProps) {
@@ -158,6 +160,8 @@ export function RecordViewSheetActions({
   editLabel = "Edit",
   deleteLabel = "Delete",
   isDisabled = false,
+  editDisabled = false,
+  deleteDisabled = false,
 }: RecordViewSheetActionsProps) {
   if (!onEdit && !onDelete) return null;
 
@@ -165,7 +169,7 @@ export function RecordViewSheetActions({
     <div className="shrink-0 border-t border-border bg-card px-6 py-4">
       <div className="flex gap-2">
         {onEdit ? (
-          <Button className="flex-1" onClick={onEdit} disabled={isDisabled}>
+          <Button className="flex-1" onClick={onEdit} disabled={isDisabled || editDisabled}>
             <Pencil className="h-4 w-4" />
             {editLabel}
           </Button>
@@ -173,7 +177,7 @@ export function RecordViewSheetActions({
         {onDelete ? (
           <Button
             variant="outline"
-            disabled={isDisabled}
+            disabled={isDisabled || deleteDisabled}
             className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={onDelete}
           >

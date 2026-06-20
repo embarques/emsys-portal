@@ -16,6 +16,12 @@ export const queryKeys = {
   permissions: {
     all: ["permissions"] as const,
     user: () => [...queryKeys.permissions.all, "user"] as const,
+    catalog: () => [...queryKeys.permissions.all, "catalog"] as const,
+  },
+  roles: {
+    all: ["roles"] as const,
+    list: () => [...queryKeys.roles.all, "list"] as const,
+    detail: (roleId: string) => [...queryKeys.roles.all, "detail", roleId] as const,
   },
   employees: {
     all: ["employees"] as const,

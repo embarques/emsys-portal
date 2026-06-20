@@ -1,4 +1,3 @@
-import { getPermissionLabel } from "./permissions-catalog";
 import type { Role } from "./types";
 
 export function truncateRoleId(roleId: string): string {
@@ -8,7 +7,7 @@ export function truncateRoleId(roleId: string): string {
 export function formatPermissionsSummary(role: Role, limit = 3): string {
   if (role.permissions.length === 0) return "—";
 
-  const labels = role.permissions.map((permission) => getPermissionLabel(permission.value));
+  const labels = role.permissions.map((permission) => permission.label ?? permission.value);
   const visible = labels.slice(0, limit);
   const suffix = labels.length > limit ? ` (+${labels.length - limit})` : "";
   return `${visible.join(", ")}${suffix}`;
@@ -18,7 +17,9 @@ export function roleMatchesQuery(role: Role, query: string): boolean {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
 
-  const permissionText = role.permissions.map((permission) => getPermissionLabel(permission.value)).join(" ");
+  const permissionText = role.permissions
+    .map((permission) => permission.label ?? permission.value)
+    .join(" ");
 
   return [role.roleId, role.name, permissionText, role.createdBy, String(role.permissions.length)]
     .join(" ")
