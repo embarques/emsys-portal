@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 import { Switch } from "@/components/ui/switch";
 import {
@@ -21,6 +22,11 @@ export function RolePermissionsEditor({
   permissions,
   onChange,
 }: RolePermissionsEditorProps) {
+  const catalogGroups = getPermissionCatalogGroups();
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    () => new Set(catalogGroups)
+  );
+
   const assignedValues = useMemo(
     () => new Set(permissions.map((permission) => permission.value.trim()).filter(Boolean)),
     [permissions]
@@ -35,7 +41,17 @@ export function RolePermissionsEditor({
     onChange(permissions.filter((permission) => permission.value !== value));
   }
 
-  const catalogGroups = getPermissionCatalogGroups();
+  function toggleGroup(group: string) {
+    setExpandedGroups((current) => {
+      const next = new Set(current);
+      if (next.has(group)) {
+        next.delete(group);
+      } else {
+        next.add(group);
+      }
+      return next;
+    });
+  }
 
   return (
     <section className="space-y-4" aria-labelledby="permissions-heading">
@@ -54,34 +70,49 @@ export function RolePermissionsEditor({
       <div className="overflow-hidden rounded-xl border">
         {catalogGroups.map((group, groupIndex) => (
           <div key={group} className={groupIndex > 0 ? "border-t" : undefined}>
-            <div className="bg-muted/40 px-4 py-2.5">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {group}
-              </h4>
-            </div>
-            <div className="divide-y">
-              {getPermissionsByGroup(group).map((entry) => {
-                const isAssigned = assignedValues.has(entry.value);
-                return (
-                  <label
-                    key={entry.value}
-                    htmlFor={`permission-${entry.value}`}
-                    className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/30"
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium">{entry.label}</span>
-                      <span className="block font-mono text-xs text-muted-foreground">{entry.value}</span>
-                    </span>
-                    <Switch
-                      id={`permission-${entry.value}`}
-                      checked={isAssigned}
-                      onCheckedChange={(checked) => togglePermission(entry.value, checked)}
-                      aria-label={`${entry.label} permission`}
-                    />
-                  </label>
-                );
-              })}
-            </div>
+            <h4>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-3 bg-muted/40 px-4 py-2.5 text-left transition-colors hover:bg-muted/60"
+                aria-expanded={expandedGroups.has(group)}
+                aria-controls={`permission-group-${groupIndex}`}
+                onClick={() => toggleGroup(group)}
+              >
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {group}
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform ${
+                    expandedGroups.has(group) ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+            </h4>
+            {expandedGroups.has(group) ? (
+              <div id={`permission-group-${groupIndex}`} className="divide-y">
+                {getPermissionsByGroup(group).map((entry) => {
+                  const isAssigned = assignedValues.has(entry.value);
+                  return (
+                    <label
+                      key={entry.value}
+                      htmlFor={`permission-${entry.value}`}
+                      className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/30"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">{entry.label}</span>
+                        <span className="block font-mono text-xs text-muted-foreground">{entry.value}</span>
+                      </span>
+                      <Switch
+                        id={`permission-${entry.value}`}
+                        checked={isAssigned}
+                        onCheckedChange={(checked) => togglePermission(entry.value, checked)}
+                        aria-label={`${entry.label} permission`}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
