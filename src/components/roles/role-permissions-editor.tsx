@@ -15,12 +15,16 @@ import {
 
 type RolePermissionsEditorProps = {
   permissions: RolePermissionFormValues[];
-  onChange: (permissions: RolePermissionFormValues[]) => void;
+  onChange?: (permissions: RolePermissionFormValues[]) => void;
+  readOnly?: boolean;
+  showPermissionValues?: boolean;
 };
 
 export function RolePermissionsEditor({
   permissions,
   onChange,
+  readOnly = false,
+  showPermissionValues = true,
 }: RolePermissionsEditorProps) {
   const catalogGroups = getPermissionCatalogGroups();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
@@ -33,6 +37,8 @@ export function RolePermissionsEditor({
   );
 
   function togglePermission(value: string, checked: boolean) {
+    if (readOnly || !onChange) return;
+
     if (checked) {
       onChange([...permissions, { id: createPermissionId(), value }]);
       return;
@@ -96,16 +102,26 @@ export function RolePermissionsEditor({
                     <label
                       key={entry.value}
                       htmlFor={`permission-${entry.value}`}
-                      className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/30"
+                      className={`flex items-center justify-between gap-4 px-4 py-3 transition-colors ${
+                        readOnly ? "cursor-default" : "cursor-pointer hover:bg-muted/30"
+                      }`}
                     >
                       <span className="min-w-0">
                         <span className="block text-sm font-medium">{entry.label}</span>
-                        <span className="block font-mono text-xs text-muted-foreground">{entry.value}</span>
+                        {showPermissionValues ? (
+                          <span className="block font-mono text-xs text-muted-foreground">
+                            {entry.value}
+                          </span>
+                        ) : null}
                       </span>
                       <Switch
                         id={`permission-${entry.value}`}
                         checked={isAssigned}
-                        onCheckedChange={(checked) => togglePermission(entry.value, checked)}
+                        disabled={readOnly}
+                        className={readOnly ? "disabled:cursor-default disabled:opacity-100" : undefined}
+                        onCheckedChange={
+                          readOnly ? undefined : (checked) => togglePermission(entry.value, checked)
+                        }
                         aria-label={`${entry.label} permission`}
                       />
                     </label>
