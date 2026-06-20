@@ -292,7 +292,7 @@ function buildCustomerSearchFilterGroups(params: CustomerListParams): ApiSearchF
     } else {
       const orGroup = createOrTextSearchFilterGroup(
         params.search.value,
-        [...CUSTOMER_BAR_OR_SEARCH_FIELDS],
+        [...(params.orFields ?? CUSTOMER_BAR_OR_SEARCH_FIELDS)],
         "contains",
       );
       if (orGroup) {

@@ -175,6 +175,8 @@ export type CustomerListParams = {
   filterRows?: TableFilterRowState[];
   branch?: CustomerBranchFilter;
   customerType?: number | "all";
+  /** Override the OR fields used for an unscoped bar search (defaults to CUSTOMER_BAR_OR_SEARCH_FIELDS). */
+  orFields?: readonly string[];
 };
 
 /** GET /customers?page=1&limit=40&offset=0&sort=name:asc */

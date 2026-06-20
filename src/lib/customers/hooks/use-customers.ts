@@ -37,17 +37,24 @@ function isCustomerListFiltered(params: CustomerListParams): boolean {
 
 export function useCustomerSearch(
   search: CustomerSearchFilter | undefined,
-  options: { enabled?: boolean; limit?: number } = {},
+  options: {
+    enabled?: boolean;
+    limit?: number;
+    customerType?: number | "all";
+    orFields?: readonly string[];
+  } = {},
 ) {
-  const { enabled = true, limit = 40 } = options;
+  const { enabled = true, limit = 40, customerType, orFields } = options;
 
   return useQuery({
-    queryKey: queryKeys.customers.search(search, limit),
+    queryKey: queryKeys.customers.search(search, limit, { customerType, orFields }),
     queryFn: () =>
       fetchCustomers({
         ...DEFAULT_CUSTOMER_LIST_PARAMS,
         limit,
         search,
+        customerType,
+        orFields,
       }),
     enabled: enabled && Boolean(search?.value.trim()),
   });

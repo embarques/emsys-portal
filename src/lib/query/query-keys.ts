@@ -84,8 +84,11 @@ export const queryKeys = {
     all: ["customers"] as const,
     lists: () => [...queryKeys.customers.all, "list"] as const,
     list: (params: CustomerListParams) => [...queryKeys.customers.lists(), params] as const,
-    search: (search: CustomerSearchFilter | undefined, limit: number) =>
-      [...queryKeys.customers.all, "search", search, limit] as const,
+    search: (
+      search: CustomerSearchFilter | undefined,
+      limit: number,
+      scope: { customerType?: number | "all"; orFields?: readonly string[] } = {},
+    ) => [...queryKeys.customers.all, "search", search, limit, scope] as const,
     stats: (scope: "all" | "active" | "inactive" | "senders" | "receivers") =>
       [...queryKeys.customers.all, "stats", scope] as const,
     detail: (customerId: string) => [...queryKeys.customers.all, "detail", customerId] as const,

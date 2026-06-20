@@ -4,6 +4,7 @@ import { CalendarDays, Pencil, UserPlus, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -28,8 +29,10 @@ import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   useCreateCustomer,
   useCustomerPicker,
+  useCustomerSearch,
   useUpdateCustomer,
 } from "@/lib/customers/hooks/use-customers";
+import { CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
 import {
   CUSTOMER_TYPE_RECEIVER,
   CUSTOMER_TYPE_SENDER,
@@ -184,6 +187,8 @@ export function OrderForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
+  const [senderQuery, setSenderQuery] = useState("");
+  const [receiverQuery, setReceiverQuery] = useState("");
   const handleEnterNavigation = useFormEnterNavigation();
   const isSavingCustomer = createCustomerMutation.isPending || updateCustomerMutation.isPending;
 
@@ -203,23 +208,65 @@ export function OrderForm({
     [customers],
   );
 
-  // Keep the currently selected party visible even if it isn't part of the loaded picker page
+  // Typing in a party picker runs the same POST /customers/search filter endpoint, scoped by
+  // customerType and matching name, address 1, or phone (debounced to avoid a request per keystroke).
+  const debouncedSenderQuery = useDebouncedValue(senderQuery, 300).trim();
+  const debouncedReceiverQuery = useDebouncedValue(receiverQuery, 300).trim();
+
+  const senderSearch = useCustomerSearch(
+    debouncedSenderQuery ? { value: debouncedSenderQuery } : undefined,
+    {
+      customerType: CUSTOMER_TYPE_SENDER,
+      orFields: CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS,
+      limit: 40,
+    },
+  );
+
+  const receiverSearch = useCustomerSearch(
+    debouncedReceiverQuery ? { value: debouncedReceiverQuery } : undefined,
+    {
+      customerType: CUSTOMER_TYPE_RECEIVER,
+      orFields: CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS,
+      limit: 40,
+    },
+  );
+
+  const senderSearchResults = useMemo(
+    () =>
+      (senderSearch.data?.items ?? []).filter(
+        (customer) => customer.active && isCustomerSenderType(customer.customerType),
+      ),
+    [senderSearch.data],
+  );
+
+  const receiverSearchResults = useMemo(
+    () =>
+      (receiverSearch.data?.items ?? []).filter(
+        (customer) => customer.active && isCustomerReceiverType(customer.customerType),
+      ),
+    [receiverSearch.data],
+  );
+
+  // While searching, show server results; otherwise the loaded picker page. The currently
+  // selected party is always pinned so its label stays visible even when off the current page
   // (e.g. a customer that was just created or edited inline).
   const senderSelectOptions = useMemo(() => {
-    const options = senderCustomers.map(customerToSelectOption);
-    if (values.sender && !senderCustomers.some((customer) => customer.id === values.sender!.id)) {
+    const source = debouncedSenderQuery ? senderSearchResults : senderCustomers;
+    const options = source.map(customerToSelectOption);
+    if (values.sender && !source.some((customer) => customer.id === values.sender!.id)) {
       options.unshift(customerToSelectOption(values.sender));
     }
     return options;
-  }, [senderCustomers, values.sender]);
+  }, [debouncedSenderQuery, senderSearchResults, senderCustomers, values.sender]);
 
   const receiverSelectOptions = useMemo(() => {
-    const options = receiverCustomers.map(customerToSelectOption);
-    if (values.receiver && !receiverCustomers.some((customer) => customer.id === values.receiver!.id)) {
+    const source = debouncedReceiverQuery ? receiverSearchResults : receiverCustomers;
+    const options = source.map(customerToSelectOption);
+    if (values.receiver && !source.some((customer) => customer.id === values.receiver!.id)) {
       options.unshift(customerToSelectOption(values.receiver));
     }
     return options;
-  }, [receiverCustomers, values.receiver]);
+  }, [debouncedReceiverQuery, receiverSearchResults, receiverCustomers, values.receiver]);
 
   function updateField<K extends keyof OrderFormValues>(key: K, value: OrderFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -229,6 +276,7 @@ export function OrderForm({
   function updateSenderId(senderId: string) {
     const sender =
       senderCustomers.find((customer) => customer.id === senderId) ??
+      senderSearchResults.find((customer) => customer.id === senderId) ??
       (values.sender?.id === senderId ? values.sender : null);
     updateField("senderId", senderId);
     updateField("sender", sender);
@@ -237,6 +285,7 @@ export function OrderForm({
   function updateReceiverId(receiverId: string) {
     const receiver =
       receiverCustomers.find((customer) => customer.id === receiverId) ??
+      receiverSearchResults.find((customer) => customer.id === receiverId) ??
       (values.receiver?.id === receiverId ? values.receiver : null);
     updateField("receiverId", receiverId);
     updateField("receiver", receiver);
@@ -421,7 +470,13 @@ export function OrderForm({
               placeholder="Select sender"
               searchPlaceholder="Search by name, phone, or address…"
               required
-              options={[{ value: "", label: "Select sender" }, ...senderSelectOptions]}
+              manualFiltering
+              loading={senderSearch.isFetching}
+              onSearchChange={setSenderQuery}
+              options={[
+                ...(debouncedSenderQuery ? [] : [{ value: "", label: "Select sender" }]),
+                ...senderSelectOptions,
+              ]}
             />
             {values.sender ? <CustomerContactSummary customer={values.sender} /> : null}
           </div>
@@ -441,7 +496,13 @@ export function OrderForm({
               onValueChange={updateReceiverId}
               placeholder="No receiver"
               searchPlaceholder="Search by name, phone, or address…"
-              options={[{ value: "", label: "No receiver" }, ...receiverSelectOptions]}
+              manualFiltering
+              loading={receiverSearch.isFetching}
+              onSearchChange={setReceiverQuery}
+              options={[
+                ...(debouncedReceiverQuery ? [] : [{ value: "", label: "No receiver" }]),
+                ...receiverSelectOptions,
+              ]}
             />
             {values.receiver ? <CustomerContactSummary customer={values.receiver} /> : null}
           </div>

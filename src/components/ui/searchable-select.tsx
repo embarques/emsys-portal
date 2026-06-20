@@ -35,6 +35,13 @@ type SearchableSelectProps = {
   placeholder?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
+  /** Notifies the parent of the live search query (for server-side/remote search). */
+  onSearchChange?: (query: string) => void;
+  /** Disables the built-in client-side filtering so server-provided options render as-is. */
+  manualFiltering?: boolean;
+  /** Shows a loading message instead of the empty message while remote results are fetching. */
+  loading?: boolean;
+  loadingMessage?: string;
   disabled?: boolean;
   searchable?: boolean;
   required?: boolean;
@@ -76,6 +83,10 @@ export function SearchableSelect({
   placeholder = "Select an option",
   searchPlaceholder = "Search…",
   emptyMessage = "No results found.",
+  onSearchChange,
+  manualFiltering = false,
+  loading = false,
+  loadingMessage = "Searching…",
   disabled = false,
   searchable = true,
   required = false,
@@ -120,9 +131,14 @@ export function SearchableSelect({
     <input type="hidden" name={name} value={value} />
   ) : null;
 
+  function changeQuery(next: string) {
+    setQuery(next);
+    onSearchChange?.(next);
+  }
+
   function handleSelect(nextValue: string) {
     onValueChange(nextValue);
-    setQuery("");
+    changeQuery("");
     setOpen(false);
   }
 
@@ -204,13 +220,13 @@ export function SearchableSelect({
   // Searchable: the trigger itself is a text field; options filter as you type.
   return (
     <div className="relative">
-      <Command className="overflow-visible bg-transparent">
+      <Command className="overflow-visible bg-transparent" shouldFilter={!manualFiltering}>
         <Popover
           open={open}
           onOpenChange={(next) => {
             if (disabled) return;
             setOpen(next);
-            if (!next) setQuery("");
+            if (!next) changeQuery("");
           }}
         >
           <PopoverAnchor asChild>
@@ -233,14 +249,14 @@ export function SearchableSelect({
                 disabled={disabled}
                 value={query}
                 onValueChange={(next) => {
-                  setQuery(next);
+                  changeQuery(next);
                   if (!open) setOpen(true);
                 }}
                 onFocus={() => setOpen(true)}
                 onKeyDown={(event) => {
                   if (event.key === "Escape") {
                     setOpen(false);
-                    setQuery("");
+                    changeQuery("");
                     inputRef.current?.blur();
                   }
                 }}
@@ -263,7 +279,7 @@ export function SearchableSelect({
             className={cn(popoverContentClassName, contentClassName)}
           >
             <CommandList ref={scrollIsolationRef}>
-              <CommandEmpty>{emptyMessage}</CommandEmpty>
+              <CommandEmpty>{loading ? loadingMessage : emptyMessage}</CommandEmpty>
               {optionItems}
             </CommandList>
           </PopoverContent>
