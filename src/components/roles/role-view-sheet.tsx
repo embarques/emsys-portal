@@ -45,6 +45,7 @@ export function RoleViewSheet({ role, open, onOpenChange, onEdit, onDelete }: Ro
               permissions={role.permissions}
               readOnly
               showPermissionValues={false}
+              defaultExpanded={false}
             />
           </RecordViewSheetSection>
 

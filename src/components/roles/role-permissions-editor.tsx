@@ -18,6 +18,7 @@ type RolePermissionsEditorProps = {
   onChange?: (permissions: RolePermissionFormValues[]) => void;
   readOnly?: boolean;
   showPermissionValues?: boolean;
+  defaultExpanded?: boolean;
 };
 
 export function RolePermissionsEditor({
@@ -25,10 +26,11 @@ export function RolePermissionsEditor({
   onChange,
   readOnly = false,
   showPermissionValues = true,
+  defaultExpanded = true,
 }: RolePermissionsEditorProps) {
   const catalogGroups = getPermissionCatalogGroups();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    () => new Set(catalogGroups)
+    () => new Set(defaultExpanded ? catalogGroups : [])
   );
 
   const assignedValues = useMemo(
