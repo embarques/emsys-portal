@@ -12,4 +12,11 @@ export const API_ENDPOINTS = {
   CONTAINERS: "/containers",
   TRUCKS: "/trucks",
   INVOICES: "/invoices",
+  ACCOUNTING_INCOME_STATEMENTS: "/accounting/incomestatements",
+  ACCOUNTING_INCOME_STATEMENT: "/accounting/incomestatement",
+  ACCOUNTING_JOURNALS: "/accounting/journals",
+  ACCOUNTING_JOURNAL: "/accounting/journal",
+  ACCOUNTING_ACCOUNTS: "/accounting/accounts",
+  ACCOUNTING_ACCOUNT: "/accounting/account",
+  ACCOUNTING_PAYMENT_METHODS: "/accounting/paymentmethods",
 } as const;

@@ -60,6 +60,14 @@ export const queryKeys = {
     stats: (scope: "outstanding") => [...queryKeys.invoices.all, "stats", scope] as const,
     detail: (invoiceId: string) => [...queryKeys.invoices.all, "detail", invoiceId] as const,
   },
+  accounting: {
+    all: ["accounting"] as const,
+    incomeStatement: (branchCode: string, date: string) =>
+      [...queryKeys.accounting.all, "income-statement", branchCode, date] as const,
+    journals: (params: unknown) => [...queryKeys.accounting.all, "journals", params] as const,
+    accounts: (params: unknown) => [...queryKeys.accounting.all, "accounts", params] as const,
+    paymentMethods: () => [...queryKeys.accounting.all, "payment-methods"] as const,
+  },
   branches: {
     all: ["branches"] as const,
     lists: () => [...queryKeys.branches.all, "list"] as const,
