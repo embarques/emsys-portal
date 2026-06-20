@@ -43,3 +43,32 @@ export function getPermissionsByGroup(
 ): PermissionCatalogEntry[] {
   return catalog.filter((entry) => entry.group === group);
 }
+
+type PermissionCatalogSource = Pick<PermissionCatalogEntry, "id" | "value"> & {
+  label?: string;
+  group?: string;
+};
+
+export function mergePermissionCatalogEntries(
+  catalog: PermissionCatalogEntry[],
+  assigned: PermissionCatalogSource[],
+): PermissionCatalogEntry[] {
+  const merged = new Map<string, PermissionCatalogEntry>();
+
+  for (const entry of catalog) {
+    merged.set(entry.id, entry);
+  }
+
+  for (const permission of assigned) {
+    if (merged.has(permission.id)) continue;
+
+    merged.set(permission.id, {
+      id: permission.id,
+      value: permission.value,
+      label: permission.label ?? permission.value,
+      group: permission.group ?? "Other",
+    });
+  }
+
+  return Array.from(merged.values());
+}

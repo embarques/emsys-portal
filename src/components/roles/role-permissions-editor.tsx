@@ -35,9 +35,14 @@ export function RolePermissionsEditor({
     () => new Set(defaultExpanded ? catalogGroups : [])
   );
 
+  const assignedIds = useMemo(
+    () => new Set(permissions.map((permission) => permission.id.trim()).filter(Boolean)),
+    [permissions],
+  );
+
   const assignedValues = useMemo(
     () => new Set(permissions.map((permission) => permission.value.trim()).filter(Boolean)),
-    [permissions]
+    [permissions],
   );
 
   useEffect(() => {
@@ -84,7 +89,10 @@ export function RolePermissionsEditor({
       </div>
 
       <div className="overflow-hidden rounded-xl border">
-        {catalogGroups.map((group, groupIndex) => (
+        {catalog.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-muted-foreground">Loading permissions…</p>
+        ) : (
+          catalogGroups.map((group, groupIndex) => (
           <div key={group} className={groupIndex > 0 ? "border-t" : undefined}>
             <h4>
               <button
@@ -107,7 +115,7 @@ export function RolePermissionsEditor({
             {expandedGroups.has(group) ? (
               <div id={`permission-group-${groupIndex}`} className="divide-y">
                 {getPermissionsByGroup(group, catalog).map((entry) => {
-                  const isAssigned = assignedValues.has(entry.value);
+                  const isAssigned = assignedIds.has(entry.id) || assignedValues.has(entry.value);
                   return (
                     <label
                       key={entry.value}
@@ -140,7 +148,8 @@ export function RolePermissionsEditor({
               </div>
             ) : null}
           </div>
-        ))}
+        ))
+        )}
       </div>
     </section>
   );

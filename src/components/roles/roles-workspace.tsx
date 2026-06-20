@@ -67,6 +67,7 @@ import {
   useRoles,
   useUpdateRole,
 } from "@/lib/roles/hooks/use-roles";
+import { mergePermissionCatalogEntries } from "@/lib/roles/permissions-catalog";
 import {
   createEmptyRoleForm,
   roleToFormValues,
@@ -116,8 +117,26 @@ export function RolesWorkspace() {
     },
     [roles],
   );
-  const permissionCatalog =
-    permissionCatalogQuery.data?.length ? permissionCatalogQuery.data : assignedPermissionCatalog;
+  const basePermissionCatalog = useMemo(() => {
+    if (permissionCatalogQuery.data) {
+      return permissionCatalogQuery.data;
+    }
+
+    if (permissionCatalogQuery.isError) {
+      return assignedPermissionCatalog;
+    }
+
+    return [];
+  }, [
+    assignedPermissionCatalog,
+    permissionCatalogQuery.data,
+    permissionCatalogQuery.isError,
+  ]);
+
+  const permissionCatalog = useMemo(() => {
+    if (!editingRole) return basePermissionCatalog;
+    return mergePermissionCatalogEntries(basePermissionCatalog, editingRole.permissions);
+  }, [basePermissionCatalog, editingRole]);
   const isSaving =
     createRoleMutation.isPending ||
     updateRoleMutation.isPending ||
@@ -256,17 +275,19 @@ export function RolesWorkspace() {
     {
       id: "createdAt",
       label: "Date created",
+      defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (role) => formatAuditDate(role.createdAt),
     },
     {
       id: "createdBy",
-      label: "User created",
-      renderCell: (role) => role.createdBy,
+      label: "Created by",
+      renderCell: (role) => role.createdBy || "—",
     },
     {
       id: "updatedAt",
       label: "Date modified",
+      defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (role) => formatAuditDate(role.updatedAt),
     },

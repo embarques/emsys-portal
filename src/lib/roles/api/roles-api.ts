@@ -11,6 +11,13 @@ import type { Role, RoleFormValues, RolePermission } from "@/lib/roles/types";
 
 const CATALOG_LIMIT = 200;
 
+type ApiRoleUser = {
+  id?: number;
+  name?: string;
+  userName?: string;
+  fullName?: string;
+};
+
 type ApiPermission = {
   id?: number;
   _id?: number;
@@ -27,6 +34,10 @@ type ApiRole = {
   permissions?: ApiPermission[];
   createdAt?: string;
   updatedAt?: string;
+  created?: string;
+  updated?: string;
+  createdBy?: string | number | ApiRoleUser;
+  user?: ApiRoleUser;
 };
 
 type ApiRoleWritePayload = {
@@ -64,6 +75,38 @@ function normalizePermission(raw: unknown): RolePermission | null {
   };
 }
 
+function readAuditDate(...values: unknown[]): string {
+  for (const value of values) {
+    const trimmed = String(value ?? "").trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
+}
+
+function readRoleCreatedBy(createdBy: unknown, user?: unknown): string {
+  if (typeof createdBy === "string" && createdBy.trim()) {
+    return createdBy.trim();
+  }
+
+  if (createdBy && typeof createdBy === "object") {
+    const entry = createdBy as ApiRoleUser;
+    const name = String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim();
+    if (name) return name;
+  }
+
+  if (typeof createdBy === "number" && Number.isFinite(createdBy) && createdBy > 0) {
+    return String(createdBy);
+  }
+
+  if (user && typeof user === "object") {
+    const entry = user as ApiRoleUser;
+    const name = String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim();
+    if (name) return name;
+  }
+
+  return "—";
+}
+
 function normalizeRole(raw: unknown): Role | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -83,9 +126,9 @@ function normalizeRole(raw: unknown): Role | null {
     active: item.active !== false,
     systemRole: item.systemRole === true,
     permissions,
-    createdAt: item.createdAt ?? "",
-    createdBy: "—",
-    updatedAt: item.updatedAt ?? "",
+    createdAt: readAuditDate(item.createdAt, item.created),
+    createdBy: readRoleCreatedBy(item.createdBy, item.user),
+    updatedAt: readAuditDate(item.updatedAt, item.updated),
   };
 }
 

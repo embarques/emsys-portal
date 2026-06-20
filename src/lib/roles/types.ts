@@ -14,6 +14,7 @@ export type Role = {
   systemRole: boolean;
   permissions: RolePermission[];
   createdAt: string;
+  /** Display name from API `createdBy` (string, user object, or nested `user`). */
   createdBy: string;
   updatedAt: string;
 };

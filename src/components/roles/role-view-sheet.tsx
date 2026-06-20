@@ -61,7 +61,7 @@ export function RoleViewSheet({
 
           <RecordViewSheetSection title="Audit">
             <RecordViewSheetDetailRow label="Date created" value={formatAuditDate(role.createdAt)} />
-            <RecordViewSheetDetailRow label="User created" value={role.createdBy} />
+            <RecordViewSheetDetailRow label="Created by" value={role.createdBy || "—"} />
             <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(role.updatedAt)} />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
