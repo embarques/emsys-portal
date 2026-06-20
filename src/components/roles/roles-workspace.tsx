@@ -40,8 +40,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { normalizeApiError } from "@/lib/api/axios";
 import {
   Sheet,
   SheetContent,
@@ -58,10 +60,15 @@ import {
   roleMatchesQuery,
   truncateRoleId,
 } from "@/lib/roles/display";
-import { cloneRoles } from "@/lib/roles/mock-data";
+import {
+  useCreateRole,
+  useDeleteRoles,
+  useRolePermissionCatalog,
+  useRoles,
+  useUpdateRole,
+} from "@/lib/roles/hooks/use-roles";
 import {
   createEmptyRoleForm,
-  formValuesToRole,
   roleToFormValues,
   type Role,
   type RoleFilterState,
@@ -76,7 +83,6 @@ const defaultFilters: RoleFilterState = {
 
 export function RolesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [roles, setRoles] = useState<Role[]>(() => cloneRoles());
   const [filters, setFilters] = useState<RoleFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
@@ -85,6 +91,37 @@ export function RolesWorkspace() {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Role | Role[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const rolesQuery = useRoles();
+  const permissionCatalogQuery = useRolePermissionCatalog();
+  const createRoleMutation = useCreateRole();
+  const updateRoleMutation = useUpdateRole();
+  const deleteRolesMutation = useDeleteRoles();
+
+  const roles = rolesQuery.data?.items ?? [];
+  const assignedPermissionCatalog = useMemo(
+    () => {
+      const entries = roles.flatMap((role) =>
+        role.permissions
+          .filter((permission) => permission.group)
+          .map((permission) => ({
+            id: permission.id,
+            value: permission.value,
+            label: permission.label ?? permission.value,
+            group: permission.group!,
+          })),
+      );
+
+      return Array.from(new Map(entries.map((entry) => [entry.id, entry])).values());
+    },
+    [roles],
+  );
+  const permissionCatalog =
+    permissionCatalogQuery.data?.length ? permissionCatalogQuery.data : assignedPermissionCatalog;
+  const isSaving =
+    createRoleMutation.isPending ||
+    updateRoleMutation.isPending ||
+    deleteRolesMutation.isPending;
 
   const filteredRoles = useMemo(() => {
     return roles.filter((role) => roleMatchesQuery(role, filters.query));
@@ -128,22 +165,18 @@ export function RolesWorkspace() {
     setFormError(null);
   }
 
-  function saveRole(values: RoleFormValues) {
+  async function saveRole(values: RoleFormValues) {
+    setFormError(null);
+
     try {
       if (formMode === "edit" && editingRole) {
-        const nextRole = formValuesToRole(
+        const nextRole = await updateRoleMutation.mutateAsync({
+          roleId: editingRole.roleId,
           values,
-          editingRole.createdAt,
-          editingRole.createdBy,
-          new Date().toISOString()
-        );
-        setRoles((current) =>
-          current.map((role) => (role.roleId === editingRole.roleId ? nextRole : role))
-        );
+        });
         notifyUpdated("Role", nextRole.name);
       } else {
-        const nextRole = formValuesToRole(values);
-        setRoles((current) => [nextRole, ...current]);
+        const nextRole = await createRoleMutation.mutateAsync(values);
         notifyAdded("Role", nextRole.name);
       }
 
@@ -151,21 +184,28 @@ export function RolesWorkspace() {
       setEditingRole(null);
       setFormError(null);
       setPage(1);
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to save role.");
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
     }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
+    setFormError(null);
     const ids = Array.isArray(deleteTarget)
       ? deleteTarget.map((role) => role.roleId)
       : [deleteTarget.roleId];
-    setRoles((current) => current.filter((role) => !ids.includes(role.roleId)));
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewRole(null);
-    notifyDeleted("Role", ids.length);
+
+    try {
+      await deleteRolesMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
+      setViewRole(null);
+      notifyDeleted("Role", ids.length);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
+      setDeleteTarget(null);
+    }
   }
 
   const stats = [
@@ -260,6 +300,18 @@ export function RolesWorkspace() {
                 <Pencil className="h-4 w-4" />
                 Edit
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={role.systemRole}
+                className="text-destructive focus:text-destructive"
+                onSelect={() => {
+                  setFormError(null);
+                  setDeleteTarget(role);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -276,13 +328,23 @@ export function RolesWorkspace() {
     catalogTotal: roles.length,
     noun: "roles",
   });
+  const pageError = rolesQuery.isError
+    ? normalizeApiError(rolesQuery.error).message
+    : permissionCatalogQuery.isError && permissionCatalog.length === 0
+      ? normalizeApiError(permissionCatalogQuery.error).message
+      : formMode === null
+        ? formError
+        : null;
 
   return (
     <div>
       <PageHeader
         title="Roles"
         actions={
-          <Button onClick={openAddForm}>
+          <Button
+            onClick={openAddForm}
+            disabled={rolesQuery.isLoading || permissionCatalog.length === 0}
+          >
             <Plus className="h-4 w-4" />
             Add role
           </Button>
@@ -326,6 +388,12 @@ export function RolesWorkspace() {
           />
         </CardHeader>
 
+        {pageError ? (
+          <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">
+            {pageError}
+          </div>
+        ) : null}
+
         <TableSelectionBar
           selectedIds={selectedIds}
           pageRowIds={pageRoles.map((role) => role.roleId)}
@@ -334,38 +402,51 @@ export function RolesWorkspace() {
             const role = pageRoles.find((entry) => entry.roleId === selectedIds[0]);
             if (role) openEditForm(role);
           }}
-          onDelete={() => setDeleteTarget(roles.filter((role) => selectedIds.includes(role.roleId)))}
-        />
-
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={pageRoles}
-          page={currentPage}
-          rowKey={(role) => role.roleId}
-          rowLabel={(role) => role.name}
-          columnLayout={columnVisibility}
-          minWidth={1100}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={setViewRole}
-          onRowDoubleClick={openEditForm}
-          emptyState={
-            <>
-              <p className="text-muted-foreground">No roles match your search.</p>
-              <Button className="mt-4" onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                Add role
-              </Button>
-            </>
+          onDelete={() => {
+            setFormError(null);
+            setDeleteTarget(roles.filter((role) => selectedIds.includes(role.roleId)));
+          }}
+          deleteDisabled={
+            isSaving || roles.some((role) => selectedIds.includes(role.roleId) && role.systemRole)
           }
         />
 
+        {rolesQuery.isLoading ? (
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading roles…</div>
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={pageRoles}
+            page={currentPage}
+            isPageDataPending={rolesQuery.isFetching}
+            rowKey={(role) => role.roleId}
+            rowLabel={(role) => role.name}
+            columnLayout={columnVisibility}
+            minWidth={1100}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={toggleSelect}
+            onRowClick={setViewRole}
+            onRowDoubleClick={openEditForm}
+            emptyState={
+              <>
+                <p className="text-muted-foreground">No roles match your search.</p>
+                <Button className="mt-4" onClick={openAddForm}>
+                  <Plus className="h-4 w-4" />
+                  Add role
+                </Button>
+              </>
+            }
+          />
+        )}
+
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {pageRoles.length} of {filteredRoles.length} roles
+            {rolesQuery.isFetching
+              ? "Refreshing roles…"
+              : `Showing ${pageRoles.length} of ${filteredRoles.length} roles`}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -395,12 +476,14 @@ export function RolesWorkspace() {
 
       <RoleViewSheet
         role={viewRole}
+        permissionCatalog={permissionCatalog}
         open={Boolean(viewRole)}
         onOpenChange={(open) => {
           if (!open) setViewRole(null);
         }}
         onEdit={openEditForm}
         onDelete={(role) => {
+          setFormError(null);
           setViewRole(null);
           setDeleteTarget(role);
         }}
@@ -429,7 +512,9 @@ export function RolesWorkspace() {
             initialValues={
               formMode === "edit" && editingRole ? roleToFormValues(editingRole) : createEmptyRoleForm()
             }
+            permissionCatalog={permissionCatalog}
             error={formError}
+            isSubmitting={isSaving || permissionCatalogQuery.isLoading}
             submitLabel={formMode === "edit" ? "Save changes" : "Add role"}
             onSubmit={saveRole}
             onCancel={() => {
@@ -451,10 +536,10 @@ export function RolesWorkspace() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
               Delete
             </Button>

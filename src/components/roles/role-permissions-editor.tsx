@@ -1,20 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { Switch } from "@/components/ui/switch";
 import {
   getPermissionCatalogGroups,
   getPermissionsByGroup,
+  type PermissionCatalogEntry,
 } from "@/lib/roles/permissions-catalog";
 import {
-  createPermissionId,
   type RolePermissionFormValues,
 } from "@/lib/roles/types";
 
 type RolePermissionsEditorProps = {
   permissions: RolePermissionFormValues[];
+  catalog: PermissionCatalogEntry[];
   onChange?: (permissions: RolePermissionFormValues[]) => void;
   readOnly?: boolean;
   showPermissionValues?: boolean;
@@ -23,12 +24,13 @@ type RolePermissionsEditorProps = {
 
 export function RolePermissionsEditor({
   permissions,
+  catalog,
   onChange,
   readOnly = false,
   showPermissionValues = true,
   defaultExpanded = true,
 }: RolePermissionsEditorProps) {
-  const catalogGroups = getPermissionCatalogGroups();
+  const catalogGroups = useMemo(() => getPermissionCatalogGroups(catalog), [catalog]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
     () => new Set(defaultExpanded ? catalogGroups : [])
   );
@@ -38,15 +40,21 @@ export function RolePermissionsEditor({
     [permissions]
   );
 
-  function togglePermission(value: string, checked: boolean) {
+  useEffect(() => {
+    if (!defaultExpanded) return;
+
+    setExpandedGroups((current) => new Set([...current, ...catalogGroups]));
+  }, [catalogGroups, defaultExpanded]);
+
+  function togglePermission(entry: PermissionCatalogEntry, checked: boolean) {
     if (readOnly || !onChange) return;
 
     if (checked) {
-      onChange([...permissions, { id: createPermissionId(), value }]);
+      onChange([...permissions, { id: entry.id, value: entry.value }]);
       return;
     }
 
-    onChange(permissions.filter((permission) => permission.value !== value));
+    onChange(permissions.filter((permission) => permission.value !== entry.value));
   }
 
   function toggleGroup(group: string) {
@@ -98,7 +106,7 @@ export function RolePermissionsEditor({
             </h4>
             {expandedGroups.has(group) ? (
               <div id={`permission-group-${groupIndex}`} className="divide-y">
-                {getPermissionsByGroup(group).map((entry) => {
+                {getPermissionsByGroup(group, catalog).map((entry) => {
                   const isAssigned = assignedValues.has(entry.value);
                   return (
                     <label
@@ -122,7 +130,7 @@ export function RolePermissionsEditor({
                         disabled={readOnly}
                         className={readOnly ? "disabled:cursor-default disabled:opacity-100" : undefined}
                         onCheckedChange={
-                          readOnly ? undefined : (checked) => togglePermission(entry.value, checked)
+                          readOnly ? undefined : (checked) => togglePermission(entry, checked)
                         }
                         aria-label={`${entry.label} permission`}
                       />

@@ -1,15 +1,17 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { createRecordId } from "@/lib/customers/types";
-import { createRandomId } from "@/lib/utils/id";
 
 export type RolePermission = {
   id: string;
   value: string;
+  label?: string;
+  group?: string;
 };
 
 export type Role = {
   roleId: string;
   name: string;
+  active: boolean;
+  systemRole: boolean;
   permissions: RolePermission[];
   createdAt: string;
   createdBy: string;
@@ -24,6 +26,7 @@ export type RolePermissionFormValues = {
 export type RoleFormValues = {
   roleId: string;
   name: string;
+  active: boolean;
   permissions: RolePermissionFormValues[];
   createdBy: string;
 };
@@ -32,82 +35,25 @@ export type RoleFilterState = {
   query: string;
 };
 
-export function createRoleId(): string {
-  return createRecordId();
-}
-
-export function createPermissionId(): string {
-  return createRandomId();
-}
-
 export function createEmptyRoleForm(createdBy = DEFAULT_CREATED_BY): RoleFormValues {
   return {
-    roleId: createRoleId(),
+    roleId: "",
     name: "",
+    active: true,
     permissions: [],
     createdBy,
   };
-}
-
-export function permissionsFromValues(values: string[]): RolePermissionFormValues[] {
-  const unique = Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
-  return unique.map((value) => ({ id: createPermissionId(), value }));
 }
 
 export function roleToFormValues(role: Role): RoleFormValues {
   return {
     roleId: role.roleId,
     name: role.name,
+    active: role.active,
     permissions: role.permissions.map((permission) => ({
       id: permission.id,
       value: permission.value,
     })),
     createdBy: role.createdBy,
   };
-}
-
-export function normalizePermissions(permissions: RolePermissionFormValues[]): RolePermission[] {
-  const seen = new Set<string>();
-  const normalized: RolePermission[] = [];
-
-  for (const permission of permissions) {
-    const value = permission.value.trim();
-    if (!value || seen.has(value)) continue;
-    seen.add(value);
-    normalized.push({ id: permission.id || createPermissionId(), value });
-  }
-
-  return normalized;
-}
-
-export function formValuesToRole(
-  values: RoleFormValues,
-  createdAt?: string,
-  createdBy?: string,
-  updatedAt?: string
-): Role {
-  if (!values.name.trim()) {
-    throw new Error("Role name is required.");
-  }
-
-  const permissions = normalizePermissions(values.permissions);
-  if (permissions.length === 0) {
-    throw new Error("Add at least one permission.");
-  }
-
-  return {
-    roleId: values.roleId,
-    name: values.name.trim(),
-    permissions,
-    createdAt: createdAt ?? new Date().toISOString(),
-    createdBy: createdBy ?? (values.createdBy.trim() || DEFAULT_CREATED_BY),
-    updatedAt: updatedAt ?? new Date().toISOString(),
-  };
-}
-
-export function copyPermissionsFromRole(source: Role): RolePermissionFormValues[] {
-  return source.permissions.map((permission) => ({
-    id: createPermissionId(),
-    value: permission.value,
-  }));
 }

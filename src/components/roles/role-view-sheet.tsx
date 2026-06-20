@@ -12,17 +12,26 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
 import { truncateRoleId } from "@/lib/roles/display";
+import type { PermissionCatalogEntry } from "@/lib/roles/permissions-catalog";
 import type { Role } from "@/lib/roles/types";
 
 type RoleViewSheetProps = {
   role: Role | null;
+  permissionCatalog: PermissionCatalogEntry[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (role: Role) => void;
   onDelete: (role: Role) => void;
 };
 
-export function RoleViewSheet({ role, open, onOpenChange, onEdit, onDelete }: RoleViewSheetProps) {
+export function RoleViewSheet({
+  role,
+  permissionCatalog,
+  open,
+  onOpenChange,
+  onEdit,
+  onDelete,
+}: RoleViewSheetProps) {
   if (!role) return null;
 
   return (
@@ -43,6 +52,7 @@ export function RoleViewSheet({ role, open, onOpenChange, onEdit, onDelete }: Ro
           <RecordViewSheetSection padding="relaxed">
             <RolePermissionsEditor
               permissions={role.permissions}
+              catalog={permissionCatalog}
               readOnly
               showPermissionValues={false}
               defaultExpanded={false}
@@ -56,7 +66,12 @@ export function RoleViewSheet({ role, open, onOpenChange, onEdit, onDelete }: Ro
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
-        <RecordViewSheetActions editLabel="Edit role" onEdit={() => onEdit(role)} onDelete={() => onDelete(role)} />
+        <RecordViewSheetActions
+          editLabel="Edit role"
+          onEdit={() => onEdit(role)}
+          onDelete={() => onDelete(role)}
+          deleteDisabled={role.systemRole}
+        />
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

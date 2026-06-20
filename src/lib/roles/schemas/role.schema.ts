@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 export const roleFormSchema = z.object({
-  roleId: z.string().min(1),
+  roleId: z.string(),
   name: z.string().trim().min(1, "Role name is required."),
+  active: z.boolean(),
   permissions: z
     .array(
       z.object({

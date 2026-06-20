@@ -3,6 +3,8 @@ export const API_ENDPOINTS = {
   AUTH_TOKEN: "/auth/token",
   USER_PERMISSIONS: "/users/permissions",
   USERS: "/users",
+  ROLES: "/roles",
+  PERMISSIONS: "/permissions",
   EMPLOYEES: "/employees",
   CUSTOMERS: "/customers",
   BRANCHES: "/branches",

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { roleFormSchema } from "@/lib/roles/schemas/role.schema";
+import type { PermissionCatalogEntry } from "@/lib/roles/permissions-catalog";
 import {
   createEmptyRoleForm,
   type RoleFormValues,
@@ -16,7 +17,9 @@ import {
 
 type RoleFormProps = {
   initialValues?: RoleFormValues;
+  permissionCatalog: PermissionCatalogEntry[];
   error?: string | null;
+  isSubmitting?: boolean;
   submitLabel: string;
   onSubmit: (values: RoleFormValues) => void;
   onCancel: () => void;
@@ -24,7 +27,9 @@ type RoleFormProps = {
 
 export function RoleForm({
   initialValues,
+  permissionCatalog,
   error,
+  isSubmitting = false,
   submitLabel,
   onSubmit,
   onCancel,
@@ -65,7 +70,11 @@ export function RoleForm({
           control={control}
           name="permissions"
           render={({ field }) => (
-            <RolePermissionsEditor permissions={field.value} onChange={field.onChange} />
+            <RolePermissionsEditor
+              permissions={field.value}
+              catalog={permissionCatalog}
+              onChange={field.onChange}
+            />
           )}
         />
 
@@ -76,10 +85,10 @@ export function RoleForm({
       </div>
 
       <div className="flex shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={isSubmitting}>{submitLabel}</Button>
       </div>
     </form>
   );
