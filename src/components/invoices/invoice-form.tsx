@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +52,7 @@ export function InvoiceForm({
   const catalogItems = useMemo(() => cloneItems(), []);
 
   const [values, setValues] = useState<InvoiceFormValues>(initialValues ?? createEmptyInvoiceForm());
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     const base = initialValues ?? createEmptyInvoiceForm();
@@ -88,7 +90,7 @@ export function InvoiceForm({
   const balance = computeInvoiceBalance(subtotal, discount, amountPaid);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="invoiceId">Invoice ID</Label>

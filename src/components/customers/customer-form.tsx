@@ -2,7 +2,6 @@
 
 import {
   AlertCircle,
-  IdCard,
   MapPin,
   Phone as PhoneIcon,
   Plus,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +52,12 @@ type FormSectionProps = {
   children: React.ReactNode;
 };
 
-function FormSection({ icon: Icon, title, description, children }: FormSectionProps) {
+function FormSection({
+  icon: Icon,
+  title,
+  description,
+  children,
+}: FormSectionProps) {
   return (
     <section className="space-y-3">
       <div className="flex items-start gap-2.5">
@@ -60,8 +65,12 @@ function FormSection({ icon: Icon, title, description, children }: FormSectionPr
           <Icon className="size-4" />
         </span>
         <div className="space-y-0.5">
-          <h3 className="text-sm font-semibold leading-none text-foreground">{title}</h3>
-          {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+          <h3 className="text-sm font-semibold leading-none text-foreground">
+            {title}
+          </h3>
+          {description ? (
+            <p className="text-xs text-muted-foreground">{description}</p>
+          ) : null}
         </div>
       </div>
       <div className="space-y-4 pl-[2.375rem]">{children}</div>
@@ -75,7 +84,11 @@ type AddressFieldGridProps = {
   onChange: (field: keyof CustomerCoreAddress, value: string) => void;
 };
 
-function AddressFieldGrid({ idPrefix, address, onChange }: AddressFieldGridProps) {
+function AddressFieldGrid({
+  idPrefix,
+  address,
+  onChange,
+}: AddressFieldGridProps) {
   const labels = CUSTOMER_ADDRESS_FIELD_LABELS;
 
   return (
@@ -123,7 +136,9 @@ function AddressFieldGrid({ idPrefix, address, onChange }: AddressFieldGridProps
           <Input
             id={`${idPrefix}-state`}
             value={address.state}
-            onChange={(event) => onChange("state", event.target.value.toUpperCase())}
+            onChange={(event) =>
+              onChange("state", event.target.value.toUpperCase())
+            }
           />
         </div>
       </div>
@@ -139,16 +154,16 @@ function AddressFieldGrid({ idPrefix, address, onChange }: AddressFieldGridProps
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-country`}>{labels.country}</Label>
-            <Input
-              id={`${idPrefix}-country`}
-              value={address.country}
-              readOnly
-              disabled
-              aria-readonly
-              className="bg-muted/60"
-              title="Country is set automatically by the customer type"
-            />
-          </div>
+          <Input
+            id={`${idPrefix}-country`}
+            value={address.country}
+            readOnly
+            disabled
+            aria-readonly
+            className="bg-muted/60"
+            title="Country is set automatically by the customer type"
+          />
+        </div>
       </div>
     </div>
   );
@@ -168,13 +183,19 @@ export function CustomerForm({
   );
   const [formError, setFormError] = useState<string | null>(null);
   const errorMessage = formError ?? externalError;
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
-    setValues(normalizeCustomerFormValues(initialValues ?? createEmptyCustomerForm()));
+    setValues(
+      normalizeCustomerFormValues(initialValues ?? createEmptyCustomerForm()),
+    );
     setFormError(null);
   }, [initialValues?.id, initialValues?.updatedAt]);
 
-  function updateField<K extends keyof CustomerFormValues>(key: K, value: CustomerFormValues[K]) {
+  function updateField<K extends keyof CustomerFormValues>(
+    key: K,
+    value: CustomerFormValues[K],
+  ) {
     setValues((current) => {
       const next = { ...current, [key]: value };
       return key === "customerType" ? applyCustomerTypeBranch(next) : next;
@@ -182,7 +203,10 @@ export function CustomerForm({
     setFormError(null);
   }
 
-  function updateAddressField<K extends keyof CustomerCoreAddress>(key: K, value: CustomerCoreAddress[K]) {
+  function updateAddressField<K extends keyof CustomerCoreAddress>(
+    key: K,
+    value: CustomerCoreAddress[K],
+  ) {
     setValues((current) =>
       syncCustomerFormAddresses({
         ...current,
@@ -209,7 +233,10 @@ export function CustomerForm({
     setValues((current) =>
       syncCustomerFormAddresses({
         ...current,
-        addresses: [...current.addresses, createEmptyCustomerCoreAddress(current.address.country)],
+        addresses: [
+          ...current.addresses,
+          createEmptyCustomerCoreAddress(current.address.country),
+        ],
       }),
     );
   }
@@ -220,7 +247,9 @@ export function CustomerForm({
     setValues((current) =>
       syncCustomerFormAddresses({
         ...current,
-        addresses: current.addresses.filter((_, addressIndex) => addressIndex !== index),
+        addresses: current.addresses.filter(
+          (_, addressIndex) => addressIndex !== index,
+        ),
       }),
     );
   }
@@ -228,52 +257,103 @@ export function CustomerForm({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    const nextValues = normalizeCustomerFormValues(syncCustomerFormAddresses(values));
+    const nextValues = normalizeCustomerFormValues(
+      syncCustomerFormAddresses(values),
+    );
 
     try {
       validateCustomerFormValues(nextValues);
       setFormError(null);
       onSubmit(nextValues);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to save customer.");
+      setFormError(
+        error instanceof Error ? error.message : "Unable to save customer.",
+      );
     }
   }
 
   const selectedType = normalizeCustomerType(values.customerType);
 
   return (
-    <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <div className="flex-1 space-y-7 overflow-y-auto px-6 py-5">
-        <FormSection icon={User} title="General" description="Basic identity and routing for this customer.">
-          <div className="space-y-2">
-            <Label htmlFor="name">
-              Name <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="name"
-              value={values.name}
-              onChange={(event) => updateField("name", event.target.value)}
-              placeholder="Full name"
-              autoFocus
-              required
-            />
-          </div>
+        <FormSection
+          icon={User}
+          title="General"
+          description="Basic identity, contact, and reference details for this customer."
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="customerType">
+                Customer type <span className="text-destructive">*</span>
+              </Label>
+              <SearchableSelect
+                id="customerType"
+                value={String(selectedType)}
+                onValueChange={(next) =>
+                  updateField("customerType", Number(next))
+                }
+                options={CUSTOMER_TYPE_OPTIONS.map((option) => ({
+                  value: String(option.value),
+                  label: option.label,
+                }))}
+                required
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="customerType">
-              Customer type <span className="text-destructive">*</span>
-            </Label>
-            <SearchableSelect
-              id="customerType"
-              value={String(selectedType)}
-              onValueChange={(next) => updateField("customerType", Number(next))}
-              options={CUSTOMER_TYPE_OPTIONS.map((option) => ({
-                value: String(option.value),
-                label: option.label,
-              }))}
-              required
-            />
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                value={values.name}
+                onChange={(event) => updateField("name", event.target.value)}
+                placeholder="Full name"
+                autoFocus
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="IDNumber">ID number</Label>
+              <Input
+                id="IDNumber"
+                value={values.IDNumber}
+                onChange={(event) =>
+                  updateField("IDNumber", event.target.value)
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={values.email}
+                onChange={(event) => updateField("email", event.target.value)}
+                placeholder="name@example.com"
+              />
+            </div>
           </div>
+        </FormSection>
+
+        <div className="border-t border-border/60" />
+
+        <FormSection
+          icon={StickyNote}
+          title="Notes"
+          description="Internal customer notes visible to your team."
+        >
+          <textarea
+            id="notes"
+            value={values.notes}
+            onChange={(event) => updateField("notes", event.target.value)}
+            rows={3}
+            className={textareaClassName}
+            placeholder="Add any relevant context…"
+          />
         </FormSection>
 
         <div className="border-t border-border/60" />
@@ -293,32 +373,11 @@ export function CustomerForm({
 
         <div className="border-t border-border/60" />
 
-        <FormSection icon={IdCard} title="Contact & identification" description="Optional contact and reference details.">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={values.email}
-                onChange={(event) => updateField("email", event.target.value)}
-                placeholder="name@example.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="IDNumber">ID number</Label>
-              <Input
-                id="IDNumber"
-                value={values.IDNumber}
-                onChange={(event) => updateField("IDNumber", event.target.value)}
-              />
-            </div>
-          </div>
-        </FormSection>
-
-        <div className="border-t border-border/60" />
-
-        <FormSection icon={MapPin} title="Addresses" description="Primary address is used for shipping and directions.">
+        <FormSection
+          icon={MapPin}
+          title="Addresses"
+          description="Primary address is used for shipping and directions."
+        >
           <div className="space-y-3">
             <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -335,7 +394,10 @@ export function CustomerForm({
               const addressIndex = index + 1;
 
               return (
-                <div key={addressIndex} className="rounded-lg border border-border/60 bg-muted/20 p-4">
+                <div
+                  key={addressIndex}
+                  className="rounded-lg border border-border/60 bg-muted/20 p-4"
+                >
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Additional address {addressIndex}
@@ -355,7 +417,9 @@ export function CustomerForm({
                   <AddressFieldGrid
                     idPrefix={`additional-${addressIndex}`}
                     address={address}
-                    onChange={(field, value) => updateAdditionalAddressField(addressIndex, field, value)}
+                    onChange={(field, value) =>
+                      updateAdditionalAddressField(addressIndex, field, value)
+                    }
                   />
                 </div>
               );
@@ -373,19 +437,6 @@ export function CustomerForm({
             </Button>
           </div>
         </FormSection>
-
-        <div className="border-t border-border/60" />
-
-        <FormSection icon={StickyNote} title="Notes" description="Internal notes visible to your team.">
-          <textarea
-            id="notes"
-            value={values.notes}
-            onChange={(event) => updateField("notes", event.target.value)}
-            rows={3}
-            className={textareaClassName}
-            placeholder="Add any relevant context…"
-          />
-        </FormSection>
       </div>
 
       <div className="shrink-0 border-t border-border bg-card px-6 py-4">
@@ -401,7 +452,12 @@ export function CustomerForm({
           </div>
         ) : null}
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>

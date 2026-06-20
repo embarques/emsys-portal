@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,6 +80,7 @@ export function AccountingEntryForm({
   }, [fixedType]);
 
   const [values, setValues] = useState<AccountingFormValues>(initialValues ?? defaultValues);
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? defaultValues);
@@ -185,7 +187,7 @@ export function AccountingEntryForm({
   const showGlobalDateBranch = isNewInvoicePayment || isExistingInvoicePayment;
 
   return (
-    <form onSubmit={handleSubmit} className={isInline ? "space-y-3" : "space-y-4"}>
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className={isInline ? "space-y-3" : "space-y-4"}>
       {!isInline ? (
       <div className="space-y-2">
         <Label htmlFor="entryId">Entry ID</Label>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ export function EmployeeForm({
   onCancel,
 }: EmployeeFormProps) {
   const [values, setValues] = useState<EmployeeFormValues>(initialValues ?? createEmptyEmployeeForm());
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyEmployeeForm());
@@ -96,7 +98,7 @@ export function EmployeeForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-4">
       <FormSection title="Employee">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">

@@ -52,6 +52,7 @@ export function TableFilterSelect({
       disabled={disabled}
       placeholder={placeholder}
       className={cn(baseClassName, mutedWhenEmpty && !value && "text-muted-foreground", className)}
+      contentClassName="z-[110]"
     />
   );
 }

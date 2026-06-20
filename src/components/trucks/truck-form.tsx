@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,7 @@ export function TruckForm({
   onCancel,
 }: TruckFormProps) {
   const [values, setValues] = useState<TruckFormValues>(initialValues ?? createEmptyTruckForm());
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyTruckForm());
@@ -45,7 +47,7 @@ export function TruckForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="id">Truck ID</Label>
         <Input

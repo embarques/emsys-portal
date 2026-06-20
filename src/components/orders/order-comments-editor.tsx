@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { MessageSquare, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +30,17 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold">comments</h3>
-          <p className="text-sm text-muted-foreground">Add pickup comment lines with purpose, unit, quantity, and description.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5">
+          <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <MessageSquare className="size-4" />
+          </span>
+          <div className="space-y-0.5">
+            <h3 className="text-sm font-semibold leading-none text-foreground">Comments</h3>
+            <p className="text-xs text-muted-foreground">
+              Add pickup comment lines with purpose, unit, quantity, and description.
+            </p>
+          </div>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={addComment}>
           <Plus className="h-4 w-4" />
@@ -65,7 +72,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor={`comment-purpose-${index}`}>purpose</Label>
+                  <Label htmlFor={`comment-purpose-${index}`}>Purpose</Label>
                   <Input
                     id={`comment-purpose-${index}`}
                     value={comment.purpose}
@@ -74,7 +81,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor={`comment-unit-${index}`}>unit</Label>
+                  <Label htmlFor={`comment-unit-${index}`}>Unit</Label>
                   <Input
                     id={`comment-unit-${index}`}
                     value={comment.unit}
@@ -83,7 +90,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor={`comment-quantity-${index}`}>quantity</Label>
+                  <Label htmlFor={`comment-quantity-${index}`}>Quantity</Label>
                   <Input
                     id={`comment-quantity-${index}`}
                     type="number"
@@ -94,7 +101,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                 </div>
 
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor={`comment-description-${index}`}>description</Label>
+                  <Label htmlFor={`comment-description-${index}`}>Description</Label>
                   <textarea
                     id={`comment-description-${index}`}
                     className={textareaClassName}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,7 @@ type RouteFormProps = {
 export function RouteForm({ initialValues, isEditing = false, updatedAt, submitLabel, onSubmit, onCancel }: RouteFormProps) {
   const [values, setValues] = useState<RouteFormValues>(initialValues ?? createEmptyRouteForm());
   const [formError, setFormError] = useState<string | null>(null);
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyRouteForm());
@@ -71,7 +73,7 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="routeId">Route ID</Label>

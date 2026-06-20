@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useEffect, useState } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ export function EmployeeGroupForm({
     search: memberSearch,
   });
   const employees = employeesQuery.data?.items ?? [];
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyEmployeeGroupForm());
@@ -81,7 +83,7 @@ export function EmployeeGroupForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="employeeGroupId">Employee group ID</Label>

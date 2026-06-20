@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export function ConfigurationWorkspace() {
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => setMounted(true), []);
 
@@ -78,7 +80,7 @@ export function ConfigurationWorkspace() {
     <div>
       <PageHeader title="Configuration" />
 
-      <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6">
+      <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="mx-auto max-w-3xl space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Appearance</CardTitle>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Copy } from "lucide-react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,6 +48,7 @@ export function RouteAssignmentForm({
     initialValues ?? createEmptyRouteAssignmentForm(),
   );
   const [copyFromId, setCopyFromId] = useState("");
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyRouteAssignmentForm());
@@ -89,7 +91,7 @@ export function RouteAssignmentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-6">
       {!isEditing && copySources.length > 0 ? (
         <section className="rounded-xl border border-dashed bg-muted/10 p-4">
           <div className="flex items-start gap-3">

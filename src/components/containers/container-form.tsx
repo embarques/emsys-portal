@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,7 @@ export function ContainerForm({
   onCancel,
 }: ContainerFormProps) {
   const [values, setValues] = useState<ContainerFormValues>(initialValues ?? createEmptyContainerForm());
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     const base = initialValues ?? createEmptyContainerForm();
@@ -50,7 +52,7 @@ export function ContainerForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-4">
       {isEditing ? (
         <div className="space-y-2">
           <Label htmlFor="id">Container ID</Label>

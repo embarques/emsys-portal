@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { RolePermissionsEditor } from "@/components/roles/role-permissions-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,13 +45,14 @@ export function RoleForm({
     resolver: zodResolver(roleFormSchema),
     defaultValues: initialValues ?? createEmptyRoleForm(),
   });
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     reset(initialValues ?? createEmptyRoleForm());
   }, [initialValues, reset]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+    <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
         <div className="space-y-2">
           <Label htmlFor="name">
