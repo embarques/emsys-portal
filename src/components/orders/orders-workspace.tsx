@@ -557,9 +557,6 @@ export function OrdersWorkspace() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>{formMode === "edit" ? "Edit order" : "Add order"}</DialogTitle>
-            <DialogDescription>
-              Manage pickup fields: date, branch, employee, sender, receiver, purpose, and comments.
-            </DialogDescription>
           </DialogHeader>
           <OrderForm
             key={editingOrder ? getOrderRecordId(editingOrder) : "new"}

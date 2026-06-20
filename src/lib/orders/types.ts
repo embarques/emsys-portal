@@ -44,9 +44,37 @@ export type Order = {
   routeAssignmentId?: string;
 };
 
+export const ORDER_COMMENT_PURPOSES = [
+  { value: "PAYMENT", label: "Payment" },
+  { value: "ESTIMATE", label: "Estimate" },
+  { value: "TAKE", label: "Take" },
+  { value: "PICKUP", label: "Pickup" },
+  { value: "OTHER", label: "Other" },
+] as const;
+
+export type OrderCommentPurpose = (typeof ORDER_COMMENT_PURPOSES)[number]["value"];
+
+export const ORDER_COMMENT_ITEM_TYPES = [
+  { value: "box", label: "Box" },
+  { value: "barrel", label: "Barrel" },
+  { value: "tape", label: "Tape" },
+  { value: "other", label: "Other" },
+] as const;
+
+export type OrderCommentItemType = (typeof ORDER_COMMENT_ITEM_TYPES)[number]["value"];
+
+const ITEM_PURPOSES = new Set<string>(["TAKE", "PICKUP"]);
+const KNOWN_ITEM_VALUES = new Set<string>(["box", "barrel", "tape"]);
+
+/** TAKE and PICKUP describe a physical item; other purposes only carry free-text comments. */
+export function orderCommentPurposeRequiresItem(purpose: string): boolean {
+  return ITEM_PURPOSES.has(purpose.trim().toUpperCase());
+}
+
 export type OrderCommentFormValues = {
   purpose: string;
-  unit: string;
+  itemType: OrderCommentItemType | "";
+  customItem: string;
   quantity: string;
   description: string;
 };
@@ -189,10 +217,44 @@ export function buildOrderListParams(input: {
 export function createEmptyOrderComment(): OrderCommentFormValues {
   return {
     purpose: "",
-    unit: "",
-    quantity: "0",
+    itemType: "",
+    customItem: "",
+    quantity: "",
     description: "",
   };
+}
+
+/** Resolve the unit string sent to the API from the comment's item selection. */
+export function resolveOrderCommentUnit(comment: OrderCommentFormValues): string {
+  if (!orderCommentPurposeRequiresItem(comment.purpose)) return "";
+  if (comment.itemType === "other") return comment.customItem.trim();
+  return comment.itemType;
+}
+
+/** "OTHER" comments are stored as the legacy "COMMENT" purpose keyword. */
+function orderCommentPurposeKeyword(purpose: string): string {
+  const keyword = purpose.trim().toUpperCase();
+  if (!keyword) return "";
+  return keyword === "OTHER" ? "COMMENT" : keyword;
+}
+
+/**
+ * Build the order-level purpose string from its comments.
+ * Each unique comment purpose contributes a keyword in first-seen order,
+ * e.g. take 1 box + pickup 3 barrels => "TAKE, PICKUP".
+ */
+export function deriveOrderPurpose(comments: OrderCommentFormValues[]): string {
+  const keywords: string[] = [];
+  const seen = new Set<string>();
+
+  for (const comment of comments) {
+    const keyword = orderCommentPurposeKeyword(comment.purpose);
+    if (!keyword || seen.has(keyword)) continue;
+    seen.add(keyword);
+    keywords.push(keyword);
+  }
+
+  return keywords.join(", ");
 }
 
 export function todayDateInputValue(): string {
@@ -229,10 +291,26 @@ export function resetOrderFormForNextEntry(previous: OrderFormValues): OrderForm
 }
 
 export function orderCommentToFormValues(comment: PickupComment): OrderCommentFormValues {
+  const unit = comment.unit.trim();
+  const requiresItem = orderCommentPurposeRequiresItem(comment.purpose);
+
+  let itemType: OrderCommentItemType | "" = "";
+  let customItem = "";
+
+  if (requiresItem && unit) {
+    if (KNOWN_ITEM_VALUES.has(unit.toLowerCase())) {
+      itemType = unit.toLowerCase() as OrderCommentItemType;
+    } else {
+      itemType = "other";
+      customItem = unit;
+    }
+  }
+
   return {
     purpose: comment.purpose,
-    unit: comment.unit,
-    quantity: String(comment.quantity),
+    itemType,
+    customItem,
+    quantity: comment.quantity > 0 ? String(comment.quantity) : "",
     description: comment.description,
   };
 }

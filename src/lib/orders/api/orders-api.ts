@@ -36,6 +36,9 @@ import { normalizeApiUser } from "@/lib/users/api/users-api";
 import type { User } from "@/lib/users/types";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
+  deriveOrderPurpose,
+  orderCommentPurposeRequiresItem,
+  resolveOrderCommentUnit,
   type Order,
   type OrderFormValues,
   type OrderListParams,
@@ -474,12 +477,17 @@ function buildApiCommentsFromFormValues(values: OrderFormValues): ApiComment[] {
     return [{ purpose: "", unit: "", quantity: 0, description: "" }];
   }
 
-  return values.comments.map((comment) => ({
-    purpose: comment.purpose.trim(),
-    unit: comment.unit.trim(),
-    quantity: Number.isFinite(Number(comment.quantity)) ? Number(comment.quantity) : 0,
-    description: comment.description.trim(),
-  }));
+  return values.comments.map((comment) => {
+    const requiresItem = orderCommentPurposeRequiresItem(comment.purpose);
+    const quantity = Number(comment.quantity);
+
+    return {
+      purpose: comment.purpose.trim(),
+      unit: resolveOrderCommentUnit(comment),
+      quantity: requiresItem && Number.isFinite(quantity) ? quantity : 0,
+      description: requiresItem ? "" : comment.description.trim(),
+    };
+  });
 }
 
 function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload {
@@ -488,7 +496,7 @@ function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload
   }
 
   const date = values.date.trim() || new Date().toISOString().slice(0, 10);
-  const purpose = values.purpose.trim();
+  const purpose = deriveOrderPurpose(values.comments);
   const comments = buildApiCommentsFromFormValues(values);
 
   const payload: ApiPickupWritePayload = {
