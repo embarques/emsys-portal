@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  Eye,
   KeyRound,
+  MoreHorizontal,
+  Pencil,
   Plus,
   Shield,
   Trash2,
@@ -33,6 +36,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -220,6 +229,41 @@ export function RolesWorkspace() {
       label: "Date modified",
       cellClassName: "text-muted-foreground",
       renderCell: (role) => formatAuditDate(role.updatedAt),
+    },
+    {
+      id: "actions",
+      label: "Action",
+      hideable: false,
+      truncateCell: false,
+      stopRowClick: true,
+      headerClassName: "text-right",
+      cellClassName: "text-right",
+      renderCell: (role) => (
+        <div className="flex justify-end" onDoubleClick={(event) => event.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Actions for ${role.name}`}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-36">
+              <DropdownMenuItem onSelect={() => setViewRole(role)}>
+                <Eye className="h-4 w-4" />
+                View
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => openEditForm(role)}>
+                <Pencil className="h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
     },
   ];
 
