@@ -109,6 +109,12 @@ export function formatInvoicePartySummary(party: Invoice["sender"]): string {
   return `${party.name} · ${addressLine}`;
 }
 
+/** displayNumber is presentation-only; stored number remains the search/write value. */
+export function getInvoicePartyDisplayPhone(party: Invoice["sender"]): string {
+  const phone = party.phones.find((entry) => entry.displayNumber?.trim());
+  return phone?.displayNumber?.trim() || "—";
+}
+
 export function formatLineItemSummary(item: InvoiceLineItem): string {
   return `${item.itemName} × ${item.quantity} @ ${formatInvoiceMoney(item.unitPrice)} = ${formatInvoiceMoney(item.lineTotal)}`;
 }

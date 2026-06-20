@@ -46,10 +46,17 @@ type ApiAddress = {
   zipcode?: string;
 };
 
+type ApiInvoicePhone = {
+  type?: string;
+  number?: string;
+  displayNumber?: string;
+};
+
 type ApiInvoiceParty = {
   id?: string;
   oldID?: number;
   name?: string;
+  phones?: ApiInvoicePhone[];
   address?: ApiAddress;
 };
 
@@ -151,12 +158,30 @@ function normalizeApiInvoiceParty(raw: unknown): OrderParty {
       : [];
 
   const id = readStringId(party.id) ?? createRecordId();
+  const phones = Array.isArray(party.phones)
+    ? party.phones
+        .map((phone) => {
+          const number = String(phone.number ?? "").trim();
+          if (!number) return null;
+
+          const displayNumber = String(phone.displayNumber ?? "").trim();
+          const label = String(phone.type ?? "").trim();
+
+          return {
+            id: createRecordId(),
+            number,
+            ...(displayNumber ? { displayNumber } : {}),
+            ...(label ? { label } : {}),
+          };
+        })
+        .filter((phone): phone is NonNullable<typeof phone> => phone != null)
+    : [];
 
   return {
     id,
     clientId: id,
     name: String(party.name ?? "").trim() || "—",
-    phones: [],
+    phones,
     addresses,
     orderAddressId: addresses[0]?.id ?? addressId,
   };

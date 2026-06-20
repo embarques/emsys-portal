@@ -53,6 +53,7 @@ import {
   getInvoiceBalance,
   getInvoiceBalanceMoneyClass,
   getInvoiceDiscountMoneyClass,
+  getInvoicePartyDisplayPhone,
   getInvoicePaidMoneyClass,
   getInvoicePaidStatusBadgeClass,
   getInvoicePaidStatusLabel,
@@ -341,9 +342,23 @@ export function InvoicesWorkspace() {
       renderCell: (invoice) => formatInvoicePartySummary(invoice.sender),
     },
     {
+      id: "senderPhone",
+      label: "Sender phone",
+      truncateCell: false,
+      cellClassName: "whitespace-nowrap tabular-nums",
+      renderCell: (invoice) => getInvoicePartyDisplayPhone(invoice.sender),
+    },
+    {
       id: "receiver",
       label: "Receiver",
       renderCell: (invoice) => formatInvoicePartySummary(invoice.receiver),
+    },
+    {
+      id: "receiverPhone",
+      label: "Receiver phone",
+      truncateCell: false,
+      cellClassName: "whitespace-nowrap tabular-nums",
+      renderCell: (invoice) => getInvoicePartyDisplayPhone(invoice.receiver),
     },
     {
       id: "total",
@@ -414,7 +429,7 @@ export function InvoicesWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("invoices-v2", tableColumns);
+  const columnVisibility = useColumnVisibility("invoices-v3", tableColumns);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount + (filters.paymentLocation !== "all" ? 1 : 0);
   const hasActiveFilters =
