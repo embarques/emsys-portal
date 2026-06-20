@@ -1,34 +1,34 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
-const DEV_SESSION_STORAGE_KEY = "emsys:dev-session";
+export const AUTH_STATE_PATH = "playwright/.auth/user.json";
 
-export const PLAYWRIGHT_DEV_SESSION = {
-  idToken: "playwright-id-token",
-  companyId: "playwright-company",
-  email: "playwright@emsys.test",
-  name: "Playwright User",
-};
+export function getTestCredentials() {
+  const email = process.env.PLAYWRIGHT_TEST_EMAIL?.trim();
+  const password = process.env.PLAYWRIGHT_TEST_PASSWORD;
 
-/** Seed a valid dev bypass session before the app reads sessionStorage. */
-export async function installDevAuth(page: Page) {
-  await page.addInitScript(({ storageKey, session }) => {
-    window.sessionStorage.setItem(
-      storageKey,
-      JSON.stringify({
-        ...session,
-        expiresAt: Date.now() + 60 * 60 * 1000,
-      }),
+  if (!email || !password) {
+    throw new Error(
+      "PLAYWRIGHT_TEST_EMAIL and PLAYWRIGHT_TEST_PASSWORD must be set in .env.local.",
     );
-  }, {
-    storageKey: DEV_SESSION_STORAGE_KEY,
-    session: PLAYWRIGHT_DEV_SESSION,
+  }
+
+  return { email, password };
+}
+
+export async function signInWithFirebase(page: Page) {
+  const { email, password } = getTestCredentials();
+
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 30_000 });
+  await expect(page.getByText("Loading...", { exact: true })).toHaveCount(0, {
+    timeout: 30_000,
   });
 }
 
 export async function ensureAuthenticated(page: Page) {
-  await page.waitForFunction(
-    () => !window.location.pathname.startsWith("/login"),
-    undefined,
-    { timeout: 15_000 },
-  );
+  await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 30_000 });
 }

@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+import { loadEnvConfig } from "@next/env";
+
+loadEnvConfig(process.cwd());
 
 const port = 3100;
 const baseURL = `http://127.0.0.1:${port}`;
@@ -18,24 +21,27 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "auth-setup",
+      testMatch: /auth\.setup\.ts/,
+    },
+    {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["auth-setup"],
+      testIgnore: /auth\.setup\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/user.json",
+      },
     },
   ],
   webServer: {
     command: `npx next dev -H 127.0.0.1 -p ${port}`,
     url: baseURL,
-    // Always boot with Playwright env so auth bypass + mock API base URL are present.
+    // Exercise the real Firebase login and configured EMSYS API.
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
-      NEXT_PUBLIC_API_BASE_URL: `${baseURL}/api/e2e`,
-      NEXT_PUBLIC_API_USE_DEV_PROXY: "false",
-      NEXT_PUBLIC_BYPASS_AUTH: "true",
-      NEXT_PUBLIC_DEV_ID_TOKEN: "playwright-id-token",
-      NEXT_PUBLIC_DEV_COMPANY_ID: "playwright-company",
-      NEXT_PUBLIC_DEV_EMAIL: "playwright@emsys.test",
-      NEXT_PUBLIC_DEV_NAME: "Playwright User",
+      NEXT_PUBLIC_BYPASS_AUTH: "false",
       NEXT_DIST_DIR: ".next-playwright",
     },
   },
