@@ -921,6 +921,25 @@ useState
 
 ---
 
+# Git Workflow
+
+All project work must use a feature branch and pull request by default.
+
+Rules:
+
+1. Start new work from the latest `dev` branch.
+2. Before modifying code, create a dedicated branch named `codex/feat-<short-description>`.
+3. Do not work directly on `dev` unless the user explicitly instructs you to do so for that task.
+4. Keep each branch focused on the requested change.
+5. When the work is complete, run the relevant validation checks.
+6. Commit the completed work with a concise, descriptive commit message.
+7. Push the feature branch to the remote repository.
+8. Create a pull request targeting `dev`.
+9. The pull request must summarize what changed, why it changed, user or developer impact, and the validation performed.
+10. Do not merge the pull request unless the user explicitly requests the merge.
+
+---
+
 # Final Summary
 
 ```txt

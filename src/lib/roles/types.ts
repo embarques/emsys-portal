@@ -40,34 +40,28 @@ export function createPermissionId(): string {
   return createRandomId();
 }
 
-export function createEmptyPermission(): RolePermissionFormValues {
-  return { id: createPermissionId(), value: "" };
-}
-
 export function createEmptyRoleForm(createdBy = DEFAULT_CREATED_BY): RoleFormValues {
   return {
     roleId: createRoleId(),
     name: "",
-    permissions: [createEmptyPermission()],
+    permissions: [],
     createdBy,
   };
 }
 
 export function permissionsFromValues(values: string[]): RolePermissionFormValues[] {
   const unique = Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
-  return unique.length > 0
-    ? unique.map((value) => ({ id: createPermissionId(), value }))
-    : [createEmptyPermission()];
+  return unique.map((value) => ({ id: createPermissionId(), value }));
 }
 
 export function roleToFormValues(role: Role): RoleFormValues {
   return {
     roleId: role.roleId,
     name: role.name,
-    permissions:
-      role.permissions.length > 0
-        ? role.permissions.map((permission) => ({ id: permission.id, value: permission.value }))
-        : [createEmptyPermission()],
+    permissions: role.permissions.map((permission) => ({
+      id: permission.id,
+      value: permission.value,
+    })),
     createdBy: role.createdBy,
   };
 }

@@ -1,216 +1,84 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { useMemo } from "react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Switch } from "@/components/ui/switch";
 import {
   getPermissionCatalogGroups,
-  getPermissionLabel,
   getPermissionsByGroup,
 } from "@/lib/roles/permissions-catalog";
 import {
-  createEmptyPermission,
   createPermissionId,
-  type Role,
   type RolePermissionFormValues,
 } from "@/lib/roles/types";
 
 type RolePermissionsEditorProps = {
   permissions: RolePermissionFormValues[];
-  existingRoles?: Role[];
-  currentRoleId?: string;
-  showCopyFrom?: boolean;
   onChange: (permissions: RolePermissionFormValues[]) => void;
 };
 
 export function RolePermissionsEditor({
   permissions,
-  existingRoles = [],
-  currentRoleId,
-  showCopyFrom = false,
   onChange,
 }: RolePermissionsEditorProps) {
-  const [copyFromRoleId, setCopyFromRoleId] = useState("");
-
-  const copySourceRoles = useMemo(
-    () => existingRoles.filter((role) => role.roleId !== currentRoleId),
-    [currentRoleId, existingRoles]
-  );
-
   const assignedValues = useMemo(
     () => new Set(permissions.map((permission) => permission.value.trim()).filter(Boolean)),
     [permissions]
   );
 
-  function updatePermission(index: number, value: string) {
-    onChange(permissions.map((permission, permissionIndex) => (permissionIndex === index ? { ...permission, value } : permission)));
-  }
-
-  function addPermission(initialValue = "") {
-    onChange([...permissions, { id: createPermissionId(), value: initialValue }]);
-  }
-
-  function removePermission(index: number) {
-    if (permissions.length <= 1) {
-      onChange([createEmptyPermission()]);
+  function togglePermission(value: string, checked: boolean) {
+    if (checked) {
+      onChange([...permissions, { id: createPermissionId(), value }]);
       return;
     }
-    onChange(permissions.filter((_, permissionIndex) => permissionIndex !== index));
-  }
 
-  function addCatalogPermission(value: string) {
-    if (assignedValues.has(value)) return;
-    const hasEmptyRow = permissions.some((permission) => !permission.value.trim());
-    if (hasEmptyRow) {
-      onChange(
-        permissions.map((permission) =>
-          !permission.value.trim() ? { ...permission, value } : permission
-        )
-      );
-      return;
-    }
-    addPermission(value);
-  }
-
-  function handleCopyFromRole(roleId: string) {
-    setCopyFromRoleId(roleId);
-    if (!roleId) return;
-
-    const sourceRole = existingRoles.find((role) => role.roleId === roleId);
-    if (!sourceRole) return;
-
-    onChange(
-      sourceRole.permissions.map((permission) => ({
-        id: createPermissionId(),
-        value: permission.value,
-      }))
-    );
+    onChange(permissions.filter((permission) => permission.value !== value));
   }
 
   const catalogGroups = getPermissionCatalogGroups();
 
   return (
-    <section className="space-y-4">
-      {showCopyFrom && copySourceRoles.length > 0 ? (
-        <div className="rounded-xl border border-dashed bg-muted/10 p-4">
-          <div className="flex items-start gap-3">
-            <Copy className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <div>
-                <Label htmlFor="copyFromRole">Copy from existing role</Label>
-                <p className="text-xs text-muted-foreground">
-                  Start with another role&apos;s permissions, then add, edit, or remove as needed.
-                </p>
-              </div>
-              <SearchableSelect
-                id="copyFromRole"
-                value={copyFromRoleId}
-                onValueChange={handleCopyFromRole}
-                placeholder="Select a role to copy…"
-                searchPlaceholder="Search roles…"
-                options={[
-                  { value: "", label: "Select a role to copy…" },
-                  ...copySourceRoles.map((role) => ({
-                    value: role.roleId,
-                    label: `${role.name} (${role.permissions.length} permissions)`,
-                  })),
-                ]}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
-
+    <section className="space-y-4" aria-labelledby="permissions-heading">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold">Permissions</h3>
+          <h3 id="permissions-heading" className="text-sm font-semibold">Permissions</h3>
           <p className="text-sm text-muted-foreground">
-            Add, edit, or remove permissions for this role.
+            Choose what this role is allowed to access.
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={() => addPermission()}>
-          <Plus className="h-4 w-4" />
-          Add permission
-        </Button>
+        <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          {assignedValues.size} selected
+        </span>
       </div>
 
-      <div className="space-y-3">
-        {permissions.map((permission, index) => (
-          <div key={permission.id} className="flex items-start gap-2 rounded-xl border bg-muted/10 p-3">
-            <div className="min-w-0 flex-1 space-y-2">
-              <Label htmlFor={`permission-${permission.id}`} className="text-xs text-muted-foreground">
-                Permission {index + 1}
-              </Label>
-              <Input
-                id={`permission-${permission.id}`}
-                value={permission.value}
-                onChange={(event) => updatePermission(index, event.target.value)}
-                placeholder="e.g. customers.view"
-                list="permission-catalog-options"
-              />
-              {permission.value.trim() ? (
-                <p className="text-xs text-muted-foreground">{getPermissionLabel(permission.value.trim())}</p>
-              ) : null}
+      <div className="overflow-hidden rounded-xl border">
+        {catalogGroups.map((group, groupIndex) => (
+          <div key={group} className={groupIndex > 0 ? "border-t" : undefined}>
+            <div className="bg-muted/40 px-4 py-2.5">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {group}
+              </h4>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="mt-6 shrink-0 text-destructive hover:text-destructive"
-              onClick={() => removePermission(index)}
-            >
-              <Trash2 className="h-4 w-4" />
-              Remove
-            </Button>
-          </div>
-        ))}
-      </div>
-
-      <datalist id="permission-catalog-options">
-        {catalogGroups.flatMap((group) =>
-          getPermissionsByGroup(group).map((entry) => (
-            <option key={entry.value} value={entry.value}>
-              {entry.label}
-            </option>
-          ))
-        )}
-      </datalist>
-
-      <div className="space-y-3 rounded-xl border bg-muted/5 p-4">
-        <div>
-          <h4 className="text-sm font-medium">Quick add from catalog</h4>
-          <p className="text-xs text-muted-foreground">
-            Click a permission to add it to the list above.
-          </p>
-        </div>
-
-        {catalogGroups.map((group) => (
-          <div key={group} className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group}</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="divide-y">
               {getPermissionsByGroup(group).map((entry) => {
                 const isAssigned = assignedValues.has(entry.value);
                 return (
-                  <Button
+                  <label
                     key={entry.value}
-                    type="button"
-                    size="sm"
-                    variant={isAssigned ? "secondary" : "outline"}
-                    disabled={isAssigned}
-                    onClick={() => addCatalogPermission(entry.value)}
+                    htmlFor={`permission-${entry.value}`}
+                    className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/30"
                   >
-                    {entry.label}
-                    {isAssigned ? (
-                      <Badge variant="outline" className="ml-1 text-[10px]">
-                        Added
-                      </Badge>
-                    ) : null}
-                  </Button>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">{entry.label}</span>
+                      <span className="block font-mono text-xs text-muted-foreground">{entry.value}</span>
+                    </span>
+                    <Switch
+                      id={`permission-${entry.value}`}
+                      checked={isAssigned}
+                      onCheckedChange={(checked) => togglePermission(entry.value, checked)}
+                      aria-label={`${entry.label} permission`}
+                    />
+                  </label>
                 );
               })}
             </div>

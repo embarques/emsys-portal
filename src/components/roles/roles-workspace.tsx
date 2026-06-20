@@ -33,6 +33,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { formatAuditDate } from "@/lib/audit/display";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
@@ -355,7 +362,7 @@ export function RolesWorkspace() {
         }}
       />
 
-      <Dialog
+      <Sheet
         open={formMode !== null}
         onOpenChange={(open) => {
           if (!open) {
@@ -364,23 +371,21 @@ export function RolesWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{formMode === "edit" ? "Edit role" : "Add role"}</DialogTitle>
-            <DialogDescription>
+        <SheetContent className="flex w-full max-w-full flex-col p-0 sm:w-[560px] sm:max-w-[90vw]">
+          <SheetHeader className="shrink-0 border-b px-6 py-5 pr-16">
+            <SheetTitle>{formMode === "edit" ? "Edit role" : "Add role"}</SheetTitle>
+            <SheetDescription>
               {formMode === "edit"
-                ? "Update the role name and adjust its permission list."
-                : "Create a role and copy permissions from an existing role, or build the list from scratch."}
-            </DialogDescription>
-          </DialogHeader>
+                ? "Update the role name and choose its permissions."
+                : "Name the role and choose the permissions it should have."}
+            </SheetDescription>
+          </SheetHeader>
           <RoleForm
             key={editingRole?.roleId ?? "new"}
             initialValues={
               formMode === "edit" && editingRole ? roleToFormValues(editingRole) : createEmptyRoleForm()
             }
-            existingRoles={roles}
-            isEditing={formMode === "edit"}
-            updatedAt={editingRole?.updatedAt}
+            error={formError}
             submitLabel={formMode === "edit" ? "Save changes" : "Add role"}
             onSubmit={saveRole}
             onCancel={() => {
@@ -388,9 +393,8 @@ export function RolesWorkspace() {
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="z-[60]">
