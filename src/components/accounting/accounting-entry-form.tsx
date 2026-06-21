@@ -187,7 +187,7 @@ export function AccountingEntryForm({
       onKeyDown={handleEnterNavigation}
       className={isInline ? "space-y-3" : "flex min-h-0 flex-1 flex-col"}
     >
-      <div className={isInline ? "space-y-3" : "flex-1 space-y-6 overflow-y-auto px-6 py-5"}>
+      <div className={isInline ? "space-y-3" : "flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5"}>
       {!isInline && !fixedType ? (
       <div className="space-y-2">
         <Label htmlFor="type">

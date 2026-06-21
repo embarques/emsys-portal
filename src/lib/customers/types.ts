@@ -5,6 +5,7 @@ import {
   CUSTOMER_TYPE_SENDER,
   coerceCustomerTypeFromApi,
   isCustomerReceiverType,
+  isCustomerSenderType,
 } from "@/lib/customers/customer-type";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
@@ -18,6 +19,21 @@ import type { RecordPhone } from "@/lib/phones/types";
 
 export type CustomerPortalBranch = "usa" | "dr";
 
+/**
+ * GeoJSON Point. Coordinates use GeoJSON order: [longitude, latitude].
+ */
+export type AddressGeoLocation = {
+  type: "Point";
+  coordinates: [number, number];
+};
+
+/** Google verification metadata for an address. */
+export type AddressVerification = {
+  isVerified: boolean;
+  /** ISO timestamp of when the address was verified, or empty when never verified. */
+  verifiedAt: string;
+};
+
 export type CustomerCoreAddress = {
   address1: string;
   address2: string;
@@ -26,6 +42,20 @@ export type CustomerCoreAddress = {
   state: string;
   zipcode: string;
   country: string;
+  /** GeoJSON location resolved from Google Places, when available. */
+  location: AddressGeoLocation | null;
+  /** Google verification metadata, when available. */
+  verification: AddressVerification | null;
+};
+
+/** Parsed address resolved from a Google Places selection. */
+export type ParsedPlaceAddress = {
+  address1: string;
+  city: string;
+  state: string;
+  zipcode: string;
+  country: string;
+  location: AddressGeoLocation | null;
 };
 
 /** customer.Customer.branch — core.BranchDTO (list responses may omit `id`). */
@@ -295,7 +325,101 @@ export function createEmptyCustomerCoreAddress(country = ""): CustomerCoreAddres
     state: "",
     zipcode: "",
     country,
+    location: null,
+    verification: null,
   };
+}
+
+/** True when the address carries a confirmed Google verification. */
+export function isAddressVerified(
+  address: Pick<CustomerCoreAddress, "verification"> | null | undefined,
+): boolean {
+  return address?.verification?.isVerified === true;
+}
+
+/** Verification metadata stamped at `verifiedAt` (defaults to now). */
+export function createAddressVerification(
+  isVerified: boolean,
+  verifiedAt: string = new Date().toISOString(),
+): AddressVerification {
+  return {
+    isVerified,
+    verifiedAt: isVerified ? verifiedAt : "",
+  };
+}
+
+export function createAddressGeoLocation(longitude: number, latitude: number): AddressGeoLocation {
+  return { type: "Point", coordinates: [longitude, latitude] };
+}
+
+/**
+ * Apply a Google Places selection to an address: fills the resolved components,
+ * stores the GeoJSON location, and marks the address as verified.
+ * Existing apartment/address2 are preserved (Places rarely returns unit data).
+ */
+export function applyPlaceToCoreAddress(
+  address: CustomerCoreAddress,
+  place: ParsedPlaceAddress,
+): CustomerCoreAddress {
+  return {
+    ...address,
+    address1: place.address1 || address.address1,
+    city: place.city || address.city,
+    state: place.state || address.state,
+    zipcode: place.zipcode || address.zipcode,
+    country: place.country || address.country,
+    location: place.location ?? address.location,
+    verification: createAddressVerification(true),
+  };
+}
+
+/**
+ * Drop the Google verification (and location) once a verified field is edited by hand,
+ * so a "verified" badge never lies about an address that no longer matches Places.
+ */
+export function clearCoreAddressVerification(address: CustomerCoreAddress): CustomerCoreAddress {
+  if (!address.verification && !address.location) return address;
+  return { ...address, location: null, verification: null };
+}
+
+/** The address used as the customer's primary (first entry, falling back to `address`). */
+export function getCustomerPrimaryCoreAddress(
+  customer: Pick<Customer, "address" | "addresses">,
+): CustomerCoreAddress {
+  return customer.addresses[0] ?? customer.address;
+}
+
+/**
+ * True when an address holds a real location worth verifying. The country is
+ * auto-set from the customer type, so it's ignored — only a street, city, or
+ * zip indicates an address that Google can verify.
+ */
+export function coreAddressRequiresVerification(address: CustomerCoreAddress): boolean {
+  return Boolean(
+    address.address1.trim() || address.city.trim() || address.zipcode.trim(),
+  );
+}
+
+/**
+ * True when the customer has a primary address that is real but not yet
+ * verified. Only senders use Google verification — receivers pick from a
+ * predetermined city list and are never flagged.
+ */
+export function customerHasUnverifiedPrimaryAddress(
+  customer: Pick<Customer, "address" | "addresses" | "customerType">,
+): boolean {
+  if (!isCustomerSenderType(customer.customerType)) return false;
+  const primary = getCustomerPrimaryCoreAddress(customer);
+  return coreAddressRequiresVerification(primary) && !isAddressVerified(primary);
+}
+
+/** Addresses that hold a real location but still need a Google verification. */
+export function getUnverifiedCoreAddresses(
+  addresses: CustomerCoreAddress[],
+): CustomerCoreAddress[] {
+  return addresses.filter(
+    (address) => coreAddressRequiresVerification(address) && !isAddressVerified(address),
+  );
 }
 
 export function createCustomerBranchFromPortal(portal: CustomerPortalBranch): CustomerBranch {
@@ -463,7 +587,7 @@ export function getCustomerPhones(customer: Pick<Customer, "phones">): CustomerP
     }));
 }
 
-function coreAddressHasContent(address: CustomerCoreAddress): boolean {
+export function coreAddressHasContent(address: CustomerCoreAddress): boolean {
   return [
     address.address1,
     address.address2,

@@ -17,14 +17,13 @@ import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -47,11 +46,9 @@ import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
-  formatCustomerPartySummary,
   formatOrderCommentsSummary,
   formatOrderDate,
   formatOrderId,
-  formatOrderRouteAssignment,
   formatUserSummary,
   buildOrderCreatedByFilterOptions,
   getCustomerPhone,
@@ -243,35 +240,26 @@ export function OrdersWorkspace() {
 
   const tableColumns: DataTableColumn<Order>[] = [
     {
-      id: "id",
-      label: "Order ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (order) => order.id,
-    },
-    {
-      id: "date",
-      label: "date",
-      renderCell: (order) => formatOrderDate(order.date),
-    },
-    {
       id: "completed",
       label: "completed",
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (order) => (
-        <UniformWidthPill columnKey="completed">
-          <Badge
-            variant="outline"
-            className={
-              order.completed
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-            }
-          >
-            {getOrderCompletedLabel(order.completed)}
-          </Badge>
-        </UniformWidthPill>
+        <TableTagText
+          className={
+            order.completed
+              ? "text-emerald-700 dark:text-emerald-300"
+              : "text-amber-700 dark:text-amber-300"
+          }
+        >
+          {getOrderCompletedLabel(order.completed)}
+        </TableTagText>
       ),
+    },
+    {
+      id: "date",
+      label: "date",
+      renderCell: (order) => formatOrderDate(order.date),
     },
     {
       id: "createdAt",
@@ -286,19 +274,17 @@ export function OrdersWorkspace() {
       renderCell: (order) => order.sender.name.trim() || "—",
     },
     {
-      id: "sender.address.address1",
-      label: "sender.address.address1",
-      renderCell: (order) => order.sender.address.address1.trim() || "—",
+      id: "sender.address",
+      label: "sender.address",
+      renderCell: (order) =>
+        [order.sender.address.address1, order.sender.address.apartment]
+          .filter((value) => value.trim())
+          .join(", ") || "—",
     },
     {
       id: "sender.address.city",
       label: "sender.address.city",
       renderCell: (order) => order.sender.address.city.trim() || "—",
-    },
-    {
-      id: "sender.address.state",
-      label: "sender.address.state",
-      renderCell: (order) => order.sender.address.state.trim() || "—",
     },
     {
       id: "sender.address.zipcode",
@@ -311,25 +297,9 @@ export function OrdersWorkspace() {
       renderCell: (order) => getCustomerPhone(order.sender),
     },
     {
-      id: "purpose",
-      label: "purpose",
-      renderCell: (order) => order.purpose || "—",
-    },
-    {
       id: "comments",
       label: "comments",
       renderCell: (order) => formatOrderCommentsSummary(order),
-    },
-    {
-      id: "routeAssignment",
-      label: "routeAssignment",
-      renderCell: (order) => formatOrderRouteAssignment(order),
-    },
-    {
-      id: "receiver",
-      label: "receiver",
-      renderCell: (order) =>
-        order.receiver ? formatCustomerPartySummary(order.receiver) : "—",
     },
     {
       id: "user",
@@ -342,20 +312,9 @@ export function OrdersWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDate(order.updatedAt),
     },
-    {
-      id: "sector",
-      label: "sector",
-      renderCell: (order) => (order.sector ? `${order.sector.id} · ${order.sector.name}` : "—"),
-    },
-    {
-      id: "employee",
-      label: "employee",
-      defaultVisible: false,
-      renderCell: (order) => order.employee?.name.trim() || "—",
-    },
   ];
 
-  const columnVisibility = useColumnVisibility("orders-v2", tableColumns);
+  const columnVisibility = useColumnVisibility("orders-v3", tableColumns);
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== deferredQuery.trim();

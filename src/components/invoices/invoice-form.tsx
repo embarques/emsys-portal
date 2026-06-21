@@ -21,7 +21,9 @@ import {
   type SearchableSelectOption,
 } from "@/components/ui/searchable-select";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
+import { UnverifiedAddressNotice } from "@/components/addresses/unverified-address-notice";
 import { InvoiceLineItemsEditor } from "@/components/invoices/invoice-line-items-editor";
+import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatContainerLabel } from "@/lib/containers/display";
@@ -37,6 +39,7 @@ import {
   CUSTOMER_TYPE_RECEIVER,
   CUSTOMER_TYPE_SENDER,
   createEmptyCustomerForm,
+  customerHasUnverifiedPrimaryAddress,
   customerToFormValues,
   type Customer,
   type CustomerFormValues,
@@ -363,6 +366,13 @@ export function InvoiceForm({
   const amountPaid = Number(values.amountPaid) || 0;
   const balance = computeInvoiceBalance(subtotal, discount, amountPaid);
 
+  const unverifiedPartyMessage =
+    "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.";
+  // Only senders use Google verification; receivers use a predetermined city list.
+  const blockForUnverifiedParty =
+    isGoogleMapsConfigured() &&
+    Boolean(values.sender && customerHasUnverifiedPrimaryAddress(values.sender));
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
@@ -370,6 +380,12 @@ export function InvoiceForm({
       const message = "Sender is required.";
       setFormError(message);
       onFormErrorChange?.(message);
+      return;
+    }
+
+    if (blockForUnverifiedParty) {
+      setFormError(unverifiedPartyMessage);
+      onFormErrorChange?.(unverifiedPartyMessage);
       return;
     }
 
@@ -388,7 +404,7 @@ export function InvoiceForm({
   return (
     <>
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-        <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+        <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
           <FormSection icon={Receipt} title="Invoice details" required>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -531,7 +547,15 @@ export function InvoiceForm({
                     ...senderSelectOptions,
                   ]}
                 />
-                {values.sender ? <CustomerContactSummary customer={values.sender} /> : null}
+                {values.sender ? (
+                  <>
+                    <CustomerContactSummary customer={values.sender} />
+                    <UnverifiedAddressNotice
+                      customer={values.sender}
+                      onUpdateAddress={() => openEditCustomer("sender")}
+                    />
+                  </>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -557,7 +581,15 @@ export function InvoiceForm({
                     ...receiverSelectOptions,
                   ]}
                 />
-                {values.receiver ? <CustomerContactSummary customer={values.receiver} /> : null}
+                {values.receiver ? (
+                  <>
+                    <CustomerContactSummary customer={values.receiver} />
+                    <UnverifiedAddressNotice
+                      customer={values.receiver}
+                      onUpdateAddress={() => openEditCustomer("receiver")}
+                    />
+                  </>
+                ) : null}
               </div>
             </div>
           </FormSection>
@@ -616,11 +648,20 @@ export function InvoiceForm({
 
         <div className="shrink-0 border-t border-border bg-card px-6 py-4">
           {errorMessage ? <p className="mb-3 text-sm text-destructive">{errorMessage}</p> : null}
+          {!errorMessage && blockForUnverifiedParty ? (
+            <p className="mb-3 text-sm text-amber-700 dark:text-amber-300">{unverifiedPartyMessage}</p>
+          ) : null}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit">{submitLabel}</Button>
+            <Button
+              type="submit"
+              disabled={blockForUnverifiedParty}
+              title={blockForUnverifiedParty ? unverifiedPartyMessage : undefined}
+            >
+              {submitLabel}
+            </Button>
           </div>
         </div>
       </form>

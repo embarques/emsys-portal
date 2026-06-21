@@ -15,13 +15,12 @@ import { CustomerForm } from "@/components/customers/customer-form";
 import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -46,11 +45,8 @@ import { formatPrimaryPhonesDisplayOrDash } from "@/lib/phones/phones";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   formatAccountBalance,
-  formatCustomerBranchLabel,
   getClientTypeBadgeClass,
-  getCustomerBranchBadgeClass,
   getCustomerTypeLabel,
-  truncateCustomerId,
 } from "@/lib/customers/display";
 import {
   useCreateCustomer,
@@ -294,6 +290,20 @@ export function CustomersWorkspace() {
 
   const tableColumns: DataTableColumn<Customer>[] = [
     {
+      id: "customerType",
+      label: "customerType",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
+      renderCell: (customer) => {
+        const clientType = getCustomerClientType(customer) ?? "sender";
+        return (
+          <TableTagText className={getClientTypeBadgeClass(clientType)}>
+            {getCustomerTypeLabel(customer)}
+          </TableTagText>
+        );
+      },
+    },
+    {
       id: "name",
       label: "name",
       cellClassName: "font-medium",
@@ -305,33 +315,17 @@ export function CustomersWorkspace() {
       renderCell: (customer) => formatPrimaryPhonesDisplayOrDash(customer.phones),
     },
     {
-      id: "customerType",
-      label: "customerType",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (customer) => {
-        const clientType = getCustomerClientType(customer) ?? "sender";
-        return (
-          <UniformWidthPill columnKey="customerType">
-            <Badge className={getClientTypeBadgeClass(clientType)}>{getCustomerTypeLabel(customer)}</Badge>
-          </UniformWidthPill>
-        );
-      },
-    },
-    {
       id: "IDNumber",
       label: "IDNumber",
       renderCell: (customer) => customer.IDNumber || "—",
     },
     {
-      id: "address.address1",
-      label: "address.address1",
-      renderCell: (customer) => customer.address.address1 || "—",
-    },
-    {
-      id: "address.address2",
-      label: "address.address2",
-      renderCell: (customer) => customer.address.address2 || "—",
+      id: "address",
+      label: "address",
+      renderCell: (customer) =>
+        [customer.address.address1, customer.address.apartment, customer.address.address2]
+          .filter((value) => value.trim())
+          .join(", ") || "—",
     },
     {
       id: "address.city",
@@ -347,22 +341,6 @@ export function CustomersWorkspace() {
       id: "address.zipcode",
       label: "address.zipcode",
       renderCell: (customer) => customer.address.zipcode || "—",
-    },
-    {
-      id: "address.country",
-      label: "address.country",
-      renderCell: (customer) => customer.address.country || "—",
-    },
-    {
-      id: "branch",
-      label: "branch",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (customer) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getCustomerBranchBadgeClass(customer)}>{formatCustomerBranchLabel(customer)}</Badge>
-        </UniformWidthPill>
-      ),
     },
     {
       id: "email",
@@ -397,12 +375,6 @@ export function CustomersWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (customer) => (customer.updatedAt ? formatAuditDate(customer.updatedAt) : "—"),
     },
-    {
-      id: "id",
-      label: "Customer ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (customer) => truncateCustomerId(customer.id),
-    },
   ];
 
   const isListFiltered =
@@ -431,7 +403,7 @@ export function CustomersWorkspace() {
     catalogLoading: stats.isLoading,
   });
 
-  const columnVisibility = useColumnVisibility("customers-v2", tableColumns);
+  const columnVisibility = useColumnVisibility("customers-v3", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
@@ -541,7 +513,7 @@ export function CustomersWorkspace() {
             icon={Users}
             title="Loading customers"
             description="Gathering profiles, contact details, and account balances…"
-            columns={["Customer", "Type", "Phone", "Branch", "Balance"]}
+            columns={["Type", "Customer", "Phone", "Address", "Balance"]}
           />
         ) : (
           <DataTable

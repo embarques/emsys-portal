@@ -12,13 +12,12 @@ import {
 import { BranchForm } from "@/components/branches/branch-form";
 import { BranchViewSheet } from "@/components/branches/branch-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -210,9 +209,9 @@ export function BranchesWorkspace() {
       cellClassName: "overflow-visible",
       renderCell: (branch) =>
         branch.type ? (
-          <UniformWidthPill columnKey="type">
-            <Badge className={getBranchTypeBadgeClass(branch.type)}>{branch.type}</Badge>
-          </UniformWidthPill>
+          <TableTagText className={getBranchTypeBadgeClass(branch.type)}>
+            {branch.type}
+          </TableTagText>
         ) : (
           "—"
         ),

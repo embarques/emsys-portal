@@ -237,14 +237,20 @@ export function OrderPartyEditor({
             <p className="text-sm font-semibold">Phone numbers</p>
             <p className="text-xs text-muted-foreground">At least one phone is required.</p>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={addPhone}>
-            <Plus className="h-4 w-4" />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+            onClick={addPhone}
+          >
+            <Plus className="size-4" />
             Add phone
           </Button>
         </div>
 
         {values.phones.map((phone, index) => (
-          <div key={phone.id} className="rounded-lg border bg-background p-3">
+          <div key={phone.id} className="rounded-lg border bg-card p-3">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-medium">Phone {index + 1}</p>
               <Button
@@ -289,8 +295,14 @@ export function OrderPartyEditor({
             <p className="text-sm font-semibold">Addresses</p>
             <p className="text-xs text-muted-foreground">Select which address applies to this order.</p>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={addAddress}>
-            <Plus className="h-4 w-4" />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+            onClick={addAddress}
+          >
+            <Plus className="size-4" />
             Add address
           </Button>
         </div>
@@ -302,7 +314,7 @@ export function OrderPartyEditor({
           return (
             <div
               key={address.id}
-              className={cn("rounded-lg border bg-background p-3", selected && "border-primary ring-1 ring-primary/20")}
+              className={cn("rounded-lg border bg-card p-3", selected && "border-primary ring-1 ring-primary/20")}
             >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">

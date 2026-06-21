@@ -16,7 +16,7 @@ import {
 import { RoleForm } from "@/components/roles/role-form";
 import { RoleViewSheet } from "@/components/roles/role-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -25,7 +25,6 @@ import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -263,9 +262,7 @@ export function RolesWorkspace() {
       cellClassName: "overflow-visible",
       renderCell: (role) => (
         <div className="space-y-1">
-          <UniformWidthPill columnKey="permissions">
-            <Badge variant="secondary">{role.permissions.length} permissions</Badge>
-          </UniformWidthPill>
+          <TableTagText>{role.permissions.length} permissions</TableTagText>
           <p className="max-w-[320px] truncate text-xs text-muted-foreground">
             {formatPermissionsSummary(role, 4)}
           </p>

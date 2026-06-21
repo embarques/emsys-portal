@@ -192,7 +192,7 @@ export function SearchableSelect({
               autoFocus={autoFocus}
               disabled={disabled}
               className={cn(
-                "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors",
+                "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-1 text-sm shadow-xs outline-none transition-colors",
                 "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
                 "disabled:cursor-not-allowed disabled:opacity-50",
                 className
@@ -237,7 +237,7 @@ export function SearchableSelect({
                 inputRef.current?.focus();
               }}
               className={cn(
-                "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors",
+                "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-1 text-sm shadow-xs transition-colors",
                 "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
                 disabled && "cursor-not-allowed opacity-50",
                 className

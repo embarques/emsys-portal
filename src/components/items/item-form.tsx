@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { createEmptyItemForm, type ItemFormValues } from "@/lib/items/types";
 
 const textareaClassName =
-  "flex min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
+  "flex min-h-24 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type ItemFormProps = {
   initialValues?: ItemFormValues;
@@ -48,7 +48,7 @@ export function ItemForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+      <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
       <div className="space-y-2">
         <Label htmlFor="description">
           Description <span className="text-destructive">*</span>

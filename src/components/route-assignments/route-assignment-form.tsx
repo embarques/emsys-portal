@@ -90,7 +90,7 @@ export function RouteAssignmentForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+      <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
       {!isEditing && copySources.length > 0 ? (
         <section className="rounded-xl border border-dashed bg-muted/10 p-4">
           <div className="flex items-start gap-3">

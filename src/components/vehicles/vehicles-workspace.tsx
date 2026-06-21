@@ -13,13 +13,12 @@ import {
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { VehicleViewSheet } from "@/components/vehicles/vehicle-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -240,9 +239,9 @@ export function VehiclesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (vehicle) => (
-        <UniformWidthPill columnKey="fuelType">
-          <Badge className={getFuelTypeBadgeClass(vehicle.fuelType)}>{getFuelTypeLabel(vehicle.fuelType)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getFuelTypeBadgeClass(vehicle.fuelType)}>
+          {getFuelTypeLabel(vehicle.fuelType)}
+        </TableTagText>
       ),
     },
     {
@@ -251,9 +250,9 @@ export function VehiclesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (vehicle) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getBranchBadgeClass(vehicle.branch)}>{getBranchLabel(vehicle.branch)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getBranchBadgeClass(vehicle.branch)}>
+          {getBranchLabel(vehicle.branch)}
+        </TableTagText>
       ),
     },
     {

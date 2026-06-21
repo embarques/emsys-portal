@@ -13,7 +13,7 @@ import {
 import { RouteForm } from "@/components/routes/route-form";
 import { RouteViewSheet } from "@/components/routes/route-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -26,7 +26,6 @@ import {
   TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -191,9 +190,9 @@ export function RoutesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (route) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getRouteBranchBadgeClass(route.branch)}>{getRouteBranchLabel(route.branch)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getRouteBranchBadgeClass(route.branch)}>
+          {getRouteBranchLabel(route.branch)}
+        </TableTagText>
       ),
     },
     {
@@ -224,18 +223,14 @@ export function RoutesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (route) => (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
           {route.places.slice(0, 2).map((place) => (
-            <UniformWidthPill key={place.id} columnKey="places">
-              <Badge className={getPlaceKindBadgeClass(place.kind)}>
-                {getPlaceKindLabel(place.kind)}
-              </Badge>
-            </UniformWidthPill>
+            <TableTagText key={place.id} className={getPlaceKindBadgeClass(place.kind)}>
+              {getPlaceKindLabel(place.kind)}
+            </TableTagText>
           ))}
           {route.places.length > 2 ? (
-            <UniformWidthPill columnKey="places">
-              <Badge variant="outline">+{route.places.length - 2}</Badge>
-            </UniformWidthPill>
+            <TableTagText>+{route.places.length - 2}</TableTagText>
           ) : null}
         </div>
       ),

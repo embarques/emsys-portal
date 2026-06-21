@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -366,9 +366,9 @@ export function LabelsWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (label) => (
-        <UniformWidthPill columnKey="status">
-          <Badge className={getLabelStatusBadgeClass(label.status)}>{getLabelStatusLabel(label.status)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getLabelStatusBadgeClass(label.status)}>
+          {getLabelStatusLabel(label.status)}
+        </TableTagText>
       ),
     },
     {

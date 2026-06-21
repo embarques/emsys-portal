@@ -162,6 +162,8 @@ const EMPTY_CUSTOMER: Customer = {
     state: "",
     zipcode: "",
     country: "US",
+    location: null,
+    verification: null,
   },
   addresses: [],
   receivers: [],

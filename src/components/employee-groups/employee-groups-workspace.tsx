@@ -13,7 +13,7 @@ import {
 import { EmployeeGroupForm } from "@/components/employee-groups/employee-group-form";
 import { EmployeeGroupViewSheet } from "@/components/employee-groups/employee-group-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -26,7 +26,6 @@ import {
   TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -182,11 +181,7 @@ export function EmployeeGroupsWorkspace() {
       label: "Count",
       truncateCell: false,
       cellClassName: "overflow-visible",
-      renderCell: (group) => (
-        <UniformWidthPill columnKey="count">
-          <Badge variant="outline">{group.employeeIds.length}</Badge>
-        </UniformWidthPill>
-      ),
+      renderCell: (group) => <TableTagText>{group.employeeIds.length}</TableTagText>,
     },
     {
       id: "branch",
@@ -194,11 +189,9 @@ export function EmployeeGroupsWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (group) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getEmployeeGroupBranchBadgeClass(group.branch)}>
-            {getEmployeeGroupBranchLabel(group.branch)}
-          </Badge>
-        </UniformWidthPill>
+        <TableTagText className={getEmployeeGroupBranchBadgeClass(group.branch)}>
+          {getEmployeeGroupBranchLabel(group.branch)}
+        </TableTagText>
       ),
     },
     {

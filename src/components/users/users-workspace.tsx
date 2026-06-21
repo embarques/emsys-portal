@@ -14,14 +14,13 @@ import {
 import { UserForm } from "@/components/users/user-form";
 import { UserViewSheet } from "@/components/users/user-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -264,9 +263,9 @@ export function UsersWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (user) => (
-        <UniformWidthPill columnKey="active">
-          <Badge className={getUserActiveBadgeClass(user.active)}>{getUserActiveLabel(user.active)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getUserActiveBadgeClass(user.active)}>
+          {getUserActiveLabel(user.active)}
+        </TableTagText>
       ),
     },
     {
@@ -275,9 +274,9 @@ export function UsersWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (user) => (
-        <UniformWidthPill columnKey="role.name">
-          <Badge className={getUserRoleBadgeClass(user.role.name)}>{getUserRoleLabel(user.role.name)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getUserRoleBadgeClass(user.role.name)}>
+          {getUserRoleLabel(user.role.name)}
+        </TableTagText>
       ),
     },
     {
@@ -292,9 +291,9 @@ export function UsersWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (user) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getUserBranchBadgeClass(user)}>{formatUserBranchLabel(user)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getUserBranchBadgeClass(user)}>
+          {formatUserBranchLabel(user)}
+        </TableTagText>
       ),
     },
     {

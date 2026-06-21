@@ -16,7 +16,7 @@ import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventoryViewSheet } from "@/components/inventory/inventory-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -29,7 +29,6 @@ import {
   TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -243,9 +242,9 @@ export function InventoryWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (item) => (
-        <UniformWidthPill columnKey="status">
-          <Badge className={getStatusBadgeClass(item.status)}>{getStatusLabel(item.status)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getStatusBadgeClass(item.status)}>
+          {getStatusLabel(item.status)}
+        </TableTagText>
       ),
     },
     {

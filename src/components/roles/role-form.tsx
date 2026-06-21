@@ -53,7 +53,7 @@ export function RoleForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+      <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
         <div className="space-y-2">
           <Label htmlFor="name">
             Role name <span className="text-destructive">*</span>

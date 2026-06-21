@@ -22,6 +22,7 @@ import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import {
   TableDirectoryToolbar,
@@ -29,7 +30,6 @@ import {
   TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -43,7 +43,6 @@ import {
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranches } from "@/lib/branches/hooks/use-branches";
-import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeInvoiceKpis,
   formatInvoiceDate,
@@ -53,7 +52,6 @@ import {
   getInvoiceBalance,
   getInvoiceBalanceMoneyClass,
   getInvoiceDiscountMoneyClass,
-  getInvoicePartyDisplayPhone,
   getInvoicePaidMoneyClass,
   getInvoicePaidStatusBadgeClass,
   getInvoicePaidStatusLabel,
@@ -315,11 +313,9 @@ export function InvoicesWorkspace() {
       renderCell: (invoice) => {
         const status = resolveInvoicePaidStatus(invoice);
         return (
-          <UniformWidthPill columnKey="paidStatus">
-            <Badge className={getInvoicePaidStatusBadgeClass(status)}>
-              {getInvoicePaidStatusLabel(status)}
-            </Badge>
-          </UniformWidthPill>
+          <TableTagText className={getInvoicePaidStatusBadgeClass(status)}>
+            {getInvoicePaidStatusLabel(status)}
+          </TableTagText>
         );
       },
     },
@@ -329,11 +325,9 @@ export function InvoicesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (invoice) => (
-        <UniformWidthPill columnKey="paymentLocation">
-          <Badge className={getBranchBadgeClass(invoice.paymentLocation)}>
-            {getPaymentLocationLabel(invoice.paymentLocation)}
-          </Badge>
-        </UniformWidthPill>
+        <TableTagText className={getBranchBadgeClass(invoice.paymentLocation)}>
+          {getPaymentLocationLabel(invoice.paymentLocation)}
+        </TableTagText>
       ),
     },
     {
@@ -342,23 +336,9 @@ export function InvoicesWorkspace() {
       renderCell: (invoice) => formatInvoicePartySummary(invoice.sender),
     },
     {
-      id: "senderPhone",
-      label: "Sender phone",
-      truncateCell: false,
-      cellClassName: "whitespace-nowrap tabular-nums",
-      renderCell: (invoice) => getInvoicePartyDisplayPhone(invoice.sender),
-    },
-    {
       id: "receiver",
       label: "Receiver",
       renderCell: (invoice) => formatInvoicePartySummary(invoice.receiver),
-    },
-    {
-      id: "receiverPhone",
-      label: "Receiver phone",
-      truncateCell: false,
-      cellClassName: "whitespace-nowrap tabular-nums",
-      renderCell: (invoice) => getInvoicePartyDisplayPhone(invoice.receiver),
     },
     {
       id: "total",
@@ -410,26 +390,9 @@ export function InvoicesWorkspace() {
         );
       },
     },
-    {
-      id: "createdAt",
-      label: "Date created",
-      cellClassName: "text-muted-foreground",
-      renderCell: (invoice) => formatAuditDate(invoice.createdAt),
-    },
-    {
-      id: "createdBy",
-      label: "User created",
-      renderCell: (invoice) => invoice.createdBy,
-    },
-    {
-      id: "updatedAt",
-      label: "Date modified",
-      cellClassName: "text-muted-foreground",
-      renderCell: (invoice) => formatAuditDate(invoice.updatedAt),
-    },
   ];
 
-  const columnVisibility = useColumnVisibility("invoices-v3", tableColumns);
+  const columnVisibility = useColumnVisibility("invoices-v4", tableColumns);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount + (filters.paymentLocation !== "all" ? 1 : 0);
   const hasActiveFilters =

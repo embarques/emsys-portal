@@ -13,14 +13,13 @@ import {
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { EmployeeViewSheet } from "@/components/employees/employee-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -259,11 +258,9 @@ export function EmployeesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (employee) => (
-        <UniformWidthPill columnKey="active">
-          <Badge className={getEmployeeActiveBadgeClass(employee.active)}>
-            {getEmployeeActiveLabel(employee.active)}
-          </Badge>
-        </UniformWidthPill>
+        <TableTagText className={getEmployeeActiveBadgeClass(employee.active)}>
+          {getEmployeeActiveLabel(employee.active)}
+        </TableTagText>
       ),
     },
     {
@@ -284,11 +281,9 @@ export function EmployeesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (employee) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getEmployeeBranchBadgeClass(employee)}>
-            {formatEmployeeBranchLabel(employee)}
-          </Badge>
-        </UniformWidthPill>
+        <TableTagText className={getEmployeeBranchBadgeClass(employee)}>
+          {formatEmployeeBranchLabel(employee)}
+        </TableTagText>
       ),
     },
     {
