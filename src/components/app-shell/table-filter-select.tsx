@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 
 const baseClassName =
-  "h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50";
+  "h-9 min-w-0 flex-1 rounded-md border border-input bg-background text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50";
 
 type TableFilterSelectOption = {
   value: string;

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
-import { Check } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -57,10 +57,19 @@ type SearchableSelectProps = {
   "aria-labelledby"?: string;
 };
 
+const triggerClassName =
+  "relative flex min-h-10 w-full items-center rounded-lg border-2 border-foreground/60 bg-card py-2 pl-3 pr-9 text-sm outline-none transition-[border-color,box-shadow] focus-within:border-foreground data-[state=open]:border-foreground";
+
+const chevronButtonClassName =
+  "absolute inset-y-0 right-0 flex w-9 shrink-0 items-center justify-center text-foreground/70 disabled:cursor-not-allowed";
+
 const popoverContentClassName =
   // pointer-events-auto keeps the list interactive when opened inside a Radix modal (Dialog),
   // which disables pointer events on the body and would otherwise block hover/scroll/click.
-  "pointer-events-auto w-[var(--radix-popover-trigger-width)] min-w-[12rem] overflow-hidden border-muted-foreground/25 p-0 shadow-lg";
+  "pointer-events-auto w-[var(--radix-popover-trigger-width)] min-w-[12rem] overflow-hidden rounded-lg border border-border bg-popover p-0 shadow-md";
+
+const listItemClassName =
+  "cursor-pointer rounded-none px-4 py-3 text-sm data-[selected=true]:bg-muted/60 data-[selected=true]:text-foreground";
 
 /**
  * Keep wheel/touch scrolling working when the list is portaled out of a Radix modal (Dialog).
@@ -81,7 +90,7 @@ export function SearchableSelect({
   value,
   onValueChange,
   placeholder = "Select an option",
-  searchPlaceholder = "Search…",
+  searchPlaceholder,
   emptyMessage = "No results found.",
   onSearchChange,
   manualFiltering = false,
@@ -142,6 +151,16 @@ export function SearchableSelect({
     setOpen(false);
   }
 
+  function toggleOpen() {
+    if (disabled) return;
+    handleOpenChange(!open);
+    if (!open) {
+      inputRef.current?.focus();
+    }
+  }
+
+  const ChevronIcon = open ? ChevronUp : ChevronDown;
+
   const optionItems = options.map((option) => {
     const detailLines = [option.description, ...(option.descriptionLines ?? [])].filter(
       (line): line is string => Boolean(line && line.trim()),
@@ -155,15 +174,8 @@ export function SearchableSelect({
         disabled={option.disabled}
         onMouseDown={(event) => event.preventDefault()}
         onSelect={() => handleSelect(option.value)}
-        className={cn(detailLines.length > 0 && "items-start")}
+        className={cn(listItemClassName, detailLines.length > 0 && "items-start")}
       >
-        <Check
-          className={cn(
-            "size-4 shrink-0",
-            detailLines.length > 0 && "mt-0.5",
-            option.value === value ? "opacity-100" : "opacity-0",
-          )}
-        />
         <span className="flex min-w-0 flex-col">
           <span className="truncate">{option.label}</span>
           {detailLines.map((line, lineIndex) => (
@@ -191,22 +203,30 @@ export function SearchableSelect({
               aria-labelledby={ariaLabelledBy}
               autoFocus={autoFocus}
               disabled={disabled}
+              data-state={open ? "open" : "closed"}
               className={cn(
-                "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-1 text-sm shadow-xs outline-none transition-colors",
-                "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                triggerClassName,
                 "disabled:cursor-not-allowed disabled:opacity-50",
-                className
+                className,
+                "pr-9 pl-3",
               )}
             >
-              <span className={cn("truncate text-left", !selectedOption && "text-muted-foreground")}>
+              <span className={cn("min-w-0 flex-1 truncate text-left", !selectedOption && "text-muted-foreground")}>
                 {selectedOption ? selectedOption.label : placeholder}
+              </span>
+              <span className={cn(chevronButtonClassName, disabled && "pointer-events-none opacity-50")}>
+                <ChevronIcon className="size-4" aria-hidden />
               </span>
             </button>
           </PopoverTrigger>
-          <PopoverContent align={align} className={cn(popoverContentClassName, contentClassName)}>
+          <PopoverContent
+            align={align}
+            sideOffset={4}
+            className={cn(popoverContentClassName, contentClassName)}
+          >
             <Command>
-              <CommandList ref={scrollIsolationRef}>
-                <CommandEmpty>{emptyMessage}</CommandEmpty>
+              <CommandList ref={scrollIsolationRef} className="max-h-60 p-0">
+                <CommandEmpty className="px-4 py-3 text-sm">{emptyMessage}</CommandEmpty>
                 {optionItems}
               </CommandList>
             </Command>
@@ -226,28 +246,32 @@ export function SearchableSelect({
           onOpenChange={(next) => {
             if (disabled) return;
             setOpen(next);
-            if (!next) changeQuery("");
+            if (!next) {
+              changeQuery("");
+              onClose?.();
+            }
           }}
         >
           <PopoverAnchor asChild>
             <div
+              data-state={open ? "open" : "closed"}
               onClick={() => {
                 if (disabled) return;
                 setOpen(true);
                 inputRef.current?.focus();
               }}
               className={cn(
-                "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-1 text-sm shadow-xs transition-colors",
-                "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
+                triggerClassName,
                 disabled && "cursor-not-allowed opacity-50",
-                className
+                className,
+                "pr-9 pl-3",
               )}
             >
               <CommandPrimitive.Input
                 ref={inputRef}
                 id={id}
                 disabled={disabled}
-                value={query}
+                value={open ? query : query || selectedOption?.label || ""}
                 onValueChange={(next) => {
                   changeQuery(next);
                   if (!open) setOpen(true);
@@ -264,22 +288,46 @@ export function SearchableSelect({
                 aria-expanded={open}
                 aria-label={ariaLabel}
                 aria-labelledby={ariaLabelledBy}
-                placeholder={open ? searchPlaceholder : selectedOption ? selectedOption.label : placeholder}
+                placeholder={
+                  open
+                    ? (searchPlaceholder ?? placeholder)
+                    : selectedOption
+                      ? undefined
+                      : placeholder
+                }
+                readOnly={!open && Boolean(selectedOption)}
                 className={cn(
-                  "flex-1 truncate bg-transparent text-left outline-none disabled:cursor-not-allowed",
-                  !open && selectedOption ? "placeholder:text-foreground" : "placeholder:text-muted-foreground"
+                  "min-w-0 flex-1 truncate bg-transparent text-left outline-none disabled:cursor-not-allowed",
+                  "placeholder:text-muted-foreground",
                 )}
               />
+              <button
+                type="button"
+                tabIndex={-1}
+                disabled={disabled}
+                aria-label={open ? "Close options" : "Open options"}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleOpen();
+                }}
+                className={chevronButtonClassName}
+              >
+                <ChevronIcon className="size-4" aria-hidden />
+              </button>
             </div>
           </PopoverAnchor>
           <PopoverContent
             align={align}
+            sideOffset={4}
             onOpenAutoFocus={(event) => event.preventDefault()}
             onCloseAutoFocus={(event) => event.preventDefault()}
             className={cn(popoverContentClassName, contentClassName)}
           >
-            <CommandList ref={scrollIsolationRef}>
-              <CommandEmpty>{loading ? loadingMessage : emptyMessage}</CommandEmpty>
+            <CommandList ref={scrollIsolationRef} className="max-h-60 p-0">
+              <CommandEmpty className="px-4 py-3 text-sm">
+                {loading ? loadingMessage : emptyMessage}
+              </CommandEmpty>
               {optionItems}
             </CommandList>
           </PopoverContent>

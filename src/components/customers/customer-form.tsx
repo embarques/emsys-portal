@@ -200,7 +200,6 @@ function AddressFieldGrid({
             }}
             options={cityOptions}
             placeholder="Select a city"
-            searchPlaceholder="Search city…"
           />
         </div>
       ) : (
