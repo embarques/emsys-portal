@@ -600,8 +600,8 @@ export function CustomersWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
             <DialogTitle>{formMode === "edit" ? "Edit customer" : "Add customer"}</DialogTitle>
           </DialogHeader>
           <CustomerForm

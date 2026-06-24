@@ -5,15 +5,17 @@ import {
   MapPin,
   Phone as PhoneIcon,
   Plus,
+  Star,
   StickyNote,
   Trash2,
   User,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
+import { REQUIRED_PHONE_DIGITS, isCompletePhoneNumber } from "@/lib/phones/phones";
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import { AddressVerificationBadge } from "@/components/addresses/address-verification-badge";
 import { Button } from "@/components/ui/button";
@@ -33,9 +35,10 @@ import {
   applyCustomerTypeBranch,
   applyPlaceToCoreAddress,
   clearCoreAddressVerification,
+  coreAddressRequiresVerification,
   createEmptyCustomerCoreAddress,
   createEmptyCustomerForm,
-  getUnverifiedCoreAddresses,
+  isAddressVerified,
   normalizeCustomerFormValues,
   normalizeCustomerType,
   syncCustomerFormAddresses,
@@ -55,7 +58,12 @@ const VERIFICATION_SENSITIVE_FIELDS: (keyof CustomerCoreAddress)[] = [
 ];
 
 const textareaClassName =
-  "flex min-h-24 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
+  "flex min-h-16 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
+
+/** Capitalize the first letter of every word, preserving the rest as typed. */
+function capitalizeWords(value: string): string {
+  return value.replace(/(^|\s)(\p{L})/gu, (_match, boundary, letter) => boundary + letter.toUpperCase());
+}
 
 type CustomerFormProps = {
   initialValues?: CustomerFormValues;
@@ -72,19 +80,24 @@ type CustomerFormProps = {
 type FormSectionProps = {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
+  /** Optional control rendered on the right of the section header (e.g. an add button). */
+  action?: React.ReactNode;
   children: React.ReactNode;
 };
 
-function FormSection({ icon: Icon, title, children }: FormSectionProps) {
+function FormSection({ icon: Icon, title, action, children }: FormSectionProps) {
   return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2.5">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Icon className="size-4" />
-        </span>
-        <h3 className="text-sm font-semibold leading-none text-foreground">{title}</h3>
+    <section className="space-y-2.5">
+      <div className="flex min-h-7 items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Icon className="size-4 shrink-0 text-primary" />
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {title}
+          </h3>
+        </div>
+        {action}
       </div>
-      <div className="space-y-4">{children}</div>
+      {children}
     </section>
   );
 }
@@ -101,33 +114,6 @@ type AddressFieldGridProps = {
 
 const CITY_DROPDOWN_OPTIONS = getDominicanCityOptions();
 
-function ReadOnlyAddressInput({
-  id,
-  label,
-  value,
-  title,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  title: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        value={value}
-        readOnly
-        disabled
-        aria-readonly
-        className="bg-muted/60"
-        title={title}
-      />
-    </div>
-  );
-}
-
 function AddressFieldGrid({
   idPrefix,
   address,
@@ -143,122 +129,161 @@ function AddressFieldGrid({
       ? [{ value: address.city, label: address.city }, ...CITY_DROPDOWN_OPTIONS]
       : CITY_DROPDOWN_OPTIONS;
 
-  return (
-    <div className="space-y-3">
-      <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-address1`}>{labels.address1}</Label>
-        {mode === "sender" ? (
-          <AddressAutocompleteInput
-            id={`${idPrefix}-address1`}
-            value={address.address1}
-            onValueChange={(value) => onChange("address1", value)}
-            onPlaceSelected={onPlaceSelected}
-            placeholder="Start typing a street address…"
-          />
-        ) : (
-          <Input
-            id={`${idPrefix}-address1`}
-            value={address.address1}
-            onChange={(event) => onChange("address1", event.target.value)}
-            placeholder="Street address"
-          />
-        )}
-      </div>
+  const googleEnabled = isGoogleMapsConfigured();
+  // Senders use Google autocomplete to fill city/state/zip, so we render those
+  // as read-only text instead of editable fields.
+  const senderAutoFill = mode === "sender" && googleEnabled;
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-address2`}>{labels.address2}</Label>
-          <Input
-            id={`${idPrefix}-address2`}
-            value={address.address2}
-            onChange={(event) => onChange("address2", event.target.value)}
-          />
+  const cityState = [address.city, address.state]
+    .filter((part) => part && part.trim())
+    .join(", ");
+  const locationSummary = [cityState, address.zipcode?.trim() ?? ""]
+    .filter((part) => part.trim())
+    .join(" ");
+  const hasLocation = Boolean(locationSummary.trim() || address.country?.trim());
+
+  return (
+    <div className="space-y-2.5">
+      {/* Address line 1 + apartment, side by side like the phone rows. */}
+      <div className="flex items-end gap-2">
+        <div className="min-w-0 flex-1 space-y-1">
+          <Label htmlFor={`${idPrefix}-address1`} className="text-xs text-muted-foreground">
+            {labels.address1}
+          </Label>
+          {mode === "sender" ? (
+            <AddressAutocompleteInput
+              id={`${idPrefix}-address1`}
+              value={address.address1}
+              onValueChange={(value) => onChange("address1", value)}
+              onPlaceSelected={onPlaceSelected}
+              placeholder="Start typing a street address…"
+            />
+          ) : (
+            <Input
+              id={`${idPrefix}-address1`}
+              value={address.address1}
+              onChange={(event) => onChange("address1", event.target.value)}
+              placeholder="Street address"
+            />
+          )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-apartment`}>{labels.apartment}</Label>
+        <div className="w-24 shrink-0 space-y-1 sm:w-32">
+          <Label htmlFor={`${idPrefix}-apartment`} className="text-xs text-muted-foreground">
+            {labels.apartment}
+          </Label>
           <Input
             id={`${idPrefix}-apartment`}
             value={address.apartment}
             onChange={(event) => onChange("apartment", event.target.value)}
+            placeholder="Apt #"
           />
         </div>
       </div>
 
-      {mode === "receiver" ? (
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-city`}>{labels.city}</Label>
-          <SearchableSelect
-            id={`${idPrefix}-city`}
-            value={address.city}
-            onValueChange={(value) => {
-              const match = findDominicanCity(value);
-              if (match) {
-                onCitySelected(match);
-              } else {
-                onChange("city", value);
-              }
-            }}
-            options={cityOptions}
-            placeholder="Select a city"
-          />
+      {/* Cross street sits below address line 1 + apartment for both senders and receivers. */}
+      <div className="space-y-1">
+        <Input
+          id={`${idPrefix}-cross-street`}
+          value={address.address2}
+          onChange={(event) => onChange("address2", event.target.value)}
+          placeholder="Additional address information"
+        />
+      </div>
+
+      {senderAutoFill ? (
+        <div className="rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm">
+          {hasLocation ? (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              {locationSummary ? (
+                <span className="font-medium text-foreground">{locationSummary}</span>
+              ) : null}
+              {address.country?.trim() ? (
+                <span className="text-muted-foreground">· {address.country}</span>
+              ) : null}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">
+              Pick an address suggestion to fill city, state, and ZIP.
+            </span>
+          )}
         </div>
+      ) : mode === "receiver" ? (
+        <>
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor={`${idPrefix}-city`} className="text-xs text-muted-foreground">
+                {labels.city}
+              </Label>
+              <SearchableSelect
+                id={`${idPrefix}-city`}
+                value={address.city}
+                onValueChange={(value) => {
+                  const match = findDominicanCity(value);
+                  if (match) {
+                    onCitySelected(match);
+                  } else {
+                    onChange("city", value);
+                  }
+                }}
+                options={cityOptions}
+                placeholder="Select a city"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`${idPrefix}-zipcode`} className="text-xs text-muted-foreground">
+                {labels.zipcode}
+              </Label>
+              <Input
+                id={`${idPrefix}-zipcode`}
+                value={address.zipcode}
+                onChange={(event) => onChange("zipcode", event.target.value)}
+              />
+            </div>
+          </div>
+          <div className="rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm">
+            <span className="font-medium text-foreground">
+              {address.state?.trim() ? address.state : "Province set by selected city"}
+            </span>
+            {address.country?.trim() ? (
+              <span className="text-muted-foreground"> · {address.country}</span>
+            ) : null}
+          </div>
+        </>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor={`${idPrefix}-city`}>{labels.city}</Label>
+        // Sender without Google configured: keep editable city/state/zip inputs.
+        <div className="grid gap-2.5 sm:grid-cols-3">
+          <div className="space-y-1">
+            <Label htmlFor={`${idPrefix}-city`} className="text-xs text-muted-foreground">
+              {labels.city}
+            </Label>
             <Input
               id={`${idPrefix}-city`}
               value={address.city}
               onChange={(event) => onChange("city", event.target.value)}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor={`${idPrefix}-state`}>{labels.state}</Label>
+          <div className="space-y-1">
+            <Label htmlFor={`${idPrefix}-state`} className="text-xs text-muted-foreground">
+              {labels.state}
+            </Label>
             <Input
               id={`${idPrefix}-state`}
               value={address.state}
-              onChange={(event) =>
-                onChange("state", event.target.value.toUpperCase())
-              }
+              onChange={(event) => onChange("state", event.target.value.toUpperCase())}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor={`${idPrefix}-zipcode`} className="text-xs text-muted-foreground">
+              {labels.zipcode}
+            </Label>
+            <Input
+              id={`${idPrefix}-zipcode`}
+              value={address.zipcode}
+              onChange={(event) => onChange("zipcode", event.target.value)}
             />
           </div>
         </div>
       )}
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-zipcode`}>{labels.zipcode}</Label>
-          <Input
-            id={`${idPrefix}-zipcode`}
-            value={address.zipcode}
-            onChange={(event) => onChange("zipcode", event.target.value)}
-          />
-        </div>
-        {mode === "receiver" ? (
-          <ReadOnlyAddressInput
-            id={`${idPrefix}-state`}
-            label={labels.state}
-            value={address.state}
-            title="Province is set automatically by the selected city"
-          />
-        ) : (
-          <ReadOnlyAddressInput
-            id={`${idPrefix}-country`}
-            label={labels.country}
-            value={address.country}
-            title="Country is set automatically by the customer type"
-          />
-        )}
-      </div>
-
-      {mode === "receiver" ? (
-        <ReadOnlyAddressInput
-          id={`${idPrefix}-country`}
-          label={labels.country}
-          value={address.country}
-          title="Country is set automatically by the customer type"
-        />
-      ) : null}
     </div>
   );
 }
@@ -277,6 +302,11 @@ export function CustomerForm({
     normalizeCustomerFormValues(initialValues ?? createEmptyCustomerForm()),
   );
   const [formError, setFormError] = useState<string | null>(null);
+  // The address section stays collapsed until the user adds one (or when editing
+  // a customer that already has address content).
+  const [showAddresses, setShowAddresses] = useState(() =>
+    (initialValues?.addresses ?? []).some(coreAddressRequiresVerification),
+  );
   const errorMessage = formError ?? externalError;
   const handleEnterNavigation = useFormEnterNavigation();
 
@@ -284,8 +314,15 @@ export function CustomerForm({
     setValues(
       normalizeCustomerFormValues(initialValues ?? createEmptyCustomerForm()),
     );
+    setShowAddresses((initialValues?.addresses ?? []).some(coreAddressRequiresVerification));
     setFormError(null);
   }, [initialValues?.id, initialValues?.updatedAt]);
+
+  function focusAddressLine1(idPrefix: string) {
+    requestAnimationFrame(() => {
+      document.getElementById(`${idPrefix}-address1`)?.focus();
+    });
+  }
 
   function updateField<K extends keyof CustomerFormValues>(
     key: K,
@@ -295,6 +332,30 @@ export function CustomerForm({
       const next = { ...current, [key]: value };
       return key === "customerType" ? applyCustomerTypeBranch(next) : next;
     });
+    setFormError(null);
+  }
+
+  /**
+   * Switching customer type swaps the address mode (sender Google autocomplete ↔
+   * receiver city list) and country, so any previously entered address no longer
+   * applies. Reset back to the collapsed, default state.
+   */
+  function handleCustomerTypeChange(nextType: number) {
+    if (normalizeCustomerType(values.customerType) === normalizeCustomerType(nextType)) {
+      return;
+    }
+
+    setValues((current) => {
+      const next = applyCustomerTypeBranch({ ...current, customerType: nextType });
+      const emptyAddress = createEmptyCustomerCoreAddress(next.address.country);
+
+      return syncCustomerFormAddresses({
+        ...next,
+        address: emptyAddress,
+        addresses: [emptyAddress],
+      });
+    });
+    setShowAddresses(false);
     setFormError(null);
   }
 
@@ -381,43 +442,135 @@ export function CustomerForm({
   }
 
   function addAddress() {
-    setValues((current) =>
-      syncCustomerFormAddresses({
+    let newIndex = 0;
+    setValues((current) => {
+      newIndex = current.addresses.length;
+      return syncCustomerFormAddresses({
         ...current,
         addresses: [
           ...current.addresses,
           createEmptyCustomerCoreAddress(current.address.country),
         ],
-      }),
-    );
+      });
+    });
+    focusAddressLine1(`additional-${newIndex}`);
+  }
+
+  /** Reveal the collapsed address section and focus the primary address. */
+  function handleAddAddressClick() {
+    if (!showAddresses) {
+      setShowAddresses(true);
+      focusAddressLine1("primary");
+      return;
+    }
+    addAddress();
   }
 
   function removeAddress(index: number) {
+    // Removing the last remaining address collapses the section back to its
+    // hidden state, since addresses are optional unless one is open.
+    const isLastAddress = values.addresses.length <= 1;
+
+    setValues((current) => {
+      if (current.addresses.length <= 1) {
+        const empty = createEmptyCustomerCoreAddress(current.address.country);
+        return syncCustomerFormAddresses({
+          ...current,
+          address: empty,
+          addresses: [empty],
+        });
+      }
+
+      const addresses = current.addresses.filter(
+        (_, addressIndex) => addressIndex !== index,
+      );
+
+      return syncCustomerFormAddresses({
+        ...current,
+        address: { ...addresses[0] },
+        addresses,
+      });
+    });
+
+    if (isLastAddress) {
+      setShowAddresses(false);
+    }
+  }
+
+  /** Promote an address to primary by moving it to index 0. */
+  function setPrimaryAddress(index: number) {
     if (index <= 0) return;
 
-    setValues((current) =>
-      syncCustomerFormAddresses({
+    setValues((current) => {
+      const addresses = [...current.addresses];
+      const [chosen] = addresses.splice(index, 1);
+      addresses.unshift(chosen);
+
+      return syncCustomerFormAddresses({
         ...current,
-        addresses: current.addresses.filter(
-          (_, addressIndex) => addressIndex !== index,
-        ),
-      }),
-    );
+        address: { ...chosen },
+        addresses,
+      });
+    });
   }
 
   const isSender = isCustomerSenderType(values.customerType);
   const addressMode: "sender" | "receiver" = isSender ? "sender" : "receiver";
+  const googleEnabled = isGoogleMapsConfigured();
 
-  const unverifiedAddresses = useMemo(
-    () => getUnverifiedCoreAddresses([values.address, ...values.addresses.slice(1)]),
-    [values.address, values.addresses],
-  );
-  // Verification only applies to senders (Google). Receivers use a city list,
-  // and we only enforce when Google autocomplete is actually available.
-  const blockForUnverifiedAddress =
-    isSender && isGoogleMapsConfigured() && unverifiedAddresses.length > 0;
-  const unverifiedAddressMessage =
-    "Verify every address with a Google suggestion before saving.";
+  // The single reason the customer can't be saved yet, evaluated in priority
+  // order: name → first phone → any other started phone → any open address.
+  // Senders need a verified address; receivers need a city selected.
+  const blockReason: string | null = (() => {
+    if (!values.name.trim()) {
+      return "Enter the customer's name.";
+    }
+
+    const firstPhone = values.phones[0];
+    if (!firstPhone || !firstPhone.number.trim()) {
+      return "Enter a phone number.";
+    }
+    if (!isCompletePhoneNumber(firstPhone.number)) {
+      return `Phone 1 must have ${REQUIRED_PHONE_DIGITS} digits.`;
+    }
+
+    for (let index = 1; index < values.phones.length; index += 1) {
+      const phone = values.phones[index];
+      if (phone.number.trim() && !isCompletePhoneNumber(phone.number)) {
+        return `Phone ${index + 1} must have ${REQUIRED_PHONE_DIGITS} digits.`;
+      }
+    }
+
+    if (showAddresses) {
+      for (let index = 0; index < values.addresses.length; index += 1) {
+        const address = values.addresses[index];
+        const label = `Address ${index + 1}`;
+
+        if (isSender) {
+          if (googleEnabled) {
+            if (!isAddressVerified(address)) {
+              return `${label} must be verified with a Google suggestion.`;
+            }
+          } else if (!coreAddressRequiresVerification(address)) {
+            return `Complete ${label} or remove it before saving.`;
+          }
+        } else if (!address.city.trim()) {
+          return `${label} needs a city selected.`;
+        }
+      }
+    }
+
+    return null;
+  })();
+
+  const isBlocked = blockReason != null;
+
+  // Single notice shown inline with the footer actions (errors take priority).
+  const footerNotice: { tone: "error" | "warning"; message: string } | null = errorMessage
+    ? { tone: "error", message: errorMessage }
+    : blockReason
+      ? { tone: "warning", message: blockReason }
+      : null;
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -426,8 +579,8 @@ export function CustomerForm({
       syncCustomerFormAddresses(values),
     );
 
-    if (blockForUnverifiedAddress) {
-      setFormError(unverifiedAddressMessage);
+    if (blockReason) {
+      setFormError(blockReason);
       return;
     }
 
@@ -446,19 +599,17 @@ export function CustomerForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
+      <div className="flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4">
         <FormSection icon={User} title="General">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
+          <div className="space-y-2.5">
+            <div className="space-y-1">
               <Label htmlFor="customerType">
                 Customer type <span className="text-destructive">*</span>
               </Label>
               <SearchableSelect
                 id="customerType"
                 value={String(selectedType)}
-                onValueChange={(next) =>
-                  updateField("customerType", Number(next))
-                }
+                onValueChange={(next) => handleCustomerTypeChange(Number(next))}
                 options={CUSTOMER_TYPE_OPTIONS.map((option) => ({
                   value: String(option.value),
                   label: option.label,
@@ -468,21 +619,21 @@ export function CustomerForm({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="name">
                 Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 value={values.name}
-                onChange={(event) => updateField("name", event.target.value)}
+                onChange={(event) => updateField("name", capitalizeWords(event.target.value))}
                 placeholder="Full name"
                 autoFocus
                 required
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="IDNumber">ID number</Label>
               <Input
                 id="IDNumber"
@@ -493,7 +644,7 @@ export function CustomerForm({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -506,90 +657,81 @@ export function CustomerForm({
           </div>
         </FormSection>
 
-        <div className="border-t border-border/60" />
-
-        <FormSection icon={StickyNote} title="Notes">
-          <textarea
-            id="notes"
-            value={values.notes}
-            onChange={(event) => updateField("notes", event.target.value)}
-            rows={3}
-            className={textareaClassName}
-            placeholder="Add any relevant context…"
-          />
-        </FormSection>
-
-        <div className="border-t border-border/60" />
-
         <FormSection icon={PhoneIcon} title="Phones">
           <PhoneListEditor
             idPrefix="customer-phone"
             phones={values.phones}
             required
+            compact
             onChange={(phones) => updateField("phones", phones)}
           />
         </FormSection>
 
-        <div className="border-t border-border/60" />
-
         <FormSection icon={MapPin} title="Addresses">
-          <div className="space-y-3">
-            <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Primary address
-                </p>
-                {isSender ? <AddressVerificationBadge address={values.address} /> : null}
-              </div>
-              <AddressFieldGrid
-                idPrefix="primary"
-                address={values.address}
-                mode={addressMode}
-                onChange={(field, value) => updateAddressField(field, value)}
-                onPlaceSelected={applyPlaceToPrimaryAddress}
-                onCitySelected={applyCityToPrimaryAddress}
-              />
-            </div>
-
-            {values.addresses.slice(1).map((address, index) => {
-              const addressIndex = index + 1;
+          <div className="space-y-2.5">
+            {showAddresses && values.addresses.map((address, index) => {
+              const isPrimary = index === 0;
 
               return (
                 <div
-                  key={addressIndex}
-                  className="rounded-lg border border-border/60 bg-muted/20 p-4"
+                  key={index}
+                  className="rounded-lg border border-border/60 bg-muted/20 p-3"
                 >
-                  <div className="mb-3 flex items-center justify-between gap-2">
+                  <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Additional address {addressIndex}
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {`Address ${index + 1}`}
                       </p>
                       {isSender ? <AddressVerificationBadge address={address} /> : null}
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => removeAddress(addressIndex)}
-                    >
-                      <Trash2 className="size-3.5" />
-                      Remove
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-pressed={isPrimary}
+                        title={isPrimary ? "Primary address" : "Set as primary"}
+                        className={cn(
+                          "size-7 shrink-0",
+                          isPrimary
+                            ? "text-amber-500 hover:text-amber-500"
+                            : "text-muted-foreground",
+                        )}
+                        onClick={() => setPrimaryAddress(index)}
+                      >
+                        <Star className={cn("size-4", isPrimary && "fill-current")} />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        title="Remove address"
+                        className="size-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => removeAddress(index)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   <AddressFieldGrid
-                    idPrefix={`additional-${addressIndex}`}
+                    idPrefix={isPrimary ? "primary" : `additional-${index}`}
                     address={address}
                     mode={addressMode}
                     onChange={(field, value) =>
-                      updateAdditionalAddressField(addressIndex, field, value)
+                      isPrimary
+                        ? updateAddressField(field, value)
+                        : updateAdditionalAddressField(index, field, value)
                     }
                     onPlaceSelected={(place) =>
-                      applyPlaceToAdditionalAddress(addressIndex, place)
+                      isPrimary
+                        ? applyPlaceToPrimaryAddress(place)
+                        : applyPlaceToAdditionalAddress(index, place)
                     }
                     onCitySelected={(city) =>
-                      applyCityToAdditionalAddress(addressIndex, city)
+                      isPrimary
+                        ? applyCityToPrimaryAddress(city)
+                        : applyCityToAdditionalAddress(index, city)
                     }
                   />
                 </div>
@@ -599,50 +741,66 @@ export function CustomerForm({
             <Button
               type="button"
               variant="outline"
-              size="sm"
-              className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
-              onClick={addAddress}
+              className="h-9 w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
+              onClick={handleAddAddressClick}
             >
               <Plus className="size-4" />
-              Add another address
+              Add address
             </Button>
           </div>
         </FormSection>
+
+        <FormSection icon={StickyNote} title="Notes">
+          <textarea
+            id="notes"
+            value={values.notes}
+            onChange={(event) => updateField("notes", event.target.value)}
+            rows={2}
+            className={textareaClassName}
+            placeholder="Add any relevant context…"
+          />
+        </FormSection>
       </div>
 
-      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-        {errorMessage ? (
-          <div
-            className={cn(
-              "mb-3 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2",
-              "text-sm text-destructive",
-            )}
-          >
-            <AlertCircle className="mt-0.5 size-4 shrink-0" />
-            <span>{errorMessage}</span>
+      <div className="shrink-0 border-t border-border bg-card px-5 py-3">
+        <div className="flex items-center justify-between gap-3">
+          {footerNotice ? (
+            footerNotice.tone === "error" ? (
+              <div
+                className={cn(
+                  "flex min-w-0 flex-1 items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5",
+                  "text-sm text-destructive",
+                )}
+              >
+                <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                <span className="min-w-0 break-words">{footerNotice.message}</span>
+              </div>
+            ) : (
+              <p className="min-w-0 flex-1 break-words text-sm text-amber-700 dark:text-amber-300">
+                {footerNotice.message}
+              </p>
+            )
+          ) : (
+            <span className="flex-1" aria-hidden />
+          )}
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || isBlocked}
+              title={footerNotice?.message}
+            >
+              {isSubmitting ? "Saving…" : submitLabel}
+            </Button>
           </div>
-        ) : null}
-        {!errorMessage && blockForUnverifiedAddress ? (
-          <p className="mb-3 text-sm text-amber-700 dark:text-amber-300">
-            {unverifiedAddressMessage}
-          </p>
-        ) : null}
-        <div className="flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || blockForUnverifiedAddress}
-            title={blockForUnverifiedAddress ? unverifiedAddressMessage : undefined}
-          >
-            {isSubmitting ? "Saving…" : submitLabel}
-          </Button>
         </div>
       </div>
     </form>

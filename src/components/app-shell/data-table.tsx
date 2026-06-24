@@ -62,6 +62,7 @@ function DataTableContent<T>({
   const [resizingColumnId, setResizingColumnId] = useState<string | null>(null);
   const pendingRowClickRef = useRef<number | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
+  const [emptyViewportWidth, setEmptyViewportWidth] = useState<number | null>(null);
   const lastAutoFitSignatureRef = useRef<string | null>(null);
   const autoFitPassRef = useRef(0);
   const autoFitContextRef = useRef({ pageKey: -1, visibleColumnKey: "" });
@@ -151,6 +152,24 @@ function DataTableContent<T>({
       cancelAnimationFrame(innerFrame);
     };
   }, [autoFitColumns, page, rows, isPageDataPending, selectable, visibleColumnKey]);
+
+  // When the table is empty the body cell spans the full (very wide) table,
+  // pushing the centered empty-state message off-screen. Measure the scroll
+  // container so the message can be pinned to the visible viewport instead.
+  useLayoutEffect(() => {
+    if (rows.length > 0) return;
+
+    // table -> minWidth wrapper -> CardContent (the horizontal scroll container).
+    const scrollContainer = tableRef.current?.parentElement?.parentElement;
+    if (!scrollContainer) return;
+
+    const update = () => setEmptyViewportWidth(scrollContainer.clientWidth);
+    update();
+
+    const observer = new ResizeObserver(update);
+    observer.observe(scrollContainer);
+    return () => observer.disconnect();
+  }, [rows.length]);
 
   function startColumnResize(columnId: string, startX: number) {
     const startWidth = getColumnWidth(columnId);
@@ -339,8 +358,13 @@ function DataTableContent<T>({
             })
           ) : (
             <tr>
-              <td colSpan={colSpan} className="px-0 py-12 text-center">
-                {emptyState}
+              <td colSpan={colSpan} className="p-0">
+                <div
+                  className="sticky left-0 flex flex-col items-center justify-center px-6 py-12 text-center"
+                  style={emptyViewportWidth ? { width: emptyViewportWidth } : undefined}
+                >
+                  {emptyState}
+                </div>
               </td>
             </tr>
           )}

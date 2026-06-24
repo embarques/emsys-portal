@@ -1,4 +1,8 @@
-import { formatPhoneForDisplay, normalizeStoredPhone } from "@/lib/utils/phone";
+import {
+  getPhoneDialDigits,
+  normalizeStoredPhone,
+  resolvePhoneDisplayValue,
+} from "@/lib/utils/phone";
 
 import {
   RECORD_PHONE_TYPE_OPTIONS,
@@ -6,6 +10,14 @@ import {
   type RecordPhoneType,
   type RecordPhoneWritePayload,
 } from "./types";
+
+/** Every phone number must contain exactly this many digits to be valid. */
+export const REQUIRED_PHONE_DIGITS = 10;
+
+/** True when the phone number holds exactly the required number of digits. */
+export function isCompletePhoneNumber(value: string): boolean {
+  return getPhoneDialDigits(value).length === REQUIRED_PHONE_DIGITS;
+}
 
 type ApiPhoneRaw = {
   type?: string;
@@ -125,6 +137,10 @@ export function validateRecordPhones(
   if (options.required !== false && normalized.length === 0) {
     throw new Error("At least one phone number is required.");
   }
+
+  if (normalized.some((phone) => !isCompletePhoneNumber(phone.number))) {
+    throw new Error(`Every phone number must have ${REQUIRED_PHONE_DIGITS} digits.`);
+  }
 }
 
 export function buildApiPhonesPayload(phones: RecordPhone[]): RecordPhoneWritePayload[] {
@@ -149,9 +165,7 @@ export function getPrimaryPhoneNumber(phones: RecordPhone[]): string {
 export function getRecordPhoneDisplayNumber(
   phone: Pick<RecordPhone, "number" | "displayNumber">,
 ): string {
-  const display = phone.displayNumber?.trim();
-  if (display) return display;
-  return formatPhoneForDisplay(phone.number);
+  return resolvePhoneDisplayValue(phone.number, phone.displayNumber);
 }
 
 export function getPrimaryPhoneDisplayNumber(phones: RecordPhone[]): string {

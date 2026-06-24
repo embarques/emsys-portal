@@ -1,11 +1,12 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Star, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { cn } from "@/lib/utils";
 import {
   createDefaultRecordPhones,
   createEmptyRecordPhone,
@@ -17,21 +18,34 @@ type PhoneListEditorProps = {
   idPrefix?: string;
   phones: RecordPhone[];
   required?: boolean;
+  /** Dense single-row layout used inside compact forms. */
+  compact?: boolean;
   onChange: (phones: RecordPhone[]) => void;
 };
+
+const PHONE_TYPE_OPTIONS = RECORD_PHONE_TYPE_OPTIONS.map((option) => ({
+  value: option.value,
+  label: option.label,
+}));
 
 export function PhoneListEditor({
   idPrefix = "phone",
   phones,
   required = false,
+  compact = false,
   onChange,
 }: PhoneListEditorProps) {
   const entries = phones.length > 0 ? phones : createDefaultRecordPhones();
 
   function updatePhone(index: number, patch: Partial<RecordPhone>) {
-    const next = entries.map((phone, phoneIndex) =>
-      phoneIndex === index ? { ...phone, ...patch } : phone,
-    );
+    const next = entries.map((phone, phoneIndex) => {
+      if (phoneIndex === index) {
+        return { ...phone, ...patch };
+      }
+      // When marking a phone as primary, clear the flag on all others so the
+      // newly selected one wins (avoids reverting to the first existing primary).
+      return patch.isPrimary ? { ...phone, isPrimary: false } : phone;
+    });
     onChange(patch.isPrimary ? ensureSinglePrimaryPhone(next) : next);
   }
 
@@ -46,6 +60,78 @@ export function PhoneListEditor({
     }
 
     onChange(ensureSinglePrimaryPhone(entries.filter((_, phoneIndex) => phoneIndex !== index)));
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        {entries.map((phone, index) => {
+          const isOnly = entries.length <= 1;
+
+          return (
+            <div key={`${idPrefix}-${index}`} className="flex items-center gap-2">
+              <div className="w-28 shrink-0 sm:w-32">
+                <SearchableSelect
+                  aria-label={`Phone ${index + 1} type`}
+                  value={phone.type}
+                  onValueChange={(next) => updatePhone(index, { type: next as RecordPhone["type"] })}
+                  searchPlaceholder="Search types…"
+                  options={PHONE_TYPE_OPTIONS}
+                />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <PhoneInput
+                  aria-label={`Phone ${index + 1} number`}
+                  value={phone.number}
+                  onChange={(nextValue) => updatePhone(index, { number: nextValue })}
+                  required={required && index === 0}
+                />
+              </div>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-pressed={phone.isPrimary}
+                title={phone.isPrimary ? "Primary phone" : "Set as primary"}
+                className={cn(
+                  "shrink-0",
+                  phone.isPrimary
+                    ? "text-amber-500 hover:text-amber-500"
+                    : "text-muted-foreground",
+                )}
+                onClick={() => updatePhone(index, { isPrimary: true })}
+              >
+                <Star className={cn("size-4", phone.isPrimary && "fill-current")} />
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                title="Remove phone"
+                disabled={isOnly}
+                className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => removePhone(index)}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          );
+        })}
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
+          onClick={addPhone}
+        >
+          <Plus className="size-4" />
+          Add phone
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -76,10 +162,7 @@ export function PhoneListEditor({
                 value={phone.type}
                 onValueChange={(next) => updatePhone(index, { type: next as RecordPhone["type"] })}
                 searchPlaceholder="Search types…"
-                options={RECORD_PHONE_TYPE_OPTIONS.map((option) => ({
-                  value: option.value,
-                  label: option.label,
-                }))}
+                options={PHONE_TYPE_OPTIONS}
               />
             </div>
 

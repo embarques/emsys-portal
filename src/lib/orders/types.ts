@@ -1,6 +1,7 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import type { Customer, CustomerAddress, CustomerPhone } from "@/lib/customers/types";
+import { REQUIRED_PHONE_DIGITS, isCompletePhoneNumber } from "@/lib/phones/phones";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 import { createRecordId } from "@/lib/customers/types";
 import type { Employee } from "@/lib/employees/types";
@@ -484,6 +485,10 @@ export function normalizeOrderParty(values: OrderPartyFormValues, label: string)
 
   if (phones.length === 0) {
     throw new Error(`${label} must have at least one phone number.`);
+  }
+
+  if (phones.some((phone) => !isCompletePhoneNumber(phone.number))) {
+    throw new Error(`${label} phone numbers must have ${REQUIRED_PHONE_DIGITS} digits.`);
   }
 
   if (addresses.length === 0) {

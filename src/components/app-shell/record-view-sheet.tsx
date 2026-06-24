@@ -36,6 +36,8 @@ type RecordViewSheetBodyProps = {
 
 type RecordViewSheetSectionProps = {
   title?: string;
+  /** Optional leading icon, matching the add/edit form section style. */
+  icon?: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   className?: string;
   padding?: "default" | "relaxed";
@@ -112,6 +114,7 @@ export function RecordViewSheetBody({ children, className }: RecordViewSheetBody
 
 export function RecordViewSheetSection({
   title,
+  icon: Icon,
   children,
   className,
   padding = "default",
@@ -125,7 +128,11 @@ export function RecordViewSheetSection({
     >
       {title ? (
         <div className="flex items-center gap-2.5 border-b border-border bg-muted/50 px-4 py-2.5">
-          <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-primary/80" aria-hidden />
+          {Icon ? (
+            <Icon className="size-4 shrink-0 text-primary" />
+          ) : (
+            <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-primary/80" aria-hidden />
+          )}
           <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-foreground/75">
             {title}
           </h3>
