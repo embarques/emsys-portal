@@ -30,7 +30,6 @@ import { getBranchBadgeClass } from "@/lib/vehicles/display";
 
 type OrderViewSheetProps = {
   order: Order | null;
-  orders: Order[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (order: Order) => void;
@@ -54,7 +53,7 @@ function CustomerCard({ title, customer }: { title: string; customer: Customer }
   );
 }
 
-export function OrderViewSheet({ order, orders, open, onOpenChange, onEdit, onDelete }: OrderViewSheetProps) {
+export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: OrderViewSheetProps) {
   if (!order) return null;
 
   return (
@@ -99,7 +98,7 @@ export function OrderViewSheet({ order, orders, open, onOpenChange, onEdit, onDe
 
           <CustomerCard title="sender" customer={order.sender} />
 
-          <SenderOrderHistorySection sender={order.sender} orders={orders} currentOrderId={String(order.id)} />
+          <SenderOrderHistorySection sender={order.sender} currentOrderId={String(order.id)} />
 
           {order.receiver ? (
             <CustomerCard title="receiver" customer={order.receiver} />

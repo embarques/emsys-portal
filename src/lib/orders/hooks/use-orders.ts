@@ -9,6 +9,7 @@ import {
   deleteOrders,
   fetchOrderById,
   fetchOrders,
+  fetchSenderOrderHistory,
   setOrdersCompleted,
   updateOrder,
 } from "@/lib/orders/api/orders-api";
@@ -65,6 +66,23 @@ export function useOrderSearch(
         search,
       }),
     enabled: queryEnabled && enabled && Boolean(search?.value.trim()),
+  });
+}
+
+const SENDER_HISTORY_LIMIT = 50;
+
+/** Load a sender's pickup history via GET /pickups filtered by their customer id. */
+export function useSenderOrderHistory(
+  senderId: string | null | undefined,
+  limit = SENDER_HISTORY_LIMIT,
+) {
+  const queryEnabled = useOrdersQueryEnabled();
+  const id = senderId?.trim() ?? "";
+
+  return useQuery({
+    queryKey: queryKeys.orders.history(id, limit),
+    queryFn: () => fetchSenderOrderHistory(id, { limit }),
+    enabled: queryEnabled && Boolean(id),
   });
 }
 

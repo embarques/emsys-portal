@@ -360,23 +360,6 @@ export function orderToFormValues(order: Order): OrderFormValues {
   };
 }
 
-export function ordersShareSender(
-  a: Pick<Customer, "id" | "name">,
-  b: Pick<Customer, "id" | "name">,
-): boolean {
-  if (a.id && b.id && a.id === b.id) return true;
-  return a.name.trim().toLowerCase() === b.name.trim().toLowerCase();
-}
-
-export function getSenderOrderHistory(
-  orders: Order[],
-  sender: Pick<Customer, "id" | "name">,
-): Order[] {
-  return orders
-    .filter((order) => ordersShareSender(order.sender, sender))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-}
-
 // --- Legacy party types used by invoices ---
 
 export type OrderBranch = "usa" | "dr";

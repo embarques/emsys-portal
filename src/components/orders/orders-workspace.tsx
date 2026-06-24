@@ -583,7 +583,6 @@ export function OrdersWorkspace() {
 
       <OrderViewSheet
         order={viewOrder}
-        orders={orders}
         open={Boolean(viewOrder)}
         onOpenChange={(open) => {
           if (!open) setViewOrder(null);
@@ -610,7 +609,6 @@ export function OrdersWorkspace() {
           </DialogHeader>
           <OrderForm
             key={editingOrder ? getOrderRecordId(editingOrder) : "new"}
-            allOrders={orders}
             initialValues={
               formMode === "edit" && editingOrder ? orderToFormValues(editingOrder) : createEmptyOrderForm()
             }

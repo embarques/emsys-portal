@@ -54,11 +54,9 @@ import {
   type OrderFormSubmitResult,
   type OrderFormValues,
 } from "@/lib/orders/types";
-import type { Order } from "@/lib/orders/types";
 
 type OrderFormProps = {
   initialValues?: OrderFormValues;
-  allOrders?: Order[];
   isEditing?: boolean;
   updatedAt?: string;
   submitLabel: string;
@@ -143,7 +141,6 @@ function PartyFieldActions({
 
 export function OrderForm({
   initialValues,
-  allOrders = [],
   isEditing = false,
   updatedAt,
   submitLabel,
@@ -533,7 +530,6 @@ export function OrderForm({
       {values.sender ? (
         <SenderOrderHistorySection
           sender={values.sender}
-          orders={allOrders}
           currentOrderId={values.id > 0 ? String(values.id) : undefined}
         />
       ) : null}

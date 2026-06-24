@@ -136,6 +136,12 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
 
 const ORDER_LIST_SEARCH_FIELD = "sender.name";
 
+/** Pickup field holding the sender's customer id, used to load a sender's pickup history. */
+const SENDER_HISTORY_FILTER_FIELD = "sender.id";
+
+/** Default number of historical pickups loaded for a sender. */
+const SENDER_HISTORY_LIMIT = 50;
+
 const EMPTY_CUSTOMER: Customer = {
   id: "",
   oldID: null,
@@ -425,6 +431,40 @@ export async function fetchOrders(params: OrderListParams = {}): Promise<Paginat
   }
 
   const query = buildOrdersQuery(params);
+  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
+    `${API_ENDPOINTS.PICKUPS}?${query}`,
+  );
+
+  return normalizePaginatedOrders(response);
+}
+
+/**
+ * Pickup history for a single sender.
+ * `GET /pickups?field=sender.id&operator=eq&value=<customerId>&sort=date:desc`
+ *
+ * Returns the sender's previous and current pickups so the order form/view can
+ * show them without relying on the client-side orders list page.
+ */
+export async function fetchSenderOrderHistory(
+  senderId: string,
+  options: { limit?: number } = {},
+): Promise<PaginatedResult<Order>> {
+  const trimmedId = senderId.trim();
+  if (!trimmedId) {
+    return { items: [], page: 1, resultsPerPage: 0, total: 0 };
+  }
+
+  const query = buildApiListQuery({
+    page: 1,
+    limit: options.limit ?? SENDER_HISTORY_LIMIT,
+    sort: DEFAULT_ORDER_LIST_PARAMS.sort,
+    filter: {
+      field: SENDER_HISTORY_FILTER_FIELD,
+      operator: "eq",
+      value: trimmedId,
+    },
+  });
+
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
     `${API_ENDPOINTS.PICKUPS}?${query}`,
   );

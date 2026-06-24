@@ -76,6 +76,8 @@ export const queryKeys = {
     list: (params: OrderListParams) => [...queryKeys.orders.lists(), params] as const,
     search: (search: OrderSearchFilter | undefined, limit: number) =>
       [...queryKeys.orders.all, "search", search, limit] as const,
+    history: (senderId: string, limit: number) =>
+      [...queryKeys.orders.all, "history", senderId, limit] as const,
     stats: (scope: "pending" | "pending-pickups" | "pending-takes", branchId?: number) =>
       [...queryKeys.orders.all, "stats", scope, branchId] as const,
     detail: (orderId: string) => [...queryKeys.orders.all, "detail", orderId] as const,
