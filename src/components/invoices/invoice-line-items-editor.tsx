@@ -5,22 +5,29 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
   computeLineTotal,
   createEmptyInvoiceLineItem,
+  resolveLineTotal,
   type InvoiceLineItemFormValues,
 } from "@/lib/invoices/types";
 import type { Item } from "@/lib/items/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type InvoiceLineItemsEditorProps = {
   lineItems: InvoiceLineItemFormValues[];
   catalogItems: Item[];
   onChange: (lineItems: InvoiceLineItemFormValues[]) => void;
 };
+
+/** Default total tracks unit price × quantity until the user overrides it. */
+function deriveTotalString(item: InvoiceLineItemFormValues): string {
+  const quantity = Number(item.quantity);
+  const unitPrice = Number(item.unitPrice);
+  if (!Number.isFinite(quantity) || !Number.isFinite(unitPrice)) return "";
+  return computeLineTotal(quantity, unitPrice).toFixed(2);
+}
 
 export function InvoiceLineItemsEditor({ lineItems, catalogItems, onChange }: InvoiceLineItemsEditorProps) {
   function updateLineItem(index: number, patch: Partial<InvoiceLineItemFormValues>) {
@@ -36,6 +43,28 @@ export function InvoiceLineItemsEditor({ lineItems, catalogItems, onChange }: In
     onChange(lineItems.filter((_, itemIndex) => itemIndex !== index));
   }
 
+  function changeQuantity(index: number, quantity: string) {
+    const item = lineItems[index];
+    const patch: Partial<InvoiceLineItemFormValues> = { quantity };
+
+    // Labels and total follow the quantity unless the user has overridden them.
+    if (!item.labelsManual) patch.labelCount = quantity;
+    if (!item.totalManual) {
+      patch.lineTotal = deriveTotalString({ ...item, quantity });
+    }
+
+    updateLineItem(index, patch);
+  }
+
+  function changeUnitPrice(index: number, unitPrice: string) {
+    const item = lineItems[index];
+    const patch: Partial<InvoiceLineItemFormValues> = { unitPrice };
+    if (!item.totalManual) {
+      patch.lineTotal = deriveTotalString({ ...item, unitPrice });
+    }
+    updateLineItem(index, patch);
+  }
+
   function loadCatalogItem(index: number, itemId: string) {
     const catalogItem = catalogItems.find((entry) => entry.itemId === itemId);
     if (!catalogItem) {
@@ -43,43 +72,34 @@ export function InvoiceLineItemsEditor({ lineItems, catalogItems, onChange }: In
       return;
     }
 
-    updateLineItem(index, {
+    const item = lineItems[index];
+    const unitPrice = catalogItem.price.toFixed(2);
+    const patch: Partial<InvoiceLineItemFormValues> = {
       itemId: catalogItem.itemId,
       itemName: catalogItem.description,
-      unitPrice: catalogItem.price.toFixed(2),
-    });
+      unitPrice,
+    };
+    if (!item.totalManual) {
+      patch.lineTotal = deriveTotalString({ ...item, unitPrice });
+    }
+    updateLineItem(index, patch);
   }
 
-  const subtotal = lineItems.reduce((sum, item) => {
-    const quantity = Number(item.quantity);
-    const unitPrice = Number(item.unitPrice);
-    if (!Number.isFinite(quantity) || !Number.isFinite(unitPrice)) return sum;
-    return sum + computeLineTotal(quantity, unitPrice);
-  }, 0);
+  const subtotal = lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0);
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold">Description (line items)</h3>
-          <p className="text-sm text-muted-foreground">
-            Add items with quantity, labels, unit price, and line total.
-          </p>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-end">
         <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
-          <Plus className="h-4 w-4" />
-          Add line item
+          <Plus className="size-4" />
+          Add item
         </Button>
       </div>
 
       <div className="space-y-3">
         {lineItems.map((item, index) => {
-          const quantity = Number(item.quantity);
-          const unitPrice = Number(item.unitPrice);
-          const lineTotal =
-            Number.isFinite(quantity) && Number.isFinite(unitPrice)
-              ? computeLineTotal(quantity, unitPrice)
-              : 0;
+          const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
+          const totalValue = item.totalManual ? item.lineTotal : deriveTotalString(item);
 
           return (
             <div key={item.id} className="rounded-xl border bg-muted/10 p-4">
@@ -93,37 +113,43 @@ export function InvoiceLineItemsEditor({ lineItems, catalogItems, onChange }: In
                   disabled={lineItems.length <= 1}
                   onClick={() => removeLineItem(index)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="size-4" />
                   Delete
                 </Button>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor={`${item.id}-catalog`}>Load from item catalog</Label>
-                  <select
+                  <Label htmlFor={`${item.id}-catalog`}>Item from catalog</Label>
+                  <SearchableSelect
                     id={`${item.id}-catalog`}
-                    className={selectClassName}
                     value={item.itemId}
-                    onChange={(event) => loadCatalogItem(index, event.target.value)}
-                  >
-                    <option value="">Select catalog item or enter manually</option>
-                    {catalogItems.map((catalogItem) => (
-                      <option key={catalogItem.itemId} value={catalogItem.itemId}>
-                        {catalogItem.description} · {formatInvoiceMoney(catalogItem.price)}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(next) => loadCatalogItem(index, next)}
+                    placeholder="Pick a catalog item (optional)"
+                    searchPlaceholder="Search items…"
+                    options={[
+                      { value: "", label: "Custom item (type below)" },
+                      ...catalogItems.map((catalogItem) => ({
+                        value: catalogItem.itemId,
+                        label: catalogItem.description,
+                        descriptionLines: [formatInvoiceMoney(catalogItem.price)],
+                      })),
+                    ]}
+                  />
                 </div>
 
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor={`${item.id}-name`}>
-                    Item name <span className="text-destructive">*</span>
+                  <Label htmlFor={`${item.id}-description`}>
+                    Description <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id={`${item.id}-name`}
+                    id={`${item.id}-description`}
                     value={item.itemName}
-                    onChange={(event) => updateLineItem(index, { itemName: event.target.value })}
+                    onChange={(event) =>
+                      // Editing the text turns a catalog pick into a custom description.
+                      updateLineItem(index, { itemName: event.target.value, itemId: "" })
+                    }
+                    placeholder="Custom description or pick from catalog"
                     required
                   />
                 </div>
@@ -138,20 +164,22 @@ export function InvoiceLineItemsEditor({ lineItems, catalogItems, onChange }: In
                     min={1}
                     step="1"
                     value={item.quantity}
-                    onChange={(event) => updateLineItem(index, { quantity: event.target.value })}
+                    onChange={(event) => changeQuantity(index, event.target.value)}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor={`${item.id}-labels`}>Number of labels</Label>
+                  <Label htmlFor={`${item.id}-labels`}>Labels</Label>
                   <Input
                     id={`${item.id}-labels`}
                     type="number"
                     min={0}
                     step="1"
-                    value={item.labelCount}
-                    onChange={(event) => updateLineItem(index, { labelCount: event.target.value })}
+                    value={labelsValue}
+                    onChange={(event) =>
+                      updateLineItem(index, { labelCount: event.target.value, labelsManual: true })
+                    }
                   />
                 </div>
 
@@ -165,16 +193,23 @@ export function InvoiceLineItemsEditor({ lineItems, catalogItems, onChange }: In
                     min={0}
                     step="0.01"
                     value={item.unitPrice}
-                    onChange={(event) => updateLineItem(index, { unitPrice: event.target.value })}
+                    onChange={(event) => changeUnitPrice(index, event.target.value)}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Line total</Label>
-                  <div className="flex h-9 items-center rounded-md border bg-muted/20 px-3 text-sm font-medium">
-                    {formatInvoiceMoney(lineTotal)}
-                  </div>
+                  <Label htmlFor={`${item.id}-total`}>Total</Label>
+                  <Input
+                    id={`${item.id}-total`}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={totalValue}
+                    onChange={(event) =>
+                      updateLineItem(index, { lineTotal: event.target.value, totalManual: true })
+                    }
+                  />
                 </div>
               </div>
             </div>
@@ -186,6 +221,6 @@ export function InvoiceLineItemsEditor({ lineItems, catalogItems, onChange }: In
         <p className="text-sm text-muted-foreground">Items subtotal</p>
         <p className="text-lg font-semibold">{formatInvoiceMoney(subtotal)}</p>
       </div>
-    </section>
+    </div>
   );
 }

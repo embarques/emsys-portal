@@ -1,12 +1,16 @@
-import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
-import { formatPhoneForDisplay } from "@/lib/utils/phone";
-import type { ClientType, Customer, CustomerAddress, CustomerCoreAddress, CustomerPortalBranch } from "./types";
+import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
+import {
+  formatRecordPhoneTypeLabel,
+  getOrderedRecordPhones,
+  getRecordPhoneDisplayNumber,
+} from "@/lib/phones/phones";
+import { resolvePhoneDisplayValue } from "@/lib/utils/phone";
+import type { ClientType, Customer, CustomerAddress, CustomerCoreAddress, CustomerPhone, CustomerPortalBranch } from "./types";
 import { isCustomerReceiverType, isCustomerSenderType } from "./customer-type";
 import {
   CLIENT_TYPES,
   getCustomerAddresses,
   getCustomerClientType,
-  getCustomerPhones,
   getCustomerPortalBranch,
   getPrimaryAddress,
 } from "./types";
@@ -57,6 +61,32 @@ export function formatCoreAddressLine(address: CustomerCoreAddress): string {
   return parts.length > 0 ? parts.join(", ") : "—";
 }
 
+/** Human-friendly address grouped into a few display lines (street / city-state-zip / country). */
+export function formatCoreAddressLines(address: CustomerCoreAddress): string[] {
+  const streetParts = [address.address1, address.apartment || address.address2].filter(Boolean);
+  const cityLineParts = [address.city, [address.state, address.zipcode].filter(Boolean).join(" ")].filter(Boolean);
+
+  return [
+    streetParts.join(", "),
+    cityLineParts.join(", "),
+    address.country,
+  ].filter((line) => line.trim().length > 0);
+}
+
+/** Single-line query string suitable for Google Maps search/directions URLs. */
+export function buildCoreAddressMapsQuery(address: CustomerCoreAddress): string {
+  return [
+    address.address1,
+    address.apartment || address.address2,
+    address.city,
+    address.state,
+    address.zipcode,
+    address.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
 export function formatAddressLine(address: CustomerAddress): string {
   const parts = [
     address.streetAddress,
@@ -97,25 +127,41 @@ export function formatAccountBalance(balance: number): string {
 }
 
 export function formatPhoneSummary(customer: Customer): string {
-  const phones = getCustomerPhones(customer);
+  const phones = getOrderedRecordPhones(customer.phones);
   if (phones.length === 0) return "—";
 
-  const first = phones[0];
-  const label = first.label ? `${first.label}: ` : "";
+  const first = phones[0]!;
+  const label = formatRecordPhoneTypeLabel(first.type);
   const suffix = phones.length > 1 ? ` (+${phones.length - 1})` : "";
-  return `${label}${formatPhoneForDisplay(first.number)}${suffix}`;
+  return `${label}: ${getRecordPhoneDisplayNumber(first)}${suffix}`;
 }
 
 export function formatPhoneList(customer: Customer): string {
-  const phones = getCustomerPhones(customer);
+  const phones = getOrderedRecordPhones(customer.phones);
   if (phones.length === 0) return "—";
 
   return phones
     .map((phone) => {
-      const formatted = formatPhoneForDisplay(phone.number);
-      return phone.label ? `${phone.label}: ${formatted}` : formatted;
+      const formatted = getRecordPhoneDisplayNumber(phone);
+      const label = formatRecordPhoneTypeLabel(phone.type);
+      const suffix = phone.isPrimary ? " (primary)" : "";
+      return `${label}${suffix}: ${formatted}`;
     })
     .join(" · ");
+}
+
+export function formatPartyPhoneList(phones: CustomerPhone[]): string {
+  if (phones.length === 0) return "—";
+
+  return (
+    phones
+      .map((phone) => {
+        const formatted = resolvePhoneDisplayValue(phone.number, phone.displayNumber);
+        return phone.label ? `${phone.label}: ${formatted}` : formatted;
+      })
+      .filter(Boolean)
+      .join(" · ") || "—"
+  );
 }
 
 export function formatCustomerBranchLabel(customer: Customer): string {

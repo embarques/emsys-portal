@@ -6,20 +6,21 @@ import {
 
 /**
  * Invoice directory search bar — POST /invoices/search OR + contains.
- * Comma-separated values search invoice numbers only (OR across each term).
+ * Pagination in URL; body is filters + sort only (same as customers/trucks).
+ * Phone searches include normalized phones and legacy phone1 snapshots.
  */
 export const INVOICE_BAR_OR_SEARCH_FIELDS = [
   "number",
   "sender.name",
-  "receiver.name",
+  "sender.phones.number",
   "sender.phone1",
+  "receiver.name",
+  "receiver.phones.number",
   "receiver.phone1",
-  "sender.address.city",
-  "sender.address.state",
-  "sender.address.zipcode",
-  "receiver.address.city",
-  "receiver.address.state",
-  "receiver.address.zipcode",
+  "sender.address.address1",
+  "sender.address.address2",
+  "receiver.address.address1",
+  "receiver.address.address2",
 ] as const;
 
 export type InvoiceBarOrSearchField = (typeof INVOICE_BAR_OR_SEARCH_FIELDS)[number];
@@ -51,5 +52,11 @@ export function createInvoiceBarSearchFilterGroup(value: string): ApiSearchFilte
     return { operator: "or", filters };
   }
 
-  return createOrTextSearchFilterGroup(trimmed, [...INVOICE_BAR_OR_SEARCH_FIELDS], "contains");
+  const searchFields = /\d/.test(trimmed)
+    ? [...INVOICE_BAR_OR_SEARCH_FIELDS]
+    : INVOICE_BAR_OR_SEARCH_FIELDS.filter(
+        (field) => field !== "number" && !field.includes("phone"),
+      );
+
+  return createOrTextSearchFilterGroup(trimmed, searchFields, "contains");
 }

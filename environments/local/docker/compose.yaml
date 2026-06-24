@@ -1,0 +1,4 @@
+name: emsys-portal-local
+
+include:
+  - ./portal.yaml

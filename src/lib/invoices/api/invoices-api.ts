@@ -2,14 +2,16 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { buildApiListQuery, resolveApiListSort } from "@/lib/api/list-query";
 import {
-  buildAdvancedSearchBody,
   buildApiFilterNodeFromTableRows,
+  buildApiSearchPaginationQuery,
   createTextSearchFilter,
   hasListTextSearch,
   isApiSearchFilter,
+  resolveApiSearchSort,
   resolveSearchField,
   resolveSearchOperator,
   type ApiSearchFilterGroup,
+  type StripeStyleSearchBody,
 } from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
@@ -44,10 +46,17 @@ type ApiAddress = {
   zipcode?: string;
 };
 
+type ApiInvoicePhone = {
+  type?: string;
+  number?: string;
+  displayNumber?: string;
+};
+
 type ApiInvoiceParty = {
   id?: string;
   oldID?: number;
   name?: string;
+  phones?: ApiInvoicePhone[];
   address?: ApiAddress;
 };
 
@@ -86,6 +95,7 @@ type ApiInvoice = {
   discount?: number;
   branch?: InvoiceBranch;
   user?: ApiInvoiceUser;
+  employee?: ApiInvoiceUser;
   container?: ApiInvoiceContainer;
   sender?: ApiInvoiceParty;
   receiver?: ApiInvoiceParty;
@@ -149,12 +159,30 @@ function normalizeApiInvoiceParty(raw: unknown): OrderParty {
       : [];
 
   const id = readStringId(party.id) ?? createRecordId();
+  const phones = Array.isArray(party.phones)
+    ? party.phones
+        .map((phone) => {
+          const number = String(phone.number ?? "").trim();
+          if (!number) return null;
+
+          const displayNumber = String(phone.displayNumber ?? "").trim();
+          const label = String(phone.type ?? "").trim();
+
+          return {
+            id: createRecordId(),
+            number,
+            ...(displayNumber ? { displayNumber } : {}),
+            ...(label ? { label } : {}),
+          };
+        })
+        .filter((phone): phone is NonNullable<typeof phone> => phone != null)
+    : [];
 
   return {
     id,
     clientId: id,
     name: String(party.name ?? "").trim() || "—",
-    phones: [],
+    phones,
     addresses,
     orderAddressId: addresses[0]?.id ?? addressId,
   };
@@ -212,7 +240,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     amountPaid,
     balance,
     createdAt: String(item.createdAt ?? "").trim(),
-    createdBy: readInvoiceCreatedBy(item.user),
+    createdBy: readInvoiceCreatedBy(item.employee ?? item.user),
     updatedAt: String(item.updatedAt ?? "").trim(),
   };
 }
@@ -302,17 +330,32 @@ function buildInvoicesQuery(params: InvoiceListParams): string {
     page: params.page ?? DEFAULT_INVOICE_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_INVOICE_LIST_PARAMS.limit,
     offset: params.offset,
-    sort: resolveInvoicesSort(params),
+    sort: resolveInvoicesSort(params) ?? DEFAULT_INVOICE_LIST_PARAMS.sort,
   });
 }
 
-function buildInvoiceSearchBody(params: InvoiceListParams) {
-  return buildAdvancedSearchBody({
-    page: params.page ?? DEFAULT_INVOICE_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_INVOICE_LIST_PARAMS.limit,
-    sort: params.sort,
-    filterGroups: buildInvoiceSearchFilterGroups(params),
-  });
+/** POST /invoices/search — URL pagination; filters + sort in body only. */
+function buildInvoiceSearchBody(params: InvoiceListParams): StripeStyleSearchBody {
+  const body: StripeStyleSearchBody = {};
+
+  const sortSpecs = resolveApiSearchSort(params.sort ?? DEFAULT_INVOICE_LIST_PARAMS.sort);
+  if (sortSpecs) {
+    body.sort = sortSpecs;
+  }
+
+  const filterGroups = buildInvoiceSearchFilterGroups(params);
+  if (filterGroups.length === 0) {
+    return body;
+  }
+
+  if (filterGroups.length === 1) {
+    body.filters = filterGroups;
+    return body;
+  }
+
+  body.operator = "and";
+  body.filters = filterGroups;
+  return body;
 }
 
 function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackMessage: string): void {
@@ -331,8 +374,13 @@ function parseInvoicePathId(invoiceId: string): string {
 
 export async function fetchInvoices(params: InvoiceListParams = {}): Promise<PaginatedResult<Invoice>> {
   if (shouldUseInvoiceSearch(params)) {
+    const page = params.page ?? DEFAULT_INVOICE_LIST_PARAMS.page;
+    const limit = params.limit ?? DEFAULT_INVOICE_LIST_PARAMS.limit;
+    const offset = params.offset ?? (page - 1) * limit;
+    const paginationQuery = buildApiSearchPaginationQuery({ page, limit, offset });
+
     const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.INVOICES}/search`,
+      `${API_ENDPOINTS.INVOICES}/search?${paginationQuery}`,
       buildInvoiceSearchBody(params),
     );
 

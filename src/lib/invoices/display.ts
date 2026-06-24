@@ -1,7 +1,7 @@
 import { formatContainerLabel } from "@/lib/containers/display";
 import { getContainerById } from "@/lib/containers/mock-data";
 import { formatItemPrice } from "@/lib/items/display";
-import { getBranchLabel } from "@/lib/trucks/display";
+import { getBranchLabel } from "@/lib/vehicles/display";
 import type { Invoice, InvoiceLineItem, InvoicePaymentLocation, InvoicePaymentMethod } from "./types";
 import { INVOICE_PAYMENT_METHODS, getInvoiceBalanceAmount, getInvoiceTotal } from "./types";
 import { getOrderPartyAddress } from "./types";
@@ -107,6 +107,12 @@ export function formatInvoicePartySummary(party: Invoice["sender"]): string {
   const address = getOrderPartyAddress(party);
   const addressLine = address ? formatAddressLine(address) : "—";
   return `${party.name} · ${addressLine}`;
+}
+
+/** displayNumber is presentation-only; stored number remains the search/write value. */
+export function getInvoicePartyDisplayPhone(party: Invoice["sender"]): string {
+  const phone = party.phones.find((entry) => entry.displayNumber?.trim());
+  return phone?.displayNumber?.trim() || "—";
 }
 
 export function formatLineItemSummary(item: InvoiceLineItem): string {

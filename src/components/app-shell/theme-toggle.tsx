@@ -13,12 +13,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { updateConfigurationTheme } from "@/lib/configuration/store";
+import type { ThemePreference } from "@/lib/configuration/types";
 
 export function ThemeToggle() {
   const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => setMounted(true), []);
+
+  function applyTheme(theme: ThemePreference | "system") {
+    setTheme(theme);
+
+    if (theme === "light" || theme === "dark") {
+      updateConfigurationTheme(theme);
+    }
+  }
 
   const Icon = mounted && resolvedTheme === "dark" ? Moon : Sun;
 
@@ -32,13 +42,13 @@ export function ThemeToggle() {
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuLabel>Theme</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setTheme("light")}>
+        <DropdownMenuItem onSelect={() => applyTheme("light")}>
           <Sun className="mr-2 h-4 w-4" /> Light
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
+        <DropdownMenuItem onSelect={() => applyTheme("dark")}>
           <Moon className="mr-2 h-4 w-4" /> Dark
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
+        <DropdownMenuItem onSelect={() => applyTheme("system")}>
           <Laptop className="mr-2 h-4 w-4" /> System
         </DropdownMenuItem>
       </DropdownMenuContent>

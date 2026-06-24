@@ -13,7 +13,7 @@ import {
 import { RouteForm } from "@/components/routes/route-form";
 import { RouteViewSheet } from "@/components/routes/route-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -26,7 +26,6 @@ import {
   TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -191,9 +190,9 @@ export function RoutesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (route) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getRouteBranchBadgeClass(route.branch)}>{getRouteBranchLabel(route.branch)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getRouteBranchBadgeClass(route.branch)}>
+          {getRouteBranchLabel(route.branch)}
+        </TableTagText>
       ),
     },
     {
@@ -224,18 +223,14 @@ export function RoutesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (route) => (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
           {route.places.slice(0, 2).map((place) => (
-            <UniformWidthPill key={place.id} columnKey="places">
-              <Badge className={getPlaceKindBadgeClass(place.kind)}>
-                {getPlaceKindLabel(place.kind)}
-              </Badge>
-            </UniformWidthPill>
+            <TableTagText key={place.id} className={getPlaceKindBadgeClass(place.kind)}>
+              {getPlaceKindLabel(place.kind)}
+            </TableTagText>
           ))}
           {route.places.length > 2 ? (
-            <UniformWidthPill columnKey="places">
-              <Badge variant="outline">+{route.places.length - 2}</Badge>
-            </UniformWidthPill>
+            <TableTagText>+{route.places.length - 2}</TableTagText>
           ) : null}
         </div>
       ),
@@ -285,7 +280,7 @@ export function RoutesWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -371,6 +366,7 @@ export function RoutesWorkspace() {
           rowKey={(route) => route.routeId}
           rowLabel={(route) => route.name}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={1050}
           selectable
           selectedIds={selectedIds}
@@ -434,14 +430,9 @@ export function RoutesWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit route" : "Add route"}</DialogTitle>
-            <DialogDescription>
-              {formMode === "edit"
-                ? "Update the route name and its cities, states, zip codes, or zip ranges."
-                : "Create a new route with a generated route ID and place list."}
-            </DialogDescription>
           </DialogHeader>
           <RouteForm
             key={editingRoute?.routeId ?? "new"}

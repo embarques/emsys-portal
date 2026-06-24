@@ -25,6 +25,7 @@ import {
   type BranchListParams,
   type BranchSettings,
 } from "@/lib/branches/types";
+import { REQUIRED_PHONE_DIGITS, isCompletePhoneNumber } from "@/lib/phones/phones";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 
 function buildBranchChipFilters(params: BranchListParams): ApiSearchFilter[] {
@@ -262,7 +263,12 @@ function buildBranchWritePayload(
   const name = values.name.trim();
   if (!name) throw new Error("Branch name is required.");
 
+  const phone1 = normalizeStoredPhone(values.phone1);
   const phone2 = normalizeStoredPhone(values.phone2);
+
+  if ([phone1, phone2].some((phone) => phone && !isCompletePhoneNumber(phone))) {
+    throw new Error(`Each phone number must have ${REQUIRED_PHONE_DIGITS} digits.`);
+  }
   const disclaimer = values.disclaimer.trim();
   const logo = values.logo.trim();
   const address = buildApiAddressPayload(values.address);
@@ -272,7 +278,7 @@ function buildBranchWritePayload(
     name,
     type: values.type.trim(),
     code: values.code.trim(),
-    phone1: normalizeStoredPhone(values.phone1),
+    phone1,
   };
 
   if (options.branchId != null) {

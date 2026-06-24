@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import { addedMessage, deletedMessage, errorMessage, updatedMessage } from "@/lib/feedback/messages";
 import { cn } from "@/lib/utils";
+import { createRandomId } from "@/lib/utils/id";
 
 type ToastTone = "success" | "error";
 
@@ -32,7 +33,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const pushToast = useCallback((message: string, tone: ToastTone) => {
-    const id = crypto.randomUUID();
+    const id = createRandomId();
     setToasts((current) => [...current, { id, message, tone }]);
   }, []);
 
@@ -58,7 +59,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   return (
     <FeedbackContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed right-4 top-4 z-[300] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0">
+      <div className="pointer-events-none fixed bottom-4 right-4 z-[300] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0">
         {toasts.map((toast) => (
           <ToastCard
             key={toast.id}
@@ -90,7 +91,7 @@ function ToastCard({
     <div
       className={cn(
         "pointer-events-auto flex items-start gap-3 rounded-xl border p-4 shadow-xl backdrop-blur-sm",
-        "animate-in slide-in-from-top-4 fade-in duration-300",
+        "animate-in slide-in-from-bottom-4 fade-in duration-300",
         tone === "success" &&
           "border-emerald-300 bg-emerald-50 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-50",
         tone === "error" &&

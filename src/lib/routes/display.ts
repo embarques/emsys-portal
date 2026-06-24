@@ -1,6 +1,6 @@
 import type { RoutePlace, RoutePlaceKind, RouteRecord, RouteBranch } from "./types";
 import { ROUTE_PLACE_KINDS } from "./types";
-import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
+import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
 
 export function getRouteBranchLabel(branch: RouteBranch): string {
   return getBranchLabel(branch);

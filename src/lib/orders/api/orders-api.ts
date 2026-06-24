@@ -36,6 +36,11 @@ import { normalizeApiUser } from "@/lib/users/api/users-api";
 import type { User } from "@/lib/users/types";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
+  deriveOrderPurpose,
+  orderCommentPurposeRequiresItem,
+  orderToFormValues,
+  resolveOrderCommentUnit,
+  toApiCommentPurpose,
   type Order,
   type OrderFormValues,
   type OrderListParams,
@@ -131,8 +136,15 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
 
 const ORDER_LIST_SEARCH_FIELD = "sender.name";
 
+/** Pickup field holding the sender's customer id, used to load a sender's pickup history. */
+const SENDER_HISTORY_FILTER_FIELD = "sender.id";
+
+/** Default number of historical pickups loaded for a sender. */
+const SENDER_HISTORY_LIMIT = 50;
+
 const EMPTY_CUSTOMER: Customer = {
   id: "",
+  oldID: null,
   name: "—",
   customerType: null,
   phones: createDefaultRecordPhones(),
@@ -157,6 +169,8 @@ const EMPTY_CUSTOMER: Customer = {
     state: "",
     zipcode: "",
     country: "US",
+    location: null,
+    verification: null,
   },
   addresses: [],
   receivers: [],
@@ -424,6 +438,40 @@ export async function fetchOrders(params: OrderListParams = {}): Promise<Paginat
   return normalizePaginatedOrders(response);
 }
 
+/**
+ * Pickup history for a single sender.
+ * `GET /pickups?field=sender.id&operator=eq&value=<customerId>&sort=date:desc`
+ *
+ * Returns the sender's previous and current pickups so the order form/view can
+ * show them without relying on the client-side orders list page.
+ */
+export async function fetchSenderOrderHistory(
+  senderId: string,
+  options: { limit?: number } = {},
+): Promise<PaginatedResult<Order>> {
+  const trimmedId = senderId.trim();
+  if (!trimmedId) {
+    return { items: [], page: 1, resultsPerPage: 0, total: 0 };
+  }
+
+  const query = buildApiListQuery({
+    page: 1,
+    limit: options.limit ?? SENDER_HISTORY_LIMIT,
+    sort: DEFAULT_ORDER_LIST_PARAMS.sort,
+    filter: {
+      field: SENDER_HISTORY_FILTER_FIELD,
+      operator: "eq",
+      value: trimmedId,
+    },
+  });
+
+  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
+    `${API_ENDPOINTS.PICKUPS}?${query}`,
+  );
+
+  return normalizePaginatedOrders(response);
+}
+
 function resolvePickupBranchRef(branchId: number): ApiBranchRefPayload {
   const config =
     CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.id === branchId) ?? CUSTOMER_PORTAL_BRANCHES[0];
@@ -469,16 +517,24 @@ function buildPickupCustomerRef(customer: Customer): ApiPickupCustomerRef {
 }
 
 function buildApiCommentsFromFormValues(values: OrderFormValues): ApiComment[] {
-  if (values.comments.length === 0) {
+  // Skip blank rows (e.g. the empty comment the editor pre-focuses for the next entry).
+  const comments = values.comments.filter((comment) => comment.purpose.trim());
+
+  if (comments.length === 0) {
     return [{ purpose: "", unit: "", quantity: 0, description: "" }];
   }
 
-  return values.comments.map((comment) => ({
-    purpose: comment.purpose.trim(),
-    unit: comment.unit.trim(),
-    quantity: Number.isFinite(Number(comment.quantity)) ? Number(comment.quantity) : 0,
-    description: comment.description.trim(),
-  }));
+  return comments.map((comment) => {
+    const requiresItem = orderCommentPurposeRequiresItem(comment.purpose);
+    const quantity = Number(comment.quantity);
+
+    return {
+      purpose: toApiCommentPurpose(comment.purpose),
+      unit: resolveOrderCommentUnit(comment),
+      quantity: requiresItem && Number.isFinite(quantity) ? quantity : 0,
+      description: requiresItem ? "" : comment.description.trim(),
+    };
+  });
 }
 
 function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload {
@@ -487,7 +543,7 @@ function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload
   }
 
   const date = values.date.trim() || new Date().toISOString().slice(0, 10);
-  const purpose = values.purpose.trim();
+  const purpose = deriveOrderPurpose(values.comments);
   const comments = buildApiCommentsFromFormValues(values);
 
   const payload: ApiPickupWritePayload = {
@@ -634,4 +690,23 @@ export async function deleteOrder(orderId: string): Promise<void> {
 
 export async function deleteOrders(orderIds: string[]): Promise<void> {
   await Promise.all(orderIds.map((orderId) => deleteOrder(orderId)));
+}
+
+/** Build a full pickup write payload from an existing order with an explicit completed flag. */
+function buildPickupCompletedPayload(order: Order, completed: boolean): ApiPickupWritePayload {
+  const payload = buildPickupWritePayload(orderToFormValues(order));
+  payload.completed = completed;
+  return payload;
+}
+
+export async function setOrderCompleted(order: Order, completed: boolean): Promise<void> {
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/${order.id}`,
+    buildPickupCompletedPayload(order, completed),
+  );
+  assertMutationSuccess(response, "Unable to update pickup.");
+}
+
+export async function setOrdersCompleted(orders: Order[], completed: boolean): Promise<void> {
+  await Promise.all(orders.map((order) => setOrderCompleted(order, completed)));
 }

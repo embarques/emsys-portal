@@ -4,16 +4,18 @@ import { Copy, Phone } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   buildTelHref,
   buildWhatsAppHref,
-  formatPhoneForDisplay,
+  resolvePhoneDisplayValue,
 } from "@/lib/utils/phone";
 import { cn } from "@/lib/utils";
 
 type PhoneActionRowProps = {
   label: string;
   number: string;
+  displayNumber?: string;
   className?: string;
 };
 
@@ -30,9 +32,9 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function PhoneActionRow({ label, number, className }: PhoneActionRowProps) {
+export function PhoneActionRow({ label, number, displayNumber, className }: PhoneActionRowProps) {
   const { notifySuccess, notifyError } = useFeedback();
-  const display = formatPhoneForDisplay(number);
+  const display = resolvePhoneDisplayValue(number, displayNumber);
   const telHref = buildTelHref(number);
   const whatsAppHref = buildWhatsAppHref(number);
 
@@ -60,44 +62,59 @@ export function PhoneActionRow({ label, number, className }: PhoneActionRowProps
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          aria-label={`Copy ${label}`}
-          onClick={handleCopy}
-        >
-          <Copy className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              aria-label={`Copy ${label}`}
+              onClick={handleCopy}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Copy number</TooltipContent>
+        </Tooltip>
         {telHref ? (
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            <a href={telHref} aria-label={`Call ${label}`}>
-              <Phone className="h-4 w-4" />
-            </a>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+              >
+                <a href={telHref} aria-label={`Call ${label}`}>
+                  <Phone className="h-4 w-4" />
+                </a>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Call</TooltipContent>
+          </Tooltip>
         ) : null}
         {whatsAppHref ? (
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-[#25D366]"
-          >
-            <a
-              href={whatsAppHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`WhatsApp ${label}`}
-            >
-              <WhatsAppIcon />
-            </a>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-[#25D366] hover:text-[#1da851]"
+              >
+                <a
+                  href={whatsAppHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`WhatsApp ${label}`}
+                >
+                  <WhatsAppIcon />
+                </a>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Message on WhatsApp</TooltipContent>
+          </Tooltip>
         ) : null}
       </div>
     </div>

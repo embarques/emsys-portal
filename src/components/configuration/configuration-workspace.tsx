@@ -4,12 +4,15 @@ import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { updateConfigurationTheme } from "@/lib/configuration/store";
 import {
   CONFIGURATION_LANGUAGES,
   CONFIGURATION_THEMES,
@@ -21,9 +24,6 @@ import {
 import { useConfigurationStore, useSaveConfiguration } from "@/lib/configuration/use-configuration";
 import { cn } from "@/lib/utils";
 
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
-
 export function ConfigurationWorkspace() {
   const { notifySuccess } = useFeedback();
   const configuration = useConfigurationStore();
@@ -34,6 +34,7 @@ export function ConfigurationWorkspace() {
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => setMounted(true), []);
 
@@ -49,7 +50,9 @@ export function ConfigurationWorkspace() {
     setFormError(null);
 
     if (key === "theme") {
-      setTheme(value as ThemePreference);
+      const theme = value as ThemePreference;
+      setTheme(theme);
+      updateConfigurationTheme(theme);
     }
   }
 
@@ -77,7 +80,7 @@ export function ConfigurationWorkspace() {
     <div>
       <PageHeader title="Configuration" />
 
-      <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6">
+      <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="mx-auto max-w-3xl space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Appearance</CardTitle>
@@ -186,21 +189,18 @@ export function ConfigurationWorkspace() {
               <Label htmlFor="language">
                 Language <span className="text-destructive">*</span>
               </Label>
-              <select
+              <SearchableSelect
                 id="language"
-                className={selectClassName}
                 value={values.language}
-                onChange={(event) =>
-                  updateField("language", event.target.value as UserConfigurationFormValues["language"])
+                onValueChange={(next) =>
+                  updateField("language", next as UserConfigurationFormValues["language"])
                 }
                 required
-              >
-                {CONFIGURATION_LANGUAGES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                options={CONFIGURATION_LANGUAGES.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
+              />
             </div>
           </CardContent>
         </Card>

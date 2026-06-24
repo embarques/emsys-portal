@@ -1,222 +1,155 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   getPermissionCatalogGroups,
-  getPermissionLabel,
   getPermissionsByGroup,
+  type PermissionCatalogEntry,
 } from "@/lib/roles/permissions-catalog";
 import {
-  createEmptyPermission,
-  createPermissionId,
-  type Role,
   type RolePermissionFormValues,
 } from "@/lib/roles/types";
 
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
-
 type RolePermissionsEditorProps = {
   permissions: RolePermissionFormValues[];
-  existingRoles?: Role[];
-  currentRoleId?: string;
-  showCopyFrom?: boolean;
-  onChange: (permissions: RolePermissionFormValues[]) => void;
+  catalog: PermissionCatalogEntry[];
+  onChange?: (permissions: RolePermissionFormValues[]) => void;
+  readOnly?: boolean;
+  showPermissionValues?: boolean;
+  defaultExpanded?: boolean;
 };
 
 export function RolePermissionsEditor({
   permissions,
-  existingRoles = [],
-  currentRoleId,
-  showCopyFrom = false,
+  catalog,
   onChange,
+  readOnly = false,
+  showPermissionValues = true,
+  defaultExpanded = true,
 }: RolePermissionsEditorProps) {
-  const [copyFromRoleId, setCopyFromRoleId] = useState("");
+  const catalogGroups = useMemo(() => getPermissionCatalogGroups(catalog), [catalog]);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    () => new Set(defaultExpanded ? catalogGroups : [])
+  );
 
-  const copySourceRoles = useMemo(
-    () => existingRoles.filter((role) => role.roleId !== currentRoleId),
-    [currentRoleId, existingRoles]
+  const assignedIds = useMemo(
+    () => new Set(permissions.map((permission) => permission.id.trim()).filter(Boolean)),
+    [permissions],
   );
 
   const assignedValues = useMemo(
     () => new Set(permissions.map((permission) => permission.value.trim()).filter(Boolean)),
-    [permissions]
+    [permissions],
   );
 
-  function updatePermission(index: number, value: string) {
-    onChange(permissions.map((permission, permissionIndex) => (permissionIndex === index ? { ...permission, value } : permission)));
-  }
+  useEffect(() => {
+    if (!defaultExpanded) return;
 
-  function addPermission(initialValue = "") {
-    onChange([...permissions, { id: createPermissionId(), value: initialValue }]);
-  }
+    setExpandedGroups((current) => new Set([...current, ...catalogGroups]));
+  }, [catalogGroups, defaultExpanded]);
 
-  function removePermission(index: number) {
-    if (permissions.length <= 1) {
-      onChange([createEmptyPermission()]);
+  function togglePermission(entry: PermissionCatalogEntry, checked: boolean) {
+    if (readOnly || !onChange) return;
+
+    if (checked) {
+      onChange([...permissions, { id: entry.id, value: entry.value }]);
       return;
     }
-    onChange(permissions.filter((_, permissionIndex) => permissionIndex !== index));
+
+    onChange(permissions.filter((permission) => permission.value !== entry.value));
   }
 
-  function addCatalogPermission(value: string) {
-    if (assignedValues.has(value)) return;
-    const hasEmptyRow = permissions.some((permission) => !permission.value.trim());
-    if (hasEmptyRow) {
-      onChange(
-        permissions.map((permission) =>
-          !permission.value.trim() ? { ...permission, value } : permission
-        )
-      );
-      return;
-    }
-    addPermission(value);
+  function toggleGroup(group: string) {
+    setExpandedGroups((current) => {
+      const next = new Set(current);
+      if (next.has(group)) {
+        next.delete(group);
+      } else {
+        next.add(group);
+      }
+      return next;
+    });
   }
-
-  function handleCopyFromRole(roleId: string) {
-    setCopyFromRoleId(roleId);
-    if (!roleId) return;
-
-    const sourceRole = existingRoles.find((role) => role.roleId === roleId);
-    if (!sourceRole) return;
-
-    onChange(
-      sourceRole.permissions.map((permission) => ({
-        id: createPermissionId(),
-        value: permission.value,
-      }))
-    );
-  }
-
-  const catalogGroups = getPermissionCatalogGroups();
 
   return (
-    <section className="space-y-4">
-      {showCopyFrom && copySourceRoles.length > 0 ? (
-        <div className="rounded-xl border border-dashed bg-muted/10 p-4">
-          <div className="flex items-start gap-3">
-            <Copy className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <div>
-                <Label htmlFor="copyFromRole">Copy from existing role</Label>
-                <p className="text-xs text-muted-foreground">
-                  Start with another role&apos;s permissions, then add, edit, or remove as needed.
-                </p>
-              </div>
-              <select
-                id="copyFromRole"
-                className={selectClassName}
-                value={copyFromRoleId}
-                onChange={(event) => handleCopyFromRole(event.target.value)}
-              >
-                <option value="">Select a role to copy…</option>
-                {copySourceRoles.map((role) => (
-                  <option key={role.roleId} value={role.roleId}>
-                    {role.name} ({role.permissions.length} permissions)
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
+    <section className="space-y-4" aria-labelledby="permissions-heading">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold">Permissions</h3>
+          <h3 id="permissions-heading" className="text-sm font-semibold">Permissions</h3>
           <p className="text-sm text-muted-foreground">
-            Add, edit, or remove permissions for this role.
+            Choose what this role is allowed to access.
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={() => addPermission()}>
-          <Plus className="h-4 w-4" />
-          Add permission
-        </Button>
+        <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          {assignedValues.size} selected
+        </span>
       </div>
 
-      <div className="space-y-3">
-        {permissions.map((permission, index) => (
-          <div key={permission.id} className="flex items-start gap-2 rounded-xl border bg-muted/10 p-3">
-            <div className="min-w-0 flex-1 space-y-2">
-              <Label htmlFor={`permission-${permission.id}`} className="text-xs text-muted-foreground">
-                Permission {index + 1}
-              </Label>
-              <Input
-                id={`permission-${permission.id}`}
-                value={permission.value}
-                onChange={(event) => updatePermission(index, event.target.value)}
-                placeholder="e.g. customers.view"
-                list="permission-catalog-options"
-              />
-              {permission.value.trim() ? (
-                <p className="text-xs text-muted-foreground">{getPermissionLabel(permission.value.trim())}</p>
-              ) : null}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="mt-6 shrink-0 text-destructive hover:text-destructive"
-              onClick={() => removePermission(index)}
-            >
-              <Trash2 className="h-4 w-4" />
-              Remove
-            </Button>
+      <div className="overflow-hidden rounded-xl border">
+        {catalog.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-muted-foreground">Loading permissions…</p>
+        ) : (
+          catalogGroups.map((group, groupIndex) => (
+          <div key={group} className={groupIndex > 0 ? "border-t" : undefined}>
+            <h4>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-3 bg-muted/40 px-4 py-2.5 text-left transition-colors hover:bg-muted/60"
+                aria-expanded={expandedGroups.has(group)}
+                aria-controls={`permission-group-${groupIndex}`}
+                onClick={() => toggleGroup(group)}
+              >
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {group}
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform ${
+                    expandedGroups.has(group) ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+            </h4>
+            {expandedGroups.has(group) ? (
+              <div id={`permission-group-${groupIndex}`} className="divide-y">
+                {getPermissionsByGroup(group, catalog).map((entry) => {
+                  const isAssigned = assignedIds.has(entry.id) || assignedValues.has(entry.value);
+                  return (
+                    <label
+                      key={entry.value}
+                      htmlFor={`permission-${entry.value}`}
+                      className={`flex items-center justify-between gap-4 px-4 py-3 transition-colors ${
+                        readOnly ? "cursor-default" : "cursor-pointer hover:bg-muted/30"
+                      }`}
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">{entry.label}</span>
+                        {showPermissionValues ? (
+                          <span className="block font-mono text-xs text-muted-foreground">
+                            {entry.value}
+                          </span>
+                        ) : null}
+                      </span>
+                      <Switch
+                        id={`permission-${entry.value}`}
+                        checked={isAssigned}
+                        disabled={readOnly}
+                        className={readOnly ? "disabled:cursor-default disabled:opacity-100" : undefined}
+                        onCheckedChange={
+                          readOnly ? undefined : (checked) => togglePermission(entry, checked)
+                        }
+                        aria-label={`${entry.label} permission`}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
-        ))}
-      </div>
-
-      <datalist id="permission-catalog-options">
-        {catalogGroups.flatMap((group) =>
-          getPermissionsByGroup(group).map((entry) => (
-            <option key={entry.value} value={entry.value}>
-              {entry.label}
-            </option>
-          ))
+        ))
         )}
-      </datalist>
-
-      <div className="space-y-3 rounded-xl border bg-muted/5 p-4">
-        <div>
-          <h4 className="text-sm font-medium">Quick add from catalog</h4>
-          <p className="text-xs text-muted-foreground">
-            Click a permission to add it to the list above.
-          </p>
-        </div>
-
-        {catalogGroups.map((group) => (
-          <div key={group} className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group}</p>
-            <div className="flex flex-wrap gap-2">
-              {getPermissionsByGroup(group).map((entry) => {
-                const isAssigned = assignedValues.has(entry.value);
-                return (
-                  <Button
-                    key={entry.value}
-                    type="button"
-                    size="sm"
-                    variant={isAssigned ? "secondary" : "outline"}
-                    disabled={isAssigned}
-                    onClick={() => addCatalogPermission(entry.value)}
-                  >
-                    {entry.label}
-                    {isAssigned ? (
-                      <Badge variant="outline" className="ml-1 text-[10px]">
-                        Added
-                      </Badge>
-                    ) : null}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
       </div>
     </section>
   );

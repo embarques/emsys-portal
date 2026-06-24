@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,6 +13,7 @@ import {
 import { ItemForm } from "@/components/items/item-form";
 import { ItemViewSheet } from "@/components/items/item-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -59,6 +60,7 @@ const defaultFilters: ItemFilterState = {
 
 export function ItemsWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [items, setItems] = useState<Item[]>(() => cloneItems());
   const [filters, setFilters] = useState<ItemFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -78,6 +80,11 @@ export function ItemsWorkspace() {
   const currentPage = Math.min(page, totalPages);
   const pageItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allPageSelected = pageItems.length > 0 && pageItems.every((item) => selectedIds.includes(item.itemId));
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsInitialLoading(false), 600);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -233,7 +240,7 @@ export function ItemsWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             showFilterToggle={false}
@@ -263,6 +270,14 @@ export function ItemsWorkspace() {
           onDelete={() => setDeleteTarget(items.filter((item) => selectedIds.includes(item.itemId)))}
         />
 
+        {isInitialLoading ? (
+          <DirectoryTableLoader
+            icon={Tag}
+            title="Loading items"
+            description="Organizing item details, pricing, and catalog information…"
+            columns={["Item", "Description", "Price", "Created", "Updated"]}
+          />
+        ) : (
         <DataTable
           columns={columnVisibility.columns}
           rows={pageItems}
@@ -270,6 +285,7 @@ export function ItemsWorkspace() {
           rowKey={(item) => item.itemId}
           rowLabel={(item) => item.description}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={960}
           selectable
           selectedIds={selectedIds}
@@ -288,7 +304,9 @@ export function ItemsWorkspace() {
             </>
           }
         />
+        )}
 
+        {!isInitialLoading ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {pageItems.length} of {filteredItems.length} items
@@ -317,6 +335,7 @@ export function ItemsWorkspace() {
             </Button>
           </div>
         </div>
+        ) : null}
       </Card>
 
       <ItemViewSheet
@@ -341,12 +360,9 @@ export function ItemsWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit item" : "Add item"}</DialogTitle>
-            <DialogDescription>
-              {formMode === "edit" ? "Update the item description and price." : "Create a new catalog item."}
-            </DialogDescription>
           </DialogHeader>
           <ItemForm
             key={editingItem?.itemId ?? "new"}
@@ -356,13 +372,13 @@ export function ItemsWorkspace() {
             isEditing={formMode === "edit"}
             updatedAt={editingItem?.updatedAt}
             submitLabel={formMode === "edit" ? "Save changes" : "Add item"}
+            externalError={formError}
             onSubmit={saveItem}
             onCancel={() => {
               setFormMode(null);
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

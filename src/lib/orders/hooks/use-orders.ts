@@ -9,6 +9,8 @@ import {
   deleteOrders,
   fetchOrderById,
   fetchOrders,
+  fetchSenderOrderHistory,
+  setOrdersCompleted,
   updateOrder,
 } from "@/lib/orders/api/orders-api";
 import {
@@ -18,6 +20,7 @@ import {
 } from "@/lib/orders/order-stats";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
+  type Order,
   type OrderFormValues,
   type OrderListParams,
   type OrderSearchFilter,
@@ -66,6 +69,23 @@ export function useOrderSearch(
   });
 }
 
+const SENDER_HISTORY_LIMIT = 50;
+
+/** Load a sender's pickup history via GET /pickups filtered by their customer id. */
+export function useSenderOrderHistory(
+  senderId: string | null | undefined,
+  limit = SENDER_HISTORY_LIMIT,
+) {
+  const queryEnabled = useOrdersQueryEnabled();
+  const id = senderId?.trim() ?? "";
+
+  return useQuery({
+    queryKey: queryKeys.orders.history(id, limit),
+    queryFn: () => fetchSenderOrderHistory(id, { limit }),
+    enabled: queryEnabled && Boolean(id),
+  });
+}
+
 type OrderStatsOptions = {
   enabled?: boolean;
 };
@@ -94,22 +114,44 @@ export function useOrderStats(options: OrderStatsOptions = {}) {
     enabled: queryEnabled,
   });
 
+  const pendingEstimatesQuery = useQuery({
+    queryKey: queryKeys.orders.stats("pending-estimates"),
+    queryFn: () =>
+      fetchOrders(buildOrderStatsCountParams(buildPendingPurposeStatsFilterRows("estimate"))),
+    enabled: queryEnabled,
+  });
+
+  const pendingPaymentsQuery = useQuery({
+    queryKey: queryKeys.orders.stats("pending-payments"),
+    queryFn: () =>
+      fetchOrders(buildOrderStatsCountParams(buildPendingPurposeStatsFilterRows("payment"))),
+    enabled: queryEnabled,
+  });
+
   const pending = pendingQuery.data?.total ?? 0;
   const pendingPickups = pendingPickupsQuery.data?.total ?? 0;
   const pendingTakes = pendingTakesQuery.data?.total ?? 0;
+  const pendingEstimates = pendingEstimatesQuery.data?.total ?? 0;
+  const pendingPayments = pendingPaymentsQuery.data?.total ?? 0;
 
   return {
     pending,
     pendingPickups,
     pendingTakes,
+    pendingEstimates,
+    pendingPayments,
     isLoading:
       pendingQuery.isLoading ||
       pendingPickupsQuery.isLoading ||
-      pendingTakesQuery.isLoading,
+      pendingTakesQuery.isLoading ||
+      pendingEstimatesQuery.isLoading ||
+      pendingPaymentsQuery.isLoading,
     isError:
       pendingQuery.isError ||
       pendingPickupsQuery.isError ||
-      pendingTakesQuery.isError,
+      pendingTakesQuery.isError ||
+      pendingEstimatesQuery.isError ||
+      pendingPaymentsQuery.isError,
   };
 }
 
@@ -165,6 +207,16 @@ export function useDeleteOrders() {
 
   return useMutation({
     mutationFn: (orderIds: string[]) => deleteOrders(orderIds),
+    onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+export function useSetOrdersCompleted() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orders, completed }: { orders: Order[]; completed: boolean }) =>
+      setOrdersCompleted(orders, completed),
     onSuccess: () => invalidateOrders(queryClient),
   });
 }

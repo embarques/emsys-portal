@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Boxes,
@@ -15,7 +15,8 @@ import {
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventoryViewSheet } from "@/components/inventory/inventory-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -28,7 +29,6 @@ import {
   TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -39,6 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeInventoryKpis,
@@ -60,12 +61,8 @@ import {
 } from "@/lib/inventory/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
-import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 8;
-
-const selectClassName =
-  "h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 const defaultFilters: InventoryFilterState = {
   query: "",
@@ -92,6 +89,7 @@ function itemToFormValues(item: InventoryItem): InventoryFormValues {
 
 export function InventoryWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [items, setItems] = useState<InventoryItem[]>(() => cloneInventoryItems());
   const [filters, setFilters] = useState<InventoryFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -118,6 +116,11 @@ export function InventoryWorkspace() {
   const pageItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allPageSelected = pageItems.length > 0 && pageItems.every((item) => selectedIds.includes(item.id));
   const activeFilterCount = [filters.status, filters.location, filters.category].filter((value) => value !== "all").length;
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsInitialLoading(false), 600);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -239,9 +242,9 @@ export function InventoryWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (item) => (
-        <UniformWidthPill columnKey="status">
-          <Badge className={getStatusBadgeClass(item.status)}>{getStatusLabel(item.status)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getStatusBadgeClass(item.status)}>
+          {getStatusLabel(item.status)}
+        </TableTagText>
       ),
     },
     {
@@ -307,7 +310,7 @@ export function InventoryWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -331,69 +334,63 @@ export function InventoryWorkspace() {
                 onClearAll={hasActiveFilters ? resetFilters : undefined}
               >
             <TableFilterSection label="Status">
-              <select
-                id="filter-status"
-                className={cn(selectClassName, "min-w-[12rem]")}
+              <SearchableSelect
+                aria-label="Filter by status"
+                className="min-w-[12rem]"
                 value={filters.status}
-                onChange={(event) => {
+                onValueChange={(next) => {
                   setFilters((current) => ({
                     ...current,
-                    status: event.target.value as InventoryFilterState["status"],
+                    status: next as InventoryFilterState["status"],
                   }));
                   setPage(1);
                 }}
-              >
-                <option value="all">All statuses</option>
-                {INVENTORY_STATUSES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                searchPlaceholder="Search statuses…"
+                options={[
+                  { value: "all", label: "All statuses" },
+                  ...INVENTORY_STATUSES.map((option) => ({ value: option.value, label: option.label })),
+                ]}
+              />
             </TableFilterSection>
 
             <TableFilterSection label="Location">
-              <select
-                id="filter-location"
-                className={cn(selectClassName, "min-w-[12rem]")}
+              <SearchableSelect
+                aria-label="Filter by location"
+                className="min-w-[12rem]"
                 value={filters.location}
-                onChange={(event) => {
+                onValueChange={(next) => {
                   setFilters((current) => ({
                     ...current,
-                    location: event.target.value as InventoryFilterState["location"],
+                    location: next as InventoryFilterState["location"],
                   }));
                   setPage(1);
                 }}
-              >
-                <option value="all">All locations</option>
-                {INVENTORY_LOCATIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                searchPlaceholder="Search locations…"
+                options={[
+                  { value: "all", label: "All locations" },
+                  ...INVENTORY_LOCATIONS.map((option) => ({ value: option.value, label: option.label })),
+                ]}
+              />
             </TableFilterSection>
 
             <TableFilterSection label="Category">
-              <select
-                id="filter-category"
-                className={cn(selectClassName, "min-w-[12rem]")}
+              <SearchableSelect
+                aria-label="Filter by category"
+                className="min-w-[12rem]"
                 value={filters.category}
-                onChange={(event) => {
+                onValueChange={(next) => {
                   setFilters((current) => ({
                     ...current,
-                    category: event.target.value as InventoryFilterState["category"],
+                    category: next as InventoryFilterState["category"],
                   }));
                   setPage(1);
                 }}
-              >
-                <option value="all">All categories</option>
-                {INVENTORY_CATEGORIES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                searchPlaceholder="Search categories…"
+                options={[
+                  { value: "all", label: "All categories" },
+                  ...INVENTORY_CATEGORIES.map((option) => ({ value: option.value, label: option.label })),
+                ]}
+              />
             </TableFilterSection>
               </TableFilterPanel>
             }
@@ -411,6 +408,14 @@ export function InventoryWorkspace() {
           onDelete={() => setDeleteTarget(items.filter((item) => selectedIds.includes(item.id)))}
         />
 
+        {isInitialLoading ? (
+          <DirectoryTableLoader
+            icon={Warehouse}
+            title="Loading inventory"
+            description="Counting available stock, reservations, and warehouse locations…"
+            columns={["SKU", "Item", "Category", "Available", "Location"]}
+          />
+        ) : (
         <DataTable
           columns={columnVisibility.columns}
           rows={pageItems}
@@ -418,6 +423,7 @@ export function InventoryWorkspace() {
           rowKey={(item) => item.id}
           rowLabel={(item) => item.sku}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={1050}
           selectable
           selectedIds={selectedIds}
@@ -430,7 +436,9 @@ export function InventoryWorkspace() {
             <p className="text-muted-foreground">No inventory items match your search or filters.</p>
           }
         />
+        )}
 
+        {!isInitialLoading ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {pageItems.length} of {filteredItems.length} items
@@ -459,6 +467,7 @@ export function InventoryWorkspace() {
             </Button>
           </div>
         </div>
+        ) : null}
       </Card>
 
       <InventoryViewSheet
@@ -472,14 +481,9 @@ export function InventoryWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit inventory item" : "Add inventory item"}</DialogTitle>
-            <DialogDescription>
-              {formMode === "edit"
-                ? "Update stock counts, location, and status for this SKU."
-                : "Create a new warehouse item to track in inventory."}
-            </DialogDescription>
           </DialogHeader>
           <InventoryItemForm
             key={editingItem?.id ?? "new"}

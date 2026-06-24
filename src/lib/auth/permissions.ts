@@ -10,7 +10,7 @@ export const PERMISSIONS = {
   pickupsView: { name: "canViewPickup", resourceType: "pickup" },
   /** Pickups submenu — API has no route/truck/dispatch seed; gate with pickup view. */
   routesView: { name: "canViewPickup", resourceType: "pickup" },
-  trucksView: { name: "canViewPickup", resourceType: "pickup" },
+  vehiclesView: { name: "canViewPickup", resourceType: "pickup" },
   dispatchView: { name: "canViewPickup", resourceType: "pickup" },
   invoicesView: { name: "canViewInvoice", resourceType: "invoice" },
   /** Invoice items — no separate seed; gate with invoice view. */

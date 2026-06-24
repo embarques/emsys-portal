@@ -47,7 +47,7 @@ export type AdvancedSearchPagination = {
 
 /** POST /<resource>/search request body — same shape for every route. */
 export type AdvancedSearchBody = {
-  operator: "and";
+  operator: "and" | "or";
   filters: ApiSearchFilterNode[];
   pagination: AdvancedSearchPagination;
   sort: ApiSearchSortSpec[];
@@ -95,7 +95,9 @@ function hasApiSearchFilterValue(value: string | number | boolean): boolean {
   return value !== "";
 }
 
-function resolveAdvancedSearchFilters(options: BuildAdvancedSearchBodyOptions): ApiSearchFilterNode[] {
+function collectAdvancedSearchFilterGroups(
+  options: BuildAdvancedSearchBodyOptions,
+): ApiSearchFilterGroup[] {
   const leafFilters = (options.filters ?? []).filter(
     (filter) => filter.field.trim() && hasApiSearchFilterValue(filter.value),
   );
@@ -105,6 +107,12 @@ function resolveAdvancedSearchFilters(options: BuildAdvancedSearchBodyOptions): 
   if (leafFilters.length > 0) {
     filterGroups.push({ operator: "and", filters: leafFilters });
   }
+
+  return filterGroups;
+}
+
+function resolveAdvancedSearchFilters(options: BuildAdvancedSearchBodyOptions): ApiSearchFilterNode[] {
+  const filterGroups = collectAdvancedSearchFilterGroups(options);
 
   if (filterGroups.length === 0) {
     return [];
@@ -124,12 +132,25 @@ export function buildAdvancedSearchBody(
   const page = options.page ?? 1;
   const limit = options.limit ?? 40;
   const offset = (page - 1) * limit;
+  const pagination = { page, limit, offset };
+  const sort = resolveApiSearchSort(options.sort) ?? [];
+  const filterGroups = collectAdvancedSearchFilterGroups(options);
+
+  // Bar search only: one OR group with no other constraints → root OR + flat leaf filters.
+  if (filterGroups.length === 1 && filterGroups[0].operator === "or") {
+    return {
+      operator: "or",
+      filters: filterGroups[0].filters,
+      pagination,
+      sort,
+    };
+  }
 
   return {
     operator: "and",
     filters: resolveAdvancedSearchFilters(options),
-    pagination: { page, limit, offset },
-    sort: resolveApiSearchSort(options.sort) ?? [],
+    pagination,
+    sort,
   };
 }
 

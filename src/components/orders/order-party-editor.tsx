@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { formatAddressLine } from "@/lib/customers/display";
 import {
   getCustomerAddresses,
@@ -22,10 +23,8 @@ import {
   type OrderPartyPhoneFormValues,
 } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
+import { createRandomId } from "@/lib/utils/id";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type OrderPartyEditorProps = {
   title: string;
@@ -57,7 +56,7 @@ export function customerToOrderPartyFormValues(customer: Customer): OrderPartyFo
   const legacyPhones = getCustomerPhones(customer);
 
   return {
-    id: crypto.randomUUID(),
+    id: createRandomId(),
     clientId: getCustomerClientId(customer),
     name: customer.name,
     documentId: "",
@@ -175,30 +174,28 @@ export function OrderPartyEditor({
 
       <div className="space-y-2">
         <Label htmlFor={`${values.id}-customer`}>Load from client directory</Label>
-        <select
+        <SearchableSelect
           id={`${values.id}-customer`}
-          className={selectClassName}
           value={values.clientId}
-          onChange={(event) => {
-            const clientId = event.target.value;
+          onValueChange={(clientId) => {
             if (!clientId) {
               updateField("clientId", "");
               return;
             }
             loadCustomer(clientId);
           }}
-        >
-          <option value="">Enter manually or pick a client</option>
-          {filteredCustomers.map((customer) => {
-            const clientType = getCustomerClientType(customer);
-            return (
-              <option key={customer.id} value={getCustomerClientId(customer)}>
-                {customer.name}
-                {clientType ? ` · ${clientType}` : ""}
-              </option>
-            );
-          })}
-        </select>
+          searchPlaceholder="Search clients…"
+          options={[
+            { value: "", label: "Enter manually or pick a client" },
+            ...filteredCustomers.map((customer): SearchableSelectOption => {
+              const clientType = getCustomerClientType(customer);
+              return {
+                value: getCustomerClientId(customer),
+                label: `${customer.name}${clientType ? ` · ${clientType}` : ""}`,
+              };
+            }),
+          ]}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -240,14 +237,20 @@ export function OrderPartyEditor({
             <p className="text-sm font-semibold">Phone numbers</p>
             <p className="text-xs text-muted-foreground">At least one phone is required.</p>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={addPhone}>
-            <Plus className="h-4 w-4" />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+            onClick={addPhone}
+          >
+            <Plus className="size-4" />
             Add phone
           </Button>
         </div>
 
         {values.phones.map((phone, index) => (
-          <div key={phone.id} className="rounded-lg border bg-background p-3">
+          <div key={phone.id} className="rounded-lg border bg-card p-3">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-medium">Phone {index + 1}</p>
               <Button
@@ -292,8 +295,14 @@ export function OrderPartyEditor({
             <p className="text-sm font-semibold">Addresses</p>
             <p className="text-xs text-muted-foreground">Select which address applies to this order.</p>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={addAddress}>
-            <Plus className="h-4 w-4" />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+            onClick={addAddress}
+          >
+            <Plus className="size-4" />
             Add address
           </Button>
         </div>
@@ -305,7 +314,7 @@ export function OrderPartyEditor({
           return (
             <div
               key={address.id}
-              className={cn("rounded-lg border bg-background p-3", selected && "border-primary ring-1 ring-primary/20")}
+              className={cn("rounded-lg border bg-card p-3", selected && "border-primary ring-1 ring-primary/20")}
             >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">

@@ -1,12 +1,14 @@
 "use client";
 
+import { Building2, MapPin, Phone, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatEmployeeDate, formatEmployeeMoney } from "@/lib/employees/display";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   EMPLOYEE_ACTIVE_OPTIONS,
   EMPLOYEE_DEPARTMENTS,
@@ -14,48 +16,33 @@ import {
   EMPLOYEE_TITLES,
   createEmployeeBranchFromPortal,
   createEmptyEmployeeForm,
-  formatEmployeeUserLabel,
   getEmployeePortalBranch,
   type EmployeeAddress,
   type EmployeeFormValues,
   type EmployeePortalBranch,
 } from "@/lib/employees/types";
 
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
-
-const readOnlyClassName = "bg-muted/40";
-
 type EmployeeFormProps = {
   initialValues?: EmployeeFormValues;
   isEditing?: boolean;
   submitLabel: string;
   isSubmitting?: boolean;
+  externalError?: string | null;
   onSubmit: (values: EmployeeFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
-
-function FormSection({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-3 rounded-xl border bg-muted/10 p-4">
-      <div>
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
 
 export function EmployeeForm({
   initialValues,
   isEditing = false,
   submitLabel,
   isSubmitting = false,
+  externalError = null,
   onSubmit,
   onCancel,
 }: EmployeeFormProps) {
   const [values, setValues] = useState<EmployeeFormValues>(initialValues ?? createEmptyEmployeeForm());
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyEmployeeForm());
@@ -98,364 +85,229 @@ export function EmployeeForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <FormSection title="Employee">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="id">Employee ID</Label>
-            <Input
-              id="id"
-              value={values.id > 0 ? String(values.id) : "Assigned after save"}
-              readOnly
-              className={`font-mono text-xs ${readOnlyClassName}`}
-            />
-          </div>
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <FormBody>
+        <FormSection icon={User} title="Employee">
+          <div className="space-y-2.5">
+            <div className="space-y-1">
+              <Label htmlFor="active">
+                Active <span className="text-destructive">*</span>
+              </Label>
+              <SearchableSelect
+                id="active"
+                searchable={false}
+                value={values.active ? "true" : "false"}
+                onValueChange={(next) => updateField("active", next === "true")}
+                required
+                options={EMPLOYEE_ACTIVE_OPTIONS.map((option) => ({
+                  value: String(option.value),
+                  label: option.label,
+                }))}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="active">
-              active <span className="text-destructive">*</span>
+            <div className="space-y-1">
+              <Label htmlFor="name">
+                Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                value={values.name}
+                onChange={(event) => updateField("name", event.target.value)}
+                placeholder="MIGUEL"
+                required
+              />
+            </div>
+
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="department">
+                  Department <span className="text-destructive">*</span>
+                </Label>
+                <SearchableSelect
+                  id="department"
+                  value={values.department}
+                  onValueChange={(next) => updateField("department", next)}
+                  searchPlaceholder="Search departments…"
+                  required
+                  options={departmentOptions.map((department) => ({ value: department, label: department }))}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="title">
+                  Title <span className="text-destructive">*</span>
+                </Label>
+                <SearchableSelect
+                  id="title"
+                  value={values.title}
+                  onValueChange={(next) => updateField("title", next)}
+                  searchPlaceholder="Search titles…"
+                  required
+                  options={titleOptions.map((title) => ({ value: title, label: title }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="startDate">Start date</Label>
+                <Input
+                  id="startDate"
+                  value={values.startDate}
+                  onChange={(event) => updateField("startDate", event.target.value)}
+                  placeholder="2026-06-09T00:00:00Z"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="endDate">End date</Label>
+                <Input
+                  id="endDate"
+                  value={values.endDate}
+                  onChange={(event) => updateField("endDate", event.target.value)}
+                  placeholder="2026-06-09T00:00:00Z"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="cost">Cost</Label>
+              <Input
+                id="cost"
+                type="number"
+                min="0"
+                step="0.01"
+                value={values.cost}
+                onChange={(event) => updateField("cost", Number(event.target.value) || 0)}
+              />
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection icon={Building2} title="Branch">
+          <div className="space-y-1">
+            <Label htmlFor="branch-portal">
+              Branch <span className="text-destructive">*</span>
             </Label>
-            <select
-              id="active"
-              className={selectClassName}
-              value={values.active ? "true" : "false"}
-              onChange={(event) => updateField("active", event.target.value === "true")}
+            <SearchableSelect
+              id="branch-portal"
+              value={selectedPortalBranch}
+              onValueChange={(next) => updateBranchPortal(next as EmployeePortalBranch)}
+              searchPlaceholder="Search branches…"
               required
-            >
-              {EMPLOYEE_ACTIVE_OPTIONS.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              options={EMPLOYEE_PORTAL_BRANCHES.map((option) => ({
+                value: option.portal,
+                label: option.label,
+              }))}
+            />
           </div>
-        </div>
+        </FormSection>
 
-        <div className="space-y-2">
-          <Label htmlFor="name">
-            name <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="name"
-            value={values.name}
-            onChange={(event) => updateField("name", event.target.value)}
-            placeholder="MIGUEL"
-            required
-          />
-        </div>
+        <FormSection icon={MapPin} title="Address">
+          <div className="space-y-2.5">
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="address-address1">Address line 1</Label>
+                <Input
+                  id="address-address1"
+                  value={values.address.address1}
+                  onChange={(event) => updateAddressField("address1", event.target.value)}
+                  placeholder="245 Atlantic Ave"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="address-address2">Address line 2</Label>
+                <Input
+                  id="address-address2"
+                  value={values.address.address2}
+                  onChange={(event) => updateAddressField("address2", event.target.value)}
+                  placeholder="Suite 100"
+                />
+              </div>
+            </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="department">
-              department <span className="text-destructive">*</span>
-            </Label>
-            <select
-              id="department"
-              className={selectClassName}
-              value={values.department}
-              onChange={(event) => updateField("department", event.target.value)}
-              required
-            >
-              {departmentOptions.map((department) => (
-                <option key={department} value={department}>
-                  {department}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="address-apartment">Apartment / suite</Label>
+                <Input
+                  id="address-apartment"
+                  value={values.address.apartment}
+                  onChange={(event) => updateAddressField("apartment", event.target.value)}
+                  placeholder="Apt 4B"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="address-city">City</Label>
+                <Input
+                  id="address-city"
+                  value={values.address.city}
+                  onChange={(event) => updateAddressField("city", event.target.value)}
+                  placeholder="NEW YORK"
+                />
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="title">
-              title <span className="text-destructive">*</span>
-            </Label>
-            <select
-              id="title"
-              className={selectClassName}
-              value={values.title}
-              onChange={(event) => updateField("title", event.target.value)}
-              required
-            >
-              {titleOptions.map((title) => (
-                <option key={title} value={title}>
-                  {title}
-                </option>
-              ))}
-            </select>
+            <div className="grid gap-2.5 sm:grid-cols-3">
+              <div className="space-y-1">
+                <Label htmlFor="address-state">State / province</Label>
+                <Input
+                  id="address-state"
+                  value={values.address.state}
+                  onChange={(event) => updateAddressField("state", event.target.value.toUpperCase())}
+                  placeholder="NY"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="address-zipcode">Zip / postal code</Label>
+                <Input
+                  id="address-zipcode"
+                  value={values.address.zipcode}
+                  onChange={(event) => updateAddressField("zipcode", event.target.value)}
+                  placeholder="11201"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="address-country">Country</Label>
+                <Input
+                  id="address-country"
+                  value={values.address.country}
+                  onChange={(event) => updateAddressField("country", event.target.value.toUpperCase())}
+                  placeholder="US"
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        </FormSection>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="startDate">startDate</Label>
-            <Input
-              id="startDate"
-              value={values.startDate}
-              onChange={(event) => updateField("startDate", event.target.value)}
-              placeholder="2026-06-09T00:00:00Z"
+        <FormSection icon={Phone} title="Contact">
+          <div className="space-y-2.5">
+            <PhoneListEditor
+              idPrefix="employee-phone"
+              phones={values.phones}
+              onChange={(phones) => updateField("phones", phones)}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="endDate">endDate</Label>
-            <Input
-              id="endDate"
-              value={values.endDate}
-              onChange={(event) => updateField("endDate", event.target.value)}
-              placeholder="2026-06-09T00:00:00Z"
-            />
+            <div className="space-y-1">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={values.email}
+                onChange={(event) => updateField("email", event.target.value)}
+                placeholder="name@emsys.example"
+              />
+            </div>
           </div>
-        </div>
+        </FormSection>
+      </FormBody>
 
-        <div className="space-y-2">
-          <Label htmlFor="cost">cost</Label>
-          <Input
-            id="cost"
-            type="number"
-            min="0"
-            step="0.01"
-            value={values.cost}
-            onChange={(event) => updateField("cost", Number(event.target.value) || 0)}
-          />
-        </div>
-      </FormSection>
-
-      <FormSection title="branch">
-        <div className="space-y-2">
-          <Label htmlFor="branch-portal">
-            Branch <span className="text-destructive">*</span>
-          </Label>
-          <select
-            id="branch-portal"
-            className={selectClassName}
-            value={selectedPortalBranch}
-            onChange={(event) => updateBranchPortal(event.target.value as EmployeePortalBranch)}
-            required
-          >
-            {EMPLOYEE_PORTAL_BRANCHES.map((option) => (
-              <option key={option.portal} value={option.portal}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="branch-id">branch.id</Label>
-            <Input id="branch-id" value={String(values.branch.id)} readOnly className={readOnlyClassName} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="branch-code">branch.code</Label>
-            <Input id="branch-code" value={values.branch.code} readOnly className={readOnlyClassName} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="branch-name">branch.name</Label>
-            <Input id="branch-name" value={values.branch.name} readOnly className={readOnlyClassName} />
-          </div>
-        </div>
-      </FormSection>
-
-      <FormSection title="address">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="address-address1">address.address1</Label>
-            <Input
-              id="address-address1"
-              value={values.address.address1}
-              onChange={(event) => updateAddressField("address1", event.target.value)}
-              placeholder="245 Atlantic Ave"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address-address2">address.address2</Label>
-            <Input
-              id="address-address2"
-              value={values.address.address2}
-              onChange={(event) => updateAddressField("address2", event.target.value)}
-              placeholder="Suite 100"
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="address-apartment">address.apartment</Label>
-            <Input
-              id="address-apartment"
-              value={values.address.apartment}
-              onChange={(event) => updateAddressField("apartment", event.target.value)}
-              placeholder="Apt 4B"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address-city">address.city</Label>
-            <Input
-              id="address-city"
-              value={values.address.city}
-              onChange={(event) => updateAddressField("city", event.target.value)}
-              placeholder="NEW YORK"
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="address-state">address.state</Label>
-            <Input
-              id="address-state"
-              value={values.address.state}
-              onChange={(event) => updateAddressField("state", event.target.value.toUpperCase())}
-              placeholder="NY"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address-zipcode">address.zipcode</Label>
-            <Input
-              id="address-zipcode"
-              value={values.address.zipcode}
-              onChange={(event) => updateAddressField("zipcode", event.target.value)}
-              placeholder="11201"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address-country">address.country</Label>
-            <Input
-              id="address-country"
-              value={values.address.country}
-              onChange={(event) => updateAddressField("country", event.target.value.toUpperCase())}
-              placeholder="US"
-            />
-          </div>
-        </div>
-      </FormSection>
-
-      <FormSection title="Contact">
-        <PhoneListEditor
-          idPrefix="employee-phone"
-          phones={values.phones}
-          onChange={(phones) => updateField("phones", phones)}
-        />
-
-        <div className="space-y-2">
-          <Label htmlFor="email">email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={values.email}
-            onChange={(event) => updateField("email", event.target.value)}
-            placeholder="name@emsys.example"
-          />
-        </div>
-      </FormSection>
-
-      <FormSection title="Loans" description="Loan balances are managed by the EMSYS API and shown read-only here.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="loanAmountOwed">loanAmountOwed</Label>
-            <Input
-              id="loanAmountOwed"
-              value={formatEmployeeMoney(values.loanAmountOwed)}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="loanBalanceUpdated">loanBalanceUpdated</Label>
-            <Input
-              id="loanBalanceUpdated"
-              value={values.loanBalanceUpdated ? formatEmployeeDate(values.loanBalanceUpdated) : "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="totalLoanGiven">totalLoanGiven</Label>
-            <Input
-              id="totalLoanGiven"
-              value={formatEmployeeMoney(values.totalLoanGiven)}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="totalPaymentReceived">totalPaymentReceived</Label>
-            <Input
-              id="totalPaymentReceived"
-              value={formatEmployeeMoney(values.totalPaymentReceived)}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-        </div>
-      </FormSection>
-
-      <FormSection title="user" description="Linked EMSYS user from the API.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="user">user</Label>
-            <Input
-              id="user"
-              value={formatEmployeeUserLabel({ user: values.user })}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-id">user.id</Label>
-            <Input
-              id="user-id"
-              value={values.user?.id ? String(values.user.id) : "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-userName">user.userName</Label>
-            <Input
-              id="user-userName"
-              value={values.user?.userName || "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-fullName">user.fullName</Label>
-            <Input
-              id="user-fullName"
-              value={values.user?.fullName || "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-email">user.email</Label>
-            <Input
-              id="user-email"
-              value={values.user?.email || "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-active">user.active</Label>
-            <Input
-              id="user-active"
-              value={values.user != null ? String(values.user.active) : "—"}
-              readOnly
-              className={readOnlyClassName}
-            />
-          </div>
-        </div>
-      </FormSection>
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {submitLabel}
-        </Button>
-      </div>
+      <FormFooter
+        error={externalError}
+        submitLabel={submitLabel}
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+      />
     </form>
   );
 }

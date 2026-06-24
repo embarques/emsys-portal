@@ -61,6 +61,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       {visibleNavigation.map((group) => {
         const isOpen = openGroups[group.title] ?? false;
         const hasActiveRoute = groupHasActiveRoute(group, pathname, group.items);
+        const isParentSelected = !isOpen && hasActiveRoute;
         const GroupIcon = group.items[0]?.icon;
 
         return (
@@ -68,10 +69,13 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             <button
               type="button"
               aria-expanded={isOpen}
+              aria-current={isParentSelected ? "true" : undefined}
               onClick={() => setOpenGroups((current) => ({ ...current, [group.title]: !isOpen }))}
               className={cn(
                 "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition",
-                hasActiveRoute ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/10 hover:text-white",
+                isParentSelected
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
               )}
             >
               {GroupIcon ? <GroupIcon className="h-5 w-5 shrink-0" /> : null}
@@ -80,9 +84,10 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             </button>
 
             {isOpen ? (
-              <div className="mt-1 space-y-1 pl-11 pr-2">
+              <div className="mt-1 ml-4 space-y-1 pl-3">
                 {group.items.map((item) => {
                   const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                  const Icon = item.icon;
 
                   return (
                     <Link
@@ -90,13 +95,14 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                       href={item.href}
                       onClick={onNavigate}
                       className={cn(
-                        "flex items-center rounded-xl px-3 py-2 text-sm transition",
+                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
                         active
-                          ? "bg-white/10 text-white"
-                          : "text-white/70 hover:bg-white/10 hover:text-white",
+                          ? "bg-primary/10 font-medium text-primary"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                       )}
                     >
-                      {item.label}
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{item.label}</span>
                     </Link>
                   );
                 })}

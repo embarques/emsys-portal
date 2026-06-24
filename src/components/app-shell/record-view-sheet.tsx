@@ -36,6 +36,8 @@ type RecordViewSheetBodyProps = {
 
 type RecordViewSheetSectionProps = {
   title?: string;
+  /** Optional leading icon, matching the add/edit form section style. */
+  icon?: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   className?: string;
   padding?: "default" | "relaxed";
@@ -62,6 +64,8 @@ type RecordViewSheetActionsProps = {
   editLabel?: string;
   deleteLabel?: string;
   isDisabled?: boolean;
+  editDisabled?: boolean;
+  deleteDisabled?: boolean;
 };
 
 export function RecordViewSheet({ open, onOpenChange, children }: RecordViewSheetProps) {
@@ -110,6 +114,7 @@ export function RecordViewSheetBody({ children, className }: RecordViewSheetBody
 
 export function RecordViewSheetSection({
   title,
+  icon: Icon,
   children,
   className,
   padding = "default",
@@ -123,7 +128,11 @@ export function RecordViewSheetSection({
     >
       {title ? (
         <div className="flex items-center gap-2.5 border-b border-border bg-muted/50 px-4 py-2.5">
-          <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-primary/80" aria-hidden />
+          {Icon ? (
+            <Icon className="size-4 shrink-0 text-primary" />
+          ) : (
+            <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-primary/80" aria-hidden />
+          )}
           <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-foreground/75">
             {title}
           </h3>
@@ -158,6 +167,8 @@ export function RecordViewSheetActions({
   editLabel = "Edit",
   deleteLabel = "Delete",
   isDisabled = false,
+  editDisabled = false,
+  deleteDisabled = false,
 }: RecordViewSheetActionsProps) {
   if (!onEdit && !onDelete) return null;
 
@@ -165,7 +176,7 @@ export function RecordViewSheetActions({
     <div className="shrink-0 border-t border-border bg-card px-6 py-4">
       <div className="flex gap-2">
         {onEdit ? (
-          <Button className="flex-1" onClick={onEdit} disabled={isDisabled}>
+          <Button className="flex-1" onClick={onEdit} disabled={isDisabled || editDisabled}>
             <Pencil className="h-4 w-4" />
             {editLabel}
           </Button>
@@ -173,7 +184,7 @@ export function RecordViewSheetActions({
         {onDelete ? (
           <Button
             variant="outline"
-            disabled={isDisabled}
+            disabled={isDisabled || deleteDisabled}
             className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={onDelete}
           >

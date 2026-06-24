@@ -1,4 +1,4 @@
-# Atlas Admin - Pulse Style Sidebar Sample
+# EMSYS Portal
 
 Original Next.js + Tailwind + shadcn-style sample dashboard.
 

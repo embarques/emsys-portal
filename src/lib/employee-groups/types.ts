@@ -1,4 +1,5 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import { createRandomId } from "@/lib/utils/id";
 
 export type EmployeeGroupBranch = "usa" | "dr";
 
@@ -29,7 +30,7 @@ export const EMPLOYEE_GROUP_BRANCHES: { value: EmployeeGroupBranch; label: strin
 ];
 
 export function createEmployeeGroupId(): string {
-  return crypto.randomUUID();
+  return createRandomId();
 }
 
 export function createEmptyEmployeeGroupForm(createdBy = DEFAULT_CREATED_BY): EmployeeGroupFormValues {

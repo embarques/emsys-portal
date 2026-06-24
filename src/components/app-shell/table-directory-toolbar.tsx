@@ -121,6 +121,16 @@ function TableFilterDropdown({ open, onOpenChange, activeCount = 0, children }: 
         return;
       }
 
+      // Dropdowns inside the panel (e.g. filter selects) render in their own
+      // portal outside panelRef. Ignore interactions with those so picking an
+      // option doesn't close the whole filter panel.
+      if (
+        target instanceof Element &&
+        target.closest("[data-radix-popper-content-wrapper]")
+      ) {
+        return;
+      }
+
       onOpenChange(false);
     }
 
@@ -198,7 +208,7 @@ export function TableDirectoryToolbar({
   return (
     <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2">
       <div className="flex min-w-0 flex-1 items-center gap-2 basis-[min(100%,18rem)]">
-        <div className="min-w-0 w-full sm:max-w-sm md:max-w-md">{search}</div>
+        <div className="min-w-0 w-full">{search}</div>
         {showFilter ? (
           <TableFilterDropdown
             open={filtersOpen}

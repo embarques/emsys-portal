@@ -1,23 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Shield } from "lucide-react";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { RolePermissionsEditor } from "@/components/roles/role-permissions-editor";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { roleFormSchema } from "@/lib/roles/schemas/role.schema";
+import type { PermissionCatalogEntry } from "@/lib/roles/permissions-catalog";
 import {
   createEmptyRoleForm,
-  normalizePermissions,
-  type Role,
   type RoleFormValues,
 } from "@/lib/roles/types";
 
 type RoleFormProps = {
   initialValues?: RoleFormValues;
-  existingRoles?: Role[];
-  isEditing?: boolean;
-  updatedAt?: string;
+  permissionCatalog: PermissionCatalogEntry[];
+  error?: string | null;
+  isSubmitting?: boolean;
   submitLabel: string;
   onSubmit: (values: RoleFormValues) => void;
   onCancel: () => void;
@@ -25,82 +29,71 @@ type RoleFormProps = {
 
 export function RoleForm({
   initialValues,
-  existingRoles = [],
-  isEditing = false,
-  updatedAt,
+  permissionCatalog,
+  error,
+  isSubmitting = false,
   submitLabel,
   onSubmit,
   onCancel,
 }: RoleFormProps) {
-  const [values, setValues] = useState<RoleFormValues>(initialValues ?? createEmptyRoleForm());
-  const [formError, setFormError] = useState<string | null>(null);
+  const {
+    control,
+    formState: { errors },
+    handleSubmit,
+    register,
+    reset,
+  } = useForm<RoleFormValues>({
+    resolver: zodResolver(roleFormSchema),
+    defaultValues: initialValues ?? createEmptyRoleForm(),
+  });
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
-    setValues(initialValues ?? createEmptyRoleForm());
-    setFormError(null);
-  }, [initialValues]);
-
-  function updateField<K extends keyof RoleFormValues>(key: K, value: RoleFormValues[K]) {
-    setValues((current) => ({ ...current, [key]: value }));
-    setFormError(null);
-  }
-
-  function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-
-    const permissions = normalizePermissions(values.permissions);
-    if (permissions.length === 0) {
-      setFormError("Add at least one permission.");
-      return;
-    }
-
-    if (!values.name.trim()) {
-      setFormError("Role name is required.");
-      return;
-    }
-
-    onSubmit(values);
-  }
+    reset(initialValues ?? createEmptyRoleForm());
+  }, [initialValues, reset]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="roleId">Role ID</Label>
-          <Input id="roleId" value={values.roleId} readOnly className="bg-muted/40 font-mono text-xs" />
-          {!isEditing ? <p className="text-xs text-muted-foreground">Auto-generated ID for new roles.</p> : null}
-        </div>
+    <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <FormBody>
+        <FormSection icon={Shield} title="Role">
+          <div className="space-y-1">
+            <Label htmlFor="name">
+              Role name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="name"
+              {...register("name")}
+              placeholder="Operations Manager"
+              aria-invalid={Boolean(errors.name)}
+              autoFocus
+            />
+            {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
+          </div>
+        </FormSection>
 
-        <div className="space-y-2">
-          <Label htmlFor="name">
-            Role name <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="name"
-            value={values.name}
-            onChange={(event) => updateField("name", event.target.value)}
-            placeholder="Operations Manager"
-            required
-          />
-        </div>
-      </div>
+        <Controller
+          control={control}
+          name="permissions"
+          render={({ field }) => (
+            <RolePermissionsEditor
+              permissions={field.value}
+              catalog={permissionCatalog}
+              onChange={field.onChange}
+            />
+          )}
+        />
 
-      <RolePermissionsEditor
-        permissions={values.permissions}
-        existingRoles={existingRoles}
-        currentRoleId={values.roleId}
-        showCopyFrom={!isEditing}
-        onChange={(permissions) => updateField("permissions", permissions)}
+        {errors.permissions?.message ? (
+          <p className="text-sm text-destructive">{errors.permissions.message}</p>
+        ) : null}
+      </FormBody>
+
+      <FormFooter
+        error={error}
+        submitLabel={submitLabel}
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
       />
-
-      {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{submitLabel}</Button>
-      </div>
     </form>
   );
 }

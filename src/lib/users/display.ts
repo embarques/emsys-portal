@@ -1,4 +1,4 @@
-import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
+import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
 import type { User, UserPortalBranch } from "./types";
 import { getUserPortalBranch, isAdminRole, USER_ACTIVE_OPTIONS } from "./types";
 

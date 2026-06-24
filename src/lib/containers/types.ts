@@ -112,11 +112,13 @@ export function buildContainerListParams(input: {
   limit?: number;
   query: string;
   rows: TableFilterRowState[];
+  sort?: ApiListSortInput;
 }): ContainerListParams {
   const params: ContainerListParams = {
     ...DEFAULT_CONTAINER_LIST_PARAMS,
     page: input.page,
     limit: input.limit ?? DEFAULT_CONTAINER_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_CONTAINER_LIST_PARAMS.sort,
   };
 
   const search = createContainerSearchFilter(input.query);

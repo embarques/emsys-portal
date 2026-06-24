@@ -200,11 +200,13 @@ export function buildUserListParams(input: {
   limit?: number;
   query: string;
   rows: TableFilterRowState[];
+  sort?: ApiListSortInput;
 }): UserListParams {
   const params: UserListParams = {
     ...DEFAULT_USER_LIST_PARAMS,
     page: input.page,
     limit: input.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
   };
 
   const search = createUserSearchFilter(input.query);

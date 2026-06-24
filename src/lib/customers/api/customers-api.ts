@@ -26,13 +26,17 @@ import {
 import { expandCustomerCountrySearchNode } from "@/lib/customers/customer-country";
 import {
   buildApiAddressPayload,
+  buildApiAddressVerificationPayload,
   buildApiBranchDto,
+  buildApiGeoLocationPayload,
   type ApiAddressPayload,
   type ApiBranchDtoPayload,
 } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 import {
+  type AddressGeoLocation,
+  type AddressVerification,
   CUSTOMER_PORTAL_BRANCHES,
   type Customer,
   type CustomerBranch,
@@ -40,12 +44,25 @@ import {
   type CustomerFormValues,
   DEFAULT_CUSTOMER_LIST_PARAMS,
   normalizeCustomerType,
+  resolveCustomerBranchId,
   validateCustomerFormValues,
   type CustomerListParams,
 } from "@/lib/customers/types";
 import { CUSTOMER_BAR_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
 import { buildApiPhonesPayload, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
 import type { RecordPhone } from "@/lib/phones/types";
+
+type ApiGeoLocation = {
+  type?: string;
+  coordinates?: unknown;
+};
+
+type ApiAddressVerification = {
+  is_verified?: boolean;
+  isVerified?: boolean;
+  verified_at?: string;
+  verifiedAt?: string;
+};
 
 type ApiAddress = {
   address1?: string;
@@ -55,6 +72,8 @@ type ApiAddress = {
   state?: string;
   zipcode?: string;
   country?: string;
+  location?: ApiGeoLocation | null;
+  verification?: ApiAddressVerification | null;
 };
 
 type ApiBranch = {
@@ -130,6 +149,30 @@ function readCustomerTypeFromApi(raw?: ApiCustomer): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function normalizeAddressLocation(raw?: ApiGeoLocation | null): AddressGeoLocation | null {
+  if (!raw || !Array.isArray(raw.coordinates) || raw.coordinates.length < 2) return null;
+
+  const longitude = Number(raw.coordinates[0]);
+  const latitude = Number(raw.coordinates[1]);
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return null;
+
+  return { type: "Point", coordinates: [longitude, latitude] };
+}
+
+function normalizeAddressVerification(
+  raw?: ApiAddressVerification | null,
+): AddressVerification | null {
+  if (!raw) return null;
+
+  const isVerified = raw.is_verified ?? raw.isVerified;
+  if (isVerified == null) return null;
+
+  return {
+    isVerified: isVerified === true,
+    verifiedAt: String(raw.verified_at ?? raw.verifiedAt ?? "").trim(),
+  };
+}
+
 function normalizeAddress(raw?: ApiAddress): CustomerCoreAddress {
   const address = raw ?? {};
 
@@ -141,12 +184,14 @@ function normalizeAddress(raw?: ApiAddress): CustomerCoreAddress {
     state: String(address.state ?? "").trim(),
     zipcode: String(address.zipcode ?? "").trim(),
     country: String(address.country ?? "").trim(),
+    location: normalizeAddressLocation(address.location),
+    verification: normalizeAddressVerification(address.verification),
   };
 }
 
 function normalizeBranch(raw?: ApiBranch): CustomerBranch {
   const branch = raw ?? {};
-  const id = readNumericId(branch.id) ?? 1;
+  const id = resolveCustomerBranchId({ id: readNumericId(branch.id), code: branch.code });
   const defaults = CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.id === id) ?? CUSTOMER_PORTAL_BRANCHES[0];
 
   return {
@@ -194,6 +239,7 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
 
   return {
     id,
+    oldID: readNumericId(item.oldID) ?? null,
     name: String(item.name ?? "").trim(),
     customerType: readCustomerTypeFromApi(item),
     phones: normalizeRecordPhonesFromApi(item),
@@ -290,7 +336,7 @@ function buildCustomerSearchFilterGroups(params: CustomerListParams): ApiSearchF
     } else {
       const orGroup = createOrTextSearchFilterGroup(
         params.search.value,
-        [...CUSTOMER_BAR_OR_SEARCH_FIELDS],
+        [...(params.orFields ?? CUSTOMER_BAR_OR_SEARCH_FIELDS)],
         "contains",
       );
       if (orGroup) {
@@ -425,6 +471,10 @@ function buildCustomerWritePayload(
     payload.id = options.customerId;
   }
 
+  if (values.oldID != null && values.oldID > 0) {
+    payload.oldID = values.oldID;
+  }
+
   if (values.createdByID != null && values.createdByID > 0) {
     payload.createdByID = values.createdByID;
   }
@@ -540,6 +590,52 @@ export async function deleteCustomer(customerId: string): Promise<void> {
 
 export async function deleteCustomers(customerIds: string[]): Promise<void> {
   await Promise.all(customerIds.map((customerId) => deleteCustomer(customerId)));
+}
+
+/**
+ * PUT /customers/{id}/address/location — atomically set the primary address
+ * GeoJSON location without touching the rest of the customer record.
+ */
+export async function updateCustomerAddressLocation(
+  customerId: string,
+  location: AddressGeoLocation,
+): Promise<Customer> {
+  const payload = buildApiGeoLocationPayload(location);
+  if (!payload) {
+    throw new Error("A valid location with [longitude, latitude] is required.");
+  }
+
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.CUSTOMERS}/${customerId}/address/location`,
+    payload,
+  );
+
+  assertMutationSuccess(response, "Unable to update address location.");
+
+  return extractCustomerFromMutationResponse(response.data) ?? fetchCustomerById(customerId);
+}
+
+/**
+ * PUT /customers/{id}/address/google-verification — atomically set the primary
+ * address Google verification metadata.
+ */
+export async function updateCustomerAddressGoogleVerification(
+  customerId: string,
+  verification: AddressVerification,
+): Promise<Customer> {
+  const payload = buildApiAddressVerificationPayload(verification);
+  if (!payload) {
+    throw new Error("Verification metadata is required.");
+  }
+
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.CUSTOMERS}/${customerId}/address/google-verification`,
+    payload,
+  );
+
+  assertMutationSuccess(response, "Unable to update address verification.");
+
+  return extractCustomerFromMutationResponse(response.data) ?? fetchCustomerById(customerId);
 }
 
 export async function fetchCustomerById(customerId: string): Promise<Customer> {

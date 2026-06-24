@@ -14,6 +14,7 @@ import {
 import { ContainerForm } from "@/components/containers/container-form";
 import { ContainerViewSheet } from "@/components/containers/container-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -66,6 +67,7 @@ import {
   type ContainerFormValues,
 } from "@/lib/containers/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_CONTAINER_LIST_PARAMS.limit;
@@ -84,6 +86,7 @@ export function ContainersWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_CONTAINER_LIST_PARAMS.sort, () => setPage(1));
   const [viewContainer, setViewContainer] = useState<ContainerRecord | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingContainer, setEditingContainer] = useState<ContainerRecord | null>(null);
@@ -97,8 +100,9 @@ export function ContainersWorkspace() {
         limit: PAGE_SIZE,
         query: debouncedQuery,
         rows: filters.rows,
+        sort,
       }),
-    [debouncedQuery, filters.rows, page],
+    [debouncedQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useContainers(listParams);
@@ -226,6 +230,7 @@ export function ContainersWorkspace() {
     {
       id: "container",
       label: "Container",
+      sortField: "name",
       cellClassName: "font-medium",
       renderCell: (container) => container.name,
     },
@@ -339,7 +344,7 @@ export function ContainersWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -400,6 +405,13 @@ export function ContainersWorkspace() {
           <div className="px-6 py-8 text-sm text-destructive">
             {normalizeApiError(error).message}
           </div>
+        ) : isLoading ? (
+          <DirectoryTableLoader
+            icon={Container}
+            title="Loading containers"
+            description="Tracking shipments, capacity, costs, and departure schedules…"
+            columns={["Container", "Status", "Departure", "Capacity", "Cost"]}
+          />
         ) : (
           <DataTable
             columns={columnVisibility.columns}
@@ -410,6 +422,8 @@ export function ContainersWorkspace() {
             rowLabel={(container) => container.name}
             columnLayout={columnVisibility}
             minWidth={1400}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds.map(String)}
             allPageSelected={allPageSelected}
@@ -431,6 +445,7 @@ export function ContainersWorkspace() {
           />
         )}
 
+        {!isLoading && !isError ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {containers.length} of {totalContainers} containers
@@ -459,6 +474,7 @@ export function ContainersWorkspace() {
             </Button>
           </div>
         </div>
+        ) : null}
       </Card>
 
       <ContainerViewSheet
@@ -483,14 +499,9 @@ export function ContainersWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit container" : "Add container"}</DialogTitle>
-            <DialogDescription>
-              {formMode === "edit"
-                ? "Update container shipping and logistics details."
-                : "Create a new container record with booking and transport information."}
-            </DialogDescription>
           </DialogHeader>
           <ContainerForm
             key={editingContainer?.id ?? "new"}
@@ -502,6 +513,7 @@ export function ContainersWorkspace() {
             isEditing={formMode === "edit"}
             suggestedContainerName={formMode === "add" ? suggestedContainerName : undefined}
             submitLabel={formMode === "edit" ? "Save changes" : "Add container"}
+            externalError={formError}
             onSubmit={saveContainer}
             onCancel={() => {
               setFormMode(null);
@@ -509,7 +521,6 @@ export function ContainersWorkspace() {
             }}
             isSubmitting={isSaving}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

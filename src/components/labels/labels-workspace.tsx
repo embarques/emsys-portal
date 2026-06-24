@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatContainerLabel } from "@/lib/containers/display";
@@ -76,9 +77,6 @@ import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 10;
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 const defaultFilters: LabelFilterState = {
   query: "",
@@ -368,9 +366,9 @@ export function LabelsWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (label) => (
-        <UniformWidthPill columnKey="status">
-          <Badge className={getLabelStatusBadgeClass(label.status)}>{getLabelStatusLabel(label.status)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getLabelStatusBadgeClass(label.status)}>
+          {getLabelStatusLabel(label.status)}
+        </TableTagText>
       ),
     },
     {
@@ -590,23 +588,23 @@ export function LabelsWorkspace() {
                           <td className="px-3 py-2">{item.labelCount}</td>
                           <td className="px-3 py-2">{item.quantity}</td>
                           <td className="px-3 py-2">
-                            <select
-                              className={cn(selectClassName, "min-w-[200px]")}
+                            <SearchableSelect
+                              aria-label="Route assignment for line item"
+                              className="min-w-[200px]"
                               value={stagedRouteAssignments[item.key] ?? ""}
-                              onChange={(event) =>
-                                setStagedItemRouteAssignment(item.key, event.target.value)
+                              onValueChange={(next) =>
+                                setStagedItemRouteAssignment(item.key, next)
                               }
-                            >
-                              <option value="">None</option>
-                              {routeAssignments.map((assignment) => (
-                                <option
-                                  key={assignment.routeAssignmentId}
-                                  value={assignment.routeAssignmentId}
-                                >
-                                  {formatRouteAssignmentCopyLabel(assignment)}
-                                </option>
-                              ))}
-                            </select>
+                              placeholder="None"
+                              searchPlaceholder="Search route assignments…"
+                              options={[
+                                { value: "", label: "None" },
+                                ...routeAssignments.map((assignment) => ({
+                                  value: assignment.routeAssignmentId,
+                                  label: formatRouteAssignmentCopyLabel(assignment),
+                                })),
+                              ]}
+                            />
                           </td>
                         </tr>
                       ))}
@@ -617,19 +615,20 @@ export function LabelsWorkspace() {
                 <div className="flex flex-col gap-3 rounded-xl border bg-muted/20 p-3 sm:flex-row sm:items-end">
                   <div className="min-w-0 flex-1 space-y-2">
                     <Label htmlFor="bulkRouteAssignment">Apply route to selected line items</Label>
-                    <select
+                    <SearchableSelect
                       id="bulkRouteAssignment"
-                      className={selectClassName}
                       value={bulkRouteAssignmentId}
-                      onChange={(event) => setBulkRouteAssignmentId(event.target.value)}
-                    >
-                      <option value="">Select route assignment...</option>
-                      {routeAssignments.map((assignment) => (
-                        <option key={assignment.routeAssignmentId} value={assignment.routeAssignmentId}>
-                          {formatRouteAssignmentCopyLabel(assignment)}
-                        </option>
-                      ))}
-                    </select>
+                      onValueChange={setBulkRouteAssignmentId}
+                      placeholder="Select route assignment..."
+                      searchPlaceholder="Search route assignments…"
+                      options={[
+                        { value: "", label: "Select route assignment..." },
+                        ...routeAssignments.map((assignment) => ({
+                          value: assignment.routeAssignmentId,
+                          label: formatRouteAssignmentCopyLabel(assignment),
+                        })),
+                      ]}
+                    />
                   </div>
                   <Button
                     type="button"
@@ -756,6 +755,7 @@ export function LabelsWorkspace() {
           rowKey={(label) => label.labelId}
           rowLabel={(label) => label.barcode}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={1200}
           selectable
           selectedIds={selectedLabelIds}
@@ -849,18 +849,16 @@ export function LabelsWorkspace() {
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="newStatus">New status</Label>
-            <select
+            <SearchableSelect
               id="newStatus"
-              className={selectClassName}
               value={newStatus}
-              onChange={(event) => setNewStatus(event.target.value as LabelStatus)}
-            >
-              {LABEL_STATUSES.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              onValueChange={(next) => setNewStatus(next as LabelStatus)}
+              searchPlaceholder="Search statuses…"
+              options={LABEL_STATUSES.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
@@ -883,18 +881,16 @@ export function LabelsWorkspace() {
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="newContainer">Container</Label>
-            <select
+            <SearchableSelect
               id="newContainer"
-              className={selectClassName}
               value={newContainerId}
-              onChange={(event) => setNewContainerId(event.target.value)}
-            >
-              {containers.map((container) => (
-                <option key={container.id} value={String(container.id)}>
-                  {formatContainerLabel(container)}
-                </option>
-              ))}
-            </select>
+              onValueChange={setNewContainerId}
+              searchPlaceholder="Search containers…"
+              options={containers.map((container) => ({
+                value: String(container.id),
+                label: formatContainerLabel(container),
+              }))}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setContainerDialogOpen(false)}>

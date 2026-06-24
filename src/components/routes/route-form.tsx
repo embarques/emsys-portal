@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { MapPin, Plus, Route as RouteIcon, Trash2 } from "lucide-react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   ROUTE_BRANCHES,
   ROUTE_PLACE_KINDS,
@@ -14,9 +17,6 @@ import {
   type RouteFormValues,
   type RoutePlaceFormValues,
 } from "@/lib/routes/types";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
 
 type RouteFormProps = {
   initialValues?: RouteFormValues;
@@ -30,6 +30,7 @@ type RouteFormProps = {
 export function RouteForm({ initialValues, isEditing = false, updatedAt, submitLabel, onSubmit, onCancel }: RouteFormProps) {
   const [values, setValues] = useState<RouteFormValues>(initialValues ?? createEmptyRouteForm());
   const [formError, setFormError] = useState<string | null>(null);
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyRouteForm());
@@ -73,61 +74,49 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="routeId">Route ID</Label>
-          <Input id="routeId" value={values.routeId} readOnly className="bg-muted/40 font-mono text-xs" />
-          {!isEditing ? <p className="text-xs text-muted-foreground">Auto-generated ID for new routes.</p> : null}
-        </div>
+    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <FormBody>
+        <FormSection icon={RouteIcon} title="Route">
+          <div className="space-y-2.5">
+            <div className="space-y-1">
+              <Label htmlFor="name">
+                Route name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                value={values.name}
+                onChange={(event) => updateField("name", event.target.value)}
+                placeholder="Brooklyn — Manhattan Express"
+                required
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="name">
-            Route name <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="name"
-            value={values.name}
-            onChange={(event) => updateField("name", event.target.value)}
-            placeholder="Brooklyn — Manhattan Express"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="branch">
-            Branch <span className="text-destructive">*</span>
-          </Label>
-          <select
-            id="branch"
-            className={selectClassName}
-            value={values.branch}
-            onChange={(event) => updateField("branch", event.target.value as RouteFormValues["branch"])}
-            required
-          >
-            {ROUTE_BRANCHES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold">Route content</h3>
-            <p className="text-sm text-muted-foreground">
-              At least one place is required. Add cities, states, zip codes, or zip ranges.
-            </p>
+            <div className="space-y-1">
+              <Label htmlFor="branch">
+                Branch <span className="text-destructive">*</span>
+              </Label>
+              <SearchableSelect
+                id="branch"
+                value={values.branch}
+                onValueChange={(next) => updateField("branch", next as RouteFormValues["branch"])}
+                searchPlaceholder="Search branches…"
+                required
+                options={ROUTE_BRANCHES.map((option) => ({ value: option.value, label: option.label }))}
+              />
+            </div>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={addPlace}>
-            <Plus className="h-4 w-4" />
-            Add place
-          </Button>
-        </div>
+        </FormSection>
 
+        <FormSection
+          icon={MapPin}
+          title="Route content"
+          action={
+            <Button type="button" variant="outline" size="sm" onClick={addPlace}>
+              <Plus className="h-4 w-4" />
+              Add place
+            </Button>
+          }
+        >
         <div className="space-y-3">
           {values.places.map((place, index) => {
             const kindMeta = ROUTE_PLACE_KINDS.find((entry) => entry.value === place.kind) ?? ROUTE_PLACE_KINDS[0];
@@ -149,26 +138,24 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
                   </Button>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  <div className="space-y-1">
                     <Label htmlFor={`place-kind-${place.id}`}>Type</Label>
-                    <select
+                    <SearchableSelect
                       id={`place-kind-${place.id}`}
-                      className={selectClassName}
                       value={place.kind}
-                      onChange={(event) =>
-                        updatePlace(index, { kind: event.target.value as RoutePlaceFormValues["kind"] })
+                      onValueChange={(next) =>
+                        updatePlace(index, { kind: next as RoutePlaceFormValues["kind"] })
                       }
-                    >
-                      {ROUTE_PLACE_KINDS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                      searchPlaceholder="Search types…"
+                      options={ROUTE_PLACE_KINDS.map((option) => ({
+                        value: option.value,
+                        label: option.label,
+                      }))}
+                    />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <Label htmlFor={`place-value-${place.id}`}>
                       Value {index === 0 ? <span className="text-destructive">*</span> : null}
                     </Label>
@@ -184,16 +171,10 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
             );
           })}
         </div>
-      </section>
+        </FormSection>
+      </FormBody>
 
-      {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">{submitLabel}</Button>
-      </div>
+      <FormFooter error={formError} submitLabel={submitLabel} onCancel={onCancel} />
     </form>
   );
 }

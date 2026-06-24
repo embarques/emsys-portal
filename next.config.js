@@ -10,6 +10,7 @@ const nextConfig = {
   // Add your current LAN IP here if it changes.
   allowedDevOrigins: [
     '10.1.5.142',
+    '10.1.10.173',
     '10.1.5.142:3000',
     'localhost',
     'localhost:3000',

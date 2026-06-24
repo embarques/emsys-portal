@@ -8,12 +8,14 @@ import {
   DollarSign,
   FileText,
   Plus,
+  Printer,
   Receipt,
   Trash2,
 } from "lucide-react";
 
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -21,6 +23,7 @@ import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import {
   TableDirectoryToolbar,
@@ -28,7 +31,6 @@ import {
   TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -42,7 +44,6 @@ import {
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranches } from "@/lib/branches/hooks/use-branches";
-import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeInvoiceKpis,
   formatInvoiceDate,
@@ -86,8 +87,9 @@ import {
   type InvoiceFilterState,
   type InvoicePaymentInput,
 } from "@/lib/invoices/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
-import { getBranchBadgeClass } from "@/lib/trucks/display";
+import { getBranchBadgeClass } from "@/lib/vehicles/display";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
 
@@ -98,12 +100,13 @@ const defaultFilters: InvoiceFilterState = {
 };
 
 export function InvoicesWorkspace() {
-  const { notifyAdded, notifyDeleted, notifyError } = useFeedback();
+  const { notifyAdded, notifyDeleted, notifyError, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<InvoiceFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_INVOICE_LIST_PARAMS.sort, () => setPage(1));
   const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
   const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | Invoice[] | null>(null);
@@ -116,8 +119,9 @@ export function InvoicesWorkspace() {
         query: deferredQuery,
         rows: filters.rows,
         paymentLocation: filters.paymentLocation,
+        sort,
       }),
-    [deferredQuery, filters.paymentLocation, filters.rows, page],
+    [deferredQuery, filters.paymentLocation, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useInvoices(listParams);
@@ -238,6 +242,11 @@ export function InvoicesWorkspace() {
     notifyAdded("Payment", formatInvoiceMoney(payment.amount));
   }
 
+  // TODO: implement print for selected invoices.
+  function handleComingSoon(label: string) {
+    notifySuccess(`${label} is coming soon.`);
+  }
+
   async function confirmDelete() {
     if (!deleteTarget) return;
 
@@ -292,6 +301,7 @@ export function InvoicesWorkspace() {
     {
       id: "invoiceNumber",
       label: "Invoice number",
+      sortField: "number",
       cellClassName: "font-medium",
       renderCell: (invoice) => invoice.invoiceNumber,
     },
@@ -303,6 +313,7 @@ export function InvoicesWorkspace() {
     {
       id: "container",
       label: "Container",
+      sortField: "container.name",
       renderCell: (invoice) => getContainerLabelForInvoice(invoice),
     },
     {
@@ -313,40 +324,40 @@ export function InvoicesWorkspace() {
       renderCell: (invoice) => {
         const status = resolveInvoicePaidStatus(invoice);
         return (
-          <UniformWidthPill columnKey="paidStatus">
-            <Badge className={getInvoicePaidStatusBadgeClass(status)}>
-              {getInvoicePaidStatusLabel(status)}
-            </Badge>
-          </UniformWidthPill>
+          <TableTagText className={getInvoicePaidStatusBadgeClass(status)}>
+            {getInvoicePaidStatusLabel(status)}
+          </TableTagText>
         );
       },
     },
     {
       id: "paymentLocation",
       label: "Paid at",
+      sortField: "paidRegion",
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (invoice) => (
-        <UniformWidthPill columnKey="paymentLocation">
-          <Badge className={getBranchBadgeClass(invoice.paymentLocation)}>
-            {getPaymentLocationLabel(invoice.paymentLocation)}
-          </Badge>
-        </UniformWidthPill>
+        <TableTagText className={getBranchBadgeClass(invoice.paymentLocation)}>
+          {getPaymentLocationLabel(invoice.paymentLocation)}
+        </TableTagText>
       ),
     },
     {
       id: "sender",
       label: "Sender",
+      sortField: "sender.name",
       renderCell: (invoice) => formatInvoicePartySummary(invoice.sender),
     },
     {
       id: "receiver",
       label: "Receiver",
+      sortField: "receiver.name",
       renderCell: (invoice) => formatInvoicePartySummary(invoice.receiver),
     },
     {
       id: "total",
       label: "Invoice total",
+      sortField: "cost",
       truncateCell: false,
       renderCell: (invoice) => {
         const amount = getInvoiceSubtotal(invoice);
@@ -372,6 +383,7 @@ export function InvoicesWorkspace() {
     {
       id: "amountPaid",
       label: "Paid",
+      sortField: "payment",
       truncateCell: false,
       renderCell: (invoice) => (
         <UniformWidthPill columnKey="amountPaid">
@@ -394,26 +406,9 @@ export function InvoicesWorkspace() {
         );
       },
     },
-    {
-      id: "createdAt",
-      label: "Date created",
-      cellClassName: "text-muted-foreground",
-      renderCell: (invoice) => formatAuditDate(invoice.createdAt),
-    },
-    {
-      id: "createdBy",
-      label: "User created",
-      renderCell: (invoice) => invoice.createdBy,
-    },
-    {
-      id: "updatedAt",
-      label: "Date modified",
-      cellClassName: "text-muted-foreground",
-      renderCell: (invoice) => formatAuditDate(invoice.updatedAt),
-    },
   ];
 
-  const columnVisibility = useColumnVisibility("invoices-v2", tableColumns);
+  const columnVisibility = useColumnVisibility("invoices-v4", tableColumns);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount + (filters.paymentLocation !== "all" ? 1 : 0);
   const hasActiveFilters =
@@ -458,7 +453,7 @@ export function InvoicesWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -522,12 +517,6 @@ export function InvoicesWorkspace() {
           />
         </CardHeader>
 
-        {isError ? (
-          <div className="px-6 py-8 text-sm text-destructive">
-            {normalizeApiError(error).message}
-          </div>
-        ) : null}
-
         <TableSelectionBar
           selectedIds={selectedIds}
           pageRowIds={invoices.map((invoice) => invoice.invoiceId)}
@@ -535,61 +524,82 @@ export function InvoicesWorkspace() {
           onDelete={() =>
             setDeleteTarget(invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)))
           }
-        />
-
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={invoices}
-          page={currentPage}
-          rowKey={(invoice) => invoice.invoiceId}
-          rowLabel={(invoice) => invoice.invoiceNumber}
-          columnLayout={columnVisibility}
-          minWidth={1500}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={openView}
-          emptyState={
-            isLoading || isFetching ? (
-              <p className="text-muted-foreground">Loading invoices…</p>
-            ) : (
-              <>
-                <p className="text-muted-foreground">No invoices match your search or filters.</p>
-              </>
-            )
+          deleteDisabled={isDeleting}
+          actions={
+            <Button variant="outline" size="sm" onClick={() => handleComingSoon("Print")}>
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
           }
         />
 
-        <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {invoices.length} of {totalInvoices} invoices
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1 || isLoading}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages || isLoading}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+        {isError ? (
+          <div className="px-6 py-8 text-sm text-destructive">
+            {normalizeApiError(error).message}
           </div>
-        </div>
+        ) : isLoading ? (
+          <DirectoryTableLoader
+            icon={Receipt}
+            title="Loading invoices"
+            description="Syncing customers, balances, and payment status…"
+            columns={["Invoice", "Date", "Customer", "Status", "Balance"]}
+          />
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={invoices}
+            page={currentPage}
+            isPageDataPending={isFetching}
+            rowKey={(invoice) => invoice.invoiceId}
+            rowLabel={(invoice) => invoice.invoiceNumber}
+            columnLayout={columnVisibility}
+            minWidth={1500}
+            sort={sort}
+            onSortChange={onSortChange}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={toggleSelect}
+            onRowClick={openView}
+            emptyState={
+              <p className="text-muted-foreground">No invoices match your search or filters.</p>
+            }
+          />
+        )}
+
+        {!isLoading && !isError ? (
+          <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {isFetching
+                ? "Refreshing invoices…"
+                : `Showing ${invoices.length} of ${totalInvoices} invoices`}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <span className="px-2 text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </Card>
 
       <InvoiceViewSheet

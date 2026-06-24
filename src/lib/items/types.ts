@@ -1,4 +1,5 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import { createRandomId } from "@/lib/utils/id";
 
 export type Item = {
   itemId: string;
@@ -21,7 +22,7 @@ export type ItemFilterState = {
 };
 
 export function createItemId(): string {
-  return crypto.randomUUID();
+  return createRandomId();
 }
 
 export function createEmptyItemForm(createdBy = DEFAULT_CREATED_BY): ItemFormValues {

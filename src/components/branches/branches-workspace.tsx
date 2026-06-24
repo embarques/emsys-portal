@@ -12,13 +12,12 @@ import {
 import { BranchForm } from "@/components/branches/branch-form";
 import { BranchViewSheet } from "@/components/branches/branch-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -64,6 +63,7 @@ import {
   type BranchFormValues,
 } from "@/lib/branches/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_BRANCH_LIST_PARAMS.limit;
@@ -82,6 +82,7 @@ export function BranchesWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_BRANCH_LIST_PARAMS.sort, () => setPage(1));
   const [viewBranch, setViewBranch] = useState<Branch | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
@@ -95,8 +96,9 @@ export function BranchesWorkspace() {
         limit: PAGE_SIZE,
         query: debouncedQuery,
         rows: filters.rows,
+        sort,
       }),
-    [debouncedQuery, filters.rows, page],
+    [debouncedQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useBranches(listParams);
@@ -210,9 +212,9 @@ export function BranchesWorkspace() {
       cellClassName: "overflow-visible",
       renderCell: (branch) =>
         branch.type ? (
-          <UniformWidthPill columnKey="type">
-            <Badge className={getBranchTypeBadgeClass(branch.type)}>{branch.type}</Badge>
-          </UniformWidthPill>
+          <TableTagText className={getBranchTypeBadgeClass(branch.type)}>
+            {branch.type}
+          </TableTagText>
         ) : (
           "—"
         ),
@@ -230,6 +232,7 @@ export function BranchesWorkspace() {
     {
       id: "phones",
       label: "phones",
+      sortField: "phone1",
       renderCell: (branch) => formatBranchPhones(branch),
     },
     {
@@ -250,6 +253,7 @@ export function BranchesWorkspace() {
     {
       id: "address",
       label: "address",
+      sortField: "address.address1",
       renderCell: (branch) => formatBranchAddress(branch),
     },
     {
@@ -305,7 +309,7 @@ export function BranchesWorkspace() {
         </Card>
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -377,6 +381,8 @@ export function BranchesWorkspace() {
             rowLabel={(branch) => branch.name}
             columnLayout={columnVisibility}
             minWidth={1400}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds.map(String)}
             allPageSelected={allPageSelected}
@@ -450,8 +456,8 @@ export function BranchesWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit branch" : "Add branch"}</DialogTitle>
           </DialogHeader>
           <BranchForm
@@ -464,13 +470,13 @@ export function BranchesWorkspace() {
             isEditing={formMode === "edit"}
             submitLabel={formMode === "edit" ? "Save changes" : "Add branch"}
             isSubmitting={isSaving}
+            externalError={formError}
             onSubmit={saveBranch}
             onCancel={() => {
               setFormMode(null);
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

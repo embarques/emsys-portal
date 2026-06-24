@@ -1,5 +1,5 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { createMockObjectId } from "@/lib/trucks/types";
+import { createMockObjectId } from "@/lib/vehicles/types";
 
 export type RouteAssignmentTruckRef = {
   id: string;
