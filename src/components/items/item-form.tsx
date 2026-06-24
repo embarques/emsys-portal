@@ -18,6 +18,7 @@ type ItemFormProps = {
   updatedAt?: string;
   submitLabel: string;
   externalError?: string | null;
+  isSubmitting?: boolean;
   onSubmit: (values: ItemFormValues) => void;
   onCancel: () => void;
 };
@@ -28,6 +29,7 @@ export function ItemForm({
   updatedAt,
   submitLabel,
   externalError = null,
+  isSubmitting = false,
   onSubmit,
   onCancel,
 }: ItemFormProps) {
@@ -89,6 +91,7 @@ export function ItemForm({
       <FormFooter
         error={externalError}
         submitLabel={submitLabel}
+        isSubmitting={isSubmitting}
         onCancel={onCancel}
       />
     </form>

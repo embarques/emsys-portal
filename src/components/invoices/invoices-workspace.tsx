@@ -22,7 +22,6 @@ import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import {
@@ -361,11 +360,7 @@ export function InvoicesWorkspace() {
       truncateCell: false,
       renderCell: (invoice) => {
         const amount = getInvoiceSubtotal(invoice);
-        return (
-          <UniformWidthPill columnKey="total">
-            <span className={getInvoiceTotalMoneyClass()}>{formatInvoiceMoney(amount)}</span>
-          </UniformWidthPill>
-        );
+        return <span className={getInvoiceTotalMoneyClass()}>{formatInvoiceMoney(amount)}</span>;
       },
     },
     {
@@ -373,11 +368,9 @@ export function InvoicesWorkspace() {
       label: "Discount",
       truncateCell: false,
       renderCell: (invoice) => (
-        <UniformWidthPill columnKey="discount">
-          <span className={getInvoiceDiscountMoneyClass(invoice.discount)}>
-            {formatInvoiceMoney(invoice.discount)}
-          </span>
-        </UniformWidthPill>
+        <span className={getInvoiceDiscountMoneyClass(invoice.discount)}>
+          {formatInvoiceMoney(invoice.discount)}
+        </span>
       ),
     },
     {
@@ -386,11 +379,9 @@ export function InvoicesWorkspace() {
       sortField: "payment",
       truncateCell: false,
       renderCell: (invoice) => (
-        <UniformWidthPill columnKey="amountPaid">
-          <span className={getInvoicePaidMoneyClass(invoice.amountPaid)}>
-            {formatInvoiceMoney(invoice.amountPaid)}
-          </span>
-        </UniformWidthPill>
+        <span className={getInvoicePaidMoneyClass(invoice.amountPaid)}>
+          {formatInvoiceMoney(invoice.amountPaid)}
+        </span>
       ),
     },
     {
@@ -399,11 +390,7 @@ export function InvoicesWorkspace() {
       truncateCell: false,
       renderCell: (invoice) => {
         const amount = getInvoiceBalance(invoice);
-        return (
-          <UniformWidthPill columnKey="balance">
-            <span className={getInvoiceBalanceMoneyClass(amount)}>{formatInvoiceMoney(amount)}</span>
-          </UniformWidthPill>
-        );
+        return <span className={getInvoiceBalanceMoneyClass(amount)}>{formatInvoiceMoney(amount)}</span>;
       },
     },
   ];

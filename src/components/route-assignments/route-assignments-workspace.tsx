@@ -57,7 +57,7 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 50;
 
 const defaultFilters: RouteAssignmentFilterState = {
   query: "",

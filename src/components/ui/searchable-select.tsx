@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Command as CommandPrimitive } from "cmdk";
+import { Command as CommandPrimitive, defaultFilter } from "cmdk";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -56,6 +56,24 @@ type SearchableSelectProps = {
   "aria-label"?: string;
   "aria-labelledby"?: string;
 };
+
+/** Strip diacritics so "e" matches "é"/"è" and vice versa during search. */
+function stripDiacritics(value: string): string {
+  return value.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
+/**
+ * Accent-insensitive wrapper around cmdk's default fuzzy filter: both the option
+ * text/keywords and the typed query are normalized, so "barahona" matches
+ * "Barahona" and "penon" matches "Peñón" while keeping cmdk's ranking.
+ */
+function accentInsensitiveFilter(value: string, search: string, keywords?: string[]): number {
+  return defaultFilter(
+    stripDiacritics(value),
+    stripDiacritics(search),
+    keywords?.map(stripDiacritics),
+  );
+}
 
 const triggerClassName =
   "relative flex min-h-10 w-full items-center rounded-lg border-2 border-foreground/60 bg-card py-2 pl-3 pr-9 text-sm outline-none transition-[border-color,box-shadow] focus-within:border-foreground data-[state=open]:border-foreground";
@@ -240,7 +258,11 @@ export function SearchableSelect({
   // Searchable: the trigger itself is a text field; options filter as you type.
   return (
     <div className="relative">
-      <Command className="overflow-visible bg-transparent" shouldFilter={!manualFiltering}>
+      <Command
+        className="overflow-visible bg-transparent"
+        shouldFilter={!manualFiltering}
+        filter={accentInsensitiveFilter}
+      >
         <Popover
           open={open}
           onOpenChange={(next) => {

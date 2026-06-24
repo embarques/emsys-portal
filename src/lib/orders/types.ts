@@ -165,7 +165,7 @@ export const DEFAULT_ORDER_LIST_SORT = "date:desc" as const;
 
 export const DEFAULT_ORDER_LIST_PARAMS = {
   page: 1,
-  limit: 40,
+  limit: 50,
   sort: DEFAULT_ORDER_LIST_SORT,
 } as const satisfies Pick<OrderListParams, "page" | "limit" | "sort">;
 

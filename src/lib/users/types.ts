@@ -108,10 +108,10 @@ export type UserListResult = {
   total: number;
 };
 
-/** GET /users?page=1&limit=40&offset=0&sort=userName:asc */
+/** GET /users?page=1&limit=50&offset=0&sort=userName:asc */
 export const DEFAULT_USER_LIST_PARAMS = {
   page: 1,
-  limit: 40,
+  limit: 50,
   sort: "userName:asc",
 } as const satisfies Pick<UserListParams, "page" | "limit" | "sort">;
 

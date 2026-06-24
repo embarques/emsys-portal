@@ -41,7 +41,6 @@ export function ItemViewSheet({ item, open, onOpenChange, onEdit, onDelete }: It
             <RecordViewSheetDetailRow label="Item ID" value={item.itemId} />
             <RecordViewSheetDetailRow label="Price" value={formatItemPrice(item.price)} />
             <RecordViewSheetDetailRow label="Date created" value={formatItemDate(item.createdAt)} />
-            <RecordViewSheetDetailRow label="User created" value={item.createdBy} />
             <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(item.updatedAt)} />
           </RecordViewSheetSection>
         </RecordViewSheetBody>

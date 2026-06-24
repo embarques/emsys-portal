@@ -76,7 +76,7 @@ import {
   type RoleFormValues,
 } from "@/lib/roles/types";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 50;
 
 const defaultFilters: RoleFilterState = {
   query: "",

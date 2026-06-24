@@ -1,10 +1,12 @@
 import type { BranchListParams, BranchSearchFilter } from "@/lib/branches/types";
 import type { ContainerListParams, ContainerSearchFilter } from "@/lib/containers/types";
 import type { InvoiceListParams, InvoiceSearchFilter } from "@/lib/invoices/types";
+import type { ItemListParams, ItemSearchFilter } from "@/lib/items/types";
 import type { VehicleListParams, VehicleSearchFilter } from "@/lib/vehicles/types";
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
+import type { RouteListParams } from "@/lib/routes/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
 
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
@@ -81,6 +83,22 @@ export const queryKeys = {
     stats: (scope: "pending" | "pending-pickups" | "pending-takes", branchId?: number) =>
       [...queryKeys.orders.all, "stats", scope, branchId] as const,
     detail: (orderId: string) => [...queryKeys.orders.all, "detail", orderId] as const,
+  },
+  items: {
+    all: ["items"] as const,
+    lists: () => [...queryKeys.items.all, "list"] as const,
+    list: (params: ItemListParams) => [...queryKeys.items.lists(), params] as const,
+    search: (search: ItemSearchFilter | undefined, limit: number) =>
+      [...queryKeys.items.all, "search", search, limit] as const,
+    stats: (scope: "all" | "kpis") => [...queryKeys.items.all, "stats", scope] as const,
+    detail: (itemId: string) => [...queryKeys.items.all, "detail", itemId] as const,
+  },
+  routes: {
+    all: ["routes"] as const,
+    lists: () => [...queryKeys.routes.all, "list"] as const,
+    list: (params: RouteListParams) => [...queryKeys.routes.lists(), params] as const,
+    stats: (scope: "all" | "kpis") => [...queryKeys.routes.all, "stats", scope] as const,
+    detail: (routeId: string) => [...queryKeys.routes.all, "detail", routeId] as const,
   },
   customers: {
     all: ["customers"] as const,

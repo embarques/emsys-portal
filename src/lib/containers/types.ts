@@ -64,10 +64,10 @@ export type ContainerListParams = {
   filterRows?: TableFilterRowState[];
 };
 
-/** GET /containers?page=1&limit=40&offset=0&sort=name:desc */
+/** GET /containers?page=1&limit=50&offset=0&sort=name:desc */
 export const DEFAULT_CONTAINER_LIST_PARAMS = {
   page: 1,
-  limit: 40,
+  limit: 50,
   sort: "name:desc",
 } as const satisfies Pick<ContainerListParams, "page" | "limit" | "sort">;
 

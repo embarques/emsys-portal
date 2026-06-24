@@ -56,7 +56,7 @@ import {
   type InvoiceFormSubmitResult,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
-import { cloneItems } from "@/lib/items/mock-data";
+import { useItemPicker } from "@/lib/items/hooks/use-items";
 import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
 import { DEFAULT_ORDER_LIST_PARAMS } from "@/lib/orders/types";
 import { useOrders } from "@/lib/orders/hooks/use-orders";
@@ -163,10 +163,11 @@ export function InvoiceForm({
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
 
+  const { data: itemsData } = useItemPicker();
   const customers = customersData?.items ?? [];
   const containers = containersData?.items ?? [];
   const orders = ordersQuery.data?.items ?? [];
-  const catalogItems = useMemo(() => cloneItems(), []);
+  const catalogItems = itemsData?.items ?? [];
   const routeAssignments = useMemo(() => cloneRouteAssignments(), []);
 
   const [values, setValues] = useState<InvoiceFormValues>(initialValues ?? createEmptyInvoiceForm());

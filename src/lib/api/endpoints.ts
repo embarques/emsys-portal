@@ -9,7 +9,9 @@ export const API_ENDPOINTS = {
   CUSTOMERS: "/customers",
   BRANCHES: "/branches",
   PICKUPS: "/pickups",
+  PICKUP_ROUTES: "/pickups/route",
   CONTAINERS: "/containers",
   VEHICLES: "/trucks",
   INVOICES: "/invoices",
+  INVOICE_DESCRIPTIONS: "/invoice-descriptions",
 } as const;

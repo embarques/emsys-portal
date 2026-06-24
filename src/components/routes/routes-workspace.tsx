@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  Hash,
   MapPin,
   Plus,
   Route as RouteIcon,
@@ -13,6 +14,7 @@ import {
 import { RouteForm } from "@/components/routes/route-form";
 import { RouteViewSheet } from "@/components/routes/route-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -20,12 +22,9 @@ import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import {
-  TableDirectoryToolbar,
-  TableFilterPanel,
-  TableFilterSection,
-} from "@/components/app-shell/table-directory-toolbar";
+import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -36,6 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeRouteKpis,
@@ -43,68 +43,80 @@ import {
   formatRoutePlacesSummary,
   getPlaceKindBadgeClass,
   getPlaceKindLabel,
-  getRouteBranchBadgeClass,
-  getRouteBranchLabel,
-  routeMatchesQuery,
+  getRouteKinds,
   truncateRouteId,
 } from "@/lib/routes/display";
-import { cloneRoutes } from "@/lib/routes/mock-data";
 import {
-  ROUTE_BRANCHES,
-  ROUTE_PLACE_KINDS,
+  useCreateRoute,
+  useDeleteRoutes,
+  useRouteKpis,
+  useRouteStats,
+  useRoutes,
+  useUpdateRoute,
+} from "@/lib/routes/hooks/use-routes";
+import {
+  DEFAULT_ROUTE_LIST_PARAMS,
+  buildRouteListParams,
   createEmptyRouteForm,
-  formValuesToRoute,
   routeToFormValues,
   type RouteFilterState,
   type RouteFormValues,
   type RouteRecord,
 } from "@/lib/routes/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = 8;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: RouteFilterState = {
   query: "",
-  placeKind: "all",
-  branch: "all",
 };
 
 export function RoutesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [routes, setRoutes] = useState<RouteRecord[]>(() => cloneRoutes());
   const [filters, setFilters] = useState<RouteFilterState>(defaultFilters);
+  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_ROUTE_LIST_PARAMS.sort, () => setPage(1));
   const [viewRoute, setViewRoute] = useState<RouteRecord | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingRoute, setEditingRoute] = useState<RouteRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RouteRecord | RouteRecord[] | null>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const filteredRoutes = useMemo(() => {
-    return routes.filter((route) => {
-      if (!routeMatchesQuery(route, filters.query)) return false;
-      if (filters.branch !== "all" && route.branch !== filters.branch) return false;
-      if (filters.placeKind !== "all" && !route.places.some((place) => place.kind === filters.placeKind)) {
-        return false;
-      }
-      return true;
-    });
-  }, [filters, routes]);
+  const listParams = useMemo(
+    () => buildRouteListParams({ page, limit: PAGE_SIZE, query: debouncedQuery, sort }),
+    [debouncedQuery, page, sort],
+  );
 
-  const kpis = useMemo(() => computeRouteKpis(routes), [routes]);
-  const totalPages = Math.max(1, Math.ceil(filteredRoutes.length / PAGE_SIZE));
+  const { data, isLoading, isError, error, isFetching } = useRoutes(listParams);
+  const stats = useRouteStats();
+  const kpiQuery = useRouteKpis();
+  const createRouteMutation = useCreateRoute();
+  const updateRouteMutation = useUpdateRoute();
+  const deleteRoutesMutation = useDeleteRoutes();
+
+  const routes = data?.items ?? [];
+  const totalRoutes = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalRoutes / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pageRoutes = filteredRoutes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const allPageSelected = pageRoutes.length > 0 && pageRoutes.every((route) => selectedIds.includes(route.routeId));
+  const allPageSelected = routes.length > 0 && routes.every((route) => selectedIds.includes(route.routeId));
+  const isSaving =
+    createRouteMutation.isPending || updateRouteMutation.isPending || deleteRoutesMutation.isPending;
+
+  const kpis = useMemo(() => computeRouteKpis(kpiQuery.routes), [kpiQuery.routes]);
+  const listErrorMessage = isError ? normalizeApiError(error).message : null;
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
-      setSelectedIds((current) => Array.from(new Set([...current, ...pageRoutes.map((route) => route.routeId)])));
+      setSelectedIds((current) => Array.from(new Set([...current, ...routes.map((route) => route.routeId)])));
       return;
     }
-    setSelectedIds((current) => current.filter((id) => !pageRoutes.some((route) => route.routeId === id)));
+    setSelectedIds((current) => current.filter((id) => !routes.some((route) => route.routeId === id)));
   }
 
   function toggleSelect(routeId: string, checked: boolean) {
@@ -114,61 +126,71 @@ export function RoutesWorkspace() {
   function openAddForm() {
     setEditingRoute(null);
     setFormMode("add");
+    setFormError(null);
   }
 
   function openEditForm(route: RouteRecord) {
     setEditingRoute(route);
     setFormMode("edit");
     setViewRoute(null);
+    setFormError(null);
   }
 
-  function saveRoute(values: RouteFormValues) {
-    if (formMode === "edit" && editingRoute) {
-      const nextRoute = formValuesToRoute(
-        values,
-        editingRoute.createdAt,
-        editingRoute.createdBy,
-        new Date().toISOString()
-      );
-      setRoutes((current) =>
-        current.map((route) => (route.routeId === editingRoute.routeId ? nextRoute : route))
-      );
-      notifyUpdated("Route", nextRoute.name);
-    } else {
-      const nextRoute = formValuesToRoute(values);
-      setRoutes((current) => [nextRoute, ...current]);
-      notifyAdded("Route", nextRoute.name);
+  async function saveRoute(values: RouteFormValues) {
+    setFormError(null);
+
+    try {
+      if (formMode === "edit" && editingRoute) {
+        const nextRoute = await updateRouteMutation.mutateAsync({ routeId: editingRoute.routeId, values });
+        notifyUpdated("Route", nextRoute.name || truncateRouteId(nextRoute.routeId));
+      } else {
+        const nextRoute = await createRouteMutation.mutateAsync(values);
+        notifyAdded("Route", nextRoute.name || truncateRouteId(nextRoute.routeId));
+      }
+
+      setFormMode(null);
+      setEditingRoute(null);
+      setPage(1);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
     }
-
-    setFormMode(null);
-    setEditingRoute(null);
-    setPage(1);
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
     const ids = Array.isArray(deleteTarget) ? deleteTarget.map((route) => route.routeId) : [deleteTarget.routeId];
-    setRoutes((current) => current.filter((route) => !ids.includes(route.routeId)));
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewRoute(null);
-    notifyDeleted("Route", ids.length);
+
+    try {
+      await deleteRoutesMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
+      setViewRoute(null);
+      notifyDeleted("Route", ids.length);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
+      setDeleteTarget(null);
+    }
   }
 
-  const stats = [
-    { label: "Total routes", value: kpis.total.toString(), description: "Defined delivery routes", icon: RouteIcon },
-    { label: "USA", value: kpis.usa.toString(), description: "United States branch", icon: MapPin },
-    { label: "DR", value: kpis.dr.toString(), description: "Dominican Republic branch", icon: MapPin },
-  ];
-
-  const placeKindFilters: { value: RouteFilterState["placeKind"]; label: string }[] = [
-    { value: "all", label: "All" },
-    ...ROUTE_PLACE_KINDS.map((entry) => ({ value: entry.value, label: entry.label })),
-  ];
-
-  const branchFilters: { value: RouteFilterState["branch"]; label: string }[] = [
-    { value: "all", label: "All" },
-    ...ROUTE_BRANCHES,
+  const statCards = [
+    {
+      label: "Total routes",
+      value: stats.isLoading ? "…" : stats.total.toString(),
+      description: "Defined pickup routes",
+      icon: RouteIcon,
+    },
+    {
+      label: "Cities covered",
+      value: kpiQuery.isLoading ? "…" : kpis.cities.toString(),
+      description: "City stops across routes",
+      icon: MapPin,
+    },
+    {
+      label: "Zip rules",
+      value: kpiQuery.isLoading ? "…" : kpis.zipRules.toString(),
+      description: "Zip codes and ranges",
+      icon: Hash,
+    },
   ];
 
   const tableColumns: DataTableColumn<RouteRecord>[] = [
@@ -181,34 +203,21 @@ export function RoutesWorkspace() {
     {
       id: "name",
       label: "Name",
+      sortField: "name",
       cellClassName: "font-medium",
-      renderCell: (route) => route.name,
-    },
-    {
-      id: "branch",
-      label: "Branch",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (route) => (
-        <TableTagText className={getRouteBranchBadgeClass(route.branch)}>
-          {getRouteBranchLabel(route.branch)}
-        </TableTagText>
-      ),
+      renderCell: (route) => route.name || "—",
     },
     {
       id: "createdAt",
       label: "Date created",
+      sortField: "createdAt",
       cellClassName: "text-muted-foreground",
       renderCell: (route) => formatRouteDate(route.createdAt),
     },
     {
-      id: "createdBy",
-      label: "User created",
-      renderCell: (route) => route.createdBy,
-    },
-    {
       id: "updatedAt",
       label: "Date modified",
+      sortField: "updatedAt",
       cellClassName: "text-muted-foreground",
       renderCell: (route) => formatAuditDate(route.updatedAt),
     },
@@ -218,36 +227,37 @@ export function RoutesWorkspace() {
       renderCell: (route) => formatRoutePlacesSummary(route),
     },
     {
-      id: "places",
-      label: "Places",
+      id: "kinds",
+      label: "Types",
       truncateCell: false,
       cellClassName: "overflow-visible",
-      renderCell: (route) => (
-        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          {route.places.slice(0, 2).map((place) => (
-            <TableTagText key={place.id} className={getPlaceKindBadgeClass(place.kind)}>
-              {getPlaceKindLabel(place.kind)}
-            </TableTagText>
-          ))}
-          {route.places.length > 2 ? (
-            <TableTagText>+{route.places.length - 2}</TableTagText>
-          ) : null}
-        </div>
-      ),
+      renderCell: (route) => {
+        const kinds = getRouteKinds(route);
+        if (kinds.length === 0) return "—";
+        return (
+          <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+            {kinds.map((kind) => (
+              <TableTagText key={kind} className={getPlaceKindBadgeClass(kind)}>
+                {getPlaceKindLabel(kind)}
+              </TableTagText>
+            ))}
+          </div>
+        );
+      },
     },
   ];
 
-  const columnVisibility = useColumnVisibility("routes", tableColumns);
-  const activeFilterCount =
-    (filters.branch !== "all" ? 1 : 0) + (filters.placeKind !== "all" ? 1 : 0);
-  const hasActiveFilters =
-    Boolean(filters.query.trim()) || filters.branch !== "all" || filters.placeKind !== "all";
+  const columnVisibility = useColumnVisibility("routes-v2", tableColumns);
+  const hasActiveFilters = Boolean(filters.query.trim());
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: hasActiveFilters,
     query: filters.query,
-    matched: filteredRoutes.length,
-    catalogTotal: routes.length,
+    isSearchPending,
+    matched: totalRoutes,
+    catalogTotal: stats.total,
     noun: "routes",
+    isLoading: isFetching && routes.length === 0,
+    catalogLoading: stats.isLoading,
   });
 
   return (
@@ -255,7 +265,7 @@ export function RoutesWorkspace() {
       <PageHeader
         title="Routes"
         actions={
-          <Button onClick={openAddForm}>
+          <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
             Add route
           </Button>
@@ -263,17 +273,17 @@ export function RoutesWorkspace() {
       />
 
       <StatCardsGrid>
-        {stats.map((stat) => {
-          const Icon = stat.icon;
+        {statCards.map((card) => {
+          const Icon = card.icon;
           return (
-            <Card key={stat.label}>
+            <Card key={card.label}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{card.label}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <CardDescription className="mt-1">{stat.description}</CardDescription>
+                <div className="text-2xl font-bold">{card.value}</div>
+                <CardDescription className="mt-1">{card.description}</CardDescription>
               </CardContent>
             </Card>
           );
@@ -283,137 +293,107 @@ export function RoutesWorkspace() {
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            filtersOpen={filtersOpen}
-            onFiltersOpenChange={setFiltersOpen}
-            activeFilterCount={activeFilterCount}
+            showFilterToggle={false}
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}
                 onChange={(query) => {
-                  setFilters((current) => ({ ...current, query }));
+                  setFilters({ query });
                   setPage(1);
                 }}
                 placeholder="Search routes..."
               />
-            }
-            filterPanel={
-              <TableFilterPanel
-                resultSummary={`Showing ${filteredRoutes.length} of ${routes.length} routes`}
-                onClearAll={
-                  hasActiveFilters
-                    ? () => {
-                        setFilters(defaultFilters);
-                        setPage(1);
-                      }
-                    : undefined
-                }
-              >
-            <TableFilterSection label="Branch">
-              {branchFilters.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  size="sm"
-                  variant={filters.branch === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, branch: option.value }));
-                    setPage(1);
-                  }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
-
-            <TableFilterSection label="Contains">
-              {placeKindFilters.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  size="sm"
-                  variant={filters.placeKind === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, placeKind: option.value }));
-                    setPage(1);
-                  }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
-              </TableFilterPanel>
             }
           />
         </CardHeader>
 
         <TableSelectionBar
           selectedIds={selectedIds}
-          pageRowIds={pageRoutes.map((route) => route.routeId)}
+          pageRowIds={routes.map((route) => route.routeId)}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
-            const route = pageRoutes.find((entry) => entry.routeId === selectedIds[0]);
+            const route = routes.find((entry) => entry.routeId === selectedIds[0]);
             if (route) openEditForm(route);
           }}
           onDelete={() => setDeleteTarget(routes.filter((route) => selectedIds.includes(route.routeId)))}
         />
 
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={pageRoutes}
-          page={currentPage}
-          rowKey={(route) => route.routeId}
-          rowLabel={(route) => route.name}
-          columnLayout={columnVisibility}
-          sortUnavailable
-          minWidth={1050}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={setViewRoute}
-          onRowDoubleClick={openEditForm}
-          emptyState={
-            <>
-              <p className="text-muted-foreground">No routes match your search or filters.</p>
-              <Button className="mt-4" onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                Add route
-              </Button>
-            </>
-          }
-        />
+        {listErrorMessage ? (
+          <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
+        ) : null}
 
-        <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {pageRoutes.length} of {filteredRoutes.length} routes
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+        {isLoading ? (
+          <DirectoryTableLoader
+            icon={RouteIcon}
+            title="Loading routes"
+            description="Organizing route names, cities, and zip coverage…"
+            columns={["Route", "Name", "Created", "Updated", "Content"]}
+          />
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={routes}
+            page={currentPage}
+            isPageDataPending={isFetching}
+            rowKey={(route) => route.routeId}
+            rowLabel={(route) => route.name}
+            columnLayout={columnVisibility}
+            sort={sort}
+            onSortChange={onSortChange}
+            minWidth={1000}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={toggleSelect}
+            onRowClick={setViewRoute}
+            onRowDoubleClick={openEditForm}
+            emptyState={
+              <>
+                <p className="text-muted-foreground">
+                  {filters.query.trim() ? "No routes match your search." : "No routes yet."}
+                </p>
+                <Button className="mt-4" onClick={openAddForm}>
+                  <Plus className="h-4 w-4" />
+                  Add route
+                </Button>
+              </>
+            }
+          />
+        )}
+
+        {!isLoading ? (
+          <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {routes.length} of {totalRoutes} routes
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <span className="px-2 text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : null}
       </Card>
 
       <RouteViewSheet
@@ -429,7 +409,15 @@ export function RoutesWorkspace() {
         }}
       />
 
-      <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
+      <Dialog
+        open={formMode !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFormMode(null);
+            setFormError(null);
+          }
+        }}
+      >
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit route" : "Add route"}</DialogTitle>
@@ -442,8 +430,13 @@ export function RoutesWorkspace() {
             isEditing={formMode === "edit"}
             updatedAt={editingRoute?.updatedAt}
             submitLabel={formMode === "edit" ? "Save changes" : "Add route"}
+            externalError={formError}
+            isSubmitting={isSaving}
             onSubmit={saveRoute}
-            onCancel={() => setFormMode(null)}
+            onCancel={() => {
+              setFormMode(null);
+              setFormError(null);
+            }}
           />
         </DialogContent>
       </Dialog>
@@ -459,10 +452,10 @@ export function RoutesWorkspace() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
               Delete
             </Button>

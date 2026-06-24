@@ -120,10 +120,10 @@ export type EmployeeListResult = {
   total: number;
 };
 
-/** GET /employees?page=1&limit=40&offset=0&sort=name:asc */
+/** GET /employees?page=1&limit=50&offset=0&sort=name:asc */
 export const DEFAULT_EMPLOYEE_LIST_PARAMS = {
   page: 1,
-  limit: 40,
+  limit: 50,
   sort: "name:asc",
 } as const satisfies Pick<EmployeeListParams, "page" | "limit" | "sort">;
 

@@ -109,13 +109,12 @@ function AddressFieldGrid({
   // as read-only text instead of editable fields.
   const senderAutoFill = mode === "sender" && googleEnabled;
 
-  const cityState = [address.city, address.state]
-    .filter((part) => part && part.trim())
-    .join(", ");
-  const locationSummary = [cityState, address.zipcode?.trim() ?? ""]
-    .filter((part) => part.trim())
-    .join(" ");
-  const hasLocation = Boolean(locationSummary.trim() || address.country?.trim());
+  const hasLocation = Boolean(
+    address.city?.trim() ||
+      address.state?.trim() ||
+      address.zipcode?.trim() ||
+      address.country?.trim(),
+  );
 
   return (
     <div className="space-y-2.5">
@@ -166,42 +165,30 @@ function AddressFieldGrid({
       </div>
 
       {senderAutoFill ? (
-        <div className="rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm">
-          {hasLocation ? (
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-              {locationSummary ? (
-                <span className="font-medium text-foreground">{locationSummary}</span>
-              ) : null}
-              {address.country?.trim() ? (
-                <span className="text-muted-foreground">· {address.country}</span>
-              ) : null}
-            </div>
-          ) : (
-            <span className="text-muted-foreground">
-              Pick an address suggestion to fill city, state, and ZIP.
-            </span>
-          )}
-        </div>
-      ) : mode === "receiver" ? (
-        <>
-          <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="space-y-1">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <div className="space-y-1">
               <Label htmlFor={`${idPrefix}-city`} className="text-xs text-muted-foreground">
                 {labels.city}
               </Label>
-              <SearchableSelect
+              <Input
                 id={`${idPrefix}-city`}
                 value={address.city}
-                onValueChange={(value) => {
-                  const match = findDominicanCity(value);
-                  if (match) {
-                    onCitySelected(match);
-                  } else {
-                    onChange("city", value);
-                  }
-                }}
-                options={cityOptions}
-                placeholder="Select a city"
+                placeholder="—"
+                disabled
+                readOnly
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`${idPrefix}-state`} className="text-xs text-muted-foreground">
+                {labels.state}
+              </Label>
+              <Input
+                id={`${idPrefix}-state`}
+                value={address.state}
+                placeholder="—"
+                disabled
+                readOnly
               />
             </div>
             <div className="space-y-1">
@@ -211,19 +198,63 @@ function AddressFieldGrid({
               <Input
                 id={`${idPrefix}-zipcode`}
                 value={address.zipcode}
-                onChange={(event) => onChange("zipcode", event.target.value)}
+                placeholder="—"
+                disabled
+                readOnly
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`${idPrefix}-country`} className="text-xs text-muted-foreground">
+                {labels.country}
+              </Label>
+              <Input
+                id={`${idPrefix}-country`}
+                value={address.country}
+                placeholder="—"
+                disabled
+                readOnly
               />
             </div>
           </div>
-          <div className="rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm">
-            <span className="font-medium text-foreground">
-              {address.state?.trim() ? address.state : "Province set by selected city"}
-            </span>
-            {address.country?.trim() ? (
-              <span className="text-muted-foreground"> · {address.country}</span>
-            ) : null}
+          {!hasLocation ? (
+            <p className="text-xs text-muted-foreground">
+              Pick an address suggestion to fill city, state, ZIP, and country.
+            </p>
+          ) : null}
+        </div>
+      ) : mode === "receiver" ? (
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor={`${idPrefix}-city`} className="text-xs text-muted-foreground">
+              City, Province
+            </Label>
+            <SearchableSelect
+              id={`${idPrefix}-city`}
+              value={address.city}
+              searchPlaceholder="Search by city or province…"
+              onValueChange={(value) => {
+                const match = findDominicanCity(value);
+                if (match) {
+                  onCitySelected(match);
+                } else {
+                  onChange("city", value);
+                }
+              }}
+              options={cityOptions}
+              placeholder="Select a city"
+            />
           </div>
-        </>
+          <div className="space-y-1">
+            <Label htmlFor={`${idPrefix}-zipcode`} className="text-xs text-muted-foreground">
+              {labels.zipcode}
+            </Label>
+            <Input
+              id={`${idPrefix}-zipcode`}
+              value={address.zipcode}
+              onChange={(event) => onChange("zipcode", event.target.value)}
+            />
+          </div>
+        </div>
       ) : (
         // Sender without Google configured: keep editable city/state/zip inputs.
         <div className="grid gap-2.5 sm:grid-cols-3">

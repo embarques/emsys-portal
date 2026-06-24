@@ -1,11 +1,16 @@
 import type { Item } from "./types";
 
 export function formatItemDate(iso: string): string {
+  if (!iso?.trim()) return "—";
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(iso));
+  }).format(date);
 }
 
 export function formatItemPrice(price: number): string {
@@ -17,22 +22,6 @@ export function formatItemPrice(price: number): string {
 
 export function truncateItemId(itemId: string): string {
   return itemId.length > 12 ? `${itemId.slice(0, 8)}…` : itemId;
-}
-
-export function itemMatchesQuery(item: Item, query: string): boolean {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) return true;
-
-  return [
-    item.itemId,
-    item.description,
-    item.createdBy,
-    formatItemPrice(item.price),
-    formatItemDate(item.createdAt),
-  ]
-    .join(" ")
-    .toLowerCase()
-    .includes(normalized);
 }
 
 export function computeItemKpis(items: Item[]) {

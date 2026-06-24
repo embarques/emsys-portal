@@ -41,6 +41,8 @@ export const DOMINICAN_CITIES: DominicanCity[] = [
   { city: "San José de las Matas", province: "Santiago" },
   { city: "Sabana Iglesia", province: "Santiago" },
   { city: "Navarrete", province: "Santiago" },
+  { city: "Villa Bisonó", province: "Santiago" }, // official name for Navarrete
+  { city: "Baitoa", province: "Santiago" },
 
   // La Vega
   { city: "La Vega", province: "La Vega" },
@@ -56,6 +58,8 @@ export const DOMINICAN_CITIES: DominicanCity[] = [
   { city: "Luperón", province: "Puerto Plata" },
   { city: "Villa Isabela", province: "Puerto Plata" },
   { city: "Guananico", province: "Puerto Plata" },
+  { city: "Los Hidalgos", province: "Puerto Plata" },
+  { city: "Cabarete", province: "Puerto Plata" }, // district
 
   // Duarte
   { city: "San Francisco de Macorís", province: "Duarte" },
@@ -63,12 +67,14 @@ export const DOMINICAN_CITIES: DominicanCity[] = [
   { city: "Castillo", province: "Duarte" },
   { city: "Villa Riva", province: "Duarte" },
   { city: "Las Guáranas", province: "Duarte" },
+  { city: "Arenoso", province: "Duarte" },
 
   // La Altagracia
   { city: "Higüey", province: "La Altagracia" },
   { city: "Punta Cana", province: "La Altagracia" },
   { city: "Bávaro", province: "La Altagracia" },
   { city: "San Rafael del Yuma", province: "La Altagracia" },
+  { city: "Bayahibe", province: "La Altagracia" }, // district
 
   // La Romana
   { city: "La Romana", province: "La Romana" },
@@ -81,6 +87,8 @@ export const DOMINICAN_CITIES: DominicanCity[] = [
   { city: "Quisqueya", province: "San Pedro de Macorís" },
   { city: "Ramón Santana", province: "San Pedro de Macorís" },
   { city: "Los Llanos", province: "San Pedro de Macorís" },
+  { city: "Guayacanes", province: "San Pedro de Macorís" },
+  { city: "Juan Dolio", province: "San Pedro de Macorís" }, // district
 
   // San Cristóbal
   { city: "San Cristóbal", province: "San Cristóbal" },
@@ -90,11 +98,13 @@ export const DOMINICAN_CITIES: DominicanCity[] = [
   { city: "Cambita Garabitos", province: "San Cristóbal" },
   { city: "Sabana Grande de Palenque", province: "San Cristóbal" },
   { city: "Los Cacaos", province: "San Cristóbal" },
+  { city: "San Gregorio de Nigua", province: "San Cristóbal" },
 
   // Peravia
   { city: "Baní", province: "Peravia" },
   { city: "Nizao", province: "Peravia" },
   { city: "Matanzas", province: "Peravia" },
+  { city: "Sabana Buey", province: "Peravia" },
 
   // Azua
   { city: "Azua de Compostela", province: "Azua" },
@@ -102,12 +112,22 @@ export const DOMINICAN_CITIES: DominicanCity[] = [
   { city: "Padre Las Casas", province: "Azua" },
   { city: "Sabana Yegua", province: "Azua" },
   { city: "Estebanía", province: "Azua" },
+  { city: "Guayabal", province: "Azua" },
+  { city: "Las Yayas de Viajama", province: "Azua" },
+  { city: "Peralta", province: "Azua" },
+  { city: "Pueblo Viejo", province: "Azua" },
+  { city: "Tábara Arriba", province: "Azua" },
 
   // Barahona
   { city: "Barahona", province: "Barahona" },
   { city: "Cabral", province: "Barahona" },
   { city: "Enriquillo", province: "Barahona" },
   { city: "Paraíso", province: "Barahona" },
+  { city: "La Ciénaga", province: "Barahona" },
+  { city: "Vicente Noble", province: "Barahona" },
+  { city: "Fundación", province: "Barahona" },
+  { city: "Las Salinas", province: "Barahona" },
+  { city: "Jaquimeyes", province: "Barahona" },
 
   // Espaillat
   { city: "Moca", province: "Espaillat" },
@@ -124,6 +144,7 @@ export const DOMINICAN_CITIES: DominicanCity[] = [
   { city: "Cotuí", province: "Sánchez Ramírez" },
   { city: "Cevicos", province: "Sánchez Ramírez" },
   { city: "Fantino", province: "Sánchez Ramírez" },
+  { city: "Villa La Mata", province: "Sánchez Ramírez" },
 
   // Monte Plata
   { city: "Monte Plata", province: "Monte Plata" },
@@ -152,15 +173,19 @@ export const DOMINICAN_CITIES: DominicanCity[] = [
   { city: "Castañuelas", province: "Monte Cristi" },
   { city: "Guayubín", province: "Monte Cristi" },
   { city: "Villa Vásquez", province: "Monte Cristi" },
+  { city: "Pepillo Salcedo", province: "Monte Cristi" },
+  { city: "Las Matas de Santa Cruz", province: "Monte Cristi" },
 
   // Dajabón
   { city: "Dajabón", province: "Dajabón" },
   { city: "Loma de Cabrera", province: "Dajabón" },
   { city: "Partido", province: "Dajabón" },
+  { city: "Restauración", province: "Dajabón" },
 
   // Santiago Rodríguez
   { city: "Sabaneta", province: "Santiago Rodríguez" },
   { city: "Monción", province: "Santiago Rodríguez" },
+  { city: "Villa Los Almácigos", province: "Santiago Rodríguez" },
 
   // Hermanas Mirabal
   { city: "Salcedo", province: "Hermanas Mirabal" },
@@ -172,6 +197,8 @@ export const DOMINICAN_CITIES: DominicanCity[] = [
   { city: "Las Matas de Farfán", province: "San Juan" },
   { city: "Bohechío", province: "San Juan" },
   { city: "El Cercado", province: "San Juan" },
+  { city: "Vallejuelo", province: "San Juan" },
+  { city: "Juan de Herrera", province: "San Juan" },
 
   // Elías Piña
   { city: "Comendador", province: "Elías Piña" },
@@ -198,12 +225,15 @@ export const DOMINICAN_CITIES: DominicanCity[] = [
   { city: "Duvergé", province: "Independencia" },
   { city: "La Descubierta", province: "Independencia" },
   { city: "Postrer Río", province: "Independencia" },
+  { city: "Cristóbal", province: "Independencia" },
+  { city: "Mella", province: "Independencia" },
 
   // Bahoruco
   { city: "Neiba", province: "Bahoruco" },
   { city: "Galván", province: "Bahoruco" },
   { city: "Tamayo", province: "Bahoruco" },
   { city: "Villa Jaragua", province: "Bahoruco" },
+  { city: "Los Ríos", province: "Bahoruco" },
 
   // Pedernales
   { city: "Pedernales", province: "Pedernales" },

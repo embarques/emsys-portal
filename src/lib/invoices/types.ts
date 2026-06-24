@@ -164,10 +164,10 @@ export type InvoiceListParams = {
   paymentLocation?: InvoicePaymentLocation | "all";
 };
 
-/** GET /invoices?page=1&limit=40&offset=0&sort=number:desc */
+/** GET /invoices?page=1&limit=50&offset=0&sort=number:desc */
 export const DEFAULT_INVOICE_LIST_PARAMS = {
   page: 1,
-  limit: 40,
+  limit: 50,
   sort: "number:desc",
 } as const satisfies Pick<InvoiceListParams, "page" | "limit" | "sort">;
 
