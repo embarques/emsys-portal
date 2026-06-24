@@ -1,9 +1,10 @@
 "use client";
 
+import { CalendarCheck, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
-import { Button } from "@/components/ui/button";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -49,100 +50,98 @@ export function VehicleForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
-      <div className="space-y-2">
-        <Label htmlFor="name">
-          Name <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="name"
-          value={values.name}
-          onChange={(event) => updateField("name", event.target.value)}
-          placeholder="Unit 12 — Freightliner"
-          required
-        />
-      </div>
+      <FormBody>
+        <FormSection icon={Truck} title="Vehicle">
+          <div className="space-y-2.5">
+            <div className="space-y-1">
+              <Label htmlFor="name">
+                Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                value={values.name}
+                onChange={(event) => updateField("name", event.target.value)}
+                placeholder="Unit 12 — Freightliner"
+                required
+              />
+            </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="vin">VIN</Label>
-        <Input
-          id="vin"
-          value={values.vin}
-          onChange={(event) => updateField("vin", event.target.value.toUpperCase())}
-          placeholder="1FUJGLDR57LM12345"
-          className="font-mono text-xs"
-        />
-      </div>
+            <div className="space-y-1">
+              <Label htmlFor="vin">VIN</Label>
+              <Input
+                id="vin"
+                value={values.vin}
+                onChange={(event) => updateField("vin", event.target.value.toUpperCase())}
+                placeholder="1FUJGLDR57LM12345"
+                className="font-mono text-xs"
+              />
+            </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="year">Year</Label>
-          <Input
-            id="year"
-            type="number"
-            min={1980}
-            max={new Date().getFullYear() + 1}
-            value={values.year}
-            onChange={(event) => updateField("year", event.target.value)}
-          />
-        </div>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="year">Year</Label>
+                <Input
+                  id="year"
+                  type="number"
+                  min={1980}
+                  max={new Date().getFullYear() + 1}
+                  value={values.year}
+                  onChange={(event) => updateField("year", event.target.value)}
+                />
+              </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="fuelType">Fuel type</Label>
-          <Input
-            id="fuelType"
-            list="vehicle-fuel-types"
-            value={values.fuelType}
-            onChange={(event) => updateField("fuelType", event.target.value)}
-            placeholder="diesel"
-          />
-          <datalist id="vehicle-fuel-types">
-            {VEHICLE_FUEL_TYPES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </datalist>
-        </div>
-      </div>
+              <div className="space-y-1">
+                <Label htmlFor="fuelType">Fuel type</Label>
+                <Input
+                  id="fuelType"
+                  list="vehicle-fuel-types"
+                  value={values.fuelType}
+                  onChange={(event) => updateField("fuelType", event.target.value)}
+                  placeholder="diesel"
+                />
+                <datalist id="vehicle-fuel-types">
+                  {VEHICLE_FUEL_TYPES.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </datalist>
+              </div>
+            </div>
+          </div>
+        </FormSection>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="inspectionDate">Inspection date</Label>
-          <Input
-            id="inspectionDate"
-            type="date"
-            value={values.inspectionDate}
-            onChange={(event) => updateField("inspectionDate", event.target.value)}
-          />
-        </div>
+        <FormSection icon={CalendarCheck} title="Compliance">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="inspectionDate">Inspection date</Label>
+              <Input
+                id="inspectionDate"
+                type="date"
+                value={values.inspectionDate}
+                onChange={(event) => updateField("inspectionDate", event.target.value)}
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="registrationDate">Registration date</Label>
-          <Input
-            id="registrationDate"
-            type="date"
-            value={values.registrationDate}
-            onChange={(event) => updateField("registrationDate", event.target.value)}
-          />
-        </div>
-      </div>
+            <div className="space-y-1">
+              <Label htmlFor="registrationDate">Registration date</Label>
+              <Input
+                id="registrationDate"
+                type="date"
+                value={values.registrationDate}
+                onChange={(event) => updateField("registrationDate", event.target.value)}
+              />
+            </div>
+          </div>
+        </FormSection>
+      </FormBody>
 
-      </div>
-
-      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-        {externalError ? (
-          <p className="mb-3 text-sm text-destructive">{externalError}</p>
-        ) : null}
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {submitLabel}
-          </Button>
-        </div>
-      </div>
+      <FormFooter
+        error={externalError}
+        submitLabel={submitLabel}
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+      />
     </form>
   );
 }

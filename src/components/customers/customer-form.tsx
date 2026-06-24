@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AlertCircle,
   MapPin,
   Phone as PhoneIcon,
   Plus,
@@ -14,6 +13,7 @@ import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { REQUIRED_PHONE_DIGITS, isCompletePhoneNumber } from "@/lib/phones/phones";
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
@@ -76,31 +76,6 @@ type CustomerFormProps = {
   onSubmit: (values: CustomerFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
-
-type FormSectionProps = {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  /** Optional control rendered on the right of the section header (e.g. an add button). */
-  action?: React.ReactNode;
-  children: React.ReactNode;
-};
-
-function FormSection({ icon: Icon, title, action, children }: FormSectionProps) {
-  return (
-    <section className="space-y-2.5">
-      <div className="flex min-h-7 items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Icon className="size-4 shrink-0 text-primary" />
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {title}
-          </h3>
-        </div>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
 
 type AddressFieldGridProps = {
   idPrefix: string;
@@ -565,13 +540,6 @@ export function CustomerForm({
 
   const isBlocked = blockReason != null;
 
-  // Single notice shown inline with the footer actions (errors take priority).
-  const footerNotice: { tone: "error" | "warning"; message: string } | null = errorMessage
-    ? { tone: "error", message: errorMessage }
-    : blockReason
-      ? { tone: "warning", message: blockReason }
-      : null;
-
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
@@ -599,7 +567,7 @@ export function CustomerForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4">
+      <FormBody>
         <FormSection icon={User} title="General">
           <div className="space-y-2.5">
             <div className="space-y-1">
@@ -760,49 +728,16 @@ export function CustomerForm({
             placeholder="Add any relevant context…"
           />
         </FormSection>
-      </div>
+      </FormBody>
 
-      <div className="shrink-0 border-t border-border bg-card px-5 py-3">
-        <div className="flex items-center justify-between gap-3">
-          {footerNotice ? (
-            footerNotice.tone === "error" ? (
-              <div
-                className={cn(
-                  "flex min-w-0 flex-1 items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5",
-                  "text-sm text-destructive",
-                )}
-              >
-                <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                <span className="min-w-0 break-words">{footerNotice.message}</span>
-              </div>
-            ) : (
-              <p className="min-w-0 flex-1 break-words text-sm text-amber-700 dark:text-amber-300">
-                {footerNotice.message}
-              </p>
-            )
-          ) : (
-            <span className="flex-1" aria-hidden />
-          )}
-
-          <div className="flex shrink-0 items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || isBlocked}
-              title={footerNotice?.message}
-            >
-              {isSubmitting ? "Saving…" : submitLabel}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <FormFooter
+        error={errorMessage}
+        warning={blockReason}
+        submitLabel={submitLabel}
+        isSubmitting={isSubmitting}
+        submitDisabled={isBlocked}
+        onCancel={onCancel}
+      />
     </form>
   );
 }

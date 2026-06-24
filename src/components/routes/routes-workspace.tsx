@@ -280,7 +280,7 @@ export function RoutesWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -366,6 +366,7 @@ export function RoutesWorkspace() {
           rowKey={(route) => route.routeId}
           rowLabel={(route) => route.name}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={1050}
           selectable
           selectedIds={selectedIds}

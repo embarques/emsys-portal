@@ -755,6 +755,7 @@ export function LabelsWorkspace() {
           rowKey={(label) => label.labelId}
           rowLabel={(label) => label.barcode}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={1200}
           selectable
           selectedIds={selectedLabelIds}

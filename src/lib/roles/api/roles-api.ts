@@ -158,8 +158,8 @@ function buildRolePayload(values: RoleFormValues): ApiRoleWritePayload {
   };
 }
 
-export async function fetchRoles(): Promise<PaginatedResult<Role>> {
-  const query = buildApiListQuery({ page: 1, limit: CATALOG_LIMIT, sort: "name:asc" });
+export async function fetchRoles(sort: string = "name:asc"): Promise<PaginatedResult<Role>> {
+  const query = buildApiListQuery({ page: 1, limit: CATALOG_LIMIT, sort });
   const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
     `${API_ENDPOINTS.ROLES}?${query}`,
   );

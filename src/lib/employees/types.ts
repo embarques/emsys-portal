@@ -249,11 +249,13 @@ export function buildEmployeeListParams(input: {
   limit?: number;
   query: string;
   rows: TableFilterRowState[];
+  sort?: ApiListSortInput;
 }): EmployeeListParams {
   const params: EmployeeListParams = {
     ...DEFAULT_EMPLOYEE_LIST_PARAMS,
     page: input.page,
     limit: input.limit ?? DEFAULT_EMPLOYEE_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_EMPLOYEE_LIST_PARAMS.sort,
   };
 
   const search = createEmployeeSearchFilter(input.query);

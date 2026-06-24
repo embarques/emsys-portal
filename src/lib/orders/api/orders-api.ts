@@ -38,6 +38,7 @@ import {
   DEFAULT_ORDER_LIST_PARAMS,
   deriveOrderPurpose,
   orderCommentPurposeRequiresItem,
+  orderToFormValues,
   resolveOrderCommentUnit,
   toApiCommentPurpose,
   type Order,
@@ -649,4 +650,23 @@ export async function deleteOrder(orderId: string): Promise<void> {
 
 export async function deleteOrders(orderIds: string[]): Promise<void> {
   await Promise.all(orderIds.map((orderId) => deleteOrder(orderId)));
+}
+
+/** Build a full pickup write payload from an existing order with an explicit completed flag. */
+function buildPickupCompletedPayload(order: Order, completed: boolean): ApiPickupWritePayload {
+  const payload = buildPickupWritePayload(orderToFormValues(order));
+  payload.completed = completed;
+  return payload;
+}
+
+export async function setOrderCompleted(order: Order, completed: boolean): Promise<void> {
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/${order.id}`,
+    buildPickupCompletedPayload(order, completed),
+  );
+  assertMutationSuccess(response, "Unable to update pickup.");
+}
+
+export async function setOrdersCompleted(orders: Order[], completed: boolean): Promise<void> {
+  await Promise.all(orders.map((order) => setOrderCompleted(order, completed)));
 }

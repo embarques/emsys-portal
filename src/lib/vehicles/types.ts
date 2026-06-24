@@ -139,11 +139,13 @@ export function buildVehicleListParams(input: {
   limit?: number;
   query: string;
   rows: TableFilterRowState[];
+  sort?: ApiListSortInput;
 }): VehicleListParams {
   const params: VehicleListParams = {
     ...DEFAULT_VEHICLE_LIST_PARAMS,
     page: input.page,
     limit: input.limit ?? DEFAULT_VEHICLE_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_VEHICLE_LIST_PARAMS.sort,
   };
 
   const search = createVehicleSearchFilter(input.query);

@@ -1,9 +1,10 @@
 "use client";
 
+import { Clock, KeyRound, Mail, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
-import { Button } from "@/components/ui/button";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -80,197 +81,203 @@ export function UserForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
-      <div className="space-y-2">
-        <Label htmlFor="uid">Firebase UID</Label>
-        <Input
-          id="uid"
-          value={values.uid}
-          onChange={(event) => updateField("uid", event.target.value)}
-          placeholder="Firebase authentication UID"
-          className="font-mono text-xs"
-        />
-      </div>
+      <FormBody>
+        <FormSection icon={KeyRound} title="Account">
+          <div className="space-y-2.5">
+            <div className="space-y-1">
+              <Label htmlFor="uid">Firebase UID</Label>
+              <Input
+                id="uid"
+                value={values.uid}
+                onChange={(event) => updateField("uid", event.target.value)}
+                placeholder="Firebase authentication UID"
+                className="font-mono text-xs"
+              />
+            </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="userName">
-            Username <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="userName"
-            value={values.userName}
-            onChange={(event) => updateField("userName", event.target.value)}
-            placeholder="elk@elk.com"
-            autoComplete="off"
-            required
-          />
-        </div>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="userName">
+                  Username <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="userName"
+                  value={values.userName}
+                  onChange={(event) => updateField("userName", event.target.value)}
+                  placeholder="elk@elk.com"
+                  autoComplete="off"
+                  required
+                />
+              </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">
-            Password {!isEditing ? <span className="text-destructive">*</span> : null}
-          </Label>
-          <Input
-            id="password"
-            type="password"
-            value={values.password}
-            onChange={(event) => updateField("password", event.target.value)}
-            placeholder={isEditing ? "Leave blank to keep current" : "Enter password"}
-            autoComplete="new-password"
-            required={!isEditing}
-          />
-        </div>
-      </div>
+              <div className="space-y-1">
+                <Label htmlFor="password">
+                  Password {!isEditing ? <span className="text-destructive">*</span> : null}
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={values.password}
+                  onChange={(event) => updateField("password", event.target.value)}
+                  placeholder={isEditing ? "Leave blank to keep current" : "Enter password"}
+                  autoComplete="new-password"
+                  required={!isEditing}
+                />
+              </div>
+            </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="fullName">Full name</Label>
-        <Input
-          id="fullName"
-          value={values.fullName}
-          onChange={(event) => updateField("fullName", event.target.value)}
-          placeholder="Defaults to userName when empty"
-        />
-      </div>
+            <div className="space-y-1">
+              <Label htmlFor="fullName">Full name</Label>
+              <Input
+                id="fullName"
+                value={values.fullName}
+                onChange={(event) => updateField("fullName", event.target.value)}
+                placeholder="Defaults to userName when empty"
+              />
+            </div>
+          </div>
+        </FormSection>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="active">
-            Active <span className="text-destructive">*</span>
-          </Label>
-          <SearchableSelect
-            id="active"
-            searchable={false}
-            value={String(values.active)}
-            onValueChange={(next) => updateField("active", next === "true")}
-            required
-            options={USER_ACTIVE_OPTIONS.map((option) => ({
-              value: String(option.value),
-              label: option.label,
-            }))}
-          />
-        </div>
+        <FormSection icon={ShieldCheck} title="Access">
+          <div className="space-y-2.5">
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="active">
+                  Active <span className="text-destructive">*</span>
+                </Label>
+                <SearchableSelect
+                  id="active"
+                  searchable={false}
+                  value={String(values.active)}
+                  onValueChange={(next) => updateField("active", next === "true")}
+                  required
+                  options={USER_ACTIVE_OPTIONS.map((option) => ({
+                    value: String(option.value),
+                    label: option.label,
+                  }))}
+                />
+              </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="roleId">
-            Role <span className="text-destructive">*</span>
-          </Label>
-          <SearchableSelect
-            id="roleId"
-            value={String(values.role.id)}
-            onValueChange={(next) => handleRoleChange(Number(next))}
-            searchPlaceholder="Search roles…"
-            required
-            options={roleOptions.map((option) => ({
-              value: String(option.id),
-              label: option.label,
-            }))}
-          />
-        </div>
-      </div>
+              <div className="space-y-1">
+                <Label htmlFor="roleId">
+                  Role <span className="text-destructive">*</span>
+                </Label>
+                <SearchableSelect
+                  id="roleId"
+                  value={String(values.role.id)}
+                  onValueChange={(next) => handleRoleChange(Number(next))}
+                  searchPlaceholder="Search roles…"
+                  required
+                  options={roleOptions.map((option) => ({
+                    value: String(option.id),
+                    label: option.label,
+                  }))}
+                />
+              </div>
+            </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="branch">
-            Branch <span className="text-destructive">*</span>
-          </Label>
-          <SearchableSelect
-            id="branch"
-            value={selectedPortalBranch}
-            onValueChange={(next) => handlePortalBranchChange(next as UserPortalBranch)}
-            searchPlaceholder="Search branches…"
-            required
-            options={USER_PORTAL_BRANCHES.map((option) => ({
-              value: option.portal,
-              label: option.label,
-            }))}
-          />
-        </div>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="branch">
+                  Branch <span className="text-destructive">*</span>
+                </Label>
+                <SearchableSelect
+                  id="branch"
+                  value={selectedPortalBranch}
+                  onValueChange={(next) => handlePortalBranchChange(next as UserPortalBranch)}
+                  searchPlaceholder="Search branches…"
+                  required
+                  options={USER_PORTAL_BRANCHES.map((option) => ({
+                    value: option.portal,
+                    label: option.label,
+                  }))}
+                />
+              </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="type">User type</Label>
-          <Input
-            id="type"
-            value={values.type}
-            onChange={(event) => updateField("type", event.target.value)}
-            placeholder="User type"
-          />
-        </div>
-      </div>
+              <div className="space-y-1">
+                <Label htmlFor="type">User type</Label>
+                <Input
+                  id="type"
+                  value={values.type}
+                  onChange={(event) => updateField("type", event.target.value)}
+                  placeholder="User type"
+                />
+              </div>
+            </div>
+          </div>
+        </FormSection>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="startTime">Start time</Label>
-          <Input
-            id="startTime"
-            value={values.startTime}
-            onChange={(event) => updateField("startTime", event.target.value)}
-            placeholder="Shift start time"
-          />
-        </div>
+        <FormSection icon={Clock} title="Schedule">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="startTime">Start time</Label>
+              <Input
+                id="startTime"
+                value={values.startTime}
+                onChange={(event) => updateField("startTime", event.target.value)}
+                placeholder="Shift start time"
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="endTime">End time</Label>
-          <Input
-            id="endTime"
-            value={values.endTime}
-            onChange={(event) => updateField("endTime", event.target.value)}
-            placeholder="Shift end time"
-          />
-        </div>
-      </div>
+            <div className="space-y-1">
+              <Label htmlFor="endTime">End time</Label>
+              <Input
+                id="endTime"
+                value={values.endTime}
+                onChange={(event) => updateField("endTime", event.target.value)}
+                placeholder="Shift end time"
+              />
+            </div>
+          </div>
+        </FormSection>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="email">
-            Email {!isEditing ? <span className="text-destructive">*</span> : null}
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            value={values.email}
-            onChange={(event) => updateField("email", event.target.value)}
-            placeholder="name@emsys.example"
-            required={!isEditing}
-          />
-        </div>
+        <FormSection icon={Mail} title="Contact">
+          <div className="space-y-2.5">
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="email">
+                  Email {!isEditing ? <span className="text-destructive">*</span> : null}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={values.email}
+                  onChange={(event) => updateField("email", event.target.value)}
+                  placeholder="name@emsys.example"
+                  required={!isEditing}
+                />
+              </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="accessCode">Access code</Label>
-          <Input
-            id="accessCode"
-            type="number"
-            value={values.accessCode}
-            onChange={(event) => updateField("accessCode", Number(event.target.value) || 0)}
-          />
-        </div>
-      </div>
+              <div className="space-y-1">
+                <Label htmlFor="accessCode">Access code</Label>
+                <Input
+                  id="accessCode"
+                  type="number"
+                  value={values.accessCode}
+                  onChange={(event) => updateField("accessCode", Number(event.target.value) || 0)}
+                />
+              </div>
+            </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="user">User</Label>
-        <Input
-          id="user"
-          value={values.user ?? ""}
-          onChange={(event) => updateField("user", event.target.value.trim() || null)}
-          placeholder="Defaults to userName when empty"
-        />
-      </div>
+            <div className="space-y-1">
+              <Label htmlFor="user">User</Label>
+              <Input
+                id="user"
+                value={values.user ?? ""}
+                onChange={(event) => updateField("user", event.target.value.trim() || null)}
+                placeholder="Defaults to userName when empty"
+              />
+            </div>
+          </div>
+        </FormSection>
+      </FormBody>
 
-      </div>
-
-      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-        {externalError ? (
-          <p className="mb-3 text-sm text-destructive">{externalError}</p>
-        ) : null}
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {submitLabel}
-          </Button>
-        </div>
-      </div>
+      <FormFooter
+        error={externalError}
+        submitLabel={submitLabel}
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+      />
     </form>
   );
 }

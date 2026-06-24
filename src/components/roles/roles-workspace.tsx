@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/sheet";
 import { formatAuditDate } from "@/lib/audit/display";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
   computeRoleKpis,
@@ -86,13 +87,14 @@ export function RolesWorkspace() {
   const [filters, setFilters] = useState<RoleFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort("name:asc", () => setPage(1));
   const [viewRole, setViewRole] = useState<Role | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Role | Role[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const rolesQuery = useRoles();
+  const rolesQuery = useRoles(sort);
   const permissionCatalogQuery = useRolePermissionCatalog();
   const createRoleMutation = useCreateRole();
   const updateRoleMutation = useUpdateRole();
@@ -246,6 +248,7 @@ export function RolesWorkspace() {
     {
       id: "roleId",
       label: "Role ID",
+      sortField: "id",
       cellClassName: "font-mono text-xs",
       renderCell: (role) => truncateRoleId(role.roleId),
     },
@@ -292,6 +295,7 @@ export function RolesWorkspace() {
       id: "actions",
       label: "Action",
       hideable: false,
+      sortable: false,
       truncateCell: false,
       stopRowClick: true,
       headerClassName: "text-right",
@@ -387,7 +391,7 @@ export function RolesWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             showFilterToggle={false}
@@ -441,6 +445,8 @@ export function RolesWorkspace() {
             rowLabel={(role) => role.name}
             columnLayout={columnVisibility}
             minWidth={1100}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}

@@ -73,6 +73,7 @@ import {
   type CustomerFormValues,
 } from "@/lib/customers/types";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const PAGE_SIZE = DEFAULT_CUSTOMER_LIST_PARAMS.limit;
@@ -108,6 +109,7 @@ export function CustomersWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_CUSTOMER_LIST_PARAMS.sort, () => setPage(1));
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -132,8 +134,9 @@ export function CustomersWorkspace() {
         limit: PAGE_SIZE,
         query: debouncedQuery,
         rows: filters.rows,
+        sort,
       }),
-    [debouncedQuery, filters.rows, page],
+    [debouncedQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching, isPending } = useCustomers(listParams);
@@ -312,6 +315,7 @@ export function CustomersWorkspace() {
     {
       id: "phone",
       label: "Phone",
+      sortField: "phones.number",
       renderCell: (customer) => formatPrimaryPhonesDisplayOrDash(customer.phones),
     },
     {
@@ -322,6 +326,7 @@ export function CustomersWorkspace() {
     {
       id: "address",
       label: "address",
+      sortField: "address.address1",
       renderCell: (customer) =>
         [customer.address.address1, customer.address.apartment, customer.address.address2]
           .filter((value) => value.trim())
@@ -442,7 +447,7 @@ export function CustomersWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -525,6 +530,8 @@ export function CustomersWorkspace() {
             rowLabel={(customer) => customer.name}
             columnLayout={columnVisibility}
             minWidth={1680}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}

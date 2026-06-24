@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CustomerForm } from "@/components/customers/customer-form";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,30 +72,6 @@ type InvoiceFormProps = {
   onFormErrorChange?: (error: string | null) => void;
   onCancel: () => void;
 };
-
-type FormSectionProps = {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  required?: boolean;
-  children: React.ReactNode;
-};
-
-function FormSection({ icon: Icon, title, required, children }: FormSectionProps) {
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2.5">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Icon className="size-4" />
-        </span>
-        <h3 className="text-sm font-semibold leading-none text-foreground">
-          {title}
-          {required ? <span className="text-destructive"> *</span> : null}
-        </h3>
-      </div>
-      <div className="space-y-4">{children}</div>
-    </section>
-  );
-}
 
 type PartySide = "sender" | "receiver";
 
@@ -404,10 +381,10 @@ export function InvoiceForm({
   return (
     <>
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-        <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
+        <FormBody>
           <FormSection icon={Receipt} title="Invoice details" required>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
                 <Label htmlFor="date">
                   Date <span className="text-destructive">*</span>
                 </Label>
@@ -420,7 +397,7 @@ export function InvoiceForm({
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="invoiceNumber">
                   Invoice number <span className="text-destructive">*</span>
                 </Label>
@@ -437,7 +414,7 @@ export function InvoiceForm({
                 Pickup and route assignment are captured in the UI but are intentionally
                 left out of the API add/edit payloads until the invoices API supports them.
               */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="pickupId">Pickup</Label>
                 <SearchableSelect
                   id="pickupId"
@@ -456,7 +433,7 @@ export function InvoiceForm({
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="containerId">
                   Container <span className="text-destructive">*</span>
                 </Label>
@@ -477,7 +454,7 @@ export function InvoiceForm({
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="paymentLocation">
                   Pending <span className="text-destructive">*</span>
                 </Label>
@@ -496,7 +473,7 @@ export function InvoiceForm({
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="routeAssignmentId">Route assignment</Label>
                 <SearchableSelect
                   id="routeAssignmentId"
@@ -517,11 +494,9 @@ export function InvoiceForm({
             </div>
           </FormSection>
 
-          <div className="border-t border-border/60" />
-
           <FormSection icon={Users} title="Sender & receiver">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
                 <div className="flex items-center justify-between gap-2">
                   <Label htmlFor="senderId">
                     Sender <span className="text-destructive">*</span>
@@ -558,7 +533,7 @@ export function InvoiceForm({
                 ) : null}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <div className="flex items-center justify-between gap-2">
                   <Label htmlFor="receiverId">Receiver</Label>
                   <PartyFieldActions
@@ -594,8 +569,6 @@ export function InvoiceForm({
             </div>
           </FormSection>
 
-          <div className="border-t border-border/60" />
-
           <FormSection icon={ClipboardList} title="Description">
             <InvoiceLineItemsEditor
               lineItems={values.lineItems}
@@ -604,11 +577,10 @@ export function InvoiceForm({
             />
           </FormSection>
 
-          <div className="border-t border-border/60" />
-
           <FormSection icon={Wallet} title="Totals">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+            <div className="space-y-2.5">
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
                 <Label htmlFor="discount">Discount</Label>
                 <Input
                   id="discount"
@@ -619,7 +591,7 @@ export function InvoiceForm({
                   onChange={(event) => updateField("discount", event.target.value)}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="amountPaid">Paid</Label>
                 <Input id="amountPaid" value={formatInvoiceMoney(amountPaid)} readOnly className="bg-muted/40" />
               </div>
@@ -643,27 +615,17 @@ export function InvoiceForm({
                 <span>{formatInvoiceMoney(balance)}</span>
               </div>
             </div>
+            </div>
           </FormSection>
-        </div>
+        </FormBody>
 
-        <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-          {errorMessage ? <p className="mb-3 text-sm text-destructive">{errorMessage}</p> : null}
-          {!errorMessage && blockForUnverifiedParty ? (
-            <p className="mb-3 text-sm text-amber-700 dark:text-amber-300">{unverifiedPartyMessage}</p>
-          ) : null}
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={blockForUnverifiedParty}
-              title={blockForUnverifiedParty ? unverifiedPartyMessage : undefined}
-            >
-              {submitLabel}
-            </Button>
-          </div>
-        </div>
+        <FormFooter
+          error={errorMessage}
+          warning={blockForUnverifiedParty ? unverifiedPartyMessage : null}
+          submitLabel={submitLabel}
+          submitDisabled={blockForUnverifiedParty}
+          onCancel={onCancel}
+        />
       </form>
 
       <Dialog

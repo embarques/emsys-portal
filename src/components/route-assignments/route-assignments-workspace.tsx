@@ -296,7 +296,7 @@ export function RouteAssignmentsWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             showFilterToggle={false}
@@ -335,6 +335,7 @@ export function RouteAssignmentsWorkspace() {
           rowKey={(assignment) => assignment.id}
           rowLabel={(assignment) => assignment.name}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={1500}
           selectable
           selectedIds={selectedIds}

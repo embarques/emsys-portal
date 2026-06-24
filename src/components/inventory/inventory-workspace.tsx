@@ -310,7 +310,7 @@ export function InventoryWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -423,6 +423,7 @@ export function InventoryWorkspace() {
           rowKey={(item) => item.id}
           rowLabel={(item) => item.sku}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={1050}
           selectable
           selectedIds={selectedIds}

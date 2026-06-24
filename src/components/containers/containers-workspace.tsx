@@ -67,6 +67,7 @@ import {
   type ContainerFormValues,
 } from "@/lib/containers/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_CONTAINER_LIST_PARAMS.limit;
@@ -85,6 +86,7 @@ export function ContainersWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_CONTAINER_LIST_PARAMS.sort, () => setPage(1));
   const [viewContainer, setViewContainer] = useState<ContainerRecord | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingContainer, setEditingContainer] = useState<ContainerRecord | null>(null);
@@ -98,8 +100,9 @@ export function ContainersWorkspace() {
         limit: PAGE_SIZE,
         query: debouncedQuery,
         rows: filters.rows,
+        sort,
       }),
-    [debouncedQuery, filters.rows, page],
+    [debouncedQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useContainers(listParams);
@@ -227,6 +230,7 @@ export function ContainersWorkspace() {
     {
       id: "container",
       label: "Container",
+      sortField: "name",
       cellClassName: "font-medium",
       renderCell: (container) => container.name,
     },
@@ -340,7 +344,7 @@ export function ContainersWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -418,6 +422,8 @@ export function ContainersWorkspace() {
             rowLabel={(container) => container.name}
             columnLayout={columnVisibility}
             minWidth={1400}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds.map(String)}
             allPageSelected={allPageSelected}

@@ -1,9 +1,10 @@
 "use client";
 
+import { Package } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
-import { Button } from "@/components/ui/button";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createEmptyItemForm, type ItemFormValues } from "@/lib/items/types";
@@ -48,51 +49,48 @@ export function ItemForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
-      <div className="space-y-2">
-        <Label htmlFor="description">
-          Description <span className="text-destructive">*</span>
-        </Label>
-        <textarea
-          id="description"
-          value={values.description}
-          onChange={(event) => updateField("description", event.target.value)}
-          rows={3}
-          className={textareaClassName}
-          placeholder="Describe the item..."
-          required
-        />
-      </div>
+      <FormBody>
+        <FormSection icon={Package} title="Item">
+          <div className="space-y-2.5">
+            <div className="space-y-1">
+              <Label htmlFor="description">
+                Description <span className="text-destructive">*</span>
+              </Label>
+              <textarea
+                id="description"
+                value={values.description}
+                onChange={(event) => updateField("description", event.target.value)}
+                rows={3}
+                className={textareaClassName}
+                placeholder="Describe the item..."
+                required
+              />
+            </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="price">
-          Price <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="price"
-          type="number"
-          min={0}
-          step="0.01"
-          value={values.price}
-          onChange={(event) => updateField("price", event.target.value)}
-          placeholder="0.00"
-          required
-        />
-      </div>
+            <div className="space-y-1">
+              <Label htmlFor="price">
+                Price <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="price"
+                type="number"
+                min={0}
+                step="0.01"
+                value={values.price}
+                onChange={(event) => updateField("price", event.target.value)}
+                placeholder="0.00"
+                required
+              />
+            </div>
+          </div>
+        </FormSection>
+      </FormBody>
 
-      </div>
-
-      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-        {externalError ? (
-          <p className="mb-3 text-sm text-destructive">{externalError}</p>
-        ) : null}
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit">{submitLabel}</Button>
-        </div>
-      </div>
+      <FormFooter
+        error={externalError}
+        submitLabel={submitLabel}
+        onCancel={onCancel}
+      />
     </form>
   );
 }

@@ -506,11 +506,13 @@ export function buildCustomerListParams(input: {
   limit?: number;
   query: string;
   rows: TableFilterRowState[];
+  sort?: ApiListSortInput;
 }): CustomerListParams {
   const params: CustomerListParams = {
     ...DEFAULT_CUSTOMER_LIST_PARAMS,
     page: input.page,
     limit: input.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort,
   };
 
   const search = createCustomerSearchFilter(input.query);

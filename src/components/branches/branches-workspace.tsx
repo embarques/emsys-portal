@@ -63,6 +63,7 @@ import {
   type BranchFormValues,
 } from "@/lib/branches/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_BRANCH_LIST_PARAMS.limit;
@@ -81,6 +82,7 @@ export function BranchesWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_BRANCH_LIST_PARAMS.sort, () => setPage(1));
   const [viewBranch, setViewBranch] = useState<Branch | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
@@ -94,8 +96,9 @@ export function BranchesWorkspace() {
         limit: PAGE_SIZE,
         query: debouncedQuery,
         rows: filters.rows,
+        sort,
       }),
-    [debouncedQuery, filters.rows, page],
+    [debouncedQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useBranches(listParams);
@@ -229,6 +232,7 @@ export function BranchesWorkspace() {
     {
       id: "phones",
       label: "phones",
+      sortField: "phone1",
       renderCell: (branch) => formatBranchPhones(branch),
     },
     {
@@ -249,6 +253,7 @@ export function BranchesWorkspace() {
     {
       id: "address",
       label: "address",
+      sortField: "address.address1",
       renderCell: (branch) => formatBranchAddress(branch),
     },
     {
@@ -304,7 +309,7 @@ export function BranchesWorkspace() {
         </Card>
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -376,6 +381,8 @@ export function BranchesWorkspace() {
             rowLabel={(branch) => branch.name}
             columnLayout={columnVisibility}
             minWidth={1400}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds.map(String)}
             allPageSelected={allPageSelected}

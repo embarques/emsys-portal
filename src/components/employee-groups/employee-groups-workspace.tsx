@@ -254,7 +254,7 @@ export function EmployeeGroupsWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -325,6 +325,7 @@ export function EmployeeGroupsWorkspace() {
           rowKey={(group) => group.employeeGroupId}
           rowLabel={(group) => group.employeeGroupId}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={960}
           selectable
           selectedIds={selectedIds}

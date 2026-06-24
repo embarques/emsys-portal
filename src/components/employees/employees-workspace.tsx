@@ -38,6 +38,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { EMPLOYEE_TABLE_FILTER_FIELDS } from "@/lib/employees/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPrimaryPhonesDisplayOrDash } from "@/lib/phones/phones";
@@ -89,6 +90,7 @@ export function EmployeesWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_EMPLOYEE_LIST_PARAMS.sort, () => setPage(1));
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -102,8 +104,9 @@ export function EmployeesWorkspace() {
         limit: PAGE_SIZE,
         query: debouncedQuery,
         rows: filters.rows,
+        sort,
       }),
-    [debouncedQuery, filters.rows, page],
+    [debouncedQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useEmployees(listParams);
@@ -278,6 +281,7 @@ export function EmployeesWorkspace() {
     {
       id: "branch",
       label: "branch",
+      sortField: "branch.name",
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (employee) => (
@@ -299,6 +303,7 @@ export function EmployeesWorkspace() {
     {
       id: "phone",
       label: "Phone",
+      sortField: "phones.number",
       renderCell: (employee) => formatPrimaryPhonesDisplayOrDash(employee.phones),
     },
     {
@@ -355,6 +360,7 @@ export function EmployeesWorkspace() {
     {
       id: "user",
       label: "user",
+      sortField: "user.userName",
       renderCell: (employee) => formatEmployeeUserLabel(employee),
     },
     {
@@ -427,7 +433,7 @@ export function EmployeesWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -504,6 +510,8 @@ export function EmployeesWorkspace() {
             rowLabel={(employee) => employee.name}
             columnLayout={columnVisibility}
             minWidth={2400}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}

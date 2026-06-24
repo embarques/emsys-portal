@@ -219,10 +219,12 @@ export function buildOrderListParams(input: {
   limit?: number;
   query: string;
   rows: TableFilterRowState[];
+  sort?: ApiListSortInput;
 }): OrderListParams {
   const params: OrderListParams = {
     page: input.page,
     limit: input.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort,
   };
 
   const search = createOrderSearchFilter(input.query);

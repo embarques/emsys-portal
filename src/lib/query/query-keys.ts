@@ -20,7 +20,7 @@ export const queryKeys = {
   },
   roles: {
     all: ["roles"] as const,
-    list: () => [...queryKeys.roles.all, "list"] as const,
+    list: (sort?: string) => [...queryKeys.roles.all, "list", sort] as const,
     detail: (roleId: string) => [...queryKeys.roles.all, "detail", roleId] as const,
   },
   employees: {

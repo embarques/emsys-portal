@@ -185,11 +185,13 @@ export function buildInvoiceListParams(input: {
   query: string;
   rows: TableFilterRowState[];
   paymentLocation: InvoiceFilterState["paymentLocation"];
+  sort?: ApiListSortInput;
 }): InvoiceListParams {
   const params: InvoiceListParams = {
     ...DEFAULT_INVOICE_LIST_PARAMS,
     page: input.page,
     limit: input.limit ?? DEFAULT_INVOICE_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_INVOICE_LIST_PARAMS.sort,
   };
 
   const search = createInvoiceSearchFilter(input.query);

@@ -1,10 +1,12 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
 
 import { ScrollableTable } from "@/components/app-shell/scrollable-table";
 import { UniformPillWidthProvider } from "@/components/app-shell/uniform-width-pill";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
+import { getPrimarySortSpec, type SortDirection } from "@/lib/api/list-query";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import { measureTableColumnContentWidth } from "@/lib/table/measure-column-width";
 import type { DataTableColumn } from "@/lib/table/types";
@@ -30,6 +32,15 @@ type DataTableProps<T> = {
   /** When true, auto-fit waits until fresh page data is shown (e.g. while refetching). */
   isPageDataPending?: boolean;
   autoFitColumns?: boolean;
+  /** Current sort in `field:direction` form (e.g. `name:asc`). Enables header sort arrows. */
+  sort?: string;
+  /** Called when a sortable header is clicked. Direction is pre-toggled by DataTable. */
+  onSortChange?: (field: string, direction: SortDirection) => void;
+  /**
+   * When true, sortable headers stay clickable but show red "sorting not implemented
+   * in the API yet" feedback instead of sorting. Used as a reminder for mock-data tables.
+   */
+  sortUnavailable?: boolean;
 };
 
 function DataTableContent<T>({
@@ -50,9 +61,44 @@ function DataTableContent<T>({
   page,
   isPageDataPending = false,
   autoFitColumns = true,
+  sort,
+  onSortChange,
+  sortUnavailable = false,
 }: DataTableProps<T>) {
   const { isVisible, getColumnWidth, setColumnWidth, fitColumnWidth, fitColumnWidths, reorderColumns } =
     columnLayout;
+
+  const activeSort = useMemo(() => getPrimarySortSpec(sort), [sort]);
+  const [sortUnavailableNoticeId, setSortUnavailableNoticeId] = useState<string | null>(null);
+  const sortNoticeTimeoutRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (sortNoticeTimeoutRef.current != null) {
+        window.clearTimeout(sortNoticeTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  function handleSort(field: string) {
+    if (sortUnavailable) {
+      setSortUnavailableNoticeId(field);
+      if (sortNoticeTimeoutRef.current != null) {
+        window.clearTimeout(sortNoticeTimeoutRef.current);
+      }
+      sortNoticeTimeoutRef.current = window.setTimeout(() => {
+        setSortUnavailableNoticeId(null);
+        sortNoticeTimeoutRef.current = null;
+      }, 2000);
+      return;
+    }
+
+    if (!onSortChange) return;
+    const nextDirection: SortDirection =
+      activeSort?.field === field && activeSort.direction === "asc" ? "desc" : "asc";
+    onSortChange(field, nextDirection);
+  }
 
   const visibleColumns = columns.filter((column) => isVisible(column.id));
   const visibleColumnKey = visibleColumns.map((column) => column.id).join("\0");
@@ -212,7 +258,7 @@ function DataTableContent<T>({
         <thead>
           <tr className="border-b bg-muted/30 text-left">
             {selectable ? (
-              <th className="w-12 px-3 py-3">
+              <th className="w-12 px-2 py-3">
                 <input
                   type="checkbox"
                   aria-label="Select all rows on this page"
@@ -226,6 +272,10 @@ function DataTableContent<T>({
               const width = getColumnWidth(column.id);
               const headerLabel = formatTableColumnLabel(column.label);
               const tableColumnIndex = columnIndex + (selectable ? 1 : 0);
+              const sortField = column.sortable === false ? undefined : column.sortField ?? column.id;
+              const canSort = (Boolean(onSortChange) || sortUnavailable) && Boolean(sortField);
+              const isActiveSort = canSort && !sortUnavailable && activeSort?.field === sortField;
+              const showUnavailableNotice = sortUnavailable && sortUnavailableNoticeId === sortField;
 
               return (
                 <th
@@ -233,7 +283,7 @@ function DataTableContent<T>({
                   draggable
                   style={{ width }}
                   className={cn(
-                    "group relative cursor-grab select-none px-3 py-3 text-left active:cursor-grabbing",
+                    "group relative cursor-grab select-none px-2 py-3 text-left active:cursor-grabbing",
                     column.headerClassName,
                     draggingHeaderId === column.id && "cursor-grabbing opacity-60",
                     dragOverHeaderId === column.id && draggingHeaderId !== column.id && "bg-primary/10",
@@ -265,13 +315,67 @@ function DataTableContent<T>({
                     handleHeaderDrop(column.id);
                   }}
                 >
-                  <div className="relative flex items-center justify-start pr-2">
-                    <span
-                      className="min-w-0 truncate text-left text-xs font-semibold leading-tight tracking-wide text-foreground/70"
-                      title={headerLabel}
-                    >
-                      {headerLabel}
-                    </span>
+                  <div className="relative flex items-center justify-start">
+                    {canSort ? (
+                      <button
+                        type="button"
+                        draggable={false}
+                        aria-label={
+                          sortUnavailable
+                            ? `Sort by ${headerLabel} (not implemented in the API yet)`
+                            : `Sort by ${headerLabel}`
+                        }
+                        aria-sort={
+                          isActiveSort
+                            ? activeSort?.direction === "desc"
+                              ? "descending"
+                              : "ascending"
+                            : "none"
+                        }
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleSort(sortField!);
+                        }}
+                        className="group/sort flex min-w-0 items-center gap-0.5 text-left"
+                        title={
+                          sortUnavailable ? "Sorting isn't implemented in the API yet" : headerLabel
+                        }
+                      >
+                        <span
+                          className={cn(
+                            "min-w-0 truncate text-xs font-semibold leading-tight tracking-wide transition-colors",
+                            showUnavailableNotice ? "text-red-600 dark:text-red-400" : "text-foreground/70",
+                          )}
+                        >
+                          {headerLabel}
+                        </span>
+                        {sortUnavailable ? (
+                          <ChevronsUpDown
+                            className={cn(
+                              "size-3.5 shrink-0 transition-colors",
+                              showUnavailableNotice
+                                ? "text-red-600 dark:text-red-400"
+                                : "text-red-500/50 dark:text-red-400/50",
+                            )}
+                          />
+                        ) : isActiveSort ? (
+                          activeSort?.direction === "desc" ? (
+                            <ChevronDown className="size-3.5 shrink-0 text-foreground/80" />
+                          ) : (
+                            <ChevronUp className="size-3.5 shrink-0 text-foreground/80" />
+                          )
+                        ) : (
+                          <ChevronsUpDown className="size-3.5 shrink-0 text-foreground/30 opacity-0 transition-opacity group-hover:opacity-100 group-hover/sort:opacity-100" />
+                        )}
+                      </button>
+                    ) : (
+                      <span
+                        className="min-w-0 truncate text-left text-xs font-semibold leading-tight tracking-wide text-foreground/70"
+                        title={headerLabel}
+                      >
+                        {headerLabel}
+                      </span>
+                    )}
                   </div>
 
                   <div
@@ -320,7 +424,7 @@ function DataTableContent<T>({
                   onDoubleClick={() => handleRowDoubleClick(row)}
                 >
                   {selectable ? (
-                    <td className="px-3 py-3" onClick={(event) => event.stopPropagation()}>
+                    <td className="px-2 py-3" onClick={(event) => event.stopPropagation()}>
                       <input
                         type="checkbox"
                         aria-label={`Select ${rowLabel?.(row) ?? id}`}
@@ -341,7 +445,7 @@ function DataTableContent<T>({
                     <td
                       key={column.id}
                       style={{ width: getColumnWidth(column.id) }}
-                      className={cn("overflow-hidden px-3 py-3", column.cellClassName)}
+                      className={cn("overflow-hidden px-2 py-3", column.cellClassName)}
                       onClick={column.stopRowClick ? (event) => event.stopPropagation() : undefined}
                       title={column.truncateCell !== false && cellText ? cellText : undefined}
                     >

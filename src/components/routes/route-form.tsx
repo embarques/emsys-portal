@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { MapPin, Plus, Route as RouteIcon, Trash2 } from "lucide-react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,47 +75,48 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">
-            Route name <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="name"
-            value={values.name}
-            onChange={(event) => updateField("name", event.target.value)}
-            placeholder="Brooklyn — Manhattan Express"
-            required
-          />
-        </div>
+      <FormBody>
+        <FormSection icon={RouteIcon} title="Route">
+          <div className="space-y-2.5">
+            <div className="space-y-1">
+              <Label htmlFor="name">
+                Route name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                value={values.name}
+                onChange={(event) => updateField("name", event.target.value)}
+                placeholder="Brooklyn — Manhattan Express"
+                required
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="branch">
-            Branch <span className="text-destructive">*</span>
-          </Label>
-          <SearchableSelect
-            id="branch"
-            value={values.branch}
-            onValueChange={(next) => updateField("branch", next as RouteFormValues["branch"])}
-            searchPlaceholder="Search branches…"
-            required
-            options={ROUTE_BRANCHES.map((option) => ({ value: option.value, label: option.label }))}
-          />
-        </div>
-      </div>
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold">Route content</h3>
+            <div className="space-y-1">
+              <Label htmlFor="branch">
+                Branch <span className="text-destructive">*</span>
+              </Label>
+              <SearchableSelect
+                id="branch"
+                value={values.branch}
+                onValueChange={(next) => updateField("branch", next as RouteFormValues["branch"])}
+                searchPlaceholder="Search branches…"
+                required
+                options={ROUTE_BRANCHES.map((option) => ({ value: option.value, label: option.label }))}
+              />
+            </div>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={addPlace}>
-            <Plus className="h-4 w-4" />
-            Add place
-          </Button>
-        </div>
+        </FormSection>
 
+        <FormSection
+          icon={MapPin}
+          title="Route content"
+          action={
+            <Button type="button" variant="outline" size="sm" onClick={addPlace}>
+              <Plus className="h-4 w-4" />
+              Add place
+            </Button>
+          }
+        >
         <div className="space-y-3">
           {values.places.map((place, index) => {
             const kindMeta = ROUTE_PLACE_KINDS.find((entry) => entry.value === place.kind) ?? ROUTE_PLACE_KINDS[0];
@@ -136,8 +138,8 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
                   </Button>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  <div className="space-y-1">
                     <Label htmlFor={`place-kind-${place.id}`}>Type</Label>
                     <SearchableSelect
                       id={`place-kind-${place.id}`}
@@ -153,7 +155,7 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <Label htmlFor={`place-value-${place.id}`}>
                       Value {index === 0 ? <span className="text-destructive">*</span> : null}
                     </Label>
@@ -169,18 +171,10 @@ export function RouteForm({ initialValues, isEditing = false, updatedAt, submitL
             );
           })}
         </div>
-      </section>
-      </div>
+        </FormSection>
+      </FormBody>
 
-      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-        {formError ? <p className="mb-3 text-sm text-destructive">{formError}</p> : null}
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit">{submitLabel}</Button>
-        </div>
-      </div>
+      <FormFooter error={formError} submitLabel={submitLabel} onCancel={onCancel} />
     </form>
   );
 }

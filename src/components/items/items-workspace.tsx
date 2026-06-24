@@ -240,7 +240,7 @@ export function ItemsWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             showFilterToggle={false}
@@ -285,6 +285,7 @@ export function ItemsWorkspace() {
           rowKey={(item) => item.itemId}
           rowLabel={(item) => item.description}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={960}
           selectable
           selectedIds={selectedIds}

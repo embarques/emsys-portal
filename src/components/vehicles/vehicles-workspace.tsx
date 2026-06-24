@@ -66,6 +66,7 @@ import {
   type VehicleFormValues,
 } from "@/lib/vehicles/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_VEHICLE_LIST_PARAMS.limit;
@@ -84,6 +85,7 @@ export function VehiclesWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_VEHICLE_LIST_PARAMS.sort, () => setPage(1));
   const [viewVehicle, setViewVehicle] = useState<Vehicle | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
@@ -97,8 +99,9 @@ export function VehiclesWorkspace() {
         limit: PAGE_SIZE,
         query: debouncedQuery,
         rows: filters.rows,
+        sort,
       }),
-    [debouncedQuery, filters.rows, page],
+    [debouncedQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useVehicles(listParams);
@@ -330,7 +333,7 @@ export function VehiclesWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -397,6 +400,8 @@ export function VehiclesWorkspace() {
             rowLabel={(vehicle) => vehicle.name}
             columnLayout={columnVisibility}
             minWidth={1200}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}

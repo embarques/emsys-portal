@@ -9,6 +9,7 @@ import {
   deleteOrders,
   fetchOrderById,
   fetchOrders,
+  setOrdersCompleted,
   updateOrder,
 } from "@/lib/orders/api/orders-api";
 import {
@@ -18,6 +19,7 @@ import {
 } from "@/lib/orders/order-stats";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
+  type Order,
   type OrderFormValues,
   type OrderListParams,
   type OrderSearchFilter,
@@ -187,6 +189,16 @@ export function useDeleteOrders() {
 
   return useMutation({
     mutationFn: (orderIds: string[]) => deleteOrders(orderIds),
+    onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+export function useSetOrdersCompleted() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orders, completed }: { orders: Order[]; completed: boolean }) =>
+      setOrdersCompleted(orders, completed),
     onSuccess: () => invalidateOrders(queryClient),
   });
 }

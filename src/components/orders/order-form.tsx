@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CustomerForm } from "@/components/customers/customer-form";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,30 +66,6 @@ type OrderFormProps = {
   onFormErrorChange?: (error: string | null) => void;
   onCancel: () => void;
 };
-
-type FormSectionProps = {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  required?: boolean;
-  children: React.ReactNode;
-};
-
-function FormSection({ icon: Icon, title, required, children }: FormSectionProps) {
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2.5">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Icon className="size-4" />
-        </span>
-        <h3 className="text-sm font-semibold leading-none text-foreground">
-          {title}
-          {required ? <span className="text-destructive"> *</span> : null}
-        </h3>
-      </div>
-      <div className="space-y-4">{children}</div>
-    </section>
-  );
-}
 
 type PartySide = "sender" | "receiver";
 
@@ -358,19 +335,34 @@ export function OrderForm({
     isGoogleMapsConfigured() &&
     Boolean(values.sender && customerHasUnverifiedPrimaryAddress(values.sender));
 
+  const hasValidDate = Boolean(values.date.trim()) && !Number.isNaN(new Date(values.date).getTime());
+
+  // The single reason the order can't be saved yet, evaluated in field order:
+  // pickup date → sender → at least one comment.
+  const blockReason: string | null = (() => {
+    if (!hasValidDate) {
+      return "Select a valid pickup date.";
+    }
+    if (!values.sender) {
+      return "Select a sender.";
+    }
+    if (blockForUnverifiedParty) {
+      return unverifiedPartyMessage;
+    }
+    if (values.comments.length === 0) {
+      return "Add at least one comment.";
+    }
+    return null;
+  })();
+
+  const isBlocked = blockReason != null;
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    if (!values.sender) {
-      const message = "Sender is required.";
-      setFormError(message);
-      onFormErrorChange?.(message);
-      return;
-    }
-
-    if (blockForUnverifiedParty) {
-      setFormError(unverifiedPartyMessage);
-      onFormErrorChange?.(unverifiedPartyMessage);
+    if (blockReason) {
+      setFormError(blockReason);
+      onFormErrorChange?.(blockReason);
       return;
     }
 
@@ -384,10 +376,10 @@ export function OrderForm({
   return (
     <>
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
+      <FormBody>
       <FormSection icon={CalendarDays} title="Pickup date" required>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="space-y-1">
             <div className="relative">
               <button
                 type="button"
@@ -411,7 +403,7 @@ export function OrderForm({
 
           {isEditing ? (
             <>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="branchId">
                   Branch <span className="text-destructive">*</span>
                 </Label>
@@ -428,7 +420,7 @@ export function OrderForm({
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="employeeId">Employee</Label>
                 <SearchableSelect
                   id="employeeId"
@@ -446,7 +438,7 @@ export function OrderForm({
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="sectorId">Sector</Label>
                 <Input
                   id="sectorId"
@@ -463,12 +455,9 @@ export function OrderForm({
         </div>
       </FormSection>
 
-      <div className="border-t border-border/60" />
-
       <FormSection icon={Users} title="Sender & receiver">
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="senderId">
                 Sender <span className="text-destructive">*</span>
@@ -505,7 +494,7 @@ export function OrderForm({
             ) : null}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="receiverId">Receiver</Label>
               <PartyFieldActions
@@ -549,29 +538,16 @@ export function OrderForm({
         />
       ) : null}
 
-      <div className="border-t border-border/60" />
-
       <OrderCommentsEditor comments={values.comments} onChange={(comments) => updateField("comments", comments)} />
-      </div>
+      </FormBody>
 
-      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-        {formError ? <p className="mb-3 text-sm text-destructive">{formError}</p> : null}
-        {!formError && blockForUnverifiedParty ? (
-          <p className="mb-3 text-sm text-amber-700 dark:text-amber-300">{unverifiedPartyMessage}</p>
-        ) : null}
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={blockForUnverifiedParty}
-            title={blockForUnverifiedParty ? unverifiedPartyMessage : undefined}
-          >
-            {submitLabel}
-          </Button>
-        </div>
-      </div>
+      <FormFooter
+        error={formError}
+        warning={blockReason}
+        submitLabel={submitLabel}
+        submitDisabled={isBlocked}
+        onCancel={onCancel}
+      />
     </form>
 
       <Dialog

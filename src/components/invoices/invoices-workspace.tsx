@@ -8,6 +8,7 @@ import {
   DollarSign,
   FileText,
   Plus,
+  Printer,
   Receipt,
   Trash2,
 } from "lucide-react";
@@ -86,6 +87,7 @@ import {
   type InvoiceFilterState,
   type InvoicePaymentInput,
 } from "@/lib/invoices/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
 
@@ -98,12 +100,13 @@ const defaultFilters: InvoiceFilterState = {
 };
 
 export function InvoicesWorkspace() {
-  const { notifyAdded, notifyDeleted, notifyError } = useFeedback();
+  const { notifyAdded, notifyDeleted, notifyError, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<InvoiceFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_INVOICE_LIST_PARAMS.sort, () => setPage(1));
   const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
   const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | Invoice[] | null>(null);
@@ -116,8 +119,9 @@ export function InvoicesWorkspace() {
         query: deferredQuery,
         rows: filters.rows,
         paymentLocation: filters.paymentLocation,
+        sort,
       }),
-    [deferredQuery, filters.paymentLocation, filters.rows, page],
+    [deferredQuery, filters.paymentLocation, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useInvoices(listParams);
@@ -238,6 +242,11 @@ export function InvoicesWorkspace() {
     notifyAdded("Payment", formatInvoiceMoney(payment.amount));
   }
 
+  // TODO: implement print for selected invoices.
+  function handleComingSoon(label: string) {
+    notifySuccess(`${label} is coming soon.`);
+  }
+
   async function confirmDelete() {
     if (!deleteTarget) return;
 
@@ -292,6 +301,7 @@ export function InvoicesWorkspace() {
     {
       id: "invoiceNumber",
       label: "Invoice number",
+      sortField: "number",
       cellClassName: "font-medium",
       renderCell: (invoice) => invoice.invoiceNumber,
     },
@@ -303,6 +313,7 @@ export function InvoicesWorkspace() {
     {
       id: "container",
       label: "Container",
+      sortField: "container.name",
       renderCell: (invoice) => getContainerLabelForInvoice(invoice),
     },
     {
@@ -322,6 +333,7 @@ export function InvoicesWorkspace() {
     {
       id: "paymentLocation",
       label: "Paid at",
+      sortField: "paidRegion",
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (invoice) => (
@@ -333,16 +345,19 @@ export function InvoicesWorkspace() {
     {
       id: "sender",
       label: "Sender",
+      sortField: "sender.name",
       renderCell: (invoice) => formatInvoicePartySummary(invoice.sender),
     },
     {
       id: "receiver",
       label: "Receiver",
+      sortField: "receiver.name",
       renderCell: (invoice) => formatInvoicePartySummary(invoice.receiver),
     },
     {
       id: "total",
       label: "Invoice total",
+      sortField: "cost",
       truncateCell: false,
       renderCell: (invoice) => {
         const amount = getInvoiceSubtotal(invoice);
@@ -368,6 +383,7 @@ export function InvoicesWorkspace() {
     {
       id: "amountPaid",
       label: "Paid",
+      sortField: "payment",
       truncateCell: false,
       renderCell: (invoice) => (
         <UniformWidthPill columnKey="amountPaid">
@@ -437,7 +453,7 @@ export function InvoicesWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -508,6 +524,13 @@ export function InvoicesWorkspace() {
           onDelete={() =>
             setDeleteTarget(invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)))
           }
+          deleteDisabled={isDeleting}
+          actions={
+            <Button variant="outline" size="sm" onClick={() => handleComingSoon("Print")}>
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+          }
         />
 
         {isError ? (
@@ -531,6 +554,8 @@ export function InvoicesWorkspace() {
             rowLabel={(invoice) => invoice.invoiceNumber}
             columnLayout={columnVisibility}
             minWidth={1500}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}

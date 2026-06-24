@@ -1,10 +1,11 @@
 "use client";
 
+import { Building2, Users } from "lucide-react";
 import { useDeferredValue, useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -84,53 +85,50 @@ export function EmployeeGroupForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto bg-muted/35 px-6 py-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label>Selected employees</Label>
-          <div className="flex h-9 items-center rounded-md border bg-muted/20 px-3 text-sm">
-            {values.employeeIds.length} selected
+      <FormBody>
+        <FormSection icon={Building2} title="Group">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label>Selected employees</Label>
+              <div className="flex h-9 items-center rounded-md border bg-muted/20 px-3 text-sm">
+                {values.employeeIds.length} selected
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="branch">
+                Branch <span className="text-destructive">*</span>
+              </Label>
+              <SearchableSelect
+                id="branch"
+                value={values.branch}
+                onValueChange={(next) =>
+                  setValues((current) => ({
+                    ...current,
+                    branch: next as EmployeeGroupFormValues["branch"],
+                  }))
+                }
+                searchPlaceholder="Search branches…"
+                required
+                options={EMPLOYEE_GROUP_BRANCHES.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
+              />
+            </div>
           </div>
-        </div>
+        </FormSection>
 
-        <div className="space-y-2">
-          <Label htmlFor="branch">
-            Branch <span className="text-destructive">*</span>
-          </Label>
-          <SearchableSelect
-            id="branch"
-            value={values.branch}
-            onValueChange={(next) =>
-              setValues((current) => ({
-                ...current,
-                branch: next as EmployeeGroupFormValues["branch"],
-              }))
-            }
-            searchPlaceholder="Search branches…"
-            required
-            options={EMPLOYEE_GROUP_BRANCHES.map((option) => ({
-              value: option.value,
-              label: option.label,
-            }))}
-          />
-        </div>
-      </div>
+        <FormSection icon={Users} title="Members" required>
+          <div className="space-y-2.5">
+            <Input
+              value={memberQuery}
+              onChange={(event) => setMemberQuery(event.target.value)}
+              placeholder="Search employees by name or role..."
+            />
 
-      <section className="space-y-4">
-        <div>
-          <h3 className="text-sm font-semibold">
-            Employees <span className="text-destructive">*</span>
-          </h3>
-        </div>
-
-        <Input
-          value={memberQuery}
-          onChange={(event) => setMemberQuery(event.target.value)}
-          placeholder="Search employees by name or role..."
-        />
-
-        <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border p-3">
-          {employeesQuery.isLoading ? (
+            <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border p-3">
+              {employeesQuery.isLoading ? (
             <p className="px-2 py-6 text-center text-sm text-muted-foreground">Loading employees…</p>
           ) : employees.length > 0 ? (
             employees.map((employee) => {
@@ -164,22 +162,15 @@ export function EmployeeGroupForm({
                 </label>
               );
             })
-          ) : (
-            <p className="px-2 py-6 text-center text-sm text-muted-foreground">No employees match your search.</p>
-          )}
-        </div>
-      </section>
-      </div>
+              ) : (
+                <p className="px-2 py-6 text-center text-sm text-muted-foreground">No employees match your search.</p>
+              )}
+            </div>
+          </div>
+        </FormSection>
+      </FormBody>
 
-      <div className="shrink-0 border-t border-border bg-card px-6 py-4">
-        {formError ? <p className="mb-3 text-sm text-destructive">{formError}</p> : null}
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit">{submitLabel}</Button>
-        </div>
-      </div>
+      <FormFooter error={formError} submitLabel={submitLabel} onCancel={onCancel} />
     </form>
   );
 }

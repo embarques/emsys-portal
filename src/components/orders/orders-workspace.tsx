@@ -3,14 +3,19 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import {
   ArrowDownToLine,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
   DollarSign,
   FileText,
+  Map as MapIcon,
   PackageOpen,
   Plus,
+  Printer,
+  Route as RouteIcon,
   Trash2,
+  XCircle,
 } from "lucide-react";
 
 import { OrderForm } from "@/components/orders/order-form";
@@ -60,6 +65,7 @@ import {
   useDeleteOrders,
   useOrderStats,
   useOrders,
+  useSetOrdersCompleted,
   useUpdateOrder,
 } from "@/lib/orders/hooks/use-orders";
 import {
@@ -73,6 +79,7 @@ import {
   type OrderFormValues,
 } from "@/lib/orders/types";
 import { useUsers } from "@/lib/users/hooks/use-users";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
@@ -83,13 +90,14 @@ const defaultFilters: OrderFilterState = {
 };
 
 export function OrdersWorkspace() {
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const { loading: authLoading, companyId } = useAuth();
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_ORDER_LIST_PARAMS.sort, () => setPage(1));
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -102,8 +110,9 @@ export function OrdersWorkspace() {
         limit: PAGE_SIZE,
         query: deferredQuery,
         rows: filters.rows,
+        sort,
       }),
-    [deferredQuery, filters.rows, page],
+    [deferredQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useOrders(listParams);
@@ -117,6 +126,7 @@ export function OrdersWorkspace() {
   const createOrderMutation = useCreateOrder();
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
+  const setOrdersCompletedMutation = useSetOrdersCompleted();
   const orders = data?.items ?? [];
   const totalOrders = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
@@ -126,7 +136,12 @@ export function OrdersWorkspace() {
   const isSaving =
     createOrderMutation.isPending ||
     updateOrderMutation.isPending ||
-    deleteOrdersMutation.isPending;
+    deleteOrdersMutation.isPending ||
+    setOrdersCompletedMutation.isPending;
+  const selectedOrders = useMemo(
+    () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
+    [orders, selectedIds],
+  );
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const missingCompanyContext = !authLoading && !companyId;
 
@@ -210,6 +225,23 @@ export function OrdersWorkspace() {
     }
   }
 
+  async function handleSetCompleted(completed: boolean) {
+    if (selectedOrders.length === 0) return;
+
+    try {
+      await setOrdersCompletedMutation.mutateAsync({ orders: selectedOrders, completed });
+      const noun = selectedOrders.length === 1 ? "order" : "orders";
+      notifySuccess(`${selectedOrders.length} ${noun} marked ${completed ? "complete" : "incomplete"}.`);
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
+  }
+
+  // TODO: implement print, assign route, and map for selected orders.
+  function handleComingSoon(label: string) {
+    notifySuccess(`${label} is coming soon.`);
+  }
+
   const statCards = [
     {
       label: "Pending orders",
@@ -269,13 +301,14 @@ export function OrdersWorkspace() {
     },
     {
       id: "sender.name",
-      label: "sender.name",
+      label: "Name",
       cellClassName: "font-medium",
       renderCell: (order) => order.sender.name.trim() || "—",
     },
     {
       id: "sender.address",
-      label: "sender.address",
+      label: "Address",
+      sortField: "sender.address.address1",
       renderCell: (order) =>
         [order.sender.address.address1, order.sender.address.apartment]
           .filter((value) => value.trim())
@@ -283,17 +316,17 @@ export function OrdersWorkspace() {
     },
     {
       id: "sender.address.city",
-      label: "sender.address.city",
+      label: "City",
       renderCell: (order) => order.sender.address.city.trim() || "—",
     },
     {
       id: "sender.address.zipcode",
-      label: "sender.address.zipcode",
+      label: "Zip",
       renderCell: (order) => order.sender.address.zipcode.trim() || "—",
     },
     {
       id: "sender.phone1",
-      label: "sender.phone1",
+      label: "Phone 1",
       renderCell: (order) => getCustomerPhone(order.sender),
     },
     {
@@ -304,6 +337,7 @@ export function OrdersWorkspace() {
     {
       id: "user",
       label: "createdBy",
+      sortField: "user.name",
       renderCell: (order) => formatUserSummary(order.user),
     },
     {
@@ -356,7 +390,7 @@ export function OrdersWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -423,10 +457,56 @@ export function OrdersWorkspace() {
             const order = orders.find((entry) => getOrderRecordId(entry) === selectedIds[0]);
             if (order) openEditForm(order);
           }}
-          onDelete={() =>
-            setDeleteTarget(orders.filter((order) => selectedIds.includes(getOrderRecordId(order))))
-          }
+          onDelete={() => setDeleteTarget(selectedOrders)}
           deleteDisabled={isSaving}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleComingSoon("Print")}
+              >
+                <Printer className="h-4 w-4" />
+                Print
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isSaving}
+                onClick={() => handleSetCompleted(true)}
+                className="border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Mark complete
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isSaving}
+                onClick={() => handleSetCompleted(false)}
+                className="border-amber-500/30 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+              >
+                <XCircle className="h-4 w-4" />
+                Mark incomplete
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleComingSoon("Assign route")}
+              >
+                <RouteIcon className="h-4 w-4" />
+                Assign route
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleComingSoon("Map")}
+              >
+                <MapIcon className="h-4 w-4" />
+                Map
+              </Button>
+            </>
+          }
         />
 
         {isLoading ? (
@@ -446,6 +526,8 @@ export function OrdersWorkspace() {
             rowLabel={(order) => formatOrderId(order)}
             columnLayout={columnVisibility}
             minWidth={1500}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}

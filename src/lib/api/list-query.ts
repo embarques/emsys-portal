@@ -84,6 +84,25 @@ export function getPrimarySortField(sort?: ApiListSortInput): string | undefined
   return first?.field?.trim() || undefined;
 }
 
+/** Parse the primary `field:direction` pair from a sort input for header highlighting. */
+export function getPrimarySortSpec(sort?: ApiListSortInput): ApiListSortSpec | undefined {
+  if (!sort) return undefined;
+
+  if (typeof sort === "string") {
+    const first = sort.split(",")[0]?.trim();
+    if (!first) return undefined;
+    const [field, direction] = first.split(":").map((part) => part.trim());
+    if (!field) return undefined;
+    return direction === "asc" || direction === "desc" ? { field, direction } : { field };
+  }
+
+  const first = Array.isArray(sort) ? sort[0] : sort;
+  if (!first?.field?.trim()) return undefined;
+  return first.direction === "asc" || first.direction === "desc"
+    ? { field: first.field.trim(), direction: first.direction }
+    : { field: first.field.trim() };
+}
+
 /**
  * Builds EMSYS list query strings:
  * `?page=1&limit=40&offset=0&sort=name:asc&field=createdAt&operator=eq&value=2026-06-01`
