@@ -3,14 +3,15 @@ import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-q
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { createRecordId } from "@/lib/customers/types";
 import {
-  createEmptyOrderParty,
-  normalizeOrderParty,
-  orderPartyToFormValues,
+  createRecordId,
+  getCustomerAddresses,
+  getCustomerPhones,
+  type Customer,
+} from "@/lib/customers/types";
+import {
   todayDateInputValue,
   type OrderParty,
-  type OrderPartyFormValues,
 } from "@/lib/orders/types";
 
 export type InvoicePaymentLocation = "usa" | "dr";
@@ -81,9 +82,14 @@ export type Invoice = {
   invoiceId: string;
   invoiceNumber: string;
   date: string;
+  /** Linked pickup/order id from the pickups (orders) table. */
+  pickupId?: string;
   containerId: string;
   containerName?: string;
   paymentLocation: InvoicePaymentLocation;
+  /** Linked route assignment id from the route assignments table. */
+  routeAssignmentId?: string;
+  routeAssignmentName?: string;
   paidRegion?: string;
   paidStatus?: string;
   cost?: number;
@@ -115,16 +121,25 @@ export type InvoiceLineItemFormValues = {
   quantity: string;
   labelCount: string;
   unitPrice: string;
+  lineTotal: string;
+  /** Labels default to the quantity until the user edits them directly. */
+  labelsManual: boolean;
+  /** Total defaults to unit price × quantity until the user edits it directly. */
+  totalManual: boolean;
 };
 
 export type InvoiceFormValues = {
   invoiceId: string;
   invoiceNumber: string;
   date: string;
+  pickupId: string;
   containerId: string;
   paymentLocation: InvoicePaymentLocation;
-  sender: OrderPartyFormValues;
-  receiver: OrderPartyFormValues;
+  routeAssignmentId: string;
+  senderId: string;
+  sender: Customer | null;
+  receiverId: string;
+  receiver: Customer | null;
   lineItems: InvoiceLineItemFormValues[];
   discount: string;
   amountPaid: string;
@@ -149,10 +164,10 @@ export type InvoiceListParams = {
   paymentLocation?: InvoicePaymentLocation | "all";
 };
 
-/** GET /invoices?page=1&limit=40&offset=0&sort=number:desc */
+/** GET /invoices?page=1&limit=50&offset=0&sort=number:desc */
 export const DEFAULT_INVOICE_LIST_PARAMS = {
   page: 1,
-  limit: 40,
+  limit: 50,
   sort: "number:desc",
 } as const satisfies Pick<InvoiceListParams, "page" | "limit" | "sort">;
 
@@ -170,11 +185,13 @@ export function buildInvoiceListParams(input: {
   query: string;
   rows: TableFilterRowState[];
   paymentLocation: InvoiceFilterState["paymentLocation"];
+  sort?: ApiListSortInput;
 }): InvoiceListParams {
   const params: InvoiceListParams = {
     ...DEFAULT_INVOICE_LIST_PARAMS,
     page: input.page,
     limit: input.limit ?? DEFAULT_INVOICE_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_INVOICE_LIST_PARAMS.sort,
   };
 
   const search = createInvoiceSearchFilter(input.query);
@@ -333,8 +350,11 @@ export function createEmptyInvoiceLineItem(): InvoiceLineItemFormValues {
     itemId: "",
     itemName: "",
     quantity: "1",
-    labelCount: "0",
+    labelCount: "1",
     unitPrice: "",
+    lineTotal: "",
+    labelsManual: false,
+    totalManual: false,
   };
 }
 
@@ -343,10 +363,14 @@ export function createEmptyInvoiceForm(createdBy = DEFAULT_CREATED_BY): InvoiceF
     invoiceId: createInvoiceId(),
     invoiceNumber: "",
     date: todayDateInputValue(),
+    pickupId: "",
     containerId: "",
     paymentLocation: "usa",
-    sender: createEmptyOrderParty(),
-    receiver: createEmptyOrderParty(),
+    routeAssignmentId: "",
+    senderId: "",
+    sender: null,
+    receiverId: "",
+    receiver: null,
     lineItems: [createEmptyInvoiceLineItem()],
     discount: "0",
     amountPaid: "0",
@@ -370,6 +394,7 @@ export function resetInvoiceFormForNextEntry(
     date: previous.date,
     containerId: previous.containerId,
     paymentLocation: previous.paymentLocation,
+    routeAssignmentId: previous.routeAssignmentId,
     invoiceNumber: nextInvoiceNumber,
   };
 }
@@ -386,13 +411,39 @@ export function computeInvoiceBalance(subtotal: number, discount: number, amount
   return Math.round((subtotal - discount - amountPaid) * 100) / 100;
 }
 
+/** Total defaults to unit price × quantity but can be overridden directly. */
+export function resolveLineTotal(values: InvoiceLineItemFormValues): number {
+  const quantity = Number(values.quantity);
+  const unitPrice = Number(values.unitPrice);
+  const parsedTotal = Number(values.lineTotal);
+
+  if (values.totalManual && values.lineTotal.trim() !== "" && Number.isFinite(parsedTotal)) {
+    return Math.round(parsedTotal * 100) / 100;
+  }
+
+  if (!Number.isFinite(quantity) || !Number.isFinite(unitPrice)) return 0;
+  return computeLineTotal(quantity, unitPrice);
+}
+
+/** Labels default to the quantity but can be overridden directly. */
+export function resolveLineLabelCount(values: InvoiceLineItemFormValues): number {
+  const quantity = Number(values.quantity);
+  const parsedLabels = Number(values.labelCount);
+
+  if (values.labelsManual && values.labelCount.trim() !== "" && Number.isFinite(parsedLabels)) {
+    return parsedLabels;
+  }
+
+  return Number.isFinite(quantity) ? quantity : 0;
+}
+
 function normalizeLineItem(values: InvoiceLineItemFormValues, index: number): InvoiceLineItem {
   const quantity = Number(values.quantity);
-  const labelCount = Number(values.labelCount);
+  const labelCount = resolveLineLabelCount(values);
   const unitPrice = Number(values.unitPrice);
 
   if (!values.itemName.trim()) {
-    throw new Error(`Line item ${index + 1}: item name is required.`);
+    throw new Error(`Line item ${index + 1}: description is required.`);
   }
 
   if (!Number.isFinite(quantity) || quantity <= 0) {
@@ -414,7 +465,7 @@ function normalizeLineItem(values: InvoiceLineItemFormValues, index: number): In
     quantity,
     labelCount,
     unitPrice,
-    lineTotal: computeLineTotal(quantity, unitPrice),
+    lineTotal: resolveLineTotal(values),
   };
 }
 
@@ -426,6 +477,9 @@ export function invoiceLineItemToFormValues(item: InvoiceLineItem): InvoiceLineI
     quantity: String(item.quantity),
     labelCount: String(item.labelCount),
     unitPrice: item.unitPrice.toFixed(2),
+    lineTotal: item.lineTotal.toFixed(2),
+    labelsManual: true,
+    totalManual: true,
   };
 }
 
@@ -434,14 +488,48 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     invoiceId: invoice.invoiceId,
     invoiceNumber: invoice.invoiceNumber,
     date: invoice.date.slice(0, 10),
+    pickupId: invoice.pickupId ?? "",
     containerId: invoice.containerId,
     paymentLocation: invoice.paymentLocation,
-    sender: orderPartyToFormValues(invoice.sender),
-    receiver: orderPartyToFormValues(invoice.receiver),
-    lineItems: invoice.lineItems.length > 0 ? invoice.lineItems.map(invoiceLineItemToFormValues) : [createEmptyInvoiceLineItem()],
+    routeAssignmentId: invoice.routeAssignmentId ?? "",
+    senderId: invoice.sender.clientId ?? "",
+    sender: null,
+    receiverId: invoice.receiver.clientId ?? "",
+    receiver: null,
+    lineItems:
+      invoice.lineItems.length > 0
+        ? invoice.lineItems.map(invoiceLineItemToFormValues)
+        : [createEmptyInvoiceLineItem()],
     discount: invoice.discount.toFixed(2),
     amountPaid: invoice.amountPaid.toFixed(2),
     createdBy: invoice.createdBy,
+  };
+}
+
+/** Build an invoice party snapshot from a selected customer record. */
+export function customerToInvoiceParty(customer: Customer): OrderParty {
+  const addresses = getCustomerAddresses(customer);
+  const primaryAddress = addresses.find((address) => address.isPrimary) ?? addresses[0];
+
+  return {
+    id: createRecordId(),
+    clientId: customer.id,
+    name: customer.name.trim(),
+    documentId: customer.IDNumber.trim() || undefined,
+    email: customer.email.trim() || undefined,
+    phones: getCustomerPhones(customer),
+    addresses,
+    orderAddressId: primaryAddress?.id ?? "",
+  };
+}
+
+function createEmptyInvoiceParty(): OrderParty {
+  return {
+    id: createRecordId(),
+    name: "",
+    phones: [],
+    addresses: [],
+    orderAddressId: "",
   };
 }
 
@@ -462,6 +550,10 @@ export function formValuesToInvoice(
     throw new Error("A container is required.");
   }
 
+  if (!values.sender) {
+    throw new Error("Sender is required.");
+  }
+
   const lineItems = values.lineItems
     .filter((item) => item.itemName.trim() || item.itemId)
     .map((item, index) => normalizeLineItem(item, index));
@@ -477,15 +569,17 @@ export function formValuesToInvoice(
     throw new Error("Discount must be 0 or greater.");
   }
 
-  const sender = normalizeOrderParty(values.sender, "Sender");
-  const receiver = normalizeOrderParty(values.receiver, "Receiver");
+  const sender = customerToInvoiceParty(values.sender);
+  const receiver = values.receiver ? customerToInvoiceParty(values.receiver) : createEmptyInvoiceParty();
 
   return {
     invoiceId: values.invoiceId,
     invoiceNumber: values.invoiceNumber.trim(),
     date: values.date,
+    pickupId: values.pickupId.trim() || undefined,
     containerId: values.containerId,
     paymentLocation: values.paymentLocation,
+    routeAssignmentId: values.routeAssignmentId.trim() || undefined,
     sender,
     receiver,
     lineItems,

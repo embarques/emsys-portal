@@ -68,7 +68,7 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               aria-label={`Copy ${label}`}
               onClick={handleCopy}
             >
@@ -84,7 +84,7 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
                 asChild
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                className="h-8 w-8 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
               >
                 <a href={telHref} aria-label={`Call ${label}`}>
                   <Phone className="h-4 w-4" />
@@ -101,7 +101,7 @@ export function PhoneActionRow({ label, number, displayNumber, className }: Phon
                 asChild
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-[#25D366]"
+                className="h-8 w-8 text-[#25D366] hover:text-[#1da851]"
               >
                 <a
                   href={whatsAppHref}

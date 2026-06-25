@@ -16,7 +16,7 @@ import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventoryViewSheet } from "@/components/inventory/inventory-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -29,7 +29,6 @@ import {
   TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -63,7 +62,7 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 50;
 
 const defaultFilters: InventoryFilterState = {
   query: "",
@@ -243,9 +242,9 @@ export function InventoryWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (item) => (
-        <UniformWidthPill columnKey="status">
-          <Badge className={getStatusBadgeClass(item.status)}>{getStatusLabel(item.status)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getStatusBadgeClass(item.status)}>
+          {getStatusLabel(item.status)}
+        </TableTagText>
       ),
     },
     {
@@ -311,7 +310,7 @@ export function InventoryWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -424,6 +423,7 @@ export function InventoryWorkspace() {
           rowKey={(item) => item.id}
           rowLabel={(item) => item.sku}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={1050}
           selectable
           selectedIds={selectedIds}
@@ -481,14 +481,9 @@ export function InventoryWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit inventory item" : "Add inventory item"}</DialogTitle>
-            <DialogDescription>
-              {formMode === "edit"
-                ? "Update stock counts, location, and status for this SKU."
-                : "Create a new warehouse item to track in inventory."}
-            </DialogDescription>
           </DialogHeader>
           <InventoryItemForm
             key={editingItem?.id ?? "new"}

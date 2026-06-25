@@ -1,20 +1,28 @@
-const E164_MAX_DIGITS = 15;
+/** Canonical national phone length (NANP — USA & Dominican Republic). */
+export const PHONE_NATIONAL_DIGITS = 10;
 
-/** Strip formatting characters; preserve a leading + and digits only for API storage. */
+/**
+ * Normalize to the canonical 10-digit national number used for storage.
+ *
+ * Accepts 10 or 11 digits: an 11-digit number with the NANP country code `1`
+ * is reduced to its 10 national digits. Any formatting is stripped and the
+ * result is capped at 10 digits so every phone field stores the same shape.
+ */
 export function normalizeStoredPhone(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-
-  const hasPlus = trimmed.startsWith("+");
-  const digits = trimmed.replace(/\D/g, "").slice(0, E164_MAX_DIGITS);
+  let digits = value.replace(/\D/g, "");
   if (!digits) return "";
 
-  return hasPlus ? `+${digits}` : digits;
+  // Drop the leading NANP country code when an 11-digit number is entered.
+  if (digits.length === 11 && digits.startsWith("1")) {
+    digits = digits.slice(1);
+  }
+
+  return digits.slice(0, PHONE_NATIONAL_DIGITS);
 }
 
-/** Strip non-digits, capped at E.164 length. */
+/** Strip non-digits, capped at the national length. */
 export function sanitizePhoneDigits(value: string): string {
-  return value.replace(/\D/g, "").slice(0, E164_MAX_DIGITS);
+  return value.replace(/\D/g, "").slice(0, PHONE_NATIONAL_DIGITS);
 }
 
 function formatUsNationalDigits(digits: string): string {
@@ -32,9 +40,11 @@ export function formatPhoneForDisplay(value: string): string {
   const digits = stored.replace(/\D/g, "");
   const hasPlus = stored.startsWith("+");
 
-  if (digits.length === 11 && digits.startsWith("1")) {
+  // 11 digits: keep the leading (country/trunk) digit instead of dropping it.
+  if (digits.length === 11) {
+    const country = digits.slice(0, 1);
     const national = formatUsNationalDigits(digits.slice(1));
-    return hasPlus ? `+1 ${national}` : `1-${national}`;
+    return hasPlus ? `+${country} ${national}` : `${country}-${national}`;
   }
 
   if (digits.length === 10) {
@@ -59,11 +69,15 @@ export function formatPhoneDisplay(value: string): string {
   return formatPhoneForDisplay(value);
 }
 
-/** Prefer API displayNumber when present; otherwise format the stored number locally. */
+/**
+ * Resolve the value shown to users. A provided display value is trusted only
+ * when it carries human formatting (spaces, dashes, parentheses); a bare digit
+ * string is reformatted so every phone renders consistently in the UI.
+ */
 export function resolvePhoneDisplayValue(number: string, displayNumber?: string): string {
   const display = displayNumber?.trim();
-  if (display) return display;
-  return formatPhoneForDisplay(number);
+  if (display && /[^\d+]/.test(display)) return display;
+  return formatPhoneForDisplay(number || display || "");
 }
 
 /** Whether an API field name represents a phone value. */

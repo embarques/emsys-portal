@@ -69,7 +69,7 @@ export function AddressActionRow({ label, address, className }: AddressActionRow
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               aria-label={`Copy ${label}`}
               onClick={handleCopy}
             >
@@ -86,7 +86,7 @@ export function AddressActionRow({ label, address, className }: AddressActionRow
                   asChild
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  className="h-8 w-8 text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300"
                 >
                   <a
                     href={buildMapsSearchHref(query)}
@@ -106,7 +106,7 @@ export function AddressActionRow({ label, address, className }: AddressActionRow
                   asChild
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                  className="h-8 w-8 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   <a
                     href={buildMapsDirectionsHref(query)}

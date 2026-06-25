@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { History } from "lucide-react";
+import { History, Loader2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { UniformPillWidthProvider, UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
+import { useSenderOrderHistory } from "@/lib/orders/hooks/use-orders";
 import {
   formatOrderDate,
   formatPickupCommentSummary,
@@ -16,23 +18,31 @@ import {
   getReceiverAddressLine,
   getReceiverSummary,
 } from "@/lib/orders/display";
-import { getSenderOrderHistory, type Order } from "@/lib/orders/types";
 import type { Customer } from "@/lib/customers/types";
 import { cn } from "@/lib/utils";
 
 type SenderOrderHistorySectionProps = {
   sender: Pick<Customer, "id" | "name">;
-  orders: Order[];
   currentOrderId?: string;
 };
 
 export function SenderOrderHistorySection({
   sender,
-  orders,
   currentOrderId,
 }: SenderOrderHistorySectionProps) {
-  const history = useMemo(() => getSenderOrderHistory(orders, sender), [orders, sender]);
+  const senderId = sender.id.trim();
+  const { data, isLoading, isError, error } = useSenderOrderHistory(senderId);
+
+  // The API already sorts by date desc; sort defensively in case that changes.
+  const history = useMemo(
+    () =>
+      [...(data?.items ?? [])].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      ),
+    [data?.items],
+  );
   const senderName = sender.name.trim() || "Sender";
+  const errorMessage = isError ? normalizeApiError(error).message : null;
 
   return (
     <div className="rounded-xl border bg-muted/20 p-4">
@@ -41,10 +51,21 @@ export function SenderOrderHistorySection({
         {senderName} pickup history ({history.length})
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Previous and current pickups for this sender, matched by customer id or name.
+        Previous and current pickups for this sender, loaded by customer id.
       </p>
 
-      {history.length === 0 ? (
+      {!senderId ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Pickup history appears once the sender is saved.
+        </p>
+      ) : isLoading ? (
+        <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading pickup history…
+        </p>
+      ) : errorMessage ? (
+        <p className="mt-4 text-sm text-destructive">{errorMessage}</p>
+      ) : history.length === 0 ? (
         <p className="mt-4 text-sm text-muted-foreground">No pickup history yet.</p>
       ) : (
         <UniformPillWidthProvider resetKey={history.map((order) => order.id).join(",")}>

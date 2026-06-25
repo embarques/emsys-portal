@@ -4,6 +4,7 @@ import { Eye, EyeOff, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 
@@ -15,6 +16,7 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -58,7 +60,7 @@ export function LoginForm() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-5">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-slate-200">
               Email

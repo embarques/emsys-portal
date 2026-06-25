@@ -92,10 +92,10 @@ export type BranchListParams = {
   type?: string;
 };
 
-/** GET /branches?page=1&limit=40&offset=0&sort=name:asc */
+/** GET /branches?page=1&limit=50&offset=0&sort=name:asc */
 export const DEFAULT_BRANCH_LIST_PARAMS = {
   page: 1,
-  limit: 40,
+  limit: 50,
   sort: "name:asc",
 } as const satisfies Pick<BranchListParams, "page" | "limit" | "sort">;
 
@@ -172,11 +172,13 @@ export function buildBranchListParams(input: {
   limit?: number;
   query: string;
   rows: TableFilterRowState[];
+  sort?: ApiListSortInput;
 }): BranchListParams {
   const params: BranchListParams = {
     ...DEFAULT_BRANCH_LIST_PARAMS,
     page: input.page,
     limit: input.limit ?? DEFAULT_BRANCH_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_BRANCH_LIST_PARAMS.sort,
   };
 
   const search = createBranchSearchFilter(input.query);

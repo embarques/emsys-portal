@@ -3,28 +3,34 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import {
   ArrowDownToLine,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
+  DollarSign,
+  FileText,
+  Map as MapIcon,
   PackageOpen,
   Plus,
+  Printer,
+  Route as RouteIcon,
   Trash2,
+  XCircle,
 } from "lucide-react";
 
 import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -45,11 +51,9 @@ import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
-  formatCustomerPartySummary,
   formatOrderCommentsSummary,
   formatOrderDate,
   formatOrderId,
-  formatOrderRouteAssignment,
   formatUserSummary,
   buildOrderCreatedByFilterOptions,
   getCustomerPhone,
@@ -61,6 +65,7 @@ import {
   useDeleteOrders,
   useOrderStats,
   useOrders,
+  useSetOrdersCompleted,
   useUpdateOrder,
 } from "@/lib/orders/hooks/use-orders";
 import {
@@ -74,6 +79,7 @@ import {
   type OrderFormValues,
 } from "@/lib/orders/types";
 import { useUsers } from "@/lib/users/hooks/use-users";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
@@ -84,13 +90,14 @@ const defaultFilters: OrderFilterState = {
 };
 
 export function OrdersWorkspace() {
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const { loading: authLoading, companyId } = useAuth();
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_ORDER_LIST_PARAMS.sort, () => setPage(1));
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -103,8 +110,9 @@ export function OrdersWorkspace() {
         limit: PAGE_SIZE,
         query: deferredQuery,
         rows: filters.rows,
+        sort,
       }),
-    [deferredQuery, filters.rows, page],
+    [deferredQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useOrders(listParams);
@@ -118,6 +126,7 @@ export function OrdersWorkspace() {
   const createOrderMutation = useCreateOrder();
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
+  const setOrdersCompletedMutation = useSetOrdersCompleted();
   const orders = data?.items ?? [];
   const totalOrders = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
@@ -127,7 +136,12 @@ export function OrdersWorkspace() {
   const isSaving =
     createOrderMutation.isPending ||
     updateOrderMutation.isPending ||
-    deleteOrdersMutation.isPending;
+    deleteOrdersMutation.isPending ||
+    setOrdersCompletedMutation.isPending;
+  const selectedOrders = useMemo(
+    () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
+    [orders, selectedIds],
+  );
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const missingCompanyContext = !authLoading && !companyId;
 
@@ -211,11 +225,27 @@ export function OrdersWorkspace() {
     }
   }
 
+  async function handleSetCompleted(completed: boolean) {
+    if (selectedOrders.length === 0) return;
+
+    try {
+      await setOrdersCompletedMutation.mutateAsync({ orders: selectedOrders, completed });
+      const noun = selectedOrders.length === 1 ? "order" : "orders";
+      notifySuccess(`${selectedOrders.length} ${noun} marked ${completed ? "complete" : "incomplete"}.`);
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
+  }
+
+  // TODO: implement print, assign route, and map for selected orders.
+  function handleComingSoon(label: string) {
+    notifySuccess(`${label} is coming soon.`);
+  }
+
   const statCards = [
     {
-      label: "Pending",
+      label: "Pending orders",
       value: stats.pending.toString(),
-      description: "Not yet completed",
       icon: Clock,
     },
     {
@@ -226,42 +256,42 @@ export function OrdersWorkspace() {
     {
       label: "Pending takes",
       value: stats.pendingTakes.toString(),
-      description: "Purpose contains take · not completed",
       icon: ArrowDownToLine,
+    },
+    {
+      label: "Pending estimates",
+      value: stats.pendingEstimates.toString(),
+      icon: FileText,
+    },
+    {
+      label: "Pending payments",
+      value: stats.pendingPayments.toString(),
+      icon: DollarSign,
     },
   ];
 
   const tableColumns: DataTableColumn<Order>[] = [
-    {
-      id: "id",
-      label: "Order ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (order) => order.id,
-    },
-    {
-      id: "date",
-      label: "date",
-      renderCell: (order) => formatOrderDate(order.date),
-    },
     {
       id: "completed",
       label: "completed",
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (order) => (
-        <UniformWidthPill columnKey="completed">
-          <Badge
-            variant="outline"
-            className={
-              order.completed
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-            }
-          >
-            {getOrderCompletedLabel(order.completed)}
-          </Badge>
-        </UniformWidthPill>
+        <TableTagText
+          className={
+            order.completed
+              ? "text-emerald-700 dark:text-emerald-300"
+              : "text-amber-700 dark:text-amber-300"
+          }
+        >
+          {getOrderCompletedLabel(order.completed)}
+        </TableTagText>
       ),
+    },
+    {
+      id: "date",
+      label: "date",
+      renderCell: (order) => formatOrderDate(order.date),
     },
     {
       id: "createdAt",
@@ -271,39 +301,33 @@ export function OrdersWorkspace() {
     },
     {
       id: "sender.name",
-      label: "sender.name",
+      label: "Name",
       cellClassName: "font-medium",
       renderCell: (order) => order.sender.name.trim() || "—",
     },
     {
-      id: "sender.address.address1",
-      label: "sender.address.address1",
-      renderCell: (order) => order.sender.address.address1.trim() || "—",
+      id: "sender.address",
+      label: "Address",
+      sortField: "sender.address.address1",
+      renderCell: (order) =>
+        [order.sender.address.address1, order.sender.address.apartment]
+          .filter((value) => value.trim())
+          .join(", ") || "—",
     },
     {
       id: "sender.address.city",
-      label: "sender.address.city",
+      label: "City",
       renderCell: (order) => order.sender.address.city.trim() || "—",
     },
     {
-      id: "sender.address.state",
-      label: "sender.address.state",
-      renderCell: (order) => order.sender.address.state.trim() || "—",
-    },
-    {
       id: "sender.address.zipcode",
-      label: "sender.address.zipcode",
+      label: "Zip",
       renderCell: (order) => order.sender.address.zipcode.trim() || "—",
     },
     {
       id: "sender.phone1",
-      label: "sender.phone1",
+      label: "Phone 1",
       renderCell: (order) => getCustomerPhone(order.sender),
-    },
-    {
-      id: "purpose",
-      label: "purpose",
-      renderCell: (order) => order.purpose || "—",
     },
     {
       id: "comments",
@@ -311,19 +335,9 @@ export function OrdersWorkspace() {
       renderCell: (order) => formatOrderCommentsSummary(order),
     },
     {
-      id: "routeAssignment",
-      label: "routeAssignment",
-      renderCell: (order) => formatOrderRouteAssignment(order),
-    },
-    {
-      id: "receiver",
-      label: "receiver",
-      renderCell: (order) =>
-        order.receiver ? formatCustomerPartySummary(order.receiver) : "—",
-    },
-    {
       id: "user",
       label: "createdBy",
+      sortField: "user.name",
       renderCell: (order) => formatUserSummary(order.user),
     },
     {
@@ -332,20 +346,9 @@ export function OrdersWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDate(order.updatedAt),
     },
-    {
-      id: "sector",
-      label: "sector",
-      renderCell: (order) => (order.sector ? `${order.sector.id} · ${order.sector.name}` : "—"),
-    },
-    {
-      id: "employee",
-      label: "employee",
-      defaultVisible: false,
-      renderCell: (order) => order.employee?.name.trim() || "—",
-    },
   ];
 
-  const columnVisibility = useColumnVisibility("orders-v2", tableColumns);
+  const columnVisibility = useColumnVisibility("orders-v3", tableColumns);
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== deferredQuery.trim();
@@ -381,14 +384,13 @@ export function OrdersWorkspace() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.isLoading ? "…" : stat.value}</div>
-                <CardDescription className="mt-1">{stat.description}</CardDescription>
               </CardContent>
             </Card>
           );
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -455,10 +457,56 @@ export function OrdersWorkspace() {
             const order = orders.find((entry) => getOrderRecordId(entry) === selectedIds[0]);
             if (order) openEditForm(order);
           }}
-          onDelete={() =>
-            setDeleteTarget(orders.filter((order) => selectedIds.includes(getOrderRecordId(order))))
-          }
+          onDelete={() => setDeleteTarget(selectedOrders)}
           deleteDisabled={isSaving}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleComingSoon("Print")}
+              >
+                <Printer className="h-4 w-4" />
+                Print
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isSaving}
+                onClick={() => handleSetCompleted(true)}
+                className="border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Mark complete
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isSaving}
+                onClick={() => handleSetCompleted(false)}
+                className="border-amber-500/30 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+              >
+                <XCircle className="h-4 w-4" />
+                Mark incomplete
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleComingSoon("Assign route")}
+              >
+                <RouteIcon className="h-4 w-4" />
+                Assign route
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleComingSoon("Map")}
+              >
+                <MapIcon className="h-4 w-4" />
+                Map
+              </Button>
+            </>
+          }
         />
 
         {isLoading ? (
@@ -478,6 +526,8 @@ export function OrdersWorkspace() {
             rowLabel={(order) => formatOrderId(order)}
             columnLayout={columnVisibility}
             minWidth={1500}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}
@@ -533,7 +583,6 @@ export function OrdersWorkspace() {
 
       <OrderViewSheet
         order={viewOrder}
-        orders={orders}
         open={Boolean(viewOrder)}
         onOpenChange={(open) => {
           if (!open) setViewOrder(null);
@@ -554,16 +603,12 @@ export function OrdersWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit order" : "Add order"}</DialogTitle>
-            <DialogDescription>
-              Manage pickup fields: date, branch, employee, sender, receiver, purpose, and comments.
-            </DialogDescription>
           </DialogHeader>
           <OrderForm
             key={editingOrder ? getOrderRecordId(editingOrder) : "new"}
-            allOrders={orders}
             initialValues={
               formMode === "edit" && editingOrder ? orderToFormValues(editingOrder) : createEmptyOrderForm()
             }
@@ -577,7 +622,6 @@ export function OrdersWorkspace() {
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

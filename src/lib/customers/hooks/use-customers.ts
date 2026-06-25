@@ -9,6 +9,8 @@ import {
   fetchCustomerById,
   fetchCustomers,
   updateCustomer,
+  updateCustomerAddressGoogleVerification,
+  updateCustomerAddressLocation,
 } from "@/lib/customers/api/customers-api";
 import { hasListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
@@ -16,6 +18,8 @@ import {
   DEFAULT_CUSTOMER_LIST_PARAMS,
   CUSTOMER_TYPE_RECEIVER,
   CUSTOMER_TYPE_SENDER,
+  type AddressGeoLocation,
+  type AddressVerification,
   type CustomerFormValues,
   type CustomerListParams,
   type CustomerSearchFilter,
@@ -37,17 +41,24 @@ function isCustomerListFiltered(params: CustomerListParams): boolean {
 
 export function useCustomerSearch(
   search: CustomerSearchFilter | undefined,
-  options: { enabled?: boolean; limit?: number } = {},
+  options: {
+    enabled?: boolean;
+    limit?: number;
+    customerType?: number | "all";
+    orFields?: readonly string[];
+  } = {},
 ) {
-  const { enabled = true, limit = 40 } = options;
+  const { enabled = true, limit = 40, customerType, orFields } = options;
 
   return useQuery({
-    queryKey: queryKeys.customers.search(search, limit),
+    queryKey: queryKeys.customers.search(search, limit, { customerType, orFields }),
     queryFn: () =>
       fetchCustomers({
         ...DEFAULT_CUSTOMER_LIST_PARAMS,
         limit,
         search,
+        customerType,
+        orFields,
       }),
     enabled: enabled && Boolean(search?.value.trim()),
   });
@@ -125,6 +136,41 @@ export function useUpdateCustomer() {
   return useMutation({
     mutationFn: ({ customerId, values }: { customerId: string; values: CustomerFormValues }) =>
       updateCustomer(customerId, values),
+    onSuccess: (_data, variables) => {
+      invalidateCustomers(queryClient);
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.customers.detail(variables.customerId),
+      });
+    },
+  });
+}
+
+export function useUpdateCustomerAddressLocation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ customerId, location }: { customerId: string; location: AddressGeoLocation }) =>
+      updateCustomerAddressLocation(customerId, location),
+    onSuccess: (_data, variables) => {
+      invalidateCustomers(queryClient);
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.customers.detail(variables.customerId),
+      });
+    },
+  });
+}
+
+export function useUpdateCustomerAddressGoogleVerification() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      customerId,
+      verification,
+    }: {
+      customerId: string;
+      verification: AddressVerification;
+    }) => updateCustomerAddressGoogleVerification(customerId, verification),
     onSuccess: (_data, variables) => {
       invalidateCustomers(queryClient);
       queryClient.invalidateQueries({

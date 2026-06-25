@@ -13,10 +13,10 @@ import {
 import { queryKeys } from "@/lib/query/query-keys";
 import type { RoleFormValues } from "@/lib/roles/types";
 
-export function useRoles() {
+export function useRoles(sort: string = "name:asc") {
   return useQuery({
-    queryKey: queryKeys.roles.list(),
-    queryFn: fetchRoles,
+    queryKey: queryKeys.roles.list(sort),
+    queryFn: () => fetchRoles(sort),
     staleTime: 60_000,
   });
 }

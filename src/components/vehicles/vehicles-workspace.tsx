@@ -10,16 +10,15 @@ import {
   Truck as TruckIcon,
 } from "lucide-react";
 
-import { TruckForm } from "@/components/trucks/truck-form";
-import { TruckViewSheet } from "@/components/trucks/truck-view-sheet";
+import { VehicleForm } from "@/components/vehicles/vehicle-form";
+import { VehicleViewSheet } from "@/components/vehicles/vehicle-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -36,149 +35,154 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
-import { TRUCK_TABLE_FILTER_FIELDS } from "@/lib/trucks/filter-fields";
+import { VEHICLE_TABLE_FILTER_FIELDS } from "@/lib/vehicles/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
-  computeTruckKpis,
+  formatVehicleDate,
   getBranchBadgeClass,
   getBranchLabel,
   getFuelTypeBadgeClass,
   getFuelTypeLabel,
   truncateObjectId,
-  truncateTruckId,
-} from "@/lib/trucks/display";
+  truncateVehicleId,
+} from "@/lib/vehicles/display";
 import {
-  useCreateTruck,
-  useDeleteTrucks,
-  useTrucks,
-  useUpdateTruck,
-} from "@/lib/trucks/hooks/use-trucks";
+  useCreateVehicle,
+  useDeleteVehicles,
+  useVehicleBranchCount,
+  useVehicles,
+  useUpdateVehicle,
+} from "@/lib/vehicles/hooks/use-vehicles";
 import {
-  DEFAULT_TRUCK_LIST_PARAMS,
-  buildTruckListParams,
-  createEmptyTruckForm,
-  truckToFormValues,
-  type Truck,
-  type TruckFilterState,
-  type TruckFormValues,
-} from "@/lib/trucks/types";
+  DEFAULT_VEHICLE_LIST_PARAMS,
+  buildVehicleListParams,
+  createEmptyVehicleForm,
+  vehicleToFormValues,
+  type Vehicle,
+  type VehicleFilterState,
+  type VehicleFormValues,
+} from "@/lib/vehicles/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
-const PAGE_SIZE = DEFAULT_TRUCK_LIST_PARAMS.limit;
+const PAGE_SIZE = DEFAULT_VEHICLE_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 
-const defaultFilters: TruckFilterState = {
+const defaultFilters: VehicleFilterState = {
   query: "",
   rows: [],
 };
 
-export function TrucksWorkspace() {
+export function VehiclesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [filters, setFilters] = useState<TruckFilterState>(defaultFilters);
+  const [filters, setFilters] = useState<VehicleFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
-  const [viewTruck, setViewTruck] = useState<Truck | null>(null);
+  const { sort, onSortChange } = useTableSort(DEFAULT_VEHICLE_LIST_PARAMS.sort, () => setPage(1));
+  const [viewVehicle, setViewVehicle] = useState<Vehicle | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
-  const [editingTruck, setEditingTruck] = useState<Truck | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Truck | Truck[] | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Vehicle | Vehicle[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const listParams = useMemo(
     () =>
-      buildTruckListParams({
+      buildVehicleListParams({
         page,
         limit: PAGE_SIZE,
         query: debouncedQuery,
         rows: filters.rows,
+        sort,
       }),
-    [debouncedQuery, filters.rows, page],
+    [debouncedQuery, filters.rows, page, sort],
   );
 
-  const { data, isLoading, isError, error, isFetching } = useTrucks(listParams);
-  const createTruckMutation = useCreateTruck();
-  const updateTruckMutation = useUpdateTruck();
-  const deleteTrucksMutation = useDeleteTrucks();
+  const { data, isLoading, isError, error, isFetching } = useVehicles(listParams);
+  const createVehicleMutation = useCreateVehicle();
+  const updateVehicleMutation = useUpdateVehicle();
+  const deleteVehiclesMutation = useDeleteVehicles();
 
-  const trucks = data?.items ?? [];
-  const totalTrucks = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalTrucks / PAGE_SIZE));
+  const vehicles = data?.items ?? [];
+  const totalVehicles = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalVehicles / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const allPageSelected = trucks.length > 0 && trucks.every((truck) => selectedIds.includes(truck.id));
+  const allPageSelected = vehicles.length > 0 && vehicles.every((vehicle) => selectedIds.includes(vehicle.id));
   const isSaving =
-    createTruckMutation.isPending || updateTruckMutation.isPending || deleteTrucksMutation.isPending;
+    createVehicleMutation.isPending || updateVehicleMutation.isPending || deleteVehiclesMutation.isPending;
 
-  const kpis = useMemo(() => computeTruckKpis(trucks), [trucks]);
+  const usaBranchCount = useVehicleBranchCount("usa");
+  const drBranchCount = useVehicleBranchCount("dr");
 
   const statCards = [
     {
-      label: "Total trucks",
-      value: isLoading ? "…" : totalTrucks.toString(),
+      label: "Total vehicles",
+      value: isLoading ? "…" : totalVehicles.toString(),
       description: "Fleet units on record",
       icon: TruckIcon,
     },
     {
       label: "USA",
-      value: isLoading ? "…" : kpis.usa.toString(),
-      description: "On this page",
+      value: usaBranchCount.isLoading ? "…" : usaBranchCount.count.toString(),
+      description: "Total vehicles in USA",
       icon: Fuel,
     },
     {
       label: "DR",
-      value: isLoading ? "…" : kpis.dr.toString(),
-      description: "On this page",
+      value: drBranchCount.isLoading ? "…" : drBranchCount.count.toString(),
+      description: "Total vehicles in DR",
       icon: Fuel,
     },
   ];
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
-      setSelectedIds((current) => Array.from(new Set([...current, ...trucks.map((truck) => truck.id)])));
+      setSelectedIds((current) => Array.from(new Set([...current, ...vehicles.map((vehicle) => vehicle.id)])));
       return;
     }
-    setSelectedIds((current) => current.filter((id) => !trucks.some((truck) => truck.id === id)));
+    setSelectedIds((current) => current.filter((id) => !vehicles.some((vehicle) => vehicle.id === id)));
   }
 
-  function toggleSelect(truckId: string, checked: boolean) {
-    setSelectedIds((current) => (checked ? [...current, truckId] : current.filter((entry) => entry !== truckId)));
+  function toggleSelect(vehicleId: string, checked: boolean) {
+    setSelectedIds((current) => (checked ? [...current, vehicleId] : current.filter((entry) => entry !== vehicleId)));
   }
 
   function openAddForm() {
-    setEditingTruck(null);
+    setEditingVehicle(null);
     setFormMode("add");
     setFormError(null);
   }
 
-  function openEditForm(truck: Truck) {
-    setEditingTruck(truck);
+  function openEditForm(vehicle: Vehicle) {
+    setEditingVehicle(vehicle);
     setFormMode("edit");
-    setViewTruck(null);
+    setViewVehicle(null);
     setFormError(null);
   }
 
-  async function saveTruck(values: TruckFormValues) {
+  async function saveVehicle(values: VehicleFormValues) {
     setFormError(null);
 
     try {
-      if (formMode === "edit" && editingTruck) {
-        const nextTruck = await updateTruckMutation.mutateAsync({
-          truckId: editingTruck.id,
+      if (formMode === "edit" && editingVehicle) {
+        const nextVehicle = await updateVehicleMutation.mutateAsync({
+          vehicleId: editingVehicle.id,
           values,
         });
-        notifyUpdated("Truck", nextTruck.name);
+        notifyUpdated("Vehicle", nextVehicle.name);
       } else {
-        const nextTruck = await createTruckMutation.mutateAsync(values);
-        notifyAdded("Truck", nextTruck.name);
+        const nextVehicle = await createVehicleMutation.mutateAsync(values);
+        notifyAdded("Vehicle", nextVehicle.name);
       }
 
       setFormMode(null);
-      setEditingTruck(null);
+      setEditingVehicle(null);
       setPage(1);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
@@ -188,59 +192,59 @@ export function TrucksWorkspace() {
   async function confirmDelete() {
     if (!deleteTarget) return;
 
-    const ids = Array.isArray(deleteTarget) ? deleteTarget.map((truck) => truck.id) : [deleteTarget.id];
+    const ids = Array.isArray(deleteTarget) ? deleteTarget.map((vehicle) => vehicle.id) : [deleteTarget.id];
 
     try {
-      await deleteTrucksMutation.mutateAsync(ids);
+      await deleteVehiclesMutation.mutateAsync(ids);
       setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
       setDeleteTarget(null);
-      setViewTruck(null);
-      notifyDeleted("Truck", ids.length);
+      setViewVehicle(null);
+      notifyDeleted("Vehicle", ids.length);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);
     }
   }
 
-  const tableColumns: DataTableColumn<Truck>[] = [
+  const tableColumns: DataTableColumn<Vehicle>[] = [
     {
       id: "id",
       label: "Record ID",
       cellClassName: "font-mono text-xs",
-      renderCell: (truck) => truncateObjectId(truck.id),
+      renderCell: (vehicle) => truncateObjectId(vehicle.id),
     },
     {
       id: "truckId",
       label: "truckId",
       cellClassName: "font-mono text-xs",
-      renderCell: (truck) => truncateTruckId(truck.truckId) || "—",
+      renderCell: (vehicle) => truncateVehicleId(vehicle.truckId) || "—",
     },
     {
       id: "name",
       label: "name",
       cellClassName: "font-medium",
-      renderCell: (truck) => truck.name,
+      renderCell: (vehicle) => vehicle.name,
     },
     {
       id: "vin",
       label: "vin",
       cellClassName: "font-mono text-xs",
-      renderCell: (truck) => truck.vin || "—",
+      renderCell: (vehicle) => vehicle.vin || "—",
     },
     {
       id: "year",
       label: "year",
-      renderCell: (truck) => (truck.year > 0 ? truck.year : "—"),
+      renderCell: (vehicle) => (vehicle.year > 0 ? vehicle.year : "—"),
     },
     {
       id: "fuelType",
       label: "fuelType",
       truncateCell: false,
       cellClassName: "overflow-visible",
-      renderCell: (truck) => (
-        <UniformWidthPill columnKey="fuelType">
-          <Badge className={getFuelTypeBadgeClass(truck.fuelType)}>{getFuelTypeLabel(truck.fuelType)}</Badge>
-        </UniformWidthPill>
+      renderCell: (vehicle) => (
+        <TableTagText className={getFuelTypeBadgeClass(vehicle.fuelType)}>
+          {getFuelTypeLabel(vehicle.fuelType)}
+        </TableTagText>
       ),
     },
     {
@@ -248,53 +252,65 @@ export function TrucksWorkspace() {
       label: "branch",
       truncateCell: false,
       cellClassName: "overflow-visible",
-      renderCell: (truck) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getBranchBadgeClass(truck.branch)}>{getBranchLabel(truck.branch)}</Badge>
-        </UniformWidthPill>
+      renderCell: (vehicle) => (
+        <TableTagText className={getBranchBadgeClass(vehicle.branch)}>
+          {getBranchLabel(vehicle.branch)}
+        </TableTagText>
       ),
+    },
+    {
+      id: "inspectionDate",
+      label: "inspectionDate",
+      cellClassName: "text-muted-foreground",
+      renderCell: (vehicle) => formatVehicleDate(vehicle.inspectionDate),
+    },
+    {
+      id: "registrationDate",
+      label: "registrationDate",
+      cellClassName: "text-muted-foreground",
+      renderCell: (vehicle) => formatVehicleDate(vehicle.registrationDate),
     },
     {
       id: "createdAt",
       label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (truck) => (truck.createdAt ? formatAuditDate(truck.createdAt) : "—"),
+      renderCell: (vehicle) => (vehicle.createdAt ? formatAuditDate(vehicle.createdAt) : "—"),
     },
     {
       id: "createdBy",
       label: "createdBy",
       defaultVisible: false,
-      renderCell: (truck) => truck.createdBy || "—",
+      renderCell: (vehicle) => vehicle.createdBy || "—",
     },
     {
       id: "updatedAt",
       label: "updatedAt",
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
-      renderCell: (truck) => (truck.updatedAt ? formatAuditDate(truck.updatedAt) : "—"),
+      renderCell: (vehicle) => (vehicle.updatedAt ? formatAuditDate(vehicle.updatedAt) : "—"),
     },
   ];
 
-  const columnVisibility = useColumnVisibility("trucks-v2", tableColumns);
-  const activeFilterCount = countCompleteFilterRows(filters.rows, TRUCK_TABLE_FILTER_FIELDS);
+  const columnVisibility = useColumnVisibility("vehicles-v2", tableColumns);
+  const activeFilterCount = countCompleteFilterRows(filters.rows, VEHICLE_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: hasActiveFilters,
     query: filters.query,
     isSearchPending,
-    matched: totalTrucks,
-    noun: "trucks",
-    isLoading: isFetching && trucks.length === 0,
+    matched: totalVehicles,
+    noun: "vehicles",
+    isLoading: isFetching && vehicles.length === 0,
   });
 
   return (
     <div>
       <PageHeader
-        title="Trucks"
+        title="Vehicles"
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
-            Add truck
+            Add vehicle
           </Button>
         }
       />
@@ -317,7 +333,7 @@ export function TrucksWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -332,12 +348,12 @@ export function TrucksWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search trucks..."
+                placeholder="Search vehicles..."
               />
             }
             filterPanel={
               <TableFilterPanel
-                resultSummary={`Showing ${trucks.length} of ${totalTrucks} trucks`}
+                resultSummary={`Showing ${vehicles.length} of ${totalVehicles} vehicles`}
                 onClearAll={
                   hasActiveFilters
                     ? () => {
@@ -350,7 +366,7 @@ export function TrucksWorkspace() {
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
                   rows={filters.rows}
-                  fields={TRUCK_TABLE_FILTER_FIELDS}
+                  fields={VEHICLE_TABLE_FILTER_FIELDS}
                   onChange={(rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -363,13 +379,13 @@ export function TrucksWorkspace() {
 
         <TableSelectionBar
           selectedIds={selectedIds}
-          pageRowIds={trucks.map((truck) => truck.id)}
+          pageRowIds={vehicles.map((vehicle) => vehicle.id)}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
-            const truck = trucks.find((entry) => entry.id === selectedIds[0]);
-            if (truck) openEditForm(truck);
+            const vehicle = vehicles.find((entry) => entry.id === selectedIds[0]);
+            if (vehicle) openEditForm(vehicle);
           }}
-          onDelete={() => setDeleteTarget(trucks.filter((truck) => selectedIds.includes(truck.id)))}
+          onDelete={() => setDeleteTarget(vehicles.filter((vehicle) => selectedIds.includes(vehicle.id)))}
         />
 
         {isError ? (
@@ -377,28 +393,30 @@ export function TrucksWorkspace() {
         ) : (
           <DataTable
             columns={columnVisibility.columns}
-            rows={trucks}
+            rows={vehicles}
             page={currentPage}
             isPageDataPending={isFetching}
-            rowKey={(truck) => truck.id}
-            rowLabel={(truck) => truck.name}
+            rowKey={(vehicle) => vehicle.id}
+            rowLabel={(vehicle) => vehicle.name}
             columnLayout={columnVisibility}
             minWidth={1200}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
-            onRowClick={setViewTruck}
+            onRowClick={setViewVehicle}
             onRowDoubleClick={openEditForm}
             emptyState={
               <>
                 <p className="text-muted-foreground">
-                  {hasActiveFilters ? "No trucks match your search or filters." : "No trucks yet."}
+                  {hasActiveFilters ? "No vehicles match your search or filters." : "No vehicles yet."}
                 </p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
-                  Add truck
+                  Add vehicle
                 </Button>
               </>
             }
@@ -407,7 +425,7 @@ export function TrucksWorkspace() {
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {trucks.length} of {totalTrucks} trucks
+            Showing {vehicles.length} of {totalVehicles} vehicles
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -435,16 +453,16 @@ export function TrucksWorkspace() {
         </div>
       </Card>
 
-      <TruckViewSheet
-        truck={viewTruck}
-        open={Boolean(viewTruck)}
+      <VehicleViewSheet
+        vehicle={viewVehicle}
+        open={Boolean(viewVehicle)}
         onOpenChange={(open) => {
-          if (!open) setViewTruck(null);
+          if (!open) setViewVehicle(null);
         }}
         onEdit={openEditForm}
-        onDelete={(truck) => {
-          setViewTruck(null);
-          setDeleteTarget(truck);
+        onDelete={(vehicle) => {
+          setViewVehicle(null);
+          setDeleteTarget(vehicle);
         }}
       />
 
@@ -457,36 +475,36 @@ export function TrucksWorkspace() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{formMode === "edit" ? "Edit truck" : "Add truck"}</DialogTitle>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+            <DialogTitle>{formMode === "edit" ? "Edit vehicle" : "Add vehicle"}</DialogTitle>
           </DialogHeader>
-          <TruckForm
-            key={editingTruck?.id ?? "new"}
+          <VehicleForm
+            key={editingVehicle?.id ?? "new"}
             initialValues={
-              formMode === "edit" && editingTruck ? truckToFormValues(editingTruck) : createEmptyTruckForm()
+              formMode === "edit" && editingVehicle ? vehicleToFormValues(editingVehicle) : createEmptyVehicleForm()
             }
             isEditing={formMode === "edit"}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add truck"}
+            submitLabel={formMode === "edit" ? "Save changes" : "Add vehicle"}
             isSubmitting={isSaving}
-            onSubmit={saveTruck}
+            externalError={formError}
+            onSubmit={saveVehicle}
             onCancel={() => {
               setFormMode(null);
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="z-[60]">
           <DialogHeader>
-            <DialogTitle>Delete truck{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?</DialogTitle>
+            <DialogTitle>Delete vehicle{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?</DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected trucks. This action cannot be undone.`
-                : `This will permanently remove ${deleteTarget?.name ?? "this truck"}. This action cannot be undone.`}
+                ? `This will permanently remove ${deleteTarget.length} selected vehicles. This action cannot be undone.`
+                : `This will permanently remove ${deleteTarget?.name ?? "this vehicle"}. This action cannot be undone.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -13,7 +13,7 @@ import {
 import { EmployeeGroupForm } from "@/components/employee-groups/employee-group-form";
 import { EmployeeGroupViewSheet } from "@/components/employee-groups/employee-group-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -26,7 +26,6 @@ import {
   TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -60,7 +59,7 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 50;
 
 const defaultFilters: EmployeeGroupFilterState = {
   query: "",
@@ -182,11 +181,7 @@ export function EmployeeGroupsWorkspace() {
       label: "Count",
       truncateCell: false,
       cellClassName: "overflow-visible",
-      renderCell: (group) => (
-        <UniformWidthPill columnKey="count">
-          <Badge variant="outline">{group.employeeIds.length}</Badge>
-        </UniformWidthPill>
-      ),
+      renderCell: (group) => <TableTagText>{group.employeeIds.length}</TableTagText>,
     },
     {
       id: "branch",
@@ -194,11 +189,9 @@ export function EmployeeGroupsWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (group) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getEmployeeGroupBranchBadgeClass(group.branch)}>
-            {getEmployeeGroupBranchLabel(group.branch)}
-          </Badge>
-        </UniformWidthPill>
+        <TableTagText className={getEmployeeGroupBranchBadgeClass(group.branch)}>
+          {getEmployeeGroupBranchLabel(group.branch)}
+        </TableTagText>
       ),
     },
     {
@@ -261,7 +254,7 @@ export function EmployeeGroupsWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -332,6 +325,7 @@ export function EmployeeGroupsWorkspace() {
           rowKey={(group) => group.employeeGroupId}
           rowLabel={(group) => group.employeeGroupId}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={960}
           selectable
           selectedIds={selectedIds}
@@ -395,14 +389,9 @@ export function EmployeeGroupsWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit employee group" : "Add employee group"}</DialogTitle>
-            <DialogDescription>
-              {formMode === "edit"
-                ? "Update the employees assigned to this group."
-                : "Create a new employee group with a generated group ID."}
-            </DialogDescription>
           </DialogHeader>
           <EmployeeGroupForm
             key={editingGroup?.employeeGroupId ?? "new"}

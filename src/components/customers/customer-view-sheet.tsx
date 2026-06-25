@@ -1,5 +1,7 @@
 "use client";
 
+import { Info, MapPin, Phone as PhoneIcon, User, Wallet } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
@@ -19,12 +21,8 @@ import {
 } from "@/lib/phones/phones";
 import {
   formatAccountBalance,
-  formatCustomerBranchLabel,
   getClientTypeBadgeClass,
   getClientTypeLabel,
-  getCustomerBranchBadgeClass,
-  getCustomerTypeLabel,
-  truncateCustomerId,
 } from "@/lib/customers/display";
 import { getCustomerClientType } from "@/lib/customers/types";
 import type { Customer } from "@/lib/customers/types";
@@ -59,27 +57,24 @@ export function CustomerViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={customer.name}
-          description={<span className="font-mono text-xs">{truncateCustomerId(customer.id)}</span>}
-          meta={
-            <>
-              <Badge className={getCustomerBranchBadgeClass(customer)}>{formatCustomerBranchLabel(customer)}</Badge>
+          title={
+            <span className="flex flex-wrap items-center gap-2">
+              <span>{customer.name}</span>
               {clientType ? (
                 <Badge className={getClientTypeBadgeClass(clientType)}>{getClientTypeLabel(clientType)}</Badge>
               ) : null}
-            </>
+            </span>
           }
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title="General">
-            <RecordViewSheetDetailRow label="Name" value={customer.name} />
-            <RecordViewSheetDetailRow label="Customer type" value={getCustomerTypeLabel(customer)} />
+          <RecordViewSheetSection title="General" icon={User}>
             <RecordViewSheetDetailRow label="Email" value={customer.email || "—"} />
             <RecordViewSheetDetailRow label="ID number" value={customer.IDNumber || "—"} />
+            <RecordViewSheetDetailRow label="Notes" value={customer.notes || "—"} />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title="Phones">
+          <RecordViewSheetSection title="Phones" icon={PhoneIcon}>
             {phones.length === 0 ? (
               <RecordViewSheetDetailRow label="Phones" value="—" />
             ) : (
@@ -99,7 +94,7 @@ export function CustomerViewSheet({
           </RecordViewSheetSection>
 
           {addresses.length > 0 ? (
-            <RecordViewSheetSection title="Addresses">
+            <RecordViewSheetSection title="Addresses" icon={MapPin}>
               {addresses.map((address, index) => (
                 <AddressActionRow
                   key={index}
@@ -110,26 +105,18 @@ export function CustomerViewSheet({
             </RecordViewSheetSection>
           ) : null}
 
-          <RecordViewSheetSection title="Account">
+          <RecordViewSheetSection title="Account" icon={Wallet}>
             <RecordViewSheetDetailRow
               label="Account balance"
               value={formatAccountBalance(customer.accountBalance)}
             />
-            <RecordViewSheetDetailRow label="Notes" value={customer.notes || "—"} />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title="Branch">
-            <RecordViewSheetDetailRow label="Branch ID" value={String(customer.branch.id)} />
-            <RecordViewSheetDetailRow label="Branch code" value={customer.branch.code || "—"} />
-            <RecordViewSheetDetailRow label="Branch name" value={customer.branch.name || "—"} />
-          </RecordViewSheetSection>
-
-          <RecordViewSheetSection title="System information">
+          <RecordViewSheetSection title="System information" icon={Info}>
             <RecordViewSheetDetailRow label="Customer ID" value={customer.id} />
-            <RecordViewSheetDetailRow
-              label="Legacy ID"
-              value={customer.oldID != null ? String(customer.oldID) : "—"}
-            />
+            <RecordViewSheetDetailRow label="Branch name" value={customer.branch.name || "—"} />
+            <RecordViewSheetDetailRow label="Branch code" value={customer.branch.code || "—"} />
+            <RecordViewSheetDetailRow label="Branch ID" value={String(customer.branch.id)} />
             <RecordViewSheetDetailRow
               label="Created by"
               value={customer.createdByID != null ? String(customer.createdByID) : "—"}

@@ -4,6 +4,7 @@ import { Eye, EyeOff, Wrench } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { readDevEnvDefaults } from "@/lib/auth/utils/dev-auth";
@@ -26,6 +27,7 @@ export function DevLoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const handleEnterNavigation = useFormEnterNavigation();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -68,7 +70,7 @@ export function DevLoginForm() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="space-y-5">
           <div className="space-y-2">
             <label htmlFor="dev-company-id" className="text-sm font-medium text-slate-200">
               Company ID

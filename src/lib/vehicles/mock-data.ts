@@ -1,6 +1,6 @@
-import type { Truck } from "./types";
+import type { Vehicle } from "./types";
 
-export const MOCK_TRUCKS: Truck[] = [
+export const MOCK_VEHICLES: Vehicle[] = [
   {
     id: "665f1a2b3c4d5e6f7a8b9c0d",
     truckId: "trk-001",
@@ -9,6 +9,8 @@ export const MOCK_TRUCKS: Truck[] = [
     year: 2019,
     fuelType: "diesel",
     branch: "usa",
+    inspectionDate: "2026-03-15",
+    registrationDate: "2026-01-10",
     createdAt: "2026-06-04T14:22:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-04T14:22:00Z",
@@ -21,6 +23,8 @@ export const MOCK_TRUCKS: Truck[] = [
     year: 2021,
     fuelType: "diesel",
     branch: "dr",
+    inspectionDate: "2026-04-02",
+    registrationDate: "2026-02-18",
     createdAt: "2026-06-03T11:05:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-03T11:05:00Z",
@@ -33,6 +37,8 @@ export const MOCK_TRUCKS: Truck[] = [
     year: 2022,
     fuelType: "gas",
     branch: "usa",
+    inspectionDate: "2026-05-20",
+    registrationDate: "2026-03-05",
     createdAt: "2026-06-02T18:40:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-02T18:40:00Z",
@@ -45,6 +51,8 @@ export const MOCK_TRUCKS: Truck[] = [
     year: 2018,
     fuelType: "diesel",
     branch: "dr",
+    inspectionDate: "2026-02-28",
+    registrationDate: "2025-12-01",
     createdAt: "2026-06-01T09:15:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-01T09:15:00Z",
@@ -57,6 +65,8 @@ export const MOCK_TRUCKS: Truck[] = [
     year: 2020,
     fuelType: "gas",
     branch: "usa",
+    inspectionDate: "2026-01-22",
+    registrationDate: "2025-11-15",
     createdAt: "2026-05-30T16:30:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-05-30T16:30:00Z",
@@ -69,20 +79,22 @@ export const MOCK_TRUCKS: Truck[] = [
     year: 2023,
     fuelType: "diesel",
     branch: "dr",
+    inspectionDate: "2026-05-08",
+    registrationDate: "2026-04-12",
     createdAt: "2026-05-28T13:20:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-05-28T13:20:00Z",
   },
 ];
 
-export function cloneTrucks(): Truck[] {
-  return MOCK_TRUCKS.map((truck) => ({ ...truck }));
+export function cloneVehicles(): Vehicle[] {
+  return MOCK_VEHICLES.map((vehicle) => ({ ...vehicle }));
 }
 
-export function getTruckById(truckId: string): Truck | undefined {
-  return MOCK_TRUCKS.find((truck) => truck.truckId === truckId);
+export function getVehicleById(truckId: string): Vehicle | undefined {
+  return MOCK_VEHICLES.find((vehicle) => vehicle.truckId === truckId);
 }
 
-export function getTruckByRecordId(id: string): Truck | undefined {
-  return MOCK_TRUCKS.find((truck) => truck.id === id);
+export function getVehicleByRecordId(id: string): Vehicle | undefined {
+  return MOCK_VEHICLES.find((vehicle) => vehicle.id === id);
 }

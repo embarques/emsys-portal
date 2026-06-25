@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -76,7 +76,7 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50;
 
 const defaultFilters: LabelFilterState = {
   query: "",
@@ -366,9 +366,9 @@ export function LabelsWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (label) => (
-        <UniformWidthPill columnKey="status">
-          <Badge className={getLabelStatusBadgeClass(label.status)}>{getLabelStatusLabel(label.status)}</Badge>
-        </UniformWidthPill>
+        <TableTagText className={getLabelStatusBadgeClass(label.status)}>
+          {getLabelStatusLabel(label.status)}
+        </TableTagText>
       ),
     },
     {
@@ -755,6 +755,7 @@ export function LabelsWorkspace() {
           rowKey={(label) => label.labelId}
           rowLabel={(label) => label.barcode}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={1200}
           selectable
           selectedIds={selectedLabelIds}

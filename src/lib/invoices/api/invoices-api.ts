@@ -95,6 +95,7 @@ type ApiInvoice = {
   discount?: number;
   branch?: InvoiceBranch;
   user?: ApiInvoiceUser;
+  employee?: ApiInvoiceUser;
   container?: ApiInvoiceContainer;
   sender?: ApiInvoiceParty;
   receiver?: ApiInvoiceParty;
@@ -239,7 +240,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     amountPaid,
     balance,
     createdAt: String(item.createdAt ?? "").trim(),
-    createdBy: readInvoiceCreatedBy(item.user),
+    createdBy: readInvoiceCreatedBy(item.employee ?? item.user),
     updatedAt: String(item.updatedAt ?? "").trim(),
   };
 }

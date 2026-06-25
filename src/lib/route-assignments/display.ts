@@ -1,7 +1,7 @@
 import { getEmployeeGroupById } from "@/lib/employee-groups/mock-data";
 import { getEmployeeGroupBranchLabel } from "@/lib/employee-groups/display";
 import type { EmployeeGroup } from "@/lib/employee-groups/types";
-import { getTruckById, getTruckByRecordId } from "@/lib/trucks/mock-data";
+import { getVehicleById, getVehicleByRecordId } from "@/lib/vehicles/mock-data";
 import type { RouteAssignment, RouteAssignmentEmployeeGroupRef, RouteAssignmentTruckRef } from "./types";
 import { toRouteAssignmentDateInput } from "./types";
 
@@ -41,7 +41,7 @@ export function formatEmployeeGroupRefName(group: EmployeeGroup): string {
 export function getTruckRefLabel(truck: RouteAssignmentTruckRef): string {
   if (!truck.id && !truck.name) return "—";
 
-  const record = truck.id ? (getTruckByRecordId(truck.id) ?? getTruckById(truck.id)) : undefined;
+  const record = truck.id ? (getVehicleByRecordId(truck.id) ?? getVehicleById(truck.id)) : undefined;
   const name = truck.name || record?.name;
   const branch = record?.branch;
 

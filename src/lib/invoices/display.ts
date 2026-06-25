@@ -1,7 +1,7 @@
 import { formatContainerLabel } from "@/lib/containers/display";
 import { getContainerById } from "@/lib/containers/mock-data";
 import { formatItemPrice } from "@/lib/items/display";
-import { getBranchLabel } from "@/lib/trucks/display";
+import { getBranchLabel } from "@/lib/vehicles/display";
 import type { Invoice, InvoiceLineItem, InvoicePaymentLocation, InvoicePaymentMethod } from "./types";
 import { INVOICE_PAYMENT_METHODS, getInvoiceBalanceAmount, getInvoiceTotal } from "./types";
 import { getOrderPartyAddress } from "./types";
@@ -38,28 +38,28 @@ export function formatInvoiceMoney(amount: number): string {
 }
 
 export function getInvoiceTotalMoneyClass(): string {
-  return "inline-flex rounded-md border border-transparent bg-blue-500/15 px-2 py-0.5 font-medium tabular-nums text-blue-700 dark:text-blue-300";
+  return "font-medium tabular-nums text-blue-700 dark:text-blue-300";
 }
 
 export function getInvoiceDiscountMoneyClass(amount: number): string {
   if (amount <= 0) {
-    return "inline-flex rounded-md px-2 py-0.5 font-medium tabular-nums text-muted-foreground";
+    return "font-medium tabular-nums text-muted-foreground";
   }
-  return "inline-flex rounded-md border border-transparent bg-amber-500/15 px-2 py-0.5 font-medium tabular-nums text-amber-700 dark:text-amber-300";
+  return "font-medium tabular-nums text-amber-700 dark:text-amber-300";
 }
 
 export function getInvoicePaidMoneyClass(amount: number): string {
   if (amount <= 0) {
-    return "inline-flex rounded-md px-2 py-0.5 font-medium tabular-nums text-muted-foreground";
+    return "font-medium tabular-nums text-muted-foreground";
   }
-  return "inline-flex rounded-md border border-transparent bg-emerald-500/15 px-2 py-0.5 font-medium tabular-nums text-emerald-700 dark:text-emerald-300";
+  return "font-medium tabular-nums text-emerald-700 dark:text-emerald-300";
 }
 
 export function getInvoiceBalanceMoneyClass(amount: number): string {
   if (amount <= 0) {
-    return "inline-flex rounded-md border border-transparent bg-emerald-500/15 px-2 py-0.5 font-medium tabular-nums text-emerald-700 dark:text-emerald-300";
+    return "font-medium tabular-nums text-emerald-700 dark:text-emerald-300";
   }
-  return "inline-flex rounded-md border border-transparent bg-rose-500/15 px-2 py-0.5 font-medium tabular-nums text-rose-700 dark:text-rose-300";
+  return "font-medium tabular-nums text-rose-700 dark:text-rose-300";
 }
 
 export type InvoicePaidStatusView = "closed" | "open";

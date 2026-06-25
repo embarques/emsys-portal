@@ -34,7 +34,7 @@ import {
 } from "@/lib/invoices/display";
 import type { Invoice, InvoicePaymentInput } from "@/lib/invoices/types";
 import { getOrderPartyAddress } from "@/lib/invoices/types";
-import { getBranchBadgeClass } from "@/lib/trucks/display";
+import { getBranchBadgeClass } from "@/lib/vehicles/display";
 
 type InvoiceViewSheetProps = {
   invoice: Invoice | null;

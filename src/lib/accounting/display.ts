@@ -1,5 +1,5 @@
 import { getRouteAssignmentLabel } from "@/lib/orders/display";
-import { getBranchBadgeClass, getBranchLabel } from "@/lib/trucks/display";
+import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
 import { getPaymentMethodLabel } from "@/lib/invoices/display";
 import type { AccountingBranch, AccountingEntry, AccountingEntryType } from "./types";
 import { ACCOUNTING_ENTRY_TYPES } from "./types";

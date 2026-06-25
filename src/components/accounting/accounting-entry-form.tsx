@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { FormFooter } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +53,7 @@ type AccountingEntryFormProps = {
   variant?: "dialog" | "inline";
   fixedType?: AccountingFormValues["type"];
   submitLabel: string;
+  externalError?: string | null;
   onSubmit: (values: AccountingFormValues) => string | null;
   onFormErrorChange?: (error: string | null) => void;
   onCancel?: () => void;
@@ -65,6 +68,7 @@ export function AccountingEntryForm({
   variant = "dialog",
   fixedType,
   submitLabel,
+  externalError = null,
   onSubmit,
   onFormErrorChange,
   onCancel,
@@ -79,6 +83,7 @@ export function AccountingEntryForm({
   }, [fixedType]);
 
   const [values, setValues] = useState<AccountingFormValues>(initialValues ?? defaultValues);
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? defaultValues);
@@ -88,13 +93,6 @@ export function AccountingEntryForm({
     () => invoices.find((invoice) => invoice.invoiceId === values.invoiceId),
     [invoices, values.invoiceId]
   );
-
-  const matchedInvoiceByNumber = useMemo(
-    () => findInvoiceByNumber(invoices, values.invoiceNumber),
-    [invoices, values.invoiceNumber]
-  );
-
-  const typeMeta = ACCOUNTING_ENTRY_TYPES.find((entry) => entry.value === values.type);
 
   const previewBalance = useMemo(() => {
     if (!isNewInvoicePaymentType(values.type)) return null;
@@ -185,17 +183,15 @@ export function AccountingEntryForm({
   const showGlobalDateBranch = isNewInvoicePayment || isExistingInvoicePayment;
 
   return (
-    <form onSubmit={handleSubmit} className={isInline ? "space-y-3" : "space-y-4"}>
-      {!isInline ? (
-      <div className="space-y-2">
-        <Label htmlFor="entryId">Entry ID</Label>
-        <Input id="entryId" value={values.entryId} readOnly className="bg-muted/40 font-mono text-xs" />
-      </div>
-      ) : null}
-
+    <form
+      onSubmit={handleSubmit}
+      onKeyDown={handleEnterNavigation}
+      className={isInline ? "space-y-3" : "flex min-h-0 flex-1 flex-col"}
+    >
+      <div className={isInline ? "space-y-3" : "flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4"}>
       {!isInline && !fixedType ? (
-      <div className="space-y-2">
-        <Label htmlFor="type">
+        <div className="space-y-1">
+          <Label htmlFor="type">
           Entry type <span className="text-destructive">*</span>
         </Label>
         <SearchableSelect
@@ -209,13 +205,12 @@ export function AccountingEntryForm({
             label: option.label,
           }))}
         />
-        {typeMeta ? <p className="text-xs text-muted-foreground">{typeMeta.description}</p> : null}
       </div>
       ) : null}
 
       {showGlobalDateBranch ? (
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="space-y-1">
           <Label htmlFor="date">
             Date <span className="text-destructive">*</span>
           </Label>
@@ -228,7 +223,7 @@ export function AccountingEntryForm({
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Label htmlFor="branch">
             Branch <span className="text-destructive">*</span>
           </Label>
@@ -248,8 +243,8 @@ export function AccountingEntryForm({
       ) : null}
 
       {isNewInvoicePayment ? (
-        <div className={isInline ? "space-y-3" : "space-y-4 rounded-xl border bg-muted/10 p-4"}>
-          <div className="space-y-2">
+        <div className={isInline ? "space-y-3" : "space-y-2.5 rounded-xl border bg-muted/10 p-4"}>
+          <div className="space-y-1">
             <Label htmlFor="invoiceNumber">
               Invoice number <span className="text-destructive">*</span>
             </Label>
@@ -260,15 +255,10 @@ export function AccountingEntryForm({
               placeholder="INV-2026-0001"
               required
             />
-            {matchedInvoiceByNumber ? (
-              <p className="text-xs text-muted-foreground">
-                Matched invoice — sender and receiver filled automatically.
-              </p>
-            ) : null}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1">
               <Label htmlFor="invoiceTotal">
                 Total <span className="text-destructive">*</span>
               </Label>
@@ -284,7 +274,7 @@ export function AccountingEntryForm({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="amountPaid">
                 Amount paid <span className="text-destructive">*</span>
               </Label>
@@ -308,7 +298,7 @@ export function AccountingEntryForm({
             </p>
           ) : null}
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="paymentMethod">
               Payment type <span className="text-destructive">*</span>
             </Label>
@@ -323,8 +313,8 @@ export function AccountingEntryForm({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1">
               <Label htmlFor="senderName">Sender name</Label>
               <Input
                 id="senderName"
@@ -334,7 +324,7 @@ export function AccountingEntryForm({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="receiverName">Receiver name</Label>
               <Input
                 id="receiverName"
@@ -345,7 +335,7 @@ export function AccountingEntryForm({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="referenceNumber">Reference number</Label>
             <Input
               id="referenceNumber"
@@ -358,8 +348,8 @@ export function AccountingEntryForm({
       ) : null}
 
       {isExistingInvoicePayment ? (
-        <div className={isInline ? "space-y-3" : "space-y-4 rounded-xl border bg-muted/10 p-4"}>
-          <div className="space-y-2">
+        <div className={isInline ? "space-y-3" : "space-y-2.5 rounded-xl border bg-muted/10 p-4"}>
+          <div className="space-y-1">
             <Label htmlFor="invoiceIdExisting">
               Invoice <span className="text-destructive">*</span>
             </Label>
@@ -397,7 +387,7 @@ export function AccountingEntryForm({
             </div>
           ) : null}
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="receiptNumber">
               Receipt number <span className="text-destructive">*</span>
             </Label>
@@ -410,8 +400,8 @@ export function AccountingEntryForm({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1">
               <Label htmlFor="amountPaidExisting">
                 Amount paid <span className="text-destructive">*</span>
               </Label>
@@ -427,7 +417,7 @@ export function AccountingEntryForm({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="paymentMethodExisting">
                 Payment method <span className="text-destructive">*</span>
               </Label>
@@ -446,8 +436,8 @@ export function AccountingEntryForm({
       ) : null}
 
       {isInvoiceDiscount ? (
-        <div className={isInline ? "space-y-3" : "space-y-4 rounded-xl border bg-muted/10 p-4"}>
-          <div className="space-y-2">
+        <div className={isInline ? "space-y-3" : "space-y-2.5 rounded-xl border bg-muted/10 p-4"}>
+          <div className="space-y-1">
             <Label htmlFor="invoiceIdDiscount">
               Invoice <span className="text-destructive">*</span>
             </Label>
@@ -485,7 +475,7 @@ export function AccountingEntryForm({
             </div>
           ) : null}
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="receiptNumberDiscount">
               Receipt number <span className="text-destructive">*</span>
             </Label>
@@ -498,8 +488,8 @@ export function AccountingEntryForm({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1">
               <Label htmlFor="discountAmount">
                 Discount <span className="text-destructive">*</span>
               </Label>
@@ -515,7 +505,7 @@ export function AccountingEntryForm({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="paymentMethodDiscount">
                 Payment method <span className="text-destructive">*</span>
               </Label>
@@ -534,8 +524,8 @@ export function AccountingEntryForm({
       ) : null}
 
       {isCategoryEntry ? (
-        <div className={isInline ? "space-y-3" : "space-y-4 rounded-xl border bg-muted/10 p-4"}>
-          <div className="space-y-2">
+        <div className={isInline ? "space-y-3" : "space-y-2.5 rounded-xl border bg-muted/10 p-4"}>
+          <div className="space-y-1">
             <Label htmlFor="category">
               {values.type === "income" ? "Income" : "Expense"} category{" "}
               <span className="text-destructive">*</span>
@@ -551,7 +541,7 @@ export function AccountingEntryForm({
           </div>
 
           {values.category === "Other" ? (
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="otherCategory">
                 Other category description <span className="text-destructive">*</span>
               </Label>
@@ -565,8 +555,8 @@ export function AccountingEntryForm({
             </div>
           ) : null}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1">
               <Label htmlFor="paymentMethodCategory">
                 Payment method <span className="text-destructive">*</span>
               </Label>
@@ -581,7 +571,7 @@ export function AccountingEntryForm({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="amountPaidCategory">
                 Amount paid <span className="text-destructive">*</span>
               </Label>
@@ -598,7 +588,7 @@ export function AccountingEntryForm({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="descriptionCategory">
               Description <span className="text-destructive">*</span>
             </Label>
@@ -611,8 +601,8 @@ export function AccountingEntryForm({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1">
               <Label htmlFor="dateCategory">
                 Date <span className="text-destructive">*</span>
               </Label>
@@ -625,7 +615,7 @@ export function AccountingEntryForm({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="branchCategory">
                 Branch <span className="text-destructive">*</span>
               </Label>
@@ -639,7 +629,7 @@ export function AccountingEntryForm({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="referenceNumberCategory">Reference number</Label>
             <Input
               id="referenceNumberCategory"
@@ -652,7 +642,7 @@ export function AccountingEntryForm({
       ) : null}
 
       {!isInline && routeAssignments.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Label htmlFor="routeAssignmentId">
             Route assignment <span className="text-destructive">*</span>
           </Label>
@@ -674,14 +664,15 @@ export function AccountingEntryForm({
         </div>
       ) : null}
 
-      <div className={`flex gap-2 ${isInline ? "justify-start pt-1" : "justify-end pt-2"}`}>
-        {!isInline && onCancel ? (
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        ) : null}
-        <Button type="submit">{submitLabel}</Button>
       </div>
+
+      {isInline ? (
+        <div className="flex justify-start gap-2 pt-1">
+          <Button type="submit">{submitLabel}</Button>
+        </div>
+      ) : (
+        <FormFooter error={externalError} submitLabel={submitLabel} onCancel={onCancel} />
+      )}
     </form>
   );
 }

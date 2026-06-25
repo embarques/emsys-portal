@@ -26,7 +26,11 @@ import {
   type EmployeeListParams,
 } from "@/lib/employees/types";
 import { normalizeApiUser } from "@/lib/users/api/users-api";
-import { buildApiPhonesPayload, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
+import {
+  buildApiPhonesPayload,
+  normalizeRecordPhonesFromApi,
+  validateRecordPhones,
+} from "@/lib/phones/phones";
 import type { RecordPhone } from "@/lib/phones/types";
 
 function buildEmployeeChipFilters(params: EmployeeListParams): ApiSearchFilter[] {
@@ -234,6 +238,7 @@ function buildEmployeeWritePayload(
   const department = values.department.trim();
   const title = values.title.trim();
   const email = values.email.trim();
+  validateRecordPhones(values.phones, { required: false });
   const phones = buildApiPhonesPayload(values.phones);
 
   if (!name) throw new Error("Employee name is required.");

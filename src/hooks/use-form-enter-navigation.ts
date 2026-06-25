@@ -1,0 +1,96 @@
+import * as React from "react";
+
+const FIELD_SELECTOR = [
+  "input:not([type='hidden'])",
+  "select",
+  "textarea",
+  "[role='combobox']",
+].join(",");
+
+function isVisible(element: HTMLElement) {
+  return Boolean(
+    element.offsetWidth ||
+      element.offsetHeight ||
+      element.getClientRects().length,
+  );
+}
+
+function isNavigableField(element: HTMLElement) {
+  if ((element as HTMLInputElement).disabled) return false;
+  if ((element as HTMLInputElement).readOnly) return false;
+  if (element.getAttribute("aria-hidden") === "true") return false;
+
+  const tabIndex = element.getAttribute("tabindex");
+  if (tabIndex !== null && Number(tabIndex) < 0) return false;
+
+  return isVisible(element);
+}
+
+export type FormEnterNavigationOptions = {
+  /**
+   * Submit the form when Enter is pressed on the last field. When the form has
+   * native `required` constraints, the browser focuses the first invalid field
+   * instead of submitting. Defaults to `true`.
+   */
+  submitOnLast?: boolean;
+};
+
+/**
+ * Returns a form `onKeyDown` handler that turns Enter into "advance to next
+ * field" navigation (like Tab) and submits the form once the last field is
+ * reached. Textareas keep their newline behavior, and open comboboxes keep
+ * their own Enter-to-select behavior.
+ */
+export function useFormEnterNavigation(options: FormEnterNavigationOptions = {}) {
+  const { submitOnLast = true } = options;
+
+  return React.useCallback(
+    (event: React.KeyboardEvent<HTMLFormElement>) => {
+      if (event.key !== "Enter") return;
+      if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.defaultPrevented || event.nativeEvent.isComposing) return;
+
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      const tagName = target.tagName;
+
+      // Let textareas and rich-text fields insert newlines.
+      if (tagName === "TEXTAREA" || target.isContentEditable) return;
+
+      // Let buttons and links keep their native Enter behavior.
+      if (tagName === "BUTTON" || tagName === "A") return;
+      const inputType = (target as HTMLInputElement).type;
+      if (inputType === "submit" || inputType === "button") return;
+
+      // Let open comboboxes/menus handle Enter (e.g. confirming an option).
+      if (target.getAttribute("aria-expanded") === "true") return;
+
+      const form = event.currentTarget;
+      const fields = Array.from(
+        form.querySelectorAll<HTMLElement>(FIELD_SELECTOR),
+      ).filter(isNavigableField);
+
+      const currentIndex = fields.indexOf(target);
+      if (currentIndex === -1) return;
+
+      const nextField = fields[currentIndex + 1];
+
+      if (nextField) {
+        event.preventDefault();
+        nextField.focus();
+        return;
+      }
+
+      if (submitOnLast) {
+        event.preventDefault();
+        if (typeof form.requestSubmit === "function") {
+          form.requestSubmit();
+        } else {
+          form.submit();
+        }
+      }
+    },
+    [submitOnLast],
+  );
+}

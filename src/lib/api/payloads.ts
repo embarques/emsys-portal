@@ -3,6 +3,18 @@
  * Canonical examples: API_PAYLOADS.md
  */
 
+/** GeoJSON Point — coordinates use GeoJSON order: [longitude, latitude]. */
+export type ApiGeoLocationPayload = {
+  type: "Point";
+  coordinates: [number, number];
+};
+
+/** Google verification metadata (snake_case per EMSYS API). */
+export type ApiAddressVerificationPayload = {
+  is_verified: boolean;
+  verified_at?: string;
+};
+
 export type ApiAddressPayload = {
   address1?: string;
   address2?: string;
@@ -11,6 +23,8 @@ export type ApiAddressPayload = {
   state?: string;
   zipcode?: string;
   country?: string;
+  location?: ApiGeoLocationPayload;
+  verification?: ApiAddressVerificationPayload;
 };
 
 /** Branch reference for employees and pickups (`id` + `code`). */
@@ -50,6 +64,16 @@ export type ApiBranchSettingsPayload = {
   s3ShareLinkExpireMinutes?: number;
 };
 
+export type AddressLocationInput = {
+  type: "Point";
+  coordinates: [number, number];
+} | null;
+
+export type AddressVerificationInput = {
+  isVerified: boolean;
+  verifiedAt?: string;
+} | null;
+
 export type AddressInput = {
   address1?: string;
   address2?: string;
@@ -58,11 +82,43 @@ export type AddressInput = {
   state?: string;
   zipcode?: string;
   country?: string;
+  location?: AddressLocationInput;
+  verification?: AddressVerificationInput;
 };
+
+export function buildApiGeoLocationPayload(
+  location: AddressLocationInput,
+): ApiGeoLocationPayload | undefined {
+  if (!location || location.type !== "Point") return undefined;
+  const [longitude, latitude] = location.coordinates;
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return undefined;
+  return { type: "Point", coordinates: [longitude, latitude] };
+}
+
+export function buildApiAddressVerificationPayload(
+  verification: AddressVerificationInput,
+): ApiAddressVerificationPayload | undefined {
+  if (!verification) return undefined;
+  const payload: ApiAddressVerificationPayload = { is_verified: verification.isVerified };
+  const verifiedAt = verification.verifiedAt?.trim();
+  if (verifiedAt) {
+    payload.verified_at = verifiedAt;
+  }
+  return payload;
+}
+
+type ApiAddressStringField =
+  | "address1"
+  | "address2"
+  | "apartment"
+  | "city"
+  | "state"
+  | "zipcode"
+  | "country";
 
 export function buildApiAddressPayload(address: AddressInput): ApiAddressPayload | undefined {
   const payload: ApiAddressPayload = {};
-  const entries: [keyof ApiAddressPayload, string | undefined][] = [
+  const entries: [ApiAddressStringField, string | undefined][] = [
     ["address1", address.address1?.trim()],
     ["address2", address.address2?.trim()],
     ["apartment", address.apartment?.trim()],
@@ -76,6 +132,16 @@ export function buildApiAddressPayload(address: AddressInput): ApiAddressPayload
     if (value) {
       payload[key] = value;
     }
+  }
+
+  const location = buildApiGeoLocationPayload(address.location ?? null);
+  if (location) {
+    payload.location = location;
+  }
+
+  const verification = buildApiAddressVerificationPayload(address.verification ?? null);
+  if (verification) {
+    payload.verification = verification;
   }
 
   return Object.keys(payload).length > 0 ? payload : undefined;

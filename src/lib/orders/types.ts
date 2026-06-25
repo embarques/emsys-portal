@@ -1,6 +1,7 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import type { Customer, CustomerAddress, CustomerPhone } from "@/lib/customers/types";
+import { REQUIRED_PHONE_DIGITS, isCompletePhoneNumber } from "@/lib/phones/phones";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 import { createRecordId } from "@/lib/customers/types";
 import type { Employee } from "@/lib/employees/types";
@@ -44,9 +45,62 @@ export type Order = {
   routeAssignmentId?: string;
 };
 
+export const ORDER_COMMENT_PURPOSES = [
+  { value: "PAYMENT", label: "Payment" },
+  { value: "ESTIMATE", label: "Estimate" },
+  { value: "TAKE", label: "Take" },
+  { value: "PICKUP", label: "Pickup" },
+  { value: "OTHER", label: "Other" },
+] as const;
+
+export type OrderCommentPurpose = (typeof ORDER_COMMENT_PURPOSES)[number]["value"];
+
+export const ORDER_COMMENT_ITEM_TYPES = [
+  { value: "box", label: "Box" },
+  { value: "barrel", label: "Barrel" },
+  { value: "tape", label: "Tape" },
+  { value: "other", label: "Other" },
+] as const;
+
+export type OrderCommentItemType = (typeof ORDER_COMMENT_ITEM_TYPES)[number]["value"];
+
+const ITEM_PURPOSES = new Set<string>(["TAKE", "PICKUP"]);
+const KNOWN_ITEM_VALUES = new Set<string>(["box", "barrel", "tape"]);
+
+/** Map any stored/legacy comment purpose keyword onto a canonical dropdown value. */
+const COMMENT_PURPOSE_BY_KEYWORD: Record<string, OrderCommentPurpose> = {
+  PAYMENT: "PAYMENT",
+  ESTIMATE: "ESTIMATE",
+  TAKE: "TAKE",
+  PICKUP: "PICKUP",
+  OTHER: "OTHER",
+  COMMENT: "OTHER",
+};
+
+/** TAKE and PICKUP describe a physical item; other purposes only carry free-text comments. */
+export function orderCommentPurposeRequiresItem(purpose: string): boolean {
+  return ITEM_PURPOSES.has(purpose.trim().toUpperCase());
+}
+
+/** Normalize an incoming comment purpose (e.g. legacy lowercase "comment") to a dropdown value. */
+export function normalizeOrderCommentPurpose(purpose: string): OrderCommentPurpose | "" {
+  const keyword = purpose.trim().toUpperCase();
+  if (!keyword) return "";
+  return COMMENT_PURPOSE_BY_KEYWORD[keyword] ?? "OTHER";
+}
+
+/** Wire value for a comment purpose: the backend stores free-text comments as lowercase "comment". */
+export function toApiCommentPurpose(purpose: string): string {
+  const keyword = purpose.trim().toUpperCase();
+  if (!keyword) return "";
+  if (keyword === "OTHER" || keyword === "COMMENT") return "comment";
+  return keyword.toLowerCase();
+}
+
 export type OrderCommentFormValues = {
   purpose: string;
-  unit: string;
+  itemType: OrderCommentItemType | "";
+  customItem: string;
   quantity: string;
   description: string;
 };
@@ -111,7 +165,7 @@ export const DEFAULT_ORDER_LIST_SORT = "date:desc" as const;
 
 export const DEFAULT_ORDER_LIST_PARAMS = {
   page: 1,
-  limit: 40,
+  limit: 50,
   sort: DEFAULT_ORDER_LIST_SORT,
 } as const satisfies Pick<OrderListParams, "page" | "limit" | "sort">;
 
@@ -165,10 +219,12 @@ export function buildOrderListParams(input: {
   limit?: number;
   query: string;
   rows: TableFilterRowState[];
+  sort?: ApiListSortInput;
 }): OrderListParams {
   const params: OrderListParams = {
     page: input.page,
     limit: input.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort,
   };
 
   const search = createOrderSearchFilter(input.query);
@@ -189,10 +245,44 @@ export function buildOrderListParams(input: {
 export function createEmptyOrderComment(): OrderCommentFormValues {
   return {
     purpose: "",
-    unit: "",
-    quantity: "0",
+    itemType: "",
+    customItem: "",
+    quantity: "",
     description: "",
   };
+}
+
+/** Resolve the unit string sent to the API from the comment's item selection. */
+export function resolveOrderCommentUnit(comment: OrderCommentFormValues): string {
+  if (!orderCommentPurposeRequiresItem(comment.purpose)) return "";
+  if (comment.itemType === "other") return comment.customItem.trim();
+  return comment.itemType;
+}
+
+/** "OTHER" comments are stored as the legacy "COMMENT" purpose keyword. */
+function orderCommentPurposeKeyword(purpose: string): string {
+  const keyword = purpose.trim().toUpperCase();
+  if (!keyword) return "";
+  return keyword === "OTHER" ? "COMMENT" : keyword;
+}
+
+/**
+ * Build the order-level purpose string from its comments.
+ * Each unique comment purpose contributes a keyword in first-seen order,
+ * e.g. take 1 box + pickup 3 barrels => "TAKE, PICKUP".
+ */
+export function deriveOrderPurpose(comments: OrderCommentFormValues[]): string {
+  const keywords: string[] = [];
+  const seen = new Set<string>();
+
+  for (const comment of comments) {
+    const keyword = orderCommentPurposeKeyword(comment.purpose);
+    if (!keyword || seen.has(keyword)) continue;
+    seen.add(keyword);
+    keywords.push(keyword);
+  }
+
+  return keywords.join(", ");
 }
 
 export function todayDateInputValue(): string {
@@ -229,10 +319,26 @@ export function resetOrderFormForNextEntry(previous: OrderFormValues): OrderForm
 }
 
 export function orderCommentToFormValues(comment: PickupComment): OrderCommentFormValues {
+  const unit = comment.unit.trim();
+  const requiresItem = orderCommentPurposeRequiresItem(comment.purpose);
+
+  let itemType: OrderCommentItemType | "" = "";
+  let customItem = "";
+
+  if (requiresItem && unit) {
+    if (KNOWN_ITEM_VALUES.has(unit.toLowerCase())) {
+      itemType = unit.toLowerCase() as OrderCommentItemType;
+    } else {
+      itemType = "other";
+      customItem = unit;
+    }
+  }
+
   return {
-    purpose: comment.purpose,
-    unit: comment.unit,
-    quantity: String(comment.quantity),
+    purpose: normalizeOrderCommentPurpose(comment.purpose),
+    itemType,
+    customItem,
+    quantity: comment.quantity > 0 ? String(comment.quantity) : "",
     description: comment.description,
   };
 }
@@ -252,23 +358,6 @@ export function orderToFormValues(order: Order): OrderFormValues {
     sectorId: order.sector?.id ?? "",
     comments: order.comments.map(orderCommentToFormValues),
   };
-}
-
-export function ordersShareSender(
-  a: Pick<Customer, "id" | "name">,
-  b: Pick<Customer, "id" | "name">,
-): boolean {
-  if (a.id && b.id && a.id === b.id) return true;
-  return a.name.trim().toLowerCase() === b.name.trim().toLowerCase();
-}
-
-export function getSenderOrderHistory(
-  orders: Order[],
-  sender: Pick<Customer, "id" | "name">,
-): Order[] {
-  return orders
-    .filter((order) => ordersShareSender(order.sender, sender))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 // --- Legacy party types used by invoices ---
@@ -381,6 +470,10 @@ export function normalizeOrderParty(values: OrderPartyFormValues, label: string)
 
   if (phones.length === 0) {
     throw new Error(`${label} must have at least one phone number.`);
+  }
+
+  if (phones.some((phone) => !isCompletePhoneNumber(phone.number))) {
+    throw new Error(`${label} phone numbers must have ${REQUIRED_PHONE_DIGITS} digits.`);
   }
 
   if (addresses.length === 0) {

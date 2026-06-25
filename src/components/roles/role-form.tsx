@@ -1,11 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Shield } from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { RolePermissionsEditor } from "@/components/roles/role-permissions-editor";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { roleFormSchema } from "@/lib/roles/schemas/role.schema";
@@ -44,27 +46,30 @@ export function RoleForm({
     resolver: zodResolver(roleFormSchema),
     defaultValues: initialValues ?? createEmptyRoleForm(),
   });
+  const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     reset(initialValues ?? createEmptyRoleForm());
   }, [initialValues, reset]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
-        <div className="space-y-2">
-          <Label htmlFor="name">
-            Role name <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="name"
-            {...register("name")}
-            placeholder="Operations Manager"
-            aria-invalid={Boolean(errors.name)}
-            autoFocus
-          />
-          {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-        </div>
+    <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <FormBody>
+        <FormSection icon={Shield} title="Role">
+          <div className="space-y-1">
+            <Label htmlFor="name">
+              Role name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="name"
+              {...register("name")}
+              placeholder="Operations Manager"
+              aria-invalid={Boolean(errors.name)}
+              autoFocus
+            />
+            {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
+          </div>
+        </FormSection>
 
         <Controller
           control={control}
@@ -81,15 +86,14 @@ export function RoleForm({
         {errors.permissions?.message ? (
           <p className="text-sm text-destructive">{errors.permissions.message}</p>
         ) : null}
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      </div>
+      </FormBody>
 
-      <div className="flex shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>{submitLabel}</Button>
-      </div>
+      <FormFooter
+        error={error}
+        submitLabel={submitLabel}
+        isSubmitting={isSubmitting}
+        onCancel={onCancel}
+      />
     </form>
   );
 }

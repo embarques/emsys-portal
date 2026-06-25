@@ -12,5 +12,9 @@ export type DataTableColumn<T> = ColumnVisibilityDefinition & {
   /** When false, cell content is not wrapped in a truncating div (use for badges/pills). */
   truncateCell?: boolean;
   stopRowClick?: boolean;
+  /** When false, the column header is not clickable for sorting. Defaults to true. */
+  sortable?: boolean;
+  /** API sort field for this column (e.g. `phones.number`). Defaults to the column `id`. */
+  sortField?: string;
   renderCell: (row: T) => React.ReactNode;
 };

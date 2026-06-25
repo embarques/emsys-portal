@@ -15,13 +15,12 @@ import { CustomerForm } from "@/components/customers/customer-form";
 import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -46,11 +45,8 @@ import { formatPrimaryPhonesDisplayOrDash } from "@/lib/phones/phones";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   formatAccountBalance,
-  formatCustomerBranchLabel,
   getClientTypeBadgeClass,
-  getCustomerBranchBadgeClass,
   getCustomerTypeLabel,
-  truncateCustomerId,
 } from "@/lib/customers/display";
 import {
   useCreateCustomer,
@@ -77,6 +73,7 @@ import {
   type CustomerFormValues,
 } from "@/lib/customers/types";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const PAGE_SIZE = DEFAULT_CUSTOMER_LIST_PARAMS.limit;
@@ -112,6 +109,7 @@ export function CustomersWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_CUSTOMER_LIST_PARAMS.sort, () => setPage(1));
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -136,8 +134,9 @@ export function CustomersWorkspace() {
         limit: PAGE_SIZE,
         query: debouncedQuery,
         rows: filters.rows,
+        sort,
       }),
-    [debouncedQuery, filters.rows, page],
+    [debouncedQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching, isPending } = useCustomers(listParams);
@@ -294,6 +293,20 @@ export function CustomersWorkspace() {
 
   const tableColumns: DataTableColumn<Customer>[] = [
     {
+      id: "customerType",
+      label: "customerType",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
+      renderCell: (customer) => {
+        const clientType = getCustomerClientType(customer) ?? "sender";
+        return (
+          <TableTagText className={getClientTypeBadgeClass(clientType)}>
+            {getCustomerTypeLabel(customer)}
+          </TableTagText>
+        );
+      },
+    },
+    {
       id: "name",
       label: "name",
       cellClassName: "font-medium",
@@ -302,21 +315,8 @@ export function CustomersWorkspace() {
     {
       id: "phone",
       label: "Phone",
+      sortField: "phones.number",
       renderCell: (customer) => formatPrimaryPhonesDisplayOrDash(customer.phones),
-    },
-    {
-      id: "customerType",
-      label: "customerType",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (customer) => {
-        const clientType = getCustomerClientType(customer) ?? "sender";
-        return (
-          <UniformWidthPill columnKey="customerType">
-            <Badge className={getClientTypeBadgeClass(clientType)}>{getCustomerTypeLabel(customer)}</Badge>
-          </UniformWidthPill>
-        );
-      },
     },
     {
       id: "IDNumber",
@@ -324,14 +324,13 @@ export function CustomersWorkspace() {
       renderCell: (customer) => customer.IDNumber || "—",
     },
     {
-      id: "address.address1",
-      label: "address.address1",
-      renderCell: (customer) => customer.address.address1 || "—",
-    },
-    {
-      id: "address.address2",
-      label: "address.address2",
-      renderCell: (customer) => customer.address.address2 || "—",
+      id: "address",
+      label: "address",
+      sortField: "address.address1",
+      renderCell: (customer) =>
+        [customer.address.address1, customer.address.apartment, customer.address.address2]
+          .filter((value) => value.trim())
+          .join(", ") || "—",
     },
     {
       id: "address.city",
@@ -347,22 +346,6 @@ export function CustomersWorkspace() {
       id: "address.zipcode",
       label: "address.zipcode",
       renderCell: (customer) => customer.address.zipcode || "—",
-    },
-    {
-      id: "address.country",
-      label: "address.country",
-      renderCell: (customer) => customer.address.country || "—",
-    },
-    {
-      id: "branch",
-      label: "branch",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (customer) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getCustomerBranchBadgeClass(customer)}>{formatCustomerBranchLabel(customer)}</Badge>
-        </UniformWidthPill>
-      ),
     },
     {
       id: "email",
@@ -397,12 +380,6 @@ export function CustomersWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (customer) => (customer.updatedAt ? formatAuditDate(customer.updatedAt) : "—"),
     },
-    {
-      id: "id",
-      label: "Customer ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (customer) => truncateCustomerId(customer.id),
-    },
   ];
 
   const isListFiltered =
@@ -431,7 +408,7 @@ export function CustomersWorkspace() {
     catalogLoading: stats.isLoading,
   });
 
-  const columnVisibility = useColumnVisibility("customers-v2", tableColumns);
+  const columnVisibility = useColumnVisibility("customers-v3", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
@@ -470,7 +447,7 @@ export function CustomersWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -541,7 +518,7 @@ export function CustomersWorkspace() {
             icon={Users}
             title="Loading customers"
             description="Gathering profiles, contact details, and account balances…"
-            columns={["Customer", "Type", "Phone", "Branch", "Balance"]}
+            columns={["Type", "Customer", "Phone", "Address", "Balance"]}
           />
         ) : (
           <DataTable
@@ -553,6 +530,8 @@ export function CustomersWorkspace() {
             rowLabel={(customer) => customer.name}
             columnLayout={columnVisibility}
             minWidth={1680}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}
@@ -628,8 +607,8 @@ export function CustomersWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
             <DialogTitle>{formMode === "edit" ? "Edit customer" : "Add customer"}</DialogTitle>
           </DialogHeader>
           <CustomerForm

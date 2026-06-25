@@ -57,7 +57,7 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 50;
 
 const defaultFilters: RouteAssignmentFilterState = {
   query: "",
@@ -162,9 +162,9 @@ export function RouteAssignmentsWorkspace() {
       icon: ClipboardList,
     },
     {
-      label: "Trucks assigned",
+      label: "Vehicles assigned",
       value: kpis.uniqueTrucks.toString(),
-      description: "Distinct trucks in use",
+      description: "Distinct vehicles in use",
       icon: Truck,
     },
     {
@@ -206,18 +206,18 @@ export function RouteAssignmentsWorkspace() {
     },
     {
       id: "truck.id",
-      label: "truck.id",
+      label: "vehicle.id",
       cellClassName: "font-mono text-xs",
       renderCell: (assignment) => assignment.truck.id || "—",
     },
     {
       id: "truck.name",
-      label: "truck.name",
+      label: "vehicle.name",
       renderCell: (assignment) => assignment.truck.name || "—",
     },
     {
       id: "truck",
-      label: "truck",
+      label: "vehicle",
       renderCell: (assignment) => getTruckRefLabel(assignment.truck),
     },
     {
@@ -296,7 +296,7 @@ export function RouteAssignmentsWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             showFilterToggle={false}
@@ -335,6 +335,7 @@ export function RouteAssignmentsWorkspace() {
           rowKey={(assignment) => assignment.id}
           rowLabel={(assignment) => assignment.name}
           columnLayout={columnVisibility}
+          sortUnavailable
           minWidth={1500}
           selectable
           selectedIds={selectedIds}
@@ -398,8 +399,8 @@ export function RouteAssignmentsWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit route assignment" : "Add route assignment"}</DialogTitle>
           </DialogHeader>
           <RouteAssignmentForm

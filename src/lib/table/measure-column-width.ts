@@ -116,13 +116,19 @@ function measureBodyCell(cell: HTMLTableCellElement): number {
   return getHorizontalPadding(cell) + measureTextWidth(text, content);
 }
 
+/** Reserve room for the sort chevron (size-3.5) and its gap so the full header label always fits. */
+const HEADER_SORT_ICON_WIDTH = 14;
+const HEADER_LABEL_ICON_GAP = 2;
+
 function measureHeaderCell(cell: HTMLTableCellElement): number {
   const padding = getHorizontalPadding(cell);
   const label = cell.querySelector("span");
   const labelWidth = label ? measureTextWidth(label.textContent ?? "", label) : 0;
   const resizeHandleWidth = 8;
 
-  return padding + labelWidth + resizeHandleWidth + 4;
+  return (
+    padding + labelWidth + HEADER_LABEL_ICON_GAP + HEADER_SORT_ICON_WIDTH + resizeHandleWidth + 2
+  );
 }
 
 /** Measures the minimum width needed to fit header + row content without truncation. */

@@ -229,10 +229,9 @@ export function AccountingWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>Edit entry</DialogTitle>
-            <DialogDescription>Update this accounting entry.</DialogDescription>
           </DialogHeader>
           {editingEntry ? (
             <AccountingEntryForm
@@ -243,6 +242,7 @@ export function AccountingWorkspace() {
               isEditing
               updatedAt={editingEntry.updatedAt}
               submitLabel="Save changes"
+              externalError={formError}
               onSubmit={saveEditedEntry}
               onFormErrorChange={setFormError}
               onCancel={() => {
@@ -252,7 +252,6 @@ export function AccountingWorkspace() {
               }}
             />
           ) : null}
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

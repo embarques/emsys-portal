@@ -65,7 +65,7 @@ export const navigation: NavigationGroup[] = [
         icon: ClipboardList,
         permission: PERMISSIONS.dispatchView,
       },
-      { label: "Trucks", href: "/trucks", icon: Truck, permission: PERMISSIONS.trucksView },
+      { label: "Vehicles", href: "/vehicles", icon: Truck, permission: PERMISSIONS.vehiclesView },
       {
         label: "Deliveries",
         href: "/deliveries",

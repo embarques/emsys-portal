@@ -16,7 +16,7 @@ import {
 import { RoleForm } from "@/components/roles/role-form";
 import { RoleViewSheet } from "@/components/roles/role-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -25,7 +25,6 @@ import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -53,6 +52,7 @@ import {
 } from "@/components/ui/sheet";
 import { formatAuditDate } from "@/lib/audit/display";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
   computeRoleKpis,
@@ -76,7 +76,7 @@ import {
   type RoleFormValues,
 } from "@/lib/roles/types";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 50;
 
 const defaultFilters: RoleFilterState = {
   query: "",
@@ -87,13 +87,14 @@ export function RolesWorkspace() {
   const [filters, setFilters] = useState<RoleFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort("name:asc", () => setPage(1));
   const [viewRole, setViewRole] = useState<Role | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Role | Role[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const rolesQuery = useRoles();
+  const rolesQuery = useRoles(sort);
   const permissionCatalogQuery = useRolePermissionCatalog();
   const createRoleMutation = useCreateRole();
   const updateRoleMutation = useUpdateRole();
@@ -247,6 +248,7 @@ export function RolesWorkspace() {
     {
       id: "roleId",
       label: "Role ID",
+      sortField: "id",
       cellClassName: "font-mono text-xs",
       renderCell: (role) => truncateRoleId(role.roleId),
     },
@@ -263,9 +265,7 @@ export function RolesWorkspace() {
       cellClassName: "overflow-visible",
       renderCell: (role) => (
         <div className="space-y-1">
-          <UniformWidthPill columnKey="permissions">
-            <Badge variant="secondary">{role.permissions.length} permissions</Badge>
-          </UniformWidthPill>
+          <TableTagText>{role.permissions.length} permissions</TableTagText>
           <p className="max-w-[320px] truncate text-xs text-muted-foreground">
             {formatPermissionsSummary(role, 4)}
           </p>
@@ -295,6 +295,7 @@ export function RolesWorkspace() {
       id: "actions",
       label: "Action",
       hideable: false,
+      sortable: false,
       truncateCell: false,
       stopRowClick: true,
       headerClassName: "text-right",
@@ -390,7 +391,7 @@ export function RolesWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             showFilterToggle={false}
@@ -444,6 +445,8 @@ export function RolesWorkspace() {
             rowLabel={(role) => role.name}
             columnLayout={columnVisibility}
             minWidth={1100}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}

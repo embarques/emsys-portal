@@ -2,9 +2,9 @@ import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 
-export type TruckPortalBranch = "usa" | "dr";
+export type VehiclePortalBranch = "usa" | "dr";
 
-export type Truck = {
+export type Vehicle = {
   id: string;
   truckId: string;
   name: string;
@@ -12,12 +12,14 @@ export type Truck = {
   year: number;
   fuelType: string;
   branch: string;
+  inspectionDate: string;
+  registrationDate: string;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
 };
 
-export type TruckFormValues = {
+export type VehicleFormValues = {
   id: string;
   truckId: string;
   name: string;
@@ -25,20 +27,22 @@ export type TruckFormValues = {
   year: string;
   fuelType: string;
   branch: string;
+  inspectionDate: string;
+  registrationDate: string;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
 };
 
-export type TruckFilterState = {
+export type VehicleFilterState = {
   query: string;
   rows: TableFilterRowState[];
 };
 
 /** Matches GET /trucks filter operators from the API spec. */
-export type TruckSearchOperator = "eq" | "neq" | "contains" | "startsWith";
+export type VehicleSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 
-export type TruckSearchField =
+export type VehicleSearchField =
   | "id"
   | "truckId"
   | "name"
@@ -48,28 +52,28 @@ export type TruckSearchField =
   | "branch"
   | "createdBy";
 
-export type TruckSearchFilter = ApiListTextSearch;
+export type VehicleSearchFilter = ApiListTextSearch;
 
-export type TruckListParams = {
+export type VehicleListParams = {
   page?: number;
   limit?: number;
   offset?: number;
   sort?: ApiListSortInput;
-  search?: TruckSearchFilter;
+  search?: VehicleSearchFilter;
   filterRows?: TableFilterRowState[];
 };
 
-/** GET /trucks?page=1&limit=40&offset=0&sort=name:asc */
-export const DEFAULT_TRUCK_LIST_PARAMS = {
+/** GET /trucks?page=1&limit=50&offset=0&sort=name:asc */
+export const DEFAULT_VEHICLE_LIST_PARAMS = {
   page: 1,
-  limit: 40,
+  limit: 50,
   sort: "name:asc",
-} as const satisfies Pick<TruckListParams, "page" | "limit" | "sort">;
+} as const satisfies Pick<VehicleListParams, "page" | "limit" | "sort">;
 
-export const TRUCK_GET_SEARCH_CAPABILITIES: {
-  field: TruckSearchField;
+export const VEHICLE_GET_SEARCH_CAPABILITIES: {
+  field: VehicleSearchField;
   label: string;
-  operators: TruckSearchOperator[];
+  operators: VehicleSearchOperator[];
 }[] = [
   { field: "truckId", label: "truckId", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "name", label: "name", operators: ["startsWith", "contains", "eq", "neq"] },
@@ -78,71 +82,73 @@ export const TRUCK_GET_SEARCH_CAPABILITIES: {
   { field: "branch", label: "branch", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "createdBy", label: "createdBy", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "year", label: "year", operators: ["eq", "neq"] },
-  { field: "id", label: "Truck ID", operators: ["eq", "neq"] },
+  { field: "id", label: "Vehicle ID", operators: ["eq", "neq"] },
 ];
 
-export const TRUCK_SEARCH_FIELDS: { value: TruckSearchField; label: string }[] =
-  TRUCK_GET_SEARCH_CAPABILITIES.map(({ field, label }) => ({ value: field, label }));
+export const VEHICLE_SEARCH_FIELDS: { value: VehicleSearchField; label: string }[] =
+  VEHICLE_GET_SEARCH_CAPABILITIES.map(({ field, label }) => ({ value: field, label }));
 
-export const TRUCK_SEARCH_OPERATORS: { value: TruckSearchOperator; label: string }[] = [
+export const VEHICLE_SEARCH_OPERATORS: { value: VehicleSearchOperator; label: string }[] = [
   { value: "startsWith", label: "Starts with" },
   { value: "contains", label: "Contains" },
   { value: "eq", label: "Equals" },
   { value: "neq", label: "Not equals" },
 ];
 
-export const TRUCK_FUEL_TYPES: { value: string; label: string }[] = [
+export const VEHICLE_FUEL_TYPES: { value: string; label: string }[] = [
   { value: "gas", label: "Gas" },
   { value: "diesel", label: "Diesel" },
 ];
 
-/** @deprecated Use TRUCK_FUEL_TYPES */
-export const FUEL_TYPES = TRUCK_FUEL_TYPES;
+/** @deprecated Use VEHICLE_FUEL_TYPES */
+export const FUEL_TYPES = VEHICLE_FUEL_TYPES;
 
-export const TRUCK_BRANCH_OPTIONS: { value: string; label: string }[] = [
+export const VEHICLE_BRANCH_OPTIONS: { value: string; label: string }[] = [
   { value: "usa", label: "USA" },
   { value: "dr", label: "DR" },
   { value: "NY", label: "NY" },
   { value: "DR", label: "DR (code)" },
 ];
 
-/** @deprecated Use TRUCK_BRANCH_OPTIONS */
-export const TRUCK_BRANCHES: { value: TruckPortalBranch; label: string }[] = [
+/** @deprecated Use VEHICLE_BRANCH_OPTIONS */
+export const VEHICLE_BRANCHES: { value: VehiclePortalBranch; label: string }[] = [
   { value: "usa", label: "USA" },
   { value: "dr", label: "DR" },
 ];
 
-/** @deprecated Use TruckPortalBranch */
-export type TruckBranch = TruckPortalBranch;
+/** @deprecated Use VehiclePortalBranch */
+export type VehicleBranch = VehiclePortalBranch;
 
-/** @deprecated Use TruckPortalBranch */
+/** @deprecated Use VehiclePortalBranch */
 export type FuelType = string;
 
-export function getTruckSearchOperatorsForField(field: TruckSearchField): TruckSearchOperator[] {
-  return TRUCK_GET_SEARCH_CAPABILITIES.find((entry) => entry.field === field)?.operators ?? ["eq"];
+export function getVehicleSearchOperatorsForField(field: VehicleSearchField): VehicleSearchOperator[] {
+  return VEHICLE_GET_SEARCH_CAPABILITIES.find((entry) => entry.field === field)?.operators ?? ["eq"];
 }
 
-export function getDefaultTruckSearchOperator(field: TruckSearchField): TruckSearchOperator {
-  return getTruckSearchOperatorsForField(field)[0];
+export function getDefaultVehicleSearchOperator(field: VehicleSearchField): VehicleSearchOperator {
+  return getVehicleSearchOperatorsForField(field)[0];
 }
 
-export function createTruckSearchFilter(value: string): TruckSearchFilter | undefined {
+export function createVehicleSearchFilter(value: string): VehicleSearchFilter | undefined {
   return createListTextSearch(value);
 }
 
-export function buildTruckListParams(input: {
+export function buildVehicleListParams(input: {
   page: number;
   limit?: number;
   query: string;
   rows: TableFilterRowState[];
-}): TruckListParams {
-  const params: TruckListParams = {
-    ...DEFAULT_TRUCK_LIST_PARAMS,
+  sort?: ApiListSortInput;
+}): VehicleListParams {
+  const params: VehicleListParams = {
+    ...DEFAULT_VEHICLE_LIST_PARAMS,
     page: input.page,
-    limit: input.limit ?? DEFAULT_TRUCK_LIST_PARAMS.limit,
+    limit: input.limit ?? DEFAULT_VEHICLE_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_VEHICLE_LIST_PARAMS.sort,
   };
 
-  const search = createTruckSearchFilter(input.query);
+  const search = createVehicleSearchFilter(input.query);
   if (search) {
     params.search = search;
   }
@@ -155,7 +161,7 @@ export function buildTruckListParams(input: {
   return params;
 }
 
-export function getTruckPortalBranch(branch: string): TruckPortalBranch {
+export function getVehiclePortalBranch(branch: string): VehiclePortalBranch {
   const normalized = branch.trim().toLowerCase();
   if (normalized === "dr" || normalized === "do" || normalized === "dominican republic") {
     return "dr";
@@ -167,7 +173,7 @@ export function createMockObjectId(): string {
   return Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
 }
 
-export function createEmptyTruckForm(): TruckFormValues {
+export function createEmptyVehicleForm(): VehicleFormValues {
   return {
     id: "",
     truckId: "",
@@ -175,35 +181,35 @@ export function createEmptyTruckForm(): TruckFormValues {
     vin: "",
     year: String(new Date().getFullYear()),
     fuelType: "diesel",
-    branch: "usa",
+    branch: "",
+    inspectionDate: "",
+    registrationDate: "",
     createdAt: "",
     createdBy: "",
     updatedAt: "",
   };
 }
 
-export function truckToFormValues(truck: Truck): TruckFormValues {
+export function vehicleToFormValues(vehicle: Vehicle): VehicleFormValues {
   return {
-    id: truck.id,
-    truckId: truck.truckId,
-    name: truck.name,
-    vin: truck.vin,
-    year: truck.year > 0 ? String(truck.year) : "",
-    fuelType: truck.fuelType,
-    branch: truck.branch,
-    createdAt: truck.createdAt,
-    createdBy: truck.createdBy,
-    updatedAt: truck.updatedAt,
+    id: vehicle.id,
+    truckId: vehicle.truckId,
+    name: vehicle.name,
+    vin: vehicle.vin,
+    year: vehicle.year > 0 ? String(vehicle.year) : "",
+    fuelType: vehicle.fuelType,
+    branch: vehicle.branch,
+    inspectionDate: vehicle.inspectionDate,
+    registrationDate: vehicle.registrationDate,
+    createdAt: vehicle.createdAt,
+    createdBy: vehicle.createdBy,
+    updatedAt: vehicle.updatedAt,
   };
 }
 
-export function validateTruckFormValues(values: TruckFormValues): void {
-  if (!values.truckId.trim()) {
-    throw new Error("Truck ID is required.");
-  }
-
+export function validateVehicleFormValues(values: VehicleFormValues): void {
   if (!values.name.trim()) {
-    throw new Error("Truck name is required.");
+    throw new Error("Vehicle name is required.");
   }
 
   if (values.year.trim()) {

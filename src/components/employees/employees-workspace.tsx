@@ -13,14 +13,13 @@ import {
 import { EmployeeForm } from "@/components/employees/employee-form";
 import { EmployeeViewSheet } from "@/components/employees/employee-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
-import { UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -39,6 +38,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { EMPLOYEE_TABLE_FILTER_FIELDS } from "@/lib/employees/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPrimaryPhonesDisplayOrDash } from "@/lib/phones/phones";
@@ -90,6 +90,7 @@ export function EmployeesWorkspace() {
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const { sort, onSortChange } = useTableSort(DEFAULT_EMPLOYEE_LIST_PARAMS.sort, () => setPage(1));
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -103,8 +104,9 @@ export function EmployeesWorkspace() {
         limit: PAGE_SIZE,
         query: debouncedQuery,
         rows: filters.rows,
+        sort,
       }),
-    [debouncedQuery, filters.rows, page],
+    [debouncedQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useEmployees(listParams);
@@ -259,11 +261,9 @@ export function EmployeesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (employee) => (
-        <UniformWidthPill columnKey="active">
-          <Badge className={getEmployeeActiveBadgeClass(employee.active)}>
-            {getEmployeeActiveLabel(employee.active)}
-          </Badge>
-        </UniformWidthPill>
+        <TableTagText className={getEmployeeActiveBadgeClass(employee.active)}>
+          {getEmployeeActiveLabel(employee.active)}
+        </TableTagText>
       ),
     },
     {
@@ -281,14 +281,13 @@ export function EmployeesWorkspace() {
     {
       id: "branch",
       label: "branch",
+      sortField: "branch.name",
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (employee) => (
-        <UniformWidthPill columnKey="branch">
-          <Badge className={getEmployeeBranchBadgeClass(employee)}>
-            {formatEmployeeBranchLabel(employee)}
-          </Badge>
-        </UniformWidthPill>
+        <TableTagText className={getEmployeeBranchBadgeClass(employee)}>
+          {formatEmployeeBranchLabel(employee)}
+        </TableTagText>
       ),
     },
     {
@@ -304,6 +303,7 @@ export function EmployeesWorkspace() {
     {
       id: "phone",
       label: "Phone",
+      sortField: "phones.number",
       renderCell: (employee) => formatPrimaryPhonesDisplayOrDash(employee.phones),
     },
     {
@@ -360,6 +360,7 @@ export function EmployeesWorkspace() {
     {
       id: "user",
       label: "user",
+      sortField: "user.userName",
       renderCell: (employee) => formatEmployeeUserLabel(employee),
     },
     {
@@ -432,7 +433,7 @@ export function EmployeesWorkspace() {
         })}
       </StatCardsGrid>
 
-      <Card className="mt-6">
+      <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -509,6 +510,8 @@ export function EmployeesWorkspace() {
             rowLabel={(employee) => employee.name}
             columnLayout={columnVisibility}
             minWidth={2400}
+            sort={sort}
+            onSortChange={onSortChange}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}
@@ -580,8 +583,8 @@ export function EmployeesWorkspace() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit employee" : "Add employee"}</DialogTitle>
           </DialogHeader>
           <EmployeeForm
@@ -594,13 +597,13 @@ export function EmployeesWorkspace() {
             isEditing={formMode === "edit"}
             submitLabel={formMode === "edit" ? "Save changes" : "Add employee"}
             isSubmitting={isSaving}
+            externalError={formError}
             onSubmit={saveEmployee}
             onCancel={() => {
               setFormMode(null);
               setFormError(null);
             }}
           />
-          {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         </DialogContent>
       </Dialog>
 

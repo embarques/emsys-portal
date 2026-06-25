@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { ListChecks, Pencil, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ type TableSelectionBarProps = {
   onSelectedIdsChange: (ids: string[]) => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  /** Feature-specific bulk actions rendered between Edit and Delete. */
+  actions?: ReactNode;
   canEdit?: boolean;
   canDelete?: boolean;
   deleteDisabled?: boolean;
@@ -24,6 +27,7 @@ export function TableSelectionBar({
   onSelectedIdsChange,
   onEdit,
   onDelete,
+  actions,
   canEdit = true,
   canDelete = true,
   deleteDisabled = false,
@@ -33,6 +37,7 @@ export function TableSelectionBar({
 
   const showEdit = selectedIds.length === 1 && onEdit && canEdit;
   const showDelete = onDelete && canDelete;
+  const showDivider = Boolean(showEdit || showDelete || actions);
   const othersAvailable = canSelectAllOthers(pageRowIds, selectedIds);
 
   return (
@@ -66,7 +71,7 @@ export function TableSelectionBar({
           <ListChecks className="h-4 w-4" />
           Select all others
         </Button>
-        {showEdit || showDelete ? (
+        {showDivider ? (
           <span className="mx-0.5 hidden h-5 w-px bg-border sm:block" aria-hidden />
         ) : null}
         {showEdit ? (
@@ -75,6 +80,7 @@ export function TableSelectionBar({
             Edit
           </Button>
         ) : null}
+        {actions}
         {showDelete ? (
           <Button
             variant="outline"
