@@ -1,5 +1,5 @@
-import { AccountingWorkspace } from "@/components/accounting/accounting-workspace";
+import { redirect } from "next/navigation";
 
 export default function AccountingPage() {
-  return <AccountingWorkspace />;
+  redirect("/accounting/daily-income");
 }

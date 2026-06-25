@@ -10,6 +10,7 @@ node_modules/
 
 # next.js
 .next/
+.next-playwright/
 out/
 
 # production / build
@@ -34,6 +35,9 @@ next-env.d.ts
 
 # testing
 coverage/
+playwright/.auth/
+playwright-report/
+test-results/
 
 # vercel
 .vercel/

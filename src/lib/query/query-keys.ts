@@ -63,6 +63,14 @@ export const queryKeys = {
     stats: (scope: "outstanding") => [...queryKeys.invoices.all, "stats", scope] as const,
     detail: (invoiceId: string) => [...queryKeys.invoices.all, "detail", invoiceId] as const,
   },
+  accounting: {
+    all: ["accounting"] as const,
+    incomeStatement: (branchCode: string, date: string) =>
+      [...queryKeys.accounting.all, "income-statement", branchCode, date] as const,
+    journals: (params: unknown) => [...queryKeys.accounting.all, "journals", params] as const,
+    accounts: (params: unknown) => [...queryKeys.accounting.all, "accounts", params] as const,
+    paymentMethods: () => [...queryKeys.accounting.all, "payment-methods"] as const,
+  },
   branches: {
     all: ["branches"] as const,
     lists: () => [...queryKeys.branches.all, "list"] as const,
@@ -80,7 +88,15 @@ export const queryKeys = {
       [...queryKeys.orders.all, "search", search, limit] as const,
     history: (senderId: string, limit: number) =>
       [...queryKeys.orders.all, "history", senderId, limit] as const,
-    stats: (scope: "pending" | "pending-pickups" | "pending-takes", branchId?: number) =>
+    stats: (
+      scope:
+        | "pending"
+        | "pending-pickups"
+        | "pending-takes"
+        | "pending-estimates"
+        | "pending-payments",
+      branchId?: number,
+    ) =>
       [...queryKeys.orders.all, "stats", scope, branchId] as const,
     detail: (orderId: string) => [...queryKeys.orders.all, "detail", orderId] as const,
   },

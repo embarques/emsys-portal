@@ -6,6 +6,8 @@ function normalizeApiBaseUrl(url) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Keep Playwright's dev build isolated from a developer's running app.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   // Allows your phone to load Next.js dev assets from your Mac/PC on the LAN.
   // Add your current LAN IP here if it changes.
   allowedDevOrigins: [
@@ -16,6 +18,7 @@ const nextConfig = {
     'localhost:3000',
     '127.0.0.1',
     '127.0.0.1:3000',
+    '127.0.0.1:3100',
   ],
 
   async rewrites() {
