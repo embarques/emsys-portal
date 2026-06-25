@@ -8,7 +8,12 @@
     "dev:local": "NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/v1 next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "next lint"
+    "lint": "next lint",
+    "pretest:integration": "playwright install chromium",
+    "test:integration": "playwright test",
+    "test:integration:accounting": "playwright test tests/integration/accounting",
+    "test:integration:accounting:daily-income": "playwright test tests/integration/accounting/daily-income.spec.ts",
+    "test:integration:accounting:accounts": "playwright test tests/integration/accounting/chart-of-accounts.spec.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -37,6 +42,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",

@@ -16,4 +16,11 @@ export const API_ENDPOINTS = {
   VEHICLES: "/vehicles",
   INVOICES: "/invoices",
   INVOICE_DESCRIPTIONS: "/invoice-descriptions",
+  ACCOUNTING_INCOME_STATEMENTS: "/income-statements",
+  ACCOUNTING_INCOME_STATEMENT: "/income-statements",
+  ACCOUNTING_JOURNALS: "/journals",
+  ACCOUNTING_JOURNAL: "/journals",
+  ACCOUNTING_ACCOUNTS: "/accounting/accounts",
+  ACCOUNTING_ACCOUNT: "/accounting/account",
+  ACCOUNTING_PAYMENT_METHODS: "/accounting/paymentmethods",
 } as const;

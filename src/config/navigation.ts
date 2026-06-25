@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Barcode,
+  BookOpenText,
   Building2,
   Boxes,
   Car,
@@ -74,9 +75,15 @@ export const navigation: NavigationGroup[] = [
     ],
   },
   {
+    title: "Accounting",
+    items: [
+      { label: "Daily Income", href: "/accounting/daily-income", icon: Wallet, permission: PERMISSIONS.incomeView },
+      { label: "Chart of Accounts", href: "/accounting/accounts", icon: BookOpenText, permission: PERMISSIONS.accountsView },
+    ],
+  },
+  {
     title: "Insights",
     items: [
-      { label: "Accounting", href: "/accounting", icon: Wallet, permission: PERMISSIONS.incomeView },
       { label: "Reports", href: "/reports", icon: FileText, permission: PERMISSIONS.reportsView },
       { label: "Analytics", href: "/analytics", icon: BarChart3, permission: PERMISSIONS.reportsView },
     ],
