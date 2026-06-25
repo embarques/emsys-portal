@@ -60,7 +60,7 @@ export function RouteAssignmentForm({
 
   function handleVehicleChange(vehicleRecordId: string) {
     const vehicle = vehicles.find((entry) => entry.id === vehicleRecordId);
-    updateField("truck", {
+    updateField("vehicle", {
       id: vehicleRecordId,
       name: vehicle?.name ?? "",
     });
@@ -165,7 +165,7 @@ export function RouteAssignmentForm({
               </Label>
               <SearchableSelect
                 id="vehicleId"
-                value={values.truck.id}
+                value={values.vehicle.id}
                 onValueChange={handleVehicleChange}
                 placeholder="Select a vehicle"
                 searchPlaceholder="Search vehicles…"

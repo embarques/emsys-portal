@@ -1,5 +1,6 @@
 import type { BranchListParams, BranchSearchFilter } from "@/lib/branches/types";
 import type { ContainerListParams, ContainerSearchFilter } from "@/lib/containers/types";
+import type { DeliveryListParams, DeliverySearchFilter } from "@/lib/deliveries/types";
 import type { InvoiceListParams, InvoiceSearchFilter } from "@/lib/invoices/types";
 import type { ItemListParams, ItemSearchFilter } from "@/lib/items/types";
 import type { VehicleListParams, VehicleSearchFilter } from "@/lib/vehicles/types";
@@ -53,6 +54,16 @@ export const queryKeys = {
       [...queryKeys.containers.all, "search", search, limit] as const,
     stats: (scope: "all" | "kpis") => [...queryKeys.containers.all, "stats", scope] as const,
     detail: (containerId: number) => [...queryKeys.containers.all, "detail", containerId] as const,
+  },
+  deliveries: {
+    all: ["deliveries"] as const,
+    lists: () => [...queryKeys.deliveries.all, "list"] as const,
+    list: (params: DeliveryListParams) => [...queryKeys.deliveries.lists(), params] as const,
+    search: (search: DeliverySearchFilter | undefined, limit: number) =>
+      [...queryKeys.deliveries.all, "search", search, limit] as const,
+    stats: (scope: "all" | "kpis") => [...queryKeys.deliveries.all, "stats", scope] as const,
+    detail: (deliveryId: number) => [...queryKeys.deliveries.all, "detail", deliveryId] as const,
+    barcodes: (deliveryId: number) => [...queryKeys.deliveries.detail(deliveryId), "barcodes"] as const,
   },
   invoices: {
     all: ["invoices"] as const,

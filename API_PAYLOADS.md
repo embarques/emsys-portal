@@ -64,7 +64,7 @@ Content-Type: application/json
 
 | Type | Resources | Example |
 |------|-----------|---------|
-| MongoDB ObjectID (24-char hex) | `customers`, `invoices`, `journals`, `trucks`, `employee-groups`, `route-assignments`, `pickups/route` | `"674a1b2c3d4e5f6789012345"` |
+| MongoDB ObjectID (24-char hex) | `customers`, `invoices`, `journals`, `vehicles`, `employee-groups`, `route-assignments`, `pickups/route` | `"674a1b2c3d4e5f6789012345"` |
 | `uint16` | `users`, `roles`, `permissions`, `branches`, `employees` | `1` |
 | `uint32` | `containers`, `deliveries`, `barcodes`, `pickups`, `income-statements` | `42` |
 
@@ -655,14 +655,14 @@ No body.
 
 ---
 
-## Trucks — permission: `truck`
+## Vehicles — permission: `vehicle`
 
-### `POST /v1/trucks`
+### `POST /v1/vehicles`
 
 ```json
 {
-  "truckId": "TRK-001",
-  "name": "Truck 1",
+  "vehicleId": "VEH-001",
+  "name": "Vehicle 1",
   "vin": "1HGCM82633A004352",
   "year": 2022,
   "fuelType": "diesel",
@@ -670,7 +670,7 @@ No body.
 }
 ```
 
-### `PUT /v1/trucks/{id}`
+### `PUT /v1/vehicles/{id}`
 
 Same shape. `{id}` = ObjectID hex.
 
@@ -707,7 +707,7 @@ Same shape. `{id}` = ObjectID hex.
   "routeAssignmentId": "RA-2026-06-10",
   "name": "Monday Route",
   "date": "2026-06-10T08:00:00Z",
-  "truck": { "id": "674a1b2c3d4e5f6789012345", "name": "Truck 1" },
+  "vehicle": { "id": "674a1b2c3d4e5f6789012345", "name": "Vehicle 1" },
   "employeeGroup": { "id": "674b2c3d4e5f6789012346", "name": "Morning Crew" }
 }
 ```
@@ -734,7 +734,7 @@ Same shape. `{id}` = ObjectID hex.
 | POST | `/v1/income-statements/{id}/open` | Reopen cuadre |
 | GET | `/v1/pickups/search-by-route` | Query: `routeId`, `page`, `limit` |
 
-**`<resource>` plural paths:** `permissions`, `roles`, `branches`, `users`, `customers`, `employees`, `trucks`, `employee-groups`, `route-assignments`, `containers`, `deliveries`, `barcodes`, `pickups`, `invoices`, `journals`, `income-statements`.
+**`<resource>` plural paths:** `permissions`, `roles`, `branches`, `users`, `customers`, `employees`, `vehicles`, `employee-groups`, `route-assignments`, `containers`, `deliveries`, `barcodes`, `pickups`, `invoices`, `journals`, `income-statements`.
 
 ---
 
@@ -753,7 +753,7 @@ Same shape. `{id}` = ObjectID hex.
 | `/invoices` | `invoice` |
 | `/journals` | `journal` |
 | `/income-statements` | `income_statement` |
-| `/trucks` | `truck` |
+| `/vehicles` | `vehicle` |
 | `/employee-groups` | `employee_group` |
 | `/route-assignments` | `route_assignment` |
 

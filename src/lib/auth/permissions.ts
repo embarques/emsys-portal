@@ -8,7 +8,7 @@ export const PERMISSIONS = {
   clientsUpdate: { name: "canUpdateCustomer", resourceType: "customer" },
   clientsDelete: { name: "canDeleteCustomer", resourceType: "customer" },
   pickupsView: { name: "canViewPickup", resourceType: "pickup" },
-  /** Pickups submenu — API has no route/truck/dispatch seed; gate with pickup view. */
+  /** Pickups submenu — API has no route/vehicle/dispatch seed; gate with pickup view. */
   routesView: { name: "canViewPickup", resourceType: "pickup" },
   vehiclesView: { name: "canViewPickup", resourceType: "pickup" },
   dispatchView: { name: "canViewPickup", resourceType: "pickup" },
@@ -47,7 +47,11 @@ const PERMISSION_GRANT_ALIASES: Record<string, readonly string[]> = {
   "customer:candeletecustomer": ["client:candeleteclient"],
   "income_statement:canviewincomestatement": ["income:canviewincome"],
   "chart_account:canviewchartaccount": ["account:canviewaccount"],
-  "pickup:canviewpickup": ["route:canviewroute", "truck:canviewtruck", "dispatch:canviewdispatch"],
+  "pickup:canviewpickup": [
+    "route:canviewroute",
+    "vehicle:canviewvehicle",
+    "dispatch:canviewdispatch",
+  ],
   "invoice:canviewinvoice": ["invoiceitem:canviewinvoiceitem"],
   "delivery:canviewdelivery": ["inventory:canviewinventory"],
   "user:canviewuser": ["role:canviewrole"],
@@ -63,7 +67,7 @@ const VIEW_NAME_ALIASES: Record<string, readonly string[]> = {
   candeletecustomer: ["candeleteclient", "candeletecustomer"],
   canviewincomestatement: ["canviewincome", "canviewincomestatement"],
   canviewchartaccount: ["canviewaccount", "canviewchartaccount"],
-  canviewpickup: ["canviewroute", "canviewtruck", "canviewdispatch"],
+  canviewpickup: ["canviewroute", "canviewvehicle", "canviewdispatch"],
   canviewinvoice: ["canviewinvoiceitem"],
   canviewdelivery: ["canviewinventory"],
   canviewuser: ["canviewrole"],

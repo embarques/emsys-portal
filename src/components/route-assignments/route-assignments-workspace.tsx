@@ -3,12 +3,12 @@
 import { useMemo, useState } from "react";
 import {
   CalendarRange,
+  Car,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   Plus,
   Trash2,
-  Truck,
   UsersRound,
 } from "lucide-react";
 
@@ -39,7 +39,7 @@ import {
   formatRouteAssignmentDate,
   formatRouteAssignmentTimestamp,
   getEmployeeGroupRefLabel,
-  getTruckRefLabel,
+  getVehicleRefLabel,
   routeAssignmentMatchesSearch,
   truncateObjectId,
   truncateRouteAssignmentId,
@@ -163,9 +163,9 @@ export function RouteAssignmentsWorkspace() {
     },
     {
       label: "Vehicles assigned",
-      value: kpis.uniqueTrucks.toString(),
+      value: kpis.uniqueVehicles.toString(),
       description: "Distinct vehicles in use",
-      icon: Truck,
+      icon: Car,
     },
     {
       label: "Employee groups",
@@ -205,20 +205,20 @@ export function RouteAssignmentsWorkspace() {
       ),
     },
     {
-      id: "truck.id",
+      id: "vehicle.id",
       label: "vehicle.id",
       cellClassName: "font-mono text-xs",
-      renderCell: (assignment) => assignment.truck.id || "—",
+      renderCell: (assignment) => assignment.vehicle.id || "—",
     },
     {
-      id: "truck.name",
+      id: "vehicle.name",
       label: "vehicle.name",
-      renderCell: (assignment) => assignment.truck.name || "—",
+      renderCell: (assignment) => assignment.vehicle.name || "—",
     },
     {
-      id: "truck",
+      id: "vehicle",
       label: "vehicle",
-      renderCell: (assignment) => getTruckRefLabel(assignment.truck),
+      renderCell: (assignment) => getVehicleRefLabel(assignment.vehicle),
     },
     {
       id: "employeeGroup.id",

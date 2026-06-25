@@ -41,8 +41,8 @@ export function formatVehicleDate(iso: string): string {
   }).format(parsed);
 }
 
-export function truncateVehicleId(truckId: string): string {
-  return truckId.length > 12 ? `${truckId.slice(0, 8)}…` : truckId;
+export function truncateVehicleId(vehicleId: string): string {
+  return vehicleId.length > 12 ? `${vehicleId.slice(0, 8)}…` : vehicleId;
 }
 
 export function truncateObjectId(id: string): string {
@@ -73,8 +73,8 @@ export function vehicleMatchesSearch(vehicle: Vehicle, search: { field: string; 
     switch (search.field) {
       case "id":
         return vehicle.id;
-      case "truckId":
-        return vehicle.truckId;
+      case "vehicleId":
+        return vehicle.vehicleId;
       case "name":
         return vehicle.name;
       case "vin":
@@ -101,7 +101,7 @@ export function vehicleMatchesQuery(vehicle: Vehicle, query: string): boolean {
 
   return [
     vehicle.id,
-    vehicle.truckId,
+    vehicle.vehicleId,
     vehicle.name,
     vehicle.vin,
     String(vehicle.year),

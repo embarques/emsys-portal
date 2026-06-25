@@ -1,7 +1,7 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createMockObjectId } from "@/lib/vehicles/types";
 
-export type RouteAssignmentTruckRef = {
+export type RouteAssignmentVehicleRef = {
   id: string;
   name: string;
 };
@@ -16,7 +16,7 @@ export type RouteAssignment = {
   routeAssignmentId: string;
   name: string;
   date: string;
-  truck: RouteAssignmentTruckRef;
+  vehicle: RouteAssignmentVehicleRef;
   employeeGroup: RouteAssignmentEmployeeGroupRef;
   createdAt: string;
   createdBy: string;
@@ -28,7 +28,7 @@ export type RouteAssignmentFormValues = {
   routeAssignmentId: string;
   name: string;
   date: string;
-  truck: RouteAssignmentTruckRef;
+  vehicle: RouteAssignmentVehicleRef;
   employeeGroup: RouteAssignmentEmployeeGroupRef;
   createdBy: string;
   createdAt: string;
@@ -46,8 +46,8 @@ export type RouteAssignmentSearchField =
   | "routeAssignmentId"
   | "name"
   | "date"
-  | "truck.id"
-  | "truck.name"
+  | "vehicle.id"
+  | "vehicle.name"
   | "employeeGroup.id"
   | "employeeGroup.name"
   | "createdBy";
@@ -66,8 +66,8 @@ export const ROUTE_ASSIGNMENT_GET_SEARCH_CAPABILITIES: {
   { field: "routeAssignmentId", label: "routeAssignmentId", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "name", label: "name", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "date", label: "date", operators: ["eq", "neq"] },
-  { field: "truck.id", label: "truck.id", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "truck.name", label: "truck.name", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "vehicle.id", label: "vehicle.id", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "vehicle.name", label: "vehicle.name", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "employeeGroup.id", label: "employeeGroup.id", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "employeeGroup.name", label: "employeeGroup.name", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "createdBy", label: "createdBy", operators: ["startsWith", "contains", "eq", "neq"] },
@@ -101,7 +101,7 @@ export function createRouteAssignmentSearchFilter(value: string): RouteAssignmen
   return { field: "name", operator: "contains", value: trimmed };
 }
 
-export function createEmptyTruckRef(): RouteAssignmentTruckRef {
+export function createEmptyVehicleRef(): RouteAssignmentVehicleRef {
   return { id: "", name: "" };
 }
 
@@ -131,7 +131,7 @@ export function createEmptyRouteAssignmentForm(createdBy = DEFAULT_CREATED_BY): 
     routeAssignmentId: "",
     name: "",
     date: todayDateInputValue(),
-    truck: createEmptyTruckRef(),
+    vehicle: createEmptyVehicleRef(),
     employeeGroup: createEmptyEmployeeGroupRef(),
     createdBy,
     createdAt: "",
@@ -145,7 +145,7 @@ export function routeAssignmentToFormValues(assignment: RouteAssignment): RouteA
     routeAssignmentId: assignment.routeAssignmentId,
     name: assignment.name,
     date: toRouteAssignmentDateInput(assignment.date),
-    truck: { ...assignment.truck },
+    vehicle: { ...assignment.vehicle },
     employeeGroup: { ...assignment.employeeGroup },
     createdBy: assignment.createdBy,
     createdAt: assignment.createdAt,
@@ -159,8 +159,8 @@ export function formValuesToRouteAssignment(
   updatedAt?: string,
   id?: string,
 ): RouteAssignment {
-  if (!values.truck.id.trim()) {
-    throw new Error("A truck is required.");
+  if (!values.vehicle.id.trim()) {
+    throw new Error("A vehicle is required.");
   }
 
   if (!values.employeeGroup.id.trim()) {
@@ -174,9 +174,9 @@ export function formValuesToRouteAssignment(
     routeAssignmentId: values.routeAssignmentId.trim(),
     name: values.name.trim(),
     date: toRouteAssignmentDateIso(values.date),
-    truck: {
-      id: values.truck.id.trim(),
-      name: values.truck.name.trim(),
+    vehicle: {
+      id: values.vehicle.id.trim(),
+      name: values.vehicle.name.trim(),
     },
     employeeGroup: {
       id: values.employeeGroup.id.trim(),
@@ -197,7 +197,7 @@ export function copyRouteAssignmentFormValues(
     routeAssignmentId: "",
     name: source.name,
     date: todayDateInputValue(),
-    truck: { ...source.truck },
+    vehicle: { ...source.vehicle },
     employeeGroup: { ...source.employeeGroup },
     createdBy,
     createdAt: "",

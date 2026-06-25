@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from "react";
 import {
+  Car,
   ChevronLeft,
   ChevronRight,
   Fuel,
   Plus,
   Trash2,
-  Truck as TruckIcon,
 } from "lucide-react";
 
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
@@ -125,7 +125,7 @@ export function VehiclesWorkspace() {
       label: "Total vehicles",
       value: isLoading ? "…" : totalVehicles.toString(),
       description: "Fleet units on record",
-      icon: TruckIcon,
+      icon: Car,
     },
     {
       label: "USA",
@@ -214,10 +214,10 @@ export function VehiclesWorkspace() {
       renderCell: (vehicle) => truncateObjectId(vehicle.id),
     },
     {
-      id: "truckId",
-      label: "truckId",
+      id: "vehicleId",
+      label: "Vehicle ID",
       cellClassName: "font-mono text-xs",
-      renderCell: (vehicle) => truncateVehicleId(vehicle.truckId) || "—",
+      renderCell: (vehicle) => truncateVehicleId(vehicle.vehicleId) || "—",
     },
     {
       id: "name",

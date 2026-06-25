@@ -41,7 +41,7 @@ export function getRouteAssignmentLabel(routeAssignmentId: string): string {
   if (!routeAssignmentId) return "—";
   const assignment = getRouteAssignmentById(routeAssignmentId);
   if (!assignment) return routeAssignmentId;
-  return `${assignment.name} · ${formatOrderDate(assignment.date)} · ${assignment.truck.name || assignment.truck.id}`;
+  return `${assignment.name} · ${formatOrderDate(assignment.date)} · ${assignment.vehicle.name || assignment.vehicle.id}`;
 }
 
 export function formatOrderRouteAssignment(order: Pick<Order, "routeAssignmentId">): string {

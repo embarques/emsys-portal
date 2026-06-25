@@ -50,7 +50,7 @@ All dashboard paths that open as workspace tabs:
 | `/clientes`         | clients         | Full CRUD                         |
 | `/pickups`          | pickups         | Full CRUD + map                   |
 | `/routes`           | routes          | Full CRUD                         |
-| `/trucks`           | trucks          | Full CRUD                         |
+| `/vehicles`         | vehicles        | Full CRUD                         |
 | `/dispatch`         | dispatch        | Full CRUD                         |
 | `/envios`           | containers      | **Redirect → `/invoices/furgon`** |
 | `/invoices`         | invoices        | Full CRUD                         |
@@ -85,11 +85,11 @@ All dashboard paths that open as workspace tabs:
 | ------------------- | ------------------ | --------------------------------------------------------------------------------------------------- |
 | `/dashboard`        | `DashboardPage`    | Auth + `@/lib/dashboard/dashboardKpiMetrics`                                                        |
 | `/clientes`         | `ClientesPage`     | `clientCatalogService`, `clientLookupService`, `pickupsService` (types)                             |
-| `/pickups`          | `PickupsPage`      | `pickupsService`, `routesService`, `dispatchesService`, `trucksService`                             |
+| `/pickups`          | `PickupsPage`      | `pickupsService`, `routesService`, `dispatchesService`, `vehiclesService`                           |
 | `/routes`           | `RoutesPage`       | `routesService`                                                                                     |
-| `/trucks`           | `TrucksPage`       | `trucksService`                                                                                     |
-| `/dispatch`         | `DispatchPage`     | `dispatchesService`, `trucksService`, `employeesService`                                            |
-| `/invoices`         | `InvoicesPage`     | 8 parallel services (invoices, conduces, pickups, containers, dispatches, items, trucks, employees) |
+| `/vehicles`         | `VehiclesPage`     | `vehiclesService`                                                                                   |
+| `/dispatch`         | `DispatchPage`     | `dispatchesService`, `vehiclesService`, `employeesService`                                          |
+| `/invoices`         | `InvoicesPage`     | 8 parallel services (invoices, conduces, pickups, containers, dispatches, items, vehicles, employees) |
 | `/invoices/conduce` | `ConducePage`      | `conducesService`, `employeesService`, `containersService`                                          |
 | `/invoices/furgon`  | `FurgonPage`       | `containersService`                                                                                 |
 | `/invoices/items`   | `ItemsPage`        | `itemsService`                                                                                      |
@@ -140,7 +140,7 @@ All dashboard paths that open as workspace tabs:
 
 - **Export:** `PickupsPage`
 - **Components:** pickups table/map/modals, `DashboardTableChrome`, selection chrome
-- **Services:** `pickupsService`, `routesService`, `dispatchesService`, `trucksService`
+- **Services:** `pickupsService`, `routesService`, `dispatchesService`, `vehiclesService`
 - **Lib:** `pickupDisplay`, `pickupsFilter`, `pickupsPrintHtml`, `addressCoords`, `tableSelectionScope`
 
 #### `app/(dashboard)/routes/page.tsx`
@@ -149,23 +149,23 @@ All dashboard paths that open as workspace tabs:
 - **Components:** `RoutesTable`, `RouteViewPanel`, `RouteAddPanel`, `RoutesSelectionContextBar`
 - **Services:** `routesService`
 
-#### `app/(dashboard)/trucks/page.tsx`
+#### `app/(dashboard)/vehicles/page.tsx`
 
-- **Export:** `TrucksPage`
-- **Components:** `TrucksTable`, `TruckViewPanel`, `TruckAddPanel`, `TrucksSelectionContextBar`
-- **Services:** `trucksService`
+- **Export:** `VehiclesPage`
+- **Components:** `VehiclesTable`, `VehicleViewPanel`, `VehicleAddPanel`, `VehiclesSelectionContextBar`
+- **Services:** `vehiclesService`
 
 #### `app/(dashboard)/dispatch/page.tsx`
 
 - **Export:** `DispatchPage`
 - **Components:** `DispatchesTable`, `DispatchViewPanel`, `DispatchAddPanel`, `DispatchesSelectionContextBar`
-- **Services:** `dispatchesService`, `trucksService`, `employeesService`
+- **Services:** `dispatchesService`, `vehiclesService`, `employeesService`
 
 #### `app/(dashboard)/invoices/page.tsx`
 
 - **Export:** `InvoicesPage`
 - **Components:** `InvoicesTable`, `InvoicesFilterModal`, `InvoicesSelectionContextBar`
-- **Services:** invoices, conduces, pickups, containers, dispatches, items, trucks, employees, clientCatalog
+- **Services:** invoices, conduces, pickups, containers, dispatches, items, vehicles, employees, clientCatalog
 
 #### `app/(dashboard)/invoices/conduce/page.tsx`
 
@@ -222,7 +222,7 @@ All dashboard paths that open as workspace tabs:
 
 ### 2.5 Sidebar navigation (`components/Sidebar.tsx`)
 
-Menu groups: Dashboard, Clients, Pickups (new/list/routes/trucks/dispatch), Invoices (new/list/items/furgón/conduce), Labels (manager/tracker/updater), Shipments (delivery/packages/inventory), Accounting (income/accounts), Reports, Settings (users/roles/employees/account-settings).
+Menu groups: Dashboard, Clients, Pickups (new/list/routes/vehicles/dispatch), Invoices (new/list/items/furgón/conduce), Labels (manager/tracker/updater), Shipments (delivery/packages/inventory), Accounting (income/accounts), Reports, Settings (users/roles/employees/account-settings).
 
 Workspace tab actions: `openRouteTab`, `openPickupNewTab`, `openInvoiceNewTab`.
 
@@ -245,7 +245,7 @@ Workspace tab actions: `openRouteTab`, `openPickupNewTab`, `openInvoiceNewTab`.
 | `dashboard/`  |     7 | KPI cards, employee charts                          |
 | `items/`      |     6 | Invoice line-item catalog                           |
 | `dispatches/` |     5 | Dispatch CRUD                                       |
-| `trucks/`     |     5 | Truck CRUD                                          |
+| `vehicles/`   |     5 | Vehicle CRUD                                        |
 | `conduces/`   |     5 | Conduce (delivery slip) CRUD                        |
 | `data-table/` |     4 | Generic table, columns, mobile cards                |
 | `workspace/`  |     4 | Tab bar, shell, route host                          |
@@ -332,7 +332,7 @@ Workspace tab actions: `openRouteTab`, `openPickupNewTab`, `openInvoiceNewTab`.
 
 **containers/** (10): `ContainerAddPanel`, `ContainerFormContent`, `ContainerModal`, `ContainerViewContent`, `ContainerViewPanel`, `ContainersSelectionContextBar`, `ContainersSelectionFabColumn`, `ContainersSelectionToolbar`, `ContainersTable`
 
-**trucks/** (5): `TruckAddPanel`, `TruckFormContent`, `TruckViewPanel`, `TrucksSelectionContextBar`, `TrucksTable`
+**vehicles/** (5): `VehicleAddPanel`, `VehicleFormContent`, `VehicleViewPanel`, `VehiclesSelectionContextBar`, `VehiclesTable`
 
 **clientes/** (16): `ClientClassicAddressControl`, `ClientTypePill`, `ClientTypeSearchSelect`, `ClienteAddModal`, `ClienteClassicAddressFields`, `ClienteDetailsFormContent`, `ClienteViewPanel`, `ClientesColumnCustomize`, `ClientesFilterModal`, `ClientesSelectionContextBar`, `ClientesSelectionFabColumn`, `ClientesSelectionToolbar`, `ClientesUserActivityPanel`, `clienteFormDetailsLayout`
 
@@ -439,7 +439,7 @@ payments?, total?, discount?, paid?, balance?, createdAt?, updatedAt?
 
 **`RouteDefinition`**: `id, name, places: RoutePlace[]` where `RoutePlace = { kind: 'city'|'state'|'zip'|'zip_range', value }`
 
-**`Truck`**: `name, vin, year, gasType: 'diesel'|'gas'|''`
+**`Vehicle`**: `name, vin, year, gasType: 'diesel'|'gas'|''`
 
 **`Item`**: `description, price`
 
@@ -492,7 +492,7 @@ currentUser, sidebarCollapsed, openDropdowns[], viewMode: 'list'|'map'
 | `ProcessedLabelsFilterState` | `lib/labels/processedLabelFilters.ts` |
 | `ClientsFilterState`         | `lib/clientsFilter.ts`                |
 | `ItemsFilterState`           | `lib/itemsFilter.ts`                  |
-| `TruckFormState`             | `hooks/useTruckFormState.ts`          |
+| `VehicleFormState`           | `hooks/useVehicleFormState.ts`        |
 | `DispatchFormState`          | `hooks/useDispatchFormState.ts`       |
 | `ContainerFormState`         | `hooks/useContainerFormState.ts`      |
 | `ItemFormState`              | `hooks/useItemFormState.ts`           |
@@ -527,7 +527,7 @@ currentUser, sidebarCollapsed, openDropdowns[], viewMode: 'list'|'map'
 | `conducesService`      | `conduces`                   | No                |
 | `dispatchesService`    | `dispatches`                 | No                |
 | `routesService`        | `routes`                     | No                |
-| `trucksService`        | `trucks`                     | No                |
+| `vehiclesService`      | `vehicles`                   | No                |
 | `itemsService`         | `items`                      | No                |
 | `employeesService`     | `employees`                  | No                |
 | `usersService`         | `users`                      | No                |
@@ -546,7 +546,7 @@ Each service exports: entity interface + `get*()` + `create*` + `update*` + `del
 
 **routesService**: `getRoutes`, `createRoute`, `updateRoute`, `deleteRoute`, plus `routeMatchesSearch`, `formatRoutePlacesSummary`, `parseRouteZipRangeBounds`
 
-**containersService**, **conducesService**, **dispatchesService**, **trucksService**, **itemsService**, **employeesService**, **usersService**: standard CRUD per entity
+**containersService**, **conducesService**, **dispatchesService**, **vehiclesService**, **itemsService**, **employeesService**, **usersService**: standard CRUD per entity
 
 ---
 
@@ -565,7 +565,7 @@ Each service exports: entity interface + `get*()` + `create*` + `update*` + `del
 | `useDispatchFormState`          | dispatches service                                                   |
 | `useConduceFormState`           | conduces service                                                     |
 | `useContainerFormState`         | containers service                                                   |
-| `useTruckFormState`             | trucks service                                                       |
+| `useVehicleFormState`           | vehicles service                                                     |
 | `useItemFormState`              | items service                                                        |
 | `useRouteFormState`             | routes service                                                       |
 | `useTableSelectionScope`        | table selection scope                                                |
@@ -590,7 +590,7 @@ Each service exports: entity interface + `get*()` + `create*` + `update*` + `del
 
 | Category            | Key modules                                                                                                                                    |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Display/format**  | `pickupDisplay`, `invoiceDisplay`, `containerDisplay`, `conduceDisplay`, `dispatchDisplay`, `truckDisplay`, `itemDisplay`, `routePlaceDisplay` |
+| **Display/format**  | `pickupDisplay`, `invoiceDisplay`, `containerDisplay`, `conduceDisplay`, `dispatchDisplay`, `vehicleDisplay`, `itemDisplay`, `routePlaceDisplay` |
 | **Form validation** | `invoiceFormValidation`, `pickupLineComposerSchema`, `addressRowUtils`, `pickupReceiverForm`                                                   |
 | **Inline edit**     | `pickupLineDetailInlineEdit`, `invoiceLineItemInlineEdit`                                                                                      |
 | **Address/geo**     | `clientAddresses`, `addressCoords`, `parseGooglePlace`, `googleMapsConfig`, `dominicanCities`                                                  |
@@ -659,7 +659,7 @@ lib/store/store.ts
 
 | Tier               | Routes                                                                                                      | Count |
 | ------------------ | ----------------------------------------------------------------------------------------------------------- | ----: |
-| Full CRUD + tables | pickups, routes, trucks, dispatch, invoices, conduce, furgón, items, clientes, employees, users, labels (3) |    15 |
+| Full CRUD + tables | pickups, routes, vehicles, dispatch, invoices, conduce, furgón, items, clientes, employees, users, labels (3) |    15 |
 | Dashboard/KPI      | dashboard                                                                                                   |     1 |
 | Auth               | login                                                                                                       |     1 |
 | Placeholder        | delivery, inventory, income, accounts, reports, roles, package-manager, account-settings                    |     8 |
@@ -677,7 +677,7 @@ lib/store/store.ts
 | `conduces`   | `conducesService`   |
 | `dispatches` | `dispatchesService` |
 | `routes`     | `routesService`     |
-| `trucks`     | `trucksService`     |
+| `vehicles`   | `vehiclesService`   |
 | `items`      | `itemsService`      |
 | `employees`  | `employeesService`  |
 | `users`      | `usersService`      |

@@ -238,7 +238,7 @@ src/app/
 │   ├── routes/
 │   ├── security/
 │   ├── settings/
-│   ├── trucks/
+│   ├── vehicles/
 │   └── users/
 │
 ├── globals.css
@@ -565,7 +565,7 @@ Examples:
 - Employees
 - Containers
 - Routes
-- Trucks
+- Vehicles
 - Reports
 - Dashboard data
 - Analytics data
@@ -802,7 +802,7 @@ src/lib/customers/
 src/lib/orders/
 src/lib/invoices/
 src/lib/routes/
-src/lib/trucks/
+src/lib/vehicles/
 src/lib/users/
 src/lib/employees/
 src/lib/reports/
