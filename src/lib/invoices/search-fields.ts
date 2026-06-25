@@ -6,7 +6,7 @@ import {
 
 /**
  * Invoice directory search bar — POST /invoices/search OR + contains.
- * Pagination in URL; body is filters + sort only (same as customers/trucks).
+ * Pagination in URL; body is filters + sort only (same as customers/vehicles).
  * Phone searches include normalized phones and legacy phone1 snapshots.
  */
 export const INVOICE_BAR_OR_SEARCH_FIELDS = [

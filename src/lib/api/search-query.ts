@@ -71,7 +71,7 @@ export type BuildApiSearchBodyOptions = BuildAdvancedSearchBodyOptions;
 
 /**
  * POST /<resource>/search body when pagination is passed via URL query.
- * Used by fetchPaginatedResourceList (branches, trucks, etc.).
+ * Used by fetchPaginatedResourceList (branches, vehicles, etc.).
  */
 export type StripeStyleSearchBody = {
   operator?: "and" | "or";

@@ -174,14 +174,14 @@ Pages should stay thin. Do **not** put auth or permission logic in the page — 
 
 ## Reusing an existing permission
 
-If the new route should use an permission that already exists in the API (e.g. trucks gated by pickup view), reuse an existing `PERMISSIONS.*` entry:
+If the new route should use an permission that already exists in the API (e.g. vehicles gated by pickup view), reuse an existing `PERMISSIONS.*` entry:
 
 ```ts
 // page-permissions.ts
-"/my-new-route": PERMISSIONS.trucksView,
+"/my-new-route": PERMISSIONS.vehiclesView,
 
 // navigation.ts
-permission: PERMISSIONS.trucksView,
+permission: PERMISSIONS.vehiclesView,
 ```
 
 No API changes needed if the role already has that permission.
@@ -225,7 +225,7 @@ if (hasPermission("canViewWarehouse", "warehouse")) {
 | `/inventory` | `canViewDelivery` | `delivery` |
 | `/items` | `canViewInvoice` | `invoice` |
 | `/containers` | `canViewContainer` | `container` |
-| `/routes`, `/trucks`, `/route-assignments` | `canViewPickup` | `pickup` |
+| `/routes`, `/vehicles`, `/route-assignments` | `canViewPickup` | `pickup` |
 | `/deliveries` | `canViewDelivery` | `delivery` |
 | `/accounting` | `canViewIncomeStatement` | `income_statement` |
 | `/reports`, `/analytics` | `canViewReport` | `report` |

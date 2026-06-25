@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarCheck, Truck } from "lucide-react";
+import { CalendarCheck, Car } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -51,7 +51,7 @@ export function VehicleForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
-        <FormSection icon={Truck} title="Vehicle">
+        <FormSection icon={Car} title="Vehicle">
           <div className="space-y-2.5">
             <div className="space-y-1">
               <Label htmlFor="name">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, PackagePlus, Trash2, Truck, Users } from "lucide-react";
+import { Car, Edit, PackagePlus, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { AddDeliveryInvoicesDialog } from "@/components/deliveries/add-delivery-invoices-dialog";
@@ -87,7 +87,7 @@ export function DeliveryViewSheet({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border bg-card p-4">
                     <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                      <Truck className="size-4 text-primary" />
+                      <Car className="size-4 text-primary" />
                       Container
                     </div>
                     <p className="text-sm">{delivery.container?.name || "-"}</p>

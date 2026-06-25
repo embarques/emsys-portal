@@ -487,7 +487,7 @@ export function InvoiceForm({
                     ...routeAssignments.map((assignment) => ({
                       value: assignment.id,
                       label: assignment.name,
-                      descriptionLines: [assignment.truck.name].filter((line) => line.trim()),
+                      descriptionLines: [assignment.vehicle.name].filter((line) => line.trim()),
                     })),
                   ]}
                 />

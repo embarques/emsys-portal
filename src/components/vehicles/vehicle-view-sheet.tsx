@@ -39,7 +39,7 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
       <RecordViewSheetContent>
         <RecordViewSheetHeader
           title={vehicle.name}
-          description={<span className="font-mono text-xs">{vehicle.truckId}</span>}
+          description={<span className="font-mono text-xs">{vehicle.vehicleId}</span>}
           meta={
             <>
               <Badge className={getFuelTypeBadgeClass(vehicle.fuelType)}>{getFuelTypeLabel(vehicle.fuelType)}</Badge>
@@ -51,7 +51,7 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Vehicle">
             <RecordViewSheetDetailRow label="Record ID" value={truncateObjectId(vehicle.id)} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("truckId")} value={truncateVehicleId(vehicle.truckId)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("vehicleId")} value={truncateVehicleId(vehicle.vehicleId)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("name")} value={vehicle.name} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("vin")} value={vehicle.vin} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("year")} value={vehicle.year} />

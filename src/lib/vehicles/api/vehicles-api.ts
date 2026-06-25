@@ -49,7 +49,7 @@ function buildVehiclesQuery(params: VehicleListParams): string {
 
 type ApiVehicle = {
   id?: string;
-  truckId?: string;
+  vehicleId?: string;
   name?: string;
   vin?: string;
   year?: number;
@@ -62,13 +62,13 @@ type ApiVehicle = {
   updatedAt?: string;
 };
 
-/** POST/PUT /trucks — Swagger truck payload */
+/** POST/PUT /vehicles — Swagger vehicle payload */
 type ApiVehicleWritePayload = {
   name: string;
   vin: string;
   year: number;
   fuelType: string;
-  truckId?: string;
+  vehicleId?: string;
   branch?: string;
   inspectionDate?: string;
   registrationDate?: string;
@@ -99,7 +99,7 @@ function normalizeVehicle(raw: unknown): Vehicle | null {
 
   return {
     id,
-    truckId: String(item.truckId ?? "").trim(),
+    vehicleId: String(item.vehicleId ?? "").trim(),
     name: String(item.name ?? "").trim(),
     vin: String(item.vin ?? "").trim().toUpperCase(),
     year: Number(item.year ?? 0),
@@ -140,11 +140,11 @@ function buildVehicleWritePayload(
     fuelType: values.fuelType.trim(),
   };
 
-  // truckId and branch are assigned by the backend on create; only forward
+  // Vehicle code and branch are assigned by the backend on create; only forward
   // them when an existing value is present (e.g. when editing a record).
-  const truckIdValue = values.truckId.trim();
-  if (truckIdValue) {
-    payload.truckId = truckIdValue;
+  const vehicleIdValue = values.vehicleId.trim();
+  if (vehicleIdValue) {
+    payload.vehicleId = vehicleIdValue;
   }
 
   const branchValue = values.branch.trim();
@@ -226,12 +226,12 @@ async function resolveCreatedVehicle(
     return vehicle;
   }
 
-  const truckCode = values.truckId.trim();
-  if (truckCode) {
+  const vehicleCode = values.vehicleId.trim();
+  if (vehicleCode) {
     const matches = await fetchVehicles({
       page: 1,
       limit: 1,
-      search: { field: "truckId", operator: "eq", value: truckCode },
+      search: { field: "vehicleId", operator: "eq", value: vehicleCode },
     });
 
     const matchedVehicle = matches.items[0];

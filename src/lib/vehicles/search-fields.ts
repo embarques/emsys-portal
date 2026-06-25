@@ -1,6 +1,6 @@
-/** POST /trucks/search — OR bar search across common vehicle fields. */
+/** POST /vehicles/search — OR bar search across common vehicle fields. */
 export const VEHICLE_BAR_OR_SEARCH_FIELDS = [
-  "truckId",
+  "vehicleId",
   "name",
   "vin",
   "fuelType",

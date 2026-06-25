@@ -1,4 +1,4 @@
-import { ArrowUpRight, PackageCheck, Truck, Users, WalletCards } from "lucide-react";
+import { ArrowUpRight, Car, PackageCheck, Users, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -7,7 +7,7 @@ import { SampleTable } from "@/components/app-shell/sample-table";
 const stats = [
   { label: "Customers", value: "2,842", change: "+12%", icon: Users },
   { label: "Open Orders", value: "384", change: "+8%", icon: PackageCheck },
-  { label: "In Delivery", value: "67", change: "+4%", icon: Truck },
+  { label: "In Delivery", value: "67", change: "+4%", icon: Car },
   { label: "Revenue", value: "$128.4k", change: "+18%", icon: WalletCards },
 ];
 export default function DashboardPage() {

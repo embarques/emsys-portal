@@ -60,7 +60,7 @@ export const MOCK_ACCOUNTING_ENTRIES: AccountingEntry[] = [
     date: "2026-02-06",
     amount: 420,
     amountPaid: 420,
-    description: "Weekly diesel fill for fleet trucks",
+    description: "Weekly diesel fill for fleet vehicles",
     branch: "usa",
     routeAssignmentId: "ras-001",
     category: "Fuel",

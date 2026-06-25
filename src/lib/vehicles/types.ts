@@ -6,7 +6,7 @@ export type VehiclePortalBranch = "usa" | "dr";
 
 export type Vehicle = {
   id: string;
-  truckId: string;
+  vehicleId: string;
   name: string;
   vin: string;
   year: number;
@@ -21,7 +21,7 @@ export type Vehicle = {
 
 export type VehicleFormValues = {
   id: string;
-  truckId: string;
+  vehicleId: string;
   name: string;
   vin: string;
   year: string;
@@ -39,12 +39,12 @@ export type VehicleFilterState = {
   rows: TableFilterRowState[];
 };
 
-/** Matches GET /trucks filter operators from the API spec. */
+/** Matches GET /vehicles filter operators from the API spec. */
 export type VehicleSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 
 export type VehicleSearchField =
   | "id"
-  | "truckId"
+  | "vehicleId"
   | "name"
   | "vin"
   | "year"
@@ -63,7 +63,7 @@ export type VehicleListParams = {
   filterRows?: TableFilterRowState[];
 };
 
-/** GET /trucks?page=1&limit=50&offset=0&sort=name:asc */
+/** GET /vehicles?page=1&limit=50&offset=0&sort=name:asc */
 export const DEFAULT_VEHICLE_LIST_PARAMS = {
   page: 1,
   limit: 50,
@@ -75,7 +75,7 @@ export const VEHICLE_GET_SEARCH_CAPABILITIES: {
   label: string;
   operators: VehicleSearchOperator[];
 }[] = [
-  { field: "truckId", label: "truckId", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "vehicleId", label: "Vehicle ID", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "name", label: "name", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "vin", label: "vin", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "fuelType", label: "fuelType", operators: ["startsWith", "contains", "eq", "neq"] },
@@ -176,7 +176,7 @@ export function createMockObjectId(): string {
 export function createEmptyVehicleForm(): VehicleFormValues {
   return {
     id: "",
-    truckId: "",
+    vehicleId: "",
     name: "",
     vin: "",
     year: String(new Date().getFullYear()),
@@ -193,7 +193,7 @@ export function createEmptyVehicleForm(): VehicleFormValues {
 export function vehicleToFormValues(vehicle: Vehicle): VehicleFormValues {
   return {
     id: vehicle.id,
-    truckId: vehicle.truckId,
+    vehicleId: vehicle.vehicleId,
     name: vehicle.name,
     vin: vehicle.vin,
     year: vehicle.year > 0 ? String(vehicle.year) : "",

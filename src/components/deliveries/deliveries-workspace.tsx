@@ -3,12 +3,12 @@
 import { useMemo, useState } from "react";
 import {
   CalendarDays,
+  Car,
   ChevronLeft,
   ChevronRight,
   PackageCheck,
   Plus,
   Trash2,
-  Truck,
   Users,
 } from "lucide-react";
 
@@ -434,7 +434,7 @@ export function DeliveriesWorkspace() {
           </div>
         ) : isLoading ? (
           <DirectoryTableLoader
-            icon={Truck}
+            icon={Car}
             title="Loading deliveries"
             description="Preparing delivery routes, containers, crews, and package counts..."
             columns={["Delivery", "Date", "Container", "Driver", "Crew"]}

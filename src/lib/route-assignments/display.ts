@@ -2,7 +2,7 @@ import { getEmployeeGroupById } from "@/lib/employee-groups/mock-data";
 import { getEmployeeGroupBranchLabel } from "@/lib/employee-groups/display";
 import type { EmployeeGroup } from "@/lib/employee-groups/types";
 import { getVehicleById, getVehicleByRecordId } from "@/lib/vehicles/mock-data";
-import type { RouteAssignment, RouteAssignmentEmployeeGroupRef, RouteAssignmentTruckRef } from "./types";
+import type { RouteAssignment, RouteAssignmentEmployeeGroupRef, RouteAssignmentVehicleRef } from "./types";
 import { toRouteAssignmentDateInput } from "./types";
 
 export function formatRouteAssignmentDate(date: string): string {
@@ -38,18 +38,18 @@ export function formatEmployeeGroupRefName(group: EmployeeGroup): string {
   return `${group.employeeGroupId} · ${getEmployeeGroupBranchLabel(group.branch)} · ${group.employeeIds.length} employees`;
 }
 
-export function getTruckRefLabel(truck: RouteAssignmentTruckRef): string {
-  if (!truck.id && !truck.name) return "—";
+export function getVehicleRefLabel(vehicle: RouteAssignmentVehicleRef): string {
+  if (!vehicle.id && !vehicle.name) return "—";
 
-  const record = truck.id ? (getVehicleByRecordId(truck.id) ?? getVehicleById(truck.id)) : undefined;
-  const name = truck.name || record?.name;
+  const record = vehicle.id ? (getVehicleByRecordId(vehicle.id) ?? getVehicleById(vehicle.id)) : undefined;
+  const name = vehicle.name || record?.name;
   const branch = record?.branch;
 
   if (name && branch) {
     return `${name} (${branch.toUpperCase()})`;
   }
 
-  return name || truck.id || "—";
+  return name || vehicle.id || "—";
 }
 
 export function getEmployeeGroupRefLabel(group: RouteAssignmentEmployeeGroupRef): string {
@@ -62,9 +62,9 @@ export function getEmployeeGroupRefLabel(group: RouteAssignmentEmployeeGroupRef)
   return formatEmployeeGroupRefName(record);
 }
 
-/** @deprecated Use getTruckRefLabel */
-export function getTruckName(truckId: string): string {
-  return getTruckRefLabel({ id: truckId, name: "" });
+/** @deprecated Use getVehicleRefLabel */
+export function getVehicleName(vehicleId: string): string {
+  return getVehicleRefLabel({ id: vehicleId, name: "" });
 }
 
 /** @deprecated Use getEmployeeGroupRefLabel */
@@ -73,7 +73,7 @@ export function getEmployeeGroupLabel(employeeGroupId: string): string {
 }
 
 export function formatRouteAssignmentCopyLabel(assignment: RouteAssignment): string {
-  return `${assignment.name} · ${formatRouteAssignmentDate(assignment.date)} · ${getTruckRefLabel(assignment.truck)}`;
+  return `${assignment.name} · ${formatRouteAssignmentDate(assignment.date)} · ${getVehicleRefLabel(assignment.vehicle)}`;
 }
 
 function matchesSearchOperator(value: string, query: string, operator: string): boolean {
@@ -109,10 +109,10 @@ export function routeAssignmentMatchesSearch(
         return assignment.name;
       case "date":
         return assignment.date;
-      case "truck.id":
-        return assignment.truck.id;
-      case "truck.name":
-        return assignment.truck.name;
+      case "vehicle.id":
+        return assignment.vehicle.id;
+      case "vehicle.name":
+        return assignment.vehicle.name;
       case "employeeGroup.id":
         return assignment.employeeGroup.id;
       case "employeeGroup.name":
@@ -137,9 +137,9 @@ export function routeAssignmentMatchesQuery(assignment: RouteAssignment, query: 
     assignment.name,
     assignment.date,
     assignment.createdBy,
-    assignment.truck.id,
-    assignment.truck.name,
-    getTruckRefLabel(assignment.truck),
+    assignment.vehicle.id,
+    assignment.vehicle.name,
+    getVehicleRefLabel(assignment.vehicle),
     assignment.employeeGroup.id,
     assignment.employeeGroup.name,
     getEmployeeGroupRefLabel(assignment.employeeGroup),
@@ -151,12 +151,12 @@ export function routeAssignmentMatchesQuery(assignment: RouteAssignment, query: 
 }
 
 export function computeRouteAssignmentKpis(assignments: RouteAssignment[]) {
-  const uniqueTrucks = new Set(assignments.map((assignment) => assignment.truck.id).filter(Boolean)).size;
+  const uniqueVehicles = new Set(assignments.map((assignment) => assignment.vehicle.id).filter(Boolean)).size;
   const uniqueGroups = new Set(assignments.map((assignment) => assignment.employeeGroup.id).filter(Boolean)).size;
 
   return {
     total: assignments.length,
-    uniqueTrucks,
+    uniqueVehicles,
     uniqueGroups,
   };
 }

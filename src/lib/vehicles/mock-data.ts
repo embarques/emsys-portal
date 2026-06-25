@@ -3,7 +3,7 @@ import type { Vehicle } from "./types";
 export const MOCK_VEHICLES: Vehicle[] = [
   {
     id: "665f1a2b3c4d5e6f7a8b9c0d",
-    truckId: "trk-001",
+    vehicleId: "veh-001",
     name: "Unit 12 — Freightliner",
     vin: "1FUJGLDR57LM12345",
     year: 2019,
@@ -17,7 +17,7 @@ export const MOCK_VEHICLES: Vehicle[] = [
   },
   {
     id: "665f1a2b3c4d5e6f7a8b9c0e",
-    truckId: "trk-002",
+    vehicleId: "veh-002",
     name: "Unit 08 — Isuzu NPR",
     vin: "JALC4W160F7K67890",
     year: 2021,
@@ -31,7 +31,7 @@ export const MOCK_VEHICLES: Vehicle[] = [
   },
   {
     id: "665f1a2b3c4d5e6f7a8b9c0f",
-    truckId: "trk-003",
+    vehicleId: "veh-003",
     name: "Unit 04 — Ford Transit",
     vin: "1FTBR1XM5GKA11223",
     year: 2022,
@@ -45,7 +45,7 @@ export const MOCK_VEHICLES: Vehicle[] = [
   },
   {
     id: "665f1a2b3c4d5e6f7a8b9c10",
-    truckId: "trk-004",
+    vehicleId: "veh-004",
     name: "Unit 15 — Kenworth T680",
     vin: "1XKYDP9X7KJ445566",
     year: 2018,
@@ -59,7 +59,7 @@ export const MOCK_VEHICLES: Vehicle[] = [
   },
   {
     id: "665f1a2b3c4d5e6f7a8b9c11",
-    truckId: "trk-005",
+    vehicleId: "veh-005",
     name: "Unit 02 — Chevy Express",
     vin: "1GCWGAFG5L1234567",
     year: 2020,
@@ -73,7 +73,7 @@ export const MOCK_VEHICLES: Vehicle[] = [
   },
   {
     id: "665f1a2b3c4d5e6f7a8b9c12",
-    truckId: "trk-006",
+    vehicleId: "veh-006",
     name: "Unit 21 — Volvo VNL",
     vin: "4V4NC9EH5NN778899",
     year: 2023,
@@ -91,8 +91,8 @@ export function cloneVehicles(): Vehicle[] {
   return MOCK_VEHICLES.map((vehicle) => ({ ...vehicle }));
 }
 
-export function getVehicleById(truckId: string): Vehicle | undefined {
-  return MOCK_VEHICLES.find((vehicle) => vehicle.truckId === truckId);
+export function getVehicleById(vehicleId: string): Vehicle | undefined {
+  return MOCK_VEHICLES.find((vehicle) => vehicle.vehicleId === vehicleId);
 }
 
 export function getVehicleByRecordId(id: string): Vehicle | undefined {

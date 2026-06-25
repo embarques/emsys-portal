@@ -13,7 +13,7 @@ import {
   formatRouteAssignmentDate,
   formatRouteAssignmentTimestamp,
   getEmployeeGroupRefLabel,
-  getTruckRefLabel,
+  getVehicleRefLabel,
   truncateObjectId,
   truncateRouteAssignmentId,
 } from "@/lib/route-assignments/display";
@@ -58,9 +58,9 @@ export function RouteAssignmentViewSheet({
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Vehicle">
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("truck.id")} value={assignment.truck.id || "—"} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("truck.name")} value={assignment.truck.name || "—"} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("truck")} value={getTruckRefLabel(assignment.truck)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("vehicle.id")} value={assignment.vehicle.id || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("vehicle.name")} value={assignment.vehicle.name || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("vehicle")} value={getVehicleRefLabel(assignment.vehicle)} />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Employee group">
