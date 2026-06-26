@@ -20,6 +20,7 @@ import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { expandInvoiceFilterNode } from "@/lib/invoices/invoice-filters";
 import { createInvoiceBarSearchFilterGroup } from "@/lib/invoices/search-fields";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
+import { formatPickupCommentSummary } from "@/lib/orders/display";
 import {
   createEmptyOrderParty,
   type OrderParty,
@@ -31,7 +32,9 @@ import {
   normalizeApiInvoiceMoney,
   type Invoice,
   type InvoiceBranch,
+  type InvoiceComment,
   type InvoiceLineItem,
+  type InvoiceLineItemBarcode,
   type InvoiceListParams,
 } from "@/lib/invoices/types";
 
@@ -72,12 +75,52 @@ type ApiInvoiceContainer = {
   name?: string;
 };
 
-type ApiInvoiceDetail = {
+type ApiInvoiceComment = {
+  description?: string;
+  purpose?: string;
+  quantity?: number;
+  unit?: string;
+};
+
+type ApiInvoicePickup = {
+  id?: number | string;
+  comments?: ApiInvoiceComment[];
+};
+
+type ApiInvoiceBarcodeStatus = {
+  id?: number;
   name?: string;
+};
+
+type ApiInvoiceBarcodeContainer = {
+  id?: number | string;
+  name?: string;
+};
+
+type ApiInvoiceBarcodeDelivery = {
+  id?: number | string;
+  name?: string;
+};
+
+type ApiInvoiceBarcode = {
+  id?: number | string;
+  number?: string;
+  status?: ApiInvoiceBarcodeStatus;
+  container?: ApiInvoiceBarcodeContainer;
+  delivery?: ApiInvoiceBarcodeDelivery;
+  scanDate?: string;
+};
+
+type ApiInvoiceDetail = {
+  id?: string;
+  name?: string;
+  description?: string;
   quantity?: number;
   labels?: number;
   price?: number;
+  cost?: number;
   total?: number;
+  barcodes?: ApiInvoiceBarcode[];
 };
 
 type ApiInvoice = {
@@ -97,6 +140,8 @@ type ApiInvoice = {
   user?: ApiInvoiceUser;
   employee?: ApiInvoiceUser;
   container?: ApiInvoiceContainer;
+  pickup?: ApiInvoicePickup;
+  comments?: ApiInvoiceComment[];
   sender?: ApiInvoiceParty;
   receiver?: ApiInvoiceParty;
   invoiceDetails?: ApiInvoiceDetail[];
@@ -188,24 +233,100 @@ function normalizeApiInvoiceParty(raw: unknown): OrderParty {
   };
 }
 
+function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .map((entry): InvoiceLineItemBarcode | null => {
+      const barcode = entry as ApiInvoiceBarcode;
+      const number = String(barcode.number ?? "").trim();
+      if (!number) return null;
+
+      const statusName = String(barcode.status?.name ?? "").trim();
+      const containerName = String(barcode.container?.name ?? "").trim();
+      const deliveryName = String(barcode.delivery?.name ?? "").trim();
+      const scanDate = String(barcode.scanDate ?? "").trim();
+
+      return {
+        id: barcode.id != null ? String(barcode.id) : createRecordId(),
+        number,
+        statusId: typeof barcode.status?.id === "number" ? barcode.status.id : undefined,
+        statusName: statusName || undefined,
+        containerId: barcode.container?.id != null ? String(barcode.container.id) : undefined,
+        containerName: containerName || undefined,
+        deliveryId: barcode.delivery?.id != null ? String(barcode.delivery.id) : undefined,
+        deliveryName: deliveryName || undefined,
+        scanDate: scanDate || undefined,
+      };
+    })
+    .filter((barcode): barcode is InvoiceLineItemBarcode => barcode != null);
+}
+
 function normalizeInvoiceLineItems(raw: unknown): InvoiceLineItem[] {
   if (!Array.isArray(raw)) return [];
 
   return raw.map((entry) => {
     const detail = entry as ApiInvoiceDetail;
     const quantity = Number(detail.quantity ?? 0);
-    const unitPrice = Number(detail.price ?? 0);
-    const lineTotal = Number(detail.total ?? quantity * unitPrice);
+    const total = Number(detail.total ?? 0);
+    // The API often sends only `total` (no per-unit `price`); derive the unit
+    // price from the total / quantity so the Unit column is not shown as $0.00.
+    const explicitPrice = detail.price != null ? Number(detail.price) : undefined;
+    const lineTotal = Number.isFinite(total) && total !== 0
+      ? total
+      : quantity * (explicitPrice ?? 0);
+    const unitPrice =
+      explicitPrice != null && Number.isFinite(explicitPrice)
+        ? explicitPrice
+        : quantity > 0
+          ? Math.round((lineTotal / quantity) * 100) / 100
+          : 0;
+    const apiId = readStringId(detail.id);
+    const description = String(detail.description ?? "").trim();
+    const itemName = String(detail.name ?? "").trim() || description || "Line item";
 
     return {
-      id: createRecordId(),
-      itemName: String(detail.name ?? "").trim() || "Line item",
+      id: apiId ?? createRecordId(),
+      apiId,
+      itemName,
+      description: description || undefined,
       quantity,
       labelCount: Number(detail.labels ?? 0),
       unitPrice,
       lineTotal,
+      barcodes: normalizeInvoiceBarcodes(detail.barcodes),
     };
   });
+}
+
+function normalizeInvoiceComments(raw: unknown): InvoiceComment[] {
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .map((entry) => {
+      const comment = entry as ApiInvoiceComment;
+      const description = String(comment.description ?? "").trim();
+      const purpose = String(comment.purpose ?? "").trim();
+      const unit = String(comment.unit ?? "").trim();
+      const quantity = Number(comment.quantity ?? 0);
+
+      const summary = formatPickupCommentSummary({
+        description,
+        purpose,
+        unit,
+        quantity: Number.isFinite(quantity) ? quantity : 0,
+      });
+
+      if (!summary || summary === "—") return null;
+
+      return {
+        id: createRecordId(),
+        description: summary,
+        createdAt: "",
+        createdBy: "",
+      } satisfies InvoiceComment;
+    })
+    .filter((comment): comment is InvoiceComment => comment != null);
 }
 
 function normalizeInvoice(raw: unknown): Invoice | null {
@@ -230,10 +351,11 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     paidStatus: String(item.paidStatus ?? "").trim() || undefined,
     cost: cost || undefined,
     branch: item.branch,
+    pickupId: item.pickup?.id != null ? String(item.pickup.id) : undefined,
     sender: normalizeApiInvoiceParty(item.sender),
     receiver: normalizeApiInvoiceParty(item.receiver),
     lineItems,
-    comments: [],
+    comments: normalizeInvoiceComments(item.comments ?? item.pickup?.comments),
     activity: [],
     payments: [],
     discount,

@@ -16,14 +16,31 @@ import {
 
 export type InvoicePaymentLocation = "usa" | "dr";
 
+export type InvoiceLineItemBarcode = {
+  id: string;
+  number: string;
+  statusId?: number;
+  statusName?: string;
+  containerId?: string;
+  containerName?: string;
+  deliveryId?: string;
+  deliveryName?: string;
+  scanDate?: string;
+};
+
 export type InvoiceLineItem = {
   id: string;
+  /** Real backend invoice-detail id when loaded from the API. */
+  apiId?: string;
   itemId?: string;
   itemName: string;
+  description?: string;
   quantity: number;
   labelCount: number;
   unitPrice: number;
   lineTotal: number;
+  /** Real barcodes attached to this line item from the API. */
+  barcodes?: InvoiceLineItemBarcode[];
 };
 
 export type InvoiceComment = {

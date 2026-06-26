@@ -66,9 +66,12 @@ export function InvoiceCommentsSection({ comments, onAddComment }: InvoiceCommen
           {[...comments].reverse().map((comment) => (
             <li key={comment.id} className="rounded-lg border bg-background px-3 py-3 text-sm">
               <p className="whitespace-pre-wrap">{comment.description}</p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {formatInvoiceCommentDateTime(comment.createdAt)} · {comment.createdBy || DEFAULT_CREATED_BY}
-              </p>
+              {comment.createdAt || comment.createdBy ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {comment.createdAt ? `${formatInvoiceCommentDateTime(comment.createdAt)} · ` : ""}
+                  {comment.createdBy || DEFAULT_CREATED_BY}
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>

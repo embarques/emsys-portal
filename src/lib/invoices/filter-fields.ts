@@ -14,6 +14,13 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter invoice number…",
   },
   {
+    field: "numberRange",
+    label: "Invoice number range",
+    operators: ["eq"],
+    valueType: "range",
+    placeholder: "488800 to 488900",
+  },
+  {
     field: "date",
     label: "Invoice date",
     operators: [...DATE_OPERATORS],
@@ -77,18 +84,11 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter amount…",
   },
   {
-    field: "container.id",
-    label: "Container ID",
-    operators: ["eq", "neq"],
-    valueType: "text",
-    placeholder: "Enter container ID…",
-  },
-  {
     field: "container.name",
-    label: "Container name",
+    label: "Container",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
-    placeholder: "Enter container name…",
+    placeholder: "Enter container…",
   },
   {
     field: "branch.id",

@@ -71,6 +71,8 @@ function expandBooleanSelectFilter(filter: ApiSearchFilter): ApiSearchFilter {
 
 function expandInvoiceLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | null {
   switch (filter.field) {
+    case "numberRange":
+      return expandDateRangeFilter("number", filter.value);
     case "dateRange":
       return expandDateRangeFilter("date", filter.value);
     case "createdAtRange":

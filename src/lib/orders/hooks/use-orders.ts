@@ -82,7 +82,7 @@ export function useSenderOrderHistory(
   return useQuery({
     queryKey: queryKeys.orders.history(id, limit),
     queryFn: () => fetchSenderOrderHistory(id, { limit }),
-    enabled: queryEnabled && Boolean(id),
+    enabled: queryEnabled && id.length > 0,
   });
 }
 

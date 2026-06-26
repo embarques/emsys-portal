@@ -6,21 +6,16 @@ import {
 
 /**
  * Invoice directory search bar — POST /invoices/search OR + contains.
- * Pagination in URL; body is filters + sort only (same as customers/vehicles).
- * Phone searches include normalized phones and legacy phone1 snapshots.
+ * Pagination in URL; body is filters + sort only (same as customers/trucks).
+ * Only the fields the EMSYS /invoices/search endpoint allows may be used here;
+ * phone and address fields are rejected by the API.
  */
 export const INVOICE_BAR_OR_SEARCH_FIELDS = [
   "number",
   "sender.name",
-  "sender.phones.number",
-  "sender.phone1",
   "receiver.name",
-  "receiver.phones.number",
-  "receiver.phone1",
-  "sender.address.address1",
-  "sender.address.address2",
-  "receiver.address.address1",
-  "receiver.address.address2",
+  "container.name",
+  "container.containerNumber",
 ] as const;
 
 export type InvoiceBarOrSearchField = (typeof INVOICE_BAR_OR_SEARCH_FIELDS)[number];
@@ -54,9 +49,7 @@ export function createInvoiceBarSearchFilterGroup(value: string): ApiSearchFilte
 
   const searchFields = /\d/.test(trimmed)
     ? [...INVOICE_BAR_OR_SEARCH_FIELDS]
-    : INVOICE_BAR_OR_SEARCH_FIELDS.filter(
-        (field) => field !== "number" && !field.includes("phone"),
-      );
+    : INVOICE_BAR_OR_SEARCH_FIELDS.filter((field) => field !== "number");
 
   return createOrTextSearchFilterGroup(trimmed, searchFields, "contains");
 }

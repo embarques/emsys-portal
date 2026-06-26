@@ -455,7 +455,7 @@ export function InvoicesWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search by sender, receiver, address, phone, or invoice number…"
+                placeholder="Search by invoice number, sender, receiver, or container…"
               />
             }
             filterPanel={

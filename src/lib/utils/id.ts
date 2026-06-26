@@ -28,3 +28,17 @@ export function createRandomId(): string {
 
   return createRandomIdFromBytes() ?? createRandomIdFallback();
 }
+
+const OBJECT_ID_PATTERN = /^[a-f0-9]{24}$/i;
+
+/**
+ * True when `value` is a 24-character hex Mongo ObjectID.
+ *
+ * EMSYS stores customer ids as ObjectIDs, but legacy/migrated records can still
+ * carry a numeric `oldID`. Filtering an ObjectID API field (e.g. `sender._id`)
+ * with a numeric value makes the backend fail with
+ * "cannot decode 32-bit integer into an ObjectID", so guard such filters first.
+ */
+export function isMongoObjectId(value: string | null | undefined): boolean {
+  return typeof value === "string" && OBJECT_ID_PATTERN.test(value.trim());
+}

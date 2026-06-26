@@ -14,13 +14,15 @@ export function buildInvoiceStatsCountParams(filterRows: TableFilterRowState[]):
 }
 
 export function buildOutstandingInvoiceStatsFilterRows(): TableFilterRowState[] {
+  // The API search allowlist does not include `balance`; outstanding invoices
+  // are those whose paid status is not CLOSED (i.e. OPEN or PARTIAL).
   return [
     {
-      id: "stats-outstanding-balance",
+      id: "stats-outstanding-status",
       join: "and",
-      field: "balance",
-      operator: "gt",
-      value: "0",
+      field: "paidStatus",
+      operator: "neq",
+      value: "CLOSED",
     },
   ];
 }

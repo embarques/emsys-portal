@@ -555,7 +555,9 @@ export function CustomerForm({
         if (isSender) {
           if (googleEnabled) {
             if (!isAddressVerified(address)) {
-              return `${label} must be verified with a Google suggestion.`;
+              return values.addresses.length > 1
+                ? `${label} street address must be verified with a Google suggestion.`
+                : "Street address must be verified with a Google suggestion.";
             }
           } else if (!coreAddressRequiresVerification(address)) {
             return `Complete ${label} or remove it before saving.`;

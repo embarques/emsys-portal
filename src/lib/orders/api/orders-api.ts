@@ -137,7 +137,7 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
 const ORDER_LIST_SEARCH_FIELD = "sender.name";
 
 /** Pickup field holding the sender's customer id, used to load a sender's pickup history. */
-const SENDER_HISTORY_FILTER_FIELD = "sender._id";
+const SENDER_HISTORY_FILTER_FIELD = "sender.id";
 
 /** Default number of historical pickups loaded for a sender. */
 const SENDER_HISTORY_LIMIT = 50;
