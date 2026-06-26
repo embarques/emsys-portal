@@ -354,6 +354,15 @@ export function VehiclesWorkspace() {
             filterPanel={
               <TableFilterPanel
                 resultSummary={`Showing ${vehicles.length} of ${totalVehicles} vehicles`}
+                presets={{
+                  storageKey: "vehicles",
+                  rows: filters.rows,
+                  fields: VEHICLE_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
                 onClearAll={
                   hasActiveFilters
                     ? () => {

@@ -421,6 +421,15 @@ export function UsersWorkspace() {
             filterPanel={
               <TableFilterPanel
                 resultSummary={`Showing ${pageUsers.length} of ${totalUsers} users`}
+                presets={{
+                  storageKey: "users",
+                  rows: filters.rows,
+                  fields: USER_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
                 onClearAll={
                   hasActiveFilters
                     ? () => {

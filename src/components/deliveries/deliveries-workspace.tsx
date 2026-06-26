@@ -392,6 +392,15 @@ export function DeliveriesWorkspace() {
             filterPanel={
               <TableFilterPanel
                 resultSummary={`Showing ${deliveries.length} of ${totalDeliveries} deliveries`}
+                presets={{
+                  storageKey: "deliveries",
+                  rows: filters.rows,
+                  fields: DELIVERY_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
                 onClearAll={
                   hasActiveFilters
                     ? () => {

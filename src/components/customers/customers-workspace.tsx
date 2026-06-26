@@ -468,6 +468,15 @@ export function CustomersWorkspace() {
             filterPanel={
               <TableFilterPanel
                 resultSummary={listSummary}
+                presets={{
+                  storageKey: "customers",
+                  rows: filters.rows,
+                  fields: CUSTOMER_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
                 onClearAll={
                   hasActiveFilters
                     ? () => {

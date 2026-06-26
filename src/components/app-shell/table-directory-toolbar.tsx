@@ -5,7 +5,9 @@ import { createPortal } from "react-dom";
 import { ChevronDown, Filter } from "lucide-react";
 
 import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
+import { FilterPresetMenu } from "@/components/app-shell/filter-preset-menu";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
+import type { TableFilterFieldDefinition, TableFilterRowState } from "@/lib/table/filter-types";
 import { cn } from "@/lib/utils";
 
 type TableFilterToggleProps = {
@@ -237,10 +239,22 @@ export function TableDirectoryToolbar({
   );
 }
 
+type TableFilterPanelPresets = {
+  /** Unique localStorage scope for saved presets, typically the feature name. */
+  storageKey: string;
+  /** Current advanced-filter rows to capture when saving a preset. */
+  rows: TableFilterRowState[];
+  /** Field definitions used to determine whether the current rows are saveable. */
+  fields?: TableFilterFieldDefinition[];
+  /** Applies a selected preset's rows. */
+  onApply: (rows: TableFilterRowState[]) => void;
+};
+
 type TableFilterPanelProps = {
   title?: string;
   resultSummary?: string;
   onClearAll?: () => void;
+  presets?: TableFilterPanelPresets;
   children: ReactNode;
   className?: string;
 };
@@ -249,6 +263,7 @@ export function TableFilterPanel({
   title = "Filters",
   resultSummary,
   onClearAll,
+  presets,
   children,
   className,
 }: TableFilterPanelProps) {
@@ -266,15 +281,25 @@ export function TableFilterPanel({
             <p className="text-xs text-muted-foreground">{resultSummary}</p>
           ) : null}
         </div>
-        {onClearAll ? (
-          <button
-            type="button"
-            className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-            onClick={onClearAll}
-          >
-            Clear all
-          </button>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-3">
+          {presets ? (
+            <FilterPresetMenu
+              storageKey={presets.storageKey}
+              rows={presets.rows}
+              fields={presets.fields}
+              onApply={presets.onApply}
+            />
+          ) : null}
+          {onClearAll ? (
+            <button
+              type="button"
+              className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              onClick={onClearAll}
+            >
+              Clear all
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div

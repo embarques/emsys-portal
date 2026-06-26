@@ -461,6 +461,15 @@ export function InvoicesWorkspace() {
             filterPanel={
               <TableFilterPanel
                 resultSummary={`Showing ${invoices.length} of ${totalInvoices} invoices`}
+                presets={{
+                  storageKey: "invoices",
+                  rows: filters.rows,
+                  fields: INVOICE_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
                 onClearAll={
                   hasActiveFilters
                     ? () => {

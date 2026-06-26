@@ -365,6 +365,15 @@ export function ContainersWorkspace() {
             filterPanel={
               <TableFilterPanel
                 resultSummary={`Showing ${containers.length} of ${totalContainers} containers`}
+                presets={{
+                  storageKey: "containers",
+                  rows: filters.rows,
+                  fields: CONTAINER_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
                 onClearAll={
                   hasActiveFilters
                     ? () => {

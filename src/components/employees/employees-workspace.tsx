@@ -454,6 +454,15 @@ export function EmployeesWorkspace() {
             filterPanel={
               <TableFilterPanel
                 resultSummary={`Showing ${employees.length} of ${totalEmployees} employees`}
+                presets={{
+                  storageKey: "employees",
+                  rows: filters.rows,
+                  fields: EMPLOYEE_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
                 onClearAll={
                   hasActiveFilters
                     ? () => {

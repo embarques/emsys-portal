@@ -411,6 +411,15 @@ export function OrdersWorkspace() {
             filterPanel={
               <TableFilterPanel
                 resultSummary={`Showing ${orders.length} of ${totalOrders} orders`}
+                presets={{
+                  storageKey: "orders",
+                  rows: filters.rows,
+                  fields: ORDER_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
                 onClearAll={
                   hasActiveFilters
                     ? () => {

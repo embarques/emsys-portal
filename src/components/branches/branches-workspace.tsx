@@ -330,6 +330,15 @@ export function BranchesWorkspace() {
             filterPanel={
               <TableFilterPanel
                 resultSummary={`Showing ${branches.length} of ${totalBranches} branches`}
+                presets={{
+                  storageKey: "branches",
+                  rows: filters.rows,
+                  fields: BRANCH_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
                 onClearAll={
                   hasActiveFilters
                     ? () => {
