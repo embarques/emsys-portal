@@ -27,7 +27,6 @@ import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import {
   TableDirectoryToolbar,
   TableFilterPanel,
-  TableFilterSection,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
@@ -41,8 +40,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatBranchFilterLabel } from "@/lib/branches/display";
-import { useBranches } from "@/lib/branches/hooks/use-branches";
 import {
   computeInvoiceKpis,
   formatInvoiceDate,
@@ -76,7 +73,6 @@ import { useUsers } from "@/lib/users/hooks/use-users";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
-  INVOICE_PAYMENT_LOCATIONS,
   buildInvoiceListParams,
   createInvoiceComment,
   createInvoicePayment,
@@ -130,11 +126,6 @@ export function InvoicesWorkspace() {
     limit: 100,
     sort: "fullName:asc",
   });
-  const { data: branchesData, isLoading: branchesLoading } = useBranches({
-    page: 1,
-    limit: 100,
-    sort: "name:asc",
-  });
   const deleteInvoicesMutation = useDeleteInvoices();
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
 
@@ -169,13 +160,6 @@ export function InvoicesWorkspace() {
     () => buildOrderCreatedByFilterOptions(usersData?.items ?? []),
     [usersData?.items],
   );
-
-  const branchFilterOptions = useMemo(() => {
-    return (branchesData?.items ?? []).map((branch) => ({
-      value: String(branch.id),
-      label: formatBranchFilterLabel(branch),
-    }));
-  }, [branchesData?.items]);
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -291,11 +275,6 @@ export function InvoicesWorkspace() {
     },
   ];
 
-  const paymentFilters: { value: InvoiceFilterState["paymentLocation"]; label: string }[] = [
-    { value: "all", label: "All" },
-    ...INVOICE_PAYMENT_LOCATIONS,
-  ];
-
   const tableColumns: DataTableColumn<Invoice>[] = [
     {
       id: "invoiceNumber",
@@ -397,9 +376,8 @@ export function InvoicesWorkspace() {
 
   const columnVisibility = useColumnVisibility("invoices-v4", tableColumns);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
-  const activeFilterCount = advancedFilterCount + (filters.paymentLocation !== "all" ? 1 : 0);
-  const hasActiveFilters =
-    Boolean(filters.query.trim()) || advancedFilterCount > 0 || filters.paymentLocation !== "all";
+  const activeFilterCount = advancedFilterCount;
+  const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;
   const isSearchPending = filters.query.trim() !== deferredQuery.trim();
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: hasActiveFilters,
@@ -485,29 +463,12 @@ export function InvoicesWorkspace() {
                   fields={INVOICE_TABLE_FILTER_FIELDS}
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
-                    branches: branchesLoading ? [] : branchFilterOptions,
                   }}
                   onChange={(rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
                   }}
                 />
-                <TableFilterSection label="Paid at">
-                  {paymentFilters.map((option) => (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      size="sm"
-                      variant={filters.paymentLocation === option.value ? "default" : "outline"}
-                      onClick={() => {
-                        setFilters((current) => ({ ...current, paymentLocation: option.value }));
-                        setPage(1);
-                      }}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </TableFilterSection>
               </TableFilterPanel>
             }
           />

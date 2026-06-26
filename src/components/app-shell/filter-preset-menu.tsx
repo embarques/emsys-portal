@@ -100,7 +100,7 @@ export function FilterPresetMenu({
         <PopoverContent
           align="end"
           sideOffset={6}
-          className="w-64 p-3"
+          className="z-[110] w-64 p-3"
           onMouseDown={(event) => event.stopPropagation()}
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
@@ -164,7 +164,7 @@ export function FilterPresetMenu({
         <PopoverContent
           align="end"
           sideOffset={6}
-          className="w-64 p-0"
+          className="z-[110] w-64 p-0"
           onMouseDown={(event) => event.stopPropagation()}
         >
           {presets.length > 0 ? (
