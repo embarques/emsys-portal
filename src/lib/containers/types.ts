@@ -1,6 +1,7 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { CONTAINER_TABLE_FILTER_FIELDS } from "@/lib/containers/filter-fields";
 
 export type Container = {
   id: number;
@@ -126,7 +127,9 @@ export function buildContainerListParams(input: {
     params.search = search;
   }
 
-  const completeRows = input.rows.filter((row) => isCompleteFilterRow(row));
+  const completeRows = input.rows.filter((row) =>
+    isCompleteFilterRow(row, CONTAINER_TABLE_FILTER_FIELDS),
+  );
   if (completeRows.length > 0) {
     params.filterRows = completeRows;
   }

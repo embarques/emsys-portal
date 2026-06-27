@@ -19,8 +19,12 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+} from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
@@ -53,7 +57,9 @@ import {
   type ItemFilterState,
   type ItemFormValues,
 } from "@/lib/items/types";
+import { ITEM_TABLE_FILTER_FIELDS } from "@/lib/items/filter-fields";
 import type { DataTableColumn } from "@/lib/table/types";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
@@ -62,11 +68,13 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: ItemFilterState = {
   query: "",
+  rows: [],
 };
 
 export function ItemsWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<ItemFilterState>(defaultFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -79,8 +87,8 @@ export function ItemsWorkspace() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const listParams = useMemo(
-    () => buildItemListParams({ page, limit: PAGE_SIZE, query: debouncedQuery, sort }),
-    [debouncedQuery, page, sort],
+    () => buildItemListParams({ page, limit: PAGE_SIZE, query: debouncedQuery, rows: filters.rows, sort }),
+    [debouncedQuery, filters.rows, page, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useItems(listParams);
@@ -213,7 +221,8 @@ export function ItemsWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("items-v2", tableColumns);
-  const hasActiveFilters = Boolean(filters.query.trim());
+  const advancedFilterCount = countCompleteFilterRows(filters.rows, ITEM_TABLE_FILTER_FIELDS);
+  const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: hasActiveFilters,
     query: filters.query,
@@ -258,18 +267,52 @@ export function ItemsWorkspace() {
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={advancedFilterCount}
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={filters.query}
                 onChange={(query) => {
-                  setFilters({ query });
+                  setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
                 placeholder="Search items..."
               />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${items.length} of ${totalItems} items`}
+                presets={{
+                  storageKey: "items",
+                  rows: filters.rows,
+                  fields: ITEM_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              >
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={ITEM_TABLE_FILTER_FIELDS}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  }}
+                />
+              </TableFilterPanel>
             }
           />
         </CardHeader>
@@ -318,7 +361,7 @@ export function ItemsWorkspace() {
             emptyState={
               <>
                 <p className="text-muted-foreground">
-                  {filters.query.trim() ? "No items match your search." : "No items yet."}
+                  {hasActiveFilters ? "No items match your filters." : "No items yet."}
                 </p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />

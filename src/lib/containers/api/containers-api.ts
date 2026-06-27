@@ -8,6 +8,7 @@ import {
   hasResourceListFilters,
 } from "@/lib/api/search-query";
 import { CONTAINER_TABLE_FILTER_FIELDS } from "@/lib/containers/filter-fields";
+import { expandContainerFilterNode } from "@/lib/containers/container-filters";
 import { CONTAINER_BAR_OR_SEARCH_FIELDS } from "@/lib/containers/search-fields";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
@@ -35,6 +36,7 @@ function buildContainerSearchBody(params: ContainerListParams) {
       barOrSearchFields: CONTAINER_BAR_OR_SEARCH_FIELDS,
       filterRows: params.filterRows,
       tableFilterFields: CONTAINER_TABLE_FILTER_FIELDS,
+      expandNode: expandContainerFilterNode,
     }),
   });
 }
@@ -284,10 +286,22 @@ export async function fetchContainerById(containerId: string | number): Promise<
   return container;
 }
 
+/**
+ * The API rejects POST /containers without an `id`, so the next id is derived
+ * from the current maximum. Fetches the highest id and returns max + 1.
+ */
+async function resolveNextContainerId(): Promise<number> {
+  const top = await fetchContainers({ page: 1, limit: 1, sort: "id:desc" });
+  const maxId = top.items[0]?.id ?? 0;
+  return (Number.isFinite(maxId) ? maxId : 0) + 1;
+}
+
 export async function createContainer(values: ContainerFormValues): Promise<Container> {
+  const nextId = await resolveNextContainerId();
+
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.CONTAINERS,
-    buildContainerWritePayload(values),
+    buildContainerWritePayload(values, { containerId: nextId }),
   );
 
   assertMutationSuccess(response, "Unable to create container.");

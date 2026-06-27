@@ -20,7 +20,7 @@ import {
 import { queryKeys } from "@/lib/query/query-keys";
 
 function isItemListFiltered(params: ItemListParams): boolean {
-  return hasListTextSearch(params.search);
+  return hasListTextSearch(params.search) || (params.filterRows ?? []).length > 0;
 }
 
 export function useItems(params: ItemListParams, options: { enabled?: boolean } = {}) {

@@ -447,10 +447,10 @@ export function buildResourceSearchFilterGroups(input: {
   filterRows?: TableFilterRowState[];
   tableFilterFields: TableFilterFieldDefinition[];
   chipFilters?: ApiSearchFilter[];
-  expandNode?: (node: ApiSearchFilterNode) => ApiSearchFilterNode;
+  expandNode?: (node: ApiSearchFilterNode) => ApiSearchFilterNode | null;
 }): ApiSearchFilterGroup[] {
   const groups: ApiSearchFilterGroup[] = [];
-  const expandNode = input.expandNode ?? ((node) => node);
+  const expandNode = input.expandNode ?? ((node: ApiSearchFilterNode) => node);
 
   if (input.search?.value.trim()) {
     if (input.search.field) {

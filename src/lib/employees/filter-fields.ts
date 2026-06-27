@@ -1,46 +1,62 @@
-import { EMPLOYEE_DEPARTMENTS, EMPLOYEE_GET_SEARCH_CAPABILITIES } from "@/lib/employees/types";
+import { EMPLOYEE_DEPARTMENTS } from "@/lib/employees/types";
 import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 
-const TEXT_FIELDS = new Set([
-  "name",
-  "title",
-  "email",
-  "id",
-  "address.address1",
-  "address.address2",
-  "address.apartment",
-  "address.city",
-  "address.state",
-  "address.country",
-  "address.zipcode",
-  "branch.code",
-]);
+const TEXT_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
+const NUMERIC_OPERATORS = ["eq", "neq", "gte", "lte", "gt", "lt"] as const;
+const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 
-const TEXT_FILTER_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
-
-const PHONE_FILTER_OPERATORS =
-  EMPLOYEE_GET_SEARCH_CAPABILITIES.find((entry) => entry.field === "phones.number")?.operators ?? [
-    "startsWith",
-    "contains",
-    "eq",
-    "neq",
-  ];
-
+/**
+ * Advanced filter fields for employees. Only backend-supported fields are listed.
+ * `address.address1`, `address.address2`, `address.apartment`, `address.country`,
+ * and `branch.code` return 400 and are intentionally excluded. `id`, `branch.id`,
+ * `cost`, and `active` are coerced to number/boolean in `expandEmployeeFilterNode`.
+ */
 export const EMPLOYEE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
-  ...EMPLOYEE_GET_SEARCH_CAPABILITIES.filter((entry) => TEXT_FIELDS.has(entry.field)).map((entry) => ({
-    field: entry.field,
-    label: entry.label,
-    operators: entry.operators,
-    valueType: "text" as const,
-    placeholder: `Enter ${entry.label.toLowerCase()}…`,
-  })),
+  {
+    field: "id",
+    label: "Employee ID",
+    operators: ["eq", "neq", "gte", "lte"],
+    valueType: "text",
+    placeholder: "Enter employee ID…",
+  },
+  { field: "name", label: "Name", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter name…" },
+  { field: "title", label: "Title", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter title…" },
+  { field: "email", label: "Email", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter email…" },
   {
     field: "phone",
     label: "Phone",
-    operators: PHONE_FILTER_OPERATORS,
+    operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter phone…",
     queryFields: ["phones.number"],
+  },
+  {
+    field: "address.city",
+    label: "City",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter city…",
+  },
+  {
+    field: "address.state",
+    label: "State",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter state…",
+  },
+  {
+    field: "address.zipcode",
+    label: "Zip code",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter zip code…",
+  },
+  {
+    field: "department",
+    label: "Department",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    options: EMPLOYEE_DEPARTMENTS.map((department) => ({ value: department, label: department })),
   },
   {
     field: "active",
@@ -60,23 +76,16 @@ export const EMPLOYEE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     optionsSource: "branches",
   },
   {
-    field: "department",
-    label: "Department",
-    operators: ["eq", "neq"],
-    valueType: "select",
-    options: EMPLOYEE_DEPARTMENTS.map((department) => ({ value: department, label: department })),
-  },
-  {
-    field: "startDate",
-    label: "Start date",
-    operators: ["eq", "neq"],
+    field: "cost",
+    label: "Cost",
+    operators: [...NUMERIC_OPERATORS],
     valueType: "text",
-    placeholder: "YYYY-MM-DD",
+    placeholder: "Enter amount…",
   },
   {
-    field: "endDate",
-    label: "End date",
-    operators: ["eq", "neq"],
+    field: "createdAt",
+    label: "Date created",
+    operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },

@@ -9,6 +9,7 @@ import {
   type ApiSearchFilter,
 } from "@/lib/api/search-query";
 import { USER_TABLE_FILTER_FIELDS } from "@/lib/users/filter-fields";
+import { expandUserFilterNode } from "@/lib/users/user-filters";
 import { USER_BAR_OR_SEARCH_FIELDS } from "@/lib/users/search-fields";
 import { buildApiBranchDto, buildApiRoleRef } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
@@ -27,15 +28,15 @@ function buildUserChipFilters(params: UserListParams): ApiSearchFilter[] {
   const filters: ApiSearchFilter[] = [];
 
   if (params.active !== undefined && params.active !== "all") {
-    filters.push({ field: "active", operator: "eq", value: String(params.active) });
+    filters.push({ field: "active", operator: "eq", value: params.active === true });
   }
 
   if (params.branch && params.branch !== "all") {
-    filters.push({ field: "branch.id", operator: "eq", value: String(params.branch) });
+    filters.push({ field: "branch.id", operator: "eq", value: Number(params.branch) });
   }
 
   if (params.roleId && params.roleId !== "all") {
-    filters.push({ field: "role.id", operator: "eq", value: String(params.roleId) });
+    filters.push({ field: "role.id", operator: "eq", value: Number(params.roleId) });
   }
 
   return filters;
@@ -59,6 +60,7 @@ function buildUserSearchBody(params: UserListParams) {
       filterRows: params.filterRows,
       tableFilterFields: USER_TABLE_FILTER_FIELDS,
       chipFilters: buildUserChipFilters(params),
+      expandNode: expandUserFilterNode,
     }),
   });
 }
@@ -320,10 +322,6 @@ function buildUserWritePayload(
   return payload;
 }
 
-function formValuesToCreateUserPayload(values: UserFormValues): ApiUserWritePayload {
-  return buildUserWritePayload(values, { requirePassword: true });
-}
-
 function formValuesToUpdateUserPayload(values: UserFormValues, userId: number): ApiUserWritePayload {
   return buildUserWritePayload(values, { userId });
 }
@@ -432,10 +430,22 @@ export async function fetchUserById(userId: string | number): Promise<User> {
   return user;
 }
 
+/**
+ * The API rejects POST /users without an `id`, so the next id is derived from
+ * the current maximum. Fetches the highest id and returns max + 1.
+ */
+async function resolveNextUserId(): Promise<number> {
+  const top = await fetchUsers({ page: 1, limit: 1, sort: "id:desc" });
+  const maxId = top.items[0]?.id ?? 0;
+  return (Number.isFinite(maxId) ? maxId : 0) + 1;
+}
+
 export async function createUser(values: UserFormValues): Promise<User> {
+  const nextId = await resolveNextUserId();
+
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.USERS,
-    formValuesToCreateUserPayload(values),
+    buildUserWritePayload(values, { userId: nextId, requirePassword: true }),
   );
 
   assertMutationSuccess(response, "Unable to create user.");

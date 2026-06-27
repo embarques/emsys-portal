@@ -1,5 +1,8 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import { isCompleteFilterRow } from "@/lib/table/filter-builder";
+import type { TableFilterRowState } from "@/lib/table/filter-types";
+import { ITEM_TABLE_FILTER_FIELDS } from "@/lib/items/filter-fields";
 
 /** EMSYS invoice description (a.k.a. item) from GET /invoice-descriptions. */
 export type Item = {
@@ -26,6 +29,7 @@ export type ItemSearchFilter = ApiListTextSearch;
 
 export type ItemFilterState = {
   query: string;
+  rows: TableFilterRowState[];
 };
 
 export type ItemListParams = {
@@ -34,6 +38,7 @@ export type ItemListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: ItemSearchFilter;
+  filterRows?: TableFilterRowState[];
 };
 
 /** GET /invoice-descriptions?page=1&limit=50&offset=0&sort=name:asc */
@@ -67,6 +72,7 @@ export function buildItemListParams(input: {
   page: number;
   limit?: number;
   query: string;
+  rows?: TableFilterRowState[];
   sort?: ApiListSortInput;
 }): ItemListParams {
   const params: ItemListParams = {
@@ -79,6 +85,13 @@ export function buildItemListParams(input: {
   const search = createItemSearchFilter(input.query);
   if (search) {
     params.search = search;
+  }
+
+  const completeRows = (input.rows ?? []).filter((row) =>
+    isCompleteFilterRow(row, ITEM_TABLE_FILTER_FIELDS),
+  );
+  if (completeRows.length > 0) {
+    params.filterRows = completeRows;
   }
 
   return params;

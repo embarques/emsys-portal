@@ -8,6 +8,8 @@ import {
   hasResourceListFilters,
 } from "@/lib/api/search-query";
 import { ITEM_BAR_OR_SEARCH_FIELDS } from "@/lib/items/search-fields";
+import { ITEM_TABLE_FILTER_FIELDS } from "@/lib/items/filter-fields";
+import { expandItemFilterNode } from "@/lib/items/item-filters";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   DEFAULT_ITEM_LIST_PARAMS,
@@ -74,7 +76,11 @@ function normalizePaginatedItems(payload: PaginatedApiEnvelope<unknown[]>): Pagi
 }
 
 function hasItemListFilters(params: ItemListParams): boolean {
-  return hasResourceListFilters({ search: params.search });
+  return hasResourceListFilters({
+    search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: ITEM_TABLE_FILTER_FIELDS,
+  });
 }
 
 function buildItemsQuery(params: ItemListParams): string {
@@ -92,8 +98,9 @@ function buildItemSearchBody(params: ItemListParams) {
     filterGroups: buildResourceSearchFilterGroups({
       search: params.search,
       barOrSearchFields: ITEM_BAR_OR_SEARCH_FIELDS,
-      filterRows: [],
-      tableFilterFields: [],
+      filterRows: params.filterRows,
+      tableFilterFields: ITEM_TABLE_FILTER_FIELDS,
+      expandNode: expandItemFilterNode,
     }),
   });
 }
@@ -217,10 +224,22 @@ export async function fetchItemById(itemId: string | number): Promise<Item> {
   return item;
 }
 
+/**
+ * The API rejects POST /invoice-descriptions without an `id`, so the next id is
+ * derived from the current maximum. Fetches the highest id and returns max + 1.
+ */
+async function resolveNextItemId(): Promise<number> {
+  const top = await fetchItems({ page: 1, limit: 1, sort: "id:desc" });
+  const maxId = top.items[0] ? readNumericId(top.items[0].itemId) ?? 0 : 0;
+  return maxId + 1;
+}
+
 export async function createItem(values: ItemFormValues): Promise<Item> {
+  const nextId = await resolveNextItemId();
+
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.INVOICE_DESCRIPTIONS,
-    buildItemWritePayload(values),
+    buildItemWritePayload(values, { itemId: nextId }),
   );
 
   assertMutationSuccess(response, "Unable to create item.");

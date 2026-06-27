@@ -443,7 +443,7 @@ export function ContainersWorkspace() {
             emptyState={
               <>
                 <p className="text-muted-foreground">
-                  {filters.query.trim() ? "No containers match your search." : "No containers yet."}
+                  {hasActiveFilters ? "No containers match your filters." : "No containers yet."}
                 </p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />

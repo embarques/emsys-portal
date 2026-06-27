@@ -1,16 +1,30 @@
-import { USER_GET_SEARCH_CAPABILITIES, USER_ROLE_OPTIONS } from "@/lib/users/types";
+import { USER_ROLE_OPTIONS } from "@/lib/users/types";
 import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 
-const TEXT_FIELDS = new Set(["userName", "fullName", "email", "uid", "type", "role.name"]);
+const TEXT_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
+const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 
+/**
+ * Advanced filter fields for users. Only backend-supported fields are listed —
+ * `branch.code` and `accessCode` return 400 and are excluded. `id`, `branch.id`,
+ * and `role.id` are coerced to numbers (and `active` to boolean) in
+ * `expandUserFilterNode` because the backend ignores string numerics/booleans.
+ */
 export const USER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
-  ...USER_GET_SEARCH_CAPABILITIES.filter((entry) => TEXT_FIELDS.has(entry.field)).map((entry) => ({
-    field: entry.field,
-    label: entry.label,
-    operators: entry.operators,
-    valueType: "text" as const,
-    placeholder: `Enter ${entry.label.toLowerCase()}…`,
-  })),
+  {
+    field: "id",
+    label: "User ID",
+    operators: ["eq", "neq", "gte", "lte"],
+    valueType: "text",
+    placeholder: "Enter user ID…",
+  },
+  { field: "userName", label: "Username", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter username…" },
+  { field: "fullName", label: "Full name", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter full name…" },
+  { field: "email", label: "Email", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter email…" },
+  { field: "uid", label: "UID", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter UID…" },
+  { field: "type", label: "Type", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter type…" },
+  { field: "role.name", label: "Role name", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter role name…" },
+  { field: "branch.name", label: "Branch name", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter branch name…" },
   {
     field: "active",
     label: "Active",
@@ -34,5 +48,12 @@ export const USER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: ["eq", "neq"],
     valueType: "select",
     options: USER_ROLE_OPTIONS.map((role) => ({ value: String(role.id), label: role.label })),
+  },
+  {
+    field: "createdAt",
+    label: "Date created",
+    operators: [...DATE_OPERATORS],
+    valueType: "text",
+    placeholder: "YYYY-MM-DD",
   },
 ];

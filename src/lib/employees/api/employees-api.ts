@@ -9,6 +9,7 @@ import {
   type ApiSearchFilter,
 } from "@/lib/api/search-query";
 import { EMPLOYEE_TABLE_FILTER_FIELDS } from "@/lib/employees/filter-fields";
+import { expandEmployeeFilterNode } from "@/lib/employees/employee-filters";
 import { EMPLOYEE_BAR_OR_SEARCH_FIELDS } from "@/lib/employees/search-fields";
 import {
   buildApiAddressPayload,
@@ -41,11 +42,11 @@ function buildEmployeeChipFilters(params: EmployeeListParams): ApiSearchFilter[]
   }
 
   if (params.active !== undefined && params.active !== "all") {
-    filters.push({ field: "active", operator: "eq", value: String(params.active) });
+    filters.push({ field: "active", operator: "eq", value: params.active === true });
   }
 
   if (params.branch && params.branch !== "all") {
-    filters.push({ field: "branch.id", operator: "eq", value: String(params.branch) });
+    filters.push({ field: "branch.id", operator: "eq", value: Number(params.branch) });
   }
 
   return filters;
@@ -69,6 +70,7 @@ function buildEmployeeSearchBody(params: EmployeeListParams) {
       filterRows: params.filterRows,
       tableFilterFields: EMPLOYEE_TABLE_FILTER_FIELDS,
       chipFilters: buildEmployeeChipFilters(params),
+      expandNode: expandEmployeeFilterNode,
     }),
   });
 }
@@ -417,10 +419,22 @@ export async function fetchEmployeeById(employeeId: string): Promise<Employee> {
   return employee;
 }
 
+/**
+ * The API rejects POST /employees without an `id`, so the next id is derived
+ * from the current maximum. Fetches the highest id and returns max + 1.
+ */
+async function resolveNextEmployeeId(): Promise<number> {
+  const top = await fetchEmployees({ page: 1, limit: 1, sort: "id:desc" });
+  const maxId = top.items[0]?.id ?? 0;
+  return (Number.isFinite(maxId) ? maxId : 0) + 1;
+}
+
 export async function createEmployee(values: EmployeeFormValues): Promise<Employee> {
+  const nextId = await resolveNextEmployeeId();
+
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.EMPLOYEES,
-    buildEmployeeWritePayload(values),
+    buildEmployeeWritePayload(values, { id: nextId }),
   );
 
   assertMutationSuccess(response, "Unable to create employee.");
