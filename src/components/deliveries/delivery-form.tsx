@@ -18,6 +18,8 @@ type DeliveryFormProps = {
   initialValues?: DeliveryFormValues;
   containerOptions: SearchableSelectOption[];
   employeeGroupOptions: SearchableSelectOption[];
+  employeeGroupSearchLoading?: boolean;
+  onEmployeeGroupSearchChange?: (query: string) => void;
   submitLabel: string;
   isSubmitting?: boolean;
   externalError?: string | null;
@@ -29,6 +31,8 @@ export function DeliveryForm({
   initialValues,
   containerOptions,
   employeeGroupOptions,
+  employeeGroupSearchLoading = false,
+  onEmployeeGroupSearchChange,
   submitLabel,
   isSubmitting = false,
   externalError = null,
@@ -122,8 +126,11 @@ export function DeliveryForm({
               onValueChange={(value) => updateField("employeeGroupId", value)}
               options={employeeGroupOptions}
               placeholder="Select employee group"
-              searchPlaceholder="Search employee groups..."
+              searchPlaceholder="Search groups or employees..."
               emptyMessage="No employee groups found."
+              loading={employeeGroupSearchLoading}
+              manualFiltering
+              onSearchChange={onEmployeeGroupSearchChange}
               required
             />
           </div>

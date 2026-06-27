@@ -67,7 +67,11 @@ import {
   type DeliveryFilterState,
   type DeliveryFormValues,
 } from "@/lib/deliveries/types";
-import { useEmployeeGroupPicker } from "@/lib/employee-groups/hooks/use-employee-groups";
+import {
+  useEmployeeGroupPicker,
+  useEmployeeGroupSearch,
+} from "@/lib/employee-groups/hooks/use-employee-groups";
+import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import type { DataTableColumn } from "@/lib/table/types";
@@ -95,6 +99,7 @@ export function DeliveriesWorkspace() {
   const [editingDelivery, setEditingDelivery] = useState<Delivery | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Delivery | Delivery[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [employeeGroupQuery, setEmployeeGroupQuery] = useState("");
 
   const listParams = useMemo(
     () =>
@@ -113,6 +118,13 @@ export function DeliveriesWorkspace() {
   const kpiQuery = useDeliveryKpis();
   const containersQuery = useContainerPicker(250);
   const employeeGroupsQuery = useEmployeeGroupPicker(250);
+  const debouncedEmployeeGroupQuery = useDebouncedValue(
+    employeeGroupQuery,
+    SEARCH_DEBOUNCE_MS,
+  ).trim();
+  const employeeGroupSearch = useEmployeeGroupSearch(
+    debouncedEmployeeGroupQuery ? { value: debouncedEmployeeGroupQuery } : undefined,
+  );
   const createDeliveryMutation = useCreateDelivery();
   const updateDeliveryMutation = useUpdateDelivery();
   const deleteDeliveriesMutation = useDeleteDeliveries();
@@ -138,13 +150,24 @@ export function DeliveriesWorkspace() {
     [containersQuery.data?.items],
   );
 
+  const employeeGroups = useMemo(() => {
+    const merged = new Map<string, EmployeeGroupOption>();
+    (employeeGroupsQuery.data?.items ?? []).forEach((group) => merged.set(group.id, group));
+    (employeeGroupSearch.data?.items ?? []).forEach((group) => merged.set(group.id, group));
+
+    if (editingDelivery?.employeeGroup && !merged.has(editingDelivery.employeeGroup.id)) {
+      merged.set(editingDelivery.employeeGroup.id, {
+        ...editingDelivery.employeeGroup,
+        employees: [],
+      });
+    }
+
+    return Array.from(merged.values());
+  }, [editingDelivery?.employeeGroup, employeeGroupSearch.data?.items, employeeGroupsQuery.data?.items]);
+
   const employeeGroupRefs: DeliveryEmployeeGroupRef[] = useMemo(
-    () =>
-      (employeeGroupsQuery.data?.items ?? []).map((group) => ({
-        id: group.id,
-        name: group.name,
-      })),
-    [employeeGroupsQuery.data?.items],
+    () => employeeGroups.map((group) => ({ id: group.id, name: group.name })),
+    [employeeGroups],
   );
 
   const containerOptions: SearchableSelectOption[] = useMemo(
@@ -159,13 +182,34 @@ export function DeliveriesWorkspace() {
   );
 
   const employeeGroupOptions: SearchableSelectOption[] = useMemo(
-    () =>
-      employeeGroupRefs.map((group) => ({
+    () => {
+      const source = employeeGroupQuery.trim()
+        ? debouncedEmployeeGroupQuery
+          ? (employeeGroupSearch.data?.items ?? [])
+          : []
+        : employeeGroups;
+
+      return source.map((group) => ({
         value: group.id,
         label: group.name,
-      })),
-    [employeeGroupRefs],
+        descriptionLines: [
+          group.employees.map((employee) => employee.name).join(", "),
+          group.branch ?? "",
+        ].filter(Boolean),
+        keywords: group.employees.map((employee) => employee.name),
+      }));
+    },
+    [
+      debouncedEmployeeGroupQuery,
+      employeeGroupQuery,
+      employeeGroupSearch.data?.items,
+      employeeGroups,
+    ],
   );
+
+  const employeeGroupSearchLoading =
+    Boolean(employeeGroupQuery.trim()) &&
+    (employeeGroupQuery.trim() !== debouncedEmployeeGroupQuery || employeeGroupSearch.isFetching);
 
   const kpis = useMemo(() => computeDeliveryKpis(kpiQuery.items), [kpiQuery.items]);
 
@@ -523,6 +567,8 @@ export function DeliveriesWorkspace() {
             }
             containerOptions={containerOptions}
             employeeGroupOptions={employeeGroupOptions}
+            employeeGroupSearchLoading={employeeGroupSearchLoading}
+            onEmployeeGroupSearchChange={setEmployeeGroupQuery}
             submitLabel={formMode === "edit" ? "Save changes" : "Add delivery"}
             externalError={formError}
             onSubmit={saveDelivery}
