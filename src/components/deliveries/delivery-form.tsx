@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, Container, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import {
 type DeliveryFormProps = {
   initialValues?: DeliveryFormValues;
   containerOptions: SearchableSelectOption[];
-  employeeOptions: SearchableSelectOption[];
+  employeeGroupOptions: SearchableSelectOption[];
   submitLabel: string;
   isSubmitting?: boolean;
   externalError?: string | null;
@@ -28,7 +28,7 @@ type DeliveryFormProps = {
 export function DeliveryForm({
   initialValues,
   containerOptions,
-  employeeOptions,
+  employeeGroupOptions,
   submitLabel,
   isSubmitting = false,
   externalError = null,
@@ -58,11 +58,6 @@ export function DeliveryForm({
     }
     onSubmit(parsed.data);
   }
-
-  const helperOptions = useMemo(
-    () => [{ value: "", label: "No helper" }, ...employeeOptions],
-    [employeeOptions],
-  );
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
@@ -116,49 +111,21 @@ export function DeliveryForm({
           </div>
         </FormSection>
 
-        <FormSection icon={Users} title="Crew" required>
-          <div className="grid gap-2.5 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label htmlFor="delivery-driver">
-                Driver <span className="text-destructive">*</span>
-              </Label>
-              <SearchableSelect
-                id="delivery-driver"
-                value={values.employeeId}
-                onValueChange={(value) => updateField("employeeId", value)}
-                options={employeeOptions}
-                placeholder="Select driver"
-                searchPlaceholder="Search employees..."
-                emptyMessage="No employees found."
-                required
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="delivery-helper-1">Helper 1</Label>
-              <SearchableSelect
-                id="delivery-helper-1"
-                value={values.helper1Id}
-                onValueChange={(value) => updateField("helper1Id", value)}
-                options={helperOptions}
-                placeholder="Select helper"
-                searchPlaceholder="Search employees..."
-                emptyMessage="No employees found."
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="delivery-helper-2">Helper 2</Label>
-              <SearchableSelect
-                id="delivery-helper-2"
-                value={values.helper2Id}
-                onValueChange={(value) => updateField("helper2Id", value)}
-                options={helperOptions}
-                placeholder="Select helper"
-                searchPlaceholder="Search employees..."
-                emptyMessage="No employees found."
-              />
-            </div>
+        <FormSection icon={Users} title="Employee group" required>
+          <div className="space-y-1">
+            <Label htmlFor="delivery-employee-group">
+              Employee group <span className="text-destructive">*</span>
+            </Label>
+            <SearchableSelect
+              id="delivery-employee-group"
+              value={values.employeeGroupId}
+              onValueChange={(value) => updateField("employeeGroupId", value)}
+              options={employeeGroupOptions}
+              placeholder="Select employee group"
+              searchPlaceholder="Search employee groups..."
+              emptyMessage="No employee groups found."
+              required
+            />
           </div>
         </FormSection>
       </FormBody>

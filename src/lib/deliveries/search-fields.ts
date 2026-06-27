@@ -7,9 +7,7 @@ export const DELIVERY_BAR_OR_SEARCH_FIELDS = [
   "name",
   "container.name",
   "container.containerNumber",
-  "employee.name",
-  "helper1.name",
-  "helper2.name",
+  "employeeGroup.name",
 ] as const;
 
 export function createDeliveryBarSearchFilterGroup(value: string): ApiSearchFilterGroup | null {

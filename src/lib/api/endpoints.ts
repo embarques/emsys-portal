@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
   ROLES: "/roles",
   PERMISSIONS: "/permissions",
   EMPLOYEES: "/employees",
+  EMPLOYEE_GROUPS: "/employee-groups",
   CUSTOMERS: "/customers",
   BRANCHES: "/branches",
   PICKUPS: "/pickups",

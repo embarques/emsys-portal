@@ -8,6 +8,7 @@ import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/t
 import type { MemoPadListParams, MemoPadSearchFilter } from "@/lib/memo-pads/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
+import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
 import type { RouteListParams } from "@/lib/routes/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
 
@@ -24,7 +25,11 @@ export const queryKeys = {
   },
   roles: {
     all: ["roles"] as const,
-    list: (sort?: string) => [...queryKeys.roles.all, "list", sort] as const,
+    lists: () => [...queryKeys.roles.all, "list"] as const,
+    list: (params: RoleListParams) => [...queryKeys.roles.lists(), params] as const,
+    search: (search: RoleSearchFilter | undefined, limit: number) =>
+      [...queryKeys.roles.all, "search", search, limit] as const,
+    stats: (scope: "all" | "kpis") => [...queryKeys.roles.all, "stats", scope] as const,
     detail: (roleId: string) => [...queryKeys.roles.all, "detail", roleId] as const,
   },
   employees: {
@@ -36,6 +41,11 @@ export const queryKeys = {
     stats: (scope: "all" | "active" | "inactive") =>
       [...queryKeys.employees.all, "stats", scope] as const,
     detail: (employeeId: string) => [...queryKeys.employees.all, "detail", employeeId] as const,
+  },
+  employeeGroups: {
+    all: ["employee-groups"] as const,
+    lists: () => [...queryKeys.employeeGroups.all, "list"] as const,
+    list: (params: { limit?: number }) => [...queryKeys.employeeGroups.lists(), params] as const,
   },
   vehicles: {
     all: ["vehicles"] as const,

@@ -142,7 +142,7 @@ export type OrderSearchField =
   | "sector.id"
   | "branch.id"
   | "employee.id"
-  | "user.name";
+  | "createdBy.name";
 
 export type OrderSearchFilter = ApiListTextSearch;
 
@@ -181,7 +181,7 @@ export const ORDER_SEARCH_FIELDS: { value: OrderSearchField; label: string }[] =
   { value: "sector.id", label: "sector.id" },
   { value: "branch.id", label: "branch.id" },
   { value: "employee.id", label: "employee.id" },
-  { value: "user.name", label: "user.name" },
+  { value: "createdBy.name", label: "createdBy.name" },
 ];
 
 export function getOrderRecordId(order: Pick<Order, "id">): string {

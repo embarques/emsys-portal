@@ -2,13 +2,13 @@ import { USER_ROLE_OPTIONS } from "@/lib/users/types";
 import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 
 const TEXT_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
+const NUMERIC_OPERATORS = ["eq", "neq", "gte", "lte", "gt", "lt"] as const;
 const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 
 /**
- * Advanced filter fields for users. Only backend-supported fields are listed —
- * `branch.code` and `accessCode` return 400 and are excluded. `id`, `branch.id`,
- * and `role.id` are coerced to numbers (and `active` to boolean) in
- * `expandUserFilterNode` because the backend ignores string numerics/booleans.
+ * Advanced filter fields for users. `id`, `branch.id`, `role.id`, and `accessCode`
+ * are coerced to numbers (and `active` to boolean) in `expandUserFilterNode`
+ * because the strict API requires JSON numbers/booleans for those fields.
  */
 export const USER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
@@ -25,6 +25,14 @@ export const USER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   { field: "type", label: "Type", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter type…" },
   { field: "role.name", label: "Role name", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter role name…" },
   { field: "branch.name", label: "Branch name", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter branch name…" },
+  { field: "branch.code", label: "Branch code", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter branch code…" },
+  {
+    field: "accessCode",
+    label: "Access code",
+    operators: [...NUMERIC_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter access code…",
+  },
   {
     field: "active",
     label: "Active",

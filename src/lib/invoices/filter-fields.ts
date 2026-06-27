@@ -162,7 +162,7 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     ],
   },
   {
-    field: "user.name",
+    field: "createdBy.name",
     label: "Created by",
     operators: ["eq", "neq", "contains", "startsWith"],
     valueType: "select",

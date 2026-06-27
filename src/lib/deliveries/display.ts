@@ -15,10 +15,8 @@ export function formatDeliveryDate(value: string): string {
   }).format(date);
 }
 
-export function getDeliveryCrew(delivery: Delivery): string {
-  return [delivery.employee?.name, delivery.helper1?.name, delivery.helper2?.name]
-    .filter((name): name is string => Boolean(name?.trim()))
-    .join(", ") || "-";
+export function getDeliveryEmployeeGroup(delivery: Delivery): string {
+  return delivery.employeeGroup?.name?.trim() || "-";
 }
 
 export function groupDeliveryBarcodes(barcodes: DeliveryBarcode[]): DeliveryInvoiceGroup[] {
@@ -52,6 +50,6 @@ export function computeDeliveryKpis(deliveries: Delivery[]) {
   return {
     total: deliveries.length,
     scheduledToday: deliveries.filter((delivery) => delivery.date.slice(0, 10) === today).length,
-    assignedCrew: deliveries.filter((delivery) => delivery.employee != null).length,
+    assignedCrew: deliveries.filter((delivery) => delivery.employeeGroup != null).length,
   };
 }

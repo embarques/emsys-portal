@@ -1,30 +1,18 @@
 import {
+  coerceTypedLeafFilter,
   isApiSearchFilter,
-  type ApiSearchFilter,
   type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
 
-const NUMERIC_FIELDS = new Set(["id", "branch.id", "cost"]);
-const BOOLEAN_FIELDS = new Set(["active"]);
-
-/** Numeric/boolean employee fields ignore string values server-side, so coerce them. */
-function coerceLeafFilter(filter: ApiSearchFilter): ApiSearchFilter | null {
-  if (NUMERIC_FIELDS.has(filter.field)) {
-    const numeric = Number(String(filter.value).trim());
-    if (!Number.isFinite(numeric)) return null;
-    return { field: filter.field, operator: filter.operator, value: numeric };
-  }
-
-  if (BOOLEAN_FIELDS.has(filter.field)) {
-    return { field: filter.field, operator: filter.operator, value: String(filter.value).trim() === "true" };
-  }
-
-  return filter;
-}
+const NUMERIC_FIELDS: ReadonlySet<string> = new Set(["id", "branch.id", "cost"]);
+const BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["active"]);
 
 export function expandEmployeeFilterNode(node: ApiSearchFilterNode): ApiSearchFilterNode | null {
   if (isApiSearchFilter(node)) {
-    return coerceLeafFilter(node);
+    return coerceTypedLeafFilter(node, {
+      numericFields: NUMERIC_FIELDS,
+      booleanFields: BOOLEAN_FIELDS,
+    });
   }
 
   const filters = node.filters

@@ -1,13 +1,28 @@
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { buildApiListQuery } from "@/lib/api/list-query";
+import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
+import {
+  buildResourceSearchFilterGroups,
+  buildStripeStyleSearchBody,
+  hasResourceListFilters,
+} from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   formatPermissionGroup,
   formatPermissionLabel,
   type PermissionCatalogEntry,
 } from "@/lib/roles/permissions-catalog";
-import type { Role, RoleFormValues, RolePermission } from "@/lib/roles/types";
+import { ROLE_TABLE_FILTER_FIELDS } from "@/lib/roles/filter-fields";
+import { ROLE_BAR_OR_SEARCH_FIELDS } from "@/lib/roles/search-fields";
+import { expandRoleFilterNode } from "@/lib/roles/role-filters";
+import {
+  DEFAULT_ROLE_LIST_PARAMS,
+  type Role,
+  type RoleFormValues,
+  type RoleListParams,
+  type RolePermission,
+} from "@/lib/roles/types";
 
 const CATALOG_LIMIT = 200;
 
@@ -158,21 +173,79 @@ function buildRolePayload(values: RoleFormValues): ApiRoleWritePayload {
   };
 }
 
-export async function fetchRoles(sort: string = "name:asc"): Promise<PaginatedResult<Role>> {
-  const query = buildApiListQuery({ page: 1, limit: CATALOG_LIMIT, sort });
-  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
-    `${API_ENDPOINTS.ROLES}?${query}`,
-  );
-  const items = unwrapList(response)
+function normalizePaginatedRoles(payload: PaginatedApiEnvelope<unknown[]>): PaginatedResult<Role> {
+  const items = unwrapList(payload)
     .map(normalizeRole)
     .filter((role): role is Role => role != null);
 
   return {
     items,
-    page: response.page ?? 1,
-    resultsPerPage: response.resultsPerPage ?? items.length,
-    total: response.total ?? items.length,
+    page: payload.page ?? 1,
+    resultsPerPage: payload.resultsPerPage ?? items.length,
+    total: payload.total ?? items.length,
   };
+}
+
+function hasRoleListFilters(params: RoleListParams): boolean {
+  return hasResourceListFilters({
+    search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: ROLE_TABLE_FILTER_FIELDS,
+  });
+}
+
+function buildRolesQuery(params: RoleListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_ROLE_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_ROLE_LIST_PARAMS.limit,
+    offset: params.offset,
+    sort: params.sort ?? DEFAULT_ROLE_LIST_PARAMS.sort,
+  });
+}
+
+function buildRoleSearchBody(params: RoleListParams) {
+  return buildStripeStyleSearchBody({
+    sort: params.sort ?? DEFAULT_ROLE_LIST_PARAMS.sort,
+    filterGroups: buildResourceSearchFilterGroups({
+      search: params.search,
+      barOrSearchFields: ROLE_BAR_OR_SEARCH_FIELDS,
+      filterRows: params.filterRows,
+      tableFilterFields: ROLE_TABLE_FILTER_FIELDS,
+      expandNode: expandRoleFilterNode,
+    }),
+  });
+}
+
+export async function fetchRoles(params: RoleListParams = {}): Promise<PaginatedResult<Role>> {
+  return fetchPaginatedResourceList({
+    endpoint: API_ENDPOINTS.ROLES,
+    page: params.page ?? DEFAULT_ROLE_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_ROLE_LIST_PARAMS.limit,
+    offset: params.offset,
+    isFiltered: hasRoleListFilters(params),
+    buildGetQuery: () => buildRolesQuery(params),
+    buildSearchBody: () => buildRoleSearchBody(params),
+    normalize: normalizePaginatedRoles,
+  });
+}
+
+export async function fetchRoleById(roleId: string | number): Promise<Role> {
+  const id = parseRoleId(roleId);
+  const response = await apiClient.get<ApiRole | PaginatedApiEnvelope<ApiRole>>(
+    `${API_ENDPOINTS.ROLES}/${id}`,
+  );
+
+  const raw =
+    response && typeof response === "object" && "data" in response
+      ? (response as PaginatedApiEnvelope<ApiRole>).data
+      : response;
+
+  const role = normalizeRole(raw);
+  if (!role) {
+    throw new Error("Role not found.");
+  }
+
+  return role;
 }
 
 export async function fetchPermissionCatalog(): Promise<PermissionCatalogEntry[]> {

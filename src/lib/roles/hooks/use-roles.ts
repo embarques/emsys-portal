@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   createRole,
@@ -10,15 +10,60 @@ import {
   fetchRoles,
   updateRole,
 } from "@/lib/roles/api/roles-api";
+import { hasListTextSearch } from "@/lib/api/search-query";
+import { ROLE_TABLE_FILTER_FIELDS } from "@/lib/roles/filter-fields";
+import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import { queryKeys } from "@/lib/query/query-keys";
-import type { RoleFormValues } from "@/lib/roles/types";
+import {
+  DEFAULT_ROLE_LIST_PARAMS,
+  type RoleFormValues,
+  type RoleListParams,
+} from "@/lib/roles/types";
 
-export function useRoles(sort: string = "name:asc") {
+function isRoleListFiltered(params: RoleListParams): boolean {
+  const hasRowFilters = (params.filterRows ?? []).some((row) =>
+    isCompleteFilterRow(row, ROLE_TABLE_FILTER_FIELDS),
+  );
+
+  return hasListTextSearch(params.search) || hasRowFilters;
+}
+
+export function useRoles(params: RoleListParams, options: { enabled?: boolean } = {}) {
+  const isFiltered = isRoleListFiltered(params);
+
   return useQuery({
-    queryKey: queryKeys.roles.list(sort),
-    queryFn: () => fetchRoles(sort),
-    staleTime: 60_000,
+    queryKey: queryKeys.roles.list(params),
+    queryFn: () => fetchRoles(params),
+    enabled: options.enabled ?? true,
+    placeholderData: keepPreviousData,
+    staleTime: isFiltered ? 0 : 60_000,
   });
+}
+
+export function useRoleStats() {
+  const totalQuery = useQuery({
+    queryKey: queryKeys.roles.stats("all"),
+    queryFn: () => fetchRoles({ ...DEFAULT_ROLE_LIST_PARAMS, limit: 1 }),
+  });
+
+  return {
+    total: totalQuery.data?.total ?? 0,
+    isLoading: totalQuery.isLoading,
+    isError: totalQuery.isError,
+  };
+}
+
+export function useRoleKpis() {
+  const query = useQuery({
+    queryKey: queryKeys.roles.stats("kpis"),
+    queryFn: () => fetchRoles({ ...DEFAULT_ROLE_LIST_PARAMS, limit: 200 }),
+  });
+
+  return {
+    items: query.data?.items ?? [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+  };
 }
 
 export function useRolePermissionCatalog() {

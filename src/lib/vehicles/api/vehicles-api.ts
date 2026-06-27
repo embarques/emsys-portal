@@ -5,6 +5,7 @@ import { buildApiListQuery } from "@/lib/api/list-query";
 import {
   buildResourceSearchFilterGroups,
   buildStripeStyleSearchBody,
+  coerceTypedFilterNode,
   hasResourceListFilters,
 } from "@/lib/api/search-query";
 import { VEHICLE_TABLE_FILTER_FIELDS } from "@/lib/vehicles/filter-fields";
@@ -26,6 +27,8 @@ function hasVehicleListFilters(params: VehicleListParams): boolean {
   });
 }
 
+const VEHICLE_NUMERIC_FIELDS: ReadonlySet<string> = new Set(["year"]);
+
 function buildVehicleSearchBody(params: VehicleListParams) {
   return buildStripeStyleSearchBody({
     sort: params.sort ?? DEFAULT_VEHICLE_LIST_PARAMS.sort,
@@ -34,6 +37,8 @@ function buildVehicleSearchBody(params: VehicleListParams) {
       barOrSearchFields: VEHICLE_BAR_OR_SEARCH_FIELDS,
       filterRows: params.filterRows,
       tableFilterFields: VEHICLE_TABLE_FILTER_FIELDS,
+      expandNode: (node) =>
+        coerceTypedFilterNode(node, { numericFields: VEHICLE_NUMERIC_FIELDS }),
     }),
   });
 }

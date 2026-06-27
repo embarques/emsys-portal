@@ -1,4 +1,5 @@
 import {
+  coerceTypedLeafFilter,
   isApiSearchFilter,
   type ApiSearchFilter,
   type ApiSearchFilterNode,
@@ -7,6 +8,18 @@ import {
   mapPaymentLocationToPaidRegion,
   type InvoicePaymentLocation,
 } from "@/lib/invoices/types";
+
+const NUMERIC_FIELDS: ReadonlySet<string> = new Set([
+  "cost",
+  "discount",
+  "payment",
+  "balance",
+  "surcharge",
+  "employee.id",
+  "sender.id",
+  "receiver.id",
+]);
+const BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["isArchive", "isVoid"]);
 
 function parseRangeValue(raw: string): { start: string; end: string } | null {
   const trimmed = raw.trim();
@@ -60,15 +73,6 @@ function expandPaidRegionFilter(filter: ApiSearchFilter): ApiSearchFilter {
   return filter;
 }
 
-function expandBooleanSelectFilter(filter: ApiSearchFilter): ApiSearchFilter {
-  const wantsTrue = String(filter.value) === "true";
-  return {
-    field: filter.field,
-    operator: filter.operator,
-    value: wantsTrue,
-  };
-}
-
 function expandInvoiceLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | null {
   switch (filter.field) {
     case "numberRange":
@@ -81,11 +85,11 @@ function expandInvoiceLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode |
       return expandDateRangeFilter("updatedAt", filter.value);
     case "paidRegion":
       return expandPaidRegionFilter(filter);
-    case "isArchive":
-    case "isVoid":
-      return expandBooleanSelectFilter(filter);
     default:
-      return filter;
+      return coerceTypedLeafFilter(filter, {
+        numericFields: NUMERIC_FIELDS,
+        booleanFields: BOOLEAN_FIELDS,
+      });
   }
 }
 

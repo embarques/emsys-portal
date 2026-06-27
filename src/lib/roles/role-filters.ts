@@ -5,7 +5,7 @@ import {
   type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
 
-const NUMERIC_FIELDS: ReadonlySet<string> = new Set(["id", "price"]);
+const NUMERIC_FIELDS: ReadonlySet<string> = new Set(["id"]);
 
 function parseRangeValue(raw: string): { start: string; end: string } | null {
   const trimmed = raw.trim();
@@ -48,24 +48,26 @@ function expandDateRangeFilter(
   };
 }
 
-function expandItemLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | null {
+function expandRoleLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | null {
   switch (filter.field) {
     case "createdAtRange":
       return expandDateRangeFilter("createdAt", filter.value);
     case "updatedAtRange":
       return expandDateRangeFilter("updatedAt", filter.value);
     default:
-      return coerceTypedLeafFilter(filter, { numericFields: NUMERIC_FIELDS });
+      return coerceTypedLeafFilter(filter, {
+        numericFields: NUMERIC_FIELDS,
+      });
   }
 }
 
-export function expandItemFilterNode(node: ApiSearchFilterNode): ApiSearchFilterNode | null {
+export function expandRoleFilterNode(node: ApiSearchFilterNode): ApiSearchFilterNode | null {
   if (isApiSearchFilter(node)) {
-    return expandItemLeafFilter(node);
+    return expandRoleLeafFilter(node);
   }
 
   const filters = node.filters
-    .map((entry) => expandItemFilterNode(entry))
+    .map((entry) => expandRoleFilterNode(entry))
     .filter((entry): entry is ApiSearchFilterNode => entry != null);
 
   if (filters.length === 0) return null;

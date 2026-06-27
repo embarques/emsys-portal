@@ -7,6 +7,7 @@ import {
   buildStripeStyleSearchBody,
   hasResourceListFilters,
 } from "@/lib/api/search-query";
+import { expandDeliveryFilterNode } from "@/lib/deliveries/delivery-filters";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 import { DELIVERY_TABLE_FILTER_FIELDS } from "@/lib/deliveries/filter-fields";
@@ -18,7 +19,7 @@ import {
   type Delivery,
   type DeliveryBarcode,
   type DeliveryContainerRef,
-  type DeliveryEmployeeRef,
+  type DeliveryEmployeeGroupRef,
   type DeliveryFormValues,
   type DeliveryListParams,
 } from "@/lib/deliveries/types";
@@ -30,14 +31,17 @@ type ApiRef = {
   containerNumber?: string;
 };
 
+type ApiEmployeeGroupRef = {
+  id?: string | number;
+  name?: string;
+};
+
 type ApiDelivery = {
   id?: number | string;
   name?: string;
   date?: string;
   container?: ApiRef;
-  employee?: ApiRef;
-  helper1?: ApiRef | null;
-  helper2?: ApiRef | null;
+  employeeGroup?: ApiEmployeeGroupRef | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -63,9 +67,7 @@ type ApiDeliveryWritePayload = {
   name: string;
   date: string;
   container: DeliveryContainerRef;
-  employee: DeliveryEmployeeRef;
-  helper1: DeliveryEmployeeRef | null;
-  helper2: DeliveryEmployeeRef | null;
+  employeeGroup: DeliveryEmployeeGroupRef;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -76,7 +78,7 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
 
 type DeliveryReferenceOptions = {
   containers: DeliveryContainerRef[];
-  employees: DeliveryEmployeeRef[];
+  employeeGroups: DeliveryEmployeeGroupRef[];
 };
 
 function readNumericId(value: unknown): number | undefined {
@@ -98,16 +100,14 @@ function normalizeContainerRef(raw: unknown): DeliveryContainerRef | null {
   };
 }
 
-function normalizeEmployeeRef(raw: unknown): DeliveryEmployeeRef | null {
+function normalizeEmployeeGroupRef(raw: unknown): DeliveryEmployeeGroupRef | null {
   if (!raw || typeof raw !== "object") return null;
-  const item = raw as ApiRef;
-  const id = readNumericId(item.id);
-  if (id == null || id <= 0) return null;
+  const item = raw as ApiEmployeeGroupRef;
+  const id = String(item.id ?? "").trim();
+  const name = String(item.name ?? "").trim();
+  if (!id && !name) return null;
 
-  return {
-    id,
-    name: String(item.name ?? "").trim(),
-  };
+  return { id, name };
 }
 
 function normalizeDelivery(raw: unknown): Delivery | null {
@@ -122,9 +122,7 @@ function normalizeDelivery(raw: unknown): Delivery | null {
     name: String(item.name ?? "").trim(),
     date: String(item.date ?? "").trim(),
     container: normalizeContainerRef(item.container),
-    employee: normalizeEmployeeRef(item.employee),
-    helper1: normalizeEmployeeRef(item.helper1),
-    helper2: normalizeEmployeeRef(item.helper2),
+    employeeGroup: normalizeEmployeeGroupRef(item.employeeGroup),
     createdAt: String(item.createdAt ?? "").trim(),
     updatedAt: String(item.updatedAt ?? "").trim(),
   };
@@ -162,6 +160,7 @@ function buildDeliverySearchBody(params: DeliveryListParams) {
       barOrSearchFields: DELIVERY_BAR_OR_SEARCH_FIELDS,
       filterRows: params.filterRows,
       tableFilterFields: DELIVERY_TABLE_FILTER_FIELDS,
+      expandNode: expandDeliveryFilterNode,
     }),
   });
 }
@@ -196,12 +195,14 @@ function findContainer(id: string, containers: DeliveryContainerRef[]): Delivery
   return container;
 }
 
-function findEmployee(id: string, employees: DeliveryEmployeeRef[]): DeliveryEmployeeRef | null {
-  if (!id.trim()) return null;
-  const numericId = parseDeliveryPathId(id);
-  const employee = employees.find((entry) => entry.id === numericId);
-  if (!employee) throw new Error("Select a valid employee.");
-  return employee;
+function findEmployeeGroup(
+  id: string,
+  employeeGroups: DeliveryEmployeeGroupRef[],
+): DeliveryEmployeeGroupRef {
+  const trimmed = id.trim();
+  const group = employeeGroups.find((entry) => entry.id === trimmed);
+  if (!group) throw new Error("Select a valid employee group.");
+  return group;
 }
 
 function buildDeliveryWritePayload(
@@ -215,9 +216,7 @@ function buildDeliveryWritePayload(
     name: values.name.trim(),
     date: toApiDate(values.date),
     container: findContainer(values.containerId, references.containers),
-    employee: findEmployee(values.employeeId, references.employees)!,
-    helper1: findEmployee(values.helper1Id, references.employees),
-    helper2: findEmployee(values.helper2Id, references.employees),
+    employeeGroup: findEmployeeGroup(values.employeeGroupId, references.employeeGroups),
   };
 
   if (options.deliveryId) {
@@ -378,7 +377,7 @@ export async function fetchDeliveryBarcodes(deliveryId: string | number): Promis
       filterGroups: [
         {
           operator: "and",
-          filters: [{ field: "delivery.id", operator: "eq", value: String(numericId) }],
+          filters: [{ field: "delivery.id", operator: "eq", value: numericId }],
         },
       ],
     }),

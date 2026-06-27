@@ -286,22 +286,10 @@ export async function fetchContainerById(containerId: string | number): Promise<
   return container;
 }
 
-/**
- * The API rejects POST /containers without an `id`, so the next id is derived
- * from the current maximum. Fetches the highest id and returns max + 1.
- */
-async function resolveNextContainerId(): Promise<number> {
-  const top = await fetchContainers({ page: 1, limit: 1, sort: "id:desc" });
-  const maxId = top.items[0]?.id ?? 0;
-  return (Number.isFinite(maxId) ? maxId : 0) + 1;
-}
-
 export async function createContainer(values: ContainerFormValues): Promise<Container> {
-  const nextId = await resolveNextContainerId();
-
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.CONTAINERS,
-    buildContainerWritePayload(values, { containerId: nextId }),
+    buildContainerWritePayload(values),
   );
 
   assertMutationSuccess(response, "Unable to create container.");

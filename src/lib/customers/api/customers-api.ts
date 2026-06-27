@@ -4,6 +4,7 @@ import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query
 import {
   buildAdvancedSearchBody,
   buildApiFilterNodeFromTableRows,
+  coerceTypedLeafFilter,
   createOrTextSearchFilterGroup,
   createTextSearchFilter,
   hasListTextSearch,
@@ -131,8 +132,25 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
+const CUSTOMER_NUMERIC_FIELDS: ReadonlySet<string> = new Set(["branch.id"]);
+
+/** Coerces numeric customer leaf fields to JSON numbers (branch.id is numeric). */
+function coerceCustomerNumericNode(node: ApiSearchFilterNode): ApiSearchFilterNode {
+  if (isApiSearchFilter(node)) {
+    if (!CUSTOMER_NUMERIC_FIELDS.has(node.field)) return node;
+    return coerceTypedLeafFilter(node, { numericFields: CUSTOMER_NUMERIC_FIELDS }) ?? node;
+  }
+
+  return {
+    operator: node.operator,
+    filters: node.filters.map(coerceCustomerNumericNode),
+  };
+}
+
 function expandCustomerSearchNode(node: ApiSearchFilterNode): ApiSearchFilterNode {
-  return expandCustomerCountrySearchNode(expandCustomerTypeSearchNode(node));
+  return coerceCustomerNumericNode(
+    expandCustomerCountrySearchNode(expandCustomerTypeSearchNode(node)),
+  );
 }
 
 function readNumericId(value: number | string | undefined): number | undefined {
@@ -361,7 +379,10 @@ function buildCustomerSearchFilterGroups(params: CustomerListParams): ApiSearchF
   }
 
   if (params.branch !== undefined && params.branch !== "all") {
-    chipFilters.push({ field: "branch.id", operator: "eq", value: String(params.branch) });
+    const branchId = Number(params.branch);
+    if (Number.isFinite(branchId)) {
+      chipFilters.push({ field: "branch.id", operator: "eq", value: branchId });
+    }
   }
 
   if (isCustomerTypeFilterActive(params.customerType)) {

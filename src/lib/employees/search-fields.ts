@@ -1,10 +1,7 @@
 /**
- * POST /employees/search — OR bar search across searchable employee fields.
+ * POST /employees/search — OR bar search across searchable employee string fields.
  *
- * Only fields the backend accepts are included. `address.address1`,
- * `address.address2`, `address.apartment`, `address.country`, and `branch.code`
- * return 400 ("search query validation failed"), and including any of them makes
- * the entire OR query fail — so the supported address fields are city/state/zipcode.
+ * The bar uses the `contains` operator, so all listed fields must be strings.
  */
 export const EMPLOYEE_BAR_OR_SEARCH_FIELDS = [
   "name",
@@ -12,9 +9,14 @@ export const EMPLOYEE_BAR_OR_SEARCH_FIELDS = [
   "department",
   "email",
   "phones.number",
+  "address.address1",
+  "address.address2",
+  "address.apartment",
   "address.city",
   "address.state",
   "address.zipcode",
+  "address.country",
+  "branch.code",
 ] as const;
 
 export type EmployeeBarOrSearchField = (typeof EMPLOYEE_BAR_OR_SEARCH_FIELDS)[number];

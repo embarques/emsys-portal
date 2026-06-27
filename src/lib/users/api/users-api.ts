@@ -430,22 +430,10 @@ export async function fetchUserById(userId: string | number): Promise<User> {
   return user;
 }
 
-/**
- * The API rejects POST /users without an `id`, so the next id is derived from
- * the current maximum. Fetches the highest id and returns max + 1.
- */
-async function resolveNextUserId(): Promise<number> {
-  const top = await fetchUsers({ page: 1, limit: 1, sort: "id:desc" });
-  const maxId = top.items[0]?.id ?? 0;
-  return (Number.isFinite(maxId) ? maxId : 0) + 1;
-}
-
 export async function createUser(values: UserFormValues): Promise<User> {
-  const nextId = await resolveNextUserId();
-
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.USERS,
-    buildUserWritePayload(values, { userId: nextId, requirePassword: true }),
+    buildUserWritePayload(values, { requirePassword: true }),
   );
 
   assertMutationSuccess(response, "Unable to create user.");

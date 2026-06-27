@@ -23,7 +23,14 @@ import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
 import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+} from "@/components/app-shell/table-directory-toolbar";
+import { ROLE_TABLE_FILTER_FIELDS } from "@/lib/roles/filter-fields";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,18 +64,21 @@ import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
   computeRoleKpis,
   formatPermissionsSummary,
-  roleMatchesQuery,
   truncateRoleId,
 } from "@/lib/roles/display";
 import {
   useCreateRole,
   useDeleteRoles,
+  useRoleKpis,
   useRolePermissionCatalog,
+  useRoleStats,
   useRoles,
   useUpdateRole,
 } from "@/lib/roles/hooks/use-roles";
 import { mergePermissionCatalogEntries } from "@/lib/roles/permissions-catalog";
 import {
+  DEFAULT_ROLE_LIST_PARAMS,
+  buildRoleListParams,
   createEmptyRoleForm,
   roleToFormValues,
   type Role,
@@ -76,34 +86,54 @@ import {
   type RoleFormValues,
 } from "@/lib/roles/types";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = DEFAULT_ROLE_LIST_PARAMS.limit;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: RoleFilterState = {
   query: "",
+  rows: [],
 };
 
 export function RolesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<RoleFilterState>(defaultFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
-  const { sort, onSortChange } = useTableSort("name:asc", () => setPage(1));
+  const { sort, onSortChange } = useTableSort(DEFAULT_ROLE_LIST_PARAMS.sort, () => setPage(1));
   const [viewRole, setViewRole] = useState<Role | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Role | Role[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const rolesQuery = useRoles(sort);
+  const listParams = useMemo(
+    () =>
+      buildRoleListParams({
+        page,
+        limit: PAGE_SIZE,
+        query: debouncedQuery,
+        rows: filters.rows,
+        sort,
+      }),
+    [debouncedQuery, filters.rows, page, sort],
+  );
+
+  const rolesQuery = useRoles(listParams);
   const permissionCatalogQuery = useRolePermissionCatalog();
+  const roleStats = useRoleStats();
+  const kpiQuery = useRoleKpis();
   const createRoleMutation = useCreateRole();
   const updateRoleMutation = useUpdateRole();
   const deleteRolesMutation = useDeleteRoles();
 
   const roles = rolesQuery.data?.items ?? [];
+  const totalRoles = rolesQuery.data?.total ?? 0;
   const assignedPermissionCatalog = useMemo(
     () => {
-      const entries = roles.flatMap((role) =>
+      const entries = kpiQuery.items.flatMap((role) =>
         role.permissions
           .filter((permission) => permission.group)
           .map((permission) => ({
@@ -116,7 +146,7 @@ export function RolesWorkspace() {
 
       return Array.from(new Map(entries.map((entry) => [entry.id, entry])).values());
     },
-    [roles],
+    [kpiQuery.items],
   );
   const basePermissionCatalog = useMemo(() => {
     if (permissionCatalogQuery.data) {
@@ -143,14 +173,10 @@ export function RolesWorkspace() {
     updateRoleMutation.isPending ||
     deleteRolesMutation.isPending;
 
-  const filteredRoles = useMemo(() => {
-    return roles.filter((role) => roleMatchesQuery(role, filters.query));
-  }, [roles, filters]);
-
-  const kpis = useMemo(() => computeRoleKpis(roles), [roles]);
-  const totalPages = Math.max(1, Math.ceil(filteredRoles.length / PAGE_SIZE));
+  const kpis = useMemo(() => computeRoleKpis(kpiQuery.items), [kpiQuery.items]);
+  const totalPages = Math.max(1, Math.ceil(totalRoles / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pageRoles = filteredRoles.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageRoles = roles;
   const allPageSelected =
     pageRoles.length > 0 && pageRoles.every((role) => selectedIds.includes(role.roleId));
 
@@ -228,17 +254,22 @@ export function RolesWorkspace() {
     }
   }
 
-  const stats = [
-    { label: "Total roles", value: kpis.total.toString(), description: "Roles on record", icon: Shield },
+  const statCards = [
+    {
+      label: "Total roles",
+      value: roleStats.isLoading ? "…" : roleStats.total.toString(),
+      description: "Roles on record",
+      icon: Shield,
+    },
     {
       label: "Total permissions",
-      value: kpis.totalPermissions.toString(),
+      value: kpiQuery.isLoading ? "…" : kpis.totalPermissions.toString(),
       description: "Assigned across all roles",
       icon: KeyRound,
     },
     {
       label: "Avg per role",
-      value: kpis.averagePermissions.toString(),
+      value: kpiQuery.isLoading ? "…" : kpis.averagePermissions.toString(),
       description: "Average permissions per role",
       icon: KeyRound,
     },
@@ -342,13 +373,17 @@ export function RolesWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("roles", tableColumns);
-  const hasActiveFilters = Boolean(filters.query.trim());
+  const activeFilterCount = countCompleteFilterRows(filters.rows, ROLE_TABLE_FILTER_FIELDS);
+  const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: hasActiveFilters,
     query: filters.query,
-    matched: filteredRoles.length,
-    catalogTotal: roles.length,
+    isSearchPending,
+    matched: totalRoles,
+    catalogTotal: roleStats.total,
     noun: "roles",
+    isLoading: rolesQuery.isFetching && roles.length === 0,
+    catalogLoading: roleStats.isLoading,
   });
   const pageError = rolesQuery.isError
     ? normalizeApiError(rolesQuery.error).message
@@ -374,7 +409,7 @@ export function RolesWorkspace() {
       />
 
       <StatCardsGrid>
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.label}>
@@ -394,7 +429,9 @@ export function RolesWorkspace() {
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
             search={
@@ -406,6 +443,38 @@ export function RolesWorkspace() {
                 }}
                 placeholder="Search roles..."
               />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={`Showing ${roles.length} of ${totalRoles} roles`}
+                presets={{
+                  storageKey: "roles",
+                  rows: filters.rows,
+                  fields: ROLE_TABLE_FILTER_FIELDS,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              >
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={ROLE_TABLE_FILTER_FIELDS}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  }}
+                />
+              </TableFilterPanel>
             }
           />
         </CardHeader>
@@ -456,7 +525,9 @@ export function RolesWorkspace() {
             onRowDoubleClick={openEditForm}
             emptyState={
               <>
-                <p className="text-muted-foreground">No roles match your search.</p>
+                <p className="text-muted-foreground">
+                  {hasActiveFilters ? "No roles match your filters." : "No roles yet."}
+                </p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
                   Add role
@@ -470,7 +541,7 @@ export function RolesWorkspace() {
           <p className="text-sm text-muted-foreground">
             {rolesQuery.isFetching
               ? "Refreshing roles…"
-              : `Showing ${pageRoles.length} of ${filteredRoles.length} roles`}
+              : `Showing ${pageRoles.length} of ${totalRoles} roles`}
           </p>
           <div className="flex items-center gap-2">
             <Button

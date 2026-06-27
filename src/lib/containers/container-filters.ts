@@ -1,8 +1,11 @@
 import {
+  coerceTypedLeafFilter,
   isApiSearchFilter,
   type ApiSearchFilter,
   type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
+
+const NUMERIC_FIELDS: ReadonlySet<string> = new Set(["id", "cost"]);
 
 function parseRangeValue(raw: string): { start: string; end: string } | null {
   const trimmed = raw.trim();
@@ -45,24 +48,14 @@ function expandDateRangeFilter(
   };
 }
 
-/** Numeric container fields ignore string values server-side, so coerce to numbers. */
-function coerceNumericFilter(filter: ApiSearchFilter): ApiSearchFilter | null {
-  const numeric = Number(String(filter.value).trim());
-  if (!Number.isFinite(numeric)) return null;
-  return { field: filter.field, operator: filter.operator, value: numeric };
-}
-
 function expandContainerLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | null {
   switch (filter.field) {
     case "departureDateRange":
       return expandDateRangeFilter("departureDate", filter.value);
     case "arrivalDateRange":
       return expandDateRangeFilter("arrivalDate", filter.value);
-    case "id":
-    case "cost":
-      return coerceNumericFilter(filter);
     default:
-      return filter;
+      return coerceTypedLeafFilter(filter, { numericFields: NUMERIC_FIELDS });
   }
 }
 

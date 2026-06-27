@@ -45,7 +45,7 @@ import {
   computeDeliveryKpis,
   formatDeliveryDate,
   formatDeliveryId,
-  getDeliveryCrew,
+  getDeliveryEmployeeGroup,
 } from "@/lib/deliveries/display";
 import { DELIVERY_TABLE_FILTER_FIELDS } from "@/lib/deliveries/filter-fields";
 import {
@@ -63,12 +63,11 @@ import {
   deliveryToFormValues,
   type Delivery,
   type DeliveryContainerRef,
-  type DeliveryEmployeeRef,
+  type DeliveryEmployeeGroupRef,
   type DeliveryFilterState,
   type DeliveryFormValues,
 } from "@/lib/deliveries/types";
-import { useEmployees } from "@/lib/employees/hooks/use-employees";
-import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
+import { useEmployeeGroupPicker } from "@/lib/employee-groups/hooks/use-employee-groups";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import type { DataTableColumn } from "@/lib/table/types";
@@ -113,11 +112,7 @@ export function DeliveriesWorkspace() {
   const stats = useDeliveryStats();
   const kpiQuery = useDeliveryKpis();
   const containersQuery = useContainerPicker(250);
-  const employeesQuery = useEmployees({
-    ...DEFAULT_EMPLOYEE_LIST_PARAMS,
-    limit: 250,
-    active: true,
-  });
+  const employeeGroupsQuery = useEmployeeGroupPicker(250);
   const createDeliveryMutation = useCreateDelivery();
   const updateDeliveryMutation = useUpdateDelivery();
   const deleteDeliveriesMutation = useDeleteDeliveries();
@@ -143,13 +138,13 @@ export function DeliveriesWorkspace() {
     [containersQuery.data?.items],
   );
 
-  const employeeRefs: DeliveryEmployeeRef[] = useMemo(
+  const employeeGroupRefs: DeliveryEmployeeGroupRef[] = useMemo(
     () =>
-      (employeesQuery.data?.items ?? []).map((employee) => ({
-        id: employee.id,
-        name: employee.name,
+      (employeeGroupsQuery.data?.items ?? []).map((group) => ({
+        id: group.id,
+        name: group.name,
       })),
-    [employeesQuery.data?.items],
+    [employeeGroupsQuery.data?.items],
   );
 
   const containerOptions: SearchableSelectOption[] = useMemo(
@@ -163,13 +158,13 @@ export function DeliveriesWorkspace() {
     [containerRefs],
   );
 
-  const employeeOptions: SearchableSelectOption[] = useMemo(
+  const employeeGroupOptions: SearchableSelectOption[] = useMemo(
     () =>
-      employeeRefs.map((employee) => ({
-        value: String(employee.id),
-        label: employee.name,
+      employeeGroupRefs.map((group) => ({
+        value: group.id,
+        label: group.name,
       })),
-    [employeeRefs],
+    [employeeGroupRefs],
   );
 
   const kpis = useMemo(() => computeDeliveryKpis(kpiQuery.items), [kpiQuery.items]);
@@ -203,7 +198,7 @@ export function DeliveriesWorkspace() {
 
   async function saveDelivery(values: DeliveryFormValues) {
     setFormError(null);
-    const references = { containers: containerRefs, employees: employeeRefs };
+    const references = { containers: containerRefs, employeeGroups: employeeGroupRefs };
 
     try {
       if (formMode === "edit" && editingDelivery) {
@@ -259,9 +254,9 @@ export function DeliveriesWorkspace() {
       icon: CalendarDays,
     },
     {
-      label: "Crew assigned",
+      label: "Group assigned",
       value: kpiQuery.isLoading ? "..." : kpis.assignedCrew.toString(),
-      description: "Deliveries with a driver",
+      description: "Deliveries with an employee group",
       icon: Users,
     },
   ];
@@ -300,30 +295,10 @@ export function DeliveriesWorkspace() {
       renderCell: (delivery) => delivery.container?.containerNumber || "-",
     },
     {
-      id: "employee",
-      label: "Driver",
-      sortField: "employee.name",
-      renderCell: (delivery) => delivery.employee?.name || "-",
-    },
-    {
-      id: "crew",
-      label: "Crew",
-      sortable: false,
-      renderCell: getDeliveryCrew,
-    },
-    {
-      id: "helper1",
-      label: "Helper 1",
-      defaultVisible: false,
-      sortField: "helper1.name",
-      renderCell: (delivery) => delivery.helper1?.name || "-",
-    },
-    {
-      id: "helper2",
-      label: "Helper 2",
-      defaultVisible: false,
-      sortField: "helper2.name",
-      renderCell: (delivery) => delivery.helper2?.name || "-",
+      id: "employeeGroup",
+      label: "Employee group",
+      sortField: "employeeGroup.name",
+      renderCell: getDeliveryEmployeeGroup,
     },
   ];
 
@@ -446,7 +421,7 @@ export function DeliveriesWorkspace() {
             icon={Car}
             title="Loading deliveries"
             description="Preparing delivery routes, containers, crews, and package counts..."
-            columns={["Delivery", "Date", "Container", "Driver", "Crew"]}
+            columns={["Delivery", "Date", "Container", "Employee group"]}
           />
         ) : (
           <DataTable
@@ -547,7 +522,7 @@ export function DeliveriesWorkspace() {
                 : createEmptyDeliveryForm()
             }
             containerOptions={containerOptions}
-            employeeOptions={employeeOptions}
+            employeeGroupOptions={employeeGroupOptions}
             submitLabel={formMode === "edit" ? "Save changes" : "Add delivery"}
             externalError={formError}
             onSubmit={saveDelivery}

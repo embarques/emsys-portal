@@ -18,7 +18,7 @@ import {
   DEFAULT_DELIVERY_LIST_PARAMS,
   type Delivery,
   type DeliveryContainerRef,
-  type DeliveryEmployeeRef,
+  type DeliveryEmployeeGroupRef,
   type DeliveryFormValues,
   type DeliveryListParams,
   type DeliverySearchFilter,
@@ -116,7 +116,7 @@ export function useCreateDelivery() {
   return useMutation({
     mutationFn: (input: {
       values: DeliveryFormValues;
-      references: { containers: DeliveryContainerRef[]; employees: DeliveryEmployeeRef[] };
+      references: { containers: DeliveryContainerRef[]; employeeGroups: DeliveryEmployeeGroupRef[] };
     }) => createDelivery(input.values, input.references),
     onSuccess: () => invalidateDeliveries(queryClient),
   });
@@ -129,7 +129,7 @@ export function useUpdateDelivery() {
     mutationFn: (input: {
       deliveryId: number;
       values: DeliveryFormValues;
-      references: { containers: DeliveryContainerRef[]; employees: DeliveryEmployeeRef[] };
+      references: { containers: DeliveryContainerRef[]; employeeGroups: DeliveryEmployeeGroupRef[] };
     }) => updateDelivery(input.deliveryId, input.values, input.references),
     onSuccess: (_data, variables) => {
       invalidateDeliveries(queryClient);

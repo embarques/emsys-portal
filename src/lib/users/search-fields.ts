@@ -1,8 +1,9 @@
 /**
  * POST /users/search — OR bar search across searchable user fields.
  *
- * `branch.code` and `accessCode` return 400 ("search query validation failed")
- * and are excluded; `branch.name` is supported and included.
+ * The bar uses the `contains` operator, so only string fields belong here.
+ * `accessCode` is numeric and lives in advanced filters only (the strict API
+ * rejects string operators on numeric fields).
  */
 export const USER_BAR_OR_SEARCH_FIELDS = [
   "userName",
@@ -12,6 +13,7 @@ export const USER_BAR_OR_SEARCH_FIELDS = [
   "type",
   "role.name",
   "branch.name",
+  "branch.code",
 ] as const;
 
 export type UserBarOrSearchField = (typeof USER_BAR_OR_SEARCH_FIELDS)[number];

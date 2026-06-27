@@ -6,10 +6,9 @@ const NUMERIC_OPERATORS = ["eq", "neq", "gte", "lte", "gt", "lt"] as const;
 const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 
 /**
- * Advanced filter fields for employees. Only backend-supported fields are listed.
- * `address.address1`, `address.address2`, `address.apartment`, `address.country`,
- * and `branch.code` return 400 and are intentionally excluded. `id`, `branch.id`,
- * `cost`, and `active` are coerced to number/boolean in `expandEmployeeFilterNode`.
+ * Advanced filter fields for employees. `id`, `branch.id`, `cost`, and `active`
+ * are coerced to number/boolean in `expandEmployeeFilterNode` because the strict
+ * API requires JSON numbers/booleans for those fields.
  */
 export const EMPLOYEE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
@@ -31,6 +30,27 @@ export const EMPLOYEE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     queryFields: ["phones.number"],
   },
   {
+    field: "address.address1",
+    label: "Address line 1",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter address line 1…",
+  },
+  {
+    field: "address.address2",
+    label: "Address line 2",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter address line 2…",
+  },
+  {
+    field: "address.apartment",
+    label: "Apartment",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter apartment…",
+  },
+  {
     field: "address.city",
     label: "City",
     operators: [...TEXT_OPERATORS],
@@ -50,6 +70,13 @@ export const EMPLOYEE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter zip code…",
+  },
+  {
+    field: "address.country",
+    label: "Country",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter country…",
   },
   {
     field: "department",
@@ -74,6 +101,13 @@ export const EMPLOYEE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: ["eq", "neq"],
     valueType: "select",
     optionsSource: "branches",
+  },
+  {
+    field: "branch.code",
+    label: "Branch code",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter branch code…",
   },
   {
     field: "cost",

@@ -98,13 +98,13 @@ export function DeliveryViewSheet({
                   <div className="rounded-lg border bg-card p-4">
                     <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                       <Users className="size-4 text-primary" />
-                      Crew
+                      Employee group
                     </div>
-                    <p className="text-sm">{delivery.employee?.name || "-"}</p>
+                    <p className="text-sm">{delivery.employeeGroup?.name || "-"}</p>
                     <p className="text-xs text-muted-foreground">
-                      {[delivery.helper1?.name, delivery.helper2?.name]
-                        .filter(Boolean)
-                        .join(", ") || "No helpers assigned"}
+                      {delivery.employeeGroup?.id
+                        ? `Group ${delivery.employeeGroup.id}`
+                        : "No employee group assigned"}
                     </p>
                   </div>
                 </div>

@@ -337,7 +337,7 @@ export function OrdersWorkspace() {
     {
       id: "user",
       label: "createdBy",
-      sortField: "user.name",
+      sortField: "createdBy.name",
       renderCell: (order) => formatUserSummary(order.user),
     },
     {

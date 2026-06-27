@@ -13,20 +13,6 @@ export function formatPermissionsSummary(role: Role, limit = 3): string {
   return `${visible.join(", ")}${suffix}`;
 }
 
-export function roleMatchesQuery(role: Role, query: string): boolean {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) return true;
-
-  const permissionText = role.permissions
-    .map((permission) => permission.label ?? permission.value)
-    .join(" ");
-
-  return [role.roleId, role.name, permissionText, role.createdBy, String(role.permissions.length)]
-    .join(" ")
-    .toLowerCase()
-    .includes(normalized);
-}
-
 export function computeRoleKpis(roles: Role[]) {
   const permissionCounts = roles.map((role) => role.permissions.length);
   const totalPermissions = permissionCounts.reduce((sum, count) => sum + count, 0);

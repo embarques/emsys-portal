@@ -224,22 +224,10 @@ export async function fetchItemById(itemId: string | number): Promise<Item> {
   return item;
 }
 
-/**
- * The API rejects POST /invoice-descriptions without an `id`, so the next id is
- * derived from the current maximum. Fetches the highest id and returns max + 1.
- */
-async function resolveNextItemId(): Promise<number> {
-  const top = await fetchItems({ page: 1, limit: 1, sort: "id:desc" });
-  const maxId = top.items[0] ? readNumericId(top.items[0].itemId) ?? 0 : 0;
-  return maxId + 1;
-}
-
 export async function createItem(values: ItemFormValues): Promise<Item> {
-  const nextId = await resolveNextItemId();
-
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.INVOICE_DESCRIPTIONS,
-    buildItemWritePayload(values, { itemId: nextId }),
+    buildItemWritePayload(values),
   );
 
   assertMutationSuccess(response, "Unable to create item.");

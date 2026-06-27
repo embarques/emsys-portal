@@ -21,10 +21,21 @@ export type ApiSearchOperator =
   | "lt"
   | "lte";
 
+/**
+ * The strict API validates value types per field: numeric fields require JSON
+ * numbers, boolean fields require JSON booleans, and `in`/`notIn` require JSON
+ * arrays. Strings are only valid for string fields.
+ */
+export type ApiSearchFilterValue =
+  | string
+  | number
+  | boolean
+  | Array<string | number | boolean>;
+
 export type ApiSearchFilter = {
   field: string;
   operator: string;
-  value: string | number | boolean;
+  value: ApiSearchFilterValue;
 };
 
 export type ApiSearchFilterGroup = {
@@ -89,10 +100,100 @@ export type ApiListTextSearch = ListTextSearch & {
   operator?: ApiSearchOperator;
 };
 
-function hasApiSearchFilterValue(value: string | number | boolean): boolean {
+function hasApiSearchFilterValue(value: ApiSearchFilterValue): boolean {
+  if (Array.isArray(value)) return value.length > 0;
   if (typeof value === "number") return Number.isFinite(value);
   if (typeof value === "boolean") return true;
   return value !== "";
+}
+
+/** Membership operators require JSON arrays under the strict API contract. */
+export const MULTI_VALUE_OPERATORS: ReadonlySet<string> = new Set(["in", "notIn"]);
+
+function splitMultiValue(value: ApiSearchFilterValue): string[] {
+  if (Array.isArray(value)) {
+    return value.map((entry) => String(entry).trim()).filter(Boolean);
+  }
+  return String(value)
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Coerces a leaf filter to the JSON types the strict API expects:
+ * numeric fields → numbers, boolean fields → booleans, and `in`/`notIn` → arrays.
+ * Returns null when the value cannot satisfy the field's required type.
+ */
+export function coerceTypedLeafFilter(
+  filter: ApiSearchFilter,
+  options: {
+    numericFields?: ReadonlySet<string>;
+    booleanFields?: ReadonlySet<string>;
+  },
+): ApiSearchFilter | null {
+  const isNumeric = options.numericFields?.has(filter.field) ?? false;
+  const isBoolean = options.booleanFields?.has(filter.field) ?? false;
+
+  if (MULTI_VALUE_OPERATORS.has(filter.operator)) {
+    const parts = splitMultiValue(filter.value);
+    if (parts.length === 0) return null;
+
+    if (isNumeric) {
+      const numbers = parts
+        .map((part) => Number(part))
+        .filter((entry) => Number.isFinite(entry));
+      if (numbers.length === 0) return null;
+      return { field: filter.field, operator: filter.operator, value: numbers };
+    }
+
+    if (isBoolean) {
+      return {
+        field: filter.field,
+        operator: filter.operator,
+        value: parts.map((part) => part === "true"),
+      };
+    }
+
+    return { field: filter.field, operator: filter.operator, value: parts };
+  }
+
+  if (isNumeric) {
+    const numeric = Number(String(filter.value).trim());
+    if (!Number.isFinite(numeric)) return null;
+    return { field: filter.field, operator: filter.operator, value: numeric };
+  }
+
+  if (isBoolean) {
+    return {
+      field: filter.field,
+      operator: filter.operator,
+      value: String(filter.value).trim() === "true",
+    };
+  }
+
+  return filter;
+}
+
+/** Recursively applies {@link coerceTypedLeafFilter} across an AND/OR node tree. */
+export function coerceTypedFilterNode(
+  node: ApiSearchFilterNode,
+  options: {
+    numericFields?: ReadonlySet<string>;
+    booleanFields?: ReadonlySet<string>;
+  },
+): ApiSearchFilterNode | null {
+  if (isApiSearchFilter(node)) {
+    return coerceTypedLeafFilter(node, options);
+  }
+
+  const filters = node.filters
+    .map((entry) => coerceTypedFilterNode(entry, options))
+    .filter((entry): entry is ApiSearchFilterNode => entry != null);
+
+  if (filters.length === 0) return null;
+
+  return { operator: node.operator, filters };
 }
 
 function collectAdvancedSearchFilterGroups(

@@ -8,8 +8,9 @@ export type DeliveryContainerRef = {
   containerNumber: string;
 };
 
-export type DeliveryEmployeeRef = {
-  id: number;
+/** Matches employee_group.EmployeeGroupDTO — `id` is a string. */
+export type DeliveryEmployeeGroupRef = {
+  id: string;
   name: string;
 };
 
@@ -18,9 +19,7 @@ export type Delivery = {
   name: string;
   date: string;
   container: DeliveryContainerRef | null;
-  employee: DeliveryEmployeeRef | null;
-  helper1: DeliveryEmployeeRef | null;
-  helper2: DeliveryEmployeeRef | null;
+  employeeGroup: DeliveryEmployeeGroupRef | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -61,9 +60,7 @@ export type DeliveryFormValues = {
   name: string;
   date: string;
   containerId: string;
-  employeeId: string;
-  helper1Id: string;
-  helper2Id: string;
+  employeeGroupId: string;
 };
 
 export type DeliveryFilterState = {
@@ -88,15 +85,6 @@ export const DEFAULT_DELIVERY_LIST_PARAMS = {
   sort: "createdAt:desc",
 } as const satisfies Pick<DeliveryListParams, "page" | "limit" | "sort">;
 
-export const DELIVERY_SEARCH_FIELDS = [
-  { value: "name", label: "Delivery" },
-  { value: "container.name", label: "Container" },
-  { value: "container.containerNumber", label: "Container number" },
-  { value: "employee.name", label: "Driver" },
-  { value: "helper1.name", label: "Helper 1" },
-  { value: "helper2.name", label: "Helper 2" },
-  { value: "id", label: "Delivery ID" },
-] as const;
 
 export function createEmptyDeliveryForm(date = new Date()): DeliveryFormValues {
   return {
@@ -104,9 +92,7 @@ export function createEmptyDeliveryForm(date = new Date()): DeliveryFormValues {
     name: "",
     date: date.toISOString().slice(0, 10),
     containerId: "",
-    employeeId: "",
-    helper1Id: "",
-    helper2Id: "",
+    employeeGroupId: "",
   };
 }
 
@@ -147,9 +133,7 @@ export function deliveryToFormValues(delivery: Delivery): DeliveryFormValues {
     name: delivery.name,
     date: toFormDate(delivery.date),
     containerId: delivery.container?.id ? String(delivery.container.id) : "",
-    employeeId: delivery.employee?.id ? String(delivery.employee.id) : "",
-    helper1Id: delivery.helper1?.id ? String(delivery.helper1.id) : "",
-    helper2Id: delivery.helper2?.id ? String(delivery.helper2.id) : "",
+    employeeGroupId: delivery.employeeGroup?.id ?? "",
   };
 }
 
@@ -179,7 +163,7 @@ export function validateDeliveryFormValues(values: DeliveryFormValues): void {
     throw new Error("Container is required.");
   }
 
-  if (!values.employeeId.trim()) {
-    throw new Error("Driver is required.");
+  if (!values.employeeGroupId.trim()) {
+    throw new Error("Employee group is required.");
   }
 }

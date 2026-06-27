@@ -419,22 +419,10 @@ export async function fetchEmployeeById(employeeId: string): Promise<Employee> {
   return employee;
 }
 
-/**
- * The API rejects POST /employees without an `id`, so the next id is derived
- * from the current maximum. Fetches the highest id and returns max + 1.
- */
-async function resolveNextEmployeeId(): Promise<number> {
-  const top = await fetchEmployees({ page: 1, limit: 1, sort: "id:desc" });
-  const maxId = top.items[0]?.id ?? 0;
-  return (Number.isFinite(maxId) ? maxId : 0) + 1;
-}
-
 export async function createEmployee(values: EmployeeFormValues): Promise<Employee> {
-  const nextId = await resolveNextEmployeeId();
-
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.EMPLOYEES,
-    buildEmployeeWritePayload(values, { id: nextId }),
+    buildEmployeeWritePayload(values),
   );
 
   assertMutationSuccess(response, "Unable to create employee.");
