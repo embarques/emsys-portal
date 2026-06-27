@@ -16,7 +16,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { createFilterRowId, countCompleteFilterRows } from "@/lib/table/filter-builder";
 import type { TableFilterFieldDefinition, TableFilterRowState } from "@/lib/table/filter-types";
-import { useFilterPresets } from "@/lib/table/hooks/use-filter-presets";
+import { useFilterPresets } from "@/lib/filter-presets/hooks/use-filter-presets";
 import { cn } from "@/lib/utils";
 
 export type FilterPresetMenuProps = {
@@ -41,7 +41,7 @@ export function FilterPresetMenu({
   onApply,
   className,
 }: FilterPresetMenuProps) {
-  const { presets, savePreset, deletePreset } = useFilterPresets(storageKey);
+  const { presets, isLoading, isMutating, savePreset, deletePreset } = useFilterPresets(storageKey);
   const [loadOpen, setLoadOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [draftName, setDraftName] = useState("");
@@ -136,7 +136,7 @@ export function FilterPresetMenu({
                 type="button"
                 size="sm"
                 className="h-7 px-3 text-xs"
-                disabled={!draftName.trim()}
+                disabled={!draftName.trim() || isMutating}
                 onClick={handleSave}
               >
                 Save
@@ -167,7 +167,11 @@ export function FilterPresetMenu({
           className="z-[110] w-64 p-0"
           onMouseDown={(event) => event.stopPropagation()}
         >
-          {presets.length > 0 ? (
+          {presets.length === 0 && isLoading ? (
+            <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+              Loading presets…
+            </p>
+          ) : presets.length > 0 ? (
             <Command>
               <CommandInput placeholder="Search presets…" />
               <CommandList className="max-h-56">

@@ -120,7 +120,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter zip code…",
   },
   {
-    field: "user.name",
+    field: "createdBy.name",
     label: "Created by",
     operators: ["eq", "neq", "contains", "startsWith"],
     valueType: "select",

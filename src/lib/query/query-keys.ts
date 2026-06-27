@@ -5,6 +5,7 @@ import type { InvoiceListParams, InvoiceSearchFilter } from "@/lib/invoices/type
 import type { ItemListParams, ItemSearchFilter } from "@/lib/items/types";
 import type { VehicleListParams, VehicleSearchFilter } from "@/lib/vehicles/types";
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
+import type { MemoPadListParams, MemoPadSearchFilter } from "@/lib/memo-pads/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
 import type { RouteListParams } from "@/lib/routes/types";
@@ -158,5 +159,19 @@ export const queryKeys = {
     stats: (scope: "all" | "active" | "admin", roleId?: number) =>
       [...queryKeys.users.all, "stats", scope, roleId] as const,
     detail: (userId: string) => [...queryKeys.users.all, "detail", userId] as const,
+  },
+  filterPresets: {
+    all: ["filter-presets"] as const,
+    lists: () => [...queryKeys.filterPresets.all, "list"] as const,
+    list: (scope: string) => [...queryKeys.filterPresets.lists(), scope] as const,
+    detail: (presetId: string) => [...queryKeys.filterPresets.all, "detail", presetId] as const,
+  },
+  memoPads: {
+    all: ["memo-pads"] as const,
+    lists: () => [...queryKeys.memoPads.all, "list"] as const,
+    list: (params: MemoPadListParams) => [...queryKeys.memoPads.lists(), params] as const,
+    search: (search: MemoPadSearchFilter | undefined, limit: number) =>
+      [...queryKeys.memoPads.all, "search", search, limit] as const,
+    detail: (memoPadId: string) => [...queryKeys.memoPads.all, "detail", memoPadId] as const,
   },
 } as const;

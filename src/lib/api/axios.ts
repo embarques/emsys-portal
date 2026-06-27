@@ -6,6 +6,17 @@ import { getApiBaseUrl } from "@/lib/api/base-url";
 import { store } from "@/lib/store/store";
 import { setAuthTransport } from "@/lib/store/auth/auth-slice";
 
+declare module "axios" {
+  interface AxiosRequestConfig {
+    /**
+     * Opt out of attaching the `x-company-id` header for this request.
+     * Used by user-scoped resources (e.g. filter presets) that are not
+     * tenant-scoped on the server.
+     */
+    skipCompanyId?: boolean;
+  }
+}
+
 export const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
@@ -26,7 +37,7 @@ axiosInstance.interceptors.request.use(async (config: InternalAxiosRequestConfig
     config.headers.set("authorization", `Bearer ${idToken}`);
   }
 
-  if (companyId) {
+  if (companyId && !config.skipCompanyId) {
     config.headers.set("x-company-id", companyId);
   }
 

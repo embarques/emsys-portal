@@ -83,7 +83,7 @@ export function formatUserSummary(user: Order["user"]): string {
   return String(user.id);
 }
 
-/** Created-by filter options for POST /pickups/search (`user.name` field). */
+/** Created-by filter options for POST /pickups/search (`createdBy.name` field). */
 export function buildOrderCreatedByFilterOptions(users: User[]): TableFilterFieldOption[] {
   const seen = new Set<string>();
   const options: TableFilterFieldOption[] = [];

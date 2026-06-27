@@ -23,4 +23,6 @@ export const API_ENDPOINTS = {
   ACCOUNTING_ACCOUNTS: "/accounting/accounts",
   ACCOUNTING_ACCOUNT: "/accounting/account",
   ACCOUNTING_PAYMENT_METHODS: "/accounting/paymentmethods",
+  FILTER_PRESETS: "/filter-presets",
+  MEMO_PADS: "/memo-pads",
 } as const;

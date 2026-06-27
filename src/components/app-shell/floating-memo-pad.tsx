@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Eraser, StickyNote, X } from "lucide-react";
 
 import { useMemoPad } from "@/components/app-shell/memo-pad-provider";
 import { Button } from "@/components/ui/button";
-import { useMemoPadStore } from "@/lib/memo-pad/use-memo-pad";
+import {
+  useFloatingMemoPad,
+  useMemoPadHasNotes,
+} from "@/lib/memo-pads/hooks/use-floating-memo-pad";
 
 export function FloatingMemoPad() {
   const { open, close } = useMemoPad();
-  const { content, updateContent, clearContent } = useMemoPadStore();
+  const { content, updateContent, clearContent, isLoading, isError, isSaving } =
+    useFloatingMemoPad();
   const [savedHint, setSavedHint] = useState(false);
+  const wasSavingRef = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -27,11 +32,14 @@ export function FloatingMemoPad() {
   }, [close, open]);
 
   useEffect(() => {
-    if (!open) return;
-    setSavedHint(true);
-    const timer = window.setTimeout(() => setSavedHint(false), 1500);
-    return () => window.clearTimeout(timer);
-  }, [content, open]);
+    if (wasSavingRef.current && !isSaving) {
+      setSavedHint(true);
+      const timer = window.setTimeout(() => setSavedHint(false), 1500);
+      wasSavingRef.current = isSaving;
+      return () => window.clearTimeout(timer);
+    }
+    wasSavingRef.current = isSaving;
+  }, [isSaving]);
 
   if (!open) return null;
 
@@ -63,7 +71,11 @@ export function FloatingMemoPad() {
             Memo pad
           </div>
           <div className="flex items-center gap-1">
-            {savedHint ? <span className="text-xs text-muted-foreground">Saved</span> : null}
+            {isSaving ? (
+              <span className="text-xs text-muted-foreground">Saving…</span>
+            ) : savedHint ? (
+              <span className="text-xs text-muted-foreground">Saved</span>
+            ) : null}
             <Button
               type="button"
               variant="ghost"
@@ -91,15 +103,18 @@ export function FloatingMemoPad() {
           <textarea
             value={content}
             onChange={(event) => handleChange(event.target.value)}
-            placeholder="Jot down notes, reminders, or quick calculations..."
-            className="min-h-[220px] w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+            placeholder={
+              isLoading ? "Loading your notes..." : "Jot down notes, reminders, or quick calculations..."
+            }
+            disabled={isLoading}
+            className="min-h-[220px] w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
             spellCheck
           />
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
             <span>
               {lineCount} {lineCount === 1 ? "line" : "lines"} · {charCount} chars
             </span>
-            <span>Auto-saved locally</span>
+            <span>{isError ? "Offline — changes not saved" : "Saved to your account"}</span>
           </div>
         </div>
       </div>
@@ -109,8 +124,7 @@ export function FloatingMemoPad() {
 
 export function MemoPadToggleButton() {
   const { open, toggle } = useMemoPad();
-  const { content } = useMemoPadStore();
-  const hasNotes = content.trim().length > 0;
+  const hasNotes = useMemoPadHasNotes();
 
   return (
     <Button
