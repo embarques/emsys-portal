@@ -93,6 +93,68 @@ export type LabelFilterState = {
   status: LabelStatus | "all";
 };
 
+/** Status reference returned by / sent to the EMSYS barcode API. */
+export type BarcodeStatusRef = {
+  id?: number;
+  name: string;
+};
+
+/** Container reference returned by / sent to the EMSYS barcode API. */
+export type BarcodeContainerRef = {
+  id?: number;
+  name: string;
+};
+
+/** Normalized barcode record from the EMSYS `/barcodes` API. */
+export type Barcode = {
+  id: number;
+  number: string;
+  status: BarcodeStatusRef | null;
+  container: BarcodeContainerRef | null;
+  scanDate?: string;
+};
+
+export type GeneratedLabelSource = "created" | "existing";
+
+/** A barcode plus the invoice/line-item context shown in the generate-labels view. */
+export type GeneratedLabel = {
+  key: string;
+  barcodeId: number;
+  number: string;
+  statusId?: number;
+  statusName: string;
+  containerId?: number;
+  containerName: string;
+  invoiceId: string;
+  invoiceNumber: string;
+  description: string;
+  labelSequence: number;
+  totalLabels: number;
+  source: GeneratedLabelSource;
+};
+
+/** Default status applied to a freshly created barcode (per EMSYS API payload docs). */
+export const NEW_BARCODE_STATUS: { id: number; name: string } = {
+  id: 1,
+  name: "CREATED",
+};
+
+/**
+ * Selectable barcode statuses for the "Change status" action.
+ *
+ * NOTE: `CREATED` (1) and `CONDUCE` (4) are confirmed from the API/payload docs;
+ * the remaining IDs are best-guesses and should be reconciled with the backend's
+ * real status catalog when that endpoint becomes available.
+ */
+export const BARCODE_STATUS_OPTIONS: { id: number; name: string }[] = [
+  { id: 1, name: "CREATED" },
+  { id: 2, name: "PRINTED" },
+  { id: 3, name: "IN TRANSIT" },
+  { id: 4, name: "CONDUCE" },
+  { id: 5, name: "DELIVERED" },
+  { id: 6, name: "CANCELLED" },
+];
+
 export const LABEL_STATUSES: { value: LabelStatus; label: string }[] = [
   { value: "pending", label: "Pending" },
   { value: "generated", label: "Generated" },

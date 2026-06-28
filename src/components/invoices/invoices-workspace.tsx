@@ -10,9 +10,11 @@ import {
   Plus,
   Printer,
   Receipt,
+  Tags,
   Trash2,
 } from "lucide-react";
 
+import { InvoiceStagingDialog } from "@/components/invoices/invoice-staging-dialog";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -105,6 +107,7 @@ export function InvoicesWorkspace() {
   const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
   const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | Invoice[] | null>(null);
+  const [stagingOpen, setStagingOpen] = useState(false);
 
   const listParams = useMemo(
     () =>
@@ -155,6 +158,11 @@ export function InvoicesWorkspace() {
   }, [detailInvoice, invoices, viewInvoiceId, viewOverlay]);
 
   const kpis = useMemo(() => computeInvoiceKpis(invoices), [invoices]);
+
+  const selectedInvoices = useMemo(
+    () => invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)),
+    [invoices, selectedIds],
+  );
 
   const userFilterOptions = useMemo(
     () => buildOrderCreatedByFilterOptions(usersData?.items ?? []),
@@ -483,10 +491,16 @@ export function InvoicesWorkspace() {
           }
           deleteDisabled={isDeleting}
           actions={
-            <Button variant="outline" size="sm" onClick={() => handleComingSoon("Print")}>
-              <Printer className="h-4 w-4" />
-              Print
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={() => setStagingOpen(true)}>
+                <Tags className="h-4 w-4" />
+                Stage for processing
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleComingSoon("Print")}>
+                <Printer className="h-4 w-4" />
+                Print
+              </Button>
+            </>
           }
         />
 
@@ -558,6 +572,12 @@ export function InvoicesWorkspace() {
           </div>
         ) : null}
       </Card>
+
+      <InvoiceStagingDialog
+        open={stagingOpen}
+        onOpenChange={setStagingOpen}
+        invoices={selectedInvoices}
+      />
 
       <InvoiceViewSheet
         invoice={viewInvoice}
