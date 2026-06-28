@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Car, FileText, Package, Search, UserPlus, Users } from "lucide-react";
+import { ArrowRight, FileText, Package, Search, UserPlus, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 const quickLinks = [
   { label: "Find customer", description: "Search customer records", href: "/customers", icon: Users },
   { label: "Create customer", description: "Open a new customer form", href: "/customers", icon: UserPlus },
-  { label: "Track delivery", description: "Review routes and status", href: "/deliveries", icon: Car },
   { label: "Inventory lookup", description: "Check stock and locations", href: "/inventory", icon: Package },
   { label: "Monthly reports", description: "Open operations reports", href: "/reports", icon: FileText },
 ];

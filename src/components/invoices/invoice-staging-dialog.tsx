@@ -31,6 +31,7 @@ import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { truncateBarcode } from "@/lib/labels/display";
 import { useGenerateLabels, useUpdateBarcodes } from "@/lib/labels/hooks/use-barcodes";
+import { useGenerateLabelReport } from "@/lib/labels/hooks/use-label-reports";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import {
   BARCODE_STATUS_OPTIONS,
@@ -138,6 +139,7 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
   const containers = containersData?.items ?? [];
   const generateLabelsMutation = useGenerateLabels();
   const updateBarcodesMutation = useUpdateBarcodes();
+  const generateLabelReportMutation = useGenerateLabelReport();
 
   const [step, setStep] = useState<StagingStep>("line-items");
 
@@ -156,6 +158,7 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
 
   const isGenerating = generateLabelsMutation.isPending;
   const isUpdating = updateBarcodesMutation.isPending;
+  const isPrinting = generateLabelReportMutation.isPending;
 
   // Keep the latest invoices without making them a reset trigger: generating
   // labels invalidates the invoices query, which would otherwise change the
@@ -357,9 +360,23 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
     }
   }
 
-  function printSelectedLabels() {
-    if (selectedLabelKeys.length === 0) return;
-    notifyUpdated("Print job", `${selectedLabelKeys.length} label(s)`);
+  async function printSelectedLabels() {
+    const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
+    if (selected.length === 0) return;
+
+    const invoiceIds = Array.from(new Set(selected.map((label) => label.invoiceId).filter(Boolean)));
+    if (invoiceIds.length === 0) {
+      notifyError("Selected labels are missing an invoice reference to print.");
+      return;
+    }
+
+    try {
+      const url = await generateLabelReportMutation.mutateAsync({ invoices: invoiceIds });
+      window.open(url, "_blank", "noopener,noreferrer");
+      notifySuccess(`Labels ready for ${invoiceIds.length} invoice(s).`);
+    } catch (error) {
+      notifyError(normalizeApiError(error).message);
+    }
   }
 
   return (
@@ -519,9 +536,13 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
                 <ContainerIcon className="h-4 w-4" />
                 Transfer container
               </Button>
-              <Button size="sm" disabled={selectedLabelKeys.length === 0} onClick={printSelectedLabels}>
+              <Button
+                size="sm"
+                disabled={selectedLabelKeys.length === 0 || isPrinting}
+                onClick={printSelectedLabels}
+              >
                 <Printer className="h-4 w-4" />
-                Print
+                {isPrinting ? "Preparing…" : "Print"}
               </Button>
             </SelectionToolbar>
 

@@ -10,8 +10,6 @@ import {
   Home,
   KeyRound,
   Package,
-  PackageCheck,
-  Route,
   ScanBarcode,
   Settings,
   ShieldCheck,
@@ -56,7 +54,6 @@ export const navigation: NavigationGroup[] = [
       { label: "Inventory", href: "/inventory", icon: Boxes, permission: PERMISSIONS.inventoryView },
       { label: "Items", href: "/items", icon: Tag, permission: PERMISSIONS.invoiceItemsView },
       { label: "Containers", href: "/containers", icon: Container, permission: PERMISSIONS.containersView },
-      { label: "Routes", href: "/routes", icon: Route, permission: PERMISSIONS.routesView },
       {
         label: "Route Assignments",
         href: "/route-assignments",
@@ -64,12 +61,6 @@ export const navigation: NavigationGroup[] = [
         permission: PERMISSIONS.dispatchView,
       },
       { label: "Vehicles", href: "/vehicles", icon: Car, permission: PERMISSIONS.vehiclesView },
-      {
-        label: "Deliveries",
-        href: "/deliveries",
-        icon: PackageCheck,
-        permission: PERMISSIONS.deliveriesView,
-      },
     ],
   },
   {

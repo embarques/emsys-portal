@@ -69,6 +69,7 @@ import {
   useInvoiceStats,
   useInvoices,
 } from "@/lib/invoices/hooks/use-invoices";
+import { useGenerateInvoiceReport } from "@/lib/invoices/hooks/use-invoice-reports";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { buildOrderCreatedByFilterOptions } from "@/lib/orders/display";
 import { useUsers } from "@/lib/users/hooks/use-users";
@@ -130,6 +131,7 @@ export function InvoicesWorkspace() {
     sort: "fullName:asc",
   });
   const deleteInvoicesMutation = useDeleteInvoices();
+  const generateInvoiceReportMutation = useGenerateInvoiceReport();
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
 
   const invoices = data?.items ?? [];
@@ -139,6 +141,7 @@ export function InvoicesWorkspace() {
   const allPageSelected =
     invoices.length > 0 && invoices.every((invoice) => selectedIds.includes(invoice.invoiceId));
   const isDeleting = deleteInvoicesMutation.isPending;
+  const isPrinting = generateInvoiceReportMutation.isPending;
 
   const viewInvoice = useMemo(() => {
     if (!viewInvoiceId) return null;
@@ -233,9 +236,20 @@ export function InvoicesWorkspace() {
     notifyAdded("Payment", formatInvoiceMoney(payment.amount));
   }
 
-  // TODO: implement print for selected invoices.
-  function handleComingSoon(label: string) {
-    notifySuccess(`${label} is coming soon.`);
+  async function printSelectedInvoices() {
+    const invoiceIds = selectedInvoices.map((invoice) => invoice.invoiceId).filter(Boolean);
+    if (invoiceIds.length === 0) {
+      notifyError("Select at least one invoice to print.");
+      return;
+    }
+
+    try {
+      const report = await generateInvoiceReportMutation.mutateAsync({ invoices: invoiceIds });
+      window.open(report.url, "_blank", "noopener,noreferrer");
+      notifySuccess(`Invoice report ready for ${invoiceIds.length} invoice(s).`);
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
   }
 
   async function confirmDelete() {
@@ -497,9 +511,14 @@ export function InvoicesWorkspace() {
                 <Tags className="h-4 w-4" />
                 Stage for processing
               </Button>
-              <Button variant="outline" size="sm" onClick={() => handleComingSoon("Print")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={printSelectedInvoices}
+                disabled={isPrinting}
+              >
                 <Printer className="h-4 w-4" />
-                Print
+                {isPrinting ? "Preparing…" : "Print"}
               </Button>
             </>
           }
