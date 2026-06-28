@@ -11,6 +11,7 @@ import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
 import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
 import type { RouteListParams } from "@/lib/routes/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
+import type { EmployeeGroupSearchFilter } from "@/lib/employee-groups/api/employee-groups-api";
 
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
 
@@ -46,6 +47,8 @@ export const queryKeys = {
     all: ["employee-groups"] as const,
     lists: () => [...queryKeys.employeeGroups.all, "list"] as const,
     list: (params: { limit?: number }) => [...queryKeys.employeeGroups.lists(), params] as const,
+    search: (search: EmployeeGroupSearchFilter | undefined, limit: number) =>
+      [...queryKeys.employeeGroups.all, "search", search, limit] as const,
   },
   vehicles: {
     all: ["vehicles"] as const,

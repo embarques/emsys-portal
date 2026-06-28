@@ -48,7 +48,7 @@ function parseRangeValue(raw: string): { start: string; end: string } | null {
 
 function expandDateRangeFilter(
   field: string,
-  value: string | number | boolean,
+  value: ApiSearchFilter["value"],
 ): ApiSearchFilterNode | null {
   const range = parseRangeValue(String(value));
   if (!range) return null;

@@ -27,6 +27,7 @@ import { useColumnVisibility } from "@/components/app-shell/use-column-visibilit
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { DeliveryForm } from "@/components/deliveries/delivery-form";
 import { DeliveryViewSheet } from "@/components/deliveries/delivery-view-sheet";
+import { EmployeeGroupCreateDialog } from "@/components/employee-groups/employee-group-create-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -67,7 +68,11 @@ import {
   type DeliveryFilterState,
   type DeliveryFormValues,
 } from "@/lib/deliveries/types";
-import { useEmployeeGroupPicker } from "@/lib/employee-groups/hooks/use-employee-groups";
+import {
+  useEmployeeGroupPicker,
+  useEmployeeGroupSearch,
+} from "@/lib/employee-groups/hooks/use-employee-groups";
+import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import type { DataTableColumn } from "@/lib/table/types";
@@ -95,6 +100,9 @@ export function DeliveriesWorkspace() {
   const [editingDelivery, setEditingDelivery] = useState<Delivery | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Delivery | Delivery[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [employeeGroupQuery, setEmployeeGroupQuery] = useState("");
+  const [employeeGroupCreateOpen, setEmployeeGroupCreateOpen] = useState(false);
+  const [createdEmployeeGroupId, setCreatedEmployeeGroupId] = useState<string>();
 
   const listParams = useMemo(
     () =>
@@ -113,6 +121,13 @@ export function DeliveriesWorkspace() {
   const kpiQuery = useDeliveryKpis();
   const containersQuery = useContainerPicker(250);
   const employeeGroupsQuery = useEmployeeGroupPicker(250);
+  const debouncedEmployeeGroupQuery = useDebouncedValue(
+    employeeGroupQuery,
+    SEARCH_DEBOUNCE_MS,
+  ).trim();
+  const employeeGroupSearch = useEmployeeGroupSearch(
+    debouncedEmployeeGroupQuery ? { value: debouncedEmployeeGroupQuery } : undefined,
+  );
   const createDeliveryMutation = useCreateDelivery();
   const updateDeliveryMutation = useUpdateDelivery();
   const deleteDeliveriesMutation = useDeleteDeliveries();
@@ -138,13 +153,24 @@ export function DeliveriesWorkspace() {
     [containersQuery.data?.items],
   );
 
+  const employeeGroups = useMemo(() => {
+    const merged = new Map<string, EmployeeGroupOption>();
+    (employeeGroupsQuery.data?.items ?? []).forEach((group) => merged.set(group.id, group));
+    (employeeGroupSearch.data?.items ?? []).forEach((group) => merged.set(group.id, group));
+
+    if (editingDelivery?.employeeGroup && !merged.has(editingDelivery.employeeGroup.id)) {
+      merged.set(editingDelivery.employeeGroup.id, {
+        ...editingDelivery.employeeGroup,
+        employees: [],
+      });
+    }
+
+    return Array.from(merged.values());
+  }, [editingDelivery?.employeeGroup, employeeGroupSearch.data?.items, employeeGroupsQuery.data?.items]);
+
   const employeeGroupRefs: DeliveryEmployeeGroupRef[] = useMemo(
-    () =>
-      (employeeGroupsQuery.data?.items ?? []).map((group) => ({
-        id: group.id,
-        name: group.name,
-      })),
-    [employeeGroupsQuery.data?.items],
+    () => employeeGroups.map((group) => ({ id: group.id, name: group.name })),
+    [employeeGroups],
   );
 
   const containerOptions: SearchableSelectOption[] = useMemo(
@@ -159,13 +185,34 @@ export function DeliveriesWorkspace() {
   );
 
   const employeeGroupOptions: SearchableSelectOption[] = useMemo(
-    () =>
-      employeeGroupRefs.map((group) => ({
+    () => {
+      const source = employeeGroupQuery.trim()
+        ? debouncedEmployeeGroupQuery
+          ? (employeeGroupSearch.data?.items ?? [])
+          : []
+        : employeeGroups;
+
+      return source.map((group) => ({
         value: group.id,
         label: group.name,
-      })),
-    [employeeGroupRefs],
+        descriptionLines: [
+          group.employees.map((employee) => employee.name).join(", "),
+          group.branch ?? "",
+        ].filter(Boolean),
+        keywords: group.employees.map((employee) => employee.name),
+      }));
+    },
+    [
+      debouncedEmployeeGroupQuery,
+      employeeGroupQuery,
+      employeeGroupSearch.data?.items,
+      employeeGroups,
+    ],
   );
+
+  const employeeGroupSearchLoading =
+    Boolean(employeeGroupQuery.trim()) &&
+    (employeeGroupQuery.trim() !== debouncedEmployeeGroupQuery || employeeGroupSearch.isFetching);
 
   const kpis = useMemo(() => computeDeliveryKpis(kpiQuery.items), [kpiQuery.items]);
 
@@ -185,12 +232,14 @@ export function DeliveriesWorkspace() {
 
   function openAddForm() {
     setEditingDelivery(null);
+    setCreatedEmployeeGroupId(undefined);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(delivery: Delivery) {
     setEditingDelivery(delivery);
+    setCreatedEmployeeGroupId(undefined);
     setFormMode("edit");
     setViewDelivery(null);
     setFormError(null);
@@ -443,15 +492,9 @@ export function DeliveriesWorkspace() {
             onRowClick={setViewDelivery}
             onRowDoubleClick={openEditForm}
             emptyState={
-              <>
-                <p className="text-muted-foreground">
-                  {filters.query.trim() ? "No deliveries match your search." : "No deliveries yet."}
-                </p>
-                <Button className="mt-4" onClick={openAddForm}>
-                  <Plus className="h-4 w-4" />
-                  Add delivery
-                </Button>
-              </>
+              <p className="text-muted-foreground">
+                {filters.query.trim() ? "No deliveries match your search." : "No deliveries yet."}
+              </p>
             }
           />
         )}
@@ -516,6 +559,7 @@ export function DeliveriesWorkspace() {
           </DialogHeader>
           <DeliveryForm
             key={editingDelivery?.id ?? "new"}
+            isEditing={formMode === "edit"}
             initialValues={
               formMode === "edit" && editingDelivery
                 ? deliveryToFormValues(editingDelivery)
@@ -523,6 +567,10 @@ export function DeliveriesWorkspace() {
             }
             containerOptions={containerOptions}
             employeeGroupOptions={employeeGroupOptions}
+            employeeGroupSearchLoading={employeeGroupSearchLoading}
+            onEmployeeGroupSearchChange={setEmployeeGroupQuery}
+            onAddEmployeeGroup={() => setEmployeeGroupCreateOpen(true)}
+            createdEmployeeGroupId={createdEmployeeGroupId}
             submitLabel={formMode === "edit" ? "Save changes" : "Add delivery"}
             externalError={formError}
             onSubmit={saveDelivery}
@@ -534,6 +582,15 @@ export function DeliveriesWorkspace() {
           />
         </DialogContent>
       </Dialog>
+
+      <EmployeeGroupCreateDialog
+        open={employeeGroupCreateOpen}
+        onOpenChange={setEmployeeGroupCreateOpen}
+        onCreated={(group) => {
+          setCreatedEmployeeGroupId(group.id);
+          setEmployeeGroupQuery("");
+        }}
+      />
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="z-[60]">

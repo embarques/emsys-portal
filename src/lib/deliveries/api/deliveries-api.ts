@@ -62,11 +62,22 @@ type ApiBarcode = {
   quantity?: number;
 };
 
-type ApiDeliveryWritePayload = {
-  id?: number;
+type ApiDeliveryContainerWriteRef = {
+  id: number;
+  name: string;
+};
+
+type ApiDeliveryCreatePayload = {
+  date: string;
+  container: ApiDeliveryContainerWriteRef;
+  employeeGroup: DeliveryEmployeeGroupRef;
+};
+
+type ApiDeliveryUpdatePayload = {
+  id: number;
   name: string;
   date: string;
-  container: DeliveryContainerRef;
+  container: ApiDeliveryContainerWriteRef;
   employeeGroup: DeliveryEmployeeGroupRef;
 };
 
@@ -205,25 +216,51 @@ function findEmployeeGroup(
   return group;
 }
 
-function buildDeliveryWritePayload(
-  values: DeliveryFormValues,
-  references: DeliveryReferenceOptions,
-  options: { deliveryId?: number } = {},
-): ApiDeliveryWritePayload {
-  validateDeliveryFormValues(values);
+function toContainerWriteRef(container: DeliveryContainerRef): ApiDeliveryContainerWriteRef {
+  return { id: container.id, name: container.name };
+}
 
-  const payload: ApiDeliveryWritePayload = {
-    name: values.name.trim(),
-    date: toApiDate(values.date),
-    container: findContainer(values.containerId, references.containers),
-    employeeGroup: findEmployeeGroup(values.employeeGroupId, references.employeeGroups),
-  };
-
-  if (options.deliveryId) {
-    payload.id = options.deliveryId;
+function validateDeliveryCreateValues(values: DeliveryFormValues): void {
+  if (!values.date.trim()) {
+    throw new Error("Delivery date is required.");
   }
 
-  return payload;
+  if (!values.containerId.trim()) {
+    throw new Error("Container is required.");
+  }
+
+  if (!values.employeeGroupId.trim()) {
+    throw new Error("Employee group is required.");
+  }
+}
+
+function buildDeliveryCreatePayload(
+  values: DeliveryFormValues,
+  references: DeliveryReferenceOptions,
+): ApiDeliveryCreatePayload {
+  validateDeliveryCreateValues(values);
+
+  return {
+    date: toApiDate(values.date),
+    container: toContainerWriteRef(findContainer(values.containerId, references.containers)),
+    employeeGroup: findEmployeeGroup(values.employeeGroupId, references.employeeGroups),
+  };
+}
+
+function buildDeliveryUpdatePayload(
+  values: DeliveryFormValues,
+  references: DeliveryReferenceOptions,
+  deliveryId: number,
+): ApiDeliveryUpdatePayload {
+  validateDeliveryFormValues(values);
+
+  return {
+    id: deliveryId,
+    name: values.name.trim(),
+    date: toApiDate(values.date),
+    container: toContainerWriteRef(findContainer(values.containerId, references.containers)),
+    employeeGroup: findEmployeeGroup(values.employeeGroupId, references.employeeGroups),
+  };
 }
 
 function extractDeliveryFromMutationResponse(data: unknown): Delivery | null {
@@ -255,7 +292,7 @@ async function resolveCreatedDelivery(
   const matches = await fetchDeliveries({
     page: 1,
     limit: 1,
-    search: { field: "name", operator: "eq", value: values.name.trim() },
+    sort: "createdAt:desc",
   });
   const match = matches.items[0];
   if (match) return match;
@@ -333,7 +370,7 @@ export async function createDelivery(
 ): Promise<Delivery> {
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.DELIVERIES,
-    buildDeliveryWritePayload(values, references),
+    buildDeliveryCreatePayload(values, references),
   );
 
   assertMutationSuccess(response, "Unable to create delivery.");
@@ -348,7 +385,7 @@ export async function updateDelivery(
   const numericId = parseDeliveryPathId(deliveryId);
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.DELIVERIES}/${numericId}`,
-    buildDeliveryWritePayload(values, references, { deliveryId: numericId }),
+    buildDeliveryUpdatePayload(values, references, numericId),
   );
 
   assertMutationSuccess(response, "Unable to update delivery.");
