@@ -7,7 +7,6 @@ export const PAGE_PERMISSIONS: Record<string, Permission> = {
   "/customers": PERMISSIONS.clientsView,
   "/orders": PERMISSIONS.pickupsView,
   "/invoices": PERMISSIONS.invoicesView,
-  "/labels": PERMISSIONS.packagesView,
   "/label-updater": PERMISSIONS.packagesView,
   "/inventory": PERMISSIONS.inventoryView,
   "/items": PERMISSIONS.invoiceItemsView,

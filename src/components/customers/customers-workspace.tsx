@@ -19,7 +19,7 @@ import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -508,9 +508,10 @@ export function CustomersWorkspace() {
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : null}
 
-        <TableSelectionBar
+        <TableSelectionToolbar
           selectedIds={selectedIds}
           pageRowIds={customers.map((customer) => customer.id)}
+          totalCount={totalCustomers}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
             const customer = customers.find((entry) => entry.id === selectedIds[0]);

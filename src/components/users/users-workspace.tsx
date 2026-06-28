@@ -19,7 +19,7 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -460,9 +460,10 @@ export function UsersWorkspace() {
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : null}
 
-        <TableSelectionBar
+        <TableSelectionToolbar
           selectedIds={selectedIds}
           pageRowIds={pageUsers.map((user) => String(user.id))}
+          totalCount={totalUsers}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
             const user = pageUsers.find((entry) => String(entry.id) === selectedIds[0]);

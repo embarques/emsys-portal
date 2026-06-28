@@ -18,7 +18,7 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
@@ -397,9 +397,10 @@ export function ContainersWorkspace() {
           />
         </CardHeader>
 
-        <TableSelectionBar
+        <TableSelectionToolbar
           selectedIds={selectedIds.map(String)}
           pageRowIds={containers.map((container) => String(container.id))}
+          totalCount={totalContainers}
           onSelectedIdsChange={(ids) => setSelectedIds(ids.map(Number))}
           onEdit={() => {
             const container = containers.find((entry) => entry.id === selectedIds[0]);

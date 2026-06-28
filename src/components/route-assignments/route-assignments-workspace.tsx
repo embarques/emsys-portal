@@ -19,7 +19,7 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -315,9 +315,10 @@ export function RouteAssignmentsWorkspace() {
           />
         </CardHeader>
 
-        <TableSelectionBar
+        <TableSelectionToolbar
           selectedIds={selectedIds}
           pageRowIds={pageAssignments.map((assignment) => assignment.id)}
+          totalCount={filteredAssignments.length}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
             const assignment = pageAssignments.find((entry) => entry.id === selectedIds[0]);

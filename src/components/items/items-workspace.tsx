@@ -18,7 +18,7 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import {
@@ -317,9 +317,10 @@ export function ItemsWorkspace() {
           />
         </CardHeader>
 
-        <TableSelectionBar
+        <TableSelectionToolbar
           selectedIds={selectedIds}
           pageRowIds={items.map((item) => item.itemId)}
+          totalCount={totalItems}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
             const item = items.find((entry) => entry.itemId === selectedIds[0]);
