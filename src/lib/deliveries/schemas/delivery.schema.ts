@@ -8,4 +8,8 @@ export const deliveryFormSchema = z.object({
   employeeGroupId: z.string().trim().min(1, "Employee group is required."),
 });
 
+export const deliveryCreateFormSchema = deliveryFormSchema.omit({ name: true }).extend({
+  name: z.string().trim().optional(),
+});
+
 export type DeliveryFormSchema = z.infer<typeof deliveryFormSchema>;

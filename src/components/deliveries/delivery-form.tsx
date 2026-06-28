@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
-import { deliveryFormSchema } from "@/lib/deliveries/schemas/delivery.schema";
+import { deliveryCreateFormSchema, deliveryFormSchema } from "@/lib/deliveries/schemas/delivery.schema";
 import {
   createEmptyDeliveryForm,
   type DeliveryFormValues,
@@ -17,6 +17,7 @@ import {
 
 type DeliveryFormProps = {
   initialValues?: DeliveryFormValues;
+  isEditing?: boolean;
   containerOptions: SearchableSelectOption[];
   employeeGroupOptions: SearchableSelectOption[];
   employeeGroupSearchLoading?: boolean;
@@ -32,6 +33,7 @@ type DeliveryFormProps = {
 
 export function DeliveryForm({
   initialValues,
+  isEditing = false,
   containerOptions,
   employeeGroupOptions,
   employeeGroupSearchLoading = false,
@@ -66,32 +68,35 @@ export function DeliveryForm({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const parsed = deliveryFormSchema.safeParse(values);
+    const schema = isEditing ? deliveryFormSchema : deliveryCreateFormSchema;
+    const parsed = schema.safeParse(values);
     if (!parsed.success) {
       setLocalError(parsed.error.issues[0]?.message ?? "Review the delivery fields.");
       return;
     }
-    onSubmit(parsed.data);
+    onSubmit(parsed.data as DeliveryFormValues);
   }
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
         <FormSection icon={CalendarDays} title="Delivery" required>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label htmlFor="delivery-name">
-                Delivery <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="delivery-name"
-                value={values.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                placeholder="Conduce 01-26"
-                required
-                autoFocus
-              />
-            </div>
+          <div className={`grid gap-2.5 ${isEditing ? "sm:grid-cols-2" : ""}`}>
+            {isEditing ? (
+              <div className="space-y-1">
+                <Label htmlFor="delivery-name">
+                  Delivery <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="delivery-name"
+                  value={values.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                  placeholder="Conduce 01-26"
+                  required
+                  autoFocus
+                />
+              </div>
+            ) : null}
 
             <div className="space-y-1">
               <Label htmlFor="delivery-date">
@@ -103,6 +108,7 @@ export function DeliveryForm({
                 value={values.date}
                 onChange={(event) => updateField("date", event.target.value)}
                 required
+                autoFocus={!isEditing}
               />
             </div>
           </div>

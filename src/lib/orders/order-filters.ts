@@ -29,7 +29,7 @@ function parseRangeValue(raw: string): { start: string; end: string } | null {
   return null;
 }
 
-function expandZipRangeFilter(value: string | number | boolean): ApiSearchFilterNode | null {
+function expandZipRangeFilter(value: ApiSearchFilter["value"]): ApiSearchFilterNode | null {
   const range = parseRangeValue(String(value));
   if (!range) return null;
 
@@ -44,7 +44,7 @@ function expandZipRangeFilter(value: string | number | boolean): ApiSearchFilter
 
 function expandDateRangeFilter(
   field: string,
-  value: string | number | boolean,
+  value: ApiSearchFilter["value"],
 ): ApiSearchFilterNode | null {
   const range = parseRangeValue(String(value));
   if (!range) return null;

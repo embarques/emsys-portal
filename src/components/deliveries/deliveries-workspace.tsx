@@ -492,15 +492,9 @@ export function DeliveriesWorkspace() {
             onRowClick={setViewDelivery}
             onRowDoubleClick={openEditForm}
             emptyState={
-              <>
-                <p className="text-muted-foreground">
-                  {filters.query.trim() ? "No deliveries match your search." : "No deliveries yet."}
-                </p>
-                <Button className="mt-4" onClick={openAddForm}>
-                  <Plus className="h-4 w-4" />
-                  Add delivery
-                </Button>
-              </>
+              <p className="text-muted-foreground">
+                {filters.query.trim() ? "No deliveries match your search." : "No deliveries yet."}
+              </p>
             }
           />
         )}
@@ -565,6 +559,7 @@ export function DeliveriesWorkspace() {
           </DialogHeader>
           <DeliveryForm
             key={editingDelivery?.id ?? "new"}
+            isEditing={formMode === "edit"}
             initialValues={
               formMode === "edit" && editingDelivery
                 ? deliveryToFormValues(editingDelivery)
