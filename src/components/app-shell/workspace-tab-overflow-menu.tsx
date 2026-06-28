@@ -39,7 +39,10 @@ export function WorkspaceTabOverflowMenu({ tabs, activeTabId, onActivate }: Work
 
           return (
             <DropdownMenuItem key={tab.id} onSelect={() => onActivate(tab.id)} className="gap-2">
-              <span className={cn("min-w-0 flex-1 truncate", active && "font-medium")}>{tab.label}</span>
+              <span className={cn("min-w-0 flex-1 truncate", active && "font-medium")}>
+                <span className="mr-1.5 tabular-nums text-muted-foreground">{tab.number}</span>
+                {tab.label}
+              </span>
               {active ? <Check className="h-4 w-4 shrink-0 opacity-70" /> : null}
             </DropdownMenuItem>
           );

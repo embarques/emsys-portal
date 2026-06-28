@@ -11,6 +11,7 @@ import {
 const initialState: WorkspaceTabsState = {
   tabs: [],
   activeTabId: null,
+  nextTabNumber: 1,
 };
 
 function dedupeTabs(tabs: WorkspaceTab[]): WorkspaceTab[] {
@@ -26,47 +27,95 @@ function dedupeTabs(tabs: WorkspaceTab[]): WorkspaceTab[] {
   return unique;
 }
 
+function normalizePersistedState(state: Partial<WorkspaceTabsState> | null): WorkspaceTabsState {
+  const rawTabs = Array.isArray(state?.tabs) ? state.tabs : [];
+  let nextTabNumber = typeof state?.nextTabNumber === "number" && state.nextTabNumber > 0 ? state.nextTabNumber : 1;
+
+  const tabs = dedupeTabs(
+    rawTabs.map((tab) => {
+      if (typeof tab.number === "number" && tab.number > 0) {
+        nextTabNumber = Math.max(nextTabNumber, tab.number + 1);
+        return tab;
+      }
+
+      const number = nextTabNumber;
+      nextTabNumber += 1;
+      return { ...tab, number };
+    }),
+  );
+
+  const activeTabId =
+    state?.activeTabId && tabs.some((tab) => tab.id === state.activeTabId)
+      ? state.activeTabId
+      : (tabs.at(-1)?.id ?? null);
+
+  return { tabs, activeTabId, nextTabNumber };
+}
+
 function persistTabs(state: WorkspaceTabsState) {
   if (typeof window === "undefined") return;
   const payload: PersistedWorkspaceTabs = {
     tabs: state.tabs,
     activeTabId: state.activeTabId,
+    nextTabNumber: state.nextTabNumber,
   };
   window.sessionStorage.setItem(WORKSPACE_TABS_STORAGE_KEY, JSON.stringify(payload));
 }
+
+function allocateTabNumber(state: WorkspaceTabsState, preferred?: number): number {
+  if (preferred != null && preferred > 0 && !state.tabs.some((tab) => tab.number === preferred)) {
+    state.nextTabNumber = Math.max(state.nextTabNumber, preferred + 1);
+    return preferred;
+  }
+
+  const number = state.nextTabNumber;
+  state.nextTabNumber += 1;
+  return number;
+}
+
+type OpenWorkspaceTabPayload = {
+  id: string;
+  href: string;
+  label: string;
+  number?: number;
+};
 
 const tabsSlice = createSlice({
   name: "layoutTabs",
   initialState,
   reducers: {
-    hydrateWorkspaceTabs(state, action: PayloadAction<WorkspaceTabsState>) {
-      const tabs = dedupeTabs(action.payload.tabs);
-      const activeTabId =
-        action.payload.activeTabId && tabs.some((tab) => tab.id === action.payload.activeTabId)
-          ? action.payload.activeTabId
-          : (tabs.at(-1)?.id ?? null);
-
-      state.tabs = tabs;
-      state.activeTabId = activeTabId;
+    hydrateWorkspaceTabs(state, action: PayloadAction<Partial<WorkspaceTabsState>>) {
+      const normalized = normalizePersistedState(action.payload);
+      state.tabs = normalized.tabs;
+      state.activeTabId = normalized.activeTabId;
+      state.nextTabNumber = normalized.nextTabNumber;
       persistTabs(state);
     },
-    openWorkspaceTab(state, action: PayloadAction<WorkspaceTab>) {
+    openWorkspaceTab(state, action: PayloadAction<OpenWorkspaceTabPayload>) {
       const existing = state.tabs.find((tab) => tab.id === action.payload.id);
       if (existing) {
-        state.activeTabId = action.payload.id;
+        state.activeTabId = existing.id;
         persistTabs(state);
         return;
       }
 
-      state.tabs.push(action.payload);
+      const number = allocateTabNumber(state, action.payload.number);
+      const tab: WorkspaceTab = {
+        id: action.payload.id,
+        href: action.payload.href,
+        label: action.payload.label,
+        number,
+      };
+
+      state.tabs.push(tab);
       while (state.tabs.length > MAX_WORKSPACE_TABS) {
         const removed = state.tabs.shift();
         if (removed?.id === state.activeTabId) {
-          state.activeTabId = action.payload.id;
+          state.activeTabId = tab.id;
         }
       }
 
-      state.activeTabId = action.payload.id;
+      state.activeTabId = tab.id;
       persistTabs(state);
     },
     setActiveWorkspaceTab(state, action: PayloadAction<string>) {
@@ -123,6 +172,7 @@ const tabsSlice = createSlice({
     resetWorkspaceTabs(state) {
       state.tabs = [];
       state.activeTabId = null;
+      state.nextTabNumber = 1;
       if (typeof window !== "undefined") {
         window.sessionStorage.removeItem(WORKSPACE_TABS_STORAGE_KEY);
       }
@@ -149,13 +199,13 @@ export function readPersistedWorkspaceTabs(): WorkspaceTabsState | null {
   try {
     const raw = window.sessionStorage.getItem(WORKSPACE_TABS_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as PersistedWorkspaceTabs;
-    if (!Array.isArray(parsed.tabs)) return null;
-    return {
-      tabs: dedupeTabs(parsed.tabs),
-      activeTabId: parsed.activeTabId,
-    };
+    const parsed = JSON.parse(raw) as Partial<PersistedWorkspaceTabs>;
+    return normalizePersistedState(parsed);
   } catch {
     return null;
   }
+}
+
+export function findTabByNumber(tabs: WorkspaceTab[], tabNumber: number): WorkspaceTab | undefined {
+  return tabs.find((tab) => tab.number === tabNumber);
 }

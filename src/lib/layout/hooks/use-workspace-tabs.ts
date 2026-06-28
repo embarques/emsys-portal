@@ -7,16 +7,18 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
 import { buildWorkspaceTabUrl } from "@/lib/layout/workspace-tab-url";
 import { isWorkspaceRoute, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
-import { MAX_WORKSPACE_TABS } from "@/lib/layout/workspace-tab-types";
+import { MAX_WORKSPACE_TABS, type WorkspaceTab } from "@/lib/layout/workspace-tab-types";
 import {
   closeOtherWorkspaceTabs,
   closeWorkspaceTab,
   closeWorkspaceTabsToRight,
   openWorkspaceTab,
+  resetWorkspaceTabs,
   setActiveWorkspaceTab,
   updateWorkspaceTabLabel,
 } from "@/lib/store/layout/tabs-slice";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
+import { store } from "@/lib/store/store";
 
 function createTabId() {
   return crypto.randomUUID();
@@ -32,8 +34,8 @@ export function useWorkspaceTabs() {
   const activeTabId = useAppSelector((state) => state.layoutTabs.activeTabId);
 
   const navigateToTab = useCallback(
-    (tabId: string, href: string) => {
-      router.push(buildWorkspaceTabUrl(href, tabId));
+    (tab: Pick<WorkspaceTab, "href" | "number">) => {
+      router.push(buildWorkspaceTabUrl(tab.href, tab.number));
     },
     [router],
   );
@@ -60,10 +62,15 @@ export function useWorkspaceTabs() {
           label: label ?? resolveWorkspaceLabel(pathnameOnly),
         }),
       );
+
       if (atLimit) {
         notifySuccess(`Closed the oldest tab (maximum ${MAX_WORKSPACE_TABS} open).`);
       }
-      navigateToTab(tabId, pathnameOnly);
+
+      const created = store.getState().layoutTabs.tabs.find((tab) => tab.id === tabId);
+      if (created) {
+        navigateToTab(created);
+      }
     },
     [dispatch, isDesktopTabs, navigateToTab, notifySuccess, router, tabs.length],
   );
@@ -73,7 +80,7 @@ export function useWorkspaceTabs() {
       const tab = tabs.find((entry) => entry.id === tabId);
       if (!tab) return;
       dispatch(setActiveWorkspaceTab(tabId));
-      navigateToTab(tabId, tab.href);
+      navigateToTab(tab);
     },
     [dispatch, navigateToTab, tabs],
   );
@@ -95,7 +102,7 @@ export function useWorkspaceTabs() {
 
       if (isActive) {
         const nextTab = remaining[closingIndex] ?? remaining[closingIndex - 1] ?? remaining[0];
-        navigateToTab(nextTab.id, nextTab.href);
+        navigateToTab(nextTab);
       }
     },
     [activeTabId, dispatch, navigateToTab, router, tabs],
@@ -107,7 +114,7 @@ export function useWorkspaceTabs() {
       if (!target) return;
 
       dispatch(closeOtherWorkspaceTabs(tabId));
-      navigateToTab(tabId, target.href);
+      navigateToTab(target);
     },
     [dispatch, navigateToTab, tabs],
   );
@@ -124,11 +131,17 @@ export function useWorkspaceTabs() {
       dispatch(closeWorkspaceTabsToRight(tabId));
 
       if (activeWasRemoved) {
-        navigateToTab(tabId, target.href);
+        navigateToTab(target);
       }
     },
     [activeTabId, dispatch, navigateToTab, tabs],
   );
+
+  const closeAllTabs = useCallback(() => {
+    if (tabs.length === 0) return;
+    dispatch(resetWorkspaceTabs());
+    router.push("/");
+  }, [dispatch, router, tabs.length]);
 
   return {
     tabs,
@@ -139,6 +152,7 @@ export function useWorkspaceTabs() {
     closeTab,
     closeOtherTabs,
     closeTabsToRight,
+    closeAllTabs,
   };
 }
 

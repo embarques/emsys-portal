@@ -4,9 +4,10 @@ import { useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
-import { buildWorkspaceTabUrl, readWorkspaceTabId } from "@/lib/layout/workspace-tab-url";
+import { buildWorkspaceTabUrl, readWorkspaceTabNumber } from "@/lib/layout/workspace-tab-url";
 import { isWorkspaceRoute, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
 import {
+  findTabByNumber,
   hydrateWorkspaceTabs,
   openWorkspaceTab,
   readPersistedWorkspaceTabs,
@@ -51,27 +52,34 @@ export function WorkspaceTabsSync() {
     if (!isWorkspaceRoute(pathname)) return;
 
     const locationKey = `${pathname}?${searchParams.toString()}`;
-    const tabIdFromUrl = readWorkspaceTabId(searchParams);
+    const tabNumberFromUrl = readWorkspaceTabNumber(searchParams);
     const { tabs: currentTabs, activeTabId: currentActiveTabId } = store.getState().layoutTabs;
 
-    if (tabIdFromUrl) {
+    if (tabNumberFromUrl != null) {
       pendingAutoOpenLocation = null;
-      const existing = currentTabs.find((tab) => tab.id === tabIdFromUrl);
+      const existing = findTabByNumber(currentTabs, tabNumberFromUrl);
 
       if (existing) {
-        if (currentActiveTabId !== tabIdFromUrl) {
-          dispatch(setActiveWorkspaceTab(tabIdFromUrl));
+        if (currentActiveTabId !== existing.id) {
+          dispatch(setActiveWorkspaceTab(existing.id));
         }
         return;
       }
 
+      const tabId = createTabId();
       dispatch(
         openWorkspaceTab({
-          id: tabIdFromUrl,
+          id: tabId,
           href: pathname,
           label: resolveWorkspaceLabel(pathname),
+          number: tabNumberFromUrl,
         }),
       );
+
+      const opened = findTabByNumber(store.getState().layoutTabs.tabs, tabNumberFromUrl);
+      if (opened && opened.number !== tabNumberFromUrl) {
+        router.replace(buildWorkspaceTabUrl(pathname, opened.number));
+      }
       return;
     }
 
@@ -91,7 +99,11 @@ export function WorkspaceTabsSync() {
         label: resolveWorkspaceLabel(pathname),
       }),
     );
-    router.replace(buildWorkspaceTabUrl(pathname, tabId));
+
+    const opened = store.getState().layoutTabs.tabs.find((tab) => tab.id === tabId);
+    if (opened) {
+      router.replace(buildWorkspaceTabUrl(pathname, opened.number));
+    }
   }, [dispatch, isDesktopTabs, pathname, router, searchParams]);
 
   return null;

@@ -7,6 +7,7 @@ import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { WorkspaceTabOverflowMenu } from "@/components/app-shell/workspace-tab-overflow-menu";
@@ -24,7 +25,7 @@ type WorkspaceTabItemProps = {
 };
 
 function WorkspaceTabItem({ tab, active, index, totalTabs, tabRef }: WorkspaceTabItemProps) {
-  const { activateTab, closeTab, closeOtherTabs, closeTabsToRight } = useWorkspaceTabs();
+  const { activateTab, closeTab, closeOtherTabs, closeTabsToRight, closeAllTabs } = useWorkspaceTabs();
   const hasTabsToRight = index < totalTabs - 1;
   const hasOtherTabs = totalTabs > 1;
 
@@ -35,7 +36,7 @@ function WorkspaceTabItem({ tab, active, index, totalTabs, tabRef }: WorkspaceTa
           ref={tabRef}
           data-tab-id={tab.id}
           className={cn(
-            "group mr-1 mt-2 flex min-w-0 max-w-[220px] shrink-0 items-center rounded-t-lg border border-b-0 px-3 py-2 text-sm transition",
+            "group mr-1 mt-2 flex min-w-0 max-w-[220px] shrink-0 cursor-default items-center rounded-t-lg border border-b-0 px-3 py-2 text-sm transition",
             active
               ? "border-border bg-background text-foreground shadow-sm"
               : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -45,9 +46,10 @@ function WorkspaceTabItem({ tab, active, index, totalTabs, tabRef }: WorkspaceTa
             type="button"
             className="min-w-0 flex-1 truncate text-left"
             onClick={() => activateTab(tab.id)}
-            title={tab.label}
+            title={`${tab.number} · ${tab.label}`}
           >
-            {tab.label}
+            <span className="mr-1.5 shrink-0 tabular-nums text-muted-foreground">{tab.number}</span>
+            <span className="truncate">{tab.label}</span>
           </button>
           <button
             type="button"
@@ -63,14 +65,16 @@ function WorkspaceTabItem({ tab, active, index, totalTabs, tabRef }: WorkspaceTa
         </div>
       </ContextMenuTrigger>
 
-      <ContextMenuContent className="w-48">
-        <ContextMenuItem onSelect={() => closeTab(tab.id)}>Close</ContextMenuItem>
+      <ContextMenuContent className="w-52">
+        <ContextMenuItem onSelect={() => closeTab(tab.id)}>Close tab</ContextMenuItem>
         <ContextMenuItem disabled={!hasOtherTabs} onSelect={() => closeOtherTabs(tab.id)}>
-          Close Other Tabs
+          Close other tabs
         </ContextMenuItem>
         <ContextMenuItem disabled={!hasTabsToRight} onSelect={() => closeTabsToRight(tab.id)}>
-          Close Tabs to the Right
+          Close tabs to the right
         </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => closeAllTabs()}>Close all tabs</ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );

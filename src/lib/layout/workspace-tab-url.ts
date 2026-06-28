@@ -1,18 +1,23 @@
 import { WORKSPACE_TAB_PARAM } from "@/lib/layout/workspace-tab-types";
 
-export function buildWorkspaceTabUrl(href: string, tabId: string): string {
+export function buildWorkspaceTabUrl(href: string, tabNumber: number): string {
   const [pathname, existingSearch = ""] = href.split("?");
   const params = new URLSearchParams(existingSearch);
-  params.set(WORKSPACE_TAB_PARAM, tabId);
+  params.set(WORKSPACE_TAB_PARAM, String(tabNumber));
   const query = params.toString();
   return query ? `${pathname}?${query}` : pathname;
 }
 
-export function readWorkspaceTabId(searchParams: URLSearchParams | string | null | undefined): string | null {
+export function readWorkspaceTabNumber(
+  searchParams: URLSearchParams | string | null | undefined,
+): number | null {
   if (!searchParams) return null;
   const params = typeof searchParams === "string" ? new URLSearchParams(searchParams) : searchParams;
-  const tabId = params.get(WORKSPACE_TAB_PARAM)?.trim();
-  return tabId || null;
+  const raw = params.get(WORKSPACE_TAB_PARAM)?.trim();
+  if (!raw || !/^\d+$/.test(raw)) return null;
+
+  const tabNumber = Number(raw);
+  return Number.isInteger(tabNumber) && tabNumber > 0 ? tabNumber : null;
 }
 
 export function stripWorkspaceTabParam(searchParams: URLSearchParams): URLSearchParams {
