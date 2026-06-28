@@ -1,6 +1,5 @@
 import {
   BarChart3,
-  Barcode,
   BookOpenText,
   Building2,
   Boxes,
@@ -48,7 +47,6 @@ export const navigation: NavigationGroup[] = [
       { label: "Customers", href: "/customers", icon: Users, permission: PERMISSIONS.clientsView },
       { label: "Orders", href: "/orders", icon: Package, permission: PERMISSIONS.pickupsView },
       { label: "Invoices", href: "/invoices", icon: FileText, permission: PERMISSIONS.invoicesView },
-      { label: "Labels", href: "/labels", icon: Barcode, permission: PERMISSIONS.packagesView },
       {
         label: "Label Updater",
         href: "/label-updater",

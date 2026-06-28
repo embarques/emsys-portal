@@ -18,7 +18,7 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import {
   TableDirectoryToolbar,
@@ -305,9 +305,10 @@ export function EmployeeGroupsWorkspace() {
           />
         </CardHeader>
 
-        <TableSelectionBar
+        <TableSelectionToolbar
           selectedIds={selectedIds}
           pageRowIds={pageGroups.map((group) => group.employeeGroupId)}
+          totalCount={filteredGroups.length}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
             const group = pageGroups.find((entry) => entry.employeeGroupId === selectedIds[0]);

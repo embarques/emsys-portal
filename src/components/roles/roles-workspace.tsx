@@ -21,7 +21,7 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
@@ -485,9 +485,10 @@ export function RolesWorkspace() {
           </div>
         ) : null}
 
-        <TableSelectionBar
+        <TableSelectionToolbar
           selectedIds={selectedIds}
           pageRowIds={pageRoles.map((role) => role.roleId)}
+          totalCount={totalRoles}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
             const role = pageRoles.find((entry) => entry.roleId === selectedIds[0]);

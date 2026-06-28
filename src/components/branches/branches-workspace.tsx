@@ -16,7 +16,7 @@ import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -366,9 +366,10 @@ export function BranchesWorkspace() {
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : null}
 
-        <TableSelectionBar
+        <TableSelectionToolbar
           selectedIds={selectedIds.map(String)}
           pageRowIds={branches.map((branch) => String(branch.id))}
+          totalCount={totalBranches}
           onSelectedIdsChange={(ids) => setSelectedIds(ids.map(Number))}
           onEdit={() => {
             const branch = branches.find((entry) => entry.id === selectedIds[0]);

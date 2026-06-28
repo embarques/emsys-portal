@@ -22,7 +22,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { TableSelectionBar } from "@/components/app-shell/table-selection-bar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { DeliveryForm } from "@/components/deliveries/delivery-form";
@@ -399,9 +399,10 @@ export function DeliveriesWorkspace() {
           />
         </CardHeader>
 
-        <TableSelectionBar
+        <TableSelectionToolbar
           selectedIds={selectedIds.map(String)}
           pageRowIds={deliveries.map((delivery) => String(delivery.id))}
+          totalCount={totalDeliveries}
           onSelectedIdsChange={(ids) => setSelectedIds(ids.map(Number))}
           onEdit={() => {
             const delivery = deliveries.find((entry) => entry.id === selectedIds[0]);
