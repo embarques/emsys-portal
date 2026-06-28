@@ -1,4 +1,5 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { apiClient } from "@/lib/api/client";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery, type ApiListSortInput } from "@/lib/api/list-query";
 import {
@@ -34,6 +35,18 @@ export type EmployeeGroupListParams = {
 };
 
 export type EmployeeGroupSearchFilter = ApiListTextSearch;
+
+export type CreateEmployeeGroupInput = {
+  name: string;
+  branch: string;
+  employees: { id: number; name: string }[];
+};
+
+type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
+  success?: boolean;
+  message?: string;
+  error?: string;
+};
 
 export const DEFAULT_EMPLOYEE_GROUP_LIST_PARAMS = {
   page: 1,
@@ -119,4 +132,30 @@ export async function fetchEmployeeGroups(
       }),
     normalize: normalizePaginatedEmployeeGroups,
   });
+}
+
+export async function createEmployeeGroup(
+  input: CreateEmployeeGroupInput,
+): Promise<EmployeeGroupOption> {
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    API_ENDPOINTS.EMPLOYEE_GROUPS,
+    {
+      name: input.name.trim(),
+      branch: input.branch,
+      employees: input.employees,
+    },
+  );
+
+  if (response.success === false) {
+    throw new Error(
+      response.message?.trim() || response.error?.trim() || "Unable to create employee group.",
+    );
+  }
+
+  const group = normalizeEmployeeGroup(response.data);
+  if (!group) {
+    throw new Error("The employee group was created but the API did not return its details.");
+  }
+
+  return group;
 }

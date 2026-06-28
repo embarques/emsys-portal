@@ -1,11 +1,12 @@
 "use client";
 
-import { CalendarDays, Container, Users } from "lucide-react";
+import { CalendarDays, Container, Plus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { deliveryFormSchema } from "@/lib/deliveries/schemas/delivery.schema";
@@ -20,6 +21,8 @@ type DeliveryFormProps = {
   employeeGroupOptions: SearchableSelectOption[];
   employeeGroupSearchLoading?: boolean;
   onEmployeeGroupSearchChange?: (query: string) => void;
+  onAddEmployeeGroup?: () => void;
+  createdEmployeeGroupId?: string;
   submitLabel: string;
   isSubmitting?: boolean;
   externalError?: string | null;
@@ -33,6 +36,8 @@ export function DeliveryForm({
   employeeGroupOptions,
   employeeGroupSearchLoading = false,
   onEmployeeGroupSearchChange,
+  onAddEmployeeGroup,
+  createdEmployeeGroupId,
   submitLabel,
   isSubmitting = false,
   externalError = null,
@@ -47,6 +52,12 @@ export function DeliveryForm({
     setValues(initialValues ?? createEmptyDeliveryForm());
     setLocalError(null);
   }, [initialValues]);
+
+  useEffect(() => {
+    if (!createdEmployeeGroupId) return;
+    setValues((current) => ({ ...current, employeeGroupId: createdEmployeeGroupId }));
+    setLocalError(null);
+  }, [createdEmployeeGroupId]);
 
   function updateField<K extends keyof DeliveryFormValues>(key: K, value: DeliveryFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -120,19 +131,31 @@ export function DeliveryForm({
             <Label htmlFor="delivery-employee-group">
               Employee group <span className="text-destructive">*</span>
             </Label>
-            <SearchableSelect
-              id="delivery-employee-group"
-              value={values.employeeGroupId}
-              onValueChange={(value) => updateField("employeeGroupId", value)}
-              options={employeeGroupOptions}
-              placeholder="Select employee group"
-              searchPlaceholder="Search groups or employees..."
-              emptyMessage="No employee groups found."
-              loading={employeeGroupSearchLoading}
-              manualFiltering
-              onSearchChange={onEmployeeGroupSearchChange}
-              required
-            />
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+              <SearchableSelect
+                id="delivery-employee-group"
+                value={values.employeeGroupId}
+                onValueChange={(value) => updateField("employeeGroupId", value)}
+                options={employeeGroupOptions}
+                placeholder="Select employee group"
+                searchPlaceholder="Search groups or employees..."
+                emptyMessage="No employee groups found."
+                loading={employeeGroupSearchLoading}
+                manualFiltering
+                onSearchChange={onEmployeeGroupSearchChange}
+                required
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Create employee group"
+                title="Create employee group"
+                onClick={onAddEmployeeGroup}
+              >
+                <Plus className="size-4" />
+              </Button>
+            </div>
           </div>
         </FormSection>
       </FormBody>

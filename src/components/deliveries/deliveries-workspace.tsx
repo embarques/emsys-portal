@@ -27,6 +27,7 @@ import { useColumnVisibility } from "@/components/app-shell/use-column-visibilit
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { DeliveryForm } from "@/components/deliveries/delivery-form";
 import { DeliveryViewSheet } from "@/components/deliveries/delivery-view-sheet";
+import { EmployeeGroupCreateDialog } from "@/components/employee-groups/employee-group-create-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -100,6 +101,8 @@ export function DeliveriesWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Delivery | Delivery[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [employeeGroupQuery, setEmployeeGroupQuery] = useState("");
+  const [employeeGroupCreateOpen, setEmployeeGroupCreateOpen] = useState(false);
+  const [createdEmployeeGroupId, setCreatedEmployeeGroupId] = useState<string>();
 
   const listParams = useMemo(
     () =>
@@ -229,12 +232,14 @@ export function DeliveriesWorkspace() {
 
   function openAddForm() {
     setEditingDelivery(null);
+    setCreatedEmployeeGroupId(undefined);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(delivery: Delivery) {
     setEditingDelivery(delivery);
+    setCreatedEmployeeGroupId(undefined);
     setFormMode("edit");
     setViewDelivery(null);
     setFormError(null);
@@ -569,6 +574,8 @@ export function DeliveriesWorkspace() {
             employeeGroupOptions={employeeGroupOptions}
             employeeGroupSearchLoading={employeeGroupSearchLoading}
             onEmployeeGroupSearchChange={setEmployeeGroupQuery}
+            onAddEmployeeGroup={() => setEmployeeGroupCreateOpen(true)}
+            createdEmployeeGroupId={createdEmployeeGroupId}
             submitLabel={formMode === "edit" ? "Save changes" : "Add delivery"}
             externalError={formError}
             onSubmit={saveDelivery}
@@ -580,6 +587,15 @@ export function DeliveriesWorkspace() {
           />
         </DialogContent>
       </Dialog>
+
+      <EmployeeGroupCreateDialog
+        open={employeeGroupCreateOpen}
+        onOpenChange={setEmployeeGroupCreateOpen}
+        onCreated={(group) => {
+          setCreatedEmployeeGroupId(group.id);
+          setEmployeeGroupQuery("");
+        }}
+      />
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="z-[60]">
