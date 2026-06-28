@@ -13,6 +13,8 @@ export type WorkspaceTab = {
   href: string;
   /** Display title — can be updated dynamically (e.g. "Invoice #489391"). */
   label: string;
+  /** Optional user-chosen accent color (hex, e.g. `#3b82f6`). */
+  color?: string | null;
 };
 
 export type WorkspaceTabsState = {

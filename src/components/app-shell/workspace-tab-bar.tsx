@@ -3,6 +3,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 
+import { WorkspaceTabColorMenu } from "@/components/app-shell/workspace-tab-color-menu";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -11,7 +12,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { WorkspaceTabOverflowMenu } from "@/components/app-shell/workspace-tab-overflow-menu";
-import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
+import { useUpdateWorkspaceTabColor, useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
+import { getWorkspaceTabChromeStyle } from "@/lib/layout/workspace-tab-colors";
 import { resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
 import { WORKSPACE_TAB_OVERFLOW_THRESHOLD } from "@/lib/layout/workspace-tab-types";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
@@ -28,6 +30,7 @@ type WorkspaceTabItemProps = {
   onCloseToRight: (tabId: string) => void;
   onCloseAll: () => void;
   onDuplicate: (tab: WorkspaceTab) => void;
+  onColorChange: (tabId: string, color: string | null) => void;
   tabRef?: (node: HTMLDivElement | null) => void;
 };
 
@@ -42,10 +45,12 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
   onCloseToRight,
   onCloseAll,
   onDuplicate,
+  onColorChange,
   tabRef,
 }: WorkspaceTabItemProps) {
   const hasTabsToRight = index < totalTabs - 1;
   const hasOtherTabs = totalTabs > 1;
+  const colorStyle = getWorkspaceTabChromeStyle(tab.color, active);
 
   return (
     <ContextMenu>
@@ -53,11 +58,19 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
         <div
           ref={tabRef}
           data-tab-id={tab.id}
+          style={colorStyle}
           className={cn(
             "group mr-1 mt-2 flex min-w-0 max-w-[220px] shrink-0 cursor-default items-center rounded-t-lg border border-b-0 px-3 py-2 text-sm transition",
             active
-              ? "border-border bg-background text-foreground shadow-sm"
-              : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+              ? "border-border text-foreground shadow-sm"
+              : "border-transparent text-muted-foreground hover:text-foreground",
+            tab.color
+              ? active
+                ? "bg-background/80"
+                : "hover:brightness-[0.98]"
+              : active
+                ? "bg-background"
+                : "bg-muted/60 hover:bg-muted",
           )}
         >
           <button
@@ -85,6 +98,7 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
 
       <ContextMenuContent className="w-52">
         <ContextMenuItem onSelect={() => onDuplicate(tab)}>Open in new tab</ContextMenuItem>
+        <WorkspaceTabColorMenu tabId={tab.id} currentColor={tab.color} onColorChange={onColorChange} />
         <ContextMenuSeparator />
         <ContextMenuItem onSelect={() => onClose(tab.id)}>Close tab</ContextMenuItem>
         <ContextMenuItem disabled={!hasOtherTabs} onSelect={() => onCloseOthers(tab.id)}>
@@ -103,6 +117,7 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
 export function WorkspaceTabBar() {
   const { tabs, activeTabId, activateTab, closeTab, closeOtherTabs, closeTabsToRight, closeAllTabs, openTab } =
     useWorkspaceTabs();
+  const updateTabColor = useUpdateWorkspaceTabColor();
   const scrollRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef(new Map<string, HTMLDivElement>());
   const [hasScrollOverflow, setHasScrollOverflow] = useState(false);
@@ -156,6 +171,7 @@ export function WorkspaceTabBar() {
               onCloseToRight={closeTabsToRight}
               onCloseAll={closeAllTabs}
               onDuplicate={(tab) => openTab(tab.href, resolveWorkspaceLabel(tab.href), { forceNew: true })}
+              onColorChange={updateTabColor}
               tabRef={(node) => {
                 if (node) {
                   tabRefs.current.set(tab.id, node);

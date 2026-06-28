@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
+import { normalizeWorkspaceTabColor } from "@/lib/layout/workspace-tab-colors";
 import { cn } from "@/lib/utils";
 
 type WorkspaceTabOverflowMenuProps = {
@@ -36,9 +37,17 @@ export function WorkspaceTabOverflowMenu({ tabs, activeTabId, onActivate }: Work
       <DropdownMenuContent align="end" className="max-h-80 w-64 overflow-y-auto">
         {tabs.map((tab) => {
           const active = tab.id === activeTabId;
+          const color = normalizeWorkspaceTabColor(tab.color);
 
           return (
             <DropdownMenuItem key={tab.id} onSelect={() => onActivate(tab.id)} className="gap-2">
+              {color ? (
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full border border-border/50"
+                  style={{ backgroundColor: color }}
+                  aria-hidden
+                />
+              ) : null}
               <span className={cn("min-w-0 flex-1 truncate", active && "font-medium")}>
                 <span className="mr-1.5 tabular-nums text-muted-foreground">{tab.number}</span>
                 {tab.label}

@@ -7,6 +7,7 @@ import {
   type WorkspaceTabsState,
 } from "@/lib/layout/workspace-tab-types";
 import { getMaxWorkspaceTabs } from "@/lib/layout/workspace-tab-limits";
+import { normalizeWorkspaceTabColor } from "@/lib/layout/workspace-tab-colors";
 
 const initialState: WorkspaceTabsState = {
   tabs: [],
@@ -37,7 +38,10 @@ function renumberTabs(state: WorkspaceTabsState) {
 }
 
 function normalizePersistedState(state: Partial<WorkspaceTabsState> | null): WorkspaceTabsState {
-  const tabs = dedupeTabs(Array.isArray(state?.tabs) ? state.tabs : []);
+  const tabs = dedupeTabs(Array.isArray(state?.tabs) ? state.tabs : []).map((tab) => ({
+    ...tab,
+    color: normalizeWorkspaceTabColor(tab.color),
+  }));
   const activeTabId =
     state?.activeTabId && tabs.some((tab) => tab.id === state.activeTabId)
       ? state.activeTabId
@@ -165,6 +169,12 @@ const tabsSlice = createSlice({
       tab.label = action.payload.label;
       persistTabs(state);
     },
+    updateWorkspaceTabColor(state, action: PayloadAction<{ id: string; color: string | null }>) {
+      const tab = state.tabs.find((entry) => entry.id === action.payload.id);
+      if (!tab) return;
+      tab.color = normalizeWorkspaceTabColor(action.payload.color);
+      persistTabs(state);
+    },
     closeWorkspaceTab(state, action: PayloadAction<string>) {
       const closingId = action.payload;
       const wasActive = state.activeTabId === closingId;
@@ -231,6 +241,7 @@ export const {
   openWorkspaceTab,
   setActiveWorkspaceTab,
   updateWorkspaceTabLabel,
+  updateWorkspaceTabColor,
   closeWorkspaceTab,
   closeOtherWorkspaceTabs,
   closeWorkspaceTabsToRight,

@@ -18,6 +18,7 @@ import {
   openWorkspaceTab,
   resetWorkspaceTabs,
   setActiveWorkspaceTab,
+  updateWorkspaceTabColor,
   updateWorkspaceTabLabel,
 } from "@/lib/store/layout/tabs-slice";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
@@ -203,6 +204,16 @@ export function useUpdateWorkspaceTabLabel() {
   return useCallback(
     (id: string, label: string) => {
       dispatch(updateWorkspaceTabLabel({ id, label }));
+    },
+    [dispatch],
+  );
+}
+
+export function useUpdateWorkspaceTabColor() {
+  const dispatch = useAppDispatch();
+  return useCallback(
+    (id: string, color: string | null) => {
+      dispatch(updateWorkspaceTabColor({ id, color }));
     },
     [dispatch],
   );
