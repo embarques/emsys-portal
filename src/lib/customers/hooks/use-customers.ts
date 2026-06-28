@@ -1,6 +1,7 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createCustomer,
@@ -50,7 +51,7 @@ export function useCustomerSearch(
 ) {
   const { enabled = true, limit = 40, customerType, orFields } = options;
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.customers.search(search, limit, { customerType, orFields }),
     queryFn: () =>
       fetchCustomers({
@@ -67,7 +68,7 @@ export function useCustomerSearch(
 export function useCustomers(params: CustomerListParams) {
   const isFiltered = isCustomerListFiltered(params);
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.customers.list(params),
     queryFn: () => fetchCustomers(params),
     placeholderData: keepPreviousData,
@@ -76,18 +77,18 @@ export function useCustomers(params: CustomerListParams) {
 }
 
 export function useCustomerStats() {
-  const totalQuery = useQuery({
+  const totalQuery = useWorkspaceQuery({
     queryKey: queryKeys.customers.stats("all"),
     queryFn: () => fetchCustomers({ ...DEFAULT_CUSTOMER_LIST_PARAMS, limit: 1 }),
   });
 
-  const receiversQuery = useQuery({
+  const receiversQuery = useWorkspaceQuery({
     queryKey: queryKeys.customers.stats("receivers"),
     queryFn: () =>
       fetchCustomers({ ...DEFAULT_CUSTOMER_LIST_PARAMS, limit: 1, customerType: CUSTOMER_TYPE_RECEIVER }),
   });
 
-  const sendersQuery = useQuery({
+  const sendersQuery = useWorkspaceQuery({
     queryKey: queryKeys.customers.stats("senders"),
     queryFn: () =>
       fetchCustomers({ ...DEFAULT_CUSTOMER_LIST_PARAMS, limit: 1, customerType: CUSTOMER_TYPE_SENDER }),
@@ -103,7 +104,7 @@ export function useCustomerStats() {
 }
 
 export function useCustomer(customerId: string | null, enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.customers.detail(customerId ?? ""),
     queryFn: () => fetchCustomerById(customerId!),
     enabled: enabled && Boolean(customerId),

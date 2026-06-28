@@ -1,12 +1,19 @@
 export type ThemePreference = "light" | "dark" | "system";
 export type LanguagePreference = "en" | "es";
 
+/** Minimum workspace tabs a user can configure. */
+export const MIN_MAX_WORKSPACE_TABS = 10;
+
+/** Default maximum open workspace tabs. */
+export const DEFAULT_MAX_WORKSPACE_TABS = 20;
+
 export type UserConfiguration = {
   username: string;
   password: string;
   displayName: string;
   language: LanguagePreference;
   theme: ThemePreference;
+  maxWorkspaceTabs: number;
 };
 
 export type UserConfigurationFormValues = {
@@ -15,6 +22,7 @@ export type UserConfigurationFormValues = {
   displayName: string;
   language: LanguagePreference;
   theme: ThemePreference;
+  maxWorkspaceTabs: number;
 };
 
 export const CONFIGURATION_LANGUAGES: { value: LanguagePreference; label: string }[] = [
@@ -34,7 +42,16 @@ export const DEFAULT_USER_CONFIGURATION: UserConfiguration = {
   displayName: "Hector Mejia",
   language: "en",
   theme: "light",
+  maxWorkspaceTabs: DEFAULT_MAX_WORKSPACE_TABS,
 };
+
+export function normalizeMaxWorkspaceTabs(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_MAX_WORKSPACE_TABS;
+  }
+  return Math.max(MIN_MAX_WORKSPACE_TABS, Math.round(parsed));
+}
 
 export function configurationToFormValues(config: UserConfiguration): UserConfigurationFormValues {
   return {
@@ -43,6 +60,7 @@ export function configurationToFormValues(config: UserConfiguration): UserConfig
     displayName: config.displayName,
     language: config.language,
     theme: config.theme,
+    maxWorkspaceTabs: config.maxWorkspaceTabs,
   };
 }
 
@@ -69,6 +87,7 @@ export function formValuesToConfiguration(
     displayName: values.displayName.trim(),
     language: values.language,
     theme: values.theme,
+    maxWorkspaceTabs: normalizeMaxWorkspaceTabs(values.maxWorkspaceTabs),
   };
 }
 

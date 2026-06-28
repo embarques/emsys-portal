@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { SidebarBrand } from "@/components/brand/sidebar-brand";
+import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
 import { navigation } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { SidebarNav } from "./sidebar-nav";
@@ -49,14 +49,15 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
             const Icon = item.icon;
 
             return (
-              <Link
+              <WorkspaceNavLink
                 key={item.href}
                 href={item.href}
+                label={item.label}
                 title={item.label}
                 className={cn(iconNavLinkClassName, active && iconNavLinkActiveClassName)}
               >
                 <Icon className="h-6 w-6" />
-              </Link>
+              </WorkspaceNavLink>
             );
           })}
         </nav>
@@ -80,14 +81,15 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
           const Icon = item.icon;
 
           return (
-            <Link
+            <WorkspaceNavLink
               key={item.href}
               href={item.href}
+              label={item.label}
               title={item.label}
               className={cn(iconNavLinkClassName, active && iconNavLinkActiveClassName)}
             >
               <Icon className="h-6 w-6" />
-            </Link>
+            </WorkspaceNavLink>
           );
         })}
       </nav>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
@@ -43,7 +44,7 @@ function useOrdersQueryEnabled() {
 export function useOrders(params: OrderListParams) {
   const queryEnabled = useOrdersQueryEnabled();
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.orders.list(params),
     queryFn: () => fetchOrders(params),
     enabled: queryEnabled,
@@ -57,7 +58,7 @@ export function useOrderSearch(
   const { enabled = true, limit = 40 } = options;
   const queryEnabled = useOrdersQueryEnabled();
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.orders.search(search, limit),
     queryFn: () =>
       fetchOrders({
@@ -79,7 +80,7 @@ export function useSenderOrderHistory(
   const queryEnabled = useOrdersQueryEnabled();
   const id = senderId?.trim() ?? "";
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.orders.history(id, limit),
     queryFn: () => fetchSenderOrderHistory(id, { limit }),
     enabled: queryEnabled && id.length > 0,
@@ -94,34 +95,34 @@ export function useOrderStats(options: OrderStatsOptions = {}) {
   const { enabled = true } = options;
   const queryEnabled = useOrdersQueryEnabled() && enabled;
 
-  const pendingQuery = useQuery({
+  const pendingQuery = useWorkspaceQuery({
     queryKey: queryKeys.orders.stats("pending"),
     queryFn: () => fetchOrders(buildOrderStatsCountParams(buildPendingOrderStatsFilterRows())),
     enabled: queryEnabled,
   });
 
-  const pendingPickupsQuery = useQuery({
+  const pendingPickupsQuery = useWorkspaceQuery({
     queryKey: queryKeys.orders.stats("pending-pickups"),
     queryFn: () =>
       fetchOrders(buildOrderStatsCountParams(buildPendingPurposeStatsFilterRows("pickup"))),
     enabled: queryEnabled,
   });
 
-  const pendingTakesQuery = useQuery({
+  const pendingTakesQuery = useWorkspaceQuery({
     queryKey: queryKeys.orders.stats("pending-takes"),
     queryFn: () =>
       fetchOrders(buildOrderStatsCountParams(buildPendingPurposeStatsFilterRows("take"))),
     enabled: queryEnabled,
   });
 
-  const pendingEstimatesQuery = useQuery({
+  const pendingEstimatesQuery = useWorkspaceQuery({
     queryKey: queryKeys.orders.stats("pending-estimates"),
     queryFn: () =>
       fetchOrders(buildOrderStatsCountParams(buildPendingPurposeStatsFilterRows("estimate"))),
     enabled: queryEnabled,
   });
 
-  const pendingPaymentsQuery = useQuery({
+  const pendingPaymentsQuery = useWorkspaceQuery({
     queryKey: queryKeys.orders.stats("pending-payments"),
     queryFn: () =>
       fetchOrders(buildOrderStatsCountParams(buildPendingPurposeStatsFilterRows("payment"))),
@@ -158,7 +159,7 @@ export function useOrderStats(options: OrderStatsOptions = {}) {
 export function useOrder(orderId: string | null, enabled = true) {
   const queryEnabled = useOrdersQueryEnabled();
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.orders.detail(orderId ?? ""),
     queryFn: () => fetchOrderById(orderId!),
     enabled: queryEnabled && enabled && Boolean(orderId),

@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createRouteAssignment,
@@ -26,7 +27,7 @@ import { queryKeys } from "@/lib/query/query-keys";
 export function useRouteAssignments(params: RouteAssignmentListParams) {
   const isFiltered = hasListTextSearch(params.search);
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.routeAssignments.list(params),
     queryFn: () => fetchRouteAssignments(params),
     placeholderData: keepPreviousData,
@@ -40,7 +41,7 @@ export function useRouteAssignmentSearch(
 ) {
   const { enabled = true, limit = 40 } = options;
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.routeAssignments.search(search, limit),
     queryFn: () =>
       fetchRouteAssignments({
@@ -54,7 +55,7 @@ export function useRouteAssignmentSearch(
 }
 
 export function useRouteAssignmentPicker(limit = 200, options: { enabled?: boolean } = {}) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.routeAssignments.list({ ...DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS, limit }),
     queryFn: () => fetchRouteAssignments({ ...DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS, limit }),
     enabled: options.enabled ?? true,
@@ -91,7 +92,7 @@ export function useRouteAssignmentLookup(limit = 200, options: { enabled?: boole
 /** KPIs are scoped to today's routes only — past/future routes are excluded. */
 export function useRouteAssignmentKpis() {
   const today = todayDateInputValue();
-  const query = useQuery({
+  const query = useWorkspaceQuery({
     queryKey: queryKeys.routeAssignments.stats("kpis", today),
     queryFn: () => fetchRouteAssignmentsByDate(today),
     staleTime: 60_000,
@@ -109,7 +110,7 @@ export function useRouteAssignmentKpis() {
 }
 
 export function useRouteAssignment(routeAssignmentId: string | null, enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.routeAssignments.detail(routeAssignmentId ?? ""),
     queryFn: () => fetchRouteAssignmentById(routeAssignmentId!),
     enabled: enabled && Boolean(routeAssignmentId?.trim()),

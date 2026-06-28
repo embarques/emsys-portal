@@ -18,13 +18,17 @@ import {
   CONFIGURATION_THEMES,
   configurationToFormValues,
   formValuesToConfiguration,
+  MIN_MAX_WORKSPACE_TABS,
   type ThemePreference,
   type UserConfigurationFormValues,
 } from "@/lib/configuration/types";
 import { useConfigurationStore, useSaveConfiguration } from "@/lib/configuration/use-configuration";
+import { enforceWorkspaceTabLimit } from "@/lib/store/layout/tabs-slice";
+import { useAppDispatch } from "@/lib/store/hooks";
 import { cn } from "@/lib/utils";
 
 export function ConfigurationWorkspace() {
+  const dispatch = useAppDispatch();
   const { notifySuccess } = useFeedback();
   const configuration = useConfigurationStore();
   const saveConfiguration = useSaveConfiguration();
@@ -62,6 +66,7 @@ export function ConfigurationWorkspace() {
     try {
       const nextConfiguration = formValuesToConfiguration(values, configuration.password);
       saveConfiguration(nextConfiguration);
+      dispatch(enforceWorkspaceTabLimit());
       setTheme(nextConfiguration.theme);
       setValues(configurationToFormValues(nextConfiguration));
       notifySuccess("Configuration saved.");
@@ -204,6 +209,37 @@ export function ConfigurationWorkspace() {
                   label: option.label,
                 }))}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Workspace tabs</CardTitle>
+            <CardDescription>
+              Control how many pages you can keep open at once in the desktop tab bar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="maxWorkspaceTabs">
+                Maximum open tabs <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="maxWorkspaceTabs"
+                type="number"
+                min={MIN_MAX_WORKSPACE_TABS}
+                step={1}
+                value={values.maxWorkspaceTabs}
+                onChange={(event) =>
+                  updateField("maxWorkspaceTabs", Number.parseInt(event.target.value, 10) || MIN_MAX_WORKSPACE_TABS)
+                }
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Minimum {MIN_MAX_WORKSPACE_TABS}. When the limit is reached, opening another tab closes
+                the oldest one. Stored on this device until profile sync is added.
+              </p>
             </div>
           </CardContent>
         </Card>

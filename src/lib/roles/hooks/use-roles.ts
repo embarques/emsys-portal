@@ -1,6 +1,7 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createRole,
@@ -31,7 +32,7 @@ function isRoleListFiltered(params: RoleListParams): boolean {
 export function useRoles(params: RoleListParams, options: { enabled?: boolean } = {}) {
   const isFiltered = isRoleListFiltered(params);
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.roles.list(params),
     queryFn: () => fetchRoles(params),
     enabled: options.enabled ?? true,
@@ -41,7 +42,7 @@ export function useRoles(params: RoleListParams, options: { enabled?: boolean } 
 }
 
 export function useRoleStats() {
-  const totalQuery = useQuery({
+  const totalQuery = useWorkspaceQuery({
     queryKey: queryKeys.roles.stats("all"),
     queryFn: () => fetchRoles({ ...DEFAULT_ROLE_LIST_PARAMS, limit: 1 }),
   });
@@ -54,7 +55,7 @@ export function useRoleStats() {
 }
 
 export function useRoleKpis() {
-  const query = useQuery({
+  const query = useWorkspaceQuery({
     queryKey: queryKeys.roles.stats("kpis"),
     queryFn: () => fetchRoles({ ...DEFAULT_ROLE_LIST_PARAMS, limit: 200 }),
   });
@@ -67,7 +68,7 @@ export function useRoleKpis() {
 }
 
 export function useRolePermissionCatalog() {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.permissions.catalog(),
     queryFn: fetchPermissionCatalog,
     staleTime: 5 * 60_000,

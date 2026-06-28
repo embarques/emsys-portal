@@ -1,6 +1,7 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   DEFAULT_EMPLOYEE_GROUP_LIST_PARAMS,
@@ -18,7 +19,7 @@ export function useEmployeeGroups(
   limit: number = DEFAULT_EMPLOYEE_GROUP_LIST_PARAMS.limit,
   options: { enabled?: boolean } = {},
 ) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.employeeGroups.list({ limit }),
     queryFn: () => fetchEmployeeGroups({ ...DEFAULT_EMPLOYEE_GROUP_LIST_PARAMS, limit }),
     enabled: options.enabled ?? true,
@@ -30,7 +31,7 @@ export function useEmployeeGroupPicker(
   limit: number = DEFAULT_EMPLOYEE_GROUP_LIST_PARAMS.limit,
   options: { enabled?: boolean } = {},
 ) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.employeeGroups.list({ limit }),
     queryFn: () => fetchEmployeeGroups({ ...DEFAULT_EMPLOYEE_GROUP_LIST_PARAMS, limit }),
     enabled: options.enabled ?? true,
@@ -44,7 +45,7 @@ export function useEmployeeGroupSearch(
 ) {
   const { enabled = true, limit = 40 } = options;
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.employeeGroups.search(search, limit),
     queryFn: () =>
       fetchEmployeeGroups({

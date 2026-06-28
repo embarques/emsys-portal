@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createFilterPreset,
@@ -41,7 +42,7 @@ export function useFilterPresets(scope: string): UseFilterPresetsResult {
   const idToken = useAppSelector((state) => state.auth.idToken);
   const queryEnabled = !loading && Boolean(idToken) && Boolean(scope);
 
-  const presetsQuery = useQuery({
+  const presetsQuery = useWorkspaceQuery({
     queryKey: queryKeys.filterPresets.list(scope),
     queryFn: () => fetchFilterPresets(scope),
     enabled: queryEnabled,

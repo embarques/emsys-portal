@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import * as React from "react";
 
+import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
 import { navigation } from "@/config/navigation";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import type { Permission } from "@/lib/auth/types/permission";
@@ -90,9 +90,10 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                   const Icon = item.icon;
 
                   return (
-                    <Link
+                    <WorkspaceNavLink
                       key={item.href}
                       href={item.href}
+                      label={item.label}
                       onClick={onNavigate}
                       className={cn(
                         "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
@@ -103,7 +104,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       <span className="truncate">{item.label}</span>
-                    </Link>
+                    </WorkspaceNavLink>
                   );
                 })}
               </div>

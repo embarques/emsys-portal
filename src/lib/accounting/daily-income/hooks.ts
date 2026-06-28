@@ -1,6 +1,7 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createChartAccount,
@@ -28,7 +29,7 @@ import type {
 import { queryKeys } from "@/lib/query/query-keys";
 
 export function useIncomeStatement(branchId: number, date: string) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.accounting.incomeStatement(String(branchId), date),
     queryFn: () => fetchIncomeStatement(branchId, date),
     enabled: branchId > 0 && Boolean(date),
@@ -36,7 +37,7 @@ export function useIncomeStatement(branchId: number, date: string) {
 }
 
 export function useDailyIncomeJournals(params: DailyIncomeJournalListParams) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.accounting.journals(params),
     queryFn: () => fetchDailyIncomeJournals(params),
     enabled: params.incomeStatementId > 0,
@@ -45,7 +46,7 @@ export function useDailyIncomeJournals(params: DailyIncomeJournalListParams) {
 }
 
 export function useChartAccounts(params: ChartAccountListParams, enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.accounting.accounts(params),
     queryFn: () => fetchChartAccounts(params),
     enabled,
@@ -54,7 +55,7 @@ export function useChartAccounts(params: ChartAccountListParams, enabled = true)
 }
 
 export function useAccountingPaymentMethods(enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.accounting.paymentMethods(),
     queryFn: fetchAccountingPaymentMethods,
     enabled,
