@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteInvoice,
   deleteInvoices,
+  fetchInvoiceBalanceTotal,
   fetchInvoiceById,
   fetchInvoices,
 } from "@/lib/invoices/api/invoices-api";
@@ -26,19 +27,26 @@ type InvoiceStatsOptions = {
 export function useInvoiceStats(options: InvoiceStatsOptions = {}) {
   const { enabled = true } = options;
 
+  const outstandingFilterRows = buildOutstandingInvoiceStatsFilterRows();
+
   const outstandingQuery = useQuery({
     queryKey: queryKeys.invoices.stats("outstanding"),
-    queryFn: () =>
-      fetchInvoices(
-        buildInvoiceStatsCountParams(buildOutstandingInvoiceStatsFilterRows()),
-      ),
+    queryFn: () => fetchInvoices(buildInvoiceStatsCountParams(outstandingFilterRows)),
+    enabled,
+  });
+
+  const outstandingBalanceQuery = useQuery({
+    queryKey: queryKeys.invoices.stats("outstanding-balance"),
+    queryFn: () => fetchInvoiceBalanceTotal(outstandingFilterRows),
     enabled,
   });
 
   return {
     outstanding: outstandingQuery.data?.total ?? 0,
+    outstandingBalance: outstandingBalanceQuery.data ?? 0,
     isLoading: outstandingQuery.isLoading,
-    isError: outstandingQuery.isError,
+    isBalanceLoading: outstandingBalanceQuery.isLoading,
+    isError: outstandingQuery.isError || outstandingBalanceQuery.isError,
   };
 }
 

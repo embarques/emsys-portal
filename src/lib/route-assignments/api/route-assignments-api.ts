@@ -4,6 +4,7 @@ import { apiClient } from "@/lib/api/client";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
+  buildApiSearchPaginationQuery,
   buildStripeStyleSearchBody,
   createOrTextSearchFilterGroup,
   createTextSearchFilter,
@@ -51,7 +52,7 @@ type ApiRouteAssignment = {
   updatedBy?: ApiUser | string | null;
 };
 
-/** POST/PUT /route-assignments — see API_PAYLOADS.md */
+/** POST/PUT /routes — see API_PAYLOADS.md */
 type ApiRouteAssignmentWritePayload = {
   routeAssignmentId: string;
   name: string;
@@ -184,6 +185,41 @@ export async function fetchRouteAssignments(
     buildSearchBody: () => buildRouteAssignmentSearchBody(params),
     normalize: normalizePaginatedRouteAssignments,
   });
+}
+
+/**
+ * Fetch every route dated on `dateInput` (YYYY-MM-DD) using an inclusive-start,
+ * exclusive-end date range. Used for day-scoped KPIs so the stat cards reflect
+ * only the selected day's routes rather than the full history.
+ */
+export async function fetchRouteAssignmentsByDate(
+  dateInput: string,
+): Promise<PaginatedResult<RouteAssignment>> {
+  const start = toRouteAssignmentDateIso(dateInput);
+  const next = new Date(`${dateInput}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  const end = `${next.toISOString().slice(0, 10)}T00:00:00Z`;
+
+  const body = buildStripeStyleSearchBody({
+    sort: DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS.sort,
+    filterGroups: [
+      {
+        operator: "and",
+        filters: [
+          { field: "date", operator: "gte", value: start },
+          { field: "date", operator: "lt", value: end },
+        ],
+      },
+    ],
+  });
+
+  const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 200 });
+  const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+    `${API_ENDPOINTS.ROUTE_ASSIGNMENTS}/search?${paginationQuery}`,
+    body,
+  );
+
+  return normalizePaginatedRouteAssignments(response, { isFiltered: true });
 }
 
 export async function fetchRouteAssignmentById(routeAssignmentId: string): Promise<RouteAssignment> {

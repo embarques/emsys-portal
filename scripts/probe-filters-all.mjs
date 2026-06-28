@@ -162,7 +162,7 @@ const routes = {
   bar: ["name"],
 };
 const routeAssignments = {
-  label: "ROUTE-ASSIGNMENTS", path: "/route-assignments",
+  label: "ROUTE-ASSIGNMENTS", path: "/routes",
   fields: [["name", TEXT]],
   bar: ["name"],
 };

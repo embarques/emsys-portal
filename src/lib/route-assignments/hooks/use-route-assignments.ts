@@ -9,11 +9,13 @@ import {
   deleteRouteAssignments,
   fetchRouteAssignmentById,
   fetchRouteAssignments,
+  fetchRouteAssignmentsByDate,
   updateRouteAssignment,
 } from "@/lib/route-assignments/api/route-assignments-api";
 import { hasListTextSearch } from "@/lib/api/search-query";
 import {
   DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS,
+  todayDateInputValue,
   type RouteAssignment,
   type RouteAssignmentFormValues,
   type RouteAssignmentListParams,
@@ -86,10 +88,13 @@ export function useRouteAssignmentLookup(limit = 200, options: { enabled?: boole
   };
 }
 
+/** KPIs are scoped to today's routes only — past/future routes are excluded. */
 export function useRouteAssignmentKpis() {
+  const today = todayDateInputValue();
   const query = useQuery({
-    queryKey: queryKeys.routeAssignments.stats("kpis"),
-    queryFn: () => fetchRouteAssignments({ ...DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS, limit: 200 }),
+    queryKey: queryKeys.routeAssignments.stats(`kpis:${today}`),
+    queryFn: () => fetchRouteAssignmentsByDate(today),
+    staleTime: 60_000,
   });
 
   const items = query.data?.items ?? [];

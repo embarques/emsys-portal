@@ -44,10 +44,13 @@ export function computeContainerKpis(containers: Container[]) {
   const now = new Date();
   const oneMonthAgo = new Date(now);
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const ninetyDaysAgo = new Date(now);
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
   const oneYearAgo = new Date(now);
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
   let departedPastMonth = 0;
+  let departedPast90Days = 0;
   let departedPastYear = 0;
 
   for (const container of containers) {
@@ -59,6 +62,9 @@ export function computeContainerKpis(containers: Container[]) {
 
     if (departedAt >= oneYearAgo) {
       departedPastYear += 1;
+      if (departedAt >= ninetyDaysAgo) {
+        departedPast90Days += 1;
+      }
       if (departedAt >= oneMonthAgo) {
         departedPastMonth += 1;
       }
@@ -70,6 +76,7 @@ export function computeContainerKpis(containers: Container[]) {
     inTransit,
     totalCost,
     departedPastMonth,
+    departedPast90Days,
     departedPastYear,
   };
 }

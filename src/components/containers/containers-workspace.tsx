@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  CalendarClock,
   CalendarRange,
   ChevronLeft,
   ChevronRight,
@@ -210,6 +211,12 @@ export function ContainersWorkspace() {
       value: kpiQuery.isLoading ? "…" : kpis.departedPastMonth.toString(),
       description: "Containers departed in the last 30 days",
       icon: Ship,
+    },
+    {
+      label: "Departed (past 90 days)",
+      value: kpiQuery.isLoading ? "…" : kpis.departedPast90Days.toString(),
+      description: "Containers departed in the last 90 days",
+      icon: CalendarClock,
     },
     {
       label: "Departed (past year)",

@@ -56,7 +56,7 @@ const navigationGroups: NavigationGroup[] = [
       { label: "Containers", href: "/containers", icon: Container, permission: PERMISSIONS.containersView },
       {
         label: "Routes",
-        href: "/route-assignments",
+        href: "/routes",
         icon: ClipboardList,
         permission: PERMISSIONS.dispatchView,
       },

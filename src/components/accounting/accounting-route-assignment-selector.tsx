@@ -63,7 +63,7 @@ export function AccountingRouteAssignmentSelector({
           {routeAssignments.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No route assignments available.{" "}
-              <Link href="/route-assignments" className="font-medium text-primary underline-offset-4 hover:underline">
+              <Link href="/routes" className="font-medium text-primary underline-offset-4 hover:underline">
                 Create one first
               </Link>
               .

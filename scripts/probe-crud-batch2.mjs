@@ -82,7 +82,7 @@ const users = {
   makeUpdate: (c, id) => ({ id, uid: c.uid, email: c.email, userName: c.userName, fullName: `${c.fullName} EDIT`, active: true, branch: c.branch, role: c.role }),
 };
 const routes = {
-  label: "ROUTE-ASSIGNMENTS", path: "/route-assignments",
+  label: "ROUTE-ASSIGNMENTS", path: "/routes",
   prepareCreate: async () => {
     const veh = await req("GET", "/vehicles?limit=1");
     const v = Array.isArray(veh.json?.data) ? veh.json.data[0] : null;

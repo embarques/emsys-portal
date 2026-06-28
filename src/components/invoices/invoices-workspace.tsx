@@ -290,8 +290,10 @@ export function InvoicesWorkspace() {
     },
     {
       label: "Outstanding",
-      value: isLoading ? "…" : formatInvoiceMoney(kpis.outstanding),
-      description: "Balance on this page",
+      value: invoiceStats.isBalanceLoading
+        ? "…"
+        : formatInvoiceMoney(invoiceStats.outstandingBalance),
+      description: "Balance across all invoices",
       icon: Receipt,
     },
     {
@@ -514,7 +516,7 @@ export function InvoicesWorkspace() {
             <>
               <Button size="sm" onClick={() => setStagingOpen(true)}>
                 <Tags className="h-4 w-4" />
-                Stage for processing
+                Manage Labels
               </Button>
               <Button
                 variant="outline"

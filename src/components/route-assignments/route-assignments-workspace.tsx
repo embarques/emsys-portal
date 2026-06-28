@@ -184,19 +184,19 @@ export function RouteAssignmentsWorkspace() {
     {
       label: "Total assignments",
       value: kpis.isLoading ? "…" : kpis.total.toString(),
-      description: "Scheduled routes",
+      description: "Scheduled today",
       icon: ClipboardList,
     },
     {
       label: "Vehicles assigned",
       value: kpis.isLoading ? "…" : kpis.uniqueVehicles.toString(),
-      description: "Distinct vehicles in use",
+      description: "Distinct vehicles today",
       icon: Car,
     },
     {
       label: "Employee groups",
       value: kpis.isLoading ? "…" : kpis.uniqueGroups.toString(),
-      description: "Distinct groups scheduled",
+      description: "Distinct groups today",
       icon: UsersRound,
     },
   ];

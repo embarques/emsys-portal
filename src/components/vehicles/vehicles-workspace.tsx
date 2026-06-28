@@ -41,18 +41,17 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
+  computeVehicleKpis,
   formatVehicleDate,
   getBranchBadgeClass,
   getBranchLabel,
   getFuelTypeBadgeClass,
   getFuelTypeLabel,
-  truncateObjectId,
-  truncateVehicleId,
 } from "@/lib/vehicles/display";
 import {
   useCreateVehicle,
   useDeleteVehicles,
-  useVehicleBranchCount,
+  useVehicleKpis,
   useVehicles,
   useUpdateVehicle,
 } from "@/lib/vehicles/hooks/use-vehicles";
@@ -117,8 +116,8 @@ export function VehiclesWorkspace() {
   const isSaving =
     createVehicleMutation.isPending || updateVehicleMutation.isPending || deleteVehiclesMutation.isPending;
 
-  const usaBranchCount = useVehicleBranchCount("usa");
-  const drBranchCount = useVehicleBranchCount("dr");
+  const branchKpis = useVehicleKpis();
+  const branchCounts = computeVehicleKpis(branchKpis.items);
 
   const statCards = [
     {
@@ -129,13 +128,13 @@ export function VehiclesWorkspace() {
     },
     {
       label: "USA",
-      value: usaBranchCount.isLoading ? "…" : usaBranchCount.count.toString(),
+      value: branchKpis.isLoading ? "…" : branchCounts.usa.toString(),
       description: "Total vehicles in USA",
       icon: Fuel,
     },
     {
       label: "DR",
-      value: drBranchCount.isLoading ? "…" : drBranchCount.count.toString(),
+      value: branchKpis.isLoading ? "…" : branchCounts.dr.toString(),
       description: "Total vehicles in DR",
       icon: Fuel,
     },
@@ -207,18 +206,6 @@ export function VehiclesWorkspace() {
   }
 
   const tableColumns: DataTableColumn<Vehicle>[] = [
-    {
-      id: "id",
-      label: "Record ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (vehicle) => truncateObjectId(vehicle.id),
-    },
-    {
-      id: "vehicleId",
-      label: "Vehicle ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (vehicle) => truncateVehicleId(vehicle.vehicleId) || "—",
-    },
     {
       id: "name",
       label: "name",

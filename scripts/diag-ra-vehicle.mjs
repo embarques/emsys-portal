@@ -28,7 +28,7 @@ const dataOf = (j) => (j && typeof j === "object" && "data" in j ? j.data : j);
 const idOf = (j) => { const d = dataOf(j); return (d && (d.id ?? d._id)) ?? (typeof d === "string" ? d : null); };
 
 async function pinnedEq(field, value, rid) {
-  const { json } = await req("POST", "/route-assignments/search?page=1&limit=1&offset=0", {
+  const { json } = await req("POST", "/routes/search?page=1&limit=1&offset=0", {
     operator: "and",
     filters: [{ field, operator: "eq", value }, { field: "id", operator: "eq", value: rid }],
     sort: [{ field: "date", direction: "desc" }],
@@ -47,7 +47,7 @@ const VID = vehicle?.id ?? vehicle?._id;
 const GID = group?.id ?? group?._id;
 console.log("Using vehicle.id =", VID, "  employeeGroup.id =", GID);
 
-const create = await req("POST", "/route-assignments", {
+const create = await req("POST", "/routes", {
   routeAssignmentId: `ZZDIAG-${Date.now()}`,
   name: "ZZ Diag",
   date: "2026-06-28T00:00:00Z",
@@ -59,7 +59,7 @@ console.log("CREATE status", create.status, "id", RID);
 if (!RID) { console.log("No id; aborting.", JSON.stringify(create.json).slice(0, 300)); process.exit(1); }
 
 try {
-  const rec = dataOf((await req("GET", `/route-assignments/${RID}`)).json);
+  const rec = dataOf((await req("GET", `/routes/${RID}`)).json);
   console.log("\nStored refs as returned by the API:");
   console.log(JSON.stringify({ vehicle: rec.vehicle, employeeGroup: rec.employeeGroup }, null, 2));
 
@@ -70,6 +70,6 @@ try {
   console.log("  employeeGroup.id  eq sent-value   =>", await pinnedEq("employeeGroup.id", GID, RID));
   console.log("  employeeGroup.id  eq stored-value =>", await pinnedEq("employeeGroup.id", rec?.employeeGroup?.id ?? GID, RID));
 } finally {
-  const del = await req("DELETE", `/route-assignments/${RID}`);
+  const del = await req("DELETE", `/routes/${RID}`);
   console.log("\ncleanup delete", RID, "->", del.status);
 }

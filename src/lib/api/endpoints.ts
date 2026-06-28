@@ -15,7 +15,7 @@ export const API_ENDPOINTS = {
   DELIVERIES: "/deliveries",
   BARCODES: "/barcodes",
   VEHICLES: "/vehicles",
-  ROUTE_ASSIGNMENTS: "/route-assignments",
+  ROUTE_ASSIGNMENTS: "/routes",
   INVOICES: "/invoices",
   INVOICE_DETAIL_LABELS: "/invoice/detail/labels",
   INVOICE_DETAIL_BARCODE: "/invoice/detail/barcode",

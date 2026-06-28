@@ -392,7 +392,7 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
             {step === "line-items" ? (
               <>
                 <Tag className="h-4 w-4" />
-                Stage for processing
+                Manage Labels
               </>
             ) : (
               <>

@@ -39,7 +39,7 @@ const headers = {
   "Content-Type": "application/json",
 };
 const STAMP = Date.now();
-const RESOURCE = "/route-assignments";
+const RESOURCE = "/routes";
 
 async function req(method, path, body) {
   const r = await fetch(`${baseUrl}${path}`, {

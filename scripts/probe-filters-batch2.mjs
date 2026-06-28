@@ -76,7 +76,7 @@ await probeResource("VEHICLES", "/vehicles", [
   { field: "year", type: "num" }, { field: "id", type: "text" },
 ], ["vehicleId", "name", "vin", "fuelType", "branch"]);
 
-await probeResource("ROUTE-ASSIGNMENTS", "/route-assignments", [
+await probeResource("ROUTE-ASSIGNMENTS", "/routes", [
   { field: "routeAssignmentId", type: "text" }, { field: "name", type: "text" }, { field: "date", type: "date" },
   { field: "vehicle.name", type: "text" }, { field: "vehicle.id", type: "text" },
   { field: "employeeGroup.name", type: "text" }, { field: "employeeGroup.id", type: "text" },

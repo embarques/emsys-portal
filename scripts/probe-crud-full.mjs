@@ -274,7 +274,7 @@ const routes = {
 
 const routeAssignments = {
   label: "ROUTE-ASSIGNMENTS",
-  path: "/route-assignments",
+  path: "/routes",
   prepareCreate: async () => {
     const vehicle = await firstOne("/vehicles");
     const group = await firstOne("/employee-groups");

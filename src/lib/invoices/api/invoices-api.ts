@@ -27,6 +27,7 @@ import {
 } from "@/lib/orders/types";
 import {
   DEFAULT_INVOICE_LIST_PARAMS,
+  getInvoiceBalanceAmount,
   mapPaidRegionToPaymentLocation,
   mapPaymentLocationToPaidRegion,
   normalizeApiInvoiceMoney,
@@ -37,6 +38,7 @@ import {
   type InvoiceLineItemBarcode,
   type InvoiceListParams,
 } from "@/lib/invoices/types";
+import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
 const INVOICE_LIST_SEARCH_FIELD = "number";
 
@@ -515,6 +517,44 @@ export async function fetchInvoices(params: InvoiceListParams = {}): Promise<Pag
   );
 
   return normalizePaginatedInvoices(response);
+}
+
+/**
+ * The EMSYS API does not expose a money-sum aggregation for invoices (the
+ * `subtotal` envelope field is a filtered match count, not a balance total),
+ * so the full outstanding balance is computed by paginating through every
+ * matching invoice and summing each balance client-side.
+ */
+const INVOICE_BALANCE_PAGE_LIMIT = 200;
+const INVOICE_BALANCE_MAX_PAGES = 100;
+
+export async function fetchInvoiceBalanceTotal(
+  filterRows: TableFilterRowState[] = [],
+): Promise<number> {
+  let page = 1;
+  let total = Number.POSITIVE_INFINITY;
+  let fetched = 0;
+  let sum = 0;
+
+  while (fetched < total && page <= INVOICE_BALANCE_MAX_PAGES) {
+    const result = await fetchInvoices({
+      ...DEFAULT_INVOICE_LIST_PARAMS,
+      page,
+      limit: INVOICE_BALANCE_PAGE_LIMIT,
+      filterRows,
+    });
+
+    total = result.total;
+    for (const invoice of result.items) {
+      sum += getInvoiceBalanceAmount(invoice);
+    }
+
+    fetched += result.items.length;
+    if (result.items.length === 0) break;
+    page += 1;
+  }
+
+  return Math.round(sum * 100) / 100;
 }
 
 export async function fetchInvoiceById(invoiceId: string): Promise<Invoice> {
