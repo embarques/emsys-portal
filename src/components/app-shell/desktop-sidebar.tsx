@@ -16,6 +16,14 @@ const sidebarShellClassName =
 
 const sidebarSectionClassName = "border-border";
 
+const sidebarBrandHeaderClassName =
+  "flex shrink-0 items-center overflow-visible border-b px-5 py-3.5";
+
+const sidebarBrandHeaderCompactClassName = cn(
+  sidebarBrandHeaderClassName,
+  "justify-center px-0",
+);
+
 const iconNavLinkClassName =
   "flex h-12 w-12 items-center justify-center rounded-2xl text-muted-foreground transition hover:bg-accent hover:text-accent-foreground";
 
@@ -31,7 +39,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
   if (!expanded) {
     return (
       <aside className={cn(sidebarShellClassName, "hidden w-20 md:flex")}>
-        <div className={cn("flex h-20 shrink-0 items-center justify-center border-b", sidebarSectionClassName)}>
+        <div className={cn(sidebarBrandHeaderCompactClassName, sidebarSectionClassName)}>
           <SidebarBrand compact priority />
         </div>
 
@@ -62,7 +70,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
 
   return (
     <aside className={cn(sidebarShellClassName, "hidden w-20 md:flex xl:w-72")}>
-      <div className={cn("flex h-20 shrink-0 items-center justify-center border-b xl:hidden", sidebarSectionClassName)}>
+      <div className={cn(sidebarBrandHeaderCompactClassName, "xl:hidden", sidebarSectionClassName)}>
         <SidebarBrand compact priority />
       </div>
 
@@ -88,7 +96,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
         <SidebarProfileMenu compact />
       </div>
 
-      <div className={cn("hidden h-20 shrink-0 items-center border-b px-5 xl:flex", sidebarSectionClassName)}>
+      <div className={cn("hidden xl:flex", sidebarBrandHeaderClassName, sidebarSectionClassName)}>
         <SidebarBrand priority />
       </div>
 

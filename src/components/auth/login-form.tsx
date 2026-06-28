@@ -54,7 +54,7 @@ export function LoginForm() {
       <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/90 p-8 shadow-2xl backdrop-blur">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex justify-center">
-            <EmsysLogo variant="full" className="mx-auto h-12 max-w-[200px]" priority />
+            <EmsysLogo variant="full" className="mx-auto" priority />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Sign in to EMSYS</h1>
           <p className="mt-2 text-sm text-slate-400">

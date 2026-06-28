@@ -1,36 +1,27 @@
-import Image from "next/image";
-
 import { cn } from "@/lib/utils";
 
+const LOGO_SRC = "/logo.svg";
+
 type EmsysLogoProps = {
-  /** Square mark for collapsed sidebar / compact headers. */
+  /** Smaller size for sidebar; larger for login and hero surfaces. */
   variant?: "mark" | "full";
   className?: string;
   priority?: boolean;
 };
 
 export function EmsysLogo({ variant = "full", className, priority = false }: EmsysLogoProps) {
-  if (variant === "mark") {
-    return (
-      <Image
-        src="/emsys-icon.png"
-        alt="EMSYS"
-        width={48}
-        height={48}
-        priority={priority}
-        className={cn("size-12 rounded-2xl object-cover shadow-lg shadow-primary/20", className)}
-      />
-    );
-  }
+  const sizeClass =
+    variant === "mark"
+      ? "block h-12 w-auto max-w-none object-contain object-center"
+      : "block h-44 w-auto max-w-[160px] object-contain object-center";
 
   return (
-    <Image
-      src="/emsys-logo.png"
+    // eslint-disable-next-line @next/next/no-img-element -- SVG brand asset from /public
+    <img
+      src={LOGO_SRC}
       alt="EMSYS Management Portal"
-      width={160}
-      height={44}
-      priority={priority}
-      className={cn("h-10 w-auto max-w-[160px] object-contain object-left", className)}
+      fetchPriority={priority ? "high" : undefined}
+      className={cn(sizeClass, className)}
     />
   );
 }

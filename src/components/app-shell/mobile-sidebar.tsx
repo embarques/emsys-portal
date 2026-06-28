@@ -29,8 +29,8 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
       />
 
       <aside className="absolute inset-y-0 left-0 flex w-[19rem] max-w-[88vw] flex-col border-r bg-card text-card-foreground shadow-2xl">
-        <div className="flex h-16 shrink-0 items-center justify-between border-b px-4">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="flex shrink-0 items-center justify-between overflow-visible border-b px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3 overflow-visible">
             <SidebarBrand />
           </div>
 
