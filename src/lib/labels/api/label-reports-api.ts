@@ -8,11 +8,16 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
+/** Which collection the `values` identifiers belong to. */
+export type LabelReportCollection = "invoices" | "barcodes";
+
 /** Payload accepted by `POST /reports/labels`. */
 export type LabelReportRequest = {
-  /** Invoice identifiers to render labels for. */
-  invoices: string[];
-  /** Field the API uses to resolve `invoices` (defaults to `id`). */
+  /** Identifiers to render labels for. */
+  values: string[];
+  /** Collection the `values` belong to (defaults to `invoices`). */
+  collection?: LabelReportCollection;
+  /** Field the API uses to resolve `values` (defaults to `id`). */
   lookupField?: string;
   /** Report type (defaults to `label`). */
   type?: string;
@@ -21,13 +26,14 @@ export type LabelReportRequest = {
 };
 
 /**
- * Generate 4x6 PDF invoice labels for the requested invoices.
+ * Generate 4x6 PDF labels for the requested invoices or barcodes.
  *
  * Returns a temporary public URL pointing at the generated PDF.
  */
 export async function generateLabelReport(request: LabelReportRequest): Promise<string> {
   const response = await apiClient.post<ApiMutationEnvelope<string>>(API_ENDPOINTS.REPORTS_LABELS, {
-    invoices: request.invoices,
+    values: request.values,
+    collection: request.collection ?? "invoices",
     lookup_field: request.lookupField ?? "id",
     type: request.type ?? "label",
     expiresInHours: request.expiresInHours ?? 24,

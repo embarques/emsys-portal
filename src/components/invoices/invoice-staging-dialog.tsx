@@ -371,7 +371,10 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
     }
 
     try {
-      const url = await generateLabelReportMutation.mutateAsync({ invoices: invoiceIds });
+      const url = await generateLabelReportMutation.mutateAsync({
+        values: invoiceIds,
+        collection: "invoices",
+      });
       window.open(url, "_blank", "noopener,noreferrer");
       notifySuccess(`Labels ready for ${invoiceIds.length} invoice(s).`);
     } catch (error) {
