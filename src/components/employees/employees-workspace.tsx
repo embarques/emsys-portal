@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 import {
+  Building2,
   ChevronLeft,
   ChevronRight,
   Plus,
   Trash2,
-  UserRound,
   Users,
 } from "lucide-react";
 
@@ -209,18 +209,12 @@ export function EmployeesWorkspace() {
       description: "Employees on record",
       icon: Users,
     },
-    {
-      label: "Active",
-      value: stats.isLoading ? "…" : stats.active.toString(),
-      description: "Currently active",
-      icon: UserRound,
-    },
-    {
-      label: "Inactive",
-      value: stats.isLoading ? "…" : stats.inactive.toString(),
-      description: "No longer active",
-      icon: UserRound,
-    },
+    ...stats.branches.map((branch) => ({
+      label: branch.label,
+      value: stats.isLoading ? "…" : branch.total.toString(),
+      description: `Employees in ${branch.label}`,
+      icon: Building2,
+    })),
   ];
 
   const branchFilterOptions = useMemo(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarRange,
   Car,
@@ -37,6 +37,7 @@ import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeRouteAssignmentKpis,
   formatRouteAssignmentDate,
+  formatRouteAssignmentName,
   formatRouteAssignmentTimestamp,
   getEmployeeGroupRefLabel,
   getVehicleRefLabel,
@@ -44,7 +45,7 @@ import {
   truncateObjectId,
   truncateRouteAssignmentId,
 } from "@/lib/route-assignments/display";
-import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
+import { cloneRouteAssignments, setRouteAssignmentsStore } from "@/lib/route-assignments/mock-data";
 import {
   createEmptyRouteAssignmentForm,
   createRouteAssignmentSearchFilter,
@@ -66,6 +67,10 @@ const defaultFilters: RouteAssignmentFilterState = {
 export function RouteAssignmentsWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [assignments, setAssignments] = useState<RouteAssignment[]>(() => cloneRouteAssignments());
+
+  useEffect(() => {
+    setRouteAssignmentsStore(assignments);
+  }, [assignments]);
   const [filters, setFilters] = useState<RouteAssignmentFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
@@ -130,11 +135,11 @@ export function RouteAssignmentsWorkspace() {
       setAssignments((current) =>
         current.map((assignment) => (assignment.id === editingAssignment.id ? nextAssignment : assignment)),
       );
-      notifyUpdated("Route assignment", nextAssignment.name);
+      notifyUpdated("Route", nextAssignment.name);
     } else {
       const nextAssignment = formValuesToRouteAssignment(values);
       setAssignments((current) => [nextAssignment, ...current]);
-      notifyAdded("Route assignment", nextAssignment.name);
+      notifyAdded("Route", nextAssignment.name);
     }
 
     setFormMode(null);
@@ -151,14 +156,14 @@ export function RouteAssignmentsWorkspace() {
     setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
     setDeleteTarget(null);
     setViewAssignment(null);
-    notifyDeleted("Route assignment", ids.length);
+    notifyDeleted("Route", ids.length);
   }
 
   const stats = [
     {
       label: "Total assignments",
       value: kpis.total.toString(),
-      description: "Scheduled route assignments",
+      description: "Scheduled routes",
       icon: ClipboardList,
     },
     {
@@ -192,7 +197,7 @@ export function RouteAssignmentsWorkspace() {
       id: "name",
       label: "name",
       cellClassName: "font-medium",
-      renderCell: (assignment) => assignment.name,
+      renderCell: (assignment) => formatRouteAssignmentName(assignment),
     },
     {
       id: "date",
@@ -269,7 +274,7 @@ export function RouteAssignmentsWorkspace() {
   return (
     <div>
       <PageHeader
-        title="Route Assignments"
+        title="Routes"
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
@@ -309,7 +314,7 @@ export function RouteAssignmentsWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search route assignments..."
+                placeholder="Search routes..."
               />
             }
           />
@@ -347,7 +352,7 @@ export function RouteAssignmentsWorkspace() {
           onRowDoubleClick={openEditForm}
           emptyState={
             <>
-              <p className="text-muted-foreground">No route assignments match your search.</p>
+              <p className="text-muted-foreground">No routes match your search.</p>
               <Button className="mt-4" onClick={openAddForm}>
                 <Plus className="h-4 w-4" />
                 Add assignment
@@ -402,7 +407,7 @@ export function RouteAssignmentsWorkspace() {
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>{formMode === "edit" ? "Edit route assignment" : "Add route assignment"}</DialogTitle>
+            <DialogTitle>{formMode === "edit" ? "Edit route" : "Add route"}</DialogTitle>
           </DialogHeader>
           <RouteAssignmentForm
             key={editingAssignment?.id ?? "new"}
@@ -424,7 +429,7 @@ export function RouteAssignmentsWorkspace() {
         <DialogContent className="z-[60]">
           <DialogHeader>
             <DialogTitle>
-              Delete route assignment{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?
+              Delete route{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?
             </DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)

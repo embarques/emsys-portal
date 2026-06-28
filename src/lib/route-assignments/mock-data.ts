@@ -47,18 +47,32 @@ export const MOCK_ROUTE_ASSIGNMENTS: RouteAssignment[] = [
   },
 ];
 
-export function cloneRouteAssignments(): RouteAssignment[] {
-  return MOCK_ROUTE_ASSIGNMENTS.map((assignment) => ({
+function cloneAssignment(assignment: RouteAssignment): RouteAssignment {
+  return {
     ...assignment,
     vehicle: { ...assignment.vehicle },
     employeeGroup: { ...assignment.employeeGroup },
-  }));
+  };
+}
+
+/**
+ * Session-persistent store so mutations (add/edit/delete) survive component
+ * remounts when navigating between pages, instead of resetting to the seed data.
+ */
+let routeAssignmentsStore: RouteAssignment[] = MOCK_ROUTE_ASSIGNMENTS.map(cloneAssignment);
+
+export function cloneRouteAssignments(): RouteAssignment[] {
+  return routeAssignmentsStore.map(cloneAssignment);
+}
+
+export function setRouteAssignmentsStore(assignments: RouteAssignment[]): void {
+  routeAssignmentsStore = assignments.map(cloneAssignment);
 }
 
 export function getRouteAssignmentById(routeAssignmentId: string): RouteAssignment | undefined {
-  return MOCK_ROUTE_ASSIGNMENTS.find((assignment) => assignment.routeAssignmentId === routeAssignmentId);
+  return routeAssignmentsStore.find((assignment) => assignment.routeAssignmentId === routeAssignmentId);
 }
 
 export function getRouteAssignmentByRecordId(id: string): RouteAssignment | undefined {
-  return MOCK_ROUTE_ASSIGNMENTS.find((assignment) => assignment.id === id);
+  return routeAssignmentsStore.find((assignment) => assignment.id === id);
 }

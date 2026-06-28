@@ -1,3 +1,4 @@
+import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
@@ -11,20 +12,49 @@ import {
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 
-/** Picker-friendly shape derived from employee_group.EmployeeGroup (`id` is a string). */
+export type EmployeeGroupMemberOption = { id: number; name: string };
+
+/** Shape derived from employee_group.EmployeeGroup (`id` is a string). */
 export type EmployeeGroupOption = {
   id: string;
+  employeeGroupId: string;
   name: string;
   branch?: string;
-  employees: { id: number; name: string }[];
+  employees: EmployeeGroupMemberOption[];
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+};
+
+type ApiUser = {
+  id?: number;
+  name?: string;
+  userName?: string;
+  fullName?: string;
 };
 
 type ApiEmployeeGroup = {
   id?: string | number;
+  employeeGroupId?: string;
   name?: string;
   branch?: string;
   employees?: { id?: number; name?: string }[];
+  createdAt?: string;
+  createdBy?: ApiUser | string;
+  updatedAt?: string;
+  updatedBy?: ApiUser | string;
 };
+
+function readUserName(user: unknown): string {
+  if (!user) return "";
+  if (typeof user === "string") return user.trim();
+  if (typeof user === "object") {
+    const entry = user as ApiUser;
+    return String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim();
+  }
+  return "";
+}
 
 export type EmployeeGroupListParams = {
   page?: number;
@@ -63,9 +93,11 @@ function normalizeEmployeeGroup(raw: unknown): EmployeeGroupOption | null {
 
   const name = String(item.name ?? "").trim();
   const branch = String(item.branch ?? "").trim();
+  const employeeGroupId = String(item.employeeGroupId ?? "").trim();
 
   return {
     id,
+    employeeGroupId: employeeGroupId || id,
     name: name || id,
     branch: branch || undefined,
     employees: Array.isArray(item.employees)
@@ -77,6 +109,10 @@ function normalizeEmployeeGroup(raw: unknown): EmployeeGroupOption | null {
             : [];
         })
       : [],
+    createdAt: String(item.createdAt ?? "").trim(),
+    createdBy: readUserName(item.createdBy) || DEFAULT_CREATED_BY,
+    updatedAt: String(item.updatedAt ?? "").trim(),
+    updatedBy: readUserName(item.updatedBy),
   };
 }
 
@@ -158,4 +194,25 @@ export async function createEmployeeGroup(
   }
 
   return group;
+}
+
+export async function deleteEmployeeGroup(employeeGroupId: string): Promise<void> {
+  const id = employeeGroupId.trim();
+  if (!id) {
+    throw new Error("A valid employee group id is required to delete.");
+  }
+
+  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.EMPLOYEE_GROUPS}/${id}`,
+  );
+
+  if (response.success === false) {
+    throw new Error(
+      response.message?.trim() || response.error?.trim() || "Unable to delete employee group.",
+    );
+  }
+}
+
+export async function deleteEmployeeGroups(employeeGroupIds: string[]): Promise<void> {
+  await Promise.all(employeeGroupIds.map((id) => deleteEmployeeGroup(id)));
 }

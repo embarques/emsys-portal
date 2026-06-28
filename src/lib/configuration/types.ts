@@ -1,4 +1,4 @@
-export type ThemePreference = "light" | "dark";
+export type ThemePreference = "light" | "dark" | "system";
 export type LanguagePreference = "en" | "es";
 
 export type UserConfiguration = {
@@ -25,6 +25,7 @@ export const CONFIGURATION_LANGUAGES: { value: LanguagePreference; label: string
 export const CONFIGURATION_THEMES: { value: ThemePreference; label: string; description: string }[] = [
   { value: "light", label: "Light", description: "Bright background with dark text" },
   { value: "dark", label: "Dark", description: "Dark background with light text" },
+  { value: "system", label: "System", description: "Match your device appearance" },
 ];
 
 export const DEFAULT_USER_CONFIGURATION: UserConfiguration = {

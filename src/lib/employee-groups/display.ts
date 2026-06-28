@@ -1,14 +1,12 @@
-import { getEmployeeById } from "@/lib/employees/mock-data";
-import { getEmployeeFullName } from "@/lib/employees/types";
 import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
-import type { EmployeeGroup, EmployeeGroupBranch } from "./types";
+import type { EmployeeGroup } from "./types";
 import { EMPLOYEE_GROUP_BRANCHES } from "./types";
 
-export function getEmployeeGroupBranchLabel(branch: EmployeeGroupBranch): string {
+export function getEmployeeGroupBranchLabel(branch: string): string {
   return getBranchLabel(branch);
 }
 
-export function getEmployeeGroupBranchBadgeClass(branch: EmployeeGroupBranch): string {
+export function getEmployeeGroupBranchBadgeClass(branch: string): string {
   return getBranchBadgeClass(branch);
 }
 
@@ -24,31 +22,21 @@ export function truncateEmployeeGroupId(employeeGroupId: string): string {
   return employeeGroupId.length > 12 ? `${employeeGroupId.slice(0, 8)}…` : employeeGroupId;
 }
 
-export function formatEmployeeGroupMembersSummary(group: EmployeeGroup, limit = 3): string {
-  const names = group.employeeIds
-    .map((employeeId) => getEmployeeById(employeeId))
-    .filter(Boolean)
-    .map((employee) => getEmployeeFullName(employee!));
+export function formatEmployeeGroupMembersSummary(group: EmployeeGroup): string {
+  return formatEmployeeMemberNames(group.employees);
+}
 
-  if (names.length === 0) return "—";
-
-  const visible = names.slice(0, limit);
-  const suffix = names.length > limit ? ` (+${names.length - limit})` : "";
-  return `${visible.join(", ")}${suffix}`;
+/** Comma-separated employee names for any group-like object with named members. */
+export function formatEmployeeMemberNames(employees: { name: string }[]): string {
+  const names = employees.map((employee) => employee.name.trim()).filter(Boolean);
+  return names.length > 0 ? names.join(", ") : "—";
 }
 
 export function employeeGroupMatchesQuery(group: EmployeeGroup, query: string): boolean {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
 
-  const memberText = group.employeeIds
-    .map((employeeId) => getEmployeeById(employeeId))
-    .filter(Boolean)
-    .map((employee) => {
-      const full = employee!;
-      return `${getEmployeeFullName(full)} ${full.title} ${full.department}`;
-    })
-    .join(" ");
+  const memberText = group.employees.map((employee) => employee.name).join(" ");
 
   return [
     group.employeeGroupId,

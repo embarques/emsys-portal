@@ -47,7 +47,8 @@ function readStoredConfiguration(): UserConfiguration | null {
       password: parsed.password || DEFAULT_USER_CONFIGURATION.password,
       displayName: parsed.displayName?.trim() || DEFAULT_USER_CONFIGURATION.displayName,
       language: parsed.language === "es" ? "es" : "en",
-      theme: parsed.theme === "dark" ? "dark" : "light",
+      theme:
+        parsed.theme === "dark" || parsed.theme === "system" ? parsed.theme : "light",
     };
   } catch {
     return null;

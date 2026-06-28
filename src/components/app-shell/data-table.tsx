@@ -249,7 +249,7 @@ function DataTableContent<T>({
 
   const tableMinWidth = Math.max(
     minWidth,
-    visibleColumns.reduce((total, column) => total + getColumnWidth(column.id), 0) + (selectable ? 48 : 0)
+    visibleColumns.reduce((total, column) => total + getColumnWidth(column.id), 0) + (selectable ? 56 : 0)
   );
 
   return (
@@ -258,7 +258,7 @@ function DataTableContent<T>({
         <thead>
           <tr className="border-b bg-muted/30 text-left">
             {selectable ? (
-              <th className="w-12 px-2 py-3">
+              <th className="w-14 px-4 py-3">
                 <input
                   type="checkbox"
                   aria-label="Select all rows on this page"
@@ -424,7 +424,7 @@ function DataTableContent<T>({
                   onDoubleClick={() => handleRowDoubleClick(row)}
                 >
                   {selectable ? (
-                    <td className="px-2 py-3" onClick={(event) => event.stopPropagation()}>
+                    <td className="w-14 px-4 py-3" onClick={(event) => event.stopPropagation()}>
                       <input
                         type="checkbox"
                         aria-label={`Select ${rowLabel?.(row) ?? id}`}

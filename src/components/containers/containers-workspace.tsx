@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import {
+  CalendarRange,
   ChevronLeft,
   ChevronRight,
   Container,
-  DollarSign,
   Plus,
   Ship,
   Trash2,
@@ -43,7 +43,6 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
 import {
   computeContainerKpis,
-  formatContainerCost,
   formatContainerDate,
   formatContainerId,
   formatOptionalContainerCost,
@@ -207,16 +206,16 @@ export function ContainersWorkspace() {
       icon: Container,
     },
     {
-      label: "In transit",
-      value: kpiQuery.isLoading ? "…" : kpis.inTransit.toString(),
-      description: "Arrival date not yet passed",
+      label: "Departed (past month)",
+      value: kpiQuery.isLoading ? "…" : kpis.departedPastMonth.toString(),
+      description: "Containers departed in the last 30 days",
       icon: Ship,
     },
     {
-      label: "Total cost",
-      value: kpiQuery.isLoading ? "…" : formatContainerCost(kpis.totalCost),
-      description: "Combined container costs",
-      icon: DollarSign,
+      label: "Departed (past year)",
+      value: kpiQuery.isLoading ? "…" : kpis.departedPastYear.toString(),
+      description: "Containers departed in the last 12 months",
+      icon: CalendarRange,
     },
   ];
 

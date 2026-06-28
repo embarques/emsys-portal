@@ -10,9 +10,10 @@ import {
   UsersRound,
 } from "lucide-react";
 
-import { EmployeeGroupForm } from "@/components/employee-groups/employee-group-form";
+import { EmployeeGroupCreateDialog } from "@/components/employee-groups/employee-group-create-dialog";
 import { EmployeeGroupViewSheet } from "@/components/employee-groups/employee-group-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -36,72 +37,110 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
+import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import {
-  computeEmployeeGroupKpis,
-  employeeGroupMatchesQuery,
   formatEmployeeGroupDate,
-  formatEmployeeGroupMembersSummary,
+  formatEmployeeMemberNames,
   getEmployeeGroupBranchBadgeClass,
   getEmployeeGroupBranchLabel,
-  truncateEmployeeGroupId,
 } from "@/lib/employee-groups/display";
-import { cloneEmployeeGroups } from "@/lib/employee-groups/mock-data";
 import {
-  createEmptyEmployeeGroupForm,
-  EMPLOYEE_GROUP_BRANCHES,
-  employeeGroupToFormValues,
-  formValuesToEmployeeGroup,
-  type EmployeeGroup,
-  type EmployeeGroupFilterState,
-  type EmployeeGroupFormValues,
-} from "@/lib/employee-groups/types";
+  useEmployeeGroups,
+  useDeleteEmployeeGroups,
+} from "@/lib/employee-groups/hooks/use-employee-groups";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { getVehiclePortalBranch } from "@/lib/vehicles/types";
 
 const PAGE_SIZE = 50;
+
+type BranchFilter = "all" | "usa" | "dr";
+
+type EmployeeGroupFilterState = {
+  query: string;
+  branch: BranchFilter;
+};
 
 const defaultFilters: EmployeeGroupFilterState = {
   query: "",
   branch: "all",
 };
 
+const branchFilters: { value: BranchFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "usa", label: "USA" },
+  { value: "dr", label: "DR" },
+];
+
+function groupMatchesQuery(group: EmployeeGroupOption, query: string): boolean {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return true;
+
+  return [
+    group.name,
+    group.createdBy,
+    getEmployeeGroupBranchLabel(group.branch ?? ""),
+    group.employees.map((employee) => employee.name).join(" "),
+  ]
+    .join(" ")
+    .toLowerCase()
+    .includes(normalized);
+}
+
 export function EmployeeGroupsWorkspace() {
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [groups, setGroups] = useState<EmployeeGroup[]>(() => cloneEmployeeGroups());
+  const { notifyAdded, notifyDeleted } = useFeedback();
+  const { data, isLoading, isError, error, isFetching } = useEmployeeGroups(200);
+  const deleteGroupsMutation = useDeleteEmployeeGroups();
   const [filters, setFilters] = useState<EmployeeGroupFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
-  const [viewGroup, setViewGroup] = useState<EmployeeGroup | null>(null);
-  const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
-  const [editingGroup, setEditingGroup] = useState<EmployeeGroup | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<EmployeeGroup | EmployeeGroup[] | null>(null);
+  const [viewGroup, setViewGroup] = useState<EmployeeGroupOption | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<EmployeeGroupOption | EmployeeGroupOption[] | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const isDeleting = deleteGroupsMutation.isPending;
+
+  const groups = useMemo(() => data?.items ?? [], [data?.items]);
 
   const filteredGroups = useMemo(() => {
     return groups.filter((group) => {
-      if (!employeeGroupMatchesQuery(group, filters.query)) return false;
-      if (filters.branch !== "all" && group.branch !== filters.branch) return false;
+      if (!groupMatchesQuery(group, filters.query)) return false;
+      if (filters.branch !== "all" && getVehiclePortalBranch(group.branch ?? "") !== filters.branch) {
+        return false;
+      }
       return true;
     });
   }, [filters, groups]);
 
-  const kpis = useMemo(() => computeEmployeeGroupKpis(groups), [groups]);
+  const kpis = useMemo(() => {
+    let usa = 0;
+    let dr = 0;
+    for (const group of groups) {
+      if (getVehiclePortalBranch(group.branch ?? "") === "dr") dr += 1;
+      else usa += 1;
+    }
+    return { total: groups.length, usa, dr };
+  }, [groups]);
+
   const totalPages = Math.max(1, Math.ceil(filteredGroups.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageGroups = filteredGroups.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allPageSelected =
-    pageGroups.length > 0 && pageGroups.every((group) => selectedIds.includes(group.employeeGroupId));
+    pageGroups.length > 0 && pageGroups.every((group) => selectedIds.includes(group.id));
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
       setSelectedIds((current) =>
-        Array.from(new Set([...current, ...pageGroups.map((group) => group.employeeGroupId)]))
+        Array.from(new Set([...current, ...pageGroups.map((group) => group.id)]))
       );
       return;
     }
     setSelectedIds((current) =>
-      current.filter((id) => !pageGroups.some((group) => group.employeeGroupId === id))
+      current.filter((id) => !pageGroups.some((group) => group.id === id))
     );
   }
 
@@ -109,111 +148,85 @@ export function EmployeeGroupsWorkspace() {
     setSelectedIds((current) => (checked ? [...current, groupId] : current.filter((entry) => entry !== groupId)));
   }
 
-  function openAddForm() {
-    setEditingGroup(null);
-    setFormMode("add");
-  }
-
-  function openEditForm(group: EmployeeGroup) {
-    setEditingGroup(group);
-    setFormMode("edit");
-    setViewGroup(null);
-  }
-
-  function saveGroup(values: EmployeeGroupFormValues) {
-    if (formMode === "edit" && editingGroup) {
-      const nextGroup = formValuesToEmployeeGroup(
-        { ...values, createdBy: editingGroup.createdBy },
-        editingGroup.createdAt,
-        new Date().toISOString()
-      );
-      setGroups((current) =>
-        current.map((group) => (group.employeeGroupId === editingGroup.employeeGroupId ? nextGroup : group))
-      );
-      notifyUpdated("Employee group");
-    } else {
-      setGroups((current) => [formValuesToEmployeeGroup(values), ...current]);
-      notifyAdded("Employee group");
-    }
-
-    setFormMode(null);
-    setEditingGroup(null);
-    setPage(1);
-  }
-
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
-    const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((group) => group.employeeGroupId)
-      : [deleteTarget.employeeGroupId];
-    setGroups((current) => current.filter((group) => !ids.includes(group.employeeGroupId)));
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewGroup(null);
-    notifyDeleted("Employee group", ids.length);
+
+    const targets = Array.isArray(deleteTarget) ? deleteTarget : [deleteTarget];
+    const ids = targets.map((group) => group.id);
+
+    try {
+      await deleteGroupsMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
+      setViewGroup(null);
+      setDeleteError(null);
+      notifyDeleted("Employee group", ids.length);
+    } catch (mutationError) {
+      setDeleteError(normalizeApiError(mutationError).message);
+    }
   }
 
   const stats = [
-    { label: "Total groups", value: kpis.total.toString(), description: "Employee groups on record", icon: UsersRound },
-    { label: "USA", value: kpis.usa.toString(), description: "United States branch", icon: MapPin },
-    { label: "DR", value: kpis.dr.toString(), description: "Dominican Republic branch", icon: MapPin },
+    { label: "Total groups", value: isLoading ? "…" : kpis.total.toString(), description: "Employee groups on record", icon: UsersRound },
+    { label: "USA", value: isLoading ? "…" : kpis.usa.toString(), description: "United States branch", icon: MapPin },
+    { label: "DR", value: isLoading ? "…" : kpis.dr.toString(), description: "Dominican Republic branch", icon: MapPin },
   ];
 
-  const branchFilters: { value: EmployeeGroupFilterState["branch"]; label: string }[] = [
-    { value: "all", label: "All" },
-    ...EMPLOYEE_GROUP_BRANCHES,
-  ];
-
-  const tableColumns: DataTableColumn<EmployeeGroup>[] = [
+  const tableColumns: DataTableColumn<EmployeeGroupOption>[] = [
     {
-      id: "groupId",
-      label: "Group ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (group) => truncateEmployeeGroupId(group.employeeGroupId),
+      id: "name",
+      label: "name",
+      cellClassName: "font-medium",
+      renderCell: (group) => group.name,
     },
     {
       id: "employees",
-      label: "Employees",
-      renderCell: (group) => formatEmployeeGroupMembersSummary(group),
+      label: "employees",
+      truncateCell: false,
+      cellClassName: "whitespace-normal",
+      renderCell: (group) => formatEmployeeMemberNames(group.employees),
     },
     {
       id: "count",
-      label: "Count",
+      label: "count",
       truncateCell: false,
       cellClassName: "overflow-visible",
-      renderCell: (group) => <TableTagText>{group.employeeIds.length}</TableTagText>,
+      renderCell: (group) => <TableTagText>{group.employees.length}</TableTagText>,
     },
     {
       id: "branch",
-      label: "Branch",
+      label: "branch",
       truncateCell: false,
       cellClassName: "overflow-visible",
-      renderCell: (group) => (
-        <TableTagText className={getEmployeeGroupBranchBadgeClass(group.branch)}>
-          {getEmployeeGroupBranchLabel(group.branch)}
-        </TableTagText>
-      ),
+      renderCell: (group) =>
+        group.branch ? (
+          <TableTagText className={getEmployeeGroupBranchBadgeClass(group.branch)}>
+            {getEmployeeGroupBranchLabel(group.branch)}
+          </TableTagText>
+        ) : (
+          "—"
+        ),
     },
     {
       id: "createdAt",
-      label: "Date created",
+      label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (group) => formatEmployeeGroupDate(group.createdAt),
+      renderCell: (group) => (group.createdAt ? formatEmployeeGroupDate(group.createdAt) : "—"),
     },
     {
       id: "createdBy",
-      label: "User created",
-      renderCell: (group) => group.createdBy,
+      label: "createdBy",
+      renderCell: (group) => group.createdBy || "—",
     },
     {
       id: "updatedAt",
-      label: "Date modified",
+      label: "updatedAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (group) => formatAuditDate(group.updatedAt),
+      renderCell: (group) => (group.updatedAt ? formatAuditDate(group.updatedAt) : "—"),
     },
   ];
 
-  const columnVisibility = useColumnVisibility("employee-groups", tableColumns);
+  const columnVisibility = useColumnVisibility("employee-groups-v2", tableColumns);
   const activeFilterCount = filters.branch !== "all" ? 1 : 0;
   const hasActiveFilters = Boolean(filters.query.trim()) || filters.branch !== "all";
   const searchSummary = buildToolbarSearchSummary({
@@ -222,6 +235,7 @@ export function EmployeeGroupsWorkspace() {
     matched: filteredGroups.length,
     catalogTotal: groups.length,
     noun: "groups",
+    isLoading: isFetching && groups.length === 0,
   });
 
   return (
@@ -229,7 +243,7 @@ export function EmployeeGroupsWorkspace() {
       <PageHeader
         title="Employee Groups"
         actions={
-          <Button onClick={openAddForm}>
+          <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
             Add group
           </Button>
@@ -284,22 +298,22 @@ export function EmployeeGroupsWorkspace() {
                     : undefined
                 }
               >
-            <TableFilterSection label="Branch">
-              {branchFilters.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  size="sm"
-                  variant={filters.branch === option.value ? "default" : "outline"}
-                  onClick={() => {
-                    setFilters((current) => ({ ...current, branch: option.value }));
-                    setPage(1);
-                  }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </TableFilterSection>
+                <TableFilterSection label="Branch">
+                  {branchFilters.map((option) => (
+                    <Button
+                      key={option.value}
+                      type="button"
+                      size="sm"
+                      variant={filters.branch === option.value ? "default" : "outline"}
+                      onClick={() => {
+                        setFilters((current) => ({ ...current, branch: option.value }));
+                        setPage(1);
+                      }}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </TableFilterSection>
               </TableFilterPanel>
             }
           />
@@ -307,73 +321,85 @@ export function EmployeeGroupsWorkspace() {
 
         <TableSelectionToolbar
           selectedIds={selectedIds}
-          pageRowIds={pageGroups.map((group) => group.employeeGroupId)}
+          pageRowIds={pageGroups.map((group) => group.id)}
           totalCount={filteredGroups.length}
           onSelectedIdsChange={setSelectedIds}
-          onEdit={() => {
-            const group = pageGroups.find((entry) => entry.employeeGroupId === selectedIds[0]);
-            if (group) openEditForm(group);
+          onDelete={() => {
+            setDeleteError(null);
+            setDeleteTarget(groups.filter((group) => selectedIds.includes(group.id)));
           }}
-          onDelete={() =>
-            setDeleteTarget(groups.filter((group) => selectedIds.includes(group.employeeGroupId)))
-          }
         />
 
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={pageGroups}
-          page={currentPage}
-          rowKey={(group) => group.employeeGroupId}
-          rowLabel={(group) => group.employeeGroupId}
-          columnLayout={columnVisibility}
-          sortUnavailable
-          minWidth={960}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={setViewGroup}
-          onRowDoubleClick={openEditForm}
-          emptyState={
-            <>
-              <p className="text-muted-foreground">No employee groups match your search.</p>
-              <Button className="mt-4" onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                Add group
+        {isError ? (
+          <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(error).message}</div>
+        ) : isLoading ? (
+          <DirectoryTableLoader
+            icon={UsersRound}
+            title="Loading employee groups"
+            description="Syncing crews and their members…"
+            columns={["Name", "Employees", "Count", "Branch", "Created"]}
+          />
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={pageGroups}
+            page={currentPage}
+            isPageDataPending={isFetching}
+            rowKey={(group) => group.id}
+            rowLabel={(group) => group.name}
+            columnLayout={columnVisibility}
+            sortUnavailable
+            minWidth={960}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={toggleSelect}
+            onRowClick={setViewGroup}
+            emptyState={
+              <>
+                <p className="text-muted-foreground">No employee groups match your search.</p>
+                <Button className="mt-4" onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  Add group
+                </Button>
+              </>
+            }
+          />
+        )}
+
+        {!isLoading && !isError ? (
+          <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {isFetching
+                ? "Refreshing employee groups…"
+                : `Showing ${pageGroups.length} of ${filteredGroups.length} groups`}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
               </Button>
-            </>
-          }
-        />
-
-        <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {pageGroups.length} of {filteredGroups.length} groups
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+              <span className="px-2 text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : null}
       </Card>
 
       <EmployeeGroupViewSheet
@@ -382,35 +408,28 @@ export function EmployeeGroupsWorkspace() {
         onOpenChange={(open) => {
           if (!open) setViewGroup(null);
         }}
-        onEdit={openEditForm}
         onDelete={(group) => {
           setViewGroup(null);
+          setDeleteError(null);
           setDeleteTarget(group);
         }}
       />
 
-      <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>{formMode === "edit" ? "Edit employee group" : "Add employee group"}</DialogTitle>
-          </DialogHeader>
-          <EmployeeGroupForm
-            key={editingGroup?.employeeGroupId ?? "new"}
-            initialValues={
-              formMode === "edit" && editingGroup
-                ? employeeGroupToFormValues(editingGroup)
-                : createEmptyEmployeeGroupForm()
-            }
-            isEditing={formMode === "edit"}
-            updatedAt={editingGroup?.updatedAt}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add group"}
-            onSubmit={saveGroup}
-            onCancel={() => setFormMode(null)}
-          />
-        </DialogContent>
-      </Dialog>
+      <EmployeeGroupCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(group) => notifyAdded("Employee group", group.name)}
+      />
 
-      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }
+        }}
+      >
         <DialogContent className="z-[60]">
           <DialogHeader>
             <DialogTitle>
@@ -418,15 +437,23 @@ export function EmployeeGroupsWorkspace() {
             </DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected groups. This action cannot be undone.`
-                : "This will permanently remove this employee group. This action cannot be undone."}
+                ? `This will permanently remove ${deleteTarget.length} selected employee groups. This action cannot be undone.`
+                : `This will permanently remove ${deleteTarget?.name ?? "this employee group"}. This action cannot be undone.`}
             </DialogDescription>
           </DialogHeader>
+          {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteTarget(null);
+                setDeleteError(null);
+              }}
+              disabled={isDeleting}
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
               <Trash2 className="h-4 w-4" />
               Delete
             </Button>

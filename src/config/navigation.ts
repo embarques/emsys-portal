@@ -37,7 +37,7 @@ export type NavigationGroup = {
   items: NavigationItem[];
 };
 
-export const navigation: NavigationGroup[] = [
+const navigationGroups: NavigationGroup[] = [
   {
     title: "Workspace",
     items: [
@@ -55,7 +55,7 @@ export const navigation: NavigationGroup[] = [
       { label: "Items", href: "/items", icon: Tag, permission: PERMISSIONS.invoiceItemsView },
       { label: "Containers", href: "/containers", icon: Container, permission: PERMISSIONS.containersView },
       {
-        label: "Route Assignments",
+        label: "Routes",
         href: "/route-assignments",
         icon: ClipboardList,
         permission: PERMISSIONS.dispatchView,
@@ -100,3 +100,13 @@ export const navigation: NavigationGroup[] = [
     ],
   },
 ];
+
+/** Items within each section are sorted alphabetically by label, with Dashboard pinned first. */
+export const navigation: NavigationGroup[] = navigationGroups.map((group) => ({
+  ...group,
+  items: [...group.items].sort((a, b) => {
+    if (a.href === "/") return -1;
+    if (b.href === "/") return 1;
+    return a.label.localeCompare(b.label);
+  }),
+}));

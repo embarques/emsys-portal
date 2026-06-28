@@ -37,7 +37,7 @@ export const queryKeys = {
     list: (params: EmployeeListParams) => [...queryKeys.employees.lists(), params] as const,
     search: (search: EmployeeSearchFilter | undefined, limit: number) =>
       [...queryKeys.employees.all, "search", search, limit] as const,
-    stats: (scope: "all" | "active" | "inactive") =>
+    stats: (scope: "all" | "active" | "inactive" | `branch:${string}`) =>
       [...queryKeys.employees.all, "stats", scope] as const,
     detail: (employeeId: string) => [...queryKeys.employees.all, "detail", employeeId] as const,
   },

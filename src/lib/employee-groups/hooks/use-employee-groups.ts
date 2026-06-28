@@ -5,12 +5,25 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   DEFAULT_EMPLOYEE_GROUP_LIST_PARAMS,
   createEmployeeGroup,
+  deleteEmployeeGroups,
   fetchEmployeeGroups,
   type EmployeeGroupOption,
   type EmployeeGroupSearchFilter,
 } from "@/lib/employee-groups/api/employee-groups-api";
 import { queryKeys } from "@/lib/query/query-keys";
 import type { PaginatedResult } from "@/lib/api/types";
+
+export function useEmployeeGroups(
+  limit: number = DEFAULT_EMPLOYEE_GROUP_LIST_PARAMS.limit,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: queryKeys.employeeGroups.list({ limit }),
+    queryFn: () => fetchEmployeeGroups({ ...DEFAULT_EMPLOYEE_GROUP_LIST_PARAMS, limit }),
+    enabled: options.enabled ?? true,
+    placeholderData: keepPreviousData,
+  });
+}
 
 export function useEmployeeGroupPicker(
   limit: number = DEFAULT_EMPLOYEE_GROUP_LIST_PARAMS.limit,
@@ -62,5 +75,14 @@ export function useCreateEmployeeGroup() {
       );
       await queryClient.invalidateQueries({ queryKey: queryKeys.employeeGroups.all });
     },
+  });
+}
+
+export function useDeleteEmployeeGroups() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (employeeGroupIds: string[]) => deleteEmployeeGroups(employeeGroupIds),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.employeeGroups.all }),
   });
 }

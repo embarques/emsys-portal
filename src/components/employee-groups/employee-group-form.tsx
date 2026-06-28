@@ -62,12 +62,14 @@ export function EmployeeGroupForm({
     setMemberQuery("");
   }, [initialValues]);
 
-  function toggleEmployee(employeeId: string, checked: boolean) {
+  function toggleEmployee(member: { id: string; name: string }, checked: boolean) {
     setValues((current) => ({
       ...current,
-      employeeIds: checked
-        ? Array.from(new Set([...current.employeeIds, employeeId]))
-        : current.employeeIds.filter((id) => id !== employeeId),
+      employees: checked
+        ? current.employees.some((entry) => entry.id === member.id)
+          ? current.employees
+          : [...current.employees, member]
+        : current.employees.filter((entry) => entry.id !== member.id),
     }));
     setFormError(null);
   }
@@ -75,7 +77,7 @@ export function EmployeeGroupForm({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    if (values.employeeIds.length === 0) {
+    if (values.employees.length === 0) {
       setFormError("Select at least one employee for this group.");
       return;
     }
@@ -91,7 +93,7 @@ export function EmployeeGroupForm({
             <div className="space-y-1">
               <Label>Selected employees</Label>
               <div className="flex h-9 items-center rounded-md border bg-muted/20 px-3 text-sm">
-                {values.employeeIds.length} selected
+                {values.employees.length} selected
               </div>
             </div>
 
@@ -132,7 +134,7 @@ export function EmployeeGroupForm({
             <p className="px-2 py-6 text-center text-sm text-muted-foreground">Loading employees…</p>
           ) : employees.length > 0 ? (
             employees.map((employee) => {
-              const checked = values.employeeIds.includes(String(employee.id));
+              const checked = values.employees.some((entry) => entry.id === String(employee.id));
               return (
                 <label
                   key={employee.id}
@@ -144,7 +146,12 @@ export function EmployeeGroupForm({
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={(event) => toggleEmployee(String(employee.id), event.target.checked)}
+                    onChange={(event) =>
+                      toggleEmployee(
+                        { id: String(employee.id), name: getEmployeeFullName(employee) },
+                        event.target.checked,
+                      )
+                    }
                     className="mt-1 size-4 rounded border-input"
                   />
                   <div className="min-w-0 flex-1">

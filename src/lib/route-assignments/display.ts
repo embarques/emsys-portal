@@ -34,8 +34,33 @@ export function truncateObjectId(id: string): string {
   return id.length > 12 ? `${id.slice(0, 8)}…` : id;
 }
 
+/** Display name for a route: `date - employee group - vehicle name`. */
+export function formatRouteAssignmentName(assignment: RouteAssignment): string {
+  const parts = [
+    formatRouteAssignmentDate(assignment.date),
+    assignment.employeeGroup.name,
+    assignment.vehicle.name,
+  ]
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part) && part !== "—");
+
+  return parts.length > 0 ? parts.join(" - ") : assignment.name.trim() || "—";
+}
+
+/** Default route name on create: `date · employee names · vehicle`. */
+export function buildDefaultRouteAssignmentName(
+  date: string,
+  employeeNames: string,
+  vehicleName: string,
+): string {
+  return [formatRouteAssignmentDate(date), employeeNames, vehicleName]
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part) && part !== "—")
+    .join(" · ");
+}
+
 export function formatEmployeeGroupRefName(group: EmployeeGroup): string {
-  return `${group.employeeGroupId} · ${getEmployeeGroupBranchLabel(group.branch)} · ${group.employeeIds.length} employees`;
+  return `${group.employeeGroupId} · ${getEmployeeGroupBranchLabel(group.branch)} · ${group.employees.length} employees`;
 }
 
 export function getVehicleRefLabel(vehicle: RouteAssignmentVehicleRef): string {

@@ -1,9 +1,18 @@
-import type { EmployeeGroup } from "./types";
+import { getEmployeeById } from "@/lib/employees/mock-data";
+import { getEmployeeFullName } from "@/lib/employees/types";
+import type { EmployeeGroup, EmployeeGroupMember } from "./types";
+
+function toMembers(employeeIds: string[]): EmployeeGroupMember[] {
+  return employeeIds.flatMap((id) => {
+    const employee = getEmployeeById(id);
+    return employee ? [{ id, name: getEmployeeFullName(employee) }] : [];
+  });
+}
 
 export const MOCK_EMPLOYEE_GROUPS: EmployeeGroup[] = [
   {
     employeeGroupId: "egr-001",
-    employeeIds: ["emp-001", "emp-003", "emp-005"],
+    employees: toMembers(["emp-001", "emp-003", "emp-005"]),
     branch: "usa",
     createdAt: "2026-01-10T09:00:00Z",
     createdBy: "Hector Mejia",
@@ -11,7 +20,7 @@ export const MOCK_EMPLOYEE_GROUPS: EmployeeGroup[] = [
   },
   {
     employeeGroupId: "egr-002",
-    employeeIds: ["emp-002", "emp-007"],
+    employees: toMembers(["emp-002", "emp-007"]),
     branch: "dr",
     createdAt: "2026-02-14T11:30:00Z",
     createdBy: "Hector Mejia",
@@ -19,7 +28,7 @@ export const MOCK_EMPLOYEE_GROUPS: EmployeeGroup[] = [
   },
   {
     employeeGroupId: "egr-003",
-    employeeIds: ["emp-004", "emp-008"],
+    employees: toMembers(["emp-004", "emp-008"]),
     branch: "dr",
     createdAt: "2026-03-05T15:45:00Z",
     createdBy: "Admin User",
@@ -27,7 +36,7 @@ export const MOCK_EMPLOYEE_GROUPS: EmployeeGroup[] = [
   },
   {
     employeeGroupId: "egr-004",
-    employeeIds: ["emp-001", "emp-002", "emp-004", "emp-008"],
+    employees: toMembers(["emp-001", "emp-002", "emp-004", "emp-008"]),
     branch: "usa",
     createdAt: "2026-04-18T08:20:00Z",
     createdBy: "Hector Mejia",
@@ -38,7 +47,7 @@ export const MOCK_EMPLOYEE_GROUPS: EmployeeGroup[] = [
 export function cloneEmployeeGroups(): EmployeeGroup[] {
   return MOCK_EMPLOYEE_GROUPS.map((group) => ({
     ...group,
-    employeeIds: [...group.employeeIds],
+    employees: group.employees.map((employee) => ({ ...employee })),
   }));
 }
 

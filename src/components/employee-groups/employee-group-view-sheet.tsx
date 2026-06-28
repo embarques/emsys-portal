@@ -10,77 +10,71 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { getEmployeeById } from "@/lib/employees/mock-data";
-import { getEmployeeBranchLabel } from "@/lib/employees/display";
-import { getEmployeeFullName, getEmployeePortalBranch } from "@/lib/employees/types";
+import { formatAuditDate } from "@/lib/audit/display";
+import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import {
   formatEmployeeGroupDate,
   getEmployeeGroupBranchBadgeClass,
   getEmployeeGroupBranchLabel,
-  truncateEmployeeGroupId,
 } from "@/lib/employee-groups/display";
-import { formatAuditDate } from "@/lib/audit/display";
-import type { EmployeeGroup } from "@/lib/employee-groups/types";
 
 type EmployeeGroupViewSheetProps = {
-  group: EmployeeGroup | null;
+  group: EmployeeGroupOption | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (group: EmployeeGroup) => void;
-  onDelete: (group: EmployeeGroup) => void;
+  onDelete?: (group: EmployeeGroupOption) => void;
 };
 
-export function EmployeeGroupViewSheet({
-  group,
-  open,
-  onOpenChange,
-  onEdit,
-  onDelete,
-}: EmployeeGroupViewSheetProps) {
+export function EmployeeGroupViewSheet({ group, open, onOpenChange, onDelete }: EmployeeGroupViewSheetProps) {
   if (!group) return null;
 
-  const members = group.employeeIds.map((employeeId) => getEmployeeById(employeeId)).filter(Boolean);
+  const members = group.employees;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title="Employee group"
+          title={group.name}
           description={<span className="font-mono text-xs">{group.employeeGroupId}</span>}
           meta={
-            <Badge className={getEmployeeGroupBranchBadgeClass(group.branch)}>
-              {getEmployeeGroupBranchLabel(group.branch)}
-            </Badge>
+            group.branch ? (
+              <Badge className={getEmployeeGroupBranchBadgeClass(group.branch)}>
+                {getEmployeeGroupBranchLabel(group.branch)}
+              </Badge>
+            ) : null
           }
         />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Group">
-            <RecordViewSheetDetailRow label="Group ID" value={truncateEmployeeGroupId(group.employeeGroupId)} />
-            <RecordViewSheetDetailRow label="Branch" value={getEmployeeGroupBranchLabel(group.branch)} />
-            <RecordViewSheetDetailRow label="Date created" value={formatEmployeeGroupDate(group.createdAt)} />
-            <RecordViewSheetDetailRow label="User created" value={group.createdBy} />
-            <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(group.updatedAt)} />
-            <RecordViewSheetDetailRow label="Employees" value={group.employeeIds.length} />
+            <RecordViewSheetDetailRow label="Name" value={group.name} />
+            {group.branch ? (
+              <RecordViewSheetDetailRow label="Branch" value={getEmployeeGroupBranchLabel(group.branch)} />
+            ) : null}
+            <RecordViewSheetDetailRow label="Employees" value={group.employees.length} />
+            {group.createdAt ? (
+              <RecordViewSheetDetailRow label="Date created" value={formatEmployeeGroupDate(group.createdAt)} />
+            ) : null}
+            {group.createdBy ? (
+              <RecordViewSheetDetailRow label="User created" value={group.createdBy} />
+            ) : null}
+            {group.updatedAt ? (
+              <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(group.updatedAt)} />
+            ) : null}
+            {group.updatedBy ? (
+              <RecordViewSheetDetailRow label="User modified" value={group.updatedBy} />
+            ) : null}
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={`Members (${members.length})`} padding="relaxed">
             {members.length > 0 ? (
               <ul className="space-y-3">
-                {members.map((employee) => (
+                {members.map((member) => (
                   <li
-                    key={employee!.id}
+                    key={member.id}
                     className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-background/60 px-4 py-3"
                   >
-                    <div className="min-w-0">
-                      <p className="font-medium">{getEmployeeFullName(employee!)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {employee!.department} · {employee!.title}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="shrink-0">
-                      {getEmployeeBranchLabel(getEmployeePortalBranch(employee!))}
-                    </Badge>
+                    <p className="font-medium">{member.name}</p>
                   </li>
                 ))}
               </ul>
@@ -90,7 +84,9 @@ export function EmployeeGroupViewSheet({
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
-        <RecordViewSheetActions editLabel="Edit group" onEdit={() => onEdit(group)} onDelete={() => onDelete(group)} />
+        {onDelete ? (
+          <RecordViewSheetActions deleteLabel="Delete group" onDelete={() => onDelete(group)} />
+        ) : null}
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

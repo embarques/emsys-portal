@@ -41,9 +41,35 @@ export function computeContainerKpis(containers: Container[]) {
     return new Date(`${arrival}T23:59:59`) >= new Date();
   }).length;
 
+  const now = new Date();
+  const oneMonthAgo = new Date(now);
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const oneYearAgo = new Date(now);
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  let departedPastMonth = 0;
+  let departedPastYear = 0;
+
+  for (const container of containers) {
+    const departure = toFormDate(container.departureDate);
+    if (!departure) continue;
+
+    const departedAt = new Date(`${departure}T12:00:00`);
+    if (departedAt > now) continue;
+
+    if (departedAt >= oneYearAgo) {
+      departedPastYear += 1;
+      if (departedAt >= oneMonthAgo) {
+        departedPastMonth += 1;
+      }
+    }
+  }
+
   return {
     total: containers.length,
     inTransit,
     totalCost,
+    departedPastMonth,
+    departedPastYear,
   };
 }

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cloneEmployeeGroups } from "@/lib/employee-groups/mock-data";
 import {
+  buildDefaultRouteAssignmentName,
   formatEmployeeGroupRefName,
   formatRouteAssignmentCopyLabel,
 } from "@/lib/route-assignments/display";
@@ -47,12 +48,29 @@ export function RouteAssignmentForm({
     initialValues ?? createEmptyRouteAssignmentForm(),
   );
   const [copyFromId, setCopyFromId] = useState("");
+  const [nameEdited, setNameEdited] = useState(isEditing);
   const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyRouteAssignmentForm());
     setCopyFromId("");
-  }, [initialValues]);
+    setNameEdited(isEditing);
+  }, [initialValues, isEditing]);
+
+  const defaultName = useMemo(() => {
+    const selectedGroup = employeeGroups.find(
+      (group) => group.employeeGroupId === values.employeeGroup.id,
+    );
+    const employeeNames =
+      selectedGroup?.employees.map((employee) => employee.name).filter(Boolean).join(", ") ?? "";
+
+    return buildDefaultRouteAssignmentName(values.date, employeeNames, values.vehicle.name);
+  }, [employeeGroups, values.employeeGroup.id, values.date, values.vehicle.name]);
+
+  useEffect(() => {
+    if (nameEdited) return;
+    setValues((current) => (current.name === defaultName ? current : { ...current, name: defaultName }));
+  }, [defaultName, nameEdited]);
 
   function updateField<K extends keyof RouteAssignmentFormValues>(key: K, value: RouteAssignmentFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -81,6 +99,7 @@ export function RouteAssignmentForm({
     const source = copySources.find((assignment) => assignment.routeAssignmentId === sourceId);
     if (!source) return;
 
+    setNameEdited(true);
     setValues(copyRouteAssignmentFormValues(source, values.createdBy));
   }
 
@@ -140,7 +159,10 @@ export function RouteAssignmentForm({
               <Input
                 id="name"
                 value={values.name}
-                onChange={(event) => updateField("name", event.target.value)}
+                onChange={(event) => {
+                  setNameEdited(true);
+                  updateField("name", event.target.value);
+                }}
                 placeholder="Brooklyn morning run"
                 required
               />
@@ -160,18 +182,15 @@ export function RouteAssignmentForm({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="vehicleId">
-                Vehicle <span className="text-destructive">*</span>
-              </Label>
+              <Label htmlFor="vehicleId">Vehicle</Label>
               <SearchableSelect
                 id="vehicleId"
                 value={values.vehicle.id}
                 onValueChange={handleVehicleChange}
                 placeholder="Select a vehicle"
                 searchPlaceholder="Search vehicles…"
-                required
                 options={[
-                  { value: "", label: "Select a vehicle" },
+                  { value: "", label: "No vehicle" },
                   ...vehicles.map((vehicle) => ({
                     value: vehicle.id,
                     label: `${vehicle.name} · ${getBranchLabel(vehicle.branch)}`,

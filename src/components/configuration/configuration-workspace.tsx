@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -87,9 +87,10 @@ export function ConfigurationWorkspace() {
             <CardDescription>Choose how the dashboard looks on this device.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               {CONFIGURATION_THEMES.map((option) => {
-                const Icon = option.value === "dark" ? Moon : Sun;
+                const Icon =
+                  option.value === "dark" ? Moon : option.value === "system" ? Monitor : Sun;
                 const isSelected = values.theme === option.value;
 
                 return (
@@ -124,7 +125,9 @@ export function ConfigurationWorkspace() {
             </div>
             {mounted ? (
               <p className="mt-3 text-xs text-muted-foreground">
-                Current theme: {values.theme === "dark" ? "Dark" : "Light"}
+                Current theme:{" "}
+                {CONFIGURATION_THEMES.find((option) => option.value === values.theme)?.label ??
+                  "Light"}
               </p>
             ) : null}
           </CardContent>

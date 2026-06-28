@@ -1,6 +1,12 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import {
   createEmployee,
@@ -15,6 +21,7 @@ import { EMPLOYEE_TABLE_FILTER_FIELDS } from "@/lib/employees/filter-fields";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import {
   DEFAULT_EMPLOYEE_LIST_PARAMS,
+  EMPLOYEE_PORTAL_BRANCHES,
   type EmployeeFormValues,
   type EmployeeListParams,
   type EmployeeSearchFilter,
@@ -79,12 +86,35 @@ export function useEmployeeStats() {
     queryFn: () => fetchEmployees({ page: 1, limit: 1, active: false }),
   });
 
+  const branchQueries = useQueries({
+    queries: EMPLOYEE_PORTAL_BRANCHES.map((branch) => ({
+      queryKey: queryKeys.employees.stats(`branch:${branch.id}`),
+      queryFn: () => fetchEmployees({ page: 1, limit: 1, branch: branch.id }),
+    })),
+  });
+
+  const branches = EMPLOYEE_PORTAL_BRANCHES.map((branch, index) => ({
+    id: branch.id,
+    portal: branch.portal,
+    label: branch.label,
+    total: branchQueries[index]?.data?.total ?? 0,
+  }));
+
   return {
     total: totalQuery.data?.total ?? 0,
     active: activeQuery.data?.total ?? 0,
     inactive: inactiveQuery.data?.total ?? 0,
-    isLoading: totalQuery.isLoading || activeQuery.isLoading || inactiveQuery.isLoading,
-    isError: totalQuery.isError || activeQuery.isError || inactiveQuery.isError,
+    branches,
+    isLoading:
+      totalQuery.isLoading ||
+      activeQuery.isLoading ||
+      inactiveQuery.isLoading ||
+      branchQueries.some((query) => query.isLoading),
+    isError:
+      totalQuery.isError ||
+      activeQuery.isError ||
+      inactiveQuery.isError ||
+      branchQueries.some((query) => query.isError),
   };
 }
 

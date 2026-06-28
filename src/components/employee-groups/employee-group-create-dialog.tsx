@@ -1,17 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Search } from "lucide-react";
+import { Building2, Users } from "lucide-react";
 import { z } from "zod";
 
-import { FormFooter } from "@/components/forms/form-shell";
+import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -28,7 +27,7 @@ import { DEFAULT_EMPLOYEE_LIST_PARAMS, getEmployeePortalBranch } from "@/lib/emp
 import { cn } from "@/lib/utils";
 
 const employeeGroupCreateSchema = z.object({
-  name: z.string().trim().min(1, "Group name is required."),
+  name: z.string().trim().min(1, "Enter a group name."),
   branch: z.enum(["usa", "dr"]),
   employees: z
     .array(z.object({ id: z.number().int().positive(), name: z.string().trim().min(1) }))
@@ -49,6 +48,14 @@ const defaultValues: EmployeeGroupCreateValues = {
   employees: [],
 };
 
+/** Group name is derived from its members (e.g. "John Doe, Jane Smith"). */
+function buildEmployeeGroupName(employees: { name: string }[]): string {
+  return employees
+    .map((employee) => employee.name.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
 export function EmployeeGroupCreateDialog({
   open,
   onOpenChange,
@@ -56,6 +63,7 @@ export function EmployeeGroupCreateDialog({
 }: EmployeeGroupCreateDialogProps) {
   const [employeeQuery, setEmployeeQuery] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [nameEdited, setNameEdited] = useState(false);
   const debouncedEmployeeQuery = useDebouncedValue(employeeQuery, 300).trim();
   const employeesQuery = useEmployees({
     ...DEFAULT_EMPLOYEE_LIST_PARAMS,
@@ -63,11 +71,12 @@ export function EmployeeGroupCreateDialog({
     active: true,
   });
   const employeeSearch = useEmployeeSearch(
-    debouncedEmployeeQuery ? { value: debouncedEmployeeQuery } : undefined,
+    debouncedEmployeeQuery
+      ? { field: "name", operator: "contains", value: debouncedEmployeeQuery }
+      : undefined,
   );
   const createGroup = useCreateEmployeeGroup();
   const {
-    register,
     handleSubmit,
     setValue,
     watch,
@@ -79,6 +88,14 @@ export function EmployeeGroupCreateDialog({
   });
   const selectedEmployees = watch("employees");
   const branch = watch("branch");
+  const name = watch("name");
+
+  const derivedName = useMemo(() => buildEmployeeGroupName(selectedEmployees), [selectedEmployees]);
+
+  useEffect(() => {
+    if (nameEdited) return;
+    setValue("name", derivedName, { shouldValidate: true });
+  }, [derivedName, nameEdited, setValue]);
 
   const employees = useMemo(() => {
     const merged = new Map<number, { id: number; name: string; title: string; branch: string }>();
@@ -96,14 +113,15 @@ export function EmployeeGroupCreateDialog({
           branch: getEmployeeBranchLabel(getEmployeePortalBranch(employee)),
         }),
       );
-    selectedEmployees.forEach((employee) =>
+    selectedEmployees.forEach((employee) => {
+      if (merged.has(employee.id)) return;
       merged.set(employee.id, {
         id: employee.id,
         name: employee.name,
-        title: "Selected",
+        title: "",
         branch: "",
-      }),
-    );
+      });
+    });
     return Array.from(merged.values());
   }, [debouncedEmployeeQuery, employeeSearch.data?.items, employeesQuery.data?.items, selectedEmployees]);
 
@@ -112,6 +130,7 @@ export function EmployeeGroupCreateDialog({
       reset(defaultValues);
       setEmployeeQuery("");
       setSubmitError(null);
+      setNameEdited(false);
     }
     onOpenChange(nextOpen);
   }
@@ -129,7 +148,11 @@ export function EmployeeGroupCreateDialog({
   const submit = handleSubmit(async (values) => {
     setSubmitError(null);
     try {
-      const group = await createGroup.mutateAsync(values);
+      const group = await createGroup.mutateAsync({
+        name: values.name.trim() || buildEmployeeGroupName(values.employees),
+        branch: values.branch,
+        employees: values.employees,
+      });
       onCreated(group);
       handleDialogChange(false);
     } catch (error) {
@@ -145,77 +168,85 @@ export function EmployeeGroupCreateDialog({
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        <DialogHeader className="border-b px-6 py-4">
+        <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
           <DialogTitle>Create employee group</DialogTitle>
-          <DialogDescription>
-            Create a crew and assign it to the delivery without leaving this form.
-          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="new-employee-group-name">Group name</Label>
-                <Input
-                  id="new-employee-group-name"
-                  placeholder="Delivery crew A"
-                  autoFocus
-                  {...register("name")}
-                />
-                {errors.name ? <p className="text-xs text-destructive">{errors.name.message}</p> : null}
-              </div>
+          <FormBody>
+            <FormSection icon={Building2} title="Group">
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="new-employee-group-name">
+                    Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="new-employee-group-name"
+                    value={name}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setNameEdited(value.trim().length > 0);
+                      setValue("name", value, { shouldDirty: true, shouldValidate: true });
+                    }}
+                    placeholder="Auto-filled from selected employees"
+                  />
+                  {errors.name ? (
+                    <p className="text-xs text-destructive">{errors.name.message}</p>
+                  ) : null}
+                </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="new-employee-group-branch">Branch</Label>
-                <SearchableSelect
-                  id="new-employee-group-branch"
-                  value={branch}
-                  onValueChange={(value) =>
-                    setValue("branch", value as EmployeeGroupCreateValues["branch"], {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })
-                  }
-                  searchable={false}
-                  options={[
-                    { value: "usa", label: "USA" },
-                    { value: "dr", label: "Dominican Republic" },
-                  ]}
-                />
-              </div>
-            </div>
+                <div className="space-y-1">
+                  <Label>Selected employees</Label>
+                  <div className="flex h-9 items-center rounded-md border bg-muted/20 px-3 text-sm">
+                    {selectedEmployees.length} selected
+                  </div>
+                </div>
 
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between gap-3">
-                <Label htmlFor="new-employee-group-search">Employees</Label>
-                <Badge variant="secondary">{selectedEmployees.length} selected</Badge>
+                <div className="space-y-1">
+                  <Label htmlFor="new-employee-group-branch">
+                    Branch <span className="text-destructive">*</span>
+                  </Label>
+                  <SearchableSelect
+                    id="new-employee-group-branch"
+                    value={branch}
+                    onValueChange={(value) =>
+                      setValue("branch", value as EmployeeGroupCreateValues["branch"], {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    searchable={false}
+                    options={[
+                      { value: "usa", label: "USA" },
+                      { value: "dr", label: "Dominican Republic" },
+                    ]}
+                  />
+                </div>
               </div>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            </FormSection>
+
+            <FormSection icon={Users} title="Members" required>
+              <div className="space-y-2.5">
                 <Input
                   id="new-employee-group-search"
                   value={employeeQuery}
                   onChange={(event) => setEmployeeQuery(event.target.value)}
-                  placeholder="Search employees…"
-                  className="pl-9"
+                  placeholder="Search employees by name or role..."
                 />
-              </div>
 
-              <div className="max-h-72 overflow-y-auto rounded-xl border p-2">
-                {employeeLoading && employees.length === 0 ? (
-                  <p className="px-3 py-8 text-center text-sm text-muted-foreground">Loading employees…</p>
-                ) : employees.length === 0 ? (
-                  <p className="px-3 py-8 text-center text-sm text-muted-foreground">No employees found.</p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {employees.map((employee) => {
+                <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border p-3">
+                  {employeeLoading && employees.length === 0 ? (
+                    <p className="px-2 py-6 text-center text-sm text-muted-foreground">Loading employees…</p>
+                  ) : employees.length === 0 ? (
+                    <p className="px-2 py-6 text-center text-sm text-muted-foreground">No employees found.</p>
+                  ) : (
+                    employees.map((employee) => {
                       const checked = selectedEmployees.some((entry) => entry.id === employee.id);
                       return (
                         <label
                           key={employee.id}
                           className={cn(
-                            "flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5",
+                            "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
                             checked ? "border-primary bg-primary/5" : "hover:bg-muted/30",
                           )}
                         >
@@ -228,25 +259,30 @@ export function EmployeeGroupCreateDialog({
                                 event.target.checked,
                               )
                             }
-                            className="mt-0.5 size-4 rounded border-input"
+                            className="mt-1 size-4 rounded border-input"
                           />
-                          <span className="min-w-0 flex-1">
-                            <span className="font-medium">{employee.name}</span>
-                            <span className="mt-0.5 block text-xs text-muted-foreground">
-                              {[employee.title, employee.branch].filter(Boolean).join(" · ")}
-                            </span>
-                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium">{employee.name}</span>
+                              {employee.title ? (
+                                <Badge variant="outline">{employee.title}</Badge>
+                              ) : null}
+                            </div>
+                            {employee.branch ? (
+                              <p className="mt-1 text-xs text-muted-foreground">{employee.branch}</p>
+                            ) : null}
+                          </div>
                         </label>
                       );
-                    })}
-                  </div>
-                )}
+                    })
+                  )}
+                </div>
+                {errors.employees ? (
+                  <p className="text-xs text-destructive">{errors.employees.message}</p>
+                ) : null}
               </div>
-              {errors.employees ? (
-                <p className="text-xs text-destructive">{errors.employees.message}</p>
-              ) : null}
-            </div>
-          </div>
+            </FormSection>
+          </FormBody>
 
           <FormFooter
             error={submitError}

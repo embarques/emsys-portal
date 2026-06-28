@@ -3,9 +3,14 @@ import { createRandomId } from "@/lib/utils/id";
 
 export type EmployeeGroupBranch = "usa" | "dr";
 
+export type EmployeeGroupMember = {
+  id: string;
+  name: string;
+};
+
 export type EmployeeGroup = {
   employeeGroupId: string;
-  employeeIds: string[];
+  employees: EmployeeGroupMember[];
   branch: EmployeeGroupBranch;
   createdAt: string;
   createdBy: string;
@@ -14,7 +19,7 @@ export type EmployeeGroup = {
 
 export type EmployeeGroupFormValues = {
   employeeGroupId: string;
-  employeeIds: string[];
+  employees: EmployeeGroupMember[];
   branch: EmployeeGroupBranch;
   createdBy: string;
 };
@@ -36,7 +41,7 @@ export function createEmployeeGroupId(): string {
 export function createEmptyEmployeeGroupForm(createdBy = DEFAULT_CREATED_BY): EmployeeGroupFormValues {
   return {
     employeeGroupId: createEmployeeGroupId(),
-    employeeIds: [],
+    employees: [],
     branch: "usa",
     createdBy,
   };
@@ -45,7 +50,7 @@ export function createEmptyEmployeeGroupForm(createdBy = DEFAULT_CREATED_BY): Em
 export function employeeGroupToFormValues(group: EmployeeGroup): EmployeeGroupFormValues {
   return {
     employeeGroupId: group.employeeGroupId,
-    employeeIds: [...group.employeeIds],
+    employees: group.employees.map((employee) => ({ ...employee })),
     branch: group.branch,
     createdBy: group.createdBy,
   };
@@ -56,13 +61,13 @@ export function formValuesToEmployeeGroup(
   createdAt?: string,
   updatedAt?: string
 ): EmployeeGroup {
-  if (values.employeeIds.length === 0) {
+  if (values.employees.length === 0) {
     throw new Error("At least one employee is required.");
   }
 
   return {
     employeeGroupId: values.employeeGroupId,
-    employeeIds: values.employeeIds,
+    employees: values.employees,
     branch: values.branch,
     createdAt: createdAt ?? new Date().toISOString(),
     createdBy: values.createdBy.trim() || DEFAULT_CREATED_BY,

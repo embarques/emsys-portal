@@ -7,6 +7,7 @@ import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   VEHICLE_FUEL_TYPES,
   createEmptyVehicleForm,
@@ -92,20 +93,14 @@ export function VehicleForm({
 
               <div className="space-y-1">
                 <Label htmlFor="fuelType">Fuel type</Label>
-                <Input
+                <SearchableSelect
                   id="fuelType"
-                  list="vehicle-fuel-types"
                   value={values.fuelType}
-                  onChange={(event) => updateField("fuelType", event.target.value)}
-                  placeholder="diesel"
+                  onValueChange={(next) => updateField("fuelType", next)}
+                  placeholder="Select fuel type"
+                  searchPlaceholder="Search fuel types…"
+                  options={VEHICLE_FUEL_TYPES}
                 />
-                <datalist id="vehicle-fuel-types">
-                  {VEHICLE_FUEL_TYPES.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </datalist>
               </div>
             </div>
           </div>

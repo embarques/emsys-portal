@@ -159,10 +159,6 @@ export function formValuesToRouteAssignment(
   updatedAt?: string,
   id?: string,
 ): RouteAssignment {
-  if (!values.vehicle.id.trim()) {
-    throw new Error("A vehicle is required.");
-  }
-
   if (!values.employeeGroup.id.trim()) {
     throw new Error("An employee group is required.");
   }

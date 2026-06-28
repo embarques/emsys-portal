@@ -1,10 +1,11 @@
 "use client";
 
-import { Laptop, Moon, Sun } from "lucide-react";
+import { Check, Laptop, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,8 +17,14 @@ import {
 import { updateConfigurationTheme } from "@/lib/configuration/store";
 import type { ThemePreference } from "@/lib/configuration/types";
 
+const THEME_OPTIONS: { value: ThemePreference | "system"; label: string; icon: typeof Sun }[] = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Laptop },
+];
+
 export function ThemeToggle() {
-  const { setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => setMounted(true), []);
@@ -42,15 +49,22 @@ export function ThemeToggle() {
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuLabel>Theme</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => applyTheme("light")}>
-          <Sun className="mr-2 h-4 w-4" /> Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => applyTheme("dark")}>
-          <Moon className="mr-2 h-4 w-4" /> Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => applyTheme("system")}>
-          <Laptop className="mr-2 h-4 w-4" /> System
-        </DropdownMenuItem>
+        {THEME_OPTIONS.map((option) => {
+          const OptionIcon = option.icon;
+          const isActive = mounted && theme === option.value;
+          return (
+            <DropdownMenuItem
+              key={option.value}
+              onSelect={() => applyTheme(option.value)}
+              className="justify-between"
+            >
+              <span className="flex items-center">
+                <OptionIcon className="mr-2 h-4 w-4" /> {option.label}
+              </span>
+              <Check className={cn("h-4 w-4", isActive ? "opacity-100" : "opacity-0")} />
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
