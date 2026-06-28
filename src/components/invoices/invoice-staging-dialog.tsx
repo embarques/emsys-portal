@@ -364,21 +364,29 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
     if (selected.length === 0) return;
 
-    const invoiceIds = Array.from(new Set(selected.map((label) => label.invoiceId).filter(Boolean)));
-    if (invoiceIds.length === 0) {
-      notifyError("Selected labels are missing an invoice reference to print.");
+    const barcodeNumbers = Array.from(
+      new Set(
+        selected
+          .map((label) => label.number.trim())
+          .filter((number) => number.length > 0),
+      ),
+    );
+
+    if (barcodeNumbers.length === 0) {
+      notifyError("Selected labels are missing barcode numbers to print.");
       return;
     }
 
     try {
       const { url } = await generateLabelReportMutation.mutateAsync({
         type: "label",
-        collection: "invoices",
-        values: invoiceIds,
-        lookupField: "id",
+        collection: "barcodes",
+        values: barcodeNumbers,
+        lookupField: "number",
+        expiresInHours: 24,
       });
       window.open(url, "_blank", "noopener,noreferrer");
-      notifySuccess(`Labels ready for ${invoiceIds.length} invoice(s).`);
+      notifySuccess(`Labels ready for ${barcodeNumbers.length} barcode(s).`);
     } catch (error) {
       notifyError(normalizeApiError(error).message);
     }
