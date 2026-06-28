@@ -209,19 +209,19 @@ export function ContainersWorkspace() {
     {
       label: "Departed (past month)",
       value: kpiQuery.isLoading ? "…" : kpis.departedPastMonth.toString(),
-      description: "Containers departed in the last 30 days",
+      description: undefined,
       icon: Ship,
     },
     {
       label: "Departed (past 90 days)",
       value: kpiQuery.isLoading ? "…" : kpis.departedPast90Days.toString(),
-      description: "Containers departed in the last 90 days",
+      description: undefined,
       icon: CalendarClock,
     },
     {
       label: "Departed (past year)",
       value: kpiQuery.isLoading ? "…" : kpis.departedPastYear.toString(),
-      description: "Containers departed in the last 12 months",
+      description: undefined,
       icon: CalendarRange,
     },
   ];
@@ -343,7 +343,9 @@ export function ContainersWorkspace() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
-                <CardDescription className="mt-1">{stat.description}</CardDescription>
+                {stat.description ? (
+                  <CardDescription className="mt-1">{stat.description}</CardDescription>
+                ) : null}
               </CardContent>
             </Card>
           );
