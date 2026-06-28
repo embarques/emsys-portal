@@ -338,6 +338,7 @@ export function OrdersWorkspace() {
       id: "user",
       label: "createdBy",
       sortField: "createdBy.name",
+      cellClassName: "text-muted-foreground",
       renderCell: (order) => formatUserSummary(order.user),
     },
     {

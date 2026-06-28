@@ -40,10 +40,6 @@ import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatRouteAssignmentDate,
   formatRouteAssignmentName,
-  getEmployeeGroupRefLabel,
-  getVehicleRefLabel,
-  truncateObjectId,
-  truncateRouteAssignmentId,
 } from "@/lib/route-assignments/display";
 import {
   useCreateRouteAssignment,
@@ -203,24 +199,6 @@ export function RouteAssignmentsWorkspace() {
 
   const tableColumns: DataTableColumn<RouteAssignment>[] = [
     {
-      id: "id",
-      label: "Assignment ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (assignment) => truncateObjectId(assignment.id),
-    },
-    {
-      id: "routeAssignmentId",
-      label: "routeAssignmentId",
-      cellClassName: "font-mono text-xs",
-      renderCell: (assignment) => truncateRouteAssignmentId(assignment.routeAssignmentId),
-    },
-    {
-      id: "name",
-      label: "name",
-      cellClassName: "font-medium",
-      renderCell: (assignment) => formatRouteAssignmentName(assignment),
-    },
-    {
       id: "date",
       label: "date",
       renderCell: (assignment) => (
@@ -231,26 +209,10 @@ export function RouteAssignmentsWorkspace() {
       ),
     },
     {
-      id: "vehicle.id",
-      label: "vehicle.id",
-      cellClassName: "font-mono text-xs",
-      renderCell: (assignment) => assignment.vehicle.id || "—",
-    },
-    {
-      id: "vehicle.name",
-      label: "vehicle.name",
-      renderCell: (assignment) => assignment.vehicle.name || "—",
-    },
-    {
-      id: "vehicle",
-      label: "vehicle",
-      renderCell: (assignment) => getVehicleRefLabel(assignment.vehicle),
-    },
-    {
-      id: "employeeGroup.id",
-      label: "employeeGroup.id",
-      cellClassName: "font-mono text-xs",
-      renderCell: (assignment) => assignment.employeeGroup.id || "—",
+      id: "name",
+      label: "name",
+      cellClassName: "font-medium",
+      renderCell: (assignment) => formatRouteAssignmentName(assignment),
     },
     {
       id: "employeeGroup.name",
@@ -258,9 +220,9 @@ export function RouteAssignmentsWorkspace() {
       renderCell: (assignment) => assignment.employeeGroup.name || "—",
     },
     {
-      id: "employeeGroup",
-      label: "employeeGroup",
-      renderCell: (assignment) => getEmployeeGroupRefLabel(assignment.employeeGroup),
+      id: "vehicle.name",
+      label: "vehicle.name",
+      renderCell: (assignment) => assignment.vehicle.name || "—",
     },
     {
       id: "createdAt",
@@ -272,6 +234,7 @@ export function RouteAssignmentsWorkspace() {
     {
       id: "createdBy",
       label: "createdBy",
+      cellClassName: "text-muted-foreground",
       renderCell: (assignment) => assignment.createdBy || "—",
     },
     {
@@ -282,7 +245,7 @@ export function RouteAssignmentsWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("route-assignments", tableColumns);
+  const columnVisibility = useColumnVisibility("route-assignments-v2", tableColumns);
   const hasActiveFilters = Boolean(filters.query.trim());
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: hasActiveFilters,

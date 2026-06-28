@@ -179,14 +179,14 @@ export function SearchableSelect({
 
   const ChevronIcon = open ? ChevronUp : ChevronDown;
 
-  const optionItems = options.map((option) => {
+  const optionItems = options.map((option, index) => {
     const detailLines = [option.description, ...(option.descriptionLines ?? [])].filter(
       (line): line is string => Boolean(line && line.trim()),
     );
 
     return (
       <CommandItem
-        key={option.value}
+        key={`${option.value}-${index}`}
         value={option.value}
         keywords={[option.label, ...(option.keywords ?? [])]}
         disabled={option.disabled}

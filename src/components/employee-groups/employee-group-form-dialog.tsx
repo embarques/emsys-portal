@@ -20,12 +20,16 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
-import { useCreateEmployeeGroup } from "@/lib/employee-groups/hooks/use-employee-groups";
+import {
+  useCreateEmployeeGroup,
+  useUpdateEmployeeGroup,
+} from "@/lib/employee-groups/hooks/use-employee-groups";
 import { useEmployeeSearch, useEmployees } from "@/lib/employees/hooks/use-employees";
 import { DEFAULT_EMPLOYEE_LIST_PARAMS, getEmployeePortalBranch } from "@/lib/employees/types";
+import { getVehiclePortalBranch } from "@/lib/vehicles/types";
 import { cn } from "@/lib/utils";
 
-const employeeGroupCreateSchema = z.object({
+const employeeGroupFormSchema = z.object({
   name: z.string().trim().min(1, "Enter a group name."),
   branch: z.enum(["usa", "dr"]),
   employees: z
@@ -33,15 +37,18 @@ const employeeGroupCreateSchema = z.object({
     .min(1, "Select at least one employee."),
 });
 
-type EmployeeGroupCreateValues = z.infer<typeof employeeGroupCreateSchema>;
+type EmployeeGroupFormValues = z.infer<typeof employeeGroupFormSchema>;
 
-type EmployeeGroupCreateDialogProps = {
+type EmployeeGroupFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated: (group: EmployeeGroupOption) => void;
+  /** When provided, the dialog edits this group; otherwise it creates a new one. */
+  group?: EmployeeGroupOption | null;
+  onCreated?: (group: EmployeeGroupOption) => void;
+  onUpdated?: (group: EmployeeGroupOption) => void;
 };
 
-const defaultValues: EmployeeGroupCreateValues = {
+const defaultValues: EmployeeGroupFormValues = {
   name: "",
   branch: "usa",
   employees: [],
@@ -55,11 +62,22 @@ function buildEmployeeGroupName(employees: { name: string }[]): string {
     .join(", ");
 }
 
-export function EmployeeGroupCreateDialog({
+function groupToFormValues(group: EmployeeGroupOption): EmployeeGroupFormValues {
+  return {
+    name: group.name,
+    branch: getVehiclePortalBranch(group.branch ?? "") === "dr" ? "dr" : "usa",
+    employees: group.employees.map((employee) => ({ id: employee.id, name: employee.name })),
+  };
+}
+
+export function EmployeeGroupFormDialog({
   open,
   onOpenChange,
+  group,
   onCreated,
-}: EmployeeGroupCreateDialogProps) {
+  onUpdated,
+}: EmployeeGroupFormDialogProps) {
+  const isEditing = Boolean(group);
   const [employeeQuery, setEmployeeQuery] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [nameEdited, setNameEdited] = useState(false);
@@ -75,19 +93,34 @@ export function EmployeeGroupCreateDialog({
       : undefined,
   );
   const createGroup = useCreateEmployeeGroup();
+  const updateGroup = useUpdateEmployeeGroup();
   const {
     handleSubmit,
     setValue,
     watch,
     reset,
     formState: { errors },
-  } = useForm<EmployeeGroupCreateValues>({
-    resolver: zodResolver(employeeGroupCreateSchema),
+  } = useForm<EmployeeGroupFormValues>({
+    resolver: zodResolver(employeeGroupFormSchema),
     defaultValues,
   });
   const selectedEmployees = watch("employees");
   const branch = watch("branch");
   const name = watch("name");
+
+  // Reset the form whenever the dialog opens so edit/create modes start clean.
+  useEffect(() => {
+    if (!open) return;
+    if (group) {
+      reset(groupToFormValues(group));
+      setNameEdited(true);
+    } else {
+      reset(defaultValues);
+      setNameEdited(false);
+    }
+    setEmployeeQuery("");
+    setSubmitError(null);
+  }, [open, group, reset]);
 
   const derivedName = useMemo(() => buildEmployeeGroupName(selectedEmployees), [selectedEmployees]);
 
@@ -144,13 +177,20 @@ export function EmployeeGroupCreateDialog({
 
   const submit = handleSubmit(async (values) => {
     setSubmitError(null);
+    const payload = {
+      name: values.name.trim() || buildEmployeeGroupName(values.employees),
+      branch: values.branch,
+      employees: values.employees,
+    };
+
     try {
-      const group = await createGroup.mutateAsync({
-        name: values.name.trim() || buildEmployeeGroupName(values.employees),
-        branch: values.branch,
-        employees: values.employees,
-      });
-      onCreated(group);
+      if (group) {
+        const updated = await updateGroup.mutateAsync({ ...payload, id: group.id });
+        onUpdated?.(updated);
+      } else {
+        const created = await createGroup.mutateAsync(payload);
+        onCreated?.(created);
+      }
       handleDialogChange(false);
     } catch (error) {
       setSubmitError(normalizeApiError(error).message);
@@ -161,12 +201,13 @@ export function EmployeeGroupCreateDialog({
     employeesQuery.isLoading ||
     (Boolean(employeeQuery.trim()) &&
       (employeeQuery.trim() !== debouncedEmployeeQuery || employeeSearch.isFetching));
+  const isSubmitting = createGroup.isPending || updateGroup.isPending;
 
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-          <DialogTitle>Create employee group</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit employee group" : "Create employee group"}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
@@ -174,11 +215,11 @@ export function EmployeeGroupCreateDialog({
             <FormSection icon={Building2} title="Group">
               <div className="grid gap-2.5 sm:grid-cols-2">
                 <div className="space-y-1 sm:col-span-2">
-                  <Label htmlFor="new-employee-group-name">
+                  <Label htmlFor="employee-group-name">
                     Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="new-employee-group-name"
+                    id="employee-group-name"
                     value={name}
                     onChange={(event) => {
                       const value = event.target.value;
@@ -193,14 +234,14 @@ export function EmployeeGroupCreateDialog({
                 </div>
 
                 <div className="space-y-1 sm:col-span-2">
-                  <Label htmlFor="new-employee-group-branch">
+                  <Label htmlFor="employee-group-branch">
                     Branch <span className="text-destructive">*</span>
                   </Label>
                   <SearchableSelect
-                    id="new-employee-group-branch"
+                    id="employee-group-branch"
                     value={branch}
                     onValueChange={(value) => {
-                      setValue("branch", value as EmployeeGroupCreateValues["branch"], {
+                      setValue("branch", value as EmployeeGroupFormValues["branch"], {
                         shouldDirty: true,
                         shouldValidate: true,
                       });
@@ -223,7 +264,7 @@ export function EmployeeGroupCreateDialog({
                 </div>
 
                 <Input
-                  id="new-employee-group-search"
+                  id="employee-group-search"
                   value={employeeQuery}
                   onChange={(event) => setEmployeeQuery(event.target.value)}
                   placeholder="Search employees by name or role..."
@@ -276,8 +317,8 @@ export function EmployeeGroupCreateDialog({
 
           <FormFooter
             error={submitError}
-            submitLabel="Create group"
-            isSubmitting={createGroup.isPending}
+            submitLabel={isEditing ? "Save changes" : "Create group"}
+            isSubmitting={isSubmitting}
             onCancel={() => handleDialogChange(false)}
           />
         </form>

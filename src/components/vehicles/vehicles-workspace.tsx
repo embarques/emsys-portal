@@ -267,6 +267,7 @@ export function VehiclesWorkspace() {
       id: "createdBy",
       label: "createdBy",
       defaultVisible: false,
+      cellClassName: "text-muted-foreground",
       renderCell: (vehicle) => vehicle.createdBy || "—",
     },
     {

@@ -1,5 +1,7 @@
 "use client";
 
+import { Info, Users } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
@@ -22,10 +24,11 @@ type EmployeeGroupViewSheetProps = {
   group: EmployeeGroupOption | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: (group: EmployeeGroupOption) => void;
   onDelete?: (group: EmployeeGroupOption) => void;
 };
 
-export function EmployeeGroupViewSheet({ group, open, onOpenChange, onDelete }: EmployeeGroupViewSheetProps) {
+export function EmployeeGroupViewSheet({ group, open, onOpenChange, onEdit, onDelete }: EmployeeGroupViewSheetProps) {
   if (!group) return null;
 
   const members = group.employees;
@@ -48,25 +51,10 @@ export function EmployeeGroupViewSheet({ group, open, onOpenChange, onDelete }: 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Group">
             <RecordViewSheetDetailRow label="Name" value={group.name} />
-            {group.branch ? (
-              <RecordViewSheetDetailRow label="Branch" value={getEmployeeGroupBranchLabel(group.branch)} />
-            ) : null}
             <RecordViewSheetDetailRow label="Employees" value={group.employees.length} />
-            {group.createdAt ? (
-              <RecordViewSheetDetailRow label="Date created" value={formatEmployeeGroupDate(group.createdAt)} />
-            ) : null}
-            {group.createdBy ? (
-              <RecordViewSheetDetailRow label="User created" value={group.createdBy} />
-            ) : null}
-            {group.updatedAt ? (
-              <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(group.updatedAt)} />
-            ) : null}
-            {group.updatedBy ? (
-              <RecordViewSheetDetailRow label="User modified" value={group.updatedBy} />
-            ) : null}
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title={`Members (${members.length})`} padding="relaxed">
+          <RecordViewSheetSection title={`Members (${members.length})`} icon={Users} padding="relaxed">
             {members.length > 0 ? (
               <ul className="space-y-3">
                 {members.map((member) => (
@@ -82,10 +70,33 @@ export function EmployeeGroupViewSheet({ group, open, onOpenChange, onDelete }: 
               <p className="text-sm text-muted-foreground">No employees assigned.</p>
             )}
           </RecordViewSheetSection>
+
+          <RecordViewSheetSection title="System information" icon={Info}>
+            {group.branch ? (
+              <RecordViewSheetDetailRow label="Branch" value={getEmployeeGroupBranchLabel(group.branch)} />
+            ) : null}
+            {group.createdAt ? (
+              <RecordViewSheetDetailRow label="Date created" value={formatEmployeeGroupDate(group.createdAt)} />
+            ) : null}
+            {group.createdBy ? (
+              <RecordViewSheetDetailRow label="User created" value={group.createdBy} />
+            ) : null}
+            {group.updatedAt ? (
+              <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(group.updatedAt)} />
+            ) : null}
+            {group.updatedBy ? (
+              <RecordViewSheetDetailRow label="User modified" value={group.updatedBy} />
+            ) : null}
+          </RecordViewSheetSection>
         </RecordViewSheetBody>
 
-        {onDelete ? (
-          <RecordViewSheetActions deleteLabel="Delete group" onDelete={() => onDelete(group)} />
+        {onEdit || onDelete ? (
+          <RecordViewSheetActions
+            editLabel="Edit group"
+            deleteLabel="Delete group"
+            onEdit={onEdit ? () => onEdit(group) : undefined}
+            onDelete={onDelete ? () => onDelete(group) : undefined}
+          />
         ) : null}
       </RecordViewSheetContent>
     </RecordViewSheet>

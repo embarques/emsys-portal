@@ -256,6 +256,7 @@ export function InventoryWorkspace() {
     {
       id: "createdBy",
       label: "User created",
+      cellClassName: "text-muted-foreground",
       renderCell: (item) => item.createdBy,
     },
     {

@@ -7,6 +7,7 @@ import {
   createEmployeeGroup,
   deleteEmployeeGroups,
   fetchEmployeeGroups,
+  updateEmployeeGroup,
   type EmployeeGroupOption,
   type EmployeeGroupSearchFilter,
 } from "@/lib/employee-groups/api/employee-groups-api";
@@ -70,6 +71,29 @@ export function useCreateEmployeeGroup() {
             ...current,
             items: [group, ...current.items],
             total: current.total + 1,
+          };
+        },
+      );
+      await queryClient.invalidateQueries({ queryKey: queryKeys.employeeGroups.all });
+    },
+  });
+}
+
+export function useUpdateEmployeeGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateEmployeeGroup,
+    onSuccess: async (group) => {
+      queryClient.setQueriesData<PaginatedResult<EmployeeGroupOption>>(
+        { queryKey: queryKeys.employeeGroups.lists() },
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            items: current.items.map((item) =>
+              item.id === group.id ? { ...item, ...group } : item,
+            ),
           };
         },
       );

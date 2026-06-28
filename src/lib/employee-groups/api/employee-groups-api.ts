@@ -72,6 +72,10 @@ export type CreateEmployeeGroupInput = {
   employees: { id: number; name: string }[];
 };
 
+export type UpdateEmployeeGroupInput = CreateEmployeeGroupInput & {
+  id: string;
+};
+
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   success?: boolean;
   message?: string;
@@ -194,6 +198,50 @@ export async function createEmployeeGroup(
   }
 
   return group;
+}
+
+export async function updateEmployeeGroup(
+  input: UpdateEmployeeGroupInput,
+): Promise<EmployeeGroupOption> {
+  const id = input.id.trim();
+  if (!id) {
+    throw new Error("A valid employee group id is required to update.");
+  }
+
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.EMPLOYEE_GROUPS}/${id}`,
+    {
+      id,
+      name: input.name.trim(),
+      branch: input.branch,
+      employees: input.employees,
+    },
+  );
+
+  if (response.success === false) {
+    throw new Error(
+      response.message?.trim() || response.error?.trim() || "Unable to update employee group.",
+    );
+  }
+
+  const group = normalizeEmployeeGroup(response.data);
+  if (group) {
+    return group;
+  }
+
+  // Some API responses omit the updated record; fall back to the input shape so
+  // the cache/UI can reflect the change immediately.
+  return {
+    id,
+    employeeGroupId: id,
+    name: input.name.trim(),
+    branch: input.branch || undefined,
+    employees: input.employees.map((employee) => ({ id: employee.id, name: employee.name })),
+    createdAt: "",
+    createdBy: DEFAULT_CREATED_BY,
+    updatedAt: new Date().toISOString(),
+    updatedBy: "",
+  };
 }
 
 export async function deleteEmployeeGroup(employeeGroupId: string): Promise<void> {

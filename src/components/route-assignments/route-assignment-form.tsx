@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useEmployeeGroupPicker } from "@/lib/employee-groups/hooks/use-employee-groups";
-import { getEmployeeGroupBranchLabel } from "@/lib/employee-groups/display";
 import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import {
   buildDefaultRouteAssignmentName,
@@ -27,7 +26,7 @@ import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
 import { getBranchLabel } from "@/lib/vehicles/display";
 
 function formatEmployeeGroupOptionLabel(group: EmployeeGroupOption): string {
-  return `${group.employeeGroupId} · ${getEmployeeGroupBranchLabel(group.branch ?? "")} · ${group.employees.length} employees`;
+  return group.name?.trim() || group.employeeGroupId;
 }
 
 type RouteAssignmentFormProps = {

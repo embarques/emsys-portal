@@ -313,6 +313,7 @@ export function RolesWorkspace() {
     {
       id: "createdBy",
       label: "Created by",
+      cellClassName: "text-muted-foreground",
       renderCell: (role) => role.createdBy || "—",
     },
     {

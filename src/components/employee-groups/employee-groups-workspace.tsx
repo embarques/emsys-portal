@@ -10,7 +10,7 @@ import {
   UsersRound,
 } from "lucide-react";
 
-import { EmployeeGroupCreateDialog } from "@/components/employee-groups/employee-group-create-dialog";
+import { EmployeeGroupFormDialog } from "@/components/employee-groups/employee-group-form-dialog";
 import { EmployeeGroupViewSheet } from "@/components/employee-groups/employee-group-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -89,7 +89,7 @@ function groupMatchesQuery(group: EmployeeGroupOption, query: string): boolean {
 }
 
 export function EmployeeGroupsWorkspace() {
-  const { notifyAdded, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const { data, isLoading, isError, error, isFetching } = useEmployeeGroups(200);
   const deleteGroupsMutation = useDeleteEmployeeGroups();
   const [filters, setFilters] = useState<EmployeeGroupFilterState>(defaultFilters);
@@ -97,6 +97,7 @@ export function EmployeeGroupsWorkspace() {
   const [page, setPage] = useState(1);
   const [viewGroup, setViewGroup] = useState<EmployeeGroupOption | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editGroup, setEditGroup] = useState<EmployeeGroupOption | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<EmployeeGroupOption | EmployeeGroupOption[] | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -215,6 +216,7 @@ export function EmployeeGroupsWorkspace() {
     {
       id: "createdBy",
       label: "createdBy",
+      cellClassName: "text-muted-foreground",
       renderCell: (group) => group.createdBy || "—",
     },
     {
@@ -323,6 +325,10 @@ export function EmployeeGroupsWorkspace() {
           pageRowIds={pageGroups.map((group) => group.id)}
           totalCount={filteredGroups.length}
           onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const group = groups.find((entry) => entry.id === selectedIds[0]);
+            if (group) setEditGroup(group);
+          }}
           onDelete={() => {
             setDeleteError(null);
             setDeleteTarget(groups.filter((group) => selectedIds.includes(group.id)));
@@ -355,6 +361,7 @@ export function EmployeeGroupsWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
             onRowClick={setViewGroup}
+            onRowDoubleClick={setEditGroup}
             emptyState={
               <>
                 <p className="text-muted-foreground">No employee groups match your search.</p>
@@ -407,6 +414,10 @@ export function EmployeeGroupsWorkspace() {
         onOpenChange={(open) => {
           if (!open) setViewGroup(null);
         }}
+        onEdit={(group) => {
+          setViewGroup(null);
+          setEditGroup(group);
+        }}
         onDelete={(group) => {
           setViewGroup(null);
           setDeleteError(null);
@@ -414,10 +425,22 @@ export function EmployeeGroupsWorkspace() {
         }}
       />
 
-      <EmployeeGroupCreateDialog
+      <EmployeeGroupFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
         onCreated={(group) => notifyAdded("Employee group", group.name)}
+      />
+
+      <EmployeeGroupFormDialog
+        open={editGroup !== null}
+        group={editGroup}
+        onOpenChange={(open) => {
+          if (!open) setEditGroup(null);
+        }}
+        onUpdated={(group) => {
+          notifyUpdated("Employee group", group.name);
+          setEditGroup(null);
+        }}
       />
 
       <Dialog

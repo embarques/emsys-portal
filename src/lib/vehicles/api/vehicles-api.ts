@@ -86,7 +86,6 @@ type ApiVehicleWritePayload = {
   registrationDate?: string;
   id?: string;
   createdAt?: string;
-  createdBy?: string;
   updatedAt?: string;
 };
 
@@ -192,9 +191,9 @@ function buildVehicleWritePayload(
       payload.createdAt = values.createdAt.trim();
     }
 
-    if (values.createdBy.trim()) {
-      payload.createdBy = values.createdBy.trim();
-    }
+    // createdBy is a server-managed audit field (core.User on the backend).
+    // We only hold its display name on the client, so we must not send it back
+    // as a string — the API preserves the existing value on its own.
 
     payload.updatedAt = new Date().toISOString();
   }

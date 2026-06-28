@@ -366,6 +366,7 @@ export function CustomersWorkspace() {
     {
       id: "createdByID",
       label: "createdByID",
+      cellClassName: "text-muted-foreground",
       renderCell: (customer) => (customer.createdByID != null ? String(customer.createdByID) : "—"),
     },
     {
