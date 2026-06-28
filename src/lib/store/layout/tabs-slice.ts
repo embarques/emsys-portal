@@ -1,4 +1,4 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, current, type PayloadAction } from "@reduxjs/toolkit";
 
 import {
   WORKSPACE_TABS_STORAGE_KEY,
@@ -56,34 +56,40 @@ function normalizePersistedState(state: Partial<WorkspaceTabsState> | null): Wor
   return normalized;
 }
 
-function writePersistedTabs(state: WorkspaceTabsState) {
-  if (typeof window === "undefined") return;
+function serializeTabsState(state: WorkspaceTabsState): string {
+  const plain = current(state);
   const payload: PersistedWorkspaceTabs = {
-    tabs: state.tabs,
-    activeTabId: state.activeTabId,
-    nextTabNumber: state.nextTabNumber,
+    tabs: plain.tabs.map((tab) => ({ ...tab })),
+    activeTabId: plain.activeTabId,
+    nextTabNumber: plain.nextTabNumber,
   };
-  window.sessionStorage.setItem(WORKSPACE_TABS_STORAGE_KEY, JSON.stringify(payload));
+  return JSON.stringify(payload);
+}
+
+function writePersistedTabs(serialized: string) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(WORKSPACE_TABS_STORAGE_KEY, serialized);
 }
 
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
-let pendingPersistState: WorkspaceTabsState | null = null;
+let pendingPersistPayload: string | null = null;
 
 function flushPendingPersist() {
   if (persistTimer) {
     clearTimeout(persistTimer);
     persistTimer = null;
   }
-  if (pendingPersistState) {
-    writePersistedTabs(pendingPersistState);
-    pendingPersistState = null;
+  if (pendingPersistPayload) {
+    writePersistedTabs(pendingPersistPayload);
+    pendingPersistPayload = null;
   }
 }
 
 function persistTabs(state: WorkspaceTabsState, immediate = false) {
   if (typeof window === "undefined") return;
 
-  pendingPersistState = state;
+  // Serialize synchronously inside the reducer — Immer drafts are revoked after it returns.
+  pendingPersistPayload = serializeTabsState(state);
 
   if (immediate) {
     flushPendingPersist();

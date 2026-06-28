@@ -60,17 +60,17 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
           data-tab-id={tab.id}
           style={colorStyle}
           className={cn(
-            "group mr-1 mt-2 flex min-w-0 max-w-[220px] shrink-0 cursor-default items-center rounded-t-lg border border-b-0 px-3 py-2 text-sm transition",
+            "group mr-1 mt-1.5 flex min-w-0 max-w-[220px] shrink-0 cursor-default items-center rounded-t-lg border px-3 py-2 text-sm transition",
             active
-              ? "border-border text-foreground shadow-sm"
-              : "border-transparent text-muted-foreground hover:text-foreground",
+              ? "relative z-10 -mb-px border-border border-b-background font-medium text-foreground shadow-[0_1px_0_0_var(--background),0_-1px_4px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_0_0_var(--background),0_-1px_4px_rgba(0,0,0,0.25)]"
+              : "mb-0 border-transparent border-b-transparent text-muted-foreground hover:bg-muted/80 hover:text-foreground",
             tab.color
               ? active
-                ? "bg-background/80"
-                : "hover:brightness-[0.98]"
-              : active
                 ? "bg-background"
-                : "bg-muted/60 hover:bg-muted",
+                : "bg-muted/50 hover:brightness-[0.98]"
+              : active
+                ? "border-t-2 border-t-primary bg-background"
+                : "bg-muted/50 hover:bg-muted/70",
           )}
         >
           <button
@@ -79,7 +79,14 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
             onClick={() => onActivate(tab.id)}
             title={`${tab.number} · ${tab.label}`}
           >
-            <span className="mr-1.5 shrink-0 tabular-nums text-muted-foreground">{tab.number}</span>
+            <span
+              className={cn(
+                "mr-1.5 shrink-0 tabular-nums",
+                active ? "font-semibold text-primary" : "text-muted-foreground",
+              )}
+            >
+              {tab.number}
+            </span>
             <span className="truncate">{tab.label}</span>
           </button>
           <button

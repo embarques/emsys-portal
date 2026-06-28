@@ -30,10 +30,11 @@ export function getWorkspaceTabChromeStyle(
   if (!normalized) return undefined;
 
   return {
-    borderTopWidth: 3,
+    borderTopWidth: active ? 4 : 3,
     borderTopColor: normalized,
     backgroundColor: active
-      ? `color-mix(in srgb, ${normalized} 12%, var(--background))`
-      : `color-mix(in srgb, ${normalized} 10%, var(--muted))`,
+      ? `color-mix(in srgb, ${normalized} 20%, var(--background))`
+      : `color-mix(in srgb, ${normalized} 8%, var(--muted))`,
+    boxShadow: active ? "0 1px 0 0 var(--background)" : undefined,
   };
 }
