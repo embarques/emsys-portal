@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormFooter } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -214,9 +215,8 @@ export function AccountingEntryForm({
           <Label htmlFor="date">
             Date <span className="text-destructive">*</span>
           </Label>
-          <Input
+          <DateInput
             id="date"
-            type="date"
             value={values.date}
             onChange={(event) => updateField("date", event.target.value)}
             required
@@ -606,9 +606,8 @@ export function AccountingEntryForm({
               <Label htmlFor="dateCategory">
                 Date <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <DateInput
                 id="dateCategory"
-                type="date"
                 value={values.date}
                 onChange={(event) => updateField("date", event.target.value)}
                 required

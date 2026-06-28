@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -145,9 +146,8 @@ export function ContainerForm({
 
             <div className="space-y-1">
               <Label htmlFor="departureDate">Departure date</Label>
-              <Input
+              <DateInput
                 id="departureDate"
-                type="date"
                 value={values.departureDate}
                 onChange={(event) => updateField("departureDate", event.target.value)}
               />
@@ -155,9 +155,8 @@ export function ContainerForm({
 
             <div className="space-y-1">
               <Label htmlFor="arrivalDate">Arrival date</Label>
-              <Input
+              <DateInput
                 id="arrivalDate"
-                type="date"
                 value={values.arrivalDate}
                 onChange={(event) => updateField("arrivalDate", event.target.value)}
               />

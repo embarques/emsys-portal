@@ -5,7 +5,7 @@ export const VEHICLE_BAR_OR_SEARCH_FIELDS = [
   "vin",
   "fuelType",
   "branch",
-  "createdBy",
+  "createdBy.name",
 ] as const;
 
 export type VehicleBarOrSearchField = (typeof VEHICLE_BAR_OR_SEARCH_FIELDS)[number];

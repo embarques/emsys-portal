@@ -85,7 +85,7 @@ export function vehicleMatchesSearch(vehicle: Vehicle, search: { field: string; 
         return vehicle.fuelType;
       case "branch":
         return vehicle.branch;
-      case "createdBy":
+      case "createdBy.name":
         return vehicle.createdBy;
       default:
         return "";

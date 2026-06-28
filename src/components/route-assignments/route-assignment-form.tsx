@@ -6,13 +6,15 @@ import { ClipboardList, Copy } from "lucide-react";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { cloneEmployeeGroups } from "@/lib/employee-groups/mock-data";
+import { useEmployeeGroupPicker } from "@/lib/employee-groups/hooks/use-employee-groups";
+import { getEmployeeGroupBranchLabel } from "@/lib/employee-groups/display";
+import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import {
   buildDefaultRouteAssignmentName,
-  formatEmployeeGroupRefName,
   formatRouteAssignmentCopyLabel,
 } from "@/lib/route-assignments/display";
 import {
@@ -24,11 +26,17 @@ import {
 import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
 import { getBranchLabel } from "@/lib/vehicles/display";
 
+function formatEmployeeGroupOptionLabel(group: EmployeeGroupOption): string {
+  return `${group.employeeGroupId} · ${getEmployeeGroupBranchLabel(group.branch ?? "")} · ${group.employees.length} employees`;
+}
+
 type RouteAssignmentFormProps = {
   initialValues?: RouteAssignmentFormValues;
   copySources?: RouteAssignment[];
   isEditing?: boolean;
   submitLabel: string;
+  isSubmitting?: boolean;
+  externalError?: string | null;
   onSubmit: (values: RouteAssignmentFormValues) => void;
   onCancel: () => void;
 };
@@ -38,12 +46,15 @@ export function RouteAssignmentForm({
   copySources = [],
   isEditing = false,
   submitLabel,
+  isSubmitting = false,
+  externalError = null,
   onSubmit,
   onCancel,
 }: RouteAssignmentFormProps) {
   const { data: vehiclesData } = useVehiclePicker();
   const vehicles = vehiclesData?.items ?? [];
-  const employeeGroups = useMemo(() => cloneEmployeeGroups(), []);
+  const { data: employeeGroupsData } = useEmployeeGroupPicker();
+  const employeeGroups = employeeGroupsData?.items ?? [];
   const [values, setValues] = useState<RouteAssignmentFormValues>(
     initialValues ?? createEmptyRouteAssignmentForm(),
   );
@@ -59,7 +70,7 @@ export function RouteAssignmentForm({
 
   const defaultName = useMemo(() => {
     const selectedGroup = employeeGroups.find(
-      (group) => group.employeeGroupId === values.employeeGroup.id,
+      (group) => group.id === values.employeeGroup.id,
     );
     const employeeNames =
       selectedGroup?.employees.map((employee) => employee.name).filter(Boolean).join(", ") ?? "";
@@ -85,10 +96,10 @@ export function RouteAssignmentForm({
   }
 
   function handleEmployeeGroupChange(groupId: string) {
-    const group = employeeGroups.find((entry) => entry.employeeGroupId === groupId);
+    const group = employeeGroups.find((entry) => entry.id === groupId);
     updateField("employeeGroup", {
       id: groupId,
-      name: group ? formatEmployeeGroupRefName(group) : "",
+      name: group ? formatEmployeeGroupOptionLabel(group) : "",
     });
   }
 
@@ -136,21 +147,23 @@ export function RouteAssignmentForm({
           </section>
         ) : null}
 
-        <FormSection icon={ClipboardList} title="Assignment">
+        <FormSection icon={ClipboardList} title="Route">
           <div className="grid gap-2.5 sm:grid-cols-2">
-            <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="routeAssignmentId">
-                Assignment number <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="routeAssignmentId"
-                value={values.routeAssignmentId}
-                onChange={(event) => updateField("routeAssignmentId", event.target.value)}
-                placeholder="ras-001"
-                className="font-mono text-xs"
-                required
-              />
-            </div>
+            {isEditing ? (
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="routeAssignmentId">
+                  Assignment number <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="routeAssignmentId"
+                  value={values.routeAssignmentId}
+                  onChange={(event) => updateField("routeAssignmentId", event.target.value)}
+                  placeholder="ras-001"
+                  className="font-mono text-xs"
+                  required
+                />
+              </div>
+            ) : null}
 
             <div className="space-y-1 sm:col-span-2">
               <Label htmlFor="name">
@@ -172,9 +185,8 @@ export function RouteAssignmentForm({
               <Label htmlFor="date">
                 Date <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <DateInput
                 id="date"
-                type="date"
                 value={values.date}
                 onChange={(event) => updateField("date", event.target.value)}
                 required
@@ -199,7 +211,7 @@ export function RouteAssignmentForm({
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 sm:col-span-2">
               <Label htmlFor="employeeGroupId">
                 Employee group <span className="text-destructive">*</span>
               </Label>
@@ -213,8 +225,8 @@ export function RouteAssignmentForm({
                 options={[
                   { value: "", label: "Select an employee group" },
                   ...employeeGroups.map((group) => ({
-                    value: group.employeeGroupId,
-                    label: formatEmployeeGroupRefName(group),
+                    value: group.id,
+                    label: formatEmployeeGroupOptionLabel(group),
                   })),
                 ]}
               />
@@ -223,7 +235,12 @@ export function RouteAssignmentForm({
         </FormSection>
       </FormBody>
 
-      <FormFooter submitLabel={submitLabel} onCancel={onCancel} />
+      <FormFooter
+        submitLabel={submitLabel}
+        isSubmitting={isSubmitting}
+        error={externalError}
+        onCancel={onCancel}
+      />
     </form>
   );
 }

@@ -42,7 +42,7 @@ import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPrimaryPhonesDisplayOrDash } from "@/lib/phones/phones";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatAccountBalance,
   getClientTypeBadgeClass,
@@ -372,13 +372,13 @@ export function CustomersWorkspace() {
       id: "createdAt",
       label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (customer) => (customer.createdAt ? formatAuditDate(customer.createdAt) : "—"),
+      renderCell: (customer) => (customer.createdAt ? formatAuditDateTime(customer.createdAt) : "—"),
     },
     {
       id: "updatedAt",
       label: "updatedAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (customer) => (customer.updatedAt ? formatAuditDate(customer.updatedAt) : "—"),
+      renderCell: (customer) => (customer.updatedAt ? formatAuditDateTime(customer.updatedAt) : "—"),
     },
   ];
 

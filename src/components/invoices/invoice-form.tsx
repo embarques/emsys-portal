@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -57,7 +58,7 @@ import {
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
 import { useItemPicker } from "@/lib/items/hooks/use-items";
-import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
+import { useRouteAssignmentPicker } from "@/lib/route-assignments/hooks/use-route-assignments";
 import { DEFAULT_ORDER_LIST_PARAMS } from "@/lib/orders/types";
 import { useOrders } from "@/lib/orders/hooks/use-orders";
 
@@ -168,7 +169,8 @@ export function InvoiceForm({
   const containers = containersData?.items ?? [];
   const orders = ordersQuery.data?.items ?? [];
   const catalogItems = itemsData?.items ?? [];
-  const routeAssignments = useMemo(() => cloneRouteAssignments(), []);
+  const { data: routeAssignmentsData } = useRouteAssignmentPicker();
+  const routeAssignments = routeAssignmentsData?.items ?? [];
 
   const [values, setValues] = useState<InvoiceFormValues>(initialValues ?? createEmptyInvoiceForm());
   const [formError, setFormError] = useState<string | null>(null);
@@ -389,9 +391,8 @@ export function InvoiceForm({
                 <Label htmlFor="date">
                   Date <span className="text-destructive">*</span>
                 </Label>
-                <Input
+                <DateInput
                   id="date"
-                  type="date"
                   value={values.date}
                   onChange={(event) => updateField("date", event.target.value)}
                   required

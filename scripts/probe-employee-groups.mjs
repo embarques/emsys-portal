@@ -1,24 +1,26 @@
 #!/usr/bin/env node
 /**
- * Probe VEHICLES against the live EMSYS API:
- *   1. CRUD round-trip (LIST → READ → CREATE → READ → UPDATE → DELETE → verify gone)
- *      using a throwaway ZZ Probe Vehicle that is cleaned up afterwards.
+ * Probe EMPLOYEE GROUPS against the live EMSYS API:
+ *   1. CRUD round-trip (LIST → READ → CREATE → READ → UPDATE? → DELETE → verify gone)
+ *      using a throwaway ZZ Probe Group that is cleaned up afterwards.
+ *      NOTE: the app only wires create + delete (no updateEmployeeGroup), so the
+ *      PUT step is probed for information and not relied upon.
  *   2. Advanced-filter matrix run against a SEEDED record so we verify real
- *      matching (not just acceptance): every field × operator via
- *      POST /vehicles/search, plus the OR bar-search across
- *      VEHICLE_BAR_OR_SEARCH_FIELDS. The seeded record is deleted after.
+ *      matching (not just acceptance): field × operator via
+ *      POST /employee-groups/search, plus the OR bar-search across
+ *      [name, employees.name, branch]. The seeded record is deleted after.
  *
- * Mirrors src/lib/vehicles/*: write payload is
- * { name, vin, year(number), fuelType, vehicleId?, branch?, id? }, `year` is the
- * only numeric field (coerced to a JSON number), default sort name:asc, and the
- * documented search capabilities live in VEHICLE_GET_SEARCH_CAPABILITIES.
+ * Mirrors src/lib/employee-groups/*: create payload is
+ * { name, branch, employees: [{ id(number), name }] }, ids are Mongo ObjectId
+ * strings, employees is a nested array, default sort name:asc, and bar search
+ * fans out OR across [name, employees.name, branch].
  *
  * Match expectations (sample value == the seeded record's own value):
  *   INCLUDE ops → expect to match: eq, contains, startsWith, gte, lte
  *   EXCLUDE ops → expect NOT to match: neq, gt, lt
  *
  * Usage:
- *   EMSYS_TOKEN=<firebase-jwt> EMSYS_COMPANY_ID=<id> node scripts/probe-vehicles.mjs
+ *   EMSYS_TOKEN=<firebase-jwt> EMSYS_COMPANY_ID=<id> node scripts/probe-employee-groups.mjs
  */
 
 const baseUrl = (process.env.EMSYS_API_BASE_URL ?? "https://api.embarqueros.com/v1").replace(/\/$/, "");
@@ -36,8 +38,7 @@ const headers = {
   "Content-Type": "application/json",
 };
 const STAMP = Date.now();
-const RESOURCE = "/vehicles";
-const NUMERIC_FIELDS = new Set(["year"]);
+const RESOURCE = "/employee-groups";
 
 async function req(method, path, body) {
   const r = await fetch(`${baseUrl}${path}`, {
@@ -65,13 +66,19 @@ function line(label, res, extra = "") {
   return ok(res);
 }
 
-function seedBody(suffix = "") {
+async function pickEmployees() {
+  const res = await req("GET", "/employees?limit=2&page=1&offset=0");
+  const list = Array.isArray(res.json?.data) ? res.json.data : [];
+  return list
+    .map((e) => ({ id: Number(e.id ?? e._id), name: String(e.name ?? e.fullName ?? "Probe").trim() }))
+    .filter((e) => Number.isFinite(e.id) && e.name);
+}
+
+function seedBody(employees, suffix = "") {
   return {
-    name: `ZZ Probe Vehicle ${STAMP}${suffix}`,
-    vin: `ZZPROBEVIN${STAMP}${suffix}`.toUpperCase(),
-    year: 2026,
-    fuelType: "diesel",
+    name: `ZZ Probe Group ${STAMP}${suffix}`,
     branch: "usa",
+    employees: employees.length ? employees : [{ id: 1, name: "Probe Employee" }],
   };
 }
 
@@ -79,7 +86,7 @@ function seedBody(suffix = "") {
 // 1. CRUD
 // ---------------------------------------------------------------------------
 async function runCrud() {
-  console.log(`\n=== VEHICLES CRUD (${RESOURCE}) ===`);
+  console.log(`\n=== EMPLOYEE GROUPS CRUD (${RESOURCE}) ===`);
   let createdId = null;
   try {
     const list = await req("GET", `${RESOURCE}?limit=1&page=1&offset=0&sort=name:asc`);
@@ -92,7 +99,10 @@ async function runCrud() {
       if (sid != null) line("READ(sample)", await req("GET", `${RESOURCE}/${sid}`), `id=${sid}`);
     }
 
-    const body = seedBody("-CRUD");
+    const employees = await pickEmployees();
+    console.log(`    employees: ${employees.length ? employees.map((e) => `${e.id}:${e.name}`).join(", ") : "NONE (using fallback)"}`);
+
+    const body = seedBody(employees, "-CRUD");
     const create = await req("POST", RESOURCE, body);
     createdId = extractId(create.json);
     if (!line("CREATE", create, `id=${createdId ?? "?"}`)) return;
@@ -100,7 +110,7 @@ async function runCrud() {
     if (createdId == null) {
       const found = await req("POST", `${RESOURCE}/search?page=1&limit=1&offset=0`, {
         operator: "and",
-        filters: [{ field: "vin", operator: "eq", value: body.vin }],
+        filters: [{ field: "name", operator: "eq", value: body.name }],
         sort: [{ field: "name", direction: "asc" }],
       });
       createdId = Array.isArray(found.json?.data) ? extractId({ data: found.json.data[0] }) : null;
@@ -110,11 +120,10 @@ async function runCrud() {
 
     line("READ(new)", await req("GET", `${RESOURCE}/${createdId}`), `id=${createdId}`);
 
-    const upd = { ...body, id: createdId, name: `${body.name} EDIT`, year: 2027 };
-    line("UPDATE", await req("PUT", `${RESOURCE}/${createdId}`, upd));
-
-    const readBack = await req("GET", `${RESOURCE}/${createdId}`);
-    line("VERIFY(edit)", readBack, `name=${dataOf(readBack.json)?.name ?? "-"} year=${dataOf(readBack.json)?.year ?? "-"}`);
+    // The app does NOT wire an update; probe PUT for information only.
+    const upd = { ...body, id: createdId, name: `${body.name} EDIT` };
+    const update = await req("PUT", `${RESOURCE}/${createdId}`, upd);
+    console.log(`  [${ok(update) ? "PASS" : "INFO"}] UPDATE(probe)    ${update.status} ${ok(update) ? "" : errOf(update)} (app has no update endpoint)`);
 
     const del = await req("DELETE", `${RESOURCE}/${createdId}`);
     if (line("DELETE", del, `id=${createdId}`)) {
@@ -137,9 +146,6 @@ const ID_OPS = ["eq", "neq"];
 const DATE = ["eq", "neq", "gte", "lte", "gt", "lt"];
 const INCLUDE_OPS = new Set(["eq", "contains", "startsWith", "gte", "lte"]);
 
-function coerce(field, value) {
-  return NUMERIC_FIELDS.has(field) ? Number(value) : value;
-}
 function countOf(json) {
   if (json && typeof json === "object") {
     if (typeof json.total === "number") return json.total;
@@ -156,30 +162,28 @@ function summarize(json) {
   return String(json).slice(0, 120);
 }
 
-/** Field matrix built from the seeded record's own (server-normalized) values. */
 function buildFields(rec) {
   const fields = [
     { field: "id", ops: ID_OPS, sample: rec.id ?? rec._id },
     { field: "name", ops: TEXT, sample: rec.name },
-    { field: "vin", ops: TEXT, sample: rec.vin },
-    { field: "fuelType", ops: TEXT, sample: rec.fuelType },
-    { field: "year", ops: ID_OPS, sample: rec.year },
+    { field: "branch", ops: TEXT, sample: rec.branch },
     { field: "createdAt", ops: DATE, sample: rec.createdAt },
     { field: "updatedAt", ops: DATE, sample: rec.updatedAt },
   ];
-  if (rec.vehicleId) fields.push({ field: "vehicleId", ops: TEXT, sample: rec.vehicleId });
-  if (rec.branch) fields.push({ field: "branch", ops: TEXT, sample: rec.branch });
-  // createdBy is a core.User object → filter on the nested createdBy.name path.
-  const createdByName = rec.createdBy && typeof rec.createdBy === "object" ? rec.createdBy.name : rec.createdBy;
-  if (createdByName) fields.push({ field: "createdBy.name", ops: TEXT, sample: createdByName });
+  if (rec.employeeGroupId) fields.push({ field: "employeeGroupId", ops: TEXT, sample: rec.employeeGroupId });
+  const firstEmployee = Array.isArray(rec.employees) ? rec.employees[0] : null;
+  if (firstEmployee?.name) {
+    fields.push({ field: "employees.name", ops: ["startsWith", "contains", "eq"], sample: firstEmployee.name });
+  }
   return fields.filter((entry) => entry.sample != null && String(entry.sample) !== "");
 }
 
 async function runSeededFilters() {
-  console.log(`\n=== VEHICLES ADVANCED FILTERS — match-verified against a seeded record ===`);
+  console.log(`\n=== EMPLOYEE GROUPS ADVANCED FILTERS — match-verified against a seeded record ===`);
+  const employees = await pickEmployees();
   let seedId = null;
   try {
-    const body = seedBody("-SEED");
+    const body = seedBody(employees, "-SEED");
     const create = await req("POST", RESOURCE, body);
     seedId = extractId(create.json);
     if (!ok(create)) {
@@ -189,7 +193,7 @@ async function runSeededFilters() {
     if (seedId == null) {
       const found = await req("POST", `${RESOURCE}/search?page=1&limit=1&offset=0`, {
         operator: "and",
-        filters: [{ field: "vin", operator: "eq", value: body.vin }],
+        filters: [{ field: "name", operator: "eq", value: body.name }],
         sort: [{ field: "name", direction: "asc" }],
       });
       seedId = Array.isArray(found.json?.data) ? extractId({ data: found.json.data[0] }) : null;
@@ -200,8 +204,9 @@ async function runSeededFilters() {
     }
 
     const rec = dataOf((await req("GET", `${RESOURCE}/${seedId}`)).json);
+    const emp0 = Array.isArray(rec.employees) ? rec.employees[0] : null;
     console.log(`  Seeded id=${seedId}`);
-    console.log(`  Stored: name="${rec.name}" vin="${rec.vin}" year=${rec.year} fuelType="${rec.fuelType}" vehicleId="${rec.vehicleId ?? "-"}" branch="${rec.branch ?? "-"}"`);
+    console.log(`  Stored: name="${rec.name}" branch="${rec.branch ?? "-"}" employeeGroupId="${rec.employeeGroupId ?? "-"}" employees[0]="${emp0?.name ?? "-"}"`);
     console.log(`  Each filter is AND-pinned to "id eq ${seedId}" so results are immune to other records.`);
     console.log(`  (INCLUDE ops eq/contains/startsWith/gte/lte expect to keep the seed; EXCLUDE ops neq/gt/lt expect to drop it)\n`);
 
@@ -212,7 +217,7 @@ async function runSeededFilters() {
         const filterBody = {
           operator: "and",
           filters: [
-            { field: entry.field, operator: op, value: coerce(entry.field, entry.sample) },
+            { field: entry.field, operator: op, value: entry.sample },
             { field: "id", operator: "eq", value: seedId },
           ],
           sort: [{ field: "name", direction: "asc" }],
@@ -230,14 +235,12 @@ async function runSeededFilters() {
         results.push(row);
         const verdict = row.correct ? "PASS" : row.accepted ? "MISS" : "FAIL";
         const want = row.expectMatch ? "match" : "none ";
-        console.log(`  [${verdict}] ${entry.field.padEnd(12)} ${op.padEnd(11)} ${String(row.status).padEnd(4)} want=${want} got=${row.matched ? "match" : "none "} ${row.detail}`);
+        console.log(`  [${verdict}] ${entry.field.padEnd(16)} ${op.padEnd(11)} ${String(row.status).padEnd(4)} want=${want} got=${row.matched ? "match" : "none "} ${row.detail}`);
       }
     }
 
-    // Mirrors the app's VEHICLE_BAR_OR_SEARCH_FIELDS verbatim so the probe
-    // reflects the real bar-search request the UI sends.
     const token = String(rec.name).split(" ").find((w) => w.length >= 3) ?? "ZZ";
-    const barFields = ["vehicleId", "name", "vin", "fuelType", "branch", "createdBy.name"];
+    const barFields = ["name", "employees.name", "branch"];
     const bar = await req("POST", `${RESOURCE}/search?page=1&limit=1&offset=0`, {
       operator: "and",
       filters: [
@@ -250,7 +253,7 @@ async function runSeededFilters() {
     const barMatched = countOf(bar.json) > 0;
     const barCorrect = barAccepted && barMatched;
     results.push({ field: "OR bar search", op: "contains", correct: barCorrect, accepted: barAccepted });
-    console.log(`  [${barCorrect ? "PASS" : barAccepted ? "MISS" : "FAIL"}] ${"OR bar search".padEnd(12)} ${"contains".padEnd(11)} ${String(bar.status).padEnd(4)} token="${token}" got=${barMatched ? "match" : "none "} ${summarize(bar.json)}`);
+    console.log(`  [${barCorrect ? "PASS" : barAccepted ? "MISS" : "FAIL"}] ${"OR bar search".padEnd(16)} ${"contains".padEnd(11)} ${String(bar.status).padEnd(4)} token="${token}" got=${barMatched ? "match" : "none "} ${summarize(bar.json)}`);
 
     const correct = results.filter((r) => r.correct);
     const misses = results.filter((r) => r.accepted && !r.correct);

@@ -47,7 +47,7 @@ export function RouteAssignmentViewSheet({
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title="Assignment">
+          <RecordViewSheetSection title="Route">
             <RecordViewSheetDetailRow label="Assignment ID" value={truncateObjectId(assignment.id)} />
             <RecordViewSheetDetailRow
               label={formatTableColumnLabel("routeAssignmentId")}

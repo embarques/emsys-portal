@@ -49,7 +49,7 @@ import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatOrderCommentsSummary,
   formatOrderDate,
@@ -297,7 +297,7 @@ export function OrdersWorkspace() {
       id: "createdAt",
       label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (order) => formatAuditDate(order.createdAt),
+      renderCell: (order) => formatAuditDateTime(order.createdAt),
     },
     {
       id: "sender.name",
@@ -344,7 +344,7 @@ export function OrdersWorkspace() {
       id: "updatedAt",
       label: "updatedAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (order) => formatAuditDate(order.updatedAt),
+      renderCell: (order) => formatAuditDateTime(order.updatedAt),
     },
   ];
 

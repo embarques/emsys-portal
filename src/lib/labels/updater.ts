@@ -1,6 +1,5 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRecordId } from "@/lib/customers/types";
-import { getRouteAssignmentLabel } from "@/lib/orders/display";
 import { getLabelContainerLabel, getLabelStatusLabel } from "@/lib/labels/display";
 import { findLabelByBarcode, mutateLabelsStore, prependLabelActivity } from "@/lib/labels/store";
 import {
@@ -53,6 +52,7 @@ export function applyLabelBarcodeUpdate(
 ): LabelUpdateResult {
   const barcode = barcodeInput.trim();
   const timestamp = new Date().toISOString();
+  const resolveRouteLabel = options.resolveRouteAssignmentLabel ?? ((id: string) => id);
 
   if (!barcode) {
     return failureResult("—", "Barcode is required.", timestamp, performedBy);
@@ -82,7 +82,7 @@ export function applyLabelBarcodeUpdate(
   const previousStatus = getLabelStatusLabel(label.status);
   const previousContainer = getLabelContainerLabel(label.containerId);
   const previousRouteAssignment = label.routeAssignmentId
-    ? getRouteAssignmentLabel(label.routeAssignmentId)
+    ? resolveRouteLabel(label.routeAssignmentId)
     : undefined;
 
   let changed = false;
@@ -123,7 +123,7 @@ export function applyLabelBarcodeUpdate(
   }
 
   if (options.changeRouteAssignment && options.newRouteAssignmentId) {
-    const newRouteLabel = getRouteAssignmentLabel(options.newRouteAssignmentId);
+    const newRouteLabel = resolveRouteLabel(options.newRouteAssignmentId);
     if (label.routeAssignmentId !== options.newRouteAssignmentId) {
       result.previousRouteAssignment = previousRouteAssignment ?? "—";
       result.newRouteAssignment = newRouteLabel;

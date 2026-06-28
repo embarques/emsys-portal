@@ -40,7 +40,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   computeContainerKpis,
   formatContainerDate,
@@ -288,14 +288,14 @@ export function ContainersWorkspace() {
       label: "Date created",
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
-      renderCell: (container) => formatAuditDate(container.createdAt),
+      renderCell: (container) => formatAuditDateTime(container.createdAt),
     },
     {
       id: "updatedAt",
       label: "Date modified",
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
-      renderCell: (container) => formatAuditDate(container.updatedAt),
+      renderCell: (container) => formatAuditDateTime(container.updatedAt),
     },
   ];
 

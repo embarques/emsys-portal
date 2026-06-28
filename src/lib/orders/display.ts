@@ -1,11 +1,13 @@
 import { formatCoreAddressLine } from "@/lib/customers/display";
 import { formatPrimaryPhonesDisplayOrDash, getPhoneDisplayAtIndex } from "@/lib/phones/phones";
-import { getRouteAssignmentById } from "@/lib/route-assignments/mock-data";
 import { getBranchLabel } from "@/lib/vehicles/display";
+import type { RouteAssignment } from "@/lib/route-assignments/types";
 import type { Customer } from "@/lib/customers/types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import type { User } from "@/lib/users/types";
 import type { Order, PickupComment } from "./types";
+
+type RouteAssignmentLabelSource = Pick<RouteAssignment, "name" | "date" | "vehicle">;
 
 export function getOrderBranchLabel(branch: Order["branch"]): string {
   return branch.name.trim() || getBranchLabel(branch.code);
@@ -37,16 +39,26 @@ export function formatCustomerPartySummary(customer: Customer): string {
   return `${customer.name} · ${addressLine}`;
 }
 
-export function getRouteAssignmentLabel(routeAssignmentId: string): string {
+/**
+ * Formats a route assignment for display. The route catalog now comes from the
+ * live API, so callers resolve the assignment (e.g. via a TanStack Query picker
+ * lookup) and pass it in. Without a resolved assignment the raw id is shown.
+ */
+export function getRouteAssignmentLabel(
+  routeAssignmentId: string,
+  assignment?: RouteAssignmentLabelSource,
+): string {
   if (!routeAssignmentId) return "—";
-  const assignment = getRouteAssignmentById(routeAssignmentId);
   if (!assignment) return routeAssignmentId;
   return `${assignment.name} · ${formatOrderDate(assignment.date)} · ${assignment.vehicle.name || assignment.vehicle.id}`;
 }
 
-export function formatOrderRouteAssignment(order: Pick<Order, "routeAssignmentId">): string {
+export function formatOrderRouteAssignment(
+  order: Pick<Order, "routeAssignmentId">,
+  assignment?: RouteAssignmentLabelSource,
+): string {
   if (!order.routeAssignmentId) return "—";
-  return getRouteAssignmentLabel(order.routeAssignmentId);
+  return getRouteAssignmentLabel(order.routeAssignmentId, assignment);
 }
 
 export function formatPickupCommentSummary(comment: PickupComment): string {

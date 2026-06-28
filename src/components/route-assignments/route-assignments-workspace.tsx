@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CalendarRange,
   Car,
@@ -33,23 +33,28 @@ import {
 } from "@/components/ui/dialog";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
-import { formatAuditDate } from "@/lib/audit/display";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { normalizeApiError } from "@/lib/api/axios";
+import { createApiListTextSearch } from "@/lib/api/search-query";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
-  computeRouteAssignmentKpis,
   formatRouteAssignmentDate,
   formatRouteAssignmentName,
-  formatRouteAssignmentTimestamp,
   getEmployeeGroupRefLabel,
   getVehicleRefLabel,
-  routeAssignmentMatchesSearch,
   truncateObjectId,
   truncateRouteAssignmentId,
 } from "@/lib/route-assignments/display";
-import { cloneRouteAssignments, setRouteAssignmentsStore } from "@/lib/route-assignments/mock-data";
 import {
+  useCreateRouteAssignment,
+  useDeleteRouteAssignments,
+  useRouteAssignmentKpis,
+  useRouteAssignments,
+  useUpdateRouteAssignment,
+} from "@/lib/route-assignments/hooks/use-route-assignments";
+import {
+  DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS,
   createEmptyRouteAssignmentForm,
-  createRouteAssignmentSearchFilter,
-  formValuesToRouteAssignment,
   routeAssignmentToFormValues,
   type RouteAssignment,
   type RouteAssignmentFilterState,
@@ -58,7 +63,8 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS.limit;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: RouteAssignmentFilterState = {
   query: "",
@@ -66,44 +72,50 @@ const defaultFilters: RouteAssignmentFilterState = {
 
 export function RouteAssignmentsWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [assignments, setAssignments] = useState<RouteAssignment[]>(() => cloneRouteAssignments());
-
-  useEffect(() => {
-    setRouteAssignmentsStore(assignments);
-  }, [assignments]);
   const [filters, setFilters] = useState<RouteAssignmentFilterState>(defaultFilters);
+  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
+  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [viewAssignment, setViewAssignment] = useState<RouteAssignment | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingAssignment, setEditingAssignment] = useState<RouteAssignment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RouteAssignment | RouteAssignment[] | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const filteredAssignments = useMemo(() => {
-    const search = createRouteAssignmentSearchFilter(filters.query);
+  const listParams = useMemo(
+    () => ({
+      ...DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS,
+      page,
+      limit: PAGE_SIZE,
+      search: createApiListTextSearch(debouncedQuery),
+    }),
+    [debouncedQuery, page],
+  );
 
-    return assignments.filter((assignment) => {
-      if (search && !routeAssignmentMatchesSearch(assignment, search)) return false;
-      return true;
-    });
-  }, [assignments, filters.query]);
+  const { data, isLoading, isError, error, isFetching } = useRouteAssignments(listParams);
+  const kpis = useRouteAssignmentKpis();
+  const createMutation = useCreateRouteAssignment();
+  const updateMutation = useUpdateRouteAssignment();
+  const deleteMutation = useDeleteRouteAssignments();
 
-  const kpis = useMemo(() => computeRouteAssignmentKpis(assignments), [assignments]);
-  const totalPages = Math.max(1, Math.ceil(filteredAssignments.length / PAGE_SIZE));
+  const assignments = data?.items ?? [];
+  const totalAssignments = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalAssignments / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pageAssignments = filteredAssignments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allPageSelected =
-    pageAssignments.length > 0 && pageAssignments.every((assignment) => selectedIds.includes(assignment.id));
+    assignments.length > 0 && assignments.every((assignment) => selectedIds.includes(assignment.id));
+  const isSaving = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
       setSelectedIds((current) =>
-        Array.from(new Set([...current, ...pageAssignments.map((assignment) => assignment.id)])),
+        Array.from(new Set([...current, ...assignments.map((assignment) => assignment.id)])),
       );
       return;
     }
     setSelectedIds((current) =>
-      current.filter((id) => !pageAssignments.some((assignment) => assignment.id === id)),
+      current.filter((id) => !assignments.some((assignment) => assignment.id === id)),
     );
   }
 
@@ -116,65 +128,74 @@ export function RouteAssignmentsWorkspace() {
   function openAddForm() {
     setEditingAssignment(null);
     setFormMode("add");
+    setFormError(null);
   }
 
   function openEditForm(assignment: RouteAssignment) {
     setEditingAssignment(assignment);
     setFormMode("edit");
     setViewAssignment(null);
+    setFormError(null);
   }
 
-  function saveAssignment(values: RouteAssignmentFormValues) {
-    if (formMode === "edit" && editingAssignment) {
-      const nextAssignment = formValuesToRouteAssignment(
-        { ...values, createdBy: editingAssignment.createdBy },
-        editingAssignment.createdAt,
-        new Date().toISOString(),
-        editingAssignment.id,
-      );
-      setAssignments((current) =>
-        current.map((assignment) => (assignment.id === editingAssignment.id ? nextAssignment : assignment)),
-      );
-      notifyUpdated("Route", nextAssignment.name);
-    } else {
-      const nextAssignment = formValuesToRouteAssignment(values);
-      setAssignments((current) => [nextAssignment, ...current]);
-      notifyAdded("Route", nextAssignment.name);
+  async function saveAssignment(values: RouteAssignmentFormValues) {
+    setFormError(null);
+
+    try {
+      if (formMode === "edit" && editingAssignment) {
+        const nextAssignment = await updateMutation.mutateAsync({
+          recordId: editingAssignment.id,
+          values,
+        });
+        notifyUpdated("Route", formatRouteAssignmentName(nextAssignment));
+      } else {
+        const nextAssignment = await createMutation.mutateAsync(values);
+        notifyAdded("Route", formatRouteAssignmentName(nextAssignment));
+      }
+
+      setFormMode(null);
+      setEditingAssignment(null);
+      setPage(1);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
     }
-
-    setFormMode(null);
-    setEditingAssignment(null);
-    setPage(1);
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
+
     const ids = Array.isArray(deleteTarget)
       ? deleteTarget.map((assignment) => assignment.id)
       : [deleteTarget.id];
-    setAssignments((current) => current.filter((assignment) => !ids.includes(assignment.id)));
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewAssignment(null);
-    notifyDeleted("Route", ids.length);
+
+    try {
+      await deleteMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
+      setViewAssignment(null);
+      notifyDeleted("Route", ids.length);
+    } catch (mutationError) {
+      setFormError(normalizeApiError(mutationError).message);
+      setDeleteTarget(null);
+    }
   }
 
   const stats = [
     {
       label: "Total assignments",
-      value: kpis.total.toString(),
+      value: kpis.isLoading ? "…" : kpis.total.toString(),
       description: "Scheduled routes",
       icon: ClipboardList,
     },
     {
       label: "Vehicles assigned",
-      value: kpis.uniqueVehicles.toString(),
+      value: kpis.isLoading ? "…" : kpis.uniqueVehicles.toString(),
       description: "Distinct vehicles in use",
       icon: Car,
     },
     {
       label: "Employee groups",
-      value: kpis.uniqueGroups.toString(),
+      value: kpis.isLoading ? "…" : kpis.uniqueGroups.toString(),
       description: "Distinct groups scheduled",
       icon: UsersRound,
     },
@@ -246,7 +267,7 @@ export function RouteAssignmentsWorkspace() {
       label: "createdAt",
       cellClassName: "text-muted-foreground",
       renderCell: (assignment) =>
-        assignment.createdAt ? formatRouteAssignmentTimestamp(assignment.createdAt) : "—",
+        assignment.createdAt ? formatAuditDateTime(assignment.createdAt) : "—",
     },
     {
       id: "createdBy",
@@ -257,7 +278,7 @@ export function RouteAssignmentsWorkspace() {
       id: "updatedAt",
       label: "updatedAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (assignment) => (assignment.updatedAt ? formatAuditDate(assignment.updatedAt) : "—"),
+      renderCell: (assignment) => (assignment.updatedAt ? formatAuditDateTime(assignment.updatedAt) : "—"),
     },
   ];
 
@@ -266,9 +287,10 @@ export function RouteAssignmentsWorkspace() {
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: hasActiveFilters,
     query: filters.query,
-    matched: filteredAssignments.length,
-    catalogTotal: assignments.length,
+    isSearchPending,
+    matched: totalAssignments,
     noun: "assignments",
+    isLoading: isFetching && assignments.length === 0,
   });
 
   return (
@@ -278,7 +300,7 @@ export function RouteAssignmentsWorkspace() {
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
-            Add assignment
+            Add route
           </Button>
         }
       />
@@ -322,11 +344,11 @@ export function RouteAssignmentsWorkspace() {
 
         <TableSelectionToolbar
           selectedIds={selectedIds}
-          pageRowIds={pageAssignments.map((assignment) => assignment.id)}
-          totalCount={filteredAssignments.length}
+          pageRowIds={assignments.map((assignment) => assignment.id)}
+          totalCount={totalAssignments}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
-            const assignment = pageAssignments.find((entry) => entry.id === selectedIds[0]);
+            const assignment = assignments.find((entry) => entry.id === selectedIds[0]);
             if (assignment) openEditForm(assignment);
           }}
           onDelete={() =>
@@ -334,42 +356,49 @@ export function RouteAssignmentsWorkspace() {
           }
         />
 
-        <DataTable
-          columns={columnVisibility.columns}
-          rows={pageAssignments}
-          page={currentPage}
-          rowKey={(assignment) => assignment.id}
-          rowLabel={(assignment) => assignment.name}
-          columnLayout={columnVisibility}
-          sortUnavailable
-          minWidth={1500}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={allPageSelected}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelect={toggleSelect}
-          onRowClick={setViewAssignment}
-          onRowDoubleClick={openEditForm}
-          emptyState={
-            <>
-              <p className="text-muted-foreground">No routes match your search.</p>
-              <Button className="mt-4" onClick={openAddForm}>
-                <Plus className="h-4 w-4" />
-                Add assignment
-              </Button>
-            </>
-          }
-        />
+        {isError ? (
+          <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(error).message}</div>
+        ) : (
+          <DataTable
+            columns={columnVisibility.columns}
+            rows={assignments}
+            page={currentPage}
+            isPageDataPending={isFetching}
+            rowKey={(assignment) => assignment.id}
+            rowLabel={(assignment) => formatRouteAssignmentName(assignment)}
+            columnLayout={columnVisibility}
+            sortUnavailable
+            minWidth={1500}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={toggleSelectAll}
+            onToggleSelect={toggleSelect}
+            onRowClick={setViewAssignment}
+            onRowDoubleClick={openEditForm}
+            emptyState={
+              <>
+                <p className="text-muted-foreground">
+                  {hasActiveFilters ? "No routes match your search." : "No routes yet."}
+                </p>
+                <Button className="mt-4" onClick={openAddForm}>
+                  <Plus className="h-4 w-4" />
+                  Add route
+                </Button>
+              </>
+            }
+          />
+        )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {pageAssignments.length} of {filteredAssignments.length} assignments
+            Showing {assignments.length} of {totalAssignments} assignments
           </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage <= 1}
+              disabled={currentPage <= 1 || isLoading}
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -381,7 +410,7 @@ export function RouteAssignmentsWorkspace() {
             <Button
               variant="outline"
               size="sm"
-              disabled={currentPage >= totalPages}
+              disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
               Next
@@ -404,7 +433,15 @@ export function RouteAssignmentsWorkspace() {
         }}
       />
 
-      <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
+      <Dialog
+        open={formMode !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFormMode(null);
+            setFormError(null);
+          }
+        }}
+      >
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit route" : "Add route"}</DialogTitle>
@@ -418,9 +455,14 @@ export function RouteAssignmentsWorkspace() {
             }
             copySources={formMode === "add" ? assignments : []}
             isEditing={formMode === "edit"}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add assignment"}
+            submitLabel={formMode === "edit" ? "Save changes" : "Add route"}
+            isSubmitting={isSaving}
+            externalError={formError}
             onSubmit={saveAssignment}
-            onCancel={() => setFormMode(null)}
+            onCancel={() => {
+              setFormMode(null);
+              setFormError(null);
+            }}
           />
         </DialogContent>
       </Dialog>
@@ -438,10 +480,10 @@ export function RouteAssignmentsWorkspace() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
               Delete
             </Button>

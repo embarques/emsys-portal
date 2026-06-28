@@ -57,7 +57,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
@@ -308,7 +308,7 @@ export function RolesWorkspace() {
       label: "Date created",
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
-      renderCell: (role) => formatAuditDate(role.createdAt),
+      renderCell: (role) => formatAuditDateTime(role.createdAt),
     },
     {
       id: "createdBy",
@@ -320,7 +320,7 @@ export function RolesWorkspace() {
       label: "Date modified",
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
-      renderCell: (role) => formatAuditDate(role.updatedAt),
+      renderCell: (role) => formatAuditDateTime(role.updatedAt),
     },
     {
       id: "actions",

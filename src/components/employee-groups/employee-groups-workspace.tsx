@@ -38,10 +38,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import {
-  formatEmployeeGroupDate,
   formatEmployeeMemberNames,
   getEmployeeGroupBranchBadgeClass,
   getEmployeeGroupBranchLabel,
@@ -211,7 +210,7 @@ export function EmployeeGroupsWorkspace() {
       id: "createdAt",
       label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (group) => (group.createdAt ? formatEmployeeGroupDate(group.createdAt) : "—"),
+      renderCell: (group) => (group.createdAt ? formatAuditDateTime(group.createdAt) : "—"),
     },
     {
       id: "createdBy",
@@ -222,7 +221,7 @@ export function EmployeeGroupsWorkspace() {
       id: "updatedAt",
       label: "updatedAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (group) => (group.updatedAt ? formatAuditDate(group.updatedAt) : "—"),
+      renderCell: (group) => (group.updatedAt ? formatAuditDateTime(group.updatedAt) : "—"),
     },
   ];
 

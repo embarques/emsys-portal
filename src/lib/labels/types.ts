@@ -1,7 +1,5 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRecordId } from "@/lib/customers/types";
-import { getRouteAssignmentById } from "@/lib/route-assignments/mock-data";
-import { formatRouteAssignmentCopyLabel } from "@/lib/route-assignments/display";
 
 export type LabelStatus =
   | "pending"
@@ -58,6 +56,8 @@ export type StagedLineItem = {
   quantity: number;
   containerId: string;
   routeAssignmentId?: string;
+  /** Pre-resolved label from the live route-assignment catalog (optional). */
+  routeAssignmentLabel?: string;
 };
 
 export type LabelUpdateResult = {
@@ -86,6 +86,11 @@ export type LabelUpdaterOptions = {
   newContainerId?: string;
   changeRouteAssignment: boolean;
   newRouteAssignmentId?: string;
+  /**
+   * Resolves a route assignment id to a human label using live API data.
+   * Falls back to the raw id when omitted.
+   */
+  resolveRouteAssignmentLabel?: (routeAssignmentId: string) => string;
 };
 
 export type LabelFilterState = {
@@ -263,10 +268,8 @@ export function generateLabelsForLineItem(
   }
 
   const now = new Date().toISOString();
-  const assignment = stagedItem.routeAssignmentId
-    ? getRouteAssignmentById(stagedItem.routeAssignmentId)
-    : undefined;
-  const routeSuffix = assignment ? ` Assigned to ${formatRouteAssignmentCopyLabel(assignment)}.` : "";
+  const routeLabel = stagedItem.routeAssignmentLabel?.trim() || stagedItem.routeAssignmentId?.trim();
+  const routeSuffix = routeLabel ? ` Assigned to ${routeLabel}.` : "";
 
   const labels: ShipmentLabel[] = Array.from({ length: stagedItem.labelCount }, (_, index) => {
     const sequence = index + 1;

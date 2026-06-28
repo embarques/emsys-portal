@@ -42,7 +42,7 @@ import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import type { DataTableColumn } from "@/lib/table/types";
@@ -345,13 +345,13 @@ export function UsersWorkspace() {
       id: "createdAt",
       label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (user) => (user.createdAt ? formatAuditDate(user.createdAt) : "—"),
+      renderCell: (user) => (user.createdAt ? formatAuditDateTime(user.createdAt) : "—"),
     },
     {
       id: "updatedAt",
       label: "updatedAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (user) => (user.updatedAt ? formatAuditDate(user.updatedAt) : "—"),
+      renderCell: (user) => (user.updatedAt ? formatAuditDateTime(user.updatedAt) : "—"),
     },
   ];
 

@@ -50,7 +50,7 @@ export type VehicleSearchField =
   | "year"
   | "fuelType"
   | "branch"
-  | "createdBy";
+  | "createdBy.name";
 
 export type VehicleSearchFilter = ApiListTextSearch;
 
@@ -80,7 +80,7 @@ export const VEHICLE_GET_SEARCH_CAPABILITIES: {
   { field: "vin", label: "vin", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "fuelType", label: "fuelType", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "branch", label: "branch", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "createdBy", label: "createdBy", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "createdBy.name", label: "createdBy", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "year", label: "year", operators: ["eq", "neq"] },
   { field: "id", label: "Vehicle ID", operators: ["eq", "neq"] },
 ];

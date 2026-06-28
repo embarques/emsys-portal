@@ -1,7 +1,3 @@
-import { getEmployeeGroupById } from "@/lib/employee-groups/mock-data";
-import { getEmployeeGroupBranchLabel } from "@/lib/employee-groups/display";
-import type { EmployeeGroup } from "@/lib/employee-groups/types";
-import { getVehicleById, getVehicleByRecordId } from "@/lib/vehicles/mock-data";
 import type { RouteAssignment, RouteAssignmentEmployeeGroupRef, RouteAssignmentVehicleRef } from "./types";
 import { toRouteAssignmentDateInput } from "./types";
 
@@ -59,42 +55,14 @@ export function buildDefaultRouteAssignmentName(
     .join(" · ");
 }
 
-export function formatEmployeeGroupRefName(group: EmployeeGroup): string {
-  return `${group.employeeGroupId} · ${getEmployeeGroupBranchLabel(group.branch)} · ${group.employees.length} employees`;
-}
-
 export function getVehicleRefLabel(vehicle: RouteAssignmentVehicleRef): string {
   if (!vehicle.id && !vehicle.name) return "—";
-
-  const record = vehicle.id ? (getVehicleByRecordId(vehicle.id) ?? getVehicleById(vehicle.id)) : undefined;
-  const name = vehicle.name || record?.name;
-  const branch = record?.branch;
-
-  if (name && branch) {
-    return `${name} (${branch.toUpperCase()})`;
-  }
-
-  return name || vehicle.id || "—";
+  return vehicle.name || vehicle.id || "—";
 }
 
 export function getEmployeeGroupRefLabel(group: RouteAssignmentEmployeeGroupRef): string {
   if (!group.id && !group.name) return "—";
-  if (group.name) return group.name;
-
-  const record = group.id ? getEmployeeGroupById(group.id) : undefined;
-  if (!record) return group.id || "—";
-
-  return formatEmployeeGroupRefName(record);
-}
-
-/** @deprecated Use getVehicleRefLabel */
-export function getVehicleName(vehicleId: string): string {
-  return getVehicleRefLabel({ id: vehicleId, name: "" });
-}
-
-/** @deprecated Use getEmployeeGroupRefLabel */
-export function getEmployeeGroupLabel(employeeGroupId: string): string {
-  return getEmployeeGroupRefLabel({ id: employeeGroupId, name: "" });
+  return group.name || group.id || "—";
 }
 
 export function formatRouteAssignmentCopyLabel(assignment: RouteAssignment): string {

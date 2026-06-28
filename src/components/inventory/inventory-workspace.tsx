@@ -40,7 +40,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   computeInventoryKpis,
   getAvailableQuantity,
@@ -251,7 +251,7 @@ export function InventoryWorkspace() {
       id: "createdAt",
       label: "Date created",
       cellClassName: "text-muted-foreground",
-      renderCell: (item) => formatAuditDate(item.createdAt),
+      renderCell: (item) => formatAuditDateTime(item.createdAt),
     },
     {
       id: "createdBy",
@@ -262,7 +262,7 @@ export function InventoryWorkspace() {
       id: "updatedAt",
       label: "Date modified",
       cellClassName: "text-muted-foreground",
-      renderCell: (item) => formatAuditDate(item.updatedAt),
+      renderCell: (item) => formatAuditDateTime(item.updatedAt),
     },
   ];
 

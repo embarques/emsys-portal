@@ -39,7 +39,7 @@ import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatBranchAddress,
   formatBranchId,
@@ -265,7 +265,7 @@ export function BranchesWorkspace() {
       id: "created",
       label: "created",
       cellClassName: "text-muted-foreground",
-      renderCell: (branch) => (branch.created ? formatAuditDate(branch.created) : "—"),
+      renderCell: (branch) => (branch.created ? formatAuditDateTime(branch.created) : "—"),
     },
   ];
 

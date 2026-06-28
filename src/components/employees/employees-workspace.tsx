@@ -42,7 +42,7 @@ import { useTableSort } from "@/lib/table/use-table-sort";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPrimaryPhonesDisplayOrDash } from "@/lib/phones/phones";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
@@ -372,13 +372,13 @@ export function EmployeesWorkspace() {
       id: "createdAt",
       label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (employee) => (employee.createdAt ? formatAuditDate(employee.createdAt) : "—"),
+      renderCell: (employee) => (employee.createdAt ? formatAuditDateTime(employee.createdAt) : "—"),
     },
     {
       id: "updatedAt",
       label: "updatedAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (employee) => (employee.updatedAt ? formatAuditDate(employee.updatedAt) : "—"),
+      renderCell: (employee) => (employee.updatedAt ? formatAuditDateTime(employee.updatedAt) : "—"),
     },
   ];
 

@@ -39,7 +39,7 @@ import { VEHICLE_TABLE_FILTER_FIELDS } from "@/lib/vehicles/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatVehicleDate,
   getBranchBadgeClass,
@@ -274,7 +274,7 @@ export function VehiclesWorkspace() {
       id: "createdAt",
       label: "createdAt",
       cellClassName: "text-muted-foreground",
-      renderCell: (vehicle) => (vehicle.createdAt ? formatAuditDate(vehicle.createdAt) : "—"),
+      renderCell: (vehicle) => (vehicle.createdAt ? formatAuditDateTime(vehicle.createdAt) : "—"),
     },
     {
       id: "createdBy",
@@ -287,7 +287,7 @@ export function VehiclesWorkspace() {
       label: "updatedAt",
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
-      renderCell: (vehicle) => (vehicle.updatedAt ? formatAuditDate(vehicle.updatedAt) : "—"),
+      renderCell: (vehicle) => (vehicle.updatedAt ? formatAuditDateTime(vehicle.updatedAt) : "—"),
     },
   ];
 

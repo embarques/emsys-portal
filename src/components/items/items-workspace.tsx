@@ -38,8 +38,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatAuditDate } from "@/lib/audit/display";
-import { computeItemKpis, formatItemDate, formatItemPrice, truncateItemId } from "@/lib/items/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
+import { computeItemKpis, formatItemPrice, truncateItemId } from "@/lib/items/display";
 import {
   useCreateItem,
   useDeleteItems,
@@ -210,13 +210,13 @@ export function ItemsWorkspace() {
       id: "createdAt",
       label: "Date created",
       cellClassName: "text-muted-foreground",
-      renderCell: (item) => formatItemDate(item.createdAt),
+      renderCell: (item) => formatAuditDateTime(item.createdAt),
     },
     {
       id: "updatedAt",
       label: "Date modified",
       cellClassName: "text-muted-foreground",
-      renderCell: (item) => formatAuditDate(item.updatedAt),
+      renderCell: (item) => formatAuditDateTime(item.updatedAt),
     },
   ];
 

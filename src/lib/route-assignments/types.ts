@@ -1,5 +1,7 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createMockObjectId } from "@/lib/vehicles/types";
+import type { ApiListSortInput } from "@/lib/api/list-query";
+import type { ApiListTextSearch } from "@/lib/api/search-query";
 
 export type RouteAssignmentVehicleRef = {
   id: string;
@@ -39,67 +41,29 @@ export type RouteAssignmentFilterState = {
   query: string;
 };
 
-export type RouteAssignmentSearchOperator = "eq" | "neq" | "contains" | "startsWith";
-
-export type RouteAssignmentSearchField =
-  | "id"
-  | "routeAssignmentId"
-  | "name"
-  | "date"
-  | "vehicle.id"
-  | "vehicle.name"
-  | "employeeGroup.id"
-  | "employeeGroup.name"
-  | "createdBy";
-
-export type RouteAssignmentSearchFilter = {
-  field: RouteAssignmentSearchField;
-  operator: RouteAssignmentSearchOperator;
-  value: string;
+export type RouteAssignmentListParams = {
+  page?: number;
+  limit?: number;
+  offset?: number;
+  sort?: ApiListSortInput;
+  search?: ApiListTextSearch;
 };
 
-export const ROUTE_ASSIGNMENT_GET_SEARCH_CAPABILITIES: {
-  field: RouteAssignmentSearchField;
-  label: string;
-  operators: RouteAssignmentSearchOperator[];
-}[] = [
-  { field: "routeAssignmentId", label: "routeAssignmentId", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "name", label: "name", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "date", label: "date", operators: ["eq", "neq"] },
-  { field: "vehicle.id", label: "vehicle.id", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "vehicle.name", label: "vehicle.name", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "employeeGroup.id", label: "employeeGroup.id", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "employeeGroup.name", label: "employeeGroup.name", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "createdBy", label: "createdBy", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "id", label: "Assignment ID", operators: ["eq", "neq"] },
-];
+export type RouteAssignmentSearchFilter = ApiListTextSearch;
 
-export const ROUTE_ASSIGNMENT_SEARCH_FIELDS: { value: RouteAssignmentSearchField; label: string }[] =
-  ROUTE_ASSIGNMENT_GET_SEARCH_CAPABILITIES.map(({ field, label }) => ({ value: field, label }));
+export const DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS = {
+  page: 1,
+  limit: 50,
+  sort: "date:desc",
+} as const satisfies RouteAssignmentListParams;
 
-export const ROUTE_ASSIGNMENT_SEARCH_OPERATORS: { value: RouteAssignmentSearchOperator; label: string }[] = [
-  { value: "startsWith", label: "Starts with" },
-  { value: "contains", label: "Contains" },
-  { value: "eq", label: "Equals" },
-  { value: "neq", label: "Not equals" },
-];
-
-export function getRouteAssignmentSearchOperatorsForField(
-  field: RouteAssignmentSearchField,
-): RouteAssignmentSearchOperator[] {
-  return ROUTE_ASSIGNMENT_GET_SEARCH_CAPABILITIES.find((entry) => entry.field === field)?.operators ?? ["eq"];
-}
-
-export function getDefaultRouteAssignmentSearchOperator(field: RouteAssignmentSearchField): RouteAssignmentSearchOperator {
-  return getRouteAssignmentSearchOperatorsForField(field)[0];
-}
-
-export function createRouteAssignmentSearchFilter(value: string): RouteAssignmentSearchFilter | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-
-  return { field: "name", operator: "contains", value: trimmed };
-}
+/** Fields the bar search fans out across with an OR group. */
+export const ROUTE_ASSIGNMENT_BAR_OR_SEARCH_FIELDS = [
+  "name",
+  "routeAssignmentId",
+  "vehicle.name",
+  "employeeGroup.name",
+] as const;
 
 export function createEmptyVehicleRef(): RouteAssignmentVehicleRef {
   return { id: "", name: "" };
@@ -125,10 +89,17 @@ export function toRouteAssignmentDateInput(iso: string): string {
   return iso.slice(0, 10);
 }
 
+export function generateRouteAssignmentNumber(): string {
+  const random = Math.floor(Math.random() * 1_000_000)
+    .toString()
+    .padStart(6, "0");
+  return `ras-${Date.now().toString(36)}-${random}`;
+}
+
 export function createEmptyRouteAssignmentForm(createdBy = DEFAULT_CREATED_BY): RouteAssignmentFormValues {
   return {
     id: "",
-    routeAssignmentId: "",
+    routeAssignmentId: generateRouteAssignmentNumber(),
     name: "",
     date: todayDateInputValue(),
     vehicle: createEmptyVehicleRef(),
@@ -190,7 +161,7 @@ export function copyRouteAssignmentFormValues(
 ): RouteAssignmentFormValues {
   return {
     id: "",
-    routeAssignmentId: "",
+    routeAssignmentId: generateRouteAssignmentNumber(),
     name: source.name,
     date: todayDateInputValue(),
     vehicle: { ...source.vehicle },

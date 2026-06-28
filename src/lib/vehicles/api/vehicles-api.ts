@@ -52,6 +52,13 @@ function buildVehiclesQuery(params: VehicleListParams): string {
   });
 }
 
+type ApiUser = {
+  id?: number;
+  name?: string;
+  userName?: string;
+  fullName?: string;
+};
+
 type ApiVehicle = {
   id?: string;
   vehicleId?: string;
@@ -63,7 +70,7 @@ type ApiVehicle = {
   inspectionDate?: string;
   registrationDate?: string;
   createdAt?: string;
-  createdBy?: string;
+  createdBy?: ApiUser | string;
   updatedAt?: string;
 };
 
@@ -95,6 +102,17 @@ function readStringId(value: unknown): string | undefined {
   return id || undefined;
 }
 
+/** The API returns createdBy as a core.User object; surface a display name. */
+function readUserName(user: unknown): string {
+  if (!user) return "";
+  if (typeof user === "string") return user.trim();
+  if (typeof user === "object") {
+    const entry = user as ApiUser;
+    return String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim();
+  }
+  return "";
+}
+
 function normalizeVehicle(raw: unknown): Vehicle | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -113,7 +131,7 @@ function normalizeVehicle(raw: unknown): Vehicle | null {
     inspectionDate: String(item.inspectionDate ?? "").trim(),
     registrationDate: String(item.registrationDate ?? "").trim(),
     createdAt: String(item.createdAt ?? "").trim(),
-    createdBy: String(item.createdBy ?? "").trim(),
+    createdBy: readUserName(item.createdBy),
     updatedAt: String(item.updatedAt ?? "").trim(),
   };
 }

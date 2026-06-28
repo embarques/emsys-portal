@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import {
   useChartAccounts,
   useAccountingPaymentMethods,
@@ -128,7 +128,7 @@ export function DailyIncomeWorkspace() {
 
     <Card className="mb-6"><CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-end">
       <div className="space-y-2"><label className="text-sm font-medium" htmlFor="daily-branch">Branch</label><select id="daily-branch" className={selectClassName} value={branchCode} onChange={(event) => { setBranchCode(event.target.value); setPage(1); }}><option value="">Select branch</option>{branches.map((branch) => <option key={branch.id} value={branch.code}>{branch.code} — {branch.name}</option>)}</select></div>
-      <div className="space-y-2"><label className="text-sm font-medium" htmlFor="daily-date">Date</label><Input id="daily-date" type="date" value={date} onChange={(event) => { setDate(event.target.value); setPage(1); }} /></div>
+      <div className="space-y-2"><label className="text-sm font-medium" htmlFor="daily-date">Date</label><DateInput id="daily-date" value={date} onChange={(event) => { setDate(event.target.value); setPage(1); }} /></div>
       <div className="sm:ml-auto"><Badge className={statement?.status === "OPEN" ? "bg-emerald-600" : statement ? "bg-slate-600" : "bg-amber-600"}>{statement ? `${statement.status} · #${String(statement.id).padStart(5, "0")}` : "No closeout for this date"}</Badge></div>
     </CardContent></Card>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, Pencil, UserPlus, Users } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -159,7 +160,6 @@ export function OrderForm({
   const branches = branchesData?.items ?? [];
   const employees = employeesQuery.data?.items ?? [];
 
-  const dateInputRef = useRef<HTMLInputElement>(null);
   const [values, setValues] = useState<OrderFormValues>(initialValues ?? createEmptyOrderForm());
   const [formError, setFormError] = useState<string | null>(null);
   const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
@@ -377,25 +377,12 @@ export function OrderForm({
       <FormSection icon={CalendarDays} title="Pickup date" required>
         <div className="grid gap-2.5 sm:grid-cols-2">
           <div className="space-y-1">
-            <div className="relative">
-              <button
-                type="button"
-                aria-label="Open date picker"
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                onClick={() => dateInputRef.current?.showPicker?.()}
-              >
-                <CalendarDays className="size-4" />
-              </button>
-              <Input
-                ref={dateInputRef}
-                id="date"
-                type="date"
-                value={values.date}
-                onChange={(event) => updateField("date", event.target.value)}
-                required
-                className="pl-9 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
-              />
-            </div>
+            <DateInput
+              id="date"
+              value={values.date}
+              onChange={(event) => updateField("date", event.target.value)}
+              required
+            />
           </div>
 
           {isEditing ? (

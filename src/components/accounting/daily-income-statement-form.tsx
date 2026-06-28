@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { dailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
@@ -54,7 +55,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
         </div>
         <div className="space-y-2">
           <Label htmlFor="statement-date">Date</Label>
-          <Input id="statement-date" type="date" {...register("date")} />
+          <DateInput id="statement-date" {...register("date")} />
           {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
         </div>
         <div className="space-y-2">

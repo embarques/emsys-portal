@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScanBarcode } from "lucide-react";
 
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -13,7 +13,7 @@ import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { applyLabelBarcodeUpdate } from "@/lib/labels/updater";
 import { LABEL_STATUSES, type LabelStatus, type LabelUpdateResult } from "@/lib/labels/types";
-import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
+import { useRouteAssignmentPicker } from "@/lib/route-assignments/hooks/use-route-assignments";
 import { formatRouteAssignmentCopyLabel } from "@/lib/route-assignments/display";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,8 @@ function ResultCell({ value }: { value?: string | number }) {
 export function LabelUpdaterWorkspace() {
   const { data: containersData } = useContainerPicker();
   const containers = containersData?.items ?? [];
-  const routeAssignments = useMemo(() => cloneRouteAssignments(), []);
+  const { data: routeAssignmentsData } = useRouteAssignmentPicker();
+  const routeAssignments = routeAssignmentsData?.items ?? [];
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   const [changeStatus, setChangeStatus] = useState(true);
@@ -33,7 +34,7 @@ export function LabelUpdaterWorkspace() {
   const [changeRouteAssignment, setChangeRouteAssignment] = useState(false);
   const [newStatus, setNewStatus] = useState<LabelStatus>("in_transit");
   const [newContainerId, setNewContainerId] = useState("");
-  const [newRouteAssignmentId, setNewRouteAssignmentId] = useState(routeAssignments[0]?.routeAssignmentId ?? "");
+  const [newRouteAssignmentId, setNewRouteAssignmentId] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
   const [bulkBarcodes, setBulkBarcodes] = useState("");
   const [results, setResults] = useState<LabelUpdateResult[]>([]);
@@ -48,8 +49,21 @@ export function LabelUpdaterWorkspace() {
     }
   }, [containers, newContainerId]);
 
+  useEffect(() => {
+    if (!newRouteAssignmentId && routeAssignments[0]) {
+      setNewRouteAssignmentId(routeAssignments[0].routeAssignmentId);
+    }
+  }, [routeAssignments, newRouteAssignmentId]);
+
   function focusBarcodeInput() {
     requestAnimationFrame(() => barcodeInputRef.current?.focus());
+  }
+
+  function resolveRouteAssignmentLabel(routeAssignmentId: string): string {
+    const assignment = routeAssignments.find(
+      (entry) => entry.routeAssignmentId === routeAssignmentId,
+    );
+    return assignment ? formatRouteAssignmentCopyLabel(assignment) : routeAssignmentId;
   }
 
   function submitBarcode(rawBarcode: string) {
@@ -63,6 +77,7 @@ export function LabelUpdaterWorkspace() {
       newContainerId: changeContainer ? newContainerId : undefined,
       changeRouteAssignment,
       newRouteAssignmentId: changeRouteAssignment ? newRouteAssignmentId : undefined,
+      resolveRouteAssignmentLabel,
     });
 
     setResults((current) => [result, ...current]);
@@ -92,6 +107,7 @@ export function LabelUpdaterWorkspace() {
         newContainerId: changeContainer ? newContainerId : undefined,
         changeRouteAssignment,
         newRouteAssignmentId: changeRouteAssignment ? newRouteAssignmentId : undefined,
+        resolveRouteAssignmentLabel,
       })
     );
 

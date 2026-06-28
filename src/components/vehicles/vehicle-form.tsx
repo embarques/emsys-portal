@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -110,9 +111,8 @@ export function VehicleForm({
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="inspectionDate">Inspection date</Label>
-              <Input
+              <DateInput
                 id="inspectionDate"
-                type="date"
                 value={values.inspectionDate}
                 onChange={(event) => updateField("inspectionDate", event.target.value)}
               />
@@ -120,9 +120,8 @@ export function VehicleForm({
 
             <div className="space-y-1">
               <Label htmlFor="registrationDate">Registration date</Label>
-              <Input
+              <DateInput
                 id="registrationDate"
-                type="date"
                 value={values.registrationDate}
                 onChange={(event) => updateField("registrationDate", event.target.value)}
               />

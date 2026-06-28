@@ -3,6 +3,7 @@ import type { ContainerListParams, ContainerSearchFilter } from "@/lib/container
 import type { InvoiceListParams, InvoiceSearchFilter } from "@/lib/invoices/types";
 import type { ItemListParams, ItemSearchFilter } from "@/lib/items/types";
 import type { VehicleListParams, VehicleSearchFilter } from "@/lib/vehicles/types";
+import type { RouteAssignmentListParams, RouteAssignmentSearchFilter } from "@/lib/route-assignments/types";
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { MemoPadListParams, MemoPadSearchFilter } from "@/lib/memo-pads/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
@@ -57,6 +58,16 @@ export const queryKeys = {
     stats: (scope: "all" | "kpis" | `branch:${string}`) =>
       [...queryKeys.vehicles.all, "stats", scope] as const,
     detail: (vehicleId: string) => [...queryKeys.vehicles.all, "detail", vehicleId] as const,
+  },
+  routeAssignments: {
+    all: ["route-assignments"] as const,
+    lists: () => [...queryKeys.routeAssignments.all, "list"] as const,
+    list: (params: RouteAssignmentListParams) => [...queryKeys.routeAssignments.lists(), params] as const,
+    search: (search: RouteAssignmentSearchFilter | undefined, limit: number) =>
+      [...queryKeys.routeAssignments.all, "search", search, limit] as const,
+    stats: (scope: "all" | "kpis") => [...queryKeys.routeAssignments.all, "stats", scope] as const,
+    detail: (routeAssignmentId: string) =>
+      [...queryKeys.routeAssignments.all, "detail", routeAssignmentId] as const,
   },
   containers: {
     all: ["containers"] as const,
