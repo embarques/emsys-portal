@@ -1,18 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Suspense } from "react";
 
 import { ConfigurationBootstrap } from "@/components/configuration/configuration-bootstrap";
 import { FloatingCalculator } from "@/components/app-shell/floating-calculator";
 import { FloatingMemoPad } from "@/components/app-shell/floating-memo-pad";
+import { WorkspaceTabBar } from "@/components/app-shell/workspace-tab-bar";
+import { WorkspaceTabPanels } from "@/components/app-shell/workspace-tab-panels";
+import { WorkspaceTabsSync } from "@/components/app-shell/workspace-tabs-sync";
 import { DesktopSidebar } from "./desktop-sidebar";
 import { MobileSidebar } from "./mobile-sidebar";
 import { Topbar } from "./topbar";
+import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
 import { cn } from "@/lib/utils";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const isDesktopTabs = useIsDesktopWorkspaceTabs();
 
   useEffect(() => {
     const saved = window.localStorage.getItem("atlas-sidebar-expanded");
@@ -53,8 +59,22 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         )}
       >
         <Topbar expanded={sidebarExpanded} onToggleSidebar={toggleSidebar} />
-        <main>
-          <div className="mx-auto w-full max-w-7xl p-4 md:p-6 lg:p-8">{children}</div>
+        <main className="min-h-[calc(100vh-5rem)]">
+          {isDesktopTabs ? (
+            <Suspense
+              fallback={
+                <div className="mx-auto w-full max-w-[1600px] p-4 md:p-6 lg:p-8 text-sm text-muted-foreground">
+                  Loading workspace…
+                </div>
+              }
+            >
+              <WorkspaceTabsSync />
+              <WorkspaceTabBar />
+              <WorkspaceTabPanels />
+            </Suspense>
+          ) : (
+            <div className="mx-auto w-full max-w-7xl p-4 md:p-6 lg:p-8">{children}</div>
+          )}
         </main>
       </div>
 

@@ -87,6 +87,7 @@ import {
 } from "@/lib/invoices/types";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useSyncWorkspaceTabTitle } from "@/lib/layout/hooks/use-sync-workspace-tab-title";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
@@ -159,6 +160,11 @@ export function InvoicesWorkspace() {
       updatedAt: viewOverlay.updatedAt ?? base.updatedAt,
     };
   }, [detailInvoice, invoices, viewInvoiceId, viewOverlay]);
+
+  useSyncWorkspaceTabTitle(
+    viewInvoice ? `Invoice #${viewInvoice.invoiceNumber}` : null,
+    "Invoices",
+  );
 
   const kpis = useMemo(() => computeInvoiceKpis(invoices), [invoices]);
 
