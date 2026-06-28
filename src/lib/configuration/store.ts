@@ -1,5 +1,6 @@
 import {
   DEFAULT_USER_CONFIGURATION,
+  normalizeMaxWorkspaceTabs,
   type UserConfiguration,
 } from "./types";
 
@@ -16,7 +17,8 @@ function configurationsEqual(a: UserConfiguration, b: UserConfiguration): boolea
     a.password === b.password &&
     a.displayName === b.displayName &&
     a.language === b.language &&
-    a.theme === b.theme
+    a.theme === b.theme &&
+    a.maxWorkspaceTabs === b.maxWorkspaceTabs
   );
 }
 
@@ -49,6 +51,9 @@ function readStoredConfiguration(): UserConfiguration | null {
       language: parsed.language === "es" ? "es" : "en",
       theme:
         parsed.theme === "dark" || parsed.theme === "system" ? parsed.theme : "light",
+      maxWorkspaceTabs: normalizeMaxWorkspaceTabs(
+        parsed.maxWorkspaceTabs ?? DEFAULT_USER_CONFIGURATION.maxWorkspaceTabs,
+      ),
     };
   } catch {
     return null;

@@ -1,12 +1,12 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 import {
-  MAX_WORKSPACE_TABS,
   WORKSPACE_TABS_STORAGE_KEY,
   type PersistedWorkspaceTabs,
   type WorkspaceTab,
   type WorkspaceTabsState,
 } from "@/lib/layout/workspace-tab-types";
+import { getMaxWorkspaceTabs } from "@/lib/layout/workspace-tab-limits";
 
 const initialState: WorkspaceTabsState = {
   tabs: [],
@@ -97,6 +97,25 @@ if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", flushPendingPersist);
 }
 
+function trimTabsToLimit(state: WorkspaceTabsState) {
+  const maxTabs = getMaxWorkspaceTabs();
+
+  while (state.tabs.length > maxTabs) {
+    const removed = state.tabs.shift();
+    if (removed?.id === state.activeTabId) {
+      state.activeTabId = state.tabs[0]?.id ?? state.tabs.at(-1)?.id ?? null;
+    }
+  }
+
+  if (state.tabs.length === 0) {
+    state.activeTabId = null;
+    state.nextTabNumber = 1;
+    return;
+  }
+
+  renumberTabs(state);
+}
+
 type OpenWorkspaceTabPayload = {
   id: string;
   href: string;
@@ -112,6 +131,7 @@ const tabsSlice = createSlice({
       state.tabs = normalized.tabs;
       state.activeTabId = normalized.activeTabId;
       state.nextTabNumber = normalized.nextTabNumber;
+      trimTabsToLimit(state);
       persistTabs(state, true);
     },
     openWorkspaceTab(state, action: PayloadAction<OpenWorkspaceTabPayload>) {
@@ -130,14 +150,8 @@ const tabsSlice = createSlice({
       };
 
       state.tabs.push(tab);
-      while (state.tabs.length > MAX_WORKSPACE_TABS) {
-        const removed = state.tabs.shift();
-        if (removed?.id === state.activeTabId) {
-          state.activeTabId = tab.id;
-        }
-      }
-
-      renumberTabs(state);
+      state.activeTabId = tab.id;
+      trimTabsToLimit(state);
       state.activeTabId = tab.id;
       persistTabs(state, true);
     },
@@ -197,6 +211,10 @@ const tabsSlice = createSlice({
       renumberTabs(state);
       persistTabs(state, true);
     },
+    enforceWorkspaceTabLimit(state) {
+      trimTabsToLimit(state);
+      persistTabs(state, true);
+    },
     resetWorkspaceTabs(state) {
       state.tabs = [];
       state.activeTabId = null;
@@ -216,6 +234,7 @@ export const {
   closeWorkspaceTab,
   closeOtherWorkspaceTabs,
   closeWorkspaceTabsToRight,
+  enforceWorkspaceTabLimit,
   resetWorkspaceTabs,
 } = tabsSlice.actions;
 

@@ -7,7 +7,8 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
 import { buildWorkspaceTabUrl } from "@/lib/layout/workspace-tab-url";
 import { isWorkspaceRoute, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
-import { MAX_WORKSPACE_TABS, type WorkspaceTab } from "@/lib/layout/workspace-tab-types";
+import { type WorkspaceTab } from "@/lib/layout/workspace-tab-types";
+import { getMaxWorkspaceTabs } from "@/lib/layout/workspace-tab-limits";
 import { pathnameFromHref } from "@/lib/layout/workspace-tab-url";
 import {
   closeOtherWorkspaceTabs,
@@ -80,7 +81,8 @@ export function useWorkspaceTabs() {
         }
       }
 
-      const atLimit = tabs.length >= MAX_WORKSPACE_TABS;
+      const maxTabs = getMaxWorkspaceTabs();
+      const atLimit = tabs.length >= maxTabs;
       const tabId = createTabId();
       dispatch(
         openWorkspaceTab({
@@ -91,7 +93,7 @@ export function useWorkspaceTabs() {
       );
 
       if (atLimit) {
-        notifySuccess(`Closed the oldest tab (maximum ${MAX_WORKSPACE_TABS} open).`);
+        notifySuccess(`Closed the oldest tab (maximum ${maxTabs} open).`);
       }
 
       const created = store.getState().layoutTabs.tabs.find((tab) => tab.id === tabId);
