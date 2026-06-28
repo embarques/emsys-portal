@@ -1,9 +1,9 @@
 "use client";
 
-import { Boxes, X } from "lucide-react";
+import { X } from "lucide-react";
 
+import { EmsysLogo } from "@/components/brand/emsys-logo";
 import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/config/site";
 import { SidebarNav } from "./sidebar-nav";
 import { SidebarProfileMenu } from "./sidebar-profile-menu";
 
@@ -31,13 +31,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
       <aside className="absolute inset-y-0 left-0 flex w-[19rem] max-w-[88vw] flex-col border-r bg-card text-card-foreground shadow-2xl">
         <div className="flex h-16 shrink-0 items-center justify-between border-b px-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Boxes className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate font-semibold leading-none">{siteConfig.name}</p>
-              <p className="mt-1 truncate text-xs text-muted-foreground">{siteConfig.company}</p>
-            </div>
+            <EmsysLogo variant="full" />
           </div>
 
           <Button

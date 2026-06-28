@@ -55,6 +55,63 @@ export type DeliveryInvoiceGroup = {
   barcodes: DeliveryBarcode[];
 };
 
+export type DeliveryPackageStatusRef = {
+  id?: number;
+  name: string;
+  prevStatus?: string;
+};
+
+export type DeliveryPackageContainerRef = {
+  id: number;
+  name: string;
+  containerNumber?: string;
+};
+
+/** Barcode row returned by POST /invoice/detail/labels — selectable for delivery. */
+export type DeliveryPackageBarcode = {
+  id: number;
+  number: string;
+  status: DeliveryPackageStatusRef;
+  container: DeliveryPackageContainerRef;
+  delivery: Pick<Delivery, "id" | "name"> | null;
+  invoice: DeliveryBarcodeInvoiceRef | null;
+  scanDate?: string;
+};
+
+/** Invoice line item with nested barcodes from POST /invoice/detail/labels. */
+export type DeliveryPackageLineItem = {
+  id: string;
+  name: string;
+  invoiceNumber: string;
+  quantity: number;
+  labels: number;
+  price: number;
+  total: number;
+  barcodes: DeliveryPackageBarcode[];
+};
+
+export type DeliveryPackageUpdateResult = {
+  number: string;
+  date?: string;
+  newStatus?: string;
+  prevStatus?: string;
+  containerNumber?: string;
+  deliveryNumber?: string;
+  message: string;
+  hasError: boolean;
+};
+
+export function deliveryPackageBarcodeKey(barcode: Pick<DeliveryPackageBarcode, "number">): string {
+  return barcode.number.trim();
+}
+
+export function isBarcodeOnDelivery(
+  barcode: DeliveryPackageBarcode,
+  deliveryId: number,
+): boolean {
+  return barcode.delivery?.id === deliveryId;
+}
+
 export type DeliveryFormValues = {
   id: number;
   name: string;

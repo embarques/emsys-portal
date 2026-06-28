@@ -78,6 +78,8 @@ export const queryKeys = {
     stats: (scope: "all" | "kpis") => [...queryKeys.deliveries.all, "stats", scope] as const,
     detail: (deliveryId: number) => [...queryKeys.deliveries.all, "detail", deliveryId] as const,
     barcodes: (deliveryId: number) => [...queryKeys.deliveries.detail(deliveryId), "barcodes"] as const,
+    invoiceDetailLabels: (invoiceIds: string[]) =>
+      [...queryKeys.deliveries.all, "invoice-detail-labels", [...invoiceIds].sort()] as const,
   },
   invoices: {
     all: ["invoices"] as const,

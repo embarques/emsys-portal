@@ -3,7 +3,8 @@
 import { Car, Edit, PackagePlus, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { AddDeliveryInvoicesDialog } from "@/components/deliveries/add-delivery-invoices-dialog";
+import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { AddDeliveryPackagesDialog } from "@/components/deliveries/add-delivery-packages-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,18 +14,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { normalizeApiError } from "@/lib/api/axios";
 import {
   formatDeliveryDate,
   formatDeliveryId,
   groupDeliveryBarcodes,
 } from "@/lib/deliveries/display";
-import {
-  useAddInvoicesToDelivery,
-  useDeliveryBarcodes,
-} from "@/lib/deliveries/hooks/use-deliveries";
+import { useDeliveryBarcodes } from "@/lib/deliveries/hooks/use-deliveries";
 import type { Delivery } from "@/lib/deliveries/types";
-import type { Invoice } from "@/lib/invoices/types";
 
 type DeliveryViewSheetProps = {
   delivery: Delivery | null;
@@ -41,27 +37,14 @@ export function DeliveryViewSheet({
   onEdit,
   onDelete,
 }: DeliveryViewSheetProps) {
-  const [addInvoicesOpen, setAddInvoicesOpen] = useState(false);
-  const [packageError, setPackageError] = useState<string | null>(null);
+  const { notifySuccess } = useFeedback();
+  const [addPackagesOpen, setAddPackagesOpen] = useState(false);
   const barcodesQuery = useDeliveryBarcodes(delivery?.id ?? null, open && Boolean(delivery));
-  const addInvoicesMutation = useAddInvoicesToDelivery();
 
   const groups = useMemo(
     () => groupDeliveryBarcodes(barcodesQuery.data ?? []),
     [barcodesQuery.data],
   );
-
-  async function addInvoices(invoices: Invoice[]) {
-    if (!delivery) return;
-
-    setPackageError(null);
-    try {
-      await addInvoicesMutation.mutateAsync({ delivery, invoices });
-      setAddInvoicesOpen(false);
-    } catch (error) {
-      setPackageError(normalizeApiError(error).message);
-    }
-  }
 
   return (
     <>
@@ -114,18 +97,14 @@ export function DeliveryViewSheet({
                     <div>
                       <p className="text-sm font-medium">Packages in delivery</p>
                       <p className="text-xs text-muted-foreground">
-                        Invoice items grouped with their barcode labels.
+                        Invoice line items grouped with their package barcodes.
                       </p>
                     </div>
-                    <Button size="sm" onClick={() => setAddInvoicesOpen(true)}>
+                    <Button size="sm" onClick={() => setAddPackagesOpen(true)}>
                       <PackagePlus className="size-4" />
-                      Add invoice
+                      Add packages
                     </Button>
                   </div>
-
-                  {packageError ? (
-                    <div className="border-b px-4 py-3 text-sm text-destructive">{packageError}</div>
-                  ) : null}
 
                   {barcodesQuery.isLoading ? (
                     <p className="px-4 py-8 text-sm text-muted-foreground">Loading delivery packages...</p>
@@ -199,12 +178,21 @@ export function DeliveryViewSheet({
         </SheetContent>
       </Sheet>
 
-      <AddDeliveryInvoicesDialog
-        open={addInvoicesOpen}
-        onOpenChange={setAddInvoicesOpen}
-        isSubmitting={addInvoicesMutation.isPending}
-        onSubmit={addInvoices}
-      />
+      {delivery ? (
+        <AddDeliveryPackagesDialog
+          delivery={delivery}
+          open={addPackagesOpen}
+          onOpenChange={setAddPackagesOpen}
+          onCompleted={(results) => {
+            const successCount = results.filter((result) => !result.hasError).length;
+            if (successCount > 0) {
+              notifySuccess(
+                `${successCount} package${successCount === 1 ? "" : "s"} added to ${delivery.name}.`,
+              );
+            }
+          }}
+        />
+      ) : null}
     </>
   );
 }
