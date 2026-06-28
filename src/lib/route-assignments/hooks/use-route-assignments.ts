@@ -92,7 +92,7 @@ export function useRouteAssignmentLookup(limit = 200, options: { enabled?: boole
 export function useRouteAssignmentKpis() {
   const today = todayDateInputValue();
   const query = useQuery({
-    queryKey: queryKeys.routeAssignments.stats(`kpis:${today}`),
+    queryKey: queryKeys.routeAssignments.stats("kpis", today),
     queryFn: () => fetchRouteAssignmentsByDate(today),
     staleTime: 60_000,
   });

@@ -65,7 +65,8 @@ export const queryKeys = {
     list: (params: RouteAssignmentListParams) => [...queryKeys.routeAssignments.lists(), params] as const,
     search: (search: RouteAssignmentSearchFilter | undefined, limit: number) =>
       [...queryKeys.routeAssignments.all, "search", search, limit] as const,
-    stats: (scope: "all" | "kpis") => [...queryKeys.routeAssignments.all, "stats", scope] as const,
+    stats: (scope: "all" | "kpis", date?: string) =>
+      [...queryKeys.routeAssignments.all, "stats", scope, ...(date ? [date] : [])] as const,
     detail: (routeAssignmentId: string) =>
       [...queryKeys.routeAssignments.all, "detail", routeAssignmentId] as const,
   },
