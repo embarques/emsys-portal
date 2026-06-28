@@ -1,6 +1,7 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createVehicle,
@@ -36,7 +37,7 @@ export function useVehicleSearch(
 ) {
   const { enabled = true, limit = 40 } = options;
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.vehicles.search(search, limit),
     queryFn: () =>
       fetchVehicles({
@@ -51,7 +52,7 @@ export function useVehicleSearch(
 export function useVehicles(params: VehicleListParams, options: { enabled?: boolean } = {}) {
   const isFiltered = isVehicleListFiltered(params);
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.vehicles.list(params),
     queryFn: () => fetchVehicles(params),
     enabled: options.enabled ?? true,
@@ -61,7 +62,7 @@ export function useVehicles(params: VehicleListParams, options: { enabled?: bool
 }
 
 export function useVehicleStats() {
-  const totalQuery = useQuery({
+  const totalQuery = useWorkspaceQuery({
     queryKey: queryKeys.vehicles.stats("all"),
     queryFn: () => fetchVehicles({ ...DEFAULT_VEHICLE_LIST_PARAMS, limit: 1 }),
   });
@@ -74,7 +75,7 @@ export function useVehicleStats() {
 }
 
 export function useVehicleBranchCount(branch: VehiclePortalBranch) {
-  const query = useQuery({
+  const query = useWorkspaceQuery({
     queryKey: queryKeys.vehicles.stats(`branch:${branch}`),
     queryFn: () =>
       fetchVehicles({
@@ -92,7 +93,7 @@ export function useVehicleBranchCount(branch: VehiclePortalBranch) {
 }
 
 export function useVehicleKpis() {
-  const query = useQuery({
+  const query = useWorkspaceQuery({
     queryKey: queryKeys.vehicles.stats("kpis"),
     queryFn: () => fetchVehicles({ ...DEFAULT_VEHICLE_LIST_PARAMS, limit: 200 }),
   });
@@ -105,7 +106,7 @@ export function useVehicleKpis() {
 }
 
 export function useVehicle(vehicleId: string | null, enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.vehicles.detail(vehicleId ?? ""),
     queryFn: () => fetchVehicleById(vehicleId!),
     enabled: enabled && Boolean(vehicleId?.trim()),

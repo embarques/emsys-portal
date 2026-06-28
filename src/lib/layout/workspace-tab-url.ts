@@ -1,5 +1,9 @@
 import { WORKSPACE_TAB_PARAM } from "@/lib/layout/workspace-tab-types";
 
+export function pathnameFromHref(href: string): string {
+  return href.split("?")[0] ?? href;
+}
+
 export function buildWorkspaceTabUrl(href: string, tabNumber: number): string {
   const [pathname, existingSearch = ""] = href.split("?");
   const params = new URLSearchParams(existingSearch);

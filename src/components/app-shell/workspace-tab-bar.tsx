@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/context-menu";
 import { WorkspaceTabOverflowMenu } from "@/components/app-shell/workspace-tab-overflow-menu";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
+import { resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
 import { WORKSPACE_TAB_OVERFLOW_THRESHOLD } from "@/lib/layout/workspace-tab-types";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
 import { cn } from "@/lib/utils";
@@ -21,11 +22,28 @@ type WorkspaceTabItemProps = {
   active: boolean;
   index: number;
   totalTabs: number;
+  onActivate: (tabId: string) => void;
+  onClose: (tabId: string) => void;
+  onCloseOthers: (tabId: string) => void;
+  onCloseToRight: (tabId: string) => void;
+  onCloseAll: () => void;
+  onDuplicate: (tab: WorkspaceTab) => void;
   tabRef?: (node: HTMLDivElement | null) => void;
 };
 
-function WorkspaceTabItem({ tab, active, index, totalTabs, tabRef }: WorkspaceTabItemProps) {
-  const { activateTab, closeTab, closeOtherTabs, closeTabsToRight, closeAllTabs } = useWorkspaceTabs();
+const WorkspaceTabItem = memo(function WorkspaceTabItem({
+  tab,
+  active,
+  index,
+  totalTabs,
+  onActivate,
+  onClose,
+  onCloseOthers,
+  onCloseToRight,
+  onCloseAll,
+  onDuplicate,
+  tabRef,
+}: WorkspaceTabItemProps) {
   const hasTabsToRight = index < totalTabs - 1;
   const hasOtherTabs = totalTabs > 1;
 
@@ -45,7 +63,7 @@ function WorkspaceTabItem({ tab, active, index, totalTabs, tabRef }: WorkspaceTa
           <button
             type="button"
             className="min-w-0 flex-1 truncate text-left"
-            onClick={() => activateTab(tab.id)}
+            onClick={() => onActivate(tab.id)}
             title={`${tab.number} · ${tab.label}`}
           >
             <span className="mr-1.5 shrink-0 tabular-nums text-muted-foreground">{tab.number}</span>
@@ -57,7 +75,7 @@ function WorkspaceTabItem({ tab, active, index, totalTabs, tabRef }: WorkspaceTa
             aria-label={`Close ${tab.label}`}
             onClick={(event) => {
               event.stopPropagation();
-              closeTab(tab.id);
+              onClose(tab.id);
             }}
           >
             <X className="h-3.5 w-3.5" />
@@ -66,22 +84,25 @@ function WorkspaceTabItem({ tab, active, index, totalTabs, tabRef }: WorkspaceTa
       </ContextMenuTrigger>
 
       <ContextMenuContent className="w-52">
-        <ContextMenuItem onSelect={() => closeTab(tab.id)}>Close tab</ContextMenuItem>
-        <ContextMenuItem disabled={!hasOtherTabs} onSelect={() => closeOtherTabs(tab.id)}>
+        <ContextMenuItem onSelect={() => onDuplicate(tab)}>Open in new tab</ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => onClose(tab.id)}>Close tab</ContextMenuItem>
+        <ContextMenuItem disabled={!hasOtherTabs} onSelect={() => onCloseOthers(tab.id)}>
           Close other tabs
         </ContextMenuItem>
-        <ContextMenuItem disabled={!hasTabsToRight} onSelect={() => closeTabsToRight(tab.id)}>
+        <ContextMenuItem disabled={!hasTabsToRight} onSelect={() => onCloseToRight(tab.id)}>
           Close tabs to the right
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onSelect={() => closeAllTabs()}>Close all tabs</ContextMenuItem>
+        <ContextMenuItem onSelect={() => onCloseAll()}>Close all tabs</ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );
-}
+});
 
 export function WorkspaceTabBar() {
-  const { tabs, activeTabId, activateTab } = useWorkspaceTabs();
+  const { tabs, activeTabId, activateTab, closeTab, closeOtherTabs, closeTabsToRight, closeAllTabs, openTab } =
+    useWorkspaceTabs();
   const scrollRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef(new Map<string, HTMLDivElement>());
   const [hasScrollOverflow, setHasScrollOverflow] = useState(false);
@@ -129,6 +150,12 @@ export function WorkspaceTabBar() {
               index={index}
               totalTabs={tabs.length}
               active={tab.id === activeTabId}
+              onActivate={activateTab}
+              onClose={closeTab}
+              onCloseOthers={closeOtherTabs}
+              onCloseToRight={closeTabsToRight}
+              onCloseAll={closeAllTabs}
+              onDuplicate={(tab) => openTab(tab.href, resolveWorkspaceLabel(tab.href), { forceNew: true })}
               tabRef={(node) => {
                 if (node) {
                   tabRefs.current.set(tab.id, node);

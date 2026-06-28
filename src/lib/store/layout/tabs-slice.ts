@@ -27,32 +27,32 @@ function dedupeTabs(tabs: WorkspaceTab[]): WorkspaceTab[] {
   return unique;
 }
 
+/** Keep tab numbers contiguous (1…n) so the next opened tab is always n + 1. */
+function renumberTabs(state: WorkspaceTabsState) {
+  state.tabs = state.tabs.map((tab, index) => ({
+    ...tab,
+    number: index + 1,
+  }));
+  state.nextTabNumber = state.tabs.length + 1;
+}
+
 function normalizePersistedState(state: Partial<WorkspaceTabsState> | null): WorkspaceTabsState {
-  const rawTabs = Array.isArray(state?.tabs) ? state.tabs : [];
-  let nextTabNumber = typeof state?.nextTabNumber === "number" && state.nextTabNumber > 0 ? state.nextTabNumber : 1;
-
-  const tabs = dedupeTabs(
-    rawTabs.map((tab) => {
-      if (typeof tab.number === "number" && tab.number > 0) {
-        nextTabNumber = Math.max(nextTabNumber, tab.number + 1);
-        return tab;
-      }
-
-      const number = nextTabNumber;
-      nextTabNumber += 1;
-      return { ...tab, number };
-    }),
-  );
-
+  const tabs = dedupeTabs(Array.isArray(state?.tabs) ? state.tabs : []);
   const activeTabId =
     state?.activeTabId && tabs.some((tab) => tab.id === state.activeTabId)
       ? state.activeTabId
       : (tabs.at(-1)?.id ?? null);
 
-  return { tabs, activeTabId, nextTabNumber };
+  const normalized: WorkspaceTabsState = {
+    tabs,
+    activeTabId,
+    nextTabNumber: 1,
+  };
+  renumberTabs(normalized);
+  return normalized;
 }
 
-function persistTabs(state: WorkspaceTabsState) {
+function writePersistedTabs(state: WorkspaceTabsState) {
   if (typeof window === "undefined") return;
   const payload: PersistedWorkspaceTabs = {
     tabs: state.tabs,
@@ -62,22 +62,45 @@ function persistTabs(state: WorkspaceTabsState) {
   window.sessionStorage.setItem(WORKSPACE_TABS_STORAGE_KEY, JSON.stringify(payload));
 }
 
-function allocateTabNumber(state: WorkspaceTabsState, preferred?: number): number {
-  if (preferred != null && preferred > 0 && !state.tabs.some((tab) => tab.number === preferred)) {
-    state.nextTabNumber = Math.max(state.nextTabNumber, preferred + 1);
-    return preferred;
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingPersistState: WorkspaceTabsState | null = null;
+
+function flushPendingPersist() {
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  if (pendingPersistState) {
+    writePersistedTabs(pendingPersistState);
+    pendingPersistState = null;
+  }
+}
+
+function persistTabs(state: WorkspaceTabsState, immediate = false) {
+  if (typeof window === "undefined") return;
+
+  pendingPersistState = state;
+
+  if (immediate) {
+    flushPendingPersist();
+    return;
   }
 
-  const number = state.nextTabNumber;
-  state.nextTabNumber += 1;
-  return number;
+  if (persistTimer) return;
+
+  persistTimer = setTimeout(() => {
+    flushPendingPersist();
+  }, 250);
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", flushPendingPersist);
 }
 
 type OpenWorkspaceTabPayload = {
   id: string;
   href: string;
   label: string;
-  number?: number;
 };
 
 const tabsSlice = createSlice({
@@ -89,7 +112,7 @@ const tabsSlice = createSlice({
       state.tabs = normalized.tabs;
       state.activeTabId = normalized.activeTabId;
       state.nextTabNumber = normalized.nextTabNumber;
-      persistTabs(state);
+      persistTabs(state, true);
     },
     openWorkspaceTab(state, action: PayloadAction<OpenWorkspaceTabPayload>) {
       const existing = state.tabs.find((tab) => tab.id === action.payload.id);
@@ -99,12 +122,11 @@ const tabsSlice = createSlice({
         return;
       }
 
-      const number = allocateTabNumber(state, action.payload.number);
       const tab: WorkspaceTab = {
         id: action.payload.id,
         href: action.payload.href,
         label: action.payload.label,
-        number,
+        number: state.tabs.length + 1,
       };
 
       state.tabs.push(tab);
@@ -115,8 +137,9 @@ const tabsSlice = createSlice({
         }
       }
 
+      renumberTabs(state);
       state.activeTabId = tab.id;
-      persistTabs(state);
+      persistTabs(state, true);
     },
     setActiveWorkspaceTab(state, action: PayloadAction<string>) {
       state.activeTabId = action.payload;
@@ -137,24 +160,28 @@ const tabsSlice = createSlice({
 
       if (state.tabs.length === 0) {
         state.activeTabId = null;
-        persistTabs(state);
+        state.nextTabNumber = 1;
+        persistTabs(state, true);
         return;
       }
+
+      renumberTabs(state);
 
       if (wasActive) {
         const nextTab = state.tabs[closingIndex] ?? state.tabs[closingIndex - 1] ?? state.tabs[0];
         state.activeTabId = nextTab?.id ?? null;
       }
 
-      persistTabs(state);
+      persistTabs(state, true);
     },
     closeOtherWorkspaceTabs(state, action: PayloadAction<string>) {
       const keep = state.tabs.find((tab) => tab.id === action.payload);
       if (!keep) return;
 
       state.tabs = [keep];
+      renumberTabs(state);
       state.activeTabId = keep.id;
-      persistTabs(state);
+      persistTabs(state, true);
     },
     closeWorkspaceTabsToRight(state, action: PayloadAction<string>) {
       const index = state.tabs.findIndex((tab) => tab.id === action.payload);
@@ -167,7 +194,8 @@ const tabsSlice = createSlice({
         state.activeTabId = action.payload;
       }
 
-      persistTabs(state);
+      renumberTabs(state);
+      persistTabs(state, true);
     },
     resetWorkspaceTabs(state) {
       state.tabs = [];
@@ -208,4 +236,9 @@ export function readPersistedWorkspaceTabs(): WorkspaceTabsState | null {
 
 export function findTabByNumber(tabs: WorkspaceTab[], tabNumber: number): WorkspaceTab | undefined {
   return tabs.find((tab) => tab.number === tabNumber);
+}
+
+export function findTabByHref(tabs: WorkspaceTab[], href: string): WorkspaceTab | undefined {
+  const pathname = href.split("?")[0] ?? href;
+  return tabs.find((tab) => tab.href === pathname);
 }

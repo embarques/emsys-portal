@@ -11,7 +11,7 @@ export const WORKSPACE_TAB_OVERFLOW_THRESHOLD = 6;
 export type WorkspaceTab = {
   /** Internal stable key for React / keep-alive. */
   id: string;
-  /** Sequential tab number shown in the URL and tab bar (e.g. `?tab=3`). */
+  /** Sequential tab number shown in the URL and tab bar (1…n, renumbered when tabs close). */
   number: number;
   href: string;
   /** Display title — can be updated dynamically (e.g. "Invoice #489391"). */
@@ -21,7 +21,7 @@ export type WorkspaceTab = {
 export type WorkspaceTabsState = {
   tabs: WorkspaceTab[];
   activeTabId: string | null;
-  /** Next tab number to assign when opening a tab. */
+  /** Next tab number to assign (= open tab count + 1). */
   nextTabNumber: number;
 };
 

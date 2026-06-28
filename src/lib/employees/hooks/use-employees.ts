@@ -4,9 +4,9 @@ import {
   keepPreviousData,
   useMutation,
   useQueries,
-  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createEmployee,
@@ -46,7 +46,7 @@ export function useEmployeeSearch(
 ) {
   const { enabled = true, limit = 40 } = options;
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.employees.search(search, limit),
     queryFn: () =>
       fetchEmployees({
@@ -62,7 +62,7 @@ export function useEmployeeSearch(
 export function useEmployees(params: EmployeeListParams) {
   const isFiltered = isEmployeeListFiltered(params);
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.employees.list(params),
     queryFn: () => fetchEmployees(params),
     placeholderData: keepPreviousData,
@@ -71,17 +71,17 @@ export function useEmployees(params: EmployeeListParams) {
 }
 
 export function useEmployeeStats() {
-  const totalQuery = useQuery({
+  const totalQuery = useWorkspaceQuery({
     queryKey: queryKeys.employees.stats("all"),
     queryFn: () => fetchEmployees({ page: 1, limit: 1 }),
   });
 
-  const activeQuery = useQuery({
+  const activeQuery = useWorkspaceQuery({
     queryKey: queryKeys.employees.stats("active"),
     queryFn: () => fetchEmployees({ page: 1, limit: 1, active: true }),
   });
 
-  const inactiveQuery = useQuery({
+  const inactiveQuery = useWorkspaceQuery({
     queryKey: queryKeys.employees.stats("inactive"),
     queryFn: () => fetchEmployees({ page: 1, limit: 1, active: false }),
   });
@@ -119,7 +119,7 @@ export function useEmployeeStats() {
 }
 
 export function useEmployee(employeeId: string | null, enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.employees.detail(employeeId ?? ""),
     queryFn: () => fetchEmployeeById(employeeId!),
     enabled: enabled && Boolean(employeeId),

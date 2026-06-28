@@ -1,6 +1,7 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   deleteInvoice,
@@ -29,13 +30,13 @@ export function useInvoiceStats(options: InvoiceStatsOptions = {}) {
 
   const outstandingFilterRows = buildOutstandingInvoiceStatsFilterRows();
 
-  const outstandingQuery = useQuery({
+  const outstandingQuery = useWorkspaceQuery({
     queryKey: queryKeys.invoices.stats("outstanding"),
     queryFn: () => fetchInvoices(buildInvoiceStatsCountParams(outstandingFilterRows)),
     enabled,
   });
 
-  const outstandingBalanceQuery = useQuery({
+  const outstandingBalanceQuery = useWorkspaceQuery({
     queryKey: queryKeys.invoices.stats("outstanding-balance"),
     queryFn: () => fetchInvoiceBalanceTotal(outstandingFilterRows),
     enabled,
@@ -56,7 +57,7 @@ export function useInvoiceSearch(
 ) {
   const { enabled = true, limit = 40 } = options;
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.invoices.search(search, limit),
     queryFn: () =>
       fetchInvoices({
@@ -69,7 +70,7 @@ export function useInvoiceSearch(
 }
 
 export function useInvoices(params: InvoiceListParams, options: { enabled?: boolean } = {}) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.invoices.list(params),
     queryFn: () => fetchInvoices(params),
     enabled: options.enabled ?? true,
@@ -77,7 +78,7 @@ export function useInvoices(params: InvoiceListParams, options: { enabled?: bool
 }
 
 export function useInvoice(invoiceId: string | null, enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.invoices.detail(invoiceId ?? ""),
     queryFn: () => fetchInvoiceById(invoiceId!),
     enabled: enabled && Boolean(invoiceId?.trim()),

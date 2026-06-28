@@ -1,6 +1,7 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createItem,
@@ -26,7 +27,7 @@ function isItemListFiltered(params: ItemListParams): boolean {
 export function useItems(params: ItemListParams, options: { enabled?: boolean } = {}) {
   const isFiltered = isItemListFiltered(params);
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.items.list(params),
     queryFn: () => fetchItems(params),
     enabled: options.enabled ?? true,
@@ -41,7 +42,7 @@ export function useItemSearch(
 ) {
   const { enabled = true, limit = 40 } = options;
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.items.search(search, limit),
     queryFn: () =>
       fetchItems({
@@ -54,7 +55,7 @@ export function useItemSearch(
 }
 
 export function useItemStats() {
-  const totalQuery = useQuery({
+  const totalQuery = useWorkspaceQuery({
     queryKey: queryKeys.items.stats("all"),
     queryFn: () => fetchItems({ ...DEFAULT_ITEM_LIST_PARAMS, limit: 1 }),
   });
@@ -67,7 +68,7 @@ export function useItemStats() {
 }
 
 export function useItemKpis() {
-  const query = useQuery({
+  const query = useWorkspaceQuery({
     queryKey: queryKeys.items.stats("kpis"),
     queryFn: () => fetchItems({ ...DEFAULT_ITEM_LIST_PARAMS, limit: 200 }),
   });
@@ -80,7 +81,7 @@ export function useItemKpis() {
 }
 
 export function useItem(itemId: string | null, enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.items.detail(itemId ?? ""),
     queryFn: () => fetchItemById(itemId!),
     enabled: enabled && Boolean(itemId),

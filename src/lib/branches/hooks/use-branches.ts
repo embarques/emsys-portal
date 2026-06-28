@@ -1,6 +1,7 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createBranch,
@@ -36,7 +37,7 @@ export function useBranchSearch(
 ) {
   const { enabled = true, limit = 40 } = options;
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.branches.search(search, limit),
     queryFn: () =>
       fetchBranches({
@@ -51,7 +52,7 @@ export function useBranchSearch(
 export function useBranches(params: BranchListParams, options: { enabled?: boolean } = {}) {
   const isFiltered = isBranchListFiltered(params);
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.branches.list(params),
     queryFn: () => fetchBranches(params),
     enabled: options.enabled ?? true,
@@ -61,7 +62,7 @@ export function useBranches(params: BranchListParams, options: { enabled?: boole
 }
 
 export function useBranchStats() {
-  const totalQuery = useQuery({
+  const totalQuery = useWorkspaceQuery({
     queryKey: queryKeys.branches.stats("all"),
     queryFn: () => fetchBranches({ ...DEFAULT_BRANCH_LIST_PARAMS, limit: 1 }),
   });
@@ -74,7 +75,7 @@ export function useBranchStats() {
 }
 
 export function useBranch(branchId: number | null, enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.branches.detail(branchId ?? 0),
     queryFn: () => fetchBranchById(branchId!),
     enabled: enabled && branchId != null && branchId > 0,

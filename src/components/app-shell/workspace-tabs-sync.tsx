@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
-import { buildWorkspaceTabUrl, readWorkspaceTabNumber } from "@/lib/layout/workspace-tab-url";
+import { buildWorkspaceTabUrl, pathnameFromHref, readWorkspaceTabNumber } from "@/lib/layout/workspace-tab-url";
 import { isWorkspaceRoute, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
 import {
   findTabByNumber,
@@ -13,7 +13,7 @@ import {
   readPersistedWorkspaceTabs,
   setActiveWorkspaceTab,
 } from "@/lib/store/layout/tabs-slice";
-import { useAppDispatch } from "@/lib/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import { store } from "@/lib/store/store";
 
 function createTabId() {
@@ -33,6 +33,8 @@ export function WorkspaceTabsSync() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isDesktopTabs = useIsDesktopWorkspaceTabs();
+  const tabs = useAppSelector((state) => state.layoutTabs.tabs);
+  const activeTabId = useAppSelector((state) => state.layoutTabs.activeTabId);
 
   const hydratedRef = useRef(false);
 
@@ -66,18 +68,26 @@ export function WorkspaceTabsSync() {
         return;
       }
 
+      const tabOnCurrentRoute = currentTabs.find((tab) => pathnameFromHref(tab.href) === pathname);
+      if (tabOnCurrentRoute) {
+        if (currentActiveTabId !== tabOnCurrentRoute.id) {
+          dispatch(setActiveWorkspaceTab(tabOnCurrentRoute.id));
+        }
+        router.replace(buildWorkspaceTabUrl(tabOnCurrentRoute.href, tabOnCurrentRoute.number));
+        return;
+      }
+
       const tabId = createTabId();
       dispatch(
         openWorkspaceTab({
           id: tabId,
           href: pathname,
           label: resolveWorkspaceLabel(pathname),
-          number: tabNumberFromUrl,
         }),
       );
 
-      const opened = findTabByNumber(store.getState().layoutTabs.tabs, tabNumberFromUrl);
-      if (opened && opened.number !== tabNumberFromUrl) {
+      const opened = store.getState().layoutTabs.tabs.find((tab) => tab.id === tabId);
+      if (opened) {
         router.replace(buildWorkspaceTabUrl(pathname, opened.number));
       }
       return;
@@ -105,6 +115,20 @@ export function WorkspaceTabsSync() {
       router.replace(buildWorkspaceTabUrl(pathname, opened.number));
     }
   }, [dispatch, isDesktopTabs, pathname, router, searchParams]);
+
+  useEffect(() => {
+    if (!isDesktopTabs || !hydratedRef.current) return;
+    if (!activeTabId) return;
+
+    const activeTab = tabs.find((tab) => tab.id === activeTabId);
+    if (!activeTab) return;
+    if (pathnameFromHref(activeTab.href) !== pathname) return;
+
+    const tabNumberFromUrl = readWorkspaceTabNumber(searchParams);
+    if (tabNumberFromUrl === activeTab.number) return;
+
+    router.replace(buildWorkspaceTabUrl(activeTab.href, activeTab.number));
+  }, [activeTabId, isDesktopTabs, pathname, router, searchParams, tabs]);
 
   return null;
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createUser,
@@ -67,7 +68,7 @@ export function useUserSearch(
 ) {
   const { enabled = true, limit = 40 } = options;
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.users.search(search, limit, options),
     queryFn: () => fetchUsers(buildUserSearchParams(search, options)),
     enabled: enabled && Boolean(search?.value.trim()),
@@ -84,7 +85,7 @@ export function useUserAutocomplete(
   const search = createUserSearchFilter(query, field, operator);
   const hasQuery = Boolean(query.trim());
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.users.autocomplete(query, field, operator, options),
     queryFn: () => fetchUsers(buildUserSearchParams(hasQuery ? search : undefined, options)),
     enabled,
@@ -94,7 +95,7 @@ export function useUserAutocomplete(
 export function useUsers(params: UserListParams) {
   const isFiltered = isUserListFiltered(params);
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.users.list(params),
     queryFn: () => fetchUsers(params),
     placeholderData: keepPreviousData,
@@ -103,17 +104,17 @@ export function useUsers(params: UserListParams) {
 }
 
 export function useUserStats(adminRoleId = 1) {
-  const totalQuery = useQuery({
+  const totalQuery = useWorkspaceQuery({
     queryKey: queryKeys.users.stats("all"),
     queryFn: () => fetchUsers({ page: 1, limit: 1 }),
   });
 
-  const activeQuery = useQuery({
+  const activeQuery = useWorkspaceQuery({
     queryKey: queryKeys.users.stats("active"),
     queryFn: () => fetchUsers({ page: 1, limit: 1, active: true }),
   });
 
-  const adminQuery = useQuery({
+  const adminQuery = useWorkspaceQuery({
     queryKey: queryKeys.users.stats("admin", adminRoleId),
     queryFn: () => fetchUsers({ page: 1, limit: 1, roleId: adminRoleId }),
   });
@@ -128,7 +129,7 @@ export function useUserStats(adminRoleId = 1) {
 }
 
 export function useUser(userId: string | number | null, enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.users.detail(String(userId ?? "")),
     queryFn: () => fetchUserById(userId!),
     enabled: enabled && userId != null && String(userId).trim() !== "",

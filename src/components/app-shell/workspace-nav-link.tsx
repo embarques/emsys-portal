@@ -3,7 +3,13 @@
 import Link from "next/link";
 import type { ComponentProps, MouseEvent } from "react";
 
-import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { useIsDesktopWorkspaceTabs, useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { isWorkspaceRoute } from "@/lib/layout/workspace-registry";
 import { cn } from "@/lib/utils";
@@ -12,10 +18,6 @@ type WorkspaceNavLinkProps = ComponentProps<typeof Link> & {
   href: string;
   label: string;
 };
-
-function shouldOpenInAppTab(event: MouseEvent<HTMLAnchorElement>) {
-  return !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0);
-}
 
 export function WorkspaceNavLink({
   href,
@@ -26,9 +28,10 @@ export function WorkspaceNavLink({
   ...props
 }: WorkspaceNavLinkProps) {
   const isMobile = useIsMobileViewport();
+  const isDesktopTabs = useIsDesktopWorkspaceTabs();
   const { openTab } = useWorkspaceTabs();
 
-  if (isMobile || !isWorkspaceRoute(href)) {
+  if (isMobile || !isDesktopTabs || !isWorkspaceRoute(href)) {
     return (
       <Link href={href} className={className} onClick={onClick} {...props}>
         {children}
@@ -36,22 +39,34 @@ export function WorkspaceNavLink({
     );
   }
 
-  return (
-    <Link
-      href={href}
-      className={className}
-      onClick={(event) => {
-        onClick?.(event);
-        if (event.defaultPrevented) return;
-        if (!shouldOpenInAppTab(event)) return;
+  function handleNavigate(event: MouseEvent<HTMLAnchorElement>, forceNew: boolean) {
+    onClick?.(event);
+    if (event.defaultPrevented) return;
+    if (event.button !== 0) return;
+    if (event.shiftKey || event.altKey) return;
 
-        event.preventDefault();
-        openTab(href, label);
-      }}
-      {...props}
-    >
-      {children}
-    </Link>
+    event.preventDefault();
+    openTab(href, label, { forceNew });
+  }
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <Link
+          href={href}
+          className={className}
+          onClick={(event) => handleNavigate(event, event.metaKey || event.ctrlKey)}
+          {...props}
+        >
+          {children}
+        </Link>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        <ContextMenuItem onSelect={() => openTab(href, label, { forceNew: true })}>
+          Open in new tab
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 

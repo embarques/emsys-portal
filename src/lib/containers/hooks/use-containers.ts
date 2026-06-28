@@ -1,6 +1,7 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createContainer,
@@ -35,7 +36,7 @@ export function useContainerSearch(
 ) {
   const { enabled = true, limit = 40 } = options;
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.containers.search(search, limit),
     queryFn: () =>
       fetchContainers({
@@ -50,7 +51,7 @@ export function useContainerSearch(
 export function useContainers(params: ContainerListParams, options: { enabled?: boolean } = {}) {
   const isFiltered = isContainerListFiltered(params);
 
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.containers.list(params),
     queryFn: () => fetchContainers(params),
     enabled: options.enabled ?? true,
@@ -60,7 +61,7 @@ export function useContainers(params: ContainerListParams, options: { enabled?: 
 }
 
 export function useContainerStats() {
-  const totalQuery = useQuery({
+  const totalQuery = useWorkspaceQuery({
     queryKey: queryKeys.containers.stats("all"),
     queryFn: () => fetchContainers({ ...DEFAULT_CONTAINER_LIST_PARAMS, limit: 1 }),
   });
@@ -73,7 +74,7 @@ export function useContainerStats() {
 }
 
 export function useContainerKpis() {
-  const query = useQuery({
+  const query = useWorkspaceQuery({
     queryKey: queryKeys.containers.stats("kpis"),
     queryFn: () => fetchContainers({ ...DEFAULT_CONTAINER_LIST_PARAMS, limit: 200 }),
   });
@@ -86,7 +87,7 @@ export function useContainerKpis() {
 }
 
 export function useContainer(containerId: number | null, enabled = true) {
-  return useQuery({
+  return useWorkspaceQuery({
     queryKey: queryKeys.containers.detail(containerId ?? 0),
     queryFn: () => fetchContainerById(containerId!),
     enabled: enabled && containerId != null && containerId > 0,
