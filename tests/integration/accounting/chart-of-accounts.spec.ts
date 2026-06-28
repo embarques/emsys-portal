@@ -1,46 +1,53 @@
 import { expect, test } from "@playwright/test";
 
-import { ensureAuthenticated } from "../auth.fixture";
+import { gotoWorkspace, waitForApiResponse, workspaceMain } from "../workspace.fixture";
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/accounting/accounts");
-  await ensureAuthenticated(page);
+  await gotoWorkspace(page, "/accounting/accounts");
 });
 
 test("renders the live paginated chart of accounts directory", async ({ page }) => {
-  await expect(page.getByRole("heading", { name: "Chart of Accounts" })).toBeVisible();
-  await expect(page.getByText("Accounts", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Showing \d+ of \d+ accounts/).first()).toBeVisible();
-  await expect(page.getByText(/Page 1 of \d+/)).toBeVisible();
+  const main = workspaceMain(page);
+
+  await expect(main.getByRole("heading", { name: "Chart of Accounts" })).toBeVisible();
+  await expect(main.getByText("Accounts", { exact: true })).toBeVisible();
+  await expect(main.getByText("Loading accounts…")).toHaveCount(0, { timeout: 30_000 });
+  await expect(main.getByText("Route not found")).toHaveCount(0);
+  await expect(main.getByText(/Showing \d+ of \d+ accounts/).first()).toBeVisible();
+  await expect(main.getByText(/Page \d+ of \d+/)).toBeVisible({ timeout: 15_000 });
 });
 
 test("creates and deletes an account through the authenticated API", async ({ page }) => {
+  const main = workspaceMain(page);
   const accountName = `Playwright Account ${Date.now()}`;
 
-  await page.getByRole("button", { name: "Add account" }).click();
+  await main.getByRole("button", { name: "Add account" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Create account" });
   await dialog.getByLabel("Account name", { exact: true }).fill(accountName);
   await dialog.getByLabel("Account type", { exact: true }).selectOption("REVENUE");
   await dialog.getByLabel("Description", { exact: true }).fill("Created by Playwright integration testing");
 
-  const createResponse = page.waitForResponse((candidate) =>
-    candidate.url().includes("/accounting/account") && candidate.request().method() === "POST",
-  );
-  await page.getByRole("button", { name: "Create account" }).click();
-  expect((await createResponse).ok()).toBe(true);
+  const createResponse = waitForApiResponse(page, "/accounting/account", "POST", { requireOk: false });
+  await dialog.getByRole("button", { name: "Create account" }).click();
+  const response = await createResponse;
+  expect(response.ok(), `Create account failed with HTTP ${response.status()}`).toBe(true);
 
   await expect(page.getByText("Account created.")).toBeVisible();
 
-  await page.getByPlaceholder("Search by account…").fill(accountName);
-  const row = page.locator("tr").filter({ hasText: accountName });
-  await expect(row).toBeVisible();
+  await main.getByPlaceholder("Search by account…").fill(accountName);
+  const row = main.locator("tr").filter({ hasText: accountName });
+  await expect(row).toBeVisible({ timeout: 15_000 });
   await row.getByRole("button", { name: "Delete account" }).click();
 
-  const deleteResponse = page.waitForResponse((candidate) =>
-    candidate.url().includes("/accounting/account/") && candidate.request().method() === "DELETE",
-  );
+  const deleteResponse = waitForApiResponse(page, "/accounting/account/", "DELETE", { requireOk: false });
   await page.getByRole("dialog", { name: "Delete account?" }).getByRole("button", { name: "Delete" }).click();
-  expect((await deleteResponse).ok()).toBe(true);
+  const deleted = await deleteResponse;
+  expect(deleted.ok(), `Delete account failed with HTTP ${deleted.status()}`).toBe(true);
   await expect(row).toHaveCount(0);
+});
+
+test("opens the route in a workspace tab", async ({ page }) => {
+  await expect(page).toHaveURL(/\/accounting\/accounts\?.*tab=\d+/);
+  await expect(workspaceMain(page).locator("[data-tab-id]").filter({ hasText: "Chart of Accounts" })).toBeVisible();
 });

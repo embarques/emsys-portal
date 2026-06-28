@@ -15,6 +15,7 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL,
+    viewport: { width: 1280, height: 720 },
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -38,7 +39,7 @@ export default defineConfig({
     command: `npx next dev -H 127.0.0.1 -p ${port}`,
     url: baseURL,
     // Exercise the real Firebase login and configured EMSYS API.
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
       NEXT_PUBLIC_BYPASS_AUTH: "false",

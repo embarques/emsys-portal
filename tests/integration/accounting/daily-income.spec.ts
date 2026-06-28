@@ -1,10 +1,14 @@
 import { expect, test } from "@playwright/test";
 
-import { ensureAuthenticated } from "../auth.fixture";
+import {
+  gotoWorkspace,
+  waitForWorkspaceShell,
+  waitForWorkspaceTabUrl,
+  workspaceMain,
+} from "../workspace.fixture";
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/accounting/daily-income");
-  await ensureAuthenticated(page);
+  await gotoWorkspace(page, "/accounting/daily-income");
 });
 
 test("uses Firebase authentication for EMSYS API requests", async ({ page }) => {
@@ -13,6 +17,9 @@ test("uses Firebase authentication for EMSYS API requests", async ({ page }) => 
   );
 
   await page.reload();
+  await waitForWorkspaceTabUrl(page, "/accounting/daily-income");
+  await waitForWorkspaceShell(page);
+
   const request = await permissionsRequest;
 
   expect(request.headers().authorization).toMatch(/^Bearer\s+\S+$/);
@@ -20,11 +27,18 @@ test("uses Firebase authentication for EMSYS API requests", async ({ page }) => 
 });
 
 test("renders live closeout totals and its transaction directory", async ({ page }) => {
-  await expect(page.getByRole("heading", { name: "Daily Income" })).toBeVisible();
-  await expect(page.getByText("Total income")).toBeVisible();
-  await expect(page.getByText("Total expenses")).toBeVisible();
-  await expect(page.getByText("Net (income − expenses)")).toBeVisible();
-  await expect(page.getByText("Invoice payments")).toBeVisible();
-  await expect(page.getByText("Transactions", { exact: true })).toBeVisible();
-  await expect(page.getByText(/No closeout for this date|(?:OPEN|CLOSED) · #/)).toBeVisible();
+  const main = workspaceMain(page);
+
+  await expect(main.getByRole("heading", { name: "Daily Income" })).toBeVisible();
+  await expect(main.getByText("Total income")).toBeVisible();
+  await expect(main.getByText("Total expenses")).toBeVisible();
+  await expect(main.getByText("Net (income − expenses)")).toBeVisible();
+  await expect(main.getByText("Invoice payments")).toBeVisible();
+  await expect(main.getByText("Transactions", { exact: true })).toBeVisible();
+  await expect(main.getByText(/No closeout for this date|(?:OPEN|CLOSED) · #/)).toBeVisible();
+});
+
+test("opens the route in a workspace tab", async ({ page }) => {
+  await expect(page).toHaveURL(/\/accounting\/daily-income\?.*tab=\d+/);
+  await expect(workspaceMain(page).locator("[data-tab-id]").filter({ hasText: "Daily Income" })).toBeVisible();
 });
