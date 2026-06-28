@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 
-import { EmsysLogo } from "@/components/brand/emsys-logo";
+import { SidebarBrand } from "@/components/brand/sidebar-brand";
 import { Button } from "@/components/ui/button";
 import { SidebarNav } from "./sidebar-nav";
 import { SidebarProfileMenu } from "./sidebar-profile-menu";
@@ -31,7 +31,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
       <aside className="absolute inset-y-0 left-0 flex w-[19rem] max-w-[88vw] flex-col border-r bg-card text-card-foreground shadow-2xl">
         <div className="flex h-16 shrink-0 items-center justify-between border-b px-4">
           <div className="flex min-w-0 items-center gap-3">
-            <EmsysLogo variant="full" />
+            <SidebarBrand />
           </div>
 
           <Button

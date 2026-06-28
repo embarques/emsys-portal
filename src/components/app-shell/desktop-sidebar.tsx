@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { EmsysLogo } from "@/components/brand/emsys-logo";
+import { SidebarBrand } from "@/components/brand/sidebar-brand";
 import { navigation } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { SidebarNav } from "./sidebar-nav";
@@ -32,9 +32,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
     return (
       <aside className={cn(sidebarShellClassName, "hidden w-20 md:flex")}>
         <div className={cn("flex h-20 shrink-0 items-center justify-center border-b", sidebarSectionClassName)}>
-          <Link href="/" aria-label="Dashboard" className="flex items-center justify-center">
-            <EmsysLogo variant="mark" priority />
-          </Link>
+          <SidebarBrand compact priority />
         </div>
 
         <nav className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-3 py-4">
@@ -65,9 +63,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
   return (
     <aside className={cn(sidebarShellClassName, "hidden w-20 md:flex xl:w-72")}>
       <div className={cn("flex h-20 shrink-0 items-center justify-center border-b xl:hidden", sidebarSectionClassName)}>
-        <Link href="/" aria-label="Dashboard" className="flex items-center justify-center">
-          <EmsysLogo variant="mark" priority />
-        </Link>
+        <SidebarBrand compact priority />
       </div>
 
       <nav className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-3 py-4 xl:hidden">
@@ -93,9 +89,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
       </div>
 
       <div className={cn("hidden h-20 shrink-0 items-center border-b px-5 xl:flex", sidebarSectionClassName)}>
-        <Link href="/" aria-label="Dashboard" className="min-w-0">
-          <EmsysLogo variant="full" priority />
-        </Link>
+        <SidebarBrand priority />
       </div>
 
       <div className="hidden min-h-0 flex-1 overflow-y-auto p-3 xl:block">
