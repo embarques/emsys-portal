@@ -3,12 +3,13 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  addInvoicesToDelivery,
+  addPackagesToDelivery,
   createDelivery,
   deleteDeliveries,
   fetchDeliveries,
   fetchDeliveryBarcodes,
   fetchDeliveryById,
+  fetchInvoiceDetailLabels,
   updateDelivery,
 } from "@/lib/deliveries/api/deliveries-api";
 import { hasListTextSearch } from "@/lib/api/search-query";
@@ -21,9 +22,9 @@ import {
   type DeliveryEmployeeGroupRef,
   type DeliveryFormValues,
   type DeliveryListParams,
+  type DeliveryPackageBarcode,
   type DeliverySearchFilter,
 } from "@/lib/deliveries/types";
-import type { Invoice } from "@/lib/invoices/types";
 import { queryKeys } from "@/lib/query/query-keys";
 
 function isDeliveryListFiltered(params: DeliveryListParams): boolean {
@@ -147,14 +148,23 @@ export function useDeleteDeliveries() {
   });
 }
 
-export function useAddInvoicesToDelivery() {
+export function useAddPackagesToDelivery() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { delivery: Delivery; invoices: Invoice[] }) => addInvoicesToDelivery(input),
+    mutationFn: (input: { delivery: Delivery; barcodes: DeliveryPackageBarcode[] }) =>
+      addPackagesToDelivery(input),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.deliveries.barcodes(variables.delivery.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.deliveries.detail(variables.delivery.id) });
     },
+  });
+}
+
+export function useInvoiceDetailLabels(invoiceIds: string[], enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.deliveries.invoiceDetailLabels(invoiceIds),
+    queryFn: () => fetchInvoiceDetailLabels(invoiceIds),
+    enabled: enabled && invoiceIds.length > 0,
   });
 }

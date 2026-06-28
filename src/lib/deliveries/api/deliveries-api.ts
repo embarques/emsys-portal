@@ -22,8 +22,12 @@ import {
   type DeliveryEmployeeGroupRef,
   type DeliveryFormValues,
   type DeliveryListParams,
+  type DeliveryPackageBarcode,
+  type DeliveryPackageContainerRef,
+  type DeliveryPackageLineItem,
+  type DeliveryPackageStatusRef,
+  type DeliveryPackageUpdateResult,
 } from "@/lib/deliveries/types";
-import type { Invoice } from "@/lib/invoices/types";
 
 type ApiRef = {
   id?: number | string;
@@ -85,7 +89,24 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   success?: boolean;
   message?: string;
   error?: string;
+  response?: unknown;
 };
+
+function unwrapPayload(payload: unknown): unknown {
+  if (!payload || typeof payload !== "object") return payload;
+  const envelope = payload as ApiMutationEnvelope<unknown>;
+  if (envelope.data !== undefined && envelope.data !== null) return envelope.data;
+  if (envelope.response !== undefined && envelope.response !== null) return envelope.response;
+  return payload;
+}
+
+function unwrapArray(payload: unknown): unknown[] {
+  const value = unwrapPayload(payload);
+  return Array.isArray(value) ? value : [];
+}
+
+const DELIVERY_PACKAGE_ACTION = "delivery-pkgs";
+const CONDUCE_STATUS_NAMES = new Set(["CONDUCE"]);
 
 type DeliveryReferenceOptions = {
   containers: DeliveryContainerRef[];
@@ -423,32 +444,201 @@ export async function fetchDeliveryBarcodes(deliveryId: string | number): Promis
   return normalizeBarcodeList(response);
 }
 
-export async function addInvoicesToDelivery(input: {
+function normalizePackageStatus(raw: unknown): DeliveryPackageStatusRef {
+  if (!raw || typeof raw !== "object") return { name: "" };
+  const item = raw as { id?: number; name?: string; prevStatus?: string };
+  return {
+    id: readNumericId(item.id),
+    name: String(item.name ?? "").trim(),
+    prevStatus: String(item.prevStatus ?? "").trim() || undefined,
+  };
+}
+
+function normalizePackageContainer(raw: unknown): DeliveryPackageContainerRef {
+  if (!raw || typeof raw !== "object") return { id: 0, name: "" };
+  const item = raw as ApiRef;
+  return {
+    id: readNumericId(item.id) ?? 0,
+    name: String(item.name ?? "").trim(),
+    containerNumber: String(item.containerNumber ?? "").trim() || undefined,
+  };
+}
+
+function normalizePackageBarcode(raw: unknown): DeliveryPackageBarcode | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as ApiBarcode;
+  const id = readNumericId(item.id);
+  const number = String(item.number ?? "").trim();
+  if (id == null || id <= 0 || !number) return null;
+
+  const invoiceId = item.invoice?.id ?? item.invoiceId;
+  const invoiceNumber = item.invoice?.number ?? item.invoiceNumber;
+
+  return {
+    id,
+    number,
+    status: normalizePackageStatus(item.status),
+    container: normalizePackageContainer(item.container),
+    delivery:
+      item.delivery && readNumericId(item.delivery.id)
+        ? { id: readNumericId(item.delivery.id)!, name: String(item.delivery.name ?? "").trim() }
+        : null,
+    invoice: invoiceId
+      ? { id: String(invoiceId), number: String(invoiceNumber ?? invoiceId) }
+      : null,
+    scanDate: String(item.scanDate ?? item.createdAt ?? "").trim() || undefined,
+  };
+}
+
+function normalizePackageLineItem(raw: unknown): DeliveryPackageLineItem | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as {
+    id?: string | number;
+    name?: string;
+    invoice?: string;
+    quantity?: number;
+    labels?: number;
+    price?: number;
+    total?: number;
+    barcodes?: unknown[];
+  };
+
+  const id = String(item.id ?? item.name ?? "").trim();
+  const name = String(item.name ?? "").trim();
+  if (!id && !name) return null;
+
+  const barcodes = Array.isArray(item.barcodes)
+    ? item.barcodes
+        .map(normalizePackageBarcode)
+        .filter((barcode): barcode is DeliveryPackageBarcode => barcode != null)
+    : [];
+
+  return {
+    id: id || name,
+    name: name || id,
+    invoiceNumber: String(item.invoice ?? "").trim(),
+    quantity: Number(item.quantity ?? 0),
+    labels: Number(item.labels ?? barcodes.length),
+    price: Number(item.price ?? 0),
+    total: Number(item.total ?? 0),
+    barcodes,
+  };
+}
+
+function normalizePackageUpdateResult(raw: unknown): DeliveryPackageUpdateResult | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as {
+    number?: string;
+    date?: string;
+    newStatus?: string;
+    prevStatus?: string;
+    containerNumber?: string;
+    deliveryNumber?: string;
+    message?: string;
+    hasError?: boolean;
+  };
+  const number = String(item.number ?? "").trim();
+  if (!number) return null;
+
+  return {
+    number,
+    date: String(item.date ?? "").trim() || undefined,
+    newStatus: String(item.newStatus ?? "").trim() || undefined,
+    prevStatus: String(item.prevStatus ?? "").trim() || undefined,
+    containerNumber: String(item.containerNumber ?? "").trim() || undefined,
+    deliveryNumber: String(item.deliveryNumber ?? "").trim() || undefined,
+    message: String(item.message ?? "").trim(),
+    hasError: Boolean(item.hasError),
+  };
+}
+
+export async function fetchInvoiceDetailLabels(invoiceIds: string[]): Promise<DeliveryPackageLineItem[]> {
+  const ids = invoiceIds.map((id) => id.trim()).filter(Boolean);
+  if (ids.length === 0) {
+    throw new Error("Select at least one invoice.");
+  }
+
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    API_ENDPOINTS.INVOICE_DETAIL_LABELS,
+    { invoiceIds: ids },
+  );
+
+  assertMutationSuccess(response, "Unable to load invoice packages.");
+  return unwrapArray(response)
+    .map(normalizePackageLineItem)
+    .filter((line): line is DeliveryPackageLineItem => line != null);
+}
+
+export async function fetchDeliveryBarcodeStatuses(): Promise<DeliveryPackageStatusRef[]> {
+  const response = await apiClient.get<ApiMutationEnvelope<unknown>>(
+    API_ENDPOINTS.INVOICE_DETAIL_BARCODE_STATUSES,
+  );
+
+  return unwrapArray(response)
+    .map(normalizePackageStatus)
+    .filter((status) => status.name);
+}
+
+function resolveConduceStatus(statuses: DeliveryPackageStatusRef[]): DeliveryPackageStatusRef {
+  const match =
+    statuses.find((status) => status.id === 6) ??
+    statuses.find((status) => CONDUCE_STATUS_NAMES.has(status.name.toUpperCase()));
+
+  if (!match?.name) {
+    throw new Error("CONDUCE status is not available in the barcode status list.");
+  }
+
+  return match;
+}
+
+export async function addPackagesToDelivery(input: {
   delivery: Delivery;
-  invoices: Invoice[];
-}): Promise<void> {
-  const { delivery, invoices } = input;
+  barcodes: DeliveryPackageBarcode[];
+}): Promise<DeliveryPackageUpdateResult[]> {
+  const { delivery, barcodes } = input;
+
   if (!delivery.container) {
     throw new Error("Delivery must have a container before packages can be added.");
   }
 
-  const requests = invoices.flatMap((invoice) =>
-    invoice.lineItems.flatMap((lineItem) => {
-      const count = Math.max(1, lineItem.labelCount || lineItem.quantity || 1);
-      return Array.from({ length: count }, (_entry, index) =>
-        apiClient.post<ApiMutationEnvelope<unknown>>(API_ENDPOINTS.BARCODES, {
-          number: `${invoice.invoiceNumber || invoice.invoiceId}-${lineItem.id}-${index + 1}`,
-          status: { id: 4, name: "CONDUCE" },
-          container: delivery.container,
-          delivery: { id: delivery.id, name: delivery.name },
-          invoice: { id: invoice.invoiceId, number: invoice.invoiceNumber },
-          lineItemName: lineItem.itemName,
-          quantity: lineItem.quantity,
-        }),
-      );
-    }),
+  if (barcodes.length === 0) {
+    throw new Error("Select at least one package to add.");
+  }
+
+  const conduceStatus = resolveConduceStatus(await fetchDeliveryBarcodeStatuses());
+
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    API_ENDPOINTS.INVOICE_DETAIL_BARCODE,
+    {
+      action: DELIVERY_PACKAGE_ACTION,
+      barcodes: barcodes.map((barcode) => ({
+        number: barcode.number,
+        currentStatus: barcode.status,
+        nextStatus: { id: conduceStatus.id, name: conduceStatus.name },
+        prevStatus: conduceStatus.prevStatus ?? barcode.status.prevStatus ?? "",
+        container: barcode.container,
+        delivery: barcode.delivery,
+        invoice: barcode.invoice,
+      })),
+      status: { id: conduceStatus.id, name: conduceStatus.name },
+      container: { id: 0, name: "" },
+      delivery: { id: delivery.id, name: delivery.name },
+    },
   );
 
-  const responses = await Promise.all(requests);
-  responses.forEach((response) => assertMutationSuccess(response, "Unable to add invoice packages."));
+  assertMutationSuccess(response, "Unable to add packages to delivery.");
+
+  const results = unwrapArray(response)
+    .map(normalizePackageUpdateResult)
+    .filter((result): result is DeliveryPackageUpdateResult => result != null);
+
+  if (results.length === 0 && barcodes.length > 0) {
+    return barcodes.map((barcode) => ({
+      number: barcode.number,
+      message: "Package added to delivery.",
+      hasError: false,
+    }));
+  }
+
+  return results;
 }

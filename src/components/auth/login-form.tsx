@@ -1,8 +1,10 @@
 "use client";
 
-import { Eye, EyeOff, Shield } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+
+import { EmsysLogo } from "@/components/brand/emsys-logo";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
@@ -51,8 +53,8 @@ export function LoginForm() {
 
       <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/90 p-8 shadow-2xl backdrop-blur">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-            <Shield className="h-7 w-7" />
+          <div className="mx-auto mb-4 flex justify-center">
+            <EmsysLogo variant="full" className="mx-auto h-12 max-w-[200px]" priority />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Sign in to EMSYS</h1>
           <p className="mt-2 text-sm text-slate-400">

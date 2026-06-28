@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Boxes } from "lucide-react";
 
+import { EmsysLogo } from "@/components/brand/emsys-logo";
 import { navigation } from "@/config/navigation";
-import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { SidebarNav } from "./sidebar-nav";
 import { SidebarProfileMenu } from "./sidebar-profile-menu";
@@ -33,12 +32,8 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
     return (
       <aside className={cn(sidebarShellClassName, "hidden w-20 md:flex")}>
         <div className={cn("flex h-20 shrink-0 items-center justify-center border-b", sidebarSectionClassName)}>
-          <Link
-            href="/"
-            aria-label="Dashboard"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-          >
-            <Boxes className="h-6 w-6" />
+          <Link href="/" aria-label="Dashboard" className="flex items-center justify-center">
+            <EmsysLogo variant="mark" priority />
           </Link>
         </div>
 
@@ -70,12 +65,8 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
   return (
     <aside className={cn(sidebarShellClassName, "hidden w-20 md:flex xl:w-72")}>
       <div className={cn("flex h-20 shrink-0 items-center justify-center border-b xl:hidden", sidebarSectionClassName)}>
-        <Link
-          href="/"
-          aria-label="Dashboard"
-          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-        >
-          <Boxes className="h-6 w-6" />
+        <Link href="/" aria-label="Dashboard" className="flex items-center justify-center">
+          <EmsysLogo variant="mark" priority />
         </Link>
       </div>
 
@@ -101,18 +92,10 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
         <SidebarProfileMenu compact />
       </div>
 
-      <div className={cn("hidden h-20 shrink-0 items-center gap-3 border-b px-5 xl:flex", sidebarSectionClassName)}>
-        <Link
-          href="/"
-          aria-label="Dashboard"
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-        >
-          <Boxes className="h-6 w-6" />
+      <div className={cn("hidden h-20 shrink-0 items-center border-b px-5 xl:flex", sidebarSectionClassName)}>
+        <Link href="/" aria-label="Dashboard" className="min-w-0">
+          <EmsysLogo variant="full" priority />
         </Link>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold leading-none text-foreground">{siteConfig.name}</p>
-          <p className="mt-1 truncate text-xs text-muted-foreground">{siteConfig.company}</p>
-        </div>
       </div>
 
       <div className="hidden min-h-0 flex-1 overflow-y-auto p-3 xl:block">
