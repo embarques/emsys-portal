@@ -27,8 +27,13 @@ export const API_ENDPOINTS = {
   ACCOUNTING_ACCOUNTS: "/accounting/accounts",
   ACCOUNTING_ACCOUNT: "/accounting/account",
   ACCOUNTING_PAYMENT_METHODS: "/accounting/paymentmethods",
-  REPORTS_LABELS: "/reports/labels",
+  REPORTS_INCOME: "/reports/income",
   REPORTS_INVOICES: "/reports/invoices",
+  REPORTS_JOURNALS: "/reports/journals",
+  REPORTS_LABELS: "/reports/labels",
+  REPORTS_PICKUPS: "/reports/pickups",
+  /** Public PDF download; append `/{token}`. */
+  REPORTS_PUBLIC: "/public/reports",
   FILTER_PRESETS: "/filter-presets",
   MEMO_PADS: "/memo-pads",
 } as const;

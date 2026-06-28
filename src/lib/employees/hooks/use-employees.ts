@@ -88,8 +88,8 @@ export function useEmployeeStats() {
 
   const branchQueries = useQueries({
     queries: EMPLOYEE_PORTAL_BRANCHES.map((branch) => ({
-      queryKey: queryKeys.employees.stats(`branch:${branch.id}`),
-      queryFn: () => fetchEmployees({ page: 1, limit: 1, branch: branch.id }),
+      queryKey: queryKeys.employees.stats(`branch:${branch.code}`),
+      queryFn: () => fetchEmployees({ page: 1, limit: 1, branch: branch.code }),
     })),
   });
 

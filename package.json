@@ -8,7 +8,8 @@
     "dev:local": "NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/v1 next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "pretest:integration": "playwright install chromium",
     "test:integration": "playwright test",
     "test:integration:accounting": "playwright test tests/integration/accounting",
@@ -42,11 +43,14 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.9",
     "tailwindcss": "latest",
     "typescript": "latest"
   }

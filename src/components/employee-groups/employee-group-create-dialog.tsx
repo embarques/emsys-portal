@@ -21,7 +21,6 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import { useCreateEmployeeGroup } from "@/lib/employee-groups/hooks/use-employee-groups";
-import { getEmployeeBranchLabel } from "@/lib/employees/display";
 import { useEmployeeSearch, useEmployees } from "@/lib/employees/hooks/use-employees";
 import { DEFAULT_EMPLOYEE_LIST_PARAMS, getEmployeePortalBranch } from "@/lib/employees/types";
 import { cn } from "@/lib/utils";
@@ -98,19 +97,18 @@ export function EmployeeGroupCreateDialog({
   }, [derivedName, nameEdited, setValue]);
 
   const employees = useMemo(() => {
-    const merged = new Map<number, { id: number; name: string; title: string; branch: string }>();
+    const merged = new Map<number, { id: number; name: string; title: string }>();
     const source = debouncedEmployeeQuery
       ? (employeeSearch.data?.items ?? [])
       : (employeesQuery.data?.items ?? []);
 
     source
-      .filter((employee) => employee.active)
+      .filter((employee) => employee.active && getEmployeePortalBranch(employee) === branch)
       .forEach((employee) =>
         merged.set(employee.id, {
           id: employee.id,
           name: employee.name,
           title: employee.title,
-          branch: getEmployeeBranchLabel(getEmployeePortalBranch(employee)),
         }),
       );
     selectedEmployees.forEach((employee) => {
@@ -119,11 +117,10 @@ export function EmployeeGroupCreateDialog({
         id: employee.id,
         name: employee.name,
         title: "",
-        branch: "",
       });
     });
     return Array.from(merged.values());
-  }, [debouncedEmployeeQuery, employeeSearch.data?.items, employeesQuery.data?.items, selectedEmployees]);
+  }, [branch, debouncedEmployeeQuery, employeeSearch.data?.items, employeesQuery.data?.items, selectedEmployees]);
 
   function handleDialogChange(nextOpen: boolean) {
     if (!nextOpen) {
@@ -195,26 +192,20 @@ export function EmployeeGroupCreateDialog({
                   ) : null}
                 </div>
 
-                <div className="space-y-1">
-                  <Label>Selected employees</Label>
-                  <div className="flex h-9 items-center rounded-md border bg-muted/20 px-3 text-sm">
-                    {selectedEmployees.length} selected
-                  </div>
-                </div>
-
-                <div className="space-y-1">
+                <div className="space-y-1 sm:col-span-2">
                   <Label htmlFor="new-employee-group-branch">
                     Branch <span className="text-destructive">*</span>
                   </Label>
                   <SearchableSelect
                     id="new-employee-group-branch"
                     value={branch}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
                       setValue("branch", value as EmployeeGroupCreateValues["branch"], {
                         shouldDirty: true,
                         shouldValidate: true,
-                      })
-                    }
+                      });
+                      setValue("employees", [], { shouldDirty: true, shouldValidate: true });
+                    }}
                     searchable={false}
                     options={[
                       { value: "usa", label: "USA" },
@@ -227,6 +218,10 @@ export function EmployeeGroupCreateDialog({
 
             <FormSection icon={Users} title="Members" required>
               <div className="space-y-2.5">
+                <div className="flex items-center justify-end">
+                  <Badge variant="secondary">{selectedEmployees.length} selected</Badge>
+                </div>
+
                 <Input
                   id="new-employee-group-search"
                   value={employeeQuery}
@@ -234,7 +229,7 @@ export function EmployeeGroupCreateDialog({
                   placeholder="Search employees by name or role..."
                 />
 
-                <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border p-3">
+                <div className="max-h-72 space-y-1 overflow-y-auto rounded-xl border p-2">
                   {employeeLoading && employees.length === 0 ? (
                     <p className="px-2 py-6 text-center text-sm text-muted-foreground">Loading employees…</p>
                   ) : employees.length === 0 ? (
@@ -246,7 +241,7 @@ export function EmployeeGroupCreateDialog({
                         <label
                           key={employee.id}
                           className={cn(
-                            "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
+                            "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors",
                             checked ? "border-primary bg-primary/5" : "hover:bg-muted/30",
                           )}
                         >
@@ -259,17 +254,12 @@ export function EmployeeGroupCreateDialog({
                                 event.target.checked,
                               )
                             }
-                            className="mt-1 size-4 rounded border-input"
+                            className="size-4 rounded border-input"
                           />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-medium">{employee.name}</span>
-                              {employee.title ? (
-                                <Badge variant="outline">{employee.title}</Badge>
-                              ) : null}
-                            </div>
-                            {employee.branch ? (
-                              <p className="mt-1 text-xs text-muted-foreground">{employee.branch}</p>
+                          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                            <span className="font-medium">{employee.name}</span>
+                            {employee.title ? (
+                              <Badge variant="outline">{employee.title}</Badge>
                             ) : null}
                           </div>
                         </label>

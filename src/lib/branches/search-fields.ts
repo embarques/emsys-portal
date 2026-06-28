@@ -1,14 +1,16 @@
-/** POST /branches/search — OR bar search across common branch fields. */
+/**
+ * POST /branches/search — OR bar search across common branch fields.
+ * Only fields the API allows may appear here; unsupported fields (phone1/2,
+ * address.country, settings.labelPrefix, disclaimer) cause an HTTP 400.
+ */
 export const BRANCH_BAR_OR_SEARCH_FIELDS = [
   "name",
   "code",
   "type",
-  "phone1",
-  "phone2",
+  "phones.number",
   "address.city",
   "address.state",
-  "address.country",
-  "settings.labelPrefix",
+  "address.zipcode",
 ] as const;
 
 export type BranchBarOrSearchField = (typeof BRANCH_BAR_OR_SEARCH_FIELDS)[number];

@@ -46,7 +46,7 @@ function buildEmployeeChipFilters(params: EmployeeListParams): ApiSearchFilter[]
   }
 
   if (params.branch && params.branch !== "all") {
-    filters.push({ field: "branch.id", operator: "eq", value: Number(params.branch) });
+    filters.push({ field: "branch.code", operator: "eq", value: String(params.branch) });
   }
 
   return filters;

@@ -69,7 +69,7 @@ import {
   useInvoiceStats,
   useInvoices,
 } from "@/lib/invoices/hooks/use-invoices";
-import { useGenerateInvoiceReport } from "@/lib/invoices/hooks/use-invoice-reports";
+import { useGenerateInvoiceReport } from "@/lib/reports/hooks/use-reports";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { buildOrderCreatedByFilterOptions } from "@/lib/orders/display";
 import { useUsers } from "@/lib/users/hooks/use-users";
@@ -244,7 +244,12 @@ export function InvoicesWorkspace() {
     }
 
     try {
-      const report = await generateInvoiceReportMutation.mutateAsync({ invoices: invoiceIds });
+      const report = await generateInvoiceReportMutation.mutateAsync({
+        type: "invoice",
+        collection: "invoices",
+        values: invoiceIds,
+        lookupField: "id",
+      });
       window.open(report.url, "_blank", "noopener,noreferrer");
       notifySuccess(`Invoice report ready for ${invoiceIds.length} invoice(s).`);
     } catch (mutationError) {

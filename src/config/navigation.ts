@@ -46,7 +46,7 @@ const navigationGroups: NavigationGroup[] = [
       { label: "Orders", href: "/orders", icon: Package, permission: PERMISSIONS.pickupsView },
       { label: "Invoices", href: "/invoices", icon: FileText, permission: PERMISSIONS.invoicesView },
       {
-        label: "Label Updater",
+        label: "Label Manager",
         href: "/label-updater",
         icon: ScanBarcode,
         permission: PERMISSIONS.packagesView,

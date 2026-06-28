@@ -102,7 +102,7 @@ export function LabelUpdaterWorkspace() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Label Updater" />
+      <PageHeader title="Label Manager" />
 
       <Card>
         <CardHeader>

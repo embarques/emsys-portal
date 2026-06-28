@@ -56,23 +56,29 @@ export type BranchFormValues = {
 
 export type BranchSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 
+/**
+ * Fields the EMSYS API allows in branch search/filter queries. This list is
+ * authoritative — the API rejects any other field with HTTP 400.
+ * (e.g. `disclaimer`, `phone1/2`, `address.country`, `settings.labelPrefix`
+ * are NOT searchable; use `phones.number`, `address.zipcode`, etc.)
+ */
 export type BranchSearchField =
   | "id"
   | "name"
   | "code"
   | "type"
-  | "phone1"
-  | "phone2"
-  | "disclaimer"
-  | "logo"
-  | "address.address1"
-  | "address.address2"
-  | "address.apartment"
   | "address.city"
   | "address.state"
-  | "address.country"
   | "address.zipcode"
-  | "settings.labelPrefix";
+  | "phones.number"
+  | "phones.type"
+  | "phones.isPrimary"
+  | "createdAt"
+  | "updatedAt"
+  | "createdBy.id"
+  | "createdBy.name"
+  | "updatedBy.id"
+  | "updatedBy.name";
 
 export type BranchSearchFilter = ApiListTextSearch;
 
@@ -103,14 +109,10 @@ export const BRANCH_SEARCH_FIELDS: { value: BranchSearchField; label: string }[]
   { value: "name", label: "Name" },
   { value: "code", label: "Code" },
   { value: "type", label: "Type" },
-  { value: "phone1", label: "Phone 1" },
-  { value: "phone2", label: "Phone 2" },
-  { value: "disclaimer", label: "Disclaimer" },
+  { value: "phones.number", label: "Phone" },
   { value: "address.city", label: "City" },
   { value: "address.state", label: "State" },
-  { value: "address.country", label: "Country" },
-  { value: "settings.labelPrefix", label: "Label prefix" },
-  { value: "id", label: "Branch ID" },
+  { value: "address.zipcode", label: "Zip code" },
 ];
 
 export const BRANCH_SEARCH_OPERATORS: { value: BranchSearchOperator; label: string }[] = [

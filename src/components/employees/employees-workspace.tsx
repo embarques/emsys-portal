@@ -221,7 +221,7 @@ export function EmployeesWorkspace() {
     const apiBranches = branchesData?.items ?? [];
 
     return apiBranches.map((branch) => ({
-      value: String(branch.id),
+      value: branch.code,
       label: formatBranchFilterLabel(branch),
     }));
   }, [branchesData?.items]);

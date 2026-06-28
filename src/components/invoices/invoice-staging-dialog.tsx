@@ -31,7 +31,7 @@ import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { truncateBarcode } from "@/lib/labels/display";
 import { useGenerateLabels, useUpdateBarcodes } from "@/lib/labels/hooks/use-barcodes";
-import { useGenerateLabelReport } from "@/lib/labels/hooks/use-label-reports";
+import { useGenerateLabelReport } from "@/lib/reports/hooks/use-reports";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import {
   BARCODE_STATUS_OPTIONS,
@@ -371,9 +371,11 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
     }
 
     try {
-      const url = await generateLabelReportMutation.mutateAsync({
-        values: invoiceIds,
+      const { url } = await generateLabelReportMutation.mutateAsync({
+        type: "label",
         collection: "invoices",
+        values: invoiceIds,
+        lookupField: "id",
       });
       window.open(url, "_blank", "noopener,noreferrer");
       notifySuccess(`Labels ready for ${invoiceIds.length} invoice(s).`);
@@ -631,7 +633,7 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
               </Button>
               <Button onClick={generateLabels} disabled={selectedItemKeys.length === 0 || isGenerating}>
                 <Barcode className="h-4 w-4" />
-                {isGenerating ? "Generating…" : `Generate labels (${selectedItemKeys.length})`}
+                {isGenerating ? "Working…" : `Manage labels (${selectedItemKeys.length})`}
               </Button>
             </>
           ) : (

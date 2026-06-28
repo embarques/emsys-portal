@@ -6,9 +6,10 @@ const NUMERIC_OPERATORS = ["eq", "neq", "gte", "lte", "gt", "lt"] as const;
 const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 
 /**
- * Advanced filter fields for employees. `id`, `branch.id`, `cost`, and `active`
- * are coerced to number/boolean in `expandEmployeeFilterNode` because the strict
- * API requires JSON numbers/booleans for those fields.
+ * Advanced filter fields for employees. `id`, `cost`, and `active` are coerced to
+ * number/boolean in `expandEmployeeFilterNode` because the strict API requires JSON
+ * numbers/booleans for those fields. Branch filtering uses `branch.code` (a string)
+ * because employee records only carry `branch.code`, not `branch.id`.
  */
 export const EMPLOYEE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
@@ -96,18 +97,11 @@ export const EMPLOYEE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     ],
   },
   {
-    field: "branch.id",
+    field: "branch.code",
     label: "Branch",
     operators: ["eq", "neq"],
     valueType: "select",
     optionsSource: "branches",
-  },
-  {
-    field: "branch.code",
-    label: "Branch code",
-    operators: [...TEXT_OPERATORS],
-    valueType: "text",
-    placeholder: "Enter branch code…",
   },
   {
     field: "cost",

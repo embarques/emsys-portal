@@ -107,8 +107,8 @@ export type EmployeeListParams = {
   sort?: ApiListSortInput;
   search?: EmployeeSearchFilter;
   filterRows?: TableFilterRowState[];
-  /** @deprecated Use filterRows — kept for stats queries */
-  branch?: number | "all";
+  /** Branch code (e.g. "NY", "RD"). @deprecated Use filterRows — kept for stats queries */
+  branch?: string | "all";
   active?: boolean | "all";
   department?: string;
 };
@@ -134,6 +134,7 @@ const BRANCH_ID_TO_PORTAL: Record<number, EmployeePortalBranch> = {
 
 const BRANCH_CODE_TO_PORTAL: Record<string, EmployeePortalBranch> = {
   NY: "usa",
+  RD: "dr",
   DR: "dr",
   DO: "dr",
 };
@@ -147,7 +148,7 @@ export const EMPLOYEE_PORTAL_BRANCHES: {
   country: string;
 }[] = [
   { portal: "usa", id: 1, label: "USA", code: "NY", name: "New York", country: "US" },
-  { portal: "dr", id: 2, label: "DR", code: "DR", name: "Dominican Republic", country: "DO" },
+  { portal: "dr", id: 2, label: "DR", code: "RD", name: "Dominican Republic", country: "DO" },
 ];
 
 /** @deprecated Use EMPLOYEE_PORTAL_BRANCHES */
