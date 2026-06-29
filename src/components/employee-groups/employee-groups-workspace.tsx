@@ -49,6 +49,7 @@ import {
   useEmployeeGroups,
   useDeleteEmployeeGroups,
 } from "@/lib/employee-groups/hooks/use-employee-groups";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { getVehiclePortalBranch } from "@/lib/vehicles/types";
@@ -92,6 +93,7 @@ export function EmployeeGroupsWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const { data, isLoading, isError, error, isFetching } = useEmployeeGroups(200);
   const deleteGroupsMutation = useDeleteEmployeeGroups();
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const [filters, setFilters] = useState<EmployeeGroupFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
@@ -146,6 +148,33 @@ export function EmployeeGroupsWorkspace() {
 
   function toggleSelect(groupId: string, checked: boolean) {
     setSelectedIds((current) => (checked ? [...current, groupId] : current.filter((entry) => entry !== groupId)));
+  }
+
+  function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({
+        feature: "employee-groups",
+        baseHref: "/employee-groups",
+        mode: "add",
+        label: "Create employee group",
+      });
+      return;
+    }
+    setCreateOpen(true);
+  }
+
+  function openEditForm(group: EmployeeGroupOption) {
+    if (isDesktopTabs) {
+      openFormTab({
+        feature: "employee-groups",
+        baseHref: "/employee-groups",
+        mode: "edit",
+        entityId: group.id,
+        label: `Edit ${group.name}`,
+      });
+      return;
+    }
+    setEditGroup(group);
   }
 
   async function confirmDelete() {
@@ -244,7 +273,7 @@ export function EmployeeGroupsWorkspace() {
       <PageHeader
         title="Employee Groups"
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
+          <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
             Add group
           </Button>
@@ -327,7 +356,7 @@ export function EmployeeGroupsWorkspace() {
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
             const group = groups.find((entry) => entry.id === selectedIds[0]);
-            if (group) setEditGroup(group);
+            if (group) openEditForm(group);
           }}
           onDelete={() => {
             setDeleteError(null);
@@ -361,11 +390,11 @@ export function EmployeeGroupsWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
             onRowClick={setViewGroup}
-            onRowDoubleClick={setEditGroup}
+            onRowDoubleClick={openEditForm}
             emptyState={
               <>
                 <p className="text-muted-foreground">No employee groups match your search.</p>
-                <Button className="mt-4" onClick={() => setCreateOpen(true)}>
+                <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
                   Add group
                 </Button>
@@ -416,7 +445,7 @@ export function EmployeeGroupsWorkspace() {
         }}
         onEdit={(group) => {
           setViewGroup(null);
-          setEditGroup(group);
+          openEditForm(group);
         }}
         onDelete={(group) => {
           setViewGroup(null);

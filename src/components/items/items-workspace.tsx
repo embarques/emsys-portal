@@ -15,6 +15,7 @@ import { ItemViewSheet } from "@/components/items/item-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
@@ -121,13 +122,30 @@ export function ItemsWorkspace() {
     setSelectedIds((current) => (checked ? [...current, itemId] : current.filter((entry) => entry !== itemId)));
   }
 
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
   function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({ feature: "items", baseHref: "/items", mode: "add", label: "Add item" });
+      return;
+    }
     setEditingItem(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(item: Item) {
+    if (isDesktopTabs) {
+      setViewItem(null);
+      openFormTab({
+        feature: "items",
+        baseHref: "/items",
+        mode: "edit",
+        entityId: item.itemId,
+        label: `Edit ${item.description || truncateItemId(item.itemId)}`,
+      });
+      return;
+    }
     setEditingItem(item);
     setFormMode("edit");
     setViewItem(null);

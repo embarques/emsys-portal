@@ -4,6 +4,7 @@ import {
   WORKSPACE_TABS_STORAGE_KEY,
   type PersistedWorkspaceTabs,
   type WorkspaceTab,
+  type WorkspaceTabForm,
   type WorkspaceTabsState,
 } from "@/lib/layout/workspace-tab-types";
 import { getMaxWorkspaceTabs } from "@/lib/layout/workspace-tab-limits";
@@ -130,6 +131,8 @@ type OpenWorkspaceTabPayload = {
   id: string;
   href: string;
   label: string;
+  /** Present when opening an add/edit form tab. */
+  form?: WorkspaceTabForm;
 };
 
 const tabsSlice = createSlice({
@@ -157,6 +160,7 @@ const tabsSlice = createSlice({
         href: action.payload.href,
         label: action.payload.label,
         number: state.tabs.length + 1,
+        ...(action.payload.form ? { form: action.payload.form } : {}),
       };
 
       state.tabs.push(tab);
@@ -276,5 +280,21 @@ export function findTabByNumber(tabs: WorkspaceTab[], tabNumber: number): Worksp
 
 export function findTabByHref(tabs: WorkspaceTab[], href: string): WorkspaceTab | undefined {
   const pathname = href.split("?")[0] ?? href;
-  return tabs.find((tab) => tab.href === pathname);
+  // Only match regular workspace tabs so sidebar navigation never lands on a form tab.
+  return tabs.find((tab) => !tab.form && tab.href === pathname);
+}
+
+export function findFormTab(
+  tabs: WorkspaceTab[],
+  feature: string,
+  mode: WorkspaceTabForm["mode"],
+  entityId?: string,
+): WorkspaceTab | undefined {
+  return tabs.find(
+    (tab) =>
+      tab.form?.feature === feature &&
+      tab.form.mode === mode &&
+      // Edit tabs are keyed by record; add tabs are reused per feature.
+      (mode === "add" || tab.form.entityId === entityId),
+  );
 }

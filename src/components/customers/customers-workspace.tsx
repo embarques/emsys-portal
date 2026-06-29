@@ -57,6 +57,7 @@ import {
 } from "@/lib/customers/hooks/use-customers";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
@@ -90,6 +91,7 @@ type CustomerDeleteTarget =
 
 export function CustomersWorkspace() {
   const { hasPermission } = useAuth();
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifyError, notifySuccess } = useFeedback();
   const canCreateCustomers = hasPermission(
     PERMISSIONS.clientsCreate.name,
@@ -161,12 +163,33 @@ export function CustomersWorkspace() {
     deleteCustomersMutation.isPending;
 
   function openAddForm() {
+    // Desktop: open the form in its own workspace tab. Mobile has no tabs, so keep the dialog.
+    if (isDesktopTabs) {
+      openFormTab({
+        feature: "customers",
+        baseHref: "/customers",
+        mode: "add",
+        label: "Add customer",
+      });
+      return;
+    }
     setEditingCustomer(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(customer: Customer) {
+    if (isDesktopTabs) {
+      setViewCustomer(null);
+      openFormTab({
+        feature: "customers",
+        baseHref: "/customers",
+        mode: "edit",
+        entityId: customer.id,
+        label: `Edit ${customer.name}`,
+      });
+      return;
+    }
     setEditingCustomer(customer);
     setFormMode("edit");
     setViewCustomer(null);

@@ -15,6 +15,7 @@ import { VehicleViewSheet } from "@/components/vehicles/vehicle-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
@@ -152,13 +153,30 @@ export function VehiclesWorkspace() {
     setSelectedIds((current) => (checked ? [...current, vehicleId] : current.filter((entry) => entry !== vehicleId)));
   }
 
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
   function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({ feature: "vehicles", baseHref: "/vehicles", mode: "add", label: "Add vehicle" });
+      return;
+    }
     setEditingVehicle(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(vehicle: Vehicle) {
+    if (isDesktopTabs) {
+      setViewVehicle(null);
+      openFormTab({
+        feature: "vehicles",
+        baseHref: "/vehicles",
+        mode: "edit",
+        entityId: vehicle.id,
+        label: `Edit ${vehicle.name}`,
+      });
+      return;
+    }
     setEditingVehicle(vehicle);
     setFormMode("edit");
     setViewVehicle(null);

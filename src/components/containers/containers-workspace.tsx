@@ -17,6 +17,7 @@ import { ContainerViewSheet } from "@/components/containers/container-view-sheet
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
@@ -144,13 +145,30 @@ export function ContainersWorkspace() {
     );
   }
 
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
   function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({ feature: "containers", baseHref: "/containers", mode: "add", label: "Add container" });
+      return;
+    }
     setEditingContainer(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(container: ContainerRecord) {
+    if (isDesktopTabs) {
+      setViewContainer(null);
+      openFormTab({
+        feature: "containers",
+        baseHref: "/containers",
+        mode: "edit",
+        entityId: String(container.id),
+        label: `Edit ${container.name}`,
+      });
+      return;
+    }
     setEditingContainer(container);
     setFormMode("edit");
     setViewContainer(null);
