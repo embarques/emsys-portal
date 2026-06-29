@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Save } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
 import { DailyIncomeTransactionForm } from "@/components/accounting/daily-income-transaction-form";
@@ -21,7 +21,7 @@ type SharedProps = {
   paymentMethods: AccountingLookup[];
   isSubmitting: boolean;
   error?: string | null;
-  onSubmit: (values: DailyIncomeJournalValues) => void;
+  onSubmit: (values: DailyIncomeJournalValues) => void | Promise<void>;
   onCancel: () => void;
 };
 
@@ -38,7 +38,26 @@ type EditModeProps = SharedProps & {
 type Props = AddModeProps | EditModeProps;
 
 function emptyTransaction(type: JournalTransactionType): DailyIncomeJournalValues {
-  return { transactionType: type, amount: 0, refNumber: "", description: "" };
+  return {
+    transactionType: type,
+    amount: 0,
+    refNumber: "",
+    description: "",
+    includeSender: false,
+    includeReceiver: false,
+  };
+}
+
+function continueTransactionValues(
+  type: JournalTransactionType,
+  values: DailyIncomeJournalValues,
+): DailyIncomeJournalValues {
+  return {
+    ...emptyTransaction(type),
+    employeeId: values.employeeId,
+    employeeName: values.employeeName,
+    transactionType: type,
+  };
 }
 
 function clearTypeSpecificFields(
@@ -62,6 +81,8 @@ export function AddTransactionWizard(props: Props) {
   const [detailValues, setDetailValues] = useState<DailyIncomeJournalValues>(
     isEdit ? props.initialValues : emptyTransaction("INITIAL-PAYMENT"),
   );
+  const [formSessionKey, setFormSessionKey] = useState(0);
+  const [focusSecondFieldSignal, setFocusSecondFieldSignal] = useState(0);
 
   useEffect(() => {
     if (!props.open) return;
@@ -76,7 +97,22 @@ export function AddTransactionWizard(props: Props) {
     setStep(1);
     setSelectedType(null);
     setDetailValues(emptyTransaction("INITIAL-PAYMENT"));
+    setFormSessionKey(0);
+    setFocusSecondFieldSignal(0);
   }, [props.open, isEdit, isEdit ? props.initialValues : null]);
+
+  async function handleFormSubmit(values: DailyIncomeJournalValues) {
+    try {
+      await props.onSubmit(values);
+      if (!isEdit && selectedType) {
+        setDetailValues(continueTransactionValues(selectedType, values));
+        setFormSessionKey((key) => key + 1);
+        setFocusSecondFieldSignal((signal) => signal + 1);
+      }
+    } catch {
+      // Parent surfaces API/validation errors via props.error.
+    }
+  }
 
   function handleTypeChange(type: JournalTransactionType) {
     setSelectedType(type);
@@ -111,9 +147,21 @@ export function AddTransactionWizard(props: Props) {
         ) : null}
 
         {selectedType ? (
-          <div className={cn("min-h-0 flex-1 flex-col", step === 2 ? "flex" : "hidden")}>
+          <div className={cn("relative min-h-0 flex-1 flex-col", step === 2 ? "flex" : "hidden")}>
+            {props.isSubmitting && step === 2 ? (
+              <div
+                className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-[1px]"
+                aria-live="polite"
+                aria-busy="true"
+              >
+                <div className="flex items-center gap-2 rounded-lg border bg-card px-4 py-3 text-sm shadow-sm">
+                  <Loader2 className="size-4 animate-spin text-primary" />
+                  Saving transaction…
+                </div>
+              </div>
+            ) : null}
             <DailyIncomeTransactionForm
-              key={`${selectedType}-${isEdit ? props.initialValues.transactionType : "add"}`}
+              key={`${selectedType}-${isEdit ? props.initialValues.transactionType : `add-${formSessionKey}`}`}
               formId={formId}
               transactionType={selectedType}
               initialValues={detailValues}
@@ -122,7 +170,8 @@ export function AddTransactionWizard(props: Props) {
               invoices={props.invoices}
               paymentMethods={props.paymentMethods}
               showTypeSummary={!isEdit}
-              onSubmit={props.onSubmit}
+              focusSecondFieldSignal={!isEdit ? focusSecondFieldSignal : undefined}
+              onSubmit={handleFormSubmit}
             />
           </div>
         ) : null}
@@ -159,7 +208,7 @@ export function AddTransactionWizard(props: Props) {
                 Cancel
               </Button>
               <Button type="submit" form={formId} disabled={props.isSubmitting}>
-                <Save className="size-4" />
+                {props.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                 {props.isSubmitting ? "Saving…" : "Save transaction"}
               </Button>
             </div>

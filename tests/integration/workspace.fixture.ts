@@ -82,7 +82,7 @@ export async function openWorkspaceFromSidebar(page: Page, pathname: string) {
 }
 
 type GotoWorkspaceOptions = {
-  /** API path fragment to wait for (e.g. `/accounting/accounts`). Ignores page navigations. */
+  /** API path fragment to wait for (e.g. `/chart-accounts`). Ignores page navigations. */
   waitForApiGet?: string;
 };
 

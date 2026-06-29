@@ -1,11 +1,12 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, ChevronLeft, ChevronRight, Edit, Lock, LockOpen, Plus, Receipt, Trash2, Wallet } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, ChevronLeft, ChevronRight, Edit, Lock, LockOpen, Plus, Receipt, ScrollText, Trash2, Wallet } from "lucide-react";
 
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomeStatementForm } from "@/components/accounting/daily-income-statement-form";
 import { DataTable } from "@/components/app-shell/data-table";
+import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
@@ -51,7 +52,31 @@ function transactionLabel(value: string) {
   return ({ "INITIAL-PAYMENT": "Invoice", PAYMENT: "Payment", DISCOUNT: "Discount", SURCHARGE: "Surcharge", EXPENSE: "Expense", SALES: "Income", TRANSFER: "Transfer", LOAN: "Loan" } as Record<string, string>)[value] ?? value;
 }
 function journalValues(row: DailyIncomeJournal): DailyIncomeJournalValues {
-  return { transactionType: row.transactionType, amount: row.amount, refNumber: row.refNumber, description: row.description, employeeId: row.employee?.id, employeeName: row.employee?.name, accountId: row.account?.id, accountName: row.account?.displayName ?? row.account?.name, accountType: row.accounts.find((account) => account.id === row.account?.id)?.type, sourceAccountId: row.sourceAccount?.id, sourceAccountName: row.sourceAccount?.displayName ?? row.sourceAccount?.name, sourceAccountType: row.accounts.find((account) => account.id === row.sourceAccount?.id)?.type, invoiceId: row.invoice?.id != null ? String(row.invoice.id) : "", invoiceNumber: row.invoice?.number, paymentMethodId: row.paymentMethod?.id, paymentMethodName: row.paymentMethod?.name };
+  return {
+    transactionType: row.transactionType,
+    amount: row.amount,
+    refNumber: row.refNumber,
+    description: row.description,
+    employeeId: row.employee?.id,
+    employeeName: row.employee?.name,
+    accountId: row.account?.id,
+    accountName: row.account?.displayName ?? row.account?.name,
+    accountType: row.accounts.find((account) => account.id === row.account?.id)?.type,
+    sourceAccountId: row.sourceAccount?.id,
+    sourceAccountName: row.sourceAccount?.displayName ?? row.sourceAccount?.name,
+    sourceAccountType: row.accounts.find((account) => account.id === row.sourceAccount?.id)?.type,
+    invoiceId: row.invoice?.id != null ? String(row.invoice.id) : "",
+    invoiceNumber: row.invoice?.number ?? "",
+    invoiceCost: row.invoice?.cost,
+    includeSender: Boolean(row.invoice?.sender?.id),
+    includeReceiver: Boolean(row.invoice?.receiver?.id),
+    senderId: row.invoice?.sender?.id != null ? String(row.invoice.sender.id) : undefined,
+    senderName: row.invoice?.sender?.name,
+    receiverId: row.invoice?.receiver?.id != null ? String(row.invoice.receiver.id) : undefined,
+    receiverName: row.invoice?.receiver?.name,
+    paymentMethodId: row.paymentMethod?.id,
+    paymentMethodName: row.paymentMethod?.name,
+  };
 }
 
 export function DailyIncomeWorkspace() {
@@ -118,11 +143,33 @@ export function DailyIncomeWorkspace() {
     const action = statement ? updateStatement.mutateAsync({ id: statement.id, values }) : createStatement.mutateAsync(values);
     action.then(() => { setStatementDialog(false); setBranchCode(values.branchCode); setDate(values.date); feedback.notifySuccess(statement ? "Daily income updated." : "Daily income created."); }).catch((error) => setFormError(normalizeApiError(error).message));
   }
-  function saveJournal(values: DailyIncomeJournalValues) {
-    if (!statement) return;
+  function saveJournal(values: DailyIncomeJournalValues): Promise<void> {
+    if (!statement) return Promise.reject(new Error("No closeout loaded."));
     setFormError(null);
-    const action = editingJournal ? updateJournal.mutateAsync({ id: editingJournal.id, statement, values }) : createJournal.mutateAsync({ statement, values });
-    action.then(() => { setTransactionDialog(false); setEditingJournal(null); feedback.notifySuccess(editingJournal ? "Transaction updated." : "Transaction created."); }).catch((error) => setFormError(normalizeApiError(error).message));
+    return (editingJournal
+      ? updateJournal.mutateAsync({ id: editingJournal.id, statement, values })
+      : createJournal.mutateAsync({ statement, values })
+    )
+      .then(() => {
+        if (editingJournal) {
+          feedback.notifySuccess("Transaction updated.");
+          setTransactionDialog(false);
+          setEditingJournal(null);
+          return;
+        }
+
+        if (values.transactionType === "INITIAL-PAYMENT") {
+          const invoiceNumber = values.invoiceNumber?.trim() || "invoice";
+          feedback.notifySuccess(`New invoice #${invoiceNumber} created and payment registered.`);
+          return;
+        }
+
+        feedback.notifySuccess("Transaction created.");
+      })
+      .catch((error) => {
+        setFormError(normalizeApiError(error).message);
+        return Promise.reject(error);
+      });
   }
   function changeStatus(open: boolean) {
     if (!statement) return;
@@ -141,12 +188,14 @@ export function DailyIncomeWorkspace() {
       <div className="sm:ml-auto"><Badge className={statement?.status === "OPEN" ? "bg-emerald-600" : statement ? "bg-slate-600" : "bg-amber-600"}>{statement ? `${statement.status} · #${String(statement.id).padStart(5, "0")}` : "No closeout for this date"}</Badge></div>
     </CardContent></Card>
 
+    {statement ? <>
     <StatCardsGrid>{stats.map((stat) => { const Icon = stat.icon; return <Card key={stat.label}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle><Icon className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stat.value}</div><CardDescription className="mt-1">{stat.description}</CardDescription></CardContent></Card>; })}</StatCardsGrid>
 
-    <Card className="mt-6"><CardHeader className="gap-3 border-b py-4 pb-3"><div className="flex items-center justify-between gap-3"><div><CardTitle>Transactions</CardTitle><CardDescription>All entries for the selected branch and date.</CardDescription></div><Button onClick={() => { setEditingJournal(null); setFormError(null); setTransactionDialog(true); }} disabled={!statement || statement.status !== "OPEN"}><Plus className="h-4 w-4" /> Add transaction</Button></div><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={`Showing ${rows.length} of ${total} transactions`} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder="Search transactions…" />} /></CardHeader>
-      {statementQuery.isError || journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(statementQuery.error ?? journalsQuery.error).message}</div> : !statement ? <div className="px-6 py-12 text-center text-muted-foreground">Create or select a daily closeout to view transactions.</div> : journalsQuery.isLoading ? <div className="px-6 py-12 text-center text-muted-foreground">Loading transactions…</div> : <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionLabel(row.transactionType)} columnLayout={columnLayout} minWidth={1100} emptyState={<p className="text-muted-foreground">No transactions match this closeout.</p>} />}
-      {statement ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{journalsQuery.isFetching ? "Refreshing transactions…" : `Showing ${rows.length} of ${total} transactions`}</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-4 w-4" /> Previous</Button><span className="px-2 text-sm text-muted-foreground">Page {page} of {totalPages}</span><Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next <ChevronRight className="h-4 w-4" /></Button></div></div> : null}
+    <Card className="mt-6"><CardHeader className="gap-3 border-b py-4 pb-3"><div className="flex items-center justify-between gap-3"><div><CardTitle>Transactions</CardTitle><CardDescription>All entries for the selected branch and date.</CardDescription></div><Button onClick={() => { setEditingJournal(null); setFormError(null); setTransactionDialog(true); }} disabled={statement.status !== "OPEN"}><Plus className="h-4 w-4" /> Add transaction</Button></div><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={`Showing ${rows.length} of ${total} transactions`} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder="Search transactions…" />} /></CardHeader>
+      {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title="Loading transactions" description="Syncing journal entries, payments, and closeout totals…" columns={["Date", "Account", "Employee", "Type", "Reference", "Amount"]} /> : <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionLabel(row.transactionType)} columnLayout={columnLayout} minWidth={1100} emptyState={<p className="text-muted-foreground">No transactions match this closeout.</p>} />}
+      {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{journalsQuery.isFetching ? "Refreshing transactions…" : `Showing ${rows.length} of ${total} transactions`}</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-4 w-4" /> Previous</Button><span className="px-2 text-sm text-muted-foreground">Page {page} of {totalPages}</span><Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next <ChevronRight className="h-4 w-4" /></Button></div></div> : null}
     </Card>
+    </> : null}
 
     <Dialog open={statementDialog} onOpenChange={(open) => { setStatementDialog(open); if (!open) setFormError(null); }}><DialogContent className="sm:max-w-xl"><DialogHeader><DialogTitle>{statement ? "Edit daily income" : "Create daily income"}</DialogTitle><DialogDescription>Set the branch, date, currency, and exchange rate for this closeout.</DialogDescription></DialogHeader><DailyIncomeStatementForm branches={branches} initialValues={statementValues} isSubmitting={mutationPending} error={formError} onSubmit={saveStatement} onCancel={() => setStatementDialog(false)} /></DialogContent></Dialog>
     <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">{editingJournal ? <AddTransactionWizard open={transactionDialog} mode="edit" initialValues={journalValues(editingJournal)} employees={employees} accounts={accountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" employees={employees} accounts={accountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>

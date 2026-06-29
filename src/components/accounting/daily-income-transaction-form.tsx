@@ -4,10 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
+import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { FormBody, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getTransactionTypeOption } from "@/lib/accounting/daily-income/transaction-type-config";
+import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { dailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
 import type { AccountingLookup, ChartAccount, DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
@@ -26,7 +27,8 @@ type Props = {
   paymentMethods: AccountingLookup[];
   formId: string;
   showTypeSummary?: boolean;
-  onSubmit: (values: DailyIncomeJournalValues) => void;
+  focusSecondFieldSignal?: number;
+  onSubmit: (values: DailyIncomeJournalValues) => void | Promise<void>;
 };
 
 function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
@@ -47,6 +49,7 @@ export function DailyIncomeTransactionForm({
   paymentMethods,
   formId,
   showTypeSummary = false,
+  focusSecondFieldSignal,
   onSubmit,
 }: Props) {
   const typeOption = getTransactionTypeOption(transactionType);
@@ -68,19 +71,29 @@ export function DailyIncomeTransactionForm({
     reset({ ...initialValues, transactionType });
   }, [initialValues, reset, transactionType]);
 
+  useEffect(() => {
+    if (!focusSecondFieldSignal) return;
+    const fieldId = getTransactionFormSecondFieldId(transactionType);
+    const timer = window.setTimeout(() => {
+      document.getElementById(fieldId)?.focus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [focusSecondFieldSignal, transactionType]);
+
   const type = watch("transactionType");
   const employeeId = watch("employeeId");
   const invoiceId = watch("invoiceId");
   const accountId = watch("accountId");
   const sourceAccountId = watch("sourceAccountId");
   const paymentMethodId = watch("paymentMethodId");
-  const needsInvoice = ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(type);
+  const needsExistingInvoice = ["PAYMENT", "DISCOUNT", "SURCHARGE"].includes(type);
+  const isRegisterInvoice = type === "INITIAL-PAYMENT";
   const needsAccount = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(type);
-  const needsPaymentMethod = needsInvoice || type === "SALES";
+  const needsPaymentMethod = needsExistingInvoice || isRegisterInvoice || type === "SALES";
   const needsSourceAccount = type === "TRANSFER" || type === "EXPENSE" || type === "LOAN";
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+    <form id={formId} onSubmit={handleSubmit((values) => onSubmit(values))} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
         {showTypeSummary ? (
           <div className="flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/80 px-4 py-3">
@@ -100,6 +113,16 @@ export function DailyIncomeTransactionForm({
         ) : null}
 
         <FormSection title={typeOption.sectionTitle} required>
+          {isRegisterInvoice ? (
+            <RegisterInvoiceTransactionFields
+              employees={employees}
+              paymentMethods={paymentMethods}
+              errors={errors}
+              register={register}
+              setValue={setValue}
+              watch={watch}
+            />
+          ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <RequiredLabel htmlFor="journal-employee">Employee</RequiredLabel>
@@ -138,7 +161,7 @@ export function DailyIncomeTransactionForm({
               {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
             </div>
 
-            {needsInvoice ? (
+            {needsExistingInvoice ? (
               <div className="space-y-2 sm:col-span-2">
                 <RequiredLabel htmlFor="journal-invoice">Invoice</RequiredLabel>
                 <select
@@ -262,6 +285,7 @@ export function DailyIncomeTransactionForm({
               />
             </div>
           </div>
+          )}
         </FormSection>
       </FormBody>
     </form>

@@ -52,7 +52,7 @@ test.describe("Daily income register invoice", () => {
 
         if (response.ok()) {
           expect(response.ok(), `Create transaction failed with HTTP ${response.status()}`).toBe(true);
-          await expect(page.getByText("Transaction created.")).toBeVisible({ timeout: 15_000 });
+          await expect(page.getByText(/New invoice #.+ created and payment registered\./)).toBeVisible({ timeout: 15_000 });
           await expect(main.getByText(refNumber)).toBeVisible({ timeout: 15_000 });
           await expect(main.getByText("Invoice", { exact: true }).first()).toBeVisible();
           console.log(`[playwright:daily-income] Register invoice succeeded on branch ${branchCode}.`);

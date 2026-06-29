@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
+  buildAdvancedSearchBody,
   buildApiSearchPaginationQuery,
   buildStripeStyleSearchBody,
 } from "@/lib/api/search-query";
@@ -17,6 +18,7 @@ import {
   type DailyIncomeJournalList,
   type DailyIncomeJournalListParams,
   type DailyIncomeJournalValues,
+  type DailyIncomePartyRef,
   type DailyIncomeStatement,
   type DailyIncomeStatementValues,
   type DailyIncomeSummary,
@@ -67,6 +69,31 @@ function assertMutation(payload: unknown, fallback: string) {
   if (envelope.success === false) {
     throw new Error(stringValue(envelope.message || envelope.error) || fallback);
   }
+}
+
+function assertChartAccountMutation(payload: unknown, fallback: string) {
+  const envelope = objectValue(payload);
+  if (envelope.success !== true) {
+    throw new Error(stringValue(envelope.message || envelope.error) || fallback);
+  }
+}
+
+function unwrapChartAccountList(payload: unknown): unknown[] {
+  const data = objectValue(payload).data;
+  return Array.isArray(data) ? data : [];
+}
+
+function unwrapChartAccountEntity(payload: unknown): unknown {
+  const envelope = objectValue(payload);
+  return firstDefined(envelope.data, payload);
+}
+
+function normalizePartyRef(value: unknown): DailyIncomePartyRef | undefined {
+  const raw = objectValue(value);
+  const id = firstDefined(raw.id, raw._id);
+  const name = stringValue(firstDefined(raw.name, raw.displayName));
+  if (id == null || id === "" || !name) return undefined;
+  return { id: typeof id === "number" ? id : String(id), name };
 }
 
 function normalizeLookup(value: unknown): AccountingLookup | undefined {
@@ -139,6 +166,8 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
           cost: numberValue(invoice.cost),
           payment: numberValue(invoice.payment),
           balance: numberValue(invoice.balance),
+          sender: normalizePartyRef(invoice.sender),
+          receiver: normalizePartyRef(invoice.receiver),
         }
       : undefined,
     createdAt: stringValue(raw.createdAt) || undefined,
@@ -316,54 +345,38 @@ export async function setIncomeStatementStatus(statement: DailyIncomeStatement, 
   return normalizeIncomeStatement(unwrapArray(payload)[0] ?? unwrap(payload));
 }
 
+function parseJournalSearchRows(payload: unknown): unknown[] {
+  const envelope = objectValue(payload);
+  if (Array.isArray(envelope.data)) return envelope.data;
+  const unwrapped = unwrap(payload);
+  if (Array.isArray(unwrapped)) return unwrapped;
+  const nested = objectValue(unwrapped);
+  if (Array.isArray(nested.journals)) return nested.journals;
+  return [];
+}
+
 export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListParams): Promise<DailyIncomeJournalList> {
   if (!params.incomeStatementId) {
     return { items: [], summary: EMPTY_DAILY_INCOME_SUMMARY, page: 1, resultsPerPage: params.limit ?? 20, total: 0 };
   }
   const page = params.page ?? 1;
   const limit = params.limit ?? 20;
+  const summaryFetchLimit = 500;
 
-  let items: DailyIncomeJournal[] = [];
-
-  try {
-    const listQuery = buildApiListQuery({
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search`,
+    buildAdvancedSearchBody({
       page: 1,
-      limit: 500,
+      limit: summaryFetchLimit,
       sort: { field: "createdAt", direction: "desc" },
-    });
-    const listPayload = await apiClient.get<ApiEnvelope>(
-      `${API_ENDPOINTS.ACCOUNTING_JOURNALS}?${listQuery}`,
-    );
-    items = unwrapArray(listPayload)
-      .map(normalizeJournal)
-      .filter(
-        (item): item is DailyIncomeJournal =>
-          item != null && item.incomeStatementId === params.incomeStatementId,
-      );
-  } catch {
-    // Fall through to POST /search.
-  }
+      filters: [{ field: "incomeStatement.id", operator: "eq", value: params.incomeStatementId }],
+    }),
+  );
 
-  if (items.length === 0) {
-    const query = queryString({
-      page,
-      limit,
-      offset: (page - 1) * limit,
-    });
-    const payload = await apiClient.post<ApiEnvelope>(
-      `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search?${query}`,
-      {
-        operator: "and",
-        filters: [{ field: "incomeStatement.id", operator: "eq", value: params.incomeStatementId }],
-        sort: [{ field: "createdAt", direction: "desc" }],
-      },
-    );
-    const envelope = objectValue(payload);
-    const unwrapped = unwrap(payload);
-    const first = Array.isArray(unwrapped) ? objectValue(unwrapped[0]) : objectValue(unwrapped);
-    const rows = Array.isArray(first.journals) ? first.journals : Array.isArray(unwrapped) ? unwrapped : [];
-    items = rows.map(normalizeJournal).filter((item): item is DailyIncomeJournal => item != null);
-  }
+  const envelope = objectValue(payload);
+  let items = parseJournalSearchRows(payload)
+    .map(normalizeJournal)
+    .filter((item): item is DailyIncomeJournal => item != null);
 
   const search = params.query?.trim().toLowerCase();
   if (search) {
@@ -373,7 +386,7 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
     );
   }
 
-  const total = items.length;
+  const total = search ? items.length : numberValue(envelope.total, items.length);
   const offset = (page - 1) * limit;
   const pageItems = items.slice(offset, offset + limit);
 
@@ -387,12 +400,35 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
 }
 
 function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJournalValues) {
+  if (!statement.id) {
+    throw new Error("A daily closeout id is required to save a transaction.");
+  }
+
   const invoiceRelated = ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(values.transactionType);
   const accountRelated = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(values.transactionType);
   const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType);
 
+  const invoice =
+    values.transactionType === "INITIAL-PAYMENT" && values.invoiceNumber?.trim()
+      ? {
+          number: values.invoiceNumber.trim(),
+          cost: values.invoiceCost,
+          payment: values.amount,
+          balance: (values.invoiceCost ?? 0) - values.amount,
+          ...(values.senderId
+            ? { sender: { id: values.senderId, name: values.senderName ?? "" } }
+            : {}),
+          ...(values.receiverId
+            ? { receiver: { id: values.receiverId, name: values.receiverName ?? "" } }
+            : {}),
+        }
+      : invoiceRelated && values.invoiceId
+        ? { id: values.invoiceId, number: values.invoiceNumber }
+        : undefined;
+
   return {
     incomeStatementId: statement.id,
+    incomeStatement: { id: statement.id },
     date: `${statement.date}T00:00:00Z`,
     transactionType: values.transactionType,
     amount: values.amount,
@@ -409,10 +445,10 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     sourceAccount: sourceAccountRelated && values.sourceAccountId
       ? { id: values.sourceAccountId, name: values.sourceAccountName, type: values.sourceAccountType }
       : undefined,
-    invoiceId: invoiceRelated && values.invoiceId ? values.invoiceId : undefined,
-    invoice: invoiceRelated && values.invoiceId
-      ? { id: values.invoiceId, number: values.invoiceNumber }
+    invoiceId: values.transactionType !== "INITIAL-PAYMENT" && invoiceRelated && values.invoiceId
+      ? values.invoiceId
       : undefined,
+    invoice,
     paymentMethod: values.paymentMethodId
       ? { id: values.paymentMethodId, name: values.paymentMethodName }
       : undefined,
@@ -442,16 +478,18 @@ export async function deleteDailyIncomeJournal(id: string) {
 export async function fetchChartAccounts(params: ChartAccountListParams = {}): Promise<ChartAccountList> {
   const page = params.page ?? 1;
   const limit = params.limit ?? 20;
-  const query = queryString({
+  const listQuery = buildApiListQuery({
     page,
-    results_per_page: limit,
-    search: params.query?.trim() || undefined,
-    sort_by: "createdAt",
-    order: "desc",
+    limit,
+    sort: { field: "createdAt", direction: "desc" },
   });
-  const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_ACCOUNTS}?${query}`);
+  const search = params.query?.trim();
+  const query = search ? `${listQuery}&search=${encodeURIComponent(search)}` : listQuery;
+  const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.CHART_ACCOUNTS}?${query}`);
   const envelope = objectValue(payload);
-  const items = unwrapArray(payload).map(normalizeAccount).filter((item): item is ChartAccount => item != null);
+  const items = unwrapChartAccountList(payload)
+    .map(normalizeAccount)
+    .filter((item): item is ChartAccount => item != null);
   return {
     items,
     page: numberValue(envelope.page, page),
@@ -484,18 +522,25 @@ function accountPayload(values: ChartAccountValues) {
 }
 
 export async function createChartAccount(values: ChartAccountValues) {
-  const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_ACCOUNT, accountPayload(values));
-  assertMutation(payload, "Unable to create account.");
-  return normalizeAccount(unwrapArray(payload)[0] ?? unwrap(payload));
+  const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.CHART_ACCOUNTS, accountPayload(values));
+  assertChartAccountMutation(payload, "Unable to create account.");
+  const result = normalizeAccount(unwrapChartAccountEntity(payload));
+  if (!result) throw new Error("The API did not return the created account.");
+  return result;
 }
 
 export async function updateChartAccount(id: number, values: ChartAccountValues) {
-  const payload = await apiClient.put<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_ACCOUNT}/${id}`, accountPayload(values));
-  assertMutation(payload, "Unable to update account.");
-  return normalizeAccount(unwrapArray(payload)[0] ?? unwrap(payload));
+  const payload = await apiClient.put<ApiEnvelope>(
+    `${API_ENDPOINTS.CHART_ACCOUNTS}/${id}`,
+    accountPayload(values),
+  );
+  assertChartAccountMutation(payload, "Unable to update account.");
+  const result = normalizeAccount(unwrapChartAccountEntity(payload));
+  if (!result) throw new Error("The API did not return the updated account.");
+  return result;
 }
 
 export async function deleteChartAccount(id: number) {
-  const payload = await apiClient.delete<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_ACCOUNT}/${id}`);
-  assertMutation(payload, "Unable to delete account.");
+  const payload = await apiClient.delete<ApiEnvelope>(`${API_ENDPOINTS.CHART_ACCOUNTS}/${id}`);
+  assertChartAccountMutation(payload, "Unable to delete account.");
 }

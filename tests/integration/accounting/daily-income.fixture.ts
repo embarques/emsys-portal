@@ -500,16 +500,16 @@ export async function ensureOpenDailyCloseoutForBranch(
 
 type RegisterInvoiceTransactionOptions = {
   amount: string;
+  cost?: string;
+  invoiceNumber?: string;
   refNumber?: string;
   description?: string;
-  /** 1-based index into loaded invoice options (default 1 = first invoice). */
-  invoiceOptionIndex?: number;
 };
 
 /** Wait until the closeout badge and transaction list have finished loading. */
 export async function waitForCloseoutTransactionsReady(main: Locator) {
   await expect(main.getByText(/^OPEN · #/)).toBeVisible({ timeout: 15_000 });
-  await expect(main.getByText("Loading transactions…")).toHaveCount(0, { timeout: 30_000 });
+  await expect(main.getByText("Loading transactions")).toHaveCount(0, { timeout: 30_000 });
 }
 
 /** Step 2 of the add-transaction wizard for INITIAL-PAYMENT (Register invoice). */
@@ -518,31 +518,19 @@ export async function fillRegisterInvoiceTransactionForm(
   options: RegisterInvoiceTransactionOptions,
 ) {
   await selectFirstRealOption(dialog.locator("#journal-employee"), "employee");
-  await dialog.locator("#journal-amount").fill(options.amount);
 
-  const invoiceSelect = dialog.locator("#journal-invoice");
-  const configuredInvoice = configuredInvoiceNumber();
-  if (configuredInvoice) {
-    const option = invoiceSelect.locator("option").filter({ hasText: configuredInvoice });
-    await expect(option.first()).toBeAttached({ timeout: 30_000 });
-    const invoiceValue = await option.first().getAttribute("value");
-    if (!invoiceValue) {
-      throw new Error(`Invoice option not found for PLAYWRIGHT_DAILY_INCOME_INVOICE_NUMBER=${configuredInvoice}.`);
-    }
-    await invoiceSelect.selectOption(invoiceValue);
-  } else {
-    const invoiceIndex = options.invoiceOptionIndex ?? 1;
-    await expect(invoiceSelect.locator("option").nth(invoiceIndex)).toBeAttached({ timeout: 30_000 });
-    const invoiceValue = await invoiceSelect.locator("option").nth(invoiceIndex).getAttribute("value");
-    if (!invoiceValue) {
-      throw new Error(`Expected invoice option at index ${invoiceIndex}.`);
-    }
-    await invoiceSelect.selectOption(invoiceValue);
-  }
+  const invoiceNumber =
+    options.invoiceNumber ??
+    configuredInvoiceNumber() ??
+    `PW-INV-${Date.now()}`;
+  await dialog.locator("#journal-invoice-number").fill(invoiceNumber);
+  await dialog.locator("#journal-invoice-cost").fill(options.cost ?? options.amount ?? "1.00");
+  await dialog.locator("#journal-amount").fill(options.amount ?? "1.00");
   await dialog.locator("#journal-payment").selectOption({ label: "CASH" });
 
   await expect(dialog.locator("#journal-employee")).not.toHaveValue("");
-  await expect(dialog.locator("#journal-invoice")).not.toHaveValue("");
+  await expect(dialog.locator("#journal-invoice-number")).toHaveValue(invoiceNumber);
+  await expect(dialog.locator("#journal-invoice-cost")).not.toHaveValue("");
   await expect(dialog.locator("#journal-payment")).not.toHaveValue("");
 
   if (options.refNumber) {
@@ -561,23 +549,19 @@ export async function fillRegisterInvoiceTransactionForm(
 export async function saveRegisterInvoiceTransaction(
   page: Page,
   dialog: Locator,
-  options: RegisterInvoiceTransactionOptions & { maxInvoiceAttempts?: number },
+  options: RegisterInvoiceTransactionOptions & { maxAttempts?: number },
 ) {
-  const maxAttempts = options.maxInvoiceAttempts ?? (configuredInvoiceNumber() ? 1 : 5);
-  const invoiceSelect = dialog.locator("#journal-invoice");
-  const optionCount = await invoiceSelect.locator("option").count();
-  const startIndex = options.invoiceOptionIndex ?? 1;
-  const endIndex = Math.min(optionCount, startIndex + maxAttempts - 1);
-
-  if (endIndex < startIndex) {
-    throw new Error("No invoice options loaded for register-invoice transaction.");
-  }
-
+  const maxAttempts = options.maxAttempts ?? 3;
   let lastStatus = 0;
   let lastResponse: Response | null = null;
 
-  for (let invoiceIndex = startIndex; invoiceIndex <= endIndex; invoiceIndex += 1) {
-    await fillRegisterInvoiceTransactionForm(dialog, { ...options, invoiceOptionIndex: invoiceIndex });
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const invoiceNumber =
+      options.invoiceNumber ??
+      configuredInvoiceNumber() ??
+      `PW-INV-${Date.now()}-${attempt}`;
+
+    await fillRegisterInvoiceTransactionForm(dialog, { ...options, invoiceNumber });
 
     const createResponse = waitForApiResponse(page, "/journals", "POST", { requireOk: false });
     await dialog.getByRole("button", { name: "Save transaction" }).click();
@@ -586,14 +570,11 @@ export async function saveRegisterInvoiceTransaction(
     lastResponse = response;
 
     if (response.ok()) {
-      const invoiceValue = await invoiceSelect.inputValue();
-      console.log(
-        `[playwright:daily-income] Journal created with invoice option index=${invoiceIndex} id=${invoiceValue}.`,
-      );
+      console.log(`[playwright:daily-income] Journal created with invoice number=${invoiceNumber}.`);
       return response;
     }
 
-    await logApiResponse(response, `create journal failed (invoice index ${invoiceIndex})`);
+    await logApiResponse(response, `create journal failed (invoice ${invoiceNumber})`);
 
     if (response.status() !== 403) {
       throw new Error(`Create transaction failed with HTTP ${response.status()}.`);
@@ -606,9 +587,7 @@ export async function saveRegisterInvoiceTransaction(
     return lastResponse;
   }
 
-  throw new Error(
-    `Create transaction failed with HTTP ${lastStatus} after trying invoice options ${startIndex}–${endIndex}. Pick an invoice that is not already registered on this closeout.`,
-  );
+  throw new Error(`Create transaction failed with HTTP ${lastStatus} after ${maxAttempts} invoice attempts.`);
 }
 
 export type DailyIncomeTransactionSpec = {
@@ -618,6 +597,9 @@ export type DailyIncomeTransactionSpec = {
   label: string;
   /** Section heading after selecting the type */
   sectionTitle: string;
+  /** Register invoice — new invoice number text field */
+  needsRegisterInvoice?: boolean;
+  /** Existing invoice dropdown (payment, discount, surcharge) */
   needsInvoice?: boolean;
   needsAccount?: boolean;
   needsSourceAccount?: boolean;
@@ -630,7 +612,7 @@ export const DAILY_INCOME_TRANSACTION_SPECS: DailyIncomeTransactionSpec[] = [
     slug: "register-invoice",
     label: "Register invoice",
     sectionTitle: "Invoice information",
-    needsInvoice: true,
+    needsRegisterInvoice: true,
     needsPaymentMethod: true,
   },
   {
@@ -729,6 +711,11 @@ export async function openAddTransactionWizard(
     const employeeCount = await dialog.locator("#journal-employee option").count();
     expect(employeeCount, "employee dropdown options").toBeGreaterThan(1);
 
+    if (spec?.needsRegisterInvoice) {
+      await expect(dialog.locator("#journal-invoice-number")).toBeVisible();
+      await expect(dialog.locator("#journal-invoice-cost")).toBeVisible();
+    }
+
     if (spec?.needsInvoice) {
       const invoiceCount = await dialog.locator("#journal-invoice option").count();
       expect(invoiceCount, "invoice dropdown options").toBeGreaterThan(1);
@@ -754,7 +741,7 @@ async function selectFirstAccountOption(select: Locator, fieldName: string) {
   const optionCount = await select.locator("option").count();
   if (optionCount <= 1) {
     throw new Error(
-      `No ${fieldName} options loaded — GET /accounting/accounts may be unavailable in this environment.`,
+      `No ${fieldName} options loaded — GET /chart-accounts may be unavailable in this environment.`,
     );
   }
 
@@ -763,6 +750,16 @@ async function selectFirstAccountOption(select: Locator, fieldName: string) {
 
 export async function fillTransactionForm(dialog: Locator, spec: DailyIncomeTransactionSpec, options: TransactionFormOptions = {}) {
   const amount = options.amount ?? "1.00";
+
+  if (spec.needsRegisterInvoice) {
+    await fillRegisterInvoiceTransactionForm(dialog, {
+      amount,
+      cost: amount,
+      refNumber: options.refNumber,
+      description: options.description,
+    });
+    return;
+  }
 
   await selectFirstRealOption(dialog.locator("#journal-employee"), "employee");
   await dialog.locator("#journal-amount").fill(amount);
@@ -838,6 +835,16 @@ export async function saveJournalTransaction(
     testInfo?: TestInfo;
   } = {},
 ) {
+  if (spec.needsRegisterInvoice) {
+    return saveRegisterInvoiceTransaction(page, dialog, {
+      amount: options.amount ?? "1.00",
+      cost: options.amount ?? "1.00",
+      refNumber: options.refNumber,
+      description: options.description,
+      maxAttempts: options.maxInvoiceAttempts,
+    });
+  }
+
   if (spec.needsInvoice) {
     return saveInvoiceJournalTransaction(page, dialog, spec, options);
   }

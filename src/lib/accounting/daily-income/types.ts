@@ -5,6 +5,11 @@ export type AccountingLookup = {
   displayName?: string;
 };
 
+export type DailyIncomePartyRef = {
+  id: string | number;
+  name: string;
+};
+
 export type IncomeStatementStatus = "OPEN" | "CLOSED";
 
 export type DailyIncomeStatement = {
@@ -60,6 +65,8 @@ export type DailyIncomeJournal = {
     cost?: number;
     payment?: number;
     balance?: number;
+    sender?: DailyIncomePartyRef;
+    receiver?: DailyIncomePartyRef;
   };
   paymentMethod?: AccountingLookup;
   accounts: Array<{
@@ -112,6 +119,13 @@ export type DailyIncomeJournalValues = {
   sourceAccountType?: string;
   invoiceId?: string;
   invoiceNumber?: string;
+  invoiceCost?: number;
+  includeSender?: boolean;
+  includeReceiver?: boolean;
+  senderId?: string;
+  senderName?: string;
+  receiverId?: string;
+  receiverName?: string;
   paymentMethodId?: number;
   paymentMethodName?: string;
 };

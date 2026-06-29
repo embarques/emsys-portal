@@ -33,6 +33,13 @@ export const dailyIncomeJournalSchema = z.object({
   sourceAccountType: z.string().optional(),
   invoiceId: z.string().optional(),
   invoiceNumber: z.string().optional(),
+  invoiceCost: z.number().optional(),
+  includeSender: z.boolean().optional(),
+  includeReceiver: z.boolean().optional(),
+  senderId: z.string().optional(),
+  senderName: z.string().optional(),
+  receiverId: z.string().optional(),
+  receiverName: z.string().optional(),
   paymentMethodId: z.number().optional(),
   paymentMethodName: z.string().optional(),
 }).superRefine((values, context) => {
@@ -40,7 +47,33 @@ export const dailyIncomeJournalSchema = z.object({
     context.addIssue({ code: "custom", path: ["employeeId"], message: "Employee is required." });
   }
 
-  const invoiceRelated = ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(values.transactionType);
+  if (values.transactionType === "INITIAL-PAYMENT") {
+    if (!values.invoiceNumber?.trim()) {
+      context.addIssue({ code: "custom", path: ["invoiceNumber"], message: "Invoice is required." });
+    }
+    if (!values.invoiceCost || values.invoiceCost <= 0) {
+      context.addIssue({ code: "custom", path: ["invoiceCost"], message: "Cost must be greater than zero." });
+    }
+    if (values.invoiceCost != null && values.amount > values.invoiceCost) {
+      context.addIssue({
+        code: "custom",
+        path: ["amount"],
+        message: "Amount cannot exceed cost.",
+      });
+    }
+    if (!values.paymentMethodId) {
+      context.addIssue({ code: "custom", path: ["paymentMethodId"], message: "Payment method is required." });
+    }
+    if (values.includeSender && !values.senderId?.trim()) {
+      context.addIssue({ code: "custom", path: ["senderId"], message: "Sender client is required." });
+    }
+    if (values.includeReceiver && !values.receiverId?.trim()) {
+      context.addIssue({ code: "custom", path: ["receiverId"], message: "Receiver client is required." });
+    }
+    return;
+  }
+
+  const invoiceRelated = ["PAYMENT", "DISCOUNT", "SURCHARGE"].includes(values.transactionType);
   if (invoiceRelated && !values.invoiceId) {
     context.addIssue({ code: "custom", path: ["invoiceId"], message: "Invoice is required." });
   }

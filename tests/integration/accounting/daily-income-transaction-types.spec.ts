@@ -29,7 +29,7 @@ test.describe("Daily income transaction types", () => {
         dialog = await openTransactionTypeWizard(page, main, spec);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        if (message.includes("/accounting/accounts") || message.includes("account dropdown")) {
+        if (message.includes("/chart-accounts") || message.includes("account dropdown")) {
           test.skip(true, `${spec.label}: ${message}`);
         }
         throw error;
@@ -47,7 +47,7 @@ test.describe("Daily income transaction types", () => {
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        if (message.includes("/accounting/accounts")) {
+        if (message.includes("/chart-accounts")) {
           test.skip(true, `${spec.label}: ${message}`);
         }
         throw error;
@@ -61,7 +61,11 @@ test.describe("Daily income transaction types", () => {
       }
 
       expect(response.ok(), `${spec.label} failed with HTTP ${response.status()}`).toBe(true);
-      await expect(page.getByText("Transaction created.")).toBeVisible({ timeout: 15_000 });
+      if (spec.slug === "register-invoice") {
+        await expect(page.getByText(/New invoice #.+ created and payment registered\./)).toBeVisible({ timeout: 15_000 });
+      } else {
+        await expect(page.getByText("Transaction created.")).toBeVisible({ timeout: 15_000 });
+      }
       await expect(main.getByText(refNumber)).toBeVisible({ timeout: 15_000 });
 
       console.log(`[playwright:daily-income] ${spec.slug} succeeded on branch ${branchCode}.`);

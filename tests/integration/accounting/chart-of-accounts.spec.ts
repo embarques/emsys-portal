@@ -7,7 +7,7 @@ async function skipIfChartAccountsApiUnavailable(page: import("@playwright/test"
   await expect(main.getByText("Loading accounts…")).toHaveCount(0, { timeout: 30_000 });
 
   if (await main.getByText("Route not found").isVisible()) {
-    test.skip(true, "EMSYS API does not expose GET /accounting/accounts yet (Route not found).");
+    test.skip(true, "EMSYS API does not expose GET /chart-accounts yet (Route not found).");
   }
 }
 
@@ -39,7 +39,7 @@ test("creates and deletes an account through the authenticated API", async ({ pa
   await dialog.getByLabel("Account type", { exact: true }).selectOption("REVENUE");
   await dialog.getByLabel("Description", { exact: true }).fill("Created by Playwright integration testing");
 
-  const createResponse = waitForApiResponse(page, "/accounting/account", "POST", { requireOk: false });
+  const createResponse = waitForApiResponse(page, "/chart-accounts", "POST", { requireOk: false });
   await dialog.getByRole("button", { name: "Create account" }).click();
   const response = await createResponse;
   expect(response.ok(), `Create account failed with HTTP ${response.status()}`).toBe(true);
@@ -51,7 +51,7 @@ test("creates and deletes an account through the authenticated API", async ({ pa
   await expect(row).toBeVisible({ timeout: 15_000 });
   await row.getByRole("button", { name: "Delete account" }).click();
 
-  const deleteResponse = waitForApiResponse(page, "/accounting/account/", "DELETE", { requireOk: false });
+  const deleteResponse = waitForApiResponse(page, "/chart-accounts/", "DELETE", { requireOk: false });
   await page.getByRole("dialog", { name: "Delete account?" }).getByRole("button", { name: "Delete" }).click();
   const deleted = await deleteResponse;
   expect(deleted.ok(), `Delete account failed with HTTP ${deleted.status()}`).toBe(true);
