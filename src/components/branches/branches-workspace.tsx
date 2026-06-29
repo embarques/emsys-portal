@@ -14,6 +14,7 @@ import { BranchViewSheet } from "@/components/branches/branch-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
@@ -132,13 +133,30 @@ export function BranchesWorkspace() {
     );
   }
 
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
   function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({ feature: "branches", baseHref: "/branches", mode: "add", label: "Add branch" });
+      return;
+    }
     setEditingBranch(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(branch: Branch) {
+    if (isDesktopTabs) {
+      setViewBranch(null);
+      openFormTab({
+        feature: "branches",
+        baseHref: "/branches",
+        mode: "edit",
+        entityId: String(branch.id),
+        label: `Edit ${branch.name}`,
+      });
+      return;
+    }
     setEditingBranch(branch);
     setFormMode("edit");
     setViewBranch(null);

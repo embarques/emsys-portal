@@ -24,6 +24,7 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
@@ -167,13 +168,30 @@ export function OrdersWorkspace() {
     setSelectedIds((current) => (checked ? [...current, orderId] : current.filter((entry) => entry !== orderId)));
   }
 
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
   function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({ feature: "orders", baseHref: "/orders", mode: "add", label: "Add order" });
+      return;
+    }
     setEditingOrder(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(order: Order) {
+    if (isDesktopTabs) {
+      setViewOrder(null);
+      openFormTab({
+        feature: "orders",
+        baseHref: "/orders",
+        mode: "edit",
+        entityId: getOrderRecordId(order),
+        label: `Edit ${formatOrderId(order)}`,
+      });
+      return;
+    }
     setEditingOrder(order);
     setFormMode("edit");
     setViewOrder(null);

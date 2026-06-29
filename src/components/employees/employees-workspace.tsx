@@ -15,6 +15,7 @@ import { EmployeeViewSheet } from "@/components/employees/employee-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
@@ -147,13 +148,30 @@ export function EmployeesWorkspace() {
     );
   }
 
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
   function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({ feature: "employees", baseHref: "/employees", mode: "add", label: "Add employee" });
+      return;
+    }
     setEditingEmployee(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(employee: Employee) {
+    if (isDesktopTabs) {
+      setViewEmployee(null);
+      openFormTab({
+        feature: "employees",
+        baseHref: "/employees",
+        mode: "edit",
+        entityId: String(employee.id),
+        label: `Edit ${employee.name}`,
+      });
+      return;
+    }
     setEditingEmployee(employee);
     setFormMode("edit");
     setViewEmployee(null);

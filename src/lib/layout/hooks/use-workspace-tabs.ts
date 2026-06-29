@@ -7,13 +7,14 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
 import { buildWorkspaceTabUrl } from "@/lib/layout/workspace-tab-url";
 import { isWorkspaceRoute, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
-import { type WorkspaceTab } from "@/lib/layout/workspace-tab-types";
+import { type WorkspaceTab, type WorkspaceTabForm } from "@/lib/layout/workspace-tab-types";
 import { getMaxWorkspaceTabs } from "@/lib/layout/workspace-tab-limits";
 import { pathnameFromHref } from "@/lib/layout/workspace-tab-url";
 import {
   closeOtherWorkspaceTabs,
   closeWorkspaceTab,
   closeWorkspaceTabsToRight,
+  findFormTab,
   findTabByHref,
   openWorkspaceTab,
   resetWorkspaceTabs,
@@ -105,6 +106,84 @@ export function useWorkspaceTabs() {
     [dispatch, isDesktopTabs, navigateToTab, notifySuccess, router, tabs.length],
   );
 
+  const openFormTab = useCallback(
+    (params: {
+      feature: string;
+      /** Real workspace route used for the tab URL and sidebar highlight (e.g. "/customers"). */
+      baseHref: string;
+      mode: WorkspaceTabForm["mode"];
+      entityId?: string;
+      label: string;
+    }) => {
+      if (!isDesktopTabs) {
+        router.push(params.baseHref);
+        return;
+      }
+
+      const currentTabs = store.getState().layoutTabs.tabs;
+      const existing = findFormTab(currentTabs, params.feature, params.mode, params.entityId);
+      if (existing) {
+        dispatch(setActiveWorkspaceTab(existing.id));
+        navigateToTab(existing);
+        return;
+      }
+
+      const returnToTabId = store.getState().layoutTabs.activeTabId;
+      const maxTabs = getMaxWorkspaceTabs();
+      const atLimit = currentTabs.length >= maxTabs;
+      const tabId = createTabId();
+      dispatch(
+        openWorkspaceTab({
+          id: tabId,
+          href: pathnameFromHref(params.baseHref),
+          label: params.label,
+          form: {
+            feature: params.feature,
+            mode: params.mode,
+            entityId: params.entityId,
+            returnToTabId,
+          },
+        }),
+      );
+
+      if (atLimit) {
+        notifySuccess(`Closed the oldest tab (maximum ${maxTabs} open).`);
+      }
+
+      const created = store.getState().layoutTabs.tabs.find((tab) => tab.id === tabId);
+      if (created) {
+        navigateToTab(created);
+      }
+    },
+    [dispatch, isDesktopTabs, navigateToTab, notifySuccess, router],
+  );
+
+  const closeFormTabAndReturn = useCallback(
+    (tabId: string) => {
+      const tab = store.getState().layoutTabs.tabs.find((entry) => entry.id === tabId);
+      const returnToTabId = tab?.form?.returnToTabId ?? null;
+
+      dispatch(closeWorkspaceTab(tabId));
+
+      const remaining = store.getState().layoutTabs.tabs;
+      if (remaining.length === 0) {
+        router.push("/");
+        return;
+      }
+
+      const target =
+        (returnToTabId ? remaining.find((entry) => entry.id === returnToTabId) : undefined) ??
+        remaining.find((entry) => entry.id === store.getState().layoutTabs.activeTabId) ??
+        remaining[remaining.length - 1];
+
+      if (target) {
+        dispatch(setActiveWorkspaceTab(target.id));
+        navigateToTab(target);
+      }
+    },
+    [dispatch, navigateToTab, router],
+  );
+
   const activateTab = useCallback(
     (tabId: string) => {
       const tab = tabs.find((entry) => entry.id === tabId);
@@ -191,6 +270,8 @@ export function useWorkspaceTabs() {
     activeTabId,
     isDesktopTabs,
     openTab,
+    openFormTab,
+    closeFormTabAndReturn,
     activateTab,
     closeTab,
     closeOtherTabs,

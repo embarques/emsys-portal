@@ -16,6 +16,7 @@ import { UserViewSheet } from "@/components/users/user-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
@@ -154,13 +155,30 @@ export function UsersWorkspace() {
     );
   }
 
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
   function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({ feature: "users", baseHref: "/users", mode: "add", label: "Add user" });
+      return;
+    }
     setEditingUser(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(user: User) {
+    if (isDesktopTabs) {
+      setViewUser(null);
+      openFormTab({
+        feature: "users",
+        baseHref: "/users",
+        mode: "edit",
+        entityId: String(user.id),
+        label: `Edit ${user.userName}`,
+      });
+      return;
+    }
     setEditingUser(user);
     setFormMode("edit");
     setViewUser(null);
