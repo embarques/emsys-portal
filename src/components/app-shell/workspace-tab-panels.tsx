@@ -3,6 +3,7 @@
 import { memo } from "react";
 
 import { resolveWorkspaceComponent } from "@/lib/layout/workspace-registry";
+import { resolveWorkspaceFormComponent } from "@/lib/layout/workspace-form-registry";
 import { WorkspaceTabScope } from "@/lib/layout/workspace-tab-scope";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
@@ -13,12 +14,15 @@ type WorkspaceTabPanelProps = {
 };
 
 const WorkspaceTabPanel = memo(function WorkspaceTabPanel({ tab, active }: WorkspaceTabPanelProps) {
-  const Component = resolveWorkspaceComponent(tab.href);
+  const FormComponent = tab.form ? resolveWorkspaceFormComponent(tab.form.feature) : null;
+  const Component = tab.form ? null : resolveWorkspaceComponent(tab.href);
 
   return (
     <div hidden={!active} aria-hidden={!active} className={active ? "block" : "hidden"}>
       <WorkspaceTabScope tabId={tab.id} isActive={active}>
-        {Component ? (
+        {tab.form && FormComponent ? (
+          <FormComponent tabId={tab.id} mode={tab.form.mode} entityId={tab.form.entityId} />
+        ) : Component ? (
           <Component />
         ) : (
           <div className="rounded-xl border border-dashed p-8 text-sm text-muted-foreground">

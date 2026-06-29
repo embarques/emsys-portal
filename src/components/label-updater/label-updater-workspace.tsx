@@ -125,122 +125,126 @@ export function LabelUpdaterWorkspace() {
           <CardTitle className="text-base">Update options</CardTitle>
           <CardDescription>Select one or more fields to apply on each barcode scan.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-4">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={changeStatus}
-                onChange={(event) => setChangeStatus(event.target.checked)}
-                className="size-4 rounded border-input"
-              />
-              Change status
-            </label>
-            {changeStatus ? (
-              <div className="space-y-2">
-                <Label htmlFor="newStatus">New status</Label>
-                <SearchableSelect
-                  id="newStatus"
-                  value={newStatus}
-                  onValueChange={(next) => setNewStatus(next as LabelStatus)}
-                  searchPlaceholder="Search statuses…"
-                  options={LABEL_STATUSES.map((option) => ({
-                    value: option.value,
-                    label: option.label,
-                  }))}
+        <CardContent className="space-y-6">
+          <div className="grid items-start gap-6 sm:grid-cols-3">
+            <div className="space-y-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={changeStatus}
+                  onChange={(event) => setChangeStatus(event.target.checked)}
+                  className="size-4 rounded border-input"
                 />
-              </div>
-            ) : null}
+                Change status
+              </label>
+              {changeStatus ? (
+                <div className="space-y-2">
+                  <Label htmlFor="newStatus">New status</Label>
+                  <SearchableSelect
+                    id="newStatus"
+                    value={newStatus}
+                    onValueChange={(next) => setNewStatus(next as LabelStatus)}
+                    searchPlaceholder="Search statuses…"
+                    options={LABEL_STATUSES.map((option) => ({
+                      value: option.value,
+                      label: option.label,
+                    }))}
+                  />
+                </div>
+              ) : null}
+            </div>
 
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={changeContainer}
-                onChange={(event) => setChangeContainer(event.target.checked)}
-                className="size-4 rounded border-input"
-              />
-              Change container
-            </label>
-            {changeContainer ? (
-              <div className="space-y-2">
-                <Label htmlFor="newContainer">New container</Label>
-                <SearchableSelect
-                  id="newContainer"
-                  value={newContainerId}
-                  onValueChange={setNewContainerId}
-                  searchPlaceholder="Search containers…"
-                  options={containers.map((container) => ({
-                    value: String(container.id),
-                    label: formatContainerLabel(container),
-                  }))}
+            <div className="space-y-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={changeContainer}
+                  onChange={(event) => setChangeContainer(event.target.checked)}
+                  className="size-4 rounded border-input"
                 />
-              </div>
-            ) : null}
+                Change container
+              </label>
+              {changeContainer ? (
+                <div className="space-y-2">
+                  <Label htmlFor="newContainer">New container</Label>
+                  <SearchableSelect
+                    id="newContainer"
+                    value={newContainerId}
+                    onValueChange={setNewContainerId}
+                    searchPlaceholder="Search containers…"
+                    options={containers.map((container) => ({
+                      value: String(container.id),
+                      label: formatContainerLabel(container),
+                    }))}
+                  />
+                </div>
+              ) : null}
+            </div>
 
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={changeRouteAssignment}
-                onChange={(event) => setChangeRouteAssignment(event.target.checked)}
-                className="size-4 rounded border-input"
-              />
-              Change route assignment
-            </label>
-            {changeRouteAssignment ? (
-              <div className="space-y-2">
-                <Label htmlFor="newRouteAssignment">New route assignment</Label>
-                <SearchableSelect
-                  id="newRouteAssignment"
-                  value={newRouteAssignmentId}
-                  onValueChange={setNewRouteAssignmentId}
-                  searchPlaceholder="Search route assignments…"
-                  options={routeAssignments.map((assignment) => ({
-                    value: assignment.routeAssignmentId,
-                    label: formatRouteAssignmentCopyLabel(assignment),
-                  }))}
+            <div className="space-y-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={changeRouteAssignment}
+                  onChange={(event) => setChangeRouteAssignment(event.target.checked)}
+                  className="size-4 rounded border-input"
                 />
-              </div>
-            ) : null}
+                Change route assignment
+              </label>
+              {changeRouteAssignment ? (
+                <div className="space-y-2">
+                  <Label htmlFor="newRouteAssignment">New route assignment</Label>
+                  <SearchableSelect
+                    id="newRouteAssignment"
+                    value={newRouteAssignmentId}
+                    onValueChange={setNewRouteAssignmentId}
+                    searchPlaceholder="Search route assignments…"
+                    options={routeAssignments.map((assignment) => ({
+                      value: assignment.routeAssignmentId,
+                      label: formatRouteAssignmentCopyLabel(assignment),
+                    }))}
+                  />
+                </div>
+              ) : null}
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="barcodeInput">Barcode (press Enter)</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="barcodeInput"
-                  ref={barcodeInputRef}
-                  value={barcodeInput}
-                  onChange={(event) => setBarcodeInput(event.target.value)}
-                  onKeyDown={handleBarcodeKeyDown}
-                  placeholder="Scan or type barcode..."
-                  className="font-mono text-sm"
-                  autoComplete="off"
-                />
-                <Button type="button" onClick={() => submitBarcode(barcodeInput)}>
-                  <ScanBarcode className="h-4 w-4" />
-                  Apply
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Field clears automatically after each update so you can scan the next label.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bulkBarcodes">Multiple barcodes (comma or newline separated)</Label>
-              <textarea
-                id="bulkBarcodes"
-                value={bulkBarcodes}
-                onChange={(event) => setBulkBarcodes(event.target.value)}
-                rows={4}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                placeholder="LBL-..., LBL-..."
+          <div className="space-y-2">
+            <Label htmlFor="barcodeInput">Barcode (press Enter)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="barcodeInput"
+                ref={barcodeInputRef}
+                value={barcodeInput}
+                onChange={(event) => setBarcodeInput(event.target.value)}
+                onKeyDown={handleBarcodeKeyDown}
+                placeholder="Scan or type barcode..."
+                className="font-mono text-sm"
+                autoComplete="off"
               />
-              <Button type="button" variant="outline" size="sm" onClick={applyBulkBarcodes}>
-                Apply all barcodes
+              <Button type="button" onClick={() => submitBarcode(barcodeInput)}>
+                <ScanBarcode className="h-4 w-4" />
+                Apply
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Field clears automatically after each update so you can scan the next label.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bulkBarcodes">Multiple barcodes (comma or newline separated)</Label>
+            <textarea
+              id="bulkBarcodes"
+              value={bulkBarcodes}
+              onChange={(event) => setBulkBarcodes(event.target.value)}
+              rows={4}
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+              placeholder="LBL-..., LBL-..."
+            />
+            <Button type="button" variant="outline" size="sm" onClick={applyBulkBarcodes}>
+              Apply all barcodes
+            </Button>
           </div>
         </CardContent>
       </Card>

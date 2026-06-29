@@ -5,6 +5,17 @@ export const WORKSPACE_TABS_STORAGE_KEY = "emsys-workspace-tabs";
 /** Show the tab overflow menu when at least this many tabs are open. */
 export const WORKSPACE_TAB_OVERFLOW_THRESHOLD = 6;
 
+/** Add/edit form context carried by a form tab (vs. a regular list/workspace tab). */
+export type WorkspaceTabForm = {
+  /** Feature key resolved against the form host registry (e.g. "customers"). */
+  feature: string;
+  mode: "add" | "edit";
+  /** Target record id when editing. */
+  entityId?: string;
+  /** Tab to re-activate after the form tab closes (the tab that opened it). */
+  returnToTabId?: string | null;
+};
+
 export type WorkspaceTab = {
   /** Internal stable key for React / keep-alive. */
   id: string;
@@ -15,6 +26,8 @@ export type WorkspaceTab = {
   label: string;
   /** Optional user-chosen accent color (hex, e.g. `#3b82f6`). */
   color?: string | null;
+  /** Present when this tab hosts an add/edit form instead of a workspace page. */
+  form?: WorkspaceTabForm;
 };
 
 export type WorkspaceTabsState = {

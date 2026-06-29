@@ -16,6 +16,7 @@ import { RouteAssignmentForm } from "@/components/route-assignments/route-assign
 import { RouteAssignmentViewSheet } from "@/components/route-assignments/route-assignment-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
@@ -121,13 +122,35 @@ export function RouteAssignmentsWorkspace() {
     );
   }
 
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
   function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({
+        feature: "route-assignments",
+        baseHref: "/routes",
+        mode: "add",
+        label: "Add route",
+      });
+      return;
+    }
     setEditingAssignment(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(assignment: RouteAssignment) {
+    if (isDesktopTabs) {
+      setViewAssignment(null);
+      openFormTab({
+        feature: "route-assignments",
+        baseHref: "/routes",
+        mode: "edit",
+        entityId: assignment.id,
+        label: `Edit ${formatRouteAssignmentName(assignment)}`,
+      });
+      return;
+    }
     setEditingAssignment(assignment);
     setFormMode("edit");
     setViewAssignment(null);
