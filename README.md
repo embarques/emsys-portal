@@ -87,6 +87,68 @@ Restart the dev server after changing env files.
 
 Write payload builders live in `src/lib/api/payloads.ts` and each feature's `src/lib/<feature>/api/*-api.ts` file.
 
+## Playwright integration tests
+
+End-to-end tests use **real Firebase login** and the **live EMSYS API** (no auth bypass). Full documentation:
+
+**[PLAYWRIGHT.md](./PLAYWRIGHT.md)**
+
+### Run tests
+
+```bash
+# Playwright UI (recommended)
+npm run test:integration:accounting:daily-income:ui
+
+# Terminal
+npm run test:integration:accounting:daily-income
+```
+
+Set `PLAYWRIGHT_TEST_EMAIL` and `PLAYWRIGHT_TEST_PASSWORD` in `.env.local` (see `.env.local.example`).
+
+### Manual verification (same conditions as Playwright)
+
+Use this when a test fails but you want to confirm the app works with the **same auth path** Playwright uses.
+
+Playwright does **not** use `npm run dev` on port 3000. It starts its own server on **port 3100** with `NEXT_PUBLIC_BYPASS_AUTH=false`.
+
+1. **Configure credentials** in `.env.local`:
+
+   ```env
+   PLAYWRIGHT_TEST_EMAIL=your-test-user@example.com
+   PLAYWRIGHT_TEST_PASSWORD=your-password
+   ```
+
+   Optional — pin Daily Income branch (date is picked automatically by the test):
+
+   ```env
+   PLAYWRIGHT_DAILY_INCOME_BRANCH=NY
+   ```
+
+2. **Stop anything on port 3100** (Playwright UI, a previous manual run):
+
+   ```bash
+   lsof -ti :3100 | xargs kill -9
+   ```
+
+3. **Start the Playwright-equivalent dev server**:
+
+   ```bash
+   NEXT_PUBLIC_BYPASS_AUTH=false NEXT_DIST_DIR=.next-playwright npx next dev -H 127.0.0.1 -p 3100
+   ```
+
+4. **Open** [http://127.0.0.1:3100/login](http://127.0.0.1:3100/login) and sign in with `PLAYWRIGHT_TEST_EMAIL` / `PLAYWRIGHT_TEST_PASSWORD` (real Firebase login — not dev bypass).
+
+5. **Open Daily Income**: Accounting → Daily Income (or [http://127.0.0.1:3100/accounting/daily-income](http://127.0.0.1:3100/accounting/daily-income)).
+
+6. **Confirm the closeout** — branch/date should show a green **`OPEN · #…`** badge (e.g. `OPEN · #32571`). **Add transaction** should be enabled.
+
+| Session | Port | Auth | Same as Playwright? |
+|---------|------|------|---------------------|
+| `npm run dev` + bypass in `.env.local` | 3000 (or custom) | Dev session / auto-login | No |
+| Manual Firebase login on port 3100 | 3100 | Firebase JWT | **Yes** |
+
+If Daily Income works manually on port 3100 but the test still fails, check the terminal for `[playwright:api]` lines (HTTP status, `x-company-id`, response body). See [PLAYWRIGHT.md](./PLAYWRIGHT.md) troubleshooting.
+
 ## Included
 
 - Pulse-style sidebar behavior

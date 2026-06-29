@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
+import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
   createChartAccount,
   createDailyIncomeJournal,
@@ -27,38 +28,60 @@ import type {
   DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
 import { queryKeys } from "@/lib/query/query-keys";
+import { useAppSelector } from "@/lib/store/hooks";
+
+/** EMSYS API returns 403 when Authorization or x-company-id are not ready yet. */
+function useAccountingQueryEnabled(extraEnabled = true) {
+  const { loading, companyId, roleLoading } = useAuth();
+  const { idToken, companyId: transportCompanyId } = useAppSelector((state) => state.auth);
+
+  return (
+    extraEnabled &&
+    !loading &&
+    !roleLoading &&
+    Boolean(idToken && companyId && transportCompanyId && companyId === transportCompanyId)
+  );
+}
 
 export function useIncomeStatement(branchId: number, date: string) {
+  const queryEnabled = useAccountingQueryEnabled(branchId > 0 && Boolean(date));
+
   return useWorkspaceQuery({
     queryKey: queryKeys.accounting.incomeStatement(String(branchId), date),
     queryFn: () => fetchIncomeStatement(branchId, date),
-    enabled: branchId > 0 && Boolean(date),
+    enabled: queryEnabled,
   });
 }
 
 export function useDailyIncomeJournals(params: DailyIncomeJournalListParams) {
+  const queryEnabled = useAccountingQueryEnabled(params.incomeStatementId > 0);
+
   return useWorkspaceQuery({
     queryKey: queryKeys.accounting.journals(params),
     queryFn: () => fetchDailyIncomeJournals(params),
-    enabled: params.incomeStatementId > 0,
+    enabled: queryEnabled,
     placeholderData: keepPreviousData,
   });
 }
 
 export function useChartAccounts(params: ChartAccountListParams, enabled = true) {
+  const queryEnabled = useAccountingQueryEnabled(enabled);
+
   return useWorkspaceQuery({
     queryKey: queryKeys.accounting.accounts(params),
     queryFn: () => fetchChartAccounts(params),
-    enabled,
+    enabled: queryEnabled,
     placeholderData: keepPreviousData,
   });
 }
 
 export function useAccountingPaymentMethods(enabled = true) {
+  const queryEnabled = useAccountingQueryEnabled(enabled);
+
   return useWorkspaceQuery({
     queryKey: queryKeys.accounting.paymentMethods(),
     queryFn: fetchAccountingPaymentMethods,
-    enabled,
+    enabled: queryEnabled,
     staleTime: 60_000,
   });
 }

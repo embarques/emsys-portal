@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
@@ -37,6 +37,7 @@ export function WorkspaceTabsSync() {
   const activeTabId = useAppSelector((state) => state.layoutTabs.activeTabId);
 
   const hydratedRef = useRef(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     if (!isDesktopTabs || hydratedRef.current) return;
@@ -47,10 +48,11 @@ export function WorkspaceTabsSync() {
     }
 
     hydratedRef.current = true;
+    setHydrated(true);
   }, [dispatch, isDesktopTabs]);
 
   useEffect(() => {
-    if (!isDesktopTabs || !hydratedRef.current) return;
+    if (!isDesktopTabs || !hydrated) return;
     if (!isWorkspaceRoute(pathname)) return;
 
     const locationKey = `${pathname}?${searchParams.toString()}`;
@@ -98,6 +100,17 @@ export function WorkspaceTabsSync() {
       return;
     }
 
+    const existingOnRoute = currentTabs.find((tab) => pathnameFromHref(tab.href) === pathname);
+    if (existingOnRoute) {
+      pendingAutoOpenLocation = null;
+      if (currentActiveTabId !== existingOnRoute.id) {
+        dispatch(setActiveWorkspaceTab(existingOnRoute.id));
+      }
+      router.replace(buildWorkspaceTabUrl(existingOnRoute.href, existingOnRoute.number));
+      return;
+    }
+
+    // Guard duplicate auto-open (e.g. React Strict Mode). Retry if no tab was created yet.
     if (pendingAutoOpenLocation === locationKey) return;
 
     pendingAutoOpenLocation = locationKey;
@@ -114,10 +127,10 @@ export function WorkspaceTabsSync() {
     if (opened) {
       router.replace(buildWorkspaceTabUrl(pathname, opened.number));
     }
-  }, [dispatch, isDesktopTabs, pathname, router, searchParams]);
+  }, [dispatch, isDesktopTabs, hydrated, pathname, router, searchParams]);
 
   useEffect(() => {
-    if (!isDesktopTabs || !hydratedRef.current) return;
+    if (!isDesktopTabs || !hydrated) return;
     if (!activeTabId) return;
 
     const activeTab = tabs.find((tab) => tab.id === activeTabId);
@@ -128,7 +141,7 @@ export function WorkspaceTabsSync() {
     if (tabNumberFromUrl === activeTab.number) return;
 
     router.replace(buildWorkspaceTabUrl(activeTab.href, activeTab.number));
-  }, [activeTabId, isDesktopTabs, pathname, router, searchParams, tabs]);
+  }, [activeTabId, isDesktopTabs, hydrated, pathname, router, searchParams, tabs]);
 
   return null;
 }

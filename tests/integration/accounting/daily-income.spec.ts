@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
   await gotoWorkspace(page, "/accounting/daily-income");
 });
 
-test("uses Firebase authentication for EMSYS API requests", async ({ page }) => {
+test("uses bearer authentication for EMSYS API requests", async ({ page }) => {
   const permissionsRequest = page.waitForRequest((request) =>
     request.url().includes("/users/permissions"),
   );

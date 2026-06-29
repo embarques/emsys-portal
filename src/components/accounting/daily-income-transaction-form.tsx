@@ -69,6 +69,11 @@ export function DailyIncomeTransactionForm({
   }, [initialValues, reset, transactionType]);
 
   const type = watch("transactionType");
+  const employeeId = watch("employeeId");
+  const invoiceId = watch("invoiceId");
+  const accountId = watch("accountId");
+  const sourceAccountId = watch("sourceAccountId");
+  const paymentMethodId = watch("paymentMethodId");
   const needsInvoice = ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(type);
   const needsAccount = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(type);
   const needsPaymentMethod = needsInvoice || type === "SALES";
@@ -101,12 +106,12 @@ export function DailyIncomeTransactionForm({
               <select
                 id="journal-employee"
                 className={selectClassName}
+                value={employeeId ?? ""}
                 onChange={(event) => {
                   const employee = employees.find((item) => String(item.id) === event.target.value);
                   setValue("employeeId", employee?.id, { shouldValidate: true });
                   setValue("employeeName", employee?.name ?? "");
                 }}
-                defaultValue={initialValues.employeeId ?? ""}
               >
                 <option value="">Select employee</option>
                 {employees.map((employee) => (
@@ -139,12 +144,12 @@ export function DailyIncomeTransactionForm({
                 <select
                   id="journal-invoice"
                   className={selectClassName}
+                  value={invoiceId ?? ""}
                   onChange={(event) => {
                     const invoice = invoices.find((item) => item.invoiceId === event.target.value);
                     setValue("invoiceId", invoice?.invoiceId ?? "", { shouldValidate: true });
                     setValue("invoiceNumber", invoice?.invoiceNumber ?? "");
                   }}
-                  defaultValue={initialValues.invoiceId ?? ""}
                 >
                   <option value="">Select invoice</option>
                   {invoices.map((invoice) => (
@@ -165,13 +170,13 @@ export function DailyIncomeTransactionForm({
                 <select
                   id="journal-account"
                   className={selectClassName}
+                  value={accountId ?? ""}
                   onChange={(event) => {
                     const account = accounts.find((item) => item.id === Number(event.target.value));
                     setValue("accountId", account?.id, { shouldValidate: true });
                     setValue("accountName", account?.displayName ?? "");
                     setValue("accountType", account?.type);
                   }}
-                  defaultValue={initialValues.accountId ?? ""}
                 >
                   <option value="">Select account</option>
                   {accounts.map((account) => (
@@ -192,13 +197,13 @@ export function DailyIncomeTransactionForm({
                 <select
                   id="journal-source"
                   className={selectClassName}
+                  value={sourceAccountId ?? ""}
                   onChange={(event) => {
                     const account = accounts.find((item) => item.id === Number(event.target.value));
                     setValue("sourceAccountId", account?.id, { shouldValidate: true });
                     setValue("sourceAccountName", account?.displayName ?? "");
                     setValue("sourceAccountType", account?.type);
                   }}
-                  defaultValue={initialValues.sourceAccountId ?? ""}
                 >
                   <option value="">Select source account</option>
                   {accounts.map((account) => (
@@ -222,12 +227,12 @@ export function DailyIncomeTransactionForm({
               <select
                 id="journal-payment"
                 className={selectClassName}
+                value={paymentMethodId ?? ""}
                 onChange={(event) => {
                   const method = paymentMethods.find((item) => item.id === Number(event.target.value));
                   setValue("paymentMethodId", method?.id, { shouldValidate: true });
                   setValue("paymentMethodName", method?.name ?? "");
                 }}
-                defaultValue={initialValues.paymentMethodId ?? ""}
               >
                 <option value="">Select payment method</option>
                 {paymentMethods.map((method) => (

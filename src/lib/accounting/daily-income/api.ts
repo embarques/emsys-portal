@@ -1,5 +1,10 @@
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { buildApiListQuery } from "@/lib/api/list-query";
+import {
+  buildApiSearchPaginationQuery,
+  buildStripeStyleSearchBody,
+} from "@/lib/api/search-query";
 import {
   EMPTY_DAILY_INCOME_SUMMARY,
   type AccountingLookup,
@@ -222,23 +227,54 @@ function queryString(values: Record<string, string | number | undefined>) {
   return query.toString();
 }
 
+export async function fetchIncomeStatementById(id: number) {
+  if (!id) return null;
+  const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENT}/${id}`);
+  return normalizeIncomeStatement(unwrap(payload));
+}
+
 export async function fetchIncomeStatement(branchId: number, date: string) {
   if (!branchId || !date) return null;
-  const query = queryString({
-    page: 1,
-    limit: 1,
-    offset: 0,
-  });
+  const isoDate = date.slice(0, 10);
+
+  try {
+    const listQuery = buildApiListQuery({
+      page: 1,
+      limit: 500,
+      sort: { field: "date", direction: "desc" },
+    });
+    const listPayload = await apiClient.get<ApiEnvelope>(
+      `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}?${listQuery}`,
+    );
+    for (const row of unwrapArray(listPayload)) {
+      const statement = normalizeIncomeStatement(row);
+      if (
+        statement &&
+        statement.date.slice(0, 10) === isoDate &&
+        statement.branch?.id === branchId
+      ) {
+        return statement;
+      }
+    }
+  } catch {
+    // Fall through to POST /search.
+  }
+
+  const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 1, offset: 0 });
   const payload = await apiClient.post<ApiEnvelope>(
-    `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/search?${query}`,
-    {
-      operator: "and",
-      filters: [
-        { field: "branch._id", operator: "eq", value: branchId },
-        { field: "date", operator: "eq", value: date },
+    `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENTS}/search?${paginationQuery}`,
+    buildStripeStyleSearchBody({
+      sort: { field: "date", direction: "desc" },
+      filterGroups: [
+        {
+          operator: "and",
+          filters: [
+            { field: "branch.id", operator: "eq", value: branchId },
+            { field: "date", operator: "eq", value: isoDate },
+          ],
+        },
       ],
-      sort: [{ field: "date", direction: "desc" }],
-    },
+    }),
   );
   return normalizeIncomeStatement(unwrapArray(payload)[0]);
 }
@@ -286,24 +322,49 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
   }
   const page = params.page ?? 1;
   const limit = params.limit ?? 20;
-  const query = queryString({
-    page,
-    limit,
-    offset: (page - 1) * limit,
-  });
-  const payload = await apiClient.post<ApiEnvelope>(
-    `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search?${query}`,
-    {
-      operator: "and",
-      filters: [{ field: "incomeStatement._id", operator: "eq", value: params.incomeStatementId }],
-      sort: [{ field: "createdAt", direction: "desc" }],
-    },
-  );
-  const envelope = objectValue(payload);
-  const unwrapped = unwrap(payload);
-  const first = Array.isArray(unwrapped) ? objectValue(unwrapped[0]) : objectValue(unwrapped);
-  const rows = Array.isArray(first.journals) ? first.journals : Array.isArray(unwrapped) ? unwrapped : [];
-  let items = rows.map(normalizeJournal).filter((item): item is DailyIncomeJournal => item != null);
+
+  let items: DailyIncomeJournal[] = [];
+
+  try {
+    const listQuery = buildApiListQuery({
+      page: 1,
+      limit: 500,
+      sort: { field: "createdAt", direction: "desc" },
+    });
+    const listPayload = await apiClient.get<ApiEnvelope>(
+      `${API_ENDPOINTS.ACCOUNTING_JOURNALS}?${listQuery}`,
+    );
+    items = unwrapArray(listPayload)
+      .map(normalizeJournal)
+      .filter(
+        (item): item is DailyIncomeJournal =>
+          item != null && item.incomeStatementId === params.incomeStatementId,
+      );
+  } catch {
+    // Fall through to POST /search.
+  }
+
+  if (items.length === 0) {
+    const query = queryString({
+      page,
+      limit,
+      offset: (page - 1) * limit,
+    });
+    const payload = await apiClient.post<ApiEnvelope>(
+      `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search?${query}`,
+      {
+        operator: "and",
+        filters: [{ field: "incomeStatement.id", operator: "eq", value: params.incomeStatementId }],
+        sort: [{ field: "createdAt", direction: "desc" }],
+      },
+    );
+    const envelope = objectValue(payload);
+    const unwrapped = unwrap(payload);
+    const first = Array.isArray(unwrapped) ? objectValue(unwrapped[0]) : objectValue(unwrapped);
+    const rows = Array.isArray(first.journals) ? first.journals : Array.isArray(unwrapped) ? unwrapped : [];
+    items = rows.map(normalizeJournal).filter((item): item is DailyIncomeJournal => item != null);
+  }
+
   const search = params.query?.trim().toLowerCase();
   if (search) {
     items = items.filter((item) =>
@@ -311,12 +372,17 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
         .some((value) => value?.toLowerCase().includes(search)),
     );
   }
+
+  const total = items.length;
+  const offset = (page - 1) * limit;
+  const pageItems = items.slice(offset, offset + limit);
+
   return {
-    items,
-    summary: first.summary ? normalizeSummary(first.summary) : computeJournalSummary(items),
-    page: numberValue(envelope.page, page),
-    resultsPerPage: numberValue(firstDefined(envelope.resultsPerPage, envelope.results_per_page), limit),
-    total: numberValue(firstDefined(envelope.total, first.total), items.length),
+    items: pageItems,
+    summary: computeJournalSummary(items),
+    page,
+    resultsPerPage: limit,
+    total,
   };
 }
 
@@ -326,12 +392,17 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType);
 
   return {
-    date: statement.date,
+    incomeStatementId: statement.id,
+    date: `${statement.date}T00:00:00Z`,
     transactionType: values.transactionType,
     amount: values.amount,
     refNumber: values.refNumber,
     description: values.description,
-    employeeId: values.employeeId,
+    currency: statement.currency,
+    rate: statement.rate,
+    employee: values.employeeId
+      ? { id: values.employeeId, name: values.employeeName ?? "" }
+      : undefined,
     account: accountRelated && values.accountId
       ? { id: values.accountId, name: values.accountName, type: values.accountType }
       : undefined,
@@ -339,6 +410,9 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
       ? { id: values.sourceAccountId, name: values.sourceAccountName, type: values.sourceAccountType }
       : undefined,
     invoiceId: invoiceRelated && values.invoiceId ? values.invoiceId : undefined,
+    invoice: invoiceRelated && values.invoiceId
+      ? { id: values.invoiceId, number: values.invoiceNumber }
+      : undefined,
     paymentMethod: values.paymentMethodId
       ? { id: values.paymentMethodId, name: values.paymentMethodName }
       : undefined,
