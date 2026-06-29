@@ -6,6 +6,7 @@ import { CustomerFormWorkspace } from "@/components/customers/customer-form-work
 import { EmployeeFormWorkspace } from "@/components/employees/employee-form-workspace";
 import { ItemFormWorkspace } from "@/components/items/item-form-workspace";
 import { OrderFormWorkspace } from "@/components/orders/order-form-workspace";
+import { RoleFormWorkspace } from "@/components/roles/role-form-workspace";
 import { RouteAssignmentFormWorkspace } from "@/components/route-assignments/route-assignment-form-workspace";
 import { UserFormWorkspace } from "@/components/users/user-form-workspace";
 import { VehicleFormWorkspace } from "@/components/vehicles/vehicle-form-workspace";
@@ -27,6 +28,7 @@ export const workspaceFormRegistry: Record<string, ComponentType<WorkspaceFormHo
   items: ItemFormWorkspace,
   containers: ContainerFormWorkspace,
   "route-assignments": RouteAssignmentFormWorkspace,
+  roles: RoleFormWorkspace,
   vehicles: VehicleFormWorkspace,
   users: UserFormWorkspace,
   employees: EmployeeFormWorkspace,

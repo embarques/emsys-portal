@@ -18,6 +18,7 @@ import { RoleViewSheet } from "@/components/roles/role-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
 
@@ -198,13 +199,30 @@ export function RolesWorkspace() {
     );
   }
 
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
   function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({ feature: "roles", baseHref: "/roles", mode: "add", label: "Add role" });
+      return;
+    }
     setEditingRole(null);
     setFormMode("add");
     setFormError(null);
   }
 
   function openEditForm(role: Role) {
+    if (isDesktopTabs) {
+      setViewRole(null);
+      openFormTab({
+        feature: "roles",
+        baseHref: "/roles",
+        mode: "edit",
+        entityId: role.roleId,
+        label: `Edit ${role.name}`,
+      });
+      return;
+    }
     setEditingRole(role);
     setFormMode("edit");
     setViewRole(null);
