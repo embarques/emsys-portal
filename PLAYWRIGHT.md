@@ -6,7 +6,7 @@ End-to-end integration tests for the EMSYS portal. Tests run against a dedicated
 
 ## ⚠️ Daily Income not opening in the UI?
 
-Daily Income opens when you run a test under **`chromium`** (e.g. `opens the route in a workspace tab` or `registers an invoice transaction`). Auth runs automatically in **`global-setup.ts`** before any test — you will not see a separate login test in the sidebar.
+Daily Income opens when you run a test under **`chromium`** (e.g. `opens the route in a workspace tab` or `registers an invoice`). Auth runs automatically in **`global-setup.ts`** before any test — you will not see a separate login test in the sidebar. The project currently has **15 integration tests** (chart of accounts + daily income).
 
 | Step | What happens |
 |------|----------------|
@@ -17,54 +17,76 @@ Daily Income opens when you run a test under **`chromium`** (e.g. `opens the rou
 
 ## Quick start (Playwright UI — recommended)
 
-Most local runs use **Playwright UI** so you can watch the browser, step through failures, and open traces.
+Most local runs use **Playwright UI** so you can watch the browser, step through failures, and re-run individual tests.
+
+### Prerequisites
+
+1. Copy credentials into `.env.local` (see [Prerequisites](#prerequisites) below).
+2. Install Chromium (runs automatically via `pretest:integration` on first test run):
+
+```bash
+npx playwright install chromium
+```
+
+### Open Playwright UI
 
 From the repository root:
 
 ```bash
-# Daily income tests (opens Playwright UI)
+# Register invoice only (recommended while working on that flow)
+npm run test:integration:accounting:daily-income:register-invoice:ui
+
+# All daily income tests
 npm run test:integration:accounting:daily-income:ui
-```
 
-All integration tests in UI mode:
-
-```bash
+# Full integration suite
 npm run test:integration:ui
 ```
 
-### What you see in the UI
+These UI scripts run `clean:playwright:ui` first (clears stale traces and auth cache) and use `--workers=1` so the UI viewer stays stable.
 
-The left sidebar lists tests under the **`chromium`** project (12 daily income tests: page load, auth headers, workspace tab, register invoice, 8 transaction types).
+### How to run tests in the UI
 
-Auth runs once in **`global-setup.ts`** before tests start (not visible as a sidebar test). If global setup fails, check the terminal for `POST /auth/token` errors.
+1. Run one of the commands above — Playwright UI opens in your browser (usually `http://localhost:9323` or similar).
+2. In the **left sidebar**, expand the **`chromium`** project.
+3. **Run all tests**: click the ▶ button at the top of the sidebar.
+4. **Run one test**: hover a test name → click its ▶ button.
+5. **Filter tests**: use the search box (e.g. `register invoice`, `[register-expense]`, `chart of accounts`).
+6. **Watch execution**: the browser panel on the right shows each step (login via global setup, then navigation).
+7. **On failure**: select the test → open **Trace**, **Screenshot**, or **Video** (terminal runs retain more artifacts than UI mode).
 
-### Typical UI workflow
+Auth runs once in **`global-setup.ts`** before specs start — you will not see a separate login test in the sidebar. If setup fails, read the **terminal** for `POST /auth/token` errors.
 
-1. Run `npm run test:integration:accounting:daily-income:ui`
-2. Wait for Playwright UI to open in the browser
-3. Click **Run all** (or pick a test under **chromium**)
-4. Watch the test browser on the right — the first run logs in via global setup, then tests open Daily Income
-5. On failure: click the test → **Trace**, **Screenshot**, or **Video** tabs (terminal runs only; UI disables heavy artifacts)
+### Register invoice in the UI
 
-Run a single test (e.g. register invoice):
+```bash
+npm run test:integration:accounting:daily-income:register-invoice:ui
+```
 
-1. Open UI with the command above
-2. Filter or find `registers an invoice transaction` under **chromium**
-3. Click the ▶ button on that test only
+In the sidebar, run:
+
+`Daily income register invoice › registers an invoice, shows success toast, and keeps the wizard open for the next entry`
+
+The test verifies:
+
+- OPEN closeout is found or created
+- Register invoice wizard (employee, invoice number, cost, amount, balance, payment method)
+- Success toast: **`New invoice #xxxx created and payment registered.`**
+- Wizard stays open with **employee retained** and invoice fields cleared for the next entry
 
 ### Terminal alternative
 
-If you prefer CLI output instead of the UI:
-
 ```bash
+# Register invoice (terminal)
+npm run test:integration:accounting:daily-income:register-invoice
+
+# All daily income tests
 npm run test:integration:accounting:daily-income
+
+# List tests without running
+npx playwright test tests/integration --list
 ```
 
-List tests without running:
-
-```bash
-npx playwright test tests/integration/accounting/daily-income --list
-```
 Other useful commands:
 
 ```bash
@@ -264,24 +286,121 @@ Use this to reproduce what the tests see **before** debugging Playwright itself.
 Re-run the test:
 
 ```bash
-npm run test:integration:accounting:daily-income -- --grep "registers an invoice"
+npm run test:integration:accounting:daily-income:register-invoice
 ```
 
 Watch `[playwright:auth]`, `[playwright:daily-income]`, and `[playwright:api]` in the terminal.
 
 ---
 
-## Available test suites
+## Available tests (full list)
+
+**15 tests** in the **`chromium`** project (`npx playwright test tests/integration --list`):
+
+### Chart of accounts (`chart-of-accounts.spec.ts`)
+
+| Test | What it covers |
+|------|----------------|
+| `renders the live paginated chart of accounts directory` | List loads from `GET /chart-accounts` |
+| `creates and deletes an account through the authenticated API` | Create + delete via API |
+| `opens the route in a workspace tab` | Workspace tab URL and tab bar |
+
+### Daily income — page & auth (`daily-income.spec.ts`)
+
+| Test | What it covers |
+|------|----------------|
+| `uses bearer authentication for EMSYS API requests` | `Authorization: Bearer` + `x-company-id` on API calls |
+| `renders closeout totals and transaction directory only when a closeout exists` | Stat cards / table hidden without closeout |
+| `opens the route in a workspace tab` | Daily Income workspace tab |
+
+### Daily income — register invoice (`daily-income-register-invoice.spec.ts`)
+
+| Test | What it covers |
+|------|----------------|
+| `registers an invoice, shows success toast, and keeps the wizard open for the next entry` | Full register-invoice flow, balance field, success toast, continuous entry |
+
+### Daily income — transaction types (`daily-income-transaction-types.spec.ts`)
+
+One test per journal type (title includes slug in brackets):
+
+| Slug | Test title suffix |
+|------|-------------------|
+| `register-invoice` | `[register-invoice] fills form and submits journal transaction` |
+| `register-payment` | `[register-payment] fills form and submits journal transaction` |
+| `register-expense` | `[register-expense] fills form and submits journal transaction` |
+| `register-income` | `[register-income] fills form and submits journal transaction` |
+| `apply-discount` | `[apply-discount] fills form and submits journal transaction` |
+| `apply-surcharge` | `[apply-surcharge] fills form and submits journal transaction` |
+| `transfer-account` | `[transfer-account] fills form and submits journal transaction` |
+| `register-loan` | `[register-loan] fills form and submits journal transaction` |
+
+---
+
+## npm scripts reference
+
+| Script | What runs |
+|--------|-----------|
+| `test:integration` | All specs under `tests/integration/` |
+| `test:integration:ui` | All integration tests in Playwright UI |
+| `test:integration:accounting` | All accounting specs |
+| `test:integration:accounting:accounts` | Chart of accounts only |
+| `test:integration:accounting:daily-income` | All `daily-income*.spec.ts` files |
+| `test:integration:accounting:daily-income:ui` | Daily income tests in UI |
+| `test:integration:accounting:daily-income:register-invoice` | Register invoice spec (terminal) |
+| `test:integration:accounting:daily-income:register-invoice:ui` | Register invoice in UI |
+| `test:integration:accounting:daily-income:transactions` | All 8 transaction-type tests |
+| `test:integration:accounting:daily-income:transaction:register-invoice` | `[register-invoice]` only |
+| `test:integration:accounting:daily-income:transaction:register-invoice:ui` | `[register-invoice]` in UI |
+| `test:integration:accounting:daily-income:transaction:register-payment` | `[register-payment]` only |
+| `test:integration:accounting:daily-income:transaction:register-expense` | `[register-expense]` only |
+| `test:integration:accounting:daily-income:transaction:register-income` | `[register-income]` only |
+| `test:integration:accounting:daily-income:transaction:apply-discount` | `[apply-discount]` only |
+| `test:integration:accounting:daily-income:transaction:apply-surcharge` | `[apply-surcharge]` only |
+| `test:integration:accounting:daily-income:transaction:transfer-account` | `[transfer-account]` only |
+| `test:integration:accounting:daily-income:transaction:register-loan` | `[register-loan]` only |
+
+### Example executions
+
+```bash
+# UI — register invoice (fastest feedback while developing the form)
+npm run test:integration:accounting:daily-income:register-invoice:ui
+
+# UI — one transaction type (filter in Playwright UI, or use terminal script)
+npm run test:integration:accounting:daily-income:transaction:register-payment
+
+# Terminal — register invoice
+npm run test:integration:accounting:daily-income:register-invoice
+
+# Terminal — grep by slug
+npx playwright test tests/integration/accounting/daily-income-transaction-types.spec.ts --grep "\[register-payment\]"
+
+# Terminal — grep by words
+npx playwright test tests/integration/accounting/daily-income --grep "register invoice"
+
+# Headed browser (no UI app)
+npm run test:integration:accounting:daily-income:register-invoice -- --headed
+
+# Step debugger
+npm run test:integration:accounting:daily-income:register-invoice -- --debug
+
+# List tests
+npx playwright test tests/integration --list
+```
+
+---
+
+## Available test suites (summary)
 
 Tests target the **desktop workspace tab UI** (`?tab=N` URLs, tab bar, keep-alive panels). Helpers live in `tests/integration/workspace.fixture.ts`.
 
 | Script | Spec file | What it covers |
 |--------|-----------|----------------|
-| `test:integration:accounting:daily-income` | `tests/integration/accounting/daily-income*.spec.ts` | Daily Income page, auth headers, closeout UI, register-invoice flow |
+| `test:integration:accounting:daily-income` | `tests/integration/accounting/daily-income*.spec.ts` | Daily Income page, auth, closeout UI, register invoice, transaction types |
+| `test:integration:accounting:daily-income:register-invoice` | `daily-income-register-invoice.spec.ts` | Dedicated register-invoice E2E flow |
 | `test:integration:accounting:daily-income:transactions` | `daily-income-transaction-types.spec.ts` | All 8 transaction types (form + submit) |
-| `test:integration:accounting:daily-income:transaction:*` | same | One transaction type per npm script (see [Transaction type tests](#transaction-type-tests-one-per-journal-type)) |
-| `test:integration:accounting:accounts` | `chart-of-accounts.spec.ts` | Chart of Accounts list, create/delete account via API |
-| `test:integration:accounting` | both accounting specs | All accounting integration tests |
+| `test:integration:accounting:daily-income:transaction:*` | same | One transaction type per npm script |
+| `test:integration:accounting:accounts` | `chart-of-accounts.spec.ts` | Chart of Accounts list, create/delete |
+| `test:integration:accounting` | both accounting dirs | All accounting integration tests |
 | `test:integration` | all specs under `tests/integration/` | Full integration suite |
 
 ---
@@ -291,33 +410,42 @@ Tests target the **desktop workspace tab UI** (`?tab=N` URLs, tab bar, keep-aliv
 ### In Playwright UI (recommended)
 
 ```bash
-# All daily income tests (cleans stale artifacts, single worker)
-npm run test:integration:accounting:daily-income:ui
-
 # Register invoice only
 npm run test:integration:accounting:daily-income:register-invoice:ui
-```
 
-These scripts run `clean:playwright:ui` first and use `--workers=1` so trace/video zip files do not corrupt the UI viewer.
+# All daily income tests
+npm run test:integration:accounting:daily-income:ui
 
-```bash
+# [register-invoice] transaction-type test (shorter than full register-invoice spec)
+npm run test:integration:accounting:daily-income:transaction:register-invoice:ui
+
 # Everything in UI mode
 npm run test:integration:ui
 ```
 
-In the UI sidebar, run individual tests under **chromium** with the ▶ button. Use the filter box to find tests by name (e.g. `register invoice`).
+See [How to run tests in the UI](#how-to-run-tests-in-the-ui) for the step-by-step workflow.
+
+These scripts run `clean:playwright:ui` first and use `--workers=1` so trace/video zip files do not corrupt the UI viewer.
+
+In the UI sidebar, run individual tests under **chromium** with the ▶ button. Use the filter box to find tests by name (e.g. `register invoice`, `[register-expense]`).
 
 ### In the terminal
 
 ```bash
+# Register invoice dedicated spec
+npm run test:integration:accounting:daily-income:register-invoice
+
+# One transaction type by slug
+npm run test:integration:accounting:daily-income:transaction:register-payment
+
 # One test by title (grep)
-npx playwright test tests/integration/accounting/daily-income -g "registers an invoice"
+npx playwright test tests/integration/accounting/daily-income-register-invoice.spec.ts -g "registers an invoice"
 
 # Headed browser (watch without the UI app)
-npm run test:integration:accounting:daily-income -- --headed
+npm run test:integration:accounting:daily-income:register-invoice -- --headed
 
 # Step-through debugger
-npm run test:integration:accounting:daily-income -- --debug
+npm run test:integration:accounting:daily-income:register-invoice -- --debug
 ```
 
 ---
@@ -436,13 +564,15 @@ Account-based types (`register-expense`, `register-income`, `transfer-account`, 
 1. EMSYS API dev session (via `global-setup.ts`)
 2. Open Daily Income in a workspace tab
 3. Find, create, or reopen an **OPEN** closeout (today, or walk back up to 14 days; **409 → reuse existing**)
-4. **Add transaction** → **Register invoice** → fill form → **Save transaction**
+4. **Add transaction** → **Register invoice** → fill form (cost, amount, **balance**, payment method) → **Save transaction**
+5. Assert toast: **`New invoice #xxxx created and payment registered.`**
+6. Assert wizard **stays open** with employee kept and invoice fields cleared (continuous entry)
 
 **API permissions required** for the Playwright test user:
 
 - Search/create/reopen daily income closeouts (`/income-statements`)
 - Create journal entries (`POST /journals`)
-- Read employees and invoices for form dropdowns
+- Read employees and payment methods for the form
 
 #### “Unable to find or open an OPEN daily closeout”
 
@@ -481,7 +611,7 @@ The terminal logs the full journal request body under `[playwright:api]` when sa
 Run only this test in the UI:
 
 ```bash
-npm run test:integration:accounting:daily-income:ui
+npm run test:integration:accounting:daily-income:register-invoice:ui
 ```
 
 Then filter for `registers an invoice` and click ▶ on that test.
@@ -489,7 +619,7 @@ Then filter for `registers an invoice` and click ▶ on that test.
 Or in the terminal:
 
 ```bash
-npm run test:integration:accounting:daily-income -- --grep "registers an invoice"
+npm run test:integration:accounting:daily-income:register-invoice
 ```
 
 ### Tests say "did not run" or global setup fails

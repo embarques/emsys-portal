@@ -540,6 +540,31 @@ export async function fillRegisterInvoiceTransactionForm(
   if (options.description) {
     await dialog.locator("#journal-description").fill(options.description);
   }
+
+  const costValue = Number.parseFloat(options.cost ?? options.amount ?? "1.00");
+  const amountValue = Number.parseFloat(options.amount ?? "1.00");
+  if (Number.isFinite(costValue) && Number.isFinite(amountValue)) {
+    const balanceLabel = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(costValue - amountValue);
+    await expect(dialog.locator("#journal-invoice-balance")).toHaveValue(balanceLabel);
+  }
+}
+
+export async function expectRegisterInvoiceSuccessToast(page: Page, invoiceNumber: string) {
+  await expect(
+    page.getByText(`New invoice #${invoiceNumber} created and payment registered.`),
+  ).toBeVisible({ timeout: 15_000 });
+}
+
+/** After a successful save, the wizard stays open with employee retained and invoice fields cleared. */
+export async function expectRegisterInvoiceWizardReadyForNextEntry(dialog: Locator) {
+  await expect(dialog.getByRole("heading", { name: "Add transaction" })).toBeVisible();
+  await expect(dialog.locator("#journal-employee")).not.toHaveValue("");
+  await expect(dialog.locator("#journal-invoice-number")).toHaveValue("");
+  await expect(dialog.locator("#journal-invoice-cost")).not.toHaveValue("15.00");
+  await expect(dialog.locator("#journal-amount")).not.toHaveValue("10.00");
 }
 
 /**
@@ -696,7 +721,7 @@ export async function openAddTransactionWizard(
   main: Locator,
   transactionLabel: string,
   sectionTitle: string,
-  spec?: Pick<DailyIncomeTransactionSpec, "needsInvoice" | "needsAccount">,
+  spec?: Pick<DailyIncomeTransactionSpec, "needsRegisterInvoice" | "needsInvoice" | "needsAccount">,
 ) {
   await expect(main.getByRole("button", { name: "Add transaction" })).toBeEnabled({ timeout: 15_000 });
   await main.getByRole("button", { name: "Add transaction" }).click();
@@ -732,6 +757,8 @@ export async function openAddTransactionWizard(
 
 type TransactionFormOptions = {
   amount?: string;
+  cost?: string;
+  invoiceNumber?: string;
   refNumber?: string;
   description?: string;
   invoiceOptionIndex?: number;
@@ -754,7 +781,8 @@ export async function fillTransactionForm(dialog: Locator, spec: DailyIncomeTran
   if (spec.needsRegisterInvoice) {
     await fillRegisterInvoiceTransactionForm(dialog, {
       amount,
-      cost: amount,
+      cost: options.cost ?? amount,
+      invoiceNumber: options.invoiceNumber,
       refNumber: options.refNumber,
       description: options.description,
     });
@@ -838,7 +866,8 @@ export async function saveJournalTransaction(
   if (spec.needsRegisterInvoice) {
     return saveRegisterInvoiceTransaction(page, dialog, {
       amount: options.amount ?? "1.00",
-      cost: options.amount ?? "1.00",
+      cost: options.cost ?? options.amount ?? "1.00",
+      invoiceNumber: options.invoiceNumber,
       refNumber: options.refNumber,
       description: options.description,
       maxAttempts: options.maxInvoiceAttempts,

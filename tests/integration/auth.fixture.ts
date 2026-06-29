@@ -150,7 +150,9 @@ export async function persistAuthStorageState(context: BrowserContext, page: Pag
   if (devSessionValue) {
     for (const origin of state.origins) {
       if (origin.origin.includes("127.0.0.1:3100")) {
-        origin.sessionStorage = [{ name: DEV_SESSION_STORAGE_KEY, value: devSessionValue }];
+        Object.assign(origin, {
+          sessionStorage: [{ name: DEV_SESSION_STORAGE_KEY, value: devSessionValue }],
+        });
       }
     }
   }

@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 import {
   ensureOpenDailyCloseoutForBranch,
+  expectRegisterInvoiceSuccessToast,
+  expectRegisterInvoiceWizardReadyForNextEntry,
   logDailyIncomeBranchPlan,
   logRunningTestForBranch,
   openRegisterInvoiceTransactionWizard,
@@ -18,7 +20,9 @@ test.describe("Daily income register invoice", () => {
     await gotoWorkspace(page, "/accounting/daily-income");
   });
 
-  test("logs in, opens closeout, and registers an invoice transaction", async ({ page }) => {
+  test("registers an invoice, shows success toast, and keeps the wizard open for the next entry", async ({
+    page,
+  }) => {
     const main = workspaceMain(page);
 
     await expect(main.getByRole("heading", { name: "Daily Income" })).toBeVisible();
@@ -39,10 +43,13 @@ test.describe("Daily income register invoice", () => {
         await expect(main.locator("#daily-branch")).toHaveValue(branchCode);
 
         const dialog = await openRegisterInvoiceTransactionWizard(page, main);
+        const invoiceNumber = `PW-INV-${branchCode}-${Date.now()}`;
         const refNumber = `PW-${branchCode}-${Date.now()}`;
 
         const response = await saveRegisterInvoiceTransaction(page, dialog, {
-          amount: "1.00",
+          invoiceNumber,
+          amount: "10.00",
+          cost: "15.00",
           refNumber,
           description: `Playwright register invoice integration test (${branchCode})`,
         });
@@ -52,10 +59,13 @@ test.describe("Daily income register invoice", () => {
 
         if (response.ok()) {
           expect(response.ok(), `Create transaction failed with HTTP ${response.status()}`).toBe(true);
-          await expect(page.getByText(/New invoice #.+ created and payment registered\./)).toBeVisible({ timeout: 15_000 });
+          await expectRegisterInvoiceSuccessToast(page, invoiceNumber);
+          await expectRegisterInvoiceWizardReadyForNextEntry(dialog);
           await expect(main.getByText(refNumber)).toBeVisible({ timeout: 15_000 });
           await expect(main.getByText("Invoice", { exact: true }).first()).toBeVisible();
-          console.log(`[playwright:daily-income] Register invoice succeeded on branch ${branchCode}.`);
+          console.log(
+            `[playwright:daily-income] Register invoice #${invoiceNumber} succeeded on branch ${branchCode}.`,
+          );
           return;
         }
 

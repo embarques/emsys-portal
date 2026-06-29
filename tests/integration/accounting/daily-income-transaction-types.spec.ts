@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 import {
   DAILY_INCOME_TRANSACTION_SPECS,
+  expectRegisterInvoiceSuccessToast,
+  expectRegisterInvoiceWizardReadyForNextEntry,
   openTransactionTypeWizard,
   prepareDailyIncomeCloseout,
   saveJournalTransaction,
@@ -36,11 +38,15 @@ test.describe("Daily income transaction types", () => {
       }
 
       const refNumber = `PW-${branchCode}-${Date.now()}`;
+      const invoiceNumber =
+        spec.slug === "register-invoice" ? `PW-INV-${branchCode}-${Date.now()}` : undefined;
 
       let response;
       try {
         response = await saveJournalTransaction(page, dialog, spec, {
-          amount: "1.00",
+          amount: spec.slug === "register-invoice" ? "10.00" : "1.00",
+          cost: spec.slug === "register-invoice" ? "15.00" : undefined,
+          invoiceNumber,
           refNumber,
           description: `Playwright ${spec.slug} integration test (${branchCode})`,
           testInfo,
@@ -61,8 +67,9 @@ test.describe("Daily income transaction types", () => {
       }
 
       expect(response.ok(), `${spec.label} failed with HTTP ${response.status()}`).toBe(true);
-      if (spec.slug === "register-invoice") {
-        await expect(page.getByText(/New invoice #.+ created and payment registered\./)).toBeVisible({ timeout: 15_000 });
+      if (spec.slug === "register-invoice" && invoiceNumber) {
+        await expectRegisterInvoiceSuccessToast(page, invoiceNumber);
+        await expectRegisterInvoiceWizardReadyForNextEntry(dialog);
       } else {
         await expect(page.getByText("Transaction created.")).toBeVisible({ timeout: 15_000 });
       }

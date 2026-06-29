@@ -18,6 +18,7 @@
     "test:integration:accounting": "playwright test tests/integration/accounting",
     "test:integration:accounting:daily-income": "playwright test tests/integration/accounting/daily-income",
     "test:integration:accounting:daily-income:ui": "npm run clean:playwright:ui && PLAYWRIGHT_TRACING_NO_WEBSOCKET_FRAMES=1 playwright test tests/integration/accounting/daily-income --ui --workers=1",
+    "test:integration:accounting:daily-income:register-invoice": "playwright test tests/integration/accounting/daily-income-register-invoice.spec.ts --grep \"registers an invoice\"",
     "test:integration:accounting:daily-income:register-invoice:ui": "npm run clean:playwright:ui && PLAYWRIGHT_TRACING_NO_WEBSOCKET_FRAMES=1 playwright test tests/integration/accounting/daily-income-register-invoice.spec.ts --ui --workers=1 --grep \"registers an invoice\"",
     "test:integration:accounting:daily-income:transaction:register-invoice:ui": "npm run clean:playwright:ui && PLAYWRIGHT_TRACING_NO_WEBSOCKET_FRAMES=1 playwright test tests/integration/accounting/daily-income-transaction-types.spec.ts --ui --workers=1 --grep \"\\[register-invoice\\]\"",
     "test:integration:accounting:daily-income:transactions": "playwright test tests/integration/accounting/daily-income-transaction-types.spec.ts",
