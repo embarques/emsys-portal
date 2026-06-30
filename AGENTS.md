@@ -998,3 +998,16 @@ When modifying the project:
 13. Always include `x-company-id` for EMSYS API requests.
 14. Keep dashboard routes as they are unless explicitly requested.
 15. Preserve the existing application layout and UI behavior unless explicitly asked to change it.
+
+---
+
+## Cursor Cloud specific instructions
+
+Environment notes for cloud agents (the startup update script already runs `npm ci`). Node 22 + npm are in the snapshot.
+
+### Running the dev server
+* `npm run dev:local` serves on port 3000 and points the API at `http://localhost:8080/v1` (use with a locally running `emsys-api`). `npm run dev` / `dev:remote` use `NEXT_PUBLIC_API_BASE_URL` from `.env` (remote API). Lint/build are standard: `npm run lint` (pre-existing warnings, 0 errors), `npm run build`.
+
+### Auth caveat (full dashboard E2E needs Firebase)
+* A gitignored `.env.local` enables dev bypass (`NEXT_PUBLIC_BYPASS_AUTH=true`). Even in bypass mode the session is established by minting a token via the API `POST /v1/auth/token`, which itself requires real Firebase credentials on the API. Without Firebase, the `/login` (dev-login form) page renders, but logging in and loading authenticated dashboard data will not succeed.
+* For real login + authenticated data, set the `NEXT_PUBLIC_FIREBASE_*` web config (and a Firebase test account) and run with `NEXT_PUBLIC_BYPASS_AUTH=false`. Playwright E2E (`PLAYWRIGHT.md`) likewise needs `PLAYWRIGHT_TEST_EMAIL`/`PLAYWRIGHT_TEST_PASSWORD`.
