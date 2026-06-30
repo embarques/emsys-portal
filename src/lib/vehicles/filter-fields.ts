@@ -5,7 +5,7 @@ import {
 } from "@/lib/vehicles/types";
 import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 
-const TEXT_FIELDS = new Set(["vehicleId", "name", "vin", "createdBy.name", "id"]);
+const TEXT_FIELDS = new Set(["vehicleId", "name", "vin", "licensePlate", "createdBy.name", "id"]);
 
 export const VEHICLE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   ...VEHICLE_GET_SEARCH_CAPABILITIES.filter((entry) => TEXT_FIELDS.has(entry.field)).map((entry) => ({

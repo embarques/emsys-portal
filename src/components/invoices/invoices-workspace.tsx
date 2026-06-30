@@ -10,6 +10,7 @@ import {
   Plus,
   Printer,
   Receipt,
+  Route as RouteIcon,
   Tags,
   Trash2,
 } from "lucide-react";
@@ -70,6 +71,11 @@ import {
   useInvoices,
 } from "@/lib/invoices/hooks/use-invoices";
 import { useGenerateInvoiceReport } from "@/lib/reports/hooks/use-reports";
+import { useAssignInvoiceBarcodesToRoute } from "@/lib/labels/hooks/use-barcodes";
+import { useRoutePicker } from "@/lib/routes/hooks/use-routes";
+import { formatRouteCopyLabel } from "@/lib/routes/display";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Label } from "@/components/ui/label";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { buildOrderCreatedByFilterOptions } from "@/lib/orders/display";
 import { useUsers } from "@/lib/users/hooks/use-users";
@@ -110,6 +116,8 @@ export function InvoicesWorkspace() {
   const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | Invoice[] | null>(null);
   const [stagingOpen, setStagingOpen] = useState(false);
+  const [assignRouteOpen, setAssignRouteOpen] = useState(false);
+  const [selectedRouteId, setSelectedRouteId] = useState("");
 
   const listParams = useMemo(
     () =>
@@ -133,6 +141,11 @@ export function InvoicesWorkspace() {
   });
   const deleteInvoicesMutation = useDeleteInvoices();
   const generateInvoiceReportMutation = useGenerateInvoiceReport();
+  const assignRouteMutation = useAssignInvoiceBarcodesToRoute();
+  const { data: routesData, isLoading: routesLoading } = useRoutePicker(
+    undefined,
+    { enabled: assignRouteOpen || filtersOpen },
+  );
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
 
   const invoices = data?.items ?? [];
@@ -172,6 +185,20 @@ export function InvoicesWorkspace() {
     () => invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)),
     [invoices, selectedIds],
   );
+
+  const routes = useMemo(
+    () => routesData?.items ?? [],
+    [routesData?.items],
+  );
+  const routeOptions = useMemo(
+    () =>
+      routes.map((assignment) => ({
+        value: assignment.id,
+        label: formatRouteCopyLabel(assignment),
+      })),
+    [routes],
+  );
+  const isAssigningRoute = assignRouteMutation.isPending;
 
   const userFilterOptions = useMemo(
     () => buildOrderCreatedByFilterOptions(usersData?.items ?? []),
@@ -258,6 +285,40 @@ export function InvoicesWorkspace() {
       });
       window.open(report.url, "_blank", "noopener,noreferrer");
       notifySuccess(`Invoice report ready for ${invoiceIds.length} invoice(s).`);
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
+  }
+
+  function openAssignRoute() {
+    if (selectedInvoices.length === 0) {
+      notifyError("Select at least one invoice to assign a route.");
+      return;
+    }
+    setSelectedRouteId("");
+    setAssignRouteOpen(true);
+  }
+
+  async function confirmAssignRoute() {
+    if (selectedInvoices.length === 0 || !selectedRouteId) return;
+
+    const invoiceIds = selectedInvoices.map((invoice) => invoice.invoiceId).filter(Boolean);
+
+    try {
+      const result = await assignRouteMutation.mutateAsync({
+        routeId: selectedRouteId,
+        invoiceIds,
+      });
+      const noun = result.assignedCount === 1 ? "barcode" : "barcodes";
+      const routeName =
+        result.routeName ||
+        routes.find((assignment) => assignment.id === selectedRouteId)?.name ||
+        "route";
+      notifySuccess(
+        `${result.assignedCount} ${noun} assigned to ${routeName} (trip ${result.tripNumber}).`,
+      );
+      setAssignRouteOpen(false);
+      setSelectedRouteId("");
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
     }
@@ -498,6 +559,7 @@ export function InvoicesWorkspace() {
                   fields={INVOICE_TABLE_FILTER_FIELDS}
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
+                    routes: routeOptions,
                   }}
                   onChange={(rows) => {
                     setFilters((current) => ({ ...current, rows }));
@@ -523,6 +585,15 @@ export function InvoicesWorkspace() {
               <Button size="sm" onClick={() => setStagingOpen(true)}>
                 <Tags className="h-4 w-4" />
                 Manage Labels
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openAssignRoute}
+                disabled={isAssigningRoute}
+              >
+                <RouteIcon className="h-4 w-4" />
+                Assign route
               </Button>
               <Button
                 variant="outline"
@@ -626,6 +697,56 @@ export function InvoicesWorkspace() {
         onAddComment={addInvoiceComment}
         onRecordPayment={recordInvoicePayment}
       />
+
+      <Dialog
+        open={assignRouteOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAssignRouteOpen(false);
+            setSelectedRouteId("");
+          }
+        }}
+      >
+        <DialogContent className="z-[60]">
+          <DialogHeader>
+            <DialogTitle>Assign route</DialogTitle>
+            <DialogDescription>
+              {`Assign the barcodes of ${selectedInvoices.length} selected invoice${
+                selectedInvoices.length === 1 ? "" : "s"
+              } to a route. Only barcodes that have a container are assigned.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <Label htmlFor="assign-invoice-route">Route</Label>
+            <SearchableSelect
+              id="assign-invoice-route"
+              value={selectedRouteId}
+              onValueChange={setSelectedRouteId}
+              placeholder="Select a route"
+              searchPlaceholder="Search routes…"
+              loading={routesLoading}
+              emptyMessage={routesLoading ? "Loading routes…" : "No routes found."}
+              options={routeOptions}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAssignRouteOpen(false);
+                setSelectedRouteId("");
+              }}
+              disabled={isAssigningRoute}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmAssignRoute} disabled={!selectedRouteId || isAssigningRoute}>
+              <RouteIcon className="h-4 w-4" />
+              {isAssigningRoute ? "Assigning…" : "Assign route"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="z-[60]">

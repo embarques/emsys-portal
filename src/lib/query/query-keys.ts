@@ -3,11 +3,12 @@ import type { ContainerListParams, ContainerSearchFilter } from "@/lib/container
 import type { InvoiceListParams, InvoiceSearchFilter } from "@/lib/invoices/types";
 import type { ItemListParams, ItemSearchFilter } from "@/lib/items/types";
 import type { VehicleListParams, VehicleSearchFilter } from "@/lib/vehicles/types";
-import type { RouteAssignmentListParams, RouteAssignmentSearchFilter } from "@/lib/route-assignments/types";
+import type { RouteListParams, RouteSearchFilter } from "@/lib/routes/types";
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { MemoPadListParams, MemoPadSearchFilter } from "@/lib/memo-pads/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
+import type { PickupRouteListParams } from "@/lib/pickup-routes/types";
 import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
 import type { EmployeeGroupSearchFilter } from "@/lib/employee-groups/api/employee-groups-api";
@@ -59,16 +60,21 @@ export const queryKeys = {
       [...queryKeys.vehicles.all, "stats", scope] as const,
     detail: (vehicleId: string) => [...queryKeys.vehicles.all, "detail", vehicleId] as const,
   },
-  routeAssignments: {
-    all: ["route-assignments"] as const,
-    lists: () => [...queryKeys.routeAssignments.all, "list"] as const,
-    list: (params: RouteAssignmentListParams) => [...queryKeys.routeAssignments.lists(), params] as const,
-    search: (search: RouteAssignmentSearchFilter | undefined, limit: number) =>
-      [...queryKeys.routeAssignments.all, "search", search, limit] as const,
+  routes: {
+    all: ["routes"] as const,
+    lists: () => [...queryKeys.routes.all, "list"] as const,
+    list: (params: RouteListParams) => [...queryKeys.routes.lists(), params] as const,
+    search: (search: RouteSearchFilter | undefined, limit: number) =>
+      [...queryKeys.routes.all, "search", search, limit] as const,
     stats: (scope: "all" | "kpis", date?: string) =>
-      [...queryKeys.routeAssignments.all, "stats", scope, ...(date ? [date] : [])] as const,
-    detail: (routeAssignmentId: string) =>
-      [...queryKeys.routeAssignments.all, "detail", routeAssignmentId] as const,
+      [...queryKeys.routes.all, "stats", scope, ...(date ? [date] : [])] as const,
+    detail: (routeId: string) =>
+      [...queryKeys.routes.all, "detail", routeId] as const,
+  },
+  pickupRoutes: {
+    all: ["pickup-routes"] as const,
+    lists: () => [...queryKeys.pickupRoutes.all, "list"] as const,
+    list: (params: PickupRouteListParams) => [...queryKeys.pickupRoutes.lists(), params] as const,
   },
   containers: {
     all: ["containers"] as const,

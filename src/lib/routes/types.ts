@@ -3,45 +3,45 @@ import { createMockObjectId } from "@/lib/vehicles/types";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
 
-export type RouteAssignmentVehicleRef = {
+export type RouteVehicleRef = {
   id: string;
   name: string;
 };
 
-export type RouteAssignmentEmployeeGroupRef = {
+export type RouteEmployeeGroupRef = {
   id: string;
   name: string;
 };
 
-export type RouteAssignment = {
+export type Route = {
   id: string;
-  routeAssignmentId: string;
+  routeId: string;
   name: string;
   date: string;
-  vehicle: RouteAssignmentVehicleRef;
-  employeeGroup: RouteAssignmentEmployeeGroupRef;
+  vehicle: RouteVehicleRef;
+  employeeGroup: RouteEmployeeGroupRef;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
 };
 
-export type RouteAssignmentFormValues = {
+export type RouteFormValues = {
   id: string;
-  routeAssignmentId: string;
+  routeId: string;
   name: string;
   date: string;
-  vehicle: RouteAssignmentVehicleRef;
-  employeeGroup: RouteAssignmentEmployeeGroupRef;
+  vehicle: RouteVehicleRef;
+  employeeGroup: RouteEmployeeGroupRef;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
 };
 
-export type RouteAssignmentFilterState = {
+export type RouteFilterState = {
   query: string;
 };
 
-export type RouteAssignmentListParams = {
+export type RouteListParams = {
   page?: number;
   limit?: number;
   offset?: number;
@@ -49,27 +49,27 @@ export type RouteAssignmentListParams = {
   search?: ApiListTextSearch;
 };
 
-export type RouteAssignmentSearchFilter = ApiListTextSearch;
+export type RouteSearchFilter = ApiListTextSearch;
 
-export const DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS = {
+export const DEFAULT_ROUTE_LIST_PARAMS = {
   page: 1,
   limit: 50,
   sort: "date:desc",
-} as const satisfies RouteAssignmentListParams;
+} as const satisfies RouteListParams;
 
 /** Fields the bar search fans out across with an OR group. */
-export const ROUTE_ASSIGNMENT_BAR_OR_SEARCH_FIELDS = [
+export const ROUTE_BAR_OR_SEARCH_FIELDS = [
   "name",
   "routeAssignmentId",
   "vehicle.name",
   "employeeGroup.name",
 ] as const;
 
-export function createEmptyVehicleRef(): RouteAssignmentVehicleRef {
+export function createEmptyVehicleRef(): RouteVehicleRef {
   return { id: "", name: "" };
 }
 
-export function createEmptyEmployeeGroupRef(): RouteAssignmentEmployeeGroupRef {
+export function createEmptyEmployeeGroupRef(): RouteEmployeeGroupRef {
   return { id: "", name: "" };
 }
 
@@ -77,29 +77,29 @@ export function todayDateInputValue(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function toRouteAssignmentDateIso(dateInput: string): string {
+export function toRouteDateIso(dateInput: string): string {
   const trimmed = dateInput.trim();
   if (!trimmed) return "";
   if (trimmed.includes("T")) return trimmed;
   return `${trimmed}T00:00:00Z`;
 }
 
-export function toRouteAssignmentDateInput(iso: string): string {
+export function toRouteDateInput(iso: string): string {
   if (!iso) return "";
   return iso.slice(0, 10);
 }
 
-export function generateRouteAssignmentNumber(): string {
+export function generateRouteNumber(): string {
   const random = Math.floor(Math.random() * 1_000_000)
     .toString()
     .padStart(6, "0");
   return `ras-${Date.now().toString(36)}-${random}`;
 }
 
-export function createEmptyRouteAssignmentForm(createdBy = DEFAULT_CREATED_BY): RouteAssignmentFormValues {
+export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormValues {
   return {
     id: "",
-    routeAssignmentId: generateRouteAssignmentNumber(),
+    routeId: generateRouteNumber(),
     name: "",
     date: todayDateInputValue(),
     vehicle: createEmptyVehicleRef(),
@@ -110,12 +110,12 @@ export function createEmptyRouteAssignmentForm(createdBy = DEFAULT_CREATED_BY): 
   };
 }
 
-export function routeAssignmentToFormValues(assignment: RouteAssignment): RouteAssignmentFormValues {
+export function routeToFormValues(assignment: Route): RouteFormValues {
   return {
     id: assignment.id,
-    routeAssignmentId: assignment.routeAssignmentId,
+    routeId: assignment.routeId,
     name: assignment.name,
-    date: toRouteAssignmentDateInput(assignment.date),
+    date: toRouteDateInput(assignment.date),
     vehicle: { ...assignment.vehicle },
     employeeGroup: { ...assignment.employeeGroup },
     createdBy: assignment.createdBy,
@@ -124,12 +124,12 @@ export function routeAssignmentToFormValues(assignment: RouteAssignment): RouteA
   };
 }
 
-export function formValuesToRouteAssignment(
-  values: RouteAssignmentFormValues,
+export function formValuesToRoute(
+  values: RouteFormValues,
   createdAt?: string,
   updatedAt?: string,
   id?: string,
-): RouteAssignment {
+): Route {
   if (!values.employeeGroup.id.trim()) {
     throw new Error("An employee group is required.");
   }
@@ -138,9 +138,9 @@ export function formValuesToRouteAssignment(
 
   return {
     id: id ?? (values.id.trim() || createMockObjectId()),
-    routeAssignmentId: values.routeAssignmentId.trim(),
+    routeId: values.routeId.trim(),
     name: values.name.trim(),
-    date: toRouteAssignmentDateIso(values.date),
+    date: toRouteDateIso(values.date),
     vehicle: {
       id: values.vehicle.id.trim(),
       name: values.vehicle.name.trim(),
@@ -155,13 +155,13 @@ export function formValuesToRouteAssignment(
   };
 }
 
-export function copyRouteAssignmentFormValues(
-  source: RouteAssignment,
+export function copyRouteFormValues(
+  source: Route,
   createdBy = DEFAULT_CREATED_BY,
-): RouteAssignmentFormValues {
+): RouteFormValues {
   return {
     id: "",
-    routeAssignmentId: generateRouteAssignmentNumber(),
+    routeId: generateRouteNumber(),
     name: source.name,
     date: todayDateInputValue(),
     vehicle: { ...source.vehicle },

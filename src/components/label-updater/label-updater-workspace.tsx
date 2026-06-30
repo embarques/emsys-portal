@@ -13,8 +13,8 @@ import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { applyLabelBarcodeUpdate } from "@/lib/labels/updater";
 import { LABEL_STATUSES, type LabelStatus, type LabelUpdateResult } from "@/lib/labels/types";
-import { useRouteAssignmentPicker } from "@/lib/route-assignments/hooks/use-route-assignments";
-import { formatRouteAssignmentCopyLabel } from "@/lib/route-assignments/display";
+import { useRoutePicker } from "@/lib/routes/hooks/use-routes";
+import { formatRouteCopyLabel } from "@/lib/routes/display";
 import { cn } from "@/lib/utils";
 
 function ResultCell({ value }: { value?: string | number }) {
@@ -25,16 +25,16 @@ function ResultCell({ value }: { value?: string | number }) {
 export function LabelUpdaterWorkspace() {
   const { data: containersData } = useContainerPicker();
   const containers = containersData?.items ?? [];
-  const { data: routeAssignmentsData } = useRouteAssignmentPicker();
-  const routeAssignments = routeAssignmentsData?.items ?? [];
+  const { data: routesData } = useRoutePicker();
+  const routes = routesData?.items ?? [];
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   const [changeStatus, setChangeStatus] = useState(true);
   const [changeContainer, setChangeContainer] = useState(false);
-  const [changeRouteAssignment, setChangeRouteAssignment] = useState(false);
+  const [changeRoute, setChangeRoute] = useState(false);
   const [newStatus, setNewStatus] = useState<LabelStatus>("in_transit");
   const [newContainerId, setNewContainerId] = useState("");
-  const [newRouteAssignmentId, setNewRouteAssignmentId] = useState("");
+  const [newRouteId, setNewRouteId] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
   const [bulkBarcodes, setBulkBarcodes] = useState("");
   const [results, setResults] = useState<LabelUpdateResult[]>([]);
@@ -50,20 +50,20 @@ export function LabelUpdaterWorkspace() {
   }, [containers, newContainerId]);
 
   useEffect(() => {
-    if (!newRouteAssignmentId && routeAssignments[0]) {
-      setNewRouteAssignmentId(routeAssignments[0].routeAssignmentId);
+    if (!newRouteId && routes[0]) {
+      setNewRouteId(routes[0].routeId);
     }
-  }, [routeAssignments, newRouteAssignmentId]);
+  }, [routes, newRouteId]);
 
   function focusBarcodeInput() {
     requestAnimationFrame(() => barcodeInputRef.current?.focus());
   }
 
-  function resolveRouteAssignmentLabel(routeAssignmentId: string): string {
-    const assignment = routeAssignments.find(
-      (entry) => entry.routeAssignmentId === routeAssignmentId,
+  function resolveRouteLabel(routeId: string): string {
+    const assignment = routes.find(
+      (entry) => entry.routeId === routeId,
     );
-    return assignment ? formatRouteAssignmentCopyLabel(assignment) : routeAssignmentId;
+    return assignment ? formatRouteCopyLabel(assignment) : routeId;
   }
 
   function submitBarcode(rawBarcode: string) {
@@ -75,9 +75,9 @@ export function LabelUpdaterWorkspace() {
       newStatus: changeStatus ? newStatus : undefined,
       changeContainer,
       newContainerId: changeContainer ? newContainerId : undefined,
-      changeRouteAssignment,
-      newRouteAssignmentId: changeRouteAssignment ? newRouteAssignmentId : undefined,
-      resolveRouteAssignmentLabel,
+      changeRoute,
+      newRouteId: changeRoute ? newRouteId : undefined,
+      resolveRouteLabel,
     });
 
     setResults((current) => [result, ...current]);
@@ -105,9 +105,9 @@ export function LabelUpdaterWorkspace() {
         newStatus: changeStatus ? newStatus : undefined,
         changeContainer,
         newContainerId: changeContainer ? newContainerId : undefined,
-        changeRouteAssignment,
-        newRouteAssignmentId: changeRouteAssignment ? newRouteAssignmentId : undefined,
-        resolveRouteAssignmentLabel,
+        changeRoute,
+        newRouteId: changeRoute ? newRouteId : undefined,
+        resolveRouteLabel,
       })
     );
 
@@ -185,23 +185,23 @@ export function LabelUpdaterWorkspace() {
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  checked={changeRouteAssignment}
-                  onChange={(event) => setChangeRouteAssignment(event.target.checked)}
+                  checked={changeRoute}
+                  onChange={(event) => setChangeRoute(event.target.checked)}
                   className="size-4 rounded border-input"
                 />
-                Change route assignment
+                Change route
               </label>
-              {changeRouteAssignment ? (
+              {changeRoute ? (
                 <div className="space-y-2">
-                  <Label htmlFor="newRouteAssignment">New route assignment</Label>
+                  <Label htmlFor="newRoute">New route</Label>
                   <SearchableSelect
-                    id="newRouteAssignment"
-                    value={newRouteAssignmentId}
-                    onValueChange={setNewRouteAssignmentId}
-                    searchPlaceholder="Search route assignments…"
-                    options={routeAssignments.map((assignment) => ({
-                      value: assignment.routeAssignmentId,
-                      label: formatRouteAssignmentCopyLabel(assignment),
+                    id="newRoute"
+                    value={newRouteId}
+                    onValueChange={setNewRouteId}
+                    searchPlaceholder="Search routes…"
+                    options={routes.map((assignment) => ({
+                      value: assignment.routeId,
+                      label: formatRouteCopyLabel(assignment),
                     }))}
                   />
                 </div>
@@ -309,10 +309,10 @@ export function LabelUpdaterWorkspace() {
                         <ResultCell value={result.newContainer} />
                       </td>
                       <td className="px-3 py-2">
-                        <ResultCell value={result.previousRouteAssignment} />
+                        <ResultCell value={result.previousRoute} />
                       </td>
                       <td className="px-3 py-2">
-                        <ResultCell value={result.newRouteAssignment} />
+                        <ResultCell value={result.newRoute} />
                       </td>
                       <td className="px-3 py-2">
                         <ResultCell value={result.totalLabels} />

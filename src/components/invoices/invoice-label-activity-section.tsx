@@ -33,7 +33,7 @@ export function InvoiceLabelActivitySection({ invoice }: InvoiceLabelActivitySec
         Label activity ({timeline.length})
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Creation, status changes, container updates, route assignments, and print events for this invoice.
+        Creation, status changes, container updates, routes, and print events for this invoice.
       </p>
 
       {timeline.length === 0 ? (

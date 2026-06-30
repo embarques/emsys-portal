@@ -68,15 +68,28 @@ export function VehicleForm({
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="vin">VIN</Label>
-              <Input
-                id="vin"
-                value={values.vin}
-                onChange={(event) => updateField("vin", event.target.value.toUpperCase())}
-                placeholder="1FUJGLDR57LM12345"
-                className="font-mono text-xs"
-              />
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="vin">VIN</Label>
+                <Input
+                  id="vin"
+                  value={values.vin}
+                  onChange={(event) => updateField("vin", event.target.value.toUpperCase())}
+                  placeholder="1FUJGLDR57LM12345"
+                  className="font-mono text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="licensePlate">License plate</Label>
+                <Input
+                  id="licensePlate"
+                  value={values.licensePlate}
+                  onChange={(event) => updateField("licensePlate", event.target.value.toUpperCase())}
+                  placeholder="ABC-1234"
+                  className="font-mono text-xs"
+                />
+              </div>
             </div>
 
             <div className="grid gap-2.5 sm:grid-cols-2">

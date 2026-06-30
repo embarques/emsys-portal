@@ -39,7 +39,7 @@ export function ExistingInvoicePaymentsSection({
 
   function submitEntry(values: AccountingFormValues): string | null {
     if (!canRegister) {
-      return "Select a route assignment before registering entries.";
+      return "Select a route before registering entries.";
     }
     return onAddEntry(values);
   }
@@ -65,7 +65,7 @@ export function ExistingInvoicePaymentsSection({
             />
           </fieldset>
           {!canRegister ? (
-            <p className="mt-2 text-sm text-destructive">Select a route assignment above to register entries.</p>
+            <p className="mt-2 text-sm text-destructive">Select a route above to register entries.</p>
           ) : null}
           {formError ? <p className="mt-2 text-sm text-destructive">{formError}</p> : null}
         </div>

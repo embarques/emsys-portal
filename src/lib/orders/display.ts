@@ -1,13 +1,13 @@
 import { formatCoreAddressLine } from "@/lib/customers/display";
 import { formatPrimaryPhonesDisplayOrDash, getPhoneDisplayAtIndex } from "@/lib/phones/phones";
 import { getBranchLabel } from "@/lib/vehicles/display";
-import type { RouteAssignment } from "@/lib/route-assignments/types";
+import type { Route } from "@/lib/routes/types";
 import type { Customer } from "@/lib/customers/types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import type { User } from "@/lib/users/types";
 import type { Order, PickupComment } from "./types";
 
-type RouteAssignmentLabelSource = Pick<RouteAssignment, "name" | "date" | "vehicle">;
+type RouteLabelSource = Pick<Route, "name" | "date" | "vehicle">;
 
 export function getOrderBranchLabel(branch: Order["branch"]): string {
   return branch.name.trim() || getBranchLabel(branch.code);
@@ -40,25 +40,25 @@ export function formatCustomerPartySummary(customer: Customer): string {
 }
 
 /**
- * Formats a route assignment for display. The route catalog now comes from the
+ * Formats a route for display. The route catalog now comes from the
  * live API, so callers resolve the assignment (e.g. via a TanStack Query picker
  * lookup) and pass it in. Without a resolved assignment the raw id is shown.
  */
-export function getRouteAssignmentLabel(
-  routeAssignmentId: string,
-  assignment?: RouteAssignmentLabelSource,
+export function getRouteLabel(
+  routeId: string,
+  assignment?: RouteLabelSource,
 ): string {
-  if (!routeAssignmentId) return "—";
-  if (!assignment) return routeAssignmentId;
+  if (!routeId) return "—";
+  if (!assignment) return routeId;
   return `${assignment.name} · ${formatOrderDate(assignment.date)} · ${assignment.vehicle.name || assignment.vehicle.id}`;
 }
 
-export function formatOrderRouteAssignment(
-  order: Pick<Order, "routeAssignmentId">,
-  assignment?: RouteAssignmentLabelSource,
+export function formatOrderRoute(
+  order: Pick<Order, "routeId">,
+  assignment?: RouteLabelSource,
 ): string {
-  if (!order.routeAssignmentId) return "—";
-  return getRouteAssignmentLabel(order.routeAssignmentId, assignment);
+  if (!order.routeId) return "—";
+  return getRouteLabel(order.routeId, assignment);
 }
 
 export function formatPickupCommentSummary(comment: PickupComment): string {

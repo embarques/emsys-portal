@@ -10,32 +10,32 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import {
-  formatRouteAssignmentDate,
-  formatRouteAssignmentTimestamp,
+  formatRouteDate,
+  formatRouteTimestamp,
   getEmployeeGroupRefLabel,
   getVehicleRefLabel,
   truncateObjectId,
-  truncateRouteAssignmentId,
-} from "@/lib/route-assignments/display";
+  truncateRouteId,
+} from "@/lib/routes/display";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
-import type { RouteAssignment } from "@/lib/route-assignments/types";
+import type { Route } from "@/lib/routes/types";
 
-type RouteAssignmentViewSheetProps = {
-  assignment: RouteAssignment | null;
+type RouteViewSheetProps = {
+  assignment: Route | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (assignment: RouteAssignment) => void;
-  onDelete: (assignment: RouteAssignment) => void;
+  onEdit: (assignment: Route) => void;
+  onDelete: (assignment: Route) => void;
 };
 
-export function RouteAssignmentViewSheet({
+export function RouteViewSheet({
   assignment,
   open,
   onOpenChange,
   onEdit,
   onDelete,
-}: RouteAssignmentViewSheetProps) {
+}: RouteViewSheetProps) {
   if (!assignment) return null;
 
   return (
@@ -43,18 +43,18 @@ export function RouteAssignmentViewSheet({
       <RecordViewSheetContent>
         <RecordViewSheetHeader
           title={assignment.name}
-          description={<span className="font-mono text-xs">{assignment.routeAssignmentId}</span>}
+          description={<span className="font-mono text-xs">{assignment.routeId}</span>}
         />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Route">
             <RecordViewSheetDetailRow label="Assignment ID" value={truncateObjectId(assignment.id)} />
             <RecordViewSheetDetailRow
-              label={formatTableColumnLabel("routeAssignmentId")}
-              value={truncateRouteAssignmentId(assignment.routeAssignmentId)}
+              label={formatTableColumnLabel("routeId")}
+              value={truncateRouteId(assignment.routeId)}
             />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("name")} value={assignment.name} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("date")} value={formatRouteAssignmentDate(assignment.date)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("date")} value={formatRouteDate(assignment.date)} />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Vehicle">
@@ -72,7 +72,7 @@ export function RouteAssignmentViewSheet({
           <RecordViewSheetSection title="Audit">
             <RecordViewSheetDetailRow
               label={formatTableColumnLabel("createdAt")}
-              value={assignment.createdAt ? formatRouteAssignmentTimestamp(assignment.createdAt) : "—"}
+              value={assignment.createdAt ? formatRouteTimestamp(assignment.createdAt) : "—"}
             />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("createdBy")} value={assignment.createdBy || "—"} />
             <RecordViewSheetDetailRow
