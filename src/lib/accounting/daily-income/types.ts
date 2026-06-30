@@ -75,6 +75,7 @@ export type DailyIncomeJournal = {
   rate: number;
   employee?: AccountingLookup;
   account?: AccountingLookup;
+  paymentAccount?: AccountingLookup;
   sourceAccount?: AccountingLookup;
   invoice?: {
     id?: string | number;
@@ -128,6 +129,11 @@ export function isZellePaymentMethod(name?: string | null): boolean {
   return name?.trim().toLowerCase() === "zelle";
 }
 
+export function requiresBankAccount(name?: string | null): boolean {
+  const normalizedName = name?.trim().toUpperCase();
+  return normalizedName === "DEPOSIT" || normalizedName === "ZELLE";
+}
+
 export type DailyIncomeJournalValues = {
   transactionType: JournalTransactionType;
   amount: number;
@@ -138,6 +144,9 @@ export type DailyIncomeJournalValues = {
   accountId?: number;
   accountName?: string;
   accountType?: string;
+  paymentAccountId?: number;
+  paymentAccountName?: string;
+  paymentAccountType?: string;
   sourceAccountId?: number;
   sourceAccountName?: string;
   sourceAccountType?: string;
@@ -185,6 +194,7 @@ export type ChartAccountListParams = {
   page?: number;
   limit?: number;
   query?: string;
+  type?: ChartAccountType;
 };
 
 export type ChartAccountList = {

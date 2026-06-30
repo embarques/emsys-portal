@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -12,7 +12,7 @@ import { CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS } from "@/lib/customers/search-f
 import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/customer-type";
 import type { Customer } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
-import { isZellePaymentMethod, type AccountingLookup, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 
@@ -56,6 +56,7 @@ function customerOptions(customers: Customer[]) {
 
 type Props = {
   employees: Employee[];
+  bankAccounts: ChartAccount[];
   paymentMethods: AccountingLookup[];
   errors: FieldErrors<DailyIncomeJournalValues>;
   register: ReturnType<typeof import("react-hook-form").useForm<DailyIncomeJournalValues>>["register"];
@@ -65,6 +66,7 @@ type Props = {
 
 export function RegisterInvoiceTransactionFields({
   employees,
+  bankAccounts,
   paymentMethods,
   errors,
   register,
@@ -75,6 +77,8 @@ export function RegisterInvoiceTransactionFields({
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const isZelle = isZellePaymentMethod(paymentMethodName);
+  const needsBankAccount = requiresBankAccount(paymentMethodName);
+  const paymentAccountId = watch("paymentAccountId");
   const invoiceCost = watch("invoiceCost");
   const amount = watch("amount");
   const balance = computeInvoiceBalance(invoiceCost, amount);
@@ -82,6 +86,14 @@ export function RegisterInvoiceTransactionFields({
   const includeReceiver = watch("includeReceiver");
   const senderId = watch("senderId");
   const receiverId = watch("receiverId");
+
+  useEffect(() => {
+    if (!needsBankAccount || bankAccounts.some((account) => account.id === paymentAccountId) || !bankAccounts[0]) return;
+    const account = bankAccounts[0];
+    setValue("paymentAccountId", account.id, { shouldValidate: true });
+    setValue("paymentAccountName", account.displayName);
+    setValue("paymentAccountType", account.type);
+  }, [bankAccounts, needsBankAccount, paymentAccountId, setValue]);
 
   const [senderQuery, setSenderQuery] = useState("");
   const [receiverQuery, setReceiverQuery] = useState("");
@@ -259,6 +271,29 @@ export function RegisterInvoiceTransactionFields({
           <p className="text-sm text-destructive">{errors.paymentMethodId.message}</p>
         ) : null}
       </div>
+
+      {needsBankAccount ? (
+        <div className="space-y-2 sm:col-span-2">
+          <RequiredLabel htmlFor="journal-bank-account">Bank account</RequiredLabel>
+          <select
+            id="journal-bank-account"
+            className={selectClassName}
+            value={paymentAccountId ?? ""}
+            onChange={(event) => {
+              const account = bankAccounts.find((item) => item.id === Number(event.target.value));
+              setValue("paymentAccountId", account?.id, { shouldValidate: true });
+              setValue("paymentAccountName", account?.displayName ?? "");
+              setValue("paymentAccountType", account?.type);
+            }}
+          >
+            <option value="">Select bank account</option>
+            {bankAccounts.map((account) => (
+              <option key={account.id} value={account.id}>{account.displayName}</option>
+            ))}
+          </select>
+          {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
+        </div>
+      ) : null}
 
       {isZelle ? (
         <>
