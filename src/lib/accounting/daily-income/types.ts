@@ -128,6 +128,11 @@ export function isZellePaymentMethod(name?: string | null): boolean {
   return name?.trim().toLowerCase() === "zelle";
 }
 
+export function requiresBankAccount(name?: string | null): boolean {
+  const normalizedName = name?.trim().toUpperCase();
+  return normalizedName === "DEPOSIT" || normalizedName === "ZELLE";
+}
+
 export type DailyIncomeJournalValues = {
   transactionType: JournalTransactionType;
   amount: number;
@@ -185,6 +190,7 @@ export type ChartAccountListParams = {
   page?: number;
   limit?: number;
   query?: string;
+  type?: ChartAccountType;
 };
 
 export type ChartAccountList = {

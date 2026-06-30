@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { isZellePaymentMethod } from "@/lib/accounting/daily-income/types";
+import { isZellePaymentMethod, requiresBankAccount } from "@/lib/accounting/daily-income/types";
 
 export const dailyIncomeStatementSchema = z.object({
   date: z.string().min(1, "Date is required."),
@@ -67,6 +67,14 @@ export const dailyIncomeJournalSchema = z.object({
         message: "Zelle transaction name is required.",
       });
     }
+  }
+
+  if (requiresBankAccount(values.paymentMethodName) && (!values.accountId || values.accountType !== "BANK")) {
+    context.addIssue({
+      code: "custom",
+      path: ["accountId"],
+      message: "Select a bank account for this payment method.",
+    });
   }
 
   if (values.transactionType === "INITIAL-PAYMENT") {

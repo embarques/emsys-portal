@@ -9,6 +9,7 @@ import {
 import {
   EMPTY_DAILY_INCOME_SUMMARY,
   isZellePaymentMethod,
+  requiresBankAccount,
   type AccountingLookup,
   type ChartAccount,
   type ChartAccountList,
@@ -458,6 +459,11 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   const invoiceRelated = ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(values.transactionType);
   const accountRelated = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(values.transactionType);
   const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType);
+  const bankAccountRequired = requiresBankAccount(values.paymentMethodName);
+
+  if (bankAccountRequired && (!values.accountId || values.accountType !== "BANK")) {
+    throw new Error("Select a bank account for this payment method.");
+  }
 
   const invoice =
     values.transactionType === "INITIAL-PAYMENT" && values.invoiceNumber?.trim()
@@ -490,7 +496,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     employee: values.employeeId
       ? { id: values.employeeId, name: values.employeeName ?? "" }
       : undefined,
-    account: accountRelated && values.accountId
+    account: (accountRelated || bankAccountRequired) && values.accountId
       ? { id: values.accountId, name: values.accountName, type: values.accountType }
       : undefined,
     sourceAccount: sourceAccountRelated && values.sourceAccountId
@@ -539,6 +545,7 @@ export async function fetchChartAccounts(params: ChartAccountListParams = {}): P
     page,
     limit,
     sort: { field: "createdAt", direction: "desc" },
+    filter: params.type ? { field: "type", operator: "eq", value: params.type } : undefined,
   });
   const search = params.query?.trim();
   const query = search ? `${listQuery}&search=${encodeURIComponent(search)}` : listQuery;

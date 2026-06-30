@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { dailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
-import { isZellePaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import type { Employee } from "@/lib/employees/types";
 import { getInvoiceBalanceAmount, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
@@ -25,6 +25,7 @@ type Props = {
   initialValues: DailyIncomeJournalValues;
   employees: Employee[];
   accounts: ChartAccount[];
+  bankAccounts: ChartAccount[];
   invoices: Invoice[];
   paymentMethods: AccountingLookup[];
   formId: string;
@@ -47,6 +48,7 @@ export function DailyIncomeTransactionForm({
   initialValues,
   employees,
   accounts,
+  bankAccounts,
   invoices,
   paymentMethods,
   formId,
@@ -90,6 +92,7 @@ export function DailyIncomeTransactionForm({
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const isZelle = isZellePaymentMethod(paymentMethodName);
+  const needsBankAccount = requiresBankAccount(paymentMethodName);
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
   const invoiceOptions = useMemo(
     () =>
@@ -122,6 +125,14 @@ export function DailyIncomeTransactionForm({
   const needsPaymentMethod = needsExistingInvoice || isRegisterInvoice || type === "SALES";
   const needsSourceAccount = type === "TRANSFER" || type === "EXPENSE" || type === "LOAN";
 
+  useEffect(() => {
+    if (!needsBankAccount || bankAccounts.some((account) => account.id === accountId) || !bankAccounts[0]) return;
+    const account = bankAccounts[0];
+    setValue("accountId", account.id, { shouldValidate: true });
+    setValue("accountName", account.displayName);
+    setValue("accountType", account.type);
+  }, [accountId, bankAccounts, needsBankAccount, setValue]);
+
   return (
     <form id={formId} onSubmit={handleSubmit((values) => onSubmit(values))} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
@@ -146,6 +157,7 @@ export function DailyIncomeTransactionForm({
           {isRegisterInvoice ? (
             <RegisterInvoiceTransactionFields
               employees={employees}
+              bankAccounts={bankAccounts}
               paymentMethods={paymentMethods}
               errors={errors}
               register={register}
@@ -229,7 +241,7 @@ export function DailyIncomeTransactionForm({
               <Input id="journal-reference" placeholder="Enter reference number" {...register("refNumber")} />
             </div>
 
-            {needsAccount ? (
+            {needsAccount && !needsBankAccount ? (
               <div className="space-y-2">
                 <RequiredLabel htmlFor="journal-account">Account</RequiredLabel>
                 <select
@@ -314,6 +326,29 @@ export function DailyIncomeTransactionForm({
                 <p className="text-sm text-destructive">{errors.paymentMethodId.message}</p>
               ) : null}
             </div>
+
+            {needsBankAccount ? (
+              <div className="space-y-2">
+                <RequiredLabel htmlFor="journal-bank-account">Bank account</RequiredLabel>
+                <select
+                  id="journal-bank-account"
+                  className={selectClassName}
+                  value={accountId ?? ""}
+                  onChange={(event) => {
+                    const account = bankAccounts.find((item) => item.id === Number(event.target.value));
+                    setValue("accountId", account?.id, { shouldValidate: true });
+                    setValue("accountName", account?.displayName ?? "");
+                    setValue("accountType", account?.type);
+                  }}
+                >
+                  <option value="">Select bank account</option>
+                  {bankAccounts.map((account) => (
+                    <option key={account.id} value={account.id}>{account.displayName}</option>
+                  ))}
+                </select>
+                {errors.accountId ? <p className="text-sm text-destructive">{errors.accountId.message}</p> : null}
+              </div>
+            ) : null}
 
             <div className="space-y-2">
               <RequiredLabel htmlFor="journal-amount">Amount</RequiredLabel>

@@ -17,6 +17,7 @@ type SharedProps = {
   open: boolean;
   employees: Employee[];
   accounts: ChartAccount[];
+  bankAccounts: ChartAccount[];
   invoices: Invoice[];
   paymentMethods: AccountingLookup[];
   isSubmitting: boolean;
@@ -167,6 +168,7 @@ export function AddTransactionWizard(props: Props) {
               initialValues={detailValues}
               employees={props.employees}
               accounts={props.accounts}
+              bankAccounts={props.bankAccounts}
               invoices={props.invoices}
               paymentMethods={props.paymentMethods}
               showTypeSummary={!isEdit}
