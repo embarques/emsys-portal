@@ -13,15 +13,15 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useEmployeeGroupPicker } from "@/lib/employee-groups/hooks/use-employee-groups";
 import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import {
-  buildDefaultRouteAssignmentName,
-  formatRouteAssignmentCopyLabel,
-} from "@/lib/route-assignments/display";
+  buildDefaultRouteName,
+  formatRouteCopyLabel,
+} from "@/lib/routes/display";
 import {
-  copyRouteAssignmentFormValues,
-  createEmptyRouteAssignmentForm,
-  type RouteAssignment,
-  type RouteAssignmentFormValues,
-} from "@/lib/route-assignments/types";
+  copyRouteFormValues,
+  createEmptyRouteForm,
+  type Route,
+  type RouteFormValues,
+} from "@/lib/routes/types";
 import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
 import { getBranchLabel } from "@/lib/vehicles/display";
 
@@ -29,18 +29,18 @@ function formatEmployeeGroupOptionLabel(group: EmployeeGroupOption): string {
   return group.name?.trim() || group.employeeGroupId;
 }
 
-type RouteAssignmentFormProps = {
-  initialValues?: RouteAssignmentFormValues;
-  copySources?: RouteAssignment[];
+type RouteFormProps = {
+  initialValues?: RouteFormValues;
+  copySources?: Route[];
   isEditing?: boolean;
   submitLabel: string;
   isSubmitting?: boolean;
   externalError?: string | null;
-  onSubmit: (values: RouteAssignmentFormValues) => void;
+  onSubmit: (values: RouteFormValues) => void;
   onCancel: () => void;
 };
 
-export function RouteAssignmentForm({
+export function RouteForm({
   initialValues,
   copySources = [],
   isEditing = false,
@@ -49,20 +49,20 @@ export function RouteAssignmentForm({
   externalError = null,
   onSubmit,
   onCancel,
-}: RouteAssignmentFormProps) {
+}: RouteFormProps) {
   const { data: vehiclesData } = useVehiclePicker();
   const vehicles = vehiclesData?.items ?? [];
   const { data: employeeGroupsData } = useEmployeeGroupPicker();
   const employeeGroups = employeeGroupsData?.items ?? [];
-  const [values, setValues] = useState<RouteAssignmentFormValues>(
-    initialValues ?? createEmptyRouteAssignmentForm(),
+  const [values, setValues] = useState<RouteFormValues>(
+    initialValues ?? createEmptyRouteForm(),
   );
   const [copyFromId, setCopyFromId] = useState("");
   const [nameEdited, setNameEdited] = useState(isEditing);
   const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
-    setValues(initialValues ?? createEmptyRouteAssignmentForm());
+    setValues(initialValues ?? createEmptyRouteForm());
     setCopyFromId("");
     setNameEdited(isEditing);
   }, [initialValues, isEditing]);
@@ -74,7 +74,7 @@ export function RouteAssignmentForm({
     const employeeNames =
       selectedGroup?.employees.map((employee) => employee.name).filter(Boolean).join(", ") ?? "";
 
-    return buildDefaultRouteAssignmentName(values.date, employeeNames, values.vehicle.name);
+    return buildDefaultRouteName(values.date, employeeNames, values.vehicle.name);
   }, [employeeGroups, values.employeeGroup.id, values.date, values.vehicle.name]);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export function RouteAssignmentForm({
     setValues((current) => (current.name === defaultName ? current : { ...current, name: defaultName }));
   }, [defaultName, nameEdited]);
 
-  function updateField<K extends keyof RouteAssignmentFormValues>(key: K, value: RouteAssignmentFormValues[K]) {
+  function updateField<K extends keyof RouteFormValues>(key: K, value: RouteFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
   }
 
@@ -106,11 +106,11 @@ export function RouteAssignmentForm({
     setCopyFromId(sourceId);
     if (!sourceId) return;
 
-    const source = copySources.find((assignment) => assignment.routeAssignmentId === sourceId);
+    const source = copySources.find((assignment) => assignment.routeId === sourceId);
     if (!source) return;
 
     setNameEdited(true);
-    setValues(copyRouteAssignmentFormValues(source, values.createdBy));
+    setValues(copyRouteFormValues(source, values.createdBy));
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -136,8 +136,8 @@ export function RouteAssignmentForm({
                   options={[
                     { value: "", label: "Start from scratch" },
                     ...copySources.map((assignment) => ({
-                      value: assignment.routeAssignmentId,
-                      label: formatRouteAssignmentCopyLabel(assignment),
+                      value: assignment.routeId,
+                      label: formatRouteCopyLabel(assignment),
                     })),
                   ]}
                 />
@@ -150,13 +150,13 @@ export function RouteAssignmentForm({
           <div className="grid gap-2.5 sm:grid-cols-2">
             {isEditing ? (
               <div className="space-y-1 sm:col-span-2">
-                <Label htmlFor="routeAssignmentId">
+                <Label htmlFor="routeId">
                   Assignment number <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  id="routeAssignmentId"
-                  value={values.routeAssignmentId}
-                  onChange={(event) => updateField("routeAssignmentId", event.target.value)}
+                  id="routeId"
+                  value={values.routeId}
+                  onChange={(event) => updateField("routeId", event.target.value)}
                   placeholder="ras-001"
                   className="font-mono text-xs"
                   required

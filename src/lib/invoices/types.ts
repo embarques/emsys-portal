@@ -104,9 +104,9 @@ export type Invoice = {
   containerId: string;
   containerName?: string;
   paymentLocation: InvoicePaymentLocation;
-  /** Linked route assignment id from the route assignments table. */
-  routeAssignmentId?: string;
-  routeAssignmentName?: string;
+  /** Linked route id from the routes table. */
+  routeId?: string;
+  routeName?: string;
   paidRegion?: string;
   paidStatus?: string;
   cost?: number;
@@ -152,7 +152,7 @@ export type InvoiceFormValues = {
   pickupId: string;
   containerId: string;
   paymentLocation: InvoicePaymentLocation;
-  routeAssignmentId: string;
+  routeId: string;
   senderId: string;
   sender: Customer | null;
   receiverId: string;
@@ -383,7 +383,7 @@ export function createEmptyInvoiceForm(createdBy = DEFAULT_CREATED_BY): InvoiceF
     pickupId: "",
     containerId: "",
     paymentLocation: "usa",
-    routeAssignmentId: "",
+    routeId: "",
     senderId: "",
     sender: null,
     receiverId: "",
@@ -411,7 +411,7 @@ export function resetInvoiceFormForNextEntry(
     date: previous.date,
     containerId: previous.containerId,
     paymentLocation: previous.paymentLocation,
-    routeAssignmentId: previous.routeAssignmentId,
+    routeId: previous.routeId,
     invoiceNumber: nextInvoiceNumber,
   };
 }
@@ -508,7 +508,7 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     pickupId: invoice.pickupId ?? "",
     containerId: invoice.containerId,
     paymentLocation: invoice.paymentLocation,
-    routeAssignmentId: invoice.routeAssignmentId ?? "",
+    routeId: invoice.routeId ?? "",
     senderId: invoice.sender.clientId ?? "",
     sender: null,
     receiverId: invoice.receiver.clientId ?? "",
@@ -596,7 +596,7 @@ export function formValuesToInvoice(
     pickupId: values.pickupId.trim() || undefined,
     containerId: values.containerId,
     paymentLocation: values.paymentLocation,
-    routeAssignmentId: values.routeAssignmentId.trim() || undefined,
+    routeId: values.routeId.trim() || undefined,
     sender,
     receiver,
     lineItems,

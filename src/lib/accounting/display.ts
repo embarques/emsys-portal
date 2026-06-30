@@ -1,4 +1,4 @@
-import { getRouteAssignmentLabel } from "@/lib/orders/display";
+import { getRouteLabel } from "@/lib/orders/display";
 import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
 import { getPaymentMethodLabel } from "@/lib/invoices/display";
 import type { AccountingBranch, AccountingEntry, AccountingEntryType } from "./types";
@@ -87,7 +87,7 @@ export function accountingEntryMatchesQuery(entry: AccountingEntry, query: strin
     entry.otherCategory,
     entry.receiptNumber,
     entry.referenceNumber,
-    getRouteAssignmentLabel(entry.routeAssignmentId),
+    getRouteLabel(entry.routeId),
     entry.paymentMethod ? getPaymentMethodLabel(entry.paymentMethod) : "",
     getAccountingBranchLabel(entry.branch),
     formatAccountingMoney(entry.amount),

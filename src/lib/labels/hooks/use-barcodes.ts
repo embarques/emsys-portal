@@ -3,6 +3,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
+  assignInvoiceItemBarcodesToRoute,
+  collectAssignableInvoiceBarcodeIds,
   generateLabels,
   updateBarcodes,
   type BarcodeUpdate,
@@ -27,6 +29,24 @@ export function useUpdateBarcodes() {
 
   return useMutation({
     mutationFn: (updates: BarcodeUpdate[]) => updateBarcodes(updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}
+
+/**
+ * Assign the barcodes of the selected invoices to a route. Resolves each
+ * invoice's container-bearing barcodes, then assigns them in one request.
+ */
+export function useAssignInvoiceBarcodesToRoute() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ routeId, invoiceIds }: { routeId: string; invoiceIds: string[] }) => {
+      const barcodeIds = await collectAssignableInvoiceBarcodeIds(invoiceIds);
+      return assignInvoiceItemBarcodesToRoute(routeId, barcodeIds);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
     },

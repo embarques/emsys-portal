@@ -82,8 +82,8 @@ export function formatActivityAction(action: LabelActivityEntry["action"]): stri
       return "Status change";
     case "container_change":
       return "Container change";
-    case "route_assignment_change":
-      return "Route assignment change";
+    case "route_change":
+      return "Route change";
     case "print":
       return "Print";
     default:

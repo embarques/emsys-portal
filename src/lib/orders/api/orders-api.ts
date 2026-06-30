@@ -321,7 +321,7 @@ function normalizeOrder(raw: unknown): Order | null {
     purpose: String(item.purpose ?? "").trim(),
     comments,
     sector: normalizePickupSector(item.sector),
-    routeAssignmentId: String(item.routeAssignmentId ?? "").trim() || undefined,
+    routeId: String(item.routeAssignmentId ?? "").trim() || undefined,
   };
 }
 

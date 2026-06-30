@@ -54,6 +54,7 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
             <RecordViewSheetDetailRow label={formatTableColumnLabel("vehicleId")} value={truncateVehicleId(vehicle.vehicleId)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("name")} value={vehicle.name} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("vin")} value={vehicle.vin} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("licensePlate")} value={vehicle.licensePlate || "—"} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("year")} value={vehicle.year} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("fuelType")} value={getFuelTypeLabel(vehicle.fuelType)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("branch")} value={vehicle.branch || "—"} />

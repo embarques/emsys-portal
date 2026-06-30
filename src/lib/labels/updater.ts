@@ -52,14 +52,14 @@ export function applyLabelBarcodeUpdate(
 ): LabelUpdateResult {
   const barcode = barcodeInput.trim();
   const timestamp = new Date().toISOString();
-  const resolveRouteLabel = options.resolveRouteAssignmentLabel ?? ((id: string) => id);
+  const resolveRouteLabel = options.resolveRouteLabel ?? ((id: string) => id);
 
   if (!barcode) {
     return failureResult("—", "Barcode is required.", timestamp, performedBy);
   }
 
-  if (!options.changeStatus && !options.changeContainer && !options.changeRouteAssignment) {
-    return failureResult(barcode, "Select at least one field to update (status, container, or route assignment).", timestamp, performedBy);
+  if (!options.changeStatus && !options.changeContainer && !options.changeRoute) {
+    return failureResult(barcode, "Select at least one field to update (status, container, or route).", timestamp, performedBy);
   }
 
   if (options.changeStatus && !options.newStatus) {
@@ -70,8 +70,8 @@ export function applyLabelBarcodeUpdate(
     return failureResult(barcode, "Select a new container.", timestamp, performedBy);
   }
 
-  if (options.changeRouteAssignment && !options.newRouteAssignmentId) {
-    return failureResult(barcode, "Select a new route assignment.", timestamp, performedBy);
+  if (options.changeRoute && !options.newRouteId) {
+    return failureResult(barcode, "Select a new route.", timestamp, performedBy);
   }
 
   const label = findLabelByBarcode(barcode);
@@ -81,8 +81,8 @@ export function applyLabelBarcodeUpdate(
 
   const previousStatus = getLabelStatusLabel(label.status);
   const previousContainer = getLabelContainerLabel(label.containerId);
-  const previousRouteAssignment = label.routeAssignmentId
-    ? resolveRouteLabel(label.routeAssignmentId)
+  const previousRoute = label.routeId
+    ? resolveRouteLabel(label.routeId)
     : undefined;
 
   let changed = false;
@@ -122,15 +122,15 @@ export function applyLabelBarcodeUpdate(
     }
   }
 
-  if (options.changeRouteAssignment && options.newRouteAssignmentId) {
-    const newRouteLabel = resolveRouteLabel(options.newRouteAssignmentId);
-    if (label.routeAssignmentId !== options.newRouteAssignmentId) {
-      result.previousRouteAssignment = previousRouteAssignment ?? "—";
-      result.newRouteAssignment = newRouteLabel;
+  if (options.changeRoute && options.newRouteId) {
+    const newRouteLabel = resolveRouteLabel(options.newRouteId);
+    if (label.routeId !== options.newRouteId) {
+      result.previousRoute = previousRoute ?? "—";
+      result.newRoute = newRouteLabel;
       changed = true;
     } else {
-      result.previousRouteAssignment = previousRouteAssignment ?? newRouteLabel;
-      result.newRouteAssignment = newRouteLabel;
+      result.previousRoute = previousRoute ?? newRouteLabel;
+      result.newRoute = newRouteLabel;
     }
   }
 
@@ -144,8 +144,8 @@ export function applyLabelBarcodeUpdate(
       newStatus: result.newStatus,
       previousContainer: result.previousContainer,
       newContainer: result.newContainer,
-      previousRouteAssignment: result.previousRouteAssignment,
-      newRouteAssignment: result.newRouteAssignment,
+      previousRoute: result.previousRoute,
+      newRoute: result.newRoute,
     };
   }
 
@@ -158,10 +158,10 @@ export function applyLabelBarcodeUpdate(
         status: options.changeStatus && options.newStatus ? options.newStatus : entry.status,
         containerId:
           options.changeContainer && options.newContainerId ? options.newContainerId : entry.containerId,
-        routeAssignmentId:
-          options.changeRouteAssignment && options.newRouteAssignmentId
-            ? options.newRouteAssignmentId
-            : entry.routeAssignmentId,
+        routeId:
+          options.changeRoute && options.newRouteId
+            ? options.newRouteId
+            : entry.routeId,
         updatedAt: timestamp,
       };
     })
@@ -174,17 +174,17 @@ export function applyLabelBarcodeUpdate(
   if (result.previousContainer && result.newContainer) {
     changeParts.push(`container ${result.previousContainer} → ${result.newContainer}`);
   }
-  if (result.previousRouteAssignment !== undefined && result.newRouteAssignment) {
-    changeParts.push(`route ${result.previousRouteAssignment} → ${result.newRouteAssignment}`);
+  if (result.previousRoute !== undefined && result.newRoute) {
+    changeParts.push(`route ${result.previousRoute} → ${result.newRoute}`);
   }
 
   result.message = `Updated ${changeParts.join("; ")}.`;
 
   let action: LabelActivityEntry["action"] = "status_change";
-  if (options.changeContainer && !options.changeStatus && !options.changeRouteAssignment) {
+  if (options.changeContainer && !options.changeStatus && !options.changeRoute) {
     action = "container_change";
-  } else if (options.changeRouteAssignment && !options.changeStatus && !options.changeContainer) {
-    action = "route_assignment_change";
+  } else if (options.changeRoute && !options.changeStatus && !options.changeContainer) {
+    action = "route_change";
   }
 
   prependLabelActivity([

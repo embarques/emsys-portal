@@ -49,6 +49,20 @@ export type GenerateLabelTarget = {
   lineItemId: string;
 };
 
+/** Result of assigning invoice-item barcodes to a route. */
+export type InvoiceItemBarcodeRoute = {
+  routeId: string;
+  routeName: string;
+  tripNumber: number;
+  assignedCount: number;
+};
+
+type ApiBarcodeRouteData = {
+  route?: { id?: string; name?: string };
+  tripNumber?: number;
+  assignedCount?: number;
+};
+
 /** A single barcode update to apply via `PUT /barcodes/{id}`. */
 export type BarcodeUpdate = {
   id: number;
@@ -262,4 +276,74 @@ export async function generateLabels(targets: GenerateLabelTarget[]): Promise<Ge
   }
 
   return labels;
+}
+
+function barcodeHasContainer(barcode: InvoiceLineItemBarcode): boolean {
+  return Boolean(barcode.containerName?.trim() || barcode.containerId?.trim());
+}
+
+/**
+ * Collect assignable barcode ids from the given invoices.
+ *
+ * Invoice list rows do not reliably carry barcodes, so each invoice's detail is
+ * fetched. Only barcodes that exist on a line item AND have a container qualify
+ * for route (the container drives the route trip number).
+ */
+export async function collectAssignableInvoiceBarcodeIds(invoiceIds: string[]): Promise<number[]> {
+  const uniqueIds = Array.from(new Set(invoiceIds.filter(Boolean)));
+  if (uniqueIds.length === 0) return [];
+
+  const invoices = await Promise.all(uniqueIds.map((id) => fetchInvoiceById(id)));
+
+  const barcodeIds = new Set<number>();
+  for (const invoice of invoices) {
+    for (const lineItem of invoice.lineItems) {
+      for (const barcode of lineItem.barcodes ?? []) {
+        if (!barcodeHasContainer(barcode)) continue;
+        const numericId = readNumericId(barcode.id);
+        if (numericId != null && numericId > 0) {
+          barcodeIds.add(numericId);
+        }
+      }
+    }
+  }
+
+  return Array.from(barcodeIds);
+}
+
+/**
+ * Assign invoice-item barcodes to a route.
+ * PUT /invoices/item/barcode/route/{routeId} with `{ barcodeIds }`.
+ *
+ * Each barcode must exist inside invoice_details.barcodes and have a container;
+ * the container drives the computed route trip number. The barcode's existing
+ * container is preserved (not duplicated inside the stored route reference).
+ */
+export async function assignInvoiceItemBarcodesToRoute(
+  routeId: string,
+  barcodeIds: number[],
+): Promise<InvoiceItemBarcodeRoute> {
+  const id = routeId.trim();
+  if (!id) {
+    throw new Error("A valid route is required.");
+  }
+
+  if (barcodeIds.length === 0) {
+    throw new Error("The selected invoices have no barcodes with a container to assign.");
+  }
+
+  const response = await apiClient.put<ApiMutationEnvelope<ApiBarcodeRouteData>>(
+    `${API_ENDPOINTS.INVOICE_ITEM_BARCODE_ROUTE}/${id}`,
+    { barcodeIds },
+  );
+
+  assertMutationSuccess(response, "Unable to assign invoice item barcodes to route.");
+
+  const data = response.data;
+  return {
+    routeId: String(data?.route?.id ?? id).trim(),
+    routeName: String(data?.route?.name ?? "").trim(),
+    tripNumber: Number(data?.tripNumber ?? 0),
+    assignedCount: Number(data?.assignedCount ?? barcodeIds.length),
+  };
 }

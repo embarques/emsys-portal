@@ -169,11 +169,13 @@ const routeAssignments = {
 const vehicles = {
   label: "VEHICLES", path: "/vehicles",
   numeric: new Set(["year"]),
+  // `id` is a Mongo ObjectId here, so it can't be exercised with a synthetic
+  // value; the match-verified scripts/probe-vehicles.mjs covers id eq/neq.
   fields: [
-    ["vehicleId", TEXT], ["name", TEXT], ["vin", TEXT], ["createdBy", TEXT], ["id", TEXT],
+    ["vehicleId", TEXT], ["name", TEXT], ["vin", TEXT], ["createdBy.name", BYNAME],
     ["fuelType", EQ2], ["branch", BYNAME], ["year", EQ2],
   ],
-  bar: ["vehicleId", "name", "vin", "fuelType", "branch", "createdBy"],
+  bar: ["vehicleId", "name", "vin", "fuelType", "branch", "createdBy.name"],
 };
 const employees = {
   label: "EMPLOYEES", path: "/employees",

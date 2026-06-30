@@ -80,6 +80,12 @@ import {
   type OrderFormValues,
 } from "@/lib/orders/types";
 import { useUsers } from "@/lib/users/hooks/use-users";
+import {
+  useAssignPickupsToRoute,
+  usePickupRoutePicker,
+} from "@/lib/pickup-routes/hooks/use-pickup-routes";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Label } from "@/components/ui/label";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 
@@ -104,6 +110,8 @@ export function OrdersWorkspace() {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Order | Order[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [assignRouteOpen, setAssignRouteOpen] = useState(false);
+  const [selectedRouteId, setSelectedRouteId] = useState("");
   const listParams = useMemo(
     () =>
       buildOrderListParams({
@@ -128,6 +136,10 @@ export function OrdersWorkspace() {
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
   const setOrdersCompletedMutation = useSetOrdersCompleted();
+  const assignRouteMutation = useAssignPickupsToRoute();
+  const { data: routesData, isLoading: routesLoading } = usePickupRoutePicker(undefined, {
+    enabled: assignRouteOpen || filtersOpen,
+  });
   const orders = data?.items ?? [];
   const totalOrders = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
@@ -138,10 +150,16 @@ export function OrdersWorkspace() {
     createOrderMutation.isPending ||
     updateOrderMutation.isPending ||
     deleteOrdersMutation.isPending ||
-    setOrdersCompletedMutation.isPending;
+    setOrdersCompletedMutation.isPending ||
+    assignRouteMutation.isPending;
   const selectedOrders = useMemo(
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
     [orders, selectedIds],
+  );
+  const routes = useMemo(() => routesData?.items ?? [], [routesData?.items]);
+  const routeOptions = useMemo(
+    () => routes.map((route) => ({ value: route.id, label: route.name || route.id })),
+    [routes],
   );
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const missingCompanyContext = !authLoading && !companyId;
@@ -255,7 +273,32 @@ export function OrdersWorkspace() {
     }
   }
 
-  // TODO: implement print, assign route, and map for selected orders.
+  function openAssignRoute() {
+    if (selectedOrders.length === 0) return;
+    setSelectedRouteId("");
+    setAssignRouteOpen(true);
+  }
+
+  async function confirmAssignRoute() {
+    if (selectedOrders.length === 0 || !selectedRouteId) return;
+
+    const pickupIds = selectedOrders.map((order) => order.id);
+
+    try {
+      await assignRouteMutation.mutateAsync({ routeId: selectedRouteId, pickupIds });
+      const noun = pickupIds.length === 1 ? "order" : "orders";
+      const routeName = routes.find((route) => route.id === selectedRouteId)?.name;
+      notifySuccess(
+        `${pickupIds.length} ${noun} assigned${routeName ? ` to ${routeName}` : ""}.`,
+      );
+      setAssignRouteOpen(false);
+      setSelectedRouteId("");
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
+  }
+
+  // TODO: implement print and map for selected orders.
   function handleComingSoon(label: string) {
     notifySuccess(`${label} is coming soon.`);
   }
@@ -454,6 +497,7 @@ export function OrdersWorkspace() {
                   fields={ORDER_TABLE_FILTER_FIELDS}
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
+                    routes: routeOptions,
                   }}
                   onChange={(rows) => {
                     setFilters((current) => ({ ...current, rows }));
@@ -521,7 +565,8 @@ export function OrdersWorkspace() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleComingSoon("Assign route")}
+                disabled={isSaving}
+                onClick={openAssignRoute}
               >
                 <RouteIcon className="h-4 w-4" />
                 Assign route
@@ -651,6 +696,53 @@ export function OrdersWorkspace() {
               setFormError(null);
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={assignRouteOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAssignRouteOpen(false);
+            setSelectedRouteId("");
+          }
+        }}
+      >
+        <DialogContent className="z-[60]">
+          <DialogHeader>
+            <DialogTitle>Assign route</DialogTitle>
+            <DialogDescription>
+              {`Assign ${selectedOrders.length} selected order${selectedOrders.length === 1 ? "" : "s"} to a route.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <Label htmlFor="assign-route">Route</Label>
+            <SearchableSelect
+              id="assign-route"
+              value={selectedRouteId}
+              onValueChange={setSelectedRouteId}
+              placeholder="Select a route"
+              searchPlaceholder="Search routes…"
+              loading={routesLoading}
+              emptyMessage={routesLoading ? "Loading routes…" : "No routes found."}
+              options={routeOptions}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAssignRouteOpen(false);
+                setSelectedRouteId("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmAssignRoute} disabled={!selectedRouteId || isSaving}>
+              <RouteIcon className="h-4 w-4" />
+              Assign route
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

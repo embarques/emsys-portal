@@ -32,8 +32,8 @@ import {
 import { todayDateInputValue } from "@/lib/orders/types";
 import { formatInvoiceMoney, getInvoiceBalance, getInvoiceSubtotal } from "@/lib/invoices/display";
 import { INVOICE_PAYMENT_METHODS, type Invoice } from "@/lib/invoices/types";
-import { formatRouteAssignmentCopyLabel } from "@/lib/route-assignments/display";
-import type { RouteAssignment } from "@/lib/route-assignments/types";
+import { formatRouteCopyLabel } from "@/lib/routes/display";
+import type { Route } from "@/lib/routes/types";
 
 const PAYMENT_METHOD_OPTIONS = INVOICE_PAYMENT_METHODS.map((option) => ({
   value: option.value,
@@ -48,7 +48,7 @@ const BRANCH_OPTIONS = ACCOUNTING_BRANCHES.map((option) => ({
 type AccountingEntryFormProps = {
   initialValues?: AccountingFormValues;
   invoices: Invoice[];
-  routeAssignments?: RouteAssignment[];
+  routes?: Route[];
   isEditing?: boolean;
   updatedAt?: string;
   variant?: "dialog" | "inline";
@@ -63,7 +63,7 @@ type AccountingEntryFormProps = {
 export function AccountingEntryForm({
   initialValues,
   invoices,
-  routeAssignments = [],
+  routes = [],
   isEditing = false,
   updatedAt,
   variant = "dialog",
@@ -640,23 +640,23 @@ export function AccountingEntryForm({
         </div>
       ) : null}
 
-      {!isInline && routeAssignments.length > 0 ? (
+      {!isInline && routes.length > 0 ? (
         <div className="space-y-1">
-          <Label htmlFor="routeAssignmentId">
-            Route assignment <span className="text-destructive">*</span>
+          <Label htmlFor="routeId">
+            Route <span className="text-destructive">*</span>
           </Label>
           <SearchableSelect
-            id="routeAssignmentId"
-            value={values.routeAssignmentId}
-            onValueChange={(next) => updateField("routeAssignmentId", next)}
-            placeholder="Select a route assignment…"
-            searchPlaceholder="Search route assignments…"
+            id="routeId"
+            value={values.routeId}
+            onValueChange={(next) => updateField("routeId", next)}
+            placeholder="Select a route…"
+            searchPlaceholder="Search routes…"
             required
             options={[
-              { value: "", label: "Select a route assignment…" },
-              ...routeAssignments.map((assignment) => ({
-                value: assignment.routeAssignmentId,
-                label: formatRouteAssignmentCopyLabel(assignment),
+              { value: "", label: "Select a route…" },
+              ...routes.map((assignment) => ({
+                value: assignment.routeId,
+                label: formatRouteCopyLabel(assignment),
               })),
             ]}
           />

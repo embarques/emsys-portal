@@ -64,6 +64,7 @@ type ApiVehicle = {
   vehicleId?: string;
   name?: string;
   vin?: string;
+  licensePlate?: string;
   year?: number;
   fuelType?: string;
   branch?: string;
@@ -80,6 +81,7 @@ type ApiVehicleWritePayload = {
   vin: string;
   year: number;
   fuelType: string;
+  licensePlate?: string;
   vehicleId?: string;
   branch?: string;
   inspectionDate?: string;
@@ -124,6 +126,7 @@ function normalizeVehicle(raw: unknown): Vehicle | null {
     vehicleId: String(item.vehicleId ?? "").trim(),
     name: String(item.name ?? "").trim(),
     vin: String(item.vin ?? "").trim().toUpperCase(),
+    licensePlate: String(item.licensePlate ?? "").trim().toUpperCase(),
     year: Number(item.year ?? 0),
     fuelType: String(item.fuelType ?? "").trim(),
     branch: String(item.branch ?? "").trim(),
@@ -161,6 +164,11 @@ function buildVehicleWritePayload(
     year: yearValue ? Number(yearValue) : 0,
     fuelType: values.fuelType.trim(),
   };
+
+  const licensePlateValue = values.licensePlate.trim().toUpperCase();
+  if (licensePlateValue) {
+    payload.licensePlate = licensePlateValue;
+  }
 
   // Vehicle code and branch are assigned by the backend on create; only forward
   // them when an existing value is present (e.g. when editing a record).

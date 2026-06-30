@@ -3,40 +3,40 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
-import { RouteAssignmentForm } from "@/components/route-assignments/route-assignment-form";
+import { RouteForm } from "@/components/routes/route-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
 import {
-  useCreateRouteAssignment,
-  useRouteAssignment,
-  useRouteAssignmentPicker,
-  useUpdateRouteAssignment,
-} from "@/lib/route-assignments/hooks/use-route-assignments";
+  useCreateRoute,
+  useRoute,
+  useRoutePicker,
+  useUpdateRoute,
+} from "@/lib/routes/hooks/use-routes";
 import {
-  createEmptyRouteAssignmentForm,
-  routeAssignmentToFormValues,
-  type RouteAssignmentFormValues,
-} from "@/lib/route-assignments/types";
-import { formatRouteAssignmentName } from "@/lib/route-assignments/display";
+  createEmptyRouteForm,
+  routeToFormValues,
+  type RouteFormValues,
+} from "@/lib/routes/types";
+import { formatRouteName } from "@/lib/routes/display";
 import {
   useUpdateWorkspaceTabLabel,
   useWorkspaceTabs,
 } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
-export function RouteAssignmentFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
-  const createMutation = useCreateRouteAssignment();
-  const updateMutation = useUpdateRouteAssignment();
-  const detailQuery = useRouteAssignment(isEditing ? (entityId ?? null) : null);
+  const createMutation = useCreateRoute();
+  const updateMutation = useUpdateRoute();
+  const detailQuery = useRoute(isEditing ? (entityId ?? null) : null);
   // Add mode offers a "copy from existing assignment" picker.
-  const pickerQuery = useRouteAssignmentPicker(200, { enabled: !isEditing });
+  const pickerQuery = useRoutePicker(200, { enabled: !isEditing });
 
   const [formError, setFormError] = useState<string | null>(null);
   const [formInstance, setFormInstance] = useState(0);
@@ -45,7 +45,7 @@ export function RouteAssignmentFormWorkspace({ tabId, mode, entityId }: Workspac
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const copySources = isEditing ? [] : (pickerQuery.data?.items ?? []);
 
-  const editingLabel = editing ? formatRouteAssignmentName(editing) : undefined;
+  const editingLabel = editing ? formatRouteName(editing) : undefined;
 
   useEffect(() => {
     if (isEditing && editingLabel) {
@@ -53,19 +53,19 @@ export function RouteAssignmentFormWorkspace({ tabId, mode, entityId }: Workspac
     }
   }, [editingLabel, isEditing, tabId, updateTabLabel]);
 
-  async function save(values: RouteAssignmentFormValues) {
+  async function save(values: RouteFormValues) {
     setFormError(null);
 
     try {
       if (isEditing && editing) {
         const next = await updateMutation.mutateAsync({ recordId: editing.id, values });
-        notifyUpdated("Route", formatRouteAssignmentName(next));
+        notifyUpdated("Route", formatRouteName(next));
         closeFormTabAndReturn(tabId);
         return;
       }
 
       const next = await createMutation.mutateAsync(values);
-      notifyAdded("Route", formatRouteAssignmentName(next));
+      notifyAdded("Route", formatRouteName(next));
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
@@ -102,14 +102,14 @@ export function RouteAssignmentFormWorkspace({ tabId, mode, entityId }: Workspac
   return (
     <FormTabShell
       title={isEditing ? "Edit route" : "Add route"}
-      description={isEditing && editingLabel ? editingLabel : "Create a new route assignment."}
+      description={isEditing && editingLabel ? editingLabel : "Create a new route."}
     >
-      <RouteAssignmentForm
+      <RouteForm
         key={isEditing ? (editing?.id ?? "edit") : `new-${formInstance}`}
         initialValues={
           isEditing && editing
-            ? routeAssignmentToFormValues(editing)
-            : createEmptyRouteAssignmentForm()
+            ? routeToFormValues(editing)
+            : createEmptyRouteForm()
         }
         copySources={copySources}
         isEditing={isEditing}

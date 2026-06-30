@@ -13,7 +13,7 @@ export type LabelActivityAction =
   | "generate"
   | "status_change"
   | "container_change"
-  | "route_assignment_change"
+  | "route_change"
   | "print";
 
 export type ShipmentLabel = {
@@ -24,7 +24,7 @@ export type ShipmentLabel = {
   barcode: string;
   status: LabelStatus;
   containerId: string;
-  routeAssignmentId?: string;
+  routeId?: string;
   description: string;
   labelSequence: number;
   totalLabels: number;
@@ -55,9 +55,9 @@ export type StagedLineItem = {
   labelCount: number;
   quantity: number;
   containerId: string;
-  routeAssignmentId?: string;
-  /** Pre-resolved label from the live route-assignment catalog (optional). */
-  routeAssignmentLabel?: string;
+  routeId?: string;
+  /** Pre-resolved label from the live route catalog (optional). */
+  routeLabel?: string;
 };
 
 export type LabelUpdateResult = {
@@ -70,8 +70,8 @@ export type LabelUpdateResult = {
   newStatus?: string;
   previousContainer?: string;
   newContainer?: string;
-  previousRouteAssignment?: string;
-  newRouteAssignment?: string;
+  previousRoute?: string;
+  newRoute?: string;
   totalLabels?: number;
   date?: string;
   dateTime: string;
@@ -84,13 +84,13 @@ export type LabelUpdaterOptions = {
   newStatus?: LabelStatus;
   changeContainer: boolean;
   newContainerId?: string;
-  changeRouteAssignment: boolean;
-  newRouteAssignmentId?: string;
+  changeRoute: boolean;
+  newRouteId?: string;
   /**
-   * Resolves a route assignment id to a human label using live API data.
+   * Resolves a route id to a human label using live API data.
    * Falls back to the raw id when omitted.
    */
-  resolveRouteAssignmentLabel?: (routeAssignmentId: string) => string;
+  resolveRouteLabel?: (routeId: string) => string;
 };
 
 export type LabelFilterState = {
@@ -268,7 +268,7 @@ export function generateLabelsForLineItem(
   }
 
   const now = new Date().toISOString();
-  const routeLabel = stagedItem.routeAssignmentLabel?.trim() || stagedItem.routeAssignmentId?.trim();
+  const routeLabel = stagedItem.routeLabel?.trim() || stagedItem.routeId?.trim();
   const routeSuffix = routeLabel ? ` Assigned to ${routeLabel}.` : "";
 
   const labels: ShipmentLabel[] = Array.from({ length: stagedItem.labelCount }, (_, index) => {
@@ -281,7 +281,7 @@ export function generateLabelsForLineItem(
       barcode: generateBarcode(stagedItem.invoiceNumber, stagedItem.lineItemId, sequence),
       status: "generated",
       containerId: stagedItem.containerId,
-      routeAssignmentId: stagedItem.routeAssignmentId,
+      routeId: stagedItem.routeId,
       description: stagedItem.description,
       labelSequence: sequence,
       totalLabels: stagedItem.labelCount,

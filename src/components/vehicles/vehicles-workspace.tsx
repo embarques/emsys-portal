@@ -237,6 +237,12 @@ export function VehiclesWorkspace() {
       renderCell: (vehicle) => vehicle.vin || "—",
     },
     {
+      id: "licensePlate",
+      label: "licensePlate",
+      cellClassName: "font-mono text-xs",
+      renderCell: (vehicle) => vehicle.licensePlate || "—",
+    },
+    {
       id: "year",
       label: "year",
       renderCell: (vehicle) => (vehicle.year > 0 ? vehicle.year : "—"),
