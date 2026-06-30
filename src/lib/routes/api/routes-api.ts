@@ -13,13 +13,13 @@ import {
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 import {
-  DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS,
-  ROUTE_ASSIGNMENT_BAR_OR_SEARCH_FIELDS,
-  toRouteAssignmentDateIso,
-  type RouteAssignment,
-  type RouteAssignmentFormValues,
-  type RouteAssignmentListParams,
-} from "@/lib/route-assignments/types";
+  DEFAULT_ROUTE_LIST_PARAMS,
+  ROUTE_BAR_OR_SEARCH_FIELDS,
+  toRouteDateIso,
+  type Route,
+  type RouteFormValues,
+  type RouteListParams,
+} from "@/lib/routes/types";
 
 type ApiUser = {
   id?: number;
@@ -39,7 +39,7 @@ type ApiEmployeeGroupRef = ApiRef & {
   employees?: unknown[];
 };
 
-type ApiRouteAssignment = {
+type ApiRoute = {
   id?: string | number;
   routeAssignmentId?: string;
   name?: string;
@@ -53,7 +53,7 @@ type ApiRouteAssignment = {
 };
 
 /** POST/PUT /routes — see API_PAYLOADS.md */
-type ApiRouteAssignmentWritePayload = {
+type ApiRouteWritePayload = {
   routeAssignmentId: string;
   name: string;
   date: string;
@@ -78,7 +78,7 @@ function readUserName(user: unknown): string {
   return "";
 }
 
-function normalizeVehicleRef(raw?: ApiRef | null): RouteAssignment["vehicle"] {
+function normalizeVehicleRef(raw?: ApiRef | null): Route["vehicle"] {
   const ref = raw ?? {};
   return {
     id: String(ref.id ?? "").trim(),
@@ -86,23 +86,23 @@ function normalizeVehicleRef(raw?: ApiRef | null): RouteAssignment["vehicle"] {
   };
 }
 
-function normalizeEmployeeGroupRef(raw?: ApiEmployeeGroupRef | null): RouteAssignment["employeeGroup"] {
+function normalizeEmployeeGroupRef(raw?: ApiEmployeeGroupRef | null): Route["employeeGroup"] {
   const ref = raw ?? {};
   const id = String(ref.id ?? "").trim();
   const name = String(ref.name ?? "").trim() || String(ref.employeeGroupId ?? "").trim();
   return { id, name };
 }
 
-export function normalizeApiRouteAssignment(raw: unknown): RouteAssignment | null {
+export function normalizeApiRoute(raw: unknown): Route | null {
   if (!raw || typeof raw !== "object") return null;
 
-  const item = raw as ApiRouteAssignment;
+  const item = raw as ApiRoute;
   const id = String(item.id ?? "").trim();
   if (!id) return null;
 
   return {
     id,
-    routeAssignmentId: String(item.routeAssignmentId ?? "").trim(),
+    routeId: String(item.routeAssignmentId ?? "").trim(),
     name: String(item.name ?? "").trim(),
     date: String(item.date ?? "").trim(),
     vehicle: normalizeVehicleRef(item.vehicle),
@@ -113,14 +113,14 @@ export function normalizeApiRouteAssignment(raw: unknown): RouteAssignment | nul
   };
 }
 
-function normalizePaginatedRouteAssignments(
+function normalizePaginatedRoutes(
   payload: PaginatedApiEnvelope<unknown[]>,
   context: { isFiltered?: boolean } = {},
-): PaginatedResult<RouteAssignment> {
+): PaginatedResult<Route> {
   const items = Array.isArray(payload.data)
     ? payload.data
-        .map(normalizeApiRouteAssignment)
-        .filter((assignment): assignment is RouteAssignment => assignment != null)
+        .map(normalizeApiRoute)
+        .filter((assignment): assignment is Route => assignment != null)
     : [];
 
   return {
@@ -131,9 +131,9 @@ function normalizePaginatedRouteAssignments(
   };
 }
 
-function buildRouteAssignmentSearchBody(params: RouteAssignmentListParams) {
+function buildRouteSearchBody(params: RouteListParams) {
   const search = params.search;
-  const sort = params.sort ?? DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS.sort;
+  const sort = params.sort ?? DEFAULT_ROUTE_LIST_PARAMS.sort;
 
   if (!search?.value.trim()) {
     return buildStripeStyleSearchBody({ sort, filterGroups: [] });
@@ -153,7 +153,7 @@ function buildRouteAssignmentSearchBody(params: RouteAssignmentListParams) {
 
   const orGroup = createOrTextSearchFilterGroup(
     search.value,
-    [...ROUTE_ASSIGNMENT_BAR_OR_SEARCH_FIELDS],
+    [...ROUTE_BAR_OR_SEARCH_FIELDS],
     search.operator ?? "contains",
   );
 
@@ -163,14 +163,14 @@ function buildRouteAssignmentSearchBody(params: RouteAssignmentListParams) {
   });
 }
 
-export async function fetchRouteAssignments(
-  params: RouteAssignmentListParams = {},
-): Promise<PaginatedResult<RouteAssignment>> {
-  const page = params.page ?? DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS.page;
-  const limit = params.limit ?? DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS.limit;
+export async function fetchRoutes(
+  params: RouteListParams = {},
+): Promise<PaginatedResult<Route>> {
+  const page = params.page ?? DEFAULT_ROUTE_LIST_PARAMS.page;
+  const limit = params.limit ?? DEFAULT_ROUTE_LIST_PARAMS.limit;
 
   return fetchPaginatedResourceList({
-    endpoint: API_ENDPOINTS.ROUTE_ASSIGNMENTS,
+    endpoint: API_ENDPOINTS.ROUTES,
     page,
     limit,
     offset: params.offset,
@@ -180,10 +180,10 @@ export async function fetchRouteAssignments(
         page,
         limit,
         offset: params.offset,
-        sort: params.sort ?? DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS.sort,
+        sort: params.sort ?? DEFAULT_ROUTE_LIST_PARAMS.sort,
       }),
-    buildSearchBody: () => buildRouteAssignmentSearchBody(params),
-    normalize: normalizePaginatedRouteAssignments,
+    buildSearchBody: () => buildRouteSearchBody(params),
+    normalize: normalizePaginatedRoutes,
   });
 }
 
@@ -192,16 +192,16 @@ export async function fetchRouteAssignments(
  * exclusive-end date range. Used for day-scoped KPIs so the stat cards reflect
  * only the selected day's routes rather than the full history.
  */
-export async function fetchRouteAssignmentsByDate(
+export async function fetchRoutesByDate(
   dateInput: string,
-): Promise<PaginatedResult<RouteAssignment>> {
-  const start = toRouteAssignmentDateIso(dateInput);
+): Promise<PaginatedResult<Route>> {
+  const start = toRouteDateIso(dateInput);
   const next = new Date(`${dateInput}T00:00:00Z`);
   next.setUTCDate(next.getUTCDate() + 1);
   const end = `${next.toISOString().slice(0, 10)}T00:00:00Z`;
 
   const body = buildStripeStyleSearchBody({
-    sort: DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS.sort,
+    sort: DEFAULT_ROUTE_LIST_PARAMS.sort,
     filterGroups: [
       {
         operator: "and",
@@ -215,49 +215,49 @@ export async function fetchRouteAssignmentsByDate(
 
   const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 200 });
   const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-    `${API_ENDPOINTS.ROUTE_ASSIGNMENTS}/search?${paginationQuery}`,
+    `${API_ENDPOINTS.ROUTES}/search?${paginationQuery}`,
     body,
   );
 
-  return normalizePaginatedRouteAssignments(response, { isFiltered: true });
+  return normalizePaginatedRoutes(response, { isFiltered: true });
 }
 
-export async function fetchRouteAssignmentById(routeAssignmentId: string): Promise<RouteAssignment> {
-  const id = routeAssignmentId.trim();
+export async function fetchRouteById(routeId: string): Promise<Route> {
+  const id = routeId.trim();
   if (!id) {
-    throw new Error("A valid route assignment id is required.");
+    throw new Error("A valid route id is required.");
   }
 
-  const response = await apiClient.get<ApiRouteAssignment | PaginatedApiEnvelope<ApiRouteAssignment>>(
-    `${API_ENDPOINTS.ROUTE_ASSIGNMENTS}/${id}`,
+  const response = await apiClient.get<ApiRoute | PaginatedApiEnvelope<ApiRoute>>(
+    `${API_ENDPOINTS.ROUTES}/${id}`,
   );
 
   const raw =
     response && typeof response === "object" && "data" in response
-      ? (response as PaginatedApiEnvelope<ApiRouteAssignment>).data
+      ? (response as PaginatedApiEnvelope<ApiRoute>).data
       : response;
 
-  const assignment = normalizeApiRouteAssignment(raw);
+  const assignment = normalizeApiRoute(raw);
   if (!assignment) {
-    throw new Error("Route assignment not found.");
+    throw new Error("Route not found.");
   }
 
   return assignment;
 }
 
-function buildRouteAssignmentWritePayload(
-  values: RouteAssignmentFormValues,
+function buildRouteWritePayload(
+  values: RouteFormValues,
   options: { recordId?: string } = {},
-): ApiRouteAssignmentWritePayload {
+): ApiRouteWritePayload {
   const employeeGroupId = values.employeeGroup.id.trim();
   if (!employeeGroupId) {
     throw new Error("An employee group is required.");
   }
 
-  const payload: ApiRouteAssignmentWritePayload = {
-    routeAssignmentId: values.routeAssignmentId.trim(),
+  const payload: ApiRouteWritePayload = {
+    routeAssignmentId: values.routeId.trim(),
     name: values.name.trim(),
-    date: toRouteAssignmentDateIso(values.date),
+    date: toRouteDateIso(values.date),
     employeeGroup: {
       id: employeeGroupId,
       name: values.employeeGroup.name.trim(),
@@ -285,14 +285,14 @@ function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackM
   }
 }
 
-function extractRouteAssignmentFromMutationResponse(data: unknown): RouteAssignment | null {
+function extractRouteFromMutationResponse(data: unknown): Route | null {
   if (data && typeof data === "object" && !Array.isArray(data)) {
-    return normalizeApiRouteAssignment(data);
+    return normalizeApiRoute(data);
   }
   return null;
 }
 
-function extractCreatedRouteAssignmentId(response: ApiMutationEnvelope<unknown>): string | null {
+function extractCreatedRouteId(response: ApiMutationEnvelope<unknown>): string | null {
   const data = response.data;
 
   if (typeof data === "string") {
@@ -300,30 +300,30 @@ function extractCreatedRouteAssignmentId(response: ApiMutationEnvelope<unknown>)
     return id || null;
   }
 
-  const assignment = extractRouteAssignmentFromMutationResponse(data);
+  const assignment = extractRouteFromMutationResponse(data);
   return assignment?.id ?? null;
 }
 
-async function resolveCreatedRouteAssignment(
-  values: RouteAssignmentFormValues,
+async function resolveCreatedRoute(
+  values: RouteFormValues,
   response: ApiMutationEnvelope<unknown>,
-): Promise<RouteAssignment> {
-  const createdId = extractCreatedRouteAssignmentId(response);
+): Promise<Route> {
+  const createdId = extractCreatedRouteId(response);
   if (createdId) {
-    return fetchRouteAssignmentById(createdId);
+    return fetchRouteById(createdId);
   }
 
-  const assignment = extractRouteAssignmentFromMutationResponse(response.data);
+  const assignment = extractRouteFromMutationResponse(response.data);
   if (assignment) {
     return assignment;
   }
 
-  const routeAssignmentId = values.routeAssignmentId.trim();
-  if (routeAssignmentId) {
-    const matches = await fetchRouteAssignments({
+  const routeId = values.routeId.trim();
+  if (routeId) {
+    const matches = await fetchRoutes({
       page: 1,
       limit: 1,
-      search: { field: "routeAssignmentId", operator: "eq", value: routeAssignmentId },
+      search: { field: "routeAssignmentId", operator: "eq", value: routeId },
     });
 
     const matched = matches.items[0];
@@ -333,54 +333,54 @@ async function resolveCreatedRouteAssignment(
   }
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to create route assignment.");
+  throw new Error(message?.trim() || "Unable to create route.");
 }
 
-export async function createRouteAssignment(
-  values: RouteAssignmentFormValues,
-): Promise<RouteAssignment> {
+export async function createRoute(
+  values: RouteFormValues,
+): Promise<Route> {
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
-    API_ENDPOINTS.ROUTE_ASSIGNMENTS,
-    buildRouteAssignmentWritePayload(values),
+    API_ENDPOINTS.ROUTES,
+    buildRouteWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create route assignment.");
+  assertMutationSuccess(response, "Unable to create route.");
 
-  return resolveCreatedRouteAssignment(values, response);
+  return resolveCreatedRoute(values, response);
 }
 
-export async function updateRouteAssignment(
+export async function updateRoute(
   recordId: string,
-  values: RouteAssignmentFormValues,
-): Promise<RouteAssignment> {
+  values: RouteFormValues,
+): Promise<Route> {
   const id = recordId.trim();
   if (!id) {
-    throw new Error("A valid route assignment id is required to update.");
+    throw new Error("A valid route id is required to update.");
   }
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.ROUTE_ASSIGNMENTS}/${id}`,
-    buildRouteAssignmentWritePayload(values, { recordId: id }),
+    `${API_ENDPOINTS.ROUTES}/${id}`,
+    buildRouteWritePayload(values, { recordId: id }),
   );
 
-  assertMutationSuccess(response, "Unable to update route assignment.");
+  assertMutationSuccess(response, "Unable to update route.");
 
-  return extractRouteAssignmentFromMutationResponse(response.data) ?? fetchRouteAssignmentById(id);
+  return extractRouteFromMutationResponse(response.data) ?? fetchRouteById(id);
 }
 
-export async function deleteRouteAssignment(recordId: string): Promise<void> {
+export async function deleteRoute(recordId: string): Promise<void> {
   const id = recordId.trim();
   if (!id) {
-    throw new Error("A valid route assignment id is required to delete.");
+    throw new Error("A valid route id is required to delete.");
   }
 
   const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.ROUTE_ASSIGNMENTS}/${id}`,
+    `${API_ENDPOINTS.ROUTES}/${id}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete route assignment.");
+  assertMutationSuccess(response, "Unable to delete route.");
 }
 
-export async function deleteRouteAssignments(recordIds: string[]): Promise<void> {
-  await Promise.all(recordIds.map((id) => deleteRouteAssignment(id)));
+export async function deleteRoutes(recordIds: string[]): Promise<void> {
+  await Promise.all(recordIds.map((id) => deleteRoute(id)));
 }

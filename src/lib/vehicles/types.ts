@@ -9,6 +9,7 @@ export type Vehicle = {
   vehicleId: string;
   name: string;
   vin: string;
+  licensePlate: string;
   year: number;
   fuelType: string;
   branch: string;
@@ -24,6 +25,7 @@ export type VehicleFormValues = {
   vehicleId: string;
   name: string;
   vin: string;
+  licensePlate: string;
   year: string;
   fuelType: string;
   branch: string;
@@ -47,6 +49,7 @@ export type VehicleSearchField =
   | "vehicleId"
   | "name"
   | "vin"
+  | "licensePlate"
   | "year"
   | "fuelType"
   | "branch"
@@ -78,11 +81,12 @@ export const VEHICLE_GET_SEARCH_CAPABILITIES: {
   { field: "vehicleId", label: "Vehicle ID", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "name", label: "name", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "vin", label: "vin", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "licensePlate", label: "licensePlate", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "fuelType", label: "fuelType", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "branch", label: "branch", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "createdBy.name", label: "createdBy", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "year", label: "year", operators: ["eq", "neq"] },
-  { field: "id", label: "Vehicle ID", operators: ["eq", "neq"] },
+  { field: "id", label: "Record ID", operators: ["eq", "neq"] },
 ];
 
 export const VEHICLE_SEARCH_FIELDS: { value: VehicleSearchField; label: string }[] =
@@ -179,6 +183,7 @@ export function createEmptyVehicleForm(): VehicleFormValues {
     vehicleId: "",
     name: "",
     vin: "",
+    licensePlate: "",
     year: String(new Date().getFullYear()),
     fuelType: "diesel",
     branch: "",
@@ -196,6 +201,7 @@ export function vehicleToFormValues(vehicle: Vehicle): VehicleFormValues {
     vehicleId: vehicle.vehicleId,
     name: vehicle.name,
     vin: vehicle.vin,
+    licensePlate: vehicle.licensePlate,
     year: vehicle.year > 0 ? String(vehicle.year) : "",
     fuelType: vehicle.fuelType,
     branch: vehicle.branch,

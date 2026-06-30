@@ -1,8 +1,8 @@
-import type { RouteAssignment, RouteAssignmentEmployeeGroupRef, RouteAssignmentVehicleRef } from "./types";
-import { toRouteAssignmentDateInput } from "./types";
+import type { Route, RouteEmployeeGroupRef, RouteVehicleRef } from "./types";
+import { toRouteDateInput } from "./types";
 
-export function formatRouteAssignmentDate(date: string): string {
-  const input = toRouteAssignmentDateInput(date) || date;
+export function formatRouteDate(date: string): string {
+  const input = toRouteDateInput(date) || date;
   if (!input) return "—";
 
   return new Intl.DateTimeFormat("en-US", {
@@ -12,7 +12,7 @@ export function formatRouteAssignmentDate(date: string): string {
   }).format(new Date(`${input}T12:00:00`));
 }
 
-export function formatRouteAssignmentTimestamp(iso: string): string {
+export function formatRouteTimestamp(iso: string): string {
   if (!iso) return "—";
 
   return new Intl.DateTimeFormat("en-US", {
@@ -22,8 +22,8 @@ export function formatRouteAssignmentTimestamp(iso: string): string {
   }).format(new Date(iso));
 }
 
-export function truncateRouteAssignmentId(routeAssignmentId: string): string {
-  return routeAssignmentId.length > 12 ? `${routeAssignmentId.slice(0, 8)}…` : routeAssignmentId;
+export function truncateRouteId(routeId: string): string {
+  return routeId.length > 12 ? `${routeId.slice(0, 8)}…` : routeId;
 }
 
 export function truncateObjectId(id: string): string {
@@ -31,9 +31,9 @@ export function truncateObjectId(id: string): string {
 }
 
 /** Display name for a route: `date - employee group - vehicle name`. */
-export function formatRouteAssignmentName(assignment: RouteAssignment): string {
+export function formatRouteName(assignment: Route): string {
   const parts = [
-    formatRouteAssignmentDate(assignment.date),
+    formatRouteDate(assignment.date),
     assignment.employeeGroup.name,
     assignment.vehicle.name,
   ]
@@ -44,29 +44,29 @@ export function formatRouteAssignmentName(assignment: RouteAssignment): string {
 }
 
 /** Default route name on create: `date · employee names · vehicle`. */
-export function buildDefaultRouteAssignmentName(
+export function buildDefaultRouteName(
   date: string,
   employeeNames: string,
   vehicleName: string,
 ): string {
-  return [formatRouteAssignmentDate(date), employeeNames, vehicleName]
+  return [formatRouteDate(date), employeeNames, vehicleName]
     .map((part) => part?.trim())
     .filter((part): part is string => Boolean(part) && part !== "—")
     .join(" · ");
 }
 
-export function getVehicleRefLabel(vehicle: RouteAssignmentVehicleRef): string {
+export function getVehicleRefLabel(vehicle: RouteVehicleRef): string {
   if (!vehicle.id && !vehicle.name) return "—";
   return vehicle.name || vehicle.id || "—";
 }
 
-export function getEmployeeGroupRefLabel(group: RouteAssignmentEmployeeGroupRef): string {
+export function getEmployeeGroupRefLabel(group: RouteEmployeeGroupRef): string {
   if (!group.id && !group.name) return "—";
   return group.name || group.id || "—";
 }
 
-export function formatRouteAssignmentCopyLabel(assignment: RouteAssignment): string {
-  return `${assignment.name} · ${formatRouteAssignmentDate(assignment.date)} · ${getVehicleRefLabel(assignment.vehicle)}`;
+export function formatRouteCopyLabel(assignment: Route): string {
+  return `${assignment.name} · ${formatRouteDate(assignment.date)} · ${getVehicleRefLabel(assignment.vehicle)}`;
 }
 
 function matchesSearchOperator(value: string, query: string, operator: string): boolean {
@@ -85,8 +85,8 @@ function matchesSearchOperator(value: string, query: string, operator: string): 
   }
 }
 
-export function routeAssignmentMatchesSearch(
-  assignment: RouteAssignment,
+export function routeMatchesSearch(
+  assignment: Route,
   search: { field: string; operator: string; value: string },
 ): boolean {
   const query = search.value.trim();
@@ -96,8 +96,8 @@ export function routeAssignmentMatchesSearch(
     switch (search.field) {
       case "id":
         return assignment.id;
-      case "routeAssignmentId":
-        return assignment.routeAssignmentId;
+      case "routeId":
+        return assignment.routeId;
       case "name":
         return assignment.name;
       case "date":
@@ -120,13 +120,13 @@ export function routeAssignmentMatchesSearch(
   return matchesSearchOperator(fieldValue, query, search.operator);
 }
 
-export function routeAssignmentMatchesQuery(assignment: RouteAssignment, query: string): boolean {
+export function routeMatchesQuery(assignment: Route, query: string): boolean {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
 
   return [
     assignment.id,
-    assignment.routeAssignmentId,
+    assignment.routeId,
     assignment.name,
     assignment.date,
     assignment.createdBy,
@@ -136,14 +136,14 @@ export function routeAssignmentMatchesQuery(assignment: RouteAssignment, query: 
     assignment.employeeGroup.id,
     assignment.employeeGroup.name,
     getEmployeeGroupRefLabel(assignment.employeeGroup),
-    formatRouteAssignmentDate(assignment.date),
+    formatRouteDate(assignment.date),
   ]
     .join(" ")
     .toLowerCase()
     .includes(normalized);
 }
 
-export function computeRouteAssignmentKpis(assignments: RouteAssignment[]) {
+export function computeRouteKpis(assignments: Route[]) {
   const uniqueVehicles = new Set(assignments.map((assignment) => assignment.vehicle.id).filter(Boolean)).size;
   const uniqueGroups = new Set(assignments.map((assignment) => assignment.employeeGroup.id).filter(Boolean)).size;
 

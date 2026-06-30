@@ -58,7 +58,7 @@ import {
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
 import { useItemPicker } from "@/lib/items/hooks/use-items";
-import { useRouteAssignmentPicker } from "@/lib/route-assignments/hooks/use-route-assignments";
+import { useRoutePicker } from "@/lib/routes/hooks/use-routes";
 import { DEFAULT_ORDER_LIST_PARAMS } from "@/lib/orders/types";
 import { useOrders } from "@/lib/orders/hooks/use-orders";
 
@@ -169,8 +169,8 @@ export function InvoiceForm({
   const containers = containersData?.items ?? [];
   const orders = ordersQuery.data?.items ?? [];
   const catalogItems = itemsData?.items ?? [];
-  const { data: routeAssignmentsData } = useRouteAssignmentPicker();
-  const routeAssignments = routeAssignmentsData?.items ?? [];
+  const { data: routesData } = useRoutePicker();
+  const routes = routesData?.items ?? [];
 
   const [values, setValues] = useState<InvoiceFormValues>(initialValues ?? createEmptyInvoiceForm());
   const [formError, setFormError] = useState<string | null>(null);
@@ -413,7 +413,7 @@ export function InvoiceForm({
               </div>
 
               {/*
-                Pickup and route assignment are captured in the UI but are intentionally
+                Pickup and route are captured in the UI but are intentionally
                 left out of the API add/edit payloads until the invoices API supports them.
               */}
               <div className="space-y-1">
@@ -476,16 +476,16 @@ export function InvoiceForm({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="routeAssignmentId">Route assignment</Label>
+                <Label htmlFor="routeId">Route</Label>
                 <SearchableSelect
-                  id="routeAssignmentId"
-                  value={values.routeAssignmentId}
-                  onValueChange={(next) => updateField("routeAssignmentId", next)}
-                  placeholder="No route assignment"
-                  searchPlaceholder="Search route assignments…"
+                  id="routeId"
+                  value={values.routeId}
+                  onValueChange={(next) => updateField("routeId", next)}
+                  placeholder="No route"
+                  searchPlaceholder="Search routes…"
                   options={[
-                    { value: "", label: "No route assignment" },
-                    ...routeAssignments.map((assignment) => ({
+                    { value: "", label: "No route" },
+                    ...routes.map((assignment) => ({
                       value: assignment.id,
                       label: assignment.name,
                       descriptionLines: [assignment.vehicle.name].filter((line) => line.trim()),

@@ -5,7 +5,7 @@ import { ArrowDownCircle, ArrowUpCircle, Receipt, Trash2, Wallet } from "lucide-
 
 import { AccountingEntryForm } from "@/components/accounting/accounting-entry-form";
 import { AccountingEntryViewSheet } from "@/components/accounting/accounting-entry-view-sheet";
-import { AccountingRouteAssignmentSelector } from "@/components/accounting/accounting-route-assignment-selector";
+import { AccountingRouteSelector } from "@/components/accounting/accounting-route-selector";
 import { ExistingInvoicePaymentsSection } from "@/components/accounting/existing-invoice-payments-section";
 import { IncomeExpensesSection } from "@/components/accounting/income-expenses-section";
 import { InvoiceDiscountsSection } from "@/components/accounting/invoice-discounts-section";
@@ -41,16 +41,16 @@ import {
 } from "@/lib/accounting/types";
 import { cloneInvoices } from "@/lib/invoices/mock-data";
 import type { Invoice } from "@/lib/invoices/types";
-import { cloneRouteAssignments } from "@/lib/route-assignments/mock-data";
+import { cloneRoutes } from "@/lib/routes/mock-data";
 
-const ACTIVE_ROUTE_ASSIGNMENT_KEY = "emsys-accounting-route-assignment";
+const ACTIVE_ROUTE_KEY = "emsys-accounting-route";
 
 export function AccountingWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
-  const routeAssignments = useMemo(() => cloneRouteAssignments(), []);
+  const routes = useMemo(() => cloneRoutes(), []);
   const [entries, setEntries] = useState<AccountingEntry[]>(() => cloneAccountingEntries());
   const [invoices, setInvoices] = useState<Invoice[]>(() => cloneInvoices());
-  const [activeRouteAssignmentId, setActiveRouteAssignmentId] = useState("");
+  const [activeRouteId, setActiveRouteId] = useState("");
   const [viewEntry, setViewEntry] = useState<AccountingEntry | null>(null);
   const [formMode, setFormMode] = useState<"edit" | null>(null);
   const [editingEntry, setEditingEntry] = useState<AccountingEntry | null>(null);
@@ -58,22 +58,22 @@ export function AccountingWorkspace() {
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem(ACTIVE_ROUTE_ASSIGNMENT_KEY);
-    if (stored && routeAssignments.some((assignment) => assignment.routeAssignmentId === stored)) {
-      setActiveRouteAssignmentId(stored);
+    const stored = localStorage.getItem(ACTIVE_ROUTE_KEY);
+    if (stored && routes.some((assignment) => assignment.routeId === stored)) {
+      setActiveRouteId(stored);
     }
-  }, [routeAssignments]);
+  }, [routes]);
 
-  const canRegister = Boolean(activeRouteAssignmentId);
+  const canRegister = Boolean(activeRouteId);
   const kpis = useMemo(() => computeAccountingKpis(entries), [entries]);
 
-  function handleRouteAssignmentChange(routeAssignmentId: string) {
-    setActiveRouteAssignmentId(routeAssignmentId);
-    if (routeAssignmentId) {
-      localStorage.setItem(ACTIVE_ROUTE_ASSIGNMENT_KEY, routeAssignmentId);
+  function handleRouteChange(routeId: string) {
+    setActiveRouteId(routeId);
+    if (routeId) {
+      localStorage.setItem(ACTIVE_ROUTE_KEY, routeId);
       return;
     }
-    localStorage.removeItem(ACTIVE_ROUTE_ASSIGNMENT_KEY);
+    localStorage.removeItem(ACTIVE_ROUTE_KEY);
   }
 
   function syncInvoiceForEntry(entry: AccountingEntry) {
@@ -96,13 +96,13 @@ export function AccountingWorkspace() {
   }
 
   function addEntry(values: AccountingFormValues): string | null {
-    if (!activeRouteAssignmentId) {
-      return "Select a route assignment before registering entries.";
+    if (!activeRouteId) {
+      return "Select a route before registering entries.";
     }
 
     try {
       const nextEntry = formValuesToAccountingEntry(
-        { ...values, routeAssignmentId: activeRouteAssignmentId },
+        { ...values, routeId: activeRouteId },
         invoices
       );
       setEntries((current) => [nextEntry, ...current]);
@@ -195,10 +195,10 @@ export function AccountingWorkspace() {
         })}
       </StatCardsGrid>
 
-      <AccountingRouteAssignmentSelector
-        routeAssignments={routeAssignments}
-        value={activeRouteAssignmentId}
-        onChange={handleRouteAssignmentChange}
+      <AccountingRouteSelector
+        routes={routes}
+        value={activeRouteId}
+        onChange={handleRouteChange}
       />
 
       <NewInvoicePaymentsSection {...sectionProps} />
@@ -237,7 +237,7 @@ export function AccountingWorkspace() {
             <AccountingEntryForm
               key={editingEntry.entryId}
               invoices={invoices}
-              routeAssignments={routeAssignments}
+              routes={routes}
               initialValues={accountingToFormValues(editingEntry)}
               isEditing
               updatedAt={editingEntry.updatedAt}

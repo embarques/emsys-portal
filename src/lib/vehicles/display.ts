@@ -79,6 +79,8 @@ export function vehicleMatchesSearch(vehicle: Vehicle, search: { field: string; 
         return vehicle.name;
       case "vin":
         return vehicle.vin;
+      case "licensePlate":
+        return vehicle.licensePlate;
       case "year":
         return String(vehicle.year);
       case "fuelType":
@@ -104,6 +106,7 @@ export function vehicleMatchesQuery(vehicle: Vehicle, query: string): boolean {
     vehicle.vehicleId,
     vehicle.name,
     vehicle.vin,
+    vehicle.licensePlate,
     String(vehicle.year),
     getFuelTypeLabel(vehicle.fuelType),
     vehicle.branch,

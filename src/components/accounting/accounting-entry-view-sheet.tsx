@@ -23,8 +23,8 @@ import {
   getPaymentMethodLabel,
   truncateAccountingEntryId,
 } from "@/lib/accounting/display";
-import { getRouteAssignmentLabel } from "@/lib/orders/display";
-import { useRouteAssignmentLookup } from "@/lib/route-assignments/hooks/use-route-assignments";
+import { getRouteLabel } from "@/lib/orders/display";
+import { useRouteLookup } from "@/lib/routes/hooks/use-routes";
 import type { AccountingEntry } from "@/lib/accounting/types";
 
 type AccountingEntryViewSheetProps = {
@@ -42,7 +42,7 @@ export function AccountingEntryViewSheet({
   onEdit,
   onDelete,
 }: AccountingEntryViewSheetProps) {
-  const routeAssignmentLookup = useRouteAssignmentLookup();
+  const routeLookup = useRouteLookup();
 
   if (!entry) return null;
 
@@ -70,10 +70,10 @@ export function AccountingEntryViewSheet({
             <RecordViewSheetDetailRow label="Description" value={entry.description} />
             <RecordViewSheetDetailRow label="Amount" value={formatAccountingMoney(entry.amount)} />
             <RecordViewSheetDetailRow
-              label="Route assignment"
-              value={getRouteAssignmentLabel(
-                entry.routeAssignmentId,
-                routeAssignmentLookup.getByKey(entry.routeAssignmentId),
+              label="Route"
+              value={getRouteLabel(
+                entry.routeId,
+                routeLookup.getByKey(entry.routeId),
               )}
             />
           </RecordViewSheetSection>

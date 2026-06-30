@@ -12,8 +12,8 @@ import {
   UsersRound,
 } from "lucide-react";
 
-import { RouteAssignmentForm } from "@/components/route-assignments/route-assignment-form";
-import { RouteAssignmentViewSheet } from "@/components/route-assignments/route-assignment-view-sheet";
+import { RouteForm } from "@/components/routes/route-form";
+import { RouteViewSheet } from "@/components/routes/route-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
@@ -39,50 +39,50 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { createApiListTextSearch } from "@/lib/api/search-query";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
-  formatRouteAssignmentDate,
-  formatRouteAssignmentName,
-} from "@/lib/route-assignments/display";
+  formatRouteDate,
+  formatRouteName,
+} from "@/lib/routes/display";
 import {
-  useCreateRouteAssignment,
-  useDeleteRouteAssignments,
-  useRouteAssignmentKpis,
-  useRouteAssignments,
-  useUpdateRouteAssignment,
-} from "@/lib/route-assignments/hooks/use-route-assignments";
+  useCreateRoute,
+  useDeleteRoutes,
+  useRouteKpis,
+  useRoutes,
+  useUpdateRoute,
+} from "@/lib/routes/hooks/use-routes";
 import {
-  DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS,
-  createEmptyRouteAssignmentForm,
-  routeAssignmentToFormValues,
-  type RouteAssignment,
-  type RouteAssignmentFilterState,
-  type RouteAssignmentFormValues,
-} from "@/lib/route-assignments/types";
+  DEFAULT_ROUTE_LIST_PARAMS,
+  createEmptyRouteForm,
+  routeToFormValues,
+  type Route,
+  type RouteFilterState,
+  type RouteFormValues,
+} from "@/lib/routes/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
-const PAGE_SIZE = DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS.limit;
+const PAGE_SIZE = DEFAULT_ROUTE_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 
-const defaultFilters: RouteAssignmentFilterState = {
+const defaultFilters: RouteFilterState = {
   query: "",
 };
 
-export function RouteAssignmentsWorkspace() {
+export function RoutesWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
-  const [filters, setFilters] = useState<RouteAssignmentFilterState>(defaultFilters);
+  const [filters, setFilters] = useState<RouteFilterState>(defaultFilters);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
-  const [viewAssignment, setViewAssignment] = useState<RouteAssignment | null>(null);
+  const [viewAssignment, setViewAssignment] = useState<Route | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
-  const [editingAssignment, setEditingAssignment] = useState<RouteAssignment | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<RouteAssignment | RouteAssignment[] | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<Route | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Route | Route[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const listParams = useMemo(
     () => ({
-      ...DEFAULT_ROUTE_ASSIGNMENT_LIST_PARAMS,
+      ...DEFAULT_ROUTE_LIST_PARAMS,
       page,
       limit: PAGE_SIZE,
       search: createApiListTextSearch(debouncedQuery),
@@ -90,11 +90,11 @@ export function RouteAssignmentsWorkspace() {
     [debouncedQuery, page],
   );
 
-  const { data, isLoading, isError, error, isFetching } = useRouteAssignments(listParams);
-  const kpis = useRouteAssignmentKpis();
-  const createMutation = useCreateRouteAssignment();
-  const updateMutation = useUpdateRouteAssignment();
-  const deleteMutation = useDeleteRouteAssignments();
+  const { data, isLoading, isError, error, isFetching } = useRoutes(listParams);
+  const kpis = useRouteKpis();
+  const createMutation = useCreateRoute();
+  const updateMutation = useUpdateRoute();
+  const deleteMutation = useDeleteRoutes();
 
   const assignments = data?.items ?? [];
   const totalAssignments = data?.total ?? 0;
@@ -127,7 +127,7 @@ export function RouteAssignmentsWorkspace() {
   function openAddForm() {
     if (isDesktopTabs) {
       openFormTab({
-        feature: "route-assignments",
+        feature: "routes",
         baseHref: "/routes",
         mode: "add",
         label: "Add route",
@@ -139,15 +139,15 @@ export function RouteAssignmentsWorkspace() {
     setFormError(null);
   }
 
-  function openEditForm(assignment: RouteAssignment) {
+  function openEditForm(assignment: Route) {
     if (isDesktopTabs) {
       setViewAssignment(null);
       openFormTab({
-        feature: "route-assignments",
+        feature: "routes",
         baseHref: "/routes",
         mode: "edit",
         entityId: assignment.id,
-        label: `Edit ${formatRouteAssignmentName(assignment)}`,
+        label: `Edit ${formatRouteName(assignment)}`,
       });
       return;
     }
@@ -157,7 +157,7 @@ export function RouteAssignmentsWorkspace() {
     setFormError(null);
   }
 
-  async function saveAssignment(values: RouteAssignmentFormValues) {
+  async function saveAssignment(values: RouteFormValues) {
     setFormError(null);
 
     try {
@@ -166,10 +166,10 @@ export function RouteAssignmentsWorkspace() {
           recordId: editingAssignment.id,
           values,
         });
-        notifyUpdated("Route", formatRouteAssignmentName(nextAssignment));
+        notifyUpdated("Route", formatRouteName(nextAssignment));
       } else {
         const nextAssignment = await createMutation.mutateAsync(values);
-        notifyAdded("Route", formatRouteAssignmentName(nextAssignment));
+        notifyAdded("Route", formatRouteName(nextAssignment));
       }
 
       setFormMode(null);
@@ -220,14 +220,14 @@ export function RouteAssignmentsWorkspace() {
     },
   ];
 
-  const tableColumns: DataTableColumn<RouteAssignment>[] = [
+  const tableColumns: DataTableColumn<Route>[] = [
     {
       id: "date",
       label: "date",
       renderCell: (assignment) => (
         <div className="flex items-center gap-1.5">
           <CalendarRange className="h-3.5 w-3.5 text-muted-foreground" />
-          {formatRouteAssignmentDate(assignment.date)}
+          {formatRouteDate(assignment.date)}
         </div>
       ),
     },
@@ -235,7 +235,7 @@ export function RouteAssignmentsWorkspace() {
       id: "name",
       label: "name",
       cellClassName: "font-medium",
-      renderCell: (assignment) => formatRouteAssignmentName(assignment),
+      renderCell: (assignment) => formatRouteName(assignment),
     },
     {
       id: "employeeGroup.name",
@@ -268,7 +268,7 @@ export function RouteAssignmentsWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("route-assignments-v2", tableColumns);
+  const columnVisibility = useColumnVisibility("routes-v2", tableColumns);
   const hasActiveFilters = Boolean(filters.query.trim());
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: hasActiveFilters,
@@ -335,7 +335,7 @@ export function RouteAssignmentsWorkspace() {
             page={currentPage}
             isPageDataPending={isFetching}
             rowKey={(assignment) => assignment.id}
-            rowLabel={(assignment) => formatRouteAssignmentName(assignment)}
+            rowLabel={(assignment) => formatRouteName(assignment)}
             columnLayout={columnVisibility}
             sortUnavailable
             minWidth={1500}
@@ -390,7 +390,7 @@ export function RouteAssignmentsWorkspace() {
         </div>
       </Card>
 
-      <RouteAssignmentViewSheet
+      <RouteViewSheet
         assignment={viewAssignment}
         open={Boolean(viewAssignment)}
         onOpenChange={(open) => {
@@ -416,12 +416,12 @@ export function RouteAssignmentsWorkspace() {
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{formMode === "edit" ? "Edit route" : "Add route"}</DialogTitle>
           </DialogHeader>
-          <RouteAssignmentForm
+          <RouteForm
             key={editingAssignment?.id ?? "new"}
             initialValues={
               formMode === "edit" && editingAssignment
-                ? routeAssignmentToFormValues(editingAssignment)
-                : createEmptyRouteAssignmentForm()
+                ? routeToFormValues(editingAssignment)
+                : createEmptyRouteForm()
             }
             copySources={formMode === "add" ? assignments : []}
             isEditing={formMode === "edit"}

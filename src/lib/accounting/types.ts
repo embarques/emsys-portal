@@ -24,7 +24,7 @@ export type AccountingEntry = {
   amount: number;
   description: string;
   branch: AccountingBranch;
-  routeAssignmentId: string;
+  routeId: string;
   invoiceId?: string;
   invoiceNumber?: string;
   invoiceTotal?: number;
@@ -49,7 +49,7 @@ export type AccountingFormValues = {
   amount: string;
   description: string;
   branch: AccountingBranch;
-  routeAssignmentId: string;
+  routeId: string;
   invoiceId: string;
   invoiceNumber: string;
   invoiceTotal: string;
@@ -139,7 +139,7 @@ export function createEmptyAccountingForm(createdBy = DEFAULT_CREATED_BY): Accou
     amount: "",
     description: "",
     branch: "usa",
-    routeAssignmentId: "",
+    routeId: "",
     invoiceId: "",
     invoiceNumber: "",
     invoiceTotal: "",
@@ -168,7 +168,7 @@ export function resetAccountingFormForNextEntry(
     type,
     date: previous.date,
     branch: previous.branch,
-    routeAssignmentId: previous.routeAssignmentId,
+    routeId: previous.routeId,
     paymentMethod: previous.paymentMethod,
     category: isCategoryType(type) ? previous.category : getDefaultCategoryForType(type),
     otherCategory:
@@ -184,7 +184,7 @@ export function accountingToFormValues(entry: AccountingEntry): AccountingFormVa
     amount: String(entry.amount),
     description: entry.description,
     branch: entry.branch,
-    routeAssignmentId: entry.routeAssignmentId,
+    routeId: entry.routeId,
     invoiceId: entry.invoiceId ?? "",
     invoiceNumber: entry.invoiceNumber ?? "",
     invoiceTotal: entry.invoiceTotal !== undefined ? String(entry.invoiceTotal) : "",
@@ -260,9 +260,9 @@ export function formValuesToAccountingEntry(
     throw new Error("Date is required.");
   }
 
-  const routeAssignmentId = values.routeAssignmentId.trim();
-  if (!routeAssignmentId) {
-    throw new Error("Select a route assignment before registering entries.");
+  const routeId = values.routeId.trim();
+  if (!routeId) {
+    throw new Error("Select a route before registering entries.");
   }
 
   if (values.type === "invoice_payment_new") {
@@ -296,7 +296,7 @@ export function formValuesToAccountingEntry(
       invoiceTotal: Math.round(invoiceTotal * 100) / 100,
       description: `Payment for ${values.invoiceNumber.trim()}`,
       branch: values.branch,
-      routeAssignmentId,
+      routeId,
       invoiceId: matchedInvoice?.invoiceId,
       invoiceNumber: values.invoiceNumber.trim(),
       senderName: values.senderName.trim() || matchedInvoice?.sender.name || "—",
@@ -338,7 +338,7 @@ export function formValuesToAccountingEntry(
       amountPaid: Math.round(amountPaid * 100) / 100,
       description: `Payment for ${invoice.invoiceNumber} (Receipt ${receiptNumber})`,
       branch: values.branch,
-      routeAssignmentId,
+      routeId,
       invoiceId: invoice.invoiceId,
       invoiceNumber: invoice.invoiceNumber,
       senderName: invoice.sender.name,
@@ -380,7 +380,7 @@ export function formValuesToAccountingEntry(
       amount: Math.round(discount * 100) / 100,
       description: `Discount for ${invoice.invoiceNumber} (Receipt ${receiptNumber})`,
       branch: values.branch,
-      routeAssignmentId,
+      routeId,
       invoiceId: invoice.invoiceId,
       invoiceNumber: invoice.invoiceNumber,
       senderName: invoice.sender.name,
@@ -419,7 +419,7 @@ export function formValuesToAccountingEntry(
       amountPaid: Math.round(amountPaid * 100) / 100,
       description: values.description.trim(),
       branch: values.branch,
-      routeAssignmentId,
+      routeId,
       paymentMethod: values.paymentMethod,
       referenceNumber: values.referenceNumber.trim() || undefined,
       category: values.category,

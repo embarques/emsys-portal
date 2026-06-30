@@ -8,7 +8,7 @@ import { EmployeeGroupFormWorkspace } from "@/components/employee-groups/employe
 import { ItemFormWorkspace } from "@/components/items/item-form-workspace";
 import { OrderFormWorkspace } from "@/components/orders/order-form-workspace";
 import { RoleFormWorkspace } from "@/components/roles/role-form-workspace";
-import { RouteAssignmentFormWorkspace } from "@/components/route-assignments/route-assignment-form-workspace";
+import { RouteFormWorkspace } from "@/components/routes/route-form-workspace";
 import { UserFormWorkspace } from "@/components/users/user-form-workspace";
 import { VehicleFormWorkspace } from "@/components/vehicles/vehicle-form-workspace";
 import type { WorkspaceTabForm } from "@/lib/layout/workspace-tab-types";
@@ -28,7 +28,7 @@ export const workspaceFormRegistry: Record<string, ComponentType<WorkspaceFormHo
   orders: OrderFormWorkspace,
   items: ItemFormWorkspace,
   containers: ContainerFormWorkspace,
-  "route-assignments": RouteAssignmentFormWorkspace,
+  "routes": RouteFormWorkspace,
   roles: RoleFormWorkspace,
   vehicles: VehicleFormWorkspace,
   users: UserFormWorkspace,

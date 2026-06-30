@@ -1,5 +1,5 @@
-import { RouteAssignmentsWorkspace } from "@/components/route-assignments/route-assignments-workspace";
+import { RoutesWorkspace } from "@/components/routes/routes-workspace";
 
-export default function RouteAssignmentsPage() {
-  return <RouteAssignmentsWorkspace />;
+export default function RoutesPage() {
+  return <RoutesWorkspace />;
 }
