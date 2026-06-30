@@ -25,7 +25,7 @@ type StatCardsCarouselProps = {
   className?: string;
   desktopMinimumVisibleItems?: number;
   desktopMinimumCardWidth?: number;
-  mobileMinimumVisibleItems?: number;
+  mobileVisibleItems?: number;
 };
 
 type StatCardsCarouselTrackProps = {
@@ -37,7 +37,6 @@ type CarouselHeightStyle = CSSProperties & {
 };
 
 const CARD_GAP_PX = 16;
-const MOBILE_CONTROLS_HEIGHT_PX = 80;
 
 function clampVisibleItems(value: number, minimum: number, itemCount: number) {
   const safeMinimum = Math.min(Math.max(minimum, 1), itemCount);
@@ -144,76 +143,53 @@ function DesktopStatCardsCarousel({
 
 function MobileStatCardsCarousel({
   children,
-  minimumVisibleItems,
-}: StatCardsCarouselTrackProps & { minimumVisibleItems: number }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  requestedVisibleItems,
+}: StatCardsCarouselTrackProps & { requestedVisibleItems: number }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [api, setApi] = useState<CarouselApi>();
-  const [visibleItems, setVisibleItems] = useState(() =>
-    clampVisibleItems(minimumVisibleItems, minimumVisibleItems, children.length),
+  const visibleItems = clampVisibleItems(
+    requestedVisibleItems,
+    requestedVisibleItems,
+    children.length,
   );
   const [viewportHeight, setViewportHeight] = useState<number>();
   const maximumStartIndex = Math.max(children.length - visibleItems, 0);
   const firstVisibleIndex = useCarouselPosition(api, maximumStartIndex);
 
-  const updateLayout = useCallback(() => {
-    const container = containerRef.current;
+  const updateViewportHeight = useCallback(() => {
     const content = contentRef.current;
-    if (!container || !content) return;
+    if (!content) return;
 
     const cards = Array.from(
       content.querySelectorAll<HTMLElement>("[data-slot='carousel-item'] > *"),
     );
     const firstCard = cards[0];
-    if (!firstCard) return;
-
-    const availableHeight =
-      window.innerHeight -
-      container.getBoundingClientRect().top -
-      MOBILE_CONTROLS_HEIGHT_PX;
-    const fittingItems = Math.floor(
-      (availableHeight + CARD_GAP_PX) / (firstCard.offsetHeight + CARD_GAP_PX),
-    );
-    const nextVisibleItems = clampVisibleItems(
-      fittingItems,
-      minimumVisibleItems,
-      cards.length,
-    );
-    const lastVisibleCard = cards[nextVisibleItems - 1];
-    if (!lastVisibleCard) return;
+    const lastVisibleCard = cards[visibleItems - 1];
+    if (!firstCard || !lastVisibleCard) return;
 
     const nextHeight =
       lastVisibleCard.offsetTop + lastVisibleCard.offsetHeight - firstCard.offsetTop;
-    setVisibleItems((current) =>
-      current === nextVisibleItems ? current : nextVisibleItems,
-    );
     if (nextHeight > 0) {
       setViewportHeight((current) => (current === nextHeight ? current : nextHeight));
     }
-  }, [minimumVisibleItems]);
+  }, [visibleItems]);
 
   useLayoutEffect(() => {
-    updateLayout();
-  }, [children.length, updateLayout]);
+    updateViewportHeight();
+  }, [children.length, updateViewportHeight]);
 
   useEffect(() => {
-    const container = containerRef.current;
     const content = contentRef.current;
-    if (!container || !content) return;
+    if (!content) return;
 
-    const resizeObserver = new ResizeObserver(updateLayout);
-    resizeObserver.observe(container);
+    const resizeObserver = new ResizeObserver(updateViewportHeight);
     resizeObserver.observe(content);
     content
       .querySelectorAll<HTMLElement>("[data-slot='carousel-item'] > *")
       .forEach((card) => resizeObserver.observe(card));
-    window.addEventListener("resize", updateLayout);
 
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", updateLayout);
-    };
-  }, [children.length, updateLayout]);
+    return () => resizeObserver.disconnect();
+  }, [children.length, updateViewportHeight]);
 
   useEffect(() => {
     if (!viewportHeight || !api) return;
@@ -227,62 +203,60 @@ function MobileStatCardsCarousel({
   };
 
   return (
-    <div ref={containerRef}>
-      <Carousel
-        aria-label="Summary cards"
-        className="space-y-2 [&_[data-slot=carousel-content]]:h-[var(--stat-cards-carousel-height)]"
-        opts={{ align: "start", slidesToScroll: 1 }}
-        orientation="vertical"
-        setApi={setApi}
-        style={carouselStyle}
+    <Carousel
+      aria-label="Summary cards"
+      className="space-y-2 [&_[data-slot=carousel-content]]:h-[var(--stat-cards-carousel-height)]"
+      opts={{ align: "start", slidesToScroll: 1 }}
+      orientation="vertical"
+      setApi={setApi}
+      style={carouselStyle}
+    >
+      <div className="flex justify-end">
+        <CarouselPrevious
+          className="static ml-auto size-8 translate-x-0 rotate-90"
+          disabled={firstVisibleIndex === 0}
+          onClick={() => api?.scrollTo(Math.max(firstVisibleIndex - 1, 0))}
+        />
+      </div>
+      <CarouselContent
+        className="h-[var(--stat-cards-carousel-height)]"
+        ref={contentRef}
       >
-        <div className="flex justify-end">
-          <CarouselPrevious
-            className="static ml-auto size-8 translate-x-0 rotate-90"
-            disabled={firstVisibleIndex === 0}
-            onClick={() => api?.scrollTo(Math.max(firstVisibleIndex - 1, 0))}
-          />
-        </div>
-        <CarouselContent
-          className="h-[var(--stat-cards-carousel-height)]"
-          ref={contentRef}
-        >
-          {children.map((child, index) => (
-            <CarouselItem
-              aria-label={`${index + 1} of ${children.length}`}
-              key={index}
-              style={{ flexBasis: `calc((100% + 1rem) / ${visibleItems})` }}
-            >
-              {child}
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            {firstVisibleIndex + 1}–
-            {Math.min(firstVisibleIndex + visibleItems, children.length)} of {children.length}
-          </span>
-          <CarouselNext
-            className="static size-8 translate-x-0 rotate-90"
-            disabled={firstVisibleIndex >= maximumStartIndex}
-            onClick={() => api?.scrollTo(Math.min(firstVisibleIndex + 1, maximumStartIndex))}
-          />
-        </div>
-      </Carousel>
-    </div>
+        {children.map((child, index) => (
+          <CarouselItem
+            aria-label={`${index + 1} of ${children.length}`}
+            key={index}
+            style={{ flexBasis: `calc((100% + 1rem) / ${visibleItems})` }}
+          >
+            {child}
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">
+          {firstVisibleIndex + 1}–
+          {Math.min(firstVisibleIndex + visibleItems, children.length)} of {children.length}
+        </span>
+        <CarouselNext
+          className="static size-8 translate-x-0 rotate-90"
+          disabled={firstVisibleIndex >= maximumStartIndex}
+          onClick={() => api?.scrollTo(Math.min(firstVisibleIndex + 1, maximumStartIndex))}
+        />
+      </div>
+    </Carousel>
   );
 }
 
 /**
- * Reusable summary-card carousel. Visible slides are calculated from the
- * available screen space and clamped to configurable desktop/mobile minimums.
+ * Reusable summary-card carousel. Desktop capacity is calculated from the
+ * available width; mobile uses a fixed three-card viewport by default.
  */
 export function StatCardsCarousel({
   children,
   className,
   desktopMinimumVisibleItems = 1,
   desktopMinimumCardWidth = 280,
-  mobileMinimumVisibleItems = 3,
+  mobileVisibleItems = 3,
 }: StatCardsCarouselProps) {
   const items = Children.toArray(children);
 
@@ -291,7 +265,7 @@ export function StatCardsCarousel({
   return (
     <div className={className}>
       <div className="sm:hidden">
-        <MobileStatCardsCarousel minimumVisibleItems={mobileMinimumVisibleItems}>
+        <MobileStatCardsCarousel requestedVisibleItems={mobileVisibleItems}>
           {items}
         </MobileStatCardsCarousel>
       </div>
