@@ -7,14 +7,18 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
-type CarouselOrientation = "horizontal" | "vertical";
+import {
+  Carousel,
+  type CarouselApi,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 type StatCardsCarouselProps = {
   children: ReactNode;
@@ -25,211 +29,161 @@ type StatCardsCarouselProps = {
 
 type StatCardsCarouselTrackProps = {
   children: ReactNode[];
-  orientation: CarouselOrientation;
   visibleItems: number;
 };
 
-const ITEM_GAP_REM = 1;
+type CarouselHeightStyle = CSSProperties & {
+  "--stat-cards-carousel-height": string;
+};
 
-function StatCardsCarouselTrack({
-  children,
-  orientation,
-  visibleItems,
-}: StatCardsCarouselTrackProps) {
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const [verticalViewportHeight, setVerticalViewportHeight] = useState<number>();
-  const [canScrollPrevious, setCanScrollPrevious] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(children.length > visibleItems);
+function useCarouselPosition(api: CarouselApi, maximumStartIndex: number) {
   const [firstVisibleIndex, setFirstVisibleIndex] = useState(0);
 
-  const updateScrollState = useCallback(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    const current = orientation === "horizontal" ? viewport.scrollLeft : viewport.scrollTop;
-    const maximum =
-      orientation === "horizontal"
-        ? viewport.scrollWidth - viewport.clientWidth
-        : viewport.scrollHeight - viewport.clientHeight;
-
-    setCanScrollPrevious(current > 1);
-    setCanScrollNext(maximum - current > 1);
-    const firstItem = viewport.querySelector<HTMLElement>("[data-stat-card-carousel-item]");
-    const itemStep = firstItem
-      ? (orientation === "horizontal" ? firstItem.offsetWidth : firstItem.offsetHeight) + 16
-      : 0;
-    setFirstVisibleIndex(itemStep ? Math.round(current / itemStep) : 0);
-  }, [orientation]);
-
-  const updateVerticalViewportHeight = useCallback(() => {
-    if (orientation !== "vertical") return;
-
-    const viewport = viewportRef.current;
-    const items = viewport?.querySelectorAll<HTMLElement>("[data-stat-card-carousel-item]");
-    if (!viewport || !items?.length) return;
-
-    const lastVisibleItem = items[Math.min(visibleItems, items.length) - 1];
-    const firstItem = items[0];
-    if (!firstItem || !lastVisibleItem) return;
-
-    setVerticalViewportHeight(
-      lastVisibleItem.offsetTop + lastVisibleItem.offsetHeight - firstItem.offsetTop,
-    );
-  }, [orientation, visibleItems]);
-
-  useLayoutEffect(() => {
-    updateVerticalViewportHeight();
-  }, [children.length, updateVerticalViewportHeight]);
-
   useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
+    if (!api) return;
 
-    const update = () => {
-      updateVerticalViewportHeight();
-      updateScrollState();
+    const updatePosition = () => {
+      const selectedIndex = api.selectedScrollSnap();
+      const nextIndex = Math.min(selectedIndex, maximumStartIndex);
+      setFirstVisibleIndex(nextIndex);
+      if (selectedIndex > maximumStartIndex) api.scrollTo(maximumStartIndex);
     };
 
-    update();
-    const resizeObserver = new ResizeObserver(update);
-    resizeObserver.observe(viewport);
-    viewport
-      .querySelectorAll<HTMLElement>("[data-stat-card-carousel-item]")
-      .forEach((item) => resizeObserver.observe(item));
-    viewport.addEventListener("scroll", updateScrollState, { passive: true });
+    updatePosition();
+    api.on("select", updatePosition);
+    api.on("reInit", updatePosition);
 
     return () => {
-      resizeObserver.disconnect();
-      viewport.removeEventListener("scroll", updateScrollState);
+      api.off("select", updatePosition);
+      api.off("reInit", updatePosition);
     };
-  }, [children.length, updateScrollState, updateVerticalViewportHeight]);
+  }, [api, maximumStartIndex]);
 
-  function scroll(direction: -1 | 1) {
-    const viewport = viewportRef.current;
-    const firstItem = viewport?.querySelector<HTMLElement>("[data-stat-card-carousel-item]");
-    if (!viewport || !firstItem) return;
+  return firstVisibleIndex;
+}
 
-    const amount =
-      orientation === "horizontal"
-        ? firstItem.offsetWidth + 16
-        : firstItem.offsetHeight + 16;
-
-    if (orientation === "horizontal") {
-      viewport.scrollLeft += direction * amount;
-    } else {
-      viewport.scrollTop += direction * amount;
-    }
-  }
-
-  const isHorizontal = orientation === "horizontal";
-  const previousLabel = isHorizontal ? "Previous cards" : "Previous card";
-  const nextLabel = isHorizontal ? "Next cards" : "Next card";
-  const PreviousIcon = isHorizontal ? ChevronLeft : ChevronUp;
-  const NextIcon = isHorizontal ? ChevronRight : ChevronDown;
-
+function DesktopStatCardsCarousel({
+  children,
+  visibleItems,
+}: StatCardsCarouselTrackProps) {
   return (
-    <div
+    <Carousel
       aria-label="Summary cards"
-      aria-roledescription="carousel"
-      className={cn("relative", isHorizontal ? "px-0" : "space-y-2")}
-      role="region"
+      opts={{ align: "start", containScroll: "trimSnaps", slidesToScroll: 1 }}
     >
-      {!isHorizontal ? (
-        <div className="flex justify-end">
-          <Button
-            aria-label={previousLabel}
-            disabled={!canScrollPrevious}
-            className="size-8"
-            onClick={() => scroll(-1)}
-            size="icon"
-            type="button"
-            variant="outline"
-          >
-            <PreviousIcon className="h-4 w-4" />
-          </Button>
-        </div>
-      ) : null}
-
-      <div
-        ref={viewportRef}
-        className={cn(
-          "scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          isHorizontal
-            ? "flex snap-x snap-mandatory gap-4 overflow-x-auto"
-            : "flex snap-y snap-mandatory flex-col gap-4 overflow-y-auto overscroll-contain",
-        )}
-        style={
-          !isHorizontal && verticalViewportHeight
-            ? { height: verticalViewportHeight }
-            : undefined
-        }
-        tabIndex={0}
-      >
+      <CarouselContent>
         {children.map((child, index) => (
-          <div
+          <CarouselItem
             aria-label={`${index + 1} of ${children.length}`}
-            data-stat-card-carousel-item
+            className="[&>*]:h-full"
             key={index}
-            className="min-w-0 shrink-0 snap-start [&>*]:h-full"
-            role="group"
-            style={
-              isHorizontal
-                ? {
-                    flexBasis: `calc((100% - ${(visibleItems - 1) * ITEM_GAP_REM}rem) / ${visibleItems})`,
-                  }
-                : undefined
-            }
+            style={{ flexBasis: `${100 / visibleItems}%` }}
           >
             {child}
-          </div>
+          </CarouselItem>
         ))}
-      </div>
+      </CarouselContent>
+      <CarouselPrevious className="left-0 -translate-x-1/2 shadow-sm" />
+      <CarouselNext className="right-0 translate-x-1/2 shadow-sm" />
+    </Carousel>
+  );
+}
 
-      {isHorizontal ? (
-        <>
-          <Button
-            aria-label={previousLabel}
-            className="absolute left-0 top-1/2 z-10 size-8 -translate-x-1/2 -translate-y-1/2 shadow-sm"
-            disabled={!canScrollPrevious}
-            onClick={() => scroll(-1)}
-            size="icon"
-            type="button"
-            variant="outline"
+function MobileStatCardsCarousel({ children, visibleItems }: StatCardsCarouselTrackProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [api, setApi] = useState<CarouselApi>();
+  const [viewportHeight, setViewportHeight] = useState<number>();
+  const maximumStartIndex = Math.max(children.length - visibleItems, 0);
+  const firstVisibleIndex = useCarouselPosition(api, maximumStartIndex);
+
+  const updateViewportHeight = useCallback(() => {
+    const content = contentRef.current;
+    if (!content) return;
+
+    const cards = Array.from(
+      content.querySelectorAll<HTMLElement>("[data-slot='carousel-item'] > *"),
+    );
+    const firstCard = cards[0];
+    const lastVisibleCard = cards[Math.min(visibleItems, cards.length) - 1];
+    if (!firstCard || !lastVisibleCard) return;
+
+    const nextHeight =
+      lastVisibleCard.offsetTop + lastVisibleCard.offsetHeight - firstCard.offsetTop;
+    if (nextHeight > 0) {
+      setViewportHeight((current) => (current === nextHeight ? current : nextHeight));
+    }
+  }, [visibleItems]);
+
+  useLayoutEffect(() => {
+    updateViewportHeight();
+  }, [children.length, updateViewportHeight]);
+
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+
+    const resizeObserver = new ResizeObserver(updateViewportHeight);
+    resizeObserver.observe(content);
+    content
+      .querySelectorAll<HTMLElement>("[data-slot='carousel-item'] > *")
+      .forEach((card) => resizeObserver.observe(card));
+
+    return () => resizeObserver.disconnect();
+  }, [children.length, updateViewportHeight]);
+
+  useEffect(() => {
+    if (!viewportHeight || !api) return;
+
+    const frame = requestAnimationFrame(() => api.reInit());
+    return () => cancelAnimationFrame(frame);
+  }, [api, viewportHeight]);
+
+  const carouselStyle: CarouselHeightStyle = {
+    "--stat-cards-carousel-height": viewportHeight ? `${viewportHeight}px` : "auto",
+  };
+
+  return (
+    <Carousel
+      aria-label="Summary cards"
+      className="space-y-2 [&_[data-slot=carousel-content]]:h-[var(--stat-cards-carousel-height)]"
+      opts={{ align: "start", slidesToScroll: 1 }}
+      orientation="vertical"
+      setApi={setApi}
+      style={carouselStyle}
+    >
+      <div className="flex justify-end">
+        <CarouselPrevious
+          className="static ml-auto size-8 translate-x-0 rotate-90"
+          disabled={firstVisibleIndex === 0}
+          onClick={() => api?.scrollTo(Math.max(firstVisibleIndex - 1, 0))}
+        />
+      </div>
+      <CarouselContent
+        className="h-[var(--stat-cards-carousel-height)]"
+        ref={contentRef}
+      >
+        {children.map((child, index) => (
+          <CarouselItem
+            aria-label={`${index + 1} of ${children.length}`}
+            key={index}
+            style={{ flexBasis: `calc((100% + 1rem) / ${visibleItems})` }}
           >
-            <PreviousIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            aria-label={nextLabel}
-            className="absolute right-0 top-1/2 z-10 size-8 translate-x-1/2 -translate-y-1/2 shadow-sm"
-            disabled={!canScrollNext}
-            onClick={() => scroll(1)}
-            size="icon"
-            type="button"
-            variant="outline"
-          >
-            <NextIcon className="h-4 w-4" />
-          </Button>
-        </>
-      ) : (
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            {firstVisibleIndex + 1}–
-            {Math.min(firstVisibleIndex + visibleItems, children.length)} of {children.length}
-          </span>
-          <Button
-            aria-label={nextLabel}
-            className="size-8"
-            disabled={!canScrollNext}
-            onClick={() => scroll(1)}
-            size="icon"
-            type="button"
-            variant="outline"
-          >
-            <NextIcon className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-    </div>
+            {child}
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">
+          {firstVisibleIndex + 1}–
+          {Math.min(firstVisibleIndex + visibleItems, children.length)} of {children.length}
+        </span>
+        <CarouselNext
+          className="static size-8 translate-x-0 rotate-90"
+          disabled={firstVisibleIndex >= maximumStartIndex}
+          onClick={() => api?.scrollTo(Math.min(firstVisibleIndex + 1, maximumStartIndex))}
+        />
+      </div>
+    </Carousel>
   );
 }
 
@@ -250,14 +204,14 @@ export function StatCardsCarousel({
   return (
     <div className={className}>
       <div className="sm:hidden">
-        <StatCardsCarouselTrack orientation="vertical" visibleItems={mobileVisibleItems}>
+        <MobileStatCardsCarousel visibleItems={mobileVisibleItems}>
           {items}
-        </StatCardsCarouselTrack>
+        </MobileStatCardsCarousel>
       </div>
       <div className="hidden sm:block">
-        <StatCardsCarouselTrack orientation="horizontal" visibleItems={desktopVisibleItems}>
+        <DesktopStatCardsCarousel visibleItems={desktopVisibleItems}>
           {items}
-        </StatCardsCarouselTrack>
+        </DesktopStatCardsCarousel>
       </div>
     </div>
   );
