@@ -20,8 +20,7 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
-import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
+import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
@@ -490,11 +489,7 @@ export function InvoicesWorkspace() {
         }
       />
 
-      <StatCardsCarousel>
-        {stats.map((stat) => (
-          <FlippableStatCard key={stat.label} {...stat} />
-        ))}
-      </StatCardsCarousel>
+      <StatCards items={stats} />
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">

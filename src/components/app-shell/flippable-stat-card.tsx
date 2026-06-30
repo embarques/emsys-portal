@@ -21,9 +21,9 @@ export type StatCardDetail = {
 type FlippableStatCardProps = {
   label: string;
   value: string;
-  description: string;
+  description?: string;
   icon: ComponentType<{ className?: string }>;
-  details: StatCardDetail[];
+  details?: StatCardDetail[];
 };
 
 type FlipActionProps = {
@@ -63,6 +63,12 @@ export function FlippableStatCard({
   details,
 }: FlippableStatCardProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const resolvedDetails = details?.length
+    ? details
+    : [
+        { label: "Current value", value },
+        { label: "Summary", value: description || "Current metric" },
+      ];
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -85,7 +91,7 @@ export function FlippableStatCard({
             </CardHeader>
             <CardContent className="pr-16">
               <div className="text-2xl font-bold">{value}</div>
-              <CardDescription className="mt-1">{description}</CardDescription>
+              <CardDescription className="mt-1">{description ?? "\u00a0"}</CardDescription>
             </CardContent>
             <FlipAction
               icon={Info}
@@ -104,16 +110,18 @@ export function FlippableStatCard({
               <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="space-y-0 px-5 pr-16 text-xs">
-              {details.map((detail, index) => (
+              {resolvedDetails.map((detail, index) => (
                 <div
                   className={cn(
                     "flex items-center justify-between gap-3 py-1.5",
-                    index < details.length - 1 && "border-b",
+                    index < resolvedDetails.length - 1 && "border-b",
                   )}
                   key={detail.label}
                 >
                   <span className="truncate text-muted-foreground">{detail.label}</span>
-                  <span className="shrink-0 font-medium tabular-nums">{detail.value}</span>
+                  <span className="min-w-0 max-w-[60%] truncate text-right font-medium tabular-nums">
+                    {detail.value}
+                  </span>
                 </div>
               ))}
             </CardContent>

@@ -8,8 +8,11 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ComponentType,
   type ReactNode,
 } from "react";
+
+import { FlippableStatCard, type StatCardDetail } from "@/components/app-shell/flippable-stat-card";
 
 import {
   Carousel,
@@ -26,6 +29,18 @@ type StatCardsCarouselProps = {
   desktopMinimumVisibleItems?: number;
   desktopMinimumCardWidth?: number;
   mobileVisibleItems?: number;
+};
+
+export type StatCardItem = {
+  label: string;
+  value: string;
+  description?: string;
+  icon: ComponentType<{ className?: string }>;
+  details?: StatCardDetail[];
+};
+
+type StatCardsProps = Omit<StatCardsCarouselProps, "children"> & {
+  items: StatCardItem[];
 };
 
 type StatCardsCarouselTrackProps = {
@@ -278,5 +293,16 @@ export function StatCardsCarousel({
         </DesktopStatCardsCarousel>
       </div>
     </div>
+  );
+}
+
+/** Renders a complete responsive carousel from a page's KPI definitions. */
+export function StatCards({ items, ...carouselProps }: StatCardsProps) {
+  return (
+    <StatCardsCarousel {...carouselProps}>
+      {items.map((item) => (
+        <FlippableStatCard key={item.label} {...item} />
+      ))}
+    </StatCardsCarousel>
   );
 }
