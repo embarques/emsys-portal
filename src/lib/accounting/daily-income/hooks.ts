@@ -14,6 +14,7 @@ import {
   fetchAccountingPaymentMethods,
   fetchDailyIncomeJournals,
   fetchIncomeStatement,
+  fetchIncomeStatementSummaryTotals,
   setIncomeStatementStatus,
   updateChartAccount,
   updateDailyIncomeJournal,
@@ -49,6 +50,16 @@ export function useIncomeStatement(branchId: number, date: string) {
   return useWorkspaceQuery({
     queryKey: queryKeys.accounting.incomeStatement(String(branchId), date),
     queryFn: () => fetchIncomeStatement(branchId, date),
+    enabled: queryEnabled,
+  });
+}
+
+export function useIncomeStatementSummaryTotals(incomeStatementId: number) {
+  const queryEnabled = useAccountingQueryEnabled(incomeStatementId > 0);
+
+  return useWorkspaceQuery({
+    queryKey: queryKeys.accounting.summaryTotals(incomeStatementId),
+    queryFn: () => fetchIncomeStatementSummaryTotals(incomeStatementId),
     enabled: queryEnabled,
   });
 }

@@ -36,6 +36,23 @@ export type DailyIncomeSummary = {
   zelle: number;
 };
 
+export type IncomeStatementSummaryDetail = {
+  header: string;
+  value: number;
+};
+
+export type IncomeStatementSummaryTotal = {
+  header: string;
+  value: number;
+  details?: IncomeStatementSummaryDetail[];
+};
+
+export type IncomeStatementSummaryTotals = {
+  currency: string;
+  rate: number;
+  totals: IncomeStatementSummaryTotal[];
+};
+
 export type JournalTransactionType =
   | "INITIAL-PAYMENT"
   | "PAYMENT"
