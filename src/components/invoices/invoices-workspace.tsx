@@ -21,7 +21,7 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
@@ -33,7 +33,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -348,12 +348,31 @@ export function InvoicesWorkspace() {
       value: isLoading ? "…" : totalInvoices.toString(),
       description: "Invoices on record",
       icon: FileText,
+      details: [
+        { label: "Current page", value: isLoading ? "…" : invoices.length.toString() },
+        { label: "Page", value: isLoading ? "…" : `${currentPage} of ${totalPages}` },
+        { label: "Page size", value: PAGE_SIZE.toString() },
+      ],
     },
     {
       label: "Outstanding invoices",
       value: invoiceStats.isLoading ? "…" : invoiceStats.outstanding.toString(),
       description: "Invoices with open balance",
       icon: CircleAlert,
+      details: [
+        {
+          label: "Open invoices",
+          value: invoiceStats.isLoading ? "…" : invoiceStats.outstanding.toString(),
+        },
+        {
+          label: "Share of total",
+          value:
+            invoiceStats.isLoading || isLoading || totalInvoices === 0
+              ? "…"
+              : `${Math.round((invoiceStats.outstanding / totalInvoices) * 100)}%`,
+        },
+        { label: "Statuses", value: "Open / partial" },
+      ],
     },
     {
       label: "Outstanding",
@@ -362,12 +381,47 @@ export function InvoicesWorkspace() {
         : formatInvoiceMoney(invoiceStats.outstandingBalance),
       description: "Balance across all invoices",
       icon: Receipt,
+      details: [
+        {
+          label: "Open invoices",
+          value: invoiceStats.isLoading ? "…" : invoiceStats.outstanding.toString(),
+        },
+        {
+          label: "Average balance",
+          value:
+            invoiceStats.isBalanceLoading || invoiceStats.outstanding === 0
+              ? "…"
+              : formatInvoiceMoney(
+                  invoiceStats.outstandingBalance / invoiceStats.outstanding,
+                ),
+        },
+        { label: "Scope", value: "All invoices" },
+      ],
     },
     {
       label: "Collected",
       value: isLoading ? "…" : formatInvoiceMoney(kpis.collected),
       description: "Paid on this page",
       icon: DollarSign,
+      details: [
+        {
+          label: "Paid invoices",
+          value: isLoading
+            ? "…"
+            : invoices.filter((invoice) => invoice.amountPaid > 0).length.toString(),
+        },
+        {
+          label: "Average paid",
+          value:
+            isLoading || invoices.every((invoice) => invoice.amountPaid <= 0)
+              ? "…"
+              : formatInvoiceMoney(
+                  kpis.collected /
+                    invoices.filter((invoice) => invoice.amountPaid > 0).length,
+                ),
+        },
+        { label: "Scope", value: "Current page" },
+      ],
     },
   ];
 
@@ -496,23 +550,7 @@ export function InvoicesWorkspace() {
         }
       />
 
-      <StatCardsGrid>
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <CardDescription className="mt-1">{stat.description}</CardDescription>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </StatCardsGrid>
+      <StatCards items={stats} />
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">

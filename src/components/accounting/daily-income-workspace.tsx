@@ -9,7 +9,7 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
@@ -189,7 +189,7 @@ export function DailyIncomeWorkspace() {
     </CardContent></Card>
 
     {statement ? <>
-    <StatCardsGrid>{stats.map((stat) => { const Icon = stat.icon; return <Card key={stat.label}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle><Icon className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stat.value}</div><CardDescription className="mt-1">{stat.description}</CardDescription></CardContent></Card>; })}</StatCardsGrid>
+    <StatCards items={stats} />
 
     <Card className="mt-6"><CardHeader className="gap-3 border-b py-4 pb-3"><div className="flex items-center justify-between gap-3"><div><CardTitle>Transactions</CardTitle><CardDescription>All entries for the selected branch and date.</CardDescription></div><Button onClick={() => { setEditingJournal(null); setFormError(null); setTransactionDialog(true); }} disabled={statement.status !== "OPEN"}><Plus className="h-4 w-4" /> Add transaction</Button></div><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={`Showing ${rows.length} of ${total} transactions`} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder="Search transactions…" />} /></CardHeader>
       {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title="Loading transactions" description="Syncing journal entries, payments, and closeout totals…" columns={["Date", "Account", "Employee", "Type", "Reference", "Amount"]} /> : <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionLabel(row.transactionType)} columnLayout={columnLayout} minWidth={1100} emptyState={<p className="text-muted-foreground">No transactions match this closeout.</p>} />}

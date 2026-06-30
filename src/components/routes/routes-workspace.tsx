@@ -18,12 +18,12 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCardsGrid } from "@/components/app-shell/stat-cards-grid";
+import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -291,23 +291,7 @@ export function RoutesWorkspace() {
         }
       />
 
-      <StatCardsGrid>
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <CardDescription className="mt-1">{stat.description}</CardDescription>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </StatCardsGrid>
+      <StatCards items={stats} />
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
