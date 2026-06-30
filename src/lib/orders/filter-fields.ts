@@ -127,7 +127,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     optionsSource: "users",
   },
   {
-    field: "route._id",
+    field: "route.id",
     label: "Route",
     operators: ["eq", "neq"],
     valueType: "select",

@@ -52,3 +52,16 @@ export function useAssignInvoiceBarcodesToRoute() {
     },
   });
 }
+
+/** Assign a specific set of barcodes (by id) to a route in one request. */
+export function useAssignBarcodesToRoute() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ routeId, barcodeIds }: { routeId: string; barcodeIds: number[] }) =>
+      assignInvoiceItemBarcodesToRoute(routeId, barcodeIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+    },
+  });
+}

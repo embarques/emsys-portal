@@ -15,9 +15,10 @@ import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateInput } from "@/components/ui/date-input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   useChartAccounts,
   useAccountingPaymentMethods,
@@ -38,7 +39,6 @@ import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const PAGE_SIZE = 20;
-const selectClassName = "flex h-9 min-w-44 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
 function today() {
   const date = new Date();
@@ -76,6 +76,8 @@ function journalValues(row: DailyIncomeJournal): DailyIncomeJournalValues {
     receiverName: row.invoice?.receiver?.name,
     paymentMethodId: row.paymentMethod?.id,
     paymentMethodName: row.paymentMethod?.name,
+    zelleTransactionDate: row.zelleTransactionDate,
+    zelleTransactionName: row.zelleTransactionName,
   };
 }
 
@@ -182,16 +184,18 @@ export function DailyIncomeWorkspace() {
       {statement ? <Button variant={statement.status === "OPEN" ? "destructive" : "default"} onClick={() => changeStatus(statement.status !== "OPEN")} disabled={statusMutation.isPending}>{statement.status === "OPEN" ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}{statement.status === "OPEN" ? "Close day" : "Reopen day"}</Button> : null}
     </>} />
 
+    {statement ? <StatCards items={stats} className="mb-6" /> : null}
+
     <Card className="mb-6"><CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-end">
-      <div className="space-y-2"><label className="text-sm font-medium" htmlFor="daily-branch">Branch</label><select id="daily-branch" className={selectClassName} value={branchCode} onChange={(event) => { setBranchCode(event.target.value); setPage(1); }}><option value="">Select branch</option>{branches.map((branch) => <option key={branch.id} value={branch.code}>{branch.code} — {branch.name}</option>)}</select></div>
+      <div className="space-y-2"><label className="text-sm font-medium" htmlFor="daily-branch">Branch</label><SearchableSelect id="daily-branch" className="min-w-44" value={branchCode} onValueChange={(next) => { setBranchCode(next); setPage(1); }} options={branches.map((branch) => ({ value: branch.code, label: `${branch.code} — ${branch.name}`, keywords: [branch.code, branch.name] }))} placeholder="Select branch" searchPlaceholder="Search branches…" /></div>
       <div className="space-y-2"><label className="text-sm font-medium" htmlFor="daily-date">Date</label><DateInput id="daily-date" value={date} onChange={(event) => { setDate(event.target.value); setPage(1); }} /></div>
       <div className="sm:ml-auto"><Badge className={statement?.status === "OPEN" ? "bg-emerald-600" : statement ? "bg-slate-600" : "bg-amber-600"}>{statement ? `${statement.status} · #${String(statement.id).padStart(5, "0")}` : "No closeout for this date"}</Badge></div>
     </CardContent></Card>
 
     {statement ? <>
-    <StatCards items={stats} />
+    <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>Transactions</CardTitle><Button onClick={() => { setEditingJournal(null); setFormError(null); setTransactionDialog(true); }} disabled={statement.status !== "OPEN"}><Plus className="h-4 w-4" /> Add transaction</Button></div>
 
-    <Card className="mt-6"><CardHeader className="gap-3 border-b py-4 pb-3"><div className="flex items-center justify-between gap-3"><div><CardTitle>Transactions</CardTitle><CardDescription>All entries for the selected branch and date.</CardDescription></div><Button onClick={() => { setEditingJournal(null); setFormError(null); setTransactionDialog(true); }} disabled={statement.status !== "OPEN"}><Plus className="h-4 w-4" /> Add transaction</Button></div><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={`Showing ${rows.length} of ${total} transactions`} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder="Search transactions…" />} /></CardHeader>
+    <Card className="gap-0"><CardHeader className="gap-3 border-b py-4 pb-3"><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={`Showing ${rows.length} of ${total} transactions`} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder="Search transactions…" />} /></CardHeader>
       {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title="Loading transactions" description="Syncing journal entries, payments, and closeout totals…" columns={["Date", "Account", "Employee", "Type", "Reference", "Amount"]} /> : <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionLabel(row.transactionType)} columnLayout={columnLayout} minWidth={1100} emptyState={<p className="text-muted-foreground">No transactions match this closeout.</p>} />}
       {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{journalsQuery.isFetching ? "Refreshing transactions…" : `Showing ${rows.length} of ${total} transactions`}</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-4 w-4" /> Previous</Button><span className="px-2 text-sm text-muted-foreground">Page {page} of {totalPages}</span><Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next <ChevronRight className="h-4 w-4" /></Button></div></div> : null}
     </Card>

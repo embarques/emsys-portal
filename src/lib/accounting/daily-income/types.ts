@@ -69,6 +69,8 @@ export type DailyIncomeJournal = {
     receiver?: DailyIncomePartyRef;
   };
   paymentMethod?: AccountingLookup;
+  zelleTransactionDate?: string;
+  zelleTransactionName?: string;
   accounts: Array<{
     id: number;
     name: string;
@@ -104,6 +106,11 @@ export type DailyIncomeStatementValues = {
   rate: number;
 };
 
+/** Zelle requires extra reconciliation fields to prevent duplicate payment posting. */
+export function isZellePaymentMethod(name?: string | null): boolean {
+  return name?.trim().toLowerCase() === "zelle";
+}
+
 export type DailyIncomeJournalValues = {
   transactionType: JournalTransactionType;
   amount: number;
@@ -120,6 +127,7 @@ export type DailyIncomeJournalValues = {
   invoiceId?: string;
   invoiceNumber?: string;
   invoiceCost?: number;
+  invoiceBalance?: number;
   includeSender?: boolean;
   includeReceiver?: boolean;
   senderId?: string;
@@ -128,6 +136,8 @@ export type DailyIncomeJournalValues = {
   receiverName?: string;
   paymentMethodId?: number;
   paymentMethodName?: string;
+  zelleTransactionDate?: string;
+  zelleTransactionName?: string;
 };
 
 export type ChartAccountType = "ASSET" | "EXPENSE" | "REVENUE" | "BANK" | "LOAN";

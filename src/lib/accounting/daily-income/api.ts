@@ -8,6 +8,7 @@ import {
 } from "@/lib/api/search-query";
 import {
   EMPTY_DAILY_INCOME_SUMMARY,
+  isZellePaymentMethod,
   type AccountingLookup,
   type ChartAccount,
   type ChartAccountList,
@@ -158,6 +159,8 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     account: normalizeLookup(raw.account) ?? (primaryLine ? normalizeLookup(primaryLine) : undefined),
     sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
     paymentMethod: normalizeLookup(raw.paymentMethod),
+    zelleTransactionDate: stringValue(raw.zelleTransactionDate).slice(0, 10) || undefined,
+    zelleTransactionName: stringValue(raw.zelleTransactionName) || undefined,
     accounts: accountLines,
     invoice: Object.keys(invoice).length
       ? {
@@ -452,6 +455,12 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     paymentMethod: values.paymentMethodId
       ? { id: values.paymentMethodId, name: values.paymentMethodName }
       : undefined,
+    ...(isZellePaymentMethod(values.paymentMethodName)
+      ? {
+          zelleTransactionDate: values.zelleTransactionDate,
+          zelleTransactionName: values.zelleTransactionName,
+        }
+      : {}),
   };
 }
 

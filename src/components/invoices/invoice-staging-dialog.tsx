@@ -5,9 +5,9 @@ import {
   Barcode,
   Container as ContainerIcon,
   ListChecks,
-  ListX,
   Printer,
   RefreshCw,
+  Route as RouteIcon,
   Tag,
   Trash2,
 } from "lucide-react";
@@ -30,7 +30,13 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { truncateBarcode } from "@/lib/labels/display";
-import { useGenerateLabels, useUpdateBarcodes } from "@/lib/labels/hooks/use-barcodes";
+import {
+  useAssignBarcodesToRoute,
+  useGenerateLabels,
+  useUpdateBarcodes,
+} from "@/lib/labels/hooks/use-barcodes";
+import { useRoutePicker } from "@/lib/routes/hooks/use-routes";
+import { formatRouteCopyLabel, isDrRoute } from "@/lib/routes/display";
 import { useGenerateLabelReport } from "@/lib/reports/hooks/use-reports";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import {
@@ -62,13 +68,50 @@ function getStatusBadgeClass(statusName: string): string {
   return "border-transparent bg-muted text-muted-foreground";
 }
 
+type HeaderSelectCheckboxProps = {
+  total: number;
+  selectedCount: number;
+  onSelectAll: () => void;
+  onDeselectAll: () => void;
+  label: string;
+};
+
+/** Header checkbox that toggles select-all / deselect-all with an indeterminate state. */
+function HeaderSelectCheckbox({
+  total,
+  selectedCount,
+  onSelectAll,
+  onDeselectAll,
+  label,
+}: HeaderSelectCheckboxProps) {
+  const ref = useRef<HTMLInputElement>(null);
+  const allSelected = total > 0 && selectedCount === total;
+  const someSelected = selectedCount > 0 && selectedCount < total;
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
+
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      aria-label={label}
+      checked={allSelected}
+      disabled={total === 0}
+      onChange={(event) => (event.target.checked ? onSelectAll() : onDeselectAll())}
+      className="size-4 rounded border-input"
+    />
+  );
+}
+
 type SelectionToolbarProps = {
   selectedCount: number;
   total: number;
   allKeys: string[];
   selectedKeys: string[];
-  onSelectAll: () => void;
-  onDeselectAll: () => void;
   onSelectAllOthers: () => void;
   onRemoveAll: () => void;
   children?: ReactNode;
@@ -79,8 +122,6 @@ function SelectionToolbar({
   total,
   allKeys,
   selectedKeys,
-  onSelectAll,
-  onDeselectAll,
   onSelectAllOthers,
   onRemoveAll,
   children,
@@ -94,14 +135,6 @@ function SelectionToolbar({
       </span>
 
       <div className="flex flex-wrap items-center gap-1.5">
-        <Button size="sm" variant="ghost" onClick={onSelectAll} disabled={total === 0}>
-          <ListChecks className="h-4 w-4" />
-          Select all
-        </Button>
-        <Button size="sm" variant="ghost" onClick={onDeselectAll} disabled={selectedCount === 0}>
-          <ListX className="h-4 w-4" />
-          Deselect all
-        </Button>
         <Button
           size="sm"
           variant="outline"
@@ -120,7 +153,7 @@ function SelectionToolbar({
           onClick={onRemoveAll}
         >
           <Trash2 className="h-4 w-4" />
-          Remove all
+          Remove
         </Button>
         {children ? (
           <>
@@ -139,6 +172,7 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
   const containers = containersData?.items ?? [];
   const generateLabelsMutation = useGenerateLabels();
   const updateBarcodesMutation = useUpdateBarcodes();
+  const assignRouteMutation = useAssignBarcodesToRoute();
   const generateLabelReportMutation = useGenerateLabelReport();
 
   const [step, setStep] = useState<StagingStep>("line-items");
@@ -153,11 +187,30 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
 
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [containerDialogOpen, setContainerDialogOpen] = useState(false);
+  const [routeDialogOpen, setRouteDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<string>(BARCODE_STATUS_OPTIONS[1].name);
   const [newContainerId, setNewContainerId] = useState("");
+  const [newRouteId, setNewRouteId] = useState("");
+
+  const { data: routesData, isLoading: routesLoading } = useRoutePicker(200, {
+    enabled: routeDialogOpen,
+  });
+  const routes = useMemo(
+    () => (routesData?.items ?? []).filter(isDrRoute),
+    [routesData?.items],
+  );
+  const routeOptions = useMemo(
+    () =>
+      routes.map((route) => ({
+        value: route.id,
+        label: formatRouteCopyLabel(route),
+      })),
+    [routes],
+  );
 
   const isGenerating = generateLabelsMutation.isPending;
   const isUpdating = updateBarcodesMutation.isPending;
+  const isAssigningRoute = assignRouteMutation.isPending;
   const isPrinting = generateLabelReportMutation.isPending;
 
   // Keep the latest invoices without making them a reset trigger: generating
@@ -324,6 +377,46 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
     setContainerDialogOpen(true);
   }
 
+  function openRouteDialog() {
+    if (selectedLabelKeys.length === 0) return;
+    setNewRouteId("");
+    setRouteDialogOpen(true);
+  }
+
+  async function applyRouteAssignment() {
+    const route = routes.find((entry) => entry.id === newRouteId);
+    if (!route) return;
+
+    const barcodeIds = Array.from(
+      new Set(
+        generatedLabels
+          .filter((label) => selectedLabelKeys.includes(label.key))
+          .map((label) => label.barcodeId)
+          .filter((id) => id > 0),
+      ),
+    );
+
+    if (barcodeIds.length === 0) {
+      notifyError("Selected labels have no saved barcodes to assign to a route.");
+      return;
+    }
+
+    try {
+      const result = await assignRouteMutation.mutateAsync({
+        routeId: newRouteId,
+        barcodeIds,
+      });
+      const routeName = result.routeName || route.name || "route";
+      notifySuccess(
+        `${result.assignedCount} label(s) assigned to ${routeName} (trip ${result.tripNumber}).`,
+      );
+      setRouteDialogOpen(false);
+      setNewRouteId("");
+    } catch (error) {
+      notifyError(normalizeApiError(error).message);
+    }
+  }
+
   async function applyContainerChange() {
     const container = containers.find((entry) => String(entry.id) === newContainerId);
     if (!container) return;
@@ -405,7 +498,7 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
             ) : (
               <>
                 <Barcode className="h-4 w-4" />
-                Generate labels
+                Label manager
               </>
             )}
           </DialogTitle>
@@ -423,8 +516,6 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
               total={lineItems.length}
               allKeys={itemKeys}
               selectedKeys={selectedItemKeys}
-              onSelectAll={() => setSelectedItemKeys(itemKeys)}
-              onDeselectAll={() => setSelectedItemKeys([])}
               onSelectAllOthers={() =>
                 setSelectedItemKeys(selectAllOthers(itemKeys, selectedItemKeys))
               }
@@ -435,7 +526,15 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
               <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-muted/50 text-xs text-muted-foreground">
                   <tr className="border-b">
-                    <th className="w-10 px-3 py-2" />
+                    <th className="w-10 px-3 py-2">
+                      <HeaderSelectCheckbox
+                        total={lineItems.length}
+                        selectedCount={selectedItemKeys.length}
+                        onSelectAll={() => setSelectedItemKeys(itemKeys)}
+                        onDeselectAll={() => setSelectedItemKeys([])}
+                        label="Select all line items"
+                      />
+                    </th>
                     <th className="px-3 py-2 font-medium">Invoice</th>
                     <th className="px-3 py-2 font-medium">Description</th>
                     <th className="px-3 py-2 font-medium">Labels</th>
@@ -520,12 +619,6 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
               total={filteredLabels.length}
               allKeys={filteredLabelKeys}
               selectedKeys={selectedLabelKeys}
-              onSelectAll={() =>
-                setSelectedLabelKeys((current) =>
-                  Array.from(new Set([...current, ...filteredLabelKeys])),
-                )
-              }
-              onDeselectAll={() => setSelectedLabelKeys([])}
               onSelectAllOthers={() =>
                 setSelectedLabelKeys(selectAllOthers(filteredLabelKeys, selectedLabelKeys))
               }
@@ -551,6 +644,15 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
               </Button>
               <Button
                 size="sm"
+                variant="outline"
+                disabled={selectedLabelKeys.length === 0 || isAssigningRoute}
+                onClick={openRouteDialog}
+              >
+                <RouteIcon className="h-4 w-4" />
+                Assign route
+              </Button>
+              <Button
+                size="sm"
                 disabled={selectedLabelKeys.length === 0 || isPrinting}
                 onClick={printSelectedLabels}
               >
@@ -563,7 +665,25 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
               <table className="w-full text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-muted/50 text-xs text-muted-foreground">
                   <tr className="border-b">
-                    <th className="w-10 px-3 py-2" />
+                    <th className="w-10 px-3 py-2">
+                      <HeaderSelectCheckbox
+                        total={filteredLabels.length}
+                        selectedCount={
+                          filteredLabelKeys.filter((key) => selectedLabelKeys.includes(key)).length
+                        }
+                        onSelectAll={() =>
+                          setSelectedLabelKeys((current) =>
+                            Array.from(new Set([...current, ...filteredLabelKeys])),
+                          )
+                        }
+                        onDeselectAll={() =>
+                          setSelectedLabelKeys((current) =>
+                            current.filter((key) => !filteredLabelKeys.includes(key)),
+                          )
+                        }
+                        label="Select all labels"
+                      />
+                    </th>
                     <th className="px-3 py-2 font-medium">Invoice</th>
                     <th className="px-3 py-2 font-medium">Barcode</th>
                     <th className="px-3 py-2 font-medium">Status</th>
@@ -720,6 +840,44 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
             </Button>
             <Button onClick={applyContainerChange} disabled={!newContainerId || isUpdating}>
               {isUpdating ? "Applying…" : "Apply container"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={routeDialogOpen} onOpenChange={setRouteDialogOpen}>
+        <DialogContent className="z-[70]">
+          <DialogHeader>
+            <DialogTitle>Assign route</DialogTitle>
+            <DialogDescription>
+              {`Assign ${selectedLabelKeys.length} selected label(s) to a route. Only labels with a container are assigned.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="staging-new-route">Route</Label>
+            <SearchableSelect
+              id="staging-new-route"
+              value={newRouteId}
+              onValueChange={setNewRouteId}
+              placeholder="Select a route"
+              searchPlaceholder="Search routes…"
+              contentClassName="z-[80]"
+              loading={routesLoading}
+              emptyMessage={routesLoading ? "Loading routes…" : "No routes found."}
+              options={routeOptions}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRouteDialogOpen(false)}
+              disabled={isAssigningRoute}
+            >
+              Cancel
+            </Button>
+            <Button onClick={applyRouteAssignment} disabled={!newRouteId || isAssigningRoute}>
+              <RouteIcon className="h-4 w-4" />
+              {isAssigningRoute ? "Assigning…" : "Assign route"}
             </Button>
           </DialogFooter>
         </DialogContent>

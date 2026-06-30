@@ -82,8 +82,8 @@ import {
 import { useUsers } from "@/lib/users/hooks/use-users";
 import {
   useAssignPickupsToRoute,
-  usePickupRoutePicker,
-} from "@/lib/pickup-routes/hooks/use-pickup-routes";
+  useRoutePicker,
+} from "@/lib/routes/hooks/use-routes";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Label } from "@/components/ui/label";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -137,7 +137,7 @@ export function OrdersWorkspace() {
   const deleteOrdersMutation = useDeleteOrders();
   const setOrdersCompletedMutation = useSetOrdersCompleted();
   const assignRouteMutation = useAssignPickupsToRoute();
-  const { data: routesData, isLoading: routesLoading } = usePickupRoutePicker(undefined, {
+  const { data: routesData, isLoading: routesLoading } = useRoutePicker(undefined, {
     enabled: assignRouteOpen || filtersOpen,
   });
   const orders = data?.items ?? [];

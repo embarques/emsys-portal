@@ -90,7 +90,8 @@ function normalizeEmployeeGroupRef(raw?: ApiEmployeeGroupRef | null): Route["emp
   const ref = raw ?? {};
   const id = String(ref.id ?? "").trim();
   const name = String(ref.name ?? "").trim() || String(ref.employeeGroupId ?? "").trim();
-  return { id, name };
+  const branch = String(ref.branch ?? "").trim();
+  return { id, name, ...(branch ? { branch } : {}) };
 }
 
 export function normalizeApiRoute(raw: unknown): Route | null {
@@ -383,4 +384,30 @@ export async function deleteRoute(recordId: string): Promise<void> {
 
 export async function deleteRoutes(recordIds: string[]): Promise<void> {
   await Promise.all(recordIds.map((id) => deleteRoute(id)));
+}
+
+/**
+ * Assign pickups (orders) to a route via PUT /pickups/route/{routeId} with
+ * `{ pickupIds }`. Each pickup then stores a `{ id, name }` route reference,
+ * which the orders table can filter on via `route.id` / `route.name`.
+ */
+export async function assignPickupsToRoute(
+  routeId: string,
+  pickupIds: number[],
+): Promise<void> {
+  const id = routeId.trim();
+  if (!id) {
+    throw new Error("A valid route is required.");
+  }
+
+  if (pickupIds.length === 0) {
+    throw new Error("Select at least one pickup to assign.");
+  }
+
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUP_ROUTES}/${id}`,
+    { pickupIds },
+  );
+
+  assertMutationSuccess(response, "Unable to assign route.");
 }

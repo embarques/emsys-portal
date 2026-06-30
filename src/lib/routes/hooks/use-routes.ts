@@ -5,6 +5,7 @@ import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-q
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
+  assignPickupsToRoute,
   createRoute,
   deleteRoute,
   deleteRoutes,
@@ -160,5 +161,16 @@ export function useDeleteRoutes() {
   return useMutation({
     mutationFn: (recordIds: string[]) => deleteRoutes(recordIds),
     onSuccess: () => invalidateRoutes(queryClient),
+  });
+}
+
+/** Assign pickups to a route; refreshes the orders list so route refs appear. */
+export function useAssignPickupsToRoute() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ routeId, pickupIds }: { routeId: string; pickupIds: number[] }) =>
+      assignPickupsToRoute(routeId, pickupIds),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.orders.all }),
   });
 }

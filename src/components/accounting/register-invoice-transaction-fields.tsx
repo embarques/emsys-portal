@@ -12,7 +12,7 @@ import { CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS } from "@/lib/customers/search-f
 import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/customer-type";
 import type { Customer } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
-import type { AccountingLookup, DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { isZellePaymentMethod, type AccountingLookup, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 
@@ -73,6 +73,8 @@ export function RegisterInvoiceTransactionFields({
 }: Props) {
   const employeeId = watch("employeeId");
   const paymentMethodId = watch("paymentMethodId");
+  const paymentMethodName = watch("paymentMethodName");
+  const isZelle = isZellePaymentMethod(paymentMethodName);
   const invoiceCost = watch("invoiceCost");
   const amount = watch("amount");
   const balance = computeInvoiceBalance(invoiceCost, amount);
@@ -239,7 +241,11 @@ export function RegisterInvoiceTransactionFields({
           onChange={(event) => {
             const method = paymentMethods.find((item) => item.id === Number(event.target.value));
             setValue("paymentMethodId", method?.id, { shouldValidate: true });
-            setValue("paymentMethodName", method?.name ?? "");
+            setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true });
+            if (!isZellePaymentMethod(method?.name)) {
+              setValue("zelleTransactionDate", undefined, { shouldValidate: true });
+              setValue("zelleTransactionName", undefined, { shouldValidate: true });
+            }
           }}
         >
           <option value="">Select payment method</option>
@@ -253,6 +259,32 @@ export function RegisterInvoiceTransactionFields({
           <p className="text-sm text-destructive">{errors.paymentMethodId.message}</p>
         ) : null}
       </div>
+
+      {isZelle ? (
+        <>
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="journal-zelle-date">Zelle transaction date</RequiredLabel>
+            <Input id="journal-zelle-date" type="date" {...register("zelleTransactionDate")} />
+            {errors.zelleTransactionDate ? (
+              <p className="text-sm text-destructive">{errors.zelleTransactionDate.message}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <RequiredLabel htmlFor="journal-zelle-name">
+              Zelle transaction name (as it appears in bank account)
+            </RequiredLabel>
+            <Input
+              id="journal-zelle-name"
+              placeholder="Enter Zelle transaction name"
+              {...register("zelleTransactionName")}
+            />
+            {errors.zelleTransactionName ? (
+              <p className="text-sm text-destructive">{errors.zelleTransactionName.message}</p>
+            ) : null}
+          </div>
+        </>
+      ) : null}
 
       <div className="space-y-3 sm:col-span-2">
         <label className="flex items-center gap-2 text-sm font-medium">

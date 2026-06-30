@@ -69,6 +69,17 @@ export function formatRouteCopyLabel(assignment: Route): string {
   return `${assignment.name} · ${formatRouteDate(assignment.date)} · ${getVehicleRefLabel(assignment.vehicle)}`;
 }
 
+/** A route belongs to the DR (Dominican Republic) branch via its employee group. */
+export function isDrRoute(assignment: Route): boolean {
+  const branch = assignment.employeeGroup.branch?.trim().toLowerCase();
+  if (branch) {
+    return branch === "dr" || branch === "do" || branch === "dominican republic";
+  }
+
+  // Fallback: employee group names are formatted as `… · DR · …` / `… · USA · …`.
+  return /(^|[^a-z])dr([^a-z]|$)/i.test(assignment.employeeGroup.name);
+}
+
 function matchesSearchOperator(value: string, query: string, operator: string): boolean {
   const haystack = value.toLowerCase();
   const needle = query.toLowerCase();

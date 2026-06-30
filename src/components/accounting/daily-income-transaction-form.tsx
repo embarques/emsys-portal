@@ -1,18 +1,20 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { FormBody, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { dailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
-import type { AccountingLookup, ChartAccount, DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { isZellePaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { formatAccountingMoney } from "@/lib/accounting/display";
 import type { Employee } from "@/lib/employees/types";
-import type { Invoice } from "@/lib/invoices/types";
+import { getInvoiceBalanceAmount, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
 import { cn } from "@/lib/utils";
 
 const selectClassName =
@@ -86,6 +88,34 @@ export function DailyIncomeTransactionForm({
   const accountId = watch("accountId");
   const sourceAccountId = watch("sourceAccountId");
   const paymentMethodId = watch("paymentMethodId");
+  const paymentMethodName = watch("paymentMethodName");
+  const isZelle = isZellePaymentMethod(paymentMethodName);
+  const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
+  const invoiceOptions = useMemo(
+    () =>
+      invoices.map((invoice) => {
+        const phones = [...(invoice.sender?.phones ?? []), ...(invoice.receiver?.phones ?? [])];
+        const phoneKeywords = phones.flatMap((phone) =>
+          [phone.number, phone.displayNumber].filter((value): value is string => Boolean(value)),
+        );
+        const descriptionLines = [
+          invoice.sender?.name ? `Sender: ${invoice.sender.name}` : null,
+          invoice.receiver?.name ? `Receiver: ${invoice.receiver.name}` : null,
+        ].filter((line): line is string => Boolean(line));
+        return {
+          value: invoice.invoiceId,
+          label: invoice.invoiceNumber,
+          descriptionLines,
+          keywords: [
+            invoice.invoiceNumber,
+            invoice.sender?.name ?? "",
+            invoice.receiver?.name ?? "",
+            ...phoneKeywords,
+          ].filter(Boolean),
+        };
+      }),
+    [invoices],
+  );
   const needsExistingInvoice = ["PAYMENT", "DISCOUNT", "SURCHARGE"].includes(type);
   const isRegisterInvoice = type === "INITIAL-PAYMENT";
   const needsAccount = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(type);
@@ -96,7 +126,7 @@ export function DailyIncomeTransactionForm({
     <form id={formId} onSubmit={handleSubmit((values) => onSubmit(values))} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
         {showTypeSummary ? (
-          <div className="flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/80 px-4 py-3">
+          <div className="flex items-center gap-3 rounded-lg border border-blue-100 bg-card px-4 py-3">
             <span
               className={cn(
                 "flex size-9 shrink-0 items-center justify-center rounded-lg",
@@ -124,6 +154,52 @@ export function DailyIncomeTransactionForm({
             />
           ) : (
           <div className="grid gap-4 sm:grid-cols-2">
+            {needsExistingInvoice ? (
+              <div className="space-y-2 sm:col-span-2">
+                <RequiredLabel htmlFor="journal-invoice">Invoice</RequiredLabel>
+                <SearchableSelect
+                  id="journal-invoice"
+                  value={invoiceId ?? ""}
+                  onValueChange={(next) => {
+                    const invoice = invoices.find((item) => item.invoiceId === next);
+                    setValue("invoiceId", invoice?.invoiceId ?? "", { shouldValidate: true });
+                    setValue("invoiceNumber", invoice?.invoiceNumber ?? "");
+                    setValue(
+                      "invoiceBalance",
+                      invoice ? getInvoiceBalanceAmount(invoice) : undefined,
+                      { shouldValidate: true },
+                    );
+                  }}
+                  placeholder="Select invoice"
+                  searchPlaceholder="Search by invoice #, sender or receiver phone…"
+                  options={invoiceOptions}
+                />
+                {errors.invoiceId ? (
+                  <p className="text-sm text-destructive">{errors.invoiceId.message}</p>
+                ) : null}
+                {selectedInvoice ? (
+                  <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 rounded-md border border-blue-100 bg-card px-3 py-2 text-sm sm:grid-cols-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total</p>
+                      <p className="font-medium">{formatAccountingMoney(getInvoiceTotal(selectedInvoice))}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Discount</p>
+                      <p className="font-medium">{formatAccountingMoney(selectedInvoice.discount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Paid</p>
+                      <p className="font-medium">{formatAccountingMoney(selectedInvoice.amountPaid)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Balance</p>
+                      <p className="font-medium">{formatAccountingMoney(getInvoiceBalanceAmount(selectedInvoice))}</p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="space-y-2">
               <RequiredLabel htmlFor="journal-employee">Employee</RequiredLabel>
               <select
@@ -149,43 +225,9 @@ export function DailyIncomeTransactionForm({
             </div>
 
             <div className="space-y-2">
-              <RequiredLabel htmlFor="journal-amount">Amount</RequiredLabel>
-              <Input
-                id="journal-amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                {...register("amount", { valueAsNumber: true })}
-              />
-              {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
+              <Label htmlFor="journal-reference">Reference number</Label>
+              <Input id="journal-reference" placeholder="Enter reference number" {...register("refNumber")} />
             </div>
-
-            {needsExistingInvoice ? (
-              <div className="space-y-2 sm:col-span-2">
-                <RequiredLabel htmlFor="journal-invoice">Invoice</RequiredLabel>
-                <select
-                  id="journal-invoice"
-                  className={selectClassName}
-                  value={invoiceId ?? ""}
-                  onChange={(event) => {
-                    const invoice = invoices.find((item) => item.invoiceId === event.target.value);
-                    setValue("invoiceId", invoice?.invoiceId ?? "", { shouldValidate: true });
-                    setValue("invoiceNumber", invoice?.invoiceNumber ?? "");
-                  }}
-                >
-                  <option value="">Select invoice</option>
-                  {invoices.map((invoice) => (
-                    <option key={invoice.invoiceId} value={invoice.invoiceId}>
-                      {invoice.invoiceNumber}
-                    </option>
-                  ))}
-                </select>
-                {errors.invoiceId ? (
-                  <p className="text-sm text-destructive">{errors.invoiceId.message}</p>
-                ) : null}
-              </div>
-            ) : null}
 
             {needsAccount ? (
               <div className="space-y-2">
@@ -254,7 +296,11 @@ export function DailyIncomeTransactionForm({
                 onChange={(event) => {
                   const method = paymentMethods.find((item) => item.id === Number(event.target.value));
                   setValue("paymentMethodId", method?.id, { shouldValidate: true });
-                  setValue("paymentMethodName", method?.name ?? "");
+                  setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true });
+                  if (!isZellePaymentMethod(method?.name)) {
+                    setValue("zelleTransactionDate", undefined, { shouldValidate: true });
+                    setValue("zelleTransactionName", undefined, { shouldValidate: true });
+                  }
                 }}
               >
                 <option value="">Select payment method</option>
@@ -270,9 +316,43 @@ export function DailyIncomeTransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="journal-reference">Reference number</Label>
-              <Input id="journal-reference" placeholder="Enter reference number" {...register("refNumber")} />
+              <RequiredLabel htmlFor="journal-amount">Amount</RequiredLabel>
+              <Input
+                id="journal-amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                {...register("amount", { valueAsNumber: true })}
+              />
+              {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
             </div>
+
+            {isZelle ? (
+              <>
+                <div className="space-y-2">
+                  <RequiredLabel htmlFor="journal-zelle-date">Zelle transaction date</RequiredLabel>
+                  <Input id="journal-zelle-date" type="date" {...register("zelleTransactionDate")} />
+                  {errors.zelleTransactionDate ? (
+                    <p className="text-sm text-destructive">{errors.zelleTransactionDate.message}</p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <RequiredLabel htmlFor="journal-zelle-name">
+                    Zelle transaction name (as it appears in bank account)
+                  </RequiredLabel>
+                  <Input
+                    id="journal-zelle-name"
+                    placeholder="Enter Zelle transaction name"
+                    {...register("zelleTransactionName")}
+                  />
+                  {errors.zelleTransactionName ? (
+                    <p className="text-sm text-destructive">{errors.zelleTransactionName.message}</p>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
 
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="journal-description">Description</Label>
@@ -280,7 +360,7 @@ export function DailyIncomeTransactionForm({
                 id="journal-description"
                 rows={3}
                 placeholder="Enter description (optional)"
-                className={`${selectClassName} h-auto py-2`}
+                className={cn(selectClassName, "h-auto py-2 bg-card")}
                 {...register("description")}
               />
             </div>

@@ -8,7 +8,6 @@ import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/t
 import type { MemoPadListParams, MemoPadSearchFilter } from "@/lib/memo-pads/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
-import type { PickupRouteListParams } from "@/lib/pickup-routes/types";
 import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
 import type { EmployeeGroupSearchFilter } from "@/lib/employee-groups/api/employee-groups-api";
@@ -70,11 +69,6 @@ export const queryKeys = {
       [...queryKeys.routes.all, "stats", scope, ...(date ? [date] : [])] as const,
     detail: (routeId: string) =>
       [...queryKeys.routes.all, "detail", routeId] as const,
-  },
-  pickupRoutes: {
-    all: ["pickup-routes"] as const,
-    lists: () => [...queryKeys.pickupRoutes.all, "list"] as const,
-    list: (params: PickupRouteListParams) => [...queryKeys.pickupRoutes.lists(), params] as const,
   },
   containers: {
     all: ["containers"] as const,

@@ -11,6 +11,7 @@ export type RouteVehicleRef = {
 export type RouteEmployeeGroupRef = {
   id: string;
   name: string;
+  branch?: string;
 };
 
 export type Route = {

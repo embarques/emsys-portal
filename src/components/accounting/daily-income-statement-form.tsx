@@ -8,11 +8,15 @@ import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { dailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import type { DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import type { Branch } from "@/lib/branches/types";
 
-const selectClassName = "flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
+const currencyOptions = [
+  { value: "USD", label: "Dollar" },
+  { value: "DOP", label: "Peso" },
+];
 
 type Props = {
   branches: Branch[];
@@ -31,26 +35,27 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
 
   useEffect(() => reset(initialValues), [initialValues, reset]);
   const branchId = watch("branchId");
+  const currency = watch("currency");
+  const branchOptions = branches.map((branch) => ({ value: String(branch.id), label: `${branch.code} — ${branch.name}`, keywords: [branch.code, branch.name] }));
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="statement-branch">Branch</Label>
-          <select
+          <SearchableSelect
             id="statement-branch"
-            className={selectClassName}
-            value={branchId || ""}
-            onChange={(event) => {
-              const branch = branches.find((item) => item.id === Number(event.target.value));
+            value={branchId ? String(branchId) : ""}
+            onValueChange={(next) => {
+              const branch = branches.find((item) => item.id === Number(next));
               setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
               setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
               setValue("branchName", branch?.name ?? "", { shouldValidate: true });
             }}
-          >
-            <option value="">Select branch</option>
-            {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.code} — {branch.name}</option>)}
-          </select>
+            options={branchOptions}
+            placeholder="Select branch"
+            searchPlaceholder="Search branches…"
+          />
           {errors.branchId ? <p className="text-sm text-destructive">{errors.branchId.message}</p> : null}
         </div>
         <div className="space-y-2">
@@ -60,10 +65,13 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
         </div>
         <div className="space-y-2">
           <Label htmlFor="statement-currency">Currency</Label>
-          <select id="statement-currency" className={selectClassName} {...register("currency")}>
-            <option value="USD">Dollar</option>
-            <option value="DOP">Peso</option>
-          </select>
+          <SearchableSelect
+            id="statement-currency"
+            value={currency ?? ""}
+            onValueChange={(next) => setValue("currency", next, { shouldValidate: true })}
+            options={currencyOptions}
+            placeholder="Select currency"
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="statement-rate">Exchange rate</Label>

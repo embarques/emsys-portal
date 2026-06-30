@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isZellePaymentMethod } from "@/lib/accounting/daily-income/types";
+
 export const dailyIncomeStatementSchema = z.object({
   date: z.string().min(1, "Date is required."),
   branchId: z.number().positive("Branch is required."),
@@ -34,6 +36,7 @@ export const dailyIncomeJournalSchema = z.object({
   invoiceId: z.string().optional(),
   invoiceNumber: z.string().optional(),
   invoiceCost: z.number().optional(),
+  invoiceBalance: z.number().optional(),
   includeSender: z.boolean().optional(),
   includeReceiver: z.boolean().optional(),
   senderId: z.string().optional(),
@@ -42,9 +45,28 @@ export const dailyIncomeJournalSchema = z.object({
   receiverName: z.string().optional(),
   paymentMethodId: z.number().optional(),
   paymentMethodName: z.string().optional(),
+  zelleTransactionDate: z.string().optional(),
+  zelleTransactionName: z.string().optional(),
 }).superRefine((values, context) => {
   if (!values.employeeId) {
     context.addIssue({ code: "custom", path: ["employeeId"], message: "Employee is required." });
+  }
+
+  if (isZellePaymentMethod(values.paymentMethodName)) {
+    if (!values.zelleTransactionDate?.trim()) {
+      context.addIssue({
+        code: "custom",
+        path: ["zelleTransactionDate"],
+        message: "Zelle transaction date is required.",
+      });
+    }
+    if (!values.zelleTransactionName?.trim()) {
+      context.addIssue({
+        code: "custom",
+        path: ["zelleTransactionName"],
+        message: "Zelle transaction name is required.",
+      });
+    }
   }
 
   if (values.transactionType === "INITIAL-PAYMENT") {
@@ -76,6 +98,17 @@ export const dailyIncomeJournalSchema = z.object({
   const invoiceRelated = ["PAYMENT", "DISCOUNT", "SURCHARGE"].includes(values.transactionType);
   if (invoiceRelated && !values.invoiceId) {
     context.addIssue({ code: "custom", path: ["invoiceId"], message: "Invoice is required." });
+  }
+  if (
+    values.transactionType === "PAYMENT" &&
+    values.invoiceBalance != null &&
+    values.amount > values.invoiceBalance
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["amount"],
+      message: "Amount cannot exceed the invoice balance.",
+    });
   }
   if ((invoiceRelated || values.transactionType === "SALES") && !values.paymentMethodId) {
     context.addIssue({ code: "custom", path: ["paymentMethodId"], message: "Payment method is required." });
