@@ -75,6 +75,7 @@ export type DailyIncomeJournal = {
   rate: number;
   employee?: AccountingLookup;
   account?: AccountingLookup;
+  paymentAccount?: AccountingLookup;
   sourceAccount?: AccountingLookup;
   invoice?: {
     id?: string | number;
@@ -143,6 +144,9 @@ export type DailyIncomeJournalValues = {
   accountId?: number;
   accountName?: string;
   accountType?: string;
+  paymentAccountId?: number;
+  paymentAccountName?: string;
+  paymentAccountType?: string;
   sourceAccountId?: number;
   sourceAccountName?: string;
   sourceAccountType?: string;

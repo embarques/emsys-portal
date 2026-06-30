@@ -161,6 +161,7 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     rate: numberValue(raw.rate),
     employee: normalizeLookup(raw.employee),
     account: normalizeLookup(raw.account) ?? (primaryLine ? normalizeLookup(primaryLine) : undefined),
+    paymentAccount: normalizeLookup(raw.paymentAccount),
     sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
     paymentMethod: normalizeLookup(raw.paymentMethod),
     zelleTransactionDate: stringValue(raw.zelleTransactionDate).slice(0, 10) || undefined,
@@ -461,7 +462,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType);
   const bankAccountRequired = requiresBankAccount(values.paymentMethodName);
 
-  if (bankAccountRequired && (!values.accountId || values.accountType !== "BANK")) {
+  if (bankAccountRequired && (!values.paymentAccountId || values.paymentAccountType !== "BANK")) {
     throw new Error("Select a bank account for this payment method.");
   }
 
@@ -470,23 +471,14 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
       ? {
           number: values.invoiceNumber.trim(),
           cost: values.invoiceCost,
-          payment: values.amount,
-          balance: (values.invoiceCost ?? 0) - values.amount,
-          ...(values.senderId
-            ? { sender: { id: values.senderId, name: values.senderName ?? "" } }
-            : {}),
-          ...(values.receiverId
-            ? { receiver: { id: values.receiverId, name: values.receiverName ?? "" } }
-            : {}),
+          discount: 0,
         }
-      : invoiceRelated && values.invoiceId
-        ? { id: values.invoiceId, number: values.invoiceNumber }
-        : undefined;
+      : undefined;
 
   return {
     incomeStatementId: statement.id,
     incomeStatement: { id: statement.id },
-    date: `${statement.date}T00:00:00Z`,
+    date: statement.date,
     transactionType: values.transactionType,
     amount: values.amount,
     refNumber: values.refNumber,
@@ -496,8 +488,11 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     employee: values.employeeId
       ? { id: values.employeeId, name: values.employeeName ?? "" }
       : undefined,
-    account: (accountRelated || bankAccountRequired) && values.accountId
+    account: accountRelated && values.accountId
       ? { id: values.accountId, name: values.accountName, type: values.accountType }
+      : undefined,
+    paymentAccount: bankAccountRequired && values.paymentAccountId
+      ? { id: values.paymentAccountId, name: values.paymentAccountName, type: values.paymentAccountType }
       : undefined,
     sourceAccount: sourceAccountRelated && values.sourceAccountId
       ? { id: values.sourceAccountId, name: values.sourceAccountName, type: values.sourceAccountType }
@@ -506,6 +501,12 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
       ? values.invoiceId
       : undefined,
     invoice,
+    sender: values.transactionType === "INITIAL-PAYMENT" && values.senderId
+      ? { id: values.senderId, name: values.senderName ?? "" }
+      : undefined,
+    receiver: values.transactionType === "INITIAL-PAYMENT" && values.receiverId
+      ? { id: values.receiverId, name: values.receiverName ?? "" }
+      : undefined,
     paymentMethod: values.paymentMethodId
       ? { id: values.paymentMethodId, name: values.paymentMethodName }
       : undefined,

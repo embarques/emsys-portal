@@ -30,6 +30,9 @@ export const dailyIncomeJournalSchema = z.object({
   accountId: z.number().optional(),
   accountName: z.string().optional(),
   accountType: z.string().optional(),
+  paymentAccountId: z.number().optional(),
+  paymentAccountName: z.string().optional(),
+  paymentAccountType: z.string().optional(),
   sourceAccountId: z.number().optional(),
   sourceAccountName: z.string().optional(),
   sourceAccountType: z.string().optional(),
@@ -69,10 +72,13 @@ export const dailyIncomeJournalSchema = z.object({
     }
   }
 
-  if (requiresBankAccount(values.paymentMethodName) && (!values.accountId || values.accountType !== "BANK")) {
+  if (
+    requiresBankAccount(values.paymentMethodName) &&
+    (!values.paymentAccountId || values.paymentAccountType !== "BANK")
+  ) {
     context.addIssue({
       code: "custom",
-      path: ["accountId"],
+      path: ["paymentAccountId"],
       message: "Select a bank account for this payment method.",
     });
   }

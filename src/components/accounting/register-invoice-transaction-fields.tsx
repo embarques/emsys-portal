@@ -78,7 +78,7 @@ export function RegisterInvoiceTransactionFields({
   const paymentMethodName = watch("paymentMethodName");
   const isZelle = isZellePaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
-  const accountId = watch("accountId");
+  const paymentAccountId = watch("paymentAccountId");
   const invoiceCost = watch("invoiceCost");
   const amount = watch("amount");
   const balance = computeInvoiceBalance(invoiceCost, amount);
@@ -88,12 +88,12 @@ export function RegisterInvoiceTransactionFields({
   const receiverId = watch("receiverId");
 
   useEffect(() => {
-    if (!needsBankAccount || bankAccounts.some((account) => account.id === accountId) || !bankAccounts[0]) return;
+    if (!needsBankAccount || bankAccounts.some((account) => account.id === paymentAccountId) || !bankAccounts[0]) return;
     const account = bankAccounts[0];
-    setValue("accountId", account.id, { shouldValidate: true });
-    setValue("accountName", account.displayName);
-    setValue("accountType", account.type);
-  }, [accountId, bankAccounts, needsBankAccount, setValue]);
+    setValue("paymentAccountId", account.id, { shouldValidate: true });
+    setValue("paymentAccountName", account.displayName);
+    setValue("paymentAccountType", account.type);
+  }, [bankAccounts, needsBankAccount, paymentAccountId, setValue]);
 
   const [senderQuery, setSenderQuery] = useState("");
   const [receiverQuery, setReceiverQuery] = useState("");
@@ -278,12 +278,12 @@ export function RegisterInvoiceTransactionFields({
           <select
             id="journal-bank-account"
             className={selectClassName}
-            value={accountId ?? ""}
+            value={paymentAccountId ?? ""}
             onChange={(event) => {
               const account = bankAccounts.find((item) => item.id === Number(event.target.value));
-              setValue("accountId", account?.id, { shouldValidate: true });
-              setValue("accountName", account?.displayName ?? "");
-              setValue("accountType", account?.type);
+              setValue("paymentAccountId", account?.id, { shouldValidate: true });
+              setValue("paymentAccountName", account?.displayName ?? "");
+              setValue("paymentAccountType", account?.type);
             }}
           >
             <option value="">Select bank account</option>
@@ -291,7 +291,7 @@ export function RegisterInvoiceTransactionFields({
               <option key={account.id} value={account.id}>{account.displayName}</option>
             ))}
           </select>
-          {errors.accountId ? <p className="text-sm text-destructive">{errors.accountId.message}</p> : null}
+          {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
         </div>
       ) : null}
 
