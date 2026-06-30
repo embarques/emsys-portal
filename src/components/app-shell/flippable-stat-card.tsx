@@ -63,12 +63,7 @@ export function FlippableStatCard({
   details,
 }: FlippableStatCardProps) {
   const [showDetails, setShowDetails] = useState(false);
-  const resolvedDetails = details?.length
-    ? details
-    : [
-        { label: "Current value", value },
-        { label: "Summary", value: description || "Current metric" },
-      ];
+  const hasDetails = Boolean(details?.length);
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -93,14 +88,17 @@ export function FlippableStatCard({
               <div className="text-2xl font-bold">{value}</div>
               <CardDescription className="mt-1">{description ?? "\u00a0"}</CardDescription>
             </CardContent>
-            <FlipAction
-              icon={Info}
-              label={`View ${label} details`}
-              onClick={() => setShowDetails(true)}
-              tabIndex={showDetails ? -1 : 0}
-            />
+            {hasDetails ? (
+              <FlipAction
+                icon={Info}
+                label={`View ${label} details`}
+                onClick={() => setShowDetails(true)}
+                tabIndex={showDetails ? -1 : 0}
+              />
+            ) : null}
           </Card>
 
+          {hasDetails ? (
           <Card
             aria-hidden={!showDetails}
             className="absolute inset-0 h-full gap-2 py-4 [backface-visibility:hidden] [transform:rotateY(180deg)]"
@@ -110,11 +108,11 @@ export function FlippableStatCard({
               <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="space-y-0 px-5 pr-16 text-xs">
-              {resolvedDetails.map((detail, index) => (
+              {details?.map((detail, index) => (
                 <div
                   className={cn(
                     "flex items-center justify-between gap-3 py-1.5",
-                    index < resolvedDetails.length - 1 && "border-b",
+                    index < (details?.length ?? 0) - 1 && "border-b",
                   )}
                   key={detail.label}
                 >
@@ -132,6 +130,7 @@ export function FlippableStatCard({
               tabIndex={showDetails ? 0 : -1}
             />
           </Card>
+          ) : null}
         </div>
       </div>
     </TooltipProvider>

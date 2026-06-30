@@ -23,6 +23,9 @@ import {
   type DailyIncomeStatement,
   type DailyIncomeStatementValues,
   type DailyIncomeSummary,
+  type IncomeStatementSummaryDetail,
+  type IncomeStatementSummaryTotal,
+  type IncomeStatementSummaryTotals,
   type JournalTransactionType,
 } from "@/lib/accounting/daily-income/types";
 
@@ -263,6 +266,51 @@ export async function fetchIncomeStatementById(id: number) {
   if (!id) return null;
   const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENT}/${id}`);
   return normalizeIncomeStatement(unwrap(payload));
+}
+
+function normalizeSummaryDetail(value: unknown): IncomeStatementSummaryDetail | null {
+  const raw = objectValue(value);
+  const header = stringValue(raw.header);
+  if (!header) return null;
+  return { header, value: numberValue(raw.value) };
+}
+
+function normalizeSummaryTotal(value: unknown): IncomeStatementSummaryTotal | null {
+  const raw = objectValue(value);
+  const header = stringValue(raw.header);
+  if (!header) return null;
+  const details = Array.isArray(raw.details)
+    ? raw.details
+        .map(normalizeSummaryDetail)
+        .filter((item): item is IncomeStatementSummaryDetail => item != null)
+    : undefined;
+  return {
+    header,
+    value: numberValue(raw.value),
+    details: details?.length ? details : undefined,
+  };
+}
+
+export async function fetchIncomeStatementSummaryTotals(
+  incomeStatementId: number,
+): Promise<IncomeStatementSummaryTotals | null> {
+  if (!incomeStatementId) return null;
+  const payload = await apiClient.get<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENT}/${incomeStatementId}/summary-total`,
+  );
+  const envelope = objectValue(payload);
+  if (envelope.success === false) {
+    throw new Error(stringValue(envelope.message || envelope.error) || "Unable to load summary totals.");
+  }
+  const raw = objectValue(unwrap(payload));
+  const totals = (Array.isArray(raw.totals) ? raw.totals : unwrapArray(payload))
+    .map(normalizeSummaryTotal)
+    .filter((item): item is IncomeStatementSummaryTotal => item != null);
+  return {
+    currency: stringValue(raw.currency) || "USD",
+    rate: numberValue(raw.rate, 1),
+    totals,
+  };
 }
 
 export async function fetchIncomeStatement(branchId: number, date: string) {
