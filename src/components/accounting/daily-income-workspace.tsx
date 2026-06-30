@@ -32,6 +32,7 @@ import {
   useUpdateDailyIncomeJournal,
   useUpdateIncomeStatement,
 } from "@/lib/accounting/daily-income/hooks";
+import { isPaymentReceiptEligible, printPaymentReceipt } from "@/lib/accounting/daily-income/receipt";
 import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import {
   dailyIncomeCurrencyDescription,
