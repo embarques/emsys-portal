@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, ChevronLeft, ChevronRight, Edit, Lock, LockOpen, Plus, Receipt, ScrollText, Trash2, Wallet } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, ChevronLeft, ChevronRight, Edit, Lock, LockOpen, Plus, Printer, Receipt, ScrollText, Trash2, Wallet } from "lucide-react";
 
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomeStatementForm } from "@/components/accounting/daily-income-statement-form";
@@ -31,6 +31,7 @@ import {
   useUpdateDailyIncomeJournal,
   useUpdateIncomeStatement,
 } from "@/lib/accounting/daily-income/hooks";
+import { isPaymentReceiptEligible, printPaymentReceipt } from "@/lib/accounting/daily-income/receipt";
 import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -128,8 +129,8 @@ export function DailyIncomeWorkspace() {
     { id: "reference", label: "Reference #", renderCell: (row) => row.refNumber || "—" },
     { id: "paymentMethod", label: "Payment method", renderCell: (row) => row.paymentMethod?.name ?? "—" },
     { id: "amount", label: "Amount", cellClassName: "font-medium tabular-nums", renderCell: (row) => money(row.amount) },
-    { id: "actions", label: "Actions", hideable: false, stopRowClick: true, truncateCell: false, renderCell: (row) => <div className="flex justify-end gap-1"><Button size="icon" variant="ghost" aria-label="Edit transaction" disabled={statement?.status !== "OPEN"} onClick={() => { setEditingJournal(row); setFormError(null); setTransactionDialog(true); }}><Edit className="h-4 w-4" /></Button><Button size="icon" variant="ghost" aria-label="Delete transaction" disabled={statement?.status !== "OPEN"} onClick={() => setDeleteJournal(row)}><Trash2 className="h-4 w-4" /></Button></div> },
-  ], [statement?.status]);
+    { id: "actions", label: "Actions", hideable: false, stopRowClick: true, truncateCell: false, renderCell: (row) => <div className="flex justify-end gap-1">{isPaymentReceiptEligible(row.transactionType) ? <Button size="icon" variant="ghost" aria-label="Print receipt" onClick={() => printPaymentReceipt(row, { branchName: selectedBranch?.name })}><Printer className="h-4 w-4" /></Button> : null}<Button size="icon" variant="ghost" aria-label="Edit transaction" disabled={statement?.status !== "OPEN"} onClick={() => { setEditingJournal(row); setFormError(null); setTransactionDialog(true); }}><Edit className="h-4 w-4" /></Button><Button size="icon" variant="ghost" aria-label="Delete transaction" disabled={statement?.status !== "OPEN"} onClick={() => setDeleteJournal(row)}><Trash2 className="h-4 w-4" /></Button></div> },
+  ], [statement?.status, selectedBranch?.name]);
   const columnLayout = useColumnVisibility("daily-income-v1", columns);
   const stats = [
     { label: "Total income", value: money(summary?.totalIncome ?? 0), description: "Income entries", icon: ArrowUpCircle },
