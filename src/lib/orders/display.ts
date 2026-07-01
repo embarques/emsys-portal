@@ -61,6 +61,14 @@ export function formatOrderRoute(
   return getRouteLabel(order.routeId, assignment);
 }
 
+export function formatOrderRouteName(
+  order: Pick<Order, "routeId" | "routeName">,
+  assignment?: Pick<Route, "name">,
+): string {
+  if (!order.routeId && !order.routeName) return "—";
+  return assignment?.name.trim() || order.routeName?.trim() || order.routeId || "—";
+}
+
 export function formatPickupCommentSummary(comment: PickupComment): string {
   const description = comment.description.trim();
   if (description) return description;

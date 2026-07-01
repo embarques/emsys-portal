@@ -93,7 +93,13 @@ type ApiPickup = {
   purpose?: string;
   comments?: ApiComment[];
   sector?: ApiSectorRef;
+  route?: ApiRouteRef | null;
   routeAssignmentId?: string;
+};
+
+type ApiRouteRef = {
+  id?: string | number;
+  name?: string;
 };
 
 type ApiPickupCustomerRef = {
@@ -296,6 +302,17 @@ function normalizePickupUser(raw: unknown): User | null {
   };
 }
 
+function normalizePickupRouteRef(raw: unknown): { id: string; name: string } | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const item = raw as ApiRouteRef;
+  const id = String(item.id ?? "").trim();
+  const name = String(item.name ?? "").trim();
+  if (!id && !name) return null;
+
+  return { id, name };
+}
+
 function normalizeOrder(raw: unknown): Order | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -305,6 +322,7 @@ function normalizeOrder(raw: unknown): Order | null {
 
   const receiverRaw = item.receiver ?? (Array.isArray(item.receivers) ? item.receivers[0] : null);
   const comments = Array.isArray(item.comments) ? item.comments.map(normalizePickupComment) : [];
+  const routeRef = normalizePickupRouteRef(item.route);
 
   return {
     id,
@@ -320,7 +338,8 @@ function normalizeOrder(raw: unknown): Order | null {
     purpose: String(item.purpose ?? "").trim(),
     comments,
     sector: normalizePickupSector(item.sector),
-    routeId: String(item.routeAssignmentId ?? "").trim() || undefined,
+    routeId: routeRef?.id || String(item.routeAssignmentId ?? "").trim() || undefined,
+    routeName: routeRef?.name || undefined,
   };
 }
 

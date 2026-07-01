@@ -43,6 +43,7 @@ export type Order = {
   comments: PickupComment[];
   sector: PickupSector | null;
   routeId?: string;
+  routeName?: string;
 };
 
 export const ORDER_COMMENT_PURPOSES = [

@@ -55,11 +55,12 @@ import {
   formatOrderCommentsSummary,
   formatOrderDate,
   formatOrderId,
-  formatUserSummary,
+  formatOrderRouteName,
   buildOrderCreatedByFilterOptions,
   getCustomerPhone,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
+import { buildRouteFilterOptions } from "@/lib/routes/display";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
   useCreateOrder,
@@ -82,7 +83,7 @@ import {
 import { useUsers } from "@/lib/users/hooks/use-users";
 import {
   useAssignPickupsToRoute,
-  useRoutePicker,
+  useRouteLookup,
 } from "@/lib/routes/hooks/use-routes";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Label } from "@/components/ui/label";
@@ -137,9 +138,7 @@ export function OrdersWorkspace() {
   const deleteOrdersMutation = useDeleteOrders();
   const setOrdersCompletedMutation = useSetOrdersCompleted();
   const assignRouteMutation = useAssignPickupsToRoute();
-  const { data: routesData, isLoading: routesLoading } = useRoutePicker(undefined, {
-    enabled: assignRouteOpen || filtersOpen,
-  });
+  const routeLookup = useRouteLookup();
   const orders = data?.items ?? [];
   const totalOrders = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
@@ -156,11 +155,9 @@ export function OrdersWorkspace() {
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
     [orders, selectedIds],
   );
-  const routes = useMemo(() => routesData?.items ?? [], [routesData?.items]);
-  const routeOptions = useMemo(
-    () => routes.map((route) => ({ value: route.id, label: route.name || route.id })),
-    [routes],
-  );
+  const routes = routeLookup.items;
+  const routeOptions = useMemo(() => buildRouteFilterOptions(routes), [routes]);
+  const routesLoading = routeLookup.isLoading;
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const missingCompanyContext = !authLoading && !companyId;
 
@@ -396,11 +393,12 @@ export function OrdersWorkspace() {
       renderCell: (order) => formatOrderCommentsSummary(order),
     },
     {
-      id: "user",
-      label: "createdBy",
-      sortField: "createdBy.name",
+      id: "route.name",
+      label: "Route",
+      sortField: "route.name",
       cellClassName: "text-muted-foreground",
-      renderCell: (order) => formatUserSummary(order.user),
+      renderCell: (order) =>
+        formatOrderRouteName(order, routeLookup.getByKey(order.routeId)),
     },
     {
       id: "updatedAt",
@@ -698,7 +696,10 @@ export function OrdersWorkspace() {
           }
         }}
       >
-        <DialogContent className="z-[60]">
+        <DialogContent
+          className="z-[60]"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Assign route</DialogTitle>
             <DialogDescription>

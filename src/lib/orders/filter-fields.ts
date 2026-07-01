@@ -70,6 +70,13 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter purpose…",
   },
   {
+    field: "route.id",
+    label: "Route",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    optionsSource: "routes",
+  },
+  {
     field: "receiver.name",
     label: "Receiver name",
     operators: [...TEXT_OPERATORS],
@@ -125,13 +132,6 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: ["eq", "neq", "contains", "startsWith"],
     valueType: "select",
     optionsSource: "users",
-  },
-  {
-    field: "route.id",
-    label: "Route",
-    operators: ["eq", "neq"],
-    valueType: "select",
-    optionsSource: "routes",
   },
   {
     field: "completed",
