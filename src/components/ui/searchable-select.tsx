@@ -5,6 +5,7 @@ import { Command as CommandPrimitive, defaultFilter } from "cmdk";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { focusNextFormField } from "@/hooks/use-form-enter-navigation";
 import {
   Command,
   CommandEmpty,
@@ -49,6 +50,8 @@ type SearchableSelectProps = {
   name?: string;
   className?: string;
   contentClassName?: string;
+  /** When false, the closed trigger grows to show the full selected label instead of truncating. */
+  truncateSelection?: boolean;
   align?: "start" | "center" | "end";
   autoFocus?: boolean;
   defaultOpen?: boolean;
@@ -84,7 +87,8 @@ const chevronButtonClassName =
 const popoverContentClassName =
   // pointer-events-auto keeps the list interactive when opened inside a Radix modal (Dialog),
   // which disables pointer events on the body and would otherwise block hover/scroll/click.
-  "pointer-events-auto w-[var(--radix-popover-trigger-width)] min-w-[12rem] overflow-hidden rounded-lg border border-border bg-popover p-0 shadow-md";
+  // z-[80] stacks above DialogContent (often z-[60]/z-[70]) so options are not hidden behind the modal.
+  "pointer-events-auto z-[80] w-[var(--radix-popover-trigger-width)] min-w-[12rem] overflow-hidden rounded-lg border border-border bg-popover p-0 shadow-md";
 
 const listItemClassName =
   "cursor-pointer rounded-none px-4 py-3 text-sm data-[selected=true]:bg-muted/60 data-[selected=true]:text-foreground";
@@ -121,6 +125,7 @@ export function SearchableSelect({
   name,
   className,
   contentClassName,
+  truncateSelection = true,
   align = "start",
   autoFocus = false,
   defaultOpen = false,
@@ -131,6 +136,7 @@ export function SearchableSelect({
   const [open, setOpen] = React.useState(defaultOpen);
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
   const scrollIsolationRef = useScrollIsolation();
 
   function handleOpenChange(next: boolean) {
@@ -167,6 +173,13 @@ export function SearchableSelect({
     onValueChange(nextValue);
     changeQuery("");
     setOpen(false);
+
+    const focusTarget = searchable ? inputRef.current : triggerRef.current;
+    window.setTimeout(() => {
+      if (!focusNextFormField(focusTarget)) {
+        focusTarget?.focus();
+      }
+    }, 0);
   }
 
   function toggleOpen() {
@@ -178,6 +191,12 @@ export function SearchableSelect({
   }
 
   const ChevronIcon = open ? ChevronUp : ChevronDown;
+
+  const selectionClassName = truncateSelection
+    ? "min-w-0 flex-1 truncate text-left"
+    : "whitespace-nowrap text-left";
+  const showSelectionLabel =
+    !truncateSelection && !open && Boolean(selectedOption) && !query;
 
   const optionItems = options.map((option, index) => {
     const detailLines = [option.description, ...(option.descriptionLines ?? [])].filter(
@@ -213,6 +232,7 @@ export function SearchableSelect({
         <Popover open={open} onOpenChange={handleOpenChange} modal>
           <PopoverTrigger asChild>
             <button
+              ref={triggerRef}
               type="button"
               id={id}
               role="combobox"
@@ -229,7 +249,7 @@ export function SearchableSelect({
                 "pr-9 pl-3",
               )}
             >
-              <span className={cn("min-w-0 flex-1 truncate text-left", !selectedOption && "text-muted-foreground")}>
+              <span className={cn(selectionClassName, !selectedOption && "text-muted-foreground")}>
                 {selectedOption ? selectedOption.label : placeholder}
               </span>
               <span className={cn(chevronButtonClassName, disabled && "pointer-events-none opacity-50")}>
@@ -273,6 +293,7 @@ export function SearchableSelect({
               onClose?.();
             }
           }}
+          modal
         >
           <PopoverAnchor asChild>
             <div
@@ -289,6 +310,11 @@ export function SearchableSelect({
                 "pr-9 pl-3",
               )}
             >
+              {showSelectionLabel ? (
+                <span aria-hidden className="whitespace-nowrap text-left">
+                  {selectedOption?.label}
+                </span>
+              ) : null}
               <CommandPrimitive.Input
                 ref={inputRef}
                 id={id}
@@ -319,7 +345,10 @@ export function SearchableSelect({
                 }
                 readOnly={!open && Boolean(selectedOption)}
                 className={cn(
-                  "min-w-0 flex-1 truncate bg-transparent text-left outline-none disabled:cursor-not-allowed",
+                  showSelectionLabel && "sr-only",
+                  truncateSelection
+                    ? "min-w-0 flex-1 truncate bg-transparent text-left outline-none disabled:cursor-not-allowed"
+                    : "whitespace-nowrap bg-transparent text-left outline-none disabled:cursor-not-allowed",
                   "placeholder:text-muted-foreground",
                 )}
               />

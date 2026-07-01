@@ -17,13 +17,37 @@ function isVisible(element: HTMLElement) {
 
 function isNavigableField(element: HTMLElement) {
   if ((element as HTMLInputElement).disabled) return false;
-  if ((element as HTMLInputElement).readOnly) return false;
+
+  const isCombobox = element.getAttribute("role") === "combobox";
+  if ((element as HTMLInputElement).readOnly && !isCombobox) return false;
   if (element.getAttribute("aria-hidden") === "true") return false;
 
   const tabIndex = element.getAttribute("tabindex");
   if (tabIndex !== null && Number(tabIndex) < 0) return false;
 
   return isVisible(element);
+}
+
+export function getNavigableFormFields(container: ParentNode): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FIELD_SELECTOR)).filter(isNavigableField);
+}
+
+/** Focus the next navigable field in the same form. Returns true when focus moved. */
+export function focusNextFormField(current: HTMLElement | null): boolean {
+  if (!current) return false;
+
+  const form = current.closest("form");
+  if (!form) return false;
+
+  const fields = getNavigableFormFields(form);
+  const currentIndex = fields.indexOf(current);
+  if (currentIndex === -1) return false;
+
+  const nextField = fields[currentIndex + 1];
+  if (!nextField) return false;
+
+  nextField.focus();
+  return true;
 }
 
 export type FormEnterNavigationOptions = {
@@ -67,9 +91,7 @@ export function useFormEnterNavigation(options: FormEnterNavigationOptions = {})
       if (target.getAttribute("aria-expanded") === "true") return;
 
       const form = event.currentTarget;
-      const fields = Array.from(
-        form.querySelectorAll<HTMLElement>(FIELD_SELECTOR),
-      ).filter(isNavigableField);
+      const fields = getNavigableFormFields(form);
 
       const currentIndex = fields.indexOf(target);
       if (currentIndex === -1) return;

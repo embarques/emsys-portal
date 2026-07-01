@@ -846,7 +846,10 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
       </Dialog>
 
       <Dialog open={routeDialogOpen} onOpenChange={setRouteDialogOpen}>
-        <DialogContent className="z-[70]">
+        <DialogContent
+          className="z-[70]"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Assign route</DialogTitle>
             <DialogDescription>

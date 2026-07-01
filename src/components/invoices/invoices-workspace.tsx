@@ -745,7 +745,10 @@ export function InvoicesWorkspace() {
           }
         }}
       >
-        <DialogContent className="z-[60]">
+        <DialogContent
+          className="z-[60]"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Assign route</DialogTitle>
             <DialogDescription>
