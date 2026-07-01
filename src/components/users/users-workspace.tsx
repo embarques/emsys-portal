@@ -6,7 +6,8 @@ import {
   ChevronRight,
   Plus,
   Shield,
-  Trash2,
+  KeyRound,
+  UserX,
   UserCog,
   Users,
 } from "lucide-react";
@@ -32,6 +33,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
@@ -60,16 +68,16 @@ import {
 } from "@/lib/users/display";
 import {
   useCreateUser,
-  useDeleteUsers,
+  useDeactivateUser,
   useUsers,
   useUserStats,
   useUpdateUser,
 } from "@/lib/users/hooks/use-users";
+import { createSecondaryFirebaseUser, sendUserPasswordReset } from "@/lib/auth/firebase/firebase-user-admin";
 import {
   DEFAULT_USER_LIST_PARAMS,
   buildUserListParams,
   createEmptyUserForm,
-  maskPassword,
   userToFormValues,
   type User,
   type UserFilterState,
@@ -85,7 +93,7 @@ const defaultFilters: UserFilterState = {
 };
 
 export function UsersWorkspace() {
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
   const [filters, setFilters] = useState<UserFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -96,7 +104,8 @@ export function UsersWorkspace() {
   const [viewUser, setViewUser] = useState<User | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<User | User[] | null>(null);
+  const [deactivateTarget, setDeactivateTarget] = useState<User | User[] | null>(null);
+  const [resetTarget, setResetTarget] = useState<User | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const listParams = useMemo(
@@ -118,7 +127,7 @@ export function UsersWorkspace() {
   const stats = useUserStats();
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
-  const deleteUsersMutation = useDeleteUsers();
+  const deactivateUserMutation = useDeactivateUser();
 
   const users = data?.items ?? [];
   const totalUsers = data?.total ?? 0;
@@ -128,7 +137,7 @@ export function UsersWorkspace() {
   const allPageSelected =
     pageUsers.length > 0 && pageUsers.every((user) => selectedIds.includes(String(user.id)));
   const isSaving =
-    createUserMutation.isPending || updateUserMutation.isPending || deleteUsersMutation.isPending;
+    createUserMutation.isPending || updateUserMutation.isPending || deactivateUserMutation.isPending;
 
   const branchFilterOptions = useMemo(() => {
     const apiBranches = branchesData?.items ?? [];
@@ -175,7 +184,7 @@ export function UsersWorkspace() {
         baseHref: "/users",
         mode: "edit",
         entityId: String(user.id),
-        label: `Edit ${user.userName}`,
+        label: `Edit ${user.name}`,
       });
       return;
     }
@@ -194,10 +203,17 @@ export function UsersWorkspace() {
           userId: editingUser.id,
           values,
         });
-        notifyUpdated("User", nextUser.userName);
+        notifyUpdated("User", nextUser.name);
       } else {
-        const nextUser = await createUserMutation.mutateAsync(values);
-        notifyAdded("User", nextUser.userName);
+        const uid = await createSecondaryFirebaseUser(values.email, values.password);
+        try {
+          const nextUser = await createUserMutation.mutateAsync({ values, uid });
+          notifyAdded("User", nextUser.name);
+        } catch (apiError) {
+          throw new Error(
+            `The Firebase account was created, but the EMSYS tenant user record was not created. Do not submit this form again with the same email. ${normalizeApiError(apiError).message}`,
+          );
+        }
       }
 
       setFormMode(null);
@@ -208,22 +224,31 @@ export function UsersWorkspace() {
     }
   }
 
-  async function confirmDelete() {
-    if (!deleteTarget) return;
-
-    const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((user) => user.id)
-      : [deleteTarget.id];
+  async function confirmDeactivate() {
+    if (!deactivateTarget) return;
+    const targets = Array.isArray(deactivateTarget) ? deactivateTarget : [deactivateTarget];
 
     try {
-      await deleteUsersMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.map(String).includes(id)));
-      setDeleteTarget(null);
+      await Promise.all(targets.map((user) => deactivateUserMutation.mutateAsync(user)));
+      setSelectedIds((current) => current.filter((id) => !targets.map((user) => String(user.id)).includes(id)));
+      setDeactivateTarget(null);
       setViewUser(null);
-      notifyDeleted("User", ids.length);
+      notifyUpdated(targets.length === 1 ? "User" : "Users", targets.length === 1 ? targets[0].name : String(targets.length));
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
-      setDeleteTarget(null);
+      setDeactivateTarget(null);
+    }
+  }
+
+  async function confirmPasswordReset() {
+    if (!resetTarget) return;
+    try {
+      await sendUserPasswordReset(resetTarget.email);
+      notifySuccess(`Password reset email sent to ${resetTarget.email}.`);
+      setResetTarget(null);
+    } catch (resetError) {
+      setFormError(normalizeApiError(resetError).message);
+      setResetTarget(null);
     }
   }
 
@@ -262,21 +287,10 @@ export function UsersWorkspace() {
       renderCell: (user) => (user.uid ? truncateUid(user.uid) : "—"),
     },
     {
-      id: "userName",
-      label: "userName",
+      id: "name",
+      label: "name",
       cellClassName: "font-medium",
-      renderCell: (user) => user.userName,
-    },
-    {
-      id: "fullName",
-      label: "fullName",
-      renderCell: (user) => user.fullName || "—",
-    },
-    {
-      id: "password",
-      label: "password",
-      cellClassName: "font-mono text-muted-foreground",
-      renderCell: (user) => maskPassword(user.password),
+      renderCell: (user) => user.name,
     },
     {
       id: "active",
@@ -319,11 +333,6 @@ export function UsersWorkspace() {
       ),
     },
     {
-      id: "branch.code",
-      label: "branch.code",
-      renderCell: (user) => user.branch.code || "—",
-    },
-    {
       id: "branch.name",
       label: "branch.name",
       renderCell: (user) => user.branch.name || "—",
@@ -337,22 +346,6 @@ export function UsersWorkspace() {
       id: "endTime",
       label: "endTime",
       renderCell: (user) => user.endTime || "—",
-    },
-    {
-      id: "type",
-      label: "type",
-      renderCell: (user) => user.type || "—",
-    },
-    {
-      id: "accessCode",
-      label: "accessCode",
-      cellClassName: "font-mono text-xs",
-      renderCell: (user) => String(user.accessCode),
-    },
-    {
-      id: "user",
-      label: "user",
-      renderCell: (user) => user.user || "—",
     },
     {
       id: "email",
@@ -370,6 +363,26 @@ export function UsersWorkspace() {
       label: "updatedAt",
       cellClassName: "text-muted-foreground",
       renderCell: (user) => (user.updatedAt ? formatAuditDateTime(user.updatedAt) : "—"),
+    },
+    {
+      id: "actions",
+      label: "Actions",
+      sortable: false,
+      truncateCell: false,
+      renderCell: (user) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={(event) => event.stopPropagation()} aria-label={`Actions for ${user.name}`}>
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+            <DropdownMenuItem onClick={() => openEditForm(user)}>Edit user</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setResetTarget(user)}>Send password reset</DropdownMenuItem>
+            {user.active ? <DropdownMenuItem className="text-destructive" onClick={() => setDeactivateTarget(user)}>Deactivate user</DropdownMenuItem> : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
     },
   ];
 
@@ -471,7 +484,7 @@ export function UsersWorkspace() {
             const user = pageUsers.find((entry) => String(entry.id) === selectedIds[0]);
             if (user) openEditForm(user);
           }}
-          onDelete={() => setDeleteTarget(users.filter((user) => selectedIds.includes(String(user.id))))}
+          onDelete={() => setDeactivateTarget(users.filter((user) => selectedIds.includes(String(user.id))))}
           deleteDisabled={isSaving}
         />
 
@@ -484,9 +497,9 @@ export function UsersWorkspace() {
             page={currentPage}
             isPageDataPending={isFetching}
             rowKey={(user) => String(user.id)}
-            rowLabel={(user) => user.userName}
+            rowLabel={(user) => user.name}
             columnLayout={columnVisibility}
-            minWidth={2200}
+        minWidth={1600}
             sort={sort}
             onSortChange={onSortChange}
             selectable
@@ -547,7 +560,7 @@ export function UsersWorkspace() {
         onEdit={openEditForm}
         onDelete={(user) => {
           setViewUser(null);
-          setDeleteTarget(user);
+          setDeactivateTarget(user);
         }}
       />
 
@@ -582,23 +595,41 @@ export function UsersWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <Dialog open={deactivateTarget !== null} onOpenChange={(open) => !open && setDeactivateTarget(null)}>
         <DialogContent className="z-[60]">
           <DialogHeader>
-            <DialogTitle>Delete user{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?</DialogTitle>
+            <DialogTitle>Deactivate user{Array.isArray(deactivateTarget) && deactivateTarget.length > 1 ? "s" : ""}?</DialogTitle>
             <DialogDescription>
-              {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected users.`
-                : "This will permanently remove this user account. This action cannot be undone."}
+              {Array.isArray(deactivateTarget)
+                ? `This will prevent ${deactivateTarget.length} selected users from accessing this company.`
+                : `${deactivateTarget?.name ?? "This user"} will no longer be able to access this company.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
+            <Button variant="outline" onClick={() => setDeactivateTarget(null)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
-              <Trash2 className="h-4 w-4" />
-              Delete
+            <Button variant="destructive" onClick={confirmDeactivate} disabled={isSaving}>
+              <UserX className="h-4 w-4" />
+              Deactivate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetTarget !== null} onOpenChange={(open) => !open && setResetTarget(null)}>
+        <DialogContent className="z-[60]">
+          <DialogHeader>
+            <DialogTitle>Send password reset?</DialogTitle>
+            <DialogDescription>
+              Send a Firebase password-reset email to {resetTarget?.name} at {resetTarget?.email}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetTarget(null)}>Cancel</Button>
+            <Button onClick={confirmPasswordReset}>
+              <KeyRound className="size-4" />
+              Send password reset
             </Button>
           </DialogFooter>
         </DialogContent>

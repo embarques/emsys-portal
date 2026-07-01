@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { updateConfigurationTheme } from "@/lib/configuration/store";
+import { useConfigurationStore, useUpdateUserPreferences } from "@/lib/configuration/use-configuration";
 import type { ThemePreference } from "@/lib/configuration/types";
 
 const THEME_OPTIONS: { value: ThemePreference | "system"; label: string; icon: typeof Sun }[] = [
@@ -26,15 +27,15 @@ const THEME_OPTIONS: { value: ThemePreference | "system"; label: string; icon: t
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
+  const preferences = useConfigurationStore();
+  const updatePreferences = useUpdateUserPreferences();
 
   React.useEffect(() => setMounted(true), []);
 
   function applyTheme(theme: ThemePreference | "system") {
     setTheme(theme);
-
-    if (theme === "light" || theme === "dark") {
-      updateConfigurationTheme(theme);
-    }
+    updateConfigurationTheme(theme);
+    updatePreferences.mutate({ ...preferences, theme });
   }
 
   const Icon = mounted && resolvedTheme === "dark" ? Moon : Sun;

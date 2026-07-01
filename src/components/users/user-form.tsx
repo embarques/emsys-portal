@@ -1,25 +1,24 @@
 "use client";
 
-import { Clock, KeyRound, Mail, ShieldCheck } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Clock, KeyRound, ShieldCheck } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
-import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import {
-  USER_ACTIVE_OPTIONS,
-  USER_PORTAL_BRANCHES,
-  USER_ROLE_OPTIONS,
-  createEmptyUserForm,
-  createUserBranchFromPortal,
-  getUserPortalBranch,
-  type UserFormValues,
-  type UserPortalBranch,
-} from "@/lib/users/types";
+import { Switch } from "@/components/ui/switch";
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { normalizeApiError } from "@/lib/api/axios";
+import { useRoles } from "@/lib/roles/hooks/use-roles";
+import { DEFAULT_ROLE_LIST_PARAMS } from "@/lib/roles/types";
+import { createUserFormSchema } from "@/lib/users/schemas/user.schema";
+import { createEmptyUserForm, USER_ACTIVE_OPTIONS, type UserFormValues } from "@/lib/users/types";
 
-type UserFormProps = {
+type Props = {
   initialValues?: UserFormValues;
   isEditing?: boolean;
   submitLabel: string;
@@ -34,250 +33,131 @@ export function UserForm({
   isEditing = false,
   submitLabel,
   isSubmitting = false,
-  externalError = null,
+  externalError,
   onSubmit,
   onCancel,
-}: UserFormProps) {
-  const [values, setValues] = useState<UserFormValues>(initialValues ?? createEmptyUserForm());
+}: Props) {
+  const branchesQuery = useBranchPicker(200);
+  const rolesQuery = useRoles({ ...DEFAULT_ROLE_LIST_PARAMS, limit: 200 });
+  const {
+    control,
+    formState: { errors },
+    handleSubmit,
+    register,
+    reset,
+  } = useForm<UserFormValues>({
+    resolver: zodResolver(createUserFormSchema(isEditing)),
+    defaultValues: initialValues ?? createEmptyUserForm(),
+  });
   const handleEnterNavigation = useFormEnterNavigation();
+  const restrictLoginHours = useWatch({ control, name: "restrictLoginHours" });
 
-  useEffect(() => {
-    setValues(initialValues ?? createEmptyUserForm());
-  }, [initialValues]);
+  useEffect(() => reset(initialValues ?? createEmptyUserForm()), [initialValues, reset]);
 
-  const selectedPortalBranch = getUserPortalBranch({ branch: values.branch });
-
-  const roleOptions = useMemo(() => {
-    const options = new Map(USER_ROLE_OPTIONS.map((option) => [option.id, option.label]));
-    if (values.role.id > 0 && !options.has(values.role.id)) {
-      options.set(values.role.id, values.role.name || `Role ${values.role.id}`);
-    }
-    return Array.from(options.entries()).map(([id, label]) => ({ id, label }));
-  }, [values.role.id, values.role.name]);
-
-  function updateField<K extends keyof UserFormValues>(key: K, value: UserFormValues[K]) {
-    setValues((current) => ({ ...current, [key]: value }));
-  }
-
-  function handlePortalBranchChange(portal: UserPortalBranch) {
-    setValues((current) => ({
-      ...current,
-      branch: createUserBranchFromPortal(portal),
-    }));
-  }
-
-  function handleRoleChange(roleId: number) {
-    const label = roleOptions.find((option) => option.id === roleId)?.label ?? "";
-    setValues((current) => ({
-      ...current,
-      role: { id: roleId, name: label },
-    }));
-  }
-
-  function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    onSubmit(values);
-  }
+  const branches = branchesQuery.data?.items ?? [];
+  const roles = useMemo(
+    () => (rolesQuery.data?.items ?? []).filter((role) => role.active),
+    [rolesQuery.data?.items],
+  );
+  const selectorsLoading = branchesQuery.isLoading || rolesQuery.isLoading;
+  const selectorError = branchesQuery.error ?? rolesQuery.error;
+  const noOptions = !selectorsLoading && !selectorError && (branches.length === 0 || roles.length === 0);
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      onKeyDown={handleEnterNavigation}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <FormBody>
-        <FormSection icon={KeyRound} title="Account">
-          <div className="space-y-2.5">
-            <div className="space-y-1">
-              <Label htmlFor="uid">Firebase UID</Label>
-              <Input
-                id="uid"
-                value={values.uid}
-                onChange={(event) => updateField("uid", event.target.value)}
-                placeholder="Firebase authentication UID"
-                className="font-mono text-xs"
-              />
-            </div>
-
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="userName">
-                  Username <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="userName"
-                  value={values.userName}
-                  onChange={(event) => updateField("userName", event.target.value)}
-                  placeholder="elk@elk.com"
-                  autoComplete="off"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="password">
-                  Password {!isEditing ? <span className="text-destructive">*</span> : null}
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={values.password}
-                  onChange={(event) => updateField("password", event.target.value)}
-                  placeholder={isEditing ? "Leave blank to keep current" : "Enter password"}
-                  autoComplete="new-password"
-                  required={!isEditing}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="fullName">Full name</Label>
-              <Input
-                id="fullName"
-                value={values.fullName}
-                onChange={(event) => updateField("fullName", event.target.value)}
-                placeholder="Defaults to userName when empty"
-              />
-            </div>
+        <FormSection icon={KeyRound} title="Profile">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Full name" required error={errors.name?.message}>
+              <Input id="name" {...register("name")} placeholder="Full name" aria-invalid={Boolean(errors.name)} autoFocus />
+            </Field>
+            <Field label="Email" required error={errors.email?.message}>
+              <Input id="email" type="email" {...register("email")} placeholder="user@example.com" aria-invalid={Boolean(errors.email)} readOnly={isEditing} />
+            </Field>
           </div>
+          {!isEditing ? (
+            <Field label="Temporary password" required error={errors.password?.message}>
+              <Input id="password" type="password" {...register("password")} placeholder="At least 6 characters" autoComplete="new-password" aria-invalid={Boolean(errors.password)} />
+            </Field>
+          ) : null}
         </FormSection>
 
         <FormSection icon={ShieldCheck} title="Access">
-          <div className="space-y-2.5">
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="active">
-                  Active <span className="text-destructive">*</span>
-                </Label>
-                <SearchableSelect
-                  id="active"
-                  searchable={false}
-                  value={String(values.active)}
-                  onValueChange={(next) => updateField("active", next === "true")}
-                  required
-                  options={USER_ACTIVE_OPTIONS.map((option) => ({
-                    value: String(option.value),
-                    label: option.label,
-                  }))}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="roleId">
-                  Role <span className="text-destructive">*</span>
-                </Label>
-                <SearchableSelect
-                  id="roleId"
-                  value={String(values.role.id)}
-                  onValueChange={(next) => handleRoleChange(Number(next))}
-                  searchPlaceholder="Search roles…"
-                  required
-                  options={roleOptions.map((option) => ({
-                    value: String(option.id),
-                    label: option.label,
-                  }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="branch">
-                  Branch <span className="text-destructive">*</span>
-                </Label>
-                <SearchableSelect
-                  id="branch"
-                  value={selectedPortalBranch}
-                  onValueChange={(next) => handlePortalBranchChange(next as UserPortalBranch)}
-                  searchPlaceholder="Search branches…"
-                  required
-                  options={USER_PORTAL_BRANCHES.map((option) => ({
-                    value: option.portal,
-                    label: option.label,
-                  }))}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="type">User type</Label>
-                <Input
-                  id="type"
-                  value={values.type}
-                  onChange={(event) => updateField("type", event.target.value)}
-                  placeholder="User type"
-                />
-              </div>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Controller
+              control={control}
+              name="active"
+              render={({ field }) => (
+                <Field label="Status" required>
+                  <SearchableSelect id="active" searchable={false} value={String(field.value)} onValueChange={(value) => field.onChange(value === "true")} options={USER_ACTIVE_OPTIONS.map((option) => ({ value: String(option.value), label: option.label }))} />
+                </Field>
+              )}
+            />
+            <Controller
+              control={control}
+              name="branch"
+              render={({ field }) => (
+                <Field label="Branch" required error={errors.branch?.id?.message}>
+                  <SearchableSelect id="branch" value={field.value.id ? String(field.value.id) : ""} disabled={branchesQuery.isLoading || branches.length === 0} placeholder={branchesQuery.isLoading ? "Loading branches…" : "Select branch"} searchPlaceholder="Search branches…" onValueChange={(value) => { const branch = branches.find((item) => item.id === Number(value)); field.onChange({ id: branch?.id ?? 0, name: branch?.name ?? "" }); }} options={branches.map((branch) => ({ value: String(branch.id), label: branch.name }))} />
+                </Field>
+              )}
+            />
+            <Controller
+              control={control}
+              name="role"
+              render={({ field }) => (
+                <Field label="Role" required error={errors.role?.id?.message}>
+                  <SearchableSelect id="role" value={field.value.id ? String(field.value.id) : ""} disabled={rolesQuery.isLoading || roles.length === 0} placeholder={rolesQuery.isLoading ? "Loading roles…" : "Select role"} searchPlaceholder="Search roles…" onValueChange={(value) => { const role = roles.find((item) => Number(item.roleId) === Number(value)); field.onChange({ id: Number(role?.roleId ?? 0), name: role?.name ?? "" }); }} options={roles.map((role) => ({ value: String(role.roleId), label: role.name }))} />
+                </Field>
+              )}
+            />
           </div>
+          {selectorError ? <p className="text-sm text-destructive">Unable to load access options: {normalizeApiError(selectorError).message}</p> : null}
+          {noOptions ? <p className="text-sm text-muted-foreground">No active branches or roles are available.</p> : null}
         </FormSection>
 
-        <FormSection icon={Clock} title="Schedule">
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label htmlFor="startTime">Start time</Label>
-              <Input
-                id="startTime"
-                value={values.startTime}
-                onChange={(event) => updateField("startTime", event.target.value)}
-                placeholder="Shift start time"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="endTime">End time</Label>
-              <Input
-                id="endTime"
-                value={values.endTime}
-                onChange={(event) => updateField("endTime", event.target.value)}
-                placeholder="Shift end time"
-              />
-            </div>
-          </div>
-        </FormSection>
-
-        <FormSection icon={Mail} title="Contact">
-          <div className="space-y-2.5">
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="email">
-                  Email {!isEditing ? <span className="text-destructive">*</span> : null}
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={values.email}
-                  onChange={(event) => updateField("email", event.target.value)}
-                  placeholder="name@emsys.example"
-                  required={!isEditing}
-                />
+        <FormSection icon={Clock} title="Login hours">
+          <Controller
+            control={control}
+            name="restrictLoginHours"
+            render={({ field }) => (
+              <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+                <div>
+                  <Label htmlFor="restrictLoginHours">Restrict login hours</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">Limits when this user can access the system each day.</p>
+                </div>
+                <Switch id="restrictLoginHours" checked={field.value} onCheckedChange={field.onChange} />
               </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="accessCode">Access code</Label>
-                <Input
-                  id="accessCode"
-                  type="number"
-                  value={values.accessCode}
-                  onChange={(event) => updateField("accessCode", Number(event.target.value) || 0)}
-                />
-              </div>
+            )}
+          />
+          {restrictLoginHours ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Start time" required error={errors.startTime?.message}>
+                <Input id="startTime" type="time" {...register("startTime")} aria-invalid={Boolean(errors.startTime)} />
+              </Field>
+              <Field label="End time" required error={errors.endTime?.message}>
+                <Input id="endTime" type="time" {...register("endTime")} aria-invalid={Boolean(errors.endTime)} />
+              </Field>
             </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="user">User</Label>
-              <Input
-                id="user"
-                value={values.user ?? ""}
-                onChange={(event) => updateField("user", event.target.value.trim() || null)}
-                placeholder="Defaults to userName when empty"
-              />
-            </div>
-          </div>
+          ) : null}
         </FormSection>
       </FormBody>
 
-      <FormFooter
-        error={externalError}
-        submitLabel={submitLabel}
-        isSubmitting={isSubmitting}
-        onCancel={onCancel}
-      />
+      <FormFooter error={externalError} submitLabel={submitLabel} isSubmitting={isSubmitting} submitDisabled={selectorsLoading || noOptions} onCancel={onCancel} />
     </form>
+  );
+}
+
+function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <Label>{label}{required ? <span className="text-destructive"> *</span> : null}</Label>
+      {children}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+    </div>
   );
 }

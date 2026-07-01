@@ -11,239 +11,75 @@ import {
 import { USER_TABLE_FILTER_FIELDS } from "@/lib/users/filter-fields";
 import { expandUserFilterNode } from "@/lib/users/user-filters";
 import { USER_BAR_OR_SEARCH_FIELDS } from "@/lib/users/search-fields";
-import { buildApiBranchDto, buildApiRoleRef } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
-  createEmptyUserRole,
   DEFAULT_USER_LIST_PARAMS,
   type User,
-  type UserBranch,
   type UserFormValues,
   type UserListParams,
-  type UserPermission,
-  type UserRole,
+  type UserReference,
+  type UserWritePayload,
 } from "@/lib/users/types";
-
-function buildUserChipFilters(params: UserListParams): ApiSearchFilter[] {
-  const filters: ApiSearchFilter[] = [];
-
-  if (params.active !== undefined && params.active !== "all") {
-    filters.push({ field: "active", operator: "eq", value: params.active === true });
-  }
-
-  if (params.branch && params.branch !== "all") {
-    filters.push({ field: "branch.id", operator: "eq", value: Number(params.branch) });
-  }
-
-  if (params.roleId && params.roleId !== "all") {
-    filters.push({ field: "role.id", operator: "eq", value: Number(params.roleId) });
-  }
-
-  return filters;
-}
-
-function hasUserListFilters(params: UserListParams): boolean {
-  return hasResourceListFilters({
-    search: params.search,
-    filterRows: params.filterRows,
-    tableFilterFields: USER_TABLE_FILTER_FIELDS,
-    hasChipFilters: buildUserChipFilters(params).length > 0,
-  });
-}
-
-function buildUserSearchBody(params: UserListParams) {
-  return buildStripeStyleSearchBody({
-    sort: params.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
-    filterGroups: buildResourceSearchFilterGroups({
-      search: params.search,
-      barOrSearchFields: USER_BAR_OR_SEARCH_FIELDS,
-      filterRows: params.filterRows,
-      tableFilterFields: USER_TABLE_FILTER_FIELDS,
-      chipFilters: buildUserChipFilters(params),
-      expandNode: expandUserFilterNode,
-    }),
-  });
-}
-
-function buildUsersQuery(params: UserListParams): string {
-  return buildApiListQuery({
-    page: params.page ?? DEFAULT_USER_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
-    offset: params.offset,
-    sort: params.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
-  });
-}
-
-type ApiUserPermission = {
-  _id?: number;
-  id?: number;
-  name?: string;
-  resourceType?: string;
-  create?: boolean;
-  view?: boolean;
-  update?: boolean;
-  delete?: boolean;
-  print?: boolean;
-};
-
-type ApiUserRole = {
-  _id?: number;
-  id?: number;
-  name?: string;
-  active?: boolean;
-  permissions?: ApiUserPermission[];
-  createdAt?: string;
-  updatedAt?: string;
-};
-
-type ApiUserBranch = {
-  _id?: number;
-  id?: number;
-  name?: string;
-  code?: string;
-};
 
 type ApiUser = {
   _id?: number | string;
   id?: number | string;
   uid?: string;
   email?: string;
-  userName?: string;
-  username?: string;
-  user?: string | null;
-  fullName?: string;
+  name?: string;
   active?: boolean;
-  accessCode?: number;
-  role?: ApiUserRole;
-  branch?: ApiUserBranch;
-  branches?: ApiUserBranch[];
-  password?: string;
-  type?: string;
+  branch?: ApiReference;
+  role?: ApiReference;
   startTime?: string;
   endTime?: string;
   createdAt?: string;
   updatedAt?: string;
+  createdBy?: ApiReference;
+  updatedBy?: ApiReference;
 };
 
-/** POST/PUT /users — see API_PAYLOADS.md */
-type ApiUserWritePayload = {
-  uid?: string;
-  email: string;
-  userName: string;
-  fullName: string;
-  active: boolean;
-  branch: ReturnType<typeof buildApiBranchDto>;
-  role: ReturnType<typeof buildApiRoleRef>;
-  password?: string;
-  id?: number;
-  accessCode?: number;
-  type?: string;
-  startTime?: string;
-  endTime?: string;
-};
+type ApiReference = { _id?: number; id?: number; name?: string };
+type ApiEnvelope<T> = PaginatedApiEnvelope<T> & { success?: boolean; message?: string; error?: string };
 
-type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
-  success?: boolean;
-  message?: string;
-  error?: string;
-};
-
-function readNumericId(value: number | string | undefined): number | undefined {
+function readId(value: number | string | undefined): number | undefined {
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function normalizePermission(raw: unknown): UserPermission | null {
-  if (!raw || typeof raw !== "object") return null;
-
-  const item = raw as ApiUserPermission;
-  const id = readNumericId(item._id ?? item.id);
-  if (id == null) return null;
-
+function normalizeReference(raw: ApiReference | undefined): UserReference {
   return {
-    id,
-    name: String(item.name ?? "").trim(),
-    resourceType: String(item.resourceType ?? "").trim(),
-    create: item.create === true,
-    view: item.view === true,
-    update: item.update === true,
-    delete: item.delete === true,
-    print: item.print === true,
-  };
-}
-
-function normalizeRole(raw: unknown): UserRole {
-  if (!raw || typeof raw !== "object") {
-    return createEmptyUserRole();
-  }
-
-  const item = raw as ApiUserRole;
-  const permissions = Array.isArray(item.permissions)
-    ? item.permissions.map(normalizePermission).filter((entry): entry is UserPermission => entry != null)
-    : [];
-
-  return {
-    id: readNumericId(item._id ?? item.id) ?? 0,
-    name: String(item.name ?? "").trim(),
-    active: item.active !== false,
-    permissions,
-    createdAt: item.createdAt ?? "",
-    updatedAt: item.updatedAt ?? "",
-  };
-}
-
-function normalizeBranch(raw: unknown): UserBranch {
-  if (!raw || typeof raw !== "object") {
-    return { id: 0, name: "", code: "" };
-  }
-
-  const item = raw as ApiUserBranch;
-
-  return {
-    id: readNumericId(item._id ?? item.id) ?? 0,
-    name: String(item.name ?? "").trim(),
-    code: String(item.code ?? "").trim(),
+    id: readId(raw?._id ?? raw?.id) ?? 0,
+    name: String(raw?.name ?? "").trim(),
   };
 }
 
 function normalizeUser(raw: unknown): User | null {
   if (!raw || typeof raw !== "object") return null;
-
   const item = raw as ApiUser;
-  const id = readNumericId(item._id ?? item.id);
+  const id = readId(item._id ?? item.id);
   if (id == null) return null;
-
-  const userName = String(item.userName ?? item.username ?? "").trim();
-  const email = String(item.email ?? "").trim();
-  const fullName = String(item.fullName ?? "").trim();
-  const role = normalizeRole(item.role);
-
   return {
     id,
     uid: String(item.uid ?? "").trim(),
-    userName,
-    email,
-    fullName: fullName || userName || email,
-    password: "",
+    email: String(item.email ?? "").trim(),
+    name: String(item.name ?? item.email ?? "").trim(),
     active: item.active !== false,
-    role,
-    branch: normalizeBranch(item.branch),
+    branch: normalizeReference(item.branch),
+    role: normalizeReference(item.role),
     startTime: String(item.startTime ?? "").trim(),
     endTime: String(item.endTime ?? "").trim(),
     createdAt: item.createdAt ?? "",
     updatedAt: item.updatedAt ?? "",
-    user: item.user != null ? String(item.user).trim() || null : null,
-    accessCode: Number(item.accessCode ?? 0),
-    type: String(item.type ?? "").trim(),
+    createdBy: item.createdBy ? normalizeReference(item.createdBy) : null,
+    updatedBy: item.updatedBy ? normalizeReference(item.updatedBy) : null,
   };
 }
 
-function normalizePaginatedUsers(payload: PaginatedApiEnvelope<unknown[]>): PaginatedResult<User> {
+function normalizeUsers(payload: PaginatedApiEnvelope<unknown[]>): PaginatedResult<User> {
   const items = Array.isArray(payload.data)
-    ? payload.data.map(normalizeUser).filter((user): user is User => user != null)
+    ? payload.data.map(normalizeUser).filter((item): item is User => item != null)
     : [];
-
   return {
     items,
     page: payload.page ?? 1,
@@ -252,147 +88,75 @@ function normalizePaginatedUsers(payload: PaginatedApiEnvelope<unknown[]>): Pagi
   };
 }
 
-function buildUserWritePayload(
-  values: UserFormValues,
-  options: { userId?: number; requirePassword?: boolean } = {},
-): ApiUserWritePayload {
-  const userName = values.userName.trim();
-  const email = values.email.trim() || userName;
-  const fullName = values.fullName.trim() || userName;
-  const password = values.password.trim();
-  const branchId = values.branch.id;
-
-  if (!userName) {
-    throw new Error("Username is required.");
+function chipFilters(params: UserListParams): ApiSearchFilter[] {
+  const filters: ApiSearchFilter[] = [];
+  if (params.active !== undefined && params.active !== "all") {
+    filters.push({ field: "active", operator: "eq", value: params.active });
   }
-
-  if (options.requirePassword && !password) {
-    throw new Error("Password is required.");
+  if (params.branch && params.branch !== "all") {
+    filters.push({ field: "branch.id", operator: "eq", value: Number(params.branch) });
   }
-
-  if (!values.role.id) {
-    throw new Error("Role is required.");
+  if (params.roleId && params.roleId !== "all") {
+    filters.push({ field: "role.id", operator: "eq", value: Number(params.roleId) });
   }
+  return filters;
+}
 
-  if (!branchId) {
-    throw new Error("Branch is required.");
-  }
+function hasFilters(params: UserListParams): boolean {
+  return hasResourceListFilters({
+    search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: USER_TABLE_FILTER_FIELDS,
+    hasChipFilters: chipFilters(params).length > 0,
+  });
+}
 
-  const payload: ApiUserWritePayload = {
-    email,
-    userName,
-    fullName,
+function listQuery(params: UserListParams): string {
+  return buildApiListQuery({
+    page: params.page ?? DEFAULT_USER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
+    offset: params.offset,
+    sort: params.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
+  });
+}
+
+function searchBody(params: UserListParams) {
+  return buildStripeStyleSearchBody({
+    sort: params.sort ?? DEFAULT_USER_LIST_PARAMS.sort,
+    filterGroups: buildResourceSearchFilterGroups({
+      search: params.search,
+      barOrSearchFields: USER_BAR_OR_SEARCH_FIELDS,
+      filterRows: params.filterRows,
+      tableFilterFields: USER_TABLE_FILTER_FIELDS,
+      chipFilters: chipFilters(params),
+      expandNode: expandUserFilterNode,
+    }),
+  });
+}
+
+function writePayload(values: UserFormValues, uid?: string): UserWritePayload {
+  const payload: UserWritePayload = {
+    email: values.email.trim(),
+    name: values.name.trim(),
     active: values.active,
-    branch: buildApiBranchDto(values.branch),
-    role: buildApiRoleRef(values.role),
+    branch: { id: values.branch.id, name: values.branch.name },
+    role: { id: values.role.id, name: values.role.name },
   };
-
-  if (options.userId != null) {
-    payload.id = options.userId;
+  if (uid) payload.uid = uid;
+  if (values.restrictLoginHours) {
+    payload.startTime = values.startTime;
+    payload.endTime = values.endTime;
+  } else {
+    payload.startTime = "";
+    payload.endTime = "";
   }
-
-  const uid = values.uid.trim();
-  if (uid) {
-    payload.uid = uid;
-  }
-
-  if (password) {
-    payload.password = password;
-  }
-
-  if (values.accessCode > 0) {
-    payload.accessCode = values.accessCode;
-  }
-
-  const type = values.type.trim();
-  if (type) {
-    payload.type = type;
-  }
-
-  const startTime = values.startTime.trim();
-  if (startTime) {
-    payload.startTime = startTime;
-  }
-
-  const endTime = values.endTime.trim();
-  if (endTime) {
-    payload.endTime = endTime;
-  }
-
   return payload;
 }
 
-function formValuesToUpdateUserPayload(values: UserFormValues, userId: number): ApiUserWritePayload {
-  return buildUserWritePayload(values, { userId });
-}
-
-function parseUserPathId(userId: string | number): number {
-  const numericId = readNumericId(userId);
-  if (numericId == null) {
-    throw new Error("Invalid user ID.");
-  }
-
-  return numericId;
-}
-
-function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackMessage: string) {
+function assertSuccess(response: ApiEnvelope<unknown>, fallback: string) {
   if (response.success === false) {
-    throw new Error(response.message?.trim() || response.error?.trim() || fallbackMessage);
+    throw new Error(response.message?.trim() || response.error?.trim() || fallback);
   }
-}
-
-function extractUserFromMutationResponse(data: unknown): User | null {
-  if (data && typeof data === "object" && !Array.isArray(data)) {
-    return normalizeUser(data);
-  }
-
-  return null;
-}
-
-function extractCreatedUserId(response: ApiMutationEnvelope<unknown>): string | null {
-  const data = response.data;
-
-  if (typeof data === "string" || typeof data === "number") {
-    const id = String(data).trim();
-    return id || null;
-  }
-
-  if (data && typeof data === "object") {
-    const record = data as ApiUser;
-    const id = readNumericId(record._id ?? record.id);
-    if (id != null) {
-      return String(id);
-    }
-  }
-
-  return null;
-}
-
-async function resolveCreatedUser(
-  values: UserFormValues,
-  response: ApiMutationEnvelope<unknown>,
-): Promise<User> {
-  const createdId = extractCreatedUserId(response);
-  if (createdId) {
-    return fetchUserById(createdId);
-  }
-
-  const userName = values.userName.trim();
-  if (userName) {
-    const matches = await fetchUsers({
-      page: 1,
-      limit: 1,
-      search: { field: "userName", operator: "eq", value: userName },
-    });
-
-    const matchedUser = matches.items[0];
-    if (matchedUser) {
-      return matchedUser;
-    }
-  }
-
-  const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to create user.");
 }
 
 export function normalizeApiUser(raw: unknown): User | null {
@@ -405,68 +169,64 @@ export async function fetchUsers(params: UserListParams = {}): Promise<Paginated
     page: params.page ?? DEFAULT_USER_LIST_PARAMS.page,
     limit: params.limit ?? DEFAULT_USER_LIST_PARAMS.limit,
     offset: params.offset,
-    isFiltered: hasUserListFilters(params),
-    buildGetQuery: () => buildUsersQuery(params),
-    buildSearchBody: () => buildUserSearchBody(params),
-    normalize: normalizePaginatedUsers,
+    isFiltered: hasFilters(params),
+    buildGetQuery: () => listQuery(params),
+    buildSearchBody: () => searchBody(params),
+    normalize: normalizeUsers,
   });
 }
 
 export async function fetchUserById(userId: string | number): Promise<User> {
-  const response = await apiClient.get<ApiUser | PaginatedApiEnvelope<ApiUser>>(
-    `${API_ENDPOINTS.USERS}/${userId}`,
-  );
-
-  const raw =
-    response && typeof response === "object" && "data" in response
-      ? (response as PaginatedApiEnvelope<ApiUser>).data
-      : response;
-
-  const user = normalizeUser(raw);
-  if (!user) {
-    throw new Error("User not found.");
-  }
-
+  const response = await apiClient.get<ApiEnvelope<ApiUser>>(`${API_ENDPOINTS.USERS}/${userId}`);
+  const user = normalizeUser(response.data ?? response);
+  if (!user) throw new Error("User not found.");
   return user;
 }
 
-export async function createUser(values: UserFormValues): Promise<User> {
-  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
-    API_ENDPOINTS.USERS,
-    buildUserWritePayload(values, { requirePassword: true }),
-  );
+export async function fetchCurrentUser(): Promise<User> {
+  const response = await apiClient.get<ApiEnvelope<ApiUser>>(API_ENDPOINTS.CURRENT_USER);
+  const user = normalizeUser(response.data);
+  if (!user) throw new Error("Current tenant user not found.");
+  return user;
+}
 
-  assertMutationSuccess(response, "Unable to create user.");
-
-  return resolveCreatedUser(values, response);
+export async function createUser(values: UserFormValues, uid: string): Promise<User> {
+  const response = await apiClient.post<ApiEnvelope<ApiUser>>(API_ENDPOINTS.USERS, writePayload(values, uid));
+  assertSuccess(response, "Unable to create user.");
+  const user = normalizeUser(response.data);
+  if (user) return user;
+  const matches = await fetchUsers({
+    page: 1,
+    limit: 1,
+    search: { field: "email", operator: "eq", value: values.email.trim() },
+  });
+  if (!matches.items[0]) throw new Error("User was created but could not be reloaded.");
+  return matches.items[0];
 }
 
 export async function updateUser(userId: string | number, values: UserFormValues): Promise<User> {
-  const numericId = parseUserPathId(userId);
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.USERS}/${numericId}`,
-    formValuesToUpdateUserPayload(values, numericId),
+  const response = await apiClient.put<ApiEnvelope<ApiUser>>(
+    `${API_ENDPOINTS.USERS}/${userId}`,
+    writePayload(values),
   );
-
-  assertMutationSuccess(response, "Unable to update user.");
-
-  const updatedUser = extractUserFromMutationResponse(response.data);
-  if (updatedUser) {
-    return updatedUser;
-  }
-
-  return fetchUserById(numericId);
+  assertSuccess(response, "Unable to update user.");
+  return normalizeUser(response.data) ?? fetchUserById(userId);
 }
 
-export async function deleteUser(userId: string | number): Promise<void> {
-  const numericId = parseUserPathId(userId);
-  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.USERS}/${numericId}`,
-  );
-
-  assertMutationSuccess(response, "Unable to delete user.");
+export async function deactivateUser(user: User): Promise<User> {
+  return updateUser(user.id, { ...userToValues(user), active: false });
 }
 
-export async function deleteUsers(userIds: Array<string | number>): Promise<void> {
-  await Promise.all(userIds.map((userId) => deleteUser(userId)));
+function userToValues(user: User): UserFormValues {
+  return {
+    email: user.email,
+    name: user.name,
+    password: "",
+    active: user.active,
+    branch: user.branch,
+    role: user.role,
+    restrictLoginHours: Boolean(user.startTime || user.endTime),
+    startTime: user.startTime,
+    endTime: user.endTime,
+  };
 }

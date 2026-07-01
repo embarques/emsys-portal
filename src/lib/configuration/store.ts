@@ -1,103 +1,26 @@
-import {
-  DEFAULT_USER_CONFIGURATION,
-  normalizeMaxWorkspaceTabs,
-  type UserConfiguration,
-} from "./types";
+import { DEFAULT_USER_PREFERENCES, type UserPreferenceValues } from "./types";
 
-const STORAGE_KEY = "emsys-user-configuration";
-
-let configurationStore: UserConfiguration = { ...DEFAULT_USER_CONFIGURATION };
-let cachedSnapshot: UserConfiguration = configurationStore;
-const serverSnapshot: UserConfiguration = { ...DEFAULT_USER_CONFIGURATION };
+let snapshot: UserPreferenceValues = { ...DEFAULT_USER_PREFERENCES };
 const listeners = new Set<() => void>();
 
-function configurationsEqual(a: UserConfiguration, b: UserConfiguration): boolean {
-  return (
-    a.username === b.username &&
-    a.password === b.password &&
-    a.displayName === b.displayName &&
-    a.language === b.language &&
-    a.theme === b.theme &&
-    a.maxWorkspaceTabs === b.maxWorkspaceTabs
-  );
-}
-
-function commitConfigurationStore(next: UserConfiguration, persist: boolean) {
-  configurationStore = { ...next };
-  cachedSnapshot = configurationStore;
-
-  if (persist) {
-    writeStoredConfiguration(configurationStore);
-  }
-
-  emit();
-}
-
-function emit() {
-  listeners.forEach((listener) => listener());
-}
-
-function readStoredConfiguration(): UserConfiguration | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<UserConfiguration>;
-    return {
-      username: parsed.username?.trim() || DEFAULT_USER_CONFIGURATION.username,
-      password: parsed.password || DEFAULT_USER_CONFIGURATION.password,
-      displayName: parsed.displayName?.trim() || DEFAULT_USER_CONFIGURATION.displayName,
-      language: parsed.language === "es" ? "es" : "en",
-      theme:
-        parsed.theme === "dark" || parsed.theme === "system" ? parsed.theme : "light",
-      maxWorkspaceTabs: normalizeMaxWorkspaceTabs(
-        parsed.maxWorkspaceTabs ?? DEFAULT_USER_CONFIGURATION.maxWorkspaceTabs,
-      ),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredConfiguration(config: UserConfiguration) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-}
-
-export function subscribeConfigurationStore(listener: () => void): () => void {
+export function subscribeConfigurationStore(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
-export function getConfigurationSnapshot(): UserConfiguration {
-  return cachedSnapshot;
+export function getConfigurationSnapshot() {
+  return snapshot;
 }
 
-export function getConfigurationServerSnapshot(): UserConfiguration {
-  return serverSnapshot;
+export function getConfigurationServerSnapshot() {
+  return DEFAULT_USER_PREFERENCES;
 }
 
-export function initializeConfigurationStore() {
-  const stored = readStoredConfiguration();
-  const next = stored ? { ...stored } : { ...DEFAULT_USER_CONFIGURATION };
-
-  if (configurationsEqual(next, configurationStore)) {
-    return;
-  }
-
-  commitConfigurationStore(next, false);
+export function syncConfigurationStore(next: UserPreferenceValues) {
+  snapshot = { ...next };
+  listeners.forEach((listener) => listener());
 }
 
-export function setConfigurationStore(next: UserConfiguration) {
-  commitConfigurationStore(next, true);
-}
-
-export function updateConfigurationTheme(theme: UserConfiguration["theme"]) {
-  if (configurationStore.theme === theme) return;
-  commitConfigurationStore({ ...configurationStore, theme }, true);
-}
-
-export function resetConfigurationStore() {
-  commitConfigurationStore({ ...DEFAULT_USER_CONFIGURATION }, true);
+export function updateConfigurationTheme(theme: UserPreferenceValues["theme"]) {
+  syncConfigurationStore({ ...snapshot, theme });
 }

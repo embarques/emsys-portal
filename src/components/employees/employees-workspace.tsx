@@ -372,7 +372,7 @@ export function EmployeesWorkspace() {
     {
       id: "user",
       label: "user",
-      sortField: "user.userName",
+      sortField: "user.name",
       renderCell: (employee) => formatEmployeeUserLabel(employee),
     },
     {
@@ -382,9 +382,9 @@ export function EmployeesWorkspace() {
       renderCell: (employee) => (employee.user?.id ? String(employee.user.id) : "—"),
     },
     {
-      id: "user.userName",
-      label: "user.userName",
-      renderCell: (employee) => employee.user?.userName || "—",
+      id: "user.name",
+      label: "user.name",
+      renderCell: (employee) => employee.user?.name || "—",
     },
     {
       id: "createdAt",

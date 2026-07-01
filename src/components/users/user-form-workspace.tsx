@@ -8,6 +8,7 @@ import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
+import { createSecondaryFirebaseUser } from "@/lib/auth/firebase/firebase-user-admin";
 import { useCreateUser, useUpdateUser, useUser } from "@/lib/users/hooks/use-users";
 import { createEmptyUserForm, userToFormValues, type UserFormValues } from "@/lib/users/types";
 import {
@@ -27,16 +28,15 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
   const detailQuery = useUser(isEditing ? (entityId ?? null) : null);
 
   const [formError, setFormError] = useState<string | null>(null);
-  const [formInstance, setFormInstance] = useState(0);
 
   const editing = isEditing ? (detailQuery.data ?? null) : null;
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   useEffect(() => {
-    if (isEditing && editing?.userName) {
-      updateTabLabel(tabId, `Edit ${editing.userName}`);
+    if (isEditing && editing?.name) {
+      updateTabLabel(tabId, `Edit ${editing.name}`);
     }
-  }, [editing?.userName, isEditing, tabId, updateTabLabel]);
+  }, [editing?.name, isEditing, tabId, updateTabLabel]);
 
   async function save(values: UserFormValues) {
     setFormError(null);
@@ -44,14 +44,21 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
     try {
       if (isEditing && editing) {
         const next = await updateMutation.mutateAsync({ userId: editing.id, values });
-        notifyUpdated("User", next.userName);
+        notifyUpdated("User", next.name);
         closeFormTabAndReturn(tabId);
         return;
       }
 
-      const next = await createMutation.mutateAsync(values);
-      notifyAdded("User", next.userName);
-      setFormInstance((value) => value + 1);
+      const uid = await createSecondaryFirebaseUser(values.email, values.password);
+      try {
+        const next = await createMutation.mutateAsync({ values, uid });
+        notifyAdded("User", next.name);
+        closeFormTabAndReturn(tabId);
+      } catch (apiError) {
+        throw new Error(
+          `The Firebase account was created, but the EMSYS tenant user record was not created. Do not submit this form again with the same email. ${normalizeApiError(apiError).message}`,
+        );
+      }
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
     }
@@ -87,10 +94,10 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
   return (
     <FormTabShell
       title={isEditing ? "Edit user" : "Add user"}
-      description={isEditing && editing ? editing.userName : "Create a new user account."}
+      description={isEditing && editing ? editing.name : "Create a new user account."}
     >
       <UserForm
-        key={isEditing ? (editing?.id ?? "edit") : `new-${formInstance}`}
+        key={isEditing ? (editing?.id ?? "edit") : "new"}
         initialValues={isEditing && editing ? userToFormValues(editing) : createEmptyUserForm()}
         isEditing={isEditing}
         submitLabel={isEditing ? "Save changes" : "Add user"}

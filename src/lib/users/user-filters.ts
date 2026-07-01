@@ -4,7 +4,7 @@ import {
   type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
 
-const NUMERIC_FIELDS: ReadonlySet<string> = new Set(["id", "branch.id", "role.id", "accessCode"]);
+const NUMERIC_FIELDS: ReadonlySet<string> = new Set(["id", "branch.id", "role.id"]);
 const BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["active"]);
 
 export function expandUserFilterNode(node: ApiSearchFilterNode): ApiSearchFilterNode | null {
