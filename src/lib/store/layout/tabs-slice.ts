@@ -294,7 +294,8 @@ export function findFormTab(
     (tab) =>
       tab.form?.feature === feature &&
       tab.form.mode === mode &&
-      // Edit tabs are keyed by record; add tabs are reused per feature.
-      (mode === "add" || tab.form.entityId === entityId),
+      (mode === "add"
+        ? !entityId || tab.form.entityId === entityId
+        : tab.form.entityId === entityId),
   );
 }

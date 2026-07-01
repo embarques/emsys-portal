@@ -9,13 +9,16 @@ import { TransactionWizardStepper } from "@/components/accounting/transaction-wi
 import { Button } from "@/components/ui/button";
 import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { AccountingLookup, ChartAccount, DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import type { Employee } from "@/lib/employees/types";
 import type { Invoice } from "@/lib/invoices/types";
 import { cn } from "@/lib/utils";
 
 type SharedProps = {
   open: boolean;
+  presentation?: "dialog" | "tab";
   employees: Employee[];
+  employeeGroups: EmployeeGroupOption[];
   accounts: ChartAccount[];
   bankAccounts: ChartAccount[];
   invoices: Invoice[];
@@ -41,7 +44,6 @@ type Props = AddModeProps | EditModeProps;
 function emptyTransaction(type: JournalTransactionType): DailyIncomeJournalValues {
   return {
     transactionType: type,
-    amount: 0,
     refNumber: "",
     description: "",
     includeSender: false,
@@ -57,6 +59,10 @@ function continueTransactionValues(
     ...emptyTransaction(type),
     employeeId: values.employeeId,
     employeeName: values.employeeName,
+    employeeGroupId: values.employeeGroupId,
+    employeeGroupName: values.employeeGroupName,
+    paymentMethodId: values.paymentMethodId,
+    paymentMethodName: values.paymentMethodName,
     transactionType: type,
   };
 }
@@ -74,6 +80,7 @@ function clearTypeSpecificFields(
 
 export function AddTransactionWizard(props: Props) {
   const formId = useId();
+  const presentation = props.presentation ?? "dialog";
   const isEdit = props.mode === "edit";
   const [step, setStep] = useState<1 | 2>(isEdit ? 2 : 1);
   const [selectedType, setSelectedType] = useState<JournalTransactionType | null>(
@@ -131,14 +138,26 @@ export function AddTransactionWizard(props: Props) {
   }
 
   return (
-    <div className="flex max-h-[90vh] flex-col">
-      <DialogHeader className="shrink-0 space-y-4 border-b border-border px-6 py-4 pr-12">
-        <div>
-          <DialogTitle>{isEdit ? "Edit transaction" : "Add transaction"}</DialogTitle>
-          <DialogDescription>Record an entry in the selected daily closeout.</DialogDescription>
+    <div
+      data-testid="transaction-wizard"
+      className={cn(
+        "flex flex-col",
+        presentation === "dialog" ? "max-h-[90vh]" : "min-h-0 flex-1",
+      )}
+    >
+      {presentation === "dialog" ? (
+        <DialogHeader className="shrink-0 space-y-4 border-b border-border px-6 py-4 pr-12">
+          <div>
+            <DialogTitle>{isEdit ? "Edit transaction" : "Add transaction"}</DialogTitle>
+            <DialogDescription>Record an entry in the selected daily closeout.</DialogDescription>
+          </div>
+          <TransactionWizardStepper step={step} />
+        </DialogHeader>
+      ) : (
+        <div className="shrink-0 border-b border-border px-5 py-3">
+          <TransactionWizardStepper step={step} />
         </div>
-        <TransactionWizardStepper step={step} />
-      </DialogHeader>
+      )}
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {step === 1 ? (
@@ -167,6 +186,7 @@ export function AddTransactionWizard(props: Props) {
               transactionType={selectedType}
               initialValues={detailValues}
               employees={props.employees}
+              employeeGroups={props.employeeGroups}
               accounts={props.accounts}
               bankAccounts={props.bankAccounts}
               invoices={props.invoices}
@@ -179,7 +199,12 @@ export function AddTransactionWizard(props: Props) {
         ) : null}
       </div>
 
-      <div className="shrink-0 border-t border-border bg-card px-6 py-3">
+      <div
+        className={cn(
+          "shrink-0 border-t border-border bg-card",
+          presentation === "dialog" ? "px-6 py-3" : "px-5 py-3",
+        )}
+      >
         {step === 1 ? (
           <div className="flex items-center justify-between gap-3">
             <Button type="button" variant="outline" onClick={props.onCancel} disabled={props.isSubmitting}>

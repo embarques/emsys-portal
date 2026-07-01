@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 
+import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +14,10 @@ import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/cu
 import type { Customer } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
 import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
+import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
-
-const selectClassName =
-  "flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
@@ -56,6 +56,7 @@ function customerOptions(customers: Customer[]) {
 
 type Props = {
   employees: Employee[];
+  employeeGroups: EmployeeGroupOption[];
   bankAccounts: ChartAccount[];
   paymentMethods: AccountingLookup[];
   errors: FieldErrors<DailyIncomeJournalValues>;
@@ -66,6 +67,7 @@ type Props = {
 
 export function RegisterInvoiceTransactionFields({
   employees,
+  employeeGroups,
   bankAccounts,
   paymentMethods,
   errors,
@@ -74,6 +76,7 @@ export function RegisterInvoiceTransactionFields({
   watch,
 }: Props) {
   const employeeId = watch("employeeId");
+  const employeeGroupId = watch("employeeGroupId");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const isZelle = isZellePaymentMethod(paymentMethodName);
@@ -135,6 +138,28 @@ export function RegisterInvoiceTransactionFields({
     return options;
   }, [customers, debouncedSenderQuery, senderCustomers, senderId, senderSearch.data?.items]);
 
+  const paymentMethodOptions = useMemo(
+    () => [
+      { value: "", label: "Select payment method" },
+      ...paymentMethods.map((method) => ({
+        value: String(method.id),
+        label: method.name,
+        keywords: [method.name],
+      })),
+    ],
+    [paymentMethods],
+  );
+  const bankAccountOptions = useMemo(
+    () => [
+      { value: "", label: "Select bank account" },
+      ...bankAccounts.map((account) => ({
+        value: String(account.id),
+        label: account.displayName,
+        keywords: [account.displayName],
+      })),
+    ],
+    [bankAccounts],
+  );
   const receiverOptions = useMemo(() => {
     const source = debouncedReceiverQuery
       ? (receiverSearch.data?.items ?? []).filter(
@@ -169,89 +194,25 @@ export function RegisterInvoiceTransactionFields({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <div className="space-y-2">
-        <RequiredLabel htmlFor="journal-employee">Employee</RequiredLabel>
-        <select
-          id="journal-employee"
-          className={selectClassName}
-          value={employeeId ?? ""}
-          onChange={(event) => {
-            const employee = employees.find((item) => String(item.id) === event.target.value);
-            setValue("employeeId", employee?.id, { shouldValidate: true });
-            setValue("employeeName", employee?.name ?? "");
-          }}
-        >
-          <option value="">Select employee</option>
-          {employees.map((employee) => (
-            <option key={employee.id} value={employee.id}>
-              {employee.name}
-            </option>
-          ))}
-        </select>
-        {errors.employeeId ? <p className="text-sm text-destructive">{errors.employeeId.message}</p> : null}
-      </div>
-
-      <div className="space-y-2">
-        <RequiredLabel htmlFor="journal-invoice-number">Invoice</RequiredLabel>
-        <Input
-          id="journal-invoice-number"
-          placeholder="Enter new invoice number"
-          {...register("invoiceNumber")}
+      <div className="sm:col-span-2">
+        <TransactionAssigneeSelect
+          employees={employees}
+          employeeGroups={employeeGroups}
+          employeeId={employeeId}
+          employeeGroupId={employeeGroupId}
+          groupsOnly
+          error={errors.employeeId?.message}
+          setValue={setValue}
         />
-        {errors.invoiceNumber ? (
-          <p className="text-sm text-destructive">{errors.invoiceNumber.message}</p>
-        ) : null}
-      </div>
-
-      <div className="space-y-2">
-        <RequiredLabel htmlFor="journal-invoice-cost">Cost</RequiredLabel>
-        <Input
-          id="journal-invoice-cost"
-          type="number"
-          min="0.01"
-          step="0.01"
-          placeholder="0.00"
-          {...register("invoiceCost", { valueAsNumber: true })}
-        />
-        {errors.invoiceCost ? <p className="text-sm text-destructive">{errors.invoiceCost.message}</p> : null}
-      </div>
-
-      <div className="space-y-2">
-        <RequiredLabel htmlFor="journal-amount">Amount</RequiredLabel>
-        <Input
-          id="journal-amount"
-          type="number"
-          min="0.01"
-          step="0.01"
-          placeholder="0.00"
-          {...register("amount", { valueAsNumber: true })}
-        />
-        {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="journal-invoice-balance">Balance</Label>
-        <Input
-          id="journal-invoice-balance"
-          readOnly
-          tabIndex={-1}
-          value={balance == null ? "" : formatMoney(balance)}
-          className="bg-muted/40"
-          aria-invalid={balance != null && balance < 0}
-        />
-        {balance != null && balance < 0 ? (
-          <p className="text-sm text-destructive">Balance cannot be negative.</p>
-        ) : null}
       </div>
 
       <div className="space-y-2 sm:col-span-2">
         <RequiredLabel htmlFor="journal-payment">Payment method</RequiredLabel>
-        <select
+        <SearchableSelect
           id="journal-payment"
-          className={selectClassName}
-          value={paymentMethodId ?? ""}
-          onChange={(event) => {
-            const method = paymentMethods.find((item) => item.id === Number(event.target.value));
+          value={paymentMethodId != null ? String(paymentMethodId) : ""}
+          onValueChange={(next) => {
+            const method = paymentMethods.find((item) => item.id === Number(next));
             setValue("paymentMethodId", method?.id, { shouldValidate: true });
             setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true });
             if (!isZellePaymentMethod(method?.name)) {
@@ -259,14 +220,10 @@ export function RegisterInvoiceTransactionFields({
               setValue("zelleTransactionName", undefined, { shouldValidate: true });
             }
           }}
-        >
-          <option value="">Select payment method</option>
-          {paymentMethods.map((method) => (
-            <option key={method.id} value={method.id}>
-              {method.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Select payment method"
+          searchPlaceholder="Search payment methods…"
+          options={paymentMethodOptions}
+        />
         {errors.paymentMethodId ? (
           <p className="text-sm text-destructive">{errors.paymentMethodId.message}</p>
         ) : null}
@@ -275,29 +232,26 @@ export function RegisterInvoiceTransactionFields({
       {needsBankAccount ? (
         <div className="space-y-2 sm:col-span-2">
           <RequiredLabel htmlFor="journal-bank-account">Bank account</RequiredLabel>
-          <select
+          <SearchableSelect
             id="journal-bank-account"
-            className={selectClassName}
-            value={paymentAccountId ?? ""}
-            onChange={(event) => {
-              const account = bankAccounts.find((item) => item.id === Number(event.target.value));
+            value={paymentAccountId != null ? String(paymentAccountId) : ""}
+            onValueChange={(next) => {
+              const account = bankAccounts.find((item) => item.id === Number(next));
               setValue("paymentAccountId", account?.id, { shouldValidate: true });
               setValue("paymentAccountName", account?.displayName ?? "");
               setValue("paymentAccountType", account?.type);
             }}
-          >
-            <option value="">Select bank account</option>
-            {bankAccounts.map((account) => (
-              <option key={account.id} value={account.id}>{account.displayName}</option>
-            ))}
-          </select>
+            placeholder="Select bank account"
+            searchPlaceholder="Search bank accounts…"
+            options={bankAccountOptions}
+          />
           {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
         </div>
       ) : null}
 
       {isZelle ? (
         <>
-          <div className="space-y-2">
+          <div className="space-y-2 sm:col-span-2">
             <RequiredLabel htmlFor="journal-zelle-date">Zelle transaction date</RequiredLabel>
             <Input id="journal-zelle-date" type="date" {...register("zelleTransactionDate")} />
             {errors.zelleTransactionDate ? (
@@ -305,7 +259,7 @@ export function RegisterInvoiceTransactionFields({
             ) : null}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 sm:col-span-2">
             <RequiredLabel htmlFor="journal-zelle-name">
               Zelle transaction name (as it appears in bank account)
             </RequiredLabel>
@@ -320,6 +274,59 @@ export function RegisterInvoiceTransactionFields({
           </div>
         </>
       ) : null}
+
+      <div className="space-y-2 sm:col-span-2">
+        <RequiredLabel htmlFor="journal-invoice-number">Invoice</RequiredLabel>
+        <Input
+          id="journal-invoice-number"
+          placeholder="Enter new invoice number"
+          {...register("invoiceNumber")}
+        />
+        {errors.invoiceNumber ? (
+          <p className="text-sm text-destructive">{errors.invoiceNumber.message}</p>
+        ) : null}
+      </div>
+
+      <div className="space-y-2 sm:col-span-2">
+        <RequiredLabel htmlFor="journal-invoice-cost">Cost</RequiredLabel>
+        <Input
+          id="journal-invoice-cost"
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="0.00"
+          {...register("invoiceCost", { setValueAs: moneyFormSetValueAs })}
+        />
+        {errors.invoiceCost ? <p className="text-sm text-destructive">{errors.invoiceCost.message}</p> : null}
+      </div>
+
+      <div className="space-y-2 sm:col-span-2">
+        <RequiredLabel htmlFor="journal-amount">Amount</RequiredLabel>
+        <Input
+          id="journal-amount"
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="0.00"
+          {...register("amount", { setValueAs: moneyFormSetValueAs })}
+        />
+        {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
+      </div>
+
+      <div className="space-y-2 sm:col-span-2">
+        <Label htmlFor="journal-invoice-balance">Balance</Label>
+        <Input
+          id="journal-invoice-balance"
+          readOnly
+          tabIndex={-1}
+          value={balance == null ? "" : formatMoney(balance)}
+          className="bg-muted/40"
+          aria-invalid={balance != null && balance < 0}
+        />
+        {balance != null && balance < 0 ? (
+          <p className="text-sm text-destructive">Balance cannot be negative.</p>
+        ) : null}
+      </div>
 
       <div className="space-y-3 sm:col-span-2">
         <label className="flex items-center gap-2 text-sm font-medium">

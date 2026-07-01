@@ -69,7 +69,7 @@ test.describe("Daily income transaction types", () => {
       expect(response.ok(), `${spec.label} failed with HTTP ${response.status()}`).toBe(true);
       if (spec.slug === "register-invoice" && invoiceNumber) {
         await expectRegisterInvoiceSuccessToast(page, invoiceNumber);
-        await expectRegisterInvoiceWizardReadyForNextEntry(dialog);
+        await expectRegisterInvoiceWizardReadyForNextEntry(page, dialog);
       } else {
         await expect(page.getByText("Transaction created.")).toBeVisible({ timeout: 15_000 });
       }

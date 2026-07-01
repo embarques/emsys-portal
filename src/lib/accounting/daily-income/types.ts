@@ -74,6 +74,7 @@ export type DailyIncomeJournal = {
   currency: string;
   rate: number;
   employee?: AccountingLookup;
+  employeeGroup?: DailyIncomePartyRef;
   account?: AccountingLookup;
   paymentAccount?: AccountingLookup;
   sourceAccount?: AccountingLookup;
@@ -136,11 +137,13 @@ export function requiresBankAccount(name?: string | null): boolean {
 
 export type DailyIncomeJournalValues = {
   transactionType: JournalTransactionType;
-  amount: number;
+  amount?: number;
   refNumber: string;
   description: string;
   employeeId?: number;
   employeeName?: string;
+  employeeGroupId?: string;
+  employeeGroupName?: string;
   accountId?: number;
   accountName?: string;
   accountType?: string;
@@ -166,43 +169,14 @@ export type DailyIncomeJournalValues = {
   zelleTransactionName?: string;
 };
 
-export type ChartAccountType = "ASSET" | "EXPENSE" | "REVENUE" | "BANK" | "LOAN";
-
-export type ChartAccount = {
-  id: number;
-  name: string;
-  displayName: string;
-  type: ChartAccountType;
-  description: string;
-  branch?: AccountingLookup;
-  parentAccount?: AccountingLookup;
-  systemAccount: boolean;
-  branchAccount: boolean;
-};
-
-export type ChartAccountValues = {
-  displayName: string;
-  type: ChartAccountType;
-  description: string;
-  branchId?: number;
-  branchCode?: string;
-  parentAccountId?: number;
-  parentAccountName?: string;
-};
-
-export type ChartAccountListParams = {
-  page?: number;
-  limit?: number;
-  query?: string;
-  type?: ChartAccountType;
-};
-
-export type ChartAccountList = {
-  items: ChartAccount[];
-  page: number;
-  resultsPerPage: number;
-  total: number;
-};
+export type {
+  ChartAccount,
+  ChartAccountList,
+  ChartAccountListParams,
+  ChartAccountRef,
+  ChartAccountType,
+  ChartAccountValues,
+} from "@/lib/accounting/chart-accounts/types";
 
 export const EMPTY_DAILY_INCOME_SUMMARY: DailyIncomeSummary = {
   totalGeneral: 0,

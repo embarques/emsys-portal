@@ -5,24 +5,20 @@ import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
-  createChartAccount,
   createDailyIncomeJournal,
   createIncomeStatement,
-  deleteChartAccount,
   deleteDailyIncomeJournal,
-  fetchChartAccounts,
   fetchAccountingPaymentMethods,
+  fetchDailyIncomeJournal,
   fetchDailyIncomeJournals,
   fetchIncomeStatement,
+  fetchIncomeStatementById,
   fetchIncomeStatementSummaryTotals,
   setIncomeStatementStatus,
-  updateChartAccount,
   updateDailyIncomeJournal,
   updateIncomeStatement,
 } from "@/lib/accounting/daily-income/api";
 import type {
-  ChartAccountListParams,
-  ChartAccountValues,
   DailyIncomeJournalListParams,
   DailyIncomeJournalValues,
   DailyIncomeStatement,
@@ -54,6 +50,26 @@ export function useIncomeStatement(branchId: number, date: string) {
   });
 }
 
+export function useIncomeStatementById(incomeStatementId: number | null) {
+  const queryEnabled = useAccountingQueryEnabled(Boolean(incomeStatementId));
+
+  return useWorkspaceQuery({
+    queryKey: queryKeys.accounting.incomeStatementById(incomeStatementId ?? 0),
+    queryFn: () => fetchIncomeStatementById(incomeStatementId ?? 0),
+    enabled: queryEnabled,
+  });
+}
+
+export function useDailyIncomeJournal(journalId: string | null) {
+  const queryEnabled = useAccountingQueryEnabled(Boolean(journalId));
+
+  return useWorkspaceQuery({
+    queryKey: queryKeys.accounting.journalById(journalId ?? ""),
+    queryFn: () => fetchDailyIncomeJournal(journalId ?? ""),
+    enabled: queryEnabled,
+  });
+}
+
 export function useIncomeStatementSummaryTotals(incomeStatementId: number) {
   const queryEnabled = useAccountingQueryEnabled(incomeStatementId > 0);
 
@@ -75,16 +91,12 @@ export function useDailyIncomeJournals(params: DailyIncomeJournalListParams) {
   });
 }
 
-export function useChartAccounts(params: ChartAccountListParams, enabled = true) {
-  const queryEnabled = useAccountingQueryEnabled(enabled);
-
-  return useWorkspaceQuery({
-    queryKey: queryKeys.accounting.accounts(params),
-    queryFn: () => fetchChartAccounts(params),
-    enabled: queryEnabled,
-    placeholderData: keepPreviousData,
-  });
-}
+export {
+  useChartAccounts,
+  useCreateChartAccount,
+  useDeleteChartAccount,
+  useUpdateChartAccount,
+} from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 
 export function useAccountingPaymentMethods(enabled = true) {
   const queryEnabled = useAccountingQueryEnabled(enabled);
@@ -155,29 +167,5 @@ export function useDeleteDailyIncomeJournal() {
   return useMutation({
     mutationFn: (id: string) => deleteDailyIncomeJournal(id),
     onSuccess: () => invalidateDailyIncome(queryClient),
-  });
-}
-
-export function useCreateChartAccount() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (values: ChartAccountValues) => createChartAccount(values),
-    onSuccess: () => invalidateAccounting(queryClient),
-  });
-}
-
-export function useUpdateChartAccount() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, values }: { id: number; values: ChartAccountValues }) => updateChartAccount(id, values),
-    onSuccess: () => invalidateAccounting(queryClient),
-  });
-}
-
-export function useDeleteChartAccount() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => deleteChartAccount(id),
-    onSuccess: () => invalidateAccounting(queryClient),
   });
 }

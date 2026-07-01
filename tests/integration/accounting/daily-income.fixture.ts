@@ -24,6 +24,39 @@ async function selectFirstRealOption(select: Locator, fieldName: string) {
   return value;
 }
 
+async function selectSearchableOption(page: Page, trigger: Locator, label: string) {
+  await trigger.click();
+  const option = page.locator("[cmdk-item]").filter({ hasText: label }).first();
+  await expect(option).toBeAttached({ timeout: 30_000 });
+  await option.click();
+}
+
+async function selectFirstSearchableOption(page: Page, trigger: Locator, fieldName: string) {
+  await trigger.click();
+  const firstOption = page.locator("[cmdk-item]").first();
+  await expect(firstOption).toBeAttached({ timeout: 30_000 });
+  const optionCount = await page.locator("[cmdk-item]").count();
+  if (optionCount === 0) {
+    throw new Error(`No ${fieldName} options loaded.`);
+  }
+  await firstOption.click();
+}
+
+async function selectFirstTransactionAssignee(page: Page, dialog: Locator) {
+  const field = dialog.locator("#journal-employee");
+  await field.click();
+  const firstOption = page.locator("[cmdk-item]").first();
+  await expect(firstOption).toBeAttached({ timeout: 30_000 });
+  const optionCount = await page.locator("[cmdk-item]").count();
+  if (optionCount === 0) {
+    throw new Error(
+      "No employee or employee group options loaded. Ensure the API returns at least one employee or employee group.",
+    );
+  }
+  await firstOption.click();
+  await expect(field).not.toHaveValue("");
+}
+
 async function getBranchCodes(main: Locator) {
   const options = await main.locator("#daily-branch option").all();
   const codes: string[] = [];
@@ -514,10 +547,12 @@ export async function waitForCloseoutTransactionsReady(main: Locator) {
 
 /** Step 2 of the add-transaction wizard for INITIAL-PAYMENT (Register invoice). */
 export async function fillRegisterInvoiceTransactionForm(
+  page: Page,
   dialog: Locator,
   options: RegisterInvoiceTransactionOptions,
 ) {
-  await selectFirstRealOption(dialog.locator("#journal-employee"), "employee");
+  await selectFirstTransactionAssignee(page, dialog);
+  await selectSearchableOption(page, dialog.locator("#journal-payment"), "CASH");
 
   const invoiceNumber =
     options.invoiceNumber ??
@@ -526,7 +561,6 @@ export async function fillRegisterInvoiceTransactionForm(
   await dialog.locator("#journal-invoice-number").fill(invoiceNumber);
   await dialog.locator("#journal-invoice-cost").fill(options.cost ?? options.amount ?? "1.00");
   await dialog.locator("#journal-amount").fill(options.amount ?? "1.00");
-  await dialog.locator("#journal-payment").selectOption({ label: "CASH" });
 
   await expect(dialog.locator("#journal-employee")).not.toHaveValue("");
   await expect(dialog.locator("#journal-invoice-number")).toHaveValue(invoiceNumber);
@@ -558,13 +592,14 @@ export async function expectRegisterInvoiceSuccessToast(page: Page, invoiceNumbe
   ).toBeVisible({ timeout: 15_000 });
 }
 
-/** After a successful save, the wizard stays open with employee retained and invoice fields cleared. */
-export async function expectRegisterInvoiceWizardReadyForNextEntry(dialog: Locator) {
-  await expect(dialog.getByRole("heading", { name: "Add transaction" })).toBeVisible();
-  await expect(dialog.locator("#journal-employee")).not.toHaveValue("");
-  await expect(dialog.locator("#journal-invoice-number")).toHaveValue("");
-  await expect(dialog.locator("#journal-invoice-cost")).not.toHaveValue("15.00");
-  await expect(dialog.locator("#journal-amount")).not.toHaveValue("10.00");
+/** After a successful save, the wizard stays open with employee and payment method retained. */
+export async function expectRegisterInvoiceWizardReadyForNextEntry(page: Page, wizard: Locator) {
+  await expect(page.getByRole("heading", { name: "Add transaction" })).toBeVisible();
+  await expect(wizard.locator("#journal-employee")).not.toHaveValue("");
+  await expect(wizard.locator("#journal-payment")).not.toHaveValue("");
+  await expect(wizard.locator("#journal-invoice-number")).toHaveValue("");
+  await expect(wizard.locator("#journal-invoice-cost")).not.toHaveValue("15.00");
+  await expect(wizard.locator("#journal-amount")).not.toHaveValue("10.00");
 }
 
 /**
@@ -586,7 +621,7 @@ export async function saveRegisterInvoiceTransaction(
       configuredInvoiceNumber() ??
       `PW-INV-${Date.now()}-${attempt}`;
 
-    await fillRegisterInvoiceTransactionForm(dialog, { ...options, invoiceNumber });
+    await fillRegisterInvoiceTransactionForm(page, dialog, { ...options, invoiceNumber });
 
     const createResponse = waitForApiResponse(page, "/journals", "POST", { requireOk: false });
     await dialog.getByRole("button", { name: "Save transaction" }).click();
@@ -605,7 +640,7 @@ export async function saveRegisterInvoiceTransaction(
       throw new Error(`Create transaction failed with HTTP ${response.status()}.`);
     }
 
-    await expect(dialog.getByRole("heading", { name: "Add transaction" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Add transaction" })).toBeVisible();
   }
 
   if (lastResponse && lastStatus === 403) {
@@ -716,6 +751,17 @@ export async function openTransactionTypeWizard(page: Page, main: Locator, spec:
   return openAddTransactionWizard(page, main, spec.label, spec.sectionTitle, spec);
 }
 
+export async function resolveTransactionWizardSurface(page: Page) {
+  const dialog = page.getByRole("dialog").filter({ has: page.getByTestId("transaction-wizard") });
+  if ((await dialog.count()) > 0) {
+    return dialog.first();
+  }
+
+  const tabWizard = page.getByTestId("transaction-wizard");
+  await expect(tabWizard).toBeVisible({ timeout: 15_000 });
+  return tabWizard;
+}
+
 export async function openAddTransactionWizard(
   page: Page,
   main: Locator,
@@ -726,33 +772,41 @@ export async function openAddTransactionWizard(
   await expect(main.getByRole("button", { name: "Add transaction" })).toBeEnabled({ timeout: 15_000 });
   await main.getByRole("button", { name: "Add transaction" }).click();
 
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "Add transaction" })).toBeVisible();
-  await dialog.getByRole("radio", { name: transactionLabel }).click();
-  await dialog.getByRole("button", { name: "Next" }).click();
-  await expect(dialog.getByText(sectionTitle)).toBeVisible();
+  const wizard = await resolveTransactionWizardSurface(page);
+  await expect(page.getByRole("heading", { name: "Add transaction" })).toBeVisible();
+  await wizard.getByRole("radio", { name: transactionLabel }).click();
+  await wizard.getByRole("button", { name: "Next" }).click();
+  await expect(wizard.getByText(sectionTitle)).toBeVisible();
 
   await expect(async () => {
-    const employeeCount = await dialog.locator("#journal-employee option").count();
-    expect(employeeCount, "employee dropdown options").toBeGreaterThan(1);
+    await wizard.locator("#journal-employee").click();
+    const assigneeCount = await page.locator("[cmdk-item]").count();
+    expect(assigneeCount, "employee or employee group options").toBeGreaterThan(0);
+    await page.keyboard.press("Escape");
 
     if (spec?.needsRegisterInvoice) {
-      await expect(dialog.locator("#journal-invoice-number")).toBeVisible();
-      await expect(dialog.locator("#journal-invoice-cost")).toBeVisible();
+      await expect(wizard.locator("#journal-invoice-number")).toBeVisible();
+      await expect(wizard.locator("#journal-invoice-cost")).toBeVisible();
     }
 
     if (spec?.needsInvoice) {
-      const invoiceCount = await dialog.locator("#journal-invoice option").count();
+      await expect(wizard.locator("#journal-invoice")).toBeVisible();
+      await wizard.locator("#journal-invoice").click();
+      const invoiceCount = await page.locator("[cmdk-item]").count();
       expect(invoiceCount, "invoice dropdown options").toBeGreaterThan(1);
+      await page.keyboard.press("Escape");
     }
 
     if (spec?.needsAccount) {
-      const accountCount = await dialog.locator("#journal-account option").count();
+      await expect(wizard.locator("#journal-account")).toBeVisible();
+      await wizard.locator("#journal-account").click();
+      const accountCount = await page.locator("[cmdk-item]").count();
       expect(accountCount, "account dropdown options").toBeGreaterThan(1);
+      await page.keyboard.press("Escape");
     }
   }).toPass({ timeout: 30_000 });
 
-  return dialog;
+  return wizard;
 }
 
 type TransactionFormOptions = {
@@ -764,22 +818,17 @@ type TransactionFormOptions = {
   invoiceOptionIndex?: number;
 };
 
-async function selectFirstAccountOption(select: Locator, fieldName: string) {
-  const optionCount = await select.locator("option").count();
-  if (optionCount <= 1) {
-    throw new Error(
-      `No ${fieldName} options loaded — GET /chart-accounts may be unavailable in this environment.`,
-    );
-  }
 
-  await selectFirstRealOption(select, fieldName);
-}
-
-export async function fillTransactionForm(dialog: Locator, spec: DailyIncomeTransactionSpec, options: TransactionFormOptions = {}) {
+export async function fillTransactionForm(
+  page: Page,
+  dialog: Locator,
+  spec: DailyIncomeTransactionSpec,
+  options: TransactionFormOptions = {},
+) {
   const amount = options.amount ?? "1.00";
 
   if (spec.needsRegisterInvoice) {
-    await fillRegisterInvoiceTransactionForm(dialog, {
+    await fillRegisterInvoiceTransactionForm(page, dialog, {
       amount,
       cost: options.cost ?? amount,
       invoiceNumber: options.invoiceNumber,
@@ -789,7 +838,7 @@ export async function fillTransactionForm(dialog: Locator, spec: DailyIncomeTran
     return;
   }
 
-  await selectFirstRealOption(dialog.locator("#journal-employee"), "employee");
+  await selectFirstTransactionAssignee(page, dialog);
   await dialog.locator("#journal-amount").fill(amount);
 
   if (spec.needsInvoice) {
@@ -797,34 +846,25 @@ export async function fillTransactionForm(dialog: Locator, spec: DailyIncomeTran
     const configuredInvoice = configuredInvoiceNumber();
 
     if (configuredInvoice) {
-      const option = invoiceSelect.locator("option").filter({ hasText: configuredInvoice });
-      await expect(option.first()).toBeAttached({ timeout: 30_000 });
-      const invoiceValue = await option.first().getAttribute("value");
-      if (!invoiceValue) {
-        throw new Error(`Invoice option not found for PLAYWRIGHT_DAILY_INCOME_INVOICE_NUMBER=${configuredInvoice}.`);
-      }
-      await invoiceSelect.selectOption(invoiceValue);
+      await invoiceSelect.click();
+      const option = page.locator("[cmdk-item]").filter({ hasText: configuredInvoice }).first();
+      await expect(option).toBeAttached({ timeout: 30_000 });
+      await option.click();
     } else {
-      const invoiceIndex = options.invoiceOptionIndex ?? 1;
-      await expect(invoiceSelect.locator("option").nth(invoiceIndex)).toBeAttached({ timeout: 30_000 });
-      const invoiceValue = await invoiceSelect.locator("option").nth(invoiceIndex).getAttribute("value");
-      if (!invoiceValue) {
-        throw new Error(`Expected invoice option at index ${invoiceIndex}.`);
-      }
-      await invoiceSelect.selectOption(invoiceValue);
+      await selectFirstSearchableOption(page, invoiceSelect, "invoice");
     }
   }
 
   if (spec.needsAccount) {
-    await selectFirstAccountOption(dialog.locator("#journal-account"), "account");
+    await selectFirstSearchableOption(page, dialog.locator("#journal-account"), "account");
   }
 
   if (spec.needsSourceAccount) {
-    await selectFirstAccountOption(dialog.locator("#journal-source"), "source account");
+    await selectFirstSearchableOption(page, dialog.locator("#journal-source"), "source account");
   }
 
   if (spec.needsPaymentMethod) {
-    await dialog.locator("#journal-payment").selectOption({ label: "CASH" });
+    await selectSearchableOption(page, dialog.locator("#journal-payment"), "CASH");
   }
 
   await expect(dialog.locator("#journal-employee")).not.toHaveValue("");
@@ -878,7 +918,7 @@ export async function saveJournalTransaction(
     return saveInvoiceJournalTransaction(page, dialog, spec, options);
   }
 
-  await fillTransactionForm(dialog, spec, options);
+  await fillTransactionForm(page, dialog, spec, options);
 
   const createResponse = waitForApiResponse(page, "/journals", "POST", { requireOk: false });
   await dialog.getByRole("button", { name: "Save transaction" }).click();
@@ -917,7 +957,7 @@ async function saveInvoiceJournalTransaction(
   let lastResponse: Response | null = null;
 
   for (let invoiceIndex = startIndex; invoiceIndex <= endIndex; invoiceIndex += 1) {
-    await fillTransactionForm(dialog, spec, { ...options, invoiceOptionIndex: invoiceIndex });
+    await fillTransactionForm(page, dialog, spec, { ...options, invoiceOptionIndex: invoiceIndex });
 
     const createResponse = waitForApiResponse(page, "/journals", "POST", { requireOk: false });
     await dialog.getByRole("button", { name: "Save transaction" }).click();
@@ -945,7 +985,7 @@ async function saveInvoiceJournalTransaction(
       throw new Error(`${spec.slug} transaction failed with HTTP ${response.status()}.`);
     }
 
-    await expect(dialog.getByRole("heading", { name: "Add transaction" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Add transaction" })).toBeVisible();
   }
 
   if (lastResponse && lastStatus === 403) {

@@ -11,11 +11,6 @@ import {
   isZellePaymentMethod,
   requiresBankAccount,
   type AccountingLookup,
-  type ChartAccount,
-  type ChartAccountList,
-  type ChartAccountListParams,
-  type ChartAccountType,
-  type ChartAccountValues,
   type DailyIncomeJournal,
   type DailyIncomeJournalList,
   type DailyIncomeJournalListParams,
@@ -74,23 +69,6 @@ function assertMutation(payload: unknown, fallback: string) {
   if (envelope.success === false) {
     throw new Error(stringValue(envelope.message || envelope.error) || fallback);
   }
-}
-
-function assertChartAccountMutation(payload: unknown, fallback: string) {
-  const envelope = objectValue(payload);
-  if (envelope.success !== true) {
-    throw new Error(stringValue(envelope.message || envelope.error) || fallback);
-  }
-}
-
-function unwrapChartAccountList(payload: unknown): unknown[] {
-  const data = objectValue(payload).data;
-  return Array.isArray(data) ? data : [];
-}
-
-function unwrapChartAccountEntity(payload: unknown): unknown {
-  const envelope = objectValue(payload);
-  return firstDefined(envelope.data, payload);
 }
 
 function normalizePartyRef(value: unknown): DailyIncomePartyRef | undefined {
@@ -160,6 +138,7 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     currency: stringValue(raw.currency),
     rate: numberValue(raw.rate),
     employee: normalizeLookup(raw.employee),
+    employeeGroup: normalizePartyRef(raw.employeeGroup),
     account: normalizeLookup(raw.account) ?? (primaryLine ? normalizeLookup(primaryLine) : undefined),
     paymentAccount: normalizeLookup(raw.paymentAccount),
     sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
@@ -238,24 +217,6 @@ function computeJournalSummary(items: DailyIncomeJournal[]): DailyIncomeSummary 
   return summary;
 }
 
-function normalizeAccount(value: unknown): ChartAccount | null {
-  const raw = objectValue(value);
-  const id = numberValue(firstDefined(raw.id, raw._id));
-  if (!id) return null;
-  const displayName = stringValue(firstDefined(raw.displayName, raw.name));
-  return {
-    id,
-    name: stringValue(raw.name) || displayName,
-    displayName,
-    type: (stringValue(objectValue(raw.type).id || raw.type) || "ASSET") as ChartAccountType,
-    description: stringValue(raw.description),
-    branch: normalizeLookup(raw.branch),
-    parentAccount: normalizeLookup(raw.parentAccount),
-    systemAccount: raw.systemAccount === true,
-    branchAccount: raw.branchAccount === true,
-  };
-}
-
 function queryString(values: Record<string, string | number | undefined>) {
   const query = new URLSearchParams();
   Object.entries(values).forEach(([key, value]) => {
@@ -268,6 +229,14 @@ export async function fetchIncomeStatementById(id: number) {
   if (!id) return null;
   const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.ACCOUNTING_INCOME_STATEMENT}/${id}`);
   return normalizeIncomeStatement(unwrap(payload));
+}
+
+export async function fetchDailyIncomeJournal(id: string) {
+  if (!id) return null;
+  const payload = await apiClient.get<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_JOURNAL}/${encodeURIComponent(id)}`,
+  );
+  return normalizeJournal(unwrap(payload));
 }
 
 function normalizeSummaryDetail(value: unknown): IncomeStatementSummaryDetail | null {
@@ -434,7 +403,7 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
   const search = params.query?.trim().toLowerCase();
   if (search) {
     items = items.filter((item) =>
-      [item.refNumber, item.description, item.transactionType, item.employee?.name, item.invoice?.number]
+      [item.refNumber, item.description, item.transactionType, item.employee?.name, item.employeeGroup?.name, item.invoice?.number]
         .some((value) => value?.toLowerCase().includes(search)),
     );
   }
@@ -488,6 +457,9 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     employee: values.employeeId
       ? { id: values.employeeId, name: values.employeeName ?? "" }
       : undefined,
+    employeeGroup: values.employeeGroupId?.trim()
+      ? { id: values.employeeGroupId.trim(), name: values.employeeGroupName ?? "" }
+      : undefined,
     account: accountRelated && values.accountId
       ? { id: values.accountId, name: values.accountName, type: values.accountType }
       : undefined,
@@ -539,29 +511,12 @@ export async function deleteDailyIncomeJournal(id: string) {
   assertMutation(payload, "Unable to delete transaction.");
 }
 
-export async function fetchChartAccounts(params: ChartAccountListParams = {}): Promise<ChartAccountList> {
-  const page = params.page ?? 1;
-  const limit = params.limit ?? 20;
-  const listQuery = buildApiListQuery({
-    page,
-    limit,
-    sort: { field: "createdAt", direction: "desc" },
-    filter: params.type ? { field: "type", operator: "eq", value: params.type } : undefined,
-  });
-  const search = params.query?.trim();
-  const query = search ? `${listQuery}&search=${encodeURIComponent(search)}` : listQuery;
-  const payload = await apiClient.get<ApiEnvelope>(`${API_ENDPOINTS.CHART_ACCOUNTS}?${query}`);
-  const envelope = objectValue(payload);
-  const items = unwrapChartAccountList(payload)
-    .map(normalizeAccount)
-    .filter((item): item is ChartAccount => item != null);
-  return {
-    items,
-    page: numberValue(envelope.page, page),
-    resultsPerPage: numberValue(firstDefined(envelope.resultsPerPage, envelope.results_per_page), limit),
-    total: numberValue(envelope.total, items.length),
-  };
-}
+export {
+  createChartAccount,
+  deleteChartAccount,
+  fetchChartAccounts,
+  updateChartAccount,
+} from "@/lib/accounting/chart-accounts/api/chart-accounts-api";
 
 export async function fetchAccountingPaymentMethods(): Promise<AccountingLookup[]> {
   return [
@@ -573,39 +528,3 @@ export async function fetchAccountingPaymentMethods(): Promise<AccountingLookup[
   ];
 }
 
-function accountPayload(values: ChartAccountValues) {
-  return {
-    name: values.displayName,
-    displayName: values.displayName,
-    type: values.type,
-    description: values.description,
-    branch: values.branchId ? { id: values.branchId, code: values.branchCode } : undefined,
-    parentAccount: values.parentAccountId
-      ? { id: values.parentAccountId, displayName: values.parentAccountName }
-      : undefined,
-  };
-}
-
-export async function createChartAccount(values: ChartAccountValues) {
-  const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.CHART_ACCOUNTS, accountPayload(values));
-  assertChartAccountMutation(payload, "Unable to create account.");
-  const result = normalizeAccount(unwrapChartAccountEntity(payload));
-  if (!result) throw new Error("The API did not return the created account.");
-  return result;
-}
-
-export async function updateChartAccount(id: number, values: ChartAccountValues) {
-  const payload = await apiClient.put<ApiEnvelope>(
-    `${API_ENDPOINTS.CHART_ACCOUNTS}/${id}`,
-    accountPayload(values),
-  );
-  assertChartAccountMutation(payload, "Unable to update account.");
-  const result = normalizeAccount(unwrapChartAccountEntity(payload));
-  if (!result) throw new Error("The API did not return the updated account.");
-  return result;
-}
-
-export async function deleteChartAccount(id: number) {
-  const payload = await apiClient.delete<ApiEnvelope>(`${API_ENDPOINTS.CHART_ACCOUNTS}/${id}`);
-  assertChartAccountMutation(payload, "Unable to delete account.");
-}

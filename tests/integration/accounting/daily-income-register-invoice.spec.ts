@@ -60,7 +60,7 @@ test.describe("Daily income register invoice", () => {
         if (response.ok()) {
           expect(response.ok(), `Create transaction failed with HTTP ${response.status()}`).toBe(true);
           await expectRegisterInvoiceSuccessToast(page, invoiceNumber);
-          await expectRegisterInvoiceWizardReadyForNextEntry(dialog);
+          await expectRegisterInvoiceWizardReadyForNextEntry(page, dialog);
           await expect(main.getByText(refNumber)).toBeVisible({ timeout: 15_000 });
           await expect(main.getByText("Invoice", { exact: true }).first()).toBeVisible();
           console.log(

@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { chartAccountSchema } from "@/lib/accounting/daily-income/schemas";
-import type { ChartAccount, ChartAccountValues } from "@/lib/accounting/daily-income/types";
+import { chartAccountSchema } from "@/lib/accounting/chart-accounts/schemas/chart-account.schema";
+import type { ChartAccount, ChartAccountValues } from "@/lib/accounting/chart-accounts/types";
 import type { Branch } from "@/lib/branches/types";
 
 const textareaClassName = "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";

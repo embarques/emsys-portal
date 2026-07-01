@@ -11,6 +11,7 @@ import { RoleFormWorkspace } from "@/components/roles/role-form-workspace";
 import { RouteFormWorkspace } from "@/components/routes/route-form-workspace";
 import { UserFormWorkspace } from "@/components/users/user-form-workspace";
 import { VehicleFormWorkspace } from "@/components/vehicles/vehicle-form-workspace";
+import { DailyIncomeTransactionFormWorkspace } from "@/components/accounting/daily-income-transaction-form-workspace";
 import type { WorkspaceTabForm } from "@/lib/layout/workspace-tab-types";
 
 /** Props every add/edit form host component rendered inside a workspace tab receives. */
@@ -35,6 +36,7 @@ export const workspaceFormRegistry: Record<string, ComponentType<WorkspaceFormHo
   employees: EmployeeFormWorkspace,
   "employee-groups": EmployeeGroupFormWorkspace,
   branches: BranchFormWorkspace,
+  "daily-income-transactions": DailyIncomeTransactionFormWorkspace,
 };
 
 export function resolveWorkspaceFormComponent(

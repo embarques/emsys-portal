@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { isZellePaymentMethod, requiresBankAccount } from "@/lib/accounting/daily-income/types";
+import { parseMoneyFormInput } from "@/lib/accounting/daily-income/money-input";
 
 export const dailyIncomeStatementSchema = z.object({
   date: z.string().min(1, "Date is required."),
@@ -22,11 +23,21 @@ export const dailyIncomeJournalSchema = z.object({
     "TRANSFER",
     "LOAN",
   ]),
-  amount: z.number().positive("Amount must be greater than zero."),
+  amount: z.preprocess(
+    parseMoneyFormInput,
+    z
+      .number({
+        required_error: "Amount must be greater than zero.",
+        invalid_type_error: "Amount must be greater than zero.",
+      })
+      .positive("Amount must be greater than zero."),
+  ),
   refNumber: z.string().trim().max(20, "Reference number is too long."),
   description: z.string().trim().max(500, "Description is too long."),
   employeeId: z.number().optional(),
   employeeName: z.string().optional(),
+  employeeGroupId: z.string().optional(),
+  employeeGroupName: z.string().optional(),
   accountId: z.number().optional(),
   accountName: z.string().optional(),
   accountType: z.string().optional(),
@@ -38,7 +49,10 @@ export const dailyIncomeJournalSchema = z.object({
   sourceAccountType: z.string().optional(),
   invoiceId: z.string().optional(),
   invoiceNumber: z.string().optional(),
-  invoiceCost: z.number().optional(),
+  invoiceCost: z.preprocess(
+    parseMoneyFormInput,
+    z.number().positive("Cost must be greater than zero.").optional(),
+  ),
   invoiceBalance: z.number().optional(),
   includeSender: z.boolean().optional(),
   includeReceiver: z.boolean().optional(),
@@ -51,10 +65,6 @@ export const dailyIncomeJournalSchema = z.object({
   zelleTransactionDate: z.string().optional(),
   zelleTransactionName: z.string().optional(),
 }).superRefine((values, context) => {
-  if (!values.employeeId) {
-    context.addIssue({ code: "custom", path: ["employeeId"], message: "Employee is required." });
-  }
-
   if (isZellePaymentMethod(values.paymentMethodName)) {
     if (!values.zelleTransactionDate?.trim()) {
       context.addIssue({
@@ -84,11 +94,21 @@ export const dailyIncomeJournalSchema = z.object({
   }
 
   if (values.transactionType === "INITIAL-PAYMENT") {
+    if (!values.employeeGroupId?.trim()) {
+      context.addIssue({
+        code: "custom",
+        path: ["employeeId"],
+        message: "Employee group is required.",
+      });
+    }
     if (!values.invoiceNumber?.trim()) {
       context.addIssue({ code: "custom", path: ["invoiceNumber"], message: "Invoice is required." });
     }
     if (!values.invoiceCost || values.invoiceCost <= 0) {
       context.addIssue({ code: "custom", path: ["invoiceCost"], message: "Cost must be greater than zero." });
+    }
+    if (!values.paymentMethodId) {
+      context.addIssue({ code: "custom", path: ["paymentMethodId"], message: "Payment method is required." });
     }
     if (values.invoiceCost != null && values.amount > values.invoiceCost) {
       context.addIssue({
@@ -96,9 +116,6 @@ export const dailyIncomeJournalSchema = z.object({
         path: ["amount"],
         message: "Amount cannot exceed cost.",
       });
-    }
-    if (!values.paymentMethodId) {
-      context.addIssue({ code: "custom", path: ["paymentMethodId"], message: "Payment method is required." });
     }
     if (values.includeSender && !values.senderId?.trim()) {
       context.addIssue({ code: "custom", path: ["senderId"], message: "Sender client is required." });
@@ -109,20 +126,41 @@ export const dailyIncomeJournalSchema = z.object({
     return;
   }
 
-  const invoiceRelated = ["PAYMENT", "DISCOUNT", "SURCHARGE"].includes(values.transactionType);
-  if (invoiceRelated && !values.invoiceId) {
-    context.addIssue({ code: "custom", path: ["invoiceId"], message: "Invoice is required." });
+  if (values.transactionType === "PAYMENT") {
+    if (!values.employeeGroupId?.trim()) {
+      context.addIssue({
+        code: "custom",
+        path: ["employeeId"],
+        message: "Employee group is required.",
+      });
+    }
+    if (!values.invoiceId) {
+      context.addIssue({ code: "custom", path: ["invoiceId"], message: "Invoice is required." });
+    }
+    if (!values.paymentMethodId) {
+      context.addIssue({ code: "custom", path: ["paymentMethodId"], message: "Payment method is required." });
+    }
+    if (values.invoiceBalance != null && values.amount > values.invoiceBalance) {
+      context.addIssue({
+        code: "custom",
+        path: ["amount"],
+        message: "Amount cannot exceed the invoice balance.",
+      });
+    }
+    return;
   }
-  if (
-    values.transactionType === "PAYMENT" &&
-    values.invoiceBalance != null &&
-    values.amount > values.invoiceBalance
-  ) {
+
+  if (!values.employeeId && !values.employeeGroupId?.trim()) {
     context.addIssue({
       code: "custom",
-      path: ["amount"],
-      message: "Amount cannot exceed the invoice balance.",
+      path: ["employeeId"],
+      message: "Employee or employee group is required.",
     });
+  }
+
+  const invoiceRelated = ["DISCOUNT", "SURCHARGE"].includes(values.transactionType);
+  if (invoiceRelated && !values.invoiceId) {
+    context.addIssue({ code: "custom", path: ["invoiceId"], message: "Invoice is required." });
   }
   if ((invoiceRelated || values.transactionType === "SALES") && !values.paymentMethodId) {
     context.addIssue({ code: "custom", path: ["paymentMethodId"], message: "Payment method is required." });
@@ -139,12 +177,4 @@ export const dailyIncomeJournalSchema = z.object({
   }
 });
 
-export const chartAccountSchema = z.object({
-  displayName: z.string().trim().min(1, "Account name is required.").max(120),
-  type: z.enum(["ASSET", "EXPENSE", "REVENUE", "BANK", "LOAN"]),
-  description: z.string().trim().max(500),
-  branchId: z.number().optional(),
-  branchCode: z.string().optional(),
-  parentAccountId: z.number().optional(),
-  parentAccountName: z.string().optional(),
-});
+export { chartAccountSchema } from "@/lib/accounting/chart-accounts/schemas/chart-account.schema";

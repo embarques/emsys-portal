@@ -5,14 +5,18 @@ import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
+import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { FormBody, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { dailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
 import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { formatAccountingMoney } from "@/lib/accounting/display";
+import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import type { Employee } from "@/lib/employees/types";
 import { getInvoiceBalanceAmount, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
 import { cn } from "@/lib/utils";
@@ -24,6 +28,7 @@ type Props = {
   transactionType: JournalTransactionType;
   initialValues: DailyIncomeJournalValues;
   employees: Employee[];
+  employeeGroups: EmployeeGroupOption[];
   accounts: ChartAccount[];
   bankAccounts: ChartAccount[];
   invoices: Invoice[];
@@ -47,6 +52,7 @@ export function DailyIncomeTransactionForm({
   transactionType,
   initialValues,
   employees,
+  employeeGroups,
   accounts,
   bankAccounts,
   invoices,
@@ -58,6 +64,7 @@ export function DailyIncomeTransactionForm({
 }: Props) {
   const typeOption = getTransactionTypeOption(transactionType);
   const TypeIcon = typeOption.icon;
+  const handleEnterNavigation = useFormEnterNavigation();
 
   const {
     formState: { errors },
@@ -86,6 +93,7 @@ export function DailyIncomeTransactionForm({
 
   const type = watch("transactionType");
   const employeeId = watch("employeeId");
+  const employeeGroupId = watch("employeeGroupId");
   const invoiceId = watch("invoiceId");
   const accountId = watch("accountId");
   const paymentAccountId = watch("paymentAccountId");
@@ -95,6 +103,39 @@ export function DailyIncomeTransactionForm({
   const isZelle = isZellePaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
+  const accountOptions = useMemo(
+    () => [
+      { value: "", label: "Select account" },
+      ...accounts.map((account) => ({
+        value: String(account.id),
+        label: account.displayName,
+        keywords: [account.displayName],
+      })),
+    ],
+    [accounts],
+  );
+  const bankAccountOptions = useMemo(
+    () => [
+      { value: "", label: "Select bank account" },
+      ...bankAccounts.map((account) => ({
+        value: String(account.id),
+        label: account.displayName,
+        keywords: [account.displayName],
+      })),
+    ],
+    [bankAccounts],
+  );
+  const paymentMethodOptions = useMemo(
+    () => [
+      { value: "", label: "Select payment method" },
+      ...paymentMethods.map((method) => ({
+        value: String(method.id),
+        label: method.name,
+        keywords: [method.name],
+      })),
+    ],
+    [paymentMethods],
+  );
   const invoiceOptions = useMemo(
     () =>
       invoices.map((invoice) => {
@@ -135,7 +176,12 @@ export function DailyIncomeTransactionForm({
   }, [bankAccounts, needsBankAccount, paymentAccountId, setValue]);
 
   return (
-    <form id={formId} onSubmit={handleSubmit((values) => onSubmit(values))} className="flex min-h-0 flex-1 flex-col">
+    <form
+      id={formId}
+      onSubmit={handleSubmit((values) => onSubmit(values))}
+      onKeyDown={handleEnterNavigation}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <FormBody>
         {showTypeSummary ? (
           <div className="flex items-center gap-3 rounded-lg border border-blue-100 bg-card px-4 py-3">
@@ -158,6 +204,7 @@ export function DailyIncomeTransactionForm({
           {isRegisterInvoice ? (
             <RegisterInvoiceTransactionFields
               employees={employees}
+              employeeGroups={employeeGroups}
               bankAccounts={bankAccounts}
               paymentMethods={paymentMethods}
               errors={errors}
@@ -213,101 +260,29 @@ export function DailyIncomeTransactionForm({
               </div>
             ) : null}
 
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="journal-employee">Employee</RequiredLabel>
-              <select
-                id="journal-employee"
-                className={selectClassName}
-                value={employeeId ?? ""}
-                onChange={(event) => {
-                  const employee = employees.find((item) => String(item.id) === event.target.value);
-                  setValue("employeeId", employee?.id, { shouldValidate: true });
-                  setValue("employeeName", employee?.name ?? "");
-                }}
-              >
-                <option value="">Select employee</option>
-                {employees.map((employee) => (
-                  <option key={employee.id} value={employee.id}>
-                    {employee.name}
-                  </option>
-                ))}
-              </select>
-              {errors.employeeId ? (
-                <p className="text-sm text-destructive">{errors.employeeId.message}</p>
-              ) : null}
+            <div className="sm:col-span-2">
+              <TransactionAssigneeSelect
+                employees={employees}
+                employeeGroups={employeeGroups}
+                employeeId={employeeId}
+                employeeGroupId={employeeGroupId}
+                groupsOnly={type === "PAYMENT"}
+                error={errors.employeeId?.message}
+                setValue={setValue}
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="journal-reference">Reference number</Label>
-              <Input id="journal-reference" placeholder="Enter reference number" {...register("refNumber")} />
-            </div>
-
-            {needsAccount ? (
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="journal-account">Account</RequiredLabel>
-                <select
-                  id="journal-account"
-                  className={selectClassName}
-                  value={accountId ?? ""}
-                  onChange={(event) => {
-                    const account = accounts.find((item) => item.id === Number(event.target.value));
-                    setValue("accountId", account?.id, { shouldValidate: true });
-                    setValue("accountName", account?.displayName ?? "");
-                    setValue("accountType", account?.type);
-                  }}
-                >
-                  <option value="">Select account</option>
-                  {accounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.displayName}
-                    </option>
-                  ))}
-                </select>
-                {errors.accountId ? (
-                  <p className="text-sm text-destructive">{errors.accountId.message}</p>
-                ) : null}
-              </div>
-            ) : null}
-
-            {needsSourceAccount ? (
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="journal-source">Source account</RequiredLabel>
-                <select
-                  id="journal-source"
-                  className={selectClassName}
-                  value={sourceAccountId ?? ""}
-                  onChange={(event) => {
-                    const account = accounts.find((item) => item.id === Number(event.target.value));
-                    setValue("sourceAccountId", account?.id, { shouldValidate: true });
-                    setValue("sourceAccountName", account?.displayName ?? "");
-                    setValue("sourceAccountType", account?.type);
-                  }}
-                >
-                  <option value="">Select source account</option>
-                  {accounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.displayName}
-                    </option>
-                  ))}
-                </select>
-                {errors.sourceAccountId ? (
-                  <p className="text-sm text-destructive">{errors.sourceAccountId.message}</p>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2">
               {needsPaymentMethod ? (
                 <RequiredLabel htmlFor="journal-payment">Payment method</RequiredLabel>
               ) : (
                 <Label htmlFor="journal-payment">Payment method</Label>
               )}
-              <select
+              <SearchableSelect
                 id="journal-payment"
-                className={selectClassName}
-                value={paymentMethodId ?? ""}
-                onChange={(event) => {
-                  const method = paymentMethods.find((item) => item.id === Number(event.target.value));
+                value={paymentMethodId != null ? String(paymentMethodId) : ""}
+                onValueChange={(next) => {
+                  const method = paymentMethods.find((item) => item.id === Number(next));
                   setValue("paymentMethodId", method?.id, { shouldValidate: true });
                   setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true });
                   if (!isZellePaymentMethod(method?.name)) {
@@ -315,58 +290,38 @@ export function DailyIncomeTransactionForm({
                     setValue("zelleTransactionName", undefined, { shouldValidate: true });
                   }
                 }}
-              >
-                <option value="">Select payment method</option>
-                {paymentMethods.map((method) => (
-                  <option key={method.id} value={method.id}>
-                    {method.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select payment method"
+                searchPlaceholder="Search payment methods…"
+                options={paymentMethodOptions}
+              />
               {errors.paymentMethodId ? (
                 <p className="text-sm text-destructive">{errors.paymentMethodId.message}</p>
               ) : null}
             </div>
 
             {needsBankAccount ? (
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <RequiredLabel htmlFor="journal-bank-account">Bank account</RequiredLabel>
-                <select
+                <SearchableSelect
                   id="journal-bank-account"
-                  className={selectClassName}
-                  value={paymentAccountId ?? ""}
-                  onChange={(event) => {
-                    const account = bankAccounts.find((item) => item.id === Number(event.target.value));
+                  value={paymentAccountId != null ? String(paymentAccountId) : ""}
+                  onValueChange={(next) => {
+                    const account = bankAccounts.find((item) => item.id === Number(next));
                     setValue("paymentAccountId", account?.id, { shouldValidate: true });
                     setValue("paymentAccountName", account?.displayName ?? "");
                     setValue("paymentAccountType", account?.type);
                   }}
-                >
-                  <option value="">Select bank account</option>
-                  {bankAccounts.map((account) => (
-                    <option key={account.id} value={account.id}>{account.displayName}</option>
-                  ))}
-                </select>
+                  placeholder="Select bank account"
+                  searchPlaceholder="Search bank accounts…"
+                  options={bankAccountOptions}
+                />
                 {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
               </div>
             ) : null}
 
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="journal-amount">Amount</RequiredLabel>
-              <Input
-                id="journal-amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                {...register("amount", { valueAsNumber: true })}
-              />
-              {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
-            </div>
-
             {isZelle ? (
               <>
-                <div className="space-y-2">
+                <div className="space-y-2 sm:col-span-2">
                   <RequiredLabel htmlFor="journal-zelle-date">Zelle transaction date</RequiredLabel>
                   <Input id="journal-zelle-date" type="date" {...register("zelleTransactionDate")} />
                   {errors.zelleTransactionDate ? (
@@ -374,7 +329,7 @@ export function DailyIncomeTransactionForm({
                   ) : null}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 sm:col-span-2">
                   <RequiredLabel htmlFor="journal-zelle-name">
                     Zelle transaction name (as it appears in bank account)
                   </RequiredLabel>
@@ -389,6 +344,68 @@ export function DailyIncomeTransactionForm({
                 </div>
               </>
             ) : null}
+
+            <div className="space-y-2">
+              <Label htmlFor="journal-reference">Reference number</Label>
+              <Input id="journal-reference" placeholder="Enter reference number" {...register("refNumber")} />
+            </div>
+
+            {needsAccount ? (
+              <div className="space-y-2">
+                <RequiredLabel htmlFor="journal-account">Account</RequiredLabel>
+                <SearchableSelect
+                  id="journal-account"
+                  value={accountId != null ? String(accountId) : ""}
+                  onValueChange={(next) => {
+                    const account = accounts.find((item) => item.id === Number(next));
+                    setValue("accountId", account?.id, { shouldValidate: true });
+                    setValue("accountName", account?.displayName ?? "");
+                    setValue("accountType", account?.type);
+                  }}
+                  placeholder="Select account"
+                  searchPlaceholder="Search accounts…"
+                  options={accountOptions}
+                />
+                {errors.accountId ? (
+                  <p className="text-sm text-destructive">{errors.accountId.message}</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {needsSourceAccount ? (
+              <div className="space-y-2">
+                <RequiredLabel htmlFor="journal-source">Source account</RequiredLabel>
+                <SearchableSelect
+                  id="journal-source"
+                  value={sourceAccountId != null ? String(sourceAccountId) : ""}
+                  onValueChange={(next) => {
+                    const account = accounts.find((item) => item.id === Number(next));
+                    setValue("sourceAccountId", account?.id, { shouldValidate: true });
+                    setValue("sourceAccountName", account?.displayName ?? "");
+                    setValue("sourceAccountType", account?.type);
+                  }}
+                  placeholder="Select source account"
+                  searchPlaceholder="Search accounts…"
+                  options={accountOptions}
+                />
+                {errors.sourceAccountId ? (
+                  <p className="text-sm text-destructive">{errors.sourceAccountId.message}</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="space-y-2">
+              <RequiredLabel htmlFor="journal-amount">Amount</RequiredLabel>
+              <Input
+                id="journal-amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                {...register("amount", { setValueAs: moneyFormSetValueAs })}
+              />
+              {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
+            </div>
 
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="journal-description">Description</Label>

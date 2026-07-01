@@ -14,13 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useChartAccounts, useCreateChartAccount, useDeleteChartAccount, useUpdateChartAccount } from "@/lib/accounting/daily-income/hooks";
-import type { ChartAccount, ChartAccountValues } from "@/lib/accounting/daily-income/types";
+import { useChartAccounts, useCreateChartAccount, useDeleteChartAccount, useUpdateChartAccount } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
+import type { ChartAccount, ChartAccountValues } from "@/lib/accounting/chart-accounts/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import type { DataTableColumn } from "@/lib/table/types";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 40;
 const EMPTY_ACCOUNT: ChartAccountValues = { displayName: "", type: "ASSET", description: "" };
 
 function accountValues(account: ChartAccount): ChartAccountValues {
@@ -66,7 +66,8 @@ export function ChartOfAccountsWorkspace() {
 
   return <div>
     <PageHeader title="Chart of Accounts" description="Manage the accounts used by daily income transactions." actions={<Button onClick={() => { setEditing(null); setFormError(null); setDialogOpen(true); }}><Plus className="h-4 w-4" /> Add account</Button>} />
-    <Card><CardHeader className="gap-3 border-b py-4 pb-3"><div><CardTitle>Accounts</CardTitle><CardDescription>Account hierarchy, type, branch, and availability.</CardDescription></div><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={`Showing ${rows.length} of ${total} accounts`} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder="Search by account…" />} /></CardHeader>
+    <Card className="mt-6 gap-0">
+      <CardHeader className="gap-3 border-b py-4 pb-3"><div><CardTitle>Accounts</CardTitle><CardDescription>Account hierarchy, type, branch, and availability.</CardDescription></div><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={`Showing ${rows.length} of ${total} accounts`} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder="Search by account…" />} /></CardHeader>
       {accountsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(accountsQuery.error).message}</div> : accountsQuery.isLoading ? <div className="px-6 py-12 text-center text-muted-foreground">Loading accounts…</div> : <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={accountsQuery.isFetching} rowKey={(account) => String(account.id)} rowLabel={(account) => account.displayName} columnLayout={columnLayout} minWidth={1100} emptyState={<p className="text-muted-foreground">No accounts match your search.</p>} />}
       {!accountsQuery.isLoading && !accountsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{accountsQuery.isFetching ? "Refreshing accounts…" : `Showing ${rows.length} of ${total} accounts`}</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-4 w-4" /> Previous</Button><span className="px-2 text-sm text-muted-foreground">Page {page} of {totalPages}</span><Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next <ChevronRight className="h-4 w-4" /></Button></div></div> : null}
     </Card>

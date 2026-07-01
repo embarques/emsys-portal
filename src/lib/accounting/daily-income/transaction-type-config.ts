@@ -102,6 +102,6 @@ export function getTransactionTypeOption(type: JournalTransactionType): Transact
 }
 
 /** First editable field after employee when continuing entry for the same transaction type. */
-export function getTransactionFormSecondFieldId(type: JournalTransactionType): string {
-  return type === "INITIAL-PAYMENT" ? "journal-invoice-number" : "journal-amount";
+export function getTransactionFormSecondFieldId(_type: JournalTransactionType): string {
+  return "journal-payment";
 }
