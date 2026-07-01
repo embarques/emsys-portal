@@ -88,7 +88,7 @@ function normalizeVehicleRef(raw?: ApiRef | null): Route["vehicle"] {
 
 function normalizeEmployeeGroupRef(raw?: ApiEmployeeGroupRef | null): Route["employeeGroup"] {
   const ref = raw ?? {};
-  const id = String(ref.id ?? "").trim();
+  const id = String(ref.id ?? ref.employeeGroupId ?? "").trim();
   const name = String(ref.name ?? "").trim() || String(ref.employeeGroupId ?? "").trim();
   const branch = String(ref.branch ?? "").trim();
   return { id, name, ...(branch ? { branch } : {}) };

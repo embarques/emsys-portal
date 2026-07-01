@@ -106,11 +106,18 @@ export function RouteForm({
     setCopyFromId(sourceId);
     if (!sourceId) return;
 
-    const source = copySources.find((assignment) => assignment.routeId === sourceId);
+    const source = copySources.find(
+      (assignment) => assignment.routeId === sourceId || assignment.id === sourceId,
+    );
     if (!source) return;
 
-    setNameEdited(true);
-    setValues(copyRouteFormValues(source, values.createdBy));
+    setNameEdited(false);
+    setValues(
+      copyRouteFormValues(source, values, {
+        vehicles,
+        employeeGroups,
+      }),
+    );
   }
 
   function handleSubmit(event: React.FormEvent) {

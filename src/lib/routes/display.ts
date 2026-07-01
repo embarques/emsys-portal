@@ -1,5 +1,6 @@
 import type { Route, RouteEmployeeGroupRef, RouteVehicleRef } from "./types";
 import { toRouteDateInput } from "./types";
+import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 
 export function formatRouteDate(date: string): string {
   const input = toRouteDateInput(date) || date;
@@ -67,6 +68,21 @@ export function getEmployeeGroupRefLabel(group: RouteEmployeeGroupRef): string {
 
 export function formatRouteCopyLabel(assignment: Route): string {
   return `${assignment.name} · ${formatRouteDate(assignment.date)} · ${getVehicleRefLabel(assignment.vehicle)}`;
+}
+
+/** Sort routes chronologically (earliest first), then by name. */
+export function compareRoutesByDateAsc(a: Route, b: Route): number {
+  const byDate = a.date.localeCompare(b.date);
+  if (byDate !== 0) return byDate;
+  return a.name.localeCompare(b.name);
+}
+
+/** Searchable route picker options for table filters and assignment dialogs. */
+export function buildRouteFilterOptions(routes: Route[]): TableFilterFieldOption[] {
+  return [...routes].sort(compareRoutesByDateAsc).map((route) => ({
+    value: route.id,
+    label: formatRouteCopyLabel(route),
+  }));
 }
 
 /** A route belongs to the DR (Dominican Republic) branch via its employee group. */

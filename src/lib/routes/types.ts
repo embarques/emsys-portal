@@ -156,18 +156,56 @@ export function formValuesToRoute(
   };
 }
 
+export function resolveRouteVehicleForForm(
+  source: RouteVehicleRef,
+  vehicles: Array<{ id: string; name: string }>,
+): RouteVehicleRef {
+  if (!source.id.trim() && !source.name.trim()) {
+    return createEmptyVehicleRef();
+  }
+
+  const match = vehicles.find(
+    (vehicle) =>
+      (source.id && vehicle.id === source.id) ||
+      (source.name && vehicle.name === source.name),
+  );
+
+  return match ? { id: match.id, name: match.name } : { ...source };
+}
+
+export function resolveRouteEmployeeGroupForForm(
+  source: RouteEmployeeGroupRef,
+  employeeGroups: Array<{ id: string; employeeGroupId: string; name: string }>,
+): RouteEmployeeGroupRef {
+  if (!source.id.trim() && !source.name.trim()) {
+    return createEmptyEmployeeGroupRef();
+  }
+
+  const match = employeeGroups.find(
+    (group) =>
+      (source.id && (group.id === source.id || group.employeeGroupId === source.id)) ||
+      (source.name && group.name === source.name),
+  );
+
+  return match ? { id: match.id, name: match.name } : { ...source };
+}
+
 export function copyRouteFormValues(
   source: Route,
-  createdBy = DEFAULT_CREATED_BY,
+  current: Pick<RouteFormValues, "createdBy" | "date">,
+  options: {
+    vehicles: Array<{ id: string; name: string }>;
+    employeeGroups: Array<{ id: string; employeeGroupId: string; name: string }>;
+  },
 ): RouteFormValues {
   return {
     id: "",
     routeId: generateRouteNumber(),
-    name: source.name,
-    date: todayDateInputValue(),
-    vehicle: { ...source.vehicle },
-    employeeGroup: { ...source.employeeGroup },
-    createdBy,
+    name: "",
+    date: current.date.trim() || todayDateInputValue(),
+    vehicle: resolveRouteVehicleForForm(source.vehicle, options.vehicles),
+    employeeGroup: resolveRouteEmployeeGroupForForm(source.employeeGroup, options.employeeGroups),
+    createdBy: current.createdBy,
     createdAt: "",
     updatedAt: "",
   };
