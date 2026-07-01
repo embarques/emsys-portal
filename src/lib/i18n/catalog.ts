@@ -1,9 +1,13 @@
 import type { LanguagePreference } from "@/lib/configuration/types";
 
 import enCommon from "@/locales/en/common.json";
+import enContainers from "@/locales/en/containers.json";
+import enInsights from "@/locales/en/insights.json";
 import enNavigation from "@/locales/en/navigation.json";
 import enShell from "@/locales/en/shell.json";
 import esCommon from "@/locales/es/common.json";
+import esContainers from "@/locales/es/containers.json";
+import esInsights from "@/locales/es/insights.json";
 import esNavigation from "@/locales/es/navigation.json";
 import esShell from "@/locales/es/shell.json";
 
@@ -14,11 +18,15 @@ type MessageTree = Record<string, unknown>;
 const catalogs: Record<Locale, MessageTree> = {
   en: {
     common: enCommon,
+    containers: enContainers,
+    insights: enInsights,
     navigation: enNavigation,
     shell: enShell,
   },
   es: {
     common: esCommon,
+    containers: esContainers,
+    insights: esInsights,
     navigation: esNavigation,
     shell: esShell,
   },

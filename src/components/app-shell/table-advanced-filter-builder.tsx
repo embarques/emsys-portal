@@ -5,19 +5,19 @@ import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TableFilterSelect } from "@/components/app-shell/table-filter-select";
+import { useTranslation } from "@/lib/i18n";
 import {
   addTableFilterRow,
-  FILTER_OPERATOR_LABELS,
   formatTableFilterRowsLogic,
   removeTableFilterRow,
   resolveFilterFieldDefinition,
   resolveFilterRowOptions,
-  TABLE_FILTER_JOIN_OPTIONS,
   updateTableFilterRow,
   type TableFilterFieldDefinition,
   type TableFilterFieldOption,
   type TableFilterRowState,
 } from "@/lib/table/filter-builder";
+import { getFilterOperatorLabels, getTableFilterJoinOptions } from "@/lib/table/filter-labels";
 import { useTableAdvancedFilterPanel } from "@/lib/table/hooks/use-table-advanced-filter-panel";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +41,10 @@ export function TableAdvancedFilterBuilder({
   seedEmptyRowWhenOpen = true,
   className,
 }: TableAdvancedFilterBuilderProps) {
+  const { t } = useTranslation();
+  const filterOperatorLabels = getFilterOperatorLabels(t);
+  const filterJoinOptions = getTableFilterJoinOptions(t);
+
   useTableAdvancedFilterPanel({
     rows,
     open,
@@ -59,8 +63,10 @@ export function TableAdvancedFilterBuilder({
   return (
     <div className={cn("space-y-3", className)} onMouseDown={(event) => event.stopPropagation()}>
       <p className="text-xs text-muted-foreground">
-        Combine rows with <span className="font-medium text-foreground">AND</span> or{" "}
-        <span className="font-medium text-foreground">OR</span> to build nested queries.
+        {t("common.table.combineFiltersHint", {
+          and: t("common.filterOperators.and"),
+          or: t("common.filterOperators.or"),
+        })}
       </p>
 
       {rows.map((row, index) => {
@@ -76,14 +82,14 @@ export function TableAdvancedFilterBuilder({
           <div key={row.id} className="flex flex-wrap items-center gap-2">
             {index === 0 ? (
               <span className="w-14 shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Where
+                {t("common.table.where")}
               </span>
             ) : (
               <TableFilterSelect
                 aria-label={`Filter join ${index + 1}`}
                 className="w-[4.75rem] shrink-0 px-2 text-xs font-semibold uppercase tracking-wide"
                 value={row.join}
-                options={TABLE_FILTER_JOIN_OPTIONS}
+                options={filterJoinOptions}
                 onChange={(value) =>
                   updateRow(row.id, { join: value as TableFilterRowState["join"] })
                 }
@@ -94,7 +100,7 @@ export function TableAdvancedFilterBuilder({
               aria-label={`Filter field ${index + 1}`}
               className="min-w-[8.5rem] max-w-[10rem]"
               value={row.field}
-              placeholder="Field"
+              placeholder={t("common.table.field")}
               placeholderDisabled={false}
               mutedWhenEmpty
               options={fields.map((field) => ({ value: field.field, label: field.label }))}
@@ -103,19 +109,19 @@ export function TableAdvancedFilterBuilder({
 
             {usesRange ? (
               <span className="inline-flex h-9 min-w-[8.5rem] max-w-[11rem] shrink-0 items-center rounded-md border border-input bg-muted/40 px-3 text-xs font-medium text-muted-foreground">
-                In range
+                {t("common.table.inRange")}
               </span>
             ) : (
               <TableFilterSelect
                 aria-label={`Filter condition ${index + 1}`}
                 className="min-w-[8.5rem] max-w-[11rem]"
                 value={row.operator}
-                placeholder="Condition"
+                placeholder={t("common.table.condition")}
                 mutedWhenEmpty
                 disabled={!canPickOperator}
                 options={operators.map((operator) => ({
                   value: operator,
-                  label: FILTER_OPERATOR_LABELS[operator],
+                  label: filterOperatorLabels[operator],
                 }))}
                 onChange={(value) => updateRow(row.id, { operator: value })}
               />
@@ -126,7 +132,7 @@ export function TableAdvancedFilterBuilder({
                 aria-label={`Filter value ${index + 1}`}
                 className="min-w-[9rem] flex-[2]"
                 value={row.value}
-                placeholder="Value"
+                placeholder={t("common.table.value")}
                 mutedWhenEmpty
                 disabled={!canPickValue}
                 options={valueOptions}
@@ -138,7 +144,7 @@ export function TableAdvancedFilterBuilder({
                 className="h-9 min-w-[9rem] flex-[2] shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
                 value={row.value}
                 disabled={!canPickValue}
-                placeholder={canPickValue ? (definition?.placeholder ?? "Enter value…") : "Value"}
+                placeholder={canPickValue ? (definition?.placeholder ?? t("common.table.enterValue")) : t("common.table.value")}
                 onChange={(event) => updateRow(row.id, { value: event.target.value })}
               />
             )}
@@ -163,13 +169,13 @@ export function TableAdvancedFilterBuilder({
         onClick={() => onChange(addTableFilterRow(rows))}
       >
         <Plus className="h-4 w-4" />
-        New filter
+        {t("common.table.newFilter")}
       </button>
 
       {filterLogicPreview ? (
         <div className="rounded-md border border-dashed bg-muted/30 px-3 py-2">
           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            Query logic
+            {t("common.table.queryLogic")}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-foreground">{filterLogicPreview}</p>
         </div>

@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/client";
+import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
@@ -151,11 +152,6 @@ function unwrapList(payload: PaginatedApiEnvelope<unknown[]>): unknown[] {
   return Array.isArray(payload.data) ? payload.data : [];
 }
 
-function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackMessage: string) {
-  if (response.success === false) {
-    throw new Error(response.error?.trim() || response.message?.trim() || fallbackMessage);
-  }
-}
 
 function parseRoleId(roleId: string | number): number {
   const id = readNumericId(roleId);

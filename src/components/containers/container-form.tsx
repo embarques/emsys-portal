@@ -8,6 +8,7 @@ import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "@/lib/i18n";
 import {
   createEmptyContainerForm,
   type ContainerFormValues,
@@ -34,6 +35,7 @@ export function ContainerForm({
   onSubmit,
   onCancel,
 }: ContainerFormProps) {
+  const { t } = useTranslation();
   const [values, setValues] = useState<ContainerFormValues>(initialValues ?? createEmptyContainerForm());
   const handleEnterNavigation = useFormEnterNavigation();
 
@@ -58,81 +60,81 @@ export function ContainerForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
-        <FormSection icon={Container} title="Container">
+        <FormSection icon={Container} title={t("containers.form.sections.container")}>
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="name">
-                Container <span className="text-destructive">*</span>
+                {t("containers.form.fields.name")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 value={values.name}
                 onChange={(event) => updateField("name", event.target.value)}
-                placeholder="01-26"
+                placeholder={t("containers.form.placeholders.name")}
                 required
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="containerNumber">Container number</Label>
+              <Label htmlFor="containerNumber">{t("containers.form.fields.containerNumber")}</Label>
               <Input
                 id="containerNumber"
                 value={values.containerNumber}
                 onChange={(event) => updateField("containerNumber", event.target.value.toUpperCase())}
-                placeholder="SMLUD320939203"
+                placeholder={t("containers.form.placeholders.containerNumber")}
                 className="font-mono text-xs"
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="booking">
-                Booking number <span className="text-destructive">*</span>
+                {t("containers.form.fields.booking")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="booking"
                 value={values.booking}
                 onChange={(event) => updateField("booking", event.target.value)}
-                placeholder="BKG-2026-00421"
+                placeholder={t("containers.form.placeholders.booking")}
                 required
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="sealNumber">Seal number</Label>
+              <Label htmlFor="sealNumber">{t("containers.form.fields.sealNumber")}</Label>
               <Input
                 id="sealNumber"
                 value={values.sealNumber}
                 onChange={(event) => updateField("sealNumber", event.target.value)}
-                placeholder="SL-884921"
+                placeholder={t("containers.form.placeholders.sealNumber")}
               />
             </div>
           </div>
         </FormSection>
 
-        <FormSection icon={Ship} title="Logistics">
+        <FormSection icon={Ship} title={t("containers.form.sections.logistics")}>
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="broker">Broker</Label>
+              <Label htmlFor="broker">{t("containers.form.fields.broker")}</Label>
               <Input
                 id="broker"
                 value={values.broker}
                 onChange={(event) => updateField("broker", event.target.value)}
-                placeholder="Customs broker name"
+                placeholder={t("containers.form.placeholders.broker")}
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="company">Transport company</Label>
+              <Label htmlFor="company">{t("containers.form.fields.company")}</Label>
               <Input
                 id="company"
                 value={values.company}
                 onChange={(event) => updateField("company", event.target.value)}
-                placeholder="Shipping line or carrier"
+                placeholder={t("containers.form.placeholders.company")}
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="cost">Cost</Label>
+              <Label htmlFor="cost">{t("containers.form.fields.cost")}</Label>
               <Input
                 id="cost"
                 type="number"
@@ -140,12 +142,12 @@ export function ContainerForm({
                 step="0.01"
                 value={values.cost}
                 onChange={(event) => updateField("cost", event.target.value)}
-                placeholder="0.00"
+                placeholder={t("containers.form.placeholders.cost")}
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="departureDate">Departure date</Label>
+              <Label htmlFor="departureDate">{t("containers.form.fields.departureDate")}</Label>
               <DateInput
                 id="departureDate"
                 value={values.departureDate}
@@ -154,7 +156,7 @@ export function ContainerForm({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="arrivalDate">Arrival date</Label>
+              <Label htmlFor="arrivalDate">{t("containers.form.fields.arrivalDate")}</Label>
               <DateInput
                 id="arrivalDate"
                 value={values.arrivalDate}

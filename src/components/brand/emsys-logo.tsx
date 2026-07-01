@@ -1,4 +1,7 @@
+"use client";
+
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 const LOGO_SRC = "/logo.svg";
 
@@ -10,6 +13,7 @@ type EmsysLogoProps = {
 };
 
 export function EmsysLogo({ variant = "full", className, priority = false }: EmsysLogoProps) {
+  const { t } = useTranslation();
   const sizeClass =
     variant === "mark"
       ? "block h-12 w-auto max-w-none object-contain object-center"
@@ -19,7 +23,7 @@ export function EmsysLogo({ variant = "full", className, priority = false }: Ems
     // eslint-disable-next-line @next/next/no-img-element -- SVG brand asset from /public
     <img
       src={LOGO_SRC}
-      alt="EMSYS Management Portal"
+      alt={t("shell.brand.logoAlt")}
       fetchPriority={priority ? "high" : undefined}
       className={cn(sizeClass, className)}
     />

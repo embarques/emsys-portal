@@ -1,0 +1,34 @@
+{
+  "placeholder": {
+    "description": "Sample {{title}} page inside the same responsive dashboard shell.",
+    "addNew": "Add new",
+    "stats": {
+      "total": {
+        "label": "Total",
+        "description": "Current records"
+      },
+      "active": {
+        "label": "Active",
+        "description": "Available now"
+      },
+      "pending": {
+        "label": "Pending",
+        "description": "Needs review"
+      }
+    }
+  },
+  "sampleTable": {
+    "columns": {
+      "reference": "Reference",
+      "customer": "Customer",
+      "amount": "Amount",
+      "status": "Status"
+    },
+    "statuses": {
+      "ready": "Ready",
+      "pending": "Pending",
+      "delivered": "Delivered",
+      "review": "Review"
+    }
+  }
+}

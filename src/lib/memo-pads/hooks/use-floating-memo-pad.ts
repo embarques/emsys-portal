@@ -7,41 +7,28 @@ import {
   useMemoPadPicker,
   useUpdateMemoPad,
 } from "@/lib/memo-pads/hooks/use-memo-pads";
-import { fetchMemoPadById } from "@/lib/memo-pads/api/memo-pads-api";
 import { type MemoPad } from "@/lib/memo-pads/types";
 
 const DEFAULT_MEMO_PAD_NAME = "Quick notes";
 const AUTOSAVE_DELAY_MS = 800;
-const SELECTED_MEMO_PAD_STORAGE_KEY = "emsys-portal:floating-memo-pad-id";
 const MEMO_PAD_PICKER_LIMIT = 200;
 
-function readStoredMemoPadId(): string | null {
-  if (typeof window === "undefined") return null;
-  const stored = window.localStorage.getItem(SELECTED_MEMO_PAD_STORAGE_KEY)?.trim();
-  return stored || null;
-}
-
-function writeStoredMemoPadId(memoPadId: string) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(SELECTED_MEMO_PAD_STORAGE_KEY, memoPadId);
+function findQuickNotesPad(memoPads: MemoPad[]): MemoPad | undefined {
+  return memoPads.find((memoPad) => memoPad.name.trim() === DEFAULT_MEMO_PAD_NAME);
 }
 
 /** Lightweight read used by the toolbar toggle to show the "has notes" dot. */
 export function useMemoPadHasNotes(): boolean {
   const { data } = useMemoPadPicker(MEMO_PAD_PICKER_LIMIT);
-  return data?.items.some((memoPad) => memoPad.content.trim()) ?? false;
+  const quickNotes = findQuickNotesPad(data?.items ?? []);
+  return Boolean(quickNotes?.content.trim());
 }
 
 export type UseFloatingMemoPadResult = {
-  memoPads: MemoPad[];
-  selectedMemoPadId: string | null;
-  selectMemoPad: (memoPadId: string) => void;
   content: string;
   updateContent: (next: string) => void;
   clearContent: () => void;
-  isLoadingPads: boolean;
   isLoading: boolean;
-  isLoadingSelectedPad: boolean;
   isError: boolean;
   isSaving: boolean;
 };
@@ -56,20 +43,16 @@ export function useFloatingMemoPad(): UseFloatingMemoPadResult {
   const createMemoPad = useCreateMemoPad();
   const updateMemoPad = useUpdateMemoPad();
 
-  const [selectedMemoPadId, setSelectedMemoPadId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const [isLoadingSelectedPad, setIsLoadingSelectedPad] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   const latestDraftRef = useRef("");
   const dirtyRef = useRef(false);
-  const hydratedRef = useRef(false);
   const padIdRef = useRef<string | null>(null);
-  const padNameRef = useRef(DEFAULT_MEMO_PAD_NAME);
   const saveTimerRef = useRef<number | null>(null);
   const savingRef = useRef(false);
   const pendingRef = useRef(false);
-  const [isCreatingDefault, setIsCreatingDefault] = useState(false);
-  const switchingRef = useRef(false);
 
   const saveNow = useCallback(async () => {
     if (!dirtyRef.current) return;
@@ -86,16 +69,14 @@ export function useFloatingMemoPad(): UseFloatingMemoPadResult {
       if (padIdRef.current) {
         await updateMemoPad.mutateAsync({
           memoPadId: padIdRef.current,
-          values: { name: padNameRef.current, content },
+          values: { name: DEFAULT_MEMO_PAD_NAME, content },
         });
       } else {
         const created = await createMemoPad.mutateAsync({
-          name: padNameRef.current,
+          name: DEFAULT_MEMO_PAD_NAME,
           content,
         });
         padIdRef.current = created.id;
-        setSelectedMemoPadId(created.id);
-        writeStoredMemoPadId(created.id);
       }
 
       if (latestDraftRef.current === content) {
@@ -119,103 +100,48 @@ export function useFloatingMemoPad(): UseFloatingMemoPadResult {
 
   const hydratePad = useCallback((memoPad: MemoPad) => {
     padIdRef.current = memoPad.id;
-    padNameRef.current = memoPad.name || DEFAULT_MEMO_PAD_NAME;
-    setSelectedMemoPadId(memoPad.id);
-    writeStoredMemoPadId(memoPad.id);
     setDraft(memoPad.content);
     latestDraftRef.current = memoPad.content;
     dirtyRef.current = false;
-    hydratedRef.current = true;
+    setInitialized(true);
   }, []);
 
-  const loadMemoPad = useCallback(
-    async (memoPadId: string) => {
-      setIsLoadingSelectedPad(true);
-      try {
-        const memoPad = await fetchMemoPadById(memoPadId);
-        hydratePad(memoPad);
-        return memoPad;
-      } catch {
-        const fallback = memoPads.find((item) => item.id === memoPadId);
-        if (fallback) {
-          hydratePad(fallback);
-          return fallback;
-        }
-        return null;
-      } finally {
-        setIsLoadingSelectedPad(false);
-      }
-    },
-    [hydratePad, memoPads],
-  );
-
-  const selectMemoPad = useCallback(
-    async (memoPadId: string) => {
-      if (!memoPadId || memoPadId === padIdRef.current || switchingRef.current) return;
-
-      switchingRef.current = true;
-      try {
-        if (saveTimerRef.current) {
-          window.clearTimeout(saveTimerRef.current);
-          saveTimerRef.current = null;
-        }
-
-        await saveNowRef.current();
-        await loadMemoPad(memoPadId);
-      } finally {
-        switchingRef.current = false;
-      }
-    },
-    [loadMemoPad],
-  );
-
   useEffect(() => {
-    if (memoPadsQuery.isLoading || selectedMemoPadId || isCreatingDefault) return;
+    if (memoPadsQuery.isLoading || initialized || isInitializing) return;
 
-    if (memoPads.length === 0) {
-      setIsCreatingDefault(true);
-      void createMemoPad
-        .mutateAsync({ name: DEFAULT_MEMO_PAD_NAME, content: "" })
-        .then((created) => {
-          hydratePad(created);
-        })
-        .finally(() => {
-          setIsCreatingDefault(false);
-        });
+    const quickNotes = findQuickNotesPad(memoPads);
+    if (quickNotes) {
+      hydratePad(quickNotes);
       return;
     }
 
-    const storedId = readStoredMemoPadId();
-    const initialId =
-      (storedId && memoPads.some((memoPad) => memoPad.id === storedId) ? storedId : null) ??
-      memoPads[0]?.id;
-
-    if (initialId) {
-      void loadMemoPad(initialId);
-    }
+    setIsInitializing(true);
+    void createMemoPad
+      .mutateAsync({ name: DEFAULT_MEMO_PAD_NAME, content: "" })
+      .then((created) => {
+        hydratePad(created);
+      })
+      .finally(() => {
+        setIsInitializing(false);
+      });
   }, [
     createMemoPad,
     hydratePad,
-    isCreatingDefault,
-    loadMemoPad,
+    initialized,
+    isInitializing,
     memoPads,
     memoPadsQuery.isLoading,
-    selectedMemoPadId,
   ]);
 
   useEffect(() => {
-    if (!selectedMemoPadId || dirtyRef.current) return;
+    if (!initialized || dirtyRef.current) return;
 
-    const serverPad = memoPads.find((memoPad) => memoPad.id === selectedMemoPadId);
-    if (!serverPad) return;
+    const quickNotes = findQuickNotesPad(memoPads);
+    if (!quickNotes || quickNotes.id !== padIdRef.current) return;
 
-    padNameRef.current = serverPad.name || DEFAULT_MEMO_PAD_NAME;
-    if (!hydratedRef.current) {
-      setDraft(serverPad.content);
-      latestDraftRef.current = serverPad.content;
-      hydratedRef.current = true;
-    }
-  }, [memoPads, selectedMemoPadId]);
+    setDraft(quickNotes.content);
+    latestDraftRef.current = quickNotes.content;
+  }, [initialized, memoPads]);
 
   useEffect(() => {
     return () => {
@@ -240,7 +166,6 @@ export function useFloatingMemoPad(): UseFloatingMemoPadResult {
       setDraft(next);
       latestDraftRef.current = next;
       dirtyRef.current = true;
-      hydratedRef.current = true;
       scheduleSave();
     },
     [scheduleSave],
@@ -250,7 +175,6 @@ export function useFloatingMemoPad(): UseFloatingMemoPadResult {
     setDraft("");
     latestDraftRef.current = "";
     dirtyRef.current = true;
-    hydratedRef.current = true;
     if (saveTimerRef.current) {
       window.clearTimeout(saveTimerRef.current);
     }
@@ -258,21 +182,13 @@ export function useFloatingMemoPad(): UseFloatingMemoPadResult {
   }, [saveNow]);
 
   const isLoading =
-    memoPadsQuery.isLoading ||
-    isCreatingDefault ||
-    isLoadingSelectedPad ||
-    (!selectedMemoPadId && memoPads.length === 0);
+    memoPadsQuery.isLoading || isInitializing || (!initialized && memoPads.length === 0);
 
   return {
-    memoPads,
-    selectedMemoPadId,
-    selectMemoPad,
     content: draft,
     updateContent,
     clearContent,
-    isLoadingPads: memoPadsQuery.isLoading,
     isLoading,
-    isLoadingSelectedPad,
     isError: memoPadsQuery.isError,
     isSaving: createMemoPad.isPending || updateMemoPad.isPending,
   };

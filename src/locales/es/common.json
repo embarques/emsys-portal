@@ -1,3 +1,100 @@
 {
-  "loading": "Cargando..."
+  "loading": "Cargando...",
+  "actions": {
+    "add": "Agregar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saveChanges": "Guardar cambios",
+    "saving": "Guardando…",
+    "close": "Cerrar",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "dismissNotification": "Descartar notificación"
+  },
+  "empty": {
+    "dash": "—",
+    "noCarrier": "Sin transportista"
+  },
+  "audit": {
+    "dateCreated": "Fecha de creación",
+    "dateModified": "Fecha de modificación"
+  },
+  "pagination": {
+    "pageOf": "Página {{current}} de {{total}}",
+    "showingOf": "Mostrando {{count}} de {{total}} {{noun}}"
+  },
+  "listSummary": {
+    "searching": "Buscando {{noun}}…",
+    "matching": "{{matched}} {{noun}} coincidentes",
+    "matchedOf": "{{matched}} de {{total}} {{noun}}",
+    "refreshing": "Actualizando {{noun}}…",
+    "noNoun": "Sin {{noun}}",
+    "noMatching": "Ningún {{noun}} coincide",
+    "noMatchingOfTotal": "Ningún {{noun}} coincide (de {{total}} en total)",
+    "showingRange": "Mostrando {{range}} de {{total}}{{matching}} {{noun}}{{catalog}}"
+  },
+  "table": {
+    "selected": "{{count}} de {{total}} seleccionados",
+    "selectAllOthers": "Seleccionar los demás",
+    "clearSelection": "Limpiar selección",
+    "deleteSelected": "Eliminar seleccionados",
+    "showFilters": "Mostrar filtros",
+    "hideFilters": "Ocultar filtros",
+    "filters": "Filtros",
+    "clearSearch": "Limpiar búsqueda",
+    "search": "Buscar...",
+    "field": "Campo",
+    "condition": "Condición",
+    "value": "Valor",
+    "enterValue": "Ingrese un valor…",
+    "where": "Donde",
+    "inRange": "En rango",
+    "newFilter": "Nuevo filtro",
+    "queryLogic": "Lógica de consulta",
+    "combineFiltersHint": "Combine filas con {{and}} o {{or}} para crear consultas anidadas."
+  },
+  "filterOperators": {
+    "eq": "Igual a",
+    "neq": "Distinto de",
+    "contains": "Contiene",
+    "startsWith": "Comienza con",
+    "in": "En",
+    "notIn": "No en",
+    "gt": "Mayor que",
+    "gte": "Mayor o igual que",
+    "lt": "Menor que",
+    "lte": "Menor o igual que",
+    "and": "Y",
+    "or": "O"
+  },
+  "toasts": {
+    "addedWithName": "Se agregó {{entity}} \"{{name}}\".",
+    "added": "{{entity}} se agregó correctamente.",
+    "updatedWithName": "Se actualizó {{entity}} \"{{name}}\".",
+    "updated": "{{entity}} se actualizó correctamente.",
+    "deletedOne": "Se eliminó {{entity}}.",
+    "deletedMany": "Se eliminaron {{count}} {{entity}}.",
+    "errorFallback": "Algo salió mal."
+  },
+  "errors": {
+    "fallback": "Algo salió mal. Inténtelo de nuevo.",
+    "api": {
+      "unreachable": "No se pudo conectar con la API. El servidor puede estar fuera de servicio o inaccesible. Inténtelo más tarde.",
+      "temporaryUnavailable": "El servidor de la API no está disponible temporalmente (HTTP {{status}}). Inténtelo en unos momentos.",
+      "sessionExpired": "Su sesión ha expirado. Cierre sesión e inicie sesión nuevamente.",
+      "forbidden": "No tiene permiso para realizar esta acción. Su sesión puede haber expirado o su rol puede no incluir el acceso requerido.",
+      "requestFailed": "No se pudo completar la solicitud.",
+      "requestFailedWithStatus": "No se pudo completar la solicitud (HTTP {{status}})."
+    },
+    "permissionHint": "Pida a un administrador que habilite el permiso requerido en su rol."
+  },
+  "dialogs": {
+    "cannotBeUndone": "Esta acción no se puede deshacer.",
+    "deleteOneTitle": "¿Eliminar {{entity}}?",
+    "deleteManyTitle": "¿Eliminar {{entities}}?",
+    "deleteOneDescription": "Esto eliminará permanentemente {{name}}. {{cannotBeUndone}}",
+    "deleteManyDescription": "Esto eliminará permanentemente {{count}} {{entities}} seleccionados. {{cannotBeUndone}}"
+  }
 }

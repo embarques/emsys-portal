@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { ListChecks, Pencil, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +46,8 @@ export function TableSelectionToolbar({
   deleteDisabled = false,
   className,
 }: TableSelectionToolbarProps) {
+  const { t } = useTranslation();
+
   if (selectedIds.length === 0) return null;
 
   const total = totalCount ?? pageRowIds.length;
@@ -70,14 +73,14 @@ export function TableSelectionToolbar({
           variant="ghost"
           size="icon"
           className="h-7 w-7 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-foreground"
-          aria-label="Clear selection"
-          title="Clear selection"
+          aria-label={t("common.table.clearSelection")}
+          title={t("common.table.clearSelection")}
           onClick={() => onSelectedIdsChange([])}
         >
           <X className="h-4 w-4" />
         </Button>
         <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
-          {selectedIds.length} of {total} selected
+          {t("common.table.selected", { count: selectedIds.length, total })}
         </span>
         <span className="mx-1 h-5 w-px bg-primary/20" aria-hidden />
         <Button
@@ -88,7 +91,7 @@ export function TableSelectionToolbar({
           onClick={() => onSelectedIdsChange(selectAllOthers(pageRowIds, selectedIds))}
         >
           <ListChecks className="h-4 w-4" />
-          <span className="whitespace-nowrap">Select all others</span>
+          <span className="whitespace-nowrap">{t("common.table.selectAllOthers")}</span>
         </Button>
       </div>
 
@@ -98,7 +101,7 @@ export function TableSelectionToolbar({
           {showEdit ? (
             <Button variant="outline" size="sm" className="whitespace-nowrap" onClick={onEdit}>
               <Pencil className="h-4 w-4" />
-              Edit
+              {t("common.actions.edit")}
             </Button>
           ) : null}
           {actions}
@@ -113,7 +116,7 @@ export function TableSelectionToolbar({
                 onClick={onDelete}
               >
                 <Trash2 className="h-4 w-4" />
-                Delete selected
+                {t("common.table.deleteSelected")}
               </Button>
             </>
           ) : null}

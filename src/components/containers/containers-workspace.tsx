@@ -27,9 +27,10 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
-import { CONTAINER_TABLE_FILTER_FIELDS } from "@/lib/containers/filter-fields";
+import { useContainerFilterFields } from "@/lib/containers/hooks/use-container-filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useTranslation } from "@/lib/i18n";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -41,7 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { normalizeApiError } from "@/lib/api/axios";
+import { useUserError } from "@/lib/errors";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   computeContainerKpis,
@@ -80,6 +81,9 @@ const defaultFilters: ContainerFilterState = {
 };
 
 export function ContainersWorkspace() {
+  const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
+  const containerFilterFields = useContainerFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<ContainerFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -149,7 +153,7 @@ export function ContainersWorkspace() {
 
   function openAddForm() {
     if (isDesktopTabs) {
-      openFormTab({ feature: "containers", baseHref: "/containers", mode: "add", label: "Add container" });
+      openFormTab({ feature: "containers", baseHref: "/containers", mode: "add", label: t("containers.actions.add") });
       return;
     }
     setEditingContainer(null);
@@ -165,7 +169,7 @@ export function ContainersWorkspace() {
         baseHref: "/containers",
         mode: "edit",
         entityId: String(container.id),
-        label: `Edit ${container.name}`,
+        label: t("containers.actions.editNamed", { name: container.name }),
       });
       return;
     }
@@ -184,17 +188,17 @@ export function ContainersWorkspace() {
           containerId: editingContainer.id,
           values,
         });
-        notifyUpdated("Container", nextContainer.name);
+        notifyUpdated(t("containers.entity"), nextContainer.name);
       } else {
         const nextContainer = await createContainerMutation.mutateAsync(values);
-        notifyAdded("Container", nextContainer.name);
+        notifyAdded(t("containers.entity"), nextContainer.name);
       }
 
       setFormMode(null);
       setEditingContainer(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(toErrorMessage(mutationError));
     }
   }
 
@@ -210,34 +214,34 @@ export function ContainersWorkspace() {
       setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
       setDeleteTarget(null);
       setViewContainer(null);
-      notifyDeleted("Container", ids.length);
+      notifyDeleted(t("containers.entity"), ids.length);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(toErrorMessage(mutationError));
       setDeleteTarget(null);
     }
   }
 
   const statCards = [
     {
-      label: "Total containers",
+      label: t("containers.stats.total.label"),
       value: stats.isLoading ? "…" : stats.total.toString(),
-      description: "Containers on record",
+      description: t("containers.stats.total.description"),
       icon: Container,
     },
     {
-      label: "Departed (past month)",
+      label: t("containers.stats.departedPastMonth"),
       value: kpiQuery.isLoading ? "…" : kpis.departedPastMonth.toString(),
       description: undefined,
       icon: Ship,
     },
     {
-      label: "Departed (past 90 days)",
+      label: t("containers.stats.departedPast90Days"),
       value: kpiQuery.isLoading ? "…" : kpis.departedPast90Days.toString(),
       description: undefined,
       icon: CalendarClock,
     },
     {
-      label: "Departed (past year)",
+      label: t("containers.stats.departedPastYear"),
       value: kpiQuery.isLoading ? "…" : kpis.departedPastYear.toString(),
       description: undefined,
       icon: CalendarRange,
@@ -247,77 +251,77 @@ export function ContainersWorkspace() {
   const tableColumns: DataTableColumn<ContainerRecord>[] = [
     {
       id: "id",
-      label: "#",
+      label: t("containers.columns.id"),
       cellClassName: "font-mono text-xs",
       renderCell: (container) => formatContainerId(container.id),
     },
     {
       id: "container",
-      label: "Container",
+      label: t("containers.columns.container"),
       sortField: "name",
       cellClassName: "font-medium",
       renderCell: (container) => container.name,
     },
     {
       id: "containerNumber",
-      label: "Container number",
+      label: t("containers.columns.containerNumber"),
       cellClassName: "font-mono text-xs",
-      renderCell: (container) => container.containerNumber || "—",
+      renderCell: (container) => container.containerNumber || t("common.empty.dash"),
     },
     {
       id: "booking",
-      label: "Booking number",
+      label: t("containers.columns.booking"),
       renderCell: (container) => container.booking,
     },
     {
       id: "sealNumber",
-      label: "Seal number",
-      renderCell: (container) => container.sealNumber || "—",
+      label: t("containers.columns.sealNumber"),
+      renderCell: (container) => container.sealNumber || t("common.empty.dash"),
     },
     {
       id: "broker",
-      label: "Broker",
-      renderCell: (container) => container.broker || "—",
+      label: t("containers.columns.broker"),
+      renderCell: (container) => container.broker || t("common.empty.dash"),
     },
     {
       id: "company",
-      label: "Transport company",
-      renderCell: (container) => container.company || "—",
+      label: t("containers.columns.company"),
+      renderCell: (container) => container.company || t("common.empty.dash"),
     },
     {
       id: "cost",
-      label: "Cost",
+      label: t("containers.columns.cost"),
       renderCell: (container) => formatOptionalContainerCost(container.cost),
     },
     {
       id: "departureDate",
-      label: "Departure",
+      label: t("containers.columns.departureDate"),
       cellClassName: "text-muted-foreground",
       renderCell: (container) => formatContainerDate(container.departureDate),
     },
     {
       id: "arrivalDate",
-      label: "Arrival",
+      label: t("containers.columns.arrivalDate"),
       cellClassName: "text-muted-foreground",
       renderCell: (container) => formatContainerDate(container.arrivalDate),
     },
     {
       id: "barcodeSequence",
-      label: "Barcode seq.",
+      label: t("containers.columns.barcodeSequence"),
       defaultVisible: false,
       cellClassName: "font-mono text-xs text-muted-foreground",
-      renderCell: (container) => (container.barcodeSequence > 0 ? container.barcodeSequence : "—"),
+      renderCell: (container) => (container.barcodeSequence > 0 ? container.barcodeSequence : t("common.empty.dash")),
     },
     {
       id: "createdAt",
-      label: "Date created",
+      label: t("common.audit.dateCreated"),
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (container) => formatAuditDateTime(container.createdAt),
     },
     {
       id: "updatedAt",
-      label: "Date modified",
+      label: t("common.audit.dateModified"),
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (container) => formatAuditDateTime(container.updatedAt),
@@ -325,27 +329,31 @@ export function ContainersWorkspace() {
   ];
 
   const columnVisibility = useColumnVisibility("containers-v2", tableColumns);
-  const activeFilterCount = countCompleteFilterRows(filters.rows, CONTAINER_TABLE_FILTER_FIELDS);
+  const activeFilterCount = countCompleteFilterRows(filters.rows, containerFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query: filters.query,
-    isSearchPending,
-    matched: totalContainers,
-    catalogTotal: stats.total,
-    noun: "containers",
-    isLoading: isFetching && containers.length === 0,
-    catalogLoading: stats.isLoading,
-  });
+  const noun = t("containers.noun");
+  const searchSummary = buildToolbarSearchSummary(
+    {
+      isFiltered: hasActiveFilters,
+      query: filters.query,
+      isSearchPending,
+      matched: totalContainers,
+      catalogTotal: stats.total,
+      noun,
+      isLoading: isFetching && containers.length === 0,
+      catalogLoading: stats.isLoading,
+    },
+    t,
+  );
 
   return (
     <div>
       <PageHeader
-        title="Containers"
+        title={t("containers.title")}
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
-            Add container
+            {t("containers.actions.add")}
           </Button>
         }
       />
@@ -367,16 +375,20 @@ export function ContainersWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search containers..."
+                placeholder={t("containers.search.placeholder")}
               />
             }
             filterPanel={
               <TableFilterPanel
-                resultSummary={`Showing ${containers.length} of ${totalContainers} containers`}
+                resultSummary={t("common.pagination.showingOf", {
+                  count: containers.length,
+                  total: totalContainers,
+                  noun,
+                })}
                 presets={{
                   storageKey: "containers",
                   rows: filters.rows,
-                  fields: CONTAINER_TABLE_FILTER_FIELDS,
+                  fields: containerFilterFields,
                   onApply: (rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -394,7 +406,7 @@ export function ContainersWorkspace() {
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
                   rows={filters.rows}
-                  fields={CONTAINER_TABLE_FILTER_FIELDS}
+                  fields={containerFilterFields}
                   onChange={(rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -421,14 +433,20 @@ export function ContainersWorkspace() {
 
         {isError ? (
           <div className="px-6 py-8 text-sm text-destructive">
-            {normalizeApiError(error).message}
+            {toErrorMessage(error)}
           </div>
         ) : isLoading ? (
           <DirectoryTableLoader
             icon={Container}
-            title="Loading containers"
-            description="Tracking shipments, capacity, costs, and departure schedules…"
-            columns={["Container", "Status", "Departure", "Capacity", "Cost"]}
+            title={t("containers.loading.title")}
+            description={t("containers.loading.description")}
+            columns={[
+              t("containers.columns.container"),
+              t("containers.columns.status"),
+              t("containers.columns.departureDate"),
+              t("containers.columns.capacity"),
+              t("containers.columns.cost"),
+            ]}
           />
         ) : (
           <DataTable
@@ -452,11 +470,11 @@ export function ContainersWorkspace() {
             emptyState={
               <>
                 <p className="text-muted-foreground">
-                  {hasActiveFilters ? "No containers match your filters." : "No containers yet."}
+                  {hasActiveFilters ? t("containers.empty.noMatch") : t("containers.empty.none")}
                 </p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
-                  Add container
+                  {t("containers.actions.add")}
                 </Button>
               </>
             }
@@ -466,7 +484,11 @@ export function ContainersWorkspace() {
         {!isLoading && !isError ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {containers.length} of {totalContainers} containers
+            {t("common.pagination.showingOf", {
+              count: containers.length,
+              total: totalContainers,
+              noun,
+            })}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -476,10 +498,10 @@ export function ContainersWorkspace() {
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              {t("common.actions.previous")}
             </Button>
             <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -487,7 +509,7 @@ export function ContainersWorkspace() {
               disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
-              Next
+              {t("common.actions.next")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -519,7 +541,9 @@ export function ContainersWorkspace() {
       >
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>{formMode === "edit" ? "Edit container" : "Add container"}</DialogTitle>
+            <DialogTitle>
+              {formMode === "edit" ? t("containers.form.editTitle") : t("containers.form.addTitle")}
+            </DialogTitle>
           </DialogHeader>
           <ContainerForm
             key={editingContainer?.id ?? "new"}
@@ -530,7 +554,9 @@ export function ContainersWorkspace() {
             }
             isEditing={formMode === "edit"}
             suggestedContainerName={formMode === "add" ? suggestedContainerName : undefined}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add container"}
+            submitLabel={
+              formMode === "edit" ? t("common.actions.saveChanges") : t("containers.actions.add")
+            }
             externalError={formError}
             onSubmit={saveContainer}
             onCancel={() => {
@@ -546,21 +572,29 @@ export function ContainersWorkspace() {
         <DialogContent className="z-[60]">
           <DialogHeader>
             <DialogTitle>
-              Delete container{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?
+              {Array.isArray(deleteTarget) && deleteTarget.length > 1
+                ? t("containers.dialogs.deleteTitlePlural")
+                : t("containers.dialogs.deleteTitle")}
             </DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected containers. This action cannot be undone.`
-                : `This will permanently remove container ${deleteTarget?.name ?? ""}. This action cannot be undone.`}
+                ? t("containers.dialogs.deleteMany", {
+                    count: deleteTarget.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
+                : t("containers.dialogs.deleteOne", {
+                    name: deleteTarget?.name ?? "",
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
-              Delete
+              {t("common.actions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

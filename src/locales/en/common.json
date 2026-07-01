@@ -1,3 +1,100 @@
 {
-  "loading": "Loading..."
+  "loading": "Loading...",
+  "actions": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "saving": "Saving…",
+    "close": "Close",
+    "previous": "Previous",
+    "next": "Next",
+    "dismissNotification": "Dismiss notification"
+  },
+  "empty": {
+    "dash": "—",
+    "noCarrier": "No carrier"
+  },
+  "audit": {
+    "dateCreated": "Date created",
+    "dateModified": "Date modified"
+  },
+  "pagination": {
+    "pageOf": "Page {{current}} of {{total}}",
+    "showingOf": "Showing {{count}} of {{total}} {{noun}}"
+  },
+  "listSummary": {
+    "searching": "Searching {{noun}}…",
+    "matching": "{{matched}} matching {{noun}}",
+    "matchedOf": "{{matched}} of {{total}} {{noun}}",
+    "refreshing": "Refreshing {{noun}}…",
+    "noNoun": "No {{noun}}",
+    "noMatching": "No matching {{noun}}",
+    "noMatchingOfTotal": "No matching {{noun}} (out of {{total}} total)",
+    "showingRange": "Showing {{range}} of {{total}}{{matching}} {{noun}}{{catalog}}"
+  },
+  "table": {
+    "selected": "{{count}} of {{total}} selected",
+    "selectAllOthers": "Select all others",
+    "clearSelection": "Clear selection",
+    "deleteSelected": "Delete selected",
+    "showFilters": "Show filters",
+    "hideFilters": "Hide filters",
+    "filters": "Filters",
+    "clearSearch": "Clear search",
+    "search": "Search...",
+    "field": "Field",
+    "condition": "Condition",
+    "value": "Value",
+    "enterValue": "Enter value…",
+    "where": "Where",
+    "inRange": "In range",
+    "newFilter": "New filter",
+    "queryLogic": "Query logic",
+    "combineFiltersHint": "Combine rows with {{and}} or {{or}} to build nested queries."
+  },
+  "filterOperators": {
+    "eq": "Equals",
+    "neq": "Not equals",
+    "contains": "Contains",
+    "startsWith": "Starts with",
+    "in": "In",
+    "notIn": "Not in",
+    "gt": "Greater than",
+    "gte": "Greater than or equal",
+    "lt": "Less than",
+    "lte": "Less than or equal",
+    "and": "AND",
+    "or": "OR"
+  },
+  "toasts": {
+    "addedWithName": "{{entity}} \"{{name}}\" was added.",
+    "added": "{{entity}} was added successfully.",
+    "updatedWithName": "{{entity}} \"{{name}}\" was updated.",
+    "updated": "{{entity}} was updated successfully.",
+    "deletedOne": "{{entity}} was deleted.",
+    "deletedMany": "{{count}} {{entity}} were deleted.",
+    "errorFallback": "Something went wrong."
+  },
+  "errors": {
+    "fallback": "Something went wrong. Please try again.",
+    "api": {
+      "unreachable": "Unable to connect to the API. The server may be down or unreachable. Please try again later.",
+      "temporaryUnavailable": "The API server is temporarily unavailable (HTTP {{status}}). Please try again shortly.",
+      "sessionExpired": "Your session has expired. Please sign out and sign in again.",
+      "forbidden": "You don't have permission to perform this action. Your session may have expired, or your role may not include the required access.",
+      "requestFailed": "The request could not be completed.",
+      "requestFailedWithStatus": "The request could not be completed (HTTP {{status}})."
+    },
+    "permissionHint": "Ask an admin to enable the required permission on your role."
+  },
+  "dialogs": {
+    "cannotBeUndone": "This action cannot be undone.",
+    "deleteOneTitle": "Delete {{entity}}?",
+    "deleteManyTitle": "Delete {{entities}}?",
+    "deleteOneDescription": "This will permanently remove {{name}}. {{cannotBeUndone}}",
+    "deleteManyDescription": "This will permanently remove {{count}} selected {{entities}}. {{cannotBeUndone}}"
+  }
 }

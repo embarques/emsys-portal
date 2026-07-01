@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
 
 import { ScrollableTable } from "@/components/app-shell/scrollable-table";
@@ -37,8 +37,8 @@ type DataTableProps<T> = {
   /** Called when a sortable header is clicked. Direction is pre-toggled by DataTable. */
   onSortChange?: (field: string, direction: SortDirection) => void;
   /**
-   * When true, sortable headers stay clickable but show red "sorting not implemented
-   * in the API yet" feedback instead of sorting. Used as a reminder for mock-data tables.
+   * When true, sortable headers use the same sort UI but clicks are ignored until
+   * server-side sorting is wired up for the table.
    */
   sortUnavailable?: boolean;
 };
@@ -69,30 +69,9 @@ function DataTableContent<T>({
     columnLayout;
 
   const activeSort = useMemo(() => getPrimarySortSpec(sort), [sort]);
-  const [sortUnavailableNoticeId, setSortUnavailableNoticeId] = useState<string | null>(null);
-  const sortNoticeTimeoutRef = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (sortNoticeTimeoutRef.current != null) {
-        window.clearTimeout(sortNoticeTimeoutRef.current);
-      }
-    },
-    [],
-  );
 
   function handleSort(field: string) {
-    if (sortUnavailable) {
-      setSortUnavailableNoticeId(field);
-      if (sortNoticeTimeoutRef.current != null) {
-        window.clearTimeout(sortNoticeTimeoutRef.current);
-      }
-      sortNoticeTimeoutRef.current = window.setTimeout(() => {
-        setSortUnavailableNoticeId(null);
-        sortNoticeTimeoutRef.current = null;
-      }, 2000);
-      return;
-    }
+    if (sortUnavailable) return;
 
     if (!onSortChange) return;
     const nextDirection: SortDirection =
@@ -275,7 +254,6 @@ function DataTableContent<T>({
               const sortField = column.sortable === false ? undefined : column.sortField ?? column.id;
               const canSort = (Boolean(onSortChange) || sortUnavailable) && Boolean(sortField);
               const isActiveSort = canSort && !sortUnavailable && activeSort?.field === sortField;
-              const showUnavailableNotice = sortUnavailable && sortUnavailableNoticeId === sortField;
 
               return (
                 <th
@@ -322,7 +300,7 @@ function DataTableContent<T>({
                         draggable={false}
                         aria-label={
                           sortUnavailable
-                            ? `Sort by ${headerLabel} (not implemented in the API yet)`
+                            ? `Sort by ${headerLabel} (unavailable)`
                             : `Sort by ${headerLabel}`
                         }
                         aria-sort={
@@ -337,28 +315,12 @@ function DataTableContent<T>({
                           handleSort(sortField!);
                         }}
                         className="group/sort flex min-w-0 items-center gap-0.5 text-left"
-                        title={
-                          sortUnavailable ? "Sorting isn't implemented in the API yet" : headerLabel
-                        }
+                        title={headerLabel}
                       >
-                        <span
-                          className={cn(
-                            "min-w-0 truncate text-xs font-semibold leading-tight tracking-wide transition-colors",
-                            showUnavailableNotice ? "text-red-600 dark:text-red-400" : "text-foreground/70",
-                          )}
-                        >
+                        <span className="min-w-0 truncate text-xs font-semibold leading-tight tracking-wide text-foreground/70 transition-colors">
                           {headerLabel}
                         </span>
-                        {sortUnavailable ? (
-                          <ChevronsUpDown
-                            className={cn(
-                              "size-3.5 shrink-0 transition-colors",
-                              showUnavailableNotice
-                                ? "text-red-600 dark:text-red-400"
-                                : "text-red-500/50 dark:text-red-400/50",
-                            )}
-                          />
-                        ) : isActiveSort ? (
+                        {isActiveSort ? (
                           activeSort?.direction === "desc" ? (
                             <ChevronDown className="size-3.5 shrink-0 text-foreground/80" />
                           ) : (

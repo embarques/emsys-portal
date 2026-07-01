@@ -17,6 +17,7 @@ import {
   formatOptionalContainerCost,
 } from "@/lib/containers/display";
 import type { Container } from "@/lib/containers/types";
+import { useTranslation } from "@/lib/i18n";
 
 type ContainerViewSheetProps = {
   container: Container | null;
@@ -33,7 +34,11 @@ export function ContainerViewSheet({
   onEdit,
   onDelete,
 }: ContainerViewSheetProps) {
+  const { t } = useTranslation();
+
   if (!container) return null;
+
+  const dash = t("common.empty.dash");
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -43,35 +48,35 @@ export function ContainerViewSheet({
           description={<span className="font-mono text-xs">{container.containerNumber}</span>}
           meta={
             <>
-              <Badge variant="outline">{container.company || "No carrier"}</Badge>
+              <Badge variant="outline">{container.company || t("common.empty.noCarrier")}</Badge>
               <Badge variant="secondary">{formatOptionalContainerCost(container.cost)}</Badge>
             </>
           }
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title="Shipping">
-            <RecordViewSheetDetailRow label="Container ID" value={formatContainerId(container.id)} />
-            <RecordViewSheetDetailRow label="Container" value={container.name} />
-            <RecordViewSheetDetailRow label="Container number" value={container.containerNumber || "—"} />
-            <RecordViewSheetDetailRow label="Booking number" value={container.booking} />
-            <RecordViewSheetDetailRow label="Seal number" value={container.sealNumber || "—"} />
-            <RecordViewSheetDetailRow label="Broker" value={container.broker || "—"} />
-            <RecordViewSheetDetailRow label="Transport company" value={container.company || "—"} />
-            <RecordViewSheetDetailRow label="Cost" value={formatOptionalContainerCost(container.cost)} />
+          <RecordViewSheetSection title={t("containers.view.shipping")}>
+            <RecordViewSheetDetailRow label={t("containers.view.containerId")} value={formatContainerId(container.id)} />
+            <RecordViewSheetDetailRow label={t("containers.columns.container")} value={container.name} />
+            <RecordViewSheetDetailRow label={t("containers.columns.containerNumber")} value={container.containerNumber || dash} />
+            <RecordViewSheetDetailRow label={t("containers.columns.booking")} value={container.booking} />
+            <RecordViewSheetDetailRow label={t("containers.columns.sealNumber")} value={container.sealNumber || dash} />
+            <RecordViewSheetDetailRow label={t("containers.columns.broker")} value={container.broker || dash} />
+            <RecordViewSheetDetailRow label={t("containers.columns.company")} value={container.company || dash} />
+            <RecordViewSheetDetailRow label={t("containers.columns.cost")} value={formatOptionalContainerCost(container.cost)} />
             <RecordViewSheetDetailRow
-              label="Barcode sequence"
-              value={container.barcodeSequence > 0 ? container.barcodeSequence : "—"}
+              label={t("containers.view.barcodeSequence")}
+              value={container.barcodeSequence > 0 ? container.barcodeSequence : dash}
             />
-            <RecordViewSheetDetailRow label="Departure date" value={formatContainerDate(container.departureDate)} />
-            <RecordViewSheetDetailRow label="Arrival date" value={formatContainerDate(container.arrivalDate)} />
-            <RecordViewSheetDetailRow label="Date created" value={formatAuditDate(container.createdAt)} />
-            <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(container.updatedAt)} />
+            <RecordViewSheetDetailRow label={t("containers.view.departureDate")} value={formatContainerDate(container.departureDate)} />
+            <RecordViewSheetDetailRow label={t("containers.view.arrivalDate")} value={formatContainerDate(container.arrivalDate)} />
+            <RecordViewSheetDetailRow label={t("common.audit.dateCreated")} value={formatAuditDate(container.createdAt)} />
+            <RecordViewSheetDetailRow label={t("common.audit.dateModified")} value={formatAuditDate(container.updatedAt)} />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
         <RecordViewSheetActions
-          editLabel="Edit container"
+          editLabel={t("containers.actions.edit")}
           onEdit={() => onEdit(container)}
           onDelete={() => onDelete(container)}
         />

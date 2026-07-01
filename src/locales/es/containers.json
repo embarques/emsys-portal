@@ -1,0 +1,107 @@
+{
+  "entity": "Contenedor",
+  "entityPlural": "contenedores",
+  "title": "Contenedores",
+  "noun": "contenedores",
+  "actions": {
+    "add": "Agregar contenedor",
+    "edit": "Editar contenedor",
+    "editNamed": "Editar {{name}}"
+  },
+  "stats": {
+    "total": {
+      "label": "Total de contenedores",
+      "description": "Contenedores registrados"
+    },
+    "departedPastMonth": "Salidos (último mes)",
+    "departedPast90Days": "Salidos (últimos 90 días)",
+    "departedPastYear": "Salidos (último año)"
+  },
+  "columns": {
+    "id": "#",
+    "container": "Contenedor",
+    "containerNumber": "Número de contenedor",
+    "booking": "Número de reserva",
+    "sealNumber": "Número de sello",
+    "broker": "Agente aduanal",
+    "company": "Empresa de transporte",
+    "cost": "Costo",
+    "departureDate": "Salida",
+    "arrivalDate": "Llegada",
+    "barcodeSequence": "Sec. de código de barras",
+    "status": "Estado",
+    "capacity": "Capacidad"
+  },
+  "search": {
+    "placeholder": "Buscar contenedores..."
+  },
+  "loading": {
+    "title": "Cargando contenedores",
+    "description": "Rastreando envíos, capacidad, costos y calendarios de salida…",
+    "container": "Cargando contenedor…"
+  },
+  "empty": {
+    "none": "Aún no hay contenedores.",
+    "noMatch": "Ningún contenedor coincide con sus filtros."
+  },
+  "form": {
+    "addTitle": "Agregar contenedor",
+    "editTitle": "Editar contenedor",
+    "addDescription": "Crear un contenedor nuevo.",
+    "notFound": "No se encontró este contenedor.",
+    "sections": {
+      "container": "Contenedor",
+      "logistics": "Logística"
+    },
+    "fields": {
+      "name": "Contenedor",
+      "containerNumber": "Número de contenedor",
+      "booking": "Número de reserva",
+      "sealNumber": "Número de sello",
+      "broker": "Agente aduanal",
+      "company": "Empresa de transporte",
+      "cost": "Costo",
+      "departureDate": "Fecha de salida",
+      "arrivalDate": "Fecha de llegada"
+    },
+    "placeholders": {
+      "name": "01-26",
+      "containerNumber": "SMLUD320939203",
+      "booking": "BKG-2026-00421",
+      "sealNumber": "SL-884921",
+      "broker": "Nombre del agente aduanal",
+      "company": "Naviera o transportista",
+      "cost": "0.00"
+    }
+  },
+  "view": {
+    "shipping": "Envío",
+    "containerId": "ID de contenedor",
+    "barcodeSequence": "Secuencia de código de barras",
+    "departureDate": "Fecha de salida",
+    "arrivalDate": "Fecha de llegada"
+  },
+  "dialogs": {
+    "deleteTitle": "¿Eliminar contenedor?",
+    "deleteTitlePlural": "¿Eliminar contenedores?",
+    "deleteOne": "Esto eliminará permanentemente el contenedor {{name}}. {{cannotBeUndone}}",
+    "deleteMany": "Esto eliminará permanentemente {{count}} contenedores seleccionados. {{cannotBeUndone}}"
+  },
+  "filters": {
+    "fields": {
+      "id": { "label": "ID de contenedor", "placeholder": "Ingrese ID de contenedor…" },
+      "name": { "label": "Contenedor", "placeholder": "Ingrese contenedor…" },
+      "containerNumber": { "label": "Número de contenedor", "placeholder": "Ingrese número de contenedor…" },
+      "booking": { "label": "Número de reserva", "placeholder": "Ingrese número de reserva…" },
+      "sealNumber": { "label": "Número de sello", "placeholder": "Ingrese número de sello…" },
+      "seal": { "label": "Sello", "placeholder": "Ingrese sello…" },
+      "broker": { "label": "Agente aduanal", "placeholder": "Ingrese agente aduanal…" },
+      "company": { "label": "Empresa de transporte", "placeholder": "Ingrese empresa de transporte…" },
+      "cost": { "label": "Costo", "placeholder": "Ingrese monto…" },
+      "departureDate": { "label": "Fecha de salida", "placeholder": "AAAA-MM-DD" },
+      "departureDateRange": { "label": "Rango de fecha de salida", "placeholder": "2026-01-01 a 2026-06-30" },
+      "arrivalDate": { "label": "Fecha de llegada", "placeholder": "AAAA-MM-DD" },
+      "arrivalDateRange": { "label": "Rango de fecha de llegada", "placeholder": "2026-01-01 a 2026-06-30" }
+    }
+  }
+}

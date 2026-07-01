@@ -3,6 +3,7 @@
 import { Bell, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import { CalculatorToggleButton } from "@/components/app-shell/floating-calculator";
+import { LanguageToggle } from "@/components/app-shell/language-toggle";
 import { MemoPadToggleButton } from "@/components/app-shell/floating-memo-pad";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
@@ -58,6 +59,8 @@ export function Topbar({
         <CalculatorToggleButton />
 
         <MemoPadToggleButton />
+
+        <LanguageToggle />
 
         <ThemeToggle />
 

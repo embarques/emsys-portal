@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import type { PaginatedApiEnvelope } from "@/lib/api/types";
 import { fetchInvoiceById } from "@/lib/invoices/api/invoices-api";
 import type { InvoiceLineItem, InvoiceLineItemBarcode } from "@/lib/invoices/types";
@@ -73,12 +74,6 @@ function readNumericId(value: unknown): number | undefined {
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackMessage: string): void {
-  if (response.success === false) {
-    throw new Error(response.message?.trim() || response.error?.trim() || fallbackMessage);
-  }
 }
 
 export function normalizeBarcode(raw: unknown): Barcode | null {

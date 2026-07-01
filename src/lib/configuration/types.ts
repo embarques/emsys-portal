@@ -18,8 +18,8 @@ export type UserPreference = {
 export type UserPreferenceValues = Pick<UserPreference, "language" | "theme" | "maxWorkspaceTabs">;
 
 export const CONFIGURATION_LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
+  { value: "en", labelKey: "shell.language.en" },
+  { value: "es", labelKey: "shell.language.es" },
 ] as const;
 
 export const CONFIGURATION_THEMES = [

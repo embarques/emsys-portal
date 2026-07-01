@@ -1,5 +1,9 @@
 {
   "pageFallback": "Página",
+  "brand": {
+    "company": "Portal de gestión",
+    "logoAlt": "EMSYS Portal de gestión"
+  },
   "dashboard": {
     "loadingWorkspace": "Cargando espacio de trabajo…"
   },
@@ -8,14 +12,14 @@
     "openSidebarMenu": "Abrir menú lateral",
     "pricing": "Precios",
     "docs": "Documentación",
-    "reports": "Informes",
+    "reports": "Reportes",
     "support": "Soporte",
     "notifications": "Notificaciones"
   },
   "search": {
     "openMenu": "Abrir menú de búsqueda",
     "placeholder": "Buscar registros...",
-    "inputPlaceholder": "Buscar clientes, pedidos, informes...",
+    "inputPlaceholder": "Buscar clientes, pedidos, reportes...",
     "quickActions": "Acciones rápidas",
     "noResults": "No se encontraron resultados.",
     "findCustomer": {
@@ -31,8 +35,8 @@
       "description": "Verificar stock y ubicaciones"
     },
     "monthlyReports": {
-      "label": "Informes mensuales",
-      "description": "Abrir informes de operaciones"
+      "label": "Reportes mensuales",
+      "description": "Abrir reportes de operaciones"
     }
   },
   "userMenu": {
@@ -57,6 +61,14 @@
     "dark": "Oscuro",
     "system": "Sistema"
   },
+  "language": {
+    "change": "Cambiar idioma",
+    "label": "Idioma",
+    "selectPlaceholder": "Seleccionar idioma",
+    "searchPlaceholder": "Buscar idiomas…",
+    "en": "English",
+    "es": "Español"
+  },
   "mobileNav": {
     "label": "Navegación móvil",
     "closeSidebar": "Cerrar menú lateral",
@@ -64,13 +76,31 @@
   },
   "calculator": {
     "open": "Abrir calculadora",
-    "hide": "Ocultar calculadora"
+    "hide": "Ocultar calculadora",
+    "title": "Calculadora",
+    "close": "Cerrar calculadora",
+    "backspace": "Retroceso"
   },
   "memoPad": {
     "open": "Abrir bloc de notas",
-    "hide": "Ocultar bloc de notas"
+    "hide": "Ocultar bloc de notas",
+    "title": "Bloc de notas",
+    "clear": "Borrar bloc de notas",
+    "clearConfirm": "¿Borrar todas las notas del bloc?",
+    "close": "Cerrar bloc de notas",
+    "saving": "Guardando…",
+    "saved": "Guardado",
+    "loadingNotes": "Cargando sus notas...",
+    "notesPlaceholder": "Anote recordatorios, notas o cálculos rápidos...",
+    "line": "línea",
+    "lines": "líneas",
+    "chars": "caracteres",
+    "offline": "Sin conexión — cambios no guardados",
+    "savedToAccount": "Guardado en su cuenta"
   },
   "tabs": {
+    "emptyState": "Seleccione una página del menú lateral para abrir una pestaña de trabajo.",
+    "unregistered": "Este espacio de trabajo aún no está registrado.",
     "close": "Cerrar {{label}}",
     "openInNewTab": "Abrir en nueva pestaña",
     "closeTab": "Cerrar pestaña",

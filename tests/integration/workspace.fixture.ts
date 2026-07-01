@@ -46,7 +46,7 @@ export async function waitForWorkspaceShell(page: Page) {
   await expect(page.getByText("Loading workspace…", { exact: true })).toHaveCount(0, {
     timeout: 30_000,
   });
-  await expect(page.getByText("Select a page from the sidebar to open a workspace tab.")).toHaveCount(0, {
+  await expect(page.getByTestId("workspace-empty-tabs")).toHaveCount(0, {
     timeout: 15_000,
   });
   await expect(workspaceMain(page).locator("[data-tab-id]").first()).toBeVisible({
@@ -377,7 +377,7 @@ export async function gotoWorkspace(page: Page, pathname: string, options: GotoW
     timeout: 30_000,
   });
 
-  const emptyTabState = page.getByText("Select a page from the sidebar to open a workspace tab.");
+  const emptyTabState = page.getByTestId("workspace-empty-tabs");
   if (await emptyTabState.isVisible()) {
     await openWorkspaceFromSidebar(page, pathname);
   }

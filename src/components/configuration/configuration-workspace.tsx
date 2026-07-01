@@ -25,12 +25,14 @@ import {
   type UserPreferenceValues,
 } from "@/lib/configuration/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/lib/configuration/use-configuration";
+import { useTranslation } from "@/lib/i18n";
 import { enforceWorkspaceTabLimit } from "@/lib/store/layout/tabs-slice";
 import { useAppDispatch } from "@/lib/store/hooks";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 
 export function ConfigurationWorkspace() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const profileQuery = useCurrentUser();
   const preferencesQuery = useUserPreferences();
@@ -99,7 +101,7 @@ export function ConfigurationWorkspace() {
         <Card>
           <CardHeader><CardTitle>Language preference</CardTitle><CardDescription>Select the language used across the dashboard interface.</CardDescription></CardHeader>
           <CardContent>
-            <Controller control={control} name="language" render={({ field }) => <div className="space-y-2"><Label>Language</Label><SearchableSelect value={field.value} onValueChange={field.onChange} options={CONFIGURATION_LANGUAGES.map((option) => ({ value: option.value, label: option.label }))} /></div>} />
+            <Controller control={control} name="language" render={({ field }) => <div className="space-y-2"><Label>{t("shell.language.label")}</Label><SearchableSelect value={field.value} onValueChange={field.onChange} options={CONFIGURATION_LANGUAGES.map((option) => ({ value: option.value, label: t(option.labelKey) }))} placeholder={t("shell.language.selectPlaceholder")} searchPlaceholder={t("shell.language.searchPlaceholder")} /></div>} />
           </CardContent>
         </Card>
 

@@ -3,7 +3,8 @@
 import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { addedMessage, deletedMessage, errorMessage, updatedMessage } from "@/lib/feedback/messages";
+import { useTranslation } from "@/lib/i18n";
+import { formatUserErrorMessage } from "@/lib/errors/format-user-error";
 import { cn } from "@/lib/utils";
 import { createRandomId } from "@/lib/utils/id";
 
@@ -18,6 +19,7 @@ type ToastItem = {
 type FeedbackContextValue = {
   notifySuccess: (message: string) => void;
   notifyError: (message: string) => void;
+  notifyApiError: (error: unknown) => void;
   notifyAdded: (entityLabel: string, name?: string) => void;
   notifyUpdated: (entityLabel: string, name?: string) => void;
   notifyDeleted: (entityLabel: string, count?: number) => void;
@@ -26,6 +28,7 @@ type FeedbackContextValue = {
 const FeedbackContext = createContext<FeedbackContextValue | null>(null);
 
 export function FeedbackProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const dismissToast = useCallback((id: string) => {
@@ -42,18 +45,38 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   }, [pushToast]);
 
   const notifyError = useCallback((message: string) => {
-    pushToast(errorMessage(message), "error");
-  }, [pushToast]);
+    pushToast(message.trim() || t("common.errors.fallback"), "error");
+  }, [pushToast, t]);
+
+  const notifyApiError = useCallback((error: unknown) => {
+    notifyError(formatUserErrorMessage(error, t));
+  }, [notifyError, t]);
 
   const value = useMemo<FeedbackContextValue>(
     () => ({
       notifySuccess,
       notifyError,
-      notifyAdded: (entityLabel, name) => notifySuccess(addedMessage(entityLabel, name)),
-      notifyUpdated: (entityLabel, name) => notifySuccess(updatedMessage(entityLabel, name)),
-      notifyDeleted: (entityLabel, count) => notifySuccess(deletedMessage(entityLabel, count)),
+      notifyApiError,
+      notifyAdded: (entityLabel, name) =>
+        notifySuccess(
+          name
+            ? t("common.toasts.addedWithName", { entity: entityLabel, name })
+            : t("common.toasts.added", { entity: entityLabel }),
+        ),
+      notifyUpdated: (entityLabel, name) =>
+        notifySuccess(
+          name
+            ? t("common.toasts.updatedWithName", { entity: entityLabel, name })
+            : t("common.toasts.updated", { entity: entityLabel }),
+        ),
+      notifyDeleted: (entityLabel, count = 1) =>
+        notifySuccess(
+          count === 1
+            ? t("common.toasts.deletedOne", { entity: entityLabel })
+            : t("common.toasts.deletedMany", { entity: entityLabel.toLowerCase(), count }),
+        ),
     }),
-    [notifyError, notifySuccess]
+    [notifyApiError, notifyError, notifySuccess, t],
   );
 
   return (
@@ -82,6 +105,8 @@ function ToastCard({
   tone: ToastTone;
   onDismiss: () => void;
 }) {
+  const { t } = useTranslation();
+
   useEffect(() => {
     const timer = window.setTimeout(onDismiss, 4000);
     return () => window.clearTimeout(timer);
@@ -115,7 +140,7 @@ function ToastCard({
             "text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-900",
           tone === "error" && "text-destructive hover:bg-red-100 dark:text-red-300 dark:hover:bg-red-900",
         )}
-        aria-label="Dismiss notification"
+        aria-label={t("common.actions.dismissNotification")}
       >
         <X className="h-4 w-4" />
       </button>

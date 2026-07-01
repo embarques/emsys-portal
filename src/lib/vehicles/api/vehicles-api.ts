@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
@@ -209,11 +210,6 @@ function buildVehicleWritePayload(
   return payload;
 }
 
-function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackMessage: string) {
-  if (response.success === false) {
-    throw new Error(response.message?.trim() || response.error?.trim() || fallbackMessage);
-  }
-}
 
 function extractVehicleFromMutationResponse(data: unknown): Vehicle | null {
   if (data && typeof data === "object" && !Array.isArray(data)) {

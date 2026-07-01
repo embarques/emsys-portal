@@ -82,11 +82,11 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       { labelKey: "navigation.items.users", href: "/users", icon: UserCog, permission: PERMISSIONS.usersView },
       { labelKey: "navigation.items.roles", href: "/roles", icon: KeyRound, permission: PERMISSIONS.rolesView },
-      { labelKey: "navigation.items.employees", href: "/employees", icon: UsersRound, permission: PERMISSIONS.employeesView },
+      { labelKey: "navigation.items.employees", href: "/employees", icon: UserRound, permission: PERMISSIONS.employeesView },
       {
         labelKey: "navigation.items.employeeGroups",
         href: "/employee-groups",
-        icon: UserRound,
+        icon: UsersRound,
         permission: PERMISSIONS.employeesView,
       },
       { labelKey: "navigation.items.security", href: "/security", icon: ShieldCheck, permission: PERMISSIONS.usersView },

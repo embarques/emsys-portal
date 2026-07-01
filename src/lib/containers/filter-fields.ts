@@ -9,6 +9,8 @@ const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
  *
  * `id` and `cost` are numeric server-side — their values are coerced to numbers
  * in `expandContainerFilterNode` because the backend ignores string numerics.
+ *
+ * Labels and placeholders are resolved at runtime via `useContainerFilterFields`.
  */
 export const CONTAINER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {

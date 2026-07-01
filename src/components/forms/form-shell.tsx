@@ -2,6 +2,8 @@
 
 import { AlertCircle } from "lucide-react";
 
+import { useTranslation } from "@/lib/i18n";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -88,8 +90,11 @@ export function FormFooter({
   isSubmitting = false,
   submitDisabled = false,
   onCancel,
-  cancelLabel = "Cancel",
+  cancelLabel,
 }: FormFooterProps) {
+  const { t } = useTranslation();
+  const resolvedCancelLabel = cancelLabel ?? t("common.actions.cancel");
+
   const notice: FormFooterNotice | null = error
     ? { tone: "error", message: error }
     : warning
@@ -122,11 +127,11 @@ export function FormFooter({
         <div className="flex shrink-0 items-center gap-2">
           {onCancel ? (
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-              {cancelLabel}
+              {resolvedCancelLabel}
             </Button>
           ) : null}
           <Button type="submit" disabled={isSubmitting || submitDisabled} title={notice?.message}>
-            {isSubmitting ? "Saving…" : submitLabel}
+            {isSubmitting ? t("common.actions.saving") : submitLabel}
           </Button>
         </div>
       </div>

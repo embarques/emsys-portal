@@ -3,6 +3,7 @@
 import { EmsysLogo } from "@/components/brand/emsys-logo";
 import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
 import { siteConfig } from "@/config/site";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type SidebarBrandProps = {
@@ -13,6 +14,8 @@ type SidebarBrandProps = {
 };
 
 export function SidebarBrand({ compact = false, className, priority = false }: SidebarBrandProps) {
+  const { t } = useTranslation();
+
   if (compact) {
     return (
       <WorkspaceNavLink
@@ -36,7 +39,7 @@ export function SidebarBrand({ compact = false, className, priority = false }: S
       <EmsysLogo variant="mark" priority={priority} className="shrink-0" />
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold leading-none text-foreground">{siteConfig.name}</p>
-        <p className="mt-1 truncate text-xs text-muted-foreground">{siteConfig.company}</p>
+        <p className="mt-1 truncate text-xs text-muted-foreground">{t("shell.brand.company")}</p>
       </div>
     </WorkspaceNavLink>
   );

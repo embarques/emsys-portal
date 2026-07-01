@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { buildApiListQuery, resolveApiListSort } from "@/lib/api/list-query";
 import {
   buildApiFilterNodeFromTableRows,
@@ -480,12 +481,6 @@ function buildInvoiceSearchBody(params: InvoiceListParams): StripeStyleSearchBod
   body.operator = "and";
   body.filters = filterGroups;
   return body;
-}
-
-function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackMessage: string): void {
-  if (response.success === false) {
-    throw new Error(response.message?.trim() || response.error?.trim() || fallbackMessage);
-  }
 }
 
 function parseInvoicePathId(invoiceId: string): string {

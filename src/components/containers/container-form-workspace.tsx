@@ -7,7 +7,7 @@ import { ContainerForm } from "@/components/containers/container-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { normalizeApiError } from "@/lib/api/axios";
+import { useUserError } from "@/lib/errors";
 import {
   useContainer,
   useContainerPicker,
@@ -20,6 +20,7 @@ import {
   suggestNextContainerName,
   type ContainerFormValues,
 } from "@/lib/containers/types";
+import { useTranslation } from "@/lib/i18n";
 import {
   useUpdateWorkspaceTabLabel,
   useWorkspaceTabs,
@@ -27,6 +28,8 @@ import {
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
 export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+  const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -36,7 +39,6 @@ export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormH
   const createMutation = useCreateContainer();
   const updateMutation = useUpdateContainer();
   const detailQuery = useContainer(isEditing ? numericId : null);
-  // Add mode needs the existing list to suggest the next sequential container name.
   const pickerQuery = useContainerPicker(200, { enabled: !isEditing });
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -52,9 +54,9 @@ export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormH
 
   useEffect(() => {
     if (isEditing && editing?.name) {
-      updateTabLabel(tabId, `Edit ${editing.name}`);
+      updateTabLabel(tabId, t("containers.actions.editNamed", { name: editing.name }));
     }
-  }, [editing?.name, isEditing, tabId, updateTabLabel]);
+  }, [editing?.name, isEditing, t, tabId, updateTabLabel]);
 
   async function save(values: ContainerFormValues) {
     setFormError(null);
@@ -62,25 +64,25 @@ export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormH
     try {
       if (isEditing && editing) {
         const next = await updateMutation.mutateAsync({ containerId: editing.id, values });
-        notifyUpdated("Container", next.name);
+        notifyUpdated(t("containers.entity"), next.name);
         closeFormTabAndReturn(tabId);
         return;
       }
 
       const next = await createMutation.mutateAsync(values);
-      notifyAdded("Container", next.name);
+      notifyAdded(t("containers.entity"), next.name);
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(toErrorMessage(mutationError));
     }
   }
 
   if (isEditing && detailQuery.isLoading) {
     return (
-      <FormTabShell title="Edit container">
+      <FormTabShell title={t("containers.form.editTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading container…
+          {t("containers.loading.container")}
         </div>
       </FormTabShell>
     );
@@ -88,14 +90,14 @@ export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormH
 
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
-      ? normalizeApiError(detailQuery.error).message
-      : "This container could not be found.";
+      ? toErrorMessage(detailQuery.error)
+      : t("containers.form.notFound");
     return (
-      <FormTabShell title="Edit container">
+      <FormTabShell title={t("containers.form.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
-            Close
+            {t("common.actions.close")}
           </Button>
         </div>
       </FormTabShell>
@@ -104,8 +106,8 @@ export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormH
 
   return (
     <FormTabShell
-      title={isEditing ? "Edit container" : "Add container"}
-      description={isEditing && editing ? editing.name : "Create a new container."}
+      title={isEditing ? t("containers.form.editTitle") : t("containers.form.addTitle")}
+      description={isEditing && editing ? editing.name : t("containers.form.addDescription")}
     >
       <ContainerForm
         key={isEditing ? (editing?.id ?? "edit") : `new-${formInstance}`}
@@ -114,7 +116,7 @@ export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormH
         }
         isEditing={isEditing}
         suggestedContainerName={suggestedContainerName}
-        submitLabel={isEditing ? "Save changes" : "Add container"}
+        submitLabel={isEditing ? t("common.actions.saveChanges") : t("containers.actions.add")}
         externalError={formError}
         isSubmitting={isSaving}
         onSubmit={save}

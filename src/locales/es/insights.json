@@ -1,0 +1,34 @@
+{
+  "placeholder": {
+    "description": "Página de ejemplo de {{title}} dentro del mismo panel adaptable.",
+    "addNew": "Agregar nuevo",
+    "stats": {
+      "total": {
+        "label": "Total",
+        "description": "Registros actuales"
+      },
+      "active": {
+        "label": "Activos",
+        "description": "Disponibles ahora"
+      },
+      "pending": {
+        "label": "Pendientes",
+        "description": "Requieren revisión"
+      }
+    }
+  },
+  "sampleTable": {
+    "columns": {
+      "reference": "Referencia",
+      "customer": "Cliente",
+      "amount": "Monto",
+      "status": "Estado"
+    },
+    "statuses": {
+      "ready": "Listo",
+      "pending": "Pendiente",
+      "delivered": "Entregado",
+      "review": "Revisión"
+    }
+  }
+}

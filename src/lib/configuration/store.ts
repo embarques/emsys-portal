@@ -24,3 +24,7 @@ export function syncConfigurationStore(next: UserPreferenceValues) {
 export function updateConfigurationTheme(theme: UserPreferenceValues["theme"]) {
   syncConfigurationStore({ ...snapshot, theme });
 }
+
+export function updateConfigurationLanguage(language: UserPreferenceValues["language"]) {
+  syncConfigurationStore({ ...snapshot, language });
+}

@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
@@ -153,12 +154,6 @@ function writePayload(values: UserFormValues, uid?: string): UserWritePayload {
   return payload;
 }
 
-function assertSuccess(response: ApiEnvelope<unknown>, fallback: string) {
-  if (response.success === false) {
-    throw new Error(response.message?.trim() || response.error?.trim() || fallback);
-  }
-}
-
 export function normalizeApiUser(raw: unknown): User | null {
   return normalizeUser(raw);
 }
@@ -192,7 +187,7 @@ export async function fetchCurrentUser(): Promise<User> {
 
 export async function createUser(values: UserFormValues, uid: string): Promise<User> {
   const response = await apiClient.post<ApiEnvelope<ApiUser>>(API_ENDPOINTS.USERS, writePayload(values, uid));
-  assertSuccess(response, "Unable to create user.");
+  assertMutationSuccess(response, "Unable to create user.");
   const user = normalizeUser(response.data);
   if (user) return user;
   const matches = await fetchUsers({
@@ -209,7 +204,7 @@ export async function updateUser(userId: string | number, values: UserFormValues
     `${API_ENDPOINTS.USERS}/${userId}`,
     writePayload(values),
   );
-  assertSuccess(response, "Unable to update user.");
+  assertMutationSuccess(response, "Unable to update user.");
   return normalizeUser(response.data) ?? fetchUserById(userId);
 }
 

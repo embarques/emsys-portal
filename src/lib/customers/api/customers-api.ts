@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import {
   buildAdvancedSearchBody,
@@ -513,11 +514,6 @@ function buildCustomerWritePayload(
   return payload;
 }
 
-function assertMutationSuccess(response: ApiMutationEnvelope<unknown>, fallbackMessage: string) {
-  if (response.success === false) {
-    throw new Error(response.message?.trim() || response.error?.trim() || fallbackMessage);
-  }
-}
 
 function extractCustomerFromMutationResponse(data: unknown): Customer | null {
   if (data && typeof data === "object" && !Array.isArray(data)) {

@@ -1,5 +1,9 @@
 {
   "pageFallback": "Page",
+  "brand": {
+    "company": "Management Portal",
+    "logoAlt": "EMSYS Management Portal"
+  },
   "dashboard": {
     "loadingWorkspace": "Loading workspace…"
   },
@@ -57,6 +61,14 @@
     "dark": "Dark",
     "system": "System"
   },
+  "language": {
+    "change": "Change language",
+    "label": "Language",
+    "selectPlaceholder": "Select language",
+    "searchPlaceholder": "Search languages…",
+    "en": "English",
+    "es": "Español"
+  },
   "mobileNav": {
     "label": "Mobile navigation",
     "closeSidebar": "Close sidebar menu",
@@ -64,13 +76,31 @@
   },
   "calculator": {
     "open": "Open calculator",
-    "hide": "Hide calculator"
+    "hide": "Hide calculator",
+    "title": "Calculator",
+    "close": "Close calculator",
+    "backspace": "Backspace"
   },
   "memoPad": {
     "open": "Open memo pad",
-    "hide": "Hide memo pad"
+    "hide": "Hide memo pad",
+    "title": "Memo pad",
+    "clear": "Clear memo pad",
+    "clearConfirm": "Clear all memo pad notes?",
+    "close": "Close memo pad",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "loadingNotes": "Loading your notes...",
+    "notesPlaceholder": "Jot down notes, reminders, or quick calculations...",
+    "line": "line",
+    "lines": "lines",
+    "chars": "chars",
+    "offline": "Offline — changes not saved",
+    "savedToAccount": "Saved to your account"
   },
   "tabs": {
+    "emptyState": "Select a page from the sidebar to open a workspace tab.",
+    "unregistered": "This workspace is not registered yet.",
     "close": "Close {{label}}",
     "openInNewTab": "Open in new tab",
     "closeTab": "Close tab",

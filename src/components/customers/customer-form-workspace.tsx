@@ -7,7 +7,8 @@ import { CustomerForm } from "@/components/customers/customer-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { normalizeApiError } from "@/lib/api/axios";
+import { useUserError } from "@/lib/errors";
+import { useTranslation } from "@/lib/i18n";
 import {
   useCreateCustomer,
   useCustomer,
@@ -25,6 +26,8 @@ import {
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
 export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+  const { t } = useTranslation();
+  const { formatError, toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -66,14 +69,15 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
       // Keep the tab open and reset to a blank template for the next entry.
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
-      const { message, status } = normalizeApiError(mutationError);
-      const detail =
-        status === 403
-          ? isEditing
-            ? `${message} Ask an admin to enable customer update (canUpdateCustomer) on your role.`
-            : `${message} Ask an admin to enable customer create (canCreateCustomer) on your role.`
-          : message;
-      setFormError(detail);
+      const { status, category } = formatError(mutationError);
+      setFormError(
+        toErrorMessage(mutationError, {
+          hint:
+            status === 403 || category === "forbidden"
+              ? t("common.errors.permissionHint")
+              : undefined,
+        }),
+      );
     }
   }
 
@@ -90,7 +94,7 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
   if (isEditing && (customerQuery.isError || !editingCustomer)) {
     const message = customerQuery.isError
-      ? normalizeApiError(customerQuery.error).message
+      ? toErrorMessage(customerQuery.error)
       : "This customer could not be found.";
     return (
       <FormTabShell title="Edit customer">

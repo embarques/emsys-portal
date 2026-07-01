@@ -137,6 +137,7 @@ const digitButtons = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "0", "."];
 
 export function FloatingCalculator() {
   const { open, close } = useCalculator();
+  const { t } = useTranslation();
   const [state, setState] = useState<CalculatorState>(initialState);
 
   useEffect(() => {
@@ -208,14 +209,14 @@ export function FloatingCalculator() {
       <div
         className="pointer-events-auto w-[min(100vw-2rem,18rem)] overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-2xl"
         role="dialog"
-        aria-label="Calculator"
+        aria-label={t("shell.calculator.title")}
       >
         <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Calculator className="h-4 w-4" />
-            Calculator
+            {t("shell.calculator.title")}
           </div>
-          <Button type="button" variant="ghost" size="icon" className="h-8 w-8" aria-label="Close calculator" onClick={close}>
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8" aria-label={t("shell.calculator.close")} onClick={close}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -283,7 +284,7 @@ export function FloatingCalculator() {
           <div className="flex justify-end">
             <Button type="button" variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={() => press("backspace")}>
               <Delete className="h-3.5 w-3.5" />
-              Backspace
+              {t("shell.calculator.backspace")}
             </Button>
           </div>
         </div>
