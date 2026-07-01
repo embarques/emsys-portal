@@ -5,8 +5,8 @@ import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createUser,
-  deleteUser,
-  deleteUsers,
+  deactivateUser,
+  fetchCurrentUser,
   fetchUserById,
   fetchUsers,
   updateUser,
@@ -77,7 +77,7 @@ export function useUserSearch(
 
 export function useUserAutocomplete(
   query: string,
-  field: UserSearchField = "userName",
+  field: UserSearchField = "name",
   operator: UserSearchOperator = "startsWith",
   options: UserSearchOptions = {},
 ) {
@@ -136,6 +136,14 @@ export function useUser(userId: string | number | null, enabled = true) {
   });
 }
 
+export function useCurrentUser() {
+  return useWorkspaceQuery({
+    queryKey: queryKeys.users.current(),
+    queryFn: fetchCurrentUser,
+    staleTime: 60_000,
+  });
+}
+
 function invalidateUsers(queryClient: ReturnType<typeof useQueryClient>) {
   return queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
 }
@@ -144,7 +152,7 @@ export function useCreateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (values: UserFormValues) => createUser(values),
+    mutationFn: ({ values, uid }: { values: UserFormValues; uid: string }) => createUser(values, uid),
     onSuccess: () => invalidateUsers(queryClient),
   });
 }
@@ -162,20 +170,11 @@ export function useUpdateUser() {
   });
 }
 
-export function useDeleteUser() {
+export function useDeactivateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (userId: string | number) => deleteUser(userId),
-    onSuccess: () => invalidateUsers(queryClient),
-  });
-}
-
-export function useDeleteUsers() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (userIds: Array<string | number>) => deleteUsers(userIds),
+    mutationFn: deactivateUser,
     onSuccess: () => invalidateUsers(queryClient),
   });
 }

@@ -286,14 +286,13 @@ function normalizePickupUser(raw: unknown): User | null {
 
   if (!user) return null;
 
-  if (!pickupName || user.fullName.trim() || user.userName.trim()) {
+  if (!pickupName || user.name.trim()) {
     return user;
   }
 
   return {
     ...user,
-    userName: pickupName,
-    fullName: pickupName,
+    name: pickupName,
   };
 }
 

@@ -92,7 +92,7 @@ const navigationGroups: NavigationGroup[] = [
       { label: "Security", href: "/security", icon: ShieldCheck, permission: PERMISSIONS.usersView },
       { label: "Branches", href: "/branches", icon: Building2, permission: PERMISSIONS.branchesView },
       {
-        label: "Configuration",
+        label: "Settings",
         href: "/settings",
         icon: Settings,
         permission: PERMISSIONS.accountSettingsView,

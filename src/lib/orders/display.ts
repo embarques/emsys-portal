@@ -85,7 +85,7 @@ export function formatOrderCommentsSummary(order: Order, limit = 2): string {
 
 export function getOrderUserDisplayName(user: Order["user"]): string {
   if (!user) return "";
-  return user.fullName.trim() || user.userName.trim();
+  return user.name.trim();
 }
 
 export function formatUserSummary(user: Order["user"]): string {

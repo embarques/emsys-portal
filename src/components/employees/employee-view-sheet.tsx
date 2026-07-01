@@ -138,12 +138,10 @@ export function EmployeeViewSheet({
             <RecordViewSheetSection title="User">
               <RecordViewSheetDetailRow label={formatTableColumnLabel("user")} value={formatEmployeeUserLabel(employee)} />
               <RecordViewSheetDetailRow label={formatTableColumnLabel("user.id")} value={String(employee.user.id)} />
-              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.userName")} value={employee.user.userName || "—"} />
-              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.fullName")} value={employee.user.fullName || "—"} />
+              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.name")} value={employee.user.name || "—"} />
               <RecordViewSheetDetailRow label={formatTableColumnLabel("user.email")} value={employee.user.email || "—"} />
               <RecordViewSheetDetailRow label={formatTableColumnLabel("user.active")} value={String(employee.user.active)} />
               <RecordViewSheetDetailRow label={formatTableColumnLabel("user.uid")} value={employee.user.uid || "—"} />
-              <RecordViewSheetDetailRow label={formatTableColumnLabel("user.type")} value={employee.user.type || "—"} />
               <RecordViewSheetDetailRow label={formatTableColumnLabel("user.role.name")} value={employee.user.role.name || "—"} />
             </RecordViewSheetSection>
           ) : null}

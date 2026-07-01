@@ -168,6 +168,7 @@ export const queryKeys = {
     stats: (scope: "all" | "active" | "admin", roleId?: number) =>
       [...queryKeys.users.all, "stats", scope, roleId] as const,
     detail: (userId: string) => [...queryKeys.users.all, "detail", userId] as const,
+    current: () => [...queryKeys.users.all, "current"] as const,
   },
   filterPresets: {
     all: ["filter-presets"] as const,

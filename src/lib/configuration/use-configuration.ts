@@ -1,45 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useSyncExternalStore } from "react";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
+import { fetchCurrentUserPreferences, updateCurrentUserPreferences } from "./api";
+import { getConfigurationServerSnapshot, getConfigurationSnapshot, subscribeConfigurationStore, syncConfigurationStore } from "./store";
+import type { UserPreferenceValues } from "./types";
 
-import {
-  getConfigurationServerSnapshot,
-  getConfigurationSnapshot,
-  initializeConfigurationStore,
-  setConfigurationStore,
-  subscribeConfigurationStore,
-} from "./store";
-import type { UserConfiguration } from "./types";
+const preferenceKey = ["users", "current", "preferences"] as const;
 
-export function useConfigurationStore(): UserConfiguration {
-  const configuration = useSyncExternalStore(
-    subscribeConfigurationStore,
-    getConfigurationSnapshot,
-    getConfigurationServerSnapshot
-  );
-
-  useEffect(() => {
-    initializeConfigurationStore();
-  }, []);
-
-  return configuration;
+export function useUserPreferences() {
+  return useWorkspaceQuery({ queryKey: preferenceKey, queryFn: fetchCurrentUserPreferences, staleTime: 60_000 });
 }
 
-export function useSaveConfiguration() {
-  const saveConfiguration = useCallback((next: UserConfiguration) => {
-    setConfigurationStore(next);
-  }, []);
-
-  return saveConfiguration;
+export function useUpdateUserPreferences() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateCurrentUserPreferences,
+    onSuccess: (preference) => {
+      syncConfigurationStore(preference);
+      queryClient.setQueryData(preferenceKey, preference);
+    },
+  });
 }
 
-export function useConfigurationHydrated() {
-  const [hydrated, setHydrated] = useState(false);
-
+export function useConfigurationStore(): UserPreferenceValues {
+  const value = useSyncExternalStore(subscribeConfigurationStore, getConfigurationSnapshot, getConfigurationServerSnapshot);
+  const query = useUserPreferences();
   useEffect(() => {
-    initializeConfigurationStore();
-    setHydrated(true);
-  }, []);
-
-  return hydrated;
+    if (query.data) syncConfigurationStore(query.data);
+  }, [query.data]);
+  return value;
 }

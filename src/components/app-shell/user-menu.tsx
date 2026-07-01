@@ -96,7 +96,7 @@ export function UserMenu() {
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
             >
               <Settings className="h-4 w-4" />
-              Configuration
+              Settings
             </Link>
             <Link
               href="/security"

@@ -394,7 +394,7 @@ export function formatEmployeePhones(employee: Employee): string {
 
 export function formatEmployeeUserLabel(employee: Pick<Employee, "user">): string {
   if (!employee.user) return "—";
-  return employee.user.userName || employee.user.fullName || String(employee.user.id);
+  return employee.user.name || String(employee.user.id);
 }
 
 export function employeeToFormValues(employee: Employee): EmployeeFormValues {

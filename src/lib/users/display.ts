@@ -1,6 +1,5 @@
-import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
-import type { User, UserPortalBranch } from "./types";
-import { getUserPortalBranch, isAdminRole, USER_ACTIVE_OPTIONS } from "./types";
+import type { User } from "./types";
+import { isAdminRole, USER_ACTIVE_OPTIONS } from "./types";
 
 export function getUserActiveLabel(active: boolean): string {
   return USER_ACTIVE_OPTIONS.find((entry) => entry.value === active)?.label ?? (active ? "Active" : "Inactive");
@@ -12,12 +11,10 @@ export function getUserActiveBadgeClass(active: boolean): string {
     : "border-transparent bg-muted text-muted-foreground";
 }
 
-export function getUserBranchLabel(branch: UserPortalBranch): string {
-  return getBranchLabel(branch);
-}
-
 export function getUserBranchBadgeClass(user: User): string {
-  return getBranchBadgeClass(getUserPortalBranch(user));
+  return user.branch.id > 0
+    ? "border-transparent bg-blue-500/15 text-blue-700 dark:text-blue-300"
+    : "border-transparent bg-muted text-muted-foreground";
 }
 
 export function getUserRoleLabel(roleName: string): string {
@@ -42,10 +39,7 @@ export function getUserRoleBadgeClass(roleName: string): string {
 }
 
 export function formatUserBranchLabel(user: User): string {
-  const portalBranch = getUserPortalBranch(user);
-  const branchLabel = getUserBranchLabel(portalBranch);
-  const details = [user.branch.name, user.branch.code].filter(Boolean).join(" · ");
-  return details ? `${branchLabel} (${details})` : branchLabel;
+  return user.branch.name || "—";
 }
 
 export function truncateUserId(userId: number): string {

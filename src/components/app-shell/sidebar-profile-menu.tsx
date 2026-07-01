@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/lib/auth/hooks/use-auth";
-import { useConfigurationStore } from "@/lib/configuration/use-configuration";
+import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 
 function getProfileInitials(displayName: string | null, email: string | null): string {
@@ -39,15 +39,15 @@ type SidebarProfileMenuProps = {
 export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfileMenuProps) {
   const router = useRouter();
   const { displayName, email, role, roleLoading, signOut } = useAuth();
-  const configuration = useConfigurationStore();
+  const currentUserQuery = useCurrentUser();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const profileName =
-    displayName?.trim() || configuration.displayName.trim() || email?.split("@")[0] || "User";
-  const profileEmail = email?.trim() || null;
+    currentUserQuery.data?.name?.trim() || displayName?.trim() || email?.split("@")[0] || "User";
+  const profileEmail = currentUserQuery.data?.email?.trim() || email?.trim() || null;
   const profileRole = roleLoading ? "Loading..." : role?.trim() || null;
-  const initials = getProfileInitials(displayName ?? configuration.displayName, email);
+  const initials = getProfileInitials(currentUserQuery.data?.name ?? displayName, profileEmail);
 
   function ProfileMeta({ emphasized = false }: { emphasized?: boolean }) {
     const nameClassName = emphasized ? "truncate text-sm font-semibold" : "truncate text-sm font-medium text-foreground";
@@ -156,7 +156,7 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition hover:bg-accent hover:text-accent-foreground"
             >
               <Settings className="h-4 w-4 shrink-0" />
-              Configuration
+              Settings
             </Link>
             <Link
               href="/settings"
