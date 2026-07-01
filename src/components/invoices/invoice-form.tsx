@@ -466,7 +466,6 @@ export function InvoiceForm({
                   onValueChange={(next) =>
                     updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
                   }
-                  searchable={false}
                   required
                   options={INVOICE_PAYMENT_LOCATIONS.map((option) => ({
                     value: option.value,

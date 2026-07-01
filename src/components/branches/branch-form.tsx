@@ -286,7 +286,6 @@ export function BranchForm({
                 </Label>
                 <SearchableSelect
                   id="settings-invoiceCreatedThruIncomeStatement"
-                  searchable={false}
                   value={values.settings.invoiceCreatedThruIncomeStatement ? "true" : "false"}
                   onValueChange={(next) =>
                     updateSettingsField("invoiceCreatedThruIncomeStatement", next === "true")
@@ -298,7 +297,6 @@ export function BranchForm({
                 <Label htmlFor="settings-printLabelCount">Print label count</Label>
                 <SearchableSelect
                   id="settings-printLabelCount"
-                  searchable={false}
                   value={values.settings.printLabelCount ? "true" : "false"}
                   onValueChange={(next) => updateSettingsField("printLabelCount", next === "true")}
                   options={BOOLEAN_OPTIONS}

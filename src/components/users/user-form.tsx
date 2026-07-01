@@ -93,7 +93,7 @@ export function UserForm({
               name="active"
               render={({ field }) => (
                 <Field label="Status" required>
-                  <SearchableSelect id="active" searchable={false} value={String(field.value)} onValueChange={(value) => field.onChange(value === "true")} options={USER_ACTIVE_OPTIONS.map((option) => ({ value: String(option.value), label: option.label }))} />
+                  <SearchableSelect id="active" value={String(field.value)} onValueChange={(value) => field.onChange(value === "true")} options={USER_ACTIVE_OPTIONS.map((option) => ({ value: String(option.value), label: option.label }))} />
                 </Field>
               )}
             />

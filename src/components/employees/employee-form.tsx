@@ -95,7 +95,6 @@ export function EmployeeForm({
               </Label>
               <SearchableSelect
                 id="active"
-                searchable={false}
                 value={values.active ? "true" : "false"}
                 onValueChange={(next) => updateField("active", next === "true")}
                 required

@@ -168,7 +168,6 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                     {isEditing(index, "purpose") ? (
                       <SearchableSelect
                         id={`comment-purpose-${index}`}
-                        searchable={false}
                         autoFocus
                         defaultOpen
                         onClose={stopEditing}
@@ -201,7 +200,6 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                       isEditing(index, "item") ? (
                         <SearchableSelect
                           id={`comment-item-${index}`}
-                          searchable={false}
                           autoFocus
                           defaultOpen
                           onClose={stopEditing}

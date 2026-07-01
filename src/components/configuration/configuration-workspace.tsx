@@ -99,7 +99,7 @@ export function ConfigurationWorkspace() {
         <Card>
           <CardHeader><CardTitle>Language preference</CardTitle><CardDescription>Select the language used across the dashboard interface.</CardDescription></CardHeader>
           <CardContent>
-            <Controller control={control} name="language" render={({ field }) => <div className="space-y-2"><Label>Language</Label><SearchableSelect value={field.value} onValueChange={field.onChange} searchable={false} options={CONFIGURATION_LANGUAGES.map((option) => ({ value: option.value, label: option.label }))} /></div>} />
+            <Controller control={control} name="language" render={({ field }) => <div className="space-y-2"><Label>Language</Label><SearchableSelect value={field.value} onValueChange={field.onChange} options={CONFIGURATION_LANGUAGES.map((option) => ({ value: option.value, label: option.label }))} /></div>} />
           </CardContent>
         </Card>
 

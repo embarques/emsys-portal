@@ -226,7 +226,6 @@ export function EmployeeGroupFormFields({
                   });
                   setValue("employees", [], { shouldDirty: true, shouldValidate: true });
                 }}
-                searchable={false}
                 options={[
                   { value: "usa", label: "USA" },
                   { value: "dr", label: "Dominican Republic" },
