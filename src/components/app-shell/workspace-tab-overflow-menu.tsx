@@ -9,8 +9,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getWorkspaceTabDisplayLabel } from "@/lib/layout/workspace-registry";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
 import { normalizeWorkspaceTabColor } from "@/lib/layout/workspace-tab-colors";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type WorkspaceTabOverflowMenuProps = {
@@ -20,6 +22,8 @@ type WorkspaceTabOverflowMenuProps = {
 };
 
 export function WorkspaceTabOverflowMenu({ tabs, activeTabId, onActivate }: WorkspaceTabOverflowMenuProps) {
+  const { locale, t } = useTranslation();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -28,8 +32,8 @@ export function WorkspaceTabOverflowMenu({ tabs, activeTabId, onActivate }: Work
           variant="ghost"
           size="icon"
           className="mb-1 mr-1 mt-2 h-9 w-9 shrink-0 rounded-lg"
-          aria-label="Open tab list"
-          title="All tabs"
+          aria-label={t("shell.tabs.openTabList")}
+          title={t("shell.tabs.allTabs")}
         >
           <ChevronDown className="h-4 w-4" />
         </Button>
@@ -38,6 +42,7 @@ export function WorkspaceTabOverflowMenu({ tabs, activeTabId, onActivate }: Work
         {tabs.map((tab) => {
           const active = tab.id === activeTabId;
           const color = normalizeWorkspaceTabColor(tab.color);
+          const displayLabel = getWorkspaceTabDisplayLabel(tab, locale);
 
           return (
             <DropdownMenuItem key={tab.id} onSelect={() => onActivate(tab.id)} className="gap-2">
@@ -50,7 +55,7 @@ export function WorkspaceTabOverflowMenu({ tabs, activeTabId, onActivate }: Work
               ) : null}
               <span className={cn("min-w-0 flex-1 truncate", active && "font-medium")}>
                 <span className="mr-1.5 tabular-nums text-muted-foreground">{tab.number}</span>
-                {tab.label}
+                {displayLabel}
               </span>
               {active ? <Check className="h-4 w-4 shrink-0 opacity-70" /> : null}
             </DropdownMenuItem>

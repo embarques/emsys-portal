@@ -51,6 +51,8 @@ import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
+import { formatBranchFilterLabel } from "@/lib/branches/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   formatOrderCommentsSummary,
   formatOrderDate,
@@ -58,6 +60,7 @@ import {
   formatOrderRouteName,
   buildOrderCreatedByFilterOptions,
   getCustomerPhone,
+  getOrderBranchLabel,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
 import { buildRouteFilterOptions } from "@/lib/routes/display";
@@ -132,6 +135,9 @@ export function OrdersWorkspace() {
     limit: 100,
     sort: "fullName:asc",
   });
+  const { data: branchesData, isLoading: branchesLoading } = useBranchPicker(200, {
+    enabled: filtersOpen,
+  });
 
   const stats = useOrderStats();
   const createOrderMutation = useCreateOrder();
@@ -167,6 +173,22 @@ export function OrdersWorkspace() {
   const userFilterOptions = useMemo(
     () => buildOrderCreatedByFilterOptions(usersData?.items ?? []),
     [usersData?.items],
+  );
+  const branchFilterOptionsById = useMemo(
+    () =>
+      (branchesData?.items ?? []).map((branch) => ({
+        value: String(branch.id),
+        label: formatBranchFilterLabel(branch),
+      })),
+    [branchesData?.items],
+  );
+  const branchFilterOptionsByCode = useMemo(
+    () =>
+      (branchesData?.items ?? []).map((branch) => ({
+        value: branch.code,
+        label: formatBranchFilterLabel(branch),
+      })),
+    [branchesData?.items],
   );
 
   function toggleSelectAll(checked: boolean) {
@@ -377,6 +399,13 @@ export function OrdersWorkspace() {
       renderCell: (order) => formatOrderDate(order.date),
     },
     {
+      id: "branch.name",
+      label: "Branch",
+      sortField: "branch.name",
+      cellClassName: "text-muted-foreground",
+      renderCell: (order) => getOrderBranchLabel(order.branch) || "—",
+    },
+    {
       id: "createdAt",
       label: "createdAt",
       cellClassName: "text-muted-foreground",
@@ -511,6 +540,8 @@ export function OrdersWorkspace() {
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
                     routes: routeOptions,
+                    branches: branchesLoading ? [] : branchFilterOptionsById,
+                    branchCodes: branchesLoading ? [] : branchFilterOptionsByCode,
                   }}
                   onChange={(rows) => {
                     setFilters((current) => ({ ...current, rows }));

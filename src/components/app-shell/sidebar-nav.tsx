@@ -5,72 +5,48 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import * as React from "react";
 
 import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
-import { navigation } from "@/config/navigation";
-import { useAuth } from "@/lib/auth/hooks/use-auth";
-import type { Permission } from "@/lib/auth/types/permission";
+import { useNavigation } from "@/lib/navigation/use-navigation";
 import { cn } from "@/lib/utils";
 
 function groupHasActiveRoute(
-  group: (typeof navigation)[number],
+  group: ReturnType<typeof useNavigation>[number],
   pathname: string,
-  visibleItems: (typeof navigation)[number]["items"],
 ) {
-  return visibleItems.some((item) =>
+  return group.items.some((item) =>
     item.href === "/" ? pathname === "/" : pathname.startsWith(item.href),
   );
 }
 
-function canShowNavItem(
-  permission: Permission | undefined,
-  hasPermission: (name: string, resourceType: string) => boolean,
-) {
-  if (!permission) return true;
-  return hasPermission(permission.name, permission.resourceType);
-}
-
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { hasPermission } = useAuth();
-
-  const visibleNavigation = React.useMemo(
-    () =>
-      navigation
-        .map((group) => ({
-          ...group,
-          items: group.items.filter((item) => canShowNavItem(item.permission, hasPermission)),
-        }))
-        .filter((group) => group.items.length > 0),
-    [hasPermission],
-  );
+  const visibleNavigation = useNavigation();
 
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(() => {
-    return Object.fromEntries(visibleNavigation.map((group, index) => [group.title, index === 0]));
+    return Object.fromEntries(visibleNavigation.map((group, index) => [group.titleKey, index === 0]));
   });
 
   React.useEffect(() => {
-    const activeGroup = visibleNavigation.find((group) =>
-      groupHasActiveRoute(group, pathname, group.items),
-    );
+    const activeGroup = visibleNavigation.find((group) => groupHasActiveRoute(group, pathname));
     if (!activeGroup) return;
 
-    setOpenGroups((current) => ({ ...current, [activeGroup.title]: true }));
+    setOpenGroups((current) => ({ ...current, [activeGroup.titleKey]: true }));
   }, [pathname, visibleNavigation]);
 
   return (
     <nav className="space-y-1">
       {visibleNavigation.map((group) => {
-        const isOpen = openGroups[group.title] ?? false;
-        const hasActiveRoute = groupHasActiveRoute(group, pathname, group.items);
+        const isOpen = openGroups[group.titleKey] ?? false;
+        const hasActiveRoute = groupHasActiveRoute(group, pathname);
         const isParentSelected = !isOpen && hasActiveRoute;
         const GroupIcon = group.items[0]?.icon;
 
         return (
-          <div key={group.title} className="rounded-xl">
+          <div key={group.titleKey} className="rounded-xl">
             <button
               type="button"
               aria-expanded={isOpen}
               aria-current={isParentSelected ? "true" : undefined}
-              onClick={() => setOpenGroups((current) => ({ ...current, [group.title]: !isOpen }))}
+              onClick={() => setOpenGroups((current) => ({ ...current, [group.titleKey]: !isOpen }))}
               className={cn(
                 "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition",
                 isParentSelected

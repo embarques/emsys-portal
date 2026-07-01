@@ -1,0 +1,83 @@
+{
+  "pageFallback": "Page",
+  "dashboard": {
+    "loadingWorkspace": "Loading workspace…"
+  },
+  "topbar": {
+    "collapseSidebar": "Collapse sidebar",
+    "openSidebarMenu": "Open sidebar menu",
+    "pricing": "Pricing",
+    "docs": "Docs",
+    "reports": "Reports",
+    "support": "Support",
+    "notifications": "Notifications"
+  },
+  "search": {
+    "openMenu": "Open search menu",
+    "placeholder": "Search records...",
+    "inputPlaceholder": "Search customers, orders, reports...",
+    "quickActions": "Quick actions",
+    "noResults": "No matching entries found.",
+    "findCustomer": {
+      "label": "Find customer",
+      "description": "Search customer records"
+    },
+    "createCustomer": {
+      "label": "Create customer",
+      "description": "Open a new customer form"
+    },
+    "inventoryLookup": {
+      "label": "Inventory lookup",
+      "description": "Check stock and locations"
+    },
+    "monthlyReports": {
+      "label": "Monthly reports",
+      "description": "Open operations reports"
+    }
+  },
+  "userMenu": {
+    "open": "Open user menu",
+    "profile": "Profile",
+    "settings": "Settings",
+    "account": "Account",
+    "signOut": "Sign out"
+  },
+  "profileMenu": {
+    "open": "Open profile menu",
+    "defaultUser": "User",
+    "account": "Account",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "logOut": "Log out"
+  },
+  "theme": {
+    "change": "Change theme",
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "mobileNav": {
+    "label": "Mobile navigation",
+    "closeSidebar": "Close sidebar menu",
+    "closeMenu": "Close menu"
+  },
+  "calculator": {
+    "open": "Open calculator",
+    "hide": "Hide calculator"
+  },
+  "memoPad": {
+    "open": "Open memo pad",
+    "hide": "Hide memo pad"
+  },
+  "tabs": {
+    "close": "Close {{label}}",
+    "openInNewTab": "Open in new tab",
+    "closeTab": "Close tab",
+    "closeOtherTabs": "Close other tabs",
+    "closeTabsToRight": "Close tabs to the right",
+    "closeAllTabs": "Close all tabs",
+    "openTabList": "Open tab list",
+    "allTabs": "All tabs"
+  }
+}

@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 
 import { SidebarBrand } from "@/components/brand/sidebar-brand";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 import { SidebarNav } from "./sidebar-nav";
 import { SidebarProfileMenu } from "./sidebar-profile-menu";
 
@@ -13,14 +14,16 @@ type MobileSidebarProps = {
 };
 
 export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
+  const { t } = useTranslation();
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] md:hidden" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+    <div className="fixed inset-0 z-[9999] md:hidden" role="dialog" aria-modal="true" aria-label={t("shell.mobileNav.label")}>
       <button
         type="button"
         className="absolute inset-0 bg-black/55 backdrop-blur-sm"
-        aria-label="Close sidebar menu"
+        aria-label={t("shell.mobileNav.closeSidebar")}
         onClick={() => onOpenChange(false)}
         onTouchStart={(event) => {
           event.preventDefault();
@@ -39,7 +42,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
             variant="ghost"
             size="icon"
             className="shrink-0 touch-manipulation"
-            aria-label="Close menu"
+            aria-label={t("shell.mobileNav.closeMenu")}
             onClick={() => onOpenChange(false)}
             onTouchStart={(event) => {
               event.preventDefault();

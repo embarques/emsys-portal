@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 
@@ -38,15 +39,19 @@ type SidebarProfileMenuProps = {
 
 export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfileMenuProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const { displayName, email, role, roleLoading, signOut } = useAuth();
   const currentUserQuery = useCurrentUser();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const profileName =
-    currentUserQuery.data?.name?.trim() || displayName?.trim() || email?.split("@")[0] || "User";
+    currentUserQuery.data?.name?.trim() ||
+    displayName?.trim() ||
+    email?.split("@")[0] ||
+    t("shell.profileMenu.defaultUser");
   const profileEmail = currentUserQuery.data?.email?.trim() || email?.trim() || null;
-  const profileRole = roleLoading ? "Loading..." : role?.trim() || null;
+  const profileRole = roleLoading ? t("common.loading") : role?.trim() || null;
   const initials = getProfileInitials(currentUserQuery.data?.name ?? displayName, profileEmail);
 
   function ProfileMeta({ emphasized = false }: { emphasized?: boolean }) {
@@ -95,7 +100,7 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
         type="button"
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="Open profile menu"
+        aria-label={t("shell.profileMenu.open")}
         onClick={() => setOpen((current) => !current)}
         className={cn(
           "rounded-xl bg-muted/60 text-left transition hover:bg-muted",
@@ -147,7 +152,7 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition hover:bg-accent hover:text-accent-foreground"
             >
               <UserCircle className="h-4 w-4 shrink-0" />
-              Account
+              {t("shell.profileMenu.account")}
             </Link>
             <Link
               href="/settings"
@@ -156,7 +161,7 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition hover:bg-accent hover:text-accent-foreground"
             >
               <Settings className="h-4 w-4 shrink-0" />
-              Settings
+              {t("shell.profileMenu.settings")}
             </Link>
             <Link
               href="/settings"
@@ -165,7 +170,7 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition hover:bg-accent hover:text-accent-foreground"
             >
               <Bell className="h-4 w-4 shrink-0" />
-              Notifications
+              {t("shell.profileMenu.notifications")}
             </Link>
           </div>
 
@@ -177,7 +182,7 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
             >
               <LogOut className="h-4 w-4 shrink-0" />
-              Log out
+              {t("shell.profileMenu.logOut")}
             </button>
           </div>
         </div>

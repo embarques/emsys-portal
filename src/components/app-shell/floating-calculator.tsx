@@ -5,6 +5,7 @@ import { Calculator, Delete, X } from "lucide-react";
 
 import { useCalculator } from "@/components/app-shell/calculator-provider";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type Operator = "+" | "-" | "*" | "/";
@@ -322,13 +323,14 @@ function CalcButton({
 
 export function CalculatorToggleButton() {
   const { open, toggle } = useCalculator();
+  const { t } = useTranslation();
 
   return (
     <Button
       type="button"
       variant={open ? "secondary" : "ghost"}
       size="icon"
-      aria-label={open ? "Hide calculator" : "Open calculator"}
+      aria-label={open ? t("shell.calculator.hide") : t("shell.calculator.open")}
       aria-pressed={open}
       className="shrink-0"
       onClick={toggle}

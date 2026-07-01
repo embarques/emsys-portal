@@ -20,6 +20,8 @@ import { RoutesWorkspace } from "@/components/routes/routes-workspace";
 import { UsersWorkspace } from "@/components/users/users-workspace";
 import { VehiclesWorkspace } from "@/components/vehicles/vehicles-workspace";
 import { navigation } from "@/config/navigation";
+import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
+import { translate, type Locale } from "@/lib/i18n/catalog";
 
 /** Maps dashboard routes to the client workspace component rendered inside a tab. */
 export const workspaceRegistry: Record<string, ComponentType> = {
@@ -51,10 +53,23 @@ export function isWorkspaceRoute(href: string): boolean {
   return pathname in workspaceRegistry;
 }
 
-export function resolveWorkspaceLabel(href: string, fallback?: string): string {
+export function resolveWorkspaceNavLabelKey(href: string): string | null {
   const pathname = href.split("?")[0] ?? href;
   const navItem = navigation.flatMap((group) => group.items).find((item) => item.href === pathname);
-  return fallback ?? navItem?.label ?? (pathname.replace(/^\//, "") || "Page");
+  return navItem?.labelKey ?? null;
+}
+
+export function resolveWorkspaceLabel(href: string, locale: Locale = "en", fallback?: string): string {
+  const pathname = href.split("?")[0] ?? href;
+  const labelKey = resolveWorkspaceNavLabelKey(href);
+  if (labelKey) return translate(locale, labelKey);
+  return fallback ?? (pathname.replace(/^\//, "") || translate(locale, "shell.pageFallback"));
+}
+
+export function getWorkspaceTabDisplayLabel(tab: Pick<WorkspaceTab, "href" | "label">, locale: Locale): string {
+  const labelKey = resolveWorkspaceNavLabelKey(tab.href);
+  if (labelKey) return translate(locale, labelKey);
+  return tab.label;
 }
 
 export function resolveWorkspaceComponent(href: string): ComponentType | null {

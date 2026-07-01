@@ -7,6 +7,7 @@ import { LogOut, Settings, User, UserCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { useTranslation } from "@/lib/i18n";
 
 function getInitials(displayName: string | null, email: string | null): string {
   if (displayName?.trim()) {
@@ -26,12 +27,13 @@ function getInitials(displayName: string | null, email: string | null): string {
 
 export function UserMenu() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { displayName, email, role, roleLoading, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const initials = getInitials(displayName, email);
   const username = email?.split("@")[0] ?? "user";
-  const roleLabel = roleLoading ? "Loading..." : role;
+  const roleLabel = roleLoading ? t("common.loading") : role;
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -56,7 +58,7 @@ export function UserMenu() {
         type="button"
         variant="ghost"
         className="relative h-10 gap-2 rounded-full px-2 sm:rounded-lg sm:pr-3"
-        aria-label="Open user menu"
+        aria-label={t("shell.userMenu.open")}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
@@ -88,7 +90,7 @@ export function UserMenu() {
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
             >
               <User className="h-4 w-4" />
-              Profile
+              {t("shell.userMenu.profile")}
             </Link>
             <Link
               href="/settings"
@@ -96,7 +98,7 @@ export function UserMenu() {
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
             >
               <Settings className="h-4 w-4" />
-              Settings
+              {t("shell.userMenu.settings")}
             </Link>
             <Link
               href="/security"
@@ -104,7 +106,7 @@ export function UserMenu() {
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
             >
               <UserCircle className="h-4 w-4" />
-              Account
+              {t("shell.userMenu.account")}
             </Link>
           </div>
 
@@ -115,7 +117,7 @@ export function UserMenu() {
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
             >
               <LogOut className="h-4 w-4" />
-              Sign out
+              {t("shell.userMenu.signOut")}
             </button>
           </div>
         </div>

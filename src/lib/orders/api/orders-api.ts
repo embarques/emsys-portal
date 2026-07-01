@@ -21,9 +21,9 @@ import { ORDER_BAR_OR_SEARCH_FIELDS } from "@/lib/orders/search-fields";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import {
   buildApiAddressPayload,
-  buildApiBranchRef,
+  buildApiBranchDto,
   type ApiAddressPayload,
-  type ApiBranchRefPayload,
+  type ApiBranchDtoPayload,
 } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { normalizeApiCustomer } from "@/lib/customers/api/customers-api";
@@ -124,7 +124,7 @@ type ApiPickupEmployeeRef = {
 /** POST/PUT /pickups — see API_PAYLOADS.md */
 type ApiPickupWritePayload = {
   date: string;
-  branch: ApiBranchRefPayload;
+  branch: ApiBranchDtoPayload;
   sender: ApiPickupCustomerRef;
   receiver?: ApiPickupCustomerRef;
   purpose?: string;
@@ -490,11 +490,15 @@ export async function fetchSenderOrderHistory(
   return normalizePaginatedOrders(response);
 }
 
-function resolvePickupBranchRef(branchId: number): ApiBranchRefPayload {
+function resolvePickupBranchRef(branchId: number): ApiBranchDtoPayload {
   const config =
     CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.id === branchId) ?? CUSTOMER_PORTAL_BRANCHES[0];
 
-  return buildApiBranchRef({ id: config.id, code: config.code });
+  return buildApiBranchDto({
+    id: config.id,
+    code: config.code,
+    name: config.label,
+  });
 }
 
 function buildPickupCustomerRef(customer: Customer): ApiPickupCustomerRef {

@@ -26,73 +26,73 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 import type { Permission } from "@/lib/auth/types/permission";
 
 export type NavigationItem = {
-  label: string;
+  labelKey: string;
   href: string;
   icon: LucideIcon;
   permission?: Permission;
 };
 
 export type NavigationGroup = {
-  title: string;
+  titleKey: string;
   items: NavigationItem[];
 };
 
 const navigationGroups: NavigationGroup[] = [
   {
-    title: "Workspace",
+    titleKey: "navigation.groups.workspace",
     items: [
-      { label: "Dashboard", href: "/", icon: Home, permission: PERMISSIONS.dashboardView },
-      { label: "Customers", href: "/customers", icon: Users, permission: PERMISSIONS.clientsView },
-      { label: "Orders", href: "/orders", icon: Package, permission: PERMISSIONS.pickupsView },
-      { label: "Invoices", href: "/invoices", icon: FileText, permission: PERMISSIONS.invoicesView },
+      { labelKey: "navigation.items.dashboard", href: "/", icon: Home, permission: PERMISSIONS.dashboardView },
+      { labelKey: "navigation.items.customers", href: "/customers", icon: Users, permission: PERMISSIONS.clientsView },
+      { labelKey: "navigation.items.orders", href: "/orders", icon: Package, permission: PERMISSIONS.pickupsView },
+      { labelKey: "navigation.items.invoices", href: "/invoices", icon: FileText, permission: PERMISSIONS.invoicesView },
       {
-        label: "Label Manager",
+        labelKey: "navigation.items.labelManager",
         href: "/label-updater",
         icon: ScanBarcode,
         permission: PERMISSIONS.packagesView,
       },
-      { label: "Inventory", href: "/inventory", icon: Boxes, permission: PERMISSIONS.inventoryView },
-      { label: "Items", href: "/items", icon: Tag, permission: PERMISSIONS.invoiceItemsView },
-      { label: "Containers", href: "/containers", icon: Container, permission: PERMISSIONS.containersView },
+      { labelKey: "navigation.items.inventory", href: "/inventory", icon: Boxes, permission: PERMISSIONS.inventoryView },
+      { labelKey: "navigation.items.items", href: "/items", icon: Tag, permission: PERMISSIONS.invoiceItemsView },
+      { labelKey: "navigation.items.containers", href: "/containers", icon: Container, permission: PERMISSIONS.containersView },
       {
-        label: "Routes",
+        labelKey: "navigation.items.routes",
         href: "/routes",
         icon: ClipboardList,
         permission: PERMISSIONS.dispatchView,
       },
-      { label: "Vehicles", href: "/vehicles", icon: Car, permission: PERMISSIONS.vehiclesView },
+      { labelKey: "navigation.items.vehicles", href: "/vehicles", icon: Car, permission: PERMISSIONS.vehiclesView },
     ],
   },
   {
-    title: "Accounting",
+    titleKey: "navigation.groups.accounting",
     items: [
-      { label: "Daily Income", href: "/accounting/daily-income", icon: Wallet, permission: PERMISSIONS.incomeView },
-      { label: "Chart of Accounts", href: "/accounting/accounts", icon: BookOpenText, permission: PERMISSIONS.accountsView },
+      { labelKey: "navigation.items.dailyIncome", href: "/accounting/daily-income", icon: Wallet, permission: PERMISSIONS.incomeView },
+      { labelKey: "navigation.items.chartOfAccounts", href: "/accounting/accounts", icon: BookOpenText, permission: PERMISSIONS.accountsView },
     ],
   },
   {
-    title: "Insights",
+    titleKey: "navigation.groups.insights",
     items: [
-      { label: "Reports", href: "/reports", icon: FileText, permission: PERMISSIONS.reportsView },
-      { label: "Analytics", href: "/analytics", icon: BarChart3, permission: PERMISSIONS.reportsView },
+      { labelKey: "navigation.items.reports", href: "/reports", icon: FileText, permission: PERMISSIONS.reportsView },
+      { labelKey: "navigation.items.analytics", href: "/analytics", icon: BarChart3, permission: PERMISSIONS.reportsView },
     ],
   },
   {
-    title: "Admin",
+    titleKey: "navigation.groups.admin",
     items: [
-      { label: "Users", href: "/users", icon: UserCog, permission: PERMISSIONS.usersView },
-      { label: "Roles", href: "/roles", icon: KeyRound, permission: PERMISSIONS.rolesView },
-      { label: "Employees", href: "/employees", icon: UsersRound, permission: PERMISSIONS.employeesView },
+      { labelKey: "navigation.items.users", href: "/users", icon: UserCog, permission: PERMISSIONS.usersView },
+      { labelKey: "navigation.items.roles", href: "/roles", icon: KeyRound, permission: PERMISSIONS.rolesView },
+      { labelKey: "navigation.items.employees", href: "/employees", icon: UsersRound, permission: PERMISSIONS.employeesView },
       {
-        label: "Employee Groups",
+        labelKey: "navigation.items.employeeGroups",
         href: "/employee-groups",
         icon: UserRound,
         permission: PERMISSIONS.employeesView,
       },
-      { label: "Security", href: "/security", icon: ShieldCheck, permission: PERMISSIONS.usersView },
-      { label: "Branches", href: "/branches", icon: Building2, permission: PERMISSIONS.branchesView },
+      { labelKey: "navigation.items.security", href: "/security", icon: ShieldCheck, permission: PERMISSIONS.usersView },
+      { labelKey: "navigation.items.branches", href: "/branches", icon: Building2, permission: PERMISSIONS.branchesView },
       {
-        label: "Settings",
+        labelKey: "navigation.items.settings",
         href: "/settings",
         icon: Settings,
         permission: PERMISSIONS.accountSettingsView,
@@ -101,12 +101,12 @@ const navigationGroups: NavigationGroup[] = [
   },
 ];
 
-/** Items within each section are sorted alphabetically by label, with Dashboard pinned first. */
+/** Items within each section are sorted alphabetically by label key, with Dashboard pinned first. */
 export const navigation: NavigationGroup[] = navigationGroups.map((group) => ({
   ...group,
   items: [...group.items].sort((a, b) => {
     if (a.href === "/") return -1;
     if (b.href === "/") return 1;
-    return a.label.localeCompare(b.label);
+    return a.labelKey.localeCompare(b.labelKey);
   }),
 }));

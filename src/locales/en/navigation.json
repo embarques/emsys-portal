@@ -1,0 +1,31 @@
+{
+  "groups": {
+    "workspace": "Workspace",
+    "accounting": "Accounting",
+    "insights": "Insights",
+    "admin": "Admin"
+  },
+  "items": {
+    "dashboard": "Dashboard",
+    "customers": "Customers",
+    "orders": "Orders",
+    "invoices": "Invoices",
+    "labelManager": "Label Manager",
+    "inventory": "Inventory",
+    "items": "Items",
+    "containers": "Containers",
+    "routes": "Routes",
+    "vehicles": "Vehicles",
+    "dailyIncome": "Daily Income",
+    "chartOfAccounts": "Chart of Accounts",
+    "reports": "Reports",
+    "analytics": "Analytics",
+    "users": "Users",
+    "roles": "Roles",
+    "employees": "Employees",
+    "employeeGroups": "Employee Groups",
+    "security": "Security",
+    "branches": "Branches",
+    "settings": "Settings"
+  }
+}

@@ -77,6 +77,27 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     optionsSource: "routes",
   },
   {
+    field: "branch.id",
+    label: "Branch",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    optionsSource: "branches",
+  },
+  {
+    field: "branch.code",
+    label: "Branch code",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    optionsSource: "branchCodes",
+  },
+  {
+    field: "branch.name",
+    label: "Branch name",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter branch name…",
+  },
+  {
     field: "receiver.name",
     label: "Receiver name",
     operators: [...TEXT_OPERATORS],

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
+import { useConfigurationStore } from "@/lib/configuration/use-configuration";
 import { buildWorkspaceTabUrl, pathnameFromHref, readWorkspaceTabNumber } from "@/lib/layout/workspace-tab-url";
 import { isWorkspaceRoute, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
 import {
@@ -33,6 +34,7 @@ export function WorkspaceTabsSync() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isDesktopTabs = useIsDesktopWorkspaceTabs();
+  const { language } = useConfigurationStore();
   const tabs = useAppSelector((state) => state.layoutTabs.tabs);
   const activeTabId = useAppSelector((state) => state.layoutTabs.activeTabId);
 
@@ -84,7 +86,7 @@ export function WorkspaceTabsSync() {
         openWorkspaceTab({
           id: tabId,
           href: pathname,
-          label: resolveWorkspaceLabel(pathname),
+          label: resolveWorkspaceLabel(pathname, language),
         }),
       );
 
@@ -119,7 +121,7 @@ export function WorkspaceTabsSync() {
       openWorkspaceTab({
         id: tabId,
         href: pathname,
-        label: resolveWorkspaceLabel(pathname),
+        label: resolveWorkspaceLabel(pathname, language),
       }),
     );
 
@@ -127,7 +129,7 @@ export function WorkspaceTabsSync() {
     if (opened) {
       router.replace(buildWorkspaceTabUrl(pathname, opened.number));
     }
-  }, [dispatch, isDesktopTabs, hydrated, pathname, router, searchParams]);
+  }, [dispatch, isDesktopTabs, hydrated, language, pathname, router, searchParams]);
 
   useEffect(() => {
     if (!isDesktopTabs || !hydrated) return;

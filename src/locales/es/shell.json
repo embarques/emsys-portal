@@ -1,0 +1,83 @@
+{
+  "pageFallback": "Página",
+  "dashboard": {
+    "loadingWorkspace": "Cargando espacio de trabajo…"
+  },
+  "topbar": {
+    "collapseSidebar": "Contraer barra lateral",
+    "openSidebarMenu": "Abrir menú lateral",
+    "pricing": "Precios",
+    "docs": "Documentación",
+    "reports": "Informes",
+    "support": "Soporte",
+    "notifications": "Notificaciones"
+  },
+  "search": {
+    "openMenu": "Abrir menú de búsqueda",
+    "placeholder": "Buscar registros...",
+    "inputPlaceholder": "Buscar clientes, pedidos, informes...",
+    "quickActions": "Acciones rápidas",
+    "noResults": "No se encontraron resultados.",
+    "findCustomer": {
+      "label": "Buscar cliente",
+      "description": "Buscar registros de clientes"
+    },
+    "createCustomer": {
+      "label": "Crear cliente",
+      "description": "Abrir un formulario de cliente nuevo"
+    },
+    "inventoryLookup": {
+      "label": "Consultar inventario",
+      "description": "Verificar stock y ubicaciones"
+    },
+    "monthlyReports": {
+      "label": "Informes mensuales",
+      "description": "Abrir informes de operaciones"
+    }
+  },
+  "userMenu": {
+    "open": "Abrir menú de usuario",
+    "profile": "Perfil",
+    "settings": "Configuración",
+    "account": "Cuenta",
+    "signOut": "Cerrar sesión"
+  },
+  "profileMenu": {
+    "open": "Abrir menú de perfil",
+    "defaultUser": "Usuario",
+    "account": "Cuenta",
+    "settings": "Configuración",
+    "notifications": "Notificaciones",
+    "logOut": "Cerrar sesión"
+  },
+  "theme": {
+    "change": "Cambiar tema",
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "mobileNav": {
+    "label": "Navegación móvil",
+    "closeSidebar": "Cerrar menú lateral",
+    "closeMenu": "Cerrar menú"
+  },
+  "calculator": {
+    "open": "Abrir calculadora",
+    "hide": "Ocultar calculadora"
+  },
+  "memoPad": {
+    "open": "Abrir bloc de notas",
+    "hide": "Ocultar bloc de notas"
+  },
+  "tabs": {
+    "close": "Cerrar {{label}}",
+    "openInNewTab": "Abrir en nueva pestaña",
+    "closeTab": "Cerrar pestaña",
+    "closeOtherTabs": "Cerrar otras pestañas",
+    "closeTabsToRight": "Cerrar pestañas a la derecha",
+    "closeAllTabs": "Cerrar todas las pestañas",
+    "openTabList": "Abrir lista de pestañas",
+    "allTabs": "Todas las pestañas"
+  }
+}

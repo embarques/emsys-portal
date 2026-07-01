@@ -13,9 +13,11 @@ import { DesktopSidebar } from "./desktop-sidebar";
 import { MobileSidebar } from "./mobile-sidebar";
 import { Topbar } from "./topbar";
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const isDesktopTabs = useIsDesktopWorkspaceTabs();
@@ -64,7 +66,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <Suspense
               fallback={
                 <div className="mx-auto w-full max-w-[1600px] p-4 md:p-6 lg:p-8 text-sm text-muted-foreground">
-                  Loading workspace…
+                  {t("shell.dashboard.loadingWorkspace")}
                 </div>
               }
             >

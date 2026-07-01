@@ -65,11 +65,11 @@ export type ContainerListParams = {
   filterRows?: TableFilterRowState[];
 };
 
-/** GET /containers?page=1&limit=50&offset=0&sort=name:desc */
+/** GET /containers?page=1&limit=50&offset=0&sort=id:desc */
 export const DEFAULT_CONTAINER_LIST_PARAMS = {
   page: 1,
   limit: 50,
-  sort: "name:desc",
+  sort: "id:desc",
 } as const satisfies Pick<ContainerListParams, "page" | "limit" | "sort">;
 
 export const CONTAINER_SEARCH_FIELDS: { value: ContainerSearchField; label: string }[] = [

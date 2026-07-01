@@ -14,13 +14,15 @@ import {
 import { WorkspaceTabOverflowMenu } from "@/components/app-shell/workspace-tab-overflow-menu";
 import { useUpdateWorkspaceTabColor, useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { getWorkspaceTabChromeStyle } from "@/lib/layout/workspace-tab-colors";
-import { resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
+import { getWorkspaceTabDisplayLabel, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
 import { WORKSPACE_TAB_OVERFLOW_THRESHOLD } from "@/lib/layout/workspace-tab-types";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type WorkspaceTabItemProps = {
   tab: WorkspaceTab;
+  displayLabel: string;
   active: boolean;
   index: number;
   totalTabs: number;
@@ -36,6 +38,7 @@ type WorkspaceTabItemProps = {
 
 const WorkspaceTabItem = memo(function WorkspaceTabItem({
   tab,
+  displayLabel,
   active,
   index,
   totalTabs,
@@ -48,6 +51,7 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
   onColorChange,
   tabRef,
 }: WorkspaceTabItemProps) {
+  const { t } = useTranslation();
   const hasTabsToRight = index < totalTabs - 1;
   const hasOtherTabs = totalTabs > 1;
   const colorStyle = getWorkspaceTabChromeStyle(tab.color, active);
@@ -77,7 +81,7 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
             type="button"
             className="min-w-0 flex-1 truncate text-left"
             onClick={() => onActivate(tab.id)}
-            title={`${tab.number} · ${tab.label}`}
+            title={`${tab.number} · ${displayLabel}`}
           >
             <span
               className={cn(
@@ -87,12 +91,12 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
             >
               {tab.number}
             </span>
-            <span className="truncate">{tab.label}</span>
+            <span className="truncate">{displayLabel}</span>
           </button>
           <button
             type="button"
             className="ml-2 rounded p-0.5 text-muted-foreground opacity-70 transition hover:bg-accent hover:text-foreground group-hover:opacity-100"
-            aria-label={`Close ${tab.label}`}
+            aria-label={t("shell.tabs.close", { label: displayLabel })}
             onClick={(event) => {
               event.stopPropagation();
               onClose(tab.id);
@@ -104,24 +108,25 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
       </ContextMenuTrigger>
 
       <ContextMenuContent className="w-52">
-        <ContextMenuItem onSelect={() => onDuplicate(tab)}>Open in new tab</ContextMenuItem>
+        <ContextMenuItem onSelect={() => onDuplicate(tab)}>{t("shell.tabs.openInNewTab")}</ContextMenuItem>
         <WorkspaceTabColorMenu tabId={tab.id} currentColor={tab.color} onColorChange={onColorChange} />
         <ContextMenuSeparator />
-        <ContextMenuItem onSelect={() => onClose(tab.id)}>Close tab</ContextMenuItem>
+        <ContextMenuItem onSelect={() => onClose(tab.id)}>{t("shell.tabs.closeTab")}</ContextMenuItem>
         <ContextMenuItem disabled={!hasOtherTabs} onSelect={() => onCloseOthers(tab.id)}>
-          Close other tabs
+          {t("shell.tabs.closeOtherTabs")}
         </ContextMenuItem>
         <ContextMenuItem disabled={!hasTabsToRight} onSelect={() => onCloseToRight(tab.id)}>
-          Close tabs to the right
+          {t("shell.tabs.closeTabsToRight")}
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onSelect={() => onCloseAll()}>Close all tabs</ContextMenuItem>
+        <ContextMenuItem onSelect={() => onCloseAll()}>{t("shell.tabs.closeAllTabs")}</ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );
 });
 
 export function WorkspaceTabBar() {
+  const { locale } = useTranslation();
   const { tabs, activeTabId, activateTab, closeTab, closeOtherTabs, closeTabsToRight, closeAllTabs, openTab } =
     useWorkspaceTabs();
   const updateTabColor = useUpdateWorkspaceTabColor();
@@ -169,6 +174,7 @@ export function WorkspaceTabBar() {
             <WorkspaceTabItem
               key={tab.id}
               tab={tab}
+              displayLabel={getWorkspaceTabDisplayLabel(tab, locale)}
               index={index}
               totalTabs={tabs.length}
               active={tab.id === activeTabId}
@@ -177,7 +183,7 @@ export function WorkspaceTabBar() {
               onCloseOthers={closeOtherTabs}
               onCloseToRight={closeTabsToRight}
               onCloseAll={closeAllTabs}
-              onDuplicate={(tab) => openTab(tab.href, resolveWorkspaceLabel(tab.href), { forceNew: true })}
+              onDuplicate={(tab) => openTab(tab.href, resolveWorkspaceLabel(tab.href, locale), { forceNew: true })}
               onColorChange={updateTabColor}
               tabRef={(node) => {
                 if (node) {

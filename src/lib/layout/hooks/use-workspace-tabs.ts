@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
+import { useConfigurationStore } from "@/lib/configuration/use-configuration";
 import { buildWorkspaceTabUrl } from "@/lib/layout/workspace-tab-url";
 import { isWorkspaceRoute, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
 import { type WorkspaceTab, type WorkspaceTabForm } from "@/lib/layout/workspace-tab-types";
@@ -44,6 +45,7 @@ export function useWorkspaceTabs() {
   const router = useRouter();
   const isDesktopTabs = useIsDesktopWorkspaceTabs();
   const { notifySuccess } = useFeedback();
+  const { language } = useConfigurationStore();
 
   const tabs = useAppSelector((state) => state.layoutTabs.tabs);
   const activeTabId = useAppSelector((state) => state.layoutTabs.activeTabId);
@@ -90,7 +92,7 @@ export function useWorkspaceTabs() {
         openWorkspaceTab({
           id: tabId,
           href: pathnameOnly,
-          label: label ?? resolveWorkspaceLabel(pathnameOnly),
+          label: label ?? resolveWorkspaceLabel(pathnameOnly, language),
         }),
       );
 
@@ -103,7 +105,7 @@ export function useWorkspaceTabs() {
         navigateToTab(created);
       }
     },
-    [dispatch, isDesktopTabs, navigateToTab, notifySuccess, router, tabs.length],
+    [dispatch, isDesktopTabs, language, navigateToTab, notifySuccess, router, tabs.length],
   );
 
   const openFormTab = useCallback(

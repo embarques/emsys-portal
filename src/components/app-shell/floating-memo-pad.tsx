@@ -5,6 +5,7 @@ import { Eraser, StickyNote, X } from "lucide-react";
 
 import { useMemoPad } from "@/components/app-shell/memo-pad-provider";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   useFloatingMemoPad,
@@ -156,13 +157,14 @@ export function FloatingMemoPad() {
 export function MemoPadToggleButton() {
   const { open, toggle } = useMemoPad();
   const hasNotes = useMemoPadHasNotes();
+  const { t } = useTranslation();
 
   return (
     <Button
       type="button"
       variant={open ? "secondary" : "ghost"}
       size="icon"
-      aria-label={open ? "Hide memo pad" : "Open memo pad"}
+      aria-label={open ? t("shell.memoPad.hide") : t("shell.memoPad.open")}
       aria-pressed={open}
       className="relative shrink-0"
       onClick={toggle}

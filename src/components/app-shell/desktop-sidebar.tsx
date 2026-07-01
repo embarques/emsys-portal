@@ -4,12 +4,10 @@ import { usePathname } from "next/navigation";
 
 import { SidebarBrand } from "@/components/brand/sidebar-brand";
 import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
-import { navigation } from "@/config/navigation";
+import { useFlatNavigation } from "@/lib/navigation/use-navigation";
 import { cn } from "@/lib/utils";
 import { SidebarNav } from "./sidebar-nav";
 import { SidebarProfileMenu } from "./sidebar-profile-menu";
-
-const flatNavigation = navigation.flatMap((group) => group.items);
 
 const sidebarShellClassName =
   "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-card text-card-foreground shadow-lg";
@@ -35,6 +33,7 @@ type DesktopSidebarProps = {
 
 export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
   const pathname = usePathname();
+  const flatNavigation = useFlatNavigation();
 
   if (!expanded) {
     return (

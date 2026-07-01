@@ -1,0 +1,31 @@
+{
+  "groups": {
+    "workspace": "Espacio de trabajo",
+    "accounting": "Contabilidad",
+    "insights": "Información",
+    "admin": "Administración"
+  },
+  "items": {
+    "dashboard": "Panel",
+    "customers": "Clientes",
+    "orders": "Pedidos",
+    "invoices": "Facturas",
+    "labelManager": "Gestor de etiquetas",
+    "inventory": "Inventario",
+    "items": "Artículos",
+    "containers": "Contenedores",
+    "routes": "Rutas",
+    "vehicles": "Vehículos",
+    "dailyIncome": "Ingresos diarios",
+    "chartOfAccounts": "Plan de cuentas",
+    "reports": "Informes",
+    "analytics": "Análisis",
+    "users": "Usuarios",
+    "roles": "Roles",
+    "employees": "Empleados",
+    "employeeGroups": "Grupos de empleados",
+    "security": "Seguridad",
+    "branches": "Sucursales",
+    "settings": "Configuración"
+  }
+}

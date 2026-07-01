@@ -1,8 +1,16 @@
 import {
+  coerceTypedLeafFilter,
   isApiSearchFilter,
   type ApiSearchFilter,
   type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
+
+const NUMERIC_FILTER_FIELDS: ReadonlySet<string> = new Set([
+  "branch.id",
+  "employee.id",
+  "id",
+  "sector.id",
+]);
 
 function parseRangeValue(raw: string): { start: string; end: string } | null {
   const trimmed = raw.trim();
@@ -89,7 +97,7 @@ function expandOrderLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | n
     case "completed":
       return expandCompletedFilter(filter);
     default:
-      return filter;
+      return coerceTypedLeafFilter(filter, { numericFields: NUMERIC_FILTER_FIELDS });
   }
 }
 
