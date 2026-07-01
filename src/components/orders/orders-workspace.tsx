@@ -85,6 +85,7 @@ import {
   useAssignPickupsToRoute,
   useRouteLookup,
 } from "@/lib/routes/hooks/use-routes";
+import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Label } from "@/components/ui/label";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -138,6 +139,7 @@ export function OrdersWorkspace() {
   const deleteOrdersMutation = useDeleteOrders();
   const setOrdersCompletedMutation = useSetOrdersCompleted();
   const assignRouteMutation = useAssignPickupsToRoute();
+  const generatePickupReportMutation = useGeneratePickupReport();
   const routeLookup = useRouteLookup();
   const orders = data?.items ?? [];
   const totalOrders = data?.total ?? 0;
@@ -151,6 +153,7 @@ export function OrdersWorkspace() {
     deleteOrdersMutation.isPending ||
     setOrdersCompletedMutation.isPending ||
     assignRouteMutation.isPending;
+  const isPrinting = generatePickupReportMutation.isPending;
   const selectedOrders = useMemo(
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
     [orders, selectedIds],
@@ -295,7 +298,29 @@ export function OrdersWorkspace() {
     }
   }
 
-  // TODO: implement print and map for selected orders.
+  async function printSelectedOrders() {
+    const pickupIds = selectedOrders.map((order) => getOrderRecordId(order)).filter(Boolean);
+    if (pickupIds.length === 0) {
+      notifyError("Select at least one order to print.");
+      return;
+    }
+
+    try {
+      const report = await generatePickupReportMutation.mutateAsync({
+        type: "pickup",
+        collection: "pickups",
+        values: pickupIds,
+        lookupField: "id",
+      });
+      window.open(report.url, "_blank", "noopener,noreferrer");
+      const noun = pickupIds.length === 1 ? "order" : "orders";
+      notifySuccess(`Pickup manifest ready for ${pickupIds.length} ${noun}.`);
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
+  }
+
+  // TODO: implement map for selected orders.
   function handleComingSoon(label: string) {
     notifySuccess(`${label} is coming soon.`);
   }
@@ -525,10 +550,11 @@ export function OrdersWorkspace() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleComingSoon("Print")}
+                onClick={printSelectedOrders}
+                disabled={isPrinting}
               >
                 <Printer className="h-4 w-4" />
-                Print
+                {isPrinting ? "Preparing…" : "Print"}
               </Button>
               <Button
                 variant="outline"
