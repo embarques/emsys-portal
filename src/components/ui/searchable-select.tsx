@@ -78,6 +78,23 @@ function accentInsensitiveFilter(value: string, search: string, keywords?: strin
   );
 }
 
+/** Empty-value options like "Select invoice" are list placeholders, not real selections. */
+function isPseudoPlaceholderOption(option: SearchableSelectOption): boolean {
+  if (option.value !== "") return false;
+  const label = option.label.trim();
+  if (!label) return true;
+  return /^select\b/i.test(label);
+}
+
+function hasSearchableSelectSelection(
+  value: string,
+  selectedOption: SearchableSelectOption | undefined,
+): boolean {
+  if (!selectedOption) return false;
+  if (selectedOption.value !== "") return true;
+  return !isPseudoPlaceholderOption(selectedOption);
+}
+
 const triggerClassName =
   "relative flex min-h-10 w-full items-center rounded-lg border-2 border-foreground/60 bg-card py-2 pl-3 pr-9 text-sm outline-none transition-[border-color,box-shadow] focus-within:border-foreground data-[state=open]:border-foreground";
 
@@ -149,6 +166,7 @@ export function SearchableSelect({
   }
 
   const selectedOption = options.find((option) => option.value === value);
+  const hasSelection = hasSearchableSelectSelection(value, selectedOption);
 
   const requiredField = required ? (
     <input
@@ -196,7 +214,7 @@ export function SearchableSelect({
     ? "min-w-0 flex-1 truncate text-left"
     : "whitespace-nowrap text-left";
   const showSelectionLabel =
-    !truncateSelection && !open && Boolean(selectedOption) && !query;
+    !truncateSelection && !open && hasSelection && !query;
 
   const optionItems = options.map((option, index) => {
     const detailLines = [option.description, ...(option.descriptionLines ?? [])].filter(
@@ -249,8 +267,8 @@ export function SearchableSelect({
                 "pr-9 pl-3",
               )}
             >
-              <span className={cn(selectionClassName, !selectedOption && "text-muted-foreground")}>
-                {selectedOption ? selectedOption.label : placeholder}
+              <span className={cn(selectionClassName, !hasSelection && "text-muted-foreground")}>
+                {hasSelection && selectedOption ? selectedOption.label : placeholder}
               </span>
               <span className={cn(chevronButtonClassName, disabled && "pointer-events-none opacity-50")}>
                 <ChevronIcon className="size-4" aria-hidden />
@@ -319,7 +337,7 @@ export function SearchableSelect({
                 ref={inputRef}
                 id={id}
                 disabled={disabled}
-                value={open ? query : query || selectedOption?.label || ""}
+                value={open ? query : hasSelection ? query || selectedOption?.label || "" : query}
                 onValueChange={(next) => {
                   changeQuery(next);
                   if (!open) setOpen(true);
@@ -339,17 +357,18 @@ export function SearchableSelect({
                 placeholder={
                   open
                     ? (searchPlaceholder ?? placeholder)
-                    : selectedOption
+                    : hasSelection
                       ? undefined
                       : placeholder
                 }
-                readOnly={!open && Boolean(selectedOption)}
+                readOnly={!open && hasSelection}
                 className={cn(
                   showSelectionLabel && "sr-only",
                   truncateSelection
                     ? "min-w-0 flex-1 truncate bg-transparent text-left outline-none disabled:cursor-not-allowed"
                     : "whitespace-nowrap bg-transparent text-left outline-none disabled:cursor-not-allowed",
                   "placeholder:text-muted-foreground",
+                  !hasSelection && !open && "text-muted-foreground",
                 )}
               />
               <button

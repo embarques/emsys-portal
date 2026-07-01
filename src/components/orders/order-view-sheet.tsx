@@ -1,6 +1,9 @@
 "use client";
 
+import { Info, MapPin, Phone as PhoneIcon } from "lucide-react";
+
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
+import { AddressActionRow } from "@/components/addresses/address-action-row";
 import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
@@ -11,7 +14,8 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatCoreAddressLine, formatPhoneList } from "@/lib/customers/display";
+import { PhoneActionRow } from "@/components/phones/phone-action-row";
+import { formatRecordPhoneTypeLabel, getOrderedRecordPhones } from "@/lib/phones/phones";
 import { formatAuditDate } from "@/lib/audit/display";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import {
@@ -19,11 +23,13 @@ import {
   formatEmployeeSummary,
   formatOrderDate,
   formatOrderId,
+  formatOrderRouteName,
   formatPickupCommentSummary,
   formatUserSummary,
   getOrderBranchLabel,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
+import { useRouteLookup } from "@/lib/routes/hooks/use-routes";
 import type { Customer } from "@/lib/customers/types";
 import type { Order } from "@/lib/orders/types";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
@@ -37,33 +43,70 @@ type OrderViewSheetProps = {
 };
 
 function CustomerCard({ title, customer }: { title: string; customer: Customer }) {
+  const phones = getOrderedRecordPhones(customer.phones);
+  const addresses =
+    customer.addresses.length > 0
+      ? customer.addresses
+      : customer.address.address1
+        ? [customer.address]
+        : [];
+
   return (
-    <RecordViewSheetSection title={title} padding="relaxed">
-      <p className="text-sm font-medium">{customer.name}</p>
-      {customer.IDNumber ? (
-        <p className="text-xs text-muted-foreground">IDNumber: {customer.IDNumber}</p>
+    <>
+      <RecordViewSheetSection title={title} padding="relaxed">
+        <p className="text-sm font-medium">{customer.name}</p>
+        {customer.IDNumber ? (
+          <p className="text-xs text-muted-foreground">IDNumber: {customer.IDNumber}</p>
+        ) : null}
+        {customer.email ? <p className="text-xs text-muted-foreground">{customer.email}</p> : null}
+      </RecordViewSheetSection>
+
+      {addresses.length > 0 ? (
+        <RecordViewSheetSection title={`${title} address`} icon={MapPin}>
+          {addresses.map((address, index) => (
+            <AddressActionRow
+              key={`${title}-address-${index}`}
+              label={index === 0 ? "Primary address" : `Additional address ${index}`}
+              address={address}
+            />
+          ))}
+        </RecordViewSheetSection>
       ) : null}
-      {customer.email ? <p className="text-xs text-muted-foreground">{customer.email}</p> : null}
-      <p className="mt-3 text-xs text-muted-foreground">{formatPhoneList(customer)}</p>
-      <div className="mt-4 space-y-1">
-        <p className="text-xs font-medium text-primary">address</p>
-        <p className="text-sm leading-relaxed">{formatCoreAddressLine(customer.address) || "—"}</p>
-      </div>
-    </RecordViewSheetSection>
+
+      {phones.length > 0 ? (
+        <RecordViewSheetSection title={`${title} phones`} icon={PhoneIcon}>
+          {phones.map((phone, index) => (
+            <PhoneActionRow
+              key={`${title}-phone-${index}`}
+              label={
+                phone.isPrimary
+                  ? `${formatRecordPhoneTypeLabel(phone.type)} (primary)`
+                  : formatRecordPhoneTypeLabel(phone.type)
+              }
+              number={phone.number}
+              displayNumber={phone.displayNumber}
+            />
+          ))}
+        </RecordViewSheetSection>
+      ) : null}
+    </>
   );
 }
 
 export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: OrderViewSheetProps) {
+  const routeLookup = useRouteLookup();
+
   if (!order) return null;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={`Pickup ${formatOrderId(order)}`}
-          description={formatOrderDate(order.date)}
+          title={order.sender.name.trim() || `Pickup ${formatOrderId(order)}`}
+          description={`Pickup ${formatOrderId(order)}`}
           meta={
-            <>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">{formatOrderDate(order.date)}</span>
               <Badge className={getBranchBadgeClass(order.branch.code)}>{getOrderBranchLabel(order.branch)}</Badge>
               <Badge
                 variant="outline"
@@ -75,25 +118,26 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
               >
                 {getOrderCompletedLabel(order.completed)}
               </Badge>
-            </>
+            </div>
           }
         />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Pickup">
-            <RecordViewSheetDetailRow label="Order ID" value={String(order.id)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("date")} value={formatOrderDate(order.date)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("completed")} value={getOrderCompletedLabel(order.completed)} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("purpose")} value={order.purpose || "—"} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.id")} value={String(order.branch.id)} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.name")} value={order.branch.name || "—"} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.code")} value={order.branch.code || "—"} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("sector.id")} value={order.sector ? String(order.sector.id) : "—"} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("sector.name")} value={order.sector?.name || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("purpose")} value={order.purpose} />
+            <RecordViewSheetDetailRow
+              label={formatTableColumnLabel("sector.id")}
+              value={order.sector ? String(order.sector.id) : undefined}
+            />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("sector.name")} value={order.sector?.name} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("employee")} value={formatEmployeeSummary(order.employee)} />
+            <RecordViewSheetDetailRow
+              label={formatTableColumnLabel("route")}
+              value={formatOrderRouteName(order, routeLookup.getByKey(order.routeId))}
+            />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("createdBy")} value={formatUserSummary(order.user)} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("createdAt")} value={formatAuditDate(order.createdAt)} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("updatedAt")} value={formatAuditDate(order.updatedAt)} />
           </RecordViewSheetSection>
 
           <CustomerCard title="sender" customer={order.sender} />
@@ -108,8 +152,8 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
             </div>
           )}
 
-          <RecordViewSheetSection title={`comments (${order.comments.length})`} padding="relaxed">
-            {order.comments.length > 0 ? (
+          {order.comments.length > 0 ? (
+            <RecordViewSheetSection title={`comments (${order.comments.length})`} padding="relaxed">
               <ul className="space-y-2">
                 {order.comments.map((comment, index) => (
                   <li
@@ -120,13 +164,20 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">No comments.</p>
-            )}
-          </RecordViewSheetSection>
+            </RecordViewSheetSection>
+          ) : null}
 
           <RecordViewSheetSection title="Summary" padding="relaxed">
             <p className="text-sm text-muted-foreground">{formatCustomerPartySummary(order.sender)}</p>
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection title="System information" icon={Info}>
+            <RecordViewSheetDetailRow label="Order ID" value={String(order.id)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.id")} value={String(order.branch.id)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.name")} value={order.branch.name} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch.code")} value={order.branch.code} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("createdAt")} value={formatAuditDate(order.createdAt)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("updatedAt")} value={formatAuditDate(order.updatedAt)} />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 

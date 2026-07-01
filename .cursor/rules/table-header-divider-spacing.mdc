@@ -1,0 +1,46 @@
+---
+description: Consistent spacing for the divider between a table's card header and the table
+globs: src/components/**/*.tsx
+alwaysApply: true
+---
+
+# Table Header Divider Spacing
+
+All directory/table cards must use the same divider + spacing between the
+`CardHeader` (search/toolbar) and the table body. Keep it consistent with every
+other workspace table (orders, customers, invoices, items, vehicles, etc.).
+
+## Rules
+
+- The table `Card` **must** set `gap-0`. The shadcn `Card` defaults to
+  `flex flex-col gap-6`, which inserts a 24px gap between the header's `border-b`
+  divider and the table. Use `className="mt-6 gap-0"`.
+- The toolbar `CardHeader` owns the divider via `border-b` and uses exactly
+  `className="gap-3 border-b py-4 pb-3"`.
+- The table (`DataTable` / loader / empty state) renders **directly** after the
+  `CardHeader`. Do **not** add top margin/padding (e.g. `mt-*`, `pt-*`) or a
+  spacer wrapper between the divider and the table.
+- The footer/pagination row gets its own divider with `border-t px-6 py-4`.
+
+```tsx
+// ✅ GOOD — gap-0 keeps the table flush beneath the divider
+<Card className="mt-6 gap-0">
+  <CardHeader className="gap-3 border-b py-4 pb-3">
+    <TableDirectoryToolbar /* search + columns */ />
+  </CardHeader>
+  <DataTable /* ... */ />
+  <div className="flex ... border-t px-6 py-4">{/* pagination */}</div>
+</Card>
+```
+
+```tsx
+// ❌ BAD — missing gap-0, so the default Card gap-6 pushes the table down
+<Card className="mt-6">
+  <CardHeader className="gap-3 border-b py-4 pb-3">…</CardHeader>
+  <DataTable /* ... */ />
+</Card>
+```
+
+Any inline status banner shown between the header and table (error/empty notice)
+must also use `border-b px-6 py-3` so it reads as a continuation of the divider,
+not a gap.

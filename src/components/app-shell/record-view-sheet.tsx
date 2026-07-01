@@ -144,17 +144,12 @@ export function RecordViewSheetSection({
 }
 
 export function RecordViewSheetDetailRow({ label, value }: RecordViewSheetDetailRowProps) {
-  const empty = isPlaceholderValue(value);
+  if (isPlaceholderValue(value)) return null;
 
   return (
     <div className="grid grid-cols-[minmax(6.5rem,38%)_1fr] items-baseline gap-x-4 border-b border-border/80 px-4 py-2.5 last:border-b-0 odd:bg-muted/25">
       <span className="text-xs font-medium leading-snug text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "min-w-0 break-words text-sm leading-snug",
-          empty ? "font-normal text-muted-foreground/65" : "font-medium text-foreground",
-        )}
-      >
+      <span className="min-w-0 break-words text-sm font-medium leading-snug text-foreground">
         {value}
       </span>
     </div>

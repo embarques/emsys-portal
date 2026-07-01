@@ -1,0 +1,38 @@
+---
+description: All dropdowns/selects must be searchable
+globs: src/components/**/*.tsx
+alwaysApply: true
+---
+
+# Dropdowns Must Be Searchable
+
+Always use the shared `SearchableSelect` component for dropdowns/selects so
+users can filter options by typing. Do not introduce plain `<select>` elements
+or non-searchable Radix `Select` usages for option lists.
+
+Import from `@/components/ui/searchable-select`.
+
+```tsx
+// ✅ GOOD — searchable by default
+import { SearchableSelect } from "@/components/ui/searchable-select";
+
+<SearchableSelect
+  options={options}            // { value, label, description?, keywords? }[]
+  value={value}
+  onValueChange={onChange}
+  placeholder="Select an option"
+  searchPlaceholder="Search…"
+/>
+```
+
+```tsx
+// ❌ BAD — not searchable
+<select value={value} onChange={onChange}>
+  {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+</select>
+```
+
+Notes:
+- `SearchableSelect` is searchable by default (`searchable` prop defaults to `true`). Only set `searchable={false}` when there is a clear, explicit reason.
+- For remote/server-side search use `manualFiltering`, `onSearchChange`, and `loading`.
+- Use `keywords` on options to improve matching (search is accent-insensitive).
