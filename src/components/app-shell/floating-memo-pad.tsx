@@ -5,6 +5,7 @@ import { Eraser, StickyNote, X } from "lucide-react";
 
 import { useMemoPad } from "@/components/app-shell/memo-pad-provider";
 import { Button } from "@/components/ui/button";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   useFloatingMemoPad,
   useMemoPadHasNotes,
@@ -12,8 +13,19 @@ import {
 
 export function FloatingMemoPad() {
   const { open, close } = useMemoPad();
-  const { content, updateContent, clearContent, isLoading, isError, isSaving } =
-    useFloatingMemoPad();
+  const {
+    memoPads,
+    selectedMemoPadId,
+    selectMemoPad,
+    content,
+    updateContent,
+    clearContent,
+    isLoadingPads,
+    isLoading,
+    isLoadingSelectedPad,
+    isError,
+    isSaving,
+  } = useFloatingMemoPad();
   const [savedHint, setSavedHint] = useState(false);
   const wasSavingRef = useRef(false);
 
@@ -66,9 +78,28 @@ export function FloatingMemoPad() {
         aria-label="Memo pad"
       >
         <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <StickyNote className="h-4 w-4" />
-            Memo pad
+          <div className="min-w-0 flex-1 space-y-2 pr-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <StickyNote className="h-4 w-4 shrink-0" />
+              Memo pad
+            </div>
+            <SearchableSelect
+              id="floating-memo-pad-select"
+              value={selectedMemoPadId ?? ""}
+              onValueChange={(next) => {
+                void selectMemoPad(next);
+              }}
+              placeholder="Select memo pad"
+              searchPlaceholder="Search memo pads…"
+              loading={isLoadingPads}
+              loadingMessage="Loading memo pads…"
+              disabled={isLoadingPads || isLoadingSelectedPad || memoPads.length === 0}
+              options={memoPads.map((memoPad) => ({
+                value: memoPad.id,
+                label: memoPad.name.trim() || "Untitled memo pad",
+                keywords: [memoPad.name, memoPad.content],
+              }))}
+            />
           </div>
           <div className="flex items-center gap-1">
             {isSaving ? (
@@ -106,7 +137,7 @@ export function FloatingMemoPad() {
             placeholder={
               isLoading ? "Loading your notes..." : "Jot down notes, reminders, or quick calculations..."
             }
-            disabled={isLoading}
+            disabled={isLoading || isLoadingSelectedPad}
             className="min-h-[220px] w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
             spellCheck
           />

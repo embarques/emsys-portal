@@ -49,6 +49,23 @@ export function useMemoPadSearch(
   });
 }
 
+export function useMemoPadPicker(
+  limit: number = DEFAULT_MEMO_PAD_LIST_PARAMS.limit,
+  options: { enabled?: boolean } = {},
+) {
+  const { enabled = true } = options;
+
+  return useQuery({
+    queryKey: queryKeys.memoPads.list({
+      ...DEFAULT_MEMO_PAD_LIST_PARAMS,
+      limit,
+    }),
+    queryFn: () => fetchMemoPads({ ...DEFAULT_MEMO_PAD_LIST_PARAMS, limit }),
+    enabled,
+    staleTime: 60_000,
+  });
+}
+
 export function useMemoPad(memoPadId: string | null, enabled = true) {
   return useQuery({
     queryKey: queryKeys.memoPads.detail(memoPadId ?? ""),
