@@ -1,0 +1,69 @@
+---
+description: User-facing text must be localized in English and Spanish
+globs: src/components/**/*.tsx, src/app/**/*.tsx
+alwaysApply: true
+---
+
+# Localization (English + Spanish)
+
+Do not hardcode user-facing strings in components or pages. Every new UI string
+must be added to **both** English and Spanish catalogs with the **same key**.
+
+## Where strings live
+
+```txt
+src/locales/en/<feature>.json
+src/locales/es/<feature>.json
+```
+
+- Use one JSON file per feature (e.g. `orders.json`, `invoices.json`, `common.json`).
+- Keys use dot notation in code and nested objects in JSON:
+  `orders.view.routeLabel` → `{ "view": { "routeLabel": "Route" } }` under the
+  `orders` namespace/file as appropriate.
+- Shared copy (Save, Cancel, errors) belongs in `common.json`.
+
+When the i18n hook is available, read strings via `useTranslation()` from
+`@/lib/i18n` — never inline literals in JSX for user-visible text.
+
+```tsx
+// ✅ GOOD
+import { useTranslation } from "@/lib/i18n";
+
+const { t } = useTranslation();
+<Label>{t("orders.view.routeLabel")}</Label>
+<Button>{t("common.actions.save")}</Button>
+
+// ❌ BAD
+<Label>Route</Label>
+<Button>Save</Button>
+```
+
+## What must be localized
+
+- Labels, placeholders, buttons, tooltips, badges, empty states
+- Dialog/sheet titles and descriptions
+- Toast and inline error messages shown to users
+- Table column headers and filter labels shown in the UI
+- `SearchableSelect` `placeholder`, `searchPlaceholder`, `emptyMessage`, and
+  option `label` values built for display
+
+## Exemptions
+
+- API field names, IDs, debug logs, test-only strings
+- Proper nouns that must stay literal (company names, branch codes, etc.)
+- Formatting-only values (dates/numbers via `Intl`, currency helpers)
+
+## Workflow for new or changed copy
+
+1. Add or update the key in `src/locales/en/<feature>.json`.
+2. Add the **same key** with a Spanish translation in `src/locales/es/<feature>.json`.
+3. Reference the key from the component via `t("…")` (or the project's translation helper).
+4. Do not ship English-only strings or Spanish-only keys.
+
+Spanish copy should be natural business Spanish, not English left in place.
+
+## Before finishing UI work
+
+- [ ] No new hardcoded user-facing strings in TSX
+- [ ] Matching `en` and `es` entries exist for every new key
+- [ ] Placeholders and empty states are localized, not only visible labels
