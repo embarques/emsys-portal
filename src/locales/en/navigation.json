@@ -5,15 +5,24 @@
     "insights": "Insights",
     "admin": "Admin"
   },
+  "submenus": {
+    "pickups": "Pickups",
+    "invoices": "Invoices",
+    "routeManager": "Route Manager"
+  },
   "items": {
     "dashboard": "Dashboard",
     "customers": "Customers",
-    "orders": "Orders",
+    "pickups": "Pickups",
+    "orders": "Pickups",
     "invoices": "Invoices",
     "labelManager": "Label Manager",
     "inventory": "Inventory",
     "items": "Items",
     "containers": "Containers",
+    "routeManager": "Route Manager",
+    "pickupRoutes": "Pickup Routes",
+    "deliveryRoutes": "Delivery Routes",
     "routes": "Routes",
     "vehicles": "Vehicles",
     "dailyIncome": "Daily Income",

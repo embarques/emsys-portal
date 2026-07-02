@@ -5,15 +5,24 @@
     "insights": "Información",
     "admin": "Administración"
   },
+  "submenus": {
+    "pickups": "Recogidas",
+    "invoices": "Facturas",
+    "routeManager": "Manejador de Rutas"
+  },
   "items": {
     "dashboard": "Panel",
     "customers": "Clientes",
-    "orders": "Pedidos",
+    "pickups": "Recogidas",
+    "orders": "Recogidas",
     "invoices": "Facturas",
     "labelManager": "Manejador de etiquetas",
     "inventory": "Inventario",
     "items": "Artículos",
     "containers": "Contenedores",
+    "routeManager": "Manejador de Rutas",
+    "pickupRoutes": "Rutas de Recogidas",
+    "deliveryRoutes": "Rutas de Entregas",
     "routes": "Rutas",
     "vehicles": "Vehículos",
     "dailyIncome": "Ingresos diarios",

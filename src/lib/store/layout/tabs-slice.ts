@@ -175,7 +175,7 @@ const tabsSlice = createSlice({
     },
     updateWorkspaceTabLabel(state, action: PayloadAction<{ id: string; label: string }>) {
       const tab = state.tabs.find((entry) => entry.id === action.payload.id);
-      if (!tab) return;
+      if (!tab || tab.label === action.payload.label) return;
       tab.label = action.payload.label;
       persistTabs(state);
     },

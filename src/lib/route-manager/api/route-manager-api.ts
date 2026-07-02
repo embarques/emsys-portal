@@ -9,12 +9,12 @@ import {
   buildStripeStyleSearchBody,
   createOrTextSearchFilterGroup,
   createTextSearchFilter,
-  hasListTextSearch,
+  type ApiSearchFilterGroup,
 } from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
-import { ROUTES_USE_MOCK_DATA } from "@/lib/routes/data-source";
-import * as routesMockApi from "@/lib/routes/api/routes-mock-api";
+import { ROUTES_USE_MOCK_DATA } from "@/lib/route-manager/data-source";
+import * as routesMockApi from "@/lib/route-manager/api/route-manager-mock-api";
 import {
   DEFAULT_ROUTE_LIST_PARAMS,
   ROUTE_BAR_OR_SEARCH_FIELDS,
@@ -22,7 +22,8 @@ import {
   type Route,
   type RouteFormValues,
   type RouteListParams,
-} from "@/lib/routes/types";
+} from "@/lib/route-manager/types";
+import { isRouteListFiltered } from "@/lib/route-manager/branch-filter";
 
 type ApiUser = {
   id?: number;
@@ -68,7 +69,7 @@ type ApiRoute = {
 type ApiRouteWritePayload = {
   routeId?: string;
   name?: string;
-  vehicle: { id: string; name: string };
+  vehicle: { id: string; name: string; branch?: string };
   employees: { id: number; name: string }[];
 };
 
@@ -167,9 +168,18 @@ function normalizePaginatedRoutes(
 function buildRouteSearchBody(params: RouteListParams) {
   const search = params.search;
   const sort = params.sort ?? DEFAULT_ROUTE_LIST_PARAMS.sort;
+  const branchCode = params.branchCode?.trim();
+  const filterGroups: ApiSearchFilterGroup[] = [];
+
+  if (branchCode) {
+    filterGroups.push({
+      operator: "and",
+      filters: [{ field: "vehicle.branch", operator: "eq", value: branchCode }],
+    });
+  }
 
   if (!search?.value.trim()) {
-    return buildStripeStyleSearchBody({ sort, filterGroups: [] });
+    return buildStripeStyleSearchBody({ sort, filterGroups });
   }
 
   if (search.field) {
@@ -178,10 +188,10 @@ function buildRouteSearchBody(params: RouteListParams) {
       search.value,
       search.operator ?? "contains",
     );
-    return buildStripeStyleSearchBody({
-      sort,
-      filterGroups: explicitFilter ? [{ operator: "and", filters: [explicitFilter] }] : [],
-    });
+    if (explicitFilter) {
+      filterGroups.push({ operator: "and", filters: [explicitFilter] });
+    }
+    return buildStripeStyleSearchBody({ sort, filterGroups });
   }
 
   const orGroup = createOrTextSearchFilterGroup(
@@ -190,9 +200,13 @@ function buildRouteSearchBody(params: RouteListParams) {
     search.operator ?? "contains",
   );
 
+  if (orGroup) {
+    filterGroups.push(orGroup);
+  }
+
   return buildStripeStyleSearchBody({
     sort,
-    filterGroups: orGroup ? [orGroup] : [],
+    filterGroups,
   });
 }
 
@@ -211,7 +225,7 @@ export async function fetchRoutes(
     page,
     limit,
     offset: params.offset,
-    isFiltered: hasListTextSearch(params.search),
+    isFiltered: isRouteListFiltered(params),
     buildGetQuery: () =>
       buildApiListQuery({
         page,
@@ -302,10 +316,12 @@ function buildRouteWritePayload(
     throw new Error("Select at least one employee.");
   }
 
+  const vehicleBranch = values.vehicle.branch?.trim();
   const payload: ApiRouteWritePayload = {
     vehicle: {
       id: values.vehicle.id.trim(),
       name: values.vehicle.name.trim(),
+      ...(vehicleBranch ? { branch: vehicleBranch } : {}),
     },
     employees: values.employees.map((employee) => ({
       id: employee.id,

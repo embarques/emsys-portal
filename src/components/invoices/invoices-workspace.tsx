@@ -72,8 +72,8 @@ import {
 } from "@/lib/invoices/hooks/use-invoices";
 import { useGenerateInvoiceReport } from "@/lib/reports/hooks/use-reports";
 import { useAssignInvoiceBarcodesToRoute } from "@/lib/labels/hooks/use-barcodes";
-import { useRoutePicker } from "@/lib/routes/hooks/use-routes";
-import { formatRouteCopyLabel } from "@/lib/routes/display";
+import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
+import { formatRouteCopyLabel } from "@/lib/route-manager/display";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Label } from "@/components/ui/label";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";

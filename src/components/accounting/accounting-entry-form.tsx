@@ -32,8 +32,8 @@ import {
 import { todayDateInputValue } from "@/lib/orders/types";
 import { formatInvoiceMoney, getInvoiceBalance, getInvoiceSubtotal } from "@/lib/invoices/display";
 import { INVOICE_PAYMENT_METHODS, type Invoice } from "@/lib/invoices/types";
-import { formatRouteCopyLabel } from "@/lib/routes/display";
-import type { Route } from "@/lib/routes/types";
+import { formatRouteCopyLabel } from "@/lib/route-manager/display";
+import type { Route } from "@/lib/route-manager/types";
 
 const PAYMENT_METHOD_OPTIONS = INVOICE_PAYMENT_METHODS.map((option) => ({
   value: option.value,

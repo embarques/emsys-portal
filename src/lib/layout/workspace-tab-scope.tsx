@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 
 type WorkspaceTabScopeValue = {
   tabId: string;
@@ -16,13 +16,15 @@ type WorkspaceTabScopeProps = {
 };
 
 export function WorkspaceTabScope({ tabId, isActive, children }: WorkspaceTabScopeProps) {
+  const value = useMemo(() => ({ tabId, isActive }), [isActive, tabId]);
+
   return (
-    <WorkspaceTabScopeContext.Provider value={{ tabId, isActive }}>{children}</WorkspaceTabScopeContext.Provider>
+    <WorkspaceTabScopeContext.Provider value={value}>{children}</WorkspaceTabScopeContext.Provider>
   );
 }
 
 export function useWorkspaceTabScope() {
-  return useContext(WorkspaceTabScopeContext)?.tabId ?? null;
+  return useContext(WorkspaceTabScopeContext);
 }
 
 /** False when the workspace tab is mounted but hidden; true otherwise. */

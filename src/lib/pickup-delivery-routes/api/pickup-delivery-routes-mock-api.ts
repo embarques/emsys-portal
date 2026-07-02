@@ -2,14 +2,14 @@ import type { PaginatedResult } from "@/lib/api/types";
 import {
   activeRouteMatchesQuery,
   activeRouteMatchesSearch,
-} from "@/lib/active-routes/display";
-import type { ActiveRouteFormValues, ActiveRouteListParams, ActiveRouteLookupParams } from "@/lib/active-routes/types";
+} from "@/lib/pickup-delivery-routes/display";
+import type { ActiveRouteFormValues, ActiveRouteListParams, ActiveRouteLookupParams } from "@/lib/pickup-delivery-routes/types";
 import {
   assertActiveRouteFormValues,
   deriveRouteType,
   DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
   type ActiveRoute,
-} from "@/lib/active-routes/types";
+} from "@/lib/pickup-delivery-routes/types";
 import {
   buildMockActiveRouteName,
   cloneActiveRoutes,
@@ -19,8 +19,8 @@ import {
   replaceActiveRouteInStore,
   resetActiveRoutesStore,
   upsertActiveRouteInStore,
-} from "@/lib/active-routes/mock-data";
-import { getRouteByRecordId } from "@/lib/routes/mock-data";
+} from "@/lib/pickup-delivery-routes/mock-data";
+import { getRouteByRecordId } from "@/lib/route-manager/mock-data";
 import { createMockObjectId } from "@/lib/vehicles/types";
 
 const MOCK_LATENCY_MS = 120;
@@ -105,6 +105,10 @@ function paginateActiveRoutes(
 
 function filterActiveRoutes(params: ActiveRouteListParams): ActiveRoute[] {
   let items = cloneActiveRoutes();
+
+  if (params.routeType) {
+    items = items.filter((record) => record.routeType === params.routeType);
+  }
 
   const search = params.search;
   if (search?.value.trim()) {

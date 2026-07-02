@@ -1,5 +1,5 @@
-import { RoutesWorkspace } from "@/components/routes/routes-workspace";
+import { RouteManagerWorkspace } from "@/components/route-manager/route-manager-workspace";
 
 export default function RoutesPage() {
-  return <RoutesWorkspace />;
+  return <RouteManagerWorkspace />;
 }

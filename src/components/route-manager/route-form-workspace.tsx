@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
-import { RouteForm } from "@/components/routes/route-form";
+import { RouteForm } from "@/components/route-manager/route-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,13 @@ import {
   useCreateRoute,
   useRoute,
   useUpdateRoute,
-} from "@/lib/routes/hooks/use-routes";
+} from "@/lib/route-manager/hooks/use-route-manager";
 import {
   createEmptyRouteForm,
   routeToFormValues,
   type RouteFormValues,
-} from "@/lib/routes/types";
-import { formatRouteName } from "@/lib/routes/display";
+} from "@/lib/route-manager/types";
+import { formatRouteName } from "@/lib/route-manager/display";
 import {
   useUpdateWorkspaceTabLabel,
   useWorkspaceTabs,

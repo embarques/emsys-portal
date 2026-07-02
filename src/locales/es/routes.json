@@ -1,10 +1,54 @@
 {
+  "title": "Rutas",
+  "noun": "rutas",
+  "routeManager": {
+    "title": "Manejador de rutas"
+  },
+  "pickupRoutes": {
+    "title": "Rutas de recogida",
+    "editTitle": "Editar ruta de recogida",
+    "addTabLabel": "Definir ruta de recogida",
+    "editTabLabel": "Editar {{name}}",
+    "loading": "Cargando ruta de recogida…",
+    "notFound": "No se encontró esta ruta de recogida.",
+    "description": "Defina la ruta de recogida de trabajo para esta fecha. Elija una ruta existente o cree una nueva.",
+    "searchPlaceholder": "Buscar rutas de recogida…",
+    "searchNoun": "rutas de recogida",
+    "empty": "Aún no hay rutas de recogida.",
+    "emptyFiltered": "Ninguna ruta de recogida coincide con su búsqueda.",
+    "setActiveRoute": "Definir ruta de recogida",
+    "pagination": "Mostrando {{shown}} de {{total}} rutas de recogida",
+    "entities": {
+      "activeRoute": "ruta de recogida",
+      "activeRoutes": "rutas de recogida"
+    }
+  },
+  "deliveryRoutes": {
+    "title": "Rutas de entrega",
+    "editTitle": "Editar ruta de entrega",
+    "addTabLabel": "Definir ruta de entrega",
+    "editTabLabel": "Editar {{name}}",
+    "loading": "Cargando ruta de entrega…",
+    "notFound": "No se encontró esta ruta de entrega.",
+    "description": "Defina la ruta de entrega de trabajo para esta fecha y contenedor. Elija una ruta existente o cree una nueva.",
+    "searchPlaceholder": "Buscar rutas de entrega…",
+    "searchNoun": "rutas de entrega",
+    "empty": "Aún no hay rutas de entrega.",
+    "emptyFiltered": "Ninguna ruta de entrega coincide con su búsqueda.",
+    "setActiveRoute": "Definir ruta de entrega",
+    "pagination": "Mostrando {{shown}} de {{total}} rutas de entrega",
+    "entities": {
+      "activeRoute": "ruta de entrega",
+      "activeRoutes": "rutas de entrega"
+    }
+  },
   "tabs": {
     "activeRoutes": "Rutas activas",
     "routes": "Rutas"
   },
   "activeRoutesTable": {
     "searchPlaceholder": "Buscar rutas activas…",
+    "searchNoun": "rutas activas",
     "empty": "Aún no hay rutas activas.",
     "emptyFiltered": "Ninguna ruta activa coincide con su búsqueda.",
     "setActiveRoute": "Definir ruta activa",
@@ -12,7 +56,50 @@
   },
   "entities": {
     "activeRoute": "ruta activa",
-    "activeRoutes": "rutas activas"
+    "activeRoutes": "rutas activas",
+    "route": "ruta",
+    "routes": "rutas"
+  },
+  "columns": {
+    "name": "Nombre",
+    "employees": "Empleados",
+    "vehicle": "Vehículo",
+    "branch": "Sucursal",
+    "createdAt": "Creado el",
+    "createdBy": "Creado por",
+    "updatedAt": "Actualizado el",
+    "updatedBy": "Actualizado por",
+    "date": "Fecha",
+    "routeType": "Tipo",
+    "container": "Contenedor",
+    "route": "Ruta",
+    "driver": "Conductor",
+    "appraiser": "Tasador",
+    "recordId": "ID de registro"
+  },
+  "table": {
+    "searchPlaceholder": "Buscar rutas…",
+    "empty": "Aún no hay rutas.",
+    "emptyFiltered": "Ninguna ruta coincide con su búsqueda.",
+    "pagination": "Mostrando {{shown}} de {{total}} rutas",
+    "allBranches": "Todas las sucursales",
+    "branchFilter": "Sucursal",
+    "branchFilterPlaceholder": "Todas las sucursales",
+    "branchFilterSearch": "Buscar sucursales…"
+  },
+  "actions": {
+    "addRoute": "Agregar ruta"
+  },
+  "viewSheet": {
+    "sections": {
+      "route": "Ruta",
+      "vehicle": "Vehículo",
+      "employees": "Empleados",
+      "audit": "Auditoría"
+    },
+    "recordId": "ID de registro",
+    "vehicleId": "ID del vehículo",
+    "editLabel": "Editar ruta"
   },
   "activeRouteForm": {
     "sections": {
@@ -23,6 +110,10 @@
   "activeRoute": {
     "title": "Ruta activa",
     "editTitle": "Editar ruta activa",
+    "addTabLabel": "Definir ruta activa",
+    "editTabLabel": "Editar {{name}}",
+    "loading": "Cargando ruta activa…",
+    "notFound": "No se encontró esta ruta activa.",
     "description": "Defina la ruta de trabajo para esta fecha y tipo. Elija una ruta existente o cree una nueva.",
     "name": "Nombre",
     "routeType": "Tipo",
@@ -34,6 +125,10 @@
     "containerRequired": "Contenedor",
     "containerPlaceholder": "Sin contenedor",
     "containerSearch": "Buscar contenedores…",
+    "branch": "Sucursal",
+    "branchPlaceholder": "Todas las sucursales",
+    "branchSearch": "Buscar sucursales…",
+    "allBranches": "Todas las sucursales",
     "date": "Fecha",
     "route": "Ruta",
     "routePlaceholder": "Seleccionar ruta…",
@@ -81,6 +176,7 @@
   },
   "form": {
     "addTitle": "Agregar ruta",
+    "addTabLabel": "Agregar ruta",
     "editTitle": "Editar ruta",
     "addDescription": "Asigne un vehículo y miembros de la cuadrilla.",
     "editDescription": "Actualice el vehículo y la cuadrilla de esta ruta.",
@@ -88,6 +184,11 @@
     "entityLabel": "Ruta",
     "loading": "Cargando ruta…",
     "notFound": "No se encontró esta ruta.",
+    "sections": {
+      "details": "Detalles de la ruta",
+      "vehicle": "Vehículo",
+      "crew": "Miembros de la cuadrilla"
+    },
     "vehiclePlaceholder": "Seleccionar vehículo",
     "vehicleSearch": "Buscar vehículos…",
     "crewMembers": "Miembros de la cuadrilla",

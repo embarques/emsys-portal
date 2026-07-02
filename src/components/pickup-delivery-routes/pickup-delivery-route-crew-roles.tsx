@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "@/lib/i18n";
-import type { RouteEmployeeRef } from "@/lib/routes/types";
+import type { RouteEmployeeRef } from "@/lib/route-manager/types";
 import { cn } from "@/lib/utils";
 
 type ActiveRouteCrewRolesProps = {

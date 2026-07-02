@@ -9,11 +9,13 @@ import {
   FileText,
   Home,
   KeyRound,
+  LayoutGrid,
   Package,
   ScanBarcode,
   Settings,
   ShieldCheck,
   Tag,
+  Truck,
   UserCog,
   UserRound,
   Users,
@@ -26,38 +28,88 @@ import type { Permission } from "@/lib/auth/types/permission";
 
 export type NavigationItem = {
   labelKey: string;
-  href: string;
+  href?: string;
   icon: LucideIcon;
   permission?: Permission;
+  children?: NavigationItem[];
 };
 
 export type NavigationGroup = {
   titleKey: string;
+  icon?: LucideIcon;
   items: NavigationItem[];
 };
+
+export const topNavigationItems: NavigationItem[] = [
+  { labelKey: "navigation.items.dashboard", href: "/", icon: Home, permission: PERMISSIONS.dashboardView },
+];
 
 const navigationGroups: NavigationGroup[] = [
   {
     titleKey: "navigation.groups.workspace",
+    icon: LayoutGrid,
     items: [
-      { labelKey: "navigation.items.dashboard", href: "/", icon: Home, permission: PERMISSIONS.dashboardView },
-      { labelKey: "navigation.items.customers", href: "/customers", icon: Users, permission: PERMISSIONS.clientsView },
-      { labelKey: "navigation.items.orders", href: "/orders", icon: Package, permission: PERMISSIONS.pickupsView },
-      { labelKey: "navigation.items.invoices", href: "/invoices", icon: FileText, permission: PERMISSIONS.invoicesView },
-      {
-        labelKey: "navigation.items.labelManager",
-        href: "/label-updater",
-        icon: ScanBarcode,
-        permission: PERMISSIONS.packagesView,
-      },
       { labelKey: "navigation.items.inventory", href: "/inventory", icon: Boxes, permission: PERMISSIONS.inventoryView },
-      { labelKey: "navigation.items.items", href: "/items", icon: Tag, permission: PERMISSIONS.invoiceItemsView },
-      { labelKey: "navigation.items.containers", href: "/containers", icon: Container, permission: PERMISSIONS.containersView },
+      { labelKey: "navigation.items.customers", href: "/customers", icon: Users, permission: PERMISSIONS.clientsView },
       {
-        labelKey: "navigation.items.routes",
-        href: "/routes",
+        labelKey: "navigation.items.pickups",
+        href: "/orders",
+        icon: Package,
+        permission: PERMISSIONS.pickupsView,
+      },
+      {
+        labelKey: "navigation.submenus.invoices",
+        icon: FileText,
+        children: [
+          {
+            labelKey: "navigation.items.invoices",
+            href: "/invoices",
+            icon: FileText,
+            permission: PERMISSIONS.invoicesView,
+          },
+          {
+            labelKey: "navigation.items.items",
+            href: "/items",
+            icon: Tag,
+            permission: PERMISSIONS.invoiceItemsView,
+          },
+          {
+            labelKey: "navigation.items.labelManager",
+            href: "/label-updater",
+            icon: ScanBarcode,
+            permission: PERMISSIONS.packagesView,
+          },
+          {
+            labelKey: "navigation.items.containers",
+            href: "/containers",
+            icon: Container,
+            permission: PERMISSIONS.containersView,
+          },
+        ],
+      },
+      {
+        labelKey: "navigation.submenus.routeManager",
         icon: ClipboardList,
-        permission: PERMISSIONS.dispatchView,
+        children: [
+          {
+            labelKey: "navigation.items.routes",
+            href: "/routes",
+            icon: ClipboardList,
+            permission: PERMISSIONS.dispatchView,
+          },
+          {
+            labelKey: "navigation.items.deliveryRoutes",
+            href: "/delivery-routes",
+            icon: Truck,
+            permission: PERMISSIONS.dispatchView,
+          },
+          {
+            labelKey: "navigation.items.pickupRoutes",
+            href: "/pickup-routes",
+            icon: Truck,
+            permission: PERMISSIONS.dispatchView,
+          },
+        ],
       },
       { labelKey: "navigation.items.vehicles", href: "/vehicles", icon: Car, permission: PERMISSIONS.vehiclesView },
     ],
@@ -94,12 +146,4 @@ const navigationGroups: NavigationGroup[] = [
   },
 ];
 
-/** Items within each section are sorted alphabetically by label key, with Dashboard pinned first. */
-export const navigation: NavigationGroup[] = navigationGroups.map((group) => ({
-  ...group,
-  items: [...group.items].sort((a, b) => {
-    if (a.href === "/") return -1;
-    if (b.href === "/") return 1;
-    return a.labelKey.localeCompare(b.labelKey);
-  }),
-}));
+export const navigation: NavigationGroup[] = navigationGroups;

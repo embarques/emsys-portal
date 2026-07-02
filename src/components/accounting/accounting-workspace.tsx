@@ -41,7 +41,7 @@ import {
 } from "@/lib/accounting/types";
 import { cloneInvoices } from "@/lib/invoices/mock-data";
 import type { Invoice } from "@/lib/invoices/types";
-import { useRoutePicker } from "@/lib/routes/hooks/use-routes";
+import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
 
 const ACTIVE_ROUTE_KEY = "emsys-accounting-route";
 

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { SidebarBrand } from "@/components/brand/sidebar-brand";
 import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
 import { useFlatNavigation } from "@/lib/navigation/use-navigation";
+import { navigationItemMatchesPath } from "@/lib/navigation/nav-utils";
 import { cn } from "@/lib/utils";
 import { SidebarNav } from "./sidebar-nav";
 import { SidebarProfileMenu } from "./sidebar-profile-menu";
@@ -44,7 +45,8 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
 
         <nav className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-3 py-4">
           {flatNavigation.map((item) => {
-            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            if (!item.href) return null;
+            const active = navigationItemMatchesPath(item, pathname);
             const Icon = item.icon;
 
             return (
@@ -76,7 +78,8 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
 
       <nav className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-3 py-4 xl:hidden">
         {flatNavigation.map((item) => {
-          const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          if (!item.href) return null;
+          const active = navigationItemMatchesPath(item, pathname);
           const Icon = item.icon;
 
           return (

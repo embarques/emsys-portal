@@ -13,8 +13,8 @@ import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { applyLabelBarcodeUpdate } from "@/lib/labels/updater";
 import { LABEL_STATUSES, type LabelStatus, type LabelUpdateResult } from "@/lib/labels/types";
-import { useRoutePicker } from "@/lib/routes/hooks/use-routes";
-import { formatRouteCopyLabel } from "@/lib/routes/display";
+import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
+import { formatRouteCopyLabel } from "@/lib/route-manager/display";
 import { cn } from "@/lib/utils";
 
 function ResultCell({ value }: { value?: string | number }) {

@@ -1,5 +1,5 @@
-import type { ActiveRoute } from "@/lib/active-routes/types";
-import { formatRouteDate } from "@/lib/routes/display";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+import { formatRouteDate } from "@/lib/route-manager/display";
 
 export function formatActiveRouteTypeLabel(
   routeType: ActiveRoute["routeType"],

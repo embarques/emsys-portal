@@ -1,10 +1,54 @@
 {
+  "title": "Routes",
+  "noun": "routes",
+  "routeManager": {
+    "title": "Route Manager"
+  },
+  "pickupRoutes": {
+    "title": "Pickup routes",
+    "editTitle": "Edit pickup route",
+    "addTabLabel": "Set pickup route",
+    "editTabLabel": "Edit {{name}}",
+    "loading": "Loading pickup route…",
+    "notFound": "This pickup route could not be found.",
+    "description": "Set the working pickup route for this date. Pick an existing route or create one.",
+    "searchPlaceholder": "Search pickup routes…",
+    "searchNoun": "pickup routes",
+    "empty": "No pickup routes yet.",
+    "emptyFiltered": "No pickup routes match your search.",
+    "setActiveRoute": "Set pickup route",
+    "pagination": "Showing {{shown}} of {{total}} pickup routes",
+    "entities": {
+      "activeRoute": "pickup route",
+      "activeRoutes": "pickup routes"
+    }
+  },
+  "deliveryRoutes": {
+    "title": "Delivery routes",
+    "editTitle": "Edit delivery route",
+    "addTabLabel": "Set delivery route",
+    "editTabLabel": "Edit {{name}}",
+    "loading": "Loading delivery route…",
+    "notFound": "This delivery route could not be found.",
+    "description": "Set the working delivery route for this date and container. Pick an existing route or create one.",
+    "searchPlaceholder": "Search delivery routes…",
+    "searchNoun": "delivery routes",
+    "empty": "No delivery routes yet.",
+    "emptyFiltered": "No delivery routes match your search.",
+    "setActiveRoute": "Set delivery route",
+    "pagination": "Showing {{shown}} of {{total}} delivery routes",
+    "entities": {
+      "activeRoute": "delivery route",
+      "activeRoutes": "delivery routes"
+    }
+  },
   "tabs": {
     "activeRoutes": "Active routes",
     "routes": "Routes"
   },
   "activeRoutesTable": {
     "searchPlaceholder": "Search active routes…",
+    "searchNoun": "active routes",
     "empty": "No active routes yet.",
     "emptyFiltered": "No active routes match your search.",
     "setActiveRoute": "Set active route",
@@ -12,7 +56,50 @@
   },
   "entities": {
     "activeRoute": "active route",
-    "activeRoutes": "active routes"
+    "activeRoutes": "active routes",
+    "route": "route",
+    "routes": "routes"
+  },
+  "columns": {
+    "name": "Name",
+    "employees": "Employees",
+    "vehicle": "Vehicle",
+    "branch": "Branch",
+    "createdAt": "Created at",
+    "createdBy": "Created by",
+    "updatedAt": "Updated at",
+    "updatedBy": "Updated by",
+    "date": "Date",
+    "routeType": "Type",
+    "container": "Container",
+    "route": "Route",
+    "driver": "Driver",
+    "appraiser": "Appraiser",
+    "recordId": "Record ID"
+  },
+  "table": {
+    "searchPlaceholder": "Search routes…",
+    "empty": "No routes yet.",
+    "emptyFiltered": "No routes match your search.",
+    "pagination": "Showing {{shown}} of {{total}} routes",
+    "allBranches": "All branches",
+    "branchFilter": "Branch",
+    "branchFilterPlaceholder": "All branches",
+    "branchFilterSearch": "Search branches…"
+  },
+  "actions": {
+    "addRoute": "Add route"
+  },
+  "viewSheet": {
+    "sections": {
+      "route": "Route",
+      "vehicle": "Vehicle",
+      "employees": "Employees",
+      "audit": "Audit"
+    },
+    "recordId": "Record ID",
+    "vehicleId": "Vehicle ID",
+    "editLabel": "Edit route"
   },
   "activeRouteForm": {
     "sections": {
@@ -23,6 +110,10 @@
   "activeRoute": {
     "title": "Active route",
     "editTitle": "Edit active route",
+    "addTabLabel": "Set active route",
+    "editTabLabel": "Edit {{name}}",
+    "loading": "Loading active route…",
+    "notFound": "This active route could not be found.",
     "description": "Set the working route for this date and type. Pick an existing route or create one.",
     "name": "Name",
     "routeType": "Type",
@@ -34,6 +125,10 @@
     "containerRequired": "Container",
     "containerPlaceholder": "No container",
     "containerSearch": "Search containers…",
+    "branch": "Branch",
+    "branchPlaceholder": "All branches",
+    "branchSearch": "Search branches…",
+    "allBranches": "All branches",
     "date": "Date",
     "route": "Route",
     "routePlaceholder": "Select a route…",
@@ -81,6 +176,7 @@
   },
   "form": {
     "addTitle": "Add route",
+    "addTabLabel": "Add route",
     "editTitle": "Edit route",
     "addDescription": "Assign a vehicle and crew members.",
     "editDescription": "Update the vehicle and crew for this route.",
@@ -88,6 +184,11 @@
     "entityLabel": "Route",
     "loading": "Loading route…",
     "notFound": "This route could not be found.",
+    "sections": {
+      "details": "Route details",
+      "vehicle": "Vehicle",
+      "crew": "Crew members"
+    },
     "vehiclePlaceholder": "Select a vehicle",
     "vehicleSearch": "Search vehicles…",
     "crewMembers": "Crew members",

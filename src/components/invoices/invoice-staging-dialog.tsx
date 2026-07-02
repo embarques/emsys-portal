@@ -35,8 +35,8 @@ import {
   useGenerateLabels,
   useUpdateBarcodes,
 } from "@/lib/labels/hooks/use-barcodes";
-import { useRoutePicker } from "@/lib/routes/hooks/use-routes";
-import { formatRouteCopyLabel, isDrRoute } from "@/lib/routes/display";
+import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
+import { formatRouteCopyLabel, isDrRoute } from "@/lib/route-manager/display";
 import { useGenerateLabelReport } from "@/lib/reports/hooks/use-reports";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import {

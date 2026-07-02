@@ -6,8 +6,8 @@ import { ClipboardList } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatRouteCopyLabel } from "@/lib/routes/display";
-import type { Route } from "@/lib/routes/types";
+import { formatRouteCopyLabel } from "@/lib/route-manager/display";
+import type { Route } from "@/lib/route-manager/types";
 
 type AccountingRouteSelectorProps = {
   routes: Route[];

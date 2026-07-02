@@ -1,8 +1,8 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
-import type { RouteEmployeeRef } from "@/lib/routes/types";
-import { todayDateInputValue, toRouteDateInput } from "@/lib/routes/types";
+import type { RouteEmployeeRef } from "@/lib/route-manager/types";
+import { todayDateInputValue, toRouteDateInput } from "@/lib/route-manager/types";
 
 export type RouteType = "pickup" | "delivery";
 
@@ -58,6 +58,7 @@ export type ActiveRouteListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: ApiListTextSearch;
+  routeType?: RouteType;
 };
 
 export type ActiveRouteSearchFilter = ApiListTextSearch;
@@ -82,9 +83,9 @@ export function deriveRouteType(container: ActiveRouteContainerRef | null): Rout
   return container && container.id > 0 ? "delivery" : "pickup";
 }
 
-export function createEmptyActiveRouteForm(): ActiveRouteFormValues {
+export function createEmptyActiveRouteForm(routeType: RouteType = "pickup"): ActiveRouteFormValues {
   return {
-    routeType: "pickup",
+    routeType,
     container: null,
     date: todayDateInputValue(),
     routeRecordId: "",

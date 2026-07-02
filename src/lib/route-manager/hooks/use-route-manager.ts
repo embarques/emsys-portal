@@ -13,8 +13,9 @@ import {
   fetchRoutes,
   fetchRoutesByDate,
   updateRoute,
-} from "@/lib/routes/api/routes-api";
+} from "@/lib/route-manager/api/route-manager-api";
 import { hasListTextSearch } from "@/lib/api/search-query";
+import { isRouteListFiltered } from "@/lib/route-manager/branch-filter";
 import {
   DEFAULT_ROUTE_LIST_PARAMS,
   todayDateInputValue,
@@ -22,11 +23,11 @@ import {
   type RouteFormValues,
   type RouteListParams,
   type RouteSearchFilter,
-} from "@/lib/routes/types";
+} from "@/lib/route-manager/types";
 import { queryKeys } from "@/lib/query/query-keys";
 
 export function useRoutes(params: RouteListParams) {
-  const isFiltered = hasListTextSearch(params.search);
+  const isFiltered = isRouteListFiltered(params);
 
   return useWorkspaceQuery({
     queryKey: queryKeys.routes.list(params),
@@ -55,10 +56,20 @@ export function useRouteSearch(
   });
 }
 
-export function useRoutePicker(limit = 200, options: { enabled?: boolean } = {}) {
+export function useRoutePicker(
+  limit = 200,
+  options: { enabled?: boolean; branchCode?: string } = {},
+) {
+  const branchCode = options.branchCode?.trim();
+  const listParams = {
+    ...DEFAULT_ROUTE_LIST_PARAMS,
+    limit,
+    ...(branchCode ? { branchCode } : {}),
+  };
+
   return useWorkspaceQuery({
-    queryKey: queryKeys.routes.list({ ...DEFAULT_ROUTE_LIST_PARAMS, limit }),
-    queryFn: () => fetchRoutes({ ...DEFAULT_ROUTE_LIST_PARAMS, limit }),
+    queryKey: queryKeys.routes.list(listParams),
+    queryFn: () => fetchRoutes(listParams),
     enabled: options.enabled ?? true,
     staleTime: 60_000,
   });

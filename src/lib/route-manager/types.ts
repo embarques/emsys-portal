@@ -42,6 +42,7 @@ export type RouteFormValues = {
 
 export type RouteFilterState = {
   query: string;
+  branchCode: string;
 };
 
 export type RouteListParams = {
@@ -50,6 +51,7 @@ export type RouteListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: ApiListTextSearch;
+  branchCode?: string;
 };
 
 export type RouteSearchFilter = ApiListTextSearch;

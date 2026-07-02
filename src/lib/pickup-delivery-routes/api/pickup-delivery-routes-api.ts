@@ -13,19 +13,22 @@ import {
 } from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
+import type {
+  DeliveryRouteWritePayload,
+  PickupRouteWritePayload,
+} from "@/lib/pickup-delivery-routes/api-schemas";
 import {
   assertActiveRouteFormValues,
-  deriveRouteType,
-  ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS,
   DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
   type ActiveRoute,
   type ActiveRouteFormValues,
   type ActiveRouteListParams,
   type ActiveRouteLookupParams,
-} from "@/lib/active-routes/types";
-import { ROUTES_USE_MOCK_DATA } from "@/lib/routes/data-source";
-import * as activeRoutesMockApi from "@/lib/active-routes/api/active-routes-mock-api";
-import { toRouteDateIso } from "@/lib/routes/types";
+  type RouteType,
+} from "@/lib/pickup-delivery-routes/types";
+import { ROUTES_USE_MOCK_DATA } from "@/lib/route-manager/data-source";
+import * as activeRoutesMockApi from "@/lib/pickup-delivery-routes/api/pickup-delivery-routes-mock-api";
+import { toRouteDateIso } from "@/lib/route-manager/types";
 
 type ApiUser = {
   id?: number;
@@ -45,10 +48,9 @@ type ApiEmployeeRef = {
   name?: string;
 };
 
-type ApiActiveRoute = {
+type ApiPickupRoute = {
   id?: string | number;
   name?: string;
-  container?: ApiRef | null;
   date?: string;
   route?: ApiRef | null;
   driver?: ApiEmployeeRef | null;
@@ -59,14 +61,8 @@ type ApiActiveRoute = {
   updatedBy?: ApiUser | string | null;
 };
 
-/** `name` is server-generated on create — do not send on POST. */
-type ApiActiveRouteWritePayload = {
-  container: { id: number; name: string } | null;
-  date: string;
-  route: { id: string };
-  driver?: { id: number; name: string } | null;
-  appraiser?: { id: number; name: string } | null;
-  name?: string;
+type ApiDeliveryRoute = ApiPickupRoute & {
+  container?: ApiRef | null;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -74,6 +70,30 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   message?: string;
   error?: string;
 };
+
+const PICKUP_ROUTE_BAR_OR_SEARCH_FIELDS = [
+  "name",
+  "route.name",
+  "driver.name",
+  "appraiser.name",
+  "date",
+] as const;
+
+const DELIVERY_ROUTE_BAR_OR_SEARCH_FIELDS = [
+  ...PICKUP_ROUTE_BAR_OR_SEARCH_FIELDS,
+  "container.name",
+] as const;
+
+function resolveRouteType(params: { routeType?: RouteType }): RouteType {
+  if (params.routeType) return params.routeType;
+  throw new Error("A route type is required to call the scheduled routes API.");
+}
+
+function scheduledRoutesEndpoint(routeType: RouteType): string {
+  return routeType === "delivery"
+    ? API_ENDPOINTS.DELIVERY_ROUTE_SCHEDULES
+    : API_ENDPOINTS.PICKUP_ROUTE_SCHEDULES;
+}
 
 function readUserName(user: unknown): string {
   if (!user) return "";
@@ -114,31 +134,66 @@ function normalizeRouteRef(raw?: ApiRef | null): ActiveRoute["route"] | null {
   };
 }
 
-export function normalizeApiActiveRoute(raw: unknown): ActiveRoute | null {
-  if (!raw || typeof raw !== "object") return null;
-
-  const item = raw as ApiActiveRoute;
-  const id = String(item.id ?? "").trim();
-  const route = normalizeRouteRef(item.route);
-  if (!id || !route) return null;
-
-  const container = normalizeContainerRef(item.container);
-  const dateRaw = String(item.date ?? "").trim();
-
+function normalizeAuditFields(item: ApiPickupRoute) {
   return {
-    id,
-    name: String(item.name ?? "").trim() || route.name || id,
-    routeType: deriveRouteType(container),
-    container,
-    date: dateRaw.includes("T") ? dateRaw.slice(0, 10) : dateRaw,
-    route,
-    driver: normalizeEmployeeRef(item.driver),
-    appraiser: normalizeEmployeeRef(item.appraiser),
     createdAt: String(item.createdAt ?? "").trim(),
     createdBy: readUserName(item.createdBy) || DEFAULT_CREATED_BY,
     updatedAt: String(item.updatedAt ?? "").trim(),
     updatedBy: readUserName(item.updatedBy) || "",
   };
+}
+
+export function normalizeApiPickupRoute(raw: unknown): ActiveRoute | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const item = raw as ApiPickupRoute;
+  const id = String(item.id ?? "").trim();
+  const route = normalizeRouteRef(item.route);
+  if (!id || !route) return null;
+
+  const dateRaw = String(item.date ?? "").trim();
+
+  return {
+    id,
+    name: String(item.name ?? "").trim() || route.name || id,
+    routeType: "pickup",
+    container: null,
+    date: dateRaw.includes("T") ? dateRaw.slice(0, 10) : dateRaw,
+    route,
+    driver: normalizeEmployeeRef(item.driver),
+    appraiser: normalizeEmployeeRef(item.appraiser),
+    ...normalizeAuditFields(item),
+  };
+}
+
+export function normalizeApiDeliveryRoute(raw: unknown): ActiveRoute | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const item = raw as ApiDeliveryRoute;
+  const id = String(item.id ?? "").trim();
+  const route = normalizeRouteRef(item.route);
+  const container = normalizeContainerRef(item.container);
+  if (!id || !route || !container) return null;
+
+  const dateRaw = String(item.date ?? "").trim();
+
+  return {
+    id,
+    name: String(item.name ?? "").trim() || route.name || id,
+    routeType: "delivery",
+    container,
+    date: dateRaw.includes("T") ? dateRaw.slice(0, 10) : dateRaw,
+    route,
+    driver: normalizeEmployeeRef(item.driver),
+    appraiser: normalizeEmployeeRef(item.appraiser),
+    ...normalizeAuditFields(item),
+  };
+}
+
+function normalizeScheduledRoute(raw: unknown, routeType: RouteType): ActiveRoute | null {
+  return routeType === "delivery"
+    ? normalizeApiDeliveryRoute(raw)
+    : normalizeApiPickupRoute(raw);
 }
 
 function unwrapRecord(payload: unknown): unknown {
@@ -150,18 +205,15 @@ function unwrapRecord(payload: unknown): unknown {
   return payload;
 }
 
-function buildActiveRouteWritePayload(values: ActiveRouteFormValues): ApiActiveRouteWritePayload {
+function buildPickupRouteWritePayload(values: ActiveRouteFormValues): PickupRouteWritePayload {
   assertActiveRouteFormValues(values);
+  if (values.routeType !== "pickup") {
+    throw new Error("Pickup route payload requires routeType pickup.");
+  }
 
   return {
-    container:
-      values.routeType === "delivery" && values.container && values.container.id > 0
-        ? { id: values.container.id, name: values.container.name.trim() }
-        : null,
     date: toRouteDateIso(values.date),
-    route: {
-      id: values.routeRecordId.trim(),
-    },
+    route: { id: values.routeRecordId.trim() },
     driver: values.driver ? { id: values.driver.id, name: values.driver.name.trim() } : null,
     appraiser: values.appraiser
       ? { id: values.appraiser.id, name: values.appraiser.name.trim() }
@@ -169,7 +221,51 @@ function buildActiveRouteWritePayload(values: ActiveRouteFormValues): ApiActiveR
   };
 }
 
-function buildActiveRouteDaySearchBody(params: ActiveRouteLookupParams) {
+function buildDeliveryRouteWritePayload(values: ActiveRouteFormValues): DeliveryRouteWritePayload {
+  assertActiveRouteFormValues(values);
+  if (values.routeType !== "delivery" || !values.container || values.container.id <= 0) {
+    throw new Error("Delivery route payload requires a container.");
+  }
+
+  return {
+    container: { id: values.container.id, name: values.container.name.trim() },
+    date: toRouteDateIso(values.date),
+    route: { id: values.routeRecordId.trim() },
+    driver: values.driver ? { id: values.driver.id, name: values.driver.name.trim() } : null,
+    appraiser: values.appraiser
+      ? { id: values.appraiser.id, name: values.appraiser.name.trim() }
+      : null,
+  };
+}
+
+function buildScheduledRouteWritePayload(values: ActiveRouteFormValues) {
+  return values.routeType === "delivery"
+    ? buildDeliveryRouteWritePayload(values)
+    : buildPickupRouteWritePayload(values);
+}
+
+function buildPickupRouteDaySearchBody(date: string) {
+  const start = toRouteDateIso(date);
+  const dateInput = date.trim().slice(0, 10);
+  const next = new Date(`${dateInput}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  const end = `${next.toISOString().slice(0, 10)}T00:00:00Z`;
+
+  return buildStripeStyleSearchBody({
+    sort: { field: "date", direction: "desc" },
+    filterGroups: [
+      {
+        operator: "and",
+        filters: [
+          { field: "date", operator: "gte", value: start },
+          { field: "date", operator: "lt", value: end },
+        ],
+      },
+    ],
+  });
+}
+
+function buildDeliveryRouteDaySearchBody(params: ActiveRouteLookupParams) {
   const start = toRouteDateIso(params.date);
   const dateInput = params.date.trim().slice(0, 10);
   const next = new Date(`${dateInput}T00:00:00Z`);
@@ -181,7 +277,7 @@ function buildActiveRouteDaySearchBody(params: ActiveRouteLookupParams) {
     { field: "date", operator: "lt", value: end },
   ];
 
-  if (params.routeType === "delivery" && params.containerId) {
+  if (params.containerId) {
     filters.push({ field: "container.id", operator: "eq", value: String(params.containerId) });
   }
 
@@ -207,13 +303,14 @@ function matchesActiveRouteLookup(record: ActiveRoute, params: ActiveRouteLookup
   return record.routeType === "pickup";
 }
 
-function normalizePaginatedActiveRoutes(
+function normalizePaginatedScheduledRoutes(
   payload: PaginatedApiEnvelope<unknown[]>,
+  routeType: RouteType,
   context: { isFiltered?: boolean } = {},
 ): PaginatedResult<ActiveRoute> {
   const items = Array.isArray(payload.data)
     ? payload.data
-        .map(normalizeApiActiveRoute)
+        .map((row) => normalizeScheduledRoute(row, routeType))
         .filter((record): record is ActiveRoute => record != null)
     : [];
 
@@ -225,9 +322,13 @@ function normalizePaginatedActiveRoutes(
   };
 }
 
-function buildActiveRouteSearchBody(params: ActiveRouteListParams) {
+function buildScheduledRouteSearchBody(params: ActiveRouteListParams, routeType: RouteType) {
   const search = params.search;
   const sort = params.sort ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.sort;
+  const barFields =
+    routeType === "delivery"
+      ? DELIVERY_ROUTE_BAR_OR_SEARCH_FIELDS
+      : PICKUP_ROUTE_BAR_OR_SEARCH_FIELDS;
 
   if (!search?.value.trim()) {
     return buildStripeStyleSearchBody({ sort, filterGroups: [] });
@@ -239,15 +340,13 @@ function buildActiveRouteSearchBody(params: ActiveRouteListParams) {
       search.value,
       search.operator ?? "contains",
     );
-    return buildStripeStyleSearchBody({
-      sort,
-      filterGroups: explicitFilter ? [{ operator: "and", filters: [explicitFilter] }] : [],
-    });
+    const searchGroups = explicitFilter ? [{ operator: "and" as const, filters: [explicitFilter] }] : [];
+    return buildStripeStyleSearchBody({ sort, filterGroups: searchGroups });
   }
 
   const orGroup = createOrTextSearchFilterGroup(
     search.value,
-    [...ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS],
+    [...barFields],
     search.operator ?? "contains",
   );
 
@@ -260,15 +359,18 @@ function buildActiveRouteSearchBody(params: ActiveRouteListParams) {
 export async function fetchActiveRoutes(
   params: ActiveRouteListParams = {},
 ): Promise<PaginatedResult<ActiveRoute>> {
+  const routeType = resolveRouteType(params);
+
   if (ROUTES_USE_MOCK_DATA) {
     return activeRoutesMockApi.fetchActiveRoutes(params);
   }
 
   const page = params.page ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.page;
   const limit = params.limit ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.limit;
+  const endpoint = scheduledRoutesEndpoint(routeType);
 
   return fetchPaginatedResourceList({
-    endpoint: API_ENDPOINTS.ACTIVE_ROUTES,
+    endpoint,
     page,
     limit,
     offset: params.offset,
@@ -280,8 +382,8 @@ export async function fetchActiveRoutes(
         offset: params.offset,
         sort: params.sort ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.sort,
       }),
-    buildSearchBody: () => buildActiveRouteSearchBody(params),
-    normalize: normalizePaginatedActiveRoutes,
+    buildSearchBody: () => buildScheduledRouteSearchBody(params, routeType),
+    normalize: (payload, context) => normalizePaginatedScheduledRoutes(payload, routeType, context),
   });
 }
 
@@ -292,6 +394,8 @@ async function searchActiveRouteByLookup(
   if (!isoDate) return null;
   if (params.routeType === "delivery" && !params.containerId) return null;
 
+  const endpoint = scheduledRoutesEndpoint(params.routeType);
+
   try {
     const listQuery = buildApiListQuery({
       page: 1,
@@ -299,11 +403,11 @@ async function searchActiveRouteByLookup(
       sort: { field: "date", direction: "desc" },
     });
     const listPayload = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.ACTIVE_ROUTES}?${listQuery}`,
+      `${endpoint}?${listQuery}`,
     );
     const listItems = Array.isArray(listPayload.data) ? listPayload.data : [];
     for (const row of listItems) {
-      const record = normalizeApiActiveRoute(row);
+      const record = normalizeScheduledRoute(row, params.routeType);
       if (record && matchesActiveRouteLookup(record, params)) {
         return record;
       }
@@ -313,13 +417,18 @@ async function searchActiveRouteByLookup(
   }
 
   const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 1, offset: 0 });
+  const searchBody =
+    params.routeType === "delivery"
+      ? buildDeliveryRouteDaySearchBody(params)
+      : buildPickupRouteDaySearchBody(isoDate);
+
   const payload = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-    `${API_ENDPOINTS.ACTIVE_ROUTES}/search?${paginationQuery}`,
-    buildActiveRouteDaySearchBody(params),
+    `${endpoint}/search?${paginationQuery}`,
+    searchBody,
   );
 
   const items = Array.isArray(payload.data) ? payload.data : [];
-  const record = normalizeApiActiveRoute(items[0]);
+  const record = normalizeScheduledRoute(items[0], params.routeType);
   return record && matchesActiveRouteLookup(record, params) ? record : null;
 }
 
@@ -337,30 +446,36 @@ export async function fetchActiveRoute(
   return searchActiveRouteByLookup({ ...params, date });
 }
 
-export async function fetchActiveRouteById(recordId: string): Promise<ActiveRoute> {
+export async function fetchActiveRouteById(
+  recordId: string,
+  routeType: RouteType,
+): Promise<ActiveRoute> {
   if (ROUTES_USE_MOCK_DATA) {
     return activeRoutesMockApi.fetchActiveRouteById(recordId);
   }
 
   const id = recordId.trim();
   if (!id) {
-    throw new Error("A valid active route id is required.");
+    throw new Error("A valid route id is required.");
   }
 
-  const response = await apiClient.get<ApiActiveRoute | PaginatedApiEnvelope<ApiActiveRoute>>(
-    `${API_ENDPOINTS.ACTIVE_ROUTES}/${id}`,
+  const response = await apiClient.get<ApiPickupRoute | PaginatedApiEnvelope<ApiPickupRoute>>(
+    `${scheduledRoutesEndpoint(routeType)}/${id}`,
   );
 
-  const record = normalizeApiActiveRoute(unwrapRecord(response));
+  const record = normalizeScheduledRoute(unwrapRecord(response), routeType);
   if (!record) {
-    throw new Error("Active route not found.");
+    throw new Error("Route not found.");
   }
 
   return record;
 }
 
-function extractActiveRouteFromMutationResponse(data: unknown): ActiveRoute | null {
-  return normalizeApiActiveRoute(unwrapRecord(data));
+function extractActiveRouteFromMutationResponse(
+  data: unknown,
+  routeType: RouteType,
+): ActiveRoute | null {
+  return normalizeScheduledRoute(unwrapRecord(data), routeType);
 }
 
 function buildLookupFromFormValues(values: ActiveRouteFormValues): ActiveRouteLookupParams {
@@ -378,18 +493,21 @@ async function resolveSavedActiveRoute(
   values: ActiveRouteFormValues,
   response: ApiMutationEnvelope<unknown>,
 ): Promise<ActiveRoute> {
-  const fromResponse = extractActiveRouteFromMutationResponse(response.data ?? response);
+  const fromResponse = extractActiveRouteFromMutationResponse(
+    response.data ?? response,
+    values.routeType,
+  );
   if (fromResponse) return fromResponse;
 
   if (recordId) {
-    return fetchActiveRouteById(recordId);
+    return fetchActiveRouteById(recordId, values.routeType);
   }
 
   const searched = await searchActiveRouteByLookup(buildLookupFromFormValues(values));
   if (searched) return searched;
 
   const message = response.message || response.error;
-  throw new Error(message?.trim() || "Unable to save active route.");
+  throw new Error(message?.trim() || "Unable to save route.");
 }
 
 export async function createActiveRoute(values: ActiveRouteFormValues): Promise<ActiveRoute> {
@@ -398,11 +516,11 @@ export async function createActiveRoute(values: ActiveRouteFormValues): Promise<
   }
 
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
-    API_ENDPOINTS.ACTIVE_ROUTES,
-    buildActiveRouteWritePayload(values),
+    scheduledRoutesEndpoint(values.routeType),
+    buildScheduledRouteWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to create active route.");
+  assertMutationSuccess(response, "Unable to create route.");
   return resolveSavedActiveRoute(null, values, response);
 }
 
@@ -416,19 +534,18 @@ export async function updateActiveRoute(
 
   const id = recordId.trim();
   if (!id) {
-    throw new Error("A valid active route id is required to update.");
+    throw new Error("A valid route id is required to update.");
   }
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.ACTIVE_ROUTES}/${id}`,
-    buildActiveRouteWritePayload(values),
+    `${scheduledRoutesEndpoint(values.routeType)}/${id}`,
+    buildScheduledRouteWritePayload(values),
   );
 
-  assertMutationSuccess(response, "Unable to update active route.");
+  assertMutationSuccess(response, "Unable to update route.");
   return resolveSavedActiveRoute(id, values, response);
 }
 
-/** Create or update the active route for a route type + calendar day. */
 export async function upsertActiveRoute(
   values: ActiveRouteFormValues,
   existingId?: string | null,
@@ -450,27 +567,30 @@ export async function upsertActiveRoute(
   return createActiveRoute(values);
 }
 
-export async function deleteActiveRoute(recordId: string): Promise<void> {
+export async function deleteActiveRoute(recordId: string, routeType: RouteType): Promise<void> {
   if (ROUTES_USE_MOCK_DATA) {
     return activeRoutesMockApi.deleteActiveRoute(recordId);
   }
 
   const id = recordId.trim();
   if (!id) {
-    throw new Error("A valid active route id is required to delete.");
+    throw new Error("A valid route id is required to delete.");
   }
 
   const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.ACTIVE_ROUTES}/${id}`,
+    `${scheduledRoutesEndpoint(routeType)}/${id}`,
   );
 
-  assertMutationSuccess(response, "Unable to delete active route.");
+  assertMutationSuccess(response, "Unable to delete route.");
 }
 
-export async function deleteActiveRoutes(recordIds: string[]): Promise<void> {
+export async function deleteActiveRoutes(
+  recordIds: string[],
+  routeType: RouteType,
+): Promise<void> {
   if (ROUTES_USE_MOCK_DATA) {
     return activeRoutesMockApi.deleteActiveRoutes(recordIds);
   }
 
-  await Promise.all(recordIds.map((id) => deleteActiveRoute(id)));
+  await Promise.all(recordIds.map((id) => deleteActiveRoute(id, routeType)));
 }

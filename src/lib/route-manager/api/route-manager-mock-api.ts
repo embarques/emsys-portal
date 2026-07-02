@@ -5,18 +5,19 @@ import {
   deleteRoutesFromStore,
   getRouteByRecordId,
   updateRouteInStore,
-} from "@/lib/routes/mock-data";
+} from "@/lib/route-manager/mock-data";
 import {
   computeRouteKpis,
   routeMatchesQuery,
   routeMatchesSearch,
-} from "@/lib/routes/display";
+} from "@/lib/route-manager/display";
+import { routeMatchesBranchCode } from "@/lib/route-manager/branch-filter";
 import {
   DEFAULT_ROUTE_LIST_PARAMS,
   type Route,
   type RouteFormValues,
   type RouteListParams,
-} from "@/lib/routes/types";
+} from "@/lib/route-manager/types";
 
 const MOCK_LATENCY_MS = 120;
 
@@ -40,6 +41,11 @@ function paginateRoutes(items: Route[], params: RouteListParams): PaginatedResul
 
 function filterRoutes(params: RouteListParams): Route[] {
   let items = cloneRoutes();
+
+  const branchCode = params.branchCode?.trim();
+  if (branchCode) {
+    items = items.filter((route) => routeMatchesBranchCode(route, branchCode));
+  }
 
   const search = params.search;
   if (search?.value.trim()) {

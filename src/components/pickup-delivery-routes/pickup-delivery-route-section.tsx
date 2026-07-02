@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { ActiveRouteForm } from "@/components/routes/active-route-form";
-import { RouteForm } from "@/components/routes/route-form";
+import { ActiveRouteForm } from "@/components/pickup-delivery-routes/pickup-delivery-route-form";
+import { RouteForm } from "@/components/route-manager/route-form";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import {
   Dialog,
@@ -15,62 +15,82 @@ import {
 import {
   useActiveRoute,
   useUpsertActiveRoute,
-} from "@/lib/active-routes/hooks/use-active-routes";
+} from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import {
   activeRouteToFormValues,
   createEmptyActiveRouteForm,
   type ActiveRoute,
   type ActiveRouteFormValues,
-} from "@/lib/active-routes/types";
+} from "@/lib/pickup-delivery-routes/types";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
+import { formatBranchFilterLabel } from "@/lib/branches/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatRouteCopyLabel } from "@/lib/routes/display";
+import { formatRouteCopyLabel } from "@/lib/route-manager/display";
 import {
   useCreateRoute,
   useRoute,
   useRoutePicker,
-} from "@/lib/routes/hooks/use-routes";
-import { createEmptyRouteForm, type RouteFormValues } from "@/lib/routes/types";
-import type { RouteType } from "@/lib/active-routes/types";
+} from "@/lib/route-manager/hooks/use-route-manager";
+import { createEmptyRouteForm, type RouteFormValues } from "@/lib/route-manager/types";
+import type { RouteType } from "@/lib/pickup-delivery-routes/types";
+import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useAuth } from "@/providers/auth-provider";
 
 type ActiveRouteSectionProps = {
   initialRecord?: ActiveRoute | null;
+  variant?: ActiveRoutesDirectoryVariant;
   onSaved?: () => void;
   onCancel?: () => void;
 };
 
 export function ActiveRouteSection({
   initialRecord = null,
+  variant,
   onSaved,
   onCancel,
 }: ActiveRouteSectionProps) {
+  const fixedRouteType = variant?.routeType;
+  const showRouteTypeField = variant?.showRouteTypeField ?? true;
+  const showContainerField = variant?.showContainerField;
+  const routesBaseHref = variant?.baseHref ?? "/routes";
+
   const { t } = useTranslation();
   const { displayName } = useAuth();
   const { notifySuccess } = useFeedback();
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const containersQuery = useContainerPicker(200);
   const containers = containersQuery.data?.items ?? [];
-  const routesQuery = useRoutePicker(200);
+  const branchesQuery = useBranchPicker(200);
+  const branches = branchesQuery.data?.items ?? [];
+  const [branchCode, setBranchCode] = useState("");
+  const routesQuery = useRoutePicker(200, {
+    branchCode: branchCode.trim() || undefined,
+  });
 
   const [values, setValues] = useState<ActiveRouteFormValues>(() =>
-    initialRecord ? activeRouteToFormValues(initialRecord) : createEmptyActiveRouteForm(),
+    initialRecord
+      ? activeRouteToFormValues(initialRecord)
+      : createEmptyActiveRouteForm(fixedRouteType ?? "pickup"),
   );
   const [savedRecord, setSavedRecord] = useState<ActiveRoute | null>(initialRecord);
   const [formError, setFormError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFormError, setCreateFormError] = useState<string | null>(null);
   const hydratedLookupRef = useRef("");
+  const effectiveRouteType = fixedRouteType ?? values.routeType;
 
   const lookup =
     values.date.trim() &&
-    (values.routeType === "pickup" ||
-      (values.routeType === "delivery" && (values.container?.id ?? 0) > 0))
+    (effectiveRouteType === "pickup" ||
+      (effectiveRouteType === "delivery" && (values.container?.id ?? 0) > 0))
       ? {
-          routeType: values.routeType,
+          routeType: effectiveRouteType,
           date: values.date.trim(),
-          ...(values.routeType === "delivery" && values.container
+          ...(effectiveRouteType === "delivery" && values.container
             ? { containerId: values.container.id }
             : {}),
         }
@@ -118,9 +138,21 @@ export function ActiveRouteSection({
       .map((route) => ({
         value: route.id,
         label: formatRouteCopyLabel(route),
-        keywords: [route.name, route.routeId, route.vehicle.name],
+        keywords: [route.name, route.routeId, route.vehicle.name, route.vehicle.branch ?? ""],
       }));
   }, [routesQuery.data?.items]);
+
+  const branchOptions = useMemo(
+    () => [
+      { value: "", label: t("routes.activeRoute.allBranches"), keywords: ["all"] },
+      ...branches.map((branch) => ({
+        value: branch.code,
+        label: formatBranchFilterLabel(branch),
+        keywords: [branch.code, branch.name],
+      })),
+    ],
+    [branches, t],
+  );
 
   const containerOptions = useMemo(() => {
     const options = containers.map((container) => ({
@@ -166,7 +198,7 @@ export function ActiveRouteSection({
   }, [selectedRoute, selectedRouteQuery.isLoading]);
 
   const isSaving = upsertMutation.isPending;
-  const isDelivery = values.routeType === "delivery";
+  const isDelivery = effectiveRouteType === "delivery";
   const isEditing = Boolean(initialRecord ?? savedRecord?.id);
   const submitDisabled =
     !values.date.trim() ||
@@ -174,6 +206,7 @@ export function ActiveRouteSection({
     !values.routeRecordId.trim();
 
   function handleRouteTypeChange(routeType: RouteType) {
+    if (fixedRouteType) return;
     setValues((current) => ({
       ...current,
       routeType,
@@ -207,7 +240,7 @@ export function ActiveRouteSection({
       setFormError(t("routes.activeRoute.errors.date"));
       return;
     }
-    if (values.routeType === "delivery" && (!values.container || values.container.id <= 0)) {
+    if (effectiveRouteType === "delivery" && (!values.container || values.container.id <= 0)) {
       setFormError(t("routes.activeRoute.errors.container"));
       return;
     }
@@ -218,7 +251,11 @@ export function ActiveRouteSection({
 
     try {
       const record = await upsertMutation.mutateAsync({
-        values,
+        values: {
+          ...values,
+          routeType: effectiveRouteType,
+          container: isDelivery ? values.container : null,
+        },
         existingId: savedRecord?.id ?? initialRecord?.id,
       });
       setSavedRecord(record);
@@ -251,9 +288,11 @@ export function ActiveRouteSection({
   return (
     <>
       <ActiveRouteForm
-        values={values}
+        values={{ ...values, routeType: effectiveRouteType }}
         isEditing={isEditing}
         isDelivery={isDelivery}
+        showRouteTypeField={showRouteTypeField}
+        showContainerField={showContainerField}
         submitLabel={
           isEditing ? t("common.actions.saveChanges") : t("routes.activeRoute.save")
         }
@@ -261,11 +300,24 @@ export function ActiveRouteSection({
         externalError={formError}
         routeOptions={routeOptions}
         containerOptions={containerOptions}
+        branchOptions={branchOptions}
+        branchCode={branchCode}
+        branchesLoading={branchesQuery.isLoading}
         routesLoading={routesQuery.isLoading}
         routeEmployees={routeEmployees}
         selectedRouteLoading={selectedRouteQuery.isLoading}
         submitDisabled={submitDisabled}
         onRouteTypeChange={handleRouteTypeChange}
+        onBranchChange={(nextBranchCode) => {
+          setBranchCode(nextBranchCode);
+          setValues((current) => ({
+            ...current,
+            routeRecordId: "",
+            driver: null,
+            appraiser: null,
+          }));
+          setFormError(null);
+        }}
         onDateChange={(date) => {
           setValues((current) => ({
             ...current,
@@ -296,6 +348,15 @@ export function ActiveRouteSection({
           setFormError(null);
         }}
         onCreateRouteClick={() => {
+          if (isDesktopTabs) {
+            openFormTab({
+              feature: "routes",
+              baseHref: "/routes",
+              mode: "add",
+              label: t("routes.form.addTabLabel"),
+            });
+            return;
+          }
           setCreateFormError(null);
           setCreateDialogOpen(true);
         }}

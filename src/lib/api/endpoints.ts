@@ -17,7 +17,10 @@ export const API_ENDPOINTS = {
   BARCODES: "/barcodes",
   VEHICLES: "/vehicles",
   ROUTES: "/routes",
-  ACTIVE_ROUTES: "/active-routes",
+  /** Scheduled pickup route for a calendar day (`/pickup-routes` UI). */
+  PICKUP_ROUTE_SCHEDULES: "/pickup-routes",
+  /** Scheduled delivery route for a calendar day + container (`/delivery-routes` UI). */
+  DELIVERY_ROUTE_SCHEDULES: "/delivery-routes",
   INVOICES: "/invoices",
   INVOICE_ITEM_BARCODE_ROUTE: "/invoices/item/barcode/route",
   INVOICE_DETAIL_LABELS: "/invoice/detail/labels",

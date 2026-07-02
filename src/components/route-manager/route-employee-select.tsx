@@ -9,7 +9,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
 import { useEmployeeSearch, useEmployees } from "@/lib/employees/hooks/use-employees";
 import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
-import type { RouteEmployeeRef } from "@/lib/routes/types";
+import type { RouteEmployeeRef } from "@/lib/route-manager/types";
 
 type RouteEmployeeSelectProps = {
   value: RouteEmployeeRef[];

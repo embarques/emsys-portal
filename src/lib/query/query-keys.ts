@@ -1,10 +1,13 @@
-import type { ActiveRouteListParams } from "@/lib/active-routes/types";
+import type {
+  ActiveRouteListParams,
+  RouteType,
+} from "@/lib/pickup-delivery-routes/types";
 import type { BranchListParams, BranchSearchFilter } from "@/lib/branches/types";
 import type { ContainerListParams, ContainerSearchFilter } from "@/lib/containers/types";
 import type { InvoiceListParams, InvoiceSearchFilter } from "@/lib/invoices/types";
 import type { ItemListParams, ItemSearchFilter } from "@/lib/items/types";
 import type { VehicleListParams, VehicleSearchFilter } from "@/lib/vehicles/types";
-import type { RouteListParams, RouteSearchFilter } from "@/lib/routes/types";
+import type { RouteListParams, RouteSearchFilter } from "@/lib/route-manager/types";
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { MemoPadListParams, MemoPadSearchFilter } from "@/lib/memo-pads/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
@@ -64,13 +67,30 @@ export const queryKeys = {
       [...queryKeys.routes.all, "detail", routeId] as const,
     byDate: (date: string) => [...queryKeys.routes.all, "by-date", date] as const,
   },
-  activeRoutes: {
-    all: ["active-routes"] as const,
-    lists: () => [...queryKeys.activeRoutes.all, "list"] as const,
+  pickupRouteSchedules: {
+    all: ["pickup-routes"] as const,
+    lists: () => [...queryKeys.pickupRouteSchedules.all, "list"] as const,
     list: (params: ActiveRouteListParams) =>
-      [...queryKeys.activeRoutes.lists(), params] as const,
-    detail: (routeType: string, date: string, containerId?: number) =>
-      [...queryKeys.activeRoutes.all, routeType, date, containerId ?? "none"] as const,
+      [...queryKeys.pickupRouteSchedules.lists(), params] as const,
+    detail: (date: string) =>
+      [...queryKeys.pickupRouteSchedules.all, "detail", date] as const,
+    byId: (recordId: string) =>
+      [...queryKeys.pickupRouteSchedules.all, "by-id", recordId] as const,
+  },
+  deliveryRouteSchedules: {
+    all: ["delivery-routes"] as const,
+    lists: () => [...queryKeys.deliveryRouteSchedules.all, "list"] as const,
+    list: (params: ActiveRouteListParams) =>
+      [...queryKeys.deliveryRouteSchedules.lists(), params] as const,
+    detail: (date: string, containerId?: number) =>
+      [
+        ...queryKeys.deliveryRouteSchedules.all,
+        "detail",
+        date,
+        containerId ?? "none",
+      ] as const,
+    byId: (recordId: string) =>
+      [...queryKeys.deliveryRouteSchedules.all, "by-id", recordId] as const,
   },
   containers: {
     all: ["containers"] as const,
@@ -190,3 +210,9 @@ export const queryKeys = {
     detail: (memoPadId: string) => [...queryKeys.memoPads.all, "detail", memoPadId] as const,
   },
 } as const;
+
+export function getScheduledRouteQueryKeys(routeType: RouteType) {
+  return routeType === "delivery"
+    ? queryKeys.deliveryRouteSchedules
+    : queryKeys.pickupRouteSchedules;
+}

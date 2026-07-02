@@ -1,11 +1,11 @@
-import type { ActiveRoute } from "@/lib/active-routes/types";
-import { deriveRouteType } from "@/lib/active-routes/types";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+import { deriveRouteType } from "@/lib/pickup-delivery-routes/types";
 import {
   clearBrowserStore,
   readBrowserStore,
   writeBrowserStore,
 } from "@/lib/local-dev/browser-store";
-import { getRouteByRecordId } from "@/lib/routes/mock-data";
+import { getRouteByRecordId } from "@/lib/route-manager/mock-data";
 
 const LOCAL_ACTIVE_ROUTES_STORAGE_KEY = "emsys-local-active-routes";
 

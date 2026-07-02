@@ -5,11 +5,11 @@ import { Car, ClipboardList, Users } from "lucide-react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
-import { RouteEmployeeSelect } from "@/components/routes/route-employee-select";
+import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useTranslation } from "@/lib/i18n";
-import { createEmptyRouteForm, type RouteFormValues } from "@/lib/routes/types";
+import { createEmptyRouteForm, type RouteFormValues } from "@/lib/route-manager/types";
 import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
 import { getBranchLabel } from "@/lib/vehicles/display";
 
@@ -81,7 +81,7 @@ export function RouteForm({
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
         {isEditing && (values.routeId.trim() || values.name.trim()) ? (
-          <FormSection icon={ClipboardList} title={t("routes.routeDetails.title")}>
+          <FormSection icon={ClipboardList} title={t("routes.form.sections.details")}>
             <div className="grid gap-2.5 sm:grid-cols-2">
               {values.routeId.trim() ? (
                 <div className="space-y-1 sm:col-span-2">
@@ -104,7 +104,7 @@ export function RouteForm({
           </FormSection>
         ) : null}
 
-        <FormSection icon={Car} title={t("routes.routeDetails.vehicle")} required>
+        <FormSection icon={Car} title={t("routes.form.sections.vehicle")} required>
           <SearchableSelect
             id="vehicleId"
             aria-label={t("routes.routeDetails.vehicle")}
@@ -120,7 +120,7 @@ export function RouteForm({
           />
         </FormSection>
 
-        <FormSection icon={Users} title={t("routes.form.crewMembers")} required>
+        <FormSection icon={Users} title={t("routes.form.sections.crew")} required>
           <RouteEmployeeSelect
             value={values.employees}
             onChange={handleEmployeesChange}
