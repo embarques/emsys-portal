@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import { isZellePaymentMethod, requiresBankAccount } from "@/lib/accounting/daily-income/types";
-import { parseMoneyFormInput } from "@/lib/accounting/daily-income/money-input";
 
 export const dailyIncomeStatementSchema = z.object({
   date: z.string().min(1, "Date is required."),
@@ -23,15 +22,10 @@ export const dailyIncomeJournalSchema = z.object({
     "TRANSFER",
     "LOAN",
   ]),
-  amount: z.preprocess(
-    parseMoneyFormInput,
-    z
-      .number({
-        required_error: "Amount must be greater than zero.",
-        invalid_type_error: "Amount must be greater than zero.",
-      })
-      .positive("Amount must be greater than zero."),
-  ),
+  amount: z
+    .number({ error: "Amount must be greater than zero." })
+    .positive("Amount must be greater than zero.")
+    .optional(),
   refNumber: z.string().trim().max(20, "Reference number is too long."),
   description: z.string().trim().max(500, "Description is too long."),
   employeeId: z.number().optional(),
@@ -49,10 +43,7 @@ export const dailyIncomeJournalSchema = z.object({
   sourceAccountType: z.string().optional(),
   invoiceId: z.string().optional(),
   invoiceNumber: z.string().optional(),
-  invoiceCost: z.preprocess(
-    parseMoneyFormInput,
-    z.number().positive("Cost must be greater than zero.").optional(),
-  ),
+  invoiceCost: z.number().positive("Cost must be greater than zero.").optional(),
   invoiceBalance: z.number().optional(),
   includeSender: z.boolean().optional(),
   includeReceiver: z.boolean().optional(),
@@ -65,6 +56,14 @@ export const dailyIncomeJournalSchema = z.object({
   zelleTransactionDate: z.string().optional(),
   zelleTransactionName: z.string().optional(),
 }).superRefine((values, context) => {
+  if (values.amount == null) {
+    context.addIssue({
+      code: "custom",
+      path: ["amount"],
+      message: "Amount must be greater than zero.",
+    });
+  }
+
   if (isZellePaymentMethod(values.paymentMethodName)) {
     if (!values.zelleTransactionDate?.trim()) {
       context.addIssue({
@@ -110,7 +109,7 @@ export const dailyIncomeJournalSchema = z.object({
     if (!values.paymentMethodId) {
       context.addIssue({ code: "custom", path: ["paymentMethodId"], message: "Payment method is required." });
     }
-    if (values.invoiceCost != null && values.amount > values.invoiceCost) {
+    if (values.invoiceCost != null && values.amount != null && values.amount > values.invoiceCost) {
       context.addIssue({
         code: "custom",
         path: ["amount"],
@@ -140,7 +139,7 @@ export const dailyIncomeJournalSchema = z.object({
     if (!values.paymentMethodId) {
       context.addIssue({ code: "custom", path: ["paymentMethodId"], message: "Payment method is required." });
     }
-    if (values.invoiceBalance != null && values.amount > values.invoiceBalance) {
+    if (values.invoiceBalance != null && values.amount != null && values.amount > values.invoiceBalance) {
       context.addIssue({
         code: "custom",
         path: ["amount"],
