@@ -45,12 +45,14 @@ export function UserForm({
     handleSubmit,
     register,
     reset,
+    setValue,
   } = useForm<UserFormValues>({
     resolver: zodResolver(createUserFormSchema(isEditing)),
     defaultValues: initialValues ?? createEmptyUserForm(),
   });
   const handleEnterNavigation = useFormEnterNavigation();
   const restrictLoginHours = useWatch({ control, name: "restrictLoginHours" });
+  const selectedRole = useWatch({ control, name: "role" });
 
   useEffect(() => reset(initialValues ?? createEmptyUserForm()), [initialValues, reset]);
 
@@ -59,6 +61,21 @@ export function UserForm({
     () => (rolesQuery.data?.items ?? []).filter((role) => role.active),
     [rolesQuery.data?.items],
   );
+
+  useEffect(() => {
+    if (isEditing || selectedRole.id > 0) return;
+    const defaultRole = roles.find((role) => role.name.trim().toLowerCase() === "user");
+    if (!defaultRole) return;
+    const defaultRoleId = Number(defaultRole.roleId);
+    if (!Number.isInteger(defaultRoleId) || defaultRoleId <= 0) return;
+
+    setValue(
+      "role",
+      { id: defaultRoleId, name: defaultRole.name },
+      { shouldDirty: false, shouldValidate: true },
+    );
+  }, [isEditing, roles, selectedRole.id, setValue]);
+
   const selectorsLoading = branchesQuery.isLoading || rolesQuery.isLoading;
   const selectorError = branchesQuery.error ?? rolesQuery.error;
   const noOptions = !selectorsLoading && !selectorError && (branches.length === 0 || roles.length === 0);
