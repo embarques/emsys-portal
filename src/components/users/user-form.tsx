@@ -89,11 +89,11 @@ export function UserForm({
       <FormBody>
         <FormSection icon={KeyRound} title="Profile">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Full name" required error={errors.name?.message}>
-              <Input id="name" {...register("name")} placeholder="Full name" aria-invalid={Boolean(errors.name)} autoFocus />
-            </Field>
             <Field label="Email" required error={errors.email?.message}>
-              <Input id="email" type="email" {...register("email")} placeholder="user@example.com" aria-invalid={Boolean(errors.email)} readOnly={isEditing} />
+              <Input id="email" type="email" {...register("email")} placeholder="user@example.com" aria-invalid={Boolean(errors.email)} readOnly={isEditing} autoFocus />
+            </Field>
+            <Field label="Full name" required error={errors.name?.message}>
+              <Input id="name" {...register("name")} placeholder="Full name" aria-invalid={Boolean(errors.name)} />
             </Field>
           </div>
           {!isEditing ? (
