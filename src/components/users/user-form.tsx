@@ -80,9 +80,14 @@ export function UserForm({
             </Field>
           </div>
           {!isEditing ? (
-            <Field label="Temporary password" required error={errors.password?.message}>
-              <Input id="password" type="password" {...register("password")} placeholder="At least 6 characters" autoComplete="new-password" aria-invalid={Boolean(errors.password)} />
-            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="New password" required error={errors.password?.message}>
+                <Input id="password" type="password" {...register("password")} placeholder="At least 6 characters" autoComplete="new-password" aria-invalid={Boolean(errors.password)} />
+              </Field>
+              <Field label="Confirm password" required error={errors.confirmPassword?.message}>
+                <Input id="confirmPassword" type="password" {...register("confirmPassword")} placeholder="Repeat new password" autoComplete="new-password" aria-invalid={Boolean(errors.confirmPassword)} />
+              </Field>
+            </div>
           ) : null}
         </FormSection>
 
