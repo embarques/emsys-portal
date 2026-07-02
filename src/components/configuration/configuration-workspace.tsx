@@ -6,7 +6,6 @@ import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTheme } from "next-themes";
 
-import { ChangePasswordCard } from "@/components/configuration/change-password-card";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { Button } from "@/components/ui/button";
@@ -71,7 +70,6 @@ export function ConfigurationWorkspace() {
     <div>
       <PageHeader title="Settings" />
       <div className="mx-auto max-w-3xl space-y-6">
-        <ChangePasswordCard />
         <form onSubmit={handleSubmit(save)} className="space-y-6">
         <Card>
           <CardHeader><CardTitle>Appearance</CardTitle><CardDescription>Choose how the dashboard looks.</CardDescription></CardHeader>

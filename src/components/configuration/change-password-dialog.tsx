@@ -7,7 +7,14 @@ import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { changeCurrentUserPassword } from "@/lib/auth/firebase/firebase-password";
@@ -21,7 +28,12 @@ const defaultValues: ChangePasswordValues = {
   confirmPassword: "",
 };
 
-export function ChangePasswordCard() {
+type ChangePasswordDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
   const { notifySuccess } = useFeedback();
   const {
     formState: { errors, isSubmitting },
@@ -34,10 +46,19 @@ export function ChangePasswordCard() {
     defaultValues,
   });
 
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen && isSubmitting) return;
+    if (!nextOpen) {
+      reset(defaultValues);
+    }
+    onOpenChange(nextOpen);
+  }
+
   async function submit(values: ChangePasswordValues) {
     try {
       await changeCurrentUserPassword(values.password);
       reset(defaultValues);
+      onOpenChange(false);
       notifySuccess("Password changed successfully.");
     } catch (error) {
       setError("root", { message: passwordErrorMessage(error) });
@@ -45,16 +66,19 @@ export function ChangePasswordCard() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <KeyRound className="size-5" />
-          Change password
-        </CardTitle>
-        <CardDescription>Set a new password for your signed-in account.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(submit)} className="space-y-4">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-2xl gap-6 p-6 sm:p-8">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 text-2xl">
+            <KeyRound className="size-6" />
+            Change password
+          </DialogTitle>
+          <DialogDescription className="text-base">
+            Set a new password for your signed-in account.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(submit)} className="space-y-5">
           <PasswordField
             id="new-password"
             label="New password"
@@ -67,15 +91,19 @@ export function ChangePasswordCard() {
             error={errors.confirmPassword?.message}
             inputProps={register("confirmPassword")}
           />
-          {errors.root ? <p className="text-sm text-destructive" role="alert">{errors.root.message}</p> : null}
-          <div className="flex justify-end">
+          {errors.root ? (
+            <p className="text-sm text-destructive" role="alert">
+              {errors.root.message}
+            </p>
+          ) : null}
+          <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Changing password…" : "Change password"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -101,7 +129,11 @@ function PasswordField({
         aria-describedby={error ? `${id}-error` : undefined}
         {...inputProps}
       />
-      {error ? <p id={`${id}-error`} className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <p id={`${id}-error`} className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
