@@ -42,9 +42,12 @@ type ApiEmployeeGroupRef = ApiRef & {
 
 type ApiRoute = {
   id?: string | number;
+  routeId?: string;
   routeAssignmentId?: string;
   name?: string;
   date?: string;
+  container?: { id?: string | number; name?: string } | null;
+  tripNumber?: number;
   vehicle?: ApiRef | null;
   employeeGroup?: ApiEmployeeGroupRef | null;
   createdAt?: string;
@@ -55,12 +58,12 @@ type ApiRoute = {
 
 /** POST/PUT /routes — see API_PAYLOADS.md */
 type ApiRouteWritePayload = {
-  routeAssignmentId: string;
+  routeId: string;
   name: string;
   date: string;
-  vehicle?: { id: string; name: string };
+  container: { id: number; name: string } | null;
+  vehicle: { id: string; name: string };
   employeeGroup: { id: string; name: string };
-  id?: string;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -95,6 +98,13 @@ function normalizeEmployeeGroupRef(raw?: ApiEmployeeGroupRef | null): Route["emp
   return { id, name, ...(branch ? { branch } : {}) };
 }
 
+function normalizeContainerRef(raw?: ApiRoute["container"]): Route["container"] {
+  if (!raw) return null;
+  const id = Number(raw.id ?? 0);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  return { id, name: String(raw.name ?? "").trim() };
+}
+
 export function normalizeApiRoute(raw: unknown): Route | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -104,9 +114,11 @@ export function normalizeApiRoute(raw: unknown): Route | null {
 
   return {
     id,
-    routeId: String(item.routeAssignmentId ?? "").trim(),
+    routeId: String(item.routeId ?? item.routeAssignmentId ?? "").trim(),
     name: String(item.name ?? "").trim(),
     date: String(item.date ?? "").trim(),
+    container: normalizeContainerRef(item.container),
+    tripNumber: Number(item.tripNumber ?? 0),
     vehicle: normalizeVehicleRef(item.vehicle),
     employeeGroup: normalizeEmployeeGroupRef(item.employeeGroup),
     createdAt: String(item.createdAt ?? "").trim(),
@@ -249,34 +261,33 @@ export async function fetchRouteById(routeId: string): Promise<Route> {
 
 function buildRouteWritePayload(
   values: RouteFormValues,
-  options: { recordId?: string } = {},
 ): ApiRouteWritePayload {
   const employeeGroupId = values.employeeGroup.id.trim();
   if (!employeeGroupId) {
     throw new Error("An employee group is required.");
   }
 
+  if (values.routeType === "delivery" && (!values.container || values.container.id <= 0)) {
+    throw new Error("A container is required for delivery routes.");
+  }
+
   const payload: ApiRouteWritePayload = {
-    routeAssignmentId: values.routeId.trim(),
+    routeId: values.routeId.trim(),
     name: values.name.trim(),
     date: toRouteDateIso(values.date),
+    container:
+      values.routeType === "delivery" && values.container
+        ? { id: values.container.id, name: values.container.name.trim() }
+        : null,
+    vehicle: {
+      id: values.vehicle.id.trim(),
+      name: values.vehicle.name.trim(),
+    },
     employeeGroup: {
       id: employeeGroupId,
       name: values.employeeGroup.name.trim(),
     },
   };
-
-  const vehicleId = values.vehicle.id.trim();
-  if (vehicleId) {
-    payload.vehicle = {
-      id: vehicleId,
-      name: values.vehicle.name.trim(),
-    };
-  }
-
-  if (options.recordId) {
-    payload.id = options.recordId;
-  }
 
   return payload;
 }
@@ -320,7 +331,7 @@ async function resolveCreatedRoute(
     const matches = await fetchRoutes({
       page: 1,
       limit: 1,
-      search: { field: "routeAssignmentId", operator: "eq", value: routeId },
+      search: { field: "routeId", operator: "eq", value: routeId },
     });
 
     const matched = matches.items[0];
@@ -357,7 +368,7 @@ export async function updateRoute(
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.ROUTES}/${id}`,
-    buildRouteWritePayload(values, { recordId: id }),
+    buildRouteWritePayload(values),
   );
 
   assertMutationSuccess(response, "Unable to update route.");

@@ -14,11 +14,20 @@ export type RouteEmployeeGroupRef = {
   branch?: string;
 };
 
+export type RouteContainerRef = {
+  id: number;
+  name: string;
+};
+
+export type RouteType = "pickup" | "delivery";
+
 export type Route = {
   id: string;
   routeId: string;
   name: string;
   date: string;
+  container: RouteContainerRef | null;
+  tripNumber: number;
   vehicle: RouteVehicleRef;
   employeeGroup: RouteEmployeeGroupRef;
   createdAt: string;
@@ -31,6 +40,8 @@ export type RouteFormValues = {
   routeId: string;
   name: string;
   date: string;
+  routeType: RouteType;
+  container: RouteContainerRef | null;
   vehicle: RouteVehicleRef;
   employeeGroup: RouteEmployeeGroupRef;
   createdBy: string;
@@ -61,7 +72,7 @@ export const DEFAULT_ROUTE_LIST_PARAMS = {
 /** Fields the bar search fans out across with an OR group. */
 export const ROUTE_BAR_OR_SEARCH_FIELDS = [
   "name",
-  "routeAssignmentId",
+  "routeId",
   "vehicle.name",
   "employeeGroup.name",
 ] as const;
@@ -72,6 +83,10 @@ export function createEmptyVehicleRef(): RouteVehicleRef {
 
 export function createEmptyEmployeeGroupRef(): RouteEmployeeGroupRef {
   return { id: "", name: "" };
+}
+
+export function createEmptyContainerRef(): RouteContainerRef {
+  return { id: 0, name: "" };
 }
 
 export function todayDateInputValue(): string {
@@ -103,6 +118,8 @@ export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormV
     routeId: generateRouteNumber(),
     name: "",
     date: todayDateInputValue(),
+    routeType: "pickup",
+    container: null,
     vehicle: createEmptyVehicleRef(),
     employeeGroup: createEmptyEmployeeGroupRef(),
     createdBy,
@@ -117,6 +134,8 @@ export function routeToFormValues(assignment: Route): RouteFormValues {
     routeId: assignment.routeId,
     name: assignment.name,
     date: toRouteDateInput(assignment.date),
+    routeType: assignment.container ? "delivery" : "pickup",
+    container: assignment.container ? { ...assignment.container } : null,
     vehicle: { ...assignment.vehicle },
     employeeGroup: { ...assignment.employeeGroup },
     createdBy: assignment.createdBy,
@@ -142,6 +161,11 @@ export function formValuesToRoute(
     routeId: values.routeId.trim(),
     name: values.name.trim(),
     date: toRouteDateIso(values.date),
+    container:
+      values.routeType === "delivery" && values.container
+        ? { id: values.container.id, name: values.container.name.trim() }
+        : null,
+    tripNumber: 0,
     vehicle: {
       id: values.vehicle.id.trim(),
       name: values.vehicle.name.trim(),
@@ -203,6 +227,8 @@ export function copyRouteFormValues(
     routeId: generateRouteNumber(),
     name: "",
     date: current.date.trim() || todayDateInputValue(),
+    routeType: source.container ? "delivery" : "pickup",
+    container: source.container ? { ...source.container } : null,
     vehicle: resolveRouteVehicleForForm(source.vehicle, options.vehicles),
     employeeGroup: resolveRouteEmployeeGroupForForm(source.employeeGroup, options.employeeGroups),
     createdBy: current.createdBy,

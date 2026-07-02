@@ -698,21 +698,25 @@ Same shape. `{id}` = ObjectID hex.
 
 ---
 
-## Route assignments — permission: `route_assignment`
+## Routes — permission: `route`
 
-### `POST /v1/route-assignments`
+### `POST /v1/routes`
 
 ```json
 {
-  "routeAssignmentId": "RA-2026-06-10",
+  "routeId": "RA-2026-06-10",
   "name": "Monday Route",
   "date": "2026-06-10T08:00:00Z",
+  "container": null,
   "vehicle": { "id": "674a1b2c3d4e5f6789012345", "name": "Vehicle 1" },
   "employeeGroup": { "id": "674b2c3d4e5f6789012346", "name": "Morning Crew" }
 }
 ```
 
-### `PUT /v1/route-assignments/{id}`
+For a delivery route, `container` is `{ "id": 25, "name": "CONT-25" }`. For a pickup
+route, send `container: null`. The API generates the delivery route's `tripNumber`.
+
+### `PUT /v1/routes/{id}`
 
 Same shape. `{id}` = ObjectID hex.
 
@@ -734,7 +738,7 @@ Same shape. `{id}` = ObjectID hex.
 | POST | `/v1/income-statements/{id}/open` | Reopen cuadre |
 | GET | `/v1/pickups/search-by-route` | Query: `routeId`, `page`, `limit` |
 
-**`<resource>` plural paths:** `permissions`, `roles`, `branches`, `users`, `customers`, `employees`, `vehicles`, `employee-groups`, `route-assignments`, `containers`, `deliveries`, `barcodes`, `pickups`, `invoices`, `journals`, `income-statements`.
+**`<resource>` plural paths:** `permissions`, `roles`, `branches`, `users`, `customers`, `employees`, `vehicles`, `employee-groups`, `routes`, `containers`, `deliveries`, `barcodes`, `pickups`, `invoices`, `journals`, `income-statements`.
 
 ---
 
