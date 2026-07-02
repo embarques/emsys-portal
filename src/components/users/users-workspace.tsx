@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Plus,
   Shield,
-  KeyRound,
   UserX,
   UserCog,
   Users,
@@ -73,7 +72,7 @@ import {
   useUserStats,
   useUpdateUser,
 } from "@/lib/users/hooks/use-users";
-import { createSecondaryFirebaseUser, sendUserPasswordReset } from "@/lib/auth/firebase/firebase-user-admin";
+import { createSecondaryFirebaseUser } from "@/lib/auth/firebase/firebase-user-admin";
 import {
   DEFAULT_USER_LIST_PARAMS,
   buildUserListParams,
@@ -93,7 +92,7 @@ const defaultFilters: UserFilterState = {
 };
 
 export function UsersWorkspace() {
-  const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated } = useFeedback();
   const [filters, setFilters] = useState<UserFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -105,7 +104,6 @@ export function UsersWorkspace() {
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deactivateTarget, setDeactivateTarget] = useState<User | User[] | null>(null);
-  const [resetTarget, setResetTarget] = useState<User | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const listParams = useMemo(
@@ -240,18 +238,6 @@ export function UsersWorkspace() {
     }
   }
 
-  async function confirmPasswordReset() {
-    if (!resetTarget) return;
-    try {
-      await sendUserPasswordReset(resetTarget.email);
-      notifySuccess(`Password reset email sent to ${resetTarget.email}.`);
-      setResetTarget(null);
-    } catch (resetError) {
-      setFormError(normalizeApiError(resetError).message);
-      setResetTarget(null);
-    }
-  }
-
   const statCards = [
     {
       label: "Total users",
@@ -378,7 +364,6 @@ export function UsersWorkspace() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
             <DropdownMenuItem onClick={() => openEditForm(user)}>Edit user</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setResetTarget(user)}>Send password reset</DropdownMenuItem>
             {user.active ? <DropdownMenuItem className="text-destructive" onClick={() => setDeactivateTarget(user)}>Deactivate user</DropdownMenuItem> : null}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -617,23 +602,6 @@ export function UsersWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={resetTarget !== null} onOpenChange={(open) => !open && setResetTarget(null)}>
-        <DialogContent className="z-[60]">
-          <DialogHeader>
-            <DialogTitle>Send password reset?</DialogTitle>
-            <DialogDescription>
-              Send a Firebase password-reset email to {resetTarget?.name} at {resetTarget?.email}.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResetTarget(null)}>Cancel</Button>
-            <Button onClick={confirmPasswordReset}>
-              <KeyRound className="size-4" />
-              Send password reset
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
