@@ -12,6 +12,7 @@ const baseUserFormSchema = z
     email: z.email("Enter a valid email address."),
     name: z.string().trim().min(1, "Name is required."),
     password: z.string(),
+    confirmPassword: z.string(),
     active: z.boolean(),
     branch: referenceSchema,
     role: referenceSchema,
@@ -38,6 +39,19 @@ export function createUserFormSchema(isEditing: boolean) {
         code: "custom",
         path: ["password"],
         message: "Password must contain at least 6 characters.",
+      });
+    }
+    if (!isEditing && !values.confirmPassword) {
+      context.addIssue({
+        code: "custom",
+        path: ["confirmPassword"],
+        message: "Confirm your new password.",
+      });
+    } else if (!isEditing && values.password !== values.confirmPassword) {
+      context.addIssue({
+        code: "custom",
+        path: ["confirmPassword"],
+        message: "Passwords do not match.",
       });
     }
   });

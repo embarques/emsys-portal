@@ -29,6 +29,7 @@ export type UserFormValues = {
   email: string;
   name: string;
   password: string;
+  confirmPassword: string;
   active: boolean;
   branch: UserReference;
   role: UserReference;
@@ -126,6 +127,7 @@ export function createEmptyUserForm(): UserFormValues {
     email: "",
     name: "",
     password: "",
+    confirmPassword: "",
     active: true,
     branch: { id: 0, name: "" },
     role: { id: 0, name: "" },
@@ -140,6 +142,7 @@ export function userToFormValues(user: User): UserFormValues {
     email: user.email,
     name: user.name,
     password: "",
+    confirmPassword: "",
     active: user.active,
     branch: { ...user.branch },
     role: { ...user.role },

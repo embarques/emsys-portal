@@ -217,6 +217,7 @@ function userToValues(user: User): UserFormValues {
     email: user.email,
     name: user.name,
     password: "",
+    confirmPassword: "",
     active: user.active,
     branch: user.branch,
     role: user.role,

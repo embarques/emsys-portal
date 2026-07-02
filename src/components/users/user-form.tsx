@@ -45,12 +45,14 @@ export function UserForm({
     handleSubmit,
     register,
     reset,
+    setValue,
   } = useForm<UserFormValues>({
     resolver: zodResolver(createUserFormSchema(isEditing)),
     defaultValues: initialValues ?? createEmptyUserForm(),
   });
   const handleEnterNavigation = useFormEnterNavigation();
   const restrictLoginHours = useWatch({ control, name: "restrictLoginHours" });
+  const selectedRole = useWatch({ control, name: "role" });
 
   useEffect(() => reset(initialValues ?? createEmptyUserForm()), [initialValues, reset]);
 
@@ -59,6 +61,21 @@ export function UserForm({
     () => (rolesQuery.data?.items ?? []).filter((role) => role.active),
     [rolesQuery.data?.items],
   );
+
+  useEffect(() => {
+    if (isEditing || selectedRole.id > 0) return;
+    const defaultRole = roles.find((role) => role.name.trim().toLowerCase() === "user");
+    if (!defaultRole) return;
+    const defaultRoleId = Number(defaultRole.roleId);
+    if (!Number.isInteger(defaultRoleId) || defaultRoleId <= 0) return;
+
+    setValue(
+      "role",
+      { id: defaultRoleId, name: defaultRole.name },
+      { shouldDirty: false, shouldValidate: true },
+    );
+  }, [isEditing, roles, selectedRole.id, setValue]);
+
   const selectorsLoading = branchesQuery.isLoading || rolesQuery.isLoading;
   const selectorError = branchesQuery.error ?? rolesQuery.error;
   const noOptions = !selectorsLoading && !selectorError && (branches.length === 0 || roles.length === 0);
@@ -72,17 +89,22 @@ export function UserForm({
       <FormBody>
         <FormSection icon={KeyRound} title="Profile">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Full name" required error={errors.name?.message}>
-              <Input id="name" {...register("name")} placeholder="Full name" aria-invalid={Boolean(errors.name)} autoFocus />
-            </Field>
             <Field label="Email" required error={errors.email?.message}>
-              <Input id="email" type="email" {...register("email")} placeholder="user@example.com" aria-invalid={Boolean(errors.email)} readOnly={isEditing} />
+              <Input id="email" type="email" {...register("email")} placeholder="user@example.com" aria-invalid={Boolean(errors.email)} readOnly={isEditing} autoFocus />
+            </Field>
+            <Field label="Full name" required error={errors.name?.message}>
+              <Input id="name" {...register("name")} placeholder="Full name" aria-invalid={Boolean(errors.name)} />
             </Field>
           </div>
           {!isEditing ? (
-            <Field label="Temporary password" required error={errors.password?.message}>
-              <Input id="password" type="password" {...register("password")} placeholder="At least 6 characters" autoComplete="new-password" aria-invalid={Boolean(errors.password)} />
-            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="New password" required error={errors.password?.message}>
+                <Input id="password" type="password" {...register("password")} placeholder="At least 6 characters" autoComplete="new-password" aria-invalid={Boolean(errors.password)} />
+              </Field>
+              <Field label="Confirm password" required error={errors.confirmPassword?.message}>
+                <Input id="confirmPassword" type="password" {...register("confirmPassword")} placeholder="Repeat new password" autoComplete="new-password" aria-invalid={Boolean(errors.confirmPassword)} />
+              </Field>
+            </div>
           ) : null}
         </FormSection>
 
