@@ -11,15 +11,36 @@ import {
   deleteActiveRoutes,
   upsertActiveRoute,
 } from "@/lib/pickup-delivery-routes/api/pickup-delivery-routes-api";
-import type {
-  ActiveRouteFormValues,
-  ActiveRouteListParams,
-  ActiveRouteLookupParams,
-  RouteType,
+import {
+  DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
+  type ActiveRouteFormValues,
+  type ActiveRouteListParams,
+  type ActiveRouteLookupParams,
+  type RouteType,
 } from "@/lib/pickup-delivery-routes/types";
 import { hasListTextSearch } from "@/lib/api/search-query";
 import { toRouteDateInput } from "@/lib/route-manager/types";
 import { getScheduledRouteQueryKeys } from "@/lib/query/query-keys";
+
+export function useActiveRoutePicker(
+  routeType: RouteType,
+  limit = 200,
+  options: { enabled?: boolean } = {},
+) {
+  const listParams = {
+    ...DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
+    limit,
+    routeType,
+  };
+  const keys = getScheduledRouteQueryKeys(routeType);
+
+  return useWorkspaceQuery({
+    queryKey: keys.list(listParams),
+    queryFn: () => fetchActiveRoutes(listParams),
+    enabled: options.enabled ?? true,
+    staleTime: 60_000,
+  });
+}
 
 export function useActiveRoutes(params: ActiveRouteListParams) {
   const routeType = params.routeType ?? "pickup";

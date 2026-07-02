@@ -1,4 +1,5 @@
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import { formatRouteDate } from "@/lib/route-manager/display";
 
 export function formatActiveRouteTypeLabel(
@@ -20,6 +21,44 @@ export function formatActiveRouteRowLabel(record: ActiveRoute | null | undefined
   const name = String(record.name ?? "").trim();
   const routeName = String(record.route?.name ?? "").trim();
   return name || routeName || record.id || "—";
+}
+
+/** Label for pickup/delivery route assignment pickers. */
+export function formatActiveRouteAssignmentLabel(record: ActiveRoute): string {
+  const name = formatActiveRouteRowLabel(record);
+  const date = formatRouteDate(record.date);
+  const container = record.container?.name?.trim();
+
+  if (container) {
+    return `${name} · ${date} · ${container}`;
+  }
+
+  return `${name} · ${date}`;
+}
+
+function compareActiveRoutesByDateDesc(left: ActiveRoute, right: ActiveRoute): number {
+  const byDate = right.date.localeCompare(left.date);
+  if (byDate !== 0) return byDate;
+  return formatActiveRouteRowLabel(left).localeCompare(formatActiveRouteRowLabel(right));
+}
+
+/** Searchable options for assigning pickups or invoice barcodes to scheduled routes. */
+export function buildActiveRouteAssignmentOptions(
+  records: ActiveRoute[],
+): TableFilterFieldOption[] {
+  return [...records].sort(compareActiveRoutesByDateDesc).map((record) => ({
+    value: record.id,
+    label: formatActiveRouteAssignmentLabel(record),
+    keywords: [
+      record.name,
+      record.route?.name,
+      record.route?.routeId,
+      record.date,
+      record.container?.name,
+      record.driver?.name,
+      record.appraiser?.name,
+    ].filter((value): value is string => Boolean(value?.trim())),
+  }));
 }
 
 function matchesSearchOperator(value: string, query: string, operator: string): boolean {

@@ -35,8 +35,8 @@ import {
   useGenerateLabels,
   useUpdateBarcodes,
 } from "@/lib/labels/hooks/use-barcodes";
-import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
-import { formatRouteCopyLabel, isDrRoute } from "@/lib/route-manager/display";
+import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
+import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useGenerateLabelReport } from "@/lib/reports/hooks/use-reports";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import {
@@ -192,19 +192,12 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
   const [newContainerId, setNewContainerId] = useState("");
   const [newRouteId, setNewRouteId] = useState("");
 
-  const { data: routesData, isLoading: routesLoading } = useRoutePicker(200, {
+  const { data: routesData, isLoading: routesLoading } = useActiveRoutePicker("delivery", 200, {
     enabled: routeDialogOpen,
   });
-  const routes = useMemo(
-    () => (routesData?.items ?? []).filter(isDrRoute),
-    [routesData?.items],
-  );
+  const routes = routesData?.items ?? [];
   const routeOptions = useMemo(
-    () =>
-      routes.map((route) => ({
-        value: route.id,
-        label: formatRouteCopyLabel(route),
-      })),
+    () => buildActiveRouteAssignmentOptions(routes),
     [routes],
   );
 

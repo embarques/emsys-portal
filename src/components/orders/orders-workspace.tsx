@@ -64,6 +64,8 @@ import {
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
 import { buildRouteFilterOptions } from "@/lib/route-manager/display";
+import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
+import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
   useCreateOrder,
@@ -147,6 +149,7 @@ export function OrdersWorkspace() {
   const assignRouteMutation = useAssignPickupsToRoute();
   const generatePickupReportMutation = useGeneratePickupReport();
   const routeLookup = useRouteLookup();
+  const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, { enabled: assignRouteOpen });
   const orders = data?.items ?? [];
   const totalOrders = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
@@ -166,7 +169,13 @@ export function OrdersWorkspace() {
   );
   const routes = routeLookup.items;
   const routeOptions = useMemo(() => buildRouteFilterOptions(routes), [routes]);
+  const pickupRoutes = pickupRoutesQuery.data?.items ?? [];
+  const assignRouteOptions = useMemo(
+    () => buildActiveRouteAssignmentOptions(pickupRoutes),
+    [pickupRoutes],
+  );
   const routesLoading = routeLookup.isLoading;
+  const assignRoutesLoading = pickupRoutesQuery.isLoading;
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const missingCompanyContext = !authLoading && !companyId;
 
@@ -309,7 +318,7 @@ export function OrdersWorkspace() {
     try {
       await assignRouteMutation.mutateAsync({ routeId: selectedRouteId, pickupIds });
       const noun = pickupIds.length === 1 ? "order" : "orders";
-      const routeName = routes.find((route) => route.id === selectedRouteId)?.name;
+      const routeName = pickupRoutes.find((route) => route.id === selectedRouteId)?.name;
       notifySuccess(
         `${pickupIds.length} ${noun} assigned${routeName ? ` to ${routeName}` : ""}.`,
       );
@@ -771,9 +780,9 @@ export function OrdersWorkspace() {
               onValueChange={setSelectedRouteId}
               placeholder="Select a route"
               searchPlaceholder="Search routes…"
-              loading={routesLoading}
-              emptyMessage={routesLoading ? "Loading routes…" : "No routes found."}
-              options={routeOptions}
+              loading={assignRoutesLoading}
+              emptyMessage={assignRoutesLoading ? "Loading routes…" : "No routes found."}
+              options={assignRouteOptions}
             />
           </div>
           <DialogFooter>

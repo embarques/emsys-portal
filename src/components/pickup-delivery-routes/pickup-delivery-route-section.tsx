@@ -83,18 +83,21 @@ export function ActiveRouteSection({
   const hydratedLookupRef = useRef("");
   const effectiveRouteType = fixedRouteType ?? values.routeType;
 
-  const lookup =
-    values.date.trim() &&
-    (effectiveRouteType === "pickup" ||
-      (effectiveRouteType === "delivery" && (values.container?.id ?? 0) > 0))
-      ? {
-          routeType: effectiveRouteType,
-          date: values.date.trim(),
-          ...(effectiveRouteType === "delivery" && values.container
-            ? { containerId: values.container.id }
-            : {}),
-        }
-      : null;
+  const lookup = useMemo(() => {
+    const date = values.date.trim();
+    if (!date) return null;
+
+    if (effectiveRouteType === "pickup") {
+      return { routeType: effectiveRouteType, date };
+    }
+
+    const containerId = values.container?.id ?? 0;
+    if (effectiveRouteType === "delivery" && containerId > 0) {
+      return { routeType: effectiveRouteType, date, containerId };
+    }
+
+    return null;
+  }, [effectiveRouteType, values.date, values.container?.id]);
 
   const activeRouteQuery = useActiveRoute(lookup);
   const upsertMutation = useUpsertActiveRoute();
@@ -113,6 +116,8 @@ export function ActiveRouteSection({
 
     const lookupKey = `${lookup.routeType}:${lookup.date}:${lookup.containerId ?? "pickup"}`;
     if (activeRouteQuery.data) {
+      if (hydratedLookupRef.current === lookupKey) return;
+
       setValues(activeRouteToFormValues(activeRouteQuery.data));
       setSavedRecord(activeRouteQuery.data);
       hydratedLookupRef.current = lookupKey;
@@ -207,6 +212,7 @@ export function ActiveRouteSection({
 
   function handleRouteTypeChange(routeType: RouteType) {
     if (fixedRouteType) return;
+    hydratedLookupRef.current = "";
     setValues((current) => ({
       ...current,
       routeType,
@@ -222,6 +228,7 @@ export function ActiveRouteSection({
   function updateContainer(nextValue: string) {
     const container = containers.find((entry) => String(entry.id) === nextValue);
     if (!container) return;
+    hydratedLookupRef.current = "";
     setValues((current) => ({
       ...current,
       container: { id: container.id, name: formatContainerLabel(container) },
@@ -319,6 +326,7 @@ export function ActiveRouteSection({
           setFormError(null);
         }}
         onDateChange={(date) => {
+          hydratedLookupRef.current = "";
           setValues((current) => ({
             ...current,
             date,
