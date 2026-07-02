@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTheme } from "next-themes";
 
+import { ChangePasswordCard } from "@/components/configuration/change-password-card";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { Button } from "@/components/ui/button";
@@ -27,12 +28,10 @@ import {
 import { useUpdateUserPreferences, useUserPreferences } from "@/lib/configuration/use-configuration";
 import { enforceWorkspaceTabLimit } from "@/lib/store/layout/tabs-slice";
 import { useAppDispatch } from "@/lib/store/hooks";
-import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 
 export function ConfigurationWorkspace() {
   const dispatch = useAppDispatch();
-  const profileQuery = useCurrentUser();
   const preferencesQuery = useUserPreferences();
   const updatePreferences = useUpdateUserPreferences();
   const { notifySuccess } = useFeedback();
@@ -57,30 +56,21 @@ export function ConfigurationWorkspace() {
     }
   }
 
-  if (profileQuery.isLoading || preferencesQuery.isLoading) {
+  if (preferencesQuery.isLoading) {
     return <><PageHeader title="Settings" /><div className="py-16 text-center text-sm text-muted-foreground">Loading settings…</div></>;
   }
 
-  const loadError = profileQuery.error ?? preferencesQuery.error;
+  const loadError = preferencesQuery.error;
   if (loadError) {
     return <><PageHeader title="Settings" /><div className="py-16 text-center text-sm text-destructive">{normalizeApiError(loadError).message}</div></>;
   }
 
-  const profile = profileQuery.data;
   return (
     <div>
       <PageHeader title="Settings" />
-      <form onSubmit={handleSubmit(save)} className="mx-auto max-w-3xl space-y-6">
-        <Card>
-          <CardHeader><CardTitle>Profile</CardTitle><CardDescription>Your tenant profile and access context.</CardDescription></CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <ReadOnly label="Name" value={profile?.name} />
-            <ReadOnly label="Email" value={profile?.email} />
-            <ReadOnly label="Branch" value={profile?.branch.name} />
-            <ReadOnly label="Role" value={profile?.role.name} />
-          </CardContent>
-        </Card>
-
+      <div className="mx-auto max-w-3xl space-y-6">
+        <ChangePasswordCard />
+        <form onSubmit={handleSubmit(save)} className="space-y-6">
         <Card>
           <CardHeader><CardTitle>Appearance</CardTitle><CardDescription>Choose how the dashboard looks.</CardDescription></CardHeader>
           <CardContent>
@@ -117,11 +107,8 @@ export function ConfigurationWorkspace() {
           <Button type="button" variant="outline" disabled={updatePreferences.isPending} onClick={() => { reset(preferencesQuery.data ?? DEFAULT_USER_PREFERENCES); setTheme(preferencesQuery.data?.theme ?? "system"); }}>Reset changes</Button>
           <Button type="submit" disabled={updatePreferences.isPending}>{updatePreferences.isPending ? "Saving…" : "Save settings"}</Button>
         </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
-}
-
-function ReadOnly({ label, value }: { label: string; value?: string }) {
-  return <div className="space-y-1"><Label>{label}</Label><Input value={value ?? ""} readOnly /></div>;
 }
