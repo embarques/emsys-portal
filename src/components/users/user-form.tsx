@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, KeyRound, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Clock, KeyRound, ShieldCheck, XCircle } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
@@ -17,6 +17,7 @@ import { useRoles } from "@/lib/roles/hooks/use-roles";
 import { DEFAULT_ROLE_LIST_PARAMS } from "@/lib/roles/types";
 import { createUserFormSchema } from "@/lib/users/schemas/user.schema";
 import { createEmptyUserForm, USER_ACTIVE_OPTIONS, type UserFormValues } from "@/lib/users/types";
+import { cn } from "@/lib/utils";
 
 type Props = {
   initialValues?: UserFormValues;
@@ -49,10 +50,17 @@ export function UserForm({
   } = useForm<UserFormValues>({
     resolver: zodResolver(createUserFormSchema(isEditing)),
     defaultValues: initialValues ?? createEmptyUserForm(),
+    mode: "onChange",
   });
   const handleEnterNavigation = useFormEnterNavigation();
   const restrictLoginHours = useWatch({ control, name: "restrictLoginHours" });
   const selectedRole = useWatch({ control, name: "role" });
+  const password = useWatch({ control, name: "password" });
+  const confirmPassword = useWatch({ control, name: "confirmPassword" });
+  const passwordValid = password.length >= 6;
+  const passwordInvalid = Boolean(password) && !passwordValid;
+  const confirmationValid = Boolean(confirmPassword) && confirmPassword === password;
+  const confirmationInvalid = Boolean(confirmPassword) && !confirmationValid;
 
   useEffect(() => reset(initialValues ?? createEmptyUserForm()), [initialValues, reset]);
 
@@ -98,11 +106,41 @@ export function UserForm({
           </div>
           {!isEditing ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="New password" required error={errors.password?.message}>
-                <Input id="password" type="password" {...register("password")} placeholder="At least 6 characters" autoComplete="new-password" aria-invalid={Boolean(errors.password)} />
+              <Field label="New password" required>
+                <Input
+                  id="password"
+                  type="password"
+                  {...register("password")}
+                  placeholder="At least 6 characters"
+                  autoComplete="new-password"
+                  aria-invalid={passwordInvalid || Boolean(errors.password)}
+                  aria-describedby="password-status"
+                  className={passwordFieldClassName(passwordValid, passwordInvalid || Boolean(errors.password))}
+                />
+                <PasswordStatus
+                  id="password-status"
+                  valid={passwordValid}
+                  invalid={passwordInvalid || Boolean(errors.password)}
+                  message={passwordValid ? "Password is valid." : errors.password?.message ?? "Use at least 6 characters."}
+                />
               </Field>
-              <Field label="Confirm password" required error={errors.confirmPassword?.message}>
-                <Input id="confirmPassword" type="password" {...register("confirmPassword")} placeholder="Repeat new password" autoComplete="new-password" aria-invalid={Boolean(errors.confirmPassword)} />
+              <Field label="Confirm password" required>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  {...register("confirmPassword")}
+                  placeholder="Repeat new password"
+                  autoComplete="new-password"
+                  aria-invalid={confirmationInvalid || Boolean(errors.confirmPassword)}
+                  aria-describedby="confirm-password-status"
+                  className={passwordFieldClassName(confirmationValid, confirmationInvalid || Boolean(errors.confirmPassword))}
+                />
+                <PasswordStatus
+                  id="confirm-password-status"
+                  valid={confirmationValid}
+                  invalid={confirmationInvalid || Boolean(errors.confirmPassword)}
+                  message={confirmationValid ? "Passwords match." : errors.confirmPassword?.message ?? (confirmationInvalid ? "Passwords do not match." : "Re-enter your new password.")}
+                />
               </Field>
             </div>
           ) : null}
@@ -171,6 +209,46 @@ export function UserForm({
 
       <FormFooter error={externalError} submitLabel={submitLabel} isSubmitting={isSubmitting} submitDisabled={selectorsLoading || noOptions} onCancel={onCancel} />
     </form>
+  );
+}
+
+function passwordFieldClassName(valid: boolean, invalid: boolean): string | undefined {
+  if (valid) {
+    return "border-emerald-600 focus-visible:border-emerald-600 focus-visible:ring-emerald-600/20";
+  }
+  if (invalid) {
+    return "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20";
+  }
+  return undefined;
+}
+
+function PasswordStatus({
+  id,
+  valid,
+  invalid,
+  message,
+}: {
+  id: string;
+  valid: boolean;
+  invalid: boolean;
+  message: string;
+}) {
+  const Icon = valid ? CheckCircle2 : invalid ? XCircle : null;
+
+  return (
+    <p
+      id={id}
+      aria-live="polite"
+      className={cn(
+        "flex items-center gap-1.5 text-xs",
+        valid && "text-emerald-600 dark:text-emerald-400",
+        invalid && "text-destructive",
+        !valid && !invalid && "text-muted-foreground",
+      )}
+    >
+      {Icon ? <Icon className="size-3.5 shrink-0" aria-hidden /> : null}
+      {message}
+    </p>
   );
 }
 
