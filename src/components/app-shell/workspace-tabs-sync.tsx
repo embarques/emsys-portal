@@ -10,6 +10,7 @@ import { isWorkspaceRoute, resolveWorkspaceLabel } from "@/lib/layout/workspace-
 import {
   findTabByNumber,
   hydrateWorkspaceTabs,
+  enforceWorkspaceTabLimit,
   openWorkspaceTab,
   readPersistedWorkspaceTabs,
   setActiveWorkspaceTab,
@@ -34,7 +35,7 @@ export function WorkspaceTabsSync() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isDesktopTabs = useIsDesktopWorkspaceTabs();
-  const { language } = useConfigurationStore();
+  const { language, maxWorkspaceTabs } = useConfigurationStore();
   const tabs = useAppSelector((state) => state.layoutTabs.tabs);
   const activeTabId = useAppSelector((state) => state.layoutTabs.activeTabId);
 
@@ -52,6 +53,11 @@ export function WorkspaceTabsSync() {
     hydratedRef.current = true;
     setHydrated(true);
   }, [dispatch, isDesktopTabs]);
+
+  useEffect(() => {
+    if (!isDesktopTabs || !hydrated) return;
+    dispatch(enforceWorkspaceTabLimit());
+  }, [dispatch, hydrated, isDesktopTabs, maxWorkspaceTabs]);
 
   useEffect(() => {
     if (!isDesktopTabs || !hydrated) return;
