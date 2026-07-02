@@ -8,10 +8,10 @@ import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
+import { useTranslation } from "@/lib/i18n";
 import {
   useCreateRoute,
   useRoute,
-  useRoutePicker,
   useUpdateRoute,
 } from "@/lib/routes/hooks/use-routes";
 import {
@@ -27,6 +27,7 @@ import {
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
 export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+  const { t } = useTranslation();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -35,23 +36,20 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
   const createMutation = useCreateRoute();
   const updateMutation = useUpdateRoute();
   const detailQuery = useRoute(isEditing ? (entityId ?? null) : null);
-  // Add mode offers a "copy from existing assignment" picker.
-  const pickerQuery = useRoutePicker(200, { enabled: !isEditing });
 
   const [formError, setFormError] = useState<string | null>(null);
   const [formInstance, setFormInstance] = useState(0);
 
   const editing = isEditing ? (detailQuery.data ?? null) : null;
   const isSaving = createMutation.isPending || updateMutation.isPending;
-  const copySources = isEditing ? [] : (pickerQuery.data?.items ?? []);
 
   const editingLabel = editing ? formatRouteName(editing) : undefined;
 
   useEffect(() => {
     if (isEditing && editingLabel) {
-      updateTabLabel(tabId, `Edit ${editingLabel}`);
+      updateTabLabel(tabId, t("routes.form.editTabLabel", { name: editingLabel }));
     }
-  }, [editingLabel, isEditing, tabId, updateTabLabel]);
+  }, [editingLabel, isEditing, tabId, t, updateTabLabel]);
 
   async function save(values: RouteFormValues) {
     setFormError(null);
@@ -59,13 +57,13 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
     try {
       if (isEditing && editing) {
         const next = await updateMutation.mutateAsync({ recordId: editing.id, values });
-        notifyUpdated("Route", formatRouteName(next));
+        notifyUpdated(t("routes.form.entityLabel"), formatRouteName(next));
         closeFormTabAndReturn(tabId);
         return;
       }
 
       const next = await createMutation.mutateAsync(values);
-      notifyAdded("Route", formatRouteName(next));
+      notifyAdded(t("routes.form.entityLabel"), formatRouteName(next));
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
@@ -74,10 +72,10 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
 
   if (isEditing && detailQuery.isLoading) {
     return (
-      <FormTabShell title="Edit route">
+      <FormTabShell title={t("routes.form.editTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading route…
+          {t("routes.form.loading")}
         </div>
       </FormTabShell>
     );
@@ -86,13 +84,13 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
       ? normalizeApiError(detailQuery.error).message
-      : "This route could not be found.";
+      : t("routes.form.notFound");
     return (
-      <FormTabShell title="Edit route">
+      <FormTabShell title={t("routes.form.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
-            Close
+            {t("common.actions.close")}
           </Button>
         </div>
       </FormTabShell>
@@ -101,8 +99,12 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
 
   return (
     <FormTabShell
-      title={isEditing ? "Edit route" : "Add route"}
-      description={isEditing && editingLabel ? editingLabel : "Create a new route."}
+      title={isEditing ? t("routes.form.editTitle") : t("routes.form.addTitle")}
+      description={
+        isEditing && editingLabel
+          ? editingLabel
+          : t("routes.form.addDescription")
+      }
     >
       <RouteForm
         key={isEditing ? (editing?.id ?? "edit") : `new-${formInstance}`}
@@ -111,9 +113,10 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
             ? routeToFormValues(editing)
             : createEmptyRouteForm()
         }
-        copySources={copySources}
         isEditing={isEditing}
-        submitLabel={isEditing ? "Save changes" : "Add route"}
+        submitLabel={
+          isEditing ? t("common.actions.saveChanges") : t("routes.form.addTitle")
+        }
         isSubmitting={isSaving}
         externalError={formError}
         onSubmit={save}

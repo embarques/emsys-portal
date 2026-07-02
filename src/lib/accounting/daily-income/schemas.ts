@@ -93,11 +93,11 @@ export const dailyIncomeJournalSchema = z.object({
   }
 
   if (values.transactionType === "INITIAL-PAYMENT") {
-    if (!values.employeeGroupId?.trim()) {
+    if (!values.employeeId) {
       context.addIssue({
         code: "custom",
         path: ["employeeId"],
-        message: "Employee group is required.",
+        message: "Employee is required.",
       });
     }
     if (!values.invoiceNumber?.trim()) {
@@ -126,11 +126,11 @@ export const dailyIncomeJournalSchema = z.object({
   }
 
   if (values.transactionType === "PAYMENT") {
-    if (!values.employeeGroupId?.trim()) {
+    if (!values.employeeId) {
       context.addIssue({
         code: "custom",
         path: ["employeeId"],
-        message: "Employee group is required.",
+        message: "Employee is required.",
       });
     }
     if (!values.invoiceId) {
@@ -149,11 +149,11 @@ export const dailyIncomeJournalSchema = z.object({
     return;
   }
 
-  if (!values.employeeId && !values.employeeGroupId?.trim()) {
+  if (!values.employeeId) {
     context.addIssue({
       code: "custom",
       path: ["employeeId"],
-      message: "Employee or employee group is required.",
+      message: "Employee is required.",
     });
   }
 

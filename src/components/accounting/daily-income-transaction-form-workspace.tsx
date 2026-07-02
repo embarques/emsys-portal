@@ -18,7 +18,6 @@ import {
 } from "@/lib/accounting/daily-income/hooks";
 import { journalToFormValues, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
-import { useEmployeeGroupPicker } from "@/lib/employee-groups/hooks/use-employee-groups";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import {
@@ -45,8 +44,6 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
     () => (employeesQuery.data?.items ?? []).filter((employee) => employee.active),
     [employeesQuery.data?.items],
   );
-  const employeeGroupsQuery = useEmployeeGroupPicker(200);
-  const employeeGroups = employeeGroupsQuery.data?.items ?? [];
   const invoicesQuery = useInvoices({ page: 1, limit: 200, sort: "number:desc" });
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, true);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, true);
@@ -166,7 +163,6 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
           mode="edit"
           initialValues={initialValues}
           employees={employees}
-          employeeGroups={employeeGroups}
           accounts={accountsQuery.data?.items ?? []}
           bankAccounts={bankAccountsQuery.data?.items ?? []}
           invoices={invoicesQuery.data?.items ?? []}
@@ -182,7 +178,6 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
           open
           mode="add"
           employees={employees}
-          employeeGroups={employeeGroups}
           accounts={accountsQuery.data?.items ?? []}
           bankAccounts={bankAccountsQuery.data?.items ?? []}
           invoices={invoicesQuery.data?.items ?? []}

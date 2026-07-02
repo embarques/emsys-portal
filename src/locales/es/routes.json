@@ -1,0 +1,102 @@
+{
+  "tabs": {
+    "activeRoutes": "Rutas activas",
+    "routes": "Rutas"
+  },
+  "activeRoutesTable": {
+    "searchPlaceholder": "Buscar rutas activas…",
+    "empty": "Aún no hay rutas activas.",
+    "emptyFiltered": "Ninguna ruta activa coincide con su búsqueda.",
+    "setActiveRoute": "Definir ruta activa",
+    "pagination": "Mostrando {{shown}} de {{total}} rutas activas"
+  },
+  "entities": {
+    "activeRoute": "ruta activa",
+    "activeRoutes": "rutas activas"
+  },
+  "activeRouteForm": {
+    "sections": {
+      "schedule": "Programación"
+    },
+    "editHint": "Actualice la asignación y los roles de la cuadrilla, luego guarde."
+  },
+  "activeRoute": {
+    "title": "Ruta activa",
+    "editTitle": "Editar ruta activa",
+    "description": "Defina la ruta de trabajo para esta fecha y tipo. Elija una ruta existente o cree una nueva.",
+    "name": "Nombre",
+    "routeType": "Tipo",
+    "routeTypePickup": "Recogida",
+    "routeTypeDelivery": "Entrega",
+    "selectRouteType": "Seleccionar tipo",
+    "searchRouteTypes": "Buscar tipos…",
+    "container": "Contenedor",
+    "containerRequired": "Contenedor",
+    "containerPlaceholder": "Sin contenedor",
+    "containerSearch": "Buscar contenedores…",
+    "date": "Fecha",
+    "route": "Ruta",
+    "routePlaceholder": "Seleccionar ruta…",
+    "routeSearch": "Buscar rutas…",
+    "routeEmpty": "No hay rutas para esta fecha.",
+    "driver": "Conductor",
+    "appraiser": "Tasador",
+    "crewRoles": "Asignar roles",
+    "crewRolesEmpty": "Esta ruta no tiene miembros de la cuadrilla.",
+    "driverFor": "Conductor — {{name}}",
+    "appraiserFor": "Tasador — {{name}}",
+    "createRoute": "Nueva ruta",
+    "save": "Guardar ruta activa",
+    "saving": "Guardando…",
+    "saved": "Ruta activa guardada.",
+    "routeCreated": "Ruta creada.",
+    "loadingRoute": "Cargando ruta…",
+    "createdAt": "Creado el",
+    "createdBy": "Creado por",
+    "updatedAt": "Actualizado el",
+    "updatedBy": "Actualizado por",
+    "errors": {
+      "routeType": "El tipo es obligatorio.",
+      "container": "El contenedor es obligatorio para rutas de entrega.",
+      "date": "La fecha es obligatoria.",
+      "route": "La ruta es obligatoria."
+    }
+  },
+  "routeDetails": {
+    "title": "Ruta",
+    "description": "Vehículo y personal de la ruta seleccionada.",
+    "name": "Nombre",
+    "routeId": "ID de ruta",
+    "vehicle": "Vehículo",
+    "employees": "Empleados",
+    "empty": "Seleccione una ruta para ver el vehículo y el personal.",
+    "createdAt": "Creado el",
+    "createdBy": "Creado por",
+    "updatedAt": "Actualizado el",
+    "updatedBy": "Actualizado por"
+  },
+  "createDialog": {
+    "title": "Crear ruta",
+    "description": "Agregue una ruta para {{date}}. Se seleccionará como ruta activa al guardar."
+  },
+  "form": {
+    "addTitle": "Agregar ruta",
+    "editTitle": "Editar ruta",
+    "addDescription": "Asigne un vehículo y miembros de la cuadrilla.",
+    "editDescription": "Actualice el vehículo y la cuadrilla de esta ruta.",
+    "editTabLabel": "Editar {{name}}",
+    "entityLabel": "Ruta",
+    "loading": "Cargando ruta…",
+    "notFound": "No se encontró esta ruta.",
+    "vehiclePlaceholder": "Seleccionar vehículo",
+    "vehicleSearch": "Buscar vehículos…",
+    "crewMembers": "Miembros de la cuadrilla",
+    "crewMemberPlaceholder": "Buscar y agregar miembros de la cuadrilla…",
+    "removeCrewMember": "Quitar {{name}}",
+    "searchCrewMembers": "Buscar miembros de la cuadrilla…",
+    "loadingCrewMembers": "Cargando miembros de la cuadrilla…",
+    "noCrewMembersFound": "No se encontraron miembros activos de la cuadrilla.",
+    "selectAtLeastOneCrewMember": "Seleccione al menos un miembro de la cuadrilla para esta ruta.",
+    "crewMemberRequired": "Seleccione al menos un miembro de la cuadrilla."
+  }
+}

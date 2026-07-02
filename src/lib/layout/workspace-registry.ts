@@ -8,7 +8,6 @@ import { BranchesWorkspace } from "@/components/branches/branches-workspace";
 import { ConfigurationWorkspace } from "@/components/configuration/configuration-workspace";
 import { ContainersWorkspace } from "@/components/containers/containers-workspace";
 import { CustomersWorkspace } from "@/components/customers/customers-workspace";
-import { EmployeeGroupsWorkspace } from "@/components/employee-groups/employee-groups-workspace";
 import { EmployeesWorkspace } from "@/components/employees/employees-workspace";
 import { InventoryWorkspace } from "@/components/inventory/inventory-workspace";
 import { InvoicesWorkspace } from "@/components/invoices/invoices-workspace";
@@ -42,7 +41,6 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/users": UsersWorkspace,
   "/roles": RolesWorkspace,
   "/employees": EmployeesWorkspace,
-  "/employee-groups": EmployeeGroupsWorkspace,
   "/security": SecurityWorkspace,
   "/branches": BranchesWorkspace,
   "/settings": ConfigurationWorkspace,

@@ -13,6 +13,8 @@ import {
 } from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
+import { ROUTES_USE_MOCK_DATA } from "@/lib/routes/data-source";
+import * as routesMockApi from "@/lib/routes/api/routes-mock-api";
 import {
   DEFAULT_ROUTE_LIST_PARAMS,
   ROUTE_BAR_OR_SEARCH_FIELDS,
@@ -32,12 +34,18 @@ type ApiUser = {
 type ApiRef = {
   id?: string | number;
   name?: string;
+  branch?: string;
+};
+
+type ApiEmployeeRef = {
+  id?: string | number;
+  name?: string;
 };
 
 type ApiEmployeeGroupRef = ApiRef & {
   employeeGroupId?: string;
   branch?: string;
-  employees?: unknown[];
+  employees?: ApiEmployeeRef[];
 };
 
 type ApiRoute = {
@@ -46,9 +54,9 @@ type ApiRoute = {
   routeAssignmentId?: string;
   name?: string;
   date?: string;
-  container?: { id?: string | number; name?: string } | null;
   tripNumber?: number;
   vehicle?: ApiRef | null;
+  employees?: ApiEmployeeRef[];
   employeeGroup?: ApiEmployeeGroupRef | null;
   createdAt?: string;
   createdBy?: ApiUser | string | null;
@@ -56,14 +64,12 @@ type ApiRoute = {
   updatedBy?: ApiUser | string | null;
 };
 
-/** POST/PUT /routes — see API_PAYLOADS.md */
+/** POST/PUT /routes — see API_PAYLOADS.md. `name` and `routeId` are server-generated on create. */
 type ApiRouteWritePayload = {
-  routeId: string;
-  name: string;
-  date: string;
-  container: { id: number; name: string } | null;
+  routeId?: string;
+  name?: string;
   vehicle: { id: string; name: string };
-  employeeGroup: { id: string; name: string };
+  employees: { id: number; name: string }[];
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -84,25 +90,38 @@ function readUserName(user: unknown): string {
 
 function normalizeVehicleRef(raw?: ApiRef | null): Route["vehicle"] {
   const ref = raw ?? {};
+  const branch = String(ref.branch ?? "").trim();
   return {
     id: String(ref.id ?? "").trim(),
     name: String(ref.name ?? "").trim(),
+    ...(branch ? { branch } : {}),
   };
 }
 
-function normalizeEmployeeGroupRef(raw?: ApiEmployeeGroupRef | null): Route["employeeGroup"] {
-  const ref = raw ?? {};
-  const id = String(ref.id ?? ref.employeeGroupId ?? "").trim();
-  const name = String(ref.name ?? "").trim() || String(ref.employeeGroupId ?? "").trim();
-  const branch = String(ref.branch ?? "").trim();
-  return { id, name, ...(branch ? { branch } : {}) };
+function normalizeEmployeeRef(raw: unknown): Route["employees"][number] | null {
+  if (!raw || typeof raw !== "object") return null;
+  const entry = raw as ApiEmployeeRef;
+  const id = Number(entry.id);
+  const name = String(entry.name ?? "").trim();
+  if (!Number.isInteger(id) || id <= 0 || !name) return null;
+  return { id, name };
 }
 
-function normalizeContainerRef(raw?: ApiRoute["container"]): Route["container"] {
-  if (!raw) return null;
-  const id = Number(raw.id ?? 0);
-  if (!Number.isInteger(id) || id <= 0) return null;
-  return { id, name: String(raw.name ?? "").trim() };
+function normalizeRouteEmployees(item: ApiRoute): Route["employees"] {
+  if (Array.isArray(item.employees)) {
+    return item.employees
+      .map(normalizeEmployeeRef)
+      .filter((employee): employee is Route["employees"][number] => employee != null);
+  }
+
+  const nested = item.employeeGroup?.employees;
+  if (Array.isArray(nested)) {
+    return nested
+      .map(normalizeEmployeeRef)
+      .filter((employee): employee is Route["employees"][number] => employee != null);
+  }
+
+  return [];
 }
 
 export function normalizeApiRoute(raw: unknown): Route | null {
@@ -117,13 +136,13 @@ export function normalizeApiRoute(raw: unknown): Route | null {
     routeId: String(item.routeId ?? item.routeAssignmentId ?? "").trim(),
     name: String(item.name ?? "").trim(),
     date: String(item.date ?? "").trim(),
-    container: normalizeContainerRef(item.container),
     tripNumber: Number(item.tripNumber ?? 0),
     vehicle: normalizeVehicleRef(item.vehicle),
-    employeeGroup: normalizeEmployeeGroupRef(item.employeeGroup),
+    employees: normalizeRouteEmployees(item),
     createdAt: String(item.createdAt ?? "").trim(),
     createdBy: readUserName(item.createdBy) || DEFAULT_CREATED_BY,
     updatedAt: String(item.updatedAt ?? "").trim(),
+    updatedBy: readUserName(item.updatedBy) || "",
   };
 }
 
@@ -180,6 +199,10 @@ function buildRouteSearchBody(params: RouteListParams) {
 export async function fetchRoutes(
   params: RouteListParams = {},
 ): Promise<PaginatedResult<Route>> {
+  if (ROUTES_USE_MOCK_DATA) {
+    return routesMockApi.fetchRoutes(params);
+  }
+
   const page = params.page ?? DEFAULT_ROUTE_LIST_PARAMS.page;
   const limit = params.limit ?? DEFAULT_ROUTE_LIST_PARAMS.limit;
 
@@ -209,6 +232,10 @@ export async function fetchRoutes(
 export async function fetchRoutesByDate(
   dateInput: string,
 ): Promise<PaginatedResult<Route>> {
+  if (ROUTES_USE_MOCK_DATA) {
+    return routesMockApi.fetchRoutesByDate(dateInput);
+  }
+
   const start = toRouteDateIso(dateInput);
   const next = new Date(`${dateInput}T00:00:00Z`);
   next.setUTCDate(next.getUTCDate() + 1);
@@ -237,6 +264,10 @@ export async function fetchRoutesByDate(
 }
 
 export async function fetchRouteById(routeId: string): Promise<Route> {
+  if (ROUTES_USE_MOCK_DATA) {
+    return routesMockApi.fetchRouteById(routeId);
+  }
+
   const id = routeId.trim();
   if (!id) {
     throw new Error("A valid route id is required.");
@@ -261,33 +292,32 @@ export async function fetchRouteById(routeId: string): Promise<Route> {
 
 function buildRouteWritePayload(
   values: RouteFormValues,
+  mode: "create" | "update",
 ): ApiRouteWritePayload {
-  const employeeGroupId = values.employeeGroup.id.trim();
-  if (!employeeGroupId) {
-    throw new Error("An employee group is required.");
+  if (!values.vehicle.id.trim()) {
+    throw new Error("A vehicle is required.");
   }
 
-  if (values.routeType === "delivery" && (!values.container || values.container.id <= 0)) {
-    throw new Error("A container is required for delivery routes.");
+  if (values.employees.length === 0) {
+    throw new Error("Select at least one employee.");
   }
 
   const payload: ApiRouteWritePayload = {
-    routeId: values.routeId.trim(),
-    name: values.name.trim(),
-    date: toRouteDateIso(values.date),
-    container:
-      values.routeType === "delivery" && values.container
-        ? { id: values.container.id, name: values.container.name.trim() }
-        : null,
     vehicle: {
       id: values.vehicle.id.trim(),
       name: values.vehicle.name.trim(),
     },
-    employeeGroup: {
-      id: employeeGroupId,
-      name: values.employeeGroup.name.trim(),
-    },
+    employees: values.employees.map((employee) => ({
+      id: employee.id,
+      name: employee.name.trim(),
+    })),
   };
+
+  if (mode === "update") {
+    if (values.name.trim()) {
+      payload.name = values.name.trim();
+    }
+  }
 
   return payload;
 }
@@ -347,9 +377,13 @@ async function resolveCreatedRoute(
 export async function createRoute(
   values: RouteFormValues,
 ): Promise<Route> {
+  if (ROUTES_USE_MOCK_DATA) {
+    return routesMockApi.createRoute(values);
+  }
+
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.ROUTES,
-    buildRouteWritePayload(values),
+    buildRouteWritePayload(values, "create"),
   );
 
   assertMutationSuccess(response, "Unable to create route.");
@@ -361,6 +395,10 @@ export async function updateRoute(
   recordId: string,
   values: RouteFormValues,
 ): Promise<Route> {
+  if (ROUTES_USE_MOCK_DATA) {
+    return routesMockApi.updateRoute(recordId, values);
+  }
+
   const id = recordId.trim();
   if (!id) {
     throw new Error("A valid route id is required to update.");
@@ -368,7 +406,7 @@ export async function updateRoute(
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.ROUTES}/${id}`,
-    buildRouteWritePayload(values),
+    buildRouteWritePayload(values, "update"),
   );
 
   assertMutationSuccess(response, "Unable to update route.");
@@ -377,6 +415,10 @@ export async function updateRoute(
 }
 
 export async function deleteRoute(recordId: string): Promise<void> {
+  if (ROUTES_USE_MOCK_DATA) {
+    return routesMockApi.deleteRoute(recordId);
+  }
+
   const id = recordId.trim();
   if (!id) {
     throw new Error("A valid route id is required to delete.");
@@ -390,6 +432,10 @@ export async function deleteRoute(recordId: string): Promise<void> {
 }
 
 export async function deleteRoutes(recordIds: string[]): Promise<void> {
+  if (ROUTES_USE_MOCK_DATA) {
+    return routesMockApi.deleteRoutes(recordIds);
+  }
+
   await Promise.all(recordIds.map((id) => deleteRoute(id)));
 }
 
@@ -402,6 +448,10 @@ export async function assignPickupsToRoute(
   routeId: string,
   pickupIds: number[],
 ): Promise<void> {
+  if (ROUTES_USE_MOCK_DATA) {
+    return routesMockApi.assignPickupsToRoute(routeId, pickupIds);
+  }
+
   const id = routeId.trim();
   if (!id) {
     throw new Error("A valid route is required.");

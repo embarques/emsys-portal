@@ -41,13 +41,14 @@ import {
 } from "@/lib/accounting/types";
 import { cloneInvoices } from "@/lib/invoices/mock-data";
 import type { Invoice } from "@/lib/invoices/types";
-import { cloneRoutes } from "@/lib/routes/mock-data";
+import { useRoutePicker } from "@/lib/routes/hooks/use-routes";
 
 const ACTIVE_ROUTE_KEY = "emsys-accounting-route";
 
 export function AccountingWorkspace() {
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
-  const routes = useMemo(() => cloneRoutes(), []);
+  const routesQuery = useRoutePicker(200);
+  const routes = routesQuery.data?.items ?? [];
   const [entries, setEntries] = useState<AccountingEntry[]>(() => cloneAccountingEntries());
   const [invoices, setInvoices] = useState<Invoice[]>(() => cloneInvoices());
   const [activeRouteId, setActiveRouteId] = useState("");

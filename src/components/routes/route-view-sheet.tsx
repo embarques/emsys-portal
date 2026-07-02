@@ -12,7 +12,7 @@ import {
 import {
   formatRouteDate,
   formatRouteTimestamp,
-  getEmployeeGroupRefLabel,
+  getRouteEmployeesLabel,
   getVehicleRefLabel,
   truncateObjectId,
   truncateRouteId,
@@ -48,7 +48,7 @@ export function RouteViewSheet({
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Route">
-            <RecordViewSheetDetailRow label="Assignment ID" value={truncateObjectId(assignment.id)} />
+            <RecordViewSheetDetailRow label="Route ID" value={truncateObjectId(assignment.id)} />
             <RecordViewSheetDetailRow
               label={formatTableColumnLabel("routeId")}
               value={truncateRouteId(assignment.routeId)}
@@ -63,10 +63,8 @@ export function RouteViewSheet({
             <RecordViewSheetDetailRow label={formatTableColumnLabel("vehicle")} value={getVehicleRefLabel(assignment.vehicle)} />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title="Employee group">
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("employeeGroup.id")} value={assignment.employeeGroup.id || "—"} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("employeeGroup.name")} value={assignment.employeeGroup.name || "—"} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("employeeGroup")} value={getEmployeeGroupRefLabel(assignment.employeeGroup)} />
+          <RecordViewSheetSection title="Employees">
+            <RecordViewSheetDetailRow label="Employees" value={getRouteEmployeesLabel(assignment.employees)} />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title="Audit">
@@ -79,11 +77,15 @@ export function RouteViewSheet({
               label={formatTableColumnLabel("updatedAt")}
               value={assignment.updatedAt ? formatAuditDate(assignment.updatedAt) : "—"}
             />
+            <RecordViewSheetDetailRow
+              label="Updated by"
+              value={assignment.updatedBy || "—"}
+            />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
         <RecordViewSheetActions
-          editLabel="Edit assignment"
+          editLabel="Edit route"
           onEdit={() => onEdit(assignment)}
           onDelete={() => onDelete(assignment)}
         />

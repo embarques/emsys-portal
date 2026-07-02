@@ -6,47 +6,38 @@ import type { ApiListTextSearch } from "@/lib/api/search-query";
 export type RouteVehicleRef = {
   id: string;
   name: string;
-};
-
-export type RouteEmployeeGroupRef = {
-  id: string;
-  name: string;
   branch?: string;
 };
 
-export type RouteContainerRef = {
+export type RouteEmployeeRef = {
   id: number;
   name: string;
 };
-
-export type RouteType = "pickup" | "delivery";
 
 export type Route = {
   id: string;
   routeId: string;
   name: string;
   date: string;
-  container: RouteContainerRef | null;
   tripNumber: number;
   vehicle: RouteVehicleRef;
-  employeeGroup: RouteEmployeeGroupRef;
+  employees: RouteEmployeeRef[];
   createdAt: string;
   createdBy: string;
   updatedAt: string;
+  updatedBy: string;
 };
 
 export type RouteFormValues = {
   id: string;
   routeId: string;
   name: string;
-  date: string;
-  routeType: RouteType;
-  container: RouteContainerRef | null;
   vehicle: RouteVehicleRef;
-  employeeGroup: RouteEmployeeGroupRef;
+  employees: RouteEmployeeRef[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  updatedBy: string;
 };
 
 export type RouteFilterState = {
@@ -74,19 +65,11 @@ export const ROUTE_BAR_OR_SEARCH_FIELDS = [
   "name",
   "routeId",
   "vehicle.name",
-  "employeeGroup.name",
+  "employees.name",
 ] as const;
 
 export function createEmptyVehicleRef(): RouteVehicleRef {
   return { id: "", name: "" };
-}
-
-export function createEmptyEmployeeGroupRef(): RouteEmployeeGroupRef {
-  return { id: "", name: "" };
-}
-
-export function createEmptyContainerRef(): RouteContainerRef {
-  return { id: 0, name: "" };
 }
 
 export function todayDateInputValue(): string {
@@ -112,19 +95,24 @@ export function generateRouteNumber(): string {
   return `ras-${Date.now().toString(36)}-${random}`;
 }
 
+export function formatRouteEmployeeNames(employees: RouteEmployeeRef[]): string {
+  return employees
+    .map((employee) => employee.name.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
 export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormValues {
   return {
     id: "",
-    routeId: generateRouteNumber(),
+    routeId: "",
     name: "",
-    date: todayDateInputValue(),
-    routeType: "pickup",
-    container: null,
     vehicle: createEmptyVehicleRef(),
-    employeeGroup: createEmptyEmployeeGroupRef(),
+    employees: [],
     createdBy,
     createdAt: "",
     updatedAt: "",
+    updatedBy: "",
   };
 }
 
@@ -133,14 +121,12 @@ export function routeToFormValues(assignment: Route): RouteFormValues {
     id: assignment.id,
     routeId: assignment.routeId,
     name: assignment.name,
-    date: toRouteDateInput(assignment.date),
-    routeType: assignment.container ? "delivery" : "pickup",
-    container: assignment.container ? { ...assignment.container } : null,
     vehicle: { ...assignment.vehicle },
-    employeeGroup: { ...assignment.employeeGroup },
+    employees: assignment.employees.map((employee) => ({ ...employee })),
     createdBy: assignment.createdBy,
     createdAt: assignment.createdAt,
     updatedAt: assignment.updatedAt,
+    updatedBy: assignment.updatedBy,
   };
 }
 
@@ -149,90 +135,36 @@ export function formValuesToRoute(
   createdAt?: string,
   updatedAt?: string,
   id?: string,
+  existing?: Pick<Route, "date" | "tripNumber" | "routeId" | "name">,
 ): Route {
-  if (!values.employeeGroup.id.trim()) {
-    throw new Error("An employee group is required.");
+  if (!values.vehicle.id.trim()) {
+    throw new Error("A vehicle is required.");
+  }
+
+  if (values.employees.length === 0) {
+    throw new Error("Select at least one employee.");
   }
 
   const now = new Date().toISOString();
 
   return {
     id: id ?? (values.id.trim() || createMockObjectId()),
-    routeId: values.routeId.trim(),
-    name: values.name.trim(),
-    date: toRouteDateIso(values.date),
-    container:
-      values.routeType === "delivery" && values.container
-        ? { id: values.container.id, name: values.container.name.trim() }
-        : null,
-    tripNumber: 0,
+    routeId: existing?.routeId ?? values.routeId.trim(),
+    name: existing?.name ?? values.name.trim(),
+    date: existing?.date ?? "",
+    tripNumber: existing?.tripNumber ?? 0,
     vehicle: {
       id: values.vehicle.id.trim(),
       name: values.vehicle.name.trim(),
+      ...(values.vehicle.branch?.trim() ? { branch: values.vehicle.branch.trim() } : {}),
     },
-    employeeGroup: {
-      id: values.employeeGroup.id.trim(),
-      name: values.employeeGroup.name.trim(),
-    },
+    employees: values.employees.map((employee) => ({
+      id: employee.id,
+      name: employee.name.trim(),
+    })),
     createdAt: createdAt ?? (values.createdAt || now),
     createdBy: values.createdBy.trim() || DEFAULT_CREATED_BY,
     updatedAt: updatedAt ?? (values.updatedAt || now),
-  };
-}
-
-export function resolveRouteVehicleForForm(
-  source: RouteVehicleRef,
-  vehicles: Array<{ id: string; name: string }>,
-): RouteVehicleRef {
-  if (!source.id.trim() && !source.name.trim()) {
-    return createEmptyVehicleRef();
-  }
-
-  const match = vehicles.find(
-    (vehicle) =>
-      (source.id && vehicle.id === source.id) ||
-      (source.name && vehicle.name === source.name),
-  );
-
-  return match ? { id: match.id, name: match.name } : { ...source };
-}
-
-export function resolveRouteEmployeeGroupForForm(
-  source: RouteEmployeeGroupRef,
-  employeeGroups: Array<{ id: string; employeeGroupId: string; name: string }>,
-): RouteEmployeeGroupRef {
-  if (!source.id.trim() && !source.name.trim()) {
-    return createEmptyEmployeeGroupRef();
-  }
-
-  const match = employeeGroups.find(
-    (group) =>
-      (source.id && (group.id === source.id || group.employeeGroupId === source.id)) ||
-      (source.name && group.name === source.name),
-  );
-
-  return match ? { id: match.id, name: match.name } : { ...source };
-}
-
-export function copyRouteFormValues(
-  source: Route,
-  current: Pick<RouteFormValues, "createdBy" | "date">,
-  options: {
-    vehicles: Array<{ id: string; name: string }>;
-    employeeGroups: Array<{ id: string; employeeGroupId: string; name: string }>;
-  },
-): RouteFormValues {
-  return {
-    id: "",
-    routeId: generateRouteNumber(),
-    name: "",
-    date: current.date.trim() || todayDateInputValue(),
-    routeType: source.container ? "delivery" : "pickup",
-    container: source.container ? { ...source.container } : null,
-    vehicle: resolveRouteVehicleForForm(source.vehicle, options.vehicles),
-    employeeGroup: resolveRouteEmployeeGroupForForm(source.employeeGroup, options.employeeGroups),
-    createdBy: current.createdBy,
-    createdAt: "",
-    updatedAt: "",
+    updatedBy: values.updatedBy?.trim() || DEFAULT_CREATED_BY,
   };
 }

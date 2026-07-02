@@ -4,7 +4,6 @@ import { BranchFormWorkspace } from "@/components/branches/branch-form-workspace
 import { ContainerFormWorkspace } from "@/components/containers/container-form-workspace";
 import { CustomerFormWorkspace } from "@/components/customers/customer-form-workspace";
 import { EmployeeFormWorkspace } from "@/components/employees/employee-form-workspace";
-import { EmployeeGroupFormWorkspace } from "@/components/employee-groups/employee-group-form-workspace";
 import { ItemFormWorkspace } from "@/components/items/item-form-workspace";
 import { OrderFormWorkspace } from "@/components/orders/order-form-workspace";
 import { RoleFormWorkspace } from "@/components/roles/role-form-workspace";
@@ -34,7 +33,6 @@ export const workspaceFormRegistry: Record<string, ComponentType<WorkspaceFormHo
   vehicles: VehicleFormWorkspace,
   users: UserFormWorkspace,
   employees: EmployeeFormWorkspace,
-  "employee-groups": EmployeeGroupFormWorkspace,
   branches: BranchFormWorkspace,
   "daily-income-transactions": DailyIncomeTransactionFormWorkspace,
 };

@@ -104,10 +104,22 @@ export function useRouteKpis() {
   return {
     total: query.data?.total ?? items.length,
     uniqueVehicles: new Set(items.map((item) => item.vehicle.id).filter(Boolean)).size,
-    uniqueGroups: new Set(items.map((item) => item.employeeGroup.id).filter(Boolean)).size,
+    uniqueEmployees: new Set(items.flatMap((item) => item.employees.map((employee) => employee.id))).size,
     isLoading: query.isLoading,
     isError: query.isError,
   };
+}
+
+/** Routes scheduled on a single calendar day (local date input). */
+export function useRoutesByDate(dateInput: string, options: { enabled?: boolean } = {}) {
+  const date = dateInput.trim();
+
+  return useWorkspaceQuery({
+    queryKey: queryKeys.routes.byDate(date),
+    queryFn: () => fetchRoutesByDate(date),
+    enabled: (options.enabled ?? true) && Boolean(date),
+    staleTime: 30_000,
+  });
 }
 
 export function useRoute(routeId: string | null, enabled = true) {

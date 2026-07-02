@@ -9,7 +9,6 @@ import { TransactionWizardStepper } from "@/components/accounting/transaction-wi
 import { Button } from "@/components/ui/button";
 import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { AccountingLookup, ChartAccount, DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
-import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import type { Employee } from "@/lib/employees/types";
 import type { Invoice } from "@/lib/invoices/types";
 import { cn } from "@/lib/utils";
@@ -18,7 +17,6 @@ type SharedProps = {
   open: boolean;
   presentation?: "dialog" | "tab";
   employees: Employee[];
-  employeeGroups: EmployeeGroupOption[];
   accounts: ChartAccount[];
   bankAccounts: ChartAccount[];
   invoices: Invoice[];
@@ -186,7 +184,6 @@ export function AddTransactionWizard(props: Props) {
               transactionType={selectedType}
               initialValues={detailValues}
               employees={props.employees}
-              employeeGroups={props.employeeGroups}
               accounts={props.accounts}
               bankAccounts={props.bankAccounts}
               invoices={props.invoices}

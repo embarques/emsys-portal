@@ -1,3 +1,4 @@
+import type { ActiveRouteListParams } from "@/lib/active-routes/types";
 import type { BranchListParams, BranchSearchFilter } from "@/lib/branches/types";
 import type { ContainerListParams, ContainerSearchFilter } from "@/lib/containers/types";
 import type { InvoiceListParams, InvoiceSearchFilter } from "@/lib/invoices/types";
@@ -10,7 +11,6 @@ import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/t
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
 import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
-import type { EmployeeGroupSearchFilter } from "@/lib/employee-groups/api/employee-groups-api";
 
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
 
@@ -42,13 +42,6 @@ export const queryKeys = {
       [...queryKeys.employees.all, "stats", scope] as const,
     detail: (employeeId: string) => [...queryKeys.employees.all, "detail", employeeId] as const,
   },
-  employeeGroups: {
-    all: ["employee-groups"] as const,
-    lists: () => [...queryKeys.employeeGroups.all, "list"] as const,
-    list: (params: { limit?: number }) => [...queryKeys.employeeGroups.lists(), params] as const,
-    search: (search: EmployeeGroupSearchFilter | undefined, limit: number) =>
-      [...queryKeys.employeeGroups.all, "search", search, limit] as const,
-  },
   vehicles: {
     all: ["vehicles"] as const,
     lists: () => [...queryKeys.vehicles.all, "list"] as const,
@@ -69,6 +62,15 @@ export const queryKeys = {
       [...queryKeys.routes.all, "stats", scope, ...(date ? [date] : [])] as const,
     detail: (routeId: string) =>
       [...queryKeys.routes.all, "detail", routeId] as const,
+    byDate: (date: string) => [...queryKeys.routes.all, "by-date", date] as const,
+  },
+  activeRoutes: {
+    all: ["active-routes"] as const,
+    lists: () => [...queryKeys.activeRoutes.all, "list"] as const,
+    list: (params: ActiveRouteListParams) =>
+      [...queryKeys.activeRoutes.lists(), params] as const,
+    detail: (routeType: string, date: string, containerId?: number) =>
+      [...queryKeys.activeRoutes.all, routeType, date, containerId ?? "none"] as const,
   },
   containers: {
     all: ["containers"] as const,

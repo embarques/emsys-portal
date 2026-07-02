@@ -4,11 +4,13 @@ import enCommon from "@/locales/en/common.json";
 import enContainers from "@/locales/en/containers.json";
 import enInsights from "@/locales/en/insights.json";
 import enNavigation from "@/locales/en/navigation.json";
+import enRoutes from "@/locales/en/routes.json";
 import enShell from "@/locales/en/shell.json";
 import esCommon from "@/locales/es/common.json";
 import esContainers from "@/locales/es/containers.json";
 import esInsights from "@/locales/es/insights.json";
 import esNavigation from "@/locales/es/navigation.json";
+import esRoutes from "@/locales/es/routes.json";
 import esShell from "@/locales/es/shell.json";
 
 export type Locale = LanguagePreference;
@@ -21,6 +23,7 @@ const catalogs: Record<Locale, MessageTree> = {
     containers: enContainers,
     insights: enInsights,
     navigation: enNavigation,
+    routes: enRoutes,
     shell: enShell,
   },
   es: {
@@ -28,6 +31,7 @@ const catalogs: Record<Locale, MessageTree> = {
     containers: esContainers,
     insights: esInsights,
     navigation: esNavigation,
+    routes: esRoutes,
     shell: esShell,
   },
 };

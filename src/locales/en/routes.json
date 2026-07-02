@@ -1,0 +1,102 @@
+{
+  "tabs": {
+    "activeRoutes": "Active routes",
+    "routes": "Routes"
+  },
+  "activeRoutesTable": {
+    "searchPlaceholder": "Search active routes…",
+    "empty": "No active routes yet.",
+    "emptyFiltered": "No active routes match your search.",
+    "setActiveRoute": "Set active route",
+    "pagination": "Showing {{shown}} of {{total}} active routes"
+  },
+  "entities": {
+    "activeRoute": "active route",
+    "activeRoutes": "active routes"
+  },
+  "activeRouteForm": {
+    "sections": {
+      "schedule": "Schedule"
+    },
+    "editHint": "Update the assignment and crew roles, then save."
+  },
+  "activeRoute": {
+    "title": "Active route",
+    "editTitle": "Edit active route",
+    "description": "Set the working route for this date and type. Pick an existing route or create one.",
+    "name": "Name",
+    "routeType": "Type",
+    "routeTypePickup": "Pickup",
+    "routeTypeDelivery": "Delivery",
+    "selectRouteType": "Select type",
+    "searchRouteTypes": "Search types…",
+    "container": "Container",
+    "containerRequired": "Container",
+    "containerPlaceholder": "No container",
+    "containerSearch": "Search containers…",
+    "date": "Date",
+    "route": "Route",
+    "routePlaceholder": "Select a route…",
+    "routeSearch": "Search routes…",
+    "routeEmpty": "No routes for this date.",
+    "driver": "Driver",
+    "appraiser": "Appraiser",
+    "crewRoles": "Assign roles",
+    "crewRolesEmpty": "This route has no crew members.",
+    "driverFor": "Driver — {{name}}",
+    "appraiserFor": "Appraiser — {{name}}",
+    "createRoute": "New route",
+    "save": "Save active route",
+    "saving": "Saving…",
+    "saved": "Active route saved.",
+    "routeCreated": "Route created.",
+    "loadingRoute": "Loading route…",
+    "createdAt": "Created at",
+    "createdBy": "Created by",
+    "updatedAt": "Updated at",
+    "updatedBy": "Updated by",
+    "errors": {
+      "routeType": "Type is required.",
+      "container": "Container is required for delivery routes.",
+      "date": "Date is required.",
+      "route": "Route is required."
+    }
+  },
+  "routeDetails": {
+    "title": "Route",
+    "description": "Vehicle and crew for the selected route.",
+    "name": "Name",
+    "routeId": "Route ID",
+    "vehicle": "Vehicle",
+    "employees": "Employees",
+    "empty": "Select a route to see vehicle and crew details.",
+    "createdAt": "Created at",
+    "createdBy": "Created by",
+    "updatedAt": "Updated at",
+    "updatedBy": "Updated by"
+  },
+  "createDialog": {
+    "title": "Create route",
+    "description": "Add a route for {{date}}. It will be selected as the active route when saved."
+  },
+  "form": {
+    "addTitle": "Add route",
+    "editTitle": "Edit route",
+    "addDescription": "Assign a vehicle and crew members.",
+    "editDescription": "Update the vehicle and crew for this route.",
+    "editTabLabel": "Edit {{name}}",
+    "entityLabel": "Route",
+    "loading": "Loading route…",
+    "notFound": "This route could not be found.",
+    "vehiclePlaceholder": "Select a vehicle",
+    "vehicleSearch": "Search vehicles…",
+    "crewMembers": "Crew members",
+    "crewMemberPlaceholder": "Search and add crew members…",
+    "removeCrewMember": "Remove {{name}}",
+    "searchCrewMembers": "Search crew members…",
+    "loadingCrewMembers": "Loading crew members…",
+    "noCrewMembersFound": "No active crew members found.",
+    "selectAtLeastOneCrewMember": "Select at least one crew member for this route.",
+    "crewMemberRequired": "Select at least one crew member."
+  }
+}

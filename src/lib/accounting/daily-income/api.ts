@@ -457,9 +457,6 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     employee: values.employeeId
       ? { id: values.employeeId, name: values.employeeName ?? "" }
       : undefined,
-    employeeGroup: values.employeeGroupId?.trim()
-      ? { id: values.employeeGroupId.trim(), name: values.employeeGroupName ?? "" }
-      : undefined,
     account: accountRelated && values.accountId
       ? { id: values.accountId, name: values.accountName, type: values.accountType }
       : undefined,

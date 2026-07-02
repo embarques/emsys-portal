@@ -1,87 +1,117 @@
-import type { Route } from "./types";
+import type { Route, RouteFormValues } from "./types";
+import { formValuesToRoute, generateRouteNumber } from "./types";
+import {
+  clearBrowserStore,
+  readBrowserStore,
+  writeBrowserStore,
+} from "@/lib/local-dev/browser-store";
+import { createMockObjectId } from "@/lib/vehicles/types";
 
-export const MOCK_ROUTES: Route[] = [
-  {
-    id: "665f2a1b3c4d5e6f7a8b9d01",
-    routeId: "ras-001",
-    name: "Brooklyn morning run",
-    date: "2026-06-04T00:00:00Z",
-    container: null,
-    tripNumber: 0,
-    vehicle: { id: "665f1a2b3c4d5e6f7a8b9c0d", name: "Unit 12 — Freightliner" },
-    employeeGroup: { id: "egr-001", name: "egr-001 · USA · 3 employees" },
-    createdAt: "2026-06-03T18:00:00Z",
-    createdBy: "Hector Mejia",
-    updatedAt: "2026-06-04T14:22:00Z",
-  },
-  {
-    id: "665f2a1b3c4d5e6f7a8b9d02",
-    routeId: "ras-002",
-    name: "Doral warehouse shuttle",
-    date: "2026-06-03T00:00:00Z",
-    container: null,
-    tripNumber: 0,
-    vehicle: { id: "665f1a2b3c4d5e6f7a8b9c0f", name: "Unit 04 — Ford Transit" },
-    employeeGroup: { id: "egr-002", name: "egr-002 · DR · 2 employees" },
-    createdAt: "2026-06-02T16:30:00Z",
-    createdBy: "Hector Mejia",
-    updatedAt: "2026-06-03T11:05:00Z",
-  },
-  {
-    id: "665f2a1b3c4d5e6f7a8b9d03",
-    routeId: "ras-003",
-    name: "Santo Domingo delivery team",
-    date: "2026-06-02T00:00:00Z",
-    container: { id: 2, name: "02-26" },
-    tripNumber: 1,
-    vehicle: { id: "665f1a2b3c4d5e6f7a8b9c10", name: "Unit 15 — Kenworth T680" },
-    employeeGroup: { id: "egr-003", name: "egr-003 · DR · 4 employees" },
-    createdAt: "2026-06-01T10:15:00Z",
-    createdBy: "Admin User",
-    updatedAt: "2026-06-02T18:40:00Z",
-  },
-  {
-    id: "665f2a1b3c4d5e6f7a8b9d04",
-    routeId: "ras-004",
-    name: "Cross-branch support",
-    date: "2026-06-01T00:00:00Z",
-    container: null,
-    tripNumber: 0,
-    vehicle: { id: "665f1a2b3c4d5e6f7a8b9c0e", name: "Unit 08 — Isuzu NPR" },
-    employeeGroup: { id: "egr-004", name: "egr-004 · USA · 2 employees" },
-    createdAt: "2026-05-31T09:00:00Z",
-    createdBy: "Hector Mejia",
-    updatedAt: "2026-06-01T09:15:00Z",
-  },
-];
+const LOCAL_ROUTES_STORAGE_KEY = "emsys-local-routes";
+
+/** @deprecated Empty — local dev store starts blank and persists in localStorage. */
+export const MOCK_ROUTES: Route[] = [];
+
+function buildMockRouteName(employees: Route["employees"], vehicleName: string): string {
+  const parts = employees.map((employee) => employee.name.trim()).filter(Boolean);
+  if (vehicleName.trim()) parts.push(vehicleName.trim());
+  return parts.join("-") || "Route";
+}
 
 function cloneAssignment(assignment: Route): Route {
   return {
     ...assignment,
-    container: assignment.container ? { ...assignment.container } : null,
     vehicle: { ...assignment.vehicle },
-    employeeGroup: { ...assignment.employeeGroup },
+    employees: assignment.employees.map((employee) => ({ ...employee })),
   };
 }
 
-/**
- * Session-persistent store so mutations (add/edit/delete) survive component
- * remounts when navigating between pages, instead of resetting to the seed data.
- */
-let routesStore: Route[] = MOCK_ROUTES.map(cloneAssignment);
+let routesStore: Route[] | null = null;
+
+function ensureRoutesStore(): Route[] {
+  if (routesStore === null) {
+    routesStore = readBrowserStore<Route>(LOCAL_ROUTES_STORAGE_KEY)
+      .filter((assignment): assignment is Route =>
+        Boolean(assignment && typeof assignment === "object" && assignment.id),
+      )
+      .map(cloneAssignment);
+  }
+  return routesStore;
+}
+
+function commitRoutesStore(next: Route[]): void {
+  routesStore = next.map(cloneAssignment);
+  writeBrowserStore(LOCAL_ROUTES_STORAGE_KEY, routesStore);
+}
 
 export function cloneRoutes(): Route[] {
-  return routesStore.map(cloneAssignment);
+  return ensureRoutesStore().map(cloneAssignment);
 }
 
 export function setRoutesStore(assignments: Route[]): void {
-  routesStore = assignments.map(cloneAssignment);
+  commitRoutesStore(assignments);
+}
+
+export function resetRoutesStore(): void {
+  routesStore = [];
+  clearBrowserStore(LOCAL_ROUTES_STORAGE_KEY);
 }
 
 export function getRouteById(routeId: string): Route | undefined {
-  return routesStore.find((assignment) => assignment.routeId === routeId);
+  return ensureRoutesStore().find((assignment) => assignment.routeId === routeId);
 }
 
 export function getRouteByRecordId(id: string): Route | undefined {
-  return routesStore.find((assignment) => assignment.id === id);
+  return ensureRoutesStore().find((assignment) => assignment.id === id);
+}
+
+export function createRouteInStore(values: RouteFormValues, createdBy?: string): Route {
+  const now = new Date().toISOString();
+  const route = formValuesToRoute(
+    {
+      ...values,
+      routeId: generateRouteNumber(),
+      name: buildMockRouteName(values.employees, values.vehicle.name),
+      createdBy: values.createdBy || createdBy || "Local User",
+      updatedBy: values.updatedBy || createdBy || "Local User",
+    },
+    now,
+    now,
+    createMockObjectId(),
+  );
+  commitRoutesStore([route, ...ensureRoutesStore()]);
+  return cloneAssignment(route);
+}
+
+export function updateRouteInStore(recordId: string, values: RouteFormValues): Route {
+  const store = ensureRoutesStore();
+  const index = store.findIndex((assignment) => assignment.id === recordId);
+  if (index < 0) {
+    throw new Error("Route not found.");
+  }
+
+  const existing = store[index];
+  const now = new Date().toISOString();
+  const updated = formValuesToRoute(
+    {
+      ...values,
+      name: buildMockRouteName(values.employees, values.vehicle.name),
+    },
+    existing.createdAt,
+    now,
+    recordId,
+    existing,
+  );
+  updated.updatedBy = values.updatedBy?.trim() || existing.updatedBy;
+
+  commitRoutesStore(
+    store.map((assignment, entryIndex) => (entryIndex === index ? updated : assignment)),
+  );
+
+  return cloneAssignment(updated);
+}
+
+export function deleteRoutesFromStore(recordIds: string[]): void {
+  const idSet = new Set(recordIds);
+  commitRoutesStore(ensureRoutesStore().filter((assignment) => !idSet.has(assignment.id)));
 }

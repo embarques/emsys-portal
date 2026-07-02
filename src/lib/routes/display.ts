@@ -1,6 +1,7 @@
-import type { Route, RouteEmployeeGroupRef, RouteVehicleRef } from "./types";
-import { toRouteDateInput } from "./types";
+import type { Route, RouteEmployeeRef, RouteVehicleRef } from "./types";
+import { formatRouteEmployeeNames, toRouteDateInput } from "./types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
+import { getVehiclePortalBranch } from "@/lib/vehicles/types";
 
 export function formatRouteDate(date: string): string {
   const input = toRouteDateInput(date) || date;
@@ -31,11 +32,11 @@ export function truncateObjectId(id: string): string {
   return id.length > 12 ? `${id.slice(0, 8)}…` : id;
 }
 
-/** Display name for a route: `date - employee group - vehicle name`. */
+/** Display name for a route: `date - employees - vehicle name`. */
 export function formatRouteName(assignment: Route): string {
   const parts = [
     formatRouteDate(assignment.date),
-    assignment.employeeGroup.name,
+    formatRouteEmployeeNames(assignment.employees),
     assignment.vehicle.name,
   ]
     .map((part) => part?.trim())
@@ -61,9 +62,9 @@ export function getVehicleRefLabel(vehicle: RouteVehicleRef): string {
   return vehicle.name || vehicle.id || "—";
 }
 
-export function getEmployeeGroupRefLabel(group: RouteEmployeeGroupRef): string {
-  if (!group.id && !group.name) return "—";
-  return group.name || group.id || "—";
+export function getRouteEmployeesLabel(employees: RouteEmployeeRef[]): string {
+  const label = formatRouteEmployeeNames(employees);
+  return label || "—";
 }
 
 export function formatRouteCopyLabel(assignment: Route): string {
@@ -85,15 +86,11 @@ export function buildRouteFilterOptions(routes: Route[]): TableFilterFieldOption
   }));
 }
 
-/** A route belongs to the DR (Dominican Republic) branch via its employee group. */
+/** A route belongs to the DR branch when its assigned vehicle is DR. */
 export function isDrRoute(assignment: Route): boolean {
-  const branch = assignment.employeeGroup.branch?.trim().toLowerCase();
-  if (branch) {
-    return branch === "dr" || branch === "do" || branch === "dominican republic";
-  }
-
-  // Fallback: employee group names are formatted as `… · DR · …` / `… · USA · …`.
-  return /(^|[^a-z])dr([^a-z]|$)/i.test(assignment.employeeGroup.name);
+  const branch = assignment.vehicle.branch?.trim();
+  if (!branch) return false;
+  return getVehiclePortalBranch(branch) === "dr";
 }
 
 function matchesSearchOperator(value: string, query: string, operator: string): boolean {
@@ -133,10 +130,8 @@ export function routeMatchesSearch(
         return assignment.vehicle.id;
       case "vehicle.name":
         return assignment.vehicle.name;
-      case "employeeGroup.id":
-        return assignment.employeeGroup.id;
-      case "employeeGroup.name":
-        return assignment.employeeGroup.name;
+      case "employees.name":
+        return formatRouteEmployeeNames(assignment.employees);
       case "createdBy":
         return assignment.createdBy;
       default:
@@ -160,9 +155,7 @@ export function routeMatchesQuery(assignment: Route, query: string): boolean {
     assignment.vehicle.id,
     assignment.vehicle.name,
     getVehicleRefLabel(assignment.vehicle),
-    assignment.employeeGroup.id,
-    assignment.employeeGroup.name,
-    getEmployeeGroupRefLabel(assignment.employeeGroup),
+    formatRouteEmployeeNames(assignment.employees),
     formatRouteDate(assignment.date),
   ]
     .join(" ")
@@ -172,11 +165,13 @@ export function routeMatchesQuery(assignment: Route, query: string): boolean {
 
 export function computeRouteKpis(assignments: Route[]) {
   const uniqueVehicles = new Set(assignments.map((assignment) => assignment.vehicle.id).filter(Boolean)).size;
-  const uniqueGroups = new Set(assignments.map((assignment) => assignment.employeeGroup.id).filter(Boolean)).size;
+  const uniqueEmployees = new Set(
+    assignments.flatMap((assignment) => assignment.employees.map((employee) => employee.id)),
+  ).size;
 
   return {
     total: assignments.length,
     uniqueVehicles,
-    uniqueGroups,
+    uniqueEmployees,
   };
 }

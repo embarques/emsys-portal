@@ -15,7 +15,6 @@ import type { Customer } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
 import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
-import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 
@@ -56,7 +55,6 @@ function customerOptions(customers: Customer[]) {
 
 type Props = {
   employees: Employee[];
-  employeeGroups: EmployeeGroupOption[];
   bankAccounts: ChartAccount[];
   paymentMethods: AccountingLookup[];
   errors: FieldErrors<DailyIncomeJournalValues>;
@@ -67,7 +65,6 @@ type Props = {
 
 export function RegisterInvoiceTransactionFields({
   employees,
-  employeeGroups,
   bankAccounts,
   paymentMethods,
   errors,
@@ -76,7 +73,6 @@ export function RegisterInvoiceTransactionFields({
   watch,
 }: Props) {
   const employeeId = watch("employeeId");
-  const employeeGroupId = watch("employeeGroupId");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const isZelle = isZellePaymentMethod(paymentMethodName);
@@ -197,10 +193,7 @@ export function RegisterInvoiceTransactionFields({
       <div className="sm:col-span-2">
         <TransactionAssigneeSelect
           employees={employees}
-          employeeGroups={employeeGroups}
           employeeId={employeeId}
-          employeeGroupId={employeeGroupId}
-          groupsOnly
           error={errors.employeeId?.message}
           setValue={setValue}
         />

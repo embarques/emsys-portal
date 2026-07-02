@@ -16,7 +16,6 @@ import { dailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas"
 import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { formatAccountingMoney } from "@/lib/accounting/display";
-import type { EmployeeGroupOption } from "@/lib/employee-groups/api/employee-groups-api";
 import type { Employee } from "@/lib/employees/types";
 import { getInvoiceBalanceAmount, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
 import { cn } from "@/lib/utils";
@@ -28,7 +27,6 @@ type Props = {
   transactionType: JournalTransactionType;
   initialValues: DailyIncomeJournalValues;
   employees: Employee[];
-  employeeGroups: EmployeeGroupOption[];
   accounts: ChartAccount[];
   bankAccounts: ChartAccount[];
   invoices: Invoice[];
@@ -52,7 +50,6 @@ export function DailyIncomeTransactionForm({
   transactionType,
   initialValues,
   employees,
-  employeeGroups,
   accounts,
   bankAccounts,
   invoices,
@@ -93,7 +90,6 @@ export function DailyIncomeTransactionForm({
 
   const type = watch("transactionType");
   const employeeId = watch("employeeId");
-  const employeeGroupId = watch("employeeGroupId");
   const invoiceId = watch("invoiceId");
   const accountId = watch("accountId");
   const paymentAccountId = watch("paymentAccountId");
@@ -204,7 +200,6 @@ export function DailyIncomeTransactionForm({
           {isRegisterInvoice ? (
             <RegisterInvoiceTransactionFields
               employees={employees}
-              employeeGroups={employeeGroups}
               bankAccounts={bankAccounts}
               paymentMethods={paymentMethods}
               errors={errors}
@@ -263,10 +258,7 @@ export function DailyIncomeTransactionForm({
             <div className="sm:col-span-2">
               <TransactionAssigneeSelect
                 employees={employees}
-                employeeGroups={employeeGroups}
                 employeeId={employeeId}
-                employeeGroupId={employeeGroupId}
-                groupsOnly={type === "PAYMENT"}
                 error={errors.employeeId?.message}
                 setValue={setValue}
               />

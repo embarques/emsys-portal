@@ -17,7 +17,6 @@ import {
   UserCog,
   UserRound,
   Users,
-  UsersRound,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -83,12 +82,6 @@ const navigationGroups: NavigationGroup[] = [
       { labelKey: "navigation.items.users", href: "/users", icon: UserCog, permission: PERMISSIONS.usersView },
       { labelKey: "navigation.items.roles", href: "/roles", icon: KeyRound, permission: PERMISSIONS.rolesView },
       { labelKey: "navigation.items.employees", href: "/employees", icon: UserRound, permission: PERMISSIONS.employeesView },
-      {
-        labelKey: "navigation.items.employeeGroups",
-        href: "/employee-groups",
-        icon: UsersRound,
-        permission: PERMISSIONS.employeesView,
-      },
       { labelKey: "navigation.items.security", href: "/security", icon: ShieldCheck, permission: PERMISSIONS.usersView },
       { labelKey: "navigation.items.branches", href: "/branches", icon: Building2, permission: PERMISSIONS.branchesView },
       {
