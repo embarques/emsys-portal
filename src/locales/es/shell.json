@@ -44,6 +44,7 @@
     "profile": "Perfil",
     "settings": "Configuración",
     "account": "Cuenta",
+    "changePassword": "Cambiar contraseña",
     "signOut": "Cerrar sesión"
   },
   "profileMenu": {
@@ -52,6 +53,7 @@
     "account": "Cuenta",
     "settings": "Configuración",
     "notifications": "Notificaciones",
+    "changePassword": "Cambiar contraseña",
     "logOut": "Cerrar sesión"
   },
   "theme": {

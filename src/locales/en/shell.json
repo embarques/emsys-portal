@@ -44,6 +44,7 @@
     "profile": "Profile",
     "settings": "Settings",
     "account": "Account",
+    "changePassword": "Change Password",
     "signOut": "Sign out"
   },
   "profileMenu": {
@@ -52,6 +53,7 @@
     "account": "Account",
     "settings": "Settings",
     "notifications": "Notifications",
+    "changePassword": "Change Password",
     "logOut": "Log out"
   },
   "theme": {

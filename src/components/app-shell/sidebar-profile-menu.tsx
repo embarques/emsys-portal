@@ -6,11 +6,13 @@ import { useEffect, useRef, useState } from "react";
 import {
   Bell,
   ChevronsUpDown,
+  KeyRound,
   LogOut,
   Settings,
   UserCircle,
 } from "lucide-react";
 
+import { ChangePasswordDialog } from "@/components/configuration/change-password-dialog";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
@@ -43,6 +45,7 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
   const { displayName, email, role, roleLoading, signOut } = useAuth();
   const currentUserQuery = useCurrentUser();
   const [open, setOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const profileName =
@@ -172,6 +175,18 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
               <Bell className="h-4 w-4 shrink-0" />
               {t("shell.profileMenu.notifications")}
             </Link>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                closeMenu();
+                setChangePasswordOpen(true);
+              }}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition hover:bg-accent hover:text-accent-foreground"
+            >
+              <KeyRound className="h-4 w-4 shrink-0" />
+              {t("shell.profileMenu.changePassword")}
+            </button>
           </div>
 
           <div className="border-t p-2">
@@ -187,6 +202,8 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
           </div>
         </div>
       ) : null}
+
+      <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
     </div>
   );
 }
