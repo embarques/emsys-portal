@@ -16,10 +16,14 @@ function cloneActiveRoute(record: ActiveRoute): ActiveRoute {
   return {
     ...record,
     name: String(record.name ?? ""),
+    dayOfWeek: Array.isArray(record.dayOfWeek) ? [...record.dayOfWeek] : [],
+    branch: record.branch ? { ...record.branch } : null,
+    active: record.active !== false,
     container: record.container ? { ...record.container } : null,
     route: record.route ? { ...record.route } : { id: record.id, name: record.id },
-    driver: record.driver ? { ...record.driver } : null,
-    appraiser: record.appraiser ? { ...record.appraiser } : null,
+    employees: Array.isArray(record.employees)
+      ? record.employees.map((employee) => ({ ...employee }))
+      : [],
   };
 }
 
@@ -108,19 +112,24 @@ export function replaceActiveRouteInStore(recordId: string, record: ActiveRoute)
 }
 
 export function buildMockActiveRouteName(
-  date: string,
+  scheduleLabel: string,
   routeRecordId: string,
   container: ActiveRoute["container"],
+  providedName?: string,
 ): string {
   const route = getRouteByRecordId(routeRecordId);
   const routeType = deriveRouteType(container);
 
   if (routeType === "delivery" && container) {
-    const year = date.trim().slice(0, 4) || new Date().getFullYear().toString();
-    return `01-${container.name}-${year}`;
+    const year = scheduleLabel.trim().slice(0, 4);
+    const suffix = /^\d{4}$/.test(year) ? `-${year}` : "";
+    return `01-${container.name}${suffix}`;
   }
+
+  const trimmedName = providedName?.trim();
+  if (trimmedName) return trimmedName;
 
   const employeePart = route?.employees.map((employee) => employee.name).join("-") ?? "crew";
   const vehiclePart = route?.vehicle.name ?? "vehicle";
-  return `${date}-${employeePart}-${vehiclePart}`;
+  return `${scheduleLabel}-${employeePart}-${vehiclePart}`;
 }

@@ -47,11 +47,10 @@ function assertCrewRoles(values: ActiveRouteFormValues): void {
   if (!route) return;
 
   const crewIds = new Set(route.employees.map((employee) => employee.id));
-  if (values.driver && !crewIds.has(values.driver.id)) {
-    throw new Error("Driver must be a crew member on the selected route.");
-  }
-  if (values.appraiser && !crewIds.has(values.appraiser.id)) {
-    throw new Error("Appraiser must be a crew member on the selected route.");
+  for (const employee of values.employees) {
+    if (!crewIds.has(employee.id)) {
+      throw new Error("Crew member must be on the selected route.");
+    }
   }
 }
 
@@ -63,7 +62,12 @@ function formValuesToActiveRoute(
   assertCrewRoles(values);
 
   const now = new Date().toISOString();
-  const date = values.date.trim().slice(0, 10);
+  const isDate = values.scheduleType === "date";
+  const date = isDate ? values.date.trim().slice(0, 10) : "";
+  const dayOfWeek = isDate
+    ? []
+    : values.dayOfWeek.map((day) => day.trim().toLowerCase()).filter(Boolean);
+  const scheduleLabel = isDate ? date : dayOfWeek.join("-");
   const container =
     values.routeType === "delivery" && values.container && values.container.id > 0
       ? { id: values.container.id, name: values.container.name.trim() }
@@ -72,13 +76,15 @@ function formValuesToActiveRoute(
 
   return {
     id: existing?.id ?? createMockObjectId(),
-    name: buildMockActiveRouteName(date, values.routeRecordId, container),
+    name: buildMockActiveRouteName(scheduleLabel, values.routeRecordId, container, values.name),
     routeType: deriveRouteType(container),
     container,
     date,
+    dayOfWeek,
+    branch: { id: values.branch.id, code: values.branch.code.trim() },
+    active: values.active,
     route,
-    driver: values.driver ? { ...values.driver } : null,
-    appraiser: values.appraiser ? { ...values.appraiser } : null,
+    employees: values.employees.map((employee) => ({ ...employee })),
     createdAt: existing?.createdAt ?? now,
     createdBy: existing?.createdBy ?? "Local User",
     updatedAt: now,
@@ -226,13 +232,16 @@ export async function upsertActiveRoute(
     return updateActiveRoute(recordId, values);
   }
 
-  const existing = findActiveRouteByLookup({
-    routeType: values.routeType,
-    date: values.date.trim().slice(0, 10),
-    ...(values.routeType === "delivery" && values.container
-      ? { containerId: values.container.id }
-      : {}),
-  });
+  const existing =
+    values.scheduleType === "date"
+      ? findActiveRouteByLookup({
+          routeType: values.routeType,
+          date: values.date.trim().slice(0, 10),
+          ...(values.routeType === "delivery" && values.container
+            ? { containerId: values.container.id }
+            : {}),
+        })
+      : undefined;
 
   if (existing) {
     return updateActiveRoute(existing.id, values);

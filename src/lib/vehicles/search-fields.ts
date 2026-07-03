@@ -5,7 +5,7 @@ export const VEHICLE_BAR_OR_SEARCH_FIELDS = [
   "vin",
   "licensePlate",
   "fuelType",
-  "branch",
+  "branch.code",
   "createdBy.name",
 ] as const;
 

@@ -9,6 +9,8 @@ export type ActiveRoutesDirectoryVariant = {
   baseHref: string;
   columnVisibilityKey: string;
   copyPrefix: "pickupRoutes" | "deliveryRoutes";
+  /** When set, the schedule form locks the branch (and route list) to this code. */
+  fixedBranchCode?: string;
 };
 
 export const PICKUP_ROUTES_DIRECTORY_VARIANT: ActiveRoutesDirectoryVariant = {
@@ -31,4 +33,6 @@ export const DELIVERY_ROUTES_DIRECTORY_VARIANT: ActiveRoutesDirectoryVariant = {
   baseHref: "/delivery-routes",
   columnVisibilityKey: "delivery-routes-v1",
   copyPrefix: "deliveryRoutes",
+  // Deliveries only run out of the RD branch.
+  fixedBranchCode: "RD",
 };

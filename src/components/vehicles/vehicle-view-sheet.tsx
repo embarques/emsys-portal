@@ -18,6 +18,8 @@ import {
   getBranchLabel,
   getFuelTypeBadgeClass,
   getFuelTypeLabel,
+  getVehicleActiveBadgeClass,
+  getVehicleActiveLabel,
   truncateObjectId,
   truncateVehicleId,
 } from "@/lib/vehicles/display";
@@ -43,7 +45,8 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
           meta={
             <>
               <Badge className={getFuelTypeBadgeClass(vehicle.fuelType)}>{getFuelTypeLabel(vehicle.fuelType)}</Badge>
-              <Badge className={getBranchBadgeClass(vehicle.branch)}>{getBranchLabel(vehicle.branch)}</Badge>
+              <Badge className={getBranchBadgeClass(vehicle.branch.code)}>{getBranchLabel(vehicle.branch.code)}</Badge>
+              <Badge className={getVehicleActiveBadgeClass(vehicle.active)}>{getVehicleActiveLabel(vehicle.active)}</Badge>
             </>
           }
         />
@@ -57,7 +60,8 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
             <RecordViewSheetDetailRow label={formatTableColumnLabel("licensePlate")} value={vehicle.licensePlate || "—"} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("year")} value={vehicle.year} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("fuelType")} value={getFuelTypeLabel(vehicle.fuelType)} />
-            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch")} value={vehicle.branch || "—"} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("branch")} value={getBranchLabel(vehicle.branch.code)} />
+            <RecordViewSheetDetailRow label={formatTableColumnLabel("status")} value={getVehicleActiveLabel(vehicle.active)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("inspectionDate")} value={formatVehicleDate(vehicle.inspectionDate)} />
             <RecordViewSheetDetailRow label={formatTableColumnLabel("registrationDate")} value={formatVehicleDate(vehicle.registrationDate)} />
           </RecordViewSheetSection>

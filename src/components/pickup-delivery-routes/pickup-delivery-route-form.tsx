@@ -1,16 +1,31 @@
 "use client";
 
-import { Building2, CalendarRange, ClipboardList, Container, Plus, Route as RouteIcon, Users } from "lucide-react";
+import {
+  Building2,
+  CalendarRange,
+  CircleCheck,
+  ClipboardList,
+  Container,
+  Plus,
+  Route as RouteIcon,
+  Tag,
+  Users,
+} from "lucide-react";
 
-import { ActiveRouteCrewRoles } from "@/components/pickup-delivery-routes/pickup-delivery-route-crew-roles";
+import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
+import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { SearchableSelectOption } from "@/components/ui/searchable-select";
-import type { RouteEmployeeRef } from "@/lib/route-manager/types";
-import type { ActiveRouteFormValues, RouteType } from "@/lib/pickup-delivery-routes/types";
+import type { RouteCrewRole } from "@/lib/route-manager/types";
+import type {
+  ActiveRouteFormValues,
+  RouteScheduleType,
+  RouteType,
+} from "@/lib/pickup-delivery-routes/types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -20,25 +35,29 @@ type ActiveRouteFormProps = {
   isDelivery: boolean;
   showRouteTypeField?: boolean;
   showContainerField?: boolean;
+  showBranchField?: boolean;
   submitLabel: string;
   isSubmitting?: boolean;
   externalError?: string | null;
   routeOptions: SearchableSelectOption[];
   containerOptions: SearchableSelectOption[];
   branchOptions: SearchableSelectOption[];
+  dayOfWeekOptions: SearchableSelectOption[];
   branchCode: string;
   branchesLoading?: boolean;
   routesLoading?: boolean;
-  routeEmployees: RouteEmployeeRef[];
   selectedRouteLoading?: boolean;
   submitDisabled?: boolean;
   onRouteTypeChange: (routeType: RouteType) => void;
+  onScheduleTypeChange: (scheduleType: RouteScheduleType) => void;
   onBranchChange: (branchCode: string) => void;
   onDateChange: (date: string) => void;
+  onDayOfWeekChange: (dayOfWeek: string[]) => void;
+  onNameChange: (name: string) => void;
   onContainerChange: (containerId: string) => void;
   onRouteRecordChange: (routeRecordId: string) => void;
-  onDriverChange: (driver: RouteEmployeeRef | null) => void;
-  onAppraiserChange: (appraiser: RouteEmployeeRef | null) => void;
+  onRoleChange: (employeeId: number, role: RouteCrewRole) => void;
+  onActiveChange: (active: boolean) => void;
   onCreateRouteClick: () => void;
   onSubmit: () => void;
   onCancel?: () => void;
@@ -56,25 +75,29 @@ export function ActiveRouteForm({
   isDelivery,
   showRouteTypeField = true,
   showContainerField,
+  showBranchField = true,
   submitLabel,
   isSubmitting = false,
   externalError = null,
   routeOptions,
   containerOptions,
   branchOptions,
+  dayOfWeekOptions,
   branchCode,
   branchesLoading = false,
   routesLoading = false,
-  routeEmployees,
   selectedRouteLoading = false,
   submitDisabled = false,
   onRouteTypeChange,
+  onScheduleTypeChange,
   onBranchChange,
   onDateChange,
+  onDayOfWeekChange,
+  onNameChange,
   onContainerChange,
   onRouteRecordChange,
-  onDriverChange,
-  onAppraiserChange,
+  onRoleChange,
+  onActiveChange,
   onCreateRouteClick,
   onSubmit,
   onCancel,
@@ -82,6 +105,15 @@ export function ActiveRouteForm({
   const { t } = useTranslation();
   const handleEnterNavigation = useFormEnterNavigation();
   const containerVisible = showContainerField ?? isDelivery;
+  // Delivery routes are always date-based; only pickups can recur by weekday.
+  const allowDayOfWeek = values.routeType === "pickup";
+  const isDayOfWeek = allowDayOfWeek && values.scheduleType === "dayOfWeek";
+  // Day-of-week pickups can be named by the user; delivery names and one-time
+  // (date) pickup names are server-generated.
+  const showNameField = values.routeType === "pickup" && isDayOfWeek;
+  // Deliveries have no appraiser role.
+  const crewRoles: RouteCrewRole[] =
+    values.routeType === "delivery" ? ["driver", "helper"] : ["driver", "appraiser", "helper"];
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -126,15 +158,93 @@ export function ActiveRouteForm({
           </FormSection>
         ) : null}
 
-        <FormSection icon={CalendarRange} title={t("routes.activeRoute.date")} required>
-          <DateInput
-            id="active-route-date"
-            aria-label={t("routes.activeRoute.date")}
-            value={values.date}
-            onChange={(event) => onDateChange(event.target.value)}
-            required
-          />
+        <FormSection icon={CalendarRange} title={t("routes.activeRoute.schedule")} required>
+          <div className="space-y-2.5">
+            {allowDayOfWeek ? (
+              <div
+                className="inline-flex rounded-lg border border-input bg-muted p-1"
+                role="radiogroup"
+                aria-label={t("routes.activeRoute.schedule")}
+              >
+                {(["date", "dayOfWeek"] as const).map((scheduleType) => {
+                  const selected = values.scheduleType === scheduleType;
+                  return (
+                    <button
+                      key={scheduleType}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => onScheduleTypeChange(scheduleType)}
+                      className={cn(
+                        "rounded-md px-3 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                        selected
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {scheduleType === "date"
+                        ? t("routes.activeRoute.scheduleDate")
+                        : t("routes.activeRoute.scheduleDayOfWeek")}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {isDayOfWeek ? (
+              <div
+                className="flex flex-wrap gap-1.5"
+                role="group"
+                aria-label={t("routes.activeRoute.dayOfWeek")}
+              >
+                {dayOfWeekOptions.map((option) => {
+                  const selected = values.dayOfWeek.includes(option.value);
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() =>
+                        onDayOfWeekChange(
+                          selected
+                            ? values.dayOfWeek.filter((day) => day !== option.value)
+                            : [...values.dayOfWeek, option.value],
+                        )
+                      }
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                        selected
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <DateInput
+                id="active-route-date"
+                aria-label={t("routes.activeRoute.date")}
+                value={values.date}
+                onChange={(event) => onDateChange(event.target.value)}
+                required
+              />
+            )}
+          </div>
         </FormSection>
+
+        {showNameField ? (
+          <FormSection icon={Tag} title={t("routes.activeRoute.name")}>
+            <Input
+              id="active-route-name"
+              value={values.name}
+              onChange={(event) => onNameChange(event.target.value)}
+              placeholder={t("routes.activeRoute.namePlaceholder")}
+            />
+          </FormSection>
+        ) : null}
 
         {containerVisible ? (
           <FormSection icon={Container} title={t("routes.activeRoute.container")} required>
@@ -151,19 +261,21 @@ export function ActiveRouteForm({
           </FormSection>
         ) : null}
 
-        <FormSection icon={Building2} title={t("routes.activeRoute.branch")}>
-          <SearchableSelect
-            id="active-route-branch"
-            aria-label={t("routes.activeRoute.branch")}
-            value={branchCode}
-            onValueChange={onBranchChange}
-            placeholder={t("routes.activeRoute.branchPlaceholder")}
-            searchPlaceholder={t("routes.activeRoute.branchSearch")}
-            loading={branchesLoading}
-            loadingMessage={t("common.loading")}
-            options={branchOptions}
-          />
-        </FormSection>
+        {showBranchField ? (
+          <FormSection icon={Building2} title={t("routes.activeRoute.branch")} required>
+            <SearchableSelect
+              id="active-route-branch"
+              aria-label={t("routes.activeRoute.branch")}
+              value={branchCode}
+              onValueChange={onBranchChange}
+              placeholder={t("routes.activeRoute.branchPlaceholder")}
+              searchPlaceholder={t("routes.activeRoute.branchSearch")}
+              loading={branchesLoading}
+              loadingMessage={t("common.loading")}
+              options={branchOptions}
+            />
+          </FormSection>
+        ) : null}
 
         <FormSection
           icon={RouteIcon}
@@ -193,16 +305,48 @@ export function ActiveRouteForm({
 
         {values.routeRecordId ? (
           <FormSection icon={Users} title={t("routes.activeRoute.crewRoles")}>
-            <ActiveRouteCrewRoles
-              employees={routeEmployees}
-              driver={values.driver}
-              appraiser={values.appraiser}
+            <CrewRolePicker
+              employees={values.employees}
+              onRoleChange={onRoleChange}
+              roles={crewRoles}
               loading={selectedRouteLoading}
-              onDriverChange={onDriverChange}
-              onAppraiserChange={onAppraiserChange}
             />
           </FormSection>
         ) : null}
+
+        <FormSection icon={CircleCheck} title={t("routes.activeRoute.status")}>
+          <div
+            className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
+            role="radiogroup"
+            aria-label={t("routes.activeRoute.status")}
+          >
+            {[
+              { value: true, label: t("routes.activeRoute.active") },
+              { value: false, label: t("routes.activeRoute.inactive") },
+            ].map((option) => {
+              const selected = values.active === option.value;
+              return (
+                <button
+                  key={option.label}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => onActiveChange(option.value)}
+                  className={cn(
+                    "rounded-md px-4 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                    selected && option.value
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : selected
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </FormSection>
 
         {isEditing ? (
           <p className="text-xs text-muted-foreground">{t("routes.activeRouteForm.editHint")}</p>

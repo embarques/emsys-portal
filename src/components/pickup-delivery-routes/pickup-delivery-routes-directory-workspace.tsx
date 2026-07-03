@@ -25,7 +25,9 @@ import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-to
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import {
+  formatActiveRouteAppraiserName,
   formatActiveRouteContainerLabel,
+  formatActiveRouteDriverNames,
   formatActiveRouteRowLabel,
   formatActiveRouteTypeLabel,
 } from "@/lib/pickup-delivery-routes/display";
@@ -173,12 +175,17 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
       {
         id: "date",
         label: t("routes.columns.date"),
-        renderCell: (record) => (
-          <div className="flex items-center gap-1.5">
-            <CalendarRange className="h-3.5 w-3.5 text-muted-foreground" />
-            {formatRouteDate(record.date)}
-          </div>
-        ),
+        renderCell: (record) => {
+          const schedule = record.date
+            ? formatRouteDate(record.date)
+            : record.dayOfWeek.map((day) => t(`routes.activeRoute.days.${day}`)).join(", ");
+          return (
+            <div className="flex items-center gap-1.5">
+              <CalendarRange className="h-3.5 w-3.5 text-muted-foreground" />
+              {schedule || dash}
+            </div>
+          );
+        },
       },
       {
         id: "name",
@@ -204,12 +211,12 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
       {
         id: "driver.name",
         label: t("routes.columns.driver"),
-        renderCell: (record) => record.driver?.name || dash,
+        renderCell: (record) => formatActiveRouteDriverNames(record) || dash,
       },
       {
         id: "appraiser.name",
         label: t("routes.columns.appraiser"),
-        renderCell: (record) => record.appraiser?.name || dash,
+        renderCell: (record) => formatActiveRouteAppraiserName(record) || dash,
       },
       {
         id: "createdAt",

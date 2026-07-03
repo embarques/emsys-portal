@@ -23,11 +23,21 @@ export const VEHICLE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     options: VEHICLE_FUEL_TYPES,
   },
   {
-    field: "branch",
+    field: "branch.code",
     label: "Branch",
     operators: ["eq", "neq", "contains", "startsWith"],
     valueType: "select",
     options: VEHICLE_BRANCH_OPTIONS,
+  },
+  {
+    field: "active",
+    label: "Status",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    options: [
+      { value: "true", label: "Active" },
+      { value: "false", label: "Inactive" },
+    ],
   },
   {
     field: "year",

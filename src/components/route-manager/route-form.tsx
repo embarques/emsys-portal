@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Car, ClipboardList, Users } from "lucide-react";
+import { Car, CircleCheck, ClipboardList, Users } from "lucide-react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
@@ -12,6 +12,7 @@ import { useTranslation } from "@/lib/i18n";
 import { createEmptyRouteForm, type RouteFormValues } from "@/lib/route-manager/types";
 import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
 import { getBranchLabel } from "@/lib/vehicles/display";
+import { cn } from "@/lib/utils";
 
 type RouteFormProps = {
   initialValues?: RouteFormValues;
@@ -55,7 +56,7 @@ export function RouteForm({
     updateField("vehicle", {
       id: vehicleRecordId,
       name: vehicle?.name ?? "",
-      ...(vehicle?.branch ? { branch: vehicle.branch } : {}),
+      ...(vehicle?.branch.code ? { branch: vehicle.branch.code } : {}),
     });
   }
 
@@ -115,7 +116,7 @@ export function RouteForm({
             required
             options={vehicles.map((vehicle) => ({
               value: vehicle.id,
-              label: `${vehicle.name} · ${getBranchLabel(vehicle.branch)}`,
+              label: `${vehicle.name} · ${getBranchLabel(vehicle.branch.code)}`,
             }))}
           />
         </FormSection>
@@ -126,6 +127,40 @@ export function RouteForm({
             onChange={handleEmployeesChange}
             error={employeeError}
           />
+        </FormSection>
+
+        <FormSection icon={CircleCheck} title={t("routes.activeRoute.status")}>
+          <div
+            className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
+            role="radiogroup"
+            aria-label={t("routes.activeRoute.status")}
+          >
+            {[
+              { value: true, label: t("routes.activeRoute.active") },
+              { value: false, label: t("routes.activeRoute.inactive") },
+            ].map((option) => {
+              const selected = values.active === option.value;
+              return (
+                <button
+                  key={option.label}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => updateField("active", option.value)}
+                  className={cn(
+                    "rounded-md px-4 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                    selected && option.value
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : selected
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
         </FormSection>
       </FormBody>
 

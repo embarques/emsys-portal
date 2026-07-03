@@ -5,6 +5,12 @@ const referenceSchema = z.object({
   name: z.string().trim().min(1, "Select an option."),
 });
 
+const branchReferenceSchema = z.object({
+  id: z.number().int().positive("Select an option."),
+  code: z.string().trim(),
+  name: z.string().trim().min(1, "Select an option."),
+});
+
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Enter a valid time.");
 
 const baseUserFormSchema = z
@@ -14,7 +20,7 @@ const baseUserFormSchema = z
     password: z.string(),
     confirmPassword: z.string(),
     active: z.boolean(),
-    branch: referenceSchema,
+    branch: branchReferenceSchema,
     role: referenceSchema,
     restrictLoginHours: z.boolean(),
     startTime: z.string(),

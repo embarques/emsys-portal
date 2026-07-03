@@ -9,10 +9,48 @@ export type RouteVehicleRef = {
   branch?: string;
 };
 
+/** Crew member role on a route. Defaults to `driver` when unset. */
+export type RouteCrewRole = "driver" | "appraiser" | "helper";
+
+export const ROUTE_CREW_ROLES: RouteCrewRole[] = ["driver", "appraiser", "helper"];
+
+export const DEFAULT_ROUTE_CREW_ROLE: RouteCrewRole = "helper";
+
 export type RouteEmployeeRef = {
   id: number;
   name: string;
+  role?: RouteCrewRole;
 };
+
+export function resolveCrewRole(role?: RouteCrewRole): RouteCrewRole {
+  return role ?? DEFAULT_ROUTE_CREW_ROLE;
+}
+
+/** Roles that only one crew member can hold at a time. */
+export const SINGLETON_CREW_ROLES: RouteCrewRole[] = ["driver", "appraiser"];
+
+/**
+ * Assign `role` to the crew member with `employeeId`. Driver and appraiser are
+ * singleton roles (only one each), so promoting a member to one of them demotes
+ * any other member currently holding that role back to helper. Helper is
+ * unlimited.
+ */
+export function setCrewMemberRole(
+  employees: RouteEmployeeRef[],
+  employeeId: number,
+  role: RouteCrewRole,
+): RouteEmployeeRef[] {
+  const isSingleton = SINGLETON_CREW_ROLES.includes(role);
+  return employees.map((employee) => {
+    if (employee.id === employeeId) {
+      return { ...employee, role };
+    }
+    if (isSingleton && resolveCrewRole(employee.role) === role) {
+      return { ...employee, role: "helper" as RouteCrewRole };
+    }
+    return employee;
+  });
+}
 
 export type Route = {
   id: string;
@@ -22,6 +60,7 @@ export type Route = {
   tripNumber: number;
   vehicle: RouteVehicleRef;
   employees: RouteEmployeeRef[];
+  active: boolean;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
@@ -34,6 +73,7 @@ export type RouteFormValues = {
   name: string;
   vehicle: RouteVehicleRef;
   employees: RouteEmployeeRef[];
+  active: boolean;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -111,6 +151,7 @@ export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormV
     name: "",
     vehicle: createEmptyVehicleRef(),
     employees: [],
+    active: true,
     createdBy,
     createdAt: "",
     updatedAt: "",
@@ -125,6 +166,7 @@ export function routeToFormValues(assignment: Route): RouteFormValues {
     name: assignment.name,
     vehicle: { ...assignment.vehicle },
     employees: assignment.employees.map((employee) => ({ ...employee })),
+    active: assignment.active,
     createdBy: assignment.createdBy,
     createdAt: assignment.createdAt,
     updatedAt: assignment.updatedAt,
@@ -163,7 +205,9 @@ export function formValuesToRoute(
     employees: values.employees.map((employee) => ({
       id: employee.id,
       name: employee.name.trim(),
+      role: resolveCrewRole(employee.role),
     })),
+    active: values.active,
     createdAt: createdAt ?? (values.createdAt || now),
     createdBy: values.createdBy.trim() || DEFAULT_CREATED_BY,
     updatedAt: updatedAt ?? (values.updatedAt || now),

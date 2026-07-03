@@ -9,7 +9,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
 import { useEmployeeSearch, useEmployees } from "@/lib/employees/hooks/use-employees";
 import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
-import type { RouteEmployeeRef } from "@/lib/route-manager/types";
+import { DEFAULT_ROUTE_CREW_ROLE, type RouteEmployeeRef } from "@/lib/route-manager/types";
 
 type RouteEmployeeSelectProps = {
   value: RouteEmployeeRef[];
@@ -90,7 +90,7 @@ export function RouteEmployeeSelect({ value, onChange, error = null }: RouteEmpl
       employeesQuery.data?.items.find((employee) => employee.id === id) ??
       employeeSearch.data?.items.find((employee) => employee.id === id);
 
-    onChange([...value, { id, name: fromList?.name ?? "" }]);
+    onChange([...value, { id, name: fromList?.name ?? "", role: DEFAULT_ROUTE_CREW_ROLE }]);
     setPickerValue("");
     setEmployeeQuery("");
   }

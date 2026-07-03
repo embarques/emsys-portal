@@ -81,7 +81,7 @@ export function useVehicleBranchCount(branch: VehiclePortalBranch) {
       fetchVehicles({
         ...DEFAULT_VEHICLE_LIST_PARAMS,
         limit: 1,
-        search: { field: "branch", operator: "eq", value: branch },
+        search: { field: "branch.code", operator: "eq", value: branch },
       }),
   });
 

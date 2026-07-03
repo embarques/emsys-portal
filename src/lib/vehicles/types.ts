@@ -4,6 +4,12 @@ import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filte
 
 export type VehiclePortalBranch = "usa" | "dr";
 
+/** Branch a vehicle belongs to (`id` + `code`), matching the employees API shape. */
+export type VehicleBranch = {
+  id: number;
+  code: string;
+};
+
 export type Vehicle = {
   id: string;
   vehicleId: string;
@@ -12,7 +18,8 @@ export type Vehicle = {
   licensePlate: string;
   year: number;
   fuelType: string;
-  branch: string;
+  branch: VehicleBranch;
+  active: boolean;
   inspectionDate: string;
   registrationDate: string;
   createdAt: string;
@@ -28,7 +35,8 @@ export type VehicleFormValues = {
   licensePlate: string;
   year: string;
   fuelType: string;
-  branch: string;
+  branch: VehicleBranch;
+  active: boolean;
   inspectionDate: string;
   registrationDate: string;
   createdAt: string;
@@ -52,7 +60,9 @@ export type VehicleSearchField =
   | "licensePlate"
   | "year"
   | "fuelType"
-  | "branch"
+  | "branch.code"
+  | "branch.id"
+  | "active"
   | "createdBy.name";
 
 export type VehicleSearchFilter = ApiListTextSearch;
@@ -83,7 +93,9 @@ export const VEHICLE_GET_SEARCH_CAPABILITIES: {
   { field: "vin", label: "vin", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "licensePlate", label: "licensePlate", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "fuelType", label: "fuelType", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "branch", label: "branch", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "branch.code", label: "branch.code", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "branch.id", label: "branch.id", operators: ["eq", "neq"] },
+  { field: "active", label: "active", operators: ["eq", "neq"] },
   { field: "createdBy.name", label: "createdBy", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "year", label: "year", operators: ["eq", "neq"] },
   { field: "id", label: "Record ID", operators: ["eq", "neq"] },
@@ -104,6 +116,11 @@ export const VEHICLE_FUEL_TYPES: { value: string; label: string }[] = [
   { value: "diesel", label: "Diesel" },
 ];
 
+export const VEHICLE_ACTIVE_OPTIONS: { value: boolean; label: string }[] = [
+  { value: true, label: "Active" },
+  { value: false, label: "Inactive" },
+];
+
 /** @deprecated Use VEHICLE_FUEL_TYPES */
 export const FUEL_TYPES = VEHICLE_FUEL_TYPES;
 
@@ -119,9 +136,6 @@ export const VEHICLE_BRANCHES: { value: VehiclePortalBranch; label: string }[] =
   { value: "usa", label: "USA" },
   { value: "dr", label: "DR" },
 ];
-
-/** @deprecated Use VehiclePortalBranch */
-export type VehicleBranch = VehiclePortalBranch;
 
 /** @deprecated Use VehiclePortalBranch */
 export type FuelType = string;
@@ -166,7 +180,7 @@ export function buildVehicleListParams(input: {
 }
 
 export function getVehiclePortalBranch(branch: string): VehiclePortalBranch {
-  const normalized = branch.trim().toLowerCase();
+  const normalized = (branch ?? "").trim().toLowerCase();
   if (normalized === "dr" || normalized === "do" || normalized === "dominican republic") {
     return "dr";
   }
@@ -186,7 +200,8 @@ export function createEmptyVehicleForm(): VehicleFormValues {
     licensePlate: "",
     year: String(new Date().getFullYear()),
     fuelType: "diesel",
-    branch: "",
+    branch: { id: 0, code: "" },
+    active: true,
     inspectionDate: "",
     registrationDate: "",
     createdAt: "",
@@ -204,7 +219,8 @@ export function vehicleToFormValues(vehicle: Vehicle): VehicleFormValues {
     licensePlate: vehicle.licensePlate,
     year: vehicle.year > 0 ? String(vehicle.year) : "",
     fuelType: vehicle.fuelType,
-    branch: vehicle.branch,
+    branch: { ...vehicle.branch },
+    active: vehicle.active,
     inspectionDate: vehicle.inspectionDate,
     registrationDate: vehicle.registrationDate,
     createdAt: vehicle.createdAt,
@@ -216,6 +232,10 @@ export function vehicleToFormValues(vehicle: Vehicle): VehicleFormValues {
 export function validateVehicleFormValues(values: VehicleFormValues): void {
   if (!values.name.trim()) {
     throw new Error("Vehicle name is required.");
+  }
+
+  if (!(values.branch.id > 0)) {
+    throw new Error("Branch is required.");
   }
 
   if (values.year.trim()) {

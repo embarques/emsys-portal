@@ -16,10 +16,13 @@ import { resolvePaginatedListTotal } from "@/lib/api/types";
 import { ROUTES_USE_MOCK_DATA } from "@/lib/route-manager/data-source";
 import * as routesMockApi from "@/lib/route-manager/api/route-manager-mock-api";
 import {
+  DEFAULT_ROUTE_CREW_ROLE,
   DEFAULT_ROUTE_LIST_PARAMS,
   ROUTE_BAR_OR_SEARCH_FIELDS,
+  resolveCrewRole,
   toRouteDateIso,
   type Route,
+  type RouteCrewRole,
   type RouteFormValues,
   type RouteListParams,
 } from "@/lib/route-manager/types";
@@ -41,6 +44,7 @@ type ApiRef = {
 type ApiEmployeeRef = {
   id?: string | number;
   name?: string;
+  role?: string;
 };
 
 type ApiEmployeeGroupRef = ApiRef & {
@@ -59,6 +63,7 @@ type ApiRoute = {
   vehicle?: ApiRef | null;
   employees?: ApiEmployeeRef[];
   employeeGroup?: ApiEmployeeGroupRef | null;
+  active?: boolean;
   createdAt?: string;
   createdBy?: ApiUser | string | null;
   updatedAt?: string;
@@ -70,7 +75,8 @@ type ApiRouteWritePayload = {
   routeId?: string;
   name?: string;
   vehicle: { id: string; name: string; branch?: string };
-  employees: { id: number; name: string }[];
+  employees: { id: number; name: string; role: RouteCrewRole }[];
+  active: boolean;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -99,13 +105,19 @@ function normalizeVehicleRef(raw?: ApiRef | null): Route["vehicle"] {
   };
 }
 
+function normalizeCrewRole(raw: unknown): RouteCrewRole {
+  const value = String(raw ?? "").trim().toLowerCase();
+  if (value === "driver" || value === "appraiser" || value === "helper") return value;
+  return DEFAULT_ROUTE_CREW_ROLE;
+}
+
 function normalizeEmployeeRef(raw: unknown): Route["employees"][number] | null {
   if (!raw || typeof raw !== "object") return null;
   const entry = raw as ApiEmployeeRef;
   const id = Number(entry.id);
   const name = String(entry.name ?? "").trim();
   if (!Number.isInteger(id) || id <= 0 || !name) return null;
-  return { id, name };
+  return { id, name, role: normalizeCrewRole(entry.role) };
 }
 
 function normalizeRouteEmployees(item: ApiRoute): Route["employees"] {
@@ -140,6 +152,7 @@ export function normalizeApiRoute(raw: unknown): Route | null {
     tripNumber: Number(item.tripNumber ?? 0),
     vehicle: normalizeVehicleRef(item.vehicle),
     employees: normalizeRouteEmployees(item),
+    active: item.active !== false,
     createdAt: String(item.createdAt ?? "").trim(),
     createdBy: readUserName(item.createdBy) || DEFAULT_CREATED_BY,
     updatedAt: String(item.updatedAt ?? "").trim(),
@@ -326,7 +339,9 @@ function buildRouteWritePayload(
     employees: values.employees.map((employee) => ({
       id: employee.id,
       name: employee.name.trim(),
+      role: resolveCrewRole(employee.role),
     })),
+    active: values.active,
   };
 
   if (mode === "update") {

@@ -1,6 +1,21 @@
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+import { getActiveRouteAppraiser } from "@/lib/pickup-delivery-routes/types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import { formatRouteDate } from "@/lib/route-manager/display";
+import { resolveCrewRole } from "@/lib/route-manager/types";
+
+/** Names of every crew member acting as a driver (or unassigned). */
+export function formatActiveRouteDriverNames(record: ActiveRoute): string {
+  return record.employees
+    .filter((employee) => resolveCrewRole(employee.role) === "driver")
+    .map((employee) => employee.name)
+    .join(", ");
+}
+
+/** Name of the appraiser assigned to the route, if any. */
+export function formatActiveRouteAppraiserName(record: ActiveRoute): string {
+  return getActiveRouteAppraiser(record)?.name ?? "";
+}
 
 export function formatActiveRouteTypeLabel(
   routeType: ActiveRoute["routeType"],
@@ -55,8 +70,7 @@ export function buildActiveRouteAssignmentOptions(
       record.route?.routeId,
       record.date,
       record.container?.name,
-      record.driver?.name,
-      record.appraiser?.name,
+      ...record.employees.map((employee) => employee.name),
     ].filter((value): value is string => Boolean(value?.trim())),
   }));
 }
@@ -92,10 +106,13 @@ export function activeRouteMatchesSearch(
         return record.date;
       case "route.name":
         return String(record.route?.name ?? "");
+      case "employees.name":
+        return record.employees.map((employee) => employee.name).join(" ");
       case "driver.name":
-        return record.driver?.name ?? "";
+      case "drivers.name":
+        return formatActiveRouteDriverNames(record);
       case "appraiser.name":
-        return record.appraiser?.name ?? "";
+        return formatActiveRouteAppraiserName(record);
       case "container.name":
         return record.container?.name ?? "";
       case "createdBy":
@@ -119,8 +136,7 @@ export function activeRouteMatchesQuery(record: ActiveRoute, query: string): boo
     formatRouteDate(record.date),
     String(record.route?.name ?? ""),
     record.route?.routeId ?? "",
-    record.driver?.name ?? "",
-    record.appraiser?.name ?? "",
+    record.employees.map((employee) => employee.name).join(" "),
     record.container?.name ?? "",
     record.createdBy,
     record.routeType,

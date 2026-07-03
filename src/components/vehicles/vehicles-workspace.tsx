@@ -48,6 +48,8 @@ import {
   getBranchLabel,
   getFuelTypeBadgeClass,
   getFuelTypeLabel,
+  getVehicleActiveBadgeClass,
+  getVehicleActiveLabel,
 } from "@/lib/vehicles/display";
 import {
   useCreateVehicle,
@@ -264,8 +266,19 @@ export function VehiclesWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (vehicle) => (
-        <TableTagText className={getBranchBadgeClass(vehicle.branch)}>
-          {getBranchLabel(vehicle.branch)}
+        <TableTagText className={getBranchBadgeClass(vehicle.branch.code)}>
+          {getBranchLabel(vehicle.branch.code)}
+        </TableTagText>
+      ),
+    },
+    {
+      id: "active",
+      label: "status",
+      truncateCell: false,
+      cellClassName: "overflow-visible",
+      renderCell: (vehicle) => (
+        <TableTagText className={getVehicleActiveBadgeClass(vehicle.active)}>
+          {getVehicleActiveLabel(vehicle.active)}
         </TableTagText>
       ),
     },

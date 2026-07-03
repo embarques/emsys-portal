@@ -7,6 +7,13 @@ export type UserReference = {
   name: string;
 };
 
+/** Branch reference for a user: `{ id, code }` (name kept for display). */
+export type UserBranch = {
+  id: number;
+  code: string;
+  name: string;
+};
+
 export type UserAuditActor = UserReference;
 
 export type User = {
@@ -15,7 +22,7 @@ export type User = {
   email: string;
   name: string;
   active: boolean;
-  branch: UserReference;
+  branch: UserBranch;
   role: UserReference;
   startTime: string;
   endTime: string;
@@ -31,7 +38,7 @@ export type UserFormValues = {
   password: string;
   confirmPassword: string;
   active: boolean;
-  branch: UserReference;
+  branch: UserBranch;
   role: UserReference;
   restrictLoginHours: boolean;
   startTime: string;
@@ -43,7 +50,7 @@ export type UserWritePayload = {
   email: string;
   name: string;
   active: boolean;
-  branch: UserReference;
+  branch: UserBranch;
   role: UserReference;
   startTime?: string;
   endTime?: string;
@@ -129,7 +136,7 @@ export function createEmptyUserForm(): UserFormValues {
     password: "",
     confirmPassword: "",
     active: true,
-    branch: { id: 0, name: "" },
+    branch: { id: 0, code: "", name: "" },
     role: { id: 0, name: "" },
     restrictLoginHours: false,
     startTime: "",

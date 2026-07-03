@@ -162,7 +162,7 @@ export function UserForm({
               name="branch"
               render={({ field }) => (
                 <Field label="Branch" required error={errors.branch?.id?.message}>
-                  <SearchableSelect id="branch" value={field.value.id ? String(field.value.id) : ""} disabled={branchesQuery.isLoading || branches.length === 0} placeholder={branchesQuery.isLoading ? "Loading branches…" : "Select branch"} searchPlaceholder="Search branches…" onValueChange={(value) => { const branch = branches.find((item) => item.id === Number(value)); field.onChange({ id: branch?.id ?? 0, name: branch?.name ?? "" }); }} options={branches.map((branch) => ({ value: String(branch.id), label: branch.name }))} />
+                  <SearchableSelect id="branch" value={field.value.id ? String(field.value.id) : ""} disabled={branchesQuery.isLoading || branches.length === 0} placeholder={branchesQuery.isLoading ? "Loading branches…" : "Select branch"} searchPlaceholder="Search branches…" onValueChange={(value) => { const branch = branches.find((item) => item.id === Number(value)); field.onChange({ id: branch?.id ?? 0, code: branch?.code ?? "", name: branch?.name ?? "" }); }} options={branches.map((branch) => ({ value: String(branch.id), label: branch.name }))} />
                 </Field>
               )}
             />

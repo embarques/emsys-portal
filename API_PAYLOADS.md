@@ -663,12 +663,16 @@ No body.
 {
   "vehicleId": "VEH-001",
   "name": "Vehicle 1",
+  "licensePlate": "NY-48291",
   "vin": "1HGCM82633A004352",
   "year": 2022,
   "fuelType": "diesel",
-  "branch": "NYC"
+  "branch": { "id": 1, "code": "NYC" },
+  "active": true
 }
 ```
+
+A vehicle belongs to a branch. `branch` is a branch ref `{ id, code }` (`id` is the branch `uint16` from `/v1/branches`), same shape as employees/pickups. `vehicleId` is the business code (server-assigned on create). `active` is a boolean (`true` = active, `false` = disabled; defaults to `true`), matching the employee/customer `active` field. Response returns `branch` as the same `{ id, code }` object.
 
 ### `PUT /v1/vehicles/{id}`
 
@@ -688,12 +692,12 @@ One scheduled pickup route per calendar day. References a dispatch route from `/
 {
   "date": "2026-06-10T00:00:00Z",
   "route": { "id": "674a1b2c3d4e5f6789012346" },
-  "driver": { "id": 5, "name": "Jane Driver" },
+  "drivers": [{ "id": 5, "name": "Jane Driver" }],
   "appraiser": { "id": 6, "name": "Helper One" }
 }
 ```
 
-`route.id` is the Mongo ObjectId from `/routes`. `driver` and `appraiser` are optional employee refs. Response includes server-generated `name` (`date-employee1-employee2-…-vehicle`).
+`route.id` is the Mongo ObjectId from `/routes`. Every crew member is a driver by default, so `drivers` holds all crew except the appraiser; there is at most one `appraiser`. Response includes server-generated `name` (`date-employee1-employee2-…-vehicle`).
 
 ### `GET /v1/pickup-routes/{id}` — record shape
 
@@ -707,7 +711,7 @@ One scheduled pickup route per calendar day. References a dispatch route from `/
     "name": "Jane Driver-Helper One-Vehicle 1",
     "routeId": "R-1042"
   },
-  "driver": { "id": 5, "name": "Jane Driver" },
+  "drivers": [{ "id": 5, "name": "Jane Driver" }],
   "appraiser": { "id": 6, "name": "Helper One" },
   "createdAt": "2026-06-10T14:22:00Z",
   "createdBy": "Admin User",
@@ -737,12 +741,12 @@ One scheduled delivery route per container per calendar day. References a dispat
   "container": { "id": 25, "name": "CONT-25" },
   "date": "2026-06-10T00:00:00Z",
   "route": { "id": "674a1b2c3d4e5f6789012348" },
-  "driver": { "id": 8, "name": "Driver A" },
+  "drivers": [{ "id": 8, "name": "Driver A" }],
   "appraiser": { "id": 9, "name": "Helper B" }
 }
 ```
 
-`route.id` is the Mongo ObjectId from `/routes`. Response includes server-generated `name` (`01-containerNumber-year`).
+`route.id` is the Mongo ObjectId from `/routes`. `drivers` holds all crew except the appraiser (everyone defaults to driver); at most one `appraiser`. Response includes server-generated `name` (`01-containerNumber-year`).
 
 ### `GET /v1/delivery-routes/{id}` — record shape
 
@@ -757,7 +761,7 @@ One scheduled delivery route per container per calendar day. References a dispat
     "name": "Driver A-Helper B-Truck 2",
     "routeId": "R-2044"
   },
-  "driver": { "id": 8, "name": "Driver A" },
+  "drivers": [{ "id": 8, "name": "Driver A" }],
   "appraiser": { "id": 9, "name": "Helper B" },
   "createdAt": "2026-06-10T09:15:00Z",
   "createdBy": "Admin User",

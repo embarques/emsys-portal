@@ -1,5 +1,10 @@
 import type { Vehicle, VehiclePortalBranch } from "./types";
-import { VEHICLE_BRANCHES, VEHICLE_FUEL_TYPES, getVehiclePortalBranch } from "./types";
+import {
+  VEHICLE_ACTIVE_OPTIONS,
+  VEHICLE_BRANCHES,
+  VEHICLE_FUEL_TYPES,
+  getVehiclePortalBranch,
+} from "./types";
 
 export function getFuelTypeLabel(fuelType: string): string {
   return VEHICLE_FUEL_TYPES.find((entry) => entry.value === fuelType)?.label ?? (fuelType || "—");
@@ -22,6 +27,16 @@ export function getBranchBadgeClass(branch: string): string {
   return portal === "usa"
     ? "border-transparent bg-blue-500/15 text-blue-700 dark:text-blue-300"
     : "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+}
+
+export function getVehicleActiveLabel(active: boolean): string {
+  return VEHICLE_ACTIVE_OPTIONS.find((entry) => entry.value === active)?.label ?? (active ? "Active" : "Inactive");
+}
+
+export function getVehicleActiveBadgeClass(active: boolean): string {
+  return active
+    ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+    : "border-transparent bg-muted text-muted-foreground";
 }
 
 export function formatVehicleDate(iso: string): string {
@@ -85,8 +100,12 @@ export function vehicleMatchesSearch(vehicle: Vehicle, search: { field: string; 
         return String(vehicle.year);
       case "fuelType":
         return vehicle.fuelType;
-      case "branch":
-        return vehicle.branch;
+      case "branch.code":
+        return vehicle.branch.code;
+      case "branch.id":
+        return String(vehicle.branch.id);
+      case "active":
+        return String(vehicle.active);
       case "createdBy.name":
         return vehicle.createdBy;
       default:
@@ -109,8 +128,9 @@ export function vehicleMatchesQuery(vehicle: Vehicle, query: string): boolean {
     vehicle.licensePlate,
     String(vehicle.year),
     getFuelTypeLabel(vehicle.fuelType),
-    vehicle.branch,
-    getBranchLabel(vehicle.branch),
+    vehicle.branch.code,
+    getBranchLabel(vehicle.branch.code),
+    getVehicleActiveLabel(vehicle.active),
     vehicle.createdBy,
   ]
     .join(" ")
@@ -123,8 +143,8 @@ export function computeVehicleKpis(vehicles: Vehicle[]) {
     total: vehicles.length,
     gas: vehicles.filter((vehicle) => vehicle.fuelType.trim().toLowerCase() === "gas").length,
     diesel: vehicles.filter((vehicle) => vehicle.fuelType.trim().toLowerCase() === "diesel").length,
-    usa: vehicles.filter((vehicle) => getVehiclePortalBranch(vehicle.branch) === "usa").length,
-    dr: vehicles.filter((vehicle) => getVehiclePortalBranch(vehicle.branch) === "dr").length,
+    usa: vehicles.filter((vehicle) => getVehiclePortalBranch(vehicle.branch.code) === "usa").length,
+    dr: vehicles.filter((vehicle) => getVehiclePortalBranch(vehicle.branch.code) === "dr").length,
   };
 }
 

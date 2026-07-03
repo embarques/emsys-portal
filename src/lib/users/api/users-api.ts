@@ -16,6 +16,7 @@ import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   DEFAULT_USER_LIST_PARAMS,
   type User,
+  type UserBranch,
   type UserFormValues,
   type UserListParams,
   type UserReference,
@@ -29,7 +30,7 @@ type ApiUser = {
   email?: string;
   name?: string;
   active?: boolean;
-  branch?: ApiReference;
+  branch?: ApiBranchReference;
   role?: ApiReference;
   startTime?: string;
   endTime?: string;
@@ -40,6 +41,7 @@ type ApiUser = {
 };
 
 type ApiReference = { _id?: number; id?: number; name?: string };
+type ApiBranchReference = ApiReference & { code?: string };
 type ApiEnvelope<T> = PaginatedApiEnvelope<T> & { success?: boolean; message?: string; error?: string };
 
 function readId(value: number | string | undefined): number | undefined {
@@ -55,6 +57,15 @@ function normalizeReference(raw: ApiReference | undefined): UserReference {
   };
 }
 
+/** Branch ref for a user: `{ id, code }` (name kept for display fallback). */
+function normalizeUserBranch(raw: ApiBranchReference | undefined): UserBranch {
+  return {
+    id: readId(raw?._id ?? raw?.id) ?? 0,
+    code: String(raw?.code ?? "").trim(),
+    name: String(raw?.name ?? "").trim(),
+  };
+}
+
 function normalizeUser(raw: unknown): User | null {
   if (!raw || typeof raw !== "object") return null;
   const item = raw as ApiUser;
@@ -66,7 +77,7 @@ function normalizeUser(raw: unknown): User | null {
     email: String(item.email ?? "").trim(),
     name: String(item.name ?? item.email ?? "").trim(),
     active: item.active !== false,
-    branch: normalizeReference(item.branch),
+    branch: normalizeUserBranch(item.branch),
     role: normalizeReference(item.role),
     startTime: String(item.startTime ?? "").trim(),
     endTime: String(item.endTime ?? "").trim(),
@@ -140,7 +151,7 @@ function writePayload(values: UserFormValues, uid?: string): UserWritePayload {
     email: values.email.trim(),
     name: values.name.trim(),
     active: values.active,
-    branch: { id: values.branch.id, name: values.branch.name },
+    branch: { id: values.branch.id, code: values.branch.code, name: values.branch.name },
     role: { id: values.role.id, name: values.role.name },
   };
   if (uid) payload.uid = uid;

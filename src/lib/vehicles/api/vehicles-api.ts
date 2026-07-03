@@ -11,11 +11,13 @@ import {
 } from "@/lib/api/search-query";
 import { VEHICLE_TABLE_FILTER_FIELDS } from "@/lib/vehicles/filter-fields";
 import { VEHICLE_BAR_OR_SEARCH_FIELDS } from "@/lib/vehicles/search-fields";
+import { buildApiBranchRef, type ApiBranchRefPayload } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import {
   DEFAULT_VEHICLE_LIST_PARAMS,
   validateVehicleFormValues,
   type Vehicle,
+  type VehicleBranch,
   type VehicleFormValues,
   type VehicleListParams,
 } from "@/lib/vehicles/types";
@@ -28,7 +30,8 @@ function hasVehicleListFilters(params: VehicleListParams): boolean {
   });
 }
 
-const VEHICLE_NUMERIC_FIELDS: ReadonlySet<string> = new Set(["year"]);
+const VEHICLE_NUMERIC_FIELDS: ReadonlySet<string> = new Set(["year", "branch.id"]);
+const VEHICLE_BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["active"]);
 
 function buildVehicleSearchBody(params: VehicleListParams) {
   return buildStripeStyleSearchBody({
@@ -39,7 +42,10 @@ function buildVehicleSearchBody(params: VehicleListParams) {
       filterRows: params.filterRows,
       tableFilterFields: VEHICLE_TABLE_FILTER_FIELDS,
       expandNode: (node) =>
-        coerceTypedFilterNode(node, { numericFields: VEHICLE_NUMERIC_FIELDS }),
+        coerceTypedFilterNode(node, {
+          numericFields: VEHICLE_NUMERIC_FIELDS,
+          booleanFields: VEHICLE_BOOLEAN_FIELDS,
+        }),
     }),
   });
 }
@@ -60,6 +66,11 @@ type ApiUser = {
   fullName?: string;
 };
 
+type ApiBranchRef = {
+  id?: number | string;
+  code?: string;
+};
+
 type ApiVehicle = {
   id?: string;
   vehicleId?: string;
@@ -68,7 +79,8 @@ type ApiVehicle = {
   licensePlate?: string;
   year?: number;
   fuelType?: string;
-  branch?: string;
+  branch?: ApiBranchRef | string | null;
+  active?: boolean;
   inspectionDate?: string;
   registrationDate?: string;
   createdAt?: string;
@@ -84,7 +96,8 @@ type ApiVehicleWritePayload = {
   fuelType: string;
   licensePlate?: string;
   vehicleId?: string;
-  branch?: string;
+  branch?: ApiBranchRefPayload;
+  active: boolean;
   inspectionDate?: string;
   registrationDate?: string;
   id?: string;
@@ -115,6 +128,17 @@ function readUserName(user: unknown): string {
   return "";
 }
 
+/** Reads a branch object (`{ id, code }`), falling back to a legacy string code. */
+function normalizeVehicleBranch(raw: ApiVehicle["branch"]): VehicleBranch {
+  if (raw && typeof raw === "object") {
+    return {
+      id: Number(raw.id ?? 0) || 0,
+      code: String(raw.code ?? "").trim(),
+    };
+  }
+  return { id: 0, code: String(raw ?? "").trim() };
+}
+
 function normalizeVehicle(raw: unknown): Vehicle | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -130,7 +154,8 @@ function normalizeVehicle(raw: unknown): Vehicle | null {
     licensePlate: String(item.licensePlate ?? "").trim().toUpperCase(),
     year: Number(item.year ?? 0),
     fuelType: String(item.fuelType ?? "").trim(),
-    branch: String(item.branch ?? "").trim(),
+    branch: normalizeVehicleBranch(item.branch),
+    active: item.active !== false,
     inspectionDate: String(item.inspectionDate ?? "").trim(),
     registrationDate: String(item.registrationDate ?? "").trim(),
     createdAt: String(item.createdAt ?? "").trim(),
@@ -164,6 +189,7 @@ function buildVehicleWritePayload(
     vin: values.vin.trim().toUpperCase(),
     year: yearValue ? Number(yearValue) : 0,
     fuelType: values.fuelType.trim(),
+    active: values.active,
   };
 
   const licensePlateValue = values.licensePlate.trim().toUpperCase();
@@ -171,16 +197,16 @@ function buildVehicleWritePayload(
     payload.licensePlate = licensePlateValue;
   }
 
-  // Vehicle code and branch are assigned by the backend on create; only forward
-  // them when an existing value is present (e.g. when editing a record).
+  // The vehicle code is assigned by the backend on create; only forward it when
+  // an existing value is present (e.g. when editing a record).
   const vehicleIdValue = values.vehicleId.trim();
   if (vehicleIdValue) {
     payload.vehicleId = vehicleIdValue;
   }
 
-  const branchValue = values.branch.trim();
-  if (branchValue) {
-    payload.branch = branchValue;
+  const branchCode = values.branch.code.trim();
+  if (values.branch.id > 0 || branchCode) {
+    payload.branch = buildApiBranchRef({ id: values.branch.id, code: branchCode });
   }
 
   const inspectionDateValue = values.inspectionDate.trim();
