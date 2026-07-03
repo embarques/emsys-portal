@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LogOut, Settings, User, UserCircle } from "lucide-react";
+import { KeyRound, LogOut, Settings, User, UserCircle } from "lucide-react";
 
+import { ChangePasswordDialog } from "@/components/configuration/change-password-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
@@ -30,6 +31,7 @@ export function UserMenu() {
   const { t } = useTranslation();
   const { displayName, email, role, roleLoading, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const initials = getInitials(displayName, email);
   const username = email?.split("@")[0] ?? "user";
@@ -108,6 +110,17 @@ export function UserMenu() {
               <UserCircle className="h-4 w-4" />
               {t("shell.userMenu.account")}
             </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setChangePasswordOpen(true);
+              }}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+            >
+              <KeyRound className="h-4 w-4" />
+              {t("shell.userMenu.changePassword")}
+            </button>
           </div>
 
           <div className="border-t p-2">
@@ -122,6 +135,8 @@ export function UserMenu() {
           </div>
         </div>
       ) : null}
+
+      <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
     </div>
   );
 }
