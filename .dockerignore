@@ -1,5 +1,9 @@
 node_modules
 .next
+.next-playwright
+playwright-report
+test-results
+playwright/.auth
 .git
 .gitignore
 .cursor

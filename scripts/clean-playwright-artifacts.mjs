@@ -5,7 +5,12 @@ import { resolve } from "node:path";
 const root = process.cwd();
 const freshAuth = process.argv.includes("--fresh-auth");
 
-for (const dir of ["test-results", "playwright-report", "blob-report"]) {
+for (const dir of [
+  "test-results",
+  "playwright-report",
+  "blob-report",
+  ".next-playwright",
+]) {
   rmSync(resolve(root, dir), { recursive: true, force: true });
 }
 
