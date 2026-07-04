@@ -31,7 +31,10 @@ import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatRouteCopyLabel } from "@/lib/route-manager/display";
+import {
+  formatRouteAssignmentDescriptionLines,
+  formatRouteAssignmentName,
+} from "@/lib/route-manager/display";
 import {
   useCreateRoute,
   useRoute,
@@ -47,6 +50,7 @@ import {
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useAuth } from "@/providers/auth-provider";
+import { useCurrentUser } from "@/lib/users/hooks/use-users";
 
 type ActiveRouteSectionProps = {
   initialRecord?: ActiveRoute | null;
@@ -74,6 +78,7 @@ export function ActiveRouteSection({
   const containers = containersQuery.data?.items ?? [];
   const branchesQuery = useBranchPicker(200);
   const branches = branchesQuery.data?.items ?? [];
+  const currentUserQuery = useCurrentUser();
 
   const [values, setValues] = useState<ActiveRouteFormValues>(() =>
     initialRecord
@@ -85,11 +90,14 @@ export function ActiveRouteSection({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFormError, setCreateFormError] = useState<string | null>(null);
   const hydratedLookupRef = useRef("");
+  const defaultBranchAppliedRef = useRef(false);
+  const syncedRouteRecordIdRef = useRef("");
   const effectiveRouteType = fixedRouteType ?? values.routeType;
   const branchCode = fixedBranchCode ?? values.branch.code;
 
   const routesQuery = useRoutePicker(200, {
     branchCode: branchCode.trim() || undefined,
+    enabled: Boolean(branchCode.trim()),
   });
 
   // Lock the branch to the variant's fixed code (e.g. delivery routes → RD).
@@ -105,6 +113,22 @@ export function ActiveRouteSection({
         : { ...current, branch: { id: match.id, code: match.code } },
     );
   }, [branches, fixedBranchCode, initialRecord]);
+
+  // Default the branch to the current user's branch for new schedules that do
+  // not lock the branch (e.g. pickup routes). Applied once and never overrides
+  // a branch the user picked or an existing record's branch.
+  useEffect(() => {
+    if (fixedBranchCode || initialRecord) return;
+    if (defaultBranchAppliedRef.current) return;
+    const userBranch = currentUserQuery.data?.branch;
+    if (!userBranch || !(userBranch.id > 0)) return;
+    defaultBranchAppliedRef.current = true;
+    setValues((current) =>
+      current.branch.id > 0
+        ? current
+        : { ...current, branch: { id: userBranch.id, code: userBranch.code } },
+    );
+  }, [currentUserQuery.data?.branch, fixedBranchCode, initialRecord]);
 
   // Auto-detect an existing schedule only for date-based routes.
   const lookup = useMemo(() => {
@@ -131,6 +155,7 @@ export function ActiveRouteSection({
 
   useEffect(() => {
     if (initialRecord) {
+      syncedRouteRecordIdRef.current = "";
       setValues(activeRouteToFormValues(initialRecord));
       setSavedRecord(initialRecord);
     }
@@ -143,6 +168,7 @@ export function ActiveRouteSection({
     if (activeRouteQuery.data) {
       if (hydratedLookupRef.current === lookupKey) return;
 
+      syncedRouteRecordIdRef.current = "";
       setValues(activeRouteToFormValues(activeRouteQuery.data));
       setSavedRecord(activeRouteQuery.data);
       hydratedLookupRef.current = lookupKey;
@@ -151,6 +177,7 @@ export function ActiveRouteSection({
 
     if (hydratedLookupRef.current === lookupKey) return;
 
+    syncedRouteRecordIdRef.current = "";
     setSavedRecord(null);
     setValues((current) => ({
       ...current,
@@ -163,13 +190,55 @@ export function ActiveRouteSection({
   const routeOptions = useMemo(() => {
     const items = routesQuery.data?.items ?? [];
     return [...items]
-      .sort((left, right) => formatRouteCopyLabel(left).localeCompare(formatRouteCopyLabel(right)))
+      .sort((left, right) =>
+        formatRouteAssignmentName(left).localeCompare(formatRouteAssignmentName(right)),
+      )
       .map((route) => ({
         value: route.id,
-        label: formatRouteCopyLabel(route),
-        keywords: [route.name, route.routeId, route.vehicle.name, route.vehicle.branch ?? ""],
+        label: formatRouteAssignmentName(route),
+        descriptionLines: formatRouteAssignmentDescriptionLines(route),
+        keywords: [
+          route.name,
+          route.routeId,
+          route.vehicle.name,
+          route.vehicle.branch ?? "",
+        ],
       }));
   }, [routesQuery.data?.items]);
+
+  const selectedRoute = selectedRouteQuery.data ?? null;
+
+  // Sync crew from the selected route template when the user picks a route.
+  // Runs once per routeRecordId so role edits are not overwritten on re-render.
+  useEffect(() => {
+    const routeRecordId = values.routeRecordId.trim();
+    if (!routeRecordId || selectedRouteQuery.isLoading) return;
+    if (!selectedRoute) return;
+
+    const alreadySynced = syncedRouteRecordIdRef.current === routeRecordId;
+    if (alreadySynced && values.employees.length > 0) return;
+
+    syncedRouteRecordIdRef.current = routeRecordId;
+    const crew = selectedRoute.employees;
+
+    setValues((current) => {
+      const rolesById = new Map(current.employees.map((employee) => [employee.id, employee.role]));
+      const employees = crew.map((employee) => {
+        let role = rolesById.get(employee.id) ?? resolveCrewRole(employee.role);
+        if (effectiveRouteType === "delivery" && role === "appraiser") {
+          role = "driver";
+        }
+        return { id: employee.id, name: employee.name, role };
+      });
+      return { ...current, employees };
+    });
+  }, [
+    effectiveRouteType,
+    selectedRoute,
+    selectedRouteQuery.isLoading,
+    values.employees.length,
+    values.routeRecordId,
+  ]);
 
   const branchOptions = useMemo(
     () =>
@@ -210,28 +279,6 @@ export function ActiveRouteSection({
     return options;
   }, [containers, values.container]);
 
-  const selectedRoute = selectedRouteQuery.data ?? null;
-
-  // Sync the crew from the selected route template, preserving any per-schedule
-  // role edits for crew members that remain on the route.
-  useEffect(() => {
-    if (!selectedRoute || selectedRouteQuery.isLoading) return;
-
-    const crew = selectedRoute.employees;
-    setValues((current) => {
-      const rolesById = new Map(current.employees.map((employee) => [employee.id, employee.role]));
-      const employees = crew.map((employee) => {
-        let role = rolesById.get(employee.id) ?? resolveCrewRole(employee.role);
-        // Deliveries have no appraiser role.
-        if (effectiveRouteType === "delivery" && role === "appraiser") {
-          role = "driver";
-        }
-        return { id: employee.id, name: employee.name, role };
-      });
-      return { ...current, employees };
-    });
-  }, [selectedRoute, selectedRouteQuery.isLoading, effectiveRouteType]);
-
   const isSaving = upsertMutation.isPending;
   const isDelivery = effectiveRouteType === "delivery";
   const isEditing = Boolean(initialRecord ?? savedRecord?.id);
@@ -246,6 +293,7 @@ export function ActiveRouteSection({
     !values.routeRecordId.trim();
 
   function resetSchedule(partial: Partial<ActiveRouteFormValues>) {
+    syncedRouteRecordIdRef.current = "";
     setValues((current) => ({
       ...current,
       routeRecordId: "",
@@ -339,7 +387,14 @@ export function ActiveRouteSection({
   }
 
   function buildCreateRouteInitialValues(): RouteFormValues {
-    return createEmptyRouteForm(displayName ?? undefined);
+    const form = createEmptyRouteForm(displayName ?? undefined);
+    if (values.branch.id > 0 || values.branch.code.trim()) {
+      form.branch = {
+        id: values.branch.id,
+        code: values.branch.code,
+      };
+    }
+    return form;
   }
 
   async function handleCreateRoute(routeValues: RouteFormValues) {
@@ -396,6 +451,7 @@ export function ActiveRouteSection({
         }}
         onContainerChange={updateContainer}
         onRouteRecordChange={(routeRecordId) => {
+          syncedRouteRecordIdRef.current = "";
           setValues((current) => ({
             ...current,
             routeRecordId,
@@ -432,14 +488,17 @@ export function ActiveRouteSection({
               {t("routes.createDialog.description", { date: values.date })}
             </DialogDescription>
           </DialogHeader>
-          <RouteForm
-            initialValues={buildCreateRouteInitialValues()}
-            submitLabel={t("routes.activeRoute.createRoute")}
-            isSubmitting={createRouteMutation.isPending}
-            externalError={createFormError}
-            onSubmit={handleCreateRoute}
-            onCancel={() => setCreateDialogOpen(false)}
-          />
+          {createDialogOpen ? (
+            <RouteForm
+              key="create-route-from-active"
+              initialValues={buildCreateRouteInitialValues()}
+              submitLabel={t("routes.activeRoute.createRoute")}
+              isSubmitting={createRouteMutation.isPending}
+              externalError={createFormError}
+              onSubmit={handleCreateRoute}
+              onCancel={() => setCreateDialogOpen(false)}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
     </>

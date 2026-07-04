@@ -15,19 +15,28 @@ type RouteEmployeeSelectProps = {
   value: RouteEmployeeRef[];
   onChange: (employees: RouteEmployeeRef[]) => void;
   error?: string | null;
+  /** Branch code to scope the crew list to (e.g. "NY"). */
+  branchCode?: string;
 };
 
-export function RouteEmployeeSelect({ value, onChange, error = null }: RouteEmployeeSelectProps) {
+export function RouteEmployeeSelect({
+  value,
+  onChange,
+  error = null,
+  branchCode,
+}: RouteEmployeeSelectProps) {
   const { t } = useTranslation();
   const [employeeQuery, setEmployeeQuery] = useState("");
   const [pickerValue, setPickerValue] = useState("");
   const debouncedEmployeeQuery = useDebouncedValue(employeeQuery, 300).trim();
   const selectedIds = useMemo(() => new Set(value.map((employee) => employee.id)), [value]);
+  const normalizedBranchCode = branchCode?.trim() ?? "";
 
   const employeesQuery = useEmployees({
     ...DEFAULT_EMPLOYEE_LIST_PARAMS,
     limit: 200,
     active: true,
+    ...(normalizedBranchCode ? { branch: normalizedBranchCode } : {}),
   });
   const employeeSearch = useEmployeeSearch(
     debouncedEmployeeQuery
@@ -42,7 +51,14 @@ export function RouteEmployeeSelect({ value, onChange, error = null }: RouteEmpl
       : (employeesQuery.data?.items ?? []);
 
     source
-      .filter((employee) => employee.active && !selectedIds.has(employee.id))
+      .filter(
+        (employee) =>
+          employee.active &&
+          !selectedIds.has(employee.id) &&
+          // Name search hits every branch; keep only the selected branch.
+          (!normalizedBranchCode ||
+            employee.branch.code.trim().toLowerCase() === normalizedBranchCode.toLowerCase()),
+      )
       .forEach((employee) =>
         merged.set(employee.id, {
           id: employee.id,
@@ -56,6 +72,7 @@ export function RouteEmployeeSelect({ value, onChange, error = null }: RouteEmpl
     debouncedEmployeeQuery,
     employeeSearch.data?.items,
     employeesQuery.data?.items,
+    normalizedBranchCode,
     selectedIds,
   ]);
 

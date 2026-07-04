@@ -27,6 +27,8 @@ type DataTableProps<T> = {
   rowLabel?: (row: T) => string;
   onRowClick?: (row: T) => void;
   onRowDoubleClick?: (row: T) => void;
+  /** Optional edit/delete controls rendered beside the row checkbox. */
+  renderSelectCellActions?: (row: T) => React.ReactNode;
   /** When set, visible columns auto-fit on first load and whenever this page changes. */
   page?: number;
   /** When true, auto-fit waits until fresh page data is shown (e.g. while refetching). */
@@ -58,6 +60,7 @@ function DataTableContent<T>({
   rowLabel,
   onRowClick,
   onRowDoubleClick,
+  renderSelectCellActions,
   page,
   isPageDataPending = false,
   autoFitColumns = true,
@@ -228,7 +231,8 @@ function DataTableContent<T>({
 
   const tableMinWidth = Math.max(
     minWidth,
-    visibleColumns.reduce((total, column) => total + getColumnWidth(column.id), 0) + (selectable ? 56 : 0)
+    visibleColumns.reduce((total, column) => total + getColumnWidth(column.id), 0) +
+      (selectable ? (renderSelectCellActions ? 96 : 56) : 0)
   );
 
   return (
@@ -237,7 +241,10 @@ function DataTableContent<T>({
         <thead>
           <tr className="border-b bg-muted/30 text-left">
             {selectable ? (
-              <th className="w-14 px-4 py-3">
+              <th
+                className={cn("px-4 py-3", renderSelectCellActions ? "w-24" : "w-14")}
+                aria-label={renderSelectCellActions ? "Select and actions" : undefined}
+              >
                 <input
                   type="checkbox"
                   aria-label="Select all rows on this page"
@@ -386,14 +393,20 @@ function DataTableContent<T>({
                   onDoubleClick={() => handleRowDoubleClick(row)}
                 >
                   {selectable ? (
-                    <td className="w-14 px-4 py-3" onClick={(event) => event.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        aria-label={`Select ${rowLabel?.(row) ?? id}`}
-                        checked={selected}
-                        onChange={(event) => onToggleSelect?.(id, event.target.checked)}
-                        className="size-4 rounded border-input"
-                      />
+                    <td
+                      className={cn("px-4 py-3", renderSelectCellActions ? "w-24" : "w-14")}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${rowLabel?.(row) ?? id}`}
+                          checked={selected}
+                          onChange={(event) => onToggleSelect?.(id, event.target.checked)}
+                          className="size-4 shrink-0 rounded border-input"
+                        />
+                        {renderSelectCellActions?.(row)}
+                      </div>
                     </td>
                   ) : null}
                   {visibleColumns.map((column) => {

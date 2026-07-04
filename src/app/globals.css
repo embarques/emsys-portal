@@ -82,3 +82,26 @@ input[type="week"]::-webkit-calendar-picker-indicator {
   order: -1;
   margin-inline: 0 0.5rem;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #invoice-wizard-print-area,
+  #invoice-wizard-print-area * {
+    visibility: visible;
+  }
+
+  #invoice-wizard-print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    background: white;
+    color: black;
+  }
+
+  #invoice-wizard-print-area [data-print-hide] {
+    display: none !important;
+  }
+}

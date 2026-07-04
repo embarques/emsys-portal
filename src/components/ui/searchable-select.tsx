@@ -56,6 +56,8 @@ type SearchableSelectProps = {
   autoFocus?: boolean;
   defaultOpen?: boolean;
   onClose?: () => void;
+  /** When true, focuses select all visible text so it can be replaced immediately. */
+  selectAllOnFocus?: boolean;
   "aria-label"?: string;
   "aria-labelledby"?: string;
 };
@@ -147,6 +149,7 @@ export function SearchableSelect({
   autoFocus = false,
   defaultOpen = false,
   onClose,
+  selectAllOnFocus = false,
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
 }: SearchableSelectProps) {
@@ -167,6 +170,18 @@ export function SearchableSelect({
 
   const selectedOption = options.find((option) => option.value === value);
   const hasSelection = hasSearchableSelectSelection(value, selectedOption);
+
+  function focusSearchInput(shouldSelectAll = false) {
+    if (disabled) return;
+    setOpen(true);
+    window.requestAnimationFrame(() => {
+      const input = inputRef.current;
+      input?.focus();
+      if (shouldSelectAll && input?.value.trim()) {
+        input.select();
+      }
+    });
+  }
 
   const requiredField = required ? (
     <input
@@ -318,8 +333,7 @@ export function SearchableSelect({
               data-state={open ? "open" : "closed"}
               onClick={() => {
                 if (disabled) return;
-                setOpen(true);
-                inputRef.current?.focus();
+                focusSearchInput(selectAllOnFocus && hasSelection);
               }}
               className={cn(
                 triggerClassName,
@@ -342,7 +356,7 @@ export function SearchableSelect({
                   changeQuery(next);
                   if (!open) setOpen(true);
                 }}
-                onFocus={() => setOpen(true)}
+                onFocus={() => focusSearchInput(selectAllOnFocus)}
                 onKeyDown={(event) => {
                   if (event.key === "Escape") {
                     setOpen(false);

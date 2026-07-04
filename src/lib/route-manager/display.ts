@@ -68,7 +68,32 @@ export function getRouteEmployeesLabel(employees: RouteEmployeeRef[]): string {
 }
 
 export function formatRouteCopyLabel(assignment: Route): string {
-  return `${assignment.name} · ${formatRouteDate(assignment.date)} · ${getVehicleRefLabel(assignment.vehicle)}`;
+  const parts = [
+    assignment.name.trim(),
+    formatRouteDate(assignment.date),
+    getVehicleRefLabel(assignment.vehicle),
+  ].filter((part): part is string => Boolean(part?.trim()) && part !== "—");
+
+  if (parts.length > 0) return parts.join(" · ");
+
+  return assignment.routeId.trim() || assignment.id || "—";
+}
+
+/** Primary label for route assignment pickers (name only). */
+export function formatRouteAssignmentName(assignment: Route): string {
+  const name = assignment.name.trim();
+  if (name) return name;
+  return assignment.routeId.trim() || assignment.id || "—";
+}
+
+/** Secondary lines for route assignment pickers (date, vehicle). */
+export function formatRouteAssignmentDescriptionLines(assignment: Route): string[] {
+  const lines: string[] = [];
+  const date = formatRouteDate(assignment.date);
+  if (date && date !== "—") lines.push(date);
+  const vehicle = getVehicleRefLabel(assignment.vehicle);
+  if (vehicle && vehicle !== "—") lines.push(vehicle);
+  return lines;
 }
 
 /** Sort routes chronologically (earliest first), then by name. */

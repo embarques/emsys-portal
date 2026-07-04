@@ -11,6 +11,7 @@ import {
   createTextSearchFilter,
   type ApiSearchFilterGroup,
 } from "@/lib/api/search-query";
+import { buildApiBranchRef, type ApiBranchRefPayload } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 import { ROUTES_USE_MOCK_DATA } from "@/lib/route-manager/data-source";
@@ -74,6 +75,7 @@ type ApiRoute = {
 type ApiRouteWritePayload = {
   routeId?: string;
   name?: string;
+  branch?: ApiBranchRefPayload;
   vehicle: { id: string; name: string; branch?: string };
   employees: { id: number; name: string; role: RouteCrewRole }[];
   active: boolean;
@@ -343,6 +345,11 @@ function buildRouteWritePayload(
     })),
     active: values.active,
   };
+
+  const branchCode = values.branch?.code.trim();
+  if (values.branch && (values.branch.id > 0 || branchCode)) {
+    payload.branch = buildApiBranchRef({ id: values.branch.id, code: branchCode });
+  }
 
   if (mode === "update") {
     if (values.name.trim()) {

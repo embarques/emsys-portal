@@ -7,7 +7,7 @@
   "pickupRoutes": {
     "title": "Pickup routes",
     "editTitle": "Edit pickup route",
-    "addTabLabel": "Set pickup route",
+    "addTabLabel": "Add pickup route",
     "editTabLabel": "Edit {{name}}",
     "loading": "Loading pickup route…",
     "notFound": "This pickup route could not be found.",
@@ -16,7 +16,7 @@
     "searchNoun": "pickup routes",
     "empty": "No pickup routes yet.",
     "emptyFiltered": "No pickup routes match your search.",
-    "setActiveRoute": "Set pickup route",
+    "setActiveRoute": "Add pickup route",
     "pagination": "Showing {{shown}} of {{total}} pickup routes",
     "entities": {
       "activeRoute": "pickup route",
@@ -26,7 +26,7 @@
   "deliveryRoutes": {
     "title": "Delivery routes",
     "editTitle": "Edit delivery route",
-    "addTabLabel": "Set delivery route",
+    "addTabLabel": "Add delivery route",
     "editTabLabel": "Edit {{name}}",
     "loading": "Loading delivery route…",
     "notFound": "This delivery route could not be found.",
@@ -35,7 +35,7 @@
     "searchNoun": "delivery routes",
     "empty": "No delivery routes yet.",
     "emptyFiltered": "No delivery routes match your search.",
-    "setActiveRoute": "Set delivery route",
+    "setActiveRoute": "Add delivery route",
     "pagination": "Showing {{shown}} of {{total}} delivery routes",
     "entities": {
       "activeRoute": "delivery route",
@@ -152,7 +152,7 @@
     "route": "Route",
     "routePlaceholder": "Select a route…",
     "routeSearch": "Search routes…",
-    "routeEmpty": "No routes for this date.",
+    "routeEmpty": "No routes for this branch.",
     "driver": "Driver",
     "appraiser": "Appraiser",
     "helper": "Helper",
@@ -208,11 +208,16 @@
     "notFound": "This route could not be found.",
     "sections": {
       "details": "Route details",
+      "branch": "Branch",
       "vehicle": "Vehicle",
       "crew": "Crew members"
     },
+    "branchPlaceholder": "Select a branch",
+    "branchSearch": "Search branches…",
+    "selectBranchFirst": "Select a branch to load vehicles and crew.",
     "vehiclePlaceholder": "Select a vehicle",
     "vehicleSearch": "Search vehicles…",
+    "vehicleEmpty": "No vehicles for this branch.",
     "crewMembers": "Crew members",
     "crewMemberPlaceholder": "Search and add crew members…",
     "removeCrewMember": "Remove {{name}}",

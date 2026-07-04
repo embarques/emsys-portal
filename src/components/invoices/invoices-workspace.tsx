@@ -16,9 +16,11 @@ import {
 } from "lucide-react";
 
 import { InvoiceStagingDialog } from "@/components/invoices/invoice-staging-dialog";
+import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
+import { DirectoryTableRowActions } from "@/components/app-shell/directory-table-row-actions";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
@@ -48,6 +50,7 @@ import {
   formatInvoiceDate,
   formatInvoiceMoney,
   formatInvoicePartySummary,
+  formatInvoiceTabLabel,
   getContainerLabelForInvoice,
   getInvoiceBalance,
   getInvoiceBalanceMoneyClass,
@@ -70,7 +73,7 @@ import {
   useInvoiceStats,
   useInvoices,
 } from "@/lib/invoices/hooks/use-invoices";
-import { useGenerateInvoiceReport } from "@/lib/reports/hooks/use-reports";
+import { usePrintInvoices } from "@/lib/invoices/hooks/use-print-invoices";
 import { useAssignInvoiceBarcodesToRoute } from "@/lib/labels/hooks/use-barcodes";
 import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
 import { formatRouteCopyLabel } from "@/lib/route-manager/display";
@@ -87,6 +90,7 @@ import {
   createInvoicePayment,
   computeTotalPayments,
   DEFAULT_INVOICE_LIST_PARAMS,
+  getInvoiceRecordId,
   type Invoice,
   type InvoiceFilterState,
   type InvoicePaymentInput,
@@ -94,6 +98,7 @@ import {
 import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useSyncWorkspaceTabTitle } from "@/lib/layout/hooks/use-sync-workspace-tab-title";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
@@ -118,6 +123,38 @@ export function InvoicesWorkspace() {
   const [stagingOpen, setStagingOpen] = useState(false);
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState("");
+  const [addFormOpen, setAddFormOpen] = useState(false);
+  const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
+
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
+  function openAddForm() {
+    if (isDesktopTabs) {
+      openFormTab({ feature: "invoices", baseHref: "/invoices", mode: "add", label: "Add invoice" });
+      return;
+    }
+    setAddFormOpen(true);
+  }
+
+  function openEditForm(invoice: Invoice) {
+    closeView();
+    if (isDesktopTabs) {
+      openFormTab({
+        feature: "invoices",
+        baseHref: "/invoices",
+        mode: "edit",
+        entityId: getInvoiceRecordId(invoice),
+        label: formatInvoiceTabLabel(invoice),
+      });
+      return;
+    }
+    setEditInvoiceId(getInvoiceRecordId(invoice));
+  }
+
+  function openDeleteInvoice(invoice: Invoice) {
+    closeView();
+    setDeleteTarget(invoice);
+  }
 
   const listParams = useMemo(
     () =>
@@ -140,7 +177,7 @@ export function InvoicesWorkspace() {
     sort: "fullName:asc",
   });
   const deleteInvoicesMutation = useDeleteInvoices();
-  const generateInvoiceReportMutation = useGenerateInvoiceReport();
+  const { printInvoiceIds, isPrinting } = usePrintInvoices();
   const assignRouteMutation = useAssignInvoiceBarcodesToRoute();
   const { data: routesData, isLoading: routesLoading } = useRoutePicker(
     undefined,
@@ -155,7 +192,6 @@ export function InvoicesWorkspace() {
   const allPageSelected =
     invoices.length > 0 && invoices.every((invoice) => selectedIds.includes(invoice.invoiceId));
   const isDeleting = deleteInvoicesMutation.isPending;
-  const isPrinting = generateInvoiceReportMutation.isPending;
 
   const viewInvoice = useMemo(() => {
     if (!viewInvoiceId) return null;
@@ -271,23 +307,7 @@ export function InvoicesWorkspace() {
 
   async function printSelectedInvoices() {
     const invoiceIds = selectedInvoices.map((invoice) => invoice.invoiceId).filter(Boolean);
-    if (invoiceIds.length === 0) {
-      notifyError("Select at least one invoice to print.");
-      return;
-    }
-
-    try {
-      const report = await generateInvoiceReportMutation.mutateAsync({
-        type: "invoice",
-        collection: "invoices",
-        values: invoiceIds,
-        lookupField: "id",
-      });
-      window.open(report.url, "_blank", "noopener,noreferrer");
-      notifySuccess(`Invoice report ready for ${invoiceIds.length} invoice(s).`);
-    } catch (mutationError) {
-      notifyError(normalizeApiError(mutationError).message);
-    }
+    await printInvoiceIds(invoiceIds);
   }
 
   function openAssignRoute() {
@@ -341,6 +361,11 @@ export function InvoicesWorkspace() {
       notifyError(normalizeApiError(mutationError).message);
     }
   }
+
+  const editingInvoice = useMemo(
+    () => invoices.find((invoice) => invoice.invoiceId === editInvoiceId) ?? null,
+    [editInvoiceId, invoices],
+  );
 
   const stats = [
     {
@@ -543,7 +568,7 @@ export function InvoicesWorkspace() {
       <PageHeader
         title="Invoices"
         actions={
-          <Button disabled title="Invoice create via API is not available yet.">
+          <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
             Add invoice
           </Button>
@@ -614,6 +639,10 @@ export function InvoicesWorkspace() {
           pageRowIds={invoices.map((invoice) => invoice.invoiceId)}
           totalCount={totalInvoices}
           onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            const invoice = selectedInvoices[0];
+            if (invoice) openEditForm(invoice);
+          }}
           onDelete={() =>
             setDeleteTarget(invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)))
           }
@@ -675,6 +704,15 @@ export function InvoicesWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
             onRowClick={openView}
+            onRowDoubleClick={openEditForm}
+            renderSelectCellActions={(invoice) => (
+              <DirectoryTableRowActions
+                row={invoice}
+                onEdit={openEditForm}
+                onDelete={openDeleteInvoice}
+                deleteDisabled={isDeleting}
+              />
+            )}
             emptyState={
               <p className="text-muted-foreground">No invoices match your search or filters.</p>
             }
@@ -727,11 +765,8 @@ export function InvoicesWorkspace() {
         onOpenChange={(open) => {
           if (!open) closeView();
         }}
-        onEdit={() => undefined}
-        onDelete={(invoice) => {
-          closeView();
-          setDeleteTarget(invoice);
-        }}
+        onEdit={(invoice) => openEditForm(invoice)}
+        onDelete={(invoice) => openDeleteInvoice(invoice)}
         onAddComment={addInvoiceComment}
         onRecordPayment={recordInvoicePayment}
       />
@@ -786,6 +821,47 @@ export function InvoicesWorkspace() {
               {isAssigningRoute ? "Assigning…" : "Assign route"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={addFormOpen}
+        onOpenChange={(open) => {
+          if (!open) setAddFormOpen(false);
+        }}
+      >
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-6xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+            <DialogTitle>Add invoice</DialogTitle>
+          </DialogHeader>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <InvoiceCreateWizard onCancel={() => setAddFormOpen(false)} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={editInvoiceId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditInvoiceId(null);
+        }}
+      >
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-6xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+            <DialogTitle>
+              {editingInvoice
+                ? `Edit invoice ${formatInvoiceTabLabel(editingInvoice)}`
+                : "Edit invoice"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {editInvoiceId ? (
+              <InvoiceEditWizard
+                invoiceId={editInvoiceId}
+                onCancel={() => setEditInvoiceId(null)}
+              />
+            ) : null}
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -29,6 +29,7 @@ import {
   formatActiveRouteContainerLabel,
   formatActiveRouteDriverNames,
   formatActiveRouteRowLabel,
+  formatActiveRouteRouteName,
   formatActiveRouteTypeLabel,
 } from "@/lib/pickup-delivery-routes/display";
 import {
@@ -37,6 +38,7 @@ import {
   type ActiveRouteFilterState,
 } from "@/lib/pickup-delivery-routes/types";
 import { useActiveRoutes, useDeleteActiveRoutes } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import { useRouteLookup } from "@/lib/route-manager/hooks/use-route-manager";
 import { createApiListTextSearch } from "@/lib/api/search-query";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatRouteDate } from "@/lib/route-manager/display";
@@ -86,6 +88,10 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
 
   const activeRoutesQuery = useActiveRoutes(activeRouteListParams);
   const deleteActiveRoutesMutation = useDeleteActiveRoutes(variant.routeType);
+  const routeLookup = useRouteLookup(200, {
+    branchCode: variant.fixedBranchCode,
+    enabled: variant.id === "delivery",
+  });
 
   const activeRoutes = activeRoutesQuery.data?.items ?? [];
   const totalActiveRoutes = activeRoutesQuery.data?.total ?? 0;
@@ -206,7 +212,10 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
       {
         id: "route.name",
         label: t("routes.columns.route"),
-        renderCell: (record) => record.route.name || dash,
+        renderCell: (record) =>
+          variant.id === "delivery"
+            ? formatActiveRouteRouteName(record, routeLookup.getByKey)
+            : record.route.name || dash,
       },
       {
         id: "driver.name",
@@ -232,7 +241,7 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
       if (column.id === "container.name" && !variant.showContainerField) return false;
       return true;
     });
-  }, [dash, t, variant.showContainerField, variant.showRouteTypeField]);
+  }, [dash, routeLookup.getByKey, t, variant.id, variant.showContainerField, variant.showRouteTypeField]);
 
   const activeRouteColumnVisibility = useColumnVisibility(
     variant.columnVisibilityKey,

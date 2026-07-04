@@ -7,7 +7,7 @@
   "pickupRoutes": {
     "title": "Rutas de recogida",
     "editTitle": "Editar ruta de recogida",
-    "addTabLabel": "Definir ruta de recogida",
+    "addTabLabel": "Agregar ruta de recogida",
     "editTabLabel": "Editar {{name}}",
     "loading": "Cargando ruta de recogida…",
     "notFound": "No se encontró esta ruta de recogida.",
@@ -16,7 +16,7 @@
     "searchNoun": "rutas de recogida",
     "empty": "Aún no hay rutas de recogida.",
     "emptyFiltered": "Ninguna ruta de recogida coincide con su búsqueda.",
-    "setActiveRoute": "Definir ruta de recogida",
+    "setActiveRoute": "Agregar ruta de recogida",
     "pagination": "Mostrando {{shown}} de {{total}} rutas de recogida",
     "entities": {
       "activeRoute": "ruta de recogida",
@@ -26,7 +26,7 @@
   "deliveryRoutes": {
     "title": "Rutas de entrega",
     "editTitle": "Editar ruta de entrega",
-    "addTabLabel": "Definir ruta de entrega",
+    "addTabLabel": "Agregar ruta de entrega",
     "editTabLabel": "Editar {{name}}",
     "loading": "Cargando ruta de entrega…",
     "notFound": "No se encontró esta ruta de entrega.",
@@ -35,7 +35,7 @@
     "searchNoun": "rutas de entrega",
     "empty": "Aún no hay rutas de entrega.",
     "emptyFiltered": "Ninguna ruta de entrega coincide con su búsqueda.",
-    "setActiveRoute": "Definir ruta de entrega",
+    "setActiveRoute": "Agregar ruta de entrega",
     "pagination": "Mostrando {{shown}} de {{total}} rutas de entrega",
     "entities": {
       "activeRoute": "ruta de entrega",
@@ -152,7 +152,7 @@
     "route": "Ruta",
     "routePlaceholder": "Seleccionar ruta…",
     "routeSearch": "Buscar rutas…",
-    "routeEmpty": "No hay rutas para esta fecha.",
+    "routeEmpty": "No hay rutas para esta sucursal.",
     "driver": "Conductor",
     "appraiser": "Tasador",
     "helper": "Ayudante",
@@ -208,11 +208,16 @@
     "notFound": "No se encontró esta ruta.",
     "sections": {
       "details": "Detalles de la ruta",
+      "branch": "Sucursal",
       "vehicle": "Vehículo",
       "crew": "Miembros de la cuadrilla"
     },
+    "branchPlaceholder": "Seleccionar sucursal",
+    "branchSearch": "Buscar sucursales…",
+    "selectBranchFirst": "Seleccione una sucursal para cargar vehículos y cuadrilla.",
     "vehiclePlaceholder": "Seleccionar vehículo",
     "vehicleSearch": "Buscar vehículos…",
+    "vehicleEmpty": "No hay vehículos para esta sucursal.",
     "crewMembers": "Miembros de la cuadrilla",
     "crewMemberPlaceholder": "Buscar y agregar miembros de la cuadrilla…",
     "removeCrewMember": "Quitar {{name}}",
