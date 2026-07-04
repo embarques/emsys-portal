@@ -101,7 +101,7 @@ input[type="week"]::-webkit-calendar-picker-indicator {
     color: black;
   }
 
-  #invoice-wizard-print-area .print\\:hidden {
+  #invoice-wizard-print-area [data-print-hide] {
     display: none !important;
   }
 }

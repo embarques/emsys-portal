@@ -31,7 +31,10 @@ import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatRouteCopyLabel } from "@/lib/route-manager/display";
+import {
+  formatRouteAssignmentDescriptionLines,
+  formatRouteAssignmentName,
+} from "@/lib/route-manager/display";
 import {
   useCreateRoute,
   useRoute,
@@ -88,6 +91,7 @@ export function ActiveRouteSection({
   const [createFormError, setCreateFormError] = useState<string | null>(null);
   const hydratedLookupRef = useRef("");
   const defaultBranchAppliedRef = useRef(false);
+  const syncedRouteRecordIdRef = useRef("");
   const effectiveRouteType = fixedRouteType ?? values.routeType;
   const branchCode = fixedBranchCode ?? values.branch.code;
 
@@ -151,6 +155,7 @@ export function ActiveRouteSection({
 
   useEffect(() => {
     if (initialRecord) {
+      syncedRouteRecordIdRef.current = "";
       setValues(activeRouteToFormValues(initialRecord));
       setSavedRecord(initialRecord);
     }
@@ -163,6 +168,7 @@ export function ActiveRouteSection({
     if (activeRouteQuery.data) {
       if (hydratedLookupRef.current === lookupKey) return;
 
+      syncedRouteRecordIdRef.current = "";
       setValues(activeRouteToFormValues(activeRouteQuery.data));
       setSavedRecord(activeRouteQuery.data);
       hydratedLookupRef.current = lookupKey;
@@ -171,6 +177,7 @@ export function ActiveRouteSection({
 
     if (hydratedLookupRef.current === lookupKey) return;
 
+    syncedRouteRecordIdRef.current = "";
     setSavedRecord(null);
     setValues((current) => ({
       ...current,
@@ -183,13 +190,55 @@ export function ActiveRouteSection({
   const routeOptions = useMemo(() => {
     const items = routesQuery.data?.items ?? [];
     return [...items]
-      .sort((left, right) => formatRouteCopyLabel(left).localeCompare(formatRouteCopyLabel(right)))
+      .sort((left, right) =>
+        formatRouteAssignmentName(left).localeCompare(formatRouteAssignmentName(right)),
+      )
       .map((route) => ({
         value: route.id,
-        label: formatRouteCopyLabel(route),
-        keywords: [route.name, route.routeId, route.vehicle.name, route.vehicle.branch ?? ""],
+        label: formatRouteAssignmentName(route),
+        descriptionLines: formatRouteAssignmentDescriptionLines(route),
+        keywords: [
+          route.name,
+          route.routeId,
+          route.vehicle.name,
+          route.vehicle.branch ?? "",
+        ],
       }));
   }, [routesQuery.data?.items]);
+
+  const selectedRoute = selectedRouteQuery.data ?? null;
+
+  // Sync crew from the selected route template when the user picks a route.
+  // Runs once per routeRecordId so role edits are not overwritten on re-render.
+  useEffect(() => {
+    const routeRecordId = values.routeRecordId.trim();
+    if (!routeRecordId || selectedRouteQuery.isLoading) return;
+    if (!selectedRoute) return;
+
+    const alreadySynced = syncedRouteRecordIdRef.current === routeRecordId;
+    if (alreadySynced && values.employees.length > 0) return;
+
+    syncedRouteRecordIdRef.current = routeRecordId;
+    const crew = selectedRoute.employees;
+
+    setValues((current) => {
+      const rolesById = new Map(current.employees.map((employee) => [employee.id, employee.role]));
+      const employees = crew.map((employee) => {
+        let role = rolesById.get(employee.id) ?? resolveCrewRole(employee.role);
+        if (effectiveRouteType === "delivery" && role === "appraiser") {
+          role = "driver";
+        }
+        return { id: employee.id, name: employee.name, role };
+      });
+      return { ...current, employees };
+    });
+  }, [
+    effectiveRouteType,
+    selectedRoute,
+    selectedRouteQuery.isLoading,
+    values.employees.length,
+    values.routeRecordId,
+  ]);
 
   const branchOptions = useMemo(
     () =>
@@ -230,28 +279,6 @@ export function ActiveRouteSection({
     return options;
   }, [containers, values.container]);
 
-  const selectedRoute = selectedRouteQuery.data ?? null;
-
-  // Sync the crew from the selected route template, preserving any per-schedule
-  // role edits for crew members that remain on the route.
-  useEffect(() => {
-    if (!selectedRoute || selectedRouteQuery.isLoading) return;
-
-    const crew = selectedRoute.employees;
-    setValues((current) => {
-      const rolesById = new Map(current.employees.map((employee) => [employee.id, employee.role]));
-      const employees = crew.map((employee) => {
-        let role = rolesById.get(employee.id) ?? resolveCrewRole(employee.role);
-        // Deliveries have no appraiser role.
-        if (effectiveRouteType === "delivery" && role === "appraiser") {
-          role = "driver";
-        }
-        return { id: employee.id, name: employee.name, role };
-      });
-      return { ...current, employees };
-    });
-  }, [selectedRoute, selectedRouteQuery.isLoading, effectiveRouteType]);
-
   const isSaving = upsertMutation.isPending;
   const isDelivery = effectiveRouteType === "delivery";
   const isEditing = Boolean(initialRecord ?? savedRecord?.id);
@@ -266,6 +293,7 @@ export function ActiveRouteSection({
     !values.routeRecordId.trim();
 
   function resetSchedule(partial: Partial<ActiveRouteFormValues>) {
+    syncedRouteRecordIdRef.current = "";
     setValues((current) => ({
       ...current,
       routeRecordId: "",
@@ -423,6 +451,7 @@ export function ActiveRouteSection({
         }}
         onContainerChange={updateContainer}
         onRouteRecordChange={(routeRecordId) => {
+          syncedRouteRecordIdRef.current = "";
           setValues((current) => ({
             ...current,
             routeRecordId,

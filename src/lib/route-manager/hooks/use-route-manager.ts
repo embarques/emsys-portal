@@ -79,7 +79,10 @@ export function useRoutePicker(
  * Picker data plus lookup maps indexed by both the human `routeId`
  * code and the Mongo record `id`, so consumers can resolve either reference.
  */
-export function useRouteLookup(limit = 200, options: { enabled?: boolean } = {}) {
+export function useRouteLookup(
+  limit = 200,
+  options: { enabled?: boolean; branchCode?: string } = {},
+) {
   const query = useRoutePicker(limit, options);
   const items = useMemo(() => query.data?.items ?? [], [query.data]);
 

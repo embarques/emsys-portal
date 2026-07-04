@@ -1,5 +1,6 @@
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { getActiveRouteAppraiser } from "@/lib/pickup-delivery-routes/types";
+import type { Route } from "@/lib/route-manager/types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import { formatRouteDate } from "@/lib/route-manager/display";
 import { resolveCrewRole } from "@/lib/route-manager/types";
@@ -28,6 +29,28 @@ export function formatActiveRouteTypeLabel(
 
 export function formatActiveRouteContainerLabel(record: ActiveRoute | null | undefined): string {
   return record?.container?.name?.trim() || "—";
+}
+
+/** Linked route manager assignment name for the Route table column. */
+export function formatActiveRouteRouteName(
+  record: ActiveRoute,
+  getRouteByKey?: (key: string | undefined) => Pick<Route, "name" | "routeId"> | undefined,
+): string {
+  const linked = record.route;
+  if (!linked?.id) return "—";
+
+  const resolved =
+    getRouteByKey?.(linked.id) ??
+    (linked.routeId ? getRouteByKey?.(linked.routeId) : undefined);
+
+  const resolvedName = resolved?.name.trim();
+  if (resolvedName) return resolvedName;
+
+  const embeddedName = String(linked.name ?? "").trim();
+  if (embeddedName && embeddedName !== linked.id) return embeddedName;
+
+  const routeId = String(linked.routeId ?? resolved?.routeId ?? "").trim();
+  return routeId || embeddedName || linked.id || "—";
 }
 
 export function formatActiveRouteRowLabel(record: ActiveRoute | null | undefined): string {
