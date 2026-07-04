@@ -13,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  useActiveRoute,
   useUpsertActiveRoute,
 } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import {
@@ -25,7 +24,7 @@ import {
   type RouteScheduleType,
   type RouteType,
 } from "@/lib/pickup-delivery-routes/types";
-import { formatContainerLabel } from "@/lib/containers/display";
+import { formatContainerLabel, formatContainerRouteNumber } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -85,11 +84,9 @@ export function ActiveRouteSection({
       ? activeRouteToFormValues(initialRecord)
       : createEmptyActiveRouteForm(fixedRouteType ?? "pickup"),
   );
-  const [savedRecord, setSavedRecord] = useState<ActiveRoute | null>(initialRecord);
   const [formError, setFormError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFormError, setCreateFormError] = useState<string | null>(null);
-  const hydratedLookupRef = useRef("");
   const defaultBranchAppliedRef = useRef(false);
   const syncedRouteRecordIdRef = useRef("");
   const effectiveRouteType = fixedRouteType ?? values.routeType;
@@ -130,25 +127,6 @@ export function ActiveRouteSection({
     );
   }, [currentUserQuery.data?.branch, fixedBranchCode, initialRecord]);
 
-  // Auto-detect an existing schedule only for date-based routes.
-  const lookup = useMemo(() => {
-    if (values.scheduleType !== "date") return null;
-    const date = values.date.trim();
-    if (!date) return null;
-
-    if (effectiveRouteType === "pickup") {
-      return { routeType: effectiveRouteType, date };
-    }
-
-    const containerId = values.container?.id ?? 0;
-    if (effectiveRouteType === "delivery" && containerId > 0) {
-      return { routeType: effectiveRouteType, date, containerId };
-    }
-
-    return null;
-  }, [effectiveRouteType, values.scheduleType, values.date, values.container?.id]);
-
-  const activeRouteQuery = useActiveRoute(lookup);
   const upsertMutation = useUpsertActiveRoute();
   const createRouteMutation = useCreateRoute();
   const selectedRouteQuery = useRoute(values.routeRecordId || null, Boolean(values.routeRecordId));
@@ -157,35 +135,8 @@ export function ActiveRouteSection({
     if (initialRecord) {
       syncedRouteRecordIdRef.current = "";
       setValues(activeRouteToFormValues(initialRecord));
-      setSavedRecord(initialRecord);
     }
   }, [initialRecord]);
-
-  useEffect(() => {
-    if (!lookup || activeRouteQuery.isLoading || initialRecord) return;
-
-    const lookupKey = `${lookup.routeType}:${lookup.date}:${lookup.containerId ?? "pickup"}`;
-    if (activeRouteQuery.data) {
-      if (hydratedLookupRef.current === lookupKey) return;
-
-      syncedRouteRecordIdRef.current = "";
-      setValues(activeRouteToFormValues(activeRouteQuery.data));
-      setSavedRecord(activeRouteQuery.data);
-      hydratedLookupRef.current = lookupKey;
-      return;
-    }
-
-    if (hydratedLookupRef.current === lookupKey) return;
-
-    syncedRouteRecordIdRef.current = "";
-    setSavedRecord(null);
-    setValues((current) => ({
-      ...current,
-      routeRecordId: "",
-      employees: [],
-    }));
-    hydratedLookupRef.current = lookupKey;
-  }, [activeRouteQuery.data, activeRouteQuery.isLoading, initialRecord, lookup]);
 
   const routeOptions = useMemo(() => {
     const items = routesQuery.data?.items ?? [];
@@ -230,7 +181,11 @@ export function ActiveRouteSection({
         }
         return { id: employee.id, name: employee.name, role };
       });
-      return { ...current, employees };
+      return {
+        ...current,
+        routeAssignmentName: formatRouteAssignmentName(selectedRoute),
+        employees,
+      };
     });
   }, [
     effectiveRouteType,
@@ -281,7 +236,7 @@ export function ActiveRouteSection({
 
   const isSaving = upsertMutation.isPending;
   const isDelivery = effectiveRouteType === "delivery";
-  const isEditing = Boolean(initialRecord ?? savedRecord?.id);
+  const isEditing = Boolean(initialRecord);
   const scheduleFilled =
     values.scheduleType === "date"
       ? Boolean(values.date.trim())
@@ -297,16 +252,15 @@ export function ActiveRouteSection({
     setValues((current) => ({
       ...current,
       routeRecordId: "",
+      routeAssignmentName: "",
       employees: [],
       ...partial,
     }));
-    setSavedRecord(null);
     setFormError(null);
   }
 
   function handleRouteTypeChange(routeType: RouteType) {
     if (fixedRouteType) return;
-    hydratedLookupRef.current = "";
     resetSchedule({
       routeType,
       // Delivery routes are always date-based.
@@ -317,7 +271,6 @@ export function ActiveRouteSection({
   }
 
   function handleScheduleTypeChange(scheduleType: RouteScheduleType) {
-    hydratedLookupRef.current = "";
     resetSchedule({ scheduleType });
   }
 
@@ -331,9 +284,11 @@ export function ActiveRouteSection({
   function updateContainer(nextValue: string) {
     const container = containers.find((entry) => String(entry.id) === nextValue);
     if (!container) return;
-    hydratedLookupRef.current = "";
     resetSchedule({
-      container: { id: container.id, name: formatContainerLabel(container) },
+      container: {
+        id: container.id,
+        name: formatContainerRouteNumber(container),
+      },
     });
   }
 
@@ -370,15 +325,14 @@ export function ActiveRouteSection({
     }
 
     try {
-      const record = await upsertMutation.mutateAsync({
+      await upsertMutation.mutateAsync({
         values: {
           ...values,
           routeType: effectiveRouteType,
           container: isDelivery ? values.container : null,
         },
-        existingId: savedRecord?.id ?? initialRecord?.id,
+        existingId: initialRecord?.id,
       });
-      setSavedRecord(record);
       notifySuccess(t("routes.activeRoute.saved"));
       onSaved?.();
     } catch (error) {
@@ -404,6 +358,7 @@ export function ActiveRouteSection({
       setValues((current) => ({
         ...current,
         routeRecordId: created.id,
+        routeAssignmentName: created.name,
       }));
       setCreateDialogOpen(false);
       notifySuccess(t("routes.activeRoute.routeCreated"));
@@ -439,7 +394,6 @@ export function ActiveRouteSection({
         onScheduleTypeChange={handleScheduleTypeChange}
         onBranchChange={handleBranchChange}
         onDateChange={(date) => {
-          hydratedLookupRef.current = "";
           resetSchedule({ date });
         }}
         onDayOfWeekChange={(dayOfWeek) => {
@@ -452,9 +406,11 @@ export function ActiveRouteSection({
         onContainerChange={updateContainer}
         onRouteRecordChange={(routeRecordId) => {
           syncedRouteRecordIdRef.current = "";
+          const assignment = (routesQuery.data?.items ?? []).find((route) => route.id === routeRecordId);
           setValues((current) => ({
             ...current,
             routeRecordId,
+            routeAssignmentName: assignment ? formatRouteAssignmentName(assignment) : "",
             employees: [],
           }));
           setFormError(null);

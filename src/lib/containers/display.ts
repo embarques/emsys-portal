@@ -33,6 +33,14 @@ export function formatContainerLabel(container: Pick<Container, "name" | "contai
   return number ? `${container.name} · ${number}` : container.name;
 }
 
+/** Container number sent on delivery vehicle route writes (e.g. `34-26`). */
+export function formatContainerRouteNumber(
+  container: Pick<Container, "name" | "containerNumber">,
+): string {
+  const number = container.containerNumber.trim();
+  return number || container.name.trim();
+}
+
 export function computeContainerKpis(containers: Container[]) {
   const totalCost = containers.reduce((sum, container) => sum + (container.cost > 0 ? container.cost : 0), 0);
   const inTransit = containers.filter((container) => {
