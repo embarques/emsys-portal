@@ -47,6 +47,7 @@ import {
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useAuth } from "@/providers/auth-provider";
+import { useCurrentUser } from "@/lib/users/hooks/use-users";
 
 type ActiveRouteSectionProps = {
   initialRecord?: ActiveRoute | null;
@@ -74,6 +75,7 @@ export function ActiveRouteSection({
   const containers = containersQuery.data?.items ?? [];
   const branchesQuery = useBranchPicker(200);
   const branches = branchesQuery.data?.items ?? [];
+  const currentUserQuery = useCurrentUser();
 
   const [values, setValues] = useState<ActiveRouteFormValues>(() =>
     initialRecord
@@ -85,11 +87,13 @@ export function ActiveRouteSection({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFormError, setCreateFormError] = useState<string | null>(null);
   const hydratedLookupRef = useRef("");
+  const defaultBranchAppliedRef = useRef(false);
   const effectiveRouteType = fixedRouteType ?? values.routeType;
   const branchCode = fixedBranchCode ?? values.branch.code;
 
   const routesQuery = useRoutePicker(200, {
     branchCode: branchCode.trim() || undefined,
+    enabled: Boolean(branchCode.trim()),
   });
 
   // Lock the branch to the variant's fixed code (e.g. delivery routes → RD).
@@ -105,6 +109,22 @@ export function ActiveRouteSection({
         : { ...current, branch: { id: match.id, code: match.code } },
     );
   }, [branches, fixedBranchCode, initialRecord]);
+
+  // Default the branch to the current user's branch for new schedules that do
+  // not lock the branch (e.g. pickup routes). Applied once and never overrides
+  // a branch the user picked or an existing record's branch.
+  useEffect(() => {
+    if (fixedBranchCode || initialRecord) return;
+    if (defaultBranchAppliedRef.current) return;
+    const userBranch = currentUserQuery.data?.branch;
+    if (!userBranch || !(userBranch.id > 0)) return;
+    defaultBranchAppliedRef.current = true;
+    setValues((current) =>
+      current.branch.id > 0
+        ? current
+        : { ...current, branch: { id: userBranch.id, code: userBranch.code } },
+    );
+  }, [currentUserQuery.data?.branch, fixedBranchCode, initialRecord]);
 
   // Auto-detect an existing schedule only for date-based routes.
   const lookup = useMemo(() => {
@@ -339,7 +359,14 @@ export function ActiveRouteSection({
   }
 
   function buildCreateRouteInitialValues(): RouteFormValues {
-    return createEmptyRouteForm(displayName ?? undefined);
+    const form = createEmptyRouteForm(displayName ?? undefined);
+    if (values.branch.id > 0 || values.branch.code.trim()) {
+      form.branch = {
+        id: values.branch.id,
+        code: values.branch.code,
+      };
+    }
+    return form;
   }
 
   async function handleCreateRoute(routeValues: RouteFormValues) {
@@ -432,14 +459,17 @@ export function ActiveRouteSection({
               {t("routes.createDialog.description", { date: values.date })}
             </DialogDescription>
           </DialogHeader>
-          <RouteForm
-            initialValues={buildCreateRouteInitialValues()}
-            submitLabel={t("routes.activeRoute.createRoute")}
-            isSubmitting={createRouteMutation.isPending}
-            externalError={createFormError}
-            onSubmit={handleCreateRoute}
-            onCancel={() => setCreateDialogOpen(false)}
-          />
+          {createDialogOpen ? (
+            <RouteForm
+              key="create-route-from-active"
+              initialValues={buildCreateRouteInitialValues()}
+              submitLabel={t("routes.activeRoute.createRoute")}
+              isSubmitting={createRouteMutation.isPending}
+              externalError={createFormError}
+              onSubmit={handleCreateRoute}
+              onCancel={() => setCreateDialogOpen(false)}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
     </>

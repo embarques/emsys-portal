@@ -9,6 +9,13 @@ export type RouteVehicleRef = {
   branch?: string;
 };
 
+/** Branch a route belongs to. Drives vehicle/crew scoping and is sent on save. */
+export type RouteBranchRef = {
+  id: number;
+  code: string;
+  name?: string;
+};
+
 /** Crew member role on a route. Defaults to `driver` when unset. */
 export type RouteCrewRole = "driver" | "appraiser" | "helper";
 
@@ -71,6 +78,7 @@ export type RouteFormValues = {
   id: string;
   routeId: string;
   name: string;
+  branch: RouteBranchRef;
   vehicle: RouteVehicleRef;
   employees: RouteEmployeeRef[];
   active: boolean;
@@ -114,6 +122,10 @@ export function createEmptyVehicleRef(): RouteVehicleRef {
   return { id: "", name: "" };
 }
 
+export function createEmptyRouteBranchRef(): RouteBranchRef {
+  return { id: 0, code: "", name: "" };
+}
+
 export function todayDateInputValue(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -149,6 +161,7 @@ export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormV
     id: "",
     routeId: "",
     name: "",
+    branch: createEmptyRouteBranchRef(),
     vehicle: createEmptyVehicleRef(),
     employees: [],
     active: true,
@@ -160,10 +173,14 @@ export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormV
 }
 
 export function routeToFormValues(assignment: Route): RouteFormValues {
+  const branchCode = assignment.vehicle.branch?.trim() ?? "";
   return {
     id: assignment.id,
     routeId: assignment.routeId,
     name: assignment.name,
+    // Route has no dedicated branch; seed from the vehicle's branch code and
+    // let the form resolve the id/name from the branch list.
+    branch: { id: 0, code: branchCode, name: "" },
     vehicle: { ...assignment.vehicle },
     employees: assignment.employees.map((employee) => ({ ...employee })),
     active: assignment.active,

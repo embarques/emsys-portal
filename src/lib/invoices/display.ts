@@ -15,6 +15,11 @@ export function getPaymentMethodLabel(method: InvoicePaymentMethod): string {
   return INVOICE_PAYMENT_METHODS.find((entry) => entry.value === method)?.label ?? method;
 }
 
+export function formatInvoiceTabLabel(invoice: Pick<Invoice, "invoiceNumber">): string {
+  const number = invoice.invoiceNumber.trim();
+  return number ? `#${number}` : "Invoice";
+}
+
 export function formatInvoiceDate(date: string): string {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",

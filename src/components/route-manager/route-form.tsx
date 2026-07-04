@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Car, CircleCheck, ClipboardList, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Building2, Car, CircleCheck, ClipboardList, Users } from "lucide-react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
@@ -11,7 +11,9 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useTranslation } from "@/lib/i18n";
 import { createEmptyRouteForm, type RouteFormValues } from "@/lib/route-manager/types";
 import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
-import { getBranchLabel } from "@/lib/vehicles/display";
+import { formatBranchCodeLabel, formatBranchFilterLabel } from "@/lib/branches/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 
 type RouteFormProps = {
@@ -38,17 +40,82 @@ export function RouteForm({
     initialValues ?? createEmptyRouteForm(),
   );
   const [employeeError, setEmployeeError] = useState<string | null>(null);
-  const { data: vehiclesData } = useVehiclePicker();
+  const branchCode = values.branch.code.trim();
+  const { data: vehiclesData, isLoading: vehiclesLoading } = useVehiclePicker(200, {
+    branchCode: branchCode || undefined,
+    enabled: Boolean(branchCode),
+  });
   const vehicles = vehiclesData?.items ?? [];
+  const branchesQuery = useBranchPicker(200);
+  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
+  const currentUserQuery = useCurrentUser();
   const handleEnterNavigation = useFormEnterNavigation();
 
+  // Only sync external values when editing — add mode owns its own state.
   useEffect(() => {
-    setValues(initialValues ?? createEmptyRouteForm());
+    if (!isEditing || !initialValues) return;
+    setValues(initialValues);
     setEmployeeError(null);
   }, [initialValues, isEditing]);
 
+  // Resolve branch id/name from the branch list when only a code is known.
+  useEffect(() => {
+    if (values.branch.id > 0 || !branchCode) return;
+    const match = branches.find(
+      (branch) => branch.code.trim().toLowerCase() === branchCode.toLowerCase(),
+    );
+    if (!match) return;
+    setValues((current) =>
+      current.branch.id > 0
+        ? current
+        : { ...current, branch: { id: match.id, code: match.code, name: match.name } },
+    );
+  }, [branches, branchCode, values.branch.id]);
+
+  // Default new routes to the logged-in user's branch (same pattern as vehicle form).
+  useEffect(() => {
+    if (isEditing) return;
+    if (values.branch.id > 0 && branchCode) return;
+
+    const userBranch = currentUserQuery.data?.branch;
+    if (!userBranch?.id) return;
+
+    const match = branches.find((entry) => entry.id === userBranch.id);
+    const code = userBranch.code.trim() || match?.code || "";
+    if (!code) return;
+
+    setValues((current) =>
+      current.branch.id > 0 && current.branch.code.trim()
+        ? current
+        : {
+            ...current,
+            branch: {
+              id: userBranch.id,
+              code,
+              name: userBranch.name || match?.name || "",
+            },
+          },
+    );
+  }, [branchCode, branches, currentUserQuery.data?.branch, isEditing, values.branch.id]);
+
   function updateField<K extends keyof RouteFormValues>(key: K, value: RouteFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function handleBranchChange(nextBranchCode: string) {
+    const branch = branches.find((entry) => entry.code === nextBranchCode);
+    // Vehicle and crew belong to a branch — clear them when the branch changes.
+    setValues((current) => ({
+      ...current,
+      branch: {
+        id: branch?.id ?? 0,
+        code: branch?.code ?? nextBranchCode,
+        name: branch?.name ?? "",
+      },
+      vehicle: { id: "", name: "" },
+      employees: [],
+    }));
+    setEmployeeError(null);
   }
 
   function handleVehicleChange(vehicleRecordId: string) {
@@ -65,8 +132,23 @@ export function RouteForm({
     updateField("employees", employees);
   }
 
+  const branchOptions = useMemo(
+    () =>
+      branches.map((branch) => ({
+        value: branch.code,
+        label: formatBranchFilterLabel(branch),
+        keywords: [branch.code, branch.name],
+      })),
+    [branches],
+  );
+
+  const hasBranch = values.branch.id > 0 || Boolean(values.branch.code.trim());
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!hasBranch) {
+      return;
+    }
     if (!values.vehicle.id.trim()) {
       return;
     }
@@ -105,30 +187,6 @@ export function RouteForm({
           </FormSection>
         ) : null}
 
-        <FormSection icon={Car} title={t("routes.form.sections.vehicle")} required>
-          <SearchableSelect
-            id="vehicleId"
-            aria-label={t("routes.routeDetails.vehicle")}
-            value={values.vehicle.id}
-            onValueChange={handleVehicleChange}
-            placeholder={t("routes.form.vehiclePlaceholder")}
-            searchPlaceholder={t("routes.form.vehicleSearch")}
-            required
-            options={vehicles.map((vehicle) => ({
-              value: vehicle.id,
-              label: `${vehicle.name} · ${getBranchLabel(vehicle.branch.code)}`,
-            }))}
-          />
-        </FormSection>
-
-        <FormSection icon={Users} title={t("routes.form.sections.crew")} required>
-          <RouteEmployeeSelect
-            value={values.employees}
-            onChange={handleEmployeesChange}
-            error={employeeError}
-          />
-        </FormSection>
-
         <FormSection icon={CircleCheck} title={t("routes.activeRoute.status")}>
           <div
             className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
@@ -162,13 +220,63 @@ export function RouteForm({
             })}
           </div>
         </FormSection>
+
+        <FormSection icon={Building2} title={t("routes.form.sections.branch")} required>
+          <SearchableSelect
+            id="routeBranch"
+            aria-label={t("routes.form.sections.branch")}
+            value={values.branch.code}
+            onValueChange={handleBranchChange}
+            placeholder={t("routes.form.branchPlaceholder")}
+            searchPlaceholder={t("routes.form.branchSearch")}
+            loading={branchesQuery.isLoading}
+            required
+            options={branchOptions}
+          />
+        </FormSection>
+
+        <FormSection icon={Car} title={t("routes.form.sections.vehicle")} required>
+          {hasBranch ? (
+            <SearchableSelect
+              id="vehicleId"
+              aria-label={t("routes.routeDetails.vehicle")}
+              value={values.vehicle.id}
+              onValueChange={handleVehicleChange}
+              placeholder={t("routes.form.vehiclePlaceholder")}
+              searchPlaceholder={t("routes.form.vehicleSearch")}
+              loading={vehiclesLoading}
+              loadingMessage={t("common.loading")}
+              emptyMessage={t("routes.form.vehicleEmpty")}
+              required
+              options={vehicles.map((vehicle) => ({
+                value: vehicle.id,
+                label: `${vehicle.name} · ${formatBranchCodeLabel(vehicle.branch.code, branches)}`,
+              }))}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">{t("routes.form.selectBranchFirst")}</p>
+          )}
+        </FormSection>
+
+        <FormSection icon={Users} title={t("routes.form.sections.crew")} required>
+          {hasBranch ? (
+            <RouteEmployeeSelect
+              value={values.employees}
+              onChange={handleEmployeesChange}
+              error={employeeError}
+              branchCode={values.branch.code}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">{t("routes.form.selectBranchFirst")}</p>
+          )}
+        </FormSection>
       </FormBody>
 
       <FormFooter
         submitLabel={submitLabel}
         isSubmitting={isSubmitting}
         error={externalError}
-        submitDisabled={!values.vehicle.id.trim() || values.employees.length === 0}
+        submitDisabled={!hasBranch || !values.vehicle.id.trim() || values.employees.length === 0}
         onCancel={onCancel}
       />
     </form>

@@ -127,6 +127,40 @@ export function ActiveRouteForm({
       className="flex min-h-0 flex-1 flex-col"
     >
       <FormBody>
+        <FormSection icon={CircleCheck} title={t("routes.activeRoute.status")}>
+          <div
+            className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
+            role="radiogroup"
+            aria-label={t("routes.activeRoute.status")}
+          >
+            {[
+              { value: true, label: t("routes.activeRoute.active") },
+              { value: false, label: t("routes.activeRoute.inactive") },
+            ].map((option) => {
+              const selected = values.active === option.value;
+              return (
+                <button
+                  key={option.label}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => onActiveChange(option.value)}
+                  className={cn(
+                    "rounded-md px-4 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                    selected && option.value
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : selected
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </FormSection>
+
         {showRouteTypeField ? (
           <FormSection icon={ClipboardList} title={t("routes.activeRoute.routeType")} required>
             <div
@@ -313,40 +347,6 @@ export function ActiveRouteForm({
             />
           </FormSection>
         ) : null}
-
-        <FormSection icon={CircleCheck} title={t("routes.activeRoute.status")}>
-          <div
-            className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
-            role="radiogroup"
-            aria-label={t("routes.activeRoute.status")}
-          >
-            {[
-              { value: true, label: t("routes.activeRoute.active") },
-              { value: false, label: t("routes.activeRoute.inactive") },
-            ].map((option) => {
-              const selected = values.active === option.value;
-              return (
-                <button
-                  key={option.label}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => onActiveChange(option.value)}
-                  className={cn(
-                    "rounded-md px-4 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                    selected && option.value
-                      ? "bg-emerald-600 text-white shadow-sm"
-                      : selected
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </FormSection>
 
         {isEditing ? (
           <p className="text-xs text-muted-foreground">{t("routes.activeRouteForm.editHint")}</p>

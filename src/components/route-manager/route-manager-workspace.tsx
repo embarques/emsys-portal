@@ -27,7 +27,7 @@ import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatBranchFilterLabel } from "@/lib/branches/display";
+import { formatBranchCodeOnly, formatBranchFilterLabel, getBranchCodeBadgeClass } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { createApiListTextSearch } from "@/lib/api/search-query";
 import { formatAuditDateTime } from "@/lib/audit/display";
@@ -35,7 +35,6 @@ import {
   formatRouteName,
   getRouteEmployeesLabel,
 } from "@/lib/route-manager/display";
-import { getBranchBadgeClass, getBranchLabel } from "@/lib/vehicles/display";
 import {
   useCreateRoute,
   useDeleteRoutes,
@@ -88,8 +87,8 @@ export function RouteManagerWorkspace() {
   );
 
   const branchesQuery = useBranchPicker(200);
+  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
   const branchOptions = useMemo(() => {
-    const branches = branchesQuery.data?.items ?? [];
     return [
       { value: "", label: t("routes.table.allBranches"), keywords: ["all"] },
       ...branches.map((branch) => ({
@@ -98,7 +97,7 @@ export function RouteManagerWorkspace() {
         keywords: [branch.code, branch.name],
       })),
     ];
-  }, [branchesQuery.data?.items, t]);
+  }, [branches, t]);
 
   const { data, isLoading, isError, error, isFetching } = useRoutes(listParams);
   const createMutation = useCreateRoute();
@@ -230,8 +229,10 @@ export function RouteManagerWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (assignment) => (
-        <TableTagText className={getBranchBadgeClass(assignment.vehicle.branch ?? "")}>
-          {getBranchLabel(assignment.vehicle.branch ?? "")}
+        <TableTagText
+          className={getBranchCodeBadgeClass(assignment.vehicle.branch ?? "", branches)}
+        >
+          {formatBranchCodeOnly(assignment.vehicle.branch ?? "", branches)}
         </TableTagText>
       ),
     },

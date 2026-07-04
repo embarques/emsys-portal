@@ -25,6 +25,11 @@ import {
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { UnverifiedAddressNotice } from "@/components/addresses/unverified-address-notice";
 import { InvoiceLineItemsEditor } from "@/components/invoices/invoice-line-items-editor";
+import { WizardField } from "@/components/invoices/invoice-wizard-field";
+import {
+  wizardInputFieldProps,
+  wizardSelectFieldProps,
+} from "@/components/invoices/invoice-wizard-styles";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -61,6 +66,7 @@ import { useItemPicker } from "@/lib/items/hooks/use-items";
 import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
 import { DEFAULT_ORDER_LIST_PARAMS } from "@/lib/orders/types";
 import { useOrders } from "@/lib/orders/hooks/use-orders";
+import { cn } from "@/lib/utils";
 
 type InvoiceFormProps = {
   initialValues?: InvoiceFormValues;
@@ -72,6 +78,11 @@ type InvoiceFormProps = {
   onSubmit: (values: InvoiceFormValues) => InvoiceFormSubmitResult;
   onFormErrorChange?: (error: string | null) => void;
   onCancel: () => void;
+  /** When set, only the matching section is rendered (wizard mode). */
+  wizardStep?: 1 | 2 | 3;
+  appearance?: "default" | "wizard";
+  showFooter?: boolean;
+  onValuesChange?: (values: InvoiceFormValues) => void;
 };
 
 type PartySide = "sender" | "receiver";
@@ -156,7 +167,12 @@ export function InvoiceForm({
   onSubmit,
   onFormErrorChange,
   onCancel,
+  wizardStep,
+  appearance = "default",
+  showFooter = true,
+  onValuesChange,
 }: InvoiceFormProps) {
+  const isWizard = appearance === "wizard";
   const { data: customersData } = useCustomerPicker();
   const { data: containersData } = useContainerPicker();
   const ordersQuery = useOrders({ ...DEFAULT_ORDER_LIST_PARAMS, limit: 200 });
@@ -190,6 +206,16 @@ export function InvoiceForm({
     );
     setFormError(null);
   }, [initialValues, isEditing, suggestedInvoiceNumber]);
+
+  useEffect(() => {
+    onValuesChange?.(values);
+  }, [onValuesChange, values]);
+
+  const showAllSections = wizardStep == null;
+  const showDetailsSection = showAllSections || wizardStep === 1;
+  const showPartiesSection = showAllSections || wizardStep === 2;
+  const showLineItemsSection = showAllSections || wizardStep === 3;
+  const showTotalsSection = (showAllSections || wizardStep === 3) && !isWizard;
 
   // Senders are customerType 1, receivers are customerType 2 — keep each picker scoped.
   const senderCustomers = useMemo(
@@ -381,203 +407,279 @@ export function InvoiceForm({
 
   const errorMessage = formError ?? externalError;
 
+  function renderField(
+    label: string,
+    htmlFor: string,
+    required: boolean | undefined,
+    control: React.ReactNode,
+  ) {
+    if (isWizard) {
+      return (
+        <WizardField label={label} htmlFor={htmlFor} required={required}>
+          {control}
+        </WizardField>
+      );
+    }
+
+    return (
+      <div className="space-y-1">
+        <Label htmlFor={htmlFor}>
+          {label}
+          {required ? <span className="text-destructive"> *</span> : null}
+        </Label>
+        {control}
+      </div>
+    );
+  }
+
+  const detailsFields = (
+    <div className={cn("grid gap-5", isWizard ? "sm:grid-cols-2" : "gap-2.5 sm:grid-cols-2")}>
+      {renderField(
+        "Date",
+        "date",
+        true,
+        <DateInput
+          id="date"
+          value={values.date}
+          onChange={(event) => updateField("date", event.target.value)}
+          {...(isWizard ? wizardInputFieldProps(values.date, "pl-8") : {})}
+          required
+        />,
+      )}
+      {renderField(
+        "Invoice number",
+        "invoiceNumber",
+        true,
+        <Input
+          id="invoiceNumber"
+          value={values.invoiceNumber}
+          onChange={(event) => updateField("invoiceNumber", event.target.value)}
+          placeholder="INV-2026-0001"
+          {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
+          required
+        />,
+      )}
+      {renderField(
+        "Pickup",
+        "pickupId",
+        false,
+        <SearchableSelect
+          id="pickupId"
+          value={values.pickupId}
+          onValueChange={(next) => updateField("pickupId", next)}
+          placeholder="No pickup"
+          searchPlaceholder="Search pickups…"
+          {...(isWizard ? wizardSelectFieldProps(values.pickupId) : {})}
+          options={[
+            { value: "", label: "No pickup" },
+            ...orders.map((order) => ({
+              value: String(order.id),
+              label: `#${order.id}`,
+              descriptionLines: [order.sender?.name ?? ""].filter((line) => line.trim()),
+            })),
+          ]}
+        />,
+      )}
+      {renderField(
+        "Container",
+        "containerId",
+        true,
+        <SearchableSelect
+          id="containerId"
+          value={values.containerId}
+          onValueChange={(next) => updateField("containerId", next)}
+          placeholder="Select a container"
+          searchPlaceholder="Search containers…"
+          {...(isWizard ? wizardSelectFieldProps(values.containerId) : {})}
+          required
+          options={[
+            { value: "", label: "Select a container" },
+            ...containers.map((container) => ({
+              value: String(container.id),
+              label: formatContainerLabel(container),
+            })),
+          ]}
+        />,
+      )}
+      {renderField(
+        "Pending",
+        "paymentLocation",
+        true,
+        <SearchableSelect
+          id="paymentLocation"
+          value={values.paymentLocation}
+          onValueChange={(next) =>
+            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
+          }
+          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
+          required
+          options={INVOICE_PAYMENT_LOCATIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+        />,
+      )}
+      {renderField(
+        "Route",
+        "routeId",
+        false,
+        <SearchableSelect
+          id="routeId"
+          value={values.routeId}
+          onValueChange={(next) => updateField("routeId", next)}
+          placeholder="No route"
+          searchPlaceholder="Search routes…"
+          {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
+          options={[
+            { value: "", label: "No route" },
+            ...routes.map((assignment) => ({
+              value: assignment.id,
+              label: assignment.name,
+              descriptionLines: [assignment.vehicle.name].filter((line) => line.trim()),
+            })),
+          ]}
+        />,
+      )}
+    </div>
+  );
+
+  const partiesFields = (
+    <div className={cn("grid gap-5", isWizard ? "sm:grid-cols-2" : "gap-2.5 sm:grid-cols-2")}>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          {isWizard ? (
+            <Label htmlFor="senderId" className="text-xs font-normal text-muted-foreground">
+              Sender <span className="text-destructive">*</span>
+            </Label>
+          ) : (
+            <Label htmlFor="senderId">
+              Sender <span className="text-destructive">*</span>
+            </Label>
+          )}
+          <PartyFieldActions
+            hasSelection={Boolean(values.sender)}
+            onAdd={() => openAddCustomer("sender")}
+            onEdit={() => openEditCustomer("sender")}
+          />
+        </div>
+        <SearchableSelect
+          id="senderId"
+          value={values.senderId}
+          onValueChange={updateSenderId}
+          placeholder="Select sender"
+          searchPlaceholder="Search by name, phone, or address…"
+          {...(isWizard ? wizardSelectFieldProps(values.senderId) : {})}
+          required
+          manualFiltering
+          loading={senderSearch.isFetching}
+          onSearchChange={setSenderQuery}
+          options={[
+            ...(debouncedSenderQuery ? [] : [{ value: "", label: "Select sender" }]),
+            ...senderSelectOptions,
+          ]}
+        />
+        {values.sender ? (
+          <>
+            <CustomerContactSummary customer={values.sender} />
+            <UnverifiedAddressNotice
+              customer={values.sender}
+              onUpdateAddress={() => openEditCustomer("sender")}
+            />
+          </>
+        ) : null}
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          {isWizard ? (
+            <Label htmlFor="receiverId" className="text-xs font-normal text-muted-foreground">
+              Receiver
+            </Label>
+          ) : (
+            <Label htmlFor="receiverId">Receiver</Label>
+          )}
+          <PartyFieldActions
+            hasSelection={Boolean(values.receiver)}
+            onAdd={() => openAddCustomer("receiver")}
+            onEdit={() => openEditCustomer("receiver")}
+          />
+        </div>
+        <SearchableSelect
+          id="receiverId"
+          value={values.receiverId}
+          onValueChange={updateReceiverId}
+          placeholder="No receiver"
+          searchPlaceholder="Search by name, phone, or address…"
+          {...(isWizard ? wizardSelectFieldProps(values.receiverId) : {})}
+          manualFiltering
+          loading={receiverSearch.isFetching}
+          onSearchChange={setReceiverQuery}
+          options={[
+            ...(debouncedReceiverQuery ? [] : [{ value: "", label: "No receiver" }]),
+            ...receiverSelectOptions,
+          ]}
+        />
+        {values.receiver ? (
+          <>
+            <CustomerContactSummary customer={values.receiver} />
+            <UnverifiedAddressNotice
+              customer={values.receiver}
+              onUpdateAddress={() => openEditCustomer("receiver")}
+            />
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-        <FormBody>
-          <FormSection icon={Receipt} title="Invoice details" required>
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="date">
-                  Date <span className="text-destructive">*</span>
-                </Label>
-                <DateInput
-                  id="date"
-                  value={values.date}
-                  onChange={(event) => updateField("date", event.target.value)}
-                  required
+        <FormBody
+          className={
+            isWizard ? "flex-1 space-y-6 overflow-y-auto bg-card px-5 pt-4 pb-10 sm:px-8 sm:pb-12" : undefined
+          }
+        >
+          {showDetailsSection ? (
+            isWizard ? (
+              detailsFields
+            ) : (
+              <FormSection icon={Receipt} title="Invoice details" required>
+                {detailsFields}
+              </FormSection>
+            )
+          ) : null}
+
+          {showPartiesSection ? (
+            isWizard ? (
+              partiesFields
+            ) : (
+              <FormSection icon={Users} title="Sender & receiver">
+                {partiesFields}
+              </FormSection>
+            )
+          ) : null}
+
+          {showLineItemsSection ? (
+            isWizard ? (
+              <InvoiceLineItemsEditor
+                lineItems={values.lineItems}
+                catalogItems={catalogItems}
+                appearance="wizard"
+                onChange={(lineItems) => updateField("lineItems", lineItems)}
+              />
+            ) : (
+              <FormSection icon={ClipboardList} title="Description">
+                <InvoiceLineItemsEditor
+                  lineItems={values.lineItems}
+                  catalogItems={catalogItems}
+                  onChange={(lineItems) => updateField("lineItems", lineItems)}
                 />
-              </div>
+              </FormSection>
+            )
+          ) : null}
 
-              <div className="space-y-1">
-                <Label htmlFor="invoiceNumber">
-                  Invoice number <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="invoiceNumber"
-                  value={values.invoiceNumber}
-                  onChange={(event) => updateField("invoiceNumber", event.target.value)}
-                  placeholder="INV-2026-0001"
-                  required
-                />
-              </div>
-
-              {/*
-                Pickup and route are captured in the UI but are intentionally
-                left out of the API add/edit payloads until the invoices API supports them.
-              */}
-              <div className="space-y-1">
-                <Label htmlFor="pickupId">Pickup</Label>
-                <SearchableSelect
-                  id="pickupId"
-                  value={values.pickupId}
-                  onValueChange={(next) => updateField("pickupId", next)}
-                  placeholder="No pickup"
-                  searchPlaceholder="Search pickups…"
-                  options={[
-                    { value: "", label: "No pickup" },
-                    ...orders.map((order) => ({
-                      value: String(order.id),
-                      label: `#${order.id}`,
-                      descriptionLines: [order.sender?.name ?? ""].filter((line) => line.trim()),
-                    })),
-                  ]}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="containerId">
-                  Container <span className="text-destructive">*</span>
-                </Label>
-                <SearchableSelect
-                  id="containerId"
-                  value={values.containerId}
-                  onValueChange={(next) => updateField("containerId", next)}
-                  placeholder="Select a container"
-                  searchPlaceholder="Search containers…"
-                  required
-                  options={[
-                    { value: "", label: "Select a container" },
-                    ...containers.map((container) => ({
-                      value: String(container.id),
-                      label: formatContainerLabel(container),
-                    })),
-                  ]}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="paymentLocation">
-                  Pending <span className="text-destructive">*</span>
-                </Label>
-                <SearchableSelect
-                  id="paymentLocation"
-                  value={values.paymentLocation}
-                  onValueChange={(next) =>
-                    updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
-                  }
-                  required
-                  options={INVOICE_PAYMENT_LOCATIONS.map((option) => ({
-                    value: option.value,
-                    label: option.label,
-                  }))}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="routeId">Route</Label>
-                <SearchableSelect
-                  id="routeId"
-                  value={values.routeId}
-                  onValueChange={(next) => updateField("routeId", next)}
-                  placeholder="No route"
-                  searchPlaceholder="Search routes…"
-                  options={[
-                    { value: "", label: "No route" },
-                    ...routes.map((assignment) => ({
-                      value: assignment.id,
-                      label: assignment.name,
-                      descriptionLines: [assignment.vehicle.name].filter((line) => line.trim()),
-                    })),
-                  ]}
-                />
-              </div>
-            </div>
-          </FormSection>
-
-          <FormSection icon={Users} title="Sender & receiver">
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="senderId">
-                    Sender <span className="text-destructive">*</span>
-                  </Label>
-                  <PartyFieldActions
-                    hasSelection={Boolean(values.sender)}
-                    onAdd={() => openAddCustomer("sender")}
-                    onEdit={() => openEditCustomer("sender")}
-                  />
-                </div>
-                <SearchableSelect
-                  id="senderId"
-                  value={values.senderId}
-                  onValueChange={updateSenderId}
-                  placeholder="Select sender"
-                  searchPlaceholder="Search by name, phone, or address…"
-                  required
-                  manualFiltering
-                  loading={senderSearch.isFetching}
-                  onSearchChange={setSenderQuery}
-                  options={[
-                    ...(debouncedSenderQuery ? [] : [{ value: "", label: "Select sender" }]),
-                    ...senderSelectOptions,
-                  ]}
-                />
-                {values.sender ? (
-                  <>
-                    <CustomerContactSummary customer={values.sender} />
-                    <UnverifiedAddressNotice
-                      customer={values.sender}
-                      onUpdateAddress={() => openEditCustomer("sender")}
-                    />
-                  </>
-                ) : null}
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="receiverId">Receiver</Label>
-                  <PartyFieldActions
-                    hasSelection={Boolean(values.receiver)}
-                    onAdd={() => openAddCustomer("receiver")}
-                    onEdit={() => openEditCustomer("receiver")}
-                  />
-                </div>
-                <SearchableSelect
-                  id="receiverId"
-                  value={values.receiverId}
-                  onValueChange={updateReceiverId}
-                  placeholder="No receiver"
-                  searchPlaceholder="Search by name, phone, or address…"
-                  manualFiltering
-                  loading={receiverSearch.isFetching}
-                  onSearchChange={setReceiverQuery}
-                  options={[
-                    ...(debouncedReceiverQuery ? [] : [{ value: "", label: "No receiver" }]),
-                    ...receiverSelectOptions,
-                  ]}
-                />
-                {values.receiver ? (
-                  <>
-                    <CustomerContactSummary customer={values.receiver} />
-                    <UnverifiedAddressNotice
-                      customer={values.receiver}
-                      onUpdateAddress={() => openEditCustomer("receiver")}
-                    />
-                  </>
-                ) : null}
-              </div>
-            </div>
-          </FormSection>
-
-          <FormSection icon={ClipboardList} title="Description">
-            <InvoiceLineItemsEditor
-              lineItems={values.lineItems}
-              catalogItems={catalogItems}
-              onChange={(lineItems) => updateField("lineItems", lineItems)}
-            />
-          </FormSection>
-
+          {showTotalsSection ? (
           <FormSection icon={Wallet} title="Totals">
             <div className="space-y-2.5">
             <div className="grid gap-2.5 sm:grid-cols-2">
@@ -618,8 +720,10 @@ export function InvoiceForm({
             </div>
             </div>
           </FormSection>
+          ) : null}
         </FormBody>
 
+        {showFooter ? (
         <FormFooter
           error={errorMessage}
           warning={blockForUnverifiedParty ? unverifiedPartyMessage : null}
@@ -627,6 +731,7 @@ export function InvoiceForm({
           submitDisabled={blockForUnverifiedParty}
           onCancel={onCancel}
         />
+        ) : null}
       </form>
 
       <Dialog

@@ -113,13 +113,22 @@ export function useVehicle(vehicleId: string | null, enabled = true) {
   });
 }
 
-export function useVehiclePicker(limit = 200, options: { enabled?: boolean } = {}) {
+export function useVehiclePicker(
+  limit = 200,
+  options: { enabled?: boolean; branchCode?: string } = {},
+) {
+  const branchCode = options.branchCode?.trim();
+  const branchFilter = branchCode
+    ? { search: { field: "branch.code", operator: "eq" as const, value: branchCode } }
+    : {};
+
   return useVehicles(
     {
       ...DEFAULT_VEHICLE_LIST_PARAMS,
       limit,
+      ...branchFilter,
     },
-    options,
+    { enabled: options.enabled ?? Boolean(branchCode) },
   );
 }
 

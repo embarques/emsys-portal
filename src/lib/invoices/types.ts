@@ -398,6 +398,7 @@ export function createEmptyInvoiceForm(createdBy = DEFAULT_CREATED_BY): InvoiceF
 export type InvoiceFormSubmitResult = {
   error: string | null;
   nextInvoiceNumber?: string;
+  savedInvoiceId?: string;
 };
 
 export function resetInvoiceFormForNextEntry(
@@ -500,7 +501,52 @@ export function invoiceLineItemToFormValues(item: InvoiceLineItem): InvoiceLineI
   };
 }
 
+function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
+  if (!party.name.trim() && !party.clientId && !party.id) return null;
+
+  const primaryAddress =
+    party.addresses.find((address) => address.id === party.orderAddressId) ?? party.addresses[0];
+
+  return {
+    id: party.clientId ?? party.id,
+    oldID: null,
+    name: party.name.trim() || "—",
+    customerType: null,
+    phones: party.phones.map((phone, index) => ({
+      type: "mobile",
+      number: phone.number,
+      displayNumber: phone.displayNumber ?? phone.number,
+      isPrimary: index === 0,
+    })),
+    email: party.email?.trim() ?? "",
+    active: true,
+    IDNumber: party.documentId?.trim() ?? "",
+    createdAt: "",
+    updatedAt: "",
+    notes: "",
+    accountBalance: 0,
+    branch: { id: 0, name: "", code: "" },
+    createdByID: null,
+    address: {
+      address1: primaryAddress?.streetAddress.trim() ?? "",
+      address2: primaryAddress?.apt?.trim() ?? "",
+      apartment: primaryAddress?.apt?.trim() ?? "",
+      city: primaryAddress?.city.trim() ?? "",
+      state: primaryAddress?.state?.trim() ?? "",
+      zipcode: primaryAddress?.zipCode?.trim() ?? "",
+      country: primaryAddress?.provinceCountry?.trim() ?? "",
+      location: null,
+      verification: null,
+    },
+    addresses: [],
+    receivers: [],
+  };
+}
+
 export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
+  const sender = orderPartyToInvoiceFormCustomer(invoice.sender);
+  const receiver = orderPartyToInvoiceFormCustomer(invoice.receiver);
+
   return {
     invoiceId: invoice.invoiceId,
     invoiceNumber: invoice.invoiceNumber,
@@ -509,10 +555,10 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     containerId: invoice.containerId,
     paymentLocation: invoice.paymentLocation,
     routeId: invoice.routeId ?? "",
-    senderId: invoice.sender.clientId ?? "",
-    sender: null,
-    receiverId: invoice.receiver.clientId ?? "",
-    receiver: null,
+    senderId: invoice.sender.clientId ?? sender?.id ?? "",
+    sender,
+    receiverId: invoice.receiver.clientId ?? receiver?.id ?? "",
+    receiver,
     lineItems:
       invoice.lineItems.length > 0
         ? invoice.lineItems.map(invoiceLineItemToFormValues)
