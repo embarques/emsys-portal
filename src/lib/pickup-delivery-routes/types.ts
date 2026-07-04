@@ -77,6 +77,8 @@ export type ActiveRouteFormValues = {
   branch: ActiveRouteBranchRef;
   container: ActiveRouteContainerRef | null;
   routeRecordId: string;
+  /** Route manager assignment display name (sent as `route.name` on write). */
+  routeAssignmentName: string;
   employees: RouteEmployeeRef[];
   active: boolean;
 };
@@ -146,6 +148,7 @@ export function createEmptyActiveRouteForm(routeType: RouteType = "pickup"): Act
     branch: { id: 0, code: "" },
     container: null,
     routeRecordId: "",
+    routeAssignmentName: "",
     employees: [],
     active: true,
   };
@@ -163,6 +166,7 @@ export function activeRouteToFormValues(record: ActiveRoute): ActiveRouteFormVal
     branch: record.branch ? { ...record.branch } : { id: 0, code: "" },
     container: record.container ? { ...record.container } : null,
     routeRecordId: record.route.id,
+    routeAssignmentName: record.route.name,
     employees: record.employees.map((employee) => ({ ...employee })),
     active: record.active,
   };

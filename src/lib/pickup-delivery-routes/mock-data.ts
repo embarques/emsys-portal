@@ -116,14 +116,23 @@ export function buildMockActiveRouteName(
   routeRecordId: string,
   container: ActiveRoute["container"],
   providedName?: string,
+  routeType?: ActiveRoute["routeType"],
+  date?: string,
 ): string {
+  const resolvedRouteType = routeType ?? deriveRouteType(container);
   const route = getRouteByRecordId(routeRecordId);
-  const routeType = deriveRouteType(container);
 
-  if (routeType === "delivery" && container) {
-    const year = scheduleLabel.trim().slice(0, 4);
-    const suffix = /^\d{4}$/.test(year) ? `-${year}` : "";
-    return `01-${container.name}${suffix}`;
+  if (resolvedRouteType === "delivery" && container) {
+    const isoDate = (date ?? scheduleLabel).trim().slice(0, 10);
+    const containerNumber = container.name.trim();
+    const existingCount = ensureActiveRoutesStore().filter(
+      (record) =>
+        record.routeType === "delivery" &&
+        record.container?.id === container.id &&
+        (record.date === isoDate || record.date.startsWith(isoDate)),
+    ).length;
+    const sequence = existingCount + 1;
+    return `${sequence}-${containerNumber}`;
   }
 
   const trimmedName = providedName?.trim();

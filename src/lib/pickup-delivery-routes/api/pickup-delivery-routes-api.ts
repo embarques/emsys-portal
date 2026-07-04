@@ -223,7 +223,7 @@ function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRo
     branch: { id: values.branch.id, code: values.branch.code.trim() },
     route: {
       id: values.routeRecordId.trim(),
-      name: values.name.trim(),
+      name: values.routeAssignmentName.trim() || values.routeRecordId.trim(),
     },
     employees: buildEmployeeWriteRefs(values),
   };
@@ -241,7 +241,10 @@ function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRo
   }
 
   if (values.routeType === "delivery" && values.container && values.container.id > 0) {
-    payload.container = { id: values.container.id, number: values.container.name.trim() };
+    payload.container = {
+      id: values.container.id,
+      number: values.container.name.trim(),
+    };
   }
 
   return payload;
@@ -439,17 +442,6 @@ function extractActiveRouteFromMutationResponse(data: unknown): ActiveRoute | nu
   return normalizeApiVehicleRoute(unwrapRecord(data));
 }
 
-function buildLookupFromFormValues(values: ActiveRouteFormValues): ActiveRouteLookupParams | null {
-  if (values.scheduleType !== "date") return null;
-  return {
-    routeType: values.routeType,
-    date: values.date.trim().slice(0, 10),
-    ...(values.routeType === "delivery" && values.container
-      ? { containerId: values.container.id }
-      : {}),
-  };
-}
-
 async function resolveSavedActiveRoute(
   recordId: string | null,
   values: ActiveRouteFormValues,
@@ -460,12 +452,6 @@ async function resolveSavedActiveRoute(
 
   if (recordId) {
     return fetchActiveRouteById(recordId, values.routeType);
-  }
-
-  const lookup = buildLookupFromFormValues(values);
-  if (lookup) {
-    const searched = await searchActiveRouteByLookup(lookup);
-    if (searched) return searched;
   }
 
   const message = response.message || response.error;
@@ -519,14 +505,6 @@ export async function upsertActiveRoute(
   const recordId = existingId?.trim();
   if (recordId) {
     return updateActiveRoute(recordId, values);
-  }
-
-  const lookup = buildLookupFromFormValues(values);
-  if (lookup) {
-    const existing = await searchActiveRouteByLookup(lookup);
-    if (existing) {
-      return updateActiveRoute(existing.id, values);
-    }
   }
 
   return createActiveRoute(values);

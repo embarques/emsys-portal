@@ -76,7 +76,14 @@ function formValuesToActiveRoute(
 
   return {
     id: existing?.id ?? createMockObjectId(),
-    name: buildMockActiveRouteName(scheduleLabel, values.routeRecordId, container, values.name),
+    name: buildMockActiveRouteName(
+      scheduleLabel,
+      values.routeRecordId,
+      container,
+      values.name,
+      values.routeType,
+      date,
+    ),
     routeType: deriveRouteType(container),
     container,
     date,
@@ -230,21 +237,6 @@ export async function upsertActiveRoute(
   const recordId = existingId?.trim();
   if (recordId) {
     return updateActiveRoute(recordId, values);
-  }
-
-  const existing =
-    values.scheduleType === "date"
-      ? findActiveRouteByLookup({
-          routeType: values.routeType,
-          date: values.date.trim().slice(0, 10),
-          ...(values.routeType === "delivery" && values.container
-            ? { containerId: values.container.id }
-            : {}),
-        })
-      : undefined;
-
-  if (existing) {
-    return updateActiveRoute(existing.id, values);
   }
 
   return createActiveRoute(values);
