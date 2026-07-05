@@ -102,6 +102,10 @@ function isApiResponse(url: string, apiPath: string, method: string) {
       return /\/journals\/?$/.test(apiPathname);
     }
 
+    if (apiPath === "/invoices" && method === "POST") {
+      return /\/invoices\/?$/.test(apiPathname);
+    }
+
     if (apiPath === "/income-statements/" && method === "POST") {
       return /\/income-statements\/\d+\/(?:open|close)\/?$/.test(apiPathname);
     }
@@ -116,6 +120,9 @@ function isApiResponse(url: string, apiPath: string, method: string) {
       return false;
     }
     if (apiPath === "/journals" && method === "POST" && url.includes("/search")) {
+      return false;
+    }
+    if (apiPath === "/invoices" && method === "POST" && url.includes("/search")) {
       return false;
     }
     return url.includes(apiPath);
