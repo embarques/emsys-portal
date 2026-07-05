@@ -15,8 +15,11 @@ import {
   type StripeStyleSearchBody,
 } from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
+import { buildApiAddressPayload, buildApiBranchDto } from "@/lib/api/payloads";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { createRecordId } from "@/lib/customers/types";
+import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
+import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, createRecordId, type Customer } from "@/lib/customers/types";
+import { getPhoneAtDisplayIndex, getPrimaryPhoneNumber } from "@/lib/phones/phones";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { expandInvoiceFilterNode } from "@/lib/invoices/invoice-filters";
 import { createInvoiceBarSearchFilterGroup } from "@/lib/invoices/search-fields";
@@ -27,16 +30,21 @@ import {
   type OrderParty,
 } from "@/lib/orders/types";
 import {
+  computeInvoiceBalance,
   DEFAULT_INVOICE_LIST_PARAMS,
   getInvoiceBalanceAmount,
   mapPaidRegionToPaymentLocation,
   mapPaymentLocationToPaidRegion,
   normalizeApiInvoiceMoney,
+  resolveLineLabelCount,
+  resolveLineTotal,
   type Invoice,
   type InvoiceBranch,
   type InvoiceComment,
+  type InvoiceFormValues,
   type InvoiceLineItem,
   type InvoiceLineItemBarcode,
+  type InvoiceLineItemFormValues,
   type InvoiceListParams,
 } from "@/lib/invoices/types";
 import type { TableFilterRowState } from "@/lib/table/filter-builder";
@@ -569,6 +577,276 @@ export async function fetchInvoiceById(invoiceId: string): Promise<Invoice> {
   }
 
   return invoice;
+}
+
+export type InvoiceWriteContext = {
+  employee: {
+    id: number;
+    name: string;
+    userName?: string;
+    fullName?: string;
+  };
+  branch: InvoiceBranch;
+  container: {
+    id: number;
+    name: string;
+  };
+};
+
+type ApiInvoiceCustomerWriteRef = {
+  id?: string;
+  name: string;
+  customerType: number;
+  phone1: string;
+  phone2?: string;
+  email?: string;
+  IDNumber?: string;
+  address?: ReturnType<typeof buildApiAddressPayload>;
+};
+
+type ApiInvoiceDetailWriteRef = {
+  id?: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  labels: number;
+  price: number;
+  total: number;
+};
+
+type ApiInvoiceWritePayload = {
+  number: string;
+  date: string;
+  branch: ReturnType<typeof buildApiBranchDto>;
+  cost: number;
+  payment: number;
+  balance: number;
+  discount: number;
+  surcharge: number;
+  paidRegion: string;
+  paidStatus: string;
+  employee: InvoiceWriteContext["employee"];
+  container: InvoiceWriteContext["container"];
+  sender: ApiInvoiceCustomerWriteRef;
+  receiver?: ApiInvoiceCustomerWriteRef;
+  pickup?: { id: string | number };
+  invoiceDetails: ApiInvoiceDetailWriteRef[];
+  isVoid?: boolean;
+};
+
+function buildInvoiceCustomerWriteRef(
+  customer: Customer,
+  fallbackType: number,
+): ApiInvoiceCustomerWriteRef {
+  const name = customer.name.trim();
+  const phone1 = getPrimaryPhoneNumber(customer.phones);
+  const phone2 = getPhoneAtDisplayIndex(customer.phones, 1);
+  const email = customer.email.trim();
+  const idNumber = customer.IDNumber.trim();
+  const address = buildApiAddressPayload(customer.address);
+  const customerType = customer.customerType ?? fallbackType;
+
+  const payload: ApiInvoiceCustomerWriteRef = {
+    name,
+    customerType: coerceCustomerTypeFromApi(customerType || fallbackType),
+    phone1,
+  };
+
+  if (customer.id.trim()) {
+    payload.id = customer.id.trim();
+  }
+
+  if (email) payload.email = email;
+  if (idNumber) payload.IDNumber = idNumber;
+  if (phone2) payload.phone2 = phone2;
+  if (address) payload.address = address;
+
+  return payload;
+}
+
+function buildInvoiceDetailWriteRef(
+  lineItem: InvoiceLineItemFormValues,
+  index: number,
+): ApiInvoiceDetailWriteRef {
+  const name = lineItem.itemName.trim();
+  if (!name) {
+    throw new Error(`Line item ${index + 1}: description is required.`);
+  }
+
+  const quantity = Number(lineItem.quantity);
+  const labels = resolveLineLabelCount(lineItem);
+  const price = Number(lineItem.unitPrice);
+  const total = resolveLineTotal(lineItem);
+
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    throw new Error(`Line item ${index + 1}: quantity must be greater than 0.`);
+  }
+
+  if (!Number.isFinite(price) || price < 0) {
+    throw new Error(`Line item ${index + 1}: unit price must be 0 or greater.`);
+  }
+
+  const detail: ApiInvoiceDetailWriteRef = {
+    name,
+    quantity,
+    labels,
+    price: Math.round(price * 100) / 100,
+    total: Math.round(total * 100) / 100,
+  };
+
+  const description = lineItem.itemId.trim();
+  if (description) {
+    detail.description = description;
+  }
+
+  const persistedId = lineItem.id.trim();
+  if (/^[a-f\d]{24}$/i.test(persistedId)) {
+    detail.id = persistedId;
+  }
+
+  return detail;
+}
+
+function deriveInvoicePaidStatus(cost: number, discount: number, payment: number, balance: number): string {
+  if (payment <= 0) return "UNPAID";
+  if (balance <= 0 || payment >= Math.max(0, cost - discount)) return "PAID";
+  return "PARTIAL";
+}
+
+function buildInvoiceWritePayload(
+  values: InvoiceFormValues,
+  context: InvoiceWriteContext,
+  options: { isUpdate?: boolean } = {},
+): ApiInvoiceWritePayload {
+  const invoiceNumber = values.invoiceNumber.trim();
+  if (!invoiceNumber) {
+    throw new Error("Invoice number is required.");
+  }
+
+  if (!values.date.trim()) {
+    throw new Error("Date is required.");
+  }
+
+  if (!values.sender) {
+    throw new Error("Sender is required.");
+  }
+
+  const lineItems = values.lineItems.filter(
+    (item) => item.itemName.trim() || item.itemId || resolveLineTotal(item) > 0,
+  );
+
+  if (lineItems.length === 0) {
+    throw new Error("At least one line item is required.");
+  }
+
+  const invoiceDetails = lineItems.map((item, index) => buildInvoiceDetailWriteRef(item, index));
+  const cost = Math.round(invoiceDetails.reduce((sum, item) => sum + item.total, 0) * 100) / 100;
+  const discount = Number(values.discount);
+  const payment = Number(values.amountPaid);
+
+  if (!Number.isFinite(discount) || discount < 0) {
+    throw new Error("Discount must be 0 or greater.");
+  }
+
+  if (!Number.isFinite(payment) || payment < 0) {
+    throw new Error("Amount paid must be 0 or greater.");
+  }
+
+  const balance = Math.max(0, computeInvoiceBalance(cost, discount, payment));
+
+  const payload: ApiInvoiceWritePayload = {
+    number: invoiceNumber,
+    date: values.date.trim().slice(0, 10),
+    branch: buildApiBranchDto(context.branch),
+    cost,
+    payment: Math.round(payment * 100) / 100,
+    balance,
+    discount: Math.round(discount * 100) / 100,
+    surcharge: 0,
+    paidRegion: mapPaymentLocationToPaidRegion(values.paymentLocation),
+    paidStatus: deriveInvoicePaidStatus(cost, discount, payment, balance),
+    employee: {
+      id: context.employee.id,
+      name: context.employee.name.trim() || DEFAULT_CREATED_BY,
+      ...(context.employee.userName?.trim() ? { userName: context.employee.userName.trim() } : {}),
+      ...(context.employee.fullName?.trim() ? { fullName: context.employee.fullName.trim() } : {}),
+    },
+    container: {
+      id: context.container.id,
+      name: context.container.name.trim() || String(context.container.id),
+    },
+    sender: buildInvoiceCustomerWriteRef(values.sender, CUSTOMER_TYPE_SENDER),
+    invoiceDetails,
+  };
+
+  if (values.receiver) {
+    payload.receiver = buildInvoiceCustomerWriteRef(values.receiver, CUSTOMER_TYPE_RECEIVER);
+  }
+
+  const pickupId = values.pickupId.trim();
+  if (pickupId) {
+    payload.pickup = { id: pickupId };
+  }
+
+  if (options.isUpdate) {
+    payload.isVoid = false;
+  }
+
+  return payload;
+}
+
+function extractInvoiceFromMutationResponse(data: unknown): Invoice | null {
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    return normalizeInvoice(data);
+  }
+
+  return null;
+}
+
+async function resolveSavedInvoice(
+  invoiceId: string | null,
+  response: ApiMutationEnvelope<unknown>,
+): Promise<Invoice> {
+  const fromResponse = extractInvoiceFromMutationResponse(response.data ?? response);
+  if (fromResponse) return fromResponse;
+
+  if (invoiceId) {
+    return fetchInvoiceById(invoiceId);
+  }
+
+  const message = response.message || response.error;
+  throw new Error(message?.trim() || "Unable to save invoice.");
+}
+
+export async function createInvoice(
+  values: InvoiceFormValues,
+  context: InvoiceWriteContext,
+): Promise<Invoice> {
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    API_ENDPOINTS.INVOICES,
+    buildInvoiceWritePayload(values, context),
+  );
+
+  assertMutationSuccess(response, "Unable to create invoice.");
+
+  const created = extractInvoiceFromMutationResponse(response.data ?? response);
+  return resolveSavedInvoice(created?.invoiceId ?? null, response);
+}
+
+export async function updateInvoice(
+  invoiceId: string,
+  values: InvoiceFormValues,
+  context: InvoiceWriteContext,
+): Promise<Invoice> {
+  const id = parseInvoicePathId(invoiceId);
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.INVOICES}/${id}`,
+    buildInvoiceWritePayload(values, context, { isUpdate: true }),
+  );
+
+  assertMutationSuccess(response, "Unable to update invoice.");
+
+  return resolveSavedInvoice(id, response);
 }
 
 export async function deleteInvoice(invoiceId: string): Promise<void> {

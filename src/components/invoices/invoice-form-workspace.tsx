@@ -12,12 +12,21 @@ import {
   invoiceWizardTypographyRoot,
 } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
+import { normalizeApiError } from "@/lib/api/axios";
+import { fetchContainerById } from "@/lib/containers/api/containers-api";
 import { formatInvoiceTabLabel } from "@/lib/invoices/display";
-import { useInvoice } from "@/lib/invoices/hooks/use-invoices";
+import {
+  useCreateInvoice,
+  useInvoice,
+  useUpdateInvoice,
+} from "@/lib/invoices/hooks/use-invoices";
 import { usePrintInvoices } from "@/lib/invoices/hooks/use-print-invoices";
+import { fetchInvoices, type InvoiceWriteContext } from "@/lib/invoices/api/invoices-api";
 import {
   createEmptyInvoiceForm,
+  getInvoiceRecordId,
   invoiceToFormValues,
+  suggestNextInvoiceNumber,
   type InvoiceFormSubmitResult,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
@@ -26,6 +35,7 @@ import {
   useWorkspaceTabs,
 } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
+import { fetchCurrentUser } from "@/lib/users/api/users-api";
 
 type InvoiceWizardShellProps = {
   title: string;
@@ -34,7 +44,10 @@ type InvoiceWizardShellProps = {
   initialValues: InvoiceFormValues;
   submitLabel: string;
   allowPrint?: boolean;
-  onSubmit: (values: InvoiceFormValues) => InvoiceFormSubmitResult;
+  resetAfterSave?: boolean;
+  isSubmitting?: boolean;
+  onSubmit: (values: InvoiceFormValues) => Promise<InvoiceFormSubmitResult>;
+  onSaved?: () => void;
   onPrint?: (values: InvoiceFormValues, savedInvoiceId?: string | null) => Promise<string | null>;
   isPrinting?: boolean;
 };
@@ -46,7 +59,10 @@ function InvoiceWizardShell({
   initialValues,
   submitLabel,
   allowPrint = false,
+  resetAfterSave = true,
+  isSubmitting = false,
   onSubmit,
+  onSaved,
   onPrint,
   isPrinting = false,
 }: InvoiceWizardShellProps) {
@@ -73,7 +89,10 @@ function InvoiceWizardShell({
             initialValues={initialValues}
             submitLabel={submitLabel}
             allowPrint={allowPrint}
+            resetAfterSave={resetAfterSave}
+            isSubmitting={isSubmitting}
             onSubmit={onSubmit}
+            onSaved={onSaved}
             onPrint={onPrint}
             isPrinting={isPrinting}
             onCancel={onCancel}
@@ -82,6 +101,35 @@ function InvoiceWizardShell({
       </div>
     </div>
   );
+}
+
+async function buildInvoiceWriteContext(values: InvoiceFormValues): Promise<InvoiceWriteContext> {
+  const currentUser = await fetchCurrentUser();
+  const containerId = Number(values.containerId);
+
+  if (!Number.isInteger(containerId) || containerId <= 0) {
+    throw new Error("A container is required.");
+  }
+
+  const container = await fetchContainerById(containerId);
+
+  return {
+    employee: {
+      id: currentUser.id,
+      name: currentUser.name,
+      userName: currentUser.email,
+      fullName: currentUser.name,
+    },
+    branch: {
+      id: currentUser.branch.id,
+      code: currentUser.branch.code,
+      name: currentUser.branch.name,
+    },
+    container: {
+      id: container.id,
+      name: container.name.trim() || container.containerNumber.trim() || String(container.id),
+    },
+  };
 }
 
 type InvoiceCreateWizardProps = {
@@ -93,14 +141,23 @@ export function InvoiceCreateWizard({
   onCancel,
   submitLabel = "Save invoice",
 }: InvoiceCreateWizardProps) {
-  const { notifySuccess } = useFeedback();
+  const { notifyAdded } = useFeedback();
+  const createMutation = useCreateInvoice();
 
-  function handleSubmit(values: InvoiceFormValues): InvoiceFormSubmitResult {
-    notifySuccess(`Invoice #${values.invoiceNumber || "draft"} validated.`);
-    return {
-      error: null,
-      nextInvoiceNumber: values.invoiceNumber ? `${values.invoiceNumber}-next` : "",
-    };
+  async function handleSubmit(values: InvoiceFormValues): Promise<InvoiceFormSubmitResult> {
+    try {
+      const context = await buildInvoiceWriteContext(values);
+      const created = await createMutation.mutateAsync({ values, context });
+      const recent = await fetchInvoices({ page: 1, limit: 50, sort: "number:desc" });
+      notifyAdded("Invoice", created.invoiceNumber || created.invoiceId);
+      return {
+        error: null,
+        savedInvoiceId: created.invoiceId,
+        nextInvoiceNumber: suggestNextInvoiceNumber(recent.items),
+      };
+    } catch (error) {
+      return { error: normalizeApiError(error).message };
+    }
   }
 
   return (
@@ -110,6 +167,7 @@ export function InvoiceCreateWizard({
       onCancel={onCancel}
       initialValues={createEmptyInvoiceForm()}
       submitLabel={submitLabel}
+      isSubmitting={createMutation.isPending}
       onSubmit={handleSubmit}
     />
   );
@@ -126,8 +184,9 @@ export function InvoiceEditWizard({
   onCancel,
   submitLabel = "Save changes",
 }: InvoiceEditWizardProps) {
-  const { notifySuccess } = useFeedback();
+  const { notifyUpdated } = useFeedback();
   const { printInvoice, isPrinting } = usePrintInvoices();
+  const updateMutation = useUpdateInvoice();
   const invoiceQuery = useInvoice(invoiceId);
 
   const initialValues = useMemo(
@@ -145,12 +204,22 @@ export function InvoiceEditWizard({
     });
   }
 
-  function handleSubmit(values: InvoiceFormValues): InvoiceFormSubmitResult {
-    notifySuccess(`Invoice #${values.invoiceNumber || "draft"} validated.`);
-    return {
-      error: null,
-      savedInvoiceId: values.invoiceId,
-    };
+  async function handleSubmit(values: InvoiceFormValues): Promise<InvoiceFormSubmitResult> {
+    try {
+      const context = await buildInvoiceWriteContext(values);
+      const updated = await updateMutation.mutateAsync({
+        invoiceId: getInvoiceRecordId({ invoiceId: values.invoiceId }),
+        values,
+        context,
+      });
+      notifyUpdated("Invoice", updated.invoiceNumber || updated.invoiceId);
+      return {
+        error: null,
+        savedInvoiceId: updated.invoiceId,
+      };
+    } catch (error) {
+      return { error: normalizeApiError(error).message };
+    }
   }
 
   if (invoiceQuery.isLoading || !initialValues) {
@@ -181,7 +250,10 @@ export function InvoiceEditWizard({
       initialValues={initialValues}
       submitLabel={submitLabel}
       allowPrint
+      resetAfterSave={false}
+      isSubmitting={updateMutation.isPending}
       onSubmit={handleSubmit}
+      onSaved={onCancel}
       onPrint={handlePrint}
       isPrinting={isPrinting}
     />

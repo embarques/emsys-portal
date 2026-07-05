@@ -4,11 +4,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
+  createInvoice,
   deleteInvoice,
   deleteInvoices,
   fetchInvoiceBalanceTotal,
   fetchInvoiceById,
   fetchInvoices,
+  updateInvoice,
+  type InvoiceWriteContext,
 } from "@/lib/invoices/api/invoices-api";
 import {
   buildInvoiceStatsCountParams,
@@ -16,6 +19,7 @@ import {
 } from "@/lib/invoices/invoice-stats";
 import {
   DEFAULT_INVOICE_LIST_PARAMS,
+  type InvoiceFormValues,
   type InvoiceListParams,
   type InvoiceSearchFilter,
 } from "@/lib/invoices/types";
@@ -87,6 +91,30 @@ export function useInvoice(invoiceId: string | null, enabled = true) {
 
 function invalidateInvoices(queryClient: ReturnType<typeof useQueryClient>) {
   return queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+}
+
+export function useCreateInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { values: InvoiceFormValues; context: InvoiceWriteContext }) =>
+      createInvoice(input.values, input.context),
+    onSuccess: () => invalidateInvoices(queryClient),
+  });
+}
+
+export function useUpdateInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { invoiceId: string; values: InvoiceFormValues; context: InvoiceWriteContext }) =>
+      updateInvoice(input.invoiceId, input.values, input.context),
+    onSuccess: (invoice) =>
+      Promise.all([
+        invalidateInvoices(queryClient),
+        queryClient.invalidateQueries({ queryKey: queryKeys.invoices.detail(invoice.invoiceId) }),
+      ]),
+  });
 }
 
 export function useDeleteInvoice() {

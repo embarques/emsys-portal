@@ -40,7 +40,10 @@ type Props = {
   externalError?: string | null;
   /** Print is only available when editing a saved invoice in the database. */
   allowPrint?: boolean;
-  onSubmit: (values: InvoiceFormValues) => InvoiceFormSubmitResult;
+  isSubmitting?: boolean;
+  resetAfterSave?: boolean;
+  onSubmit: (values: InvoiceFormValues) => InvoiceFormSubmitResult | Promise<InvoiceFormSubmitResult>;
+  onSaved?: () => void;
   onPrint?: (values: InvoiceFormValues, savedInvoiceId?: string | null) => Promise<string | null>;
   isPrinting?: boolean;
   onCancel: () => void;
@@ -87,7 +90,10 @@ export function InvoiceFormWizard({
   submitLabel,
   externalError = null,
   allowPrint = false,
+  isSubmitting = false,
+  resetAfterSave = true,
   onSubmit,
+  onSaved,
   onPrint,
   isPrinting = false,
   onCancel,
@@ -164,30 +170,36 @@ export function InvoiceFormWizard({
     }
   }
 
-  function handleSave() {
+  async function handleSave() {
     const error = validateForSave(values);
     if (error) {
       setSubmitError(error);
       return;
     }
 
-    const result = onSubmit(values);
+    clearErrors();
+    const result = await onSubmit(values);
     setSubmitError(result.error);
-    if (!result.error) {
-      if (result.savedInvoiceId) {
-        setSavedInvoiceId(result.savedInvoiceId);
-      }
-      clearErrors();
-      setStep(1);
-      const nextValues = resetInvoiceFormForNextEntry(
-        values,
-        result.nextInvoiceNumber ?? suggestedInvoiceNumber ?? "",
-      );
-      setValues(nextValues);
-      setFormSeed(nextValues);
-      setFormSessionKey((key) => key + 1);
-      setSavedInvoiceId(null);
+    if (result.error) return;
+
+    if (result.savedInvoiceId) {
+      setSavedInvoiceId(result.savedInvoiceId);
     }
+
+    onSaved?.();
+
+    if (!resetAfterSave) return;
+
+    clearErrors();
+    setStep(1);
+    const nextValues = resetInvoiceFormForNextEntry(
+      values,
+      result.nextInvoiceNumber ?? suggestedInvoiceNumber ?? "",
+    );
+    setValues(nextValues);
+    setFormSeed(nextValues);
+    setFormSessionKey((key) => key + 1);
+    setSavedInvoiceId(null);
   }
 
   const footerError = step === 4 ? submitError ?? externalError : stepError;
@@ -300,9 +312,9 @@ export function InvoiceFormWizard({
                     {isPrinting ? "Preparing…" : "Print"}
                   </Button>
                 ) : null}
-                <Button type="button" onClick={handleSave} disabled={blockForUnverifiedParty}>
+                <Button type="button" onClick={handleSave} disabled={blockForUnverifiedParty || isSubmitting}>
                   <Save className="size-4" />
-                  {submitLabel}
+                  {isSubmitting ? "Saving…" : submitLabel}
                 </Button>
               </>
             )}

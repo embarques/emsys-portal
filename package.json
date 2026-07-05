@@ -30,7 +30,10 @@
     "test:integration:accounting:daily-income:transaction:apply-surcharge": "playwright test tests/integration/accounting/daily-income-transaction-types.spec.ts --grep \"\\[apply-surcharge\\]\"",
     "test:integration:accounting:daily-income:transaction:transfer-account": "playwright test tests/integration/accounting/daily-income-transaction-types.spec.ts --grep \"\\[transfer-account\\]\"",
     "test:integration:accounting:daily-income:transaction:register-loan": "playwright test tests/integration/accounting/daily-income-transaction-types.spec.ts --grep \"\\[register-loan\\]\"",
-    "test:integration:accounting:accounts": "playwright test tests/integration/accounting/chart-of-accounts.spec.ts"
+    "test:integration:accounting:accounts": "playwright test tests/integration/accounting/chart-of-accounts.spec.ts",
+    "test:integration:invoices": "playwright test tests/integration/invoices",
+    "test:integration:invoices:invoice-create": "playwright test tests/integration/invoices/invoice-create.spec.ts --grep \"creates an invoice\"",
+    "test:integration:invoices:invoice-create:ui": "npm run clean:playwright:ui && PLAYWRIGHT_TRACING_NO_WEBSOCKET_FRAMES=1 playwright test tests/integration/invoices/invoice-create.spec.ts --ui --workers=1 --grep \"creates an invoice\""
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

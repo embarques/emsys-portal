@@ -6,7 +6,7 @@ End-to-end integration tests for the EMSYS portal. Tests run against a dedicated
 
 ## ⚠️ Daily Income not opening in the UI?
 
-Daily Income opens when you run a test under **`chromium`** (e.g. `opens the route in a workspace tab` or `registers an invoice`). Auth runs automatically in **`global-setup.ts`** before any test — you will not see a separate login test in the sidebar. The project currently has **15 integration tests** (chart of accounts + daily income).
+Daily Income opens when you run a test under **`chromium`** (e.g. `opens the route in a workspace tab` or `registers an invoice`). Auth runs automatically in **`global-setup.ts`** before any test — you will not see a separate login test in the sidebar. The project currently has **16 integration tests** (chart of accounts + daily income + invoice create).
 
 | Step | What happens |
 |------|----------------|
@@ -33,7 +33,10 @@ npx playwright install chromium
 From the repository root:
 
 ```bash
-# Register invoice only (recommended while working on that flow)
+# Invoice create wizard (recommended while working on the add-invoice flow)
+npm run test:integration:invoices:invoice-create:ui
+
+# Daily income — register invoice
 npm run test:integration:accounting:daily-income:register-invoice:ui
 
 # All daily income tests
@@ -51,13 +54,38 @@ These UI scripts run `clean:playwright:ui` first (clears stale traces and auth c
 2. In the **left sidebar**, expand the **`chromium`** project.
 3. **Run all tests**: click the ▶ button at the top of the sidebar.
 4. **Run one test**: hover a test name → click its ▶ button.
-5. **Filter tests**: use the search box (e.g. `register invoice`, `[register-expense]`, `chart of accounts`).
+5. **Filter tests**: use the search box (e.g. `creates an invoice`, `register invoice`, `[register-expense]`, `chart of accounts`).
 6. **Watch execution**: the browser panel on the right shows each step (login via global setup, then navigation).
 7. **On failure**: select the test → open **Trace**, **Screenshot**, or **Video** (terminal runs retain more artifacts than UI mode).
 
 Auth runs once in **`global-setup.ts`** before specs start — you will not see a separate login test in the sidebar. If setup fails, read the **terminal** for `POST /auth/token` errors.
 
-### Register invoice in the UI
+### Create invoice in the UI
+
+```bash
+npm run test:integration:invoices:invoice-create:ui
+```
+
+In the sidebar, run:
+
+`Invoice create wizard › creates an invoice from the directory, saves to the API, and resets the wizard`
+
+The test verifies:
+
+- Opens **Invoices** and clicks **Add invoice** (desktop workspace tab)
+- Completes the **4-step wizard**: details → sender/receiver → line items → preview
+- Saves via **`POST /invoices`** (not `/invoices/search`)
+- Success toast: **`Invoice "PW-INV-…" was added.`**
+- Wizard resets to step 1 with a suggested next invoice number
+- Switches back to the Invoices directory tab and finds the new invoice number in search
+
+**Data requirements:** at least one **container** and one **sender** in the API. When `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set, the sender must have a **verified** address (the test tries senders until validation passes).
+
+**Permissions:** the test user needs API permission to **create invoices** (`canCreateInvoice` or equivalent). If `POST /invoices` returns **HTTP 403**, the test **skips** with a clear message (same pattern as daily-income journal tests).
+
+Helpers live in `tests/integration/invoices/invoices.fixture.ts`.
+
+### Register invoice in the UI (Daily Income)
 
 ```bash
 npm run test:integration:accounting:daily-income:register-invoice:ui
@@ -77,8 +105,14 @@ The test verifies:
 ### Terminal alternative
 
 ```bash
-# Register invoice (terminal)
+# Invoice create wizard (terminal)
+npm run test:integration:invoices:invoice-create
+
+# Register invoice — Daily Income (terminal)
 npm run test:integration:accounting:daily-income:register-invoice
+
+# All invoice integration tests
+npm run test:integration:invoices
 
 # All daily income tests
 npm run test:integration:accounting:daily-income
@@ -91,6 +125,7 @@ Other useful commands:
 
 ```bash
 npm run test:integration                              # all integration tests
+npm run test:integration:invoices:invoice-create:ui   # invoice create in UI
 npm run test:integration:accounting                   # all accounting tests
 npm run test:integration:accounting:accounts          # chart of accounts only
 npm run test:integration:accounting:daily-income:transactions   # all 8 transaction types
@@ -140,6 +175,23 @@ PLAYWRIGHT_DAILY_INCOME_BRANCH=NY
 | `PLAYWRIGHT_DAILY_INCOME_INVOICE_NUMBER` | *(Optional)* Pin a specific invoice in the register-invoice wizard |
 
 **Permissions:** The test user needs API permission to **create**, **search**, and **reopen** daily income closeouts, and to **create journals** for transaction tests.
+
+### 2b. Invoice create wizard
+
+The invoice create test (`tests/integration/invoices/invoice-create.spec.ts`) exercises the **Invoices** workspace add flow — not Daily Income register-invoice.
+
+| Requirement | Details |
+|-------------|---------|
+| Containers | At least one container must load in the step-1 picker |
+| Senders | At least one active sender; verified address when Google Maps is configured |
+| Permissions | **`POST /invoices`** must succeed for the test user (otherwise the spec skips on HTTP 403) |
+
+Run it:
+
+```bash
+npm run test:integration:invoices:invoice-create:ui   # UI (recommended)
+npm run test:integration:invoices:invoice-create      # terminal
+```
 
 Why dev and Playwright differ:
 
@@ -334,6 +386,24 @@ One test per journal type (title includes slug in brackets):
 | `transfer-account` | `[transfer-account] fills form and submits journal transaction` |
 | `register-loan` | `[register-loan] fills form and submits journal transaction` |
 
+### Invoices — create wizard (`invoice-create.spec.ts`)
+
+| Test | What it covers |
+|------|----------------|
+| `creates an invoice from the directory, saves to the API, and resets the wizard` | Invoices page → **Add invoice** → 4-step wizard → `POST /invoices` → success toast → wizard reset → directory search |
+
+**Spec file:** `tests/integration/invoices/invoice-create.spec.ts`  
+**Fixtures:** `tests/integration/invoices/invoices.fixture.ts`
+
+**Wizard steps automated:**
+
+1. **Details** — unique `PW-INV-{timestamp}` number, first available container, pending location (defaults to USA)
+2. **Parties** — first sender that passes validation (retries if Google address verification blocks)
+3. **Line items** — description, quantity `1`, unit price `10.00`
+4. **Preview** — **Save invoice** → wait for `POST /invoices`
+
+On failure, the report attaches a **curl** script to replay the API call (same as daily-income tests).
+
 ---
 
 ## npm scripts reference
@@ -358,10 +428,16 @@ One test per journal type (title includes slug in brackets):
 | `test:integration:accounting:daily-income:transaction:apply-surcharge` | `[apply-surcharge]` only |
 | `test:integration:accounting:daily-income:transaction:transfer-account` | `[transfer-account]` only |
 | `test:integration:accounting:daily-income:transaction:register-loan` | `[register-loan]` only |
+| `test:integration:invoices` | All invoice integration specs |
+| `test:integration:invoices:invoice-create` | Invoice create wizard (terminal) |
+| `test:integration:invoices:invoice-create:ui` | Invoice create wizard in UI |
 
 ### Example executions
 
 ```bash
+# UI — invoice create wizard
+npm run test:integration:invoices:invoice-create:ui
+
 # UI — register invoice (fastest feedback while developing the form)
 npm run test:integration:accounting:daily-income:register-invoice:ui
 
@@ -400,6 +476,8 @@ Tests target the **desktop workspace tab UI** (`?tab=N` URLs, tab bar, keep-aliv
 | `test:integration:accounting:daily-income:transactions` | `daily-income-transaction-types.spec.ts` | All 8 transaction types (form + submit) |
 | `test:integration:accounting:daily-income:transaction:*` | same | One transaction type per npm script |
 | `test:integration:accounting:accounts` | `chart-of-accounts.spec.ts` | Chart of Accounts list, create/delete |
+| `test:integration:invoices:invoice-create` | `invoice-create.spec.ts` | Invoices directory → add wizard → `POST /invoices` |
+| `test:integration:invoices` | `tests/integration/invoices/` | All invoice integration tests |
 | `test:integration:accounting` | both accounting dirs | All accounting integration tests |
 | `test:integration` | all specs under `tests/integration/` | Full integration suite |
 
@@ -410,7 +488,10 @@ Tests target the **desktop workspace tab UI** (`?tab=N` URLs, tab bar, keep-aliv
 ### In Playwright UI (recommended)
 
 ```bash
-# Register invoice only
+# Invoice create wizard
+npm run test:integration:invoices:invoice-create:ui
+
+# Register invoice — Daily Income
 npm run test:integration:accounting:daily-income:register-invoice:ui
 
 # All daily income tests
@@ -427,24 +508,30 @@ See [How to run tests in the UI](#how-to-run-tests-in-the-ui) for the step-by-st
 
 These scripts run `clean:playwright:ui` first and use `--workers=1` so trace/video zip files do not corrupt the UI viewer.
 
-In the UI sidebar, run individual tests under **chromium** with the ▶ button. Use the filter box to find tests by name (e.g. `register invoice`, `[register-expense]`).
+In the UI sidebar, run individual tests under **chromium** with the ▶ button. Use the filter box to find tests by name (e.g. `creates an invoice`, `register invoice`, `[register-expense]`).
 
 ### In the terminal
 
 ```bash
-# Register invoice dedicated spec
+# Invoice create wizard
+npm run test:integration:invoices:invoice-create
+
+# Register invoice — Daily Income
 npm run test:integration:accounting:daily-income:register-invoice
 
 # One transaction type by slug
 npm run test:integration:accounting:daily-income:transaction:register-payment
 
 # One test by title (grep)
+npx playwright test tests/integration/invoices/invoice-create.spec.ts -g "creates an invoice"
 npx playwright test tests/integration/accounting/daily-income-register-invoice.spec.ts -g "registers an invoice"
 
 # Headed browser (watch without the UI app)
+npm run test:integration:invoices:invoice-create -- --headed
 npm run test:integration:accounting:daily-income:register-invoice -- --headed
 
 # Step-through debugger
+npm run test:integration:invoices:invoice-create -- --debug
 npm run test:integration:accounting:daily-income:register-invoice -- --debug
 ```
 
@@ -494,6 +581,20 @@ Example **409** body (expected when you already created the closeout manually or
 If curl with `Authorization: Bearer` succeeds on the same payload, permissions are fine — the UI may have shown “No closeout for this date” before the search finished, and the test now recovers from **409** automatically.
 
 **Reference numbers** in transaction tests must stay ≤ 20 characters (`PW-NY-1730000000000` format).
+
+### Invoice create (`POST /invoices`)
+
+When the invoice create test saves on step 4, the EMSYS API returns:
+
+| HTTP | Meaning | What the test does |
+|------|---------|-------------------|
+| **201** / **200** | Created | Asserts success toast, wizard reset, invoice visible in directory search |
+| **403** | Forbidden (missing invoice create permission) | **Skips** with message to grant `canCreateInvoice` (or equivalent) |
+| **401** | Missing/invalid bearer | Check dev session / `PLAYWRIGHT_TEST_*` credentials |
+
+The test waits for **`POST /invoices`** only (not `POST /invoices/search`). On failure, stdout and the Playwright report include a **curl** command with `Authorization: Bearer` and `x-company-id`.
+
+If the wizard blocks on step 2 with an unverified sender message, pick a sender with a Google-verified address in the app, or run without `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in the Playwright dev server env.
 
 ### Transaction type tests (one per journal type)
 
