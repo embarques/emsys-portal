@@ -43,6 +43,7 @@ import {
   createEmptyCustomerForm,
   customerHasUnverifiedPrimaryAddress,
   customerToFormValues,
+  getCustomerPrimaryCoreAddress,
   type Customer,
   type CustomerFormValues,
 } from "@/lib/customers/types";
@@ -82,7 +83,8 @@ function buildCustomerSearchKeywords(customer: Customer): string[] {
     if (phone.displayNumber) keywords.push(phone.displayNumber);
   }
 
-  if (customer.address.address1) keywords.push(customer.address.address1);
+  const primaryAddress = getCustomerPrimaryCoreAddress(customer);
+  if (primaryAddress.address1) keywords.push(primaryAddress.address1);
 
   return keywords;
 }
@@ -90,7 +92,7 @@ function buildCustomerSearchKeywords(customer: Customer): string[] {
 /** Surface the primary phone and street on their own rows so neither is cut off. */
 function buildCustomerOptionDescriptionLines(customer: Customer): string[] {
   const phone = getPrimaryPhoneDisplayNumber(customer.phones);
-  const address1 = customer.address.address1.trim();
+  const address1 = getCustomerPrimaryCoreAddress(customer).address1.trim();
   return [phone, address1].filter((line) => line.trim());
 }
 

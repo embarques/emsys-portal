@@ -1,0 +1,21 @@
+{
+  "types": {
+    "mobile": "Móvil",
+    "business": "Trabajo",
+    "home": "Casa",
+    "other": "Otro"
+  },
+  "label": "Teléfono {{index}}",
+  "fieldType": "Tipo",
+  "fieldNumber": "Número",
+  "searchTypes": "Buscar tipo…",
+  "primary": "Teléfono principal",
+  "setPrimary": "Marcar como principal",
+  "remove": "Quitar teléfono",
+  "removeButton": "Quitar",
+  "add": "Agregar teléfono",
+  "aria": {
+    "type": "Tipo del teléfono {{index}}",
+    "number": "Número del teléfono {{index}}"
+  }
+}

@@ -31,6 +31,11 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { ROLE_TABLE_FILTER_FIELDS } from "@/lib/roles/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
@@ -130,7 +135,11 @@ export function RolesWorkspace() {
   const updateRoleMutation = useUpdateRole();
   const deleteRolesMutation = useDeleteRoles();
 
-  const roles = rolesQuery.data?.items ?? [];
+  const roles = useResolvedPaginatedItems(
+    rolesQuery.data?.items,
+    rolesQuery.data?.total,
+    rolesQuery.isFetching,
+  );
   const totalRoles = rolesQuery.data?.total ?? 0;
   const assignedPermissionCatalog = useMemo(
     () => {
@@ -180,6 +189,11 @@ export function RolesWorkspace() {
   const pageRoles = roles;
   const allPageSelected =
     pageRoles.length > 0 && pageRoles.every((role) => selectedIds.includes(role.roleId));
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+    setSelectedIds,
+  );
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {

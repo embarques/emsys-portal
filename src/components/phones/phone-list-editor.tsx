@@ -1,11 +1,13 @@
 "use client";
 
 import { Plus, Star, Trash2 } from "lucide-react";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   createDefaultRecordPhones,
@@ -23,11 +25,6 @@ type PhoneListEditorProps = {
   onChange: (phones: RecordPhone[]) => void;
 };
 
-const PHONE_TYPE_OPTIONS = RECORD_PHONE_TYPE_OPTIONS.map((option) => ({
-  value: option.value,
-  label: option.label,
-}));
-
 export function PhoneListEditor({
   idPrefix = "phone",
   phones,
@@ -35,7 +32,17 @@ export function PhoneListEditor({
   compact = false,
   onChange,
 }: PhoneListEditorProps) {
+  const { t } = useTranslation();
   const entries = phones.length > 0 ? phones : createDefaultRecordPhones();
+
+  const phoneTypeOptions = useMemo(
+    () =>
+      RECORD_PHONE_TYPE_OPTIONS.map((option) => ({
+        value: option.value,
+        label: t(`phones.types.${option.value}`),
+      })),
+    [t],
+  );
 
   function updatePhone(index: number, patch: Partial<RecordPhone>) {
     const next = entries.map((phone, phoneIndex) => {
@@ -72,17 +79,17 @@ export function PhoneListEditor({
             <div key={`${idPrefix}-${index}`} className="flex items-center gap-2">
               <div className="w-28 shrink-0 sm:w-32">
                 <SearchableSelect
-                  aria-label={`Phone ${index + 1} type`}
+                  aria-label={t("phones.aria.type", { index: index + 1 })}
                   value={phone.type}
                   onValueChange={(next) => updatePhone(index, { type: next as RecordPhone["type"] })}
-                  searchPlaceholder="Search types…"
-                  options={PHONE_TYPE_OPTIONS}
+                  searchPlaceholder={t("phones.searchTypes")}
+                  options={phoneTypeOptions}
                 />
               </div>
 
               <div className="min-w-0 flex-1">
                 <PhoneInput
-                  aria-label={`Phone ${index + 1} number`}
+                  aria-label={t("phones.aria.number", { index: index + 1 })}
                   value={phone.number}
                   onChange={(nextValue) => updatePhone(index, { number: nextValue })}
                   required={required && index === 0}
@@ -94,7 +101,7 @@ export function PhoneListEditor({
                 variant="ghost"
                 size="icon"
                 aria-pressed={phone.isPrimary}
-                title={phone.isPrimary ? "Primary phone" : "Set as primary"}
+                title={phone.isPrimary ? t("phones.primary") : t("phones.setPrimary")}
                 className={cn(
                   "shrink-0",
                   phone.isPrimary
@@ -110,7 +117,7 @@ export function PhoneListEditor({
                 type="button"
                 variant="ghost"
                 size="icon"
-                title="Remove phone"
+                title={t("phones.remove")}
                 disabled={isOnly}
                 className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => removePhone(index)}
@@ -128,7 +135,7 @@ export function PhoneListEditor({
           onClick={addPhone}
         >
           <Plus className="size-4" />
-          Add phone
+          {t("phones.add")}
         </Button>
       </div>
     );
@@ -139,7 +146,7 @@ export function PhoneListEditor({
       {entries.map((phone, index) => (
         <div key={`${idPrefix}-${index}`} className="rounded-lg border border-border/70 p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <p className="text-sm font-medium">Phone {index + 1}</p>
+            <p className="text-sm font-medium">{t("phones.label", { index: index + 1 })}</p>
             {entries.length > 1 ? (
               <Button
                 type="button"
@@ -149,26 +156,27 @@ export function PhoneListEditor({
                 onClick={() => removePhone(index)}
               >
                 <Trash2 className="size-4" />
-                Remove
+                {t("phones.removeButton")}
               </Button>
             ) : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor={`${idPrefix}-type-${index}`}>Type</Label>
+              <Label htmlFor={`${idPrefix}-type-${index}`}>{t("phones.fieldType")}</Label>
               <SearchableSelect
                 id={`${idPrefix}-type-${index}`}
                 value={phone.type}
                 onValueChange={(next) => updatePhone(index, { type: next as RecordPhone["type"] })}
-                searchPlaceholder="Search types…"
-                options={PHONE_TYPE_OPTIONS}
+                searchPlaceholder={t("phones.searchTypes")}
+                options={phoneTypeOptions}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor={`${idPrefix}-number-${index}`}>
-                Number {required && index === 0 ? <span className="text-destructive">*</span> : null}
+                {t("phones.fieldNumber")}{" "}
+                {required && index === 0 ? <span className="text-destructive">*</span> : null}
               </Label>
               <PhoneInput
                 id={`${idPrefix}-number-${index}`}
@@ -186,7 +194,7 @@ export function PhoneListEditor({
               checked={phone.isPrimary}
               onChange={() => updatePhone(index, { isPrimary: true })}
             />
-            Primary phone
+            {t("phones.primary")}
           </label>
         </div>
       ))}
@@ -199,7 +207,7 @@ export function PhoneListEditor({
         onClick={addPhone}
       >
         <Plus className="size-4" />
-        Add phone
+        {t("phones.add")}
       </Button>
     </div>
   );

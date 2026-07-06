@@ -23,13 +23,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
-import { isCustomerSenderType } from "@/lib/customers/customer-type";
+import { CUSTOMER_TYPE_SENDER, isCustomerSenderType } from "@/lib/customers/customer-type";
+import { useTranslation } from "@/lib/i18n";
 import {
   findDominicanCity,
   getDominicanCityOptions,
   type DominicanCity,
 } from "@/lib/customers/dominican-cities";
-import { CUSTOMER_ADDRESS_FIELD_LABELS } from "@/lib/customers/form-labels";
 import {
   CUSTOMER_TYPE_OPTIONS,
   applyCustomerTypeBranch,
@@ -38,10 +38,13 @@ import {
   coreAddressRequiresVerification,
   createEmptyCustomerCoreAddress,
   createEmptyCustomerForm,
+  getDefaultCountryForPortalBranch,
+  getPortalBranchForCustomerType,
   isAddressVerified,
   normalizeCustomerFormValues,
   normalizeCustomerType,
-  syncCustomerFormAddresses,
+  normalizeCustomerAddresses,
+  setCustomerFormPrimaryAddress,
   validateCustomerFormValues,
   type CustomerCoreAddress,
   type CustomerFormValues,
@@ -97,7 +100,19 @@ function AddressFieldGrid({
   onPlaceSelected,
   onCitySelected,
 }: AddressFieldGridProps) {
-  const labels = CUSTOMER_ADDRESS_FIELD_LABELS;
+  const { t } = useTranslation();
+  const labels = {
+    address1: t("customers.form.addressFields.address1"),
+    address2: t("customers.form.addressFields.address2"),
+    crossStreet: t("customers.form.addressFields.crossStreet"),
+    apartment: t("customers.form.addressFields.apartment"),
+    city: t("customers.form.addressFields.city"),
+    cityProvince: t("customers.form.addressFields.cityProvince"),
+    state: t("customers.form.addressFields.state"),
+    zipcode: t("customers.form.addressFields.zipcode"),
+    country: t("customers.form.addressFields.country"),
+  };
+  const dash = t("common.empty.dash");
 
   const cityOptions =
     address.city && !CITY_DROPDOWN_OPTIONS.some((option) => option.value === address.city)
@@ -130,14 +145,14 @@ function AddressFieldGrid({
               value={address.address1}
               onValueChange={(value) => onChange("address1", value)}
               onPlaceSelected={onPlaceSelected}
-              placeholder="Start typing a street address…"
+              placeholder={t("customers.form.placeholders.streetAddress")}
             />
           ) : (
             <Input
               id={`${idPrefix}-address1`}
               value={address.address1}
               onChange={(event) => onChange("address1", event.target.value)}
-              placeholder="Street address"
+              placeholder={t("customers.form.placeholders.streetAddressManual")}
             />
           )}
         </div>
@@ -149,7 +164,7 @@ function AddressFieldGrid({
             id={`${idPrefix}-apartment`}
             value={address.apartment}
             onChange={(event) => onChange("apartment", event.target.value)}
-            placeholder="Apt #"
+            placeholder={t("customers.form.placeholders.apartment")}
           />
         </div>
       </div>
@@ -160,7 +175,7 @@ function AddressFieldGrid({
           id={`${idPrefix}-cross-street`}
           value={address.address2}
           onChange={(event) => onChange("address2", event.target.value)}
-          placeholder="Additional address information"
+          placeholder={t("customers.form.placeholders.crossStreet")}
         />
       </div>
 
@@ -174,7 +189,7 @@ function AddressFieldGrid({
               <Input
                 id={`${idPrefix}-city`}
                 value={address.city}
-                placeholder="—"
+                placeholder={dash}
                 disabled
                 readOnly
               />
@@ -186,7 +201,7 @@ function AddressFieldGrid({
               <Input
                 id={`${idPrefix}-state`}
                 value={address.state}
-                placeholder="—"
+                placeholder={dash}
                 disabled
                 readOnly
               />
@@ -198,7 +213,7 @@ function AddressFieldGrid({
               <Input
                 id={`${idPrefix}-zipcode`}
                 value={address.zipcode}
-                placeholder="—"
+                placeholder={dash}
                 disabled
                 readOnly
               />
@@ -210,7 +225,7 @@ function AddressFieldGrid({
               <Input
                 id={`${idPrefix}-country`}
                 value={address.country}
-                placeholder="—"
+                placeholder={dash}
                 disabled
                 readOnly
               />
@@ -218,7 +233,7 @@ function AddressFieldGrid({
           </div>
           {!hasLocation ? (
             <p className="text-xs text-muted-foreground">
-              Pick an address suggestion to fill city, state, ZIP, and country.
+              {t("customers.form.address.googleHint")}
             </p>
           ) : null}
         </div>
@@ -226,12 +241,12 @@ function AddressFieldGrid({
         <div className="grid gap-2.5 sm:grid-cols-2">
           <div className="space-y-1">
             <Label htmlFor={`${idPrefix}-city`} className="text-xs text-muted-foreground">
-              City, Province
+              {labels.cityProvince}
             </Label>
             <SearchableSelect
               id={`${idPrefix}-city`}
               value={address.city}
-              searchPlaceholder="Search by city or province…"
+              searchPlaceholder={t("customers.form.placeholders.cityProvinceSearch")}
               onValueChange={(value) => {
                 const match = findDominicanCity(value);
                 if (match) {
@@ -241,7 +256,7 @@ function AddressFieldGrid({
                 }
               }}
               options={cityOptions}
-              placeholder="Select a city"
+              placeholder={t("customers.form.placeholders.cityProvince")}
             />
           </div>
           <div className="space-y-1">
@@ -304,6 +319,7 @@ export function CustomerForm({
   onSubmit,
   onCancel,
 }: CustomerFormProps) {
+  const { t } = useTranslation();
   const [values, setValues] = useState<CustomerFormValues>(() =>
     normalizeCustomerFormValues(initialValues ?? createEmptyCustomerForm()),
   );
@@ -353,13 +369,15 @@ export function CustomerForm({
 
     setValues((current) => {
       const next = applyCustomerTypeBranch({ ...current, customerType: nextType });
-      const emptyAddress = createEmptyCustomerCoreAddress(next.address.country);
+      const emptyAddress = createEmptyCustomerCoreAddress(
+        getDefaultCountryForPortalBranch(getPortalBranchForCustomerType(nextType)),
+        true,
+      );
 
-      return syncCustomerFormAddresses({
+      return {
         ...next,
-        address: emptyAddress,
         addresses: [emptyAddress],
-      });
+      };
     });
     setShowAddresses(false);
     setFormError(null);
@@ -377,48 +395,26 @@ export function CustomerForm({
   }
 
   function updateAddressField<K extends keyof CustomerCoreAddress>(
-    key: K,
-    value: CustomerCoreAddress[K],
-  ) {
-    setValues((current) =>
-      syncCustomerFormAddresses({
-        ...current,
-        address: applyAddressFieldEdit(current.address, key, value),
-      }),
-    );
-  }
-
-  function updateAdditionalAddressField<K extends keyof CustomerCoreAddress>(
     index: number,
     key: K,
     value: CustomerCoreAddress[K],
   ) {
-    setValues((current) => {
-      const addresses = current.addresses.map((entry, addressIndex) =>
+    setValues((current) => ({
+      ...current,
+      addresses: current.addresses.map((entry, addressIndex) =>
         addressIndex === index ? applyAddressFieldEdit(entry, key, value) : entry,
-      );
-
-      return syncCustomerFormAddresses({ ...current, addresses });
-    });
+      ),
+    }));
+    setFormError(null);
   }
 
-  function applyPlaceToPrimaryAddress(place: ParsedPlaceAddress) {
-    setValues((current) =>
-      syncCustomerFormAddresses({
-        ...current,
-        address: applyPlaceToCoreAddress(current.address, place),
-      }),
-    );
-  }
-
-  function applyPlaceToAdditionalAddress(index: number, place: ParsedPlaceAddress) {
-    setValues((current) => {
-      const addresses = current.addresses.map((entry, addressIndex) =>
+  function applyPlaceToAddress(index: number, place: ParsedPlaceAddress) {
+    setValues((current) => ({
+      ...current,
+      addresses: current.addresses.map((entry, addressIndex) =>
         addressIndex === index ? applyPlaceToCoreAddress(entry, place) : entry,
-      );
-
-      return syncCustomerFormAddresses({ ...current, addresses });
-    });
+      ),
+    }));
   }
 
   function applyCityToCoreAddress(
@@ -428,74 +424,73 @@ export function CustomerForm({
     return { ...address, city: city.city, state: city.province };
   }
 
-  function applyCityToPrimaryAddress(city: DominicanCity) {
-    setValues((current) =>
-      syncCustomerFormAddresses({
-        ...current,
-        address: applyCityToCoreAddress(current.address, city),
-      }),
-    );
+  function applyCityToAddress(index: number, city: DominicanCity) {
+    setValues((current) => ({
+      ...current,
+      addresses: current.addresses.map((entry, addressIndex) =>
+        addressIndex === index ? applyCityToCoreAddress(entry, city) : entry,
+      ),
+    }));
   }
 
-  function applyCityToAdditionalAddress(index: number, city: DominicanCity) {
-    setValues((current) => {
-      const addresses = current.addresses.map((entry, addressIndex) =>
-        addressIndex === index ? applyCityToCoreAddress(entry, city) : entry,
-      );
-
-      return syncCustomerFormAddresses({ ...current, addresses });
-    });
+  function getPrimaryAddressCountry(values: CustomerFormValues): string {
+    return (
+      values.addresses.find((entry) => entry.isPrimary)?.country ??
+      values.addresses[0]?.country ??
+      "US"
+    );
   }
 
   function addAddress() {
     let newIndex = 0;
     setValues((current) => {
       newIndex = current.addresses.length;
-      return syncCustomerFormAddresses({
+      return {
         ...current,
         addresses: [
           ...current.addresses,
-          createEmptyCustomerCoreAddress(current.address.country),
+          createEmptyCustomerCoreAddress(getPrimaryAddressCountry(current), false),
         ],
-      });
+      };
     });
-    focusAddressLine1(`additional-${newIndex}`);
+    focusAddressLine1(`address-${newIndex}`);
   }
 
   /** Reveal the collapsed address section and focus the primary address. */
   function handleAddAddressClick() {
     if (!showAddresses) {
       setShowAddresses(true);
-      focusAddressLine1("primary");
+      const primaryIndex = Math.max(
+        0,
+        values.addresses.findIndex((entry) => entry.isPrimary),
+      );
+      focusAddressLine1(`address-${primaryIndex}`);
       return;
     }
     addAddress();
   }
 
   function removeAddress(index: number) {
-    // Removing the last remaining address collapses the section back to its
-    // hidden state, since addresses are optional unless one is open.
     const isLastAddress = values.addresses.length <= 1;
 
     setValues((current) => {
       if (current.addresses.length <= 1) {
-        const empty = createEmptyCustomerCoreAddress(current.address.country);
-        return syncCustomerFormAddresses({
-          ...current,
-          address: empty,
-          addresses: [empty],
-        });
+        const empty = createEmptyCustomerCoreAddress(getPrimaryAddressCountry(current), true);
+        return { ...current, addresses: [empty] };
       }
 
-      const addresses = current.addresses.filter(
-        (_, addressIndex) => addressIndex !== index,
-      );
+      const removedPrimary = current.addresses[index]?.isPrimary === true;
+      const addresses = current.addresses
+        .filter((_, addressIndex) => addressIndex !== index)
+        .map((entry, addressIndex) => ({
+          ...entry,
+          isPrimary: removedPrimary ? addressIndex === 0 : entry.isPrimary,
+        }));
 
-      return syncCustomerFormAddresses({
+      return {
         ...current,
-        address: { ...addresses[0] },
-        addresses,
-      });
+        addresses: normalizeCustomerAddresses(addresses),
+      };
     });
 
     if (isLastAddress) {
@@ -503,21 +498,9 @@ export function CustomerForm({
     }
   }
 
-  /** Promote an address to primary by moving it to index 0. */
+  /** Mark an address as primary without changing list order. */
   function setPrimaryAddress(index: number) {
-    if (index <= 0) return;
-
-    setValues((current) => {
-      const addresses = [...current.addresses];
-      const [chosen] = addresses.splice(index, 1);
-      addresses.unshift(chosen);
-
-      return syncCustomerFormAddresses({
-        ...current,
-        address: { ...chosen },
-        addresses,
-      });
-    });
+    setValues((current) => setCustomerFormPrimaryAddress(current, index));
   }
 
   const isSender = isCustomerSenderType(values.customerType);
@@ -529,41 +512,44 @@ export function CustomerForm({
   // Senders need a verified address; receivers need a city selected.
   const blockReason: string | null = (() => {
     if (!values.name.trim()) {
-      return "Enter the customer's name.";
+      return t("customers.form.validation.nameRequired");
     }
 
     const firstPhone = values.phones[0];
     if (!firstPhone || !firstPhone.number.trim()) {
-      return "Enter a phone number.";
+      return t("customers.form.validation.phoneRequired");
     }
     if (!isCompletePhoneNumber(firstPhone.number)) {
-      return `Phone 1 must have ${REQUIRED_PHONE_DIGITS} digits.`;
+      return t("customers.form.validation.phoneDigits", { index: 1, digits: REQUIRED_PHONE_DIGITS });
     }
 
     for (let index = 1; index < values.phones.length; index += 1) {
       const phone = values.phones[index];
       if (phone.number.trim() && !isCompletePhoneNumber(phone.number)) {
-        return `Phone ${index + 1} must have ${REQUIRED_PHONE_DIGITS} digits.`;
+        return t("customers.form.validation.phoneDigits", {
+          index: index + 1,
+          digits: REQUIRED_PHONE_DIGITS,
+        });
       }
     }
 
     if (showAddresses) {
       for (let index = 0; index < values.addresses.length; index += 1) {
         const address = values.addresses[index];
-        const label = `Address ${index + 1}`;
+        const label = t("customers.form.address.label", { index: index + 1 });
 
         if (isSender) {
           if (googleEnabled) {
             if (!isAddressVerified(address)) {
               return values.addresses.length > 1
-                ? `${label} street address must be verified with a Google suggestion.`
-                : "Street address must be verified with a Google suggestion.";
+                ? t("customers.form.validation.addressGoogleVerifyNamed", { label })
+                : t("customers.form.validation.addressGoogleVerify");
             }
           } else if (!coreAddressRequiresVerification(address)) {
-            return `Complete ${label} or remove it before saving.`;
+            return t("customers.form.validation.addressCompleteOrRemove", { label });
           }
         } else if (!address.city.trim()) {
-          return `${label} needs a city selected.`;
+          return t("customers.form.validation.addressCityRequired", { label });
         }
       }
     }
@@ -576,9 +562,7 @@ export function CustomerForm({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    const nextValues = normalizeCustomerFormValues(
-      syncCustomerFormAddresses(values),
-    );
+    const nextValues = normalizeCustomerFormValues(values);
 
     if (blockReason) {
       setFormError(blockReason);
@@ -591,7 +575,7 @@ export function CustomerForm({
       onSubmit(nextValues);
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : "Unable to save customer.",
+        error instanceof Error ? error.message : t("customers.form.validation.saveFailed"),
       );
     }
   }
@@ -601,11 +585,11 @@ export function CustomerForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
-        <FormSection icon={User} title="General">
+        <FormSection icon={User} title={t("customers.form.sections.general")}>
           <div className="space-y-2.5">
             <div className="space-y-1">
               <Label htmlFor="customerType">
-                Customer type <span className="text-destructive">*</span>
+                {t("customers.form.fields.customerType")} <span className="text-destructive">*</span>
               </Label>
               <SearchableSelect
                 id="customerType"
@@ -613,7 +597,10 @@ export function CustomerForm({
                 onValueChange={(next) => handleCustomerTypeChange(Number(next))}
                 options={CUSTOMER_TYPE_OPTIONS.map((option) => ({
                   value: String(option.value),
-                  label: option.label,
+                  label:
+                    option.value === CUSTOMER_TYPE_SENDER
+                      ? t("customers.types.sender")
+                      : t("customers.types.receiver"),
                 }))}
                 disabled={lockCustomerType}
                 required
@@ -622,20 +609,20 @@ export function CustomerForm({
 
             <div className="space-y-1">
               <Label htmlFor="name">
-                Name <span className="text-destructive">*</span>
+                {t("customers.form.fields.name")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 value={values.name}
                 onChange={(event) => updateField("name", capitalizeWords(event.target.value))}
-                placeholder="Full name"
+                placeholder={t("customers.form.placeholders.name")}
                 autoFocus
                 required
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="IDNumber">ID number</Label>
+              <Label htmlFor="IDNumber">{t("customers.form.fields.idNumber")}</Label>
               <Input
                 id="IDNumber"
                 value={values.IDNumber}
@@ -646,19 +633,19 @@ export function CustomerForm({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("customers.form.fields.email")}</Label>
               <Input
                 id="email"
                 type="email"
                 value={values.email}
                 onChange={(event) => updateField("email", event.target.value)}
-                placeholder="name@example.com"
+                placeholder={t("customers.form.placeholders.email")}
               />
             </div>
           </div>
         </FormSection>
 
-        <FormSection icon={PhoneIcon} title="Phones">
+        <FormSection icon={PhoneIcon} title={t("customers.form.sections.phones")}>
           <PhoneListEditor
             idPrefix="customer-phone"
             phones={values.phones}
@@ -668,10 +655,10 @@ export function CustomerForm({
           />
         </FormSection>
 
-        <FormSection icon={MapPin} title="Addresses">
+        <FormSection icon={MapPin} title={t("customers.form.sections.addresses")}>
           <div className="space-y-2.5">
             {showAddresses && values.addresses.map((address, index) => {
-              const isPrimary = index === 0;
+              const isPrimary = address.isPrimary;
 
               return (
                 <div
@@ -681,7 +668,7 @@ export function CustomerForm({
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        {`Address ${index + 1}`}
+                        {t("customers.form.address.label", { index: index + 1 })}
                       </p>
                       {isSender ? <AddressVerificationBadge address={address} /> : null}
                     </div>
@@ -691,7 +678,11 @@ export function CustomerForm({
                         variant="ghost"
                         size="icon"
                         aria-pressed={isPrimary}
-                        title={isPrimary ? "Primary address" : "Set as primary"}
+                        title={
+                          isPrimary
+                            ? t("customers.form.address.primary")
+                            : t("customers.form.address.setPrimary")
+                        }
                         className={cn(
                           "size-7 shrink-0",
                           isPrimary
@@ -706,7 +697,7 @@ export function CustomerForm({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        title="Remove address"
+                        title={t("customers.form.address.remove")}
                         className="size-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => removeAddress(index)}
                       >
@@ -716,24 +707,12 @@ export function CustomerForm({
                   </div>
 
                   <AddressFieldGrid
-                    idPrefix={isPrimary ? "primary" : `additional-${index}`}
+                    idPrefix={`address-${index}`}
                     address={address}
                     mode={addressMode}
-                    onChange={(field, value) =>
-                      isPrimary
-                        ? updateAddressField(field, value)
-                        : updateAdditionalAddressField(index, field, value)
-                    }
-                    onPlaceSelected={(place) =>
-                      isPrimary
-                        ? applyPlaceToPrimaryAddress(place)
-                        : applyPlaceToAdditionalAddress(index, place)
-                    }
-                    onCitySelected={(city) =>
-                      isPrimary
-                        ? applyCityToPrimaryAddress(city)
-                        : applyCityToAdditionalAddress(index, city)
-                    }
+                    onChange={(field, value) => updateAddressField(index, field, value)}
+                    onPlaceSelected={(place) => applyPlaceToAddress(index, place)}
+                    onCitySelected={(city) => applyCityToAddress(index, city)}
                   />
                 </div>
               );
@@ -746,19 +725,19 @@ export function CustomerForm({
               onClick={handleAddAddressClick}
             >
               <Plus className="size-4" />
-              Add address
+              {t("customers.form.address.add")}
             </Button>
           </div>
         </FormSection>
 
-        <FormSection icon={StickyNote} title="Notes">
+        <FormSection icon={StickyNote} title={t("customers.form.sections.notes")}>
           <textarea
             id="notes"
             value={values.notes}
             onChange={(event) => updateField("notes", event.target.value)}
             rows={2}
             className={textareaClassName}
-            placeholder="Add any relevant context…"
+            placeholder={t("customers.form.placeholders.notes")}
           />
         </FormSection>
       </FormBody>

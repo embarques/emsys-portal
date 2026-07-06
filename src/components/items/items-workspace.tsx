@@ -38,9 +38,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
+import { useUserError } from "@/lib/errors";
+import { useTranslation } from "@/lib/i18n";
 import { computeItemKpis, formatItemPrice, truncateItemId } from "@/lib/items/display";
+import { useItemFilterFields } from "@/lib/items/hooks/use-item-filter-fields";
 import {
   useCreateItem,
   useDeleteItems,
@@ -58,11 +60,15 @@ import {
   type ItemFilterState,
   type ItemFormValues,
 } from "@/lib/items/types";
-import { ITEM_TABLE_FILTER_FIELDS } from "@/lib/items/filter-fields";
 import type { DataTableColumn } from "@/lib/table/types";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useTableSort } from "@/lib/table/use-table-sort";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_ITEM_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -73,6 +79,9 @@ const defaultFilters: ItemFilterState = {
 };
 
 export function ItemsWorkspace() {
+  const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
+  const itemFilterFields = useItemFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<ItemFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -99,7 +108,7 @@ export function ItemsWorkspace() {
   const updateItemMutation = useUpdateItem();
   const deleteItemsMutation = useDeleteItems();
 
-  const items = data?.items ?? [];
+  const items = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalItems = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -107,8 +116,13 @@ export function ItemsWorkspace() {
   const isSaving =
     createItemMutation.isPending || updateItemMutation.isPending || deleteItemsMutation.isPending;
 
+  useTableSelectionReset(
+    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+    setSelectedIds,
+  );
+
   const kpis = useMemo(() => computeItemKpis(kpiQuery.items), [kpiQuery.items]);
-  const listErrorMessage = isError ? normalizeApiError(error).message : null;
+  const listErrorMessage = isError ? toErrorMessage(error) : null;
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -126,7 +140,7 @@ export function ItemsWorkspace() {
 
   function openAddForm() {
     if (isDesktopTabs) {
-      openFormTab({ feature: "items", baseHref: "/items", mode: "add", label: "Add item" });
+      openFormTab({ feature: "items", baseHref: "/items", mode: "add", label: t("items.actions.add") });
       return;
     }
     setEditingItem(null);
@@ -142,7 +156,9 @@ export function ItemsWorkspace() {
         baseHref: "/items",
         mode: "edit",
         entityId: item.itemId,
-        label: `Edit ${item.description || truncateItemId(item.itemId)}`,
+        label: t("items.actions.editNamed", {
+          name: item.description || truncateItemId(item.itemId),
+        }),
       });
       return;
     }
@@ -158,17 +174,17 @@ export function ItemsWorkspace() {
     try {
       if (formMode === "edit" && editingItem) {
         const nextItem = await updateItemMutation.mutateAsync({ itemId: editingItem.itemId, values });
-        notifyUpdated("Item", nextItem.description || truncateItemId(nextItem.itemId));
+        notifyUpdated(t("items.entity"), nextItem.description || truncateItemId(nextItem.itemId));
       } else {
         const nextItem = await createItemMutation.mutateAsync(values);
-        notifyAdded("Item", nextItem.description || truncateItemId(nextItem.itemId));
+        notifyAdded(t("items.entity"), nextItem.description || truncateItemId(nextItem.itemId));
       }
 
       setFormMode(null);
       setEditingItem(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(toErrorMessage(mutationError));
     }
   }
 
@@ -181,85 +197,113 @@ export function ItemsWorkspace() {
       setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
       setDeleteTarget(null);
       setViewItem(null);
-      notifyDeleted("Item", ids.length);
+      notifyDeleted(t("items.entity"), ids.length);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(toErrorMessage(mutationError));
       setDeleteTarget(null);
     }
   }
 
-  const stat = [
-    { label: "Total items", value: stats.isLoading ? "…" : stats.total.toString(), description: "Catalog items on record", icon: Tag },
-    {
-      label: "Average price",
-      value: kpiQuery.isLoading ? "…" : formatItemPrice(kpis.averagePrice),
-      description: "Mean item price",
-      icon: DollarSign,
-    },
-    {
-      label: "Catalog value",
-      value: kpiQuery.isLoading ? "…" : formatItemPrice(kpis.totalValue),
-      description: "Sum of all item prices",
-      icon: DollarSign,
-    },
-  ];
+  const stat = useMemo(
+    () => [
+      {
+        label: t("items.stats.total.label"),
+        value: stats.isLoading ? "…" : stats.total.toString(),
+        description: t("items.stats.total.description"),
+        icon: Tag,
+      },
+      {
+        label: t("items.stats.averagePrice.label"),
+        value: kpiQuery.isLoading ? "…" : formatItemPrice(kpis.averagePrice),
+        description: t("items.stats.averagePrice.description"),
+        icon: DollarSign,
+      },
+      {
+        label: t("items.stats.catalogValue.label"),
+        value: kpiQuery.isLoading ? "…" : formatItemPrice(kpis.totalValue),
+        description: t("items.stats.catalogValue.description"),
+        icon: DollarSign,
+      },
+    ],
+    [kpiQuery.isLoading, kpis.averagePrice, kpis.totalValue, stats.isLoading, stats.total, t],
+  );
 
-  const tableColumns: DataTableColumn<Item>[] = [
-    {
-      id: "itemId",
-      label: "Item ID",
-      sortField: "id",
-      cellClassName: "font-mono text-xs",
-      renderCell: (item) => truncateItemId(item.itemId),
-    },
-    {
-      id: "description",
-      label: "Description",
-      sortField: "name",
-      cellClassName: "font-medium",
-      renderCell: (item) => item.description,
-    },
-    {
-      id: "price",
-      label: "Price",
-      renderCell: (item) => formatItemPrice(item.price),
-    },
-    {
-      id: "createdAt",
-      label: "Date created",
-      cellClassName: "text-muted-foreground",
-      renderCell: (item) => formatAuditDateTime(item.createdAt),
-    },
-    {
-      id: "updatedAt",
-      label: "Date modified",
-      cellClassName: "text-muted-foreground",
-      renderCell: (item) => formatAuditDateTime(item.updatedAt),
-    },
-  ];
+  const tableColumns: DataTableColumn<Item>[] = useMemo(
+    () => [
+      {
+        id: "itemId",
+        label: t("items.columns.itemId"),
+        sortField: "id",
+        cellClassName: "font-mono text-xs",
+        renderCell: (item) => truncateItemId(item.itemId),
+      },
+      {
+        id: "description",
+        label: t("items.columns.description"),
+        sortField: "name",
+        cellClassName: "font-medium",
+        renderCell: (item) => item.description,
+      },
+      {
+        id: "price",
+        label: t("items.columns.price"),
+        renderCell: (item) => formatItemPrice(item.price),
+      },
+      {
+        id: "createdAt",
+        label: t("items.columns.createdAt"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (item) => formatAuditDateTime(item.createdAt),
+      },
+      {
+        id: "updatedAt",
+        label: t("items.columns.updatedAt"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (item) => formatAuditDateTime(item.updatedAt),
+      },
+    ],
+    [t],
+  );
 
   const columnVisibility = useColumnVisibility("items-v2", tableColumns);
-  const advancedFilterCount = countCompleteFilterRows(filters.rows, ITEM_TABLE_FILTER_FIELDS);
+  const advancedFilterCount = countCompleteFilterRows(filters.rows, itemFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query: filters.query,
-    isSearchPending,
-    matched: totalItems,
-    catalogTotal: stats.total,
-    noun: "items",
-    isLoading: isFetching && items.length === 0,
-    catalogLoading: stats.isLoading,
-  });
+  const searchSummary = buildToolbarSearchSummary(
+    {
+      isFiltered: hasActiveFilters,
+      query: filters.query,
+      isSearchPending,
+      matched: totalItems,
+      catalogTotal: stats.total,
+      noun: t("items.noun"),
+      isLoading: isFetching && items.length === 0,
+      catalogLoading: stats.isLoading,
+    },
+    t,
+  );
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: items.length,
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      total: totalItems,
+      noun: t("items.noun"),
+      isFiltered: hasActiveFilters,
+      isLoading: isFetching,
+      catalogTotal: stats.total,
+      catalogLoading: stats.isLoading,
+    },
+    t,
+  );
 
   return (
     <div>
       <PageHeader
-        title="Items"
+        title={t("items.title")}
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
-            Add item
+            {t("items.actions.add")}
           </Button>
         }
       />
@@ -281,16 +325,16 @@ export function ItemsWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search items..."
+                placeholder={t("items.search.placeholder")}
               />
             }
             filterPanel={
               <TableFilterPanel
-                resultSummary={`Showing ${items.length} of ${totalItems} items`}
+                resultSummary={listSummary}
                 presets={{
                   storageKey: "items",
                   rows: filters.rows,
-                  fields: ITEM_TABLE_FILTER_FIELDS,
+                  fields: itemFilterFields,
                   onApply: (rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -308,7 +352,7 @@ export function ItemsWorkspace() {
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
                   rows={filters.rows}
-                  fields={ITEM_TABLE_FILTER_FIELDS}
+                  fields={itemFilterFields}
                   onChange={(rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -338,9 +382,9 @@ export function ItemsWorkspace() {
         {isLoading ? (
           <DirectoryTableLoader
             icon={Tag}
-            title="Loading items"
-            description="Organizing item details, pricing, and catalog information…"
-            columns={["Item", "Description", "Price", "Created", "Updated"]}
+            title={t("items.loading.title")}
+            description={t("items.loading.description")}
+            columns={t("items.loading.columns").split(", ")}
           />
         ) : (
           <DataTable
@@ -364,11 +408,11 @@ export function ItemsWorkspace() {
             emptyState={
               <>
                 <p className="text-muted-foreground">
-                  {hasActiveFilters ? "No items match your filters." : "No items yet."}
+                  {hasActiveFilters ? t("items.empty.noMatch") : t("items.empty.noneYet")}
                 </p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
-                  Add item
+                  {t("items.actions.add")}
                 </Button>
               </>
             }
@@ -377,9 +421,7 @@ export function ItemsWorkspace() {
 
         {!isLoading ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {items.length} of {totalItems} items
-          </p>
+          <p className="text-sm text-muted-foreground">{listSummary}</p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -388,10 +430,10 @@ export function ItemsWorkspace() {
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              {t("common.actions.previous")}
             </Button>
             <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -399,7 +441,7 @@ export function ItemsWorkspace() {
               disabled={currentPage >= totalPages}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
-              Next
+              {t("common.actions.next")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -431,7 +473,9 @@ export function ItemsWorkspace() {
       >
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>{formMode === "edit" ? "Edit item" : "Add item"}</DialogTitle>
+            <DialogTitle>
+              {formMode === "edit" ? t("items.form.editTitle") : t("items.form.addTitle")}
+            </DialogTitle>
           </DialogHeader>
           <ItemForm
             key={editingItem?.itemId ?? "new"}
@@ -440,7 +484,9 @@ export function ItemsWorkspace() {
             }
             isEditing={formMode === "edit"}
             updatedAt={editingItem?.updatedAt}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add item"}
+            submitLabel={
+              formMode === "edit" ? t("common.actions.saveChanges") : t("items.actions.add")
+            }
             externalError={formError}
             isSubmitting={isSaving}
             onSubmit={saveItem}
@@ -455,20 +501,29 @@ export function ItemsWorkspace() {
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="z-[60]">
           <DialogHeader>
-            <DialogTitle>Delete item{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?</DialogTitle>
+            <DialogTitle>
+              {Array.isArray(deleteTarget) && deleteTarget.length > 1
+                ? t("items.dialogs.deleteTitlePlural")
+                : t("items.dialogs.deleteTitle")}
+            </DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected items. This action cannot be undone.`
-                : "This will permanently remove this item. This action cannot be undone."}
+                ? t("items.dialogs.deleteMany", {
+                    count: deleteTarget.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
+                : t("items.dialogs.deleteOne", {
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
-              Delete
+              {t("common.actions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -47,6 +47,11 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { USER_TABLE_FILTER_FIELDS } from "@/lib/users/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -127,7 +132,7 @@ export function UsersWorkspace() {
   const updateUserMutation = useUpdateUser();
   const deactivateUserMutation = useDeactivateUser();
 
-  const users = data?.items ?? [];
+  const users = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalUsers = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -136,6 +141,11 @@ export function UsersWorkspace() {
     pageUsers.length > 0 && pageUsers.every((user) => selectedIds.includes(String(user.id)));
   const isSaving =
     createUserMutation.isPending || updateUserMutation.isPending || deactivateUserMutation.isPending;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+    setSelectedIds,
+  );
 
   const branchFilterOptions = useMemo(() => {
     const apiBranches = branchesData?.items ?? [];

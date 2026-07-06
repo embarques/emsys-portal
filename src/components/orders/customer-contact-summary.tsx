@@ -1,10 +1,10 @@
 "use client";
 
 import { getPhoneDisplayAtIndex } from "@/lib/phones/phones";
-import type { Customer } from "@/lib/customers/types";
+import { getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 
 export function CustomerContactSummary({ customer }: { customer: Customer }) {
-  const address = customer.address;
+  const address = getCustomerPrimaryCoreAddress(customer);
   const phone1 = getPhoneDisplayAtIndex(customer.phones, 0);
   const phone2 = getPhoneDisplayAtIndex(customer.phones, 1);
 

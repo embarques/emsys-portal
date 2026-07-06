@@ -48,6 +48,11 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
@@ -94,6 +99,7 @@ import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Label } from "@/components/ui/label";
 import { useTableSort } from "@/lib/table/use-table-sort";
+import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
@@ -150,7 +156,7 @@ export function OrdersWorkspace() {
   const generatePickupReportMutation = useGeneratePickupReport();
   const routeLookup = useRouteLookup();
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, { enabled: assignRouteOpen });
-  const orders = data?.items ?? [];
+  const orders = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalOrders = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -163,6 +169,12 @@ export function OrdersWorkspace() {
     setOrdersCompletedMutation.isPending ||
     assignRouteMutation.isPending;
   const isPrinting = generatePickupReportMutation.isPending;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(deferredQuery, filters.rows),
+    setSelectedIds,
+  );
+
   const selectedOrders = useMemo(
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
     [orders, selectedIds],
@@ -430,20 +442,22 @@ export function OrdersWorkspace() {
       id: "sender.address",
       label: "Address",
       sortField: "sender.address.address1",
-      renderCell: (order) =>
-        [order.sender.address.address1, order.sender.address.apartment]
-          .filter((value) => value.trim())
-          .join(", ") || "—",
+      renderCell: (order) => {
+        const address = getCustomerPrimaryCoreAddress(order.sender);
+        return (
+          [address.address1, address.apartment].filter((value) => value.trim()).join(", ") || "—"
+        );
+      },
     },
     {
       id: "sender.address.city",
       label: "City",
-      renderCell: (order) => order.sender.address.city.trim() || "—",
+      renderCell: (order) => getCustomerPrimaryCoreAddress(order.sender).city.trim() || "—",
     },
     {
       id: "sender.address.zipcode",
       label: "Zip",
-      renderCell: (order) => order.sender.address.zipcode.trim() || "—",
+      renderCell: (order) => getCustomerPrimaryCoreAddress(order.sender).zipcode.trim() || "—",
     },
     {
       id: "sender.phone1",

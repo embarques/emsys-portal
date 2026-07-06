@@ -30,7 +30,7 @@ import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { normalizeApiCustomer } from "@/lib/customers/api/customers-api";
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
 import type { Customer } from "@/lib/customers/types";
-import { CUSTOMER_PORTAL_BRANCHES } from "@/lib/customers/types";
+import { CUSTOMER_PORTAL_BRANCHES, getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import { createDefaultRecordPhones, getPhoneAtDisplayIndex, getPrimaryPhoneNumber, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
 import type { Employee } from "@/lib/employees/types";
 import { normalizeApiUser } from "@/lib/users/api/users-api";
@@ -168,17 +168,6 @@ const EMPTY_CUSTOMER: Customer = {
     code: "NY",
   },
   createdByID: null,
-  address: {
-    address1: "",
-    address2: "",
-    apartment: "",
-    city: "",
-    state: "",
-    zipcode: "",
-    country: "US",
-    location: null,
-    verification: null,
-  },
   addresses: [],
   receivers: [],
 };
@@ -508,7 +497,7 @@ function buildPickupCustomerRef(customer: Customer): ApiPickupCustomerRef {
   const email = customer.email.trim();
   const idNumber = customer.IDNumber.trim();
   const phone2 = getPhoneAtDisplayIndex(customer.phones, 1);
-  const address = buildApiAddressPayload(customer.address);
+  const address = buildApiAddressPayload(getCustomerPrimaryCoreAddress(customer));
 
   const payload: ApiPickupCustomerRef = {
     name,

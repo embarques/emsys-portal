@@ -12,6 +12,7 @@ import {
   getCustomerAddresses,
   getCustomerClientType,
   getCustomerPortalBranch,
+  getCustomerPrimaryCoreAddress,
   getPrimaryAddress,
 } from "./types";
 
@@ -101,20 +102,29 @@ export function formatAddressLine(address: CustomerAddress): string {
 }
 
 function getCustomerCoreAddresses(customer: Customer): CustomerCoreAddress[] {
-  const source = customer.addresses.length > 0 ? customer.addresses : [customer.address];
-
-  return source.filter((address) =>
+  return customer.addresses.filter((address) =>
     [address.address1, address.address2, address.apartment, address.city, address.state, address.zipcode, address.country].some(
       (value) => value.trim(),
     ),
   );
 }
 
+export function formatPrimaryAddressStreetLine(
+  customer: Pick<Customer, "addresses">,
+): string {
+  const address = getCustomerPrimaryCoreAddress(customer);
+
+  return [address.address1, address.apartment, address.address2]
+    .filter((value) => value.trim())
+    .join(", ");
+}
+
 export function formatAddressSummary(customer: Customer): string {
   const addresses = getCustomerCoreAddresses(customer);
   if (addresses.length === 0) return "—";
 
-  const first = formatCoreAddressLine(addresses[0]);
+  const primary = addresses.find((entry) => entry.isPrimary) ?? addresses[0]!;
+  const first = formatCoreAddressLine(primary);
   const suffix = addresses.length > 1 ? ` (+${addresses.length - 1})` : "";
   return `${first}${suffix}`;
 }

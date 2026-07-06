@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type UnverifiedAddressNoticeProps = {
-  customer: Pick<Customer, "address" | "addresses" | "customerType">;
+  customer: Pick<Customer, "addresses" | "customerType">;
   /** Opens the customer edit flow so the address can be verified via Google. */
   onUpdateAddress: () => void;
   className?: string;

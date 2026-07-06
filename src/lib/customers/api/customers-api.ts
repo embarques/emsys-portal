@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { logApiErrorDev, normalizeApiError } from "@/lib/api/api-error";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import {
@@ -47,12 +48,22 @@ import {
   DEFAULT_CUSTOMER_LIST_PARAMS,
   normalizeCustomerType,
   resolveCustomerBranchId,
+  normalizeCustomerAddresses,
+  normalizeCustomerFormValues,
+  getCustomerPrimaryCoreAddress,
+  coreAddressHasContent,
   validateCustomerFormValues,
   type CustomerListParams,
 } from "@/lib/customers/types";
+import { fetchBranches } from "@/lib/branches/api/branches-api";
 import { CUSTOMER_BAR_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
-import { buildApiPhonesPayload, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
-import type { RecordPhone } from "@/lib/phones/types";
+import {
+  buildApiPhonesPayload,
+  getPhoneAtDisplayIndex,
+  getPrimaryPhoneNumber,
+  normalizeRecordPhonesFromApi,
+} from "@/lib/phones/phones";
+import type { RecordPhone, RecordPhoneWritePayload } from "@/lib/phones/types";
 
 type ApiGeoLocation = {
   type?: string;
@@ -76,6 +87,8 @@ type ApiAddress = {
   country?: string;
   location?: ApiGeoLocation | null;
   verification?: ApiAddressVerification | null;
+  isPrimary?: boolean;
+  is_primary?: boolean;
 };
 
 type ApiBranch = {
@@ -107,17 +120,20 @@ type ApiCustomer = {
   receivers?: string[];
 };
 
-/** POST/PUT /customers — see API_PAYLOADS.md */
+/** POST/PUT /customers — see API_PAYLOADS.md and live Customer schema (`phones[]`, `addresses[]`). */
 type ApiCustomerWritePayload = {
   name: string;
   customerType: number;
-  phones: RecordPhone[];
+  phone1: string;
+  phone2?: string;
+  phones?: RecordPhoneWritePayload[];
   active: boolean;
   email?: string;
   IDNumber?: string;
   notes?: string;
   accountBalance?: number;
   address?: ApiAddressPayload;
+  addresses?: ApiAddressPayload[];
   branch: ApiBranchDtoPayload;
   receivers?: string[];
   id?: string;
@@ -192,8 +208,9 @@ function normalizeAddressVerification(
   };
 }
 
-function normalizeAddress(raw?: ApiAddress): CustomerCoreAddress {
+function normalizeAddress(raw?: ApiAddress, isPrimary = false): CustomerCoreAddress {
   const address = raw ?? {};
+  const primaryFlag = raw?.isPrimary ?? raw?.is_primary;
 
   return {
     address1: String(address.address1 ?? "").trim(),
@@ -205,7 +222,21 @@ function normalizeAddress(raw?: ApiAddress): CustomerCoreAddress {
     country: String(address.country ?? "").trim(),
     location: normalizeAddressLocation(address.location),
     verification: normalizeAddressVerification(address.verification),
+    isPrimary: primaryFlag === true || isPrimary,
   };
+}
+
+function normalizeCustomerAddressesFromApi(item: ApiCustomer): CustomerCoreAddress[] {
+  const fromArray = Array.isArray(item.addresses)
+    ? item.addresses.map((entry) => normalizeAddress(entry)).filter(coreAddressHasContent)
+    : [];
+
+  if (fromArray.length > 0) {
+    return normalizeCustomerAddresses(fromArray);
+  }
+
+  const legacy = normalizeAddress(item.address, true);
+  return coreAddressHasContent(legacy) ? [legacy] : [];
 }
 
 function normalizeBranch(raw?: ApiBranch): CustomerBranch {
@@ -228,18 +259,6 @@ function normalizeReceivers(raw?: string[]): string[] {
     .filter(Boolean);
 }
 
-function coreAddressHasContent(address: CustomerCoreAddress): boolean {
-  return [
-    address.address1,
-    address.address2,
-    address.apartment,
-    address.city,
-    address.state,
-    address.zipcode,
-    address.country,
-  ].some((value) => value.trim());
-}
-
 export function normalizeApiCustomer(raw: unknown): Customer | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -247,13 +266,7 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
   const id = String(item.id ?? "").trim();
   if (!id) return null;
 
-  const address = normalizeAddress(item.address);
-  const addresses = Array.isArray(item.addresses)
-    ? item.addresses.map(normalizeAddress).filter(coreAddressHasContent)
-    : coreAddressHasContent(address)
-      ? [address]
-      : [];
-  const primaryAddress = addresses[0] ?? address;
+  const addresses = normalizeCustomerAddressesFromApi(item);
   const branch = normalizeBranch(item.branch);
 
   return {
@@ -271,7 +284,6 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
     accountBalance: Number(item.accountBalance ?? 0),
     branch,
     createdByID: readNumericId(item.createdByID) ?? null,
-    address: primaryAddress,
     addresses,
     receivers: normalizeReceivers(item.receivers),
   };
@@ -452,26 +464,107 @@ export async function fetchCustomers(
   return normalizePaginatedCustomers(response, { isFiltered });
 }
 
+/** API wire codes for portal branches when `/branches` is unavailable. */
+const CUSTOMER_BRANCH_API_CODES: Record<number, string> = {
+  1: "NY",
+  2: "RD",
+};
+
+function buildCustomerAddressWriteEntry(
+  address: CustomerCoreAddress,
+  scalarsOnly: boolean,
+): ApiAddressPayload | undefined {
+  const input = scalarsOnly
+    ? {
+        address1: address.address1,
+        address2: address.address2,
+        apartment: address.apartment,
+        city: address.city,
+        state: address.state,
+        zipcode: address.zipcode,
+        country: address.country,
+      }
+    : address;
+
+  const payload = buildApiAddressPayload(input);
+  if (!payload) return undefined;
+
+  return {
+    ...payload,
+    isPrimary: address.isPrimary,
+  };
+}
+
+function buildCustomerAddressesWritePayload(
+  values: CustomerFormValues,
+  scalarsOnly: boolean,
+): ApiAddressPayload[] {
+  const normalized = normalizeCustomerAddresses(values.addresses);
+  const withContent = normalized.filter(coreAddressHasContent);
+  if (withContent.length === 0) return [];
+
+  return withContent
+    .map((entry) => buildCustomerAddressWriteEntry(entry, scalarsOnly))
+    .filter((entry): entry is ApiAddressPayload => entry != null);
+}
+
+async function resolveCustomerWriteBranch(branch: CustomerBranch): Promise<CustomerBranch> {
+  try {
+    const branches = await fetchBranches({ page: 1, limit: 100 });
+    const match = branches.items.find((entry) => entry.id === branch.id);
+    if (match?.code?.trim()) {
+      return {
+        id: match.id,
+        name: match.name?.trim() || branch.name,
+        code: match.code.trim(),
+      };
+    }
+  } catch (error) {
+    logApiErrorDev(error, { step: "resolveCustomerWriteBranch", branchId: branch.id });
+  }
+
+  const apiCode = CUSTOMER_BRANCH_API_CODES[branch.id];
+  if (apiCode) {
+    const defaults =
+      CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.id === branch.id) ?? CUSTOMER_PORTAL_BRANCHES[0];
+    return {
+      id: defaults.id,
+      name: defaults.label,
+      code: apiCode,
+    };
+  }
+
+  return branch;
+}
+
 function buildCustomerWritePayload(
   values: CustomerFormValues,
-  options: { customerId?: string } = {},
+  options: { customerId?: string; addressScalarsOnly?: boolean } = {},
 ): ApiCustomerWritePayload {
   validateCustomerFormValues(values);
 
   const name = values.name.trim();
   const phones = buildApiPhonesPayload(values.phones);
+  const phone1 = getPrimaryPhoneNumber(values.phones);
+  const phone2 = getPhoneAtDisplayIndex(values.phones, 1);
   const email = values.email.trim();
   const idNumber = values.IDNumber.trim();
   const notes = values.notes.trim();
-  const primaryAddress = buildApiAddressPayload(values.address);
+  const scalarsOnly = options.addressScalarsOnly === true;
+  const addressesPayload = buildCustomerAddressesWritePayload(values, scalarsOnly);
 
   const payload: ApiCustomerWritePayload = {
     name,
     customerType: portalCustomerTypeToApiWriteValue(normalizeCustomerType(values.customerType)),
+    phone1,
     phones,
     active: true,
     branch: buildApiBranchDto(values.branch),
   };
+
+  if (phone2) {
+    payload.phone2 = phone2;
+  }
 
   if (email) {
     payload.email = email;
@@ -485,8 +578,8 @@ function buildCustomerWritePayload(
     payload.notes = notes;
   }
 
-  if (primaryAddress) {
-    payload.address = primaryAddress;
+  if (addressesPayload.length > 0) {
+    payload.addresses = addressesPayload;
   }
 
   if (options.customerId) {
@@ -567,24 +660,67 @@ async function resolveCreatedCustomer(
   throw new Error(message?.trim() || "Unable to create customer.");
 }
 
+async function applyCustomerAddressMetadataAfterCreate(
+  customer: Customer,
+  address: CustomerCoreAddress,
+): Promise<Customer> {
+  let result = customer;
+  const { location, verification } = address;
+
+  if (location) {
+    try {
+      result = await updateCustomerAddressLocation(result.id, location);
+    } catch (error) {
+      logApiErrorDev(error, { step: "createCustomer.addressLocation", customerId: result.id });
+    }
+  }
+
+  if (verification) {
+    try {
+      result = await updateCustomerAddressGoogleVerification(result.id, verification);
+    } catch (error) {
+      logApiErrorDev(error, { step: "createCustomer.addressVerification", customerId: result.id });
+    }
+  }
+
+  return result;
+}
+
 export async function createCustomer(values: CustomerFormValues): Promise<Customer> {
+  const syncedValues = normalizeCustomerFormValues(values);
+  const branch = await resolveCustomerWriteBranch(syncedValues.branch);
+  const payload = buildCustomerWritePayload(
+    { ...syncedValues, branch },
+    { addressScalarsOnly: true },
+  );
+
+  if (process.env.NODE_ENV === "development") {
+    console.debug("[EMSYS customer create]", payload);
+  }
+
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.CUSTOMERS,
-    buildCustomerWritePayload(values),
+    payload,
   );
 
   assertMutationSuccess(response, "Unable to create customer.");
 
-  return resolveCreatedCustomer(values, response);
+  const customer = await resolveCreatedCustomer(syncedValues, response);
+  return applyCustomerAddressMetadataAfterCreate(
+    customer,
+    getCustomerPrimaryCoreAddress(syncedValues),
+  );
 }
 
 export async function updateCustomer(
   customerId: string,
   values: CustomerFormValues,
 ): Promise<Customer> {
+  const syncedValues = normalizeCustomerFormValues(values);
+  const branch = await resolveCustomerWriteBranch(syncedValues.branch);
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.CUSTOMERS}/${customerId}`,
-    buildCustomerWritePayload(values, { customerId }),
+    buildCustomerWritePayload({ ...syncedValues, branch }, { customerId }),
   );
 
   assertMutationSuccess(response, "Unable to update customer.");
@@ -605,8 +741,35 @@ export async function deleteCustomer(customerId: string): Promise<void> {
   assertMutationSuccess(response, "Unable to delete customer.");
 }
 
-export async function deleteCustomers(customerIds: string[]): Promise<void> {
-  await Promise.all(customerIds.map((customerId) => deleteCustomer(customerId)));
+function isCustomerAlreadyDeletedError(error: unknown): boolean {
+  const { message, status } = normalizeApiError(error);
+  return status === 404 || /customer not found/i.test(message);
+}
+
+export type DeleteCustomersResult = {
+  deletedIds: string[];
+  failedMessage?: string;
+};
+
+export async function deleteCustomers(customerIds: string[]): Promise<DeleteCustomersResult> {
+  const uniqueIds = [...new Set(customerIds.map((id) => id.trim()).filter(Boolean))];
+  const deletedIds: string[] = [];
+  let failedMessage: string | undefined;
+
+  for (const customerId of uniqueIds) {
+    try {
+      await deleteCustomer(customerId);
+      deletedIds.push(customerId);
+    } catch (error) {
+      if (isCustomerAlreadyDeletedError(error)) {
+        deletedIds.push(customerId);
+        continue;
+      }
+      failedMessage = normalizeApiError(error).message;
+    }
+  }
+
+  return { deletedIds, failedMessage };
 }
 
 /**

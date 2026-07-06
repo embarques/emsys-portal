@@ -39,6 +39,11 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { EMPLOYEE_TABLE_FILTER_FIELDS } from "@/lib/employees/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -119,7 +124,7 @@ export function EmployeesWorkspace() {
   const updateEmployeeMutation = useUpdateEmployee();
   const deleteEmployeesMutation = useDeleteEmployees();
 
-  const employees = data?.items ?? [];
+  const employees = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalEmployees = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalEmployees / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -129,6 +134,11 @@ export function EmployeesWorkspace() {
     createEmployeeMutation.isPending ||
     updateEmployeeMutation.isPending ||
     deleteEmployeesMutation.isPending;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+    setSelectedIds,
+  );
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {

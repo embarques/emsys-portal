@@ -3,6 +3,7 @@ import { formatPrimaryPhonesDisplayOrDash, getPhoneDisplayAtIndex } from "@/lib/
 import { getBranchLabel } from "@/lib/vehicles/display";
 import type { Route } from "@/lib/route-manager/types";
 import type { Customer } from "@/lib/customers/types";
+import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import type { User } from "@/lib/users/types";
 import type { Order, PickupComment } from "./types";
@@ -128,7 +129,7 @@ export function formatEmployeeSummary(employee: Order["employee"]): string {
 }
 
 export function getCustomerAddressLine(customer: Customer): string {
-  return formatCoreAddressLine(customer.address) || "—";
+  return formatCoreAddressLine(getCustomerPrimaryCoreAddress(customer)) || "—";
 }
 
 export function getCustomerPhone(customer: Customer, index = 0): string {

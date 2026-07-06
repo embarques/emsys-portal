@@ -1,0 +1,172 @@
+{
+  "entity": "Cliente",
+  "entityPlural": "clientes",
+  "title": "Clientes",
+  "noun": "clientes",
+  "actions": {
+    "add": "Agregar cliente",
+    "edit": "Editar cliente",
+    "editNamed": "Editar {{name}}",
+    "selectAtLeastOne": "Seleccione al menos un cliente."
+  },
+  "types": {
+    "sender": "Remitente",
+    "receiver": "Destinatario"
+  },
+  "stats": {
+    "total": {
+      "label": "Total de clientes",
+      "description": "Todos los registros de clientes"
+    },
+    "senders": {
+      "label": "Remitentes",
+      "description": "Clientes que envían embarques"
+    },
+    "receivers": {
+      "label": "Destinatarios",
+      "description": "Clientes que reciben embarques"
+    }
+  },
+  "columns": {
+    "customerType": "Tipo",
+    "name": "Cliente",
+    "phone": "Teléfono",
+    "IDNumber": "Número de ID",
+    "address": "Dirección",
+    "city": "Ciudad",
+    "state": "Estado",
+    "zipcode": "Código postal",
+    "email": "Correo",
+    "accountBalance": "Saldo",
+    "notes": "Notas",
+    "createdByID": "Creado por",
+    "createdAt": "Creado",
+    "updatedAt": "Actualizado"
+  },
+  "search": {
+    "placeholder": "Buscar por nombre, cualquier teléfono o cualquier dirección…"
+  },
+  "loading": {
+    "title": "Cargando clientes",
+    "description": "Reuniendo perfiles, datos de contacto y saldos…",
+    "customer": "Cargando cliente…",
+    "columns": "Tipo, Cliente, Teléfono, Dirección, Saldo"
+  },
+  "empty": {
+    "noMatch": "Ningún cliente coincide con su búsqueda o filtros."
+  },
+  "form": {
+    "addTitle": "Agregar cliente",
+    "editTitle": "Editar cliente",
+    "addDescription": "Crear un nuevo registro de cliente.",
+    "notFound": "No se encontró este cliente.",
+    "sections": {
+      "general": "General",
+      "phones": "Teléfonos",
+      "addresses": "Direcciones",
+      "notes": "Notas"
+    },
+    "fields": {
+      "customerType": "Tipo de cliente",
+      "name": "Nombre",
+      "idNumber": "Número de ID",
+      "email": "Correo",
+      "notes": "Notas"
+    },
+    "placeholders": {
+      "name": "Nombre completo",
+      "email": "nombre@ejemplo.com",
+      "streetAddress": "Empiece a escribir una dirección…",
+      "streetAddressManual": "Dirección",
+      "apartment": "Apto #",
+      "crossStreet": "Información adicional de dirección",
+      "cityProvince": "Seleccione una ciudad",
+      "cityProvinceSearch": "Buscar por ciudad o provincia…",
+      "notes": "Agregue contexto relevante…"
+    },
+    "addressFields": {
+      "address1": "Dirección",
+      "address2": "Línea de dirección 2",
+      "crossStreet": "Calle transversal",
+      "apartment": "Apartamento / suite",
+      "city": "Ciudad",
+      "cityProvince": "Ciudad, Provincia",
+      "state": "Estado / provincia",
+      "zipcode": "Código postal",
+      "country": "País"
+    },
+    "address": {
+      "label": "Dirección {{index}}",
+      "primary": "Dirección principal",
+      "additional": "Dirección adicional {{index}}",
+      "add": "Agregar dirección",
+      "remove": "Eliminar dirección",
+      "setPrimary": "Establecer como principal",
+      "primaryBadge": "Dirección principal",
+      "googleHint": "Seleccione una sugerencia de dirección para completar ciudad, estado, ZIP y país."
+    },
+    "validation": {
+      "nameRequired": "Ingrese el nombre del cliente.",
+      "phoneRequired": "Ingrese un número de teléfono.",
+      "phoneDigits": "El teléfono {{index}} debe tener {{digits}} dígitos.",
+      "addressGoogleVerify": "La dirección debe verificarse con una sugerencia de Google.",
+      "addressGoogleVerifyNamed": "La dirección de {{label}} debe verificarse con una sugerencia de Google.",
+      "addressCompleteOrRemove": "Complete {{label}} o elimínela antes de guardar.",
+      "addressCityRequired": "{{label}} requiere una ciudad seleccionada.",
+      "saveFailed": "No se pudo guardar el cliente."
+    },
+    "errors": {
+      "createForbidden": "Pida a un administrador que habilite la creación de clientes (canCreateCustomer) en su rol.",
+      "updateForbidden": "Pida a un administrador que habilite la actualización de clientes (canUpdateCustomer) en su rol.",
+      "deleteForbidden": "Pida a un administrador que habilite la eliminación de clientes (canDeleteCustomer) en su rol."
+    }
+  },
+  "view": {
+    "general": "General",
+    "phones": "Teléfonos",
+    "addresses": "Direcciones",
+    "account": "Cuenta",
+    "system": "Información del sistema",
+    "email": "Correo",
+    "idNumber": "Número de ID",
+    "notes": "Notas",
+    "accountBalance": "Saldo de cuenta",
+    "customerId": "ID de cliente",
+    "branchName": "Nombre de sucursal",
+    "branchCode": "Código de sucursal",
+    "branchId": "ID de sucursal",
+    "createdBy": "Creado por",
+    "createdAt": "Creado el",
+    "updatedAt": "Actualizado el",
+    "primaryPhone": "{{type}} (principal)",
+    "edit": "Editar cliente"
+  },
+  "dialogs": {
+    "deleteTitle": "¿Eliminar cliente?",
+    "deleteTitlePlural": "¿Eliminar clientes?",
+    "deleteOne": "Esto eliminará permanentemente a \"{{name}}\". {{cannotBeUndone}}",
+    "deleteMany": "Esto eliminará permanentemente {{count}} clientes seleccionados. {{cannotBeUndone}}",
+    "deletedOne": "El cliente \"{{name}}\" fue eliminado."
+  },
+  "filters": {
+    "fields": {
+      "name": { "label": "Nombre", "placeholder": "Ingrese nombre…" },
+      "email": { "label": "Correo", "placeholder": "Ingrese correo…" },
+      "IDNumber": { "label": "Número de ID", "placeholder": "Ingrese número de ID…" },
+      "id": { "label": "ID de cliente", "placeholder": "Ingrese ID de cliente…" },
+      "address": {
+        "address1": { "label": "Dirección 1", "placeholder": "Ingrese dirección 1…" },
+        "address2": { "label": "Línea de dirección 2", "placeholder": "Ingrese línea de dirección 2…" },
+        "city": { "label": "Ciudad", "placeholder": "Ingrese ciudad…" },
+        "state": { "label": "Estado", "placeholder": "Ingrese estado…" },
+        "zipcode": { "label": "Código postal", "placeholder": "Ingrese código postal…" },
+        "country": { "label": "País", "placeholder": "Seleccione país…" }
+      },
+      "phone": { "label": "Teléfono", "placeholder": "Ingrese teléfono…" },
+      "customerType": { "label": "Tipo de cliente", "placeholder": "Seleccione tipo…" },
+      "branch": {
+        "id": { "label": "Sucursal", "placeholder": "Seleccione sucursal…" }
+      }
+    }
+  }
+}

@@ -79,6 +79,11 @@ import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { buildOrderCreatedByFilterOptions } from "@/lib/orders/display";
 import { useUsers } from "@/lib/users/hooks/use-users";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { encodeStagingInvoiceIds } from "@/lib/invoices/staging";
 import {
@@ -198,13 +203,18 @@ export function InvoicesWorkspace() {
   const { data: routesData } = useRoutePicker(undefined, { enabled: filtersOpen });
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
 
-  const invoices = data?.items ?? [];
+  const invoices = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalInvoices = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalInvoices / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     invoices.length > 0 && invoices.every((invoice) => selectedIds.includes(invoice.invoiceId));
   const isDeleting = deleteInvoicesMutation.isPending;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(deferredQuery, filters.rows, filters.paymentLocation),
+    setSelectedIds,
+  );
 
   const viewInvoice = useMemo(() => {
     if (!viewInvoiceId) return null;

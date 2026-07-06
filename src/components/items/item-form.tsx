@@ -7,6 +7,7 @@ import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "@/lib/i18n";
 import { createEmptyItemForm, type ItemFormValues } from "@/lib/items/types";
 
 const textareaClassName =
@@ -33,30 +34,54 @@ export function ItemForm({
   onSubmit,
   onCancel,
 }: ItemFormProps) {
+  const { t } = useTranslation();
   const [values, setValues] = useState<ItemFormValues>(initialValues ?? createEmptyItemForm());
+  const [validationError, setValidationError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyItemForm());
+    setValidationError(null);
   }, [initialValues]);
 
   function updateField<K extends keyof ItemFormValues>(key: K, value: ItemFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+    setValidationError(null);
+  }
+
+  function getValidationError(): string | null {
+    if (!values.description.trim()) {
+      return t("items.form.validation.descriptionRequired");
+    }
+
+    const price = Number(values.price);
+    if (!Number.isFinite(price) || price < 0) {
+      return t("items.form.validation.priceInvalid");
+    }
+
+    return null;
   }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    const error = getValidationError();
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+
+    setValidationError(null);
     onSubmit(values);
   }
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
-        <FormSection icon={Package} title="Item">
+        <FormSection icon={Package} title={t("items.form.sections.item")}>
           <div className="space-y-2.5">
             <div className="space-y-1">
               <Label htmlFor="description">
-                Description <span className="text-destructive">*</span>
+                {t("items.form.fields.description")} <span className="text-destructive">*</span>
               </Label>
               <textarea
                 id="description"
@@ -64,14 +89,14 @@ export function ItemForm({
                 onChange={(event) => updateField("description", event.target.value)}
                 rows={3}
                 className={textareaClassName}
-                placeholder="Describe the item..."
+                placeholder={t("items.form.placeholders.description")}
                 required
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="price">
-                Price <span className="text-destructive">*</span>
+                {t("items.form.fields.price")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="price"
@@ -80,7 +105,7 @@ export function ItemForm({
                 step="0.01"
                 value={values.price}
                 onChange={(event) => updateField("price", event.target.value)}
-                placeholder="0.00"
+                placeholder={t("items.form.placeholders.price")}
                 required
               />
             </div>
@@ -89,7 +114,7 @@ export function ItemForm({
       </FormBody>
 
       <FormFooter
-        error={externalError}
+        error={externalError ?? validationError}
         submitLabel={submitLabel}
         isSubmitting={isSubmitting}
         onCancel={onCancel}

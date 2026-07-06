@@ -1,3 +1,5 @@
+import { buildCustomerAddressSearchFields } from "@/lib/customers/address-search-fields";
+import { CUSTOMER_PHONE_SEARCH_FIELDS } from "@/lib/customers/search-fields";
 import {
   CUSTOMER_GET_SEARCH_CAPABILITIES,
 } from "@/lib/customers/types";
@@ -23,6 +25,7 @@ const CUSTOMER_ADDRESS_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: [...TEXT_FILTER_OPERATORS],
     valueType: "text",
     placeholder: "Enter address line 2…",
+    queryFields: buildCustomerAddressSearchFields("address2"),
   },
   {
     field: "address.city",
@@ -30,6 +33,7 @@ const CUSTOMER_ADDRESS_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: [...TEXT_FILTER_OPERATORS],
     valueType: "text",
     placeholder: "Enter city…",
+    queryFields: buildCustomerAddressSearchFields("city"),
   },
   {
     field: "address.state",
@@ -37,6 +41,7 @@ const CUSTOMER_ADDRESS_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: [...TEXT_FILTER_OPERATORS],
     valueType: "text",
     placeholder: "Enter state…",
+    queryFields: buildCustomerAddressSearchFields("state"),
   },
   {
     field: "address.zipcode",
@@ -44,6 +49,7 @@ const CUSTOMER_ADDRESS_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: [...TEXT_FILTER_OPERATORS],
     valueType: "text",
     placeholder: "Enter zip code…",
+    queryFields: buildCustomerAddressSearchFields("zipcode"),
   },
   {
     field: "address.country",
@@ -51,6 +57,7 @@ const CUSTOMER_ADDRESS_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: ["eq", "neq"],
     valueType: "select",
     options: CUSTOMER_ADDRESS_COUNTRY_FILTER_OPTIONS,
+    queryFields: buildCustomerAddressSearchFields("country"),
   },
 ];
 
@@ -62,6 +69,9 @@ export const CUSTOMER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
       operators: entry.operators,
       valueType: "text" as const,
       placeholder: `Enter ${entry.label.toLowerCase()}…`,
+      ...(entry.field === "address.address1"
+        ? { queryFields: buildCustomerAddressSearchFields("address1", "apartment") }
+        : {}),
     }),
   ),
   ...CUSTOMER_ADDRESS_FILTER_FIELDS,
@@ -71,7 +81,7 @@ export const CUSTOMER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: PHONE_FILTER_OPERATORS,
     valueType: "text",
     placeholder: "Enter phone…",
-    queryFields: ["phones.number"],
+    queryFields: [...CUSTOMER_PHONE_SEARCH_FIELDS],
   },
   {
     field: "customerType",

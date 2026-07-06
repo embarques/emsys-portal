@@ -1,0 +1,172 @@
+{
+  "entity": "Customer",
+  "entityPlural": "customers",
+  "title": "Customers",
+  "noun": "customers",
+  "actions": {
+    "add": "Add customer",
+    "edit": "Edit customer",
+    "editNamed": "Edit {{name}}",
+    "selectAtLeastOne": "Select at least one customer."
+  },
+  "types": {
+    "sender": "Sender",
+    "receiver": "Receiver"
+  },
+  "stats": {
+    "total": {
+      "label": "Total customers",
+      "description": "All customer records"
+    },
+    "senders": {
+      "label": "Senders",
+      "description": "Customers who send shipments"
+    },
+    "receivers": {
+      "label": "Receivers",
+      "description": "Customers who receive shipments"
+    }
+  },
+  "columns": {
+    "customerType": "Type",
+    "name": "Customer",
+    "phone": "Phone",
+    "IDNumber": "ID number",
+    "address": "Address",
+    "city": "City",
+    "state": "State",
+    "zipcode": "Zip code",
+    "email": "Email",
+    "accountBalance": "Balance",
+    "notes": "Notes",
+    "createdByID": "Created by",
+    "createdAt": "Created",
+    "updatedAt": "Updated"
+  },
+  "search": {
+    "placeholder": "Search by name, any phone, or any address…"
+  },
+  "loading": {
+    "title": "Loading customers",
+    "description": "Gathering profiles, contact details, and account balances…",
+    "customer": "Loading customer…",
+    "columns": "Type, Customer, Phone, Address, Balance"
+  },
+  "empty": {
+    "noMatch": "No customers match your search or filters."
+  },
+  "form": {
+    "addTitle": "Add customer",
+    "editTitle": "Edit customer",
+    "addDescription": "Create a new customer record.",
+    "notFound": "This customer could not be found.",
+    "sections": {
+      "general": "General",
+      "phones": "Phones",
+      "addresses": "Addresses",
+      "notes": "Notes"
+    },
+    "fields": {
+      "customerType": "Customer type",
+      "name": "Name",
+      "idNumber": "ID number",
+      "email": "Email",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "name": "Full name",
+      "email": "name@example.com",
+      "streetAddress": "Start typing a street address…",
+      "streetAddressManual": "Street address",
+      "apartment": "Apt #",
+      "crossStreet": "Additional address information",
+      "cityProvince": "Select a city",
+      "cityProvinceSearch": "Search by city or province…",
+      "notes": "Add any relevant context…"
+    },
+    "addressFields": {
+      "address1": "Street address",
+      "address2": "Address line 2",
+      "crossStreet": "Cross street",
+      "apartment": "Apartment / suite",
+      "city": "City",
+      "cityProvince": "City, Province",
+      "state": "State / province",
+      "zipcode": "Zip / postal code",
+      "country": "Country"
+    },
+    "address": {
+      "label": "Address {{index}}",
+      "primary": "Primary address",
+      "additional": "Additional address {{index}}",
+      "add": "Add address",
+      "remove": "Remove address",
+      "setPrimary": "Set as primary",
+      "primaryBadge": "Primary address",
+      "googleHint": "Pick an address suggestion to fill city, state, ZIP, and country."
+    },
+    "validation": {
+      "nameRequired": "Enter the customer's name.",
+      "phoneRequired": "Enter a phone number.",
+      "phoneDigits": "Phone {{index}} must have {{digits}} digits.",
+      "addressGoogleVerify": "Street address must be verified with a Google suggestion.",
+      "addressGoogleVerifyNamed": "{{label}} street address must be verified with a Google suggestion.",
+      "addressCompleteOrRemove": "Complete {{label}} or remove it before saving.",
+      "addressCityRequired": "{{label}} needs a city selected.",
+      "saveFailed": "Unable to save customer."
+    },
+    "errors": {
+      "createForbidden": "Ask an admin to enable customer create (canCreateCustomer) on your role.",
+      "updateForbidden": "Ask an admin to enable customer update (canUpdateCustomer) on your role.",
+      "deleteForbidden": "Ask an admin to enable customer delete (canDeleteCustomer) on your role."
+    }
+  },
+  "view": {
+    "general": "General",
+    "phones": "Phones",
+    "addresses": "Addresses",
+    "account": "Account",
+    "system": "System information",
+    "email": "Email",
+    "idNumber": "ID number",
+    "notes": "Notes",
+    "accountBalance": "Account balance",
+    "customerId": "Customer ID",
+    "branchName": "Branch name",
+    "branchCode": "Branch code",
+    "branchId": "Branch ID",
+    "createdBy": "Created by",
+    "createdAt": "Created at",
+    "updatedAt": "Updated at",
+    "primaryPhone": "{{type}} (primary)",
+    "edit": "Edit customer"
+  },
+  "dialogs": {
+    "deleteTitle": "Delete customer?",
+    "deleteTitlePlural": "Delete customers?",
+    "deleteOne": "This will permanently remove \"{{name}}\". {{cannotBeUndone}}",
+    "deleteMany": "This will permanently remove {{count}} selected customers. {{cannotBeUndone}}",
+    "deletedOne": "Customer \"{{name}}\" was deleted."
+  },
+  "filters": {
+    "fields": {
+      "name": { "label": "Name", "placeholder": "Enter name…" },
+      "email": { "label": "Email", "placeholder": "Enter email…" },
+      "IDNumber": { "label": "ID number", "placeholder": "Enter id number…" },
+      "id": { "label": "Customer ID", "placeholder": "Enter customer id…" },
+      "address": {
+        "address1": { "label": "Address 1", "placeholder": "Enter address 1…" },
+        "address2": { "label": "Address line 2", "placeholder": "Enter address line 2…" },
+        "city": { "label": "City", "placeholder": "Enter city…" },
+        "state": { "label": "State", "placeholder": "Enter state…" },
+        "zipcode": { "label": "Zip code", "placeholder": "Enter zip code…" },
+        "country": { "label": "Country", "placeholder": "Select country…" }
+      },
+      "phone": { "label": "Phone", "placeholder": "Enter phone…" },
+      "customerType": { "label": "Customer type", "placeholder": "Select type…" },
+      "branch": {
+        "id": { "label": "Branch", "placeholder": "Select branch…" }
+      }
+    }
+  }
+}

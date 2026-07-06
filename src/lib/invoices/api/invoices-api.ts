@@ -18,7 +18,7 @@ import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { buildApiAddressPayload, buildApiBranchDto } from "@/lib/api/payloads";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
-import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, createRecordId, type Customer } from "@/lib/customers/types";
+import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, createRecordId, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 import { getPhoneAtDisplayIndex, getPrimaryPhoneNumber } from "@/lib/phones/phones";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { expandInvoiceFilterNode } from "@/lib/invoices/invoice-filters";
@@ -725,7 +725,7 @@ function buildInvoiceCustomerWriteRef(
   const phone2 = getPhoneAtDisplayIndex(customer.phones, 1);
   const email = customer.email.trim();
   const idNumber = customer.IDNumber.trim();
-  const address = buildApiAddressPayload(customer.address);
+  const address = buildApiAddressPayload(getCustomerPrimaryCoreAddress(customer));
   const customerType = customer.customerType ?? fallbackType;
 
   const payload: ApiInvoiceCustomerWriteRef = {

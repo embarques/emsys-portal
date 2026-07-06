@@ -30,6 +30,11 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { formatBranchCodeOnly, formatBranchFilterLabel, getBranchCodeBadgeClass } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { createApiListTextSearch } from "@/lib/api/search-query";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatRouteName,
@@ -104,7 +109,7 @@ export function RouteManagerWorkspace() {
   const updateMutation = useUpdateRoute();
   const deleteMutation = useDeleteRoutes();
 
-  const assignments = data?.items ?? [];
+  const assignments = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalAssignments = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalAssignments / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -113,6 +118,11 @@ export function RouteManagerWorkspace() {
     assignments.length > 0 && assignments.every((assignment) => selectedIds.includes(assignment.id));
   const isSaving =
     createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(debouncedQuery, filters.branchCode),
+    setSelectedIds,
+  );
 
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
 

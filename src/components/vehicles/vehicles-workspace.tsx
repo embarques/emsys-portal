@@ -38,6 +38,11 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { VEHICLE_TABLE_FILTER_FIELDS } from "@/lib/vehicles/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
@@ -111,13 +116,18 @@ export function VehiclesWorkspace() {
   const updateVehicleMutation = useUpdateVehicle();
   const deleteVehiclesMutation = useDeleteVehicles();
 
-  const vehicles = data?.items ?? [];
+  const vehicles = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalVehicles = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalVehicles / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected = vehicles.length > 0 && vehicles.every((vehicle) => selectedIds.includes(vehicle.id));
   const isSaving =
     createVehicleMutation.isPending || updateVehicleMutation.isPending || deleteVehiclesMutation.isPending;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+    setSelectedIds,
+  );
 
   const branchKpis = useVehicleKpis();
   const branchCounts = computeVehicleKpis(branchKpis.items);

@@ -30,7 +30,7 @@ import {
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
 import { useRouteLookup } from "@/lib/route-manager/hooks/use-route-manager";
-import type { Customer } from "@/lib/customers/types";
+import { coreAddressHasContent, type Customer } from "@/lib/customers/types";
 import type { Order } from "@/lib/orders/types";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
 
@@ -44,12 +44,7 @@ type OrderViewSheetProps = {
 
 function CustomerCard({ title, customer }: { title: string; customer: Customer }) {
   const phones = getOrderedRecordPhones(customer.phones);
-  const addresses =
-    customer.addresses.length > 0
-      ? customer.addresses
-      : customer.address.address1
-        ? [customer.address]
-        : [];
+  const addresses = customer.addresses.filter(coreAddressHasContent);
 
   return (
     <>

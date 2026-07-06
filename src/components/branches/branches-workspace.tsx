@@ -37,6 +37,11 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { BRANCH_TABLE_FILTER_FIELDS } from "@/lib/branches/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
@@ -108,7 +113,7 @@ export function BranchesWorkspace() {
   const updateBranchMutation = useUpdateBranch();
   const deleteBranchesMutation = useDeleteBranches();
 
-  const branches = data?.items ?? [];
+  const branches = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalBranches = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalBranches / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -118,6 +123,11 @@ export function BranchesWorkspace() {
     createBranchMutation.isPending ||
     updateBranchMutation.isPending ||
     deleteBranchesMutation.isPending;
+
+  useTableSelectionReset<number>(
+    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+    setSelectedIds,
+  );
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {

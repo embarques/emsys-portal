@@ -45,6 +45,11 @@ import { formatRouteDate } from "@/lib/route-manager/display";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useTranslation } from "@/lib/i18n";
 
 const ACTIVE_ROUTE_PAGE_SIZE = DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.limit;
@@ -93,7 +98,11 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
     enabled: variant.id === "delivery",
   });
 
-  const activeRoutes = activeRoutesQuery.data?.items ?? [];
+  const activeRoutes = useResolvedPaginatedItems(
+    activeRoutesQuery.data?.items,
+    activeRoutesQuery.data?.total,
+    activeRoutesQuery.isFetching,
+  );
   const totalActiveRoutes = activeRoutesQuery.data?.total ?? 0;
   const totalActiveRoutePages = Math.max(1, Math.ceil(totalActiveRoutes / ACTIVE_ROUTE_PAGE_SIZE));
   const currentActiveRoutePage = Math.min(activeRoutePage, totalActiveRoutePages);
@@ -102,6 +111,11 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
     activeRoutes.length > 0 &&
     activeRoutes.every((record) => selectedActiveRouteIds.includes(record.id));
   const isSaving = deleteActiveRoutesMutation.isPending;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(debouncedActiveRouteQuery, variant.routeType),
+    setSelectedActiveRouteIds,
+  );
 
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
 

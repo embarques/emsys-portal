@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { createFilterRowId, countCompleteFilterRows } from "@/lib/table/filter-builder";
 import type { TableFilterFieldDefinition, TableFilterRowState } from "@/lib/table/filter-types";
 import { useFilterPresets } from "@/lib/filter-presets/hooks/use-filter-presets";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export type FilterPresetMenuProps = {
@@ -41,6 +42,7 @@ export function FilterPresetMenu({
   onApply,
   className,
 }: FilterPresetMenuProps) {
+  const { t } = useTranslation();
   const { presets, isLoading, isMutating, savePreset, deletePreset } = useFilterPresets(storageKey);
   const [loadOpen, setLoadOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -63,8 +65,11 @@ export function FilterPresetMenu({
   }, [saveOpen]);
 
   const presetsLabel = useMemo(
-    () => (presets.length > 0 ? `Presets (${presets.length})` : "Presets"),
-    [presets.length],
+    () =>
+      presets.length > 0
+        ? t("common.table.filterPresets.presetsWithCount", { count: presets.length })
+        : t("common.table.filterPresets.presets"),
+    [presets.length, t],
   );
 
   function applyPreset(preset: { rows: TableFilterRowState[] }) {
@@ -90,11 +95,15 @@ export function FilterPresetMenu({
             type="button"
             disabled={!canSave}
             className={controlClassName}
-            aria-label="Save current filters as preset"
-            title={canSave ? "Save current filters as preset" : "Add a filter to save a preset"}
+            aria-label={t("common.table.filterPresets.saveAria")}
+            title={
+              canSave
+                ? t("common.table.filterPresets.saveTitle")
+                : t("common.table.filterPresets.saveDisabledTitle")
+            }
           >
             <BookmarkPlus className="h-3.5 w-3.5" />
-            Save preset
+            {t("common.table.filterPresets.save")}
           </button>
         </PopoverTrigger>
         <PopoverContent
@@ -105,7 +114,9 @@ export function FilterPresetMenu({
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <div className="space-y-2">
-            <p className="text-xs font-medium text-foreground">Save filter preset</p>
+            <p className="text-xs font-medium text-foreground">
+              {t("common.table.filterPresets.saveDialogTitle")}
+            </p>
             <Input
               ref={saveInputRef}
               value={draftName}
@@ -119,7 +130,7 @@ export function FilterPresetMenu({
                   setSaveOpen(false);
                 }
               }}
-              placeholder="Preset name…"
+              placeholder={t("common.table.filterPresets.namePlaceholder")}
               className="h-8 text-sm"
             />
             <div className="flex items-center justify-end gap-2">
@@ -130,7 +141,7 @@ export function FilterPresetMenu({
                 className="h-7 px-2 text-xs"
                 onClick={() => setSaveOpen(false)}
               >
-                Cancel
+                {t("common.actions.cancel")}
               </Button>
               <Button
                 type="button"
@@ -139,7 +150,7 @@ export function FilterPresetMenu({
                 disabled={!draftName.trim() || isMutating}
                 onClick={handleSave}
               >
-                Save
+                {t("common.actions.save")}
               </Button>
             </div>
           </div>
@@ -152,7 +163,7 @@ export function FilterPresetMenu({
           <button
             type="button"
             className={controlClassName}
-            aria-label="Load filter preset"
+            aria-label={t("common.table.filterPresets.loadAria")}
           >
             <Bookmark className="h-3.5 w-3.5" />
             {presetsLabel}
@@ -169,14 +180,14 @@ export function FilterPresetMenu({
         >
           {presets.length === 0 && isLoading ? (
             <p className="px-3 py-4 text-center text-xs text-muted-foreground">
-              Loading presets…
+              {t("common.table.filterPresets.loading")}
             </p>
           ) : presets.length > 0 ? (
             <Command>
-              <CommandInput placeholder="Search presets…" />
+              <CommandInput placeholder={t("common.table.filterPresets.searchPlaceholder")} />
               <CommandList className="max-h-56">
-                <CommandEmpty>No presets found.</CommandEmpty>
-                <CommandGroup heading="Saved presets">
+                <CommandEmpty>{t("common.table.filterPresets.noResults")}</CommandEmpty>
+                <CommandGroup heading={t("common.table.filterPresets.savedHeading")}>
                   {presets.map((preset) => (
                     <CommandItem
                       key={preset.id}
@@ -190,7 +201,7 @@ export function FilterPresetMenu({
                       </span>
                       <button
                         type="button"
-                        aria-label={`Delete preset ${preset.name}`}
+                        aria-label={t("common.table.filterPresets.deleteAria", { name: preset.name })}
                         className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                         onMouseDown={(event) => {
                           event.preventDefault();
@@ -211,7 +222,7 @@ export function FilterPresetMenu({
             </Command>
           ) : (
             <p className="px-3 py-4 text-center text-xs text-muted-foreground">
-              No saved presets yet. Build a filter and use “Save preset”.
+              {t("common.table.filterPresets.emptyState")}
             </p>
           )}
         </PopoverContent>
