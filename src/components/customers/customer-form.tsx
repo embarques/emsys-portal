@@ -616,7 +616,7 @@ export function CustomerForm({
                 value={values.name}
                 onChange={(event) => updateField("name", capitalizeWords(event.target.value))}
                 placeholder={t("customers.form.placeholders.name")}
-                autoFocus
+                autoFocus={!isEditing}
                 required
               />
             </div>

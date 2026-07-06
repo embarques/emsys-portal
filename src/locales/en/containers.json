@@ -80,7 +80,10 @@
     }
   },
   "view": {
-    "shipping": "Shipping",
+    "shipping": "Container information",
+    "sections": {
+      "audit": "Audit"
+    },
     "containerId": "Container ID",
     "barcodeSequence": "Barcode sequence",
     "departureDate": "Departure date",

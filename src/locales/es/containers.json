@@ -80,7 +80,10 @@
     }
   },
   "view": {
-    "shipping": "Envío",
+    "shipping": "Información del contenedor",
+    "sections": {
+      "audit": "Auditoría"
+    },
     "containerId": "ID de contenedor",
     "barcodeSequence": "Secuencia de código de barras",
     "departureDate": "Fecha de salida",

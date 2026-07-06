@@ -690,7 +690,12 @@ export function CustomersWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogContent
+          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+          onOpenAutoFocus={
+            formMode === "edit" ? (event) => event.preventDefault() : undefined
+          }
+        >
           <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
             <DialogTitle>
               {formMode === "edit" ? t("customers.form.editTitle") : t("customers.form.addTitle")}
