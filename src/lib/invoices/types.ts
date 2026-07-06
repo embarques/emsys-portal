@@ -18,6 +18,8 @@ export type InvoicePaymentLocation = "usa" | "dr";
 
 export type InvoiceLineItemBarcode = {
   id: string;
+  /** Canonical `/barcodes` id when the API exposes it separately from the embedded record id. */
+  barcodeId?: string;
   number: string;
   statusId?: number;
   statusName?: string;

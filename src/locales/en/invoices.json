@@ -1,0 +1,6 @@
+{
+  "staging": {
+    "tableAction": "Manage invoice items",
+    "title": "Select invoice items for processing"
+  }
+}

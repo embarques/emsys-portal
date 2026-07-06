@@ -3,12 +3,14 @@ import type { LanguagePreference } from "@/lib/configuration/types";
 import enCommon from "@/locales/en/common.json";
 import enContainers from "@/locales/en/containers.json";
 import enInsights from "@/locales/en/insights.json";
+import enInvoices from "@/locales/en/invoices.json";
 import enNavigation from "@/locales/en/navigation.json";
 import enRoutes from "@/locales/en/routes.json";
 import enShell from "@/locales/en/shell.json";
 import esCommon from "@/locales/es/common.json";
 import esContainers from "@/locales/es/containers.json";
 import esInsights from "@/locales/es/insights.json";
+import esInvoices from "@/locales/es/invoices.json";
 import esNavigation from "@/locales/es/navigation.json";
 import esRoutes from "@/locales/es/routes.json";
 import esShell from "@/locales/es/shell.json";
@@ -22,6 +24,7 @@ const catalogs: Record<Locale, MessageTree> = {
     common: enCommon,
     containers: enContainers,
     insights: enInsights,
+    invoices: enInvoices,
     navigation: enNavigation,
     routes: enRoutes,
     shell: enShell,
@@ -30,6 +33,7 @@ const catalogs: Record<Locale, MessageTree> = {
     common: esCommon,
     containers: esContainers,
     insights: esInsights,
+    invoices: esInvoices,
     navigation: esNavigation,
     routes: esRoutes,
     shell: esShell,

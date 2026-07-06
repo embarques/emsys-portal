@@ -4,16 +4,16 @@ Use this document when wiring the Next.js client to `emsys-api`.
 
 **Portal implementation**
 
-| Concern | Location |
-|---------|----------|
-| Shared address / branch / role builders | `src/lib/api/payloads.ts` |
-| List query strings (`page`, `limit`, `sort`, filters) | `src/lib/api/list-query.ts` — see `API-List-Query.md` |
-| Customers | `src/lib/customers/api/customers-api.ts` |
-| Employees | `src/lib/employees/api/employees-api.ts` |
-| Users | `src/lib/users/api/users-api.ts` |
-| Branches | `src/lib/branches/api/branches-api.ts` |
-| Pickups (orders) | `src/lib/orders/api/orders-api.ts` |
-| API base URL | `src/lib/api/base-url.ts` (`NEXT_PUBLIC_API_BASE_URL`) |
+| Concern                                               | Location                                               |
+| ----------------------------------------------------- | ------------------------------------------------------ |
+| Shared address / branch / role builders               | `src/lib/api/payloads.ts`                              |
+| List query strings (`page`, `limit`, `sort`, filters) | `src/lib/api/list-query.ts` — see `API-List-Query.md`  |
+| Customers                                             | `src/lib/customers/api/customers-api.ts`               |
+| Employees                                             | `src/lib/employees/api/employees-api.ts`               |
+| Users                                                 | `src/lib/users/api/users-api.ts`                       |
+| Branches                                              | `src/lib/branches/api/branches-api.ts`                 |
+| Pickups (orders)                                      | `src/lib/orders/api/orders-api.ts`                     |
+| API base URL                                          | `src/lib/api/base-url.ts` (`NEXT_PUBLIC_API_BASE_URL`) |
 
 The portal calls the API **directly** from the browser (no Next.js `/api` proxy). Ensure API CORS allows your portal origin.
 
@@ -40,8 +40,8 @@ Content-Type: application/json
 {
   "success": true,
   "message": "Request successful",
-  "data": { },
-  "meta": { }
+  "data": {},
+  "meta": {}
 }
 ```
 
@@ -62,11 +62,11 @@ Content-Type: application/json
 
 **ID types:**
 
-| Type | Resources | Example |
-|------|-----------|---------|
+| Type                           | Resources                                                                                                      | Example                      |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------- |
 | MongoDB ObjectID (24-char hex) | `customers`, `invoices`, `journals`, `vehicles`, `routes`, `pickup-routes`, `delivery-routes`, `pickups/route` | `"674a1b2c3d4e5f6789012345"` |
-| `uint16` | `users`, `roles`, `permissions`, `branches`, `employees` | `1` |
-| `uint32` | `containers`, `deliveries`, `barcodes`, `pickups`, `income-statements` | `42` |
+| `uint16`                       | `users`, `roles`, `permissions`, `branches`, `employees`                                                       | `1`                          |
+| `uint32`                       | `containers`, `deliveries`, `barcodes`, `pickups`, `income-statements`                                         | `42`                         |
 
 **On create:** omit `id` (server assigns). Do not send `"id": ""`.
 
@@ -129,9 +129,7 @@ Body (all fields optional):
     }
   ],
   "pagination": { "page": 1, "offset": 0, "limit": 40 },
-  "sort": [
-    { "field": "name", "direction": "asc" }
-  ]
+  "sort": [{ "field": "name", "direction": "asc" }]
 }
 ```
 
@@ -243,11 +241,7 @@ No body. `{uid}` = Firebase UID string.
 {
   "name": "Manager",
   "active": true,
-  "permissions": [
-    { "id": 26 },
-    { "id": 27 },
-    { "id": 28 }
-  ]
+  "permissions": [{ "id": 26 }, { "id": 27 }, { "id": 28 }]
 }
 ```
 
@@ -352,7 +346,7 @@ Same shape. `{id}` = numeric.
   "sealNumber": "SEAL-99",
   "broker": "Broker Co",
   "company": "Shipping Co",
-  "cost": 1500.00,
+  "cost": 1500.0,
   "departureDate": "2026-06-01T00:00:00Z",
   "arrivalDate": "2026-06-15T00:00:00Z"
 }
@@ -475,13 +469,9 @@ At least one of `states`, `cities`, `zipCodes`, `zipRanges` is required.
 {
   "name": "Bronx NY",
   "states": ["NY"],
-  "cities": [
-    { "cityName": "Bronx", "stateCode": "NY" }
-  ],
+  "cities": [{ "cityName": "Bronx", "stateCode": "NY" }],
   "zipCodes": ["10451", "10452"],
-  "zipRanges": [
-    { "start": "10400", "end": "10499" }
-  ]
+  "zipRanges": [{ "start": "10400", "end": "10499" }]
 }
 ```
 
@@ -510,9 +500,9 @@ Uses `CreateInvoiceRequest`. **Required:** `number`, `employee`, `container`, `s
   "number": "INV-1001",
   "date": "2026-06-10",
   "branch": { "id": 1, "code": "NYC" },
-  "cost": 120.00,
-  "payment": 20.00,
-  "balance": 100.00,
+  "cost": 120.0,
+  "payment": 20.0,
+  "balance": 100.0,
   "discount": 0,
   "surcharge": 0,
   "paidRegion": "",
@@ -548,8 +538,8 @@ Uses `CreateInvoiceRequest`. **Required:** `number`, `employee`, `container`, `s
       "name": "Shipping",
       "quantity": 2,
       "labels": 2,
-      "price": 50.00,
-      "total": 100.00
+      "price": 50.0,
+      "total": 100.0
     }
   ]
 }
@@ -562,9 +552,9 @@ Full `Invoice` model (not `CreateInvoiceRequest`). `{id}` = ObjectID hex.
 ```json
 {
   "number": "INV-1001",
-  "cost": 120.00,
-  "payment": 50.00,
-  "balance": 70.00,
+  "cost": 120.0,
+  "payment": 50.0,
+  "balance": 70.0,
   "isVoid": false,
   "sender": { "name": "Sender Co", "customerType": 1 },
   "container": { "id": 1, "name": "Container A" }
@@ -586,7 +576,7 @@ Uses `PostEntryRequest`. **Required:** `transactionType`.
 ```json
 {
   "transactionType": "SALES",
-  "amount": 45.00,
+  "amount": 45.0,
   "date": "2026-06-10",
   "description": "Counter sale",
   "refNumber": "REF-001",
@@ -599,7 +589,7 @@ Uses `PostEntryRequest`. **Required:** `transactionType`.
 ```json
 {
   "transactionType": "PAYMENT",
-  "amount": 50.00,
+  "amount": 50.0,
   "invoiceId": "674a1b2c3d4e5f6789012345",
   "paymentMethod": { "id": 1, "name": "CASH" },
   "description": "Invoice payment"
@@ -611,7 +601,7 @@ Uses `PostEntryRequest`. **Required:** `transactionType`.
 ```json
 {
   "transactionType": "EXPENSE",
-  "amount": 25.00,
+  "amount": 25.0,
   "description": "Office supplies",
   "account": { "id": 500, "name": "Supplies", "type": "EXPENSE" },
   "sourceAccount": { "id": 1, "name": "CASH ON HAND", "type": "ASSET" }
@@ -786,7 +776,11 @@ Lookup by date + container: `POST /v1/delivery-routes/search` with filters on `d
 
 ```json
 {
-  "vehicle": { "id": "674a1b2c3d4e5f6789012345", "name": "Vehicle 1", "branch": "usa" },
+  "vehicle": {
+    "id": "674a1b2c3d4e5f6789012345",
+    "name": "Vehicle 1",
+    "branch": "usa"
+  },
   "employees": [
     { "id": 5, "name": "Jane Driver" },
     { "id": 6, "name": "Helper One" }
@@ -804,19 +798,19 @@ Same write shape. `{id}` = ObjectID hex.
 
 ## Endpoints with no request body
 
-| Method | Path | Notes |
-|--------|------|-------|
-| GET | `/v1/health` | Public |
-| GET | `/v1/health/db` | Public |
-| GET | `/v1/version` | Public |
-| GET | `/v1/users/me` | Auth only |
-| GET | `/v1/users/permissions` | Tenant |
-| GET | `/v1/<resource>` | List all — query params only |
-| GET | `/v1/<resource>/{id}` | Retrieve |
-| DELETE | `/v1/<resource>/{id}` | Delete |
-| POST | `/v1/income-statements/{id}/close` | Close cuadre |
-| POST | `/v1/income-statements/{id}/open` | Reopen cuadre |
-| GET | `/v1/pickups/search-by-route` | Query: `routeId`, `page`, `limit` |
+| Method | Path                               | Notes                             |
+| ------ | ---------------------------------- | --------------------------------- |
+| GET    | `/v1/health`                       | Public                            |
+| GET    | `/v1/health/db`                    | Public                            |
+| GET    | `/v1/version`                      | Public                            |
+| GET    | `/v1/users/me`                     | Auth only                         |
+| GET    | `/v1/users/permissions`            | Tenant                            |
+| GET    | `/v1/<resource>`                   | List all — query params only      |
+| GET    | `/v1/<resource>/{id}`              | Retrieve                          |
+| DELETE | `/v1/<resource>/{id}`              | Delete                            |
+| POST   | `/v1/income-statements/{id}/close` | Close cuadre                      |
+| POST   | `/v1/income-statements/{id}/open`  | Reopen cuadre                     |
+| GET    | `/v1/pickups/search-by-route`      | Query: `routeId`, `page`, `limit` |
 
 **`<resource>` plural paths:** `permissions`, `roles`, `branches`, `users`, `customers`, `employees`, `vehicles`, `routes`, `pickup-routes`, `delivery-routes`, `containers`, `deliveries`, `barcodes`, `pickups`, `invoices`, `journals`, `income-statements`.
 
@@ -824,21 +818,21 @@ Same write shape. `{id}` = ObjectID hex.
 
 ## Permission keys by route (for 403 debugging)
 
-| Path prefix | `resourceType` for RBAC |
-|-------------|-------------------------|
-| `/permissions`, `/branches` | `settings` |
-| `/roles`, `/users` | `user` |
-| `/customers` | `customer` |
-| `/employees` | `employee` |
-| `/containers` | `container` |
-| `/deliveries` | `delivery` |
-| `/barcodes` | `labels` |
-| `/pickups` | `pickup` |
-| `/invoices` | `invoice` |
-| `/journals` | `journal` |
-| `/income-statements` | `income_statement` |
-| `/vehicles` | `vehicle` |
-| `/routes` | `route` |
-| `/pickup-routes`, `/delivery-routes` | `active_route` |
+| Path prefix                          | `resourceType` for RBAC |
+| ------------------------------------ | ----------------------- |
+| `/permissions`, `/branches`          | `settings`              |
+| `/roles`, `/users`                   | `user`                  |
+| `/customers`                         | `customer`              |
+| `/employees`                         | `employee`              |
+| `/containers`                        | `container`             |
+| `/deliveries`                        | `delivery`              |
+| `/barcodes`                          | `labels`                |
+| `/pickups`                           | `pickup`                |
+| `/invoices`                          | `invoice`               |
+| `/journals`                          | `journal`               |
+| `/income-statements`                 | `income_statement`      |
+| `/vehicles`                          | `vehicle`               |
+| `/routes`                            | `route`                 |
+| `/pickup-routes`, `/delivery-routes` | `active_route`          |
 
 Actions: `view`, `create`, `update`, `delete`, `print` (checked via seeded permissions on the user's role).

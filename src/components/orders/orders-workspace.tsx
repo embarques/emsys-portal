@@ -135,7 +135,7 @@ export function OrdersWorkspace() {
   const { data: usersData, isLoading: usersLoading } = useUsers({
     page: 1,
     limit: 100,
-    sort: "fullName:asc",
+    sort: "name:asc",
   });
   const { data: branchesData, isLoading: branchesLoading } = useBranchPicker(200, {
     enabled: filtersOpen,

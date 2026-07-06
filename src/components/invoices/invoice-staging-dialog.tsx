@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  ArrowLeft,
   Barcode,
   Container as ContainerIcon,
   ListChecks,
@@ -42,17 +43,29 @@ import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import {
   BARCODE_STATUS_OPTIONS,
   buildStagedLineItems,
+  resolveBarcodeStatusRef,
   type GeneratedLabel,
   type StagedLineItem,
 } from "@/lib/labels/types";
 import type { Invoice } from "@/lib/invoices/types";
+import { useTranslation } from "@/lib/i18n";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
 import { cn } from "@/lib/utils";
+
+export type InvoiceStagingWorkflowProps = {
+  /** Invoices selected in the table to stage for label processing. */
+  invoices: Invoice[];
+  presentation?: "dialog" | "page";
+  /** Page tab title for step 1; dialog uses the translated staging title by default. */
+  title?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
+};
 
 type InvoiceStagingDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Invoices selected in the table to stage for label processing. */
   invoices: Invoice[];
 };
 
@@ -166,9 +179,27 @@ function SelectionToolbar({
   );
 }
 
-export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceStagingDialogProps) {
+export function InvoiceStagingWorkflow({
+  invoices,
+  presentation = "dialog",
+  title,
+  open = true,
+  onOpenChange,
+  onClose,
+}: InvoiceStagingWorkflowProps) {
+  const { t } = useTranslation();
   const { notifyError, notifySuccess, notifyUpdated } = useFeedback();
-  const { data: containersData } = useContainerPicker(200, { enabled: open });
+  const isDialog = presentation === "dialog";
+  const isActive = isDialog ? open : true;
+
+  function handleClose() {
+    if (isDialog) {
+      onOpenChange?.(false);
+      return;
+    }
+    onClose?.();
+  }
+  const { data: containersData } = useContainerPicker(200, { enabled: isActive });
   const containers = containersData?.items ?? [];
   const generateLabelsMutation = useGenerateLabels();
   const updateBarcodesMutation = useUpdateBarcodes();
@@ -212,9 +243,14 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
   const invoicesRef = useRef(invoices);
   invoicesRef.current = invoices;
 
-  // Reset the whole flow only when the dialog is (re)opened for a new selection.
+  const invoiceKey = useMemo(
+    () => invoices.map((invoice) => invoice.invoiceId).sort().join(","),
+    [invoices],
+  );
+
+  // Reset the whole flow when the dialog opens or the staged invoice set changes.
   useEffect(() => {
-    if (!open) return;
+    if (!isActive) return;
     const current = invoicesRef.current;
     setStep("line-items");
     setLineItems(
@@ -228,7 +264,7 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
     setSelectedLabelKeys([]);
     setLabelQuery("");
     setStatusFilter("all");
-  }, [open]);
+  }, [invoiceKey, isActive]);
 
   const itemKeys = useMemo(() => lineItems.map((item) => item.key), [lineItems]);
 
@@ -262,11 +298,6 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
     setSelectedItemKeys((current) =>
       checked ? [...current, key] : current.filter((entry) => entry !== key),
     );
-  }
-
-  function removeLineItem(key: string) {
-    setLineItems((current) => current.filter((item) => item.key !== key));
-    setSelectedItemKeys((current) => current.filter((entry) => entry !== key));
   }
 
   function removeSelectedLineItems() {
@@ -334,9 +365,11 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
 
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
     const updates: BarcodeUpdate[] = selected
-      .filter((label) => label.barcodeId > 0)
+      .filter((label) => label.number.trim().length > 0)
       .map((label) => ({
         id: label.barcodeId,
+        invoiceId: label.invoiceId,
+        writeTarget: label.writeTarget,
         payload: {
           number: label.number,
           status: { id: option.id, name: option.name },
@@ -345,6 +378,11 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
             : {}),
         },
       }));
+
+    if (updates.length === 0) {
+      notifyError("Selected labels are missing barcode numbers to update.");
+      return;
+    }
 
     try {
       if (updates.length > 0) {
@@ -416,17 +454,24 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
 
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
     const updates: BarcodeUpdate[] = selected
-      .filter((label) => label.barcodeId > 0)
+      .filter((label) => label.number.trim().length > 0)
       .map((label) => ({
         id: label.barcodeId,
+        invoiceId: label.invoiceId,
+        writeTarget: label.writeTarget,
         payload: {
           number: label.number,
-          status: { id: label.statusId ?? 0, name: label.statusName },
+          status: resolveBarcodeStatusRef(label.statusId, label.statusName),
           container: { id: container.id, name: container.name },
         },
       }));
 
     const containerLabel = formatContainerLabel(container);
+
+    if (updates.length === 0) {
+      notifyError("Selected labels are missing barcode numbers to update.");
+      return;
+    }
 
     try {
       if (updates.length > 0) {
@@ -478,31 +523,47 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
     }
   }
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[88vh] w-full max-w-5xl flex-col gap-4 overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {step === "line-items" ? (
-              <>
-                <Tag className="h-4 w-4" />
-                Manage Labels
-              </>
-            ) : (
-              <>
-                <Barcode className="h-4 w-4" />
-                Label manager
-              </>
-            )}
-          </DialogTitle>
-          <DialogDescription>
-            {step === "line-items"
-              ? "Review line items from the selected invoices, choose which to label, then generate labels."
-              : "Barcodes were created where missing and retrieved where they already existed. Manage status, container, and printing below."}
-          </DialogDescription>
-        </DialogHeader>
+  const stagingTitle = title ?? t("invoices.staging.title");
+  const stagingDescription =
+    step === "line-items"
+      ? "Review line items from the selected invoices, choose which to label, then generate labels."
+      : "Barcodes were created where missing and retrieved where they already existed. Manage status, container, and printing below.";
 
-        {step === "line-items" ? (
+  const stagingHeaderTitle =
+    step === "line-items" ? (
+      <>
+        <Tag className="h-4 w-4" />
+        {stagingTitle}
+      </>
+    ) : (
+      <>
+        <Barcode className="h-4 w-4" />
+        Label manager
+      </>
+    );
+
+  const footerActions =
+    step === "line-items" ? (
+      <>
+        <Button variant="outline" onClick={handleClose}>
+          Cancel
+        </Button>
+        <Button onClick={generateLabels} disabled={selectedItemKeys.length === 0 || isGenerating}>
+          <Barcode className="h-4 w-4" />
+          {isGenerating ? "Working…" : `Manage labels (${selectedItemKeys.length})`}
+        </Button>
+      </>
+    ) : (
+      <>
+        <Button variant="outline" onClick={() => setStep("line-items")}>
+          Back to line items
+        </Button>
+        <Button onClick={handleClose}>Done</Button>
+      </>
+    );
+
+  const workflowPanels =
+    step === "line-items" ? (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
             <SelectionToolbar
               selectedCount={selectedItemKeys.length}
@@ -532,13 +593,12 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
                     <th className="px-3 py-2 font-medium">Description</th>
                     <th className="px-3 py-2 font-medium">Labels</th>
                     <th className="px-3 py-2 font-medium">Quantity</th>
-                    <th className="w-10 px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody>
                   {lineItems.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                      <td colSpan={5} className="px-3 py-10 text-center text-muted-foreground">
                         No line items to stage. Close and select invoices with line items.
                       </td>
                     </tr>
@@ -548,12 +608,13 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
                       return (
                         <tr
                           key={item.key}
+                          onClick={() => toggleItem(item.key, !checked)}
                           className={cn(
-                            "border-b transition-colors last:border-0 hover:bg-muted/25",
+                            "cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/25",
                             checked && "bg-primary/[0.06]",
                           )}
                         >
-                          <td className="px-3 py-2">
+                          <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
                             <input
                               type="checkbox"
                               aria-label={`Select ${item.invoiceNumber} · ${item.description}`}
@@ -566,17 +627,6 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
                           <td className="px-3 py-2">{item.description}</td>
                           <td className="px-3 py-2">{item.labelCount}</td>
                           <td className="px-3 py-2">{item.quantity}</td>
-                          <td className="px-3 py-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                              aria-label="Remove line item"
-                              onClick={() => removeLineItem(item.key)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </td>
                         </tr>
                       );
                     })
@@ -744,30 +794,10 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
               </table>
             </div>
           </div>
-        )}
+        );
 
-        <DialogFooter className="sm:justify-between">
-          {step === "line-items" ? (
-            <>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button onClick={generateLabels} disabled={selectedItemKeys.length === 0 || isGenerating}>
-                <Barcode className="h-4 w-4" />
-                {isGenerating ? "Working…" : `Manage labels (${selectedItemKeys.length})`}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => setStep("line-items")}>
-                Back to line items
-              </Button>
-              <Button onClick={() => onOpenChange(false)}>Done</Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-
+  const auxiliaryDialogs = (
+    <>
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent className="z-[70]">
           <DialogHeader>
@@ -878,6 +908,66 @@ export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceSt
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Dialog>
+    </>
+  );
+
+  if (!isDialog) {
+    return (
+      <>
+        <div className="flex min-h-[calc(100dvh-10rem)] flex-col gap-4">
+          <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t("invoices.staging.tableAction")}
+              </p>
+              <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                {stagingHeaderTitle}
+              </h1>
+              <p className="text-sm text-muted-foreground">{stagingDescription}</p>
+            </div>
+            <Button variant="outline" onClick={handleClose}>
+              <ArrowLeft className="h-4 w-4" />
+              Back to invoices
+            </Button>
+          </div>
+
+          <div className="flex min-h-0 flex-1 flex-col gap-4">{workflowPanels}</div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
+            {footerActions}
+          </div>
+        </div>
+        {auxiliaryDialogs}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="flex max-h-[88vh] w-full max-w-5xl flex-col gap-4 overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">{stagingHeaderTitle}</DialogTitle>
+            <DialogDescription>{stagingDescription}</DialogDescription>
+          </DialogHeader>
+
+          {workflowPanels}
+
+          <DialogFooter className="sm:justify-between">{footerActions}</DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {auxiliaryDialogs}
+    </>
+  );
+}
+
+export function InvoiceStagingDialog({ open, onOpenChange, invoices }: InvoiceStagingDialogProps) {
+  return (
+    <InvoiceStagingWorkflow
+      presentation="dialog"
+      open={open}
+      onOpenChange={onOpenChange}
+      invoices={invoices}
+    />
   );
 }
