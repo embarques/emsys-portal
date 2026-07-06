@@ -80,6 +80,7 @@ import {
 } from "@/lib/customers/types";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
+import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
 import { useUserError } from "@/lib/errors";
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -231,15 +232,17 @@ export function CustomersWorkspace() {
       setPage(1);
     } catch (mutationError) {
       const { status, category } = formatError(mutationError);
-      const detail = toErrorMessage(mutationError, {
-        hint:
-          status === 403 || category === "forbidden"
-            ? formMode === "edit"
-              ? t("customers.form.errors.updateForbidden")
-              : t("customers.form.errors.createForbidden")
-            : undefined,
-      });
-      setFormError(detail);
+      setFormError(
+        formatCustomerMutationError(mutationError, t, {
+          mode: formMode === "edit" ? "edit" : "create",
+          hint:
+            status === 403 || category === "forbidden"
+              ? formMode === "edit"
+                ? t("customers.form.errors.updateForbidden")
+                : t("customers.form.errors.createForbidden")
+              : undefined,
+        }),
+      );
     }
   }
 
@@ -396,7 +399,7 @@ export function CustomersWorkspace() {
     {
       id: "address",
       label: t("customers.columns.address"),
-      sortField: "address.address1",
+      sortField: "addresses.address1",
       renderCell: (customer) =>
         formatPrimaryAddressStreetLine(customer) || t("common.empty.dash"),
     },

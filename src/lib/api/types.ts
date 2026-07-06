@@ -38,6 +38,14 @@ export function resolvePaginatedListTotal(
 
   if (options.isFiltered) {
     if (typeof apiSubtotal === "number" && apiSubtotal >= 0) {
+      // Some resources (e.g. customers) reuse `subtotal` for unrelated aggregates.
+      // When rows are present but subtotal is zero, prefer `total` / page length.
+      if (apiSubtotal === 0 && itemsLength > 0) {
+        if (typeof apiTotal === "number" && apiTotal >= 0) {
+          return apiTotal;
+        }
+        return itemsLength;
+      }
       return apiSubtotal;
     }
   }

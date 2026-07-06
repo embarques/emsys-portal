@@ -28,7 +28,7 @@ import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   useCreateCustomer,
@@ -327,7 +327,11 @@ export function OrderForm({
       applyCustomerToSide(customerDialog.side, customer);
       closeCustomerDialog();
     } catch (mutationError) {
-      setCustomerFormError(normalizeApiError(mutationError).message);
+      setCustomerFormError(
+        formatCustomerMutationError(mutationError, t, {
+          mode: customerDialog.mode === "edit" ? "edit" : "create",
+        }),
+      );
     }
   }
 

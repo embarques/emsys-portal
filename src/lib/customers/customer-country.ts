@@ -11,7 +11,8 @@ export const CUSTOMER_ADDRESS_COUNTRY_FILTER_OPTIONS: TableFilterFieldOption[] =
 ];
 
 export function isCustomerAddressCountryField(field: string): boolean {
-  return field.trim() === "address.country";
+  const trimmed = field.trim();
+  return trimmed === "address.country" || trimmed === "addresses.country";
 }
 
 function isDominicanRepublicPortalValue(value: string): boolean {
@@ -29,12 +30,12 @@ export function portalCustomerCountryToApiFilterValue(portalValue: string): stri
   return isDominicanRepublicPortalValue(portalValue) ? "Do" : "us";
 }
 
-function countryUsaSearchNode(): ApiSearchFilterNode {
-  return { field: "address.country", operator: "eq", value: "us" };
+function countryUsaSearchNode(field: string): ApiSearchFilterNode {
+  return { field, operator: "eq", value: "us" };
 }
 
-function countryDoSearchNode(): ApiSearchFilterNode {
-  return { field: "address.country", operator: "eq", value: "Do" };
+function countryDoSearchNode(field: string): ApiSearchFilterNode {
+  return { field, operator: "eq", value: "Do" };
 }
 
 /** Maps portal address.country filters to API-friendly operators/values. */
@@ -50,22 +51,23 @@ export function expandCustomerCountrySearchNode(node: ApiSearchFilterNode): ApiS
     return node;
   }
 
+  const field = node.field;
   const isDo = isDominicanRepublicPortalValue(String(node.value));
 
   if (node.operator === "eq" && isDo) {
-    return countryDoSearchNode();
+    return countryDoSearchNode(field);
   }
 
   if (node.operator === "eq" && !isDo) {
-    return countryUsaSearchNode();
+    return countryUsaSearchNode(field);
   }
 
   if (node.operator === "neq" && isDo) {
-    return countryUsaSearchNode();
+    return countryUsaSearchNode(field);
   }
 
   if (node.operator === "neq" && !isDo) {
-    return countryDoSearchNode();
+    return countryDoSearchNode(field);
   }
 
   return {

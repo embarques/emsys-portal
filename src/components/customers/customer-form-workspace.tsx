@@ -7,6 +7,7 @@ import { CustomerForm } from "@/components/customers/customer-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
+import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
 import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -71,7 +72,8 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
     } catch (mutationError) {
       const { status, category } = formatError(mutationError);
       setFormError(
-        toErrorMessage(mutationError, {
+        formatCustomerMutationError(mutationError, t, {
+          mode: isEditing ? "edit" : "create",
           hint:
             status === 403 || category === "forbidden"
               ? t("common.errors.permissionHint")

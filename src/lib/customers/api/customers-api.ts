@@ -2,9 +2,10 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { logApiErrorDev, normalizeApiError } from "@/lib/api/api-error";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import {
-  buildAdvancedSearchBody,
+  buildStripeStyleSearchBody,
   buildApiFilterNodeFromTableRows,
   coerceTypedLeafFilter,
   createOrTextSearchFilterGroup,
@@ -339,10 +340,6 @@ function resolveCustomerGetFilter(params: CustomerListParams): ApiListFieldFilte
   };
 }
 
-function shouldUseCustomerPostSearch(params: CustomerListParams): boolean {
-  return hasCustomerListFilters(params);
-}
-
 function hasCustomerListFilters(params: CustomerListParams): boolean {
   return (
     hasListTextSearch(params.search) ||
@@ -409,11 +406,9 @@ function buildCustomerSearchFilterGroups(params: CustomerListParams): ApiSearchF
   return groups;
 }
 
-/** POST /customers/search — unified advanced-search body. */
+/** POST /customers/search — filters + sort in body; pagination in query string. */
 function buildCustomerSearchBody(params: CustomerListParams) {
-  return buildAdvancedSearchBody({
-    page: params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit,
+  return buildStripeStyleSearchBody({
     sort: params.sort ?? DEFAULT_CUSTOMER_LIST_PARAMS.sort,
     filterGroups: buildCustomerSearchFilterGroups(params),
   });
@@ -445,23 +440,16 @@ function buildCustomersQuery(params: CustomerListParams): string {
 export async function fetchCustomers(
   params: CustomerListParams = {},
 ): Promise<PaginatedResult<Customer>> {
-  const isFiltered = hasCustomerListFilters(params);
-
-  if (shouldUseCustomerPostSearch(params)) {
-    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.CUSTOMERS}/search`,
-      buildCustomerSearchBody(params),
-    );
-
-    return normalizePaginatedCustomers(response, { isFiltered: true });
-  }
-
-  const query = buildCustomersQuery(params);
-  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
-    `${API_ENDPOINTS.CUSTOMERS}?${query}`,
-  );
-
-  return normalizePaginatedCustomers(response, { isFiltered });
+  return fetchPaginatedResourceList({
+    endpoint: API_ENDPOINTS.CUSTOMERS,
+    page: params.page ?? DEFAULT_CUSTOMER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_CUSTOMER_LIST_PARAMS.limit,
+    offset: params.offset,
+    isFiltered: hasCustomerListFilters(params),
+    buildGetQuery: () => buildCustomersQuery(params),
+    buildSearchBody: () => buildCustomerSearchBody(params),
+    normalize: normalizePaginatedCustomers,
+  });
 }
 
 /** API wire codes for portal branches when `/branches` is unavailable. */

@@ -32,7 +32,8 @@ import {
 } from "@/components/invoices/invoice-wizard-styles";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
-import { normalizeApiError } from "@/lib/api/axios";
+import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
+import { useTranslation } from "@/lib/i18n";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import {
@@ -175,6 +176,7 @@ export function InvoiceForm({
   showFooter = true,
   onValuesChange,
 }: InvoiceFormProps) {
+  const { t } = useTranslation();
   const isWizard = appearance === "wizard";
   const { data: customersData } = useCustomerPicker();
   const { data: containersData } = useContainerPicker();
@@ -363,7 +365,11 @@ export function InvoiceForm({
       applyCustomerToSide(customerDialog.side, customer);
       closeCustomerDialog();
     } catch (mutationError) {
-      setCustomerFormError(normalizeApiError(mutationError).message);
+      setCustomerFormError(
+        formatCustomerMutationError(mutationError, t, {
+          mode: customerDialog.mode === "edit" ? "edit" : "create",
+        }),
+      );
     }
   }
 

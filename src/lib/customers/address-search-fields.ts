@@ -1,9 +1,9 @@
 /**
- * Customer address search paths — primary `address.*` scalar plus `addresses[]` entries.
- * POST /customers/search accepts both so bar and advanced filters can match any address.
+ * Customer address search paths on the `addresses[]` array.
+ * POST /customers/search matches any embedded address entry via these fields.
  */
 export function buildCustomerAddressSearchFields(...parts: readonly string[]): string[] {
-  return parts.flatMap((part) => [`address.${part}`, `addresses.${part}`]);
+  return parts.map((part) => `addresses.${part}`);
 }
 
 /** Bar + filter OR paths for street-level address matching. */
