@@ -11,6 +11,7 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
+import { useTranslation } from "@/lib/i18n";
 import { truncateRoleId } from "@/lib/roles/display";
 import type { PermissionCatalogEntry } from "@/lib/roles/permissions-catalog";
 import type { Role } from "@/lib/roles/types";
@@ -32,21 +33,28 @@ export function RoleViewSheet({
   onEdit,
   onDelete,
 }: RoleViewSheetProps) {
+  const { t } = useTranslation();
+
   if (!role) return null;
+
+  const dash = t("common.empty.dash");
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
           title={role.name}
-          description={`${role.permissions.length} permissions assigned`}
+          description={t("roles.view.permissionsAssigned", { count: role.permissions.length })}
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title="Role">
-            <RecordViewSheetDetailRow label="Role ID" value={truncateRoleId(role.roleId)} />
-            <RecordViewSheetDetailRow label="Role name" value={role.name} />
-            <RecordViewSheetDetailRow label="Permission count" value={role.permissions.length} />
+          <RecordViewSheetSection title={t("roles.view.sections.role")}>
+            <RecordViewSheetDetailRow label={t("roles.view.roleId")} value={truncateRoleId(role.roleId)} />
+            <RecordViewSheetDetailRow label={t("roles.view.roleName")} value={role.name} />
+            <RecordViewSheetDetailRow
+              label={t("roles.view.permissionCount")}
+              value={role.permissions.length}
+            />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection padding="relaxed">
@@ -59,15 +67,25 @@ export function RoleViewSheet({
             />
           </RecordViewSheetSection>
 
-          <RecordViewSheetSection title="Audit">
-            <RecordViewSheetDetailRow label="Date created" value={formatAuditDate(role.createdAt)} />
-            <RecordViewSheetDetailRow label="Created by" value={role.createdBy || "—"} />
-            <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(role.updatedAt)} />
+          <RecordViewSheetSection title={t("roles.view.sections.audit")}>
+            <RecordViewSheetDetailRow
+              label={t("roles.columns.createdAt")}
+              value={formatAuditDate(role.createdAt)}
+            />
+            <RecordViewSheetDetailRow
+              label={t("roles.columns.createdBy")}
+              value={role.createdBy || dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("roles.columns.updatedAt")}
+              value={formatAuditDate(role.updatedAt)}
+            />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 
         <RecordViewSheetActions
-          editLabel="Edit role"
+          editLabel={t("roles.view.edit")}
+          deleteLabel={t("common.actions.delete")}
           onEdit={() => onEdit(role)}
           onDelete={() => onDelete(role)}
           deleteDisabled={role.systemRole}

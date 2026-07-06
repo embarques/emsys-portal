@@ -56,6 +56,7 @@ import {
   type OrderFormSubmitResult,
   type OrderFormValues,
 } from "@/lib/orders/types";
+import { useTranslation } from "@/lib/i18n";
 
 type OrderFormProps = {
   initialValues?: OrderFormValues;
@@ -114,6 +115,8 @@ function PartyFieldActions({
   onAdd: () => void;
   onEdit: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex items-center gap-1">
       <Button
@@ -124,7 +127,7 @@ function PartyFieldActions({
         onClick={onAdd}
       >
         <UserPlus className="size-3.5" />
-        New
+        {t("orders.form.partyActions.new")}
       </Button>
       {hasSelection ? (
         <Button
@@ -135,7 +138,7 @@ function PartyFieldActions({
           onClick={onEdit}
         >
           <Pencil className="size-3.5" />
-          Edit
+          {t("orders.form.partyActions.edit")}
         </Button>
       ) : null}
     </div>
@@ -151,6 +154,7 @@ export function OrderForm({
   onFormErrorChange,
   onCancel,
 }: OrderFormProps) {
+  const { t } = useTranslation();
   const { data: customersData } = useCustomerPicker();
   const { data: branchesData } = useBranchPicker();
   const employeesQuery = useEmployees({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, limit: 200 });
@@ -314,10 +318,10 @@ export function OrderForm({
           customerId: dialogCustomer.id,
           values: formValues,
         });
-        notifyUpdated("Customer", customer.name);
+        notifyUpdated(t("customers.entity"), customer.name);
       } else {
         customer = await createCustomerMutation.mutateAsync(formValues);
-        notifyAdded("Customer", customer.name);
+        notifyAdded(t("customers.entity"), customer.name);
       }
 
       applyCustomerToSide(customerDialog.side, customer);
@@ -327,8 +331,7 @@ export function OrderForm({
     }
   }
 
-  const unverifiedPartyMessage =
-    "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.";
+  const unverifiedPartyMessage = t("orders.form.validation.unverifiedSenderAddress");
   // Only senders use Google verification; receivers use a predetermined city list.
   const blockForUnverifiedParty =
     isGoogleMapsConfigured() &&
@@ -340,16 +343,16 @@ export function OrderForm({
   // pickup date → sender → at least one comment.
   const blockReason: string | null = (() => {
     if (!hasValidDate) {
-      return "Select a valid pickup date.";
+      return t("orders.form.validation.pickupDateRequired");
     }
     if (!values.sender) {
-      return "Select a sender.";
+      return t("orders.form.validation.senderRequired");
     }
     if (blockForUnverifiedParty) {
       return unverifiedPartyMessage;
     }
     if (values.comments.length === 0) {
-      return "Add at least one comment.";
+      return t("orders.form.validation.commentRequired");
     }
     return null;
   })();
@@ -376,7 +379,7 @@ export function OrderForm({
     <>
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
-      <FormSection icon={CalendarDays} title="Pickup date" required>
+      <FormSection icon={CalendarDays} title={t("orders.form.sections.pickupDate")} required>
         <div className="grid gap-2.5 sm:grid-cols-2">
           <div className="space-y-1">
             <DateInput
@@ -391,13 +394,13 @@ export function OrderForm({
             <>
               <div className="space-y-1">
                 <Label htmlFor="branchId">
-                  Branch <span className="text-destructive">*</span>
+                  {t("orders.form.fields.branch")} <span className="text-destructive">*</span>
                 </Label>
                 <SearchableSelect
                   id="branchId"
                   value={String(values.branchId)}
                   onValueChange={(next) => updateField("branchId", Number(next))}
-                  searchPlaceholder="Search branches…"
+                  searchPlaceholder={t("orders.form.placeholders.searchBranches")}
                   required
                   options={branches.map((branch) => ({
                     value: String(branch.id),
@@ -407,15 +410,15 @@ export function OrderForm({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="employeeId">Employee</Label>
+                <Label htmlFor="employeeId">{t("orders.form.fields.employee")}</Label>
                 <SearchableSelect
                   id="employeeId"
                   value={String(values.employeeId)}
                   onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
-                  placeholder="No employee"
-                  searchPlaceholder="Search employees…"
+                  placeholder={t("orders.form.fields.noEmployee")}
+                  searchPlaceholder={t("orders.form.placeholders.searchEmployees")}
                   options={[
-                    { value: "", label: "No employee" },
+                    { value: "", label: t("orders.form.fields.noEmployee") },
                     ...employees.map((employee) => ({
                       value: String(employee.id),
                       label: `${employee.name} · ${employee.department}`,
@@ -425,7 +428,7 @@ export function OrderForm({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="sectorId">Sector</Label>
+                <Label htmlFor="sectorId">{t("orders.form.fields.sector")}</Label>
                 <Input
                   id="sectorId"
                   type="number"
@@ -441,12 +444,12 @@ export function OrderForm({
         </div>
       </FormSection>
 
-      <FormSection icon={Users} title="Sender & receiver">
+      <FormSection icon={Users} title={t("orders.form.sections.senderReceiver")}>
         <div className="grid gap-2.5 sm:grid-cols-2">
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="senderId">
-                Sender <span className="text-destructive">*</span>
+                {t("orders.form.fields.sender")} <span className="text-destructive">*</span>
               </Label>
               <PartyFieldActions
                 hasSelection={Boolean(values.sender)}
@@ -458,14 +461,16 @@ export function OrderForm({
               id="senderId"
               value={values.senderId}
               onValueChange={updateSenderId}
-              placeholder="Select sender"
-              searchPlaceholder="Search by name, phone, or address…"
+              placeholder={t("orders.form.placeholders.selectSender")}
+              searchPlaceholder={t("orders.form.placeholders.searchParty")}
               required
               manualFiltering
               loading={senderSearch.isFetching}
               onSearchChange={setSenderQuery}
               options={[
-                ...(debouncedSenderQuery ? [] : [{ value: "", label: "Select sender" }]),
+                ...(debouncedSenderQuery
+                  ? []
+                  : [{ value: "", label: t("orders.form.placeholders.selectSender") }]),
                 ...senderSelectOptions,
               ]}
             />
@@ -482,7 +487,7 @@ export function OrderForm({
 
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="receiverId">Receiver</Label>
+              <Label htmlFor="receiverId">{t("orders.form.fields.receiver")}</Label>
               <PartyFieldActions
                 hasSelection={Boolean(values.receiver)}
                 onAdd={() => openAddCustomer("receiver")}
@@ -493,13 +498,15 @@ export function OrderForm({
               id="receiverId"
               value={values.receiverId}
               onValueChange={updateReceiverId}
-              placeholder="No receiver"
-              searchPlaceholder="Search by name, phone, or address…"
+              placeholder={t("orders.form.placeholders.noReceiver")}
+              searchPlaceholder={t("orders.form.placeholders.searchParty")}
               manualFiltering
               loading={receiverSearch.isFetching}
               onSearchChange={setReceiverQuery}
               options={[
-                ...(debouncedReceiverQuery ? [] : [{ value: "", label: "No receiver" }]),
+                ...(debouncedReceiverQuery
+                  ? []
+                  : [{ value: "", label: t("orders.form.placeholders.noReceiver") }]),
                 ...receiverSelectOptions,
               ]}
             />
@@ -545,8 +552,12 @@ export function OrderForm({
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>
               {customerDialog?.mode === "edit"
-                ? `Edit ${customerDialog.side}`
-                : `Add ${customerDialog?.side ?? "customer"}`}
+                ? customerDialog.side === "receiver"
+                  ? t("orders.form.partyActions.editReceiver")
+                  : t("orders.form.partyActions.editSender")
+                : customerDialog?.side === "receiver"
+                  ? t("orders.form.partyActions.addReceiver")
+                  : t("orders.form.partyActions.addSender")}
             </DialogTitle>
           </DialogHeader>
           {customerDialog ? (
@@ -564,7 +575,11 @@ export function OrderForm({
                     }
               }
               isEditing={customerDialog.mode === "edit"}
-              submitLabel={customerDialog.mode === "edit" ? "Save changes" : "Add customer"}
+              submitLabel={
+                customerDialog.mode === "edit"
+                  ? t("common.actions.saveChanges")
+                  : t("customers.actions.add")
+              }
               isSubmitting={isSavingCustomer}
               externalError={customerFormError}
               lockCustomerType

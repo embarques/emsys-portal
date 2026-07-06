@@ -1,0 +1,58 @@
+{
+  "title": "Configuración",
+  "loading": "Cargando configuración…",
+  "toast": {
+    "saved": "Configuración guardada."
+  },
+  "actions": {
+    "reset": "Restablecer cambios",
+    "save": "Guardar configuración"
+  },
+  "appearance": {
+    "title": "Apariencia",
+    "description": "Elija cómo se ve el panel."
+  },
+  "themes": {
+    "lightDescription": "Fondo claro con texto oscuro",
+    "darkDescription": "Fondo oscuro con texto claro",
+    "systemDescription": "Coincidir con la apariencia del dispositivo"
+  },
+  "language": {
+    "title": "Preferencia de idioma",
+    "description": "Seleccione el idioma de la interfaz del panel."
+  },
+  "tabs": {
+    "title": "Pestañas de trabajo",
+    "description": "Controle cuántas páginas pueden permanecer abiertas en la barra de pestañas del escritorio.",
+    "maxLabel": "Máximo de pestañas abiertas",
+    "hint": "Elija entre {{min}} y {{max}} pestañas."
+  },
+  "validation": {
+    "maxWorkspaceTabs": "Ingrese un número entre {{min}} y {{max}}."
+  },
+  "password": {
+    "title": "Cambiar contraseña",
+    "description": "Establezca una nueva contraseña para su cuenta iniciada.",
+    "fields": {
+      "new": "Nueva contraseña",
+      "confirm": "Confirmar contraseña"
+    },
+    "actions": {
+      "submit": "Cambiar contraseña",
+      "changing": "Cambiando contraseña…"
+    },
+    "toast": {
+      "success": "Contraseña cambiada correctamente."
+    },
+    "validation": {
+      "passwordMin": "La contraseña debe tener al menos 6 caracteres.",
+      "confirmRequired": "Confirme su nueva contraseña.",
+      "passwordsMismatch": "Las contraseñas no coinciden."
+    },
+    "errors": {
+      "requiresRecentLogin": "Por seguridad, Firebase requiere que cierre sesión y vuelva a iniciar sesión antes de cambiar su contraseña.",
+      "weakPassword": "Firebase rechazó esta contraseña porque es demasiado débil.",
+      "generic": "No se pudo cambiar su contraseña."
+    }
+  }
+}

@@ -72,6 +72,11 @@
       "broker": "Nombre del agente aduanal",
       "company": "Naviera o transportista",
       "cost": "0.00"
+    },
+    "validation": {
+      "nameRequired": "Ingrese un nombre de contenedor (p. ej. 01-26).",
+      "bookingRequired": "Ingrese un número de reserva.",
+      "costInvalid": "El costo debe ser un número válido mayor o igual a 0."
     }
   },
   "view": {

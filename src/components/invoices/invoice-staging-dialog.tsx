@@ -30,12 +30,13 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
-import { truncateBarcode } from "@/lib/labels/display";
+import { truncateBarcode, getBarcodeStatusLabel } from "@/lib/labels/display";
 import {
   useAssignBarcodesToRoute,
   useGenerateLabels,
   useUpdateBarcodes,
 } from "@/lib/labels/hooks/use-barcodes";
+import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useGenerateLabelReport } from "@/lib/reports/hooks/use-reports";
@@ -139,12 +140,13 @@ function SelectionToolbar({
   onRemoveAll,
   children,
 }: SelectionToolbarProps) {
+  const { t } = useTranslation();
   const othersAvailable = canSelectAllOthers(allKeys, selectedKeys);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b bg-muted/20 px-3 py-2">
       <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
-        {selectedCount} of {total} selected
+        {t("common.table.selected", { count: selectedCount, total })}
       </span>
 
       <div className="flex flex-wrap items-center gap-1.5">
@@ -156,7 +158,7 @@ function SelectionToolbar({
           onClick={onSelectAllOthers}
         >
           <ListChecks className="h-4 w-4" />
-          Select all others
+          {t("common.table.selectAllOthers")}
         </Button>
         <Button
           size="sm"
@@ -166,7 +168,7 @@ function SelectionToolbar({
           onClick={onRemoveAll}
         >
           <Trash2 className="h-4 w-4" />
-          Remove
+          {t("labels.staging.remove")}
         </Button>
         {children ? (
           <>
@@ -189,6 +191,7 @@ export function InvoiceStagingWorkflow({
 }: InvoiceStagingWorkflowProps) {
   const { t } = useTranslation();
   const { notifyError, notifySuccess, notifyUpdated } = useFeedback();
+  const barcodeStatusOptions = useBarcodeStatusOptions();
   const isDialog = presentation === "dialog";
   const isActive = isDialog ? open : true;
 
@@ -315,7 +318,7 @@ export function InvoiceStagingWorkflow({
       const labels = await generateLabelsMutation.mutateAsync(targets);
 
       if (labels.length === 0) {
-        notifyError("No labels were generated for the selected line items.");
+        notifyError(t("labels.staging.errors.noneGenerated"));
         return;
       }
 
@@ -329,10 +332,10 @@ export function InvoiceStagingWorkflow({
       setStep("labels");
 
       const parts = [
-        createdCount > 0 ? `${createdCount} created` : null,
-        existingCount > 0 ? `${existingCount} retrieved` : null,
+        createdCount > 0 ? t("labels.staging.success.createdCount", { count: createdCount }) : null,
+        existingCount > 0 ? t("labels.staging.success.retrievedCount", { count: existingCount }) : null,
       ].filter(Boolean);
-      notifySuccess(`Labels ready (${parts.join(", ")}).`);
+      notifySuccess(t("labels.staging.success.ready", { details: parts.join(", ") }));
     } catch (error) {
       notifyError(normalizeApiError(error).message);
     }
@@ -380,7 +383,7 @@ export function InvoiceStagingWorkflow({
       }));
 
     if (updates.length === 0) {
-      notifyError("Selected labels are missing barcode numbers to update.");
+      notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
       return;
     }
 
@@ -395,7 +398,10 @@ export function InvoiceStagingWorkflow({
             : label,
         ),
       );
-      notifyUpdated("Label status", `${selected.length} label(s)`);
+      notifyUpdated(
+        t("labels.staging.entities.labelStatus"),
+        t("labels.staging.entities.labelCount", { count: selected.length }),
+      );
       setStatusDialogOpen(false);
     } catch (error) {
       notifyError(normalizeApiError(error).message);
@@ -428,7 +434,7 @@ export function InvoiceStagingWorkflow({
     );
 
     if (barcodeIds.length === 0) {
-      notifyError("Selected labels have no saved barcodes to assign to a route.");
+      notifyError(t("labels.staging.errors.missingBarcodesForRoute"));
       return;
     }
 
@@ -437,9 +443,13 @@ export function InvoiceStagingWorkflow({
         routeId: newRouteId,
         barcodeIds,
       });
-      const routeName = result.routeName || route.name || "route";
+      const routeName = result.routeName || route.name || t("labels.staging.routeDialog.route").toLowerCase();
       notifySuccess(
-        `${result.assignedCount} label(s) assigned to ${routeName} (trip ${result.tripNumber}).`,
+        t("labels.staging.success.assignedToRoute", {
+          count: result.assignedCount,
+          route: routeName,
+          trip: result.tripNumber,
+        }),
       );
       setRouteDialogOpen(false);
       setNewRouteId("");
@@ -469,7 +479,7 @@ export function InvoiceStagingWorkflow({
     const containerLabel = formatContainerLabel(container);
 
     if (updates.length === 0) {
-      notifyError("Selected labels are missing barcode numbers to update.");
+      notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
       return;
     }
 
@@ -484,7 +494,10 @@ export function InvoiceStagingWorkflow({
             : label,
         ),
       );
-      notifyUpdated("Label container", `${selected.length} label(s)`);
+      notifyUpdated(
+        t("labels.staging.entities.labelContainer"),
+        t("labels.staging.entities.labelCount", { count: selected.length }),
+      );
       setContainerDialogOpen(false);
     } catch (error) {
       notifyError(normalizeApiError(error).message);
@@ -504,7 +517,7 @@ export function InvoiceStagingWorkflow({
     );
 
     if (barcodeNumbers.length === 0) {
-      notifyError("Selected labels are missing barcode numbers to print.");
+      notifyError(t("labels.staging.errors.missingBarcodeNumbersPrint"));
       return;
     }
 
@@ -517,7 +530,7 @@ export function InvoiceStagingWorkflow({
         expiresInHours: 24,
       });
       window.open(url, "_blank", "noopener,noreferrer");
-      notifySuccess(`Labels ready for ${barcodeNumbers.length} barcode(s).`);
+      notifySuccess(t("labels.staging.success.readyToPrint", { count: barcodeNumbers.length }));
     } catch (error) {
       notifyError(normalizeApiError(error).message);
     }
@@ -526,8 +539,8 @@ export function InvoiceStagingWorkflow({
   const stagingTitle = title ?? t("invoices.staging.title");
   const stagingDescription =
     step === "line-items"
-      ? "Review line items from the selected invoices, choose which to label, then generate labels."
-      : "Barcodes were created where missing and retrieved where they already existed. Manage status, container, and printing below.";
+      ? t("labels.staging.lineItemsDescription")
+      : t("labels.staging.labelsDescription");
 
   const stagingHeaderTitle =
     step === "line-items" ? (
@@ -538,7 +551,7 @@ export function InvoiceStagingWorkflow({
     ) : (
       <>
         <Barcode className="h-4 w-4" />
-        Label manager
+        {t("labels.staging.title")}
       </>
     );
 
@@ -546,19 +559,21 @@ export function InvoiceStagingWorkflow({
     step === "line-items" ? (
       <>
         <Button variant="outline" onClick={handleClose}>
-          Cancel
+          {t("common.actions.cancel")}
         </Button>
         <Button onClick={generateLabels} disabled={selectedItemKeys.length === 0 || isGenerating}>
           <Barcode className="h-4 w-4" />
-          {isGenerating ? "Working…" : `Manage labels (${selectedItemKeys.length})`}
+          {isGenerating
+            ? t("labels.staging.working")
+            : t("labels.staging.manageLabels", { count: selectedItemKeys.length })}
         </Button>
       </>
     ) : (
       <>
         <Button variant="outline" onClick={() => setStep("line-items")}>
-          Back to line items
+          {t("labels.staging.backToLineItems")}
         </Button>
-        <Button onClick={handleClose}>Done</Button>
+        <Button onClick={handleClose}>{t("labels.staging.done")}</Button>
       </>
     );
 
@@ -586,20 +601,20 @@ export function InvoiceStagingWorkflow({
                         selectedCount={selectedItemKeys.length}
                         onSelectAll={() => setSelectedItemKeys(itemKeys)}
                         onDeselectAll={() => setSelectedItemKeys([])}
-                        label="Select all line items"
+                        label={t("labels.staging.selectAllLineItems")}
                       />
                     </th>
-                    <th className="px-3 py-2 font-medium">Invoice</th>
-                    <th className="px-3 py-2 font-medium">Description</th>
-                    <th className="px-3 py-2 font-medium">Labels</th>
-                    <th className="px-3 py-2 font-medium">Quantity</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.staging.columns.invoice")}</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.staging.columns.description")}</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.staging.columns.labels")}</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.staging.columns.quantity")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {lineItems.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-3 py-10 text-center text-muted-foreground">
-                        No line items to stage. Close and select invoices with line items.
+                        {t("labels.staging.noLineItems")}
                       </td>
                     </tr>
                   ) : (
@@ -617,7 +632,10 @@ export function InvoiceStagingWorkflow({
                           <td className="px-3 py-2" onClick={(event) => event.stopPropagation()}>
                             <input
                               type="checkbox"
-                              aria-label={`Select ${item.invoiceNumber} · ${item.description}`}
+                              aria-label={t("labels.staging.selectLineItem", {
+                                invoice: item.invoiceNumber,
+                                description: item.description,
+                              })}
                               checked={checked}
                               onChange={(event) => toggleItem(item.key, event.target.checked)}
                               className="size-4 rounded border-input"
@@ -641,18 +659,21 @@ export function InvoiceStagingWorkflow({
               <Input
                 value={labelQuery}
                 onChange={(event) => setLabelQuery(event.target.value)}
-                placeholder="Filter by invoice, barcode, status, container, description…"
+                placeholder={t("labels.staging.filterPlaceholder")}
                 className="h-8 max-w-xs"
               />
               <SearchableSelect
-                aria-label="Filter by status"
+                aria-label={t("labels.staging.filterByStatus")}
                 className="h-8 w-40"
                 value={statusFilter}
                 onValueChange={setStatusFilter}
-                searchPlaceholder="Search statuses…"
+                searchPlaceholder={t("labels.updater.search.statuses")}
                 options={statusOptions.map((option) => ({
                   value: option,
-                  label: option === "all" ? "All statuses" : option,
+                  label:
+                    option === "all"
+                      ? t("labels.staging.allStatuses")
+                      : getBarcodeStatusLabel(option, t),
                 }))}
               />
             </div>
@@ -674,7 +695,7 @@ export function InvoiceStagingWorkflow({
                 onClick={openStatusDialog}
               >
                 <RefreshCw className="h-4 w-4" />
-                Change status
+                {t("labels.staging.changeStatus")}
               </Button>
               <Button
                 size="sm"
@@ -683,7 +704,7 @@ export function InvoiceStagingWorkflow({
                 onClick={openContainerDialog}
               >
                 <ContainerIcon className="h-4 w-4" />
-                Transfer container
+                {t("labels.staging.transferContainer")}
               </Button>
               <Button
                 size="sm"
@@ -692,7 +713,7 @@ export function InvoiceStagingWorkflow({
                 onClick={openRouteDialog}
               >
                 <RouteIcon className="h-4 w-4" />
-                Assign route
+                {t("labels.staging.assignRoute")}
               </Button>
               <Button
                 size="sm"
@@ -700,7 +721,7 @@ export function InvoiceStagingWorkflow({
                 onClick={printSelectedLabels}
               >
                 <Printer className="h-4 w-4" />
-                {isPrinting ? "Preparing…" : "Print"}
+                {isPrinting ? t("labels.staging.preparing") : t("labels.staging.print")}
               </Button>
             </SelectionToolbar>
 
@@ -724,15 +745,15 @@ export function InvoiceStagingWorkflow({
                             current.filter((key) => !filteredLabelKeys.includes(key)),
                           )
                         }
-                        label="Select all labels"
+                        label={t("labels.staging.selectAllLabels")}
                       />
                     </th>
-                    <th className="px-3 py-2 font-medium">Invoice</th>
-                    <th className="px-3 py-2 font-medium">Barcode</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
-                    <th className="px-3 py-2 font-medium">Labels</th>
-                    <th className="px-3 py-2 font-medium">Container</th>
-                    <th className="px-3 py-2 font-medium">Description</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.staging.columns.invoice")}</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.staging.columns.barcode")}</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.staging.columns.status")}</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.staging.columns.labels")}</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.staging.columns.container")}</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.staging.columns.description")}</th>
                     <th className="w-10 px-3 py-2" />
                   </tr>
                 </thead>
@@ -740,7 +761,7 @@ export function InvoiceStagingWorkflow({
                   {filteredLabels.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-3 py-10 text-center text-muted-foreground">
-                        No labels match the current filter.
+                        {t("labels.staging.noLabelsMatch")}
                       </td>
                     </tr>
                   ) : (
@@ -757,7 +778,7 @@ export function InvoiceStagingWorkflow({
                           <td className="px-3 py-2">
                             <input
                               type="checkbox"
-                              aria-label={`Select label ${label.number}`}
+                              aria-label={t("labels.staging.selectLabel", { number: label.number })}
                               checked={checked}
                               onChange={(event) => toggleLabel(label.key, event.target.checked)}
                               className="size-4 rounded border-input"
@@ -767,7 +788,7 @@ export function InvoiceStagingWorkflow({
                           <td className="px-3 py-2 font-mono text-xs">{truncateBarcode(label.number)}</td>
                           <td className="px-3 py-2">
                             <TableTagText className={getStatusBadgeClass(label.statusName)}>
-                              {label.statusName}
+                              {getBarcodeStatusLabel(label.statusName, t)}
                             </TableTagText>
                           </td>
                           <td className="px-3 py-2">
@@ -780,7 +801,7 @@ export function InvoiceStagingWorkflow({
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                              aria-label="Remove label from view"
+                              aria-label={t("labels.staging.removeFromView")}
                               onClick={() => removeLabelFromView(label.key)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -801,31 +822,31 @@ export function InvoiceStagingWorkflow({
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent className="z-[70]">
           <DialogHeader>
-            <DialogTitle>Change label status</DialogTitle>
+            <DialogTitle>{t("labels.staging.statusDialog.title")}</DialogTitle>
             <DialogDescription>
-              Update status for {selectedLabelKeys.length} selected label(s).
+              {t("labels.staging.statusDialog.description", { count: selectedLabelKeys.length })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="staging-new-status">New status</Label>
+            <Label htmlFor="staging-new-status">{t("labels.staging.statusDialog.newStatus")}</Label>
             <SearchableSelect
               id="staging-new-status"
               value={newStatus}
               onValueChange={setNewStatus}
-              searchPlaceholder="Search statuses…"
+              searchPlaceholder={t("labels.updater.search.statuses")}
               contentClassName="z-[80]"
-              options={BARCODE_STATUS_OPTIONS.map((option) => ({
+              options={barcodeStatusOptions.map((option) => ({
                 value: option.name,
-                label: option.name,
+                label: option.label,
               }))}
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setStatusDialogOpen(false)} disabled={isUpdating}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button onClick={applyStatusChange} disabled={isUpdating}>
-              {isUpdating ? "Applying…" : "Apply status"}
+              {isUpdating ? t("labels.staging.statusDialog.applying") : t("labels.staging.statusDialog.apply")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -834,18 +855,18 @@ export function InvoiceStagingWorkflow({
       <Dialog open={containerDialogOpen} onOpenChange={setContainerDialogOpen}>
         <DialogContent className="z-[70]">
           <DialogHeader>
-            <DialogTitle>Transfer container</DialogTitle>
+            <DialogTitle>{t("labels.staging.containerDialog.title")}</DialogTitle>
             <DialogDescription>
-              Move {selectedLabelKeys.length} selected label(s) to another container.
+              {t("labels.staging.containerDialog.description", { count: selectedLabelKeys.length })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="staging-new-container">Container</Label>
+            <Label htmlFor="staging-new-container">{t("labels.staging.containerDialog.container")}</Label>
             <SearchableSelect
               id="staging-new-container"
               value={newContainerId}
               onValueChange={setNewContainerId}
-              searchPlaceholder="Search containers…"
+              searchPlaceholder={t("labels.updater.search.containers")}
               contentClassName="z-[80]"
               options={containers.map((container) => ({
                 value: String(container.id),
@@ -859,10 +880,12 @@ export function InvoiceStagingWorkflow({
               onClick={() => setContainerDialogOpen(false)}
               disabled={isUpdating}
             >
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button onClick={applyContainerChange} disabled={!newContainerId || isUpdating}>
-              {isUpdating ? "Applying…" : "Apply container"}
+              {isUpdating
+                ? t("labels.staging.containerDialog.applying")
+                : t("labels.staging.containerDialog.apply")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -874,22 +897,26 @@ export function InvoiceStagingWorkflow({
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>Assign route</DialogTitle>
+            <DialogTitle>{t("labels.staging.routeDialog.title")}</DialogTitle>
             <DialogDescription>
-              {`Assign ${selectedLabelKeys.length} selected label(s) to a route. Only labels with a container are assigned.`}
+              {t("labels.staging.routeDialog.description", { count: selectedLabelKeys.length })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="staging-new-route">Route</Label>
+            <Label htmlFor="staging-new-route">{t("labels.staging.routeDialog.route")}</Label>
             <SearchableSelect
               id="staging-new-route"
               value={newRouteId}
               onValueChange={setNewRouteId}
-              placeholder="Select a route"
-              searchPlaceholder="Search routes…"
+              placeholder={t("labels.staging.routeDialog.selectRoute")}
+              searchPlaceholder={t("labels.updater.search.routes")}
               contentClassName="z-[80]"
               loading={routesLoading}
-              emptyMessage={routesLoading ? "Loading routes…" : "No routes found."}
+              emptyMessage={
+                routesLoading
+                  ? t("labels.staging.routeDialog.loadingRoutes")
+                  : t("labels.staging.routeDialog.noRoutes")
+              }
               options={routeOptions}
             />
           </div>
@@ -899,11 +926,13 @@ export function InvoiceStagingWorkflow({
               onClick={() => setRouteDialogOpen(false)}
               disabled={isAssigningRoute}
             >
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button onClick={applyRouteAssignment} disabled={!newRouteId || isAssigningRoute}>
               <RouteIcon className="h-4 w-4" />
-              {isAssigningRoute ? "Assigning…" : "Assign route"}
+              {isAssigningRoute
+                ? t("labels.staging.routeDialog.assigning")
+                : t("labels.staging.routeDialog.assign")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -927,7 +956,7 @@ export function InvoiceStagingWorkflow({
             </div>
             <Button variant="outline" onClick={handleClose}>
               <ArrowLeft className="h-4 w-4" />
-              Back to invoices
+              {t("labels.staging.backToInvoices")}
             </Button>
           </div>
 

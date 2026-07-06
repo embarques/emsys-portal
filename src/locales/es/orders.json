@@ -1,0 +1,246 @@
+{
+  "entity": "Orden",
+  "entityPlural": "órdenes",
+  "title": "Órdenes",
+  "noun": "órdenes",
+  "pickup": "Recogida",
+  "pickupNamed": "Recogida {{id}}",
+  "actions": {
+    "add": "Agregar orden",
+    "edit": "Editar orden",
+    "editNamed": "Editar {{name}}",
+    "editPickup": "Editar recogida",
+    "selectAtLeastOne": "Seleccione al menos una orden para imprimir.",
+    "print": "Imprimir",
+    "preparing": "Preparando…",
+    "markComplete": "Marcar completada",
+    "markIncomplete": "Marcar incompleta",
+    "assignRoute": "Asignar ruta",
+    "map": "Mapa"
+  },
+  "stats": {
+    "pendingOrders": {
+      "label": "Órdenes pendientes"
+    },
+    "pendingPickups": {
+      "label": "Recogidas pendientes"
+    },
+    "pendingTakes": {
+      "label": "Takes pendientes"
+    },
+    "pendingEstimates": {
+      "label": "Estimados pendientes"
+    },
+    "pendingPayments": {
+      "label": "Pagos pendientes"
+    }
+  },
+  "status": {
+    "completed": "Completada",
+    "pending": "Pendiente"
+  },
+  "columns": {
+    "completed": "Completada",
+    "date": "Fecha",
+    "branchName": "Sucursal",
+    "createdAt": "Creada",
+    "senderName": "Nombre",
+    "senderAddress": "Dirección",
+    "senderCity": "Ciudad",
+    "senderZip": "Código postal",
+    "senderPhone1": "Teléfono 1",
+    "comments": "Comentarios",
+    "route": "Ruta",
+    "updatedAt": "Actualizada",
+    "purpose": "Propósito",
+    "sectorId": "ID de sector",
+    "sectorName": "Nombre del sector",
+    "employee": "Empleado",
+    "createdBy": "Creada por",
+    "orderId": "ID de orden",
+    "branchId": "ID de sucursal",
+    "branchCode": "Código de sucursal",
+    "sender": "Remitente",
+    "senderAddressLine": "Dirección del remitente",
+    "phone1": "Teléfono 1",
+    "receiver": "Destinatario",
+    "receiverAddress": "Dirección del destinatario"
+  },
+  "search": {
+    "placeholder": "Buscar por nombre, teléfono o dirección del remitente/destinatario…"
+  },
+  "loading": {
+    "title": "Cargando órdenes",
+    "description": "Coordinando clientes, rutas, paquetes y estado de entrega…",
+    "order": "Cargando orden…",
+    "columns": "Orden, Fecha, Remitente, Destinatario, Estado",
+    "pickupHistory": "Cargando historial de recogidas…"
+  },
+  "empty": {
+    "noMatch": "Ninguna orden coincide con su búsqueda o filtros.",
+    "noReceiver": "No hay destinatario en esta recogida.",
+    "noComments": "Aún no hay comentarios.",
+    "noPickupHistory": "Aún no hay historial de recogidas."
+  },
+  "form": {
+    "addTitle": "Agregar orden",
+    "editTitle": "Editar orden",
+    "addDescription": "Crear una nueva orden.",
+    "notFound": "No se encontró esta orden.",
+    "sections": {
+      "pickupDate": "Fecha de recogida",
+      "senderReceiver": "Remitente y destinatario"
+    },
+    "fields": {
+      "branch": "Sucursal",
+      "employee": "Empleado",
+      "sector": "Sector",
+      "sender": "Remitente",
+      "receiver": "Destinatario",
+      "noEmployee": "Sin empleado"
+    },
+    "placeholders": {
+      "searchBranches": "Buscar sucursales…",
+      "searchEmployees": "Buscar empleados…",
+      "selectSender": "Seleccionar remitente",
+      "noReceiver": "Sin destinatario",
+      "searchParty": "Buscar por nombre, teléfono o dirección…"
+    },
+    "partyActions": {
+      "new": "Nuevo",
+      "edit": "Editar",
+      "addSender": "Agregar remitente",
+      "addReceiver": "Agregar destinatario",
+      "editSender": "Editar remitente",
+      "editReceiver": "Editar destinatario"
+    },
+    "validation": {
+      "pickupDateRequired": "Seleccione una fecha de recogida válida.",
+      "senderRequired": "Seleccione un remitente.",
+      "unverifiedSenderAddress": "Verifique la dirección del remitente antes de guardar. Abra el remitente y actualícela con una sugerencia de Google.",
+      "commentRequired": "Agregue al menos un comentario."
+    }
+  },
+  "comments": {
+    "title": "Comentarios",
+    "add": "Agregar comentario",
+    "removeAria": "Eliminar comentario {{index}}",
+    "columns": {
+      "purpose": "Propósito",
+      "item": "Artículo",
+      "qty": "Cant.",
+      "comment": "Comentario"
+    },
+    "placeholders": {
+      "purpose": "Propósito",
+      "item": "Artículo",
+      "customItem": "Describa el artículo y la cantidad",
+      "note": "Agregue un comentario; presione Enter para agregar otro",
+      "addComment": "Agregar un comentario"
+    },
+    "purposes": {
+      "PAYMENT": "Pago",
+      "ESTIMATE": "Estimado",
+      "TAKE": "Take",
+      "PICKUP": "Recogida",
+      "OTHER": "Otro"
+    },
+    "items": {
+      "box": "Caja",
+      "barrel": "Barril",
+      "tape": "Cinta",
+      "other": "Otro"
+    }
+  },
+  "view": {
+    "pickup": "Recogida",
+    "summary": "Resumen",
+    "system": "Información del sistema",
+    "senderAddress": "Dirección de {{party}}",
+    "senderPhones": "Teléfonos de {{party}}",
+    "commentsCount": "Comentarios ({{count}})",
+    "primaryAddress": "Dirección principal",
+    "additionalAddress": "Dirección adicional {{index}}",
+    "phonePrimary": "{{type}} (principal)",
+    "idNumber": "Número de ID"
+  },
+  "history": {
+    "title": "Historial de recogidas de {{name}} ({{count}})",
+    "description": "Recogidas anteriores y actuales de este remitente, cargadas por ID de cliente.",
+    "pendingSavedSender": "El historial aparece una vez que el remitente esté guardado.",
+    "current": "Actual",
+    "defaultSenderName": "Remitente"
+  },
+  "dialogs": {
+    "assignRouteTitle": "Asignar ruta",
+    "assignRouteDescription": "Asignar {{count}} orden seleccionada a una ruta.",
+    "assignRouteDescription_plural": "Asignar {{count}} órdenes seleccionadas a una ruta.",
+    "selectRoute": "Seleccionar una ruta",
+    "searchRoutes": "Buscar rutas…",
+    "loadingRoutes": "Cargando rutas…",
+    "noRoutesFound": "No se encontraron rutas.",
+    "deleteTitle": "¿Eliminar orden?",
+    "deleteTitlePlural": "¿Eliminar órdenes?",
+    "deleteOne": "Esto eliminará permanentemente esta orden. {{cannotBeUndone}}",
+    "deleteMany": "Esto eliminará permanentemente {{count}} órdenes seleccionadas. {{cannotBeUndone}}"
+  },
+  "toasts": {
+    "markedComplete": "{{count}} orden marcada como completada.",
+    "markedComplete_plural": "{{count}} órdenes marcadas como completadas.",
+    "markedIncomplete": "{{count}} orden marcada como incompleta.",
+    "markedIncomplete_plural": "{{count}} órdenes marcadas como incompletas.",
+    "assignedToRoute": "{{count}} orden asignada{{routeSuffix}}.",
+    "assignedToRoute_plural": "{{count}} órdenes asignadas{{routeSuffix}}.",
+    "assignedToRouteNamed": " a {{routeName}}",
+    "manifestReady": "Manifiesto de recogida listo para {{count}} orden.",
+    "manifestReady_plural": "Manifiesto de recogida listo para {{count}} órdenes.",
+    "comingSoon": "{{label}} estará disponible pronto."
+  },
+  "errors": {
+    "missingCompanyContext": "Falta el contexto de empresa para esta cuenta. Las solicitudes a la API de EMSYS requieren el encabezado x-company-id. Agregue companyId a su perfil de Firebase o al claim personalizado del JWT y vuelva a iniciar sesión."
+  },
+  "filters": {
+    "fields": {
+      "sender": {
+        "name": { "label": "Nombre del remitente", "placeholder": "Ingrese el nombre del remitente…" },
+        "phone": { "label": "Teléfono del remitente", "placeholder": "Ingrese el teléfono…" },
+        "address": {
+          "address1": { "label": "Dirección 1 del remitente", "placeholder": "Ingrese la línea 1 de la dirección…" },
+          "address2": { "label": "Dirección 2 del remitente", "placeholder": "Ingrese la línea 2 de la dirección…" },
+          "city": { "label": "Ciudad del remitente", "placeholder": "Ingrese la ciudad…" },
+          "state": { "label": "Estado del remitente", "placeholder": "Ingrese el estado…" },
+          "zipcode": { "label": "Código postal del remitente", "placeholder": "Ingrese el código postal…" }
+        },
+        "zipRange": { "label": "Rango postal del remitente", "placeholder": "10001-10282 o 10001 a 10282" }
+      },
+      "purpose": { "label": "Propósito", "placeholder": "Ingrese el propósito…" },
+      "route": {
+        "id": { "label": "Ruta" }
+      },
+      "branch": {
+        "id": { "label": "Sucursal" },
+        "code": { "label": "Código de sucursal" },
+        "name": { "label": "Nombre de sucursal", "placeholder": "Ingrese el nombre de la sucursal…" }
+      },
+      "receiver": {
+        "name": { "label": "Nombre del destinatario", "placeholder": "Ingrese el nombre del destinatario…" },
+        "phone": { "label": "Teléfono del destinatario", "placeholder": "Ingrese el teléfono…" },
+        "address": {
+          "address1": { "label": "Dirección 1 del destinatario", "placeholder": "Ingrese la línea 1 de la dirección…" },
+          "address2": { "label": "Dirección 2 del destinatario", "placeholder": "Ingrese la línea 2 de la dirección…" },
+          "city": { "label": "Ciudad del destinatario", "placeholder": "Ingrese la ciudad…" },
+          "state": { "label": "Estado del destinatario", "placeholder": "Ingrese el estado…" },
+          "zipcode": { "label": "Código postal del destinatario", "placeholder": "Ingrese el código postal…" }
+        }
+      },
+      "createdBy": {
+        "name": { "label": "Creada por" }
+      },
+      "completed": { "label": "Estado de completado" },
+      "date": { "label": "Fecha de la orden", "placeholder": "AAAA-MM-DD" },
+      "dateRange": { "label": "Rango de fechas de la orden", "placeholder": "2026-01-01 a 2026-06-30" },
+      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" },
+      "createdAtRange": { "label": "Rango de fechas de creación", "placeholder": "2026-01-01 a 2026-06-30" }
+    }
+  }
+}

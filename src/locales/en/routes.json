@@ -21,6 +21,17 @@
     "entities": {
       "activeRoute": "pickup route",
       "activeRoutes": "pickup routes"
+    },
+    "form": {
+      "save": "Save pickup route",
+      "saved": "Pickup route saved.",
+      "editHint": "Update the pickup assignment and crew roles, then save."
+    },
+    "view": {
+      "editLabel": "Edit pickup route",
+      "sections": {
+        "assignment": "Assignment"
+      }
     }
   },
   "deliveryRoutes": {
@@ -40,6 +51,17 @@
     "entities": {
       "activeRoute": "delivery route",
       "activeRoutes": "delivery routes"
+    },
+    "form": {
+      "save": "Save delivery route",
+      "saved": "Delivery route saved.",
+      "editHint": "Update the delivery assignment and crew roles, then save."
+    },
+    "view": {
+      "editLabel": "Edit delivery route",
+      "sections": {
+        "assignment": "Assignment"
+      }
     }
   },
   "tabs": {
@@ -176,7 +198,8 @@
       "date": "Date is required.",
       "dayOfWeek": "Select at least one day.",
       "branch": "Branch is required.",
-      "route": "Route is required."
+      "route": "Route is required.",
+      "pickupContainer": "Pickup routes cannot include a container."
     }
   },
   "routeDetails": {
@@ -225,6 +248,10 @@
     "loadingCrewMembers": "Loading crew members…",
     "noCrewMembersFound": "No active crew members found.",
     "selectAtLeastOneCrewMember": "Select at least one crew member for this route.",
-    "crewMemberRequired": "Select at least one crew member."
+    "crewMemberRequired": "Select at least one crew member.",
+    "validation": {
+      "branchRequired": "Branch is required.",
+      "vehicleRequired": "Vehicle is required."
+    }
   }
 }

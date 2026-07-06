@@ -1,0 +1,142 @@
+{
+  "entity": "Rol",
+  "entityPlural": "roles",
+  "title": "Roles",
+  "noun": "roles",
+  "actions": {
+    "add": "Agregar rol",
+    "edit": "Editar rol",
+    "editNamed": "Editar {{name}}",
+    "view": "Ver"
+  },
+  "stats": {
+    "total": {
+      "label": "Total de roles",
+      "description": "Roles registrados"
+    },
+    "totalPermissions": {
+      "label": "Total de permisos",
+      "description": "Asignados en todos los roles"
+    },
+    "avgPerRole": {
+      "label": "Promedio por rol",
+      "description": "Promedio de permisos por rol"
+    }
+  },
+  "columns": {
+    "roleId": "ID de rol",
+    "name": "Nombre del rol",
+    "permissions": "Permisos",
+    "createdAt": "Fecha de creación",
+    "createdBy": "Creado por",
+    "updatedAt": "Fecha de modificación",
+    "action": "Acción"
+  },
+  "table": {
+    "permissionsCount": "{{count}} permisos",
+    "actionsFor": "Acciones para {{name}}"
+  },
+  "search": {
+    "placeholder": "Buscar roles..."
+  },
+  "loading": {
+    "list": "Cargando roles…",
+    "role": "Cargando rol…"
+  },
+  "empty": {
+    "noMatch": "Ningún rol coincide con sus filtros.",
+    "noneYet": "Aún no hay roles."
+  },
+  "form": {
+    "addTitle": "Agregar rol",
+    "editTitle": "Editar rol",
+    "addDescription": "Asigne un nombre al rol y elija los permisos que debe tener.",
+    "editDescription": "Actualice el nombre del rol y elija sus permisos.",
+    "notFound": "No se pudo encontrar este rol.",
+    "loadError": "No se pudo cargar este rol.",
+    "sections": {
+      "role": "Rol"
+    },
+    "fields": {
+      "name": "Nombre del rol"
+    },
+    "placeholders": {
+      "name": "Gerente de operaciones"
+    },
+    "validation": {
+      "nameRequired": "El nombre del rol es obligatorio.",
+      "permissionsRequired": "Seleccione al menos un permiso."
+    }
+  },
+  "permissions": {
+    "title": "Permisos",
+    "description": "Elija a qué puede acceder este rol.",
+    "selected": "{{count}} seleccionados",
+    "searchPlaceholder": "Buscar permisos…",
+    "searchAria": "Buscar permisos",
+    "selectAll": "Seleccionar todos los permisos",
+    "selectAllMatching": "Seleccionar todos los permisos coincidentes",
+    "selectAllAria": "Seleccionar todos los permisos",
+    "loading": "Cargando permisos…",
+    "noMatch": "Ningún permiso coincide con \"{{query}}\".",
+    "groupSelectAllAria": "Seleccionar todos los permisos de {{group}}",
+    "entryAria": "Permiso {{label}}"
+  },
+  "view": {
+    "sections": {
+      "role": "Rol",
+      "audit": "Auditoría"
+    },
+    "roleId": "ID de rol",
+    "roleName": "Nombre del rol",
+    "permissionCount": "Cantidad de permisos",
+    "permissionsAssigned": "{{count}} permisos asignados",
+    "edit": "Editar rol"
+  },
+  "dialogs": {
+    "deleteTitle": "¿Eliminar rol?",
+    "deleteTitlePlural": "¿Eliminar roles?",
+    "deleteOne": "Esto eliminará permanentemente este rol. {{cannotBeUndone}}",
+    "deleteMany": "Esto eliminará permanentemente {{count}} roles seleccionados. {{cannotBeUndone}}"
+  },
+  "filters": {
+    "fields": {
+      "id": {
+        "label": "ID de rol",
+        "placeholder": "Ingrese el ID del rol…"
+      },
+      "name": {
+        "label": "Nombre del rol",
+        "placeholder": "Ingrese el nombre del rol…"
+      },
+      "createdBy": {
+        "name": {
+          "label": "Creado por",
+          "placeholder": "Ingrese el nombre del creador…"
+        }
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Actualizado por",
+          "placeholder": "Ingrese el nombre del actualizador…"
+        }
+      },
+      "createdAt": {
+        "label": "Fecha de creación",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "createdAtRange": {
+        "label": "Rango de fecha de creación",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "updatedAt": {
+        "label": "Fecha de modificación",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAtRange": {
+        "label": "Rango de fecha de modificación",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      }
+    }
+  }
+}

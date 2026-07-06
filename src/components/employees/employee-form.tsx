@@ -1,7 +1,7 @@
 "use client";
 
 import { Building2, MapPin, Phone, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
@@ -9,8 +9,9 @@ import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useTranslation } from "@/lib/i18n";
+import { useEmployeeLabels } from "@/lib/employees/hooks/use-employee-labels";
 import {
-  EMPLOYEE_ACTIVE_OPTIONS,
   EMPLOYEE_DEPARTMENTS,
   EMPLOYEE_PORTAL_BRANCHES,
   EMPLOYEE_TITLES,
@@ -41,6 +42,8 @@ export function EmployeeForm({
   onSubmit,
   onCancel,
 }: EmployeeFormProps) {
+  const { t } = useTranslation();
+  const employeeLabels = useEmployeeLabels();
   const [values, setValues] = useState<EmployeeFormValues>(initialValues ?? createEmptyEmployeeForm());
   const handleEnterNavigation = useFormEnterNavigation();
 
@@ -48,10 +51,39 @@ export function EmployeeForm({
     setValues(initialValues ?? createEmptyEmployeeForm());
   }, [initialValues]);
 
-  const departmentOptions = Array.from(
-    new Set([...EMPLOYEE_DEPARTMENTS, values.department].filter(Boolean)),
+  const departmentOptions = useMemo(() => {
+    const departments = Array.from(new Set([...EMPLOYEE_DEPARTMENTS, values.department].filter(Boolean)));
+    return departments.map((department) => ({
+      value: department,
+      label: employeeLabels.department(department),
+    }));
+  }, [employeeLabels, values.department]);
+
+  const titleOptions = useMemo(() => {
+    const titles = Array.from(new Set([...EMPLOYEE_TITLES, values.title].filter(Boolean)));
+    return titles.map((title) => ({
+      value: title,
+      label: employeeLabels.title(title),
+    }));
+  }, [employeeLabels, values.title]);
+
+  const activeOptions = useMemo(
+    () => [
+      { value: "true", label: t("employees.enums.status.active") },
+      { value: "false", label: t("employees.enums.status.inactive") },
+    ],
+    [t],
   );
-  const titleOptions = Array.from(new Set([...EMPLOYEE_TITLES, values.title].filter(Boolean)));
+
+  const branchOptions = useMemo(
+    () =>
+      EMPLOYEE_PORTAL_BRANCHES.map((option) => ({
+        value: option.portal,
+        label: t(`employees.enums.branch.${option.portal}`),
+      })),
+    [t],
+  );
+
   const selectedPortalBranch = getEmployeePortalBranch({ branch: values.branch, address: values.address });
 
   function updateField<K extends keyof EmployeeFormValues>(key: K, value: EmployeeFormValues[K]) {
@@ -87,33 +119,30 @@ export function EmployeeForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
-        <FormSection icon={User} title="Employee">
+        <FormSection icon={User} title={t("employees.form.sections.employee")}>
           <div className="space-y-2.5">
             <div className="space-y-1">
               <Label htmlFor="active">
-                Active <span className="text-destructive">*</span>
+                {t("employees.form.fields.active")} <span className="text-destructive">*</span>
               </Label>
               <SearchableSelect
                 id="active"
                 value={values.active ? "true" : "false"}
                 onValueChange={(next) => updateField("active", next === "true")}
                 required
-                options={EMPLOYEE_ACTIVE_OPTIONS.map((option) => ({
-                  value: String(option.value),
-                  label: option.label,
-                }))}
+                options={activeOptions}
               />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="name">
-                Name <span className="text-destructive">*</span>
+                {t("employees.form.fields.name")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 value={values.name}
                 onChange={(event) => updateField("name", event.target.value)}
-                placeholder="MIGUEL"
+                placeholder={t("employees.form.placeholders.name")}
                 required
               />
             </div>
@@ -121,57 +150,57 @@ export function EmployeeForm({
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="department">
-                  Department <span className="text-destructive">*</span>
+                  {t("employees.form.fields.department")} <span className="text-destructive">*</span>
                 </Label>
                 <SearchableSelect
                   id="department"
                   value={values.department}
                   onValueChange={(next) => updateField("department", next)}
-                  searchPlaceholder="Search departments…"
+                  searchPlaceholder={t("employees.form.placeholders.departmentSearch")}
                   required
-                  options={departmentOptions.map((department) => ({ value: department, label: department }))}
+                  options={departmentOptions}
                 />
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="title">
-                  Title <span className="text-destructive">*</span>
+                  {t("employees.form.fields.title")} <span className="text-destructive">*</span>
                 </Label>
                 <SearchableSelect
                   id="title"
                   value={values.title}
                   onValueChange={(next) => updateField("title", next)}
-                  searchPlaceholder="Search titles…"
+                  searchPlaceholder={t("employees.form.placeholders.titleSearch")}
                   required
-                  options={titleOptions.map((title) => ({ value: title, label: title }))}
+                  options={titleOptions}
                 />
               </div>
             </div>
 
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor="startDate">Start date</Label>
+                <Label htmlFor="startDate">{t("employees.form.fields.startDate")}</Label>
                 <Input
                   id="startDate"
                   value={values.startDate}
                   onChange={(event) => updateField("startDate", event.target.value)}
-                  placeholder="2026-06-09T00:00:00Z"
+                  placeholder={t("employees.form.placeholders.startDate")}
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="endDate">End date</Label>
+                <Label htmlFor="endDate">{t("employees.form.fields.endDate")}</Label>
                 <Input
                   id="endDate"
                   value={values.endDate}
                   onChange={(event) => updateField("endDate", event.target.value)}
-                  placeholder="2026-06-09T00:00:00Z"
+                  placeholder={t("employees.form.placeholders.endDate")}
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="cost">Cost</Label>
+              <Label htmlFor="cost">{t("employees.form.fields.cost")}</Label>
               <Input
                 id="cost"
                 type="number"
@@ -184,102 +213,99 @@ export function EmployeeForm({
           </div>
         </FormSection>
 
-        <FormSection icon={Building2} title="Branch">
+        <FormSection icon={Building2} title={t("employees.form.sections.branch")}>
           <div className="space-y-1">
             <Label htmlFor="branch-portal">
-              Branch <span className="text-destructive">*</span>
+              {t("employees.form.fields.branch")} <span className="text-destructive">*</span>
             </Label>
             <SearchableSelect
               id="branch-portal"
               value={selectedPortalBranch}
               onValueChange={(next) => updateBranchPortal(next as EmployeePortalBranch)}
-              searchPlaceholder="Search branches…"
+              searchPlaceholder={t("employees.form.placeholders.branchSearch")}
               required
-              options={EMPLOYEE_PORTAL_BRANCHES.map((option) => ({
-                value: option.portal,
-                label: option.label,
-              }))}
+              options={branchOptions}
             />
           </div>
         </FormSection>
 
-        <FormSection icon={MapPin} title="Address">
+        <FormSection icon={MapPin} title={t("employees.form.sections.address")}>
           <div className="space-y-2.5">
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor="address-address1">Address line 1</Label>
+                <Label htmlFor="address-address1">{t("employees.form.fields.address1")}</Label>
                 <Input
                   id="address-address1"
                   value={values.address.address1}
                   onChange={(event) => updateAddressField("address1", event.target.value)}
-                  placeholder="245 Atlantic Ave"
+                  placeholder={t("employees.form.placeholders.address1")}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="address-address2">Address line 2</Label>
+                <Label htmlFor="address-address2">{t("employees.form.fields.address2")}</Label>
                 <Input
                   id="address-address2"
                   value={values.address.address2}
                   onChange={(event) => updateAddressField("address2", event.target.value)}
-                  placeholder="Suite 100"
+                  placeholder={t("employees.form.placeholders.address2")}
                 />
               </div>
             </div>
 
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor="address-apartment">Apartment / suite</Label>
+                <Label htmlFor="address-apartment">{t("employees.form.fields.apartment")}</Label>
                 <Input
                   id="address-apartment"
                   value={values.address.apartment}
                   onChange={(event) => updateAddressField("apartment", event.target.value)}
-                  placeholder="Apt 4B"
+                  placeholder={t("employees.form.placeholders.apartment")}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="address-city">City</Label>
+                <Label htmlFor="address-city">{t("employees.form.fields.city")}</Label>
                 <Input
                   id="address-city"
                   value={values.address.city}
                   onChange={(event) => updateAddressField("city", event.target.value)}
-                  placeholder="NEW YORK"
+                  placeholder={t("employees.form.placeholders.city")}
                 />
               </div>
             </div>
 
             <div className="grid gap-2.5 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label htmlFor="address-state">State / province</Label>
+                <Label htmlFor="address-state">{t("employees.form.fields.state")}</Label>
                 <Input
                   id="address-state"
                   value={values.address.state}
                   onChange={(event) => updateAddressField("state", event.target.value.toUpperCase())}
-                  placeholder="NY"
+                  placeholder={t("employees.form.placeholders.state")}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="address-zipcode">Zip / postal code</Label>
+                <Label htmlFor="address-zipcode">{t("employees.form.fields.zipcode")}</Label>
                 <Input
                   id="address-zipcode"
                   value={values.address.zipcode}
                   onChange={(event) => updateAddressField("zipcode", event.target.value)}
-                  placeholder="11201"
+                  placeholder={t("employees.form.placeholders.zipcode")}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="address-country">Country</Label>
+                <Label htmlFor="address-country">{t("employees.form.fields.country")}</Label>
                 <Input
                   id="address-country"
                   value={values.address.country}
                   onChange={(event) => updateAddressField("country", event.target.value.toUpperCase())}
-                  placeholder="US"
+                  placeholder={t("employees.form.placeholders.country")}
                 />
               </div>
             </div>
           </div>
         </FormSection>
 
-        <FormSection icon={Phone} title="Contact">
+        <FormSection icon={Phone} title={t("employees.form.sections.contact")}>
           <div className="space-y-2.5">
             <PhoneListEditor
               idPrefix="employee-phone"
@@ -288,13 +314,13 @@ export function EmployeeForm({
             />
 
             <div className="space-y-1">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("employees.form.fields.email")}</Label>
               <Input
                 id="email"
                 type="email"
                 value={values.email}
                 onChange={(event) => updateField("email", event.target.value)}
-                placeholder="name@emsys.example"
+                placeholder={t("employees.form.placeholders.email")}
               />
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CalendarRange, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
+import { ActiveRouteViewSheet } from "@/components/pickup-delivery-routes/pickup-delivery-route-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
@@ -23,7 +24,7 @@ import {
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { normalizeApiError } from "@/lib/api/axios";
+import { useUserError } from "@/lib/errors/use-user-error";
 import {
   formatActiveRouteAppraiserName,
   formatActiveRouteContainerLabel,
@@ -65,6 +66,7 @@ type ActiveRoutesDirectoryWorkspaceProps = {
 
 export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirectoryWorkspaceProps) {
   const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
   const copyPrefix = variant.copyPrefix;
   const { notifyDeleted } = useFeedback();
   const [activeRouteFilters, setActiveRouteFilters] =
@@ -79,6 +81,7 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
   const [deleteActiveRouteTarget, setDeleteActiveRouteTarget] = useState<
     ActiveRoute | ActiveRoute[] | null
   >(null);
+  const [viewActiveRoute, setViewActiveRoute] = useState<ActiveRoute | null>(null);
 
   const activeRouteListParams = useMemo(
     () => ({
@@ -182,6 +185,7 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
       await deleteActiveRoutesMutation.mutateAsync(ids);
       setSelectedActiveRouteIds((current) => current.filter((id) => !ids.includes(id)));
       setDeleteActiveRouteTarget(null);
+      setViewActiveRoute(null);
       notifyDeleted(t(`routes.${copyPrefix}.entities.activeRoute`), ids.length);
     } catch {
       setDeleteActiveRouteTarget(null);
@@ -221,14 +225,14 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
       {
         id: "container.name",
         label: t("routes.columns.container"),
-        renderCell: (record) => formatActiveRouteContainerLabel(record),
+        renderCell: (record) => formatActiveRouteContainerLabel(record, dash),
       },
       {
         id: "route.name",
         label: t("routes.columns.route"),
         renderCell: (record) =>
           variant.id === "delivery"
-            ? formatActiveRouteRouteName(record, routeLookup.getByKey)
+            ? formatActiveRouteRouteName(record, routeLookup.getByKey, dash)
             : record.route.name || dash,
       },
       {
@@ -324,7 +328,7 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
 
         {activeRoutesQuery.isError ? (
           <div className="px-6 py-8 text-sm text-destructive">
-            {normalizeApiError(activeRoutesQuery.error).message}
+            {toErrorMessage(activeRoutesQuery.error)}
           </div>
         ) : (
           <DataTable
@@ -342,7 +346,7 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
             allPageSelected={allActiveRoutePageSelected}
             onToggleSelectAll={toggleActiveRouteSelectAll}
             onToggleSelect={toggleActiveRouteSelect}
-            onRowClick={openEditActiveRoute}
+            onRowClick={setViewActiveRoute}
             onRowDoubleClick={openEditActiveRoute}
             emptyState={
               <>
@@ -399,6 +403,21 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
           </div>
         </div>
       </Card>
+
+      <ActiveRouteViewSheet
+        record={viewActiveRoute}
+        variant={variant}
+        open={Boolean(viewActiveRoute)}
+        onOpenChange={(open) => !open && setViewActiveRoute(null)}
+        onEdit={(record) => {
+          setViewActiveRoute(null);
+          openEditActiveRoute(record);
+        }}
+        onDelete={(record) => {
+          setViewActiveRoute(null);
+          setDeleteActiveRouteTarget(record);
+        }}
+      />
 
       <Dialog
         open={activeRouteDialogOpen}

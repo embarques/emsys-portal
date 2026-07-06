@@ -1,0 +1,182 @@
+{
+  "title": "Label Manager",
+  "statuses": {
+    "pending": "Pending",
+    "generated": "Generated",
+    "printed": "Printed",
+    "in_transit": "In transit",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled"
+  },
+  "barcodeStatuses": {
+    "CREATED": "Created",
+    "PRINTED": "Printed",
+    "IN TRANSIT": "In transit",
+    "CONDUCE": "Conduce",
+    "DELIVERED": "Delivered",
+    "CANCELLED": "Cancelled"
+  },
+  "activity": {
+    "actions": {
+      "generate": "Created",
+      "status_change": "Status change",
+      "container_change": "Container change",
+      "route_change": "Route change",
+      "print": "Print"
+    },
+    "section": {
+      "title": "Label activity ({{count}})",
+      "description": "Creation, status changes, container updates, routes, and print events for this invoice.",
+      "empty": "No label activity yet. Generate labels from the Labels tab to start tracking changes."
+    },
+    "columns": {
+      "dateCreated": "Date created",
+      "userCreated": "User created",
+      "dateModified": "Date modified",
+      "barcode": "Barcode",
+      "action": "Action",
+      "description": "Description"
+    }
+  },
+  "unknownContainer": "Unknown container",
+  "updater": {
+    "options": {
+      "title": "Update options",
+      "description": "Select one or more fields to apply on each barcode scan.",
+      "changeStatus": "Change status",
+      "newStatus": "New status",
+      "changeContainer": "Change container",
+      "newContainer": "New container",
+      "changeRoute": "Change route",
+      "newRoute": "New route",
+      "barcodeLabel": "Barcode (press Enter)",
+      "barcodePlaceholder": "Scan or type barcode...",
+      "barcodeHint": "Field clears automatically after each update so you can scan the next label.",
+      "bulkLabel": "Multiple barcodes (comma or newline separated)",
+      "bulkPlaceholder": "LBL-..., LBL-...",
+      "apply": "Apply",
+      "applyAll": "Apply all barcodes"
+    },
+    "search": {
+      "statuses": "Search statuses…",
+      "containers": "Search containers…",
+      "routes": "Search routes…"
+    },
+    "results": {
+      "title": "Update results",
+      "description": "Green rows succeeded; red rows failed. Only changed fields are shown per row.",
+      "empty": "Scan a barcode to see results here."
+    },
+    "columns": {
+      "barcode": "Barcode",
+      "invoice": "Invoice",
+      "container": "Container",
+      "prevStatus": "Prev status",
+      "newStatus": "New status",
+      "prevContainer": "Prev container",
+      "newContainer": "New container",
+      "prevRoute": "Prev route",
+      "newRoute": "New route",
+      "labels": "Labels",
+      "dateCreated": "Date created",
+      "userCreated": "User created",
+      "dateModified": "Date modified",
+      "message": "Message"
+    },
+    "errors": {
+      "barcodeRequired": "Barcode is required.",
+      "selectAtLeastOne": "Select at least one field to update (status, container, or route).",
+      "selectNewStatus": "Select a new status.",
+      "selectNewContainer": "Select a new container.",
+      "selectNewRoute": "Select a new route.",
+      "notFound": "No label found for barcode \"{{barcode}}\".",
+      "noChanges": "No changes applied — selected values match the current label."
+    },
+    "success": {
+      "labelUpdated": "Label updated successfully.",
+      "updated": "Updated {{changes}}."
+    },
+    "changeParts": {
+      "status": "status {{from}} → {{to}}",
+      "container": "container {{from}} → {{to}}",
+      "route": "route {{from}} → {{to}}"
+    }
+  },
+  "staging": {
+    "title": "Label manager",
+    "lineItemsDescription": "Review line items from the selected invoices, choose which to label, then generate labels.",
+    "labelsDescription": "Barcodes were created where missing and retrieved where they already existed. Manage status, container, and printing below.",
+    "backToInvoices": "Back to invoices",
+    "backToLineItems": "Back to line items",
+    "done": "Done",
+    "working": "Working…",
+    "manageLabels": "Manage labels ({{count}})",
+    "filterPlaceholder": "Filter by invoice, barcode, status, container, description…",
+    "filterByStatus": "Filter by status",
+    "allStatuses": "All statuses",
+    "changeStatus": "Change status",
+    "transferContainer": "Transfer container",
+    "assignRoute": "Assign route",
+    "preparing": "Preparing…",
+    "print": "Print",
+    "remove": "Remove",
+    "removeFromView": "Remove label from view",
+    "selectAllLineItems": "Select all line items",
+    "selectAllLabels": "Select all labels",
+    "selectLineItem": "Select {{invoice}} · {{description}}",
+    "selectLabel": "Select label {{number}}",
+    "noLineItems": "No line items to stage. Close and select invoices with line items.",
+    "noLabelsMatch": "No labels match the current filter.",
+    "statusDialog": {
+      "title": "Change label status",
+      "description": "Update status for {{count}} selected label(s).",
+      "newStatus": "New status",
+      "applying": "Applying…",
+      "apply": "Apply status"
+    },
+    "containerDialog": {
+      "title": "Transfer container",
+      "description": "Move {{count}} selected label(s) to another container.",
+      "container": "Container",
+      "applying": "Applying…",
+      "apply": "Apply container"
+    },
+    "routeDialog": {
+      "title": "Assign route",
+      "description": "Assign {{count}} selected label(s) to a route. Only labels with a container are assigned.",
+      "route": "Route",
+      "selectRoute": "Select a route",
+      "loadingRoutes": "Loading routes…",
+      "noRoutes": "No routes found.",
+      "assigning": "Assigning…",
+      "assign": "Assign route"
+    },
+    "columns": {
+      "invoice": "Invoice",
+      "description": "Description",
+      "labels": "Labels",
+      "quantity": "Quantity",
+      "barcode": "Barcode",
+      "status": "Status",
+      "container": "Container"
+    },
+    "errors": {
+      "noneGenerated": "No labels were generated for the selected line items.",
+      "missingBarcodeNumbers": "Selected labels are missing barcode numbers to update.",
+      "missingBarcodesForRoute": "Selected labels have no saved barcodes to assign to a route.",
+      "missingBarcodeNumbersPrint": "Selected labels are missing barcode numbers to print."
+    },
+    "success": {
+      "ready": "Labels ready ({{details}}).",
+      "createdCount": "{{count}} created",
+      "retrievedCount": "{{count}} retrieved",
+      "assignedToRoute": "{{count}} label(s) assigned to {{route}} (trip {{trip}}).",
+      "readyToPrint": "Labels ready for {{count}} barcode(s)."
+    },
+    "entities": {
+      "labelStatus": "Label status",
+      "labelContainer": "Label container",
+      "labelCount": "{{count}} label(s)"
+    }
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "entity": "Empleado",
+  "entityPlural": "empleados",
+  "title": "Empleados",
+  "noun": "empleados",
+  "actions": {
+    "add": "Agregar empleado",
+    "edit": "Editar empleado",
+    "editNamed": "Editar {{name}}"
+  },
+  "stats": {
+    "total": {
+      "label": "Total de empleados",
+      "description": "Empleados registrados"
+    },
+    "branch": {
+      "description": "Empleados en {{branch}}"
+    }
+  },
+  "columns": {
+    "id": "ID de empleado",
+    "name": "Nombre",
+    "title": "Cargo",
+    "department": "Departamento",
+    "active": "Activo",
+    "startDate": "Fecha de inicio",
+    "endDate": "Fecha de fin",
+    "branch": "Sucursal",
+    "branch.code": "Código de sucursal",
+    "branch.name": "Nombre de sucursal",
+    "phone": "Teléfono",
+    "email": "Correo electrónico",
+    "address.address1": "Dirección línea 1",
+    "address.city": "Ciudad",
+    "address.state": "Estado",
+    "address.country": "País",
+    "cost": "Costo",
+    "totalLoanGiven": "Total de préstamos otorgados",
+    "totalPaymentReceived": "Total de pagos recibidos",
+    "loanAmountOwed": "Préstamo pendiente",
+    "loanBalanceUpdated": "Saldo de préstamo actualizado",
+    "user": "Usuario",
+    "user.id": "ID de usuario",
+    "user.name": "Nombre de usuario",
+    "createdAt": "Creado",
+    "updatedAt": "Actualizado"
+  },
+  "search": {
+    "placeholder": "Buscar empleados..."
+  },
+  "loading": {
+    "employees": "Cargando empleados…",
+    "employee": "Cargando empleado…"
+  },
+  "empty": {
+    "noMatch": "Ningún empleado coincide con su búsqueda o filtros.",
+    "noneYet": "Aún no hay empleados."
+  },
+  "enums": {
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "branch": {
+      "usa": "EE. UU.",
+      "dr": "RD"
+    },
+    "branchCode": {
+      "NY": "NY",
+      "RD": "RD",
+      "DR": "RD",
+      "DO": "DO"
+    },
+    "department": {
+      "Operations": "Operaciones",
+      "Warehouse": "Almacén",
+      "Fleet": "Flota",
+      "Customer Service": "Atención al cliente",
+      "Administration": "Administración",
+      "Accounting": "Contabilidad",
+      "driver": "Conductor"
+    },
+    "title": {
+      "dispatcher": "Despachador",
+      "warehouse": "Almacén",
+      "driver": "Conductor",
+      "support": "Soporte",
+      "planner": "Planificador",
+      "admin": "Administrador",
+      "manager": "Gerente",
+      "supervisor": "Supervisor"
+    }
+  },
+  "form": {
+    "addTitle": "Agregar empleado",
+    "editTitle": "Editar empleado",
+    "addDescription": "Cree un nuevo registro de empleado.",
+    "notFound": "No se pudo encontrar este empleado.",
+    "sections": {
+      "employee": "Empleado",
+      "branch": "Sucursal",
+      "address": "Dirección",
+      "contact": "Contacto"
+    },
+    "fields": {
+      "active": "Activo",
+      "name": "Nombre",
+      "department": "Departamento",
+      "title": "Cargo",
+      "startDate": "Fecha de inicio",
+      "endDate": "Fecha de fin",
+      "cost": "Costo",
+      "branch": "Sucursal",
+      "address1": "Dirección línea 1",
+      "address2": "Dirección línea 2",
+      "apartment": "Apartamento / suite",
+      "city": "Ciudad",
+      "state": "Estado / provincia",
+      "zipcode": "Código postal",
+      "country": "País",
+      "email": "Correo electrónico"
+    },
+    "placeholders": {
+      "name": "MIGUEL",
+      "startDate": "2026-06-09T00:00:00Z",
+      "endDate": "2026-06-09T00:00:00Z",
+      "departmentSearch": "Buscar departamentos…",
+      "titleSearch": "Buscar cargos…",
+      "branchSearch": "Buscar sucursales…",
+      "address1": "245 Atlantic Ave",
+      "address2": "Suite 100",
+      "apartment": "Apt 4B",
+      "city": "NUEVA YORK",
+      "state": "NY",
+      "zipcode": "11201",
+      "country": "US",
+      "email": "nombre@emsys.example"
+    }
+  },
+  "view": {
+    "employeeId": "ID de empleado",
+    "sections": {
+      "employee": "Empleado",
+      "branch": "Sucursal",
+      "contact": "Contacto",
+      "address": "Dirección",
+      "loans": "Préstamos",
+      "user": "Usuario",
+      "audit": "Auditoría"
+    },
+    "branchId": "ID de sucursal",
+    "phonePrimary": "{{type}} (principal)",
+    "edit": "Editar empleado"
+  },
+  "dialogs": {
+    "deleteTitle": "¿Eliminar empleado?",
+    "deleteTitlePlural": "¿Eliminar empleados?",
+    "deleteOne": "Esto eliminará permanentemente \"{{name}}\". {{cannotBeUndone}}",
+    "deleteMany": "Esto eliminará permanentemente {{count}} empleados seleccionados. {{cannotBeUndone}}",
+    "unnamed": "este empleado"
+  },
+  "filters": {
+    "fields": {
+      "id": { "label": "ID de empleado", "placeholder": "Ingrese ID de empleado…" },
+      "name": { "label": "Nombre", "placeholder": "Ingrese nombre…" },
+      "title": { "label": "Cargo", "placeholder": "Ingrese cargo…" },
+      "email": { "label": "Correo electrónico", "placeholder": "Ingrese correo…" },
+      "phone": { "label": "Teléfono", "placeholder": "Ingrese teléfono…" },
+      "address": {
+        "address1": { "label": "Dirección línea 1", "placeholder": "Ingrese dirección línea 1…" },
+        "address2": { "label": "Dirección línea 2", "placeholder": "Ingrese dirección línea 2…" },
+        "apartment": { "label": "Apartamento", "placeholder": "Ingrese apartamento…" },
+        "city": { "label": "Ciudad", "placeholder": "Ingrese ciudad…" },
+        "state": { "label": "Estado", "placeholder": "Ingrese estado…" },
+        "zipcode": { "label": "Código postal", "placeholder": "Ingrese código postal…" },
+        "country": { "label": "País", "placeholder": "Ingrese país…" }
+      },
+      "department": { "label": "Departamento", "placeholder": "Seleccionar departamento…" },
+      "active": { "label": "Activo", "placeholder": "Seleccionar estado…" },
+      "branch": {
+        "code": { "label": "Sucursal", "placeholder": "Seleccionar sucursal…" }
+      },
+      "cost": { "label": "Costo", "placeholder": "Ingrese monto…" },
+      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" }
+    }
+  }
+}

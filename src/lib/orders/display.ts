@@ -6,6 +6,8 @@ import type { Customer } from "@/lib/customers/types";
 import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import type { User } from "@/lib/users/types";
+import type { TranslateFn } from "@/lib/feedback/messages";
+
 import type { Order, PickupComment } from "./types";
 
 type RouteLabelSource = Pick<Route, "name" | "date" | "vehicle">;
@@ -158,6 +160,9 @@ export function computeOrderKpis(orders: Order[]) {
   };
 }
 
-export function getOrderCompletedLabel(completed: boolean): string {
+export function getOrderCompletedLabel(completed: boolean, t?: TranslateFn): string {
+  if (t) {
+    return t(completed ? "orders.status.completed" : "orders.status.pending");
+  }
   return completed ? "Completed" : "Pending";
 }

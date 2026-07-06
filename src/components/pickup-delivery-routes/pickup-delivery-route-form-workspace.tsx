@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { Button } from "@/components/ui/button";
-import { normalizeApiError } from "@/lib/api/axios";
+import { useUserError } from "@/lib/errors/use-user-error";
 import { formatActiveRouteRowLabel } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRouteById } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useTranslation } from "@/lib/i18n";
@@ -27,6 +27,7 @@ type ActiveRouteFormWorkspaceProps = WorkspaceFormHostProps & {
 
 export function ActiveRouteFormWorkspace({ tabId, mode, entityId, variant }: ActiveRouteFormWorkspaceProps) {
   const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
@@ -58,7 +59,7 @@ export function ActiveRouteFormWorkspace({ tabId, mode, entityId, variant }: Act
 
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
-      ? normalizeApiError(detailQuery.error).message
+      ? toErrorMessage(detailQuery.error)
       : t(`routes.${copyPrefix}.notFound`);
     return (
       <FormTabShell title={t(`routes.${copyPrefix}.editTitle`)}>

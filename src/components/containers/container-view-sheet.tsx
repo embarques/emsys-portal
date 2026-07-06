@@ -77,6 +77,7 @@ export function ContainerViewSheet({
 
         <RecordViewSheetActions
           editLabel={t("containers.actions.edit")}
+          deleteLabel={t("common.actions.delete")}
           onEdit={() => onEdit(container)}
           onDelete={() => onDelete(container)}
         />

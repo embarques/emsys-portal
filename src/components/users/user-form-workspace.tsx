@@ -9,6 +9,7 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
 import { createSecondaryFirebaseUser } from "@/lib/auth/firebase/firebase-user-admin";
+import { useTranslation } from "@/lib/i18n";
 import { useCreateUser, useUpdateUser, useUser } from "@/lib/users/hooks/use-users";
 import { createEmptyUserForm, userToFormValues, type UserFormValues } from "@/lib/users/types";
 import {
@@ -18,6 +19,7 @@ import {
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
 export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+  const { t } = useTranslation();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -34,9 +36,9 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
   useEffect(() => {
     if (isEditing && editing?.name) {
-      updateTabLabel(tabId, `Edit ${editing.name}`);
+      updateTabLabel(tabId, t("users.actions.editNamed", { name: editing.name }));
     }
-  }, [editing?.name, isEditing, tabId, updateTabLabel]);
+  }, [editing?.name, isEditing, tabId, t, updateTabLabel]);
 
   async function save(values: UserFormValues) {
     setFormError(null);
@@ -44,7 +46,7 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
     try {
       if (isEditing && editing) {
         const next = await updateMutation.mutateAsync({ userId: editing.id, values });
-        notifyUpdated("User", next.name);
+        notifyUpdated(t("users.entity"), next.name);
         closeFormTabAndReturn(tabId);
         return;
       }
@@ -52,11 +54,13 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
       const uid = await createSecondaryFirebaseUser(values.email, values.password);
       try {
         const next = await createMutation.mutateAsync({ values, uid });
-        notifyAdded("User", next.name);
+        notifyAdded(t("users.entity"), next.name);
         closeFormTabAndReturn(tabId);
       } catch (apiError) {
         throw new Error(
-          `The Firebase account was created, but the EMSYS tenant user record was not created. Do not submit this form again with the same email. ${normalizeApiError(apiError).message}`,
+          t("users.errors.firebasePartialCreate", {
+            message: normalizeApiError(apiError).message,
+          }),
         );
       }
     } catch (mutationError) {
@@ -66,10 +70,10 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
   if (isEditing && detailQuery.isLoading) {
     return (
-      <FormTabShell title="Edit user">
+      <FormTabShell title={t("users.form.editTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading user…
+          {t("users.loading.user")}
         </div>
       </FormTabShell>
     );
@@ -78,13 +82,13 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
       ? normalizeApiError(detailQuery.error).message
-      : "This user could not be found.";
+      : t("users.form.notFound");
     return (
-      <FormTabShell title="Edit user">
+      <FormTabShell title={t("users.form.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
-            Close
+            {t("common.actions.close")}
           </Button>
         </div>
       </FormTabShell>
@@ -93,14 +97,14 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
   return (
     <FormTabShell
-      title={isEditing ? "Edit user" : "Add user"}
-      description={isEditing && editing ? editing.name : "Create a new user account."}
+      title={isEditing ? t("users.form.editTitle") : t("users.form.addTitle")}
+      description={isEditing && editing ? editing.name : t("users.form.addDescription")}
     >
       <UserForm
         key={isEditing ? (editing?.id ?? "edit") : "new"}
         initialValues={isEditing && editing ? userToFormValues(editing) : createEmptyUserForm()}
         isEditing={isEditing}
-        submitLabel={isEditing ? "Save changes" : "Add user"}
+        submitLabel={isEditing ? t("common.actions.saveChanges") : t("users.actions.add")}
         isSubmitting={isSaving}
         externalError={formError}
         onSubmit={save}

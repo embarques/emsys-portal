@@ -181,14 +181,22 @@ export function resolveBarcodeStatusRef(
   return { id: statusId ?? 0, name: trimmedName || "—" };
 }
 
-export const LABEL_STATUSES: { value: LabelStatus; label: string }[] = [
-  { value: "pending", label: "Pending" },
-  { value: "generated", label: "Generated" },
-  { value: "printed", label: "Printed" },
-  { value: "in_transit", label: "In transit" },
-  { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
-];
+export const LABEL_STATUS_VALUES = [
+  "pending",
+  "generated",
+  "printed",
+  "in_transit",
+  "delivered",
+  "cancelled",
+] as const satisfies readonly LabelStatus[];
+
+/** @deprecated Use LABEL_STATUS_VALUES with getLabelStatusLabel(t) instead. */
+export const LABEL_STATUSES: { value: LabelStatus; label: string }[] = LABEL_STATUS_VALUES.map(
+  (value) => ({
+    value,
+    label: value,
+  }),
+);
 
 export function createLabelId(): string {
   return createRecordId();

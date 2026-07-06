@@ -26,7 +26,7 @@ import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-to
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { normalizeApiError } from "@/lib/api/axios";
+import { useUserError } from "@/lib/errors/use-user-error";
 import { formatBranchCodeOnly, formatBranchFilterLabel, getBranchCodeBadgeClass } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { createApiListTextSearch } from "@/lib/api/search-query";
@@ -68,6 +68,7 @@ const defaultFilters: RouteFilterState = {
 
 export function RouteManagerWorkspace() {
   const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<RouteFilterState>(defaultFilters);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -196,7 +197,7 @@ export function RouteManagerWorkspace() {
       setEditingAssignment(null);
       setPage(1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(toErrorMessage(mutationError));
     }
   }
 
@@ -214,7 +215,7 @@ export function RouteManagerWorkspace() {
       setViewAssignment(null);
       notifyDeleted(t("routes.entities.route"), ids.length);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(toErrorMessage(mutationError));
       setDeleteTarget(null);
     }
   }
@@ -356,7 +357,7 @@ export function RouteManagerWorkspace() {
 
         {isError ? (
           <div className="px-6 py-8 text-sm text-destructive">
-            {normalizeApiError(error).message}
+            {toErrorMessage(error)}
           </div>
         ) : (
           <DataTable

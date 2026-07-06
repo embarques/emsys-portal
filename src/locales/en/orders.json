@@ -1,0 +1,246 @@
+{
+  "entity": "Order",
+  "entityPlural": "orders",
+  "title": "Orders",
+  "noun": "orders",
+  "pickup": "Pickup",
+  "pickupNamed": "Pickup {{id}}",
+  "actions": {
+    "add": "Add order",
+    "edit": "Edit order",
+    "editNamed": "Edit {{name}}",
+    "editPickup": "Edit pickup",
+    "selectAtLeastOne": "Select at least one order to print.",
+    "print": "Print",
+    "preparing": "Preparing…",
+    "markComplete": "Mark complete",
+    "markIncomplete": "Mark incomplete",
+    "assignRoute": "Assign route",
+    "map": "Map"
+  },
+  "stats": {
+    "pendingOrders": {
+      "label": "Pending orders"
+    },
+    "pendingPickups": {
+      "label": "Pending pickups"
+    },
+    "pendingTakes": {
+      "label": "Pending takes"
+    },
+    "pendingEstimates": {
+      "label": "Pending estimates"
+    },
+    "pendingPayments": {
+      "label": "Pending payments"
+    }
+  },
+  "status": {
+    "completed": "Completed",
+    "pending": "Pending"
+  },
+  "columns": {
+    "completed": "Completed",
+    "date": "Date",
+    "branchName": "Branch",
+    "createdAt": "Created",
+    "senderName": "Name",
+    "senderAddress": "Address",
+    "senderCity": "City",
+    "senderZip": "Zip",
+    "senderPhone1": "Phone 1",
+    "comments": "Comments",
+    "route": "Route",
+    "updatedAt": "Updated",
+    "purpose": "Purpose",
+    "sectorId": "Sector ID",
+    "sectorName": "Sector name",
+    "employee": "Employee",
+    "createdBy": "Created by",
+    "orderId": "Order ID",
+    "branchId": "Branch ID",
+    "branchCode": "Branch code",
+    "sender": "Sender",
+    "senderAddressLine": "Sender address",
+    "phone1": "Phone 1",
+    "receiver": "Receiver",
+    "receiverAddress": "Receiver address"
+  },
+  "search": {
+    "placeholder": "Search by sender/receiver name, phone, or address…"
+  },
+  "loading": {
+    "title": "Loading orders",
+    "description": "Coordinating customers, routes, packages, and delivery status…",
+    "order": "Loading order…",
+    "columns": "Order, Date, Sender, Receiver, Status",
+    "pickupHistory": "Loading pickup history…"
+  },
+  "empty": {
+    "noMatch": "No orders match your search or filters.",
+    "noReceiver": "No receiver on this pickup.",
+    "noComments": "No comments yet.",
+    "noPickupHistory": "No pickup history yet."
+  },
+  "form": {
+    "addTitle": "Add order",
+    "editTitle": "Edit order",
+    "addDescription": "Create a new order.",
+    "notFound": "This order could not be found.",
+    "sections": {
+      "pickupDate": "Pickup date",
+      "senderReceiver": "Sender & receiver"
+    },
+    "fields": {
+      "branch": "Branch",
+      "employee": "Employee",
+      "sector": "Sector",
+      "sender": "Sender",
+      "receiver": "Receiver",
+      "noEmployee": "No employee"
+    },
+    "placeholders": {
+      "searchBranches": "Search branches…",
+      "searchEmployees": "Search employees…",
+      "selectSender": "Select sender",
+      "noReceiver": "No receiver",
+      "searchParty": "Search by name, phone, or address…"
+    },
+    "partyActions": {
+      "new": "New",
+      "edit": "Edit",
+      "addSender": "Add sender",
+      "addReceiver": "Add receiver",
+      "editSender": "Edit sender",
+      "editReceiver": "Edit receiver"
+    },
+    "validation": {
+      "pickupDateRequired": "Select a valid pickup date.",
+      "senderRequired": "Select a sender.",
+      "unverifiedSenderAddress": "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.",
+      "commentRequired": "Add at least one comment."
+    }
+  },
+  "comments": {
+    "title": "Comments",
+    "add": "Add comment",
+    "removeAria": "Remove comment {{index}}",
+    "columns": {
+      "purpose": "Purpose",
+      "item": "Item",
+      "qty": "Qty",
+      "comment": "Comment"
+    },
+    "placeholders": {
+      "purpose": "Purpose",
+      "item": "Item",
+      "customItem": "Describe the item and quantity",
+      "note": "Add a comment, press Enter to add another",
+      "addComment": "Add a comment"
+    },
+    "purposes": {
+      "PAYMENT": "Payment",
+      "ESTIMATE": "Estimate",
+      "TAKE": "Take",
+      "PICKUP": "Pickup",
+      "OTHER": "Other"
+    },
+    "items": {
+      "box": "Box",
+      "barrel": "Barrel",
+      "tape": "Tape",
+      "other": "Other"
+    }
+  },
+  "view": {
+    "pickup": "Pickup",
+    "summary": "Summary",
+    "system": "System information",
+    "senderAddress": "{{party}} address",
+    "senderPhones": "{{party}} phones",
+    "commentsCount": "Comments ({{count}})",
+    "primaryAddress": "Primary address",
+    "additionalAddress": "Additional address {{index}}",
+    "phonePrimary": "{{type}} (primary)",
+    "idNumber": "ID number"
+  },
+  "history": {
+    "title": "{{name}} pickup history ({{count}})",
+    "description": "Previous and current pickups for this sender, loaded by customer id.",
+    "pendingSavedSender": "Pickup history appears once the sender is saved.",
+    "current": "Current",
+    "defaultSenderName": "Sender"
+  },
+  "dialogs": {
+    "assignRouteTitle": "Assign route",
+    "assignRouteDescription": "Assign {{count}} selected order to a route.",
+    "assignRouteDescription_plural": "Assign {{count}} selected orders to a route.",
+    "selectRoute": "Select a route",
+    "searchRoutes": "Search routes…",
+    "loadingRoutes": "Loading routes…",
+    "noRoutesFound": "No routes found.",
+    "deleteTitle": "Delete order?",
+    "deleteTitlePlural": "Delete orders?",
+    "deleteOne": "This will permanently remove this order. {{cannotBeUndone}}",
+    "deleteMany": "This will permanently remove {{count}} selected orders. {{cannotBeUndone}}"
+  },
+  "toasts": {
+    "markedComplete": "{{count}} order marked complete.",
+    "markedComplete_plural": "{{count}} orders marked complete.",
+    "markedIncomplete": "{{count}} order marked incomplete.",
+    "markedIncomplete_plural": "{{count}} orders marked incomplete.",
+    "assignedToRoute": "{{count}} order assigned{{routeSuffix}}.",
+    "assignedToRoute_plural": "{{count}} orders assigned{{routeSuffix}}.",
+    "assignedToRouteNamed": " to {{routeName}}",
+    "manifestReady": "Pickup manifest ready for {{count}} order.",
+    "manifestReady_plural": "Pickup manifest ready for {{count}} orders.",
+    "comingSoon": "{{label}} is coming soon."
+  },
+  "errors": {
+    "missingCompanyContext": "Company context is missing for this account. EMSYS API requests require the x-company-id header. Add companyId to your Firebase user profile or JWT custom claim, then sign in again."
+  },
+  "filters": {
+    "fields": {
+      "sender": {
+        "name": { "label": "Sender name", "placeholder": "Enter sender name…" },
+        "phone": { "label": "Sender phone", "placeholder": "Enter phone…" },
+        "address": {
+          "address1": { "label": "Sender address 1", "placeholder": "Enter address line 1…" },
+          "address2": { "label": "Sender address 2", "placeholder": "Enter address line 2…" },
+          "city": { "label": "Sender city", "placeholder": "Enter city…" },
+          "state": { "label": "Sender state", "placeholder": "Enter state…" },
+          "zipcode": { "label": "Sender zip", "placeholder": "Enter zip code…" }
+        },
+        "zipRange": { "label": "Sender zip range", "placeholder": "10001-10282 or 10001 to 10282" }
+      },
+      "purpose": { "label": "Purpose", "placeholder": "Enter purpose…" },
+      "route": {
+        "id": { "label": "Route" }
+      },
+      "branch": {
+        "id": { "label": "Branch" },
+        "code": { "label": "Branch code" },
+        "name": { "label": "Branch name", "placeholder": "Enter branch name…" }
+      },
+      "receiver": {
+        "name": { "label": "Receiver name", "placeholder": "Enter receiver name…" },
+        "phone": { "label": "Receiver phone", "placeholder": "Enter phone…" },
+        "address": {
+          "address1": { "label": "Receiver address 1", "placeholder": "Enter address line 1…" },
+          "address2": { "label": "Receiver address 2", "placeholder": "Enter address line 2…" },
+          "city": { "label": "Receiver city", "placeholder": "Enter city…" },
+          "state": { "label": "Receiver state", "placeholder": "Enter state…" },
+          "zipcode": { "label": "Receiver zip", "placeholder": "Enter zip code…" }
+        }
+      },
+      "createdBy": {
+        "name": { "label": "Created by" }
+      },
+      "completed": { "label": "Completed status" },
+      "date": { "label": "Order date", "placeholder": "YYYY-MM-DD" },
+      "dateRange": { "label": "Order date range", "placeholder": "2026-01-01 to 2026-06-30" },
+      "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" },
+      "createdAtRange": { "label": "Date created range", "placeholder": "2026-01-01 to 2026-06-30" }
+    }
+  }
+}

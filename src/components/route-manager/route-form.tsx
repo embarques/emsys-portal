@@ -147,9 +147,11 @@ export function RouteForm({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!hasBranch) {
+      setEmployeeError(t("routes.form.validation.branchRequired"));
       return;
     }
     if (!values.vehicle.id.trim()) {
+      setEmployeeError(t("routes.form.validation.vehicleRequired"));
       return;
     }
     if (values.employees.length === 0) {

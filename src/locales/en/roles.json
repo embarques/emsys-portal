@@ -1,0 +1,142 @@
+{
+  "entity": "Role",
+  "entityPlural": "roles",
+  "title": "Roles",
+  "noun": "roles",
+  "actions": {
+    "add": "Add role",
+    "edit": "Edit role",
+    "editNamed": "Edit {{name}}",
+    "view": "View"
+  },
+  "stats": {
+    "total": {
+      "label": "Total roles",
+      "description": "Roles on record"
+    },
+    "totalPermissions": {
+      "label": "Total permissions",
+      "description": "Assigned across all roles"
+    },
+    "avgPerRole": {
+      "label": "Avg per role",
+      "description": "Average permissions per role"
+    }
+  },
+  "columns": {
+    "roleId": "Role ID",
+    "name": "Role name",
+    "permissions": "Permissions",
+    "createdAt": "Date created",
+    "createdBy": "Created by",
+    "updatedAt": "Date modified",
+    "action": "Action"
+  },
+  "table": {
+    "permissionsCount": "{{count}} permissions",
+    "actionsFor": "Actions for {{name}}"
+  },
+  "search": {
+    "placeholder": "Search roles..."
+  },
+  "loading": {
+    "list": "Loading roles…",
+    "role": "Loading role…"
+  },
+  "empty": {
+    "noMatch": "No roles match your filters.",
+    "noneYet": "No roles yet."
+  },
+  "form": {
+    "addTitle": "Add role",
+    "editTitle": "Edit role",
+    "addDescription": "Name the role and choose the permissions it should have.",
+    "editDescription": "Update the role name and choose its permissions.",
+    "notFound": "This role could not be found.",
+    "loadError": "This role could not be loaded.",
+    "sections": {
+      "role": "Role"
+    },
+    "fields": {
+      "name": "Role name"
+    },
+    "placeholders": {
+      "name": "Operations Manager"
+    },
+    "validation": {
+      "nameRequired": "Role name is required.",
+      "permissionsRequired": "Select at least one permission."
+    }
+  },
+  "permissions": {
+    "title": "Permissions",
+    "description": "Choose what this role is allowed to access.",
+    "selected": "{{count}} selected",
+    "searchPlaceholder": "Search permissions…",
+    "searchAria": "Search permissions",
+    "selectAll": "Select all permissions",
+    "selectAllMatching": "Select all matching permissions",
+    "selectAllAria": "Select all permissions",
+    "loading": "Loading permissions…",
+    "noMatch": "No permissions match \"{{query}}\".",
+    "groupSelectAllAria": "Select all {{group}} permissions",
+    "entryAria": "{{label}} permission"
+  },
+  "view": {
+    "sections": {
+      "role": "Role",
+      "audit": "Audit"
+    },
+    "roleId": "Role ID",
+    "roleName": "Role name",
+    "permissionCount": "Permission count",
+    "permissionsAssigned": "{{count}} permissions assigned",
+    "edit": "Edit role"
+  },
+  "dialogs": {
+    "deleteTitle": "Delete role?",
+    "deleteTitlePlural": "Delete roles?",
+    "deleteOne": "This will permanently remove this role. {{cannotBeUndone}}",
+    "deleteMany": "This will permanently remove {{count}} selected roles. {{cannotBeUndone}}"
+  },
+  "filters": {
+    "fields": {
+      "id": {
+        "label": "Role ID",
+        "placeholder": "Enter role ID…"
+      },
+      "name": {
+        "label": "Role name",
+        "placeholder": "Enter role name…"
+      },
+      "createdBy": {
+        "name": {
+          "label": "Created by",
+          "placeholder": "Enter creator name…"
+        }
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Updated by",
+          "placeholder": "Enter updater name…"
+        }
+      },
+      "createdAt": {
+        "label": "Date created",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "createdAtRange": {
+        "label": "Created date range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "updatedAt": {
+        "label": "Date modified",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAtRange": {
+        "label": "Modified date range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      }
+    }
+  }
+}

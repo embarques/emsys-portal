@@ -8,6 +8,7 @@ import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
+import { useTranslation } from "@/lib/i18n";
 import {
   useCreateRole,
   useRoleKpis,
@@ -27,6 +28,7 @@ import {
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
 export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+  const { t } = useTranslation();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -75,9 +77,9 @@ export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
   useEffect(() => {
     if (isEditing && editing?.name) {
-      updateTabLabel(tabId, `Edit ${editing.name}`);
+      updateTabLabel(tabId, t("roles.actions.editNamed", { name: editing.name }));
     }
-  }, [editing?.name, isEditing, tabId, updateTabLabel]);
+  }, [editing?.name, isEditing, tabId, t, updateTabLabel]);
 
   async function save(values: RoleFormValues) {
     setFormError(null);
@@ -85,13 +87,13 @@ export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
     try {
       if (isEditing && editing) {
         const next = await updateMutation.mutateAsync({ roleId: editing.roleId, values });
-        notifyUpdated("Role", next.name);
+        notifyUpdated(t("roles.entity"), next.name);
         closeFormTabAndReturn(tabId);
         return;
       }
 
       const next = await createMutation.mutateAsync(values);
-      notifyAdded("Role", next.name);
+      notifyAdded(t("roles.entity"), next.name);
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
@@ -100,25 +102,23 @@ export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
   if (isEditing && kpiQuery.isLoading) {
     return (
-      <FormTabShell title="Edit role">
+      <FormTabShell title={t("roles.form.editTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading role…
+          {t("roles.loading.role")}
         </div>
       </FormTabShell>
     );
   }
 
   if (isEditing && (kpiQuery.isError || !editing)) {
-    const message = kpiQuery.isError
-      ? "This role could not be loaded."
-      : "This role could not be found.";
+    const message = kpiQuery.isError ? t("roles.form.loadError") : t("roles.form.notFound");
     return (
-      <FormTabShell title="Edit role">
+      <FormTabShell title={t("roles.form.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
-            Close
+            {t("common.actions.close")}
           </Button>
         </div>
       </FormTabShell>
@@ -127,11 +127,9 @@ export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
   return (
     <FormTabShell
-      title={isEditing ? "Edit role" : "Add role"}
+      title={isEditing ? t("roles.form.editTitle") : t("roles.form.addTitle")}
       description={
-        isEditing && editing
-          ? editing.name
-          : "Name the role and choose the permissions it should have."
+        isEditing && editing ? editing.name : t("roles.form.addDescription")
       }
     >
       <RoleForm
@@ -140,7 +138,7 @@ export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
         permissionCatalog={permissionCatalog}
         error={formError}
         isSubmitting={isSaving || permissionCatalogQuery.isLoading}
-        submitLabel={isEditing ? "Save changes" : "Add role"}
+        submitLabel={isEditing ? t("common.actions.saveChanges") : t("roles.actions.add")}
         onSubmit={save}
         onCancel={() => closeFormTabAndReturn(tabId)}
       />

@@ -36,8 +36,9 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
-import { VEHICLE_TABLE_FILTER_FIELDS } from "@/lib/vehicles/filter-fields";
+import { useTranslation } from "@/lib/i18n";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
   buildTableSelectionResetKey,
   useResolvedPaginatedItems,
@@ -50,12 +51,11 @@ import {
   computeVehicleKpis,
   formatVehicleDate,
   getBranchBadgeClass,
-  getBranchLabel,
   getFuelTypeBadgeClass,
-  getFuelTypeLabel,
   getVehicleActiveBadgeClass,
-  getVehicleActiveLabel,
 } from "@/lib/vehicles/display";
+import { useVehicleFilterFields } from "@/lib/vehicles/hooks/use-vehicle-filter-fields";
+import { useVehicleLabels } from "@/lib/vehicles/hooks/use-vehicle-labels";
 import {
   useCreateVehicle,
   useDeleteVehicles,
@@ -74,8 +74,6 @@ import {
 } from "@/lib/vehicles/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTableSort } from "@/lib/table/use-table-sort";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
-
 const PAGE_SIZE = DEFAULT_VEHICLE_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -85,6 +83,9 @@ const defaultFilters: VehicleFilterState = {
 };
 
 export function VehiclesWorkspace() {
+  const { t } = useTranslation();
+  const vehicleLabels = useVehicleLabels();
+  const vehicleFilterFields = useVehicleFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<VehicleFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -134,21 +135,21 @@ export function VehiclesWorkspace() {
 
   const statCards = [
     {
-      label: "Total vehicles",
+      label: t("vehicles.stats.total.label"),
       value: isLoading ? "…" : totalVehicles.toString(),
-      description: "Fleet units on record",
+      description: t("vehicles.stats.total.description"),
       icon: Car,
     },
     {
-      label: "USA",
+      label: t("vehicles.stats.usa.label"),
       value: branchKpis.isLoading ? "…" : branchCounts.usa.toString(),
-      description: "Total vehicles in USA",
+      description: t("vehicles.stats.usa.description"),
       icon: Fuel,
     },
     {
-      label: "DR",
+      label: t("vehicles.stats.dr.label"),
       value: branchKpis.isLoading ? "…" : branchCounts.dr.toString(),
-      description: "Total vehicles in DR",
+      description: t("vehicles.stats.dr.description"),
       icon: Fuel,
     },
   ];
@@ -169,7 +170,7 @@ export function VehiclesWorkspace() {
 
   function openAddForm() {
     if (isDesktopTabs) {
-      openFormTab({ feature: "vehicles", baseHref: "/vehicles", mode: "add", label: "Add vehicle" });
+      openFormTab({ feature: "vehicles", baseHref: "/vehicles", mode: "add", label: t("vehicles.actions.add") });
       return;
     }
     setEditingVehicle(null);
@@ -185,7 +186,7 @@ export function VehiclesWorkspace() {
         baseHref: "/vehicles",
         mode: "edit",
         entityId: vehicle.id,
-        label: `Edit ${vehicle.name}`,
+        label: t("vehicles.actions.editNamed", { name: vehicle.name }),
       });
       return;
     }
@@ -204,10 +205,10 @@ export function VehiclesWorkspace() {
           vehicleId: editingVehicle.id,
           values,
         });
-        notifyUpdated("Vehicle", nextVehicle.name);
+        notifyUpdated(t("vehicles.entity"), nextVehicle.name);
       } else {
         const nextVehicle = await createVehicleMutation.mutateAsync(values);
-        notifyAdded("Vehicle", nextVehicle.name);
+        notifyAdded(t("vehicles.entity"), nextVehicle.name);
       }
 
       setFormMode(null);
@@ -228,124 +229,144 @@ export function VehiclesWorkspace() {
       setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
       setDeleteTarget(null);
       setViewVehicle(null);
-      notifyDeleted("Vehicle", ids.length);
+      notifyDeleted(t("vehicles.entity"), ids.length);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);
     }
   }
 
-  const tableColumns: DataTableColumn<Vehicle>[] = [
-    {
-      id: "name",
-      label: "name",
-      cellClassName: "font-medium",
-      renderCell: (vehicle) => vehicle.name,
-    },
-    {
-      id: "vin",
-      label: "vin",
-      cellClassName: "font-mono text-xs",
-      renderCell: (vehicle) => vehicle.vin || "—",
-    },
-    {
-      id: "licensePlate",
-      label: "licensePlate",
-      cellClassName: "font-mono text-xs",
-      renderCell: (vehicle) => vehicle.licensePlate || "—",
-    },
-    {
-      id: "year",
-      label: "year",
-      renderCell: (vehicle) => (vehicle.year > 0 ? vehicle.year : "—"),
-    },
-    {
-      id: "fuelType",
-      label: "fuelType",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (vehicle) => (
-        <TableTagText className={getFuelTypeBadgeClass(vehicle.fuelType)}>
-          {getFuelTypeLabel(vehicle.fuelType)}
-        </TableTagText>
-      ),
-    },
-    {
-      id: "branch",
-      label: "branch",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (vehicle) => (
-        <TableTagText className={getBranchBadgeClass(vehicle.branch.code)}>
-          {getBranchLabel(vehicle.branch.code)}
-        </TableTagText>
-      ),
-    },
-    {
-      id: "active",
-      label: "status",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (vehicle) => (
-        <TableTagText className={getVehicleActiveBadgeClass(vehicle.active)}>
-          {getVehicleActiveLabel(vehicle.active)}
-        </TableTagText>
-      ),
-    },
-    {
-      id: "inspectionDate",
-      label: "inspectionDate",
-      cellClassName: "text-muted-foreground",
-      renderCell: (vehicle) => formatVehicleDate(vehicle.inspectionDate),
-    },
-    {
-      id: "registrationDate",
-      label: "registrationDate",
-      cellClassName: "text-muted-foreground",
-      renderCell: (vehicle) => formatVehicleDate(vehicle.registrationDate),
-    },
-    {
-      id: "createdAt",
-      label: "createdAt",
-      cellClassName: "text-muted-foreground",
-      renderCell: (vehicle) => (vehicle.createdAt ? formatAuditDateTime(vehicle.createdAt) : "—"),
-    },
-    {
-      id: "createdBy",
-      label: "createdBy",
-      defaultVisible: false,
-      cellClassName: "text-muted-foreground",
-      renderCell: (vehicle) => vehicle.createdBy || "—",
-    },
-    {
-      id: "updatedAt",
-      label: "updatedAt",
-      defaultVisible: false,
-      cellClassName: "text-muted-foreground",
-      renderCell: (vehicle) => (vehicle.updatedAt ? formatAuditDateTime(vehicle.updatedAt) : "—"),
-    },
-  ];
+  const dash = t("common.empty.dash");
+
+  const tableColumns: DataTableColumn<Vehicle>[] = useMemo(
+    () => [
+      {
+        id: "name",
+        label: t("vehicles.columns.name"),
+        cellClassName: "font-medium",
+        renderCell: (vehicle) => vehicle.name,
+      },
+      {
+        id: "vin",
+        label: t("vehicles.columns.vin"),
+        cellClassName: "font-mono text-xs",
+        renderCell: (vehicle) => vehicle.vin || dash,
+      },
+      {
+        id: "licensePlate",
+        label: t("vehicles.columns.licensePlate"),
+        cellClassName: "font-mono text-xs",
+        renderCell: (vehicle) => vehicle.licensePlate || dash,
+      },
+      {
+        id: "year",
+        label: t("vehicles.columns.year"),
+        renderCell: (vehicle) => (vehicle.year > 0 ? vehicle.year : dash),
+      },
+      {
+        id: "fuelType",
+        label: t("vehicles.columns.fuelType"),
+        truncateCell: false,
+        cellClassName: "overflow-visible",
+        renderCell: (vehicle) => (
+          <TableTagText className={getFuelTypeBadgeClass(vehicle.fuelType)}>
+            {vehicleLabels.fuelType(vehicle.fuelType)}
+          </TableTagText>
+        ),
+      },
+      {
+        id: "branch",
+        label: t("vehicles.columns.branch"),
+        truncateCell: false,
+        cellClassName: "overflow-visible",
+        renderCell: (vehicle) => (
+          <TableTagText className={getBranchBadgeClass(vehicle.branch.code)}>
+            {vehicleLabels.branch(vehicle.branch.code)}
+          </TableTagText>
+        ),
+      },
+      {
+        id: "active",
+        label: t("vehicles.columns.status"),
+        truncateCell: false,
+        cellClassName: "overflow-visible",
+        renderCell: (vehicle) => (
+          <TableTagText className={getVehicleActiveBadgeClass(vehicle.active)}>
+            {vehicleLabels.active(vehicle.active)}
+          </TableTagText>
+        ),
+      },
+      {
+        id: "inspectionDate",
+        label: t("vehicles.columns.inspectionDate"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (vehicle) => formatVehicleDate(vehicle.inspectionDate),
+      },
+      {
+        id: "registrationDate",
+        label: t("vehicles.columns.registrationDate"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (vehicle) => formatVehicleDate(vehicle.registrationDate),
+      },
+      {
+        id: "createdAt",
+        label: t("vehicles.columns.createdAt"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (vehicle) => (vehicle.createdAt ? formatAuditDateTime(vehicle.createdAt) : dash),
+      },
+      {
+        id: "createdBy",
+        label: t("vehicles.columns.createdBy"),
+        defaultVisible: false,
+        cellClassName: "text-muted-foreground",
+        renderCell: (vehicle) => vehicle.createdBy || dash,
+      },
+      {
+        id: "updatedAt",
+        label: t("vehicles.columns.updatedAt"),
+        defaultVisible: false,
+        cellClassName: "text-muted-foreground",
+        renderCell: (vehicle) => (vehicle.updatedAt ? formatAuditDateTime(vehicle.updatedAt) : dash),
+      },
+    ],
+    [dash, t, vehicleLabels],
+  );
 
   const columnVisibility = useColumnVisibility("vehicles-v2", tableColumns);
-  const activeFilterCount = countCompleteFilterRows(filters.rows, VEHICLE_TABLE_FILTER_FIELDS);
+  const activeFilterCount = countCompleteFilterRows(filters.rows, vehicleFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query: filters.query,
-    isSearchPending,
-    matched: totalVehicles,
-    noun: "vehicles",
-    isLoading: isFetching && vehicles.length === 0,
-  });
+  const searchSummary = buildToolbarSearchSummary(
+    {
+      isFiltered: hasActiveFilters,
+      query: filters.query,
+      isSearchPending,
+      matched: totalVehicles,
+      noun: t("vehicles.noun"),
+      isLoading: isFetching && vehicles.length === 0,
+    },
+    t,
+  );
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: vehicles.length,
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      total: totalVehicles,
+      noun: t("vehicles.noun"),
+      isFiltered: hasActiveFilters,
+      isLoading: isFetching,
+    },
+    t,
+  );
 
   return (
     <div>
       <PageHeader
-        title="Vehicles"
+        title={t("vehicles.title")}
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />
-            Add vehicle
+            {t("vehicles.actions.add")}
           </Button>
         }
       />
@@ -367,16 +388,16 @@ export function VehiclesWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search vehicles..."
+                placeholder={t("vehicles.search.placeholder")}
               />
             }
             filterPanel={
               <TableFilterPanel
-                resultSummary={`Showing ${vehicles.length} of ${totalVehicles} vehicles`}
+                resultSummary={listSummary}
                 presets={{
                   storageKey: "vehicles",
                   rows: filters.rows,
-                  fields: VEHICLE_TABLE_FILTER_FIELDS,
+                  fields: vehicleFilterFields,
                   onApply: (rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -394,7 +415,7 @@ export function VehiclesWorkspace() {
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
                   rows={filters.rows}
-                  fields={VEHICLE_TABLE_FILTER_FIELDS}
+                  fields={vehicleFilterFields}
                   onChange={(rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -441,11 +462,11 @@ export function VehiclesWorkspace() {
             emptyState={
               <>
                 <p className="text-muted-foreground">
-                  {hasActiveFilters ? "No vehicles match your search or filters." : "No vehicles yet."}
+                  {hasActiveFilters ? t("vehicles.empty.noMatch") : t("vehicles.empty.noneYet")}
                 </p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
-                  Add vehicle
+                  {t("vehicles.actions.add")}
                 </Button>
               </>
             }
@@ -453,9 +474,7 @@ export function VehiclesWorkspace() {
         )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {vehicles.length} of {totalVehicles} vehicles
-          </p>
+          <p className="text-sm text-muted-foreground">{listSummary}</p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -464,10 +483,10 @@ export function VehiclesWorkspace() {
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              {t("common.actions.previous")}
             </Button>
             <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -475,7 +494,7 @@ export function VehiclesWorkspace() {
               disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
-              Next
+              {t("common.actions.next")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -506,7 +525,9 @@ export function VehiclesWorkspace() {
       >
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>{formMode === "edit" ? "Edit vehicle" : "Add vehicle"}</DialogTitle>
+            <DialogTitle>
+              {formMode === "edit" ? t("vehicles.form.editTitle") : t("vehicles.form.addTitle")}
+            </DialogTitle>
           </DialogHeader>
           <VehicleForm
             key={editingVehicle?.id ?? "new"}
@@ -514,7 +535,7 @@ export function VehiclesWorkspace() {
               formMode === "edit" && editingVehicle ? vehicleToFormValues(editingVehicle) : createEmptyVehicleForm()
             }
             isEditing={formMode === "edit"}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add vehicle"}
+            submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("vehicles.actions.add")}
             isSubmitting={isSaving}
             externalError={formError}
             onSubmit={saveVehicle}
@@ -529,20 +550,33 @@ export function VehiclesWorkspace() {
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="z-[60]">
           <DialogHeader>
-            <DialogTitle>Delete vehicle{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?</DialogTitle>
+            <DialogTitle>
+              {Array.isArray(deleteTarget) && deleteTarget.length > 1
+                ? t("vehicles.dialogs.deleteTitlePlural")
+                : t("vehicles.dialogs.deleteTitle")}
+            </DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected vehicles. This action cannot be undone.`
-                : `This will permanently remove ${deleteTarget?.name ?? "this vehicle"}. This action cannot be undone.`}
+                ? t("vehicles.dialogs.deleteMany", {
+                    count: deleteTarget.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
+                : t("vehicles.dialogs.deleteOne", {
+                    name:
+                      !Array.isArray(deleteTarget) && deleteTarget?.name
+                        ? deleteTarget.name
+                        : t("vehicles.dialogs.unnamed"),
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
-              Delete
+              {t("common.actions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

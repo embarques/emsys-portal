@@ -1,0 +1,153 @@
+{
+  "entity": "Branch",
+  "entityPlural": "branches",
+  "title": "Branches",
+  "noun": "branches",
+  "actions": {
+    "add": "Add branch",
+    "edit": "Edit branch",
+    "editNamed": "Edit {{name}}"
+  },
+  "stats": {
+    "total": {
+      "label": "Total branches",
+      "description": "Branches on record"
+    }
+  },
+  "columns": {
+    "id": "Branch ID",
+    "name": "Name",
+    "code": "Code",
+    "type": "Type",
+    "phone1": "Phone 1",
+    "phone2": "Phone 2",
+    "phones": "Phones",
+    "address": {
+      "city": "City",
+      "state": "State",
+      "country": "Country",
+      "full": "Address"
+    },
+    "settings": {
+      "labelPrefix": "Label prefix"
+    },
+    "created": "Created"
+  },
+  "search": {
+    "placeholder": "Search branches..."
+  },
+  "loading": {
+    "list": "Loading branches…",
+    "branch": "Loading branch…"
+  },
+  "empty": {
+    "noMatch": "No branches match your search or filters.",
+    "noneYet": "No branches yet."
+  },
+  "enums": {
+    "boolean": {
+      "true": "Yes",
+      "false": "No"
+    }
+  },
+  "form": {
+    "addTitle": "Add branch",
+    "editTitle": "Edit branch",
+    "addDescription": "Create a new branch.",
+    "notFound": "This branch could not be found.",
+    "sections": {
+      "branch": "Branch",
+      "address": "Address",
+      "settings": "Settings"
+    },
+    "fields": {
+      "name": "Name",
+      "code": "Code",
+      "type": "Type",
+      "logo": "Logo URL",
+      "phone1": "Phone 1",
+      "phone2": "Phone 2",
+      "disclaimer": "Disclaimer",
+      "address1": "Address line 1",
+      "address2": "Address line 2",
+      "apartment": "Apartment / suite",
+      "city": "City",
+      "state": "State / province",
+      "zipcode": "Zip / postal code",
+      "country": "Country",
+      "labelPrefix": "Label prefix",
+      "roundDecimalPlaces": "Round decimal places",
+      "defaultLabelStatus": "Default label status",
+      "imageResampleBy": "Image resample by",
+      "s3Profile": "S3 profile",
+      "s3BucketName": "S3 bucket name",
+      "s3BucketFolder": "S3 bucket folder",
+      "s3ShareLinkExpireMinutes": "S3 share link expiry (minutes)",
+      "invoiceCreatedThruIncomeStatement": "Invoice created through income statement",
+      "printLabelCount": "Print label count"
+    }
+  },
+  "view": {
+    "branchFallback": "Branch {{id}}",
+    "prefixLabel": "Prefix: {{prefix}}",
+    "sections": {
+      "branch": "Branch",
+      "contact": "Contact",
+      "address": "Address",
+      "settings": "Settings"
+    },
+    "fields": {
+      "branchId": "Branch ID",
+      "name": "Name",
+      "code": "Code",
+      "type": "Type",
+      "logo": "Logo",
+      "disclaimer": "Disclaimer",
+      "created": "Created",
+      "phone1": "Phone 1",
+      "phone2": "Phone 2",
+      "phones": "Phones",
+      "address1": "Address 1",
+      "address2": "Address 2",
+      "apartment": "Apartment",
+      "city": "City",
+      "state": "State",
+      "zipcode": "Zipcode",
+      "country": "Country",
+      "fullAddress": "Full address",
+      "labelPrefix": "Label prefix",
+      "defaultLabelStatus": "Default label status",
+      "roundDecimalPlaces": "Round decimal places",
+      "invoiceViaIncomeStatement": "Invoice via income statement",
+      "printLabelCount": "Print label count",
+      "s3Profile": "S3 profile",
+      "s3Bucket": "S3 bucket",
+      "s3Folder": "S3 folder",
+      "s3LinkExpiry": "S3 link expiry (min)",
+      "imageResampleBy": "Image resample by"
+    },
+    "edit": "Edit branch"
+  },
+  "dialogs": {
+    "deleteTitle": "Delete branch?",
+    "deleteTitlePlural": "Delete branches?",
+    "deleteOne": "This will permanently remove \"{{name}}\". {{cannotBeUndone}}",
+    "deleteMany": "This will permanently remove {{count}} selected branches. {{cannotBeUndone}}",
+    "unnamed": "this branch"
+  },
+  "filters": {
+    "fields": {
+      "name": { "label": "Name", "placeholder": "Enter name…" },
+      "code": { "label": "Code", "placeholder": "Enter code…" },
+      "type": { "label": "Type", "placeholder": "Enter type…" },
+      "phones": {
+        "number": { "label": "Phone", "placeholder": "Enter phone…" }
+      },
+      "address": {
+        "city": { "label": "City", "placeholder": "Enter city…" },
+        "state": { "label": "State", "placeholder": "Enter state…" },
+        "zipcode": { "label": "Zip code", "placeholder": "Enter zip code…" }
+      }
+    }
+  }
+}

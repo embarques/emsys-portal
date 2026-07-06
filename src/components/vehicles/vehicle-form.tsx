@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 import {
@@ -38,11 +39,29 @@ export function VehicleForm({
   onSubmit,
   onCancel,
 }: VehicleFormProps) {
+  const { t } = useTranslation();
   const [values, setValues] = useState<VehicleFormValues>(initialValues ?? createEmptyVehicleForm());
   const handleEnterNavigation = useFormEnterNavigation();
   const branchesQuery = useBranchPicker(200);
   const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
   const currentUserQuery = useCurrentUser();
+
+  const fuelTypeOptions = useMemo(
+    () =>
+      VEHICLE_FUEL_TYPES.map((option) => ({
+        ...option,
+        label: t(`vehicles.enums.fuelType.${option.value}`),
+      })),
+    [t],
+  );
+
+  const statusOptions = useMemo(
+    () => [
+      { value: true, label: t("vehicles.enums.status.active") },
+      { value: false, label: t("vehicles.enums.status.inactive") },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyVehicleForm());
@@ -90,13 +109,13 @@ export function VehicleForm({
     ) {
       options.unshift({
         value: String(values.branch.id),
-        label: values.branch.code || `Branch ${values.branch.id}`,
+        label: values.branch.code || t("vehicles.form.branchFallback", { id: values.branch.id }),
         keywords: [values.branch.code],
       });
     }
 
     return options;
-  }, [branches, values.branch.id, values.branch.code]);
+  }, [branches, t, values.branch.id, values.branch.code]);
 
   function handleBranchChange(nextValue: string) {
     const branchId = Number(nextValue) || 0;
@@ -112,20 +131,17 @@ export function VehicleForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
-        <FormSection icon={Car} title="Vehicle">
+        <FormSection icon={Car} title={t("vehicles.form.sections.vehicle")}>
           <div className="space-y-2.5">
             <div className="space-y-1">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status">{t("vehicles.form.fields.status")}</Label>
               <div
                 id="status"
                 className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"
                 role="radiogroup"
-                aria-label="Status"
+                aria-label={t("vehicles.form.fields.status")}
               >
-                {[
-                  { value: true, label: "Active" },
-                  { value: false, label: "Inactive" },
-                ].map((option) => {
+                {statusOptions.map((option) => {
                   const selected = values.active === option.value;
                   return (
                     <button
@@ -152,36 +168,36 @@ export function VehicleForm({
 
             <div className="space-y-1">
               <Label htmlFor="name">
-                Name <span className="text-destructive">*</span>
+                {t("vehicles.form.fields.name")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 value={values.name}
                 onChange={(event) => updateField("name", event.target.value)}
-                placeholder="Unit 12 — Freightliner"
+                placeholder={t("vehicles.form.placeholders.name")}
                 required
               />
             </div>
 
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor="vin">VIN</Label>
+                <Label htmlFor="vin">{t("vehicles.form.fields.vin")}</Label>
                 <Input
                   id="vin"
                   value={values.vin}
                   onChange={(event) => updateField("vin", event.target.value.toUpperCase())}
-                  placeholder="1FUJGLDR57LM12345"
+                  placeholder={t("vehicles.form.placeholders.vin")}
                   className="font-mono text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="licensePlate">License plate</Label>
+                <Label htmlFor="licensePlate">{t("vehicles.form.fields.licensePlate")}</Label>
                 <Input
                   id="licensePlate"
                   value={values.licensePlate}
                   onChange={(event) => updateField("licensePlate", event.target.value.toUpperCase())}
-                  placeholder="ABC-1234"
+                  placeholder={t("vehicles.form.placeholders.licensePlate")}
                   className="font-mono text-xs"
                 />
               </div>
@@ -189,7 +205,7 @@ export function VehicleForm({
 
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor="year">Year</Label>
+                <Label htmlFor="year">{t("vehicles.form.fields.year")}</Label>
                 <Input
                   id="year"
                   type="number"
@@ -201,24 +217,24 @@ export function VehicleForm({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="fuelType">Fuel type</Label>
+                <Label htmlFor="fuelType">{t("vehicles.form.fields.fuelType")}</Label>
                 <SearchableSelect
                   id="fuelType"
                   value={values.fuelType}
                   onValueChange={(next) => updateField("fuelType", next)}
-                  placeholder="Select fuel type"
-                  searchPlaceholder="Search fuel types…"
-                  options={VEHICLE_FUEL_TYPES}
+                  placeholder={t("vehicles.form.placeholders.fuelType")}
+                  searchPlaceholder={t("vehicles.form.placeholders.fuelTypeSearch")}
+                  options={fuelTypeOptions}
                 />
               </div>
             </div>
           </div>
         </FormSection>
 
-        <FormSection icon={CalendarCheck} title="Compliance">
+        <FormSection icon={CalendarCheck} title={t("vehicles.form.sections.compliance")}>
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="inspectionDate">Inspection date</Label>
+              <Label htmlFor="inspectionDate">{t("vehicles.form.fields.inspectionDate")}</Label>
               <DateInput
                 id="inspectionDate"
                 value={values.inspectionDate}
@@ -227,7 +243,7 @@ export function VehicleForm({
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="registrationDate">Registration date</Label>
+              <Label htmlFor="registrationDate">{t("vehicles.form.fields.registrationDate")}</Label>
               <DateInput
                 id="registrationDate"
                 value={values.registrationDate}
@@ -237,17 +253,17 @@ export function VehicleForm({
           </div>
         </FormSection>
 
-        <FormSection icon={Building2} title="Branch">
+        <FormSection icon={Building2} title={t("vehicles.form.sections.branch")}>
           <div className="space-y-1">
             <Label htmlFor="branch">
-              Branch <span className="text-destructive">*</span>
+              {t("vehicles.form.fields.branch")} <span className="text-destructive">*</span>
             </Label>
             <SearchableSelect
               id="branch"
               value={values.branch.id > 0 ? String(values.branch.id) : ""}
               onValueChange={handleBranchChange}
-              placeholder="Select branch"
-              searchPlaceholder="Search branches…"
+              placeholder={t("vehicles.form.placeholders.branch")}
+              searchPlaceholder={t("vehicles.form.placeholders.branchSearch")}
               loading={branchesQuery.isLoading}
               options={branchOptions}
             />

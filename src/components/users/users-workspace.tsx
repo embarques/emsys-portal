@@ -45,7 +45,6 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
-import { USER_TABLE_FILTER_FIELDS } from "@/lib/users/filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import {
   buildTableSelectionResetKey,
@@ -58,18 +57,20 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { useTranslation } from "@/lib/i18n";
 import type { DataTableColumn } from "@/lib/table/types";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import {
   formatUserBranchLabel,
   getUserActiveBadgeClass,
-  getUserActiveLabel,
   getUserBranchBadgeClass,
   getUserRoleBadgeClass,
   getUserRoleLabel,
   truncateUid,
   truncateUserId,
 } from "@/lib/users/display";
+import { useUserFilterFields } from "@/lib/users/hooks/use-user-filter-fields";
+import { useUserLabels } from "@/lib/users/hooks/use-user-labels";
 import {
   useCreateUser,
   useDeactivateUser,
@@ -97,6 +98,9 @@ const defaultFilters: UserFilterState = {
 };
 
 export function UsersWorkspace() {
+  const { t } = useTranslation();
+  const userLabels = useUserLabels();
+  const userFilterFields = useUserFilterFields();
   const { notifyAdded, notifyUpdated } = useFeedback();
   const [filters, setFilters] = useState<UserFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -176,7 +180,7 @@ export function UsersWorkspace() {
 
   function openAddForm() {
     if (isDesktopTabs) {
-      openFormTab({ feature: "users", baseHref: "/users", mode: "add", label: "Add user" });
+      openFormTab({ feature: "users", baseHref: "/users", mode: "add", label: t("users.actions.add") });
       return;
     }
     setEditingUser(null);
@@ -192,7 +196,7 @@ export function UsersWorkspace() {
         baseHref: "/users",
         mode: "edit",
         entityId: String(user.id),
-        label: `Edit ${user.name}`,
+        label: t("users.actions.editNamed", { name: user.name }),
       });
       return;
     }
@@ -211,15 +215,17 @@ export function UsersWorkspace() {
           userId: editingUser.id,
           values,
         });
-        notifyUpdated("User", nextUser.name);
+        notifyUpdated(t("users.entity"), nextUser.name);
       } else {
         const uid = await createSecondaryFirebaseUser(values.email, values.password);
         try {
           const nextUser = await createUserMutation.mutateAsync({ values, uid });
-          notifyAdded("User", nextUser.name);
+          notifyAdded(t("users.entity"), nextUser.name);
         } catch (apiError) {
           throw new Error(
-            `The Firebase account was created, but the EMSYS tenant user record was not created. Do not submit this form again with the same email. ${normalizeApiError(apiError).message}`,
+            t("users.errors.firebasePartialCreate", {
+              message: normalizeApiError(apiError).message,
+            }),
           );
         }
       }
@@ -238,10 +244,15 @@ export function UsersWorkspace() {
 
     try {
       await Promise.all(targets.map((user) => deactivateUserMutation.mutateAsync(user)));
-      setSelectedIds((current) => current.filter((id) => !targets.map((user) => String(user.id)).includes(id)));
+      setSelectedIds((current) =>
+        current.filter((id) => !targets.map((user) => String(user.id)).includes(id)),
+      );
       setDeactivateTarget(null);
       setViewUser(null);
-      notifyUpdated(targets.length === 1 ? "User" : "Users", targets.length === 1 ? targets[0].name : String(targets.length));
+      notifyUpdated(
+        targets.length === 1 ? t("users.entity") : t("users.entityPlural"),
+        targets.length === 1 ? targets[0].name : String(targets.length),
+      );
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeactivateTarget(null);
@@ -250,160 +261,196 @@ export function UsersWorkspace() {
 
   const statCards = [
     {
-      label: "Total users",
+      label: t("users.stats.total.label"),
       value: stats.isLoading ? "…" : stats.total.toString(),
-      description: "Accounts on record",
+      description: t("users.stats.total.description"),
       icon: Users,
     },
     {
-      label: "Active",
+      label: t("users.stats.active.label"),
       value: stats.isLoading ? "…" : stats.active.toString(),
-      description: "Currently active",
+      description: t("users.stats.active.description"),
       icon: UserCog,
     },
     {
-      label: "Admins",
+      label: t("users.stats.admins.label"),
       value: stats.isLoading ? "…" : stats.admin.toString(),
-      description: "Admin role accounts",
+      description: t("users.stats.admins.description"),
       icon: Shield,
     },
   ];
 
-  const tableColumns: DataTableColumn<User>[] = [
-    {
-      id: "id",
-      label: "User ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (user) => truncateUserId(user.id),
-    },
-    {
-      id: "uid",
-      label: "uid",
-      cellClassName: "font-mono text-xs text-muted-foreground",
-      renderCell: (user) => (user.uid ? truncateUid(user.uid) : "—"),
-    },
-    {
-      id: "name",
-      label: "name",
-      cellClassName: "font-medium",
-      renderCell: (user) => user.name,
-    },
-    {
-      id: "active",
-      label: "active",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (user) => (
-        <TableTagText className={getUserActiveBadgeClass(user.active)}>
-          {getUserActiveLabel(user.active)}
-        </TableTagText>
-      ),
-    },
-    {
-      id: "role.name",
-      label: "role.name",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (user) => (
-        <TableTagText className={getUserRoleBadgeClass(user.role.name)}>
-          {getUserRoleLabel(user.role.name)}
-        </TableTagText>
-      ),
-    },
-    {
-      id: "role.id",
-      label: "role.id",
-      cellClassName: "font-mono text-xs",
-      renderCell: (user) => (user.role.id > 0 ? String(user.role.id) : "—"),
-    },
-    {
-      id: "branch",
-      label: "branch",
-      sortField: "branch.name",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (user) => (
-        <TableTagText className={getUserBranchBadgeClass(user)}>
-          {formatUserBranchLabel(user)}
-        </TableTagText>
-      ),
-    },
-    {
-      id: "branch.name",
-      label: "branch.name",
-      renderCell: (user) => user.branch.name || "—",
-    },
-    {
-      id: "startTime",
-      label: "startTime",
-      renderCell: (user) => user.startTime || "—",
-    },
-    {
-      id: "endTime",
-      label: "endTime",
-      renderCell: (user) => user.endTime || "—",
-    },
-    {
-      id: "email",
-      label: "email",
-      renderCell: (user) => user.email || "—",
-    },
-    {
-      id: "createdAt",
-      label: "createdAt",
-      cellClassName: "text-muted-foreground",
-      renderCell: (user) => (user.createdAt ? formatAuditDateTime(user.createdAt) : "—"),
-    },
-    {
-      id: "updatedAt",
-      label: "updatedAt",
-      cellClassName: "text-muted-foreground",
-      renderCell: (user) => (user.updatedAt ? formatAuditDateTime(user.updatedAt) : "—"),
-    },
-    {
-      id: "actions",
-      label: "Actions",
-      sortable: false,
-      truncateCell: false,
-      renderCell: (user) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={(event) => event.stopPropagation()} aria-label={`Actions for ${user.name}`}>
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
-            <DropdownMenuItem onClick={() => openEditForm(user)}>Edit user</DropdownMenuItem>
-            {user.active ? <DropdownMenuItem className="text-destructive" onClick={() => setDeactivateTarget(user)}>Deactivate user</DropdownMenuItem> : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ];
+  const dash = t("common.empty.dash");
+
+  const tableColumns: DataTableColumn<User>[] = useMemo(
+    () => [
+      {
+        id: "id",
+        label: t("users.columns.id"),
+        cellClassName: "font-mono text-xs",
+        renderCell: (user) => truncateUserId(user.id),
+      },
+      {
+        id: "uid",
+        label: t("users.columns.uid"),
+        cellClassName: "font-mono text-xs text-muted-foreground",
+        renderCell: (user) => (user.uid ? truncateUid(user.uid) : dash),
+      },
+      {
+        id: "name",
+        label: t("users.columns.name"),
+        cellClassName: "font-medium",
+        renderCell: (user) => user.name,
+      },
+      {
+        id: "active",
+        label: t("users.columns.active"),
+        truncateCell: false,
+        cellClassName: "overflow-visible",
+        renderCell: (user) => (
+          <TableTagText className={getUserActiveBadgeClass(user.active)}>
+            {userLabels.active(user.active)}
+          </TableTagText>
+        ),
+      },
+      {
+        id: "role.name",
+        label: t("users.columns.role.name"),
+        truncateCell: false,
+        cellClassName: "overflow-visible",
+        renderCell: (user) => (
+          <TableTagText className={getUserRoleBadgeClass(user.role.name)}>
+            {getUserRoleLabel(user.role.name)}
+          </TableTagText>
+        ),
+      },
+      {
+        id: "role.id",
+        label: t("users.columns.role.id"),
+        cellClassName: "font-mono text-xs",
+        renderCell: (user) => (user.role.id > 0 ? String(user.role.id) : dash),
+      },
+      {
+        id: "branch",
+        label: t("users.columns.branch"),
+        sortField: "branch.name",
+        truncateCell: false,
+        cellClassName: "overflow-visible",
+        renderCell: (user) => (
+          <TableTagText className={getUserBranchBadgeClass(user)}>
+            {formatUserBranchLabel(user)}
+          </TableTagText>
+        ),
+      },
+      {
+        id: "branch.name",
+        label: t("users.columns.branch.name"),
+        renderCell: (user) => user.branch.name || dash,
+      },
+      {
+        id: "startTime",
+        label: t("users.columns.startTime"),
+        renderCell: (user) => user.startTime || dash,
+      },
+      {
+        id: "endTime",
+        label: t("users.columns.endTime"),
+        renderCell: (user) => user.endTime || dash,
+      },
+      {
+        id: "email",
+        label: t("users.columns.email"),
+        renderCell: (user) => user.email || dash,
+      },
+      {
+        id: "createdAt",
+        label: t("users.columns.createdAt"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (user) => (user.createdAt ? formatAuditDateTime(user.createdAt) : dash),
+      },
+      {
+        id: "updatedAt",
+        label: t("users.columns.updatedAt"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (user) => (user.updatedAt ? formatAuditDateTime(user.updatedAt) : dash),
+      },
+      {
+        id: "actions",
+        label: t("users.columns.actions"),
+        sortable: false,
+        truncateCell: false,
+        renderCell: (user) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(event) => event.stopPropagation()}
+                aria-label={t("users.table.actionsFor", { name: user.name })}
+              >
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+              <DropdownMenuItem onClick={() => openEditForm(user)}>
+                {t("users.actions.edit")}
+              </DropdownMenuItem>
+              {user.active ? (
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => setDeactivateTarget(user)}
+                >
+                  {t("users.actions.deactivate")}
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+      },
+    ],
+    [dash, t, userLabels],
+  );
 
   const columnVisibility = useColumnVisibility("users", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
-  const activeFilterCount = countCompleteFilterRows(filters.rows, USER_TABLE_FILTER_FIELDS);
+  const activeFilterCount = countCompleteFilterRows(filters.rows, userFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query: filters.query,
-    isSearchPending,
-    matched: totalUsers,
-    catalogTotal: stats.total,
-    noun: "users",
-    isLoading: isFetching && users.length === 0,
-    catalogLoading: stats.isLoading,
-  });
+  const searchSummary = buildToolbarSearchSummary(
+    {
+      isFiltered: hasActiveFilters,
+      query: filters.query,
+      isSearchPending,
+      matched: totalUsers,
+      catalogTotal: stats.total,
+      noun: t("users.noun"),
+      isLoading: isFetching && users.length === 0,
+      catalogLoading: stats.isLoading,
+    },
+    t,
+  );
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: pageUsers.length,
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      total: totalUsers,
+      noun: t("users.noun"),
+      isFiltered: hasActiveFilters,
+      isLoading: isFetching,
+    },
+    t,
+  );
+
+  const deactivateMany = Array.isArray(deactivateTarget) && deactivateTarget.length > 1;
 
   return (
     <div>
       <PageHeader
-        title="Users"
+        title={t("users.title")}
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
-            Add user
+            {t("users.actions.add")}
           </Button>
         }
       />
@@ -425,16 +472,16 @@ export function UsersWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search users..."
+                placeholder={t("users.search.placeholder")}
               />
             }
             filterPanel={
               <TableFilterPanel
-                resultSummary={`Showing ${pageUsers.length} of ${totalUsers} users`}
+                resultSummary={listSummary}
                 presets={{
                   storageKey: "users",
                   rows: filters.rows,
-                  fields: USER_TABLE_FILTER_FIELDS,
+                  fields: userFilterFields,
                   onApply: (rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -452,7 +499,7 @@ export function UsersWorkspace() {
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
                   rows={filters.rows}
-                  fields={USER_TABLE_FILTER_FIELDS}
+                  fields={userFilterFields}
                   dynamicOptions={{
                     branches: branchesLoading ? [] : branchFilterOptions,
                   }}
@@ -484,7 +531,9 @@ export function UsersWorkspace() {
         />
 
         {isLoading ? (
-          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading users…</div>
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">
+            {t("users.loading.list")}
+          </div>
         ) : (
           <DataTable
             columns={columnVisibility.columns}
@@ -494,7 +543,7 @@ export function UsersWorkspace() {
             rowKey={(user) => String(user.id)}
             rowLabel={(user) => user.name}
             columnLayout={columnVisibility}
-        minWidth={1600}
+            minWidth={1600}
             sort={sort}
             onSortChange={onSortChange}
             selectable
@@ -506,10 +555,12 @@ export function UsersWorkspace() {
             onRowDoubleClick={openEditForm}
             emptyState={
               <>
-                <p className="text-muted-foreground">No users match your search or filters.</p>
+                <p className="text-muted-foreground">
+                  {hasActiveFilters ? t("users.empty.noMatch") : t("users.empty.noneYet")}
+                </p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
-                  Add user
+                  {t("users.actions.add")}
                 </Button>
               </>
             }
@@ -517,9 +568,7 @@ export function UsersWorkspace() {
         )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {isFetching ? "Refreshing…" : `Showing ${pageUsers.length} of ${totalUsers} users`}
-          </p>
+          <p className="text-sm text-muted-foreground">{listSummary}</p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -528,10 +577,10 @@ export function UsersWorkspace() {
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              {t("common.actions.previous")}
             </Button>
             <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -539,7 +588,7 @@ export function UsersWorkspace() {
               disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
-              Next
+              {t("common.actions.next")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -570,7 +619,9 @@ export function UsersWorkspace() {
       >
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>{formMode === "edit" ? "Edit user" : "Add user"}</DialogTitle>
+            <DialogTitle>
+              {formMode === "edit" ? t("users.form.editTitle") : t("users.form.addTitle")}
+            </DialogTitle>
           </DialogHeader>
           <UserForm
             key={editingUser?.id ?? "new"}
@@ -578,7 +629,9 @@ export function UsersWorkspace() {
               formMode === "edit" && editingUser ? userToFormValues(editingUser) : createEmptyUserForm()
             }
             isEditing={formMode === "edit"}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add user"}
+            submitLabel={
+              formMode === "edit" ? t("common.actions.saveChanges") : t("users.actions.add")
+            }
             isSubmitting={isSaving}
             externalError={formError}
             onSubmit={saveUser}
@@ -593,25 +646,28 @@ export function UsersWorkspace() {
       <Dialog open={deactivateTarget !== null} onOpenChange={(open) => !open && setDeactivateTarget(null)}>
         <DialogContent className="z-[60]">
           <DialogHeader>
-            <DialogTitle>Deactivate user{Array.isArray(deactivateTarget) && deactivateTarget.length > 1 ? "s" : ""}?</DialogTitle>
+            <DialogTitle>
+              {deactivateMany ? t("users.dialogs.deactivateTitlePlural") : t("users.dialogs.deactivateTitle")}
+            </DialogTitle>
             <DialogDescription>
               {Array.isArray(deactivateTarget)
-                ? `This will prevent ${deactivateTarget.length} selected users from accessing this company.`
-                : `${deactivateTarget?.name ?? "This user"} will no longer be able to access this company.`}
+                ? t("users.dialogs.deactivateMany", { count: deactivateTarget.length })
+                : t("users.dialogs.deactivateOne", {
+                    name: deactivateTarget?.name ?? t("users.dialogs.unnamed"),
+                  })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeactivateTarget(null)} disabled={isSaving}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDeactivate} disabled={isSaving}>
               <UserX className="h-4 w-4" />
-              Deactivate
+              {t("users.view.deactivate")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

@@ -1,0 +1,173 @@
+{
+  "entity": "Usuario",
+  "entityPlural": "usuarios",
+  "title": "Usuarios",
+  "noun": "usuarios",
+  "actions": {
+    "add": "Agregar usuario",
+    "edit": "Editar usuario",
+    "editNamed": "Editar {{name}}",
+    "deactivate": "Desactivar usuario",
+    "deactivateSelected": "Desactivar seleccionados"
+  },
+  "stats": {
+    "total": {
+      "label": "Total de usuarios",
+      "description": "Cuentas registradas"
+    },
+    "active": {
+      "label": "Activos",
+      "description": "Actualmente activos"
+    },
+    "admins": {
+      "label": "Administradores",
+      "description": "Cuentas con rol de administrador"
+    }
+  },
+  "columns": {
+    "id": "ID de usuario",
+    "uid": "UID",
+    "name": "Nombre",
+    "active": "Activo",
+    "role.name": "Rol",
+    "role.id": "ID de rol",
+    "branch": "Sucursal",
+    "branch.name": "Nombre de sucursal",
+    "startTime": "Hora de inicio",
+    "endTime": "Hora de fin",
+    "email": "Correo electrónico",
+    "createdAt": "Creado",
+    "updatedAt": "Actualizado",
+    "actions": "Acciones"
+  },
+  "table": {
+    "actionsFor": "Acciones para {{name}}"
+  },
+  "search": {
+    "placeholder": "Buscar usuarios..."
+  },
+  "loading": {
+    "list": "Cargando usuarios…",
+    "user": "Cargando usuario…"
+  },
+  "empty": {
+    "noMatch": "Ningún usuario coincide con su búsqueda o filtros.",
+    "noneYet": "Aún no hay usuarios."
+  },
+  "enums": {
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    }
+  },
+  "form": {
+    "addTitle": "Agregar usuario",
+    "editTitle": "Editar usuario",
+    "addDescription": "Cree una nueva cuenta de usuario.",
+    "notFound": "No se pudo encontrar este usuario.",
+    "sections": {
+      "profile": "Perfil",
+      "access": "Acceso",
+      "loginHours": "Horario de acceso"
+    },
+    "fields": {
+      "email": "Correo electrónico",
+      "name": "Nombre completo",
+      "password": "Nueva contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "active": "Estado",
+      "branch": "Sucursal",
+      "role": "Rol",
+      "restrictLoginHours": "Restringir horario de acceso",
+      "restrictLoginHoursHint": "Limita cuándo este usuario puede acceder al sistema cada día.",
+      "startTime": "Hora de inicio",
+      "endTime": "Hora de fin"
+    },
+    "placeholders": {
+      "email": "usuario@ejemplo.com",
+      "name": "Nombre completo",
+      "password": "Al menos 6 caracteres",
+      "confirmPassword": "Repita la nueva contraseña",
+      "branch": "Seleccionar sucursal",
+      "branchSearch": "Buscar sucursales…",
+      "branchLoading": "Cargando sucursales…",
+      "role": "Seleccionar rol",
+      "roleSearch": "Buscar roles…",
+      "roleLoading": "Cargando roles…"
+    },
+    "password": {
+      "valid": "La contraseña es válida.",
+      "minLength": "Use al menos 6 caracteres.",
+      "match": "Las contraseñas coinciden.",
+      "mismatch": "Las contraseñas no coinciden.",
+      "reenter": "Vuelva a ingresar su nueva contraseña."
+    },
+    "errors": {
+      "loadAccessOptions": "No se pudieron cargar las opciones de acceso: {{message}}",
+      "noAccessOptions": "No hay sucursales o roles activos disponibles."
+    },
+    "validation": {
+      "selectOption": "Seleccione una opción.",
+      "validEmail": "Ingrese una dirección de correo electrónico válida.",
+      "nameRequired": "El nombre es obligatorio.",
+      "validTime": "Ingrese una hora válida.",
+      "startTimeRequired": "La hora de inicio es obligatoria.",
+      "endTimeRequired": "La hora de fin es obligatoria.",
+      "passwordMinLength": "La contraseña debe tener al menos 6 caracteres.",
+      "confirmPasswordRequired": "Confirme su nueva contraseña.",
+      "passwordsDoNotMatch": "Las contraseñas no coinciden."
+    }
+  },
+  "view": {
+    "sections": {
+      "profile": "Perfil",
+      "access": "Acceso",
+      "loginHours": "Horario de acceso",
+      "audit": "Auditoría"
+    },
+    "userId": "ID de usuario",
+    "firebaseUid": "UID de Firebase",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "status": "Estado",
+    "role": "Rol",
+    "branch": "Sucursal",
+    "startTime": "Hora de inicio",
+    "endTime": "Hora de fin",
+    "notRestricted": "Sin restricción",
+    "created": "Creado",
+    "createdBy": "Creado por",
+    "updated": "Actualizado",
+    "updatedBy": "Actualizado por",
+    "edit": "Editar usuario",
+    "deactivate": "Desactivar"
+  },
+  "dialogs": {
+    "deactivateTitle": "¿Desactivar usuario?",
+    "deactivateTitlePlural": "¿Desactivar usuarios?",
+    "deactivateOne": "{{name}} ya no podrá acceder a esta empresa.",
+    "deactivateMany": "Esto impedirá que {{count}} usuarios seleccionados accedan a esta empresa.",
+    "unnamed": "Este usuario"
+  },
+  "errors": {
+    "firebasePartialCreate": "Se creó la cuenta de Firebase, pero no se creó el registro de usuario en EMSYS. No envíe este formulario nuevamente con el mismo correo electrónico. {{message}}"
+  },
+  "filters": {
+    "fields": {
+      "id": { "label": "ID de usuario", "placeholder": "Ingrese ID de usuario…" },
+      "name": { "label": "Nombre", "placeholder": "Ingrese nombre…" },
+      "email": { "label": "Correo electrónico", "placeholder": "Ingrese correo electrónico…" },
+      "uid": { "label": "UID", "placeholder": "Ingrese UID…" },
+      "role": {
+        "name": { "label": "Nombre de rol", "placeholder": "Ingrese nombre de rol…" },
+        "id": { "label": "Rol", "placeholder": "Ingrese ID de rol…" }
+      },
+      "branch": {
+        "name": { "label": "Nombre de sucursal", "placeholder": "Ingrese nombre de sucursal…" },
+        "id": { "label": "Sucursal", "placeholder": "Seleccionar sucursal…" }
+      },
+      "active": { "label": "Activo", "placeholder": "Seleccionar estado…" },
+      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" }
+    }
+  }
+}

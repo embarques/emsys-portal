@@ -1,0 +1,187 @@
+{
+  "entity": "Employee",
+  "entityPlural": "employees",
+  "title": "Employees",
+  "noun": "employees",
+  "actions": {
+    "add": "Add employee",
+    "edit": "Edit employee",
+    "editNamed": "Edit {{name}}"
+  },
+  "stats": {
+    "total": {
+      "label": "Total employees",
+      "description": "Employees on record"
+    },
+    "branch": {
+      "description": "Employees in {{branch}}"
+    }
+  },
+  "columns": {
+    "id": "Employee ID",
+    "name": "Name",
+    "title": "Title",
+    "department": "Department",
+    "active": "Active",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "branch": "Branch",
+    "branch.code": "Branch code",
+    "branch.name": "Branch name",
+    "phone": "Phone",
+    "email": "Email",
+    "address.address1": "Address line 1",
+    "address.city": "City",
+    "address.state": "State",
+    "address.country": "Country",
+    "cost": "Cost",
+    "totalLoanGiven": "Total loan given",
+    "totalPaymentReceived": "Total payment received",
+    "loanAmountOwed": "Loan owed",
+    "loanBalanceUpdated": "Loan balance updated",
+    "user": "User",
+    "user.id": "User ID",
+    "user.name": "User name",
+    "createdAt": "Created",
+    "updatedAt": "Updated"
+  },
+  "search": {
+    "placeholder": "Search employees..."
+  },
+  "loading": {
+    "employees": "Loading employees…",
+    "employee": "Loading employee…"
+  },
+  "empty": {
+    "noMatch": "No employees match your search or filters.",
+    "noneYet": "No employees yet."
+  },
+  "enums": {
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "branch": {
+      "usa": "USA",
+      "dr": "DR"
+    },
+    "branchCode": {
+      "NY": "NY",
+      "RD": "RD",
+      "DR": "DR",
+      "DO": "DO"
+    },
+    "department": {
+      "Operations": "Operations",
+      "Warehouse": "Warehouse",
+      "Fleet": "Fleet",
+      "Customer Service": "Customer Service",
+      "Administration": "Administration",
+      "Accounting": "Accounting",
+      "driver": "Driver"
+    },
+    "title": {
+      "dispatcher": "Dispatcher",
+      "warehouse": "Warehouse",
+      "driver": "Driver",
+      "support": "Support",
+      "planner": "Planner",
+      "admin": "Admin",
+      "manager": "Manager",
+      "supervisor": "Supervisor"
+    }
+  },
+  "form": {
+    "addTitle": "Add employee",
+    "editTitle": "Edit employee",
+    "addDescription": "Create a new employee record.",
+    "notFound": "This employee could not be found.",
+    "sections": {
+      "employee": "Employee",
+      "branch": "Branch",
+      "address": "Address",
+      "contact": "Contact"
+    },
+    "fields": {
+      "active": "Active",
+      "name": "Name",
+      "department": "Department",
+      "title": "Title",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "cost": "Cost",
+      "branch": "Branch",
+      "address1": "Address line 1",
+      "address2": "Address line 2",
+      "apartment": "Apartment / suite",
+      "city": "City",
+      "state": "State / province",
+      "zipcode": "Zip / postal code",
+      "country": "Country",
+      "email": "Email"
+    },
+    "placeholders": {
+      "name": "MIGUEL",
+      "startDate": "2026-06-09T00:00:00Z",
+      "endDate": "2026-06-09T00:00:00Z",
+      "departmentSearch": "Search departments…",
+      "titleSearch": "Search titles…",
+      "branchSearch": "Search branches…",
+      "address1": "245 Atlantic Ave",
+      "address2": "Suite 100",
+      "apartment": "Apt 4B",
+      "city": "NEW YORK",
+      "state": "NY",
+      "zipcode": "11201",
+      "country": "US",
+      "email": "name@emsys.example"
+    }
+  },
+  "view": {
+    "employeeId": "Employee ID",
+    "sections": {
+      "employee": "Employee",
+      "branch": "Branch",
+      "contact": "Contact",
+      "address": "Address",
+      "loans": "Loans",
+      "user": "User",
+      "audit": "Audit"
+    },
+    "branchId": "Branch ID",
+    "phonePrimary": "{{type}} (primary)",
+    "edit": "Edit employee"
+  },
+  "dialogs": {
+    "deleteTitle": "Delete employee?",
+    "deleteTitlePlural": "Delete employees?",
+    "deleteOne": "This will permanently remove \"{{name}}\". {{cannotBeUndone}}",
+    "deleteMany": "This will permanently remove {{count}} selected employees. {{cannotBeUndone}}",
+    "unnamed": "this employee"
+  },
+  "filters": {
+    "fields": {
+      "id": { "label": "Employee ID", "placeholder": "Enter employee ID…" },
+      "name": { "label": "Name", "placeholder": "Enter name…" },
+      "title": { "label": "Title", "placeholder": "Enter title…" },
+      "email": { "label": "Email", "placeholder": "Enter email…" },
+      "phone": { "label": "Phone", "placeholder": "Enter phone…" },
+      "address": {
+        "address1": { "label": "Address line 1", "placeholder": "Enter address line 1…" },
+        "address2": { "label": "Address line 2", "placeholder": "Enter address line 2…" },
+        "apartment": { "label": "Apartment", "placeholder": "Enter apartment…" },
+        "city": { "label": "City", "placeholder": "Enter city…" },
+        "state": { "label": "State", "placeholder": "Enter state…" },
+        "zipcode": { "label": "Zip code", "placeholder": "Enter zip code…" },
+        "country": { "label": "Country", "placeholder": "Enter country…" }
+      },
+      "department": { "label": "Department", "placeholder": "Select department…" },
+      "active": { "label": "Active", "placeholder": "Select status…" },
+      "branch": {
+        "code": { "label": "Branch", "placeholder": "Select branch…" }
+      },
+      "cost": { "label": "Cost", "placeholder": "Enter amount…" },
+      "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" }
+    }
+  }
+}

@@ -35,7 +35,8 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
-import { BRANCH_TABLE_FILTER_FIELDS } from "@/lib/branches/filter-fields";
+import { useBranchFilterFields } from "@/lib/branches/hooks/use-branch-filter-fields";
+import { useTranslation } from "@/lib/i18n";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import {
   buildTableSelectionResetKey,
@@ -70,7 +71,7 @@ import {
 } from "@/lib/branches/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTableSort } from "@/lib/table/use-table-sort";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_BRANCH_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -81,6 +82,8 @@ const defaultFilters: BranchFilterState = {
 };
 
 export function BranchesWorkspace() {
+  const { t } = useTranslation();
+  const branchFilterFields = useBranchFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<BranchFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -147,7 +150,7 @@ export function BranchesWorkspace() {
 
   function openAddForm() {
     if (isDesktopTabs) {
-      openFormTab({ feature: "branches", baseHref: "/branches", mode: "add", label: "Add branch" });
+      openFormTab({ feature: "branches", baseHref: "/branches", mode: "add", label: t("branches.actions.add") });
       return;
     }
     setEditingBranch(null);
@@ -163,7 +166,7 @@ export function BranchesWorkspace() {
         baseHref: "/branches",
         mode: "edit",
         entityId: String(branch.id),
-        label: `Edit ${branch.name}`,
+        label: t("branches.actions.editNamed", { name: branch.name }),
       });
       return;
     }
@@ -182,10 +185,10 @@ export function BranchesWorkspace() {
           branchId: editingBranch.id,
           values,
         });
-        notifyUpdated("Branch", nextBranch.name);
+        notifyUpdated(t("branches.entity"), nextBranch.name);
       } else {
         const nextBranch = await createBranchMutation.mutateAsync(values);
-        notifyAdded("Branch", nextBranch.name);
+        notifyAdded(t("branches.entity"), nextBranch.name);
       }
 
       setFormMode(null);
@@ -208,118 +211,140 @@ export function BranchesWorkspace() {
       setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
       setDeleteTarget(null);
       setViewBranch(null);
-      notifyDeleted("Branch", ids.length);
+      notifyDeleted(t("branches.entity"), ids.length);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);
     }
   }
 
-  const tableColumns: DataTableColumn<Branch>[] = [
-    {
-      id: "id",
-      label: "Branch ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (branch) => formatBranchId(branch.id),
-    },
-    {
-      id: "name",
-      label: "name",
-      cellClassName: "font-medium",
-      renderCell: (branch) => branch.name,
-    },
-    {
-      id: "code",
-      label: "code",
-      renderCell: (branch) => branch.code || "—",
-    },
-    {
-      id: "type",
-      label: "type",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (branch) =>
-        branch.type ? (
-          <TableTagText className={getBranchTypeBadgeClass(branch.type)}>
-            {branch.type}
-          </TableTagText>
-        ) : (
-          "—"
-        ),
-    },
-    {
-      id: "phone1",
-      label: "phone1",
-      renderCell: (branch) => formatPhoneDisplayOrDash(branch.phone1),
-    },
-    {
-      id: "phone2",
-      label: "phone2",
-      renderCell: (branch) => formatPhoneDisplayOrDash(branch.phone2),
-    },
-    {
-      id: "phones",
-      label: "phones",
-      sortField: "phone1",
-      renderCell: (branch) => formatBranchPhones(branch),
-    },
-    {
-      id: "address.city",
-      label: "address.city",
-      renderCell: (branch) => branch.address.city || "—",
-    },
-    {
-      id: "address.state",
-      label: "address.state",
-      renderCell: (branch) => branch.address.state || "—",
-    },
-    {
-      id: "address.country",
-      label: "address.country",
-      renderCell: (branch) => branch.address.country || "—",
-    },
-    {
-      id: "address",
-      label: "address",
-      sortField: "address.address1",
-      renderCell: (branch) => formatBranchAddress(branch),
-    },
-    {
-      id: "settings.labelPrefix",
-      label: "settings.labelPrefix",
-      renderCell: (branch) => branch.settings.labelPrefix || "—",
-    },
-    {
-      id: "created",
-      label: "created",
-      cellClassName: "text-muted-foreground",
-      renderCell: (branch) => (branch.created ? formatAuditDateTime(branch.created) : "—"),
-    },
-  ];
+  const dash = t("common.empty.dash");
+
+  const tableColumns: DataTableColumn<Branch>[] = useMemo(
+    () => [
+      {
+        id: "id",
+        label: t("branches.columns.id"),
+        cellClassName: "font-mono text-xs",
+        renderCell: (branch) => formatBranchId(branch.id),
+      },
+      {
+        id: "name",
+        label: t("branches.columns.name"),
+        cellClassName: "font-medium",
+        renderCell: (branch) => branch.name,
+      },
+      {
+        id: "code",
+        label: t("branches.columns.code"),
+        renderCell: (branch) => branch.code || dash,
+      },
+      {
+        id: "type",
+        label: t("branches.columns.type"),
+        truncateCell: false,
+        cellClassName: "overflow-visible",
+        renderCell: (branch) =>
+          branch.type ? (
+            <TableTagText className={getBranchTypeBadgeClass(branch.type)}>
+              {branch.type}
+            </TableTagText>
+          ) : (
+            dash
+          ),
+      },
+      {
+        id: "phone1",
+        label: t("branches.columns.phone1"),
+        renderCell: (branch) => formatPhoneDisplayOrDash(branch.phone1),
+      },
+      {
+        id: "phone2",
+        label: t("branches.columns.phone2"),
+        renderCell: (branch) => formatPhoneDisplayOrDash(branch.phone2),
+      },
+      {
+        id: "phones",
+        label: t("branches.columns.phones"),
+        sortField: "phone1",
+        renderCell: (branch) => formatBranchPhones(branch),
+      },
+      {
+        id: "address.city",
+        label: t("branches.columns.address.city"),
+        renderCell: (branch) => branch.address.city || dash,
+      },
+      {
+        id: "address.state",
+        label: t("branches.columns.address.state"),
+        renderCell: (branch) => branch.address.state || dash,
+      },
+      {
+        id: "address.country",
+        label: t("branches.columns.address.country"),
+        renderCell: (branch) => branch.address.country || dash,
+      },
+      {
+        id: "address",
+        label: t("branches.columns.address.full"),
+        sortField: "address.address1",
+        renderCell: (branch) => formatBranchAddress(branch),
+      },
+      {
+        id: "settings.labelPrefix",
+        label: t("branches.columns.settings.labelPrefix"),
+        renderCell: (branch) => branch.settings.labelPrefix || dash,
+      },
+      {
+        id: "created",
+        label: t("branches.columns.created"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (branch) => (branch.created ? formatAuditDateTime(branch.created) : dash),
+      },
+    ],
+    [dash, t],
+  );
 
   const columnVisibility = useColumnVisibility("branches", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
-  const activeFilterCount = countCompleteFilterRows(filters.rows, BRANCH_TABLE_FILTER_FIELDS);
+  const activeFilterCount = countCompleteFilterRows(filters.rows, branchFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query: filters.query,
-    isSearchPending,
-    matched: totalBranches,
-    catalogTotal: stats.total,
-    noun: "branches",
-    isLoading: isFetching && branches.length === 0,
-    catalogLoading: stats.isLoading,
-  });
+  const searchSummary = buildToolbarSearchSummary(
+    {
+      isFiltered: hasActiveFilters,
+      query: filters.query,
+      isSearchPending,
+      matched: totalBranches,
+      catalogTotal: stats.total,
+      noun: t("branches.noun"),
+      isLoading: isFetching && branches.length === 0,
+      catalogLoading: stats.isLoading,
+    },
+    t,
+  );
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: branches.length,
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      total: totalBranches,
+      noun: t("branches.noun"),
+      isFiltered: hasActiveFilters,
+      isLoading: isFetching,
+      catalogTotal: stats.total,
+      catalogLoading: stats.isLoading,
+    },
+    t,
+  );
 
   return (
     <div>
       <PageHeader
-        title="Branches"
+        title={t("branches.title")}
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
-            Add branch
+            {t("branches.actions.add")}
           </Button>
         }
       />
@@ -327,9 +352,9 @@ export function BranchesWorkspace() {
       <StatCards
         items={[
           {
-            label: "Total branches",
+            label: t("branches.stats.total.label"),
             value: stats.isLoading ? "…" : stats.total.toString(),
-            description: "Branches on record",
+            description: t("branches.stats.total.description"),
             icon: Building2,
           },
         ]}
@@ -350,16 +375,16 @@ export function BranchesWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search branches..."
+                placeholder={t("branches.search.placeholder")}
               />
             }
             filterPanel={
               <TableFilterPanel
-                resultSummary={`Showing ${branches.length} of ${totalBranches} branches`}
+                resultSummary={listSummary}
                 presets={{
                   storageKey: "branches",
                   rows: filters.rows,
-                  fields: BRANCH_TABLE_FILTER_FIELDS,
+                  fields: branchFilterFields,
                   onApply: (rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -377,7 +402,7 @@ export function BranchesWorkspace() {
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
                   rows={filters.rows}
-                  fields={BRANCH_TABLE_FILTER_FIELDS}
+                  fields={branchFilterFields}
                   onChange={(rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -406,7 +431,9 @@ export function BranchesWorkspace() {
         />
 
         {isLoading ? (
-          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading branches…</div>
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">
+            {t("branches.loading.list")}
+          </div>
         ) : (
           <DataTable
             columns={columnVisibility.columns}
@@ -428,10 +455,12 @@ export function BranchesWorkspace() {
             onRowDoubleClick={openEditForm}
             emptyState={
               <>
-                <p className="text-muted-foreground">No branches match your search or filters.</p>
+                <p className="text-muted-foreground">
+                  {hasActiveFilters ? t("branches.empty.noMatch") : t("branches.empty.noneYet")}
+                </p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
-                  Add branch
+                  {t("branches.actions.add")}
                 </Button>
               </>
             }
@@ -439,11 +468,7 @@ export function BranchesWorkspace() {
         )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {isFetching
-              ? "Refreshing branches…"
-              : `Showing ${branches.length} of ${totalBranches} branches`}
-          </p>
+          <p className="text-sm text-muted-foreground">{listSummary}</p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -452,10 +477,10 @@ export function BranchesWorkspace() {
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              {t("common.actions.previous")}
             </Button>
             <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -463,7 +488,7 @@ export function BranchesWorkspace() {
               disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
-              Next
+              {t("common.actions.next")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -494,7 +519,9 @@ export function BranchesWorkspace() {
       >
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>{formMode === "edit" ? "Edit branch" : "Add branch"}</DialogTitle>
+            <DialogTitle>
+              {formMode === "edit" ? t("branches.form.editTitle") : t("branches.form.addTitle")}
+            </DialogTitle>
           </DialogHeader>
           <BranchForm
             key={editingBranch?.id ?? "new"}
@@ -504,7 +531,7 @@ export function BranchesWorkspace() {
                 : createEmptyBranchForm()
             }
             isEditing={formMode === "edit"}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add branch"}
+            submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("branches.actions.add")}
             isSubmitting={isSaving}
             externalError={formError}
             onSubmit={saveBranch}
@@ -520,21 +547,32 @@ export function BranchesWorkspace() {
         <DialogContent className="z-[60]">
           <DialogHeader>
             <DialogTitle>
-              Delete branch{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "es" : ""}?
+              {Array.isArray(deleteTarget) && deleteTarget.length > 1
+                ? t("branches.dialogs.deleteTitlePlural")
+                : t("branches.dialogs.deleteTitle")}
             </DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected branches.`
-                : "This will permanently remove this branch. This action cannot be undone."}
+                ? t("branches.dialogs.deleteMany", {
+                    count: deleteTarget.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
+                : t("branches.dialogs.deleteOne", {
+                    name:
+                      !Array.isArray(deleteTarget) && deleteTarget?.name
+                        ? deleteTarget.name
+                        : t("branches.dialogs.unnamed"),
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
-              Delete
+              {t("common.actions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

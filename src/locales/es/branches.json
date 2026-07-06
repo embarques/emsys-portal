@@ -1,0 +1,153 @@
+{
+  "entity": "Sucursal",
+  "entityPlural": "sucursales",
+  "title": "Sucursales",
+  "noun": "sucursales",
+  "actions": {
+    "add": "Agregar sucursal",
+    "edit": "Editar sucursal",
+    "editNamed": "Editar {{name}}"
+  },
+  "stats": {
+    "total": {
+      "label": "Total de sucursales",
+      "description": "Sucursales registradas"
+    }
+  },
+  "columns": {
+    "id": "ID de sucursal",
+    "name": "Nombre",
+    "code": "Código",
+    "type": "Tipo",
+    "phone1": "Teléfono 1",
+    "phone2": "Teléfono 2",
+    "phones": "Teléfonos",
+    "address": {
+      "city": "Ciudad",
+      "state": "Estado",
+      "country": "País",
+      "full": "Dirección"
+    },
+    "settings": {
+      "labelPrefix": "Prefijo de etiqueta"
+    },
+    "created": "Creado"
+  },
+  "search": {
+    "placeholder": "Buscar sucursales..."
+  },
+  "loading": {
+    "list": "Cargando sucursales…",
+    "branch": "Cargando sucursal…"
+  },
+  "empty": {
+    "noMatch": "Ninguna sucursal coincide con su búsqueda o filtros.",
+    "noneYet": "Aún no hay sucursales."
+  },
+  "enums": {
+    "boolean": {
+      "true": "Sí",
+      "false": "No"
+    }
+  },
+  "form": {
+    "addTitle": "Agregar sucursal",
+    "editTitle": "Editar sucursal",
+    "addDescription": "Cree una nueva sucursal.",
+    "notFound": "No se pudo encontrar esta sucursal.",
+    "sections": {
+      "branch": "Sucursal",
+      "address": "Dirección",
+      "settings": "Configuración"
+    },
+    "fields": {
+      "name": "Nombre",
+      "code": "Código",
+      "type": "Tipo",
+      "logo": "URL del logo",
+      "phone1": "Teléfono 1",
+      "phone2": "Teléfono 2",
+      "disclaimer": "Descargo de responsabilidad",
+      "address1": "Dirección línea 1",
+      "address2": "Dirección línea 2",
+      "apartment": "Apartamento / suite",
+      "city": "Ciudad",
+      "state": "Estado / provincia",
+      "zipcode": "Código postal",
+      "country": "País",
+      "labelPrefix": "Prefijo de etiqueta",
+      "roundDecimalPlaces": "Decimales de redondeo",
+      "defaultLabelStatus": "Estado de etiqueta predeterminado",
+      "imageResampleBy": "Remuestreo de imagen",
+      "s3Profile": "Perfil S3",
+      "s3BucketName": "Nombre del bucket S3",
+      "s3BucketFolder": "Carpeta del bucket S3",
+      "s3ShareLinkExpireMinutes": "Vencimiento del enlace S3 (minutos)",
+      "invoiceCreatedThruIncomeStatement": "Factura creada mediante estado de resultados",
+      "printLabelCount": "Imprimir conteo de etiquetas"
+    }
+  },
+  "view": {
+    "branchFallback": "Sucursal {{id}}",
+    "prefixLabel": "Prefijo: {{prefix}}",
+    "sections": {
+      "branch": "Sucursal",
+      "contact": "Contacto",
+      "address": "Dirección",
+      "settings": "Configuración"
+    },
+    "fields": {
+      "branchId": "ID de sucursal",
+      "name": "Nombre",
+      "code": "Código",
+      "type": "Tipo",
+      "logo": "Logo",
+      "disclaimer": "Descargo de responsabilidad",
+      "created": "Creado",
+      "phone1": "Teléfono 1",
+      "phone2": "Teléfono 2",
+      "phones": "Teléfonos",
+      "address1": "Dirección 1",
+      "address2": "Dirección 2",
+      "apartment": "Apartamento",
+      "city": "Ciudad",
+      "state": "Estado",
+      "zipcode": "Código postal",
+      "country": "País",
+      "fullAddress": "Dirección completa",
+      "labelPrefix": "Prefijo de etiqueta",
+      "defaultLabelStatus": "Estado de etiqueta predeterminado",
+      "roundDecimalPlaces": "Decimales de redondeo",
+      "invoiceViaIncomeStatement": "Factura mediante estado de resultados",
+      "printLabelCount": "Imprimir conteo de etiquetas",
+      "s3Profile": "Perfil S3",
+      "s3Bucket": "Bucket S3",
+      "s3Folder": "Carpeta S3",
+      "s3LinkExpiry": "Vencimiento del enlace S3 (min)",
+      "imageResampleBy": "Remuestreo de imagen"
+    },
+    "edit": "Editar sucursal"
+  },
+  "dialogs": {
+    "deleteTitle": "¿Eliminar sucursal?",
+    "deleteTitlePlural": "¿Eliminar sucursales?",
+    "deleteOne": "Esto eliminará permanentemente \"{{name}}\". {{cannotBeUndone}}",
+    "deleteMany": "Esto eliminará permanentemente {{count}} sucursales seleccionadas. {{cannotBeUndone}}",
+    "unnamed": "esta sucursal"
+  },
+  "filters": {
+    "fields": {
+      "name": { "label": "Nombre", "placeholder": "Ingrese nombre…" },
+      "code": { "label": "Código", "placeholder": "Ingrese código…" },
+      "type": { "label": "Tipo", "placeholder": "Ingrese tipo…" },
+      "phones": {
+        "number": { "label": "Teléfono", "placeholder": "Ingrese teléfono…" }
+      },
+      "address": {
+        "city": { "label": "Ciudad", "placeholder": "Ingrese ciudad…" },
+        "state": { "label": "Estado", "placeholder": "Ingrese estado…" },
+        "zipcode": { "label": "Código postal", "placeholder": "Ingrese código postal…" }
+      }
+    }
+  }
+}
