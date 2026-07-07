@@ -54,10 +54,12 @@ export function useColumnVisibility<T extends ColumnVisibilityDefinition>(
 
   const getColumnWidth = useCallback(
     (id: string) => {
+      const column = columns.find((entry) => entry.id === id);
+      const fallback = column?.defaultWidth ?? DEFAULT_COLUMN_WIDTH;
       const width = preferences.widths[id];
-      return width != null && Number.isFinite(width) ? width : DEFAULT_COLUMN_WIDTH;
+      return width != null && Number.isFinite(width) ? width : fallback;
     },
-    [preferences.widths]
+    [columns, preferences.widths],
   );
 
   const setColumnVisible = useCallback(

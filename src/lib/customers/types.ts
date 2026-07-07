@@ -34,7 +34,17 @@ export type AddressVerification = {
   verifiedAt: string;
 };
 
+export type CustomerAddressLabel =
+  | "Primary"
+  | "Home"
+  | "Work"
+  | "Billing"
+  | "Delivery"
+  | "Other";
+
 export type CustomerCoreAddress = {
+  id?: string;
+  label?: CustomerAddressLabel;
   address1: string;
   address2: string;
   apartment: string;
@@ -42,12 +52,14 @@ export type CustomerCoreAddress = {
   state: string;
   zipcode: string;
   country: string;
+  phone?: string;
+  /** Whether this entry is the customer's primary address. */
+  isPrimary: boolean;
+  active?: boolean;
   /** GeoJSON location resolved from Google Places, when available. */
   location: AddressGeoLocation | null;
   /** Google verification metadata, when available. */
   verification: AddressVerification | null;
-  /** Whether this entry is the customer's primary address. */
-  isPrimary: boolean;
 };
 
 /** Parsed address resolved from a Google Places selection. */
@@ -84,6 +96,8 @@ export type Customer = {
   branch: CustomerBranch;
   createdByID: number | null;
   addresses: CustomerCoreAddress[];
+  /** Total address count when the list API omits the full `addresses` array. */
+  addressCount?: number;
   /** Linked receiver customer IDs. */
   receivers: string[];
 };

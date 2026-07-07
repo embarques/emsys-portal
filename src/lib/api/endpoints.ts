@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
   PERMISSIONS: "/permissions",
   EMPLOYEES: "/employees",
   CUSTOMERS: "/customers",
+  CUSTOMERS_AUTOCOMPLETE: "/customers/autocomplete",
   BRANCHES: "/branches",
   PICKUPS: "/pickups",
   PICKUP_ROUTES: "/pickups/route",

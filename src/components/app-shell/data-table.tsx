@@ -125,6 +125,8 @@ function DataTableContent<T>({
   }
 
   function autoFitColumnWidth(columnId: string, columnIndex: number) {
+    const column = visibleColumns.find((entry) => entry.id === columnId);
+    if (column?.autoFitColumn === false) return;
     if (!tableRef.current) return;
     const width = measureTableColumnContentWidth(tableRef.current, columnIndex);
     fitColumnWidth(columnId, width);
@@ -136,11 +138,15 @@ function DataTableContent<T>({
     const nextWidths: Record<string, number> = {};
 
     visibleColumns.forEach((column, columnIndex) => {
+      if (column.autoFitColumn === false) return;
+
       const tableColumnIndex = columnIndex + (selectable ? 1 : 0);
       nextWidths[column.id] = measureTableColumnContentWidth(tableRef.current!, tableColumnIndex);
     });
 
-    fitColumnWidths(nextWidths);
+    if (Object.keys(nextWidths).length > 0) {
+      fitColumnWidths(nextWidths);
+    }
   }
 
   useLayoutEffect(() => {
@@ -420,12 +426,16 @@ function DataTableContent<T>({
                     <td
                       key={column.id}
                       style={{ width: getColumnWidth(column.id) }}
-                      className={cn("overflow-hidden px-2 py-3", column.cellClassName)}
+                      className={cn(
+                        "px-2 py-3",
+                        column.truncateCell === false ? "whitespace-normal align-top" : "overflow-hidden",
+                        column.cellClassName,
+                      )}
                       onClick={column.stopRowClick ? (event) => event.stopPropagation() : undefined}
                       title={column.truncateCell !== false && cellText ? cellText : undefined}
                     >
                       {column.truncateCell === false ? (
-                        cellContent
+                        <div className="min-w-0 max-w-full">{cellContent}</div>
                       ) : (
                         <div className="truncate">{cellContent}</div>
                       )}

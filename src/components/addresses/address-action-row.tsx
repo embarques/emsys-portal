@@ -11,6 +11,7 @@ import {
 } from "@/lib/customers/display";
 import type { CustomerCoreAddress } from "@/lib/customers/types";
 import { cn } from "@/lib/utils";
+import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
 
 type AddressActionRowProps = {
   label: string;
@@ -53,11 +54,9 @@ export function AddressActionRow({ label, address, className }: AddressActionRow
     >
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium leading-snug text-muted-foreground">{label}</p>
-        <div className="text-sm font-medium leading-snug text-foreground">
+        <div className={cn("text-sm font-medium leading-snug text-foreground", ADDRESS_TEXT_WRAP_CLASSNAME)}>
           {lines.map((line, index) => (
-            <p key={index} className="break-words">
-              {line}
-            </p>
+            <p key={index}>{line}</p>
           ))}
         </div>
       </div>

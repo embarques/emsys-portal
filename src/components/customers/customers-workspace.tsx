@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 
 import { CustomerForm } from "@/components/customers/customer-form";
+import { CustomerTableAddressCell } from "@/components/customers/customer-addresses-sheet";
+import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
 import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -38,6 +40,7 @@ import {
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useCustomerFilterFields } from "@/lib/customers/hooks/use-customer-filter-fields";
+import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import {
   buildTableSelectionResetKey,
@@ -45,11 +48,9 @@ import {
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
-import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatAccountBalance,
-  formatPrimaryAddressStreetLine,
   getClientTypeBadgeClass,
 } from "@/lib/customers/display";
 import {
@@ -73,7 +74,6 @@ import {
   CUSTOMER_TYPE_RECEIVER,
   CUSTOMER_TYPE_SENDER,
   getCustomerClientType,
-  getCustomerPrimaryCoreAddress,
   type Customer,
   type CustomerFilterState,
   type CustomerFormValues,
@@ -84,10 +84,23 @@ import { formatCustomerMutationError } from "@/lib/customers/customer-create-err
 import { useUserError } from "@/lib/errors";
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
 import { useTableSort } from "@/lib/table/use-table-sort";
+import { cn } from "@/lib/utils";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const PAGE_SIZE = DEFAULT_CUSTOMER_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
+const CUSTOMERS_TABLE_COLUMN_STORAGE_KEY = "customers-v7";
+
+function pinActionsColumnFirst<T extends { id: string }>(columns: T[]): T[] {
+  const actionsIndex = columns.findIndex((column) => column.id === "actions");
+  if (actionsIndex <= 0) return columns;
+
+  const next = [...columns];
+  const [actionsColumn] = next.splice(actionsIndex, 1);
+  if (!actionsColumn) return columns;
+
+  return [actionsColumn, ...next];
+}
 
 const defaultFilters: CustomerFilterState = {
   query: "",
@@ -381,15 +394,16 @@ export function CustomersWorkspace() {
     {
       id: "name",
       label: t("customers.columns.name"),
-      cellClassName: "font-medium",
+      cellClassName: "align-top font-medium",
       renderCell: (customer) => customer.name,
     },
     {
       id: "phone",
       label: t("customers.columns.phone"),
       sortField: "phones.number",
-      renderCell: (customer) =>
-        getPrimaryPhoneDisplayNumber(customer.phones) || t("common.empty.dash"),
+      truncateCell: false,
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      renderCell: (customer) => <CustomerTablePhoneCell customer={customer} />,
     },
     {
       id: "IDNumber",
@@ -400,26 +414,11 @@ export function CustomersWorkspace() {
       id: "address",
       label: t("customers.columns.address"),
       sortField: "addresses.address1",
-      renderCell: (customer) =>
-        formatPrimaryAddressStreetLine(customer) || t("common.empty.dash"),
-    },
-    {
-      id: "address.city",
-      label: t("customers.columns.city"),
-      renderCell: (customer) =>
-        getCustomerPrimaryCoreAddress(customer).city || t("common.empty.dash"),
-    },
-    {
-      id: "address.state",
-      label: t("customers.columns.state"),
-      renderCell: (customer) =>
-        getCustomerPrimaryCoreAddress(customer).state || t("common.empty.dash"),
-    },
-    {
-      id: "address.zipcode",
-      label: t("customers.columns.zipcode"),
-      renderCell: (customer) =>
-        getCustomerPrimaryCoreAddress(customer).zipcode || t("common.empty.dash"),
+      defaultWidth: 225,
+      autoFitColumn: false,
+      truncateCell: false,
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      renderCell: (customer) => <CustomerTableAddressCell customer={customer} />,
     },
     {
       id: "email",
@@ -494,7 +493,11 @@ export function CustomersWorkspace() {
     t,
   );
 
-  const columnVisibility = useColumnVisibility("customers-v3", tableColumns);
+  const columnVisibility = useColumnVisibility(CUSTOMERS_TABLE_COLUMN_STORAGE_KEY, tableColumns);
+  const displayColumns = useMemo(
+    () => pinActionsColumnFirst(columnVisibility.columns),
+    [columnVisibility.columns],
+  );
   const listErrorMessage = isError ? toErrorMessage(error) : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
@@ -605,7 +608,7 @@ export function CustomersWorkspace() {
           />
         ) : (
           <DataTable
-            columns={columnVisibility.columns}
+            columns={displayColumns}
             rows={customers}
             page={currentPage}
             isPageDataPending={isFetching}
