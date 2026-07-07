@@ -1,0 +1,173 @@
+{
+  "entity": "User",
+  "entityPlural": "users",
+  "title": "Users",
+  "noun": "users",
+  "actions": {
+    "add": "Add user",
+    "edit": "Edit user",
+    "editNamed": "Edit {{name}}",
+    "deactivate": "Deactivate user",
+    "deactivateSelected": "Deactivate selected"
+  },
+  "stats": {
+    "total": {
+      "label": "Total users",
+      "description": "Accounts on record"
+    },
+    "active": {
+      "label": "Active",
+      "description": "Currently active"
+    },
+    "admins": {
+      "label": "Admins",
+      "description": "Admin role accounts"
+    }
+  },
+  "columns": {
+    "id": "User ID",
+    "uid": "UID",
+    "name": "Name",
+    "active": "Active",
+    "role.name": "Role",
+    "role.id": "Role ID",
+    "branch": "Branch",
+    "branch.name": "Branch name",
+    "startTime": "Start time",
+    "endTime": "End time",
+    "email": "Email",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "actions": "Actions"
+  },
+  "table": {
+    "actionsFor": "Actions for {{name}}"
+  },
+  "search": {
+    "placeholder": "Search users..."
+  },
+  "loading": {
+    "list": "Loading users…",
+    "user": "Loading user…"
+  },
+  "empty": {
+    "noMatch": "No users match your search or filters.",
+    "noneYet": "No users yet."
+  },
+  "enums": {
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    }
+  },
+  "form": {
+    "addTitle": "Add user",
+    "editTitle": "Edit user",
+    "addDescription": "Create a new user account.",
+    "notFound": "This user could not be found.",
+    "sections": {
+      "profile": "Profile",
+      "access": "Access",
+      "loginHours": "Login hours"
+    },
+    "fields": {
+      "email": "Email",
+      "name": "Full name",
+      "password": "New password",
+      "confirmPassword": "Confirm password",
+      "active": "Status",
+      "branch": "Branch",
+      "role": "Role",
+      "restrictLoginHours": "Restrict login hours",
+      "restrictLoginHoursHint": "Limits when this user can access the system each day.",
+      "startTime": "Start time",
+      "endTime": "End time"
+    },
+    "placeholders": {
+      "email": "user@example.com",
+      "name": "Full name",
+      "password": "At least 6 characters",
+      "confirmPassword": "Repeat new password",
+      "branch": "Select branch",
+      "branchSearch": "Search branches…",
+      "branchLoading": "Loading branches…",
+      "role": "Select role",
+      "roleSearch": "Search roles…",
+      "roleLoading": "Loading roles…"
+    },
+    "password": {
+      "valid": "Password is valid.",
+      "minLength": "Use at least 6 characters.",
+      "match": "Passwords match.",
+      "mismatch": "Passwords do not match.",
+      "reenter": "Re-enter your new password."
+    },
+    "errors": {
+      "loadAccessOptions": "Unable to load access options: {{message}}",
+      "noAccessOptions": "No active branches or roles are available."
+    },
+    "validation": {
+      "selectOption": "Select an option.",
+      "validEmail": "Enter a valid email address.",
+      "nameRequired": "Name is required.",
+      "validTime": "Enter a valid time.",
+      "startTimeRequired": "Start time is required.",
+      "endTimeRequired": "End time is required.",
+      "passwordMinLength": "Password must contain at least 6 characters.",
+      "confirmPasswordRequired": "Confirm your new password.",
+      "passwordsDoNotMatch": "Passwords do not match."
+    }
+  },
+  "view": {
+    "sections": {
+      "profile": "Profile",
+      "access": "Access",
+      "loginHours": "Login hours",
+      "audit": "Audit"
+    },
+    "userId": "User ID",
+    "firebaseUid": "Firebase UID",
+    "name": "Name",
+    "email": "Email",
+    "status": "Status",
+    "role": "Role",
+    "branch": "Branch",
+    "startTime": "Start time",
+    "endTime": "End time",
+    "notRestricted": "Not restricted",
+    "created": "Created",
+    "createdBy": "Created by",
+    "updated": "Updated",
+    "updatedBy": "Updated by",
+    "edit": "Edit user",
+    "deactivate": "Deactivate"
+  },
+  "dialogs": {
+    "deactivateTitle": "Deactivate user?",
+    "deactivateTitlePlural": "Deactivate users?",
+    "deactivateOne": "{{name}} will no longer be able to access this company.",
+    "deactivateMany": "This will prevent {{count}} selected users from accessing this company.",
+    "unnamed": "This user"
+  },
+  "errors": {
+    "firebasePartialCreate": "The Firebase account was created, but the EMSYS tenant user record was not created. Do not submit this form again with the same email. {{message}}"
+  },
+  "filters": {
+    "fields": {
+      "id": { "label": "User ID", "placeholder": "Enter user ID…" },
+      "name": { "label": "Name", "placeholder": "Enter name…" },
+      "email": { "label": "Email", "placeholder": "Enter email…" },
+      "uid": { "label": "UID", "placeholder": "Enter UID…" },
+      "role": {
+        "name": { "label": "Role name", "placeholder": "Enter role name…" },
+        "id": { "label": "Role", "placeholder": "Enter role ID…" }
+      },
+      "branch": {
+        "name": { "label": "Branch name", "placeholder": "Enter branch name…" },
+        "id": { "label": "Branch", "placeholder": "Select branch…" }
+      },
+      "active": { "label": "Active", "placeholder": "Select status…" },
+      "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" }
+    }
+  }
+}

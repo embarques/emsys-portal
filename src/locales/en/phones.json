@@ -1,0 +1,21 @@
+{
+  "types": {
+    "mobile": "Mobile",
+    "business": "Business",
+    "home": "Home",
+    "other": "Other"
+  },
+  "label": "Phone {{index}}",
+  "fieldType": "Type",
+  "fieldNumber": "Number",
+  "searchTypes": "Search types…",
+  "primary": "Primary phone",
+  "setPrimary": "Set as primary",
+  "remove": "Remove phone",
+  "removeButton": "Remove",
+  "add": "Add phone",
+  "aria": {
+    "type": "Phone {{index}} type",
+    "number": "Phone {{index}} number"
+  }
+}

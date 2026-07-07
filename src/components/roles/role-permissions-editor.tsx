@@ -5,6 +5,7 @@ import { ChevronDown, Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "@/lib/i18n";
 import {
   getPermissionCatalogGroups,
   getPermissionsByGroup,
@@ -31,6 +32,7 @@ export function RolePermissionsEditor({
   showPermissionValues = true,
   defaultExpanded = false,
 }: RolePermissionsEditorProps) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -124,13 +126,15 @@ export function RolePermissionsEditor({
     <section className="space-y-4" aria-labelledby="permissions-heading">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 id="permissions-heading" className="text-sm font-semibold">Permissions</h3>
+          <h3 id="permissions-heading" className="text-sm font-semibold">
+            {t("roles.permissions.title")}
+          </h3>
           <p className="text-sm text-muted-foreground">
-            Choose what this role is allowed to access.
+            {t("roles.permissions.description")}
           </p>
         </div>
         <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-          {assignedValues.size} selected
+          {t("roles.permissions.selected", { count: assignedValues.size })}
         </span>
       </div>
 
@@ -141,9 +145,9 @@ export function RolePermissionsEditor({
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search permissions…"
+            placeholder={t("roles.permissions.searchPlaceholder")}
             className="pl-9"
-            aria-label="Search permissions"
+            aria-label={t("roles.permissions.searchAria")}
           />
         </div>
       ) : null}
@@ -154,23 +158,25 @@ export function RolePermissionsEditor({
           className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-dashed px-4 py-2.5 transition-colors hover:bg-muted/30"
         >
           <span className="text-sm font-medium">
-            {normalizedSearch ? "Select all matching permissions" : "Select all permissions"}
+            {normalizedSearch
+              ? t("roles.permissions.selectAllMatching")
+              : t("roles.permissions.selectAll")}
           </span>
           <Switch
             id="permission-select-all"
             checked={allSelected}
             onCheckedChange={(checked) => setEntriesAssigned(filteredCatalog, checked)}
-            aria-label="Select all permissions"
+            aria-label={t("roles.permissions.selectAllAria")}
           />
         </label>
       ) : null}
 
       <div className="overflow-hidden rounded-xl border">
         {catalog.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-muted-foreground">Loading permissions…</p>
+          <p className="px-4 py-6 text-sm text-muted-foreground">{t("roles.permissions.loading")}</p>
         ) : catalogGroups.length === 0 ? (
           <p className="px-4 py-6 text-sm text-muted-foreground">
-            No permissions match “{search.trim()}”.
+            {t("roles.permissions.noMatch", { query: search.trim() })}
           </p>
         ) : (
           catalogGroups.map((group, groupIndex) => {
@@ -200,7 +206,7 @@ export function RolePermissionsEditor({
                 <Switch
                   checked={groupAllSelected}
                   onCheckedChange={(checked) => setEntriesAssigned(groupEntries, checked)}
-                  aria-label={`Select all ${group} permissions`}
+                  aria-label={t("roles.permissions.groupSelectAllAria", { group })}
                 />
               ) : null}
             </h4>
@@ -232,7 +238,7 @@ export function RolePermissionsEditor({
                         onCheckedChange={
                           readOnly ? undefined : (checked) => togglePermission(entry, checked)
                         }
-                        aria-label={`${entry.label} permission`}
+                        aria-label={t("roles.permissions.entryAria", { label: entry.label })}
                       />
                     </label>
                   );

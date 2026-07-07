@@ -7,6 +7,7 @@ import { CustomerForm } from "@/components/customers/customer-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
+import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
 import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -46,9 +47,9 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
   useEffect(() => {
     if (isEditing && editingCustomer?.name) {
-      updateTabLabel(tabId, `Edit ${editingCustomer.name}`);
+      updateTabLabel(tabId, t("customers.actions.editNamed", { name: editingCustomer.name }));
     }
-  }, [editingCustomer?.name, isEditing, tabId, updateTabLabel]);
+  }, [editingCustomer?.name, isEditing, tabId, t, updateTabLabel]);
 
   async function saveCustomer(values: CustomerFormValues) {
     setFormError(null);
@@ -59,19 +60,20 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
           customerId: editingCustomer.id,
           values,
         });
-        notifyUpdated("Customer", nextCustomer.name);
+        notifyUpdated(t("customers.entity"), nextCustomer.name);
         closeFormTabAndReturn(tabId);
         return;
       }
 
       const nextCustomer = await createCustomerMutation.mutateAsync(values);
-      notifyAdded("Customer", nextCustomer.name);
+      notifyAdded(t("customers.entity"), nextCustomer.name);
       // Keep the tab open and reset to a blank template for the next entry.
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       const { status, category } = formatError(mutationError);
       setFormError(
-        toErrorMessage(mutationError, {
+        formatCustomerMutationError(mutationError, t, {
+          mode: isEditing ? "edit" : "create",
           hint:
             status === 403 || category === "forbidden"
               ? t("common.errors.permissionHint")
@@ -83,10 +85,10 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
   if (isEditing && customerQuery.isLoading) {
     return (
-      <FormTabShell title="Edit customer">
+      <FormTabShell title={t("customers.form.editTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading customer…
+          {t("customers.loading.customer")}
         </div>
       </FormTabShell>
     );
@@ -95,13 +97,13 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
   if (isEditing && (customerQuery.isError || !editingCustomer)) {
     const message = customerQuery.isError
       ? toErrorMessage(customerQuery.error)
-      : "This customer could not be found.";
+      : t("customers.form.notFound");
     return (
-      <FormTabShell title="Edit customer">
+      <FormTabShell title={t("customers.form.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
-            Close
+            {t("common.actions.close")}
           </Button>
         </div>
       </FormTabShell>
@@ -110,9 +112,9 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
   return (
     <FormTabShell
-      title={isEditing ? "Edit customer" : "Add customer"}
+      title={isEditing ? t("customers.form.editTitle") : t("customers.form.addTitle")}
       description={
-        isEditing && editingCustomer ? editingCustomer.name : "Create a new customer record."
+        isEditing && editingCustomer ? editingCustomer.name : t("customers.form.addDescription")
       }
     >
       <CustomerForm
@@ -123,7 +125,9 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
             : createEmptyCustomerForm()
         }
         isEditing={isEditing}
-        submitLabel={isEditing ? "Save changes" : "Add customer"}
+        submitLabel={
+          isEditing ? t("common.actions.saveChanges") : t("customers.actions.add")
+        }
         isSubmitting={isSaving}
         externalError={formError}
         onSubmit={saveCustomer}

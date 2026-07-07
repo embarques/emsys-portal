@@ -1,0 +1,92 @@
+{
+  "entity": "Artículo",
+  "entityPlural": "artículos",
+  "title": "Artículos",
+  "noun": "artículos",
+  "actions": {
+    "add": "Agregar artículo",
+    "edit": "Editar artículo",
+    "editNamed": "Editar {{name}}"
+  },
+  "stats": {
+    "total": {
+      "label": "Total de artículos",
+      "description": "Artículos del catálogo registrados"
+    },
+    "averagePrice": {
+      "label": "Precio promedio",
+      "description": "Precio medio de artículos"
+    },
+    "catalogValue": {
+      "label": "Valor del catálogo",
+      "description": "Suma de todos los precios de artículos"
+    }
+  },
+  "columns": {
+    "itemId": "ID de artículo",
+    "description": "Descripción",
+    "price": "Precio",
+    "createdAt": "Fecha de creación",
+    "updatedAt": "Fecha de modificación"
+  },
+  "search": {
+    "placeholder": "Buscar artículos..."
+  },
+  "loading": {
+    "title": "Cargando artículos",
+    "description": "Organizando detalles, precios e información del catálogo…",
+    "columns": "Artículo, Descripción, Precio, Creado, Actualizado",
+    "item": "Cargando artículo…"
+  },
+  "empty": {
+    "noMatch": "Ningún artículo coincide con sus filtros.",
+    "noneYet": "Aún no hay artículos."
+  },
+  "form": {
+    "addTitle": "Agregar artículo",
+    "editTitle": "Editar artículo",
+    "addDescription": "Cree una nueva descripción de artículo.",
+    "notFound": "No se pudo encontrar este artículo.",
+    "sections": {
+      "item": "Artículo"
+    },
+    "fields": {
+      "description": "Descripción",
+      "price": "Precio"
+    },
+    "placeholders": {
+      "description": "Describa el artículo...",
+      "price": "0.00"
+    },
+    "validation": {
+      "descriptionRequired": "Ingrese una descripción.",
+      "priceInvalid": "El precio debe ser un número válido mayor o igual a 0."
+    }
+  },
+  "view": {
+    "description": "Descripción",
+    "details": "Detalles",
+    "itemId": "ID de artículo",
+    "price": "Precio",
+    "dateCreated": "Fecha de creación",
+    "dateModified": "Fecha de modificación",
+    "edit": "Editar artículo"
+  },
+  "dialogs": {
+    "deleteTitle": "¿Eliminar artículo?",
+    "deleteTitlePlural": "¿Eliminar artículos?",
+    "deleteOne": "Esto eliminará permanentemente este artículo. {{cannotBeUndone}}",
+    "deleteMany": "Esto eliminará permanentemente {{count}} artículos seleccionados. {{cannotBeUndone}}"
+  },
+  "filters": {
+    "fields": {
+      "id": { "label": "ID de artículo", "placeholder": "Ingrese el ID del artículo…" },
+      "name": { "label": "Descripción", "placeholder": "Ingrese la descripción…" },
+      "price": { "label": "Precio", "placeholder": "Ingrese el monto…" },
+      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" },
+      "createdAtRange": { "label": "Rango de fecha de creación", "placeholder": "2026-01-01 a 2026-06-30" },
+      "updatedAt": { "label": "Fecha de modificación", "placeholder": "AAAA-MM-DD" },
+      "updatedAtRange": { "label": "Rango de fecha de modificación", "placeholder": "2026-01-01 a 2026-06-30" }
+    }
+  }
+}

@@ -52,7 +52,8 @@ export function customerToOrderPartyFormValues(customer: Customer): OrderPartyFo
         }))
       : [createEmptyOrderPartyAddress()];
 
-  const primaryAddress = legacyAddresses[0] ?? addresses[0];
+  const primaryAddress =
+    legacyAddresses.find((address) => address.isPrimary) ?? legacyAddresses[0] ?? addresses[0];
   const legacyPhones = getCustomerPhones(customer);
 
   return {

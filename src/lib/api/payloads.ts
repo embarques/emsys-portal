@@ -25,6 +25,7 @@ export type ApiAddressPayload = {
   country?: string;
   location?: ApiGeoLocationPayload;
   verification?: ApiAddressVerificationPayload;
+  isPrimary?: boolean;
 };
 
 /** Branch reference for employees and pickups (`id` + `code`). */

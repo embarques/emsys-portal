@@ -1,0 +1,92 @@
+{
+  "entity": "Item",
+  "entityPlural": "items",
+  "title": "Items",
+  "noun": "items",
+  "actions": {
+    "add": "Add item",
+    "edit": "Edit item",
+    "editNamed": "Edit {{name}}"
+  },
+  "stats": {
+    "total": {
+      "label": "Total items",
+      "description": "Catalog items on record"
+    },
+    "averagePrice": {
+      "label": "Average price",
+      "description": "Mean item price"
+    },
+    "catalogValue": {
+      "label": "Catalog value",
+      "description": "Sum of all item prices"
+    }
+  },
+  "columns": {
+    "itemId": "Item ID",
+    "description": "Description",
+    "price": "Price",
+    "createdAt": "Date created",
+    "updatedAt": "Date modified"
+  },
+  "search": {
+    "placeholder": "Search items..."
+  },
+  "loading": {
+    "title": "Loading items",
+    "description": "Organizing item details, pricing, and catalog information…",
+    "columns": "Item, Description, Price, Created, Updated",
+    "item": "Loading item…"
+  },
+  "empty": {
+    "noMatch": "No items match your filters.",
+    "noneYet": "No items yet."
+  },
+  "form": {
+    "addTitle": "Add item",
+    "editTitle": "Edit item",
+    "addDescription": "Create a new item description.",
+    "notFound": "This item could not be found.",
+    "sections": {
+      "item": "Item"
+    },
+    "fields": {
+      "description": "Description",
+      "price": "Price"
+    },
+    "placeholders": {
+      "description": "Describe the item...",
+      "price": "0.00"
+    },
+    "validation": {
+      "descriptionRequired": "Enter a description.",
+      "priceInvalid": "Price must be a valid number greater than or equal to 0."
+    }
+  },
+  "view": {
+    "description": "Description",
+    "details": "Details",
+    "itemId": "Item ID",
+    "price": "Price",
+    "dateCreated": "Date created",
+    "dateModified": "Date modified",
+    "edit": "Edit item"
+  },
+  "dialogs": {
+    "deleteTitle": "Delete item?",
+    "deleteTitlePlural": "Delete items?",
+    "deleteOne": "This will permanently remove this item. {{cannotBeUndone}}",
+    "deleteMany": "This will permanently remove {{count}} selected items. {{cannotBeUndone}}"
+  },
+  "filters": {
+    "fields": {
+      "id": { "label": "Item ID", "placeholder": "Enter item ID…" },
+      "name": { "label": "Description", "placeholder": "Enter description…" },
+      "price": { "label": "Price", "placeholder": "Enter amount…" },
+      "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" },
+      "createdAtRange": { "label": "Date created range", "placeholder": "2026-01-01 to 2026-06-30" },
+      "updatedAt": { "label": "Date modified", "placeholder": "YYYY-MM-DD" },
+      "updatedAtRange": { "label": "Date modified range", "placeholder": "2026-01-01 to 2026-06-30" }
+    }
+  }
+}

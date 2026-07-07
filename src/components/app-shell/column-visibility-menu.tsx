@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
+import { useTranslation } from "@/lib/i18n";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ type ColumnVisibilityMenuProps = {
 };
 
 export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps) {
+  const { t } = useTranslation();
   const { columns, isVisible, setColumnVisible, reorderColumns, moveColumn, showAllColumns, resetColumns } =
     columnLayout;
 
@@ -47,16 +49,14 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
         onClick={() => setOpen(true)}
       >
         <Columns3 className="h-4 w-4" />
-        Columns
+        {t("common.table.columns")}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Customize columns</DialogTitle>
-            <DialogDescription>
-              Drag to reorder columns here or from the table headers. Drag column edges in the table to resize width.
-            </DialogDescription>
+            <DialogTitle>{t("common.table.customizeColumns")}</DialogTitle>
+            <DialogDescription>{t("common.table.customizeColumnsDescription")}</DialogDescription>
           </DialogHeader>
 
           <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
@@ -93,7 +93,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
                   <button
                     type="button"
                     className="cursor-grab rounded p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing"
-                    aria-label={`Drag to reorder ${columnLabel}`}
+                    aria-label={t("common.table.dragToReorder", { column: columnLabel })}
                   >
                     <GripVertical className="h-4 w-4" />
                   </button>
@@ -104,7 +104,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
                     disabled={locked}
                     onChange={(event) => setColumnVisible(column.id, event.target.checked)}
                     className="size-4 rounded border-input disabled:opacity-60"
-                    aria-label={`Toggle ${columnLabel}`}
+                    aria-label={t("common.table.toggleColumn", { column: columnLabel })}
                   />
 
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{columnLabel}</span>
@@ -116,7 +116,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
                       size="icon"
                       className="h-8 w-8"
                       disabled={index === 0}
-                      aria-label={`Move ${columnLabel} up`}
+                      aria-label={t("common.table.moveColumnUp", { column: columnLabel })}
                       onClick={() => moveColumn(column.id, "up")}
                     >
                       <ChevronUp className="h-4 w-4" />
@@ -127,7 +127,7 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
                       size="icon"
                       className="h-8 w-8"
                       disabled={index === columns.length - 1}
-                      aria-label={`Move ${columnLabel} down`}
+                      aria-label={t("common.table.moveColumnDown", { column: columnLabel })}
                       onClick={() => moveColumn(column.id, "down")}
                     >
                       <ChevronDown className="h-4 w-4" />
@@ -141,14 +141,14 @@ export function ColumnVisibilityMenu({ columnLayout }: ColumnVisibilityMenuProps
           <DialogFooter className="gap-2 sm:justify-between">
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" size="sm" onClick={showAllColumns}>
-                Show all
+                {t("common.table.showAll")}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={resetColumns}>
-                Reset to default
+                {t("common.table.resetToDefault")}
               </Button>
             </div>
             <Button type="button" size="sm" onClick={() => setOpen(false)}>
-              Done
+              {t("common.table.done")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,0 +1,182 @@
+{
+  "title": "Manejador de etiquetas",
+  "statuses": {
+    "pending": "Pendiente",
+    "generated": "Generada",
+    "printed": "Impresa",
+    "in_transit": "En tránsito",
+    "delivered": "Entregada",
+    "cancelled": "Cancelada"
+  },
+  "barcodeStatuses": {
+    "CREATED": "Creada",
+    "PRINTED": "Impresa",
+    "IN TRANSIT": "En tránsito",
+    "CONDUCE": "Conduce",
+    "DELIVERED": "Entregada",
+    "CANCELLED": "Cancelada"
+  },
+  "activity": {
+    "actions": {
+      "generate": "Creada",
+      "status_change": "Cambio de estado",
+      "container_change": "Cambio de contenedor",
+      "route_change": "Cambio de ruta",
+      "print": "Impresión"
+    },
+    "section": {
+      "title": "Actividad de etiquetas ({{count}})",
+      "description": "Creación, cambios de estado, actualizaciones de contenedor, rutas e impresiones para esta factura.",
+      "empty": "Aún no hay actividad de etiquetas. Genere etiquetas desde la pestaña Etiquetas para comenzar a registrar cambios."
+    },
+    "columns": {
+      "dateCreated": "Fecha de creación",
+      "userCreated": "Usuario creador",
+      "dateModified": "Fecha de modificación",
+      "barcode": "Código de barras",
+      "action": "Acción",
+      "description": "Descripción"
+    }
+  },
+  "unknownContainer": "Contenedor desconocido",
+  "updater": {
+    "options": {
+      "title": "Opciones de actualización",
+      "description": "Seleccione uno o más campos para aplicar en cada escaneo de código de barras.",
+      "changeStatus": "Cambiar estado",
+      "newStatus": "Nuevo estado",
+      "changeContainer": "Cambiar contenedor",
+      "newContainer": "Nuevo contenedor",
+      "changeRoute": "Cambiar ruta",
+      "newRoute": "Nueva ruta",
+      "barcodeLabel": "Código de barras (presione Enter)",
+      "barcodePlaceholder": "Escanee o escriba el código de barras...",
+      "barcodeHint": "El campo se borra automáticamente después de cada actualización para escanear la siguiente etiqueta.",
+      "bulkLabel": "Múltiples códigos de barras (separados por coma o nueva línea)",
+      "bulkPlaceholder": "LBL-..., LBL-...",
+      "apply": "Aplicar",
+      "applyAll": "Aplicar todos los códigos"
+    },
+    "search": {
+      "statuses": "Buscar estados…",
+      "containers": "Buscar contenedores…",
+      "routes": "Buscar rutas…"
+    },
+    "results": {
+      "title": "Resultados de actualización",
+      "description": "Las filas verdes tuvieron éxito; las rojas fallaron. Solo se muestran los campos modificados por fila.",
+      "empty": "Escanee un código de barras para ver los resultados aquí."
+    },
+    "columns": {
+      "barcode": "Código de barras",
+      "invoice": "Factura",
+      "container": "Contenedor",
+      "prevStatus": "Estado anterior",
+      "newStatus": "Nuevo estado",
+      "prevContainer": "Contenedor anterior",
+      "newContainer": "Nuevo contenedor",
+      "prevRoute": "Ruta anterior",
+      "newRoute": "Nueva ruta",
+      "labels": "Etiquetas",
+      "dateCreated": "Fecha de creación",
+      "userCreated": "Usuario creador",
+      "dateModified": "Fecha de modificación",
+      "message": "Mensaje"
+    },
+    "errors": {
+      "barcodeRequired": "El código de barras es obligatorio.",
+      "selectAtLeastOne": "Seleccione al menos un campo para actualizar (estado, contenedor o ruta).",
+      "selectNewStatus": "Seleccione un nuevo estado.",
+      "selectNewContainer": "Seleccione un nuevo contenedor.",
+      "selectNewRoute": "Seleccione una nueva ruta.",
+      "notFound": "No se encontró etiqueta para el código \"{{barcode}}\".",
+      "noChanges": "No se aplicaron cambios: los valores seleccionados coinciden con la etiqueta actual."
+    },
+    "success": {
+      "labelUpdated": "Etiqueta actualizada correctamente.",
+      "updated": "Actualizado {{changes}}."
+    },
+    "changeParts": {
+      "status": "estado {{from}} → {{to}}",
+      "container": "contenedor {{from}} → {{to}}",
+      "route": "ruta {{from}} → {{to}}"
+    }
+  },
+  "staging": {
+    "title": "Manejador de etiquetas",
+    "lineItemsDescription": "Revise los artículos de las facturas seleccionadas, elija cuáles etiquetar y luego genere las etiquetas.",
+    "labelsDescription": "Se crearon códigos de barras donde faltaban y se recuperaron los existentes. Administre estado, contenedor e impresión a continuación.",
+    "backToInvoices": "Volver a facturas",
+    "backToLineItems": "Volver a artículos",
+    "done": "Listo",
+    "working": "Procesando…",
+    "manageLabels": "Administrar etiquetas ({{count}})",
+    "filterPlaceholder": "Filtrar por factura, código, estado, contenedor, descripción…",
+    "filterByStatus": "Filtrar por estado",
+    "allStatuses": "Todos los estados",
+    "changeStatus": "Cambiar estado",
+    "transferContainer": "Transferir contenedor",
+    "assignRoute": "Asignar ruta",
+    "preparing": "Preparando…",
+    "print": "Imprimir",
+    "remove": "Quitar",
+    "removeFromView": "Quitar etiqueta de la vista",
+    "selectAllLineItems": "Seleccionar todos los artículos",
+    "selectAllLabels": "Seleccionar todas las etiquetas",
+    "selectLineItem": "Seleccionar {{invoice}} · {{description}}",
+    "selectLabel": "Seleccionar etiqueta {{number}}",
+    "noLineItems": "No hay artículos para preparar. Cierre y seleccione facturas con artículos.",
+    "noLabelsMatch": "Ninguna etiqueta coincide con el filtro actual.",
+    "statusDialog": {
+      "title": "Cambiar estado de etiqueta",
+      "description": "Actualizar estado de {{count}} etiqueta(s) seleccionada(s).",
+      "newStatus": "Nuevo estado",
+      "applying": "Aplicando…",
+      "apply": "Aplicar estado"
+    },
+    "containerDialog": {
+      "title": "Transferir contenedor",
+      "description": "Mover {{count}} etiqueta(s) seleccionada(s) a otro contenedor.",
+      "container": "Contenedor",
+      "applying": "Aplicando…",
+      "apply": "Aplicar contenedor"
+    },
+    "routeDialog": {
+      "title": "Asignar ruta",
+      "description": "Asigne {{count}} etiqueta(s) seleccionada(s) a una ruta. Solo se asignan etiquetas con contenedor.",
+      "route": "Ruta",
+      "selectRoute": "Seleccionar una ruta",
+      "loadingRoutes": "Cargando rutas…",
+      "noRoutes": "No se encontraron rutas.",
+      "assigning": "Asignando…",
+      "assign": "Asignar ruta"
+    },
+    "columns": {
+      "invoice": "Factura",
+      "description": "Descripción",
+      "labels": "Etiquetas",
+      "quantity": "Cantidad",
+      "barcode": "Código de barras",
+      "status": "Estado",
+      "container": "Contenedor"
+    },
+    "errors": {
+      "noneGenerated": "No se generaron etiquetas para los artículos seleccionados.",
+      "missingBarcodeNumbers": "Las etiquetas seleccionadas no tienen números de código de barras para actualizar.",
+      "missingBarcodesForRoute": "Las etiquetas seleccionadas no tienen códigos guardados para asignar a una ruta.",
+      "missingBarcodeNumbersPrint": "Las etiquetas seleccionadas no tienen números de código de barras para imprimir."
+    },
+    "success": {
+      "ready": "Etiquetas listas ({{details}}).",
+      "createdCount": "{{count}} creadas",
+      "retrievedCount": "{{count}} recuperadas",
+      "assignedToRoute": "{{count}} etiqueta(s) asignada(s) a {{route}} (viaje {{trip}}).",
+      "readyToPrint": "Etiquetas listas para {{count}} código(s) de barras."
+    },
+    "entities": {
+      "labelStatus": "Estado de etiqueta",
+      "labelContainer": "Contenedor de etiqueta",
+      "labelCount": "{{count}} etiqueta(s)"
+    }
+  }
+}

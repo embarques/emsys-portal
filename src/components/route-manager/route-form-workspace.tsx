@@ -7,7 +7,7 @@ import { RouteForm } from "@/components/route-manager/route-form";
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
-import { normalizeApiError } from "@/lib/api/axios";
+import { useUserError } from "@/lib/errors/use-user-error";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCreateRoute,
@@ -28,6 +28,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 
 export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -66,7 +67,7 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
       notifyAdded(t("routes.form.entityLabel"), formatRouteName(next));
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
-      setFormError(normalizeApiError(mutationError).message);
+      setFormError(toErrorMessage(mutationError));
     }
   }
 
@@ -83,7 +84,7 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
 
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
-      ? normalizeApiError(detailQuery.error).message
+      ? toErrorMessage(detailQuery.error)
       : t("routes.form.notFound");
     return (
       <FormTabShell title={t("routes.form.editTitle")}>

@@ -29,7 +29,7 @@ import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
-import { normalizeApiError } from "@/lib/api/axios";
+import { useUserError } from "@/lib/errors/use-user-error";
 import {
   formatRouteAssignmentDescriptionLines,
   formatRouteAssignmentName,
@@ -70,6 +70,8 @@ export function ActiveRouteSection({
   const fixedBranchCode = variant?.fixedBranchCode;
 
   const { t } = useTranslation();
+  const { toErrorMessage } = useUserError();
+  const copyPrefix = variant?.copyPrefix;
   const { displayName } = useAuth();
   const { notifySuccess } = useFeedback();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
@@ -333,10 +335,12 @@ export function ActiveRouteSection({
         },
         existingId: initialRecord?.id,
       });
-      notifySuccess(t("routes.activeRoute.saved"));
+      notifySuccess(
+        copyPrefix ? t(`routes.${copyPrefix}.form.saved`) : t("routes.activeRoute.saved"),
+      );
       onSaved?.();
     } catch (error) {
-      setFormError(normalizeApiError(error).message);
+      setFormError(toErrorMessage(error));
     }
   }
 
@@ -363,7 +367,7 @@ export function ActiveRouteSection({
       setCreateDialogOpen(false);
       notifySuccess(t("routes.activeRoute.routeCreated"));
     } catch (error) {
-      setCreateFormError(normalizeApiError(error).message);
+      setCreateFormError(toErrorMessage(error));
     }
   }
 
@@ -373,11 +377,16 @@ export function ActiveRouteSection({
         values={{ ...values, routeType: effectiveRouteType }}
         isEditing={isEditing}
         isDelivery={isDelivery}
+        copyPrefix={copyPrefix}
         showRouteTypeField={showRouteTypeField}
         showContainerField={showContainerField}
         showBranchField={!fixedBranchCode}
         submitLabel={
-          isEditing ? t("common.actions.saveChanges") : t("routes.activeRoute.save")
+          isEditing
+            ? t("common.actions.saveChanges")
+            : copyPrefix
+              ? t(`routes.${copyPrefix}.form.save`)
+              : t("routes.activeRoute.save")
         }
         isSubmitting={isSaving}
         externalError={formError}

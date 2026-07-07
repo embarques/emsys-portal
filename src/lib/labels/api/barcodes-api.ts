@@ -1,8 +1,12 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import {
+  buildApiSearchPaginationQuery,
+  buildStripeStyleSearchBody,
+} from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope } from "@/lib/api/types";
-import { fetchInvoiceById } from "@/lib/invoices/api/invoices-api";
+import { fetchInvoiceById, patchInvoiceEmbeddedBarcodes } from "@/lib/invoices/api/invoices-api";
 import type { InvoiceLineItem, InvoiceLineItemBarcode } from "@/lib/invoices/types";
 import {
   NEW_BARCODE_STATUS,
@@ -64,10 +68,18 @@ type ApiBarcodeRouteData = {
   assignedCount?: number;
 };
 
-/** A single barcode update to apply via `PUT /barcodes/{id}`. */
+/** A single barcode update to apply via `PUT /barcodes/{id}` or invoice embed patch. */
 export type BarcodeUpdate = {
   id: number;
+  invoiceId?: string;
   payload: BarcodeWritePayload;
+  /** When set, skips target resolution and uses the matching write path. */
+  writeTarget?: "barcodes" | "invoice-embedded";
+};
+
+type BarcodeWriteTarget = {
+  kind: "barcodes" | "invoice-embedded";
+  id: number;
 };
 
 function readNumericId(value: unknown): number | undefined {
@@ -110,11 +122,20 @@ export async function createBarcode(payload: BarcodeWritePayload): Promise<Barco
   assertMutationSuccess(response, "Unable to create barcode.");
 
   const created = normalizeBarcode(response.data);
-  if (created) return created;
+  if (created && created.id > 0) return created;
+
+  const number = payload.number.trim();
+  if (number) {
+    try {
+      return await fetchBarcodeByNumber(number);
+    } catch {
+      // Fall through to the requested values when lookup also fails.
+    }
+  }
 
   // Fall back to the requested values when the API returns no body.
   return {
-    id: 0,
+    id: created?.id ?? 0,
     number: payload.number,
     status: payload.status,
     container: payload.container ?? null,
@@ -138,8 +159,158 @@ export async function updateBarcode(id: number, payload: BarcodeWritePayload): P
   );
 }
 
+async function resolveBarcodeWriteTarget(
+  candidateId: number,
+  number: string,
+): Promise<BarcodeWriteTarget> {
+  const trimmedNumber = number.trim();
+
+  if (trimmedNumber) {
+    try {
+      const found = await fetchBarcodeByNumber(trimmedNumber);
+      if (found.id > 0) {
+        return { kind: "barcodes", id: found.id };
+      }
+    } catch {
+      // Legacy invoice labels live under invoiceDetails.barcodes, not /barcodes.
+    }
+  }
+
+  if (candidateId > 0) {
+    return { kind: "invoice-embedded", id: candidateId };
+  }
+
+  if (!trimmedNumber) {
+    throw new Error("Barcode number is required to update this label.");
+  }
+
+  throw new Error("Barcode not found.");
+}
+
+type ResolvedBarcodeUpdate = {
+  invoiceId?: string;
+  payload: BarcodeWritePayload;
+  target: BarcodeWriteTarget;
+};
+
+async function resolveBarcodeUpdates(updates: BarcodeUpdate[]): Promise<ResolvedBarcodeUpdate[]> {
+  return Promise.all(
+    updates.map(async (update): Promise<ResolvedBarcodeUpdate> => {
+      if (update.writeTarget === "invoice-embedded") {
+        return {
+          invoiceId: update.invoiceId,
+          payload: update.payload,
+          target: { kind: "invoice-embedded", id: update.id },
+        };
+      }
+
+      if (update.writeTarget === "barcodes") {
+        const id =
+          update.id > 0
+            ? update.id
+            : await resolveBarcodeIdForCatalogWrite(update.payload.number);
+        return {
+          payload: update.payload,
+          target: { kind: "barcodes", id },
+        };
+      }
+
+      return {
+        invoiceId: update.invoiceId,
+        payload: update.payload,
+        target: await resolveBarcodeWriteTarget(update.id, update.payload.number),
+      };
+    }),
+  );
+}
+
+function toEmbeddedPatch(target: BarcodeWriteTarget, payload: BarcodeWritePayload) {
+  return {
+    barcodeId: target.id,
+    number: payload.number,
+    status: payload.status,
+    container: payload.container,
+  };
+}
+
 export async function updateBarcodes(updates: BarcodeUpdate[]): Promise<Barcode[]> {
-  return Promise.all(updates.map((update) => updateBarcode(update.id, update.payload)));
+  const resolvedUpdates = await resolveBarcodeUpdates(updates);
+  const catalogUpdates = resolvedUpdates.filter((update) => update.target.kind === "barcodes");
+  const embeddedUpdates = resolvedUpdates.filter((update) => update.target.kind === "invoice-embedded");
+
+  const catalogResults = await Promise.all(
+    catalogUpdates.map((update) => updateBarcode(update.target.id, update.payload)),
+  );
+
+  const embeddedByInvoice = new Map<string, ReturnType<typeof toEmbeddedPatch>[]>();
+  for (const update of embeddedUpdates) {
+    const invoiceId = update.invoiceId?.trim();
+    if (!invoiceId) {
+      throw new Error("Invoice id is required to update embedded barcodes.");
+    }
+
+    const patches = embeddedByInvoice.get(invoiceId) ?? [];
+    patches.push(toEmbeddedPatch(update.target, update.payload));
+    embeddedByInvoice.set(invoiceId, patches);
+  }
+
+  const embeddedResults: Barcode[] = [];
+  for (const [invoiceId, patches] of embeddedByInvoice) {
+    await patchInvoiceEmbeddedBarcodes(invoiceId, patches);
+    for (const patch of patches) {
+      embeddedResults.push({
+        id: patch.barcodeId,
+        number: patch.number,
+        status: patch.status,
+        container: patch.container ?? null,
+      });
+    }
+  }
+
+  return [...catalogResults, ...embeddedResults];
+}
+
+export async function fetchBarcodeByNumber(number: string): Promise<Barcode> {
+  const trimmed = number.trim();
+  if (!trimmed) {
+    throw new Error("Barcode number is required.");
+  }
+
+  const paginationQuery = buildApiSearchPaginationQuery({
+    page: 1,
+    limit: 1,
+    offset: 0,
+  });
+
+  const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+    `${API_ENDPOINTS.BARCODES}/search?${paginationQuery}`,
+    buildStripeStyleSearchBody({
+      filterGroups: [
+        {
+          operator: "and",
+          filters: [{ field: "number", operator: "eq", value: trimmed }],
+        },
+      ],
+    }),
+  );
+
+  const items = Array.isArray(response.data) ? response.data : [];
+  const barcode = normalizeBarcode(items[0]);
+  if (!barcode || barcode.id <= 0) {
+    throw new Error("Barcode not found.");
+  }
+
+  return barcode;
+}
+
+async function resolveBarcodeIdForCatalogWrite(number: string): Promise<number> {
+  const trimmedNumber = number.trim();
+  if (!trimmedNumber) {
+    throw new Error("Barcode number is required to update this label.");
+  }
+
+  const found = await fetchBarcodeByNumber(trimmedNumber);
+  return found.id;
 }
 
 export async function fetchBarcodeById(id: number): Promise<Barcode> {
@@ -155,26 +326,39 @@ export async function fetchBarcodeById(id: number): Promise<Barcode> {
   return barcode;
 }
 
-/** Retrieve an existing barcode by id, falling back to the invoice-detail snapshot. */
-async function retrieveExistingBarcode(snapshot: InvoiceLineItemBarcode): Promise<Barcode> {
-  const numericId = readNumericId(snapshot.id);
-  if (numericId != null && numericId > 0) {
+/** Retrieve an existing barcode by number or invoice-detail id. */
+async function retrieveExistingBarcode(
+  snapshot: InvoiceLineItemBarcode,
+): Promise<{ barcode: Barcode; writeTarget: BarcodeWriteTarget["kind"] }> {
+  const candidateId =
+    readNumericId(snapshot.barcodeId) ?? readNumericId(snapshot.id);
+  const number = snapshot.number.trim();
+
+  if (number) {
     try {
-      return await fetchBarcodeById(numericId);
+      const barcode = await fetchBarcodeByNumber(number);
+      return { barcode, writeTarget: "barcodes" };
     } catch {
-      // Fall through to the snapshot the invoice detail already provided.
+      // Embedded invoice barcodes are often invoice-detail records, not catalog rows.
     }
   }
 
-  return {
-    id: numericId ?? 0,
-    number: snapshot.number,
-    status: snapshot.statusName ? { id: snapshot.statusId, name: snapshot.statusName } : null,
-    container: snapshot.containerName
-      ? { id: readNumericId(snapshot.containerId), name: snapshot.containerName }
-      : null,
-    scanDate: snapshot.scanDate,
-  };
+  if (candidateId != null && candidateId > 0) {
+    return {
+      barcode: {
+        id: candidateId,
+        number: snapshot.number,
+        status: snapshot.statusName ? { id: snapshot.statusId, name: snapshot.statusName } : null,
+        container: snapshot.containerName
+          ? { id: readNumericId(snapshot.containerId), name: snapshot.containerName }
+          : null,
+        scanDate: snapshot.scanDate,
+      },
+      writeTarget: "invoice-embedded",
+    };
+  }
+
+  throw new Error(number ? `Barcode not found: ${number}.` : "Barcode not found.");
 }
 
 function buildBarcodeNumber(invoiceNumber: string, lineItemId: string, sequence: number): string {
@@ -188,6 +372,7 @@ function toGeneratedLabel(
   sequence: number,
   total: number,
   source: GeneratedLabelSource,
+  writeTarget: BarcodeWriteTarget["kind"] = "barcodes",
 ): GeneratedLabel {
   return {
     key: `${context.invoiceId}:${barcode.number || barcode.id}:${sequence}`,
@@ -203,6 +388,7 @@ function toGeneratedLabel(
     labelSequence: sequence,
     totalLabels: total,
     source,
+    writeTarget,
   };
 }
 
@@ -243,8 +429,10 @@ export async function generateLabels(targets: GenerateLabelTarget[]): Promise<Ge
 
     if (existing.length > 0) {
       const retrieved = await Promise.all(existing.map(retrieveExistingBarcode));
-      retrieved.forEach((barcode, index) => {
-        labels.push(toGeneratedLabel(barcode, context, index + 1, retrieved.length, "existing"));
+      retrieved.forEach(({ barcode, writeTarget }, index) => {
+        labels.push(
+          toGeneratedLabel(barcode, context, index + 1, retrieved.length, "existing", writeTarget),
+        );
       });
       continue;
     }
@@ -271,39 +459,6 @@ export async function generateLabels(targets: GenerateLabelTarget[]): Promise<Ge
   }
 
   return labels;
-}
-
-function barcodeHasContainer(barcode: InvoiceLineItemBarcode): boolean {
-  return Boolean(barcode.containerName?.trim() || barcode.containerId?.trim());
-}
-
-/**
- * Collect assignable barcode ids from the given invoices.
- *
- * Invoice list rows do not reliably carry barcodes, so each invoice's detail is
- * fetched. Only barcodes that exist on a line item AND have a container qualify
- * for route (the container drives the route trip number).
- */
-export async function collectAssignableInvoiceBarcodeIds(invoiceIds: string[]): Promise<number[]> {
-  const uniqueIds = Array.from(new Set(invoiceIds.filter(Boolean)));
-  if (uniqueIds.length === 0) return [];
-
-  const invoices = await Promise.all(uniqueIds.map((id) => fetchInvoiceById(id)));
-
-  const barcodeIds = new Set<number>();
-  for (const invoice of invoices) {
-    for (const lineItem of invoice.lineItems) {
-      for (const barcode of lineItem.barcodes ?? []) {
-        if (!barcodeHasContainer(barcode)) continue;
-        const numericId = readNumericId(barcode.id);
-        if (numericId != null && numericId > 0) {
-          barcodeIds.add(numericId);
-        }
-      }
-    }
-  }
-
-  return Array.from(barcodeIds);
 }
 
 /**

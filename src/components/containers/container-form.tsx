@@ -37,6 +37,7 @@ export function ContainerForm({
 }: ContainerFormProps) {
   const { t } = useTranslation();
   const [values, setValues] = useState<ContainerFormValues>(initialValues ?? createEmptyContainerForm());
+  const [validationError, setValidationError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
@@ -46,14 +47,42 @@ export function ContainerForm({
         ? { ...base, name: suggestedContainerName }
         : base,
     );
+    setValidationError(null);
   }, [initialValues, isEditing, suggestedContainerName]);
 
   function updateField<K extends keyof ContainerFormValues>(key: K, value: ContainerFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+    setValidationError(null);
+  }
+
+  function getValidationError(): string | null {
+    if (!values.name.trim()) {
+      return t("containers.form.validation.nameRequired");
+    }
+
+    if (!values.booking.trim()) {
+      return t("containers.form.validation.bookingRequired");
+    }
+
+    if (values.cost.trim()) {
+      const cost = Number(values.cost);
+      if (!Number.isFinite(cost) || cost < 0) {
+        return t("containers.form.validation.costInvalid");
+      }
+    }
+
+    return null;
   }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    const error = getValidationError();
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+
+    setValidationError(null);
     onSubmit(values);
   }
 
@@ -168,7 +197,7 @@ export function ContainerForm({
       </FormBody>
 
       <FormFooter
-        error={externalError}
+        error={validationError ?? externalError}
         submitLabel={submitLabel}
         isSubmitting={isSubmitting}
         onCancel={onCancel}

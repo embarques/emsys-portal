@@ -8,6 +8,7 @@ import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
+import { useTranslation } from "@/lib/i18n";
 import {
   useCreateVehicle,
   useUpdateVehicle,
@@ -25,6 +26,7 @@ import {
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
 export function VehicleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+  const { t } = useTranslation();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -42,9 +44,9 @@ export function VehicleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
 
   useEffect(() => {
     if (isEditing && editing?.name) {
-      updateTabLabel(tabId, `Edit ${editing.name}`);
+      updateTabLabel(tabId, t("vehicles.actions.editNamed", { name: editing.name }));
     }
-  }, [editing?.name, isEditing, tabId, updateTabLabel]);
+  }, [editing?.name, isEditing, tabId, t, updateTabLabel]);
 
   async function save(values: VehicleFormValues) {
     setFormError(null);
@@ -52,13 +54,13 @@ export function VehicleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
     try {
       if (isEditing && editing) {
         const next = await updateMutation.mutateAsync({ vehicleId: editing.id, values });
-        notifyUpdated("Vehicle", next.name);
+        notifyUpdated(t("vehicles.entity"), next.name);
         closeFormTabAndReturn(tabId);
         return;
       }
 
       const next = await createMutation.mutateAsync(values);
-      notifyAdded("Vehicle", next.name);
+      notifyAdded(t("vehicles.entity"), next.name);
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
@@ -67,10 +69,10 @@ export function VehicleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
 
   if (isEditing && detailQuery.isLoading) {
     return (
-      <FormTabShell title="Edit vehicle">
+      <FormTabShell title={t("vehicles.form.editTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading vehicle…
+          {t("vehicles.loading.vehicle")}
         </div>
       </FormTabShell>
     );
@@ -79,13 +81,13 @@ export function VehicleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
       ? normalizeApiError(detailQuery.error).message
-      : "This vehicle could not be found.";
+      : t("vehicles.form.notFound");
     return (
-      <FormTabShell title="Edit vehicle">
+      <FormTabShell title={t("vehicles.form.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
-            Close
+            {t("common.actions.close")}
           </Button>
         </div>
       </FormTabShell>
@@ -94,8 +96,8 @@ export function VehicleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
 
   return (
     <FormTabShell
-      title={isEditing ? "Edit vehicle" : "Add vehicle"}
-      description={isEditing && editing ? editing.name : "Create a new vehicle record."}
+      title={isEditing ? t("vehicles.form.editTitle") : t("vehicles.form.addTitle")}
+      description={isEditing && editing ? editing.name : t("vehicles.form.addDescription")}
     >
       <VehicleForm
         key={isEditing ? (editing?.id ?? "edit") : `new-${formInstance}`}
@@ -103,7 +105,7 @@ export function VehicleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
           isEditing && editing ? vehicleToFormValues(editing) : createEmptyVehicleForm()
         }
         isEditing={isEditing}
-        submitLabel={isEditing ? "Save changes" : "Add vehicle"}
+        submitLabel={isEditing ? t("common.actions.saveChanges") : t("vehicles.actions.add")}
         isSubmitting={isSaving}
         externalError={formError}
         onSubmit={save}

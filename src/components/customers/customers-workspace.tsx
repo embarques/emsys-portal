@@ -8,7 +8,6 @@ import {
   Search,
   Trash2,
   UserCheck,
-  UserRound,
   Users,
 } from "lucide-react";
 
@@ -40,20 +39,22 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
-import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
+import { useCustomerFilterFields } from "@/lib/customers/hooks/use-customer-filter-fields";
 import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
-import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatAccountBalance,
   getClientTypeBadgeClass,
-  getCustomerTypeLabel,
 } from "@/lib/customers/display";
 import {
   useCreateCustomer,
-  useCustomerDetailsBatch,
   useCustomerStats,
   useCustomers,
   useDeleteCustomers,
@@ -78,8 +79,11 @@ import {
   type CustomerFormValues,
 } from "@/lib/customers/types";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useTableSort } from "@/lib/table/use-table-sort";
 import { useTranslation } from "@/lib/i18n";
+import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
+import { useUserError } from "@/lib/errors";
+import { isCustomerReceiverType } from "@/lib/customers/customer-type";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import { cn } from "@/lib/utils";
 import type { DataTableColumn } from "@/lib/table/types";
 
@@ -109,6 +113,8 @@ type CustomerDeleteTarget =
 
 export function CustomersWorkspace() {
   const { t } = useTranslation();
+  const { toErrorMessage, formatError } = useUserError();
+  const customerFilterFields = useCustomerFilterFields();
   const { hasPermission } = useAuth();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifyError, notifySuccess } = useFeedback();
@@ -169,22 +175,7 @@ export function CustomersWorkspace() {
   const updateCustomerMutation = useUpdateCustomer();
   const deleteCustomersMutation = useDeleteCustomers();
 
-  const customers = data?.items ?? [];
-  const customerIds = useMemo(() => customers.map((customer) => customer.id), [customers]);
-  const customerDetailQueries = useCustomerDetailsBatch(customerIds, customers.length > 0);
-  const customersWithAddressDetails = useMemo(() => {
-    const detailById = new Map<string, Customer>();
-
-    for (let index = 0; index < customerIds.length; index += 1) {
-      const customerId = customerIds[index];
-      const detail = customerDetailQueries[index]?.data;
-      if (customerId && detail) {
-        detailById.set(customerId, detail);
-      }
-    }
-
-    return customers.map((customer) => detailById.get(customer.id) ?? customer);
-  }, [customerDetailQueries, customerIds, customers]);
+  const customers = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalCustomers = data?.total ?? 0;
   const showInitialTableLoading = isPending && customers.length === 0;
   const totalPages = Math.max(1, Math.ceil(totalCustomers / PAGE_SIZE));
@@ -196,14 +187,18 @@ export function CustomersWorkspace() {
     updateCustomerMutation.isPending ||
     deleteCustomersMutation.isPending;
 
+  useTableSelectionReset(
+    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+    setSelectedIds,
+  );
+
   function openAddForm() {
-    // Desktop: open the form in its own workspace tab. Mobile has no tabs, so keep the dialog.
     if (isDesktopTabs) {
       openFormTab({
         feature: "customers",
         baseHref: "/customers",
         mode: "add",
-        label: "Add customer",
+        label: t("customers.actions.add"),
       });
       return;
     }
@@ -220,7 +215,7 @@ export function CustomersWorkspace() {
         baseHref: "/customers",
         mode: "edit",
         entityId: customer.id,
-        label: `Edit ${customer.name}`,
+        label: t("customers.actions.editNamed", { name: customer.name }),
       });
       return;
     }
@@ -239,24 +234,28 @@ export function CustomersWorkspace() {
           customerId: editingCustomer.id,
           values,
         });
-        notifyUpdated("Customer", nextCustomer.name);
+        notifyUpdated(t("customers.entity"), nextCustomer.name);
       } else {
         const nextCustomer = await createCustomerMutation.mutateAsync(values);
-        notifyAdded("Customer", nextCustomer.name);
+        notifyAdded(t("customers.entity"), nextCustomer.name);
       }
 
       setFormMode(null);
       setEditingCustomer(null);
       setPage(1);
     } catch (mutationError) {
-      const { message, status } = normalizeApiError(mutationError);
-      const detail =
-        status === 403
-          ? formMode === "edit"
-            ? `${message} Ask an admin to enable customer update (canUpdateCustomer) on your role.`
-            : `${message} Ask an admin to enable customer create (canCreateCustomer) on your role.`
-          : message;
-      setFormError(detail);
+      const { status, category } = formatError(mutationError);
+      setFormError(
+        formatCustomerMutationError(mutationError, t, {
+          mode: formMode === "edit" ? "edit" : "create",
+          hint:
+            status === 403 || category === "forbidden"
+              ? formMode === "edit"
+                ? t("customers.form.errors.updateForbidden")
+                : t("customers.form.errors.createForbidden")
+              : undefined,
+        }),
+      );
     }
   }
 
@@ -266,24 +265,44 @@ export function CustomersWorkspace() {
     const ids = deleteTarget.mode === "bulk" ? deleteTarget.ids : [deleteTarget.customer.id];
 
     try {
-      await deleteCustomersMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      const result = await deleteCustomersMutation.mutateAsync(ids);
+      const removedIds = result.deletedIds;
+
+      if (removedIds.length > 0) {
+        setSelectedIds((current) => current.filter((id) => !removedIds.includes(id)));
+      }
+
+      if (result.failedMessage) {
+        if (removedIds.length === 0) {
+          setDeleteError(result.failedMessage);
+          return;
+        }
+
+        closeDeleteDialog();
+        setViewCustomer(null);
+        notifyDeleted(t("customers.entity"), removedIds.length);
+        notifyError(result.failedMessage);
+        return;
+      }
+
       closeDeleteDialog();
       setViewCustomer(null);
 
       if (deleteTarget.mode === "single") {
-        notifySuccess(`Customer "${deleteTarget.customer.name}" was deleted.`);
+        notifySuccess(t("customers.dialogs.deletedOne", { name: deleteTarget.customer.name }));
       } else {
-        notifyDeleted("Customer", ids.length);
+        notifyDeleted(t("customers.entity"), removedIds.length);
       }
     } catch (mutationError) {
-      const { message, status } = normalizeApiError(mutationError);
-      const detail =
-        status === 403
-          ? `${message} Ask an admin to enable customer delete (canDeleteCustomer) on your role.`
-          : message;
-      setDeleteError(detail);
-      notifyError(detail);
+      const { status, category } = formatError(mutationError);
+      setDeleteError(
+        toErrorMessage(mutationError, {
+          hint:
+            status === 403 || category === "forbidden"
+              ? t("customers.form.errors.deleteForbidden")
+              : undefined,
+        }),
+      );
     }
   }
 
@@ -306,21 +325,21 @@ export function CustomersWorkspace() {
 
   const statCards = [
     {
-      label: "Total customers",
+      label: t("customers.stats.total.label"),
       value: stats.total,
-      description: "All customer records",
+      description: t("customers.stats.total.description"),
       icon: Users,
     },
     {
-      label: "Senders",
+      label: t("customers.stats.senders.label"),
       value: stats.senders,
-      description: "Customers who send shipments",
+      description: t("customers.stats.senders.description"),
       icon: Search,
     },
     {
-      label: "Receivers",
+      label: t("customers.stats.receivers.label"),
       value: stats.receivers,
-      description: "Customers who receive shipments",
+      description: t("customers.stats.receivers.description"),
       icon: UserCheck,
     },
   ];
@@ -341,62 +360,46 @@ export function CustomersWorkspace() {
             ? stats.receivers
             : 0;
 
+      const typeLabel =
+        option.value === CUSTOMER_TYPE_SENDER
+          ? t("customers.types.sender")
+          : t("customers.types.receiver");
+
       return {
         value: String(option.value),
-        label: stats.isLoading ? option.label : `${option.label} (${count.toLocaleString()})`,
+        label: stats.isLoading ? typeLabel : `${typeLabel} (${count.toLocaleString()})`,
       };
     });
-  }, [stats.isLoading, stats.receivers, stats.senders]);
+  }, [stats.isLoading, stats.receivers, stats.senders, t]);
 
-  const tableColumns: DataTableColumn<Customer>[] = [
-    {
-      id: "actions",
-      label: t("customers.workspace.actionsColumn"),
-      hideable: false,
-      sortable: false,
-      truncateCell: false,
-      stopRowClick: true,
-      cellClassName: "overflow-visible",
-      renderCell: (customer) => (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label={t("customers.workspace.viewCustomerFor", { name: customer.name })}
-          title={t("customers.workspace.viewCustomer")}
-          onClick={(event) => {
-            event.stopPropagation();
-            setViewCustomer(customer);
-          }}
-        >
-          <UserRound className="size-3.5" />
-        </Button>
-      ),
-    },
+  const tableColumns: DataTableColumn<Customer>[] = useMemo(
+    () => [
     {
       id: "customerType",
-      label: "customerType",
+      label: t("customers.columns.customerType"),
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (customer) => {
         const clientType = getCustomerClientType(customer) ?? "sender";
+        const typeLabel = isCustomerReceiverType(customer.customerType)
+          ? t("customers.types.receiver")
+          : t("customers.types.sender");
         return (
           <TableTagText className={getClientTypeBadgeClass(clientType)}>
-            {getCustomerTypeLabel(customer)}
+            {typeLabel}
           </TableTagText>
         );
       },
     },
     {
       id: "name",
-      label: "name",
+      label: t("customers.columns.name"),
       cellClassName: "align-top font-medium",
       renderCell: (customer) => customer.name,
     },
     {
       id: "phone",
-      label: "Phone",
+      label: t("customers.columns.phone"),
       sortField: "phones.number",
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
@@ -404,12 +407,12 @@ export function CustomersWorkspace() {
     },
     {
       id: "IDNumber",
-      label: "IDNumber",
-      renderCell: (customer) => customer.IDNumber || "—",
+      label: t("customers.columns.IDNumber"),
+      renderCell: (customer) => customer.IDNumber || t("common.empty.dash"),
     },
     {
       id: "address",
-      label: "address",
+      label: t("customers.columns.address"),
       sortField: "addresses.address1",
       defaultWidth: 225,
       autoFitColumn: false,
@@ -419,84 +422,95 @@ export function CustomersWorkspace() {
     },
     {
       id: "email",
-      label: "email",
-      renderCell: (customer) => customer.email || "—",
+      label: t("customers.columns.email"),
+      renderCell: (customer) => customer.email || t("common.empty.dash"),
     },
     {
       id: "accountBalance",
-      label: "accountBalance",
+      label: t("customers.columns.accountBalance"),
       renderCell: (customer) => formatAccountBalance(customer.accountBalance),
     },
     {
       id: "notes",
-      label: "notes",
+      label: t("customers.columns.notes"),
       cellClassName: "max-w-[240px] truncate",
-      renderCell: (customer) => customer.notes || "—",
+      renderCell: (customer) => customer.notes || t("common.empty.dash"),
     },
     {
       id: "createdByID",
-      label: "createdByID",
+      label: t("customers.columns.createdByID"),
       cellClassName: "text-muted-foreground",
-      renderCell: (customer) => (customer.createdByID != null ? String(customer.createdByID) : "—"),
+      renderCell: (customer) =>
+        customer.createdByID != null ? String(customer.createdByID) : t("common.empty.dash"),
     },
     {
       id: "createdAt",
-      label: "createdAt",
+      label: t("common.audit.dateCreated"),
       cellClassName: "text-muted-foreground",
-      renderCell: (customer) => (customer.createdAt ? formatAuditDateTime(customer.createdAt) : "—"),
+      renderCell: (customer) =>
+        customer.createdAt ? formatAuditDateTime(customer.createdAt) : t("common.empty.dash"),
     },
     {
       id: "updatedAt",
-      label: "updatedAt",
+      label: t("common.audit.dateModified"),
       cellClassName: "text-muted-foreground",
-      renderCell: (customer) => (customer.updatedAt ? formatAuditDateTime(customer.updatedAt) : "—"),
+      renderCell: (customer) =>
+        customer.updatedAt ? formatAuditDateTime(customer.updatedAt) : t("common.empty.dash"),
     },
-  ];
+  ],
+    [t],
+  );
 
   const isListFiltered =
     Boolean(debouncedQuery.trim()) || countCompleteFilterRows(filters.rows) > 0;
 
-  const searchResultHint = buildToolbarSearchSummary({
-    isFiltered: isListFiltered,
-    query: filters.query,
-    isSearchPending,
-    matched: totalCustomers,
-    catalogTotal: stats.total,
-    noun: "customers",
-    isLoading: isFetching && customers.length === 0,
-    catalogLoading: stats.isLoading,
-  });
+  const searchResultHint = buildToolbarSearchSummary(
+    {
+      isFiltered: isListFiltered,
+      query: filters.query,
+      isSearchPending,
+      matched: totalCustomers,
+      catalogTotal: stats.total,
+      noun: t("customers.noun"),
+      isLoading: isFetching && customers.length === 0,
+      catalogLoading: stats.isLoading,
+    },
+    t,
+  );
 
-  const listSummary = formatPaginatedListSummary({
-    itemCountOnPage: customers.length,
-    page: currentPage,
-    pageSize: PAGE_SIZE,
-    total: totalCustomers,
-    noun: "customers",
-    isFiltered: isListFiltered,
-    isLoading: isFetching,
-    catalogTotal: stats.total,
-    catalogLoading: stats.isLoading,
-  });
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: customers.length,
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      total: totalCustomers,
+      noun: t("customers.noun"),
+      isFiltered: isListFiltered,
+      isLoading: isFetching,
+      catalogTotal: stats.total,
+      catalogLoading: stats.isLoading,
+    },
+    t,
+  );
 
   const columnVisibility = useColumnVisibility(CUSTOMERS_TABLE_COLUMN_STORAGE_KEY, tableColumns);
   const displayColumns = useMemo(
     () => pinActionsColumnFirst(columnVisibility.columns),
     [columnVisibility.columns],
   );
-  const listErrorMessage = isError ? normalizeApiError(error).message : null;
+  const listErrorMessage = isError ? toErrorMessage(error) : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
 
   return (
     <div>
       <PageHeader
-        title="Customers"
+        title={t("customers.title")}
         actions={
           canCreateCustomers ? (
             <Button onClick={openAddForm} disabled={isSaving}>
               <Plus className="h-4 w-4" />
-              Add customer
+              {t("customers.actions.add")}
             </Button>
           ) : null
         }
@@ -524,7 +538,7 @@ export function CustomersWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search by name, phone, or address…"
+                placeholder={t("customers.search.placeholder")}
               />
             }
             filterPanel={
@@ -533,7 +547,7 @@ export function CustomersWorkspace() {
                 presets={{
                   storageKey: "customers",
                   rows: filters.rows,
-                  fields: CUSTOMER_TABLE_FILTER_FIELDS,
+                  fields: customerFilterFields,
                   onApply: (rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -551,7 +565,7 @@ export function CustomersWorkspace() {
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
                   rows={filters.rows}
-                  fields={CUSTOMER_TABLE_FILTER_FIELDS}
+                  fields={customerFilterFields}
                   dynamicOptions={{
                     branches: branchesLoading ? [] : branchFilterOptions,
                     customerTypes: customerTypeFilterOptions,
@@ -572,11 +586,11 @@ export function CustomersWorkspace() {
 
         <TableSelectionToolbar
           selectedIds={selectedIds}
-          pageRowIds={customersWithAddressDetails.map((customer) => customer.id)}
+          pageRowIds={customers.map((customer) => customer.id)}
           totalCount={totalCustomers}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
-            const customer = customersWithAddressDetails.find((entry) => entry.id === selectedIds[0]);
+            const customer = customers.find((entry) => entry.id === selectedIds[0]);
             if (customer) openEditForm(customer);
           }}
           canEdit={canUpdateCustomers}
@@ -588,14 +602,14 @@ export function CustomersWorkspace() {
         {showInitialTableLoading ? (
           <DirectoryTableLoader
             icon={Users}
-            title="Loading customers"
-            description="Gathering profiles, contact details, and account balances…"
-            columns={["Type", "Customer", "Phone", "Address", "Balance"]}
+            title={t("customers.loading.title")}
+            description={t("customers.loading.description")}
+            columns={t("customers.loading.columns").split(", ")}
           />
         ) : (
           <DataTable
             columns={displayColumns}
-            rows={customersWithAddressDetails}
+            rows={customers}
             page={currentPage}
             isPageDataPending={isFetching}
             rowKey={(customer) => customer.id}
@@ -609,14 +623,15 @@ export function CustomersWorkspace() {
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
+            onRowClick={setViewCustomer}
             onRowDoubleClick={canUpdateCustomers ? openEditForm : undefined}
             emptyState={
               <>
-                <p className="text-muted-foreground">No customers match your search or filters.</p>
+                <p className="text-muted-foreground">{t("customers.empty.noMatch")}</p>
                 {canCreateCustomers ? (
                   <Button className="mt-4" onClick={openAddForm}>
                     <Plus className="h-4 w-4" />
-                    Add customer
+                    {t("customers.actions.add")}
                   </Button>
                 ) : null}
               </>
@@ -635,10 +650,10 @@ export function CustomersWorkspace() {
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              {t("common.actions.previous")}
             </Button>
             <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -646,7 +661,7 @@ export function CustomersWorkspace() {
               disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
-              Next
+              {t("common.actions.next")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -678,9 +693,16 @@ export function CustomersWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogContent
+          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+          onOpenAutoFocus={
+            formMode === "edit" ? (event) => event.preventDefault() : undefined
+          }
+        >
           <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
-            <DialogTitle>{formMode === "edit" ? "Edit customer" : "Add customer"}</DialogTitle>
+            <DialogTitle>
+              {formMode === "edit" ? t("customers.form.editTitle") : t("customers.form.addTitle")}
+            </DialogTitle>
           </DialogHeader>
           <CustomerForm
             key={editingCustomer?.id ?? "new"}
@@ -690,7 +712,9 @@ export function CustomersWorkspace() {
                 : createEmptyCustomerForm()
             }
             isEditing={formMode === "edit"}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add customer"}
+            submitLabel={
+              formMode === "edit" ? t("common.actions.saveChanges") : t("customers.actions.add")
+            }
             isSubmitting={isSaving}
             externalError={formError}
             onSubmit={saveCustomer}
@@ -706,25 +730,32 @@ export function CustomersWorkspace() {
         <DialogContent className="z-[60]">
           <DialogHeader>
             <DialogTitle>
-              Delete customer
-              {deleteTarget?.mode === "bulk" && deleteTarget.ids.length > 1 ? "s" : ""}?
+              {deleteTarget?.mode === "bulk" && deleteTarget.ids.length > 1
+                ? t("customers.dialogs.deleteTitlePlural")
+                : t("customers.dialogs.deleteTitle")}
             </DialogTitle>
             <DialogDescription>
               {deleteTarget?.mode === "bulk"
-                ? `This will permanently remove ${deleteTarget.ids.length} selected customer${deleteTarget.ids.length === 1 ? "" : "s"}. This action cannot be undone.`
+                ? t("customers.dialogs.deleteMany", {
+                    count: deleteTarget.ids.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
                 : deleteTarget?.mode === "single"
-                  ? `This will permanently remove "${deleteTarget.customer.name}". This action cannot be undone.`
+                  ? t("customers.dialogs.deleteOne", {
+                      name: deleteTarget.customer.name,
+                      cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                    })
                   : null}
             </DialogDescription>
           </DialogHeader>
           {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
           <DialogFooter>
             <Button variant="outline" onClick={closeDeleteDialog} disabled={isSaving}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
-              {isSaving ? "Deleting…" : "Delete"}
+              {t("common.actions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

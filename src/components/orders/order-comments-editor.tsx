@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MessageSquare, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -14,17 +14,10 @@ import {
   type OrderCommentFormValues,
   type OrderCommentItemType,
 } from "@/lib/orders/types";
+import { useTranslation } from "@/lib/i18n";
 
 /** Purposes that may only appear once per order. */
 const SINGLE_USE_PURPOSES = new Set<string>(["ESTIMATE", "PAYMENT", "OTHER"]);
-
-function purposeLabel(value: string): string {
-  return ORDER_COMMENT_PURPOSES.find((purpose) => purpose.value === value)?.label ?? "";
-}
-
-function itemLabel(value: string): string {
-  return ORDER_COMMENT_ITEM_TYPES.find((item) => item.value === value)?.label ?? "";
-}
 
 type CommentField = "purpose" | "item" | "quantity" | "note";
 
@@ -39,7 +32,36 @@ type OrderCommentsEditorProps = {
 };
 
 export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorProps) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState<EditingCell>(null);
+
+  const purposeLabel = (value: string) =>
+    ORDER_COMMENT_PURPOSES.find((purpose) => purpose.value === value)
+      ? t(`orders.comments.purposes.${value}`)
+      : "";
+
+  const itemLabel = (value: string) =>
+    ORDER_COMMENT_ITEM_TYPES.find((item) => item.value === value)
+      ? t(`orders.comments.items.${value}`)
+      : "";
+
+  const localizedPurposes = useMemo(
+    () =>
+      ORDER_COMMENT_PURPOSES.map((purpose) => ({
+        value: purpose.value,
+        label: t(`orders.comments.purposes.${purpose.value}`),
+      })),
+    [t],
+  );
+
+  const localizedItems = useMemo(
+    () =>
+      ORDER_COMMENT_ITEM_TYPES.map((item) => ({
+        value: item.value,
+        label: t(`orders.comments.items.${item.value}`),
+      })),
+    [t],
+  );
 
   const isEditing = (index: number, field: CommentField) =>
     editing?.index === index && editing.field === field;
@@ -54,7 +76,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
         .map((comment) => comment.purpose),
     );
 
-    return ORDER_COMMENT_PURPOSES.map((purpose) => ({
+    return localizedPurposes.map((purpose) => ({
       value: purpose.value,
       label: purpose.label,
       disabled: takenSingleUse.has(purpose.value),
@@ -73,7 +95,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
         .map((comment) => comment.itemType),
     );
 
-    return ORDER_COMMENT_ITEM_TYPES.map((item) => ({
+    return localizedItems.map((item) => ({
       value: item.value,
       label: item.label,
       disabled: takenItems.has(item.value),
@@ -127,25 +149,25 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
             <MessageSquare className="size-4" />
           </span>
-          <h3 className="text-sm font-semibold leading-none text-foreground">Comments</h3>
+          <h3 className="text-sm font-semibold leading-none text-foreground">{t("orders.comments.title")}</h3>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={addComment}>
           <Plus className="h-4 w-4" />
-          Add comment
+          {t("orders.comments.add")}
         </Button>
       </div>
 
       {comments.length === 0 ? (
         <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-          No comments yet.
+          {t("orders.empty.noComments")}
         </p>
       ) : (
         <div className="overflow-hidden rounded-xl border">
           <div className="flex items-center gap-2 border-b bg-muted/40 px-2 py-1.5 text-xs font-medium text-muted-foreground">
-            <span className="w-32 shrink-0">Purpose</span>
-            <span className="w-28 shrink-0">Item</span>
-            <span className="w-16 shrink-0">Qty</span>
-            <span className="flex-1">Comment</span>
+            <span className="w-32 shrink-0">{t("orders.comments.columns.purpose")}</span>
+            <span className="w-28 shrink-0">{t("orders.comments.columns.item")}</span>
+            <span className="w-16 shrink-0">{t("orders.comments.columns.qty")}</span>
+            <span className="flex-1">{t("orders.comments.columns.comment")}</span>
             <span className="w-9 shrink-0" />
           </div>
 
@@ -176,7 +198,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                           changePurpose(index, value);
                           focusNextAfterPurpose(index, value);
                         }}
-                        placeholder="Purpose"
+                        placeholder={t("orders.comments.placeholders.purpose")}
                         options={purposeOptionsForRow(index)}
                       />
                     ) : (
@@ -188,7 +210,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                         {comment.purpose ? (
                           purposeLabel(comment.purpose)
                         ) : (
-                          <span className="text-muted-foreground">Purpose</span>
+                          <span className="text-muted-foreground">{t("orders.comments.placeholders.purpose")}</span>
                         )}
                       </button>
                     )}
@@ -212,7 +234,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                             // Custom items need a description first; known items jump to quantity.
                             setEditing({ index, field: value === "other" ? "note" : "quantity" });
                           }}
-                          placeholder="Item"
+                          placeholder={t("orders.comments.placeholders.item")}
                           options={itemOptionsForRow(index)}
                         />
                       ) : (
@@ -224,12 +246,12 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                           {comment.itemType ? (
                             itemLabel(comment.itemType)
                           ) : (
-                            <span className="text-muted-foreground">Item</span>
+                            <span className="text-muted-foreground">{t("orders.comments.placeholders.item")}</span>
                           )}
                         </button>
                       )
                     ) : (
-                      <span className="px-2 text-sm text-muted-foreground">—</span>
+                      <span className="px-2 text-sm text-muted-foreground">{t("common.empty.dash")}</span>
                     )}
                   </div>
 
@@ -266,7 +288,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                         </button>
                       )
                     ) : (
-                      <span className="px-2 text-sm text-muted-foreground">—</span>
+                      <span className="px-2 text-sm text-muted-foreground">{t("common.empty.dash")}</span>
                     )}
                   </div>
 
@@ -281,8 +303,8 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                           value={comment[noteField]}
                           placeholder={
                             noteField === "customItem"
-                              ? "Describe the item and quantity"
-                              : "Add a comment, press Enter to add another"
+                              ? t("orders.comments.placeholders.customItem")
+                              : t("orders.comments.placeholders.note")
                           }
                           onChange={(event) => updateComment(index, { [noteField]: event.target.value })}
                           onBlur={stopEditing}
@@ -304,13 +326,15 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                             comment[noteField]
                           ) : (
                             <span className="text-muted-foreground">
-                              {noteField === "customItem" ? "Describe the item and quantity" : "Add a comment"}
+                              {noteField === "customItem"
+                                ? t("orders.comments.placeholders.customItem")
+                                : t("orders.comments.placeholders.addComment")}
                             </span>
                           )}
                         </button>
                       )
                     ) : (
-                      <span className="px-2 text-sm text-muted-foreground">—</span>
+                      <span className="px-2 text-sm text-muted-foreground">{t("common.empty.dash")}</span>
                     )}
                   </div>
 
@@ -319,7 +343,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                     variant="ghost"
                     size="icon"
                     className="size-9 shrink-0 text-destructive hover:text-destructive"
-                    aria-label={`Remove comment ${index + 1}`}
+                    aria-label={t("orders.comments.removeAria", { index: index + 1 })}
                     onClick={() => removeComment(index)}
                   >
                     <Trash2 className="h-4 w-4" />

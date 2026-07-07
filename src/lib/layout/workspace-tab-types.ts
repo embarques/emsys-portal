@@ -9,7 +9,7 @@ export const WORKSPACE_TAB_OVERFLOW_THRESHOLD = 6;
 export type WorkspaceTabForm = {
   /** Feature key resolved against the form host registry (e.g. "customers"). */
   feature: string;
-  mode: "add" | "edit";
+  mode: "add" | "edit" | "stage";
   /** Target record id when editing. */
   entityId?: string;
   /** Tab to re-activate after the form tab closes (the tab that opened it). */

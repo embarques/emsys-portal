@@ -1,13 +1,12 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   createCustomer,
   deleteCustomer,
   deleteCustomers,
-  fetchCustomerAutocomplete,
   fetchCustomerById,
   fetchCustomers,
   updateCustomer,
@@ -25,11 +24,9 @@ import {
   type CustomerFormValues,
   type CustomerListParams,
   type CustomerSearchFilter,
-  type CustomerSearchResult,
 } from "@/lib/customers/types";
 import { isCustomerTypeFilterActive } from "@/lib/customers/customer-type";
 import { queryKeys } from "@/lib/query/query-keys";
-import { useWorkspaceTabQueriesEnabled } from "@/lib/layout/workspace-tab-scope";
 
 function hasCustomerChipFilters(params: CustomerListParams): boolean {
   return (
@@ -41,22 +38,6 @@ function hasCustomerChipFilters(params: CustomerListParams): boolean {
 function isCustomerListFiltered(params: CustomerListParams): boolean {
   const hasRowFilters = (params.filterRows ?? []).some((row) => isCompleteFilterRow(row));
   return hasListTextSearch(params.search) || hasRowFilters || hasCustomerChipFilters(params);
-}
-
-export function useCustomerAutocomplete(
-  query: string,
-  customerType: "sender" | "receiver",
-  options: { enabled?: boolean; limit?: number } = {},
-) {
-  const trimmed = query.trim();
-  const limit = options.limit ?? 20;
-  const enabled = (options.enabled ?? true) && trimmed.length > 0;
-
-  return useWorkspaceQuery({
-    queryKey: queryKeys.customers.autocomplete(trimmed, customerType, limit),
-    queryFn: () => fetchCustomerAutocomplete({ q: trimmed, customerType, limit }),
-    enabled,
-  });
 }
 
 export function useCustomerSearch(
@@ -127,31 +108,6 @@ export function useCustomer(customerId: string | null, enabled = true) {
     queryKey: queryKeys.customers.detail(customerId ?? ""),
     queryFn: () => fetchCustomerById(customerId!),
     enabled: enabled && Boolean(customerId),
-  });
-}
-
-export function useEnsureCustomerDetail() {
-  const queryClient = useQueryClient();
-
-  return async (customerId: string) => {
-    return queryClient.fetchQuery({
-      queryKey: queryKeys.customers.detail(customerId),
-      queryFn: () => fetchCustomerById(customerId),
-      staleTime: 60_000,
-    });
-  };
-}
-
-export function useCustomerDetailsBatch(customerIds: string[], enabled = true) {
-  const tabQueriesEnabled = useWorkspaceTabQueriesEnabled();
-
-  return useQueries({
-    queries: customerIds.map((customerId) => ({
-      queryKey: queryKeys.customers.detail(customerId),
-      queryFn: () => fetchCustomerById(customerId),
-      enabled: tabQueriesEnabled && enabled && Boolean(customerId),
-      staleTime: 60_000,
-    })),
   });
 }
 

@@ -8,6 +8,7 @@ import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
+import { useTranslation } from "@/lib/i18n";
 import {
   useCreateEmployee,
   useEmployee,
@@ -25,6 +26,7 @@ import {
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
 export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+  const { t } = useTranslation();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -42,9 +44,9 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
   useEffect(() => {
     if (isEditing && editing?.name) {
-      updateTabLabel(tabId, `Edit ${editing.name}`);
+      updateTabLabel(tabId, t("employees.actions.editNamed", { name: editing.name }));
     }
-  }, [editing?.name, isEditing, tabId, updateTabLabel]);
+  }, [editing?.name, isEditing, tabId, t, updateTabLabel]);
 
   async function save(values: EmployeeFormValues) {
     setFormError(null);
@@ -55,13 +57,13 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
           employeeId: String(editing.id),
           values,
         });
-        notifyUpdated("Employee", next.name);
+        notifyUpdated(t("employees.entity"), next.name);
         closeFormTabAndReturn(tabId);
         return;
       }
 
       const next = await createMutation.mutateAsync(values);
-      notifyAdded("Employee", next.name);
+      notifyAdded(t("employees.entity"), next.name);
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
@@ -70,10 +72,10 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
   if (isEditing && detailQuery.isLoading) {
     return (
-      <FormTabShell title="Edit employee">
+      <FormTabShell title={t("employees.form.editTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading employee…
+          {t("employees.loading.employee")}
         </div>
       </FormTabShell>
     );
@@ -82,13 +84,13 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
       ? normalizeApiError(detailQuery.error).message
-      : "This employee could not be found.";
+      : t("employees.form.notFound");
     return (
-      <FormTabShell title="Edit employee">
+      <FormTabShell title={t("employees.form.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
-            Close
+            {t("common.actions.close")}
           </Button>
         </div>
       </FormTabShell>
@@ -97,8 +99,8 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
   return (
     <FormTabShell
-      title={isEditing ? "Edit employee" : "Add employee"}
-      description={isEditing && editing ? editing.name : "Create a new employee record."}
+      title={isEditing ? t("employees.form.editTitle") : t("employees.form.addTitle")}
+      description={isEditing && editing ? editing.name : t("employees.form.addDescription")}
     >
       <EmployeeForm
         key={isEditing ? (editing?.id ?? "edit") : `new-${formInstance}`}
@@ -106,7 +108,7 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
           isEditing && editing ? employeeToFormValues(editing) : createEmptyEmployeeForm()
         }
         isEditing={isEditing}
-        submitLabel={isEditing ? "Save changes" : "Add employee"}
+        submitLabel={isEditing ? t("common.actions.saveChanges") : t("employees.actions.add")}
         isSubmitting={isSaving}
         externalError={formError}
         onSubmit={save}

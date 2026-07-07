@@ -61,6 +61,7 @@ import {
 } from "@/lib/inventory/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
 
 const PAGE_SIZE = 50;
 
@@ -116,6 +117,16 @@ export function InventoryWorkspace() {
   const pageItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allPageSelected = pageItems.length > 0 && pageItems.every((item) => selectedIds.includes(item.id));
   const activeFilterCount = [filters.status, filters.location, filters.category].filter((value) => value !== "all").length;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(
+      filters.query,
+      filters.status,
+      filters.location,
+      filters.category,
+    ),
+    setSelectedIds,
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => setIsInitialLoading(false), 600);

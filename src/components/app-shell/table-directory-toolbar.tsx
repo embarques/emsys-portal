@@ -7,6 +7,7 @@ import { ChevronDown, Filter } from "lucide-react";
 import { ColumnVisibilityMenu } from "@/components/app-shell/column-visibility-menu";
 import { FilterPresetMenu } from "@/components/app-shell/filter-preset-menu";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
+import { useTranslation } from "@/lib/i18n";
 import type { TableFilterFieldDefinition, TableFilterRowState } from "@/lib/table/filter-types";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +24,11 @@ export function TableFilterToggle({
   activeCount = 0,
   className,
 }: TableFilterToggleProps) {
+  const { t } = useTranslation();
   const hasActiveFilters = activeCount > 0;
+  const filterToggleAction = open ? t("common.table.hideFilters") : t("common.table.showFilters");
+  const activeFiltersSummaryKey =
+    activeCount === 1 ? "common.table.activeFiltersSummary_one" : "common.table.activeFiltersSummary_other";
 
   return (
     <div
@@ -41,7 +46,7 @@ export function TableFilterToggle({
         onClick={() => onOpenChange(!open)}
       >
         <Filter className="h-4 w-4" />
-        Filter
+        {t("common.table.filter")}
       </button>
       <div className="w-px self-stretch bg-border/80" aria-hidden />
       <button
@@ -49,10 +54,11 @@ export function TableFilterToggle({
         className="flex min-w-[2rem] items-center justify-center px-2 text-foreground outline-none hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
         aria-label={
           hasActiveFilters
-            ? `${activeCount} active filter${activeCount === 1 ? "" : "s"}. ${open ? "Hide filters" : "Show filters"}`
-            : open
-              ? "Hide filters"
-              : "Show filters"
+            ? t(activeFiltersSummaryKey, {
+                count: activeCount,
+                action: filterToggleAction,
+              })
+            : filterToggleAction
         }
         onClick={() => onOpenChange(!open)}
       >
@@ -76,6 +82,7 @@ type TableFilterDropdownProps = {
 };
 
 function TableFilterDropdown({ open, onOpenChange, activeCount = 0, children }: TableFilterDropdownProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [panelPosition, setPanelPosition] = useState<{ top: number; left: number; width: number } | null>(
@@ -158,7 +165,7 @@ function TableFilterDropdown({ open, onOpenChange, activeCount = 0, children }: 
             ref={panelRef}
             id="table-filter-panel"
             role="dialog"
-            aria-label="Table filters"
+            aria-label={t("common.table.tableFiltersAria")}
             className="fixed z-[100]"
             style={{
               top: panelPosition.top,
@@ -260,13 +267,16 @@ type TableFilterPanelProps = {
 };
 
 export function TableFilterPanel({
-  title = "Filters",
+  title,
   resultSummary,
   onClearAll,
   presets,
   children,
   className,
 }: TableFilterPanelProps) {
+  const { t } = useTranslation();
+  const panelTitle = title ?? t("common.table.filters");
+
   return (
     <div
       className={cn(
@@ -276,7 +286,7 @@ export function TableFilterPanel({
     >
       <div className="flex items-start justify-between gap-3 border-b px-4 py-3">
         <div className="min-w-0 space-y-0.5">
-          <h3 className="text-sm font-semibold leading-none">{title}</h3>
+          <h3 className="text-sm font-semibold leading-none">{panelTitle}</h3>
           {resultSummary ? (
             <p className="text-xs text-muted-foreground">{resultSummary}</p>
           ) : null}
@@ -296,7 +306,7 @@ export function TableFilterPanel({
               className="shrink-0 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
               onClick={onClearAll}
             >
-              Clear all
+              {t("common.table.clearAll")}
             </button>
           ) : null}
         </div>
@@ -318,11 +328,13 @@ type TableFilterSectionProps = {
 };
 
 export function TableFilterSection({ label, children }: TableFilterSectionProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm">
         <span className="w-12 shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Where
+          {t("common.table.where")}
         </span>
         <span className="font-medium text-foreground">{label}</span>
       </div>

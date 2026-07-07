@@ -1,0 +1,140 @@
+{
+  "entity": "Vehículo",
+  "entityPlural": "vehículos",
+  "title": "Vehículos",
+  "noun": "vehículos",
+  "actions": {
+    "add": "Agregar vehículo",
+    "edit": "Editar vehículo",
+    "editNamed": "Editar {{name}}"
+  },
+  "stats": {
+    "total": {
+      "label": "Total de vehículos",
+      "description": "Unidades de flota registradas"
+    },
+    "usa": {
+      "label": "EE. UU.",
+      "description": "Total de vehículos en EE. UU."
+    },
+    "dr": {
+      "label": "RD",
+      "description": "Total de vehículos en RD"
+    }
+  },
+  "columns": {
+    "name": "Nombre",
+    "vin": "VIN",
+    "licensePlate": "Placa",
+    "year": "Año",
+    "fuelType": "Tipo de combustible",
+    "branch": "Sucursal",
+    "status": "Estado",
+    "inspectionDate": "Fecha de inspección",
+    "registrationDate": "Fecha de registro",
+    "createdAt": "Creado",
+    "createdBy": "Creado por",
+    "updatedAt": "Actualizado"
+  },
+  "search": {
+    "placeholder": "Buscar vehículos..."
+  },
+  "loading": {
+    "vehicle": "Cargando vehículo…"
+  },
+  "empty": {
+    "noMatch": "Ningún vehículo coincide con su búsqueda o filtros.",
+    "noneYet": "Aún no hay vehículos."
+  },
+  "enums": {
+    "fuelType": {
+      "gas": "Gasolina",
+      "diesel": "Diésel"
+    },
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "branch": {
+      "usa": "EE. UU.",
+      "dr": "RD"
+    },
+    "branchCode": {
+      "usa": "EE. UU.",
+      "dr": "RD",
+      "NY": "NY",
+      "DR": "RD (código)"
+    }
+  },
+  "form": {
+    "addTitle": "Agregar vehículo",
+    "editTitle": "Editar vehículo",
+    "addDescription": "Cree un nuevo registro de vehículo.",
+    "notFound": "No se pudo encontrar este vehículo.",
+    "branchFallback": "Sucursal {{id}}",
+    "sections": {
+      "vehicle": "Vehículo",
+      "compliance": "Cumplimiento",
+      "branch": "Sucursal"
+    },
+    "fields": {
+      "status": "Estado",
+      "name": "Nombre",
+      "vin": "VIN",
+      "licensePlate": "Placa",
+      "year": "Año",
+      "fuelType": "Tipo de combustible",
+      "inspectionDate": "Fecha de inspección",
+      "registrationDate": "Fecha de registro",
+      "branch": "Sucursal"
+    },
+    "placeholders": {
+      "name": "Unidad 12 — Freightliner",
+      "vin": "1FUJGLDR57LM12345",
+      "licensePlate": "ABC-1234",
+      "fuelType": "Seleccionar tipo de combustible",
+      "fuelTypeSearch": "Buscar tipos de combustible…",
+      "branch": "Seleccionar sucursal",
+      "branchSearch": "Buscar sucursales…"
+    },
+    "validation": {
+      "nameRequired": "El nombre del vehículo es obligatorio.",
+      "branchRequired": "La sucursal es obligatoria.",
+      "yearInvalid": "El año debe ser un número válido."
+    }
+  },
+  "view": {
+    "sections": {
+      "vehicle": "Vehículo",
+      "audit": "Auditoría"
+    },
+    "recordId": "ID de registro",
+    "vehicleId": "ID del vehículo",
+    "edit": "Editar vehículo"
+  },
+  "dialogs": {
+    "deleteTitle": "¿Eliminar vehículo?",
+    "deleteTitlePlural": "¿Eliminar vehículos?",
+    "deleteOne": "Esto eliminará permanentemente \"{{name}}\". {{cannotBeUndone}}",
+    "deleteMany": "Esto eliminará permanentemente {{count}} vehículos seleccionados. {{cannotBeUndone}}",
+    "unnamed": "este vehículo"
+  },
+  "filters": {
+    "fields": {
+      "vehicleId": { "label": "ID del vehículo", "placeholder": "Ingrese ID del vehículo…" },
+      "name": { "label": "Nombre", "placeholder": "Ingrese nombre…" },
+      "vin": { "label": "VIN", "placeholder": "Ingrese VIN…" },
+      "licensePlate": { "label": "Placa", "placeholder": "Ingrese placa…" },
+      "id": { "label": "ID de registro", "placeholder": "Ingrese ID de registro…" },
+      "createdBy": {
+        "name": { "label": "Creado por", "placeholder": "Ingrese creado por…" }
+      },
+      "fuelType": { "label": "Tipo de combustible", "placeholder": "Seleccionar tipo de combustible…" },
+      "branch": {
+        "code": { "label": "Sucursal", "placeholder": "Seleccionar sucursal…" }
+      },
+      "active": { "label": "Estado", "placeholder": "Seleccionar estado…" },
+      "year": { "label": "Año", "placeholder": "Ingrese año…" }
+    }
+  }
+}

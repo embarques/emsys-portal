@@ -72,10 +72,18 @@
       "broker": "Customs broker name",
       "company": "Shipping line or carrier",
       "cost": "0.00"
+    },
+    "validation": {
+      "nameRequired": "Enter a container name (e.g. 01-26).",
+      "bookingRequired": "Enter a booking number.",
+      "costInvalid": "Cost must be a valid number greater than or equal to 0."
     }
   },
   "view": {
-    "shipping": "Shipping",
+    "shipping": "Container information",
+    "sections": {
+      "audit": "Audit"
+    },
     "containerId": "Container ID",
     "barcodeSequence": "Barcode sequence",
     "departureDate": "Departure date",

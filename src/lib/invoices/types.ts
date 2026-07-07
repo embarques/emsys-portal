@@ -18,6 +18,8 @@ export type InvoicePaymentLocation = "usa" | "dr";
 
 export type InvoiceLineItemBarcode = {
   id: string;
+  /** Canonical `/barcodes` id when the API exposes it separately from the embedded record id. */
+  barcodeId?: string;
   number: string;
   statusId?: number;
   statusName?: string;
@@ -504,8 +506,40 @@ export function invoiceLineItemToFormValues(item: InvoiceLineItem): InvoiceLineI
 function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
   if (!party.name.trim() && !party.clientId && !party.id) return null;
 
-  const primaryAddress =
-    party.addresses.find((address) => address.id === party.orderAddressId) ?? party.addresses[0];
+  const primaryAddressId = party.orderAddressId;
+  const addresses = party.addresses
+    .filter((address) =>
+      [
+        address.streetAddress,
+        address.apt,
+        address.city,
+        address.state,
+        address.zipCode,
+        address.provinceCountry,
+      ].some((value) => String(value ?? "").trim()),
+    )
+    .map((address) => ({
+      address1: address.streetAddress.trim(),
+      address2: address.apt?.trim() ?? "",
+      apartment: address.apt?.trim() ?? "",
+      city: address.city.trim(),
+      state: address.state?.trim() ?? "",
+      zipcode: address.zipCode?.trim() ?? "",
+      country: address.provinceCountry?.trim() ?? "",
+      location: null,
+      verification: null,
+      isPrimary: address.id === primaryAddressId || address.isPrimary,
+    }));
+
+  const resolvedAddresses =
+    addresses.length > 0
+      ? addresses.map((entry, index) => ({
+          ...entry,
+          isPrimary: addresses.some((item) => item.isPrimary)
+            ? entry.isPrimary
+            : index === 0,
+        }))
+      : [];
 
   return {
     id: party.clientId ?? party.id,
@@ -527,23 +561,7 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
     accountBalance: 0,
     branch: { id: 0, name: "", code: "" },
     createdByID: null,
-    addresses: primaryAddress
-      ? [
-          {
-            address1: primaryAddress.streetAddress.trim(),
-            address2: primaryAddress.apt?.trim() ?? "",
-            apartment: primaryAddress.apt?.trim() ?? "",
-            city: primaryAddress.city.trim(),
-            state: primaryAddress.state?.trim() ?? "",
-            zipcode: primaryAddress.zipCode?.trim() ?? "",
-            country: primaryAddress.provinceCountry?.trim() ?? "",
-            location: null,
-            verification: null,
-            isPrimary: true,
-            active: true,
-          },
-        ]
-      : [],
+    addresses: resolvedAddresses,
     receivers: [],
   };
 }

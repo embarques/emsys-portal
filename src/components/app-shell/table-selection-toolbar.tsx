@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { ListChecks, Pencil, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,13 @@ export function TableSelectionToolbar({
   className,
 }: TableSelectionToolbarProps) {
   const { t } = useTranslation();
+
+  // Drop stale selections when the current list has no matching records (e.g. after search).
+  useEffect(() => {
+    if (totalCount === 0 && selectedIds.length > 0) {
+      onSelectedIdsChange([]);
+    }
+  }, [totalCount, selectedIds.length, onSelectedIdsChange]);
 
   if (selectedIds.length === 0) return null;
 

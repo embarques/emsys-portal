@@ -1,0 +1,58 @@
+{
+  "title": "Settings",
+  "loading": "Loading settings…",
+  "toast": {
+    "saved": "Settings saved."
+  },
+  "actions": {
+    "reset": "Reset changes",
+    "save": "Save settings"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "description": "Choose how the dashboard looks."
+  },
+  "themes": {
+    "lightDescription": "Bright background with dark text",
+    "darkDescription": "Dark background with light text",
+    "systemDescription": "Match your device appearance"
+  },
+  "language": {
+    "title": "Language preference",
+    "description": "Select the language used across the dashboard interface."
+  },
+  "tabs": {
+    "title": "Workspace tabs",
+    "description": "Control how many pages can remain open in the desktop tab bar.",
+    "maxLabel": "Maximum open tabs",
+    "hint": "Choose between {{min}} and {{max}} tabs."
+  },
+  "validation": {
+    "maxWorkspaceTabs": "Enter a number between {{min}} and {{max}}."
+  },
+  "password": {
+    "title": "Change password",
+    "description": "Set a new password for your signed-in account.",
+    "fields": {
+      "new": "New password",
+      "confirm": "Confirm password"
+    },
+    "actions": {
+      "submit": "Change password",
+      "changing": "Changing password…"
+    },
+    "toast": {
+      "success": "Password changed successfully."
+    },
+    "validation": {
+      "passwordMin": "Password must contain at least 6 characters.",
+      "confirmRequired": "Confirm your new password.",
+      "passwordsMismatch": "Passwords do not match."
+    },
+    "errors": {
+      "requiresRecentLogin": "For security, Firebase requires you to sign out and sign in again before changing your password.",
+      "weakPassword": "Firebase rejected this password because it is too weak.",
+      "generic": "Unable to change your password."
+    }
+  }
+}

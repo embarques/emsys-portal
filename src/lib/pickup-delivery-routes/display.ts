@@ -27,17 +27,21 @@ export function formatActiveRouteTypeLabel(
     : t("routes.activeRoute.routeTypePickup");
 }
 
-export function formatActiveRouteContainerLabel(record: ActiveRoute | null | undefined): string {
-  return record?.container?.name?.trim() || "—";
+export function formatActiveRouteContainerLabel(
+  record: ActiveRoute | null | undefined,
+  emptyValue = "—",
+): string {
+  return record?.container?.name?.trim() || emptyValue;
 }
 
 /** Linked route manager assignment name for the Route table column. */
 export function formatActiveRouteRouteName(
   record: ActiveRoute,
   getRouteByKey?: (key: string | undefined) => Pick<Route, "name" | "routeId"> | undefined,
+  emptyValue = "—",
 ): string {
   const linked = record.route;
-  if (!linked?.id) return "—";
+  if (!linked?.id) return emptyValue;
 
   const resolved =
     getRouteByKey?.(linked.id) ??
@@ -50,15 +54,18 @@ export function formatActiveRouteRouteName(
   if (embeddedName && embeddedName !== linked.id) return embeddedName;
 
   const routeId = String(linked.routeId ?? resolved?.routeId ?? "").trim();
-  return routeId || embeddedName || linked.id || "—";
+  return routeId || embeddedName || linked.id || emptyValue;
 }
 
-export function formatActiveRouteRowLabel(record: ActiveRoute | null | undefined): string {
-  if (!record) return "—";
+export function formatActiveRouteRowLabel(
+  record: ActiveRoute | null | undefined,
+  emptyValue = "—",
+): string {
+  if (!record) return emptyValue;
 
   const name = String(record.name ?? "").trim();
   const routeName = String(record.route?.name ?? "").trim();
-  return name || routeName || record.id || "—";
+  return name || routeName || record.id || emptyValue;
 }
 
 /** Label for pickup/delivery route assignment pickers. */

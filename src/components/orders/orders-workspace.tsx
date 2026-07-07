@@ -47,8 +47,14 @@ import {
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
+import { useOrderFilterFields } from "@/lib/orders/hooks/use-order-filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
+import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
@@ -63,7 +69,6 @@ import {
   getOrderBranchLabel,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
-import { getPrimaryAddress } from "@/lib/customers/utils/address-utils";
 import { buildRouteFilterOptions } from "@/lib/route-manager/display";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
@@ -95,7 +100,9 @@ import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Label } from "@/components/ui/label";
 import { useTableSort } from "@/lib/table/use-table-sort";
+import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
 
@@ -105,6 +112,7 @@ const defaultFilters: OrderFilterState = {
 };
 
 export function OrdersWorkspace() {
+  const { t } = useTranslation();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const { loading: authLoading, companyId } = useAuth();
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
@@ -136,7 +144,7 @@ export function OrdersWorkspace() {
   const { data: usersData, isLoading: usersLoading } = useUsers({
     page: 1,
     limit: 100,
-    sort: "fullName:asc",
+    sort: "name:asc",
   });
   const { data: branchesData, isLoading: branchesLoading } = useBranchPicker(200, {
     enabled: filtersOpen,
@@ -150,8 +158,9 @@ export function OrdersWorkspace() {
   const assignRouteMutation = useAssignPickupsToRoute();
   const generatePickupReportMutation = useGeneratePickupReport();
   const routeLookup = useRouteLookup();
+  const orderFilterFields = useOrderFilterFields();
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, { enabled: assignRouteOpen });
-  const orders = data?.items ?? [];
+  const orders = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalOrders = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -164,6 +173,12 @@ export function OrdersWorkspace() {
     setOrdersCompletedMutation.isPending ||
     assignRouteMutation.isPending;
   const isPrinting = generatePickupReportMutation.isPending;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(deferredQuery, filters.rows),
+    setSelectedIds,
+  );
+
   const selectedOrders = useMemo(
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
     [orders, selectedIds],
@@ -222,7 +237,7 @@ export function OrdersWorkspace() {
 
   function openAddForm() {
     if (isDesktopTabs) {
-      openFormTab({ feature: "orders", baseHref: "/orders", mode: "add", label: "Add order" });
+      openFormTab({ feature: "orders", baseHref: "/orders", mode: "add", label: t("orders.actions.add") });
       return;
     }
     setEditingOrder(null);
@@ -238,7 +253,7 @@ export function OrdersWorkspace() {
         baseHref: "/orders",
         mode: "edit",
         entityId: getOrderRecordId(order),
-        label: `Edit ${formatOrderId(order)}`,
+        label: t("orders.actions.editNamed", { name: formatOrderId(order) }),
       });
       return;
     }
@@ -257,10 +272,10 @@ export function OrdersWorkspace() {
           orderId: getOrderRecordId(editingOrder),
           values,
         });
-        notifyUpdated("Order", formatOrderId(nextOrder));
+        notifyUpdated(t("orders.entity"), formatOrderId(nextOrder));
       } else {
         const nextOrder = await createOrderMutation.mutateAsync(values);
-        notifyAdded("Order", formatOrderId(nextOrder));
+        notifyAdded(t("orders.entity"), formatOrderId(nextOrder));
       }
 
       setFormMode(null);
@@ -286,7 +301,7 @@ export function OrdersWorkspace() {
       setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
       setDeleteTarget(null);
       setViewOrder(null);
-      notifyDeleted("Order", ids.length);
+      notifyDeleted(t("orders.entity"), ids.length);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);
@@ -298,8 +313,15 @@ export function OrdersWorkspace() {
 
     try {
       await setOrdersCompletedMutation.mutateAsync({ orders: selectedOrders, completed });
-      const noun = selectedOrders.length === 1 ? "order" : "orders";
-      notifySuccess(`${selectedOrders.length} ${noun} marked ${completed ? "complete" : "incomplete"}.`);
+      notifySuccess(
+        selectedOrders.length === 1
+          ? t(completed ? "orders.toasts.markedComplete" : "orders.toasts.markedIncomplete", {
+              count: selectedOrders.length,
+            })
+          : t(completed ? "orders.toasts.markedComplete_plural" : "orders.toasts.markedIncomplete_plural", {
+              count: selectedOrders.length,
+            }),
+      );
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
     }
@@ -318,10 +340,14 @@ export function OrdersWorkspace() {
 
     try {
       await assignRouteMutation.mutateAsync({ routeId: selectedRouteId, pickupIds });
-      const noun = pickupIds.length === 1 ? "order" : "orders";
       const routeName = pickupRoutes.find((route) => route.id === selectedRouteId)?.name;
+      const routeSuffix = routeName
+        ? t("orders.toasts.assignedToRouteNamed", { routeName })
+        : "";
       notifySuccess(
-        `${pickupIds.length} ${noun} assigned${routeName ? ` to ${routeName}` : ""}.`,
+        pickupIds.length === 1
+          ? t("orders.toasts.assignedToRoute", { count: pickupIds.length, routeSuffix })
+          : t("orders.toasts.assignedToRoute_plural", { count: pickupIds.length, routeSuffix }),
       );
       setAssignRouteOpen(false);
       setSelectedRouteId("");
@@ -333,7 +359,7 @@ export function OrdersWorkspace() {
   async function printSelectedOrders() {
     const pickupIds = selectedOrders.map((order) => getOrderRecordId(order)).filter(Boolean);
     if (pickupIds.length === 0) {
-      notifyError("Select at least one order to print.");
+      notifyError(t("orders.actions.selectAtLeastOne"));
       return;
     }
 
@@ -345,8 +371,11 @@ export function OrdersWorkspace() {
         lookupField: "id",
       });
       window.open(report.url, "_blank", "noopener,noreferrer");
-      const noun = pickupIds.length === 1 ? "order" : "orders";
-      notifySuccess(`Pickup manifest ready for ${pickupIds.length} ${noun}.`);
+      notifySuccess(
+        pickupIds.length === 1
+          ? t("orders.toasts.manifestReady", { count: pickupIds.length })
+          : t("orders.toasts.manifestReady_plural", { count: pickupIds.length }),
+      );
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
     }
@@ -354,41 +383,42 @@ export function OrdersWorkspace() {
 
   // TODO: implement map for selected orders.
   function handleComingSoon(label: string) {
-    notifySuccess(`${label} is coming soon.`);
+    notifySuccess(t("orders.toasts.comingSoon", { label }));
   }
 
   const statCards = [
     {
-      label: "Pending orders",
+      label: t("orders.stats.pendingOrders.label"),
       value: stats.pending.toString(),
       icon: Clock,
     },
     {
-      label: "Pending pickups",
+      label: t("orders.stats.pendingPickups.label"),
       value: stats.pendingPickups.toString(),
       icon: PackageOpen,
     },
     {
-      label: "Pending takes",
+      label: t("orders.stats.pendingTakes.label"),
       value: stats.pendingTakes.toString(),
       icon: ArrowDownToLine,
     },
     {
-      label: "Pending estimates",
+      label: t("orders.stats.pendingEstimates.label"),
       value: stats.pendingEstimates.toString(),
       icon: FileText,
     },
     {
-      label: "Pending payments",
+      label: t("orders.stats.pendingPayments.label"),
       value: stats.pendingPayments.toString(),
       icon: DollarSign,
     },
   ];
 
-  const tableColumns: DataTableColumn<Order>[] = [
+  const tableColumns: DataTableColumn<Order>[] = useMemo(
+    () => [
     {
       id: "completed",
-      label: "completed",
+      label: t("orders.columns.completed"),
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (order) => (
@@ -399,68 +429,71 @@ export function OrdersWorkspace() {
               : "text-amber-700 dark:text-amber-300"
           }
         >
-          {getOrderCompletedLabel(order.completed)}
+          {getOrderCompletedLabel(order.completed, t)}
         </TableTagText>
       ),
     },
     {
       id: "date",
-      label: "date",
+      label: t("orders.columns.date"),
       renderCell: (order) => formatOrderDate(order.date),
     },
     {
       id: "branch.name",
-      label: "Branch",
+      label: t("orders.columns.branchName"),
       sortField: "branch.name",
       cellClassName: "text-muted-foreground",
-      renderCell: (order) => getOrderBranchLabel(order.branch) || "—",
+      renderCell: (order) => getOrderBranchLabel(order.branch) || t("common.empty.dash"),
     },
     {
       id: "createdAt",
-      label: "createdAt",
+      label: t("orders.columns.createdAt"),
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDateTime(order.createdAt),
     },
     {
       id: "sender.name",
-      label: "Name",
+      label: t("orders.columns.senderName"),
       cellClassName: "font-medium",
-      renderCell: (order) => order.sender.name.trim() || "—",
+      renderCell: (order) => order.sender.name.trim() || t("common.empty.dash"),
     },
     {
       id: "sender.address",
-      label: "Address",
+      label: t("orders.columns.senderAddress"),
       sortField: "sender.address.address1",
       renderCell: (order) => {
-        const primary = getPrimaryAddress(order.sender);
-        return primary
-          ? [primary.address1, primary.apartment].filter((value) => value.trim()).join(", ") || "—"
-          : "—";
+        const address = getCustomerPrimaryCoreAddress(order.sender);
+        return (
+          [address.address1, address.apartment].filter((value) => value.trim()).join(", ") ||
+          t("common.empty.dash")
+        );
       },
     },
     {
       id: "sender.address.city",
-      label: "City",
-      renderCell: (order) => getPrimaryAddress(order.sender)?.city.trim() || "—",
+      label: t("orders.columns.senderCity"),
+      renderCell: (order) =>
+        getCustomerPrimaryCoreAddress(order.sender).city.trim() || t("common.empty.dash"),
     },
     {
       id: "sender.address.zipcode",
-      label: "Zip",
-      renderCell: (order) => getPrimaryAddress(order.sender)?.zipcode.trim() || "—",
+      label: t("orders.columns.senderZip"),
+      renderCell: (order) =>
+        getCustomerPrimaryCoreAddress(order.sender).zipcode.trim() || t("common.empty.dash"),
     },
     {
       id: "sender.phone1",
-      label: "Phone 1",
+      label: t("orders.columns.senderPhone1"),
       renderCell: (order) => getCustomerPhone(order.sender),
     },
     {
       id: "comments",
-      label: "comments",
+      label: t("orders.columns.comments"),
       renderCell: (order) => formatOrderCommentsSummary(order),
     },
     {
       id: "route.name",
-      label: "Route",
+      label: t("orders.columns.route"),
       sortField: "route.name",
       cellClassName: "text-muted-foreground",
       renderCell: (order) =>
@@ -468,33 +501,51 @@ export function OrdersWorkspace() {
     },
     {
       id: "updatedAt",
-      label: "updatedAt",
+      label: t("orders.columns.updatedAt"),
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDateTime(order.updatedAt),
     },
-  ];
+  ],
+    [routeLookup, t],
+  );
 
   const columnVisibility = useColumnVisibility("orders-v3", tableColumns);
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== deferredQuery.trim();
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query: filters.query,
-    isSearchPending,
-    matched: totalOrders,
-    noun: "orders",
-    isLoading: isFetching && orders.length === 0,
-  });
+  const isListFiltered = hasActiveFilters;
+  const searchSummary = buildToolbarSearchSummary(
+    {
+      isFiltered: isListFiltered,
+      query: filters.query,
+      isSearchPending,
+      matched: totalOrders,
+      noun: t("orders.noun"),
+      isLoading: isFetching && orders.length === 0,
+    },
+    t,
+  );
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: orders.length,
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      total: totalOrders,
+      noun: t("orders.noun"),
+      isFiltered: isListFiltered,
+      isLoading: isFetching,
+    },
+    t,
+  );
 
   return (
     <div>
       <PageHeader
-        title="Orders"
+        title={t("orders.title")}
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
-            Add order
+            {t("orders.actions.add")}
           </Button>
         }
       />
@@ -521,16 +572,16 @@ export function OrdersWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search by sender/receiver name, phone, or address…"
+                placeholder={t("orders.search.placeholder")}
               />
             }
             filterPanel={
               <TableFilterPanel
-                resultSummary={`Showing ${orders.length} of ${totalOrders} orders`}
+                resultSummary={listSummary}
                 presets={{
                   storageKey: "orders",
                   rows: filters.rows,
-                  fields: ORDER_TABLE_FILTER_FIELDS,
+                  fields: orderFilterFields,
                   onApply: (rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -548,7 +599,7 @@ export function OrdersWorkspace() {
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
                   rows={filters.rows}
-                  fields={ORDER_TABLE_FILTER_FIELDS}
+                  fields={orderFilterFields}
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
                     routes: routeOptions,
@@ -567,9 +618,7 @@ export function OrdersWorkspace() {
 
         {missingCompanyContext ? (
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">
-            Company context is missing for this account. EMSYS API requests require the{" "}
-            <code className="text-xs">x-company-id</code> header. Add <code className="text-xs">companyId</code> to
-            your Firebase user profile or JWT custom claim, then sign in again.
+            {t("orders.errors.missingCompanyContext")}
           </div>
         ) : null}
 
@@ -597,7 +646,7 @@ export function OrdersWorkspace() {
                 disabled={isPrinting}
               >
                 <Printer className="h-4 w-4" />
-                {isPrinting ? "Preparing…" : "Print"}
+                {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
               </Button>
               <Button
                 variant="outline"
@@ -607,7 +656,7 @@ export function OrdersWorkspace() {
                 className="border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
               >
                 <CheckCircle2 className="h-4 w-4" />
-                Mark complete
+                {t("orders.actions.markComplete")}
               </Button>
               <Button
                 variant="outline"
@@ -617,7 +666,7 @@ export function OrdersWorkspace() {
                 className="border-amber-500/30 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
               >
                 <XCircle className="h-4 w-4" />
-                Mark incomplete
+                {t("orders.actions.markIncomplete")}
               </Button>
               <Button
                 variant="outline"
@@ -626,15 +675,15 @@ export function OrdersWorkspace() {
                 onClick={openAssignRoute}
               >
                 <RouteIcon className="h-4 w-4" />
-                Assign route
+                {t("orders.actions.assignRoute")}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleComingSoon("Map")}
+                onClick={() => handleComingSoon(t("orders.actions.map"))}
               >
                 <MapIcon className="h-4 w-4" />
-                Map
+                {t("orders.actions.map")}
               </Button>
             </>
           }
@@ -643,9 +692,9 @@ export function OrdersWorkspace() {
         {isLoading ? (
           <DirectoryTableLoader
             icon={PackageOpen}
-            title="Loading orders"
-            description="Coordinating customers, routes, packages, and delivery status…"
-            columns={["Order", "Date", "Sender", "Receiver", "Status"]}
+            title={t("orders.loading.title")}
+            description={t("orders.loading.description")}
+            columns={t("orders.loading.columns").split(", ")}
           />
         ) : (
           <DataTable
@@ -668,10 +717,10 @@ export function OrdersWorkspace() {
             onRowDoubleClick={openEditForm}
             emptyState={
               <>
-                <p className="text-muted-foreground">No orders match your search or filters.</p>
+                <p className="text-muted-foreground">{t("orders.empty.noMatch")}</p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
-                  Add order
+                  {t("orders.actions.add")}
                 </Button>
               </>
             }
@@ -680,11 +729,7 @@ export function OrdersWorkspace() {
 
         {!isLoading ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {isFetching
-              ? "Refreshing orders…"
-              : `Showing ${orders.length} of ${totalOrders} orders`}
-          </p>
+          <p className="text-sm text-muted-foreground">{listSummary}</p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -693,10 +738,10 @@ export function OrdersWorkspace() {
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              {t("common.actions.previous")}
             </Button>
             <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -704,7 +749,7 @@ export function OrdersWorkspace() {
               disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
-              Next
+              {t("common.actions.next")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -736,7 +781,9 @@ export function OrdersWorkspace() {
       >
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>{formMode === "edit" ? "Edit order" : "Add order"}</DialogTitle>
+            <DialogTitle>
+              {formMode === "edit" ? t("orders.form.editTitle") : t("orders.form.addTitle")}
+            </DialogTitle>
           </DialogHeader>
           <OrderForm
             key={editingOrder ? getOrderRecordId(editingOrder) : "new"}
@@ -745,7 +792,7 @@ export function OrdersWorkspace() {
             }
             isEditing={formMode === "edit"}
             updatedAt={editingOrder?.updatedAt}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add order"}
+            submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("orders.actions.add")}
             onSubmit={saveOrder}
             onFormErrorChange={setFormError}
             onCancel={() => {
@@ -770,21 +817,27 @@ export function OrdersWorkspace() {
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>Assign route</DialogTitle>
+            <DialogTitle>{t("orders.dialogs.assignRouteTitle")}</DialogTitle>
             <DialogDescription>
-              {`Assign ${selectedOrders.length} selected order${selectedOrders.length === 1 ? "" : "s"} to a route.`}
+              {selectedOrders.length === 1
+                ? t("orders.dialogs.assignRouteDescription", { count: selectedOrders.length })
+                : t("orders.dialogs.assignRouteDescription_plural", { count: selectedOrders.length })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
-            <Label htmlFor="assign-route">Route</Label>
+            <Label htmlFor="assign-route">{t("orders.columns.route")}</Label>
             <SearchableSelect
               id="assign-route"
               value={selectedRouteId}
               onValueChange={setSelectedRouteId}
-              placeholder="Select a route"
-              searchPlaceholder="Search routes…"
+              placeholder={t("orders.dialogs.selectRoute")}
+              searchPlaceholder={t("orders.dialogs.searchRoutes")}
               loading={assignRoutesLoading}
-              emptyMessage={assignRoutesLoading ? "Loading routes…" : "No routes found."}
+              emptyMessage={
+                assignRoutesLoading
+                  ? t("orders.dialogs.loadingRoutes")
+                  : t("orders.dialogs.noRoutesFound")
+              }
               options={assignRouteOptions}
             />
           </div>
@@ -796,11 +849,11 @@ export function OrdersWorkspace() {
                 setSelectedRouteId("");
               }}
             >
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button onClick={confirmAssignRoute} disabled={!selectedRouteId || isSaving}>
               <RouteIcon className="h-4 w-4" />
-              Assign route
+              {t("orders.actions.assignRoute")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -809,20 +862,29 @@ export function OrdersWorkspace() {
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="z-[60]">
           <DialogHeader>
-            <DialogTitle>Delete order{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?</DialogTitle>
+            <DialogTitle>
+              {Array.isArray(deleteTarget) && deleteTarget.length > 1
+                ? t("orders.dialogs.deleteTitlePlural")
+                : t("orders.dialogs.deleteTitle")}
+            </DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected orders. This action cannot be undone.`
-                : "This will permanently remove this order. This action cannot be undone."}
+                ? t("orders.dialogs.deleteMany", {
+                    count: deleteTarget.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
+                : t("orders.dialogs.deleteOne", {
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
-              Delete
+              {t("common.actions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

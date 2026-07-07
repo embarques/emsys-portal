@@ -18,8 +18,7 @@ import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { buildApiAddressPayload, buildApiBranchDto } from "@/lib/api/payloads";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
-import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, createRecordId, type Customer } from "@/lib/customers/types";
-import { getPrimaryAddress } from "@/lib/customers/utils/address-utils";
+import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, createRecordId, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 import { getPhoneAtDisplayIndex, getPrimaryPhoneNumber } from "@/lib/phones/phones";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { expandInvoiceFilterNode } from "@/lib/invoices/invoice-filters";
@@ -116,6 +115,7 @@ type ApiInvoiceBarcodeDelivery = {
 
 type ApiInvoiceBarcode = {
   id?: number | string;
+  barcodeId?: number | string;
   number?: string;
   status?: ApiInvoiceBarcodeStatus;
   container?: ApiInvoiceBarcodeContainer;
@@ -259,8 +259,16 @@ function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
       const deliveryName = String(barcode.delivery?.name ?? "").trim();
       const scanDate = String(barcode.scanDate ?? "").trim();
 
+      const canonicalBarcodeId =
+        barcode.barcodeId != null
+          ? String(barcode.barcodeId)
+          : barcode.id != null
+            ? String(barcode.id)
+            : undefined;
+
       return {
-        id: barcode.id != null ? String(barcode.id) : createRecordId(),
+        id: canonicalBarcodeId ?? createRecordId(),
+        barcodeId: barcode.barcodeId != null ? String(barcode.barcodeId) : undefined,
         number,
         statusId: typeof barcode.status?.id === "number" ? barcode.status.id : undefined,
         statusName: statusName || undefined,
@@ -561,23 +569,96 @@ export async function fetchInvoiceBalanceTotal(
   return Math.round(sum * 100) / 100;
 }
 
+function unwrapInvoiceApiRecord(response: unknown): ApiInvoice {
+  const raw =
+    response && typeof response === "object" && "data" in response
+      ? (response as PaginatedApiEnvelope<ApiInvoice>).data
+      : response;
+
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Invoice not found.");
+  }
+
+  return raw as ApiInvoice;
+}
+
 export async function fetchInvoiceById(invoiceId: string): Promise<Invoice> {
   const id = parseInvoicePathId(invoiceId);
   const response = await apiClient.get<ApiInvoice | PaginatedApiEnvelope<ApiInvoice>>(
     `${API_ENDPOINTS.INVOICES}/${id}`,
   );
 
-  const raw =
-    response && typeof response === "object" && "data" in response
-      ? (response as PaginatedApiEnvelope<ApiInvoice>).data
-      : response;
-
-  const invoice = normalizeInvoice(raw);
+  const invoice = normalizeInvoice(unwrapInvoiceApiRecord(response));
   if (!invoice) {
     throw new Error("Invoice not found.");
   }
 
   return invoice;
+}
+
+/** Raw invoice record from `GET /invoices/{id}` — suitable for round-trip `PUT`. */
+export async function fetchInvoiceApiRecord(invoiceId: string): Promise<ApiInvoice> {
+  const id = parseInvoicePathId(invoiceId);
+  const response = await apiClient.get<ApiInvoice | PaginatedApiEnvelope<ApiInvoice>>(
+    `${API_ENDPOINTS.INVOICES}/${id}`,
+  );
+
+  return unwrapInvoiceApiRecord(response);
+}
+
+export type InvoiceEmbeddedBarcodePatch = {
+  barcodeId: number;
+  number: string;
+  status: { id: number; name: string };
+  container?: { id: number; name: string };
+};
+
+function readInvoiceBarcodeId(value: unknown): number | undefined {
+  if (value == null) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/** Update barcodes nested under `invoiceDetails` via `PUT /invoices/{id}`. */
+export async function patchInvoiceEmbeddedBarcodes(
+  invoiceId: string,
+  patches: InvoiceEmbeddedBarcodePatch[],
+): Promise<void> {
+  if (patches.length === 0) return;
+
+  const invoice = await fetchInvoiceApiRecord(invoiceId);
+  const patchById = new Map(patches.map((patch) => [patch.barcodeId, patch]));
+  let matched = 0;
+
+  for (const detail of invoice.invoiceDetails ?? []) {
+    for (const barcode of detail.barcodes ?? []) {
+      const numericId = readInvoiceBarcodeId(barcode.id);
+      if (numericId == null) continue;
+
+      const patch = patchById.get(numericId);
+      if (!patch) continue;
+
+      barcode.number = patch.number;
+      barcode.status = patch.status;
+      if (patch.container) {
+        barcode.container = patch.container;
+      }
+
+      matched += 1;
+    }
+  }
+
+  if (matched !== patches.length) {
+    throw new Error("One or more barcodes were not found on the invoice.");
+  }
+
+  const id = parseInvoicePathId(invoiceId);
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.INVOICES}/${id}`,
+    invoice,
+  );
+
+  assertMutationSuccess(response, "Unable to update invoice barcodes.");
 }
 
 export type InvoiceWriteContext = {
@@ -644,7 +725,7 @@ function buildInvoiceCustomerWriteRef(
   const phone2 = getPhoneAtDisplayIndex(customer.phones, 1);
   const email = customer.email.trim();
   const idNumber = customer.IDNumber.trim();
-  const address = buildApiAddressPayload(getPrimaryAddress(customer) ?? {});
+  const address = buildApiAddressPayload(getCustomerPrimaryCoreAddress(customer));
   const customerType = customer.customerType ?? fallbackType;
 
   const payload: ApiInvoiceCustomerWriteRef = {

@@ -12,7 +12,7 @@ import { useCustomerPicker, useCustomerSearch } from "@/lib/customers/hooks/use-
 import { CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
 import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/customer-type";
 import type { Customer } from "@/lib/customers/types";
-import { getPrimaryAddress } from "@/lib/customers/utils/address-utils";
+import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
 import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
@@ -41,7 +41,7 @@ function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React
 
 function customerOptionDescription(customer: Customer) {
   const phone = getPrimaryPhoneDisplayNumber(customer.phones);
-  const address1 = getPrimaryAddress(customer)?.address1.trim() ?? "";
+  const address1 = getCustomerPrimaryCoreAddress(customer).address1.trim();
   return [phone, address1].filter(Boolean);
 }
 

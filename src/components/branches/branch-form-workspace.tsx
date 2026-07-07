@@ -8,6 +8,7 @@ import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
+import { useTranslation } from "@/lib/i18n";
 import { useBranch, useCreateBranch, useUpdateBranch } from "@/lib/branches/hooks/use-branches";
 import {
   createEmptyBranchForm,
@@ -21,6 +22,7 @@ import {
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
 export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+  const { t } = useTranslation();
   const isEditing = mode === "edit";
   const { notifyAdded, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -39,9 +41,9 @@ export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHost
 
   useEffect(() => {
     if (isEditing && editing?.name) {
-      updateTabLabel(tabId, `Edit ${editing.name}`);
+      updateTabLabel(tabId, t("branches.actions.editNamed", { name: editing.name }));
     }
-  }, [editing?.name, isEditing, tabId, updateTabLabel]);
+  }, [editing?.name, isEditing, tabId, t, updateTabLabel]);
 
   async function save(values: BranchFormValues) {
     setFormError(null);
@@ -49,13 +51,13 @@ export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHost
     try {
       if (isEditing && editing) {
         const next = await updateMutation.mutateAsync({ branchId: editing.id, values });
-        notifyUpdated("Branch", next.name);
+        notifyUpdated(t("branches.entity"), next.name);
         closeFormTabAndReturn(tabId);
         return;
       }
 
       const next = await createMutation.mutateAsync(values);
-      notifyAdded("Branch", next.name);
+      notifyAdded(t("branches.entity"), next.name);
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
@@ -64,10 +66,10 @@ export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHost
 
   if (isEditing && detailQuery.isLoading) {
     return (
-      <FormTabShell title="Edit branch">
+      <FormTabShell title={t("branches.form.editTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading branch…
+          {t("branches.loading.branch")}
         </div>
       </FormTabShell>
     );
@@ -76,13 +78,13 @@ export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHost
   if (isEditing && (detailQuery.isError || !editing)) {
     const message = detailQuery.isError
       ? normalizeApiError(detailQuery.error).message
-      : "This branch could not be found.";
+      : t("branches.form.notFound");
     return (
-      <FormTabShell title="Edit branch">
+      <FormTabShell title={t("branches.form.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
-            Close
+            {t("common.actions.close")}
           </Button>
         </div>
       </FormTabShell>
@@ -91,14 +93,14 @@ export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHost
 
   return (
     <FormTabShell
-      title={isEditing ? "Edit branch" : "Add branch"}
-      description={isEditing && editing ? editing.name : "Create a new branch."}
+      title={isEditing ? t("branches.form.editTitle") : t("branches.form.addTitle")}
+      description={isEditing && editing ? editing.name : t("branches.form.addDescription")}
     >
       <BranchForm
         key={isEditing ? (editing?.id ?? "edit") : `new-${formInstance}`}
         initialValues={isEditing && editing ? branchToFormValues(editing) : createEmptyBranchForm()}
         isEditing={isEditing}
-        submitLabel={isEditing ? "Save changes" : "Add branch"}
+        submitLabel={isEditing ? t("common.actions.saveChanges") : t("branches.actions.add")}
         isSubmitting={isSaving}
         externalError={formError}
         onSubmit={save}

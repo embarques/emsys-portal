@@ -23,9 +23,9 @@ export const CONFIGURATION_LANGUAGES = [
 ] as const;
 
 export const CONFIGURATION_THEMES = [
-  { value: "light", label: "Light", description: "Bright background with dark text" },
-  { value: "dark", label: "Dark", description: "Dark background with light text" },
-  { value: "system", label: "System", description: "Match your device appearance" },
+  { value: "light", labelKey: "shell.theme.light", descriptionKey: "settings.themes.lightDescription" },
+  { value: "dark", labelKey: "shell.theme.dark", descriptionKey: "settings.themes.darkDescription" },
+  { value: "system", labelKey: "shell.theme.system", descriptionKey: "settings.themes.systemDescription" },
 ] as const;
 
 export const DEFAULT_USER_PREFERENCES: UserPreferenceValues = {

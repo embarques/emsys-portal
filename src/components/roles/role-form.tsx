@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Shield } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -10,7 +10,8 @@ import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell
 import { RolePermissionsEditor } from "@/components/roles/role-permissions-editor";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { roleFormSchema } from "@/lib/roles/schemas/role.schema";
+import { useTranslation } from "@/lib/i18n";
+import { createRoleFormSchema } from "@/lib/roles/schemas/role.schema";
 import type { PermissionCatalogEntry } from "@/lib/roles/permissions-catalog";
 import {
   createEmptyRoleForm,
@@ -36,6 +37,15 @@ export function RoleForm({
   onSubmit,
   onCancel,
 }: RoleFormProps) {
+  const { t } = useTranslation();
+  const roleFormSchema = useMemo(
+    () =>
+      createRoleFormSchema({
+        nameRequired: t("roles.form.validation.nameRequired"),
+        permissionsRequired: t("roles.form.validation.permissionsRequired"),
+      }),
+    [t],
+  );
   const {
     control,
     formState: { errors },
@@ -55,15 +65,15 @@ export function RoleForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
-        <FormSection icon={Shield} title="Role">
+        <FormSection icon={Shield} title={t("roles.form.sections.role")}>
           <div className="space-y-1">
             <Label htmlFor="name">
-              Role name <span className="text-destructive">*</span>
+              {t("roles.form.fields.name")} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="name"
               {...register("name")}
-              placeholder="Operations Manager"
+              placeholder={t("roles.form.placeholders.name")}
               aria-invalid={Boolean(errors.name)}
               autoFocus
             />

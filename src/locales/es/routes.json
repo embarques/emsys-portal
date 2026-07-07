@@ -21,6 +21,17 @@
     "entities": {
       "activeRoute": "ruta de recogida",
       "activeRoutes": "rutas de recogida"
+    },
+    "form": {
+      "save": "Guardar ruta de recogida",
+      "saved": "Ruta de recogida guardada.",
+      "editHint": "Actualice la asignación de recogida y los roles de la cuadrilla, luego guarde."
+    },
+    "view": {
+      "editLabel": "Editar ruta de recogida",
+      "sections": {
+        "assignment": "Asignación"
+      }
     }
   },
   "deliveryRoutes": {
@@ -40,6 +51,17 @@
     "entities": {
       "activeRoute": "ruta de entrega",
       "activeRoutes": "rutas de entrega"
+    },
+    "form": {
+      "save": "Guardar ruta de entrega",
+      "saved": "Ruta de entrega guardada.",
+      "editHint": "Actualice la asignación de entrega y los roles de la cuadrilla, luego guarde."
+    },
+    "view": {
+      "editLabel": "Editar ruta de entrega",
+      "sections": {
+        "assignment": "Asignación"
+      }
     }
   },
   "tabs": {
@@ -176,7 +198,8 @@
       "date": "La fecha es obligatoria.",
       "dayOfWeek": "Selecciona al menos un día.",
       "branch": "La sucursal es obligatoria.",
-      "route": "La ruta es obligatoria."
+      "route": "La ruta es obligatoria.",
+      "pickupContainer": "Las rutas de recogida no pueden incluir un contenedor."
     }
   },
   "routeDetails": {
@@ -225,6 +248,10 @@
     "loadingCrewMembers": "Cargando miembros de la cuadrilla…",
     "noCrewMembersFound": "No se encontraron miembros activos de la cuadrilla.",
     "selectAtLeastOneCrewMember": "Seleccione al menos un miembro de la cuadrilla para esta ruta.",
-    "crewMemberRequired": "Seleccione al menos un miembro de la cuadrilla."
+    "crewMemberRequired": "Seleccione al menos un miembro de la cuadrilla.",
+    "validation": {
+      "branchRequired": "La sucursal es obligatoria.",
+      "vehicleRequired": "El vehículo es obligatorio."
+    }
   }
 }

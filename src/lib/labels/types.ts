@@ -136,6 +136,8 @@ export type GeneratedLabel = {
   labelSequence: number;
   totalLabels: number;
   source: GeneratedLabelSource;
+  /** API write path for status/container updates. */
+  writeTarget?: "barcodes" | "invoice-embedded";
 };
 
 /** Default status applied to a freshly created barcode (per EMSYS API payload docs). */
@@ -160,14 +162,41 @@ export const BARCODE_STATUS_OPTIONS: { id: number; name: string }[] = [
   { id: 6, name: "CANCELLED" },
 ];
 
-export const LABEL_STATUSES: { value: LabelStatus; label: string }[] = [
-  { value: "pending", label: "Pending" },
-  { value: "generated", label: "Generated" },
-  { value: "printed", label: "Printed" },
-  { value: "in_transit", label: "In transit" },
-  { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
-];
+/** Resolve a write payload status ref from stored ids/names on a label snapshot. */
+export function resolveBarcodeStatusRef(
+  statusId: number | undefined,
+  statusName: string,
+): { id: number; name: string } {
+  const trimmedName = statusName.trim();
+  if (statusId != null && statusId > 0) {
+    return { id: statusId, name: trimmedName || "—" };
+  }
+
+  const normalizedName = trimmedName.toUpperCase();
+  const option = BARCODE_STATUS_OPTIONS.find(
+    (entry) => entry.name.toUpperCase() === normalizedName,
+  );
+  if (option) return option;
+
+  return { id: statusId ?? 0, name: trimmedName || "—" };
+}
+
+export const LABEL_STATUS_VALUES = [
+  "pending",
+  "generated",
+  "printed",
+  "in_transit",
+  "delivered",
+  "cancelled",
+] as const satisfies readonly LabelStatus[];
+
+/** @deprecated Use LABEL_STATUS_VALUES with getLabelStatusLabel(t) instead. */
+export const LABEL_STATUSES: { value: LabelStatus; label: string }[] = LABEL_STATUS_VALUES.map(
+  (value) => ({
+    value,
+    label: value,
+  }),
+);
 
 export function createLabelId(): string {
   return createRecordId();

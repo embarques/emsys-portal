@@ -1,7 +1,3 @@
-import {
-  getPrimaryAddress as getPrimaryCoreAddress,
-  getPrimaryAddressIndex,
-} from "@/lib/customers/utils/address-utils";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import {
@@ -46,14 +42,6 @@ export type CustomerAddressLabel =
   | "Delivery"
   | "Other";
 
-export type CustomerSearchMatchField = "name" | "phone" | "idNumber" | "email" | "address";
-
-export type CustomerSearchResult = {
-  customer: Customer;
-  matchedBy?: CustomerSearchMatchField;
-  matchedAddressId?: string;
-};
-
 export type CustomerCoreAddress = {
   id?: string;
   label?: CustomerAddressLabel;
@@ -65,7 +53,8 @@ export type CustomerCoreAddress = {
   zipcode: string;
   country: string;
   phone?: string;
-  isPrimary?: boolean;
+  /** Whether this entry is the customer's primary address. */
+  isPrimary: boolean;
   active?: boolean;
   /** GeoJSON location resolved from Google Places, when available. */
   location: AddressGeoLocation | null;
@@ -212,7 +201,7 @@ export type CustomerSearchField =
   | "phones.number"
   | "email"
   | "IDNumber"
-  | "addresses.address1"
+  | "address.address1"
   | "customerType"
   | "branch.id";
 
@@ -246,6 +235,7 @@ const BRANCH_ID_TO_PORTAL: Record<number, CustomerPortalBranch> = {
 
 const BRANCH_CODE_TO_PORTAL: Record<string, CustomerPortalBranch> = {
   NY: "usa",
+  RD: "dr",
   DR: "dr",
   DO: "dr",
 };
@@ -257,7 +247,7 @@ export const CUSTOMER_PORTAL_BRANCHES: {
   code: string;
 }[] = [
   { portal: "usa", id: 1, label: "USA", code: "NY" },
-  { portal: "dr", id: 2, label: "DR", code: "DR" },
+  { portal: "dr", id: 2, label: "DR", code: "RD" },
 ];
 
 /** Resolve branch id when the API returns only `name` and `code`. */
@@ -272,7 +262,7 @@ export function resolveCustomerBranchId(input: { id?: number | null; code?: stri
     const byCode = CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.code.toUpperCase() === normalizedCode);
     if (byCode) return byCode.id;
 
-    if (normalizedCode === "DO") {
+    if (normalizedCode === "RD" || normalizedCode === "DR" || normalizedCode === "DO") {
       return CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.portal === "dr")?.id ?? 2;
     }
   }
@@ -283,6 +273,7 @@ export function resolveCustomerBranchId(input: { id?: number | null; code?: stri
 /**
  * Customer search field + operator pairs verified against the live API.
  * Customer list filters use POST /customers/search with the standard advanced-search body.
+ * Address filters also query `addresses.*` via `queryFields` in filter-fields.ts.
  */
 export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   field: CustomerSearchField;
@@ -293,7 +284,7 @@ export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   { field: "phones.number", label: "Phone", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "email", label: "Email", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "IDNumber", label: "ID number", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "addresses.address1", label: "Address 1", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "address.address1", label: "Address 1", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "customerType", label: "Customer type", operators: ["eq", "neq"] },
   { field: "id", label: "Customer ID", operators: ["eq", "neq"] },
 ];
@@ -320,13 +311,16 @@ export function normalizeCustomerType(value: number | null | undefined): number 
 }
 
 export function normalizeCustomerFormValues(values: CustomerFormValues): CustomerFormValues {
-  return applyCustomerTypeBranch({
-    ...values,
-    active: true,
-    customerType: normalizeCustomerType(values.customerType),
-    phones: normalizeRecordPhonesFormValues(values.phones),
-    receivers: values.receivers.map((entry) => entry.trim()).filter(Boolean),
-  });
+  return {
+    ...applyCustomerTypeBranch({
+      ...values,
+      active: true,
+      customerType: normalizeCustomerType(values.customerType),
+      phones: normalizeRecordPhonesFormValues(values.phones),
+      receivers: values.receivers.map((entry) => entry.trim()).filter(Boolean),
+    }),
+    addresses: normalizeCustomerAddresses(values.addresses),
+  };
 }
 
 /** @deprecated Use customerType from the API. */
@@ -339,7 +333,7 @@ export function createRecordId(): string {
   return createRandomId();
 }
 
-export function createEmptyCustomerCoreAddress(country = ""): CustomerCoreAddress {
+export function createEmptyCustomerCoreAddress(country = "", isPrimary = false): CustomerCoreAddress {
   return {
     address1: "",
     address2: "",
@@ -350,6 +344,7 @@ export function createEmptyCustomerCoreAddress(country = ""): CustomerCoreAddres
     country,
     location: null,
     verification: null,
+    isPrimary,
   };
 }
 
@@ -405,11 +400,12 @@ export function clearCoreAddressVerification(address: CustomerCoreAddress): Cust
   return { ...address, location: null, verification: null };
 }
 
-/** The address used as the customer's primary (isPrimary, then first active, then first). */
+/** The customer's primary address (`isPrimary` entry, or first with content). */
 export function getCustomerPrimaryCoreAddress(
   customer: Pick<Customer, "addresses">,
 ): CustomerCoreAddress {
-  return getPrimaryCoreAddress(customer) ?? createEmptyCustomerCoreAddress();
+  const withContent = customer.addresses.filter(coreAddressHasContent);
+  return withContent.find((entry) => entry.isPrimary) ?? withContent[0] ?? createEmptyCustomerCoreAddress();
 }
 
 /**
@@ -469,16 +465,16 @@ export function applyCustomerTypeBranch(values: CustomerFormValues): CustomerFor
   const branch = createCustomerBranchFromPortal(portal);
   const defaultCountry = getDefaultCountryForPortalBranch(portal);
 
-  return syncCustomerFormAddresses({
+  return {
     ...values,
     branch,
     addresses: values.addresses.map((entry) => ({ ...entry, country: defaultCountry })),
-  });
+  };
 }
 
 export function createEmptyCustomerForm(): CustomerFormValues {
   const branch = createCustomerBranchFromPortal("usa");
-  const address = createEmptyCustomerCoreAddress("US");
+  const address = createEmptyCustomerCoreAddress("US", true);
 
   return {
     id: "",
@@ -492,7 +488,7 @@ export function createEmptyCustomerForm(): CustomerFormValues {
     notes: "",
     accountBalance: 0,
     branch,
-    addresses: [{ ...address, isPrimary: true, active: true }],
+    addresses: [address],
     receivers: [],
     createdByID: null,
     createdAt: "",
@@ -578,8 +574,7 @@ export function getCustomerPortalBranch(customer: Pick<Customer, "branch" | "add
     return BRANCH_CODE_TO_PORTAL[code];
   }
 
-  const primary = getPrimaryCoreAddress(customer);
-  const country = primary?.country.trim().toUpperCase() ?? "";
+  const country = getCustomerPrimaryCoreAddress(customer).country.trim().toUpperCase();
   if (country === "DO" || country === "DR") {
     return "dr";
   }
@@ -642,34 +637,30 @@ function coreAddressToLegacyAddress(
 export function getCustomerAddresses(
   customer: Pick<Customer, "id" | "addresses">,
 ): CustomerAddress[] {
-  return getAllAddressesFromCustomer(customer)
+  return customer.addresses
     .filter(coreAddressHasContent)
     .map((address, index) =>
-      coreAddressToLegacyAddress(customer.id, address, index, address.isPrimary === true),
+      coreAddressToLegacyAddress(customer.id, address, index, address.isPrimary),
     );
 }
 
-function getAllAddressesFromCustomer(customer: Pick<Customer, "addresses">): CustomerCoreAddress[] {
-  const seen = new Set<string>();
-  const ordered: CustomerCoreAddress[] = [];
-
-  for (const candidate of customer.addresses) {
-    if (!coreAddressHasContent(candidate)) continue;
-    const key = candidate.id?.trim() || [candidate.address1, candidate.city].join("|");
-    if (seen.has(key)) continue;
-    seen.add(key);
-    ordered.push(candidate);
+/** Ensure exactly one address is marked primary; default first when none flagged. */
+export function normalizeCustomerAddresses(addresses: CustomerCoreAddress[]): CustomerCoreAddress[] {
+  const cloned = addresses.map((entry) => ({ ...entry }));
+  if (cloned.length === 0) {
+    return [createEmptyCustomerCoreAddress("", true)];
   }
 
-  return ordered;
+  const primaryIndex = cloned.findIndex((entry) => entry.isPrimary);
+  const resolvedPrimary = primaryIndex >= 0 ? primaryIndex : 0;
+
+  return cloned.map((entry, index) => ({
+    ...entry,
+    isPrimary: index === resolvedPrimary,
+  }));
 }
 
 export function customerToFormValues(customer: Customer): CustomerFormValues {
-  const addresses =
-    customer.addresses.length > 0
-      ? customer.addresses.map((entry) => ({ ...entry }))
-      : [createEmptyCustomerCoreAddress()];
-
   return normalizeCustomerFormValues({
     id: customer.id,
     oldID: customer.oldID,
@@ -682,7 +673,7 @@ export function customerToFormValues(customer: Customer): CustomerFormValues {
     notes: customer.notes,
     accountBalance: customer.accountBalance,
     branch: { ...customer.branch },
-    addresses,
+    addresses: customer.addresses.map((entry) => ({ ...entry })),
     receivers: [...customer.receivers],
     createdByID: customer.createdByID,
     createdAt: customer.createdAt,
@@ -690,27 +681,24 @@ export function customerToFormValues(customer: Customer): CustomerFormValues {
   });
 }
 
-export function syncCustomerFormAddresses(values: CustomerFormValues): CustomerFormValues {
-  const addresses =
-    values.addresses.length > 0
-      ? values.addresses.map((entry) => ({ ...entry }))
-      : [createEmptyCustomerCoreAddress()];
-
-  const primaryIndex = getPrimaryAddressIndex(addresses);
+/** Mark one address as primary without changing list order. */
+export function setCustomerFormPrimaryAddress(
+  values: CustomerFormValues,
+  index: number,
+): CustomerFormValues {
+  if (index < 0 || index >= values.addresses.length) return values;
 
   return {
     ...values,
-    addresses: addresses.map((entry, index) => ({
+    addresses: values.addresses.map((entry, addressIndex) => ({
       ...entry,
-      isPrimary: primaryIndex >= 0 ? index === primaryIndex : index === 0,
-      active: entry.active !== false,
+      isPrimary: addressIndex === index,
     })),
   };
 }
 
-/** @deprecated Orders still use legacy CustomerAddress shape. */
-export function getLegacyPrimaryAddress(customer: Customer): CustomerAddress | undefined {
-  return getCustomerAddresses(customer)[0];
+export function getPrimaryAddress(customer: Customer): CustomerAddress | undefined {
+  return getCustomerAddresses(customer).find((entry) => entry.isPrimary) ?? getCustomerAddresses(customer)[0];
 }
 
 /** @deprecated Orders still reference clientId. */

@@ -1,13 +1,17 @@
 import { z } from "zod";
 
-export const changePasswordSchema = z
-  .object({
-    password: z.string().min(6, "Password must contain at least 6 characters."),
-    confirmPassword: z.string().min(1, "Confirm your new password."),
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    message: "Passwords do not match.",
-    path: ["confirmPassword"],
-  });
+type TranslateFn = (key: string, params?: Record<string, string | number>) => string;
 
-export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
+export function createChangePasswordSchema(t: TranslateFn) {
+  return z
+    .object({
+      password: z.string().min(6, t("settings.password.validation.passwordMin")),
+      confirmPassword: z.string().min(1, t("settings.password.validation.confirmRequired")),
+    })
+    .refine((values) => values.password === values.confirmPassword, {
+      message: t("settings.password.validation.passwordsMismatch"),
+      path: ["confirmPassword"],
+    });
+}
+
+export type ChangePasswordValues = z.infer<ReturnType<typeof createChangePasswordSchema>>;

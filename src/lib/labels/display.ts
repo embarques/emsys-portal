@@ -1,11 +1,26 @@
 import { formatContainerLabel } from "@/lib/containers/display";
 import { getContainerById } from "@/lib/containers/mock-data";
-import type { LabelActivityEntry, LabelStatus, ShipmentLabel } from "./types";
-import { LABEL_STATUSES } from "./types";
+import type { TranslateFn } from "@/lib/feedback/messages";
 import type { Invoice } from "@/lib/invoices/types";
 
-export function getLabelStatusLabel(status: LabelStatus): string {
-  return LABEL_STATUSES.find((entry) => entry.value === status)?.label ?? status;
+import type { LabelActivityEntry, LabelStatus, ShipmentLabel } from "./types";
+
+export function getLabelStatusLabel(status: LabelStatus, t: TranslateFn): string {
+  return t(`labels.statuses.${status}`);
+}
+
+export function getBarcodeStatusLabel(statusName: string, t: TranslateFn): string {
+  const trimmed = statusName.trim();
+  if (!trimmed) return trimmed;
+  const key = `labels.barcodeStatuses.${trimmed}`;
+  const translated = t(key);
+  return translated === key ? trimmed : translated;
+}
+
+export function formatActivityAction(action: LabelActivityEntry["action"], t: TranslateFn): string {
+  const key = `labels.activity.actions.${action}`;
+  const translated = t(key);
+  return translated === key ? action : translated;
 }
 
 export function getLabelStatusBadgeClass(status: LabelStatus): string {
@@ -37,9 +52,9 @@ export function formatLabelTimestamp(iso: string): string {
   }).format(new Date(iso));
 }
 
-export function getLabelContainerLabel(containerId: string): string {
+export function getLabelContainerLabel(containerId: string, t?: TranslateFn): string {
   const container = getContainerById(containerId);
-  if (!container) return "Unknown container";
+  if (!container) return t ? t("labels.unknownContainer") : "Unknown container";
   return formatContainerLabel(container);
 }
 
@@ -47,7 +62,7 @@ export function truncateBarcode(barcode: string): string {
   return barcode.length > 18 ? `${barcode.slice(0, 14)}…` : barcode;
 }
 
-export function labelMatchesQuery(label: ShipmentLabel, query: string): boolean {
+export function labelMatchesQuery(label: ShipmentLabel, query: string, t: TranslateFn): boolean {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
 
@@ -55,8 +70,8 @@ export function labelMatchesQuery(label: ShipmentLabel, query: string): boolean 
     label.invoiceNumber,
     label.barcode,
     label.description,
-    getLabelStatusLabel(label.status),
-    getLabelContainerLabel(label.containerId),
+    getLabelStatusLabel(label.status, t),
+    getLabelContainerLabel(label.containerId, t),
     String(label.totalLabels),
     String(label.quantity),
   ]
@@ -72,23 +87,6 @@ export function computeLabelKpis(labels: ShipmentLabel[]) {
     printed: labels.filter((label) => label.status === "printed").length,
     inTransit: labels.filter((label) => label.status === "in_transit").length,
   };
-}
-
-export function formatActivityAction(action: LabelActivityEntry["action"]): string {
-  switch (action) {
-    case "generate":
-      return "Created";
-    case "status_change":
-      return "Status change";
-    case "container_change":
-      return "Container change";
-    case "route_change":
-      return "Route change";
-    case "print":
-      return "Print";
-    default:
-      return action;
-  }
 }
 
 function activityBarcodes(entry: LabelActivityEntry): string[] {

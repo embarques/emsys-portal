@@ -33,6 +33,7 @@ type ActiveRouteFormProps = {
   values: ActiveRouteFormValues;
   isEditing?: boolean;
   isDelivery: boolean;
+  copyPrefix?: "pickupRoutes" | "deliveryRoutes";
   showRouteTypeField?: boolean;
   showContainerField?: boolean;
   showBranchField?: boolean;
@@ -73,6 +74,7 @@ export function ActiveRouteForm({
   values,
   isEditing = false,
   isDelivery,
+  copyPrefix,
   showRouteTypeField = true,
   showContainerField,
   showBranchField = true,
@@ -349,7 +351,11 @@ export function ActiveRouteForm({
         ) : null}
 
         {isEditing ? (
-          <p className="text-xs text-muted-foreground">{t("routes.activeRouteForm.editHint")}</p>
+          <p className="text-xs text-muted-foreground">
+            {copyPrefix
+              ? t(`routes.${copyPrefix}.form.editHint`)
+              : t("routes.activeRouteForm.editHint")}
+          </p>
         ) : null}
       </FormBody>
 

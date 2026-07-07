@@ -11,16 +11,17 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
+import { useTranslation } from "@/lib/i18n";
 import {
   formatUserBranchLabel,
   getUserActiveBadgeClass,
-  getUserActiveLabel,
   getUserBranchBadgeClass,
   getUserRoleBadgeClass,
   getUserRoleLabel,
   truncateUid,
   truncateUserId,
 } from "@/lib/users/display";
+import { useUserLabels } from "@/lib/users/hooks/use-user-labels";
 import type { User } from "@/lib/users/types";
 
 type Props = {
@@ -32,39 +33,88 @@ type Props = {
 };
 
 export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Props) {
+  const { t } = useTranslation();
+  const userLabels = useUserLabels();
+
   if (!user) return null;
+
+  const dash = t("common.empty.dash");
+
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
           title={user.name}
           description={user.email}
-          meta={<><Badge className={getUserRoleBadgeClass(user.role.name)}>{getUserRoleLabel(user.role.name)}</Badge><Badge className={getUserActiveBadgeClass(user.active)}>{getUserActiveLabel(user.active)}</Badge></>}
+          meta={
+            <>
+              <Badge className={getUserRoleBadgeClass(user.role.name)}>
+                {getUserRoleLabel(user.role.name)}
+              </Badge>
+              <Badge className={getUserActiveBadgeClass(user.active)}>
+                {userLabels.active(user.active)}
+              </Badge>
+            </>
+          }
         />
         <RecordViewSheetBody>
-          <RecordViewSheetSection title="Profile">
-            <RecordViewSheetDetailRow label="User ID" value={truncateUserId(user.id)} />
-            <RecordViewSheetDetailRow label="Firebase UID" value={user.uid ? truncateUid(user.uid) : "—"} />
-            <RecordViewSheetDetailRow label="Name" value={user.name} />
-            <RecordViewSheetDetailRow label="Email" value={user.email} />
-            <RecordViewSheetDetailRow label="Status" value={getUserActiveLabel(user.active)} />
+          <RecordViewSheetSection title={t("users.view.sections.profile")}>
+            <RecordViewSheetDetailRow label={t("users.view.userId")} value={truncateUserId(user.id)} />
+            <RecordViewSheetDetailRow
+              label={t("users.view.firebaseUid")}
+              value={user.uid ? truncateUid(user.uid) : dash}
+            />
+            <RecordViewSheetDetailRow label={t("users.view.name")} value={user.name} />
+            <RecordViewSheetDetailRow label={t("users.view.email")} value={user.email} />
+            <RecordViewSheetDetailRow
+              label={t("users.view.status")}
+              value={userLabels.active(user.active)}
+            />
           </RecordViewSheetSection>
-          <RecordViewSheetSection title="Access">
-            <RecordViewSheetDetailRow label="Role" value={user.role.name || "—"} />
-            <RecordViewSheetDetailRow label="Branch" value={<Badge className={getUserBranchBadgeClass(user)}>{formatUserBranchLabel(user)}</Badge>} />
+          <RecordViewSheetSection title={t("users.view.sections.access")}>
+            <RecordViewSheetDetailRow label={t("users.view.role")} value={user.role.name || dash} />
+            <RecordViewSheetDetailRow
+              label={t("users.view.branch")}
+              value={
+                <Badge className={getUserBranchBadgeClass(user)}>{formatUserBranchLabel(user)}</Badge>
+              }
+            />
           </RecordViewSheetSection>
-          <RecordViewSheetSection title="Login hours">
-            <RecordViewSheetDetailRow label="Start time" value={user.startTime || "Not restricted"} />
-            <RecordViewSheetDetailRow label="End time" value={user.endTime || "Not restricted"} />
+          <RecordViewSheetSection title={t("users.view.sections.loginHours")}>
+            <RecordViewSheetDetailRow
+              label={t("users.view.startTime")}
+              value={user.startTime || t("users.view.notRestricted")}
+            />
+            <RecordViewSheetDetailRow
+              label={t("users.view.endTime")}
+              value={user.endTime || t("users.view.notRestricted")}
+            />
           </RecordViewSheetSection>
-          <RecordViewSheetSection title="Audit">
-            <RecordViewSheetDetailRow label="Created" value={user.createdAt ? formatAuditDate(user.createdAt) : "—"} />
-            <RecordViewSheetDetailRow label="Created by" value={user.createdBy?.name || "—"} />
-            <RecordViewSheetDetailRow label="Updated" value={user.updatedAt ? formatAuditDate(user.updatedAt) : "—"} />
-            <RecordViewSheetDetailRow label="Updated by" value={user.updatedBy?.name || "—"} />
+          <RecordViewSheetSection title={t("users.view.sections.audit")}>
+            <RecordViewSheetDetailRow
+              label={t("users.view.created")}
+              value={user.createdAt ? formatAuditDate(user.createdAt) : dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("users.view.createdBy")}
+              value={user.createdBy?.name || dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("users.view.updated")}
+              value={user.updatedAt ? formatAuditDate(user.updatedAt) : dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("users.view.updatedBy")}
+              value={user.updatedBy?.name || dash}
+            />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
-        <RecordViewSheetActions editLabel="Edit user" deleteLabel="Deactivate" onEdit={() => onEdit(user)} onDelete={user.active ? () => onDelete(user) : undefined} />
+        <RecordViewSheetActions
+          editLabel={t("users.view.edit")}
+          deleteLabel={t("users.view.deactivate")}
+          onEdit={() => onEdit(user)}
+          onDelete={user.active ? () => onDelete(user) : undefined}
+        />
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

@@ -1,5 +1,7 @@
 "use client";
 
+import { Container as ContainerIcon, Ship } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
@@ -45,31 +47,45 @@ export function ContainerViewSheet({
       <RecordViewSheetContent>
         <RecordViewSheetHeader
           title={container.name}
-          description={<span className="font-mono text-xs">{container.containerNumber}</span>}
           meta={
             <>
-              <Badge variant="outline">{container.company || t("common.empty.noCarrier")}</Badge>
-              <Badge variant="secondary">{formatOptionalContainerCost(container.cost)}</Badge>
+              {container.containerNumber ? (
+                <Badge variant="outline" className="font-mono">
+                  {container.containerNumber}
+                </Badge>
+              ) : null}
+              <Badge variant="outline" className="font-mono">
+                {container.booking}
+              </Badge>
             </>
           }
         />
 
         <RecordViewSheetBody>
-          <RecordViewSheetSection title={t("containers.view.shipping")}>
+          <RecordViewSheetSection icon={ContainerIcon} title={t("containers.form.sections.container")}>
+            <RecordViewSheetDetailRow label={t("containers.form.fields.sealNumber")} value={container.sealNumber || dash} />
             <RecordViewSheetDetailRow label={t("containers.view.containerId")} value={formatContainerId(container.id)} />
-            <RecordViewSheetDetailRow label={t("containers.columns.container")} value={container.name} />
-            <RecordViewSheetDetailRow label={t("containers.columns.containerNumber")} value={container.containerNumber || dash} />
-            <RecordViewSheetDetailRow label={t("containers.columns.booking")} value={container.booking} />
-            <RecordViewSheetDetailRow label={t("containers.columns.sealNumber")} value={container.sealNumber || dash} />
-            <RecordViewSheetDetailRow label={t("containers.columns.broker")} value={container.broker || dash} />
-            <RecordViewSheetDetailRow label={t("containers.columns.company")} value={container.company || dash} />
-            <RecordViewSheetDetailRow label={t("containers.columns.cost")} value={formatOptionalContainerCost(container.cost)} />
             <RecordViewSheetDetailRow
               label={t("containers.view.barcodeSequence")}
               value={container.barcodeSequence > 0 ? container.barcodeSequence : dash}
             />
-            <RecordViewSheetDetailRow label={t("containers.view.departureDate")} value={formatContainerDate(container.departureDate)} />
-            <RecordViewSheetDetailRow label={t("containers.view.arrivalDate")} value={formatContainerDate(container.arrivalDate)} />
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection icon={Ship} title={t("containers.form.sections.logistics")}>
+            <RecordViewSheetDetailRow label={t("containers.form.fields.broker")} value={container.broker || dash} />
+            <RecordViewSheetDetailRow label={t("containers.form.fields.company")} value={container.company || dash} />
+            <RecordViewSheetDetailRow label={t("containers.form.fields.cost")} value={formatOptionalContainerCost(container.cost)} />
+            <RecordViewSheetDetailRow
+              label={t("containers.form.fields.departureDate")}
+              value={formatContainerDate(container.departureDate)}
+            />
+            <RecordViewSheetDetailRow
+              label={t("containers.form.fields.arrivalDate")}
+              value={formatContainerDate(container.arrivalDate)}
+            />
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection title={t("containers.view.sections.audit")}>
             <RecordViewSheetDetailRow label={t("common.audit.dateCreated")} value={formatAuditDate(container.createdAt)} />
             <RecordViewSheetDetailRow label={t("common.audit.dateModified")} value={formatAuditDate(container.updatedAt)} />
           </RecordViewSheetSection>
@@ -77,6 +93,7 @@ export function ContainerViewSheet({
 
         <RecordViewSheetActions
           editLabel={t("containers.actions.edit")}
+          deleteLabel={t("common.actions.delete")}
           onEdit={() => onEdit(container)}
           onDelete={() => onDelete(container)}
         />

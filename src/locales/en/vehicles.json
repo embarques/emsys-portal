@@ -1,0 +1,140 @@
+{
+  "entity": "Vehicle",
+  "entityPlural": "vehicles",
+  "title": "Vehicles",
+  "noun": "vehicles",
+  "actions": {
+    "add": "Add vehicle",
+    "edit": "Edit vehicle",
+    "editNamed": "Edit {{name}}"
+  },
+  "stats": {
+    "total": {
+      "label": "Total vehicles",
+      "description": "Fleet units on record"
+    },
+    "usa": {
+      "label": "USA",
+      "description": "Total vehicles in USA"
+    },
+    "dr": {
+      "label": "DR",
+      "description": "Total vehicles in DR"
+    }
+  },
+  "columns": {
+    "name": "Name",
+    "vin": "VIN",
+    "licensePlate": "License plate",
+    "year": "Year",
+    "fuelType": "Fuel type",
+    "branch": "Branch",
+    "status": "Status",
+    "inspectionDate": "Inspection date",
+    "registrationDate": "Registration date",
+    "createdAt": "Created",
+    "createdBy": "Created by",
+    "updatedAt": "Updated"
+  },
+  "search": {
+    "placeholder": "Search vehicles..."
+  },
+  "loading": {
+    "vehicle": "Loading vehicle…"
+  },
+  "empty": {
+    "noMatch": "No vehicles match your search or filters.",
+    "noneYet": "No vehicles yet."
+  },
+  "enums": {
+    "fuelType": {
+      "gas": "Gas",
+      "diesel": "Diesel"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "branch": {
+      "usa": "USA",
+      "dr": "DR"
+    },
+    "branchCode": {
+      "usa": "USA",
+      "dr": "DR",
+      "NY": "NY",
+      "DR": "DR (code)"
+    }
+  },
+  "form": {
+    "addTitle": "Add vehicle",
+    "editTitle": "Edit vehicle",
+    "addDescription": "Create a new vehicle record.",
+    "notFound": "This vehicle could not be found.",
+    "branchFallback": "Branch {{id}}",
+    "sections": {
+      "vehicle": "Vehicle",
+      "compliance": "Compliance",
+      "branch": "Branch"
+    },
+    "fields": {
+      "status": "Status",
+      "name": "Name",
+      "vin": "VIN",
+      "licensePlate": "License plate",
+      "year": "Year",
+      "fuelType": "Fuel type",
+      "inspectionDate": "Inspection date",
+      "registrationDate": "Registration date",
+      "branch": "Branch"
+    },
+    "placeholders": {
+      "name": "Unit 12 — Freightliner",
+      "vin": "1FUJGLDR57LM12345",
+      "licensePlate": "ABC-1234",
+      "fuelType": "Select fuel type",
+      "fuelTypeSearch": "Search fuel types…",
+      "branch": "Select branch",
+      "branchSearch": "Search branches…"
+    },
+    "validation": {
+      "nameRequired": "Vehicle name is required.",
+      "branchRequired": "Branch is required.",
+      "yearInvalid": "Year must be a valid number."
+    }
+  },
+  "view": {
+    "sections": {
+      "vehicle": "Vehicle",
+      "audit": "Audit"
+    },
+    "recordId": "Record ID",
+    "vehicleId": "Vehicle ID",
+    "edit": "Edit vehicle"
+  },
+  "dialogs": {
+    "deleteTitle": "Delete vehicle?",
+    "deleteTitlePlural": "Delete vehicles?",
+    "deleteOne": "This will permanently remove \"{{name}}\". {{cannotBeUndone}}",
+    "deleteMany": "This will permanently remove {{count}} selected vehicles. {{cannotBeUndone}}",
+    "unnamed": "this vehicle"
+  },
+  "filters": {
+    "fields": {
+      "vehicleId": { "label": "Vehicle ID", "placeholder": "Enter vehicle id…" },
+      "name": { "label": "Name", "placeholder": "Enter name…" },
+      "vin": { "label": "VIN", "placeholder": "Enter vin…" },
+      "licensePlate": { "label": "License plate", "placeholder": "Enter license plate…" },
+      "id": { "label": "Record ID", "placeholder": "Enter record id…" },
+      "createdBy": {
+        "name": { "label": "Created by", "placeholder": "Enter created by…" }
+      },
+      "fuelType": { "label": "Fuel type", "placeholder": "Select fuel type…" },
+      "branch": {
+        "code": { "label": "Branch", "placeholder": "Select branch…" }
+      },
+      "active": { "label": "Status", "placeholder": "Select status…" },
+      "year": { "label": "Year", "placeholder": "Enter year…" }
+    }
+  }
+}

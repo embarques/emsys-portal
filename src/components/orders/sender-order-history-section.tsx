@@ -20,6 +20,7 @@ import {
 } from "@/lib/orders/display";
 import type { Customer } from "@/lib/customers/types";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 type SenderOrderHistorySectionProps = {
   sender: Pick<Customer, "id" | "name">;
@@ -30,6 +31,7 @@ export function SenderOrderHistorySection({
   sender,
   currentOrderId,
 }: SenderOrderHistorySectionProps) {
+  const { t } = useTranslation();
   const senderId = sender.id.trim();
   const { data, isLoading, isError, error } = useSenderOrderHistory(senderId);
 
@@ -41,50 +43,47 @@ export function SenderOrderHistorySection({
       ),
     [data?.items],
   );
-  const senderName = sender.name.trim() || "Sender";
+  const senderName = sender.name.trim() || t("orders.history.defaultSenderName");
   const errorMessage = isError ? normalizeApiError(error).message : null;
+  const dash = t("common.empty.dash");
 
   return (
     <div className="rounded-xl border bg-muted/20 p-4">
       <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         <History className="h-3.5 w-3.5" />
-        {senderName} pickup history ({history.length})
+        {t("orders.history.title", { name: senderName, count: history.length })}
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Previous and current pickups for this sender, loaded by customer id.
-      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{t("orders.history.description")}</p>
 
       {!senderId ? (
-        <p className="mt-4 text-sm text-muted-foreground">
-          Pickup history appears once the sender is saved.
-        </p>
+        <p className="mt-4 text-sm text-muted-foreground">{t("orders.history.pendingSavedSender")}</p>
       ) : isLoading ? (
         <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Loading pickup history…
+          {t("orders.loading.pickupHistory")}
         </p>
       ) : errorMessage ? (
         <p className="mt-4 text-sm text-destructive">{errorMessage}</p>
       ) : history.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">No pickup history yet.</p>
+        <p className="mt-4 text-sm text-muted-foreground">{t("orders.empty.noPickupHistory")}</p>
       ) : (
         <UniformPillWidthProvider resetKey={history.map((order) => order.id).join(",")}>
           <div className="mt-4 overflow-x-auto rounded-lg border">
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead>
                 <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
-                  <th className="px-3 py-2 font-medium">id</th>
-                  <th className="px-3 py-2 font-medium">date</th>
-                  <th className="px-3 py-2 font-medium">completed</th>
-                  <th className="px-3 py-2 font-medium">sender</th>
-                  <th className="px-3 py-2 font-medium">sender address</th>
-                  <th className="px-3 py-2 font-medium">phone1</th>
-                  <th className="px-3 py-2 font-medium">comments</th>
-                  <th className="px-3 py-2 font-medium">receiver</th>
-                  <th className="px-3 py-2 font-medium">receiver address</th>
-                  <th className="px-3 py-2 font-medium">createdAt</th>
-                  <th className="px-3 py-2 font-medium">Created by</th>
-                  <th className="px-3 py-2 font-medium">updatedAt</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.orderId")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.date")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.completed")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.sender")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.senderAddressLine")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.phone1")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.comments")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.receiver")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.receiverAddress")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.createdAt")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.createdBy")}</th>
+                  <th className="px-3 py-2 font-medium">{t("orders.columns.updatedAt")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -101,7 +100,9 @@ export function SenderOrderHistorySection({
                       <td className="px-3 py-2 font-mono text-xs">
                         {order.id}
                         {isCurrent ? (
-                          <span className="ml-2 text-[10px] font-sans text-primary">Current</span>
+                          <span className="ml-2 text-[10px] font-sans text-primary">
+                            {t("orders.history.current")}
+                          </span>
                         ) : null}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs">{formatOrderDate(order.date)}</td>
@@ -116,7 +117,7 @@ export function SenderOrderHistorySection({
                                 : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
                             )}
                           >
-                            {getOrderCompletedLabel(order.completed)}
+                            {getOrderCompletedLabel(order.completed, t)}
                           </Badge>
                         </UniformWidthPill>
                       </td>
@@ -126,7 +127,7 @@ export function SenderOrderHistorySection({
                       <td className="px-3 py-2 text-xs">
                         {order.comments.length > 0
                           ? order.comments.map(formatPickupCommentSummary).join(" · ")
-                          : "—"}
+                          : dash}
                       </td>
                       <td className="px-3 py-2 text-xs">{getReceiverSummary(order)}</td>
                       <td className="px-3 py-2 text-xs">{getReceiverAddressLine(order)}</td>

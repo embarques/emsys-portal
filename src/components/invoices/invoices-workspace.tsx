@@ -10,7 +10,6 @@ import {
   Plus,
   Printer,
   Receipt,
-  Route as RouteIcon,
   Tags,
   Trash2,
 } from "lucide-react";
@@ -74,16 +73,19 @@ import {
   useInvoices,
 } from "@/lib/invoices/hooks/use-invoices";
 import { usePrintInvoices } from "@/lib/invoices/hooks/use-print-invoices";
-import { useAssignInvoiceBarcodesToRoute } from "@/lib/labels/hooks/use-barcodes";
 import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
 import { formatRouteCopyLabel } from "@/lib/route-manager/display";
-import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Label } from "@/components/ui/label";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { buildOrderCreatedByFilterOptions } from "@/lib/orders/display";
 import { useUsers } from "@/lib/users/hooks/use-users";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { encodeStagingInvoiceIds } from "@/lib/invoices/staging";
 import {
   buildInvoiceListParams,
   createInvoiceComment,
@@ -100,6 +102,7 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { useSyncWorkspaceTabTitle } from "@/lib/layout/hooks/use-sync-workspace-tab-title";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
+import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
 
@@ -110,7 +113,8 @@ const defaultFilters: InvoiceFilterState = {
 };
 
 export function InvoicesWorkspace() {
-  const { notifyAdded, notifyDeleted, notifyError, notifySuccess } = useFeedback();
+  const { t } = useTranslation();
+  const { notifyAdded, notifyDeleted, notifyError } = useFeedback();
   const [filters, setFilters] = useState<InvoiceFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
@@ -121,12 +125,30 @@ export function InvoicesWorkspace() {
   const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | Invoice[] | null>(null);
   const [stagingOpen, setStagingOpen] = useState(false);
-  const [assignRouteOpen, setAssignRouteOpen] = useState(false);
-  const [selectedRouteId, setSelectedRouteId] = useState("");
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
 
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+
+  function openManageInvoiceItems() {
+    if (selectedInvoices.length === 0) {
+      notifyError("Select at least one invoice to manage items.");
+      return;
+    }
+
+    if (isDesktopTabs) {
+      openFormTab({
+        feature: "invoice-item-staging",
+        baseHref: "/invoices",
+        mode: "stage",
+        entityId: encodeStagingInvoiceIds(selectedInvoices.map((invoice) => invoice.invoiceId)),
+        label: t("invoices.staging.tableAction"),
+      });
+      return;
+    }
+
+    setStagingOpen(true);
+  }
 
   function openAddForm() {
     if (isDesktopTabs) {
@@ -174,24 +196,25 @@ export function InvoicesWorkspace() {
   const { data: usersData, isLoading: usersLoading } = useUsers({
     page: 1,
     limit: 100,
-    sort: "fullName:asc",
+    sort: "name:asc",
   });
   const deleteInvoicesMutation = useDeleteInvoices();
   const { printInvoiceIds, isPrinting } = usePrintInvoices();
-  const assignRouteMutation = useAssignInvoiceBarcodesToRoute();
-  const { data: routesData, isLoading: routesLoading } = useRoutePicker(
-    undefined,
-    { enabled: assignRouteOpen || filtersOpen },
-  );
+  const { data: routesData } = useRoutePicker(undefined, { enabled: filtersOpen });
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
 
-  const invoices = data?.items ?? [];
+  const invoices = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalInvoices = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalInvoices / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     invoices.length > 0 && invoices.every((invoice) => selectedIds.includes(invoice.invoiceId));
   const isDeleting = deleteInvoicesMutation.isPending;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(deferredQuery, filters.rows, filters.paymentLocation),
+    setSelectedIds,
+  );
 
   const viewInvoice = useMemo(() => {
     if (!viewInvoiceId) return null;
@@ -234,8 +257,6 @@ export function InvoicesWorkspace() {
       })),
     [routes],
   );
-  const isAssigningRoute = assignRouteMutation.isPending;
-
   const userFilterOptions = useMemo(
     () => buildOrderCreatedByFilterOptions(usersData?.items ?? []),
     [usersData?.items],
@@ -308,40 +329,6 @@ export function InvoicesWorkspace() {
   async function printSelectedInvoices() {
     const invoiceIds = selectedInvoices.map((invoice) => invoice.invoiceId).filter(Boolean);
     await printInvoiceIds(invoiceIds);
-  }
-
-  function openAssignRoute() {
-    if (selectedInvoices.length === 0) {
-      notifyError("Select at least one invoice to assign a route.");
-      return;
-    }
-    setSelectedRouteId("");
-    setAssignRouteOpen(true);
-  }
-
-  async function confirmAssignRoute() {
-    if (selectedInvoices.length === 0 || !selectedRouteId) return;
-
-    const invoiceIds = selectedInvoices.map((invoice) => invoice.invoiceId).filter(Boolean);
-
-    try {
-      const result = await assignRouteMutation.mutateAsync({
-        routeId: selectedRouteId,
-        invoiceIds,
-      });
-      const noun = result.assignedCount === 1 ? "barcode" : "barcodes";
-      const routeName =
-        result.routeName ||
-        routes.find((assignment) => assignment.id === selectedRouteId)?.name ||
-        "route";
-      notifySuccess(
-        `${result.assignedCount} ${noun} assigned to ${routeName} (trip ${result.tripNumber}).`,
-      );
-      setAssignRouteOpen(false);
-      setSelectedRouteId("");
-    } catch (mutationError) {
-      notifyError(normalizeApiError(mutationError).message);
-    }
   }
 
   async function confirmDelete() {
@@ -649,18 +636,9 @@ export function InvoicesWorkspace() {
           deleteDisabled={isDeleting}
           actions={
             <>
-              <Button size="sm" onClick={() => setStagingOpen(true)}>
+              <Button size="sm" onClick={openManageInvoiceItems}>
                 <Tags className="h-4 w-4" />
-                Manage Labels
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={openAssignRoute}
-                disabled={isAssigningRoute}
-              >
-                <RouteIcon className="h-4 w-4" />
-                Assign route
+                {t("invoices.staging.tableAction")}
               </Button>
               <Button
                 variant="outline"
@@ -770,59 +748,6 @@ export function InvoicesWorkspace() {
         onAddComment={addInvoiceComment}
         onRecordPayment={recordInvoicePayment}
       />
-
-      <Dialog
-        open={assignRouteOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setAssignRouteOpen(false);
-            setSelectedRouteId("");
-          }
-        }}
-      >
-        <DialogContent
-          className="z-[60]"
-          onOpenAutoFocus={(event) => event.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>Assign route</DialogTitle>
-            <DialogDescription>
-              {`Assign the barcodes of ${selectedInvoices.length} selected invoice${
-                selectedInvoices.length === 1 ? "" : "s"
-              } to a route. Only barcodes that have a container are assigned.`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1">
-            <Label htmlFor="assign-invoice-route">Route</Label>
-            <SearchableSelect
-              id="assign-invoice-route"
-              value={selectedRouteId}
-              onValueChange={setSelectedRouteId}
-              placeholder="Select a route"
-              searchPlaceholder="Search routes…"
-              loading={routesLoading}
-              emptyMessage={routesLoading ? "Loading routes…" : "No routes found."}
-              options={routeOptions}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setAssignRouteOpen(false);
-                setSelectedRouteId("");
-              }}
-              disabled={isAssigningRoute}
-            >
-              Cancel
-            </Button>
-            <Button onClick={confirmAssignRoute} disabled={!selectedRouteId || isAssigningRoute}>
-              <RouteIcon className="h-4 w-4" />
-              {isAssigningRoute ? "Assigning…" : "Assign route"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={addFormOpen}

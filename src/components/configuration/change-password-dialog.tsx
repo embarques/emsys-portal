@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FirebaseError } from "firebase/app";
 import { KeyRound } from "lucide-react";
+import { useMemo } from "react";
 import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -19,9 +20,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { changeCurrentUserPassword } from "@/lib/auth/firebase/firebase-password";
 import {
-  changePasswordSchema,
+  createChangePasswordSchema,
   type ChangePasswordValues,
 } from "@/lib/auth/schemas/change-password.schema";
+import { useTranslation } from "@/lib/i18n";
 
 const defaultValues: ChangePasswordValues = {
   password: "",
@@ -34,7 +36,9 @@ type ChangePasswordDialogProps = {
 };
 
 export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
+  const { t } = useTranslation();
   const { notifySuccess } = useFeedback();
+  const schema = useMemo(() => createChangePasswordSchema(t), [t]);
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
@@ -42,7 +46,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
     reset,
     setError,
   } = useForm<ChangePasswordValues>({
-    resolver: zodResolver(changePasswordSchema),
+    resolver: zodResolver(schema),
     defaultValues,
   });
 
@@ -59,9 +63,9 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
       await changeCurrentUserPassword(values.password);
       reset(defaultValues);
       onOpenChange(false);
-      notifySuccess("Password changed successfully.");
+      notifySuccess(t("settings.password.toast.success"));
     } catch (error) {
-      setError("root", { message: passwordErrorMessage(error) });
+      setError("root", { message: passwordErrorMessage(error, t) });
     }
   }
 
@@ -71,23 +75,23 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-2xl">
             <KeyRound className="size-6" />
-            Change password
+            {t("settings.password.title")}
           </DialogTitle>
           <DialogDescription className="text-base">
-            Set a new password for your signed-in account.
+            {t("settings.password.description")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(submit)} className="space-y-5">
           <PasswordField
             id="new-password"
-            label="New password"
+            label={t("settings.password.fields.new")}
             error={errors.password?.message}
             inputProps={register("password")}
           />
           <PasswordField
             id="confirm-password"
-            label="Confirm password"
+            label={t("settings.password.fields.confirm")}
             error={errors.confirmPassword?.message}
             inputProps={register("confirmPassword")}
           />
@@ -98,7 +102,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
           ) : null}
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Changing password…" : "Change password"}
+              {isSubmitting ? t("settings.password.actions.changing") : t("settings.password.actions.submit")}
             </Button>
           </DialogFooter>
         </form>
@@ -138,12 +142,14 @@ function PasswordField({
   );
 }
 
-function passwordErrorMessage(error: unknown): string {
+type TranslateFn = (key: string, params?: Record<string, string | number>) => string;
+
+function passwordErrorMessage(error: unknown, t: TranslateFn): string {
   if (error instanceof FirebaseError && error.code === "auth/requires-recent-login") {
-    return "For security, Firebase requires you to sign out and sign in again before changing your password.";
+    return t("settings.password.errors.requiresRecentLogin");
   }
   if (error instanceof FirebaseError && error.code === "auth/weak-password") {
-    return "Firebase rejected this password because it is too weak.";
+    return t("settings.password.errors.weakPassword");
   }
-  return error instanceof Error ? error.message : "Unable to change your password.";
+  return error instanceof Error ? error.message : t("settings.password.errors.generic");
 }

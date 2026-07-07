@@ -37,8 +37,14 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
-import { EMPLOYEE_TABLE_FILTER_FIELDS } from "@/lib/employees/filter-fields";
+import { useTranslation } from "@/lib/i18n";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -47,15 +53,15 @@ import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
-  formatEmployeeBranchLabel,
   formatEmployeeDate,
   formatEmployeeId,
   formatEmployeeMoney,
   formatEmployeeUserLabel,
   getEmployeeActiveBadgeClass,
-  getEmployeeActiveLabel,
   getEmployeeBranchBadgeClass,
 } from "@/lib/employees/display";
+import { useEmployeeFilterFields } from "@/lib/employees/hooks/use-employee-filter-fields";
+import { useEmployeeLabels } from "@/lib/employees/hooks/use-employee-labels";
 import {
   useCreateEmployee,
   useDeleteEmployees,
@@ -73,7 +79,6 @@ import {
   type EmployeeFormValues,
 } from "@/lib/employees/types";
 import type { DataTableColumn } from "@/lib/table/types";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
 const PAGE_SIZE = DEFAULT_EMPLOYEE_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -84,6 +89,9 @@ const defaultFilters: EmployeeFilterState = {
 };
 
 export function EmployeesWorkspace() {
+  const { t } = useTranslation();
+  const employeeLabels = useEmployeeLabels();
+  const employeeFilterFields = useEmployeeFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<EmployeeFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -119,7 +127,7 @@ export function EmployeesWorkspace() {
   const updateEmployeeMutation = useUpdateEmployee();
   const deleteEmployeesMutation = useDeleteEmployees();
 
-  const employees = data?.items ?? [];
+  const employees = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalEmployees = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalEmployees / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -129,6 +137,11 @@ export function EmployeesWorkspace() {
     createEmployeeMutation.isPending ||
     updateEmployeeMutation.isPending ||
     deleteEmployeesMutation.isPending;
+
+  useTableSelectionReset(
+    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+    setSelectedIds,
+  );
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -152,7 +165,7 @@ export function EmployeesWorkspace() {
 
   function openAddForm() {
     if (isDesktopTabs) {
-      openFormTab({ feature: "employees", baseHref: "/employees", mode: "add", label: "Add employee" });
+      openFormTab({ feature: "employees", baseHref: "/employees", mode: "add", label: t("employees.actions.add") });
       return;
     }
     setEditingEmployee(null);
@@ -168,7 +181,7 @@ export function EmployeesWorkspace() {
         baseHref: "/employees",
         mode: "edit",
         entityId: String(employee.id),
-        label: `Edit ${employee.name}`,
+        label: t("employees.actions.editNamed", { name: employee.name }),
       });
       return;
     }
@@ -187,10 +200,10 @@ export function EmployeesWorkspace() {
           employeeId: String(editingEmployee.id),
           values,
         });
-        notifyUpdated("Employee", nextEmployee.name);
+        notifyUpdated(t("employees.entity"), nextEmployee.name);
       } else {
         const nextEmployee = await createEmployeeMutation.mutateAsync(values);
-        notifyAdded("Employee", nextEmployee.name);
+        notifyAdded(t("employees.entity"), nextEmployee.name);
       }
 
       setFormMode(null);
@@ -213,7 +226,7 @@ export function EmployeesWorkspace() {
       setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
       setDeleteTarget(null);
       setViewEmployee(null);
-      notifyDeleted("Employee", ids.length);
+      notifyDeleted(t("employees.entity"), ids.length);
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);
@@ -222,15 +235,17 @@ export function EmployeesWorkspace() {
 
   const statCards = [
     {
-      label: "Total employees",
+      label: t("employees.stats.total.label"),
       value: stats.isLoading ? "…" : stats.total.toString(),
-      description: "Employees on record",
+      description: t("employees.stats.total.description"),
       icon: Users,
     },
     ...stats.branches.map((branch) => ({
-      label: branch.label,
+      label: t(`employees.enums.branch.${branch.portal}`),
       value: stats.isLoading ? "…" : branch.total.toString(),
-      description: `Employees in ${branch.label}`,
+      description: t("employees.stats.branch.description", {
+        branch: t(`employees.enums.branch.${branch.portal}`),
+      }),
       icon: Building2,
     })),
   ];
@@ -244,185 +259,205 @@ export function EmployeesWorkspace() {
     }));
   }, [branchesData?.items]);
 
-  const tableColumns: DataTableColumn<Employee>[] = [
-    {
-      id: "id",
-      label: "Employee ID",
-      cellClassName: "font-mono text-xs",
-      renderCell: (employee) => formatEmployeeId(employee.id),
-    },
-    {
-      id: "name",
-      label: "name",
-      cellClassName: "font-medium",
-      renderCell: (employee) => employee.name,
-    },
-    {
-      id: "title",
-      label: "title",
-      renderCell: (employee) => employee.title || "—",
-    },
-    {
-      id: "department",
-      label: "department",
-      renderCell: (employee) => employee.department || "—",
-    },
-    {
-      id: "active",
-      label: "active",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (employee) => (
-        <TableTagText className={getEmployeeActiveBadgeClass(employee.active)}>
-          {getEmployeeActiveLabel(employee.active)}
-        </TableTagText>
-      ),
-    },
-    {
-      id: "startDate",
-      label: "startDate",
-      cellClassName: "text-muted-foreground",
-      renderCell: (employee) => (employee.startDate ? formatAuditDate(employee.startDate) : "—"),
-    },
-    {
-      id: "endDate",
-      label: "endDate",
-      cellClassName: "text-muted-foreground",
-      renderCell: (employee) => (employee.endDate ? formatAuditDate(employee.endDate) : "—"),
-    },
-    {
-      id: "branch",
-      label: "branch",
-      sortField: "branch.name",
-      truncateCell: false,
-      cellClassName: "overflow-visible",
-      renderCell: (employee) => (
-        <TableTagText className={getEmployeeBranchBadgeClass(employee)}>
-          {formatEmployeeBranchLabel(employee)}
-        </TableTagText>
-      ),
-    },
-    {
-      id: "branch.code",
-      label: "branch.code",
-      renderCell: (employee) => employee.branch.code || "—",
-    },
-    {
-      id: "branch.name",
-      label: "branch.name",
-      renderCell: (employee) => employee.branch.name || "—",
-    },
-    {
-      id: "phone",
-      label: "Phone",
-      sortField: "phones.number",
-      renderCell: (employee) => formatPrimaryPhonesDisplayOrDash(employee.phones),
-    },
-    {
-      id: "email",
-      label: "email",
-      renderCell: (employee) => employee.email || "—",
-    },
-    {
-      id: "address.address1",
-      label: "address.address1",
-      renderCell: (employee) => employee.address.address1 || "—",
-    },
-    {
-      id: "address.city",
-      label: "address.city",
-      renderCell: (employee) => employee.address.city || "—",
-    },
-    {
-      id: "address.state",
-      label: "address.state",
-      renderCell: (employee) => employee.address.state || "—",
-    },
-    {
-      id: "address.country",
-      label: "address.country",
-      renderCell: (employee) => employee.address.country || "—",
-    },
-    {
-      id: "cost",
-      label: "cost",
-      renderCell: (employee) => formatEmployeeMoney(employee.cost),
-    },
-    {
-      id: "totalLoanGiven",
-      label: "totalLoanGiven",
-      renderCell: (employee) => formatEmployeeMoney(employee.totalLoanGiven),
-    },
-    {
-      id: "totalPaymentReceived",
-      label: "totalPaymentReceived",
-      renderCell: (employee) => formatEmployeeMoney(employee.totalPaymentReceived),
-    },
-    {
-      id: "loanAmountOwed",
-      label: "loanAmountOwed",
-      renderCell: (employee) => formatEmployeeMoney(employee.loanAmountOwed),
-    },
-    {
-      id: "loanBalanceUpdated",
-      label: "loanBalanceUpdated",
-      renderCell: (employee) =>
-        employee.loanBalanceUpdated ? formatEmployeeDate(employee.loanBalanceUpdated) : "—",
-    },
-    {
-      id: "user",
-      label: "user",
-      sortField: "user.name",
-      renderCell: (employee) => formatEmployeeUserLabel(employee),
-    },
-    {
-      id: "user.id",
-      label: "user.id",
-      cellClassName: "font-mono text-xs",
-      renderCell: (employee) => (employee.user?.id ? String(employee.user.id) : "—"),
-    },
-    {
-      id: "user.name",
-      label: "user.name",
-      renderCell: (employee) => employee.user?.name || "—",
-    },
-    {
-      id: "createdAt",
-      label: "createdAt",
-      cellClassName: "text-muted-foreground",
-      renderCell: (employee) => (employee.createdAt ? formatAuditDateTime(employee.createdAt) : "—"),
-    },
-    {
-      id: "updatedAt",
-      label: "updatedAt",
-      cellClassName: "text-muted-foreground",
-      renderCell: (employee) => (employee.updatedAt ? formatAuditDateTime(employee.updatedAt) : "—"),
-    },
-  ];
+  const dash = t("common.empty.dash");
+
+  const tableColumns: DataTableColumn<Employee>[] = useMemo(
+    () => [
+      {
+        id: "id",
+        label: t("employees.columns.id"),
+        cellClassName: "font-mono text-xs",
+        renderCell: (employee) => formatEmployeeId(employee.id),
+      },
+      {
+        id: "name",
+        label: t("employees.columns.name"),
+        cellClassName: "font-medium",
+        renderCell: (employee) => employee.name,
+      },
+      {
+        id: "title",
+        label: t("employees.columns.title"),
+        renderCell: (employee) => employeeLabels.title(employee.title) || dash,
+      },
+      {
+        id: "department",
+        label: t("employees.columns.department"),
+        renderCell: (employee) => employeeLabels.department(employee.department) || dash,
+      },
+      {
+        id: "active",
+        label: t("employees.columns.active"),
+        truncateCell: false,
+        cellClassName: "overflow-visible",
+        renderCell: (employee) => (
+          <TableTagText className={getEmployeeActiveBadgeClass(employee.active)}>
+            {employeeLabels.active(employee.active)}
+          </TableTagText>
+        ),
+      },
+      {
+        id: "startDate",
+        label: t("employees.columns.startDate"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (employee) => (employee.startDate ? formatAuditDate(employee.startDate) : dash),
+      },
+      {
+        id: "endDate",
+        label: t("employees.columns.endDate"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (employee) => (employee.endDate ? formatAuditDate(employee.endDate) : dash),
+      },
+      {
+        id: "branch",
+        label: t("employees.columns.branch"),
+        sortField: "branch.name",
+        truncateCell: false,
+        cellClassName: "overflow-visible",
+        renderCell: (employee) => (
+          <TableTagText className={getEmployeeBranchBadgeClass(employee)}>
+            {employeeLabels.branchLabel(employee)}
+          </TableTagText>
+        ),
+      },
+      {
+        id: "branch.code",
+        label: t("employees.columns.branch.code"),
+        renderCell: (employee) => employee.branch.code || dash,
+      },
+      {
+        id: "branch.name",
+        label: t("employees.columns.branch.name"),
+        renderCell: (employee) => employee.branch.name || dash,
+      },
+      {
+        id: "phone",
+        label: t("employees.columns.phone"),
+        sortField: "phones.number",
+        renderCell: (employee) => formatPrimaryPhonesDisplayOrDash(employee.phones),
+      },
+      {
+        id: "email",
+        label: t("employees.columns.email"),
+        renderCell: (employee) => employee.email || dash,
+      },
+      {
+        id: "address.address1",
+        label: t("employees.columns.address.address1"),
+        renderCell: (employee) => employee.address.address1 || dash,
+      },
+      {
+        id: "address.city",
+        label: t("employees.columns.address.city"),
+        renderCell: (employee) => employee.address.city || dash,
+      },
+      {
+        id: "address.state",
+        label: t("employees.columns.address.state"),
+        renderCell: (employee) => employee.address.state || dash,
+      },
+      {
+        id: "address.country",
+        label: t("employees.columns.address.country"),
+        renderCell: (employee) => employee.address.country || dash,
+      },
+      {
+        id: "cost",
+        label: t("employees.columns.cost"),
+        renderCell: (employee) => formatEmployeeMoney(employee.cost),
+      },
+      {
+        id: "totalLoanGiven",
+        label: t("employees.columns.totalLoanGiven"),
+        renderCell: (employee) => formatEmployeeMoney(employee.totalLoanGiven),
+      },
+      {
+        id: "totalPaymentReceived",
+        label: t("employees.columns.totalPaymentReceived"),
+        renderCell: (employee) => formatEmployeeMoney(employee.totalPaymentReceived),
+      },
+      {
+        id: "loanAmountOwed",
+        label: t("employees.columns.loanAmountOwed"),
+        renderCell: (employee) => formatEmployeeMoney(employee.loanAmountOwed),
+      },
+      {
+        id: "loanBalanceUpdated",
+        label: t("employees.columns.loanBalanceUpdated"),
+        renderCell: (employee) =>
+          employee.loanBalanceUpdated ? formatEmployeeDate(employee.loanBalanceUpdated) : dash,
+      },
+      {
+        id: "user",
+        label: t("employees.columns.user"),
+        sortField: "user.name",
+        renderCell: (employee) => formatEmployeeUserLabel(employee),
+      },
+      {
+        id: "user.id",
+        label: t("employees.columns.user.id"),
+        cellClassName: "font-mono text-xs",
+        renderCell: (employee) => (employee.user?.id ? String(employee.user.id) : dash),
+      },
+      {
+        id: "user.name",
+        label: t("employees.columns.user.name"),
+        renderCell: (employee) => employee.user?.name || dash,
+      },
+      {
+        id: "createdAt",
+        label: t("employees.columns.createdAt"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (employee) => (employee.createdAt ? formatAuditDateTime(employee.createdAt) : dash),
+      },
+      {
+        id: "updatedAt",
+        label: t("employees.columns.updatedAt"),
+        cellClassName: "text-muted-foreground",
+        renderCell: (employee) => (employee.updatedAt ? formatAuditDateTime(employee.updatedAt) : dash),
+      },
+    ],
+    [dash, employeeLabels, t],
+  );
 
   const columnVisibility = useColumnVisibility("employees", tableColumns);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
-  const activeFilterCount = countCompleteFilterRows(filters.rows, EMPLOYEE_TABLE_FILTER_FIELDS);
+  const activeFilterCount = countCompleteFilterRows(filters.rows, employeeFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
-  const searchSummary = buildToolbarSearchSummary({
-    isFiltered: hasActiveFilters,
-    query: filters.query,
-    isSearchPending,
-    matched: totalEmployees,
-    catalogTotal: stats.total,
-    noun: "employees",
-    isLoading: isFetching && employees.length === 0,
-    catalogLoading: stats.isLoading,
-  });
+  const searchSummary = buildToolbarSearchSummary(
+    {
+      isFiltered: hasActiveFilters,
+      query: filters.query,
+      isSearchPending,
+      matched: totalEmployees,
+      catalogTotal: stats.total,
+      noun: t("employees.noun"),
+      isLoading: isFetching && employees.length === 0,
+      catalogLoading: stats.isLoading,
+    },
+    t,
+  );
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: employees.length,
+      page: currentPage,
+      pageSize: PAGE_SIZE,
+      total: totalEmployees,
+      noun: t("employees.noun"),
+      isFiltered: hasActiveFilters,
+      isLoading: isFetching,
+    },
+    t,
+  );
 
   return (
     <div>
       <PageHeader
-        title="Employees"
+        title={t("employees.title")}
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />
-            Add employee
+            {t("employees.actions.add")}
           </Button>
         }
       />
@@ -444,16 +479,16 @@ export function EmployeesWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search employees..."
+                placeholder={t("employees.search.placeholder")}
               />
             }
             filterPanel={
               <TableFilterPanel
-                resultSummary={`Showing ${employees.length} of ${totalEmployees} employees`}
+                resultSummary={listSummary}
                 presets={{
                   storageKey: "employees",
                   rows: filters.rows,
-                  fields: EMPLOYEE_TABLE_FILTER_FIELDS,
+                  fields: employeeFilterFields,
                   onApply: (rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -471,7 +506,7 @@ export function EmployeesWorkspace() {
                 <TableAdvancedFilterBuilder
                   open={filtersOpen}
                   rows={filters.rows}
-                  fields={EMPLOYEE_TABLE_FILTER_FIELDS}
+                  fields={employeeFilterFields}
                   dynamicOptions={{
                     branches: branchesLoading ? [] : branchFilterOptions,
                   }}
@@ -505,7 +540,9 @@ export function EmployeesWorkspace() {
         />
 
         {isLoading ? (
-          <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading employees…</div>
+          <div className="px-6 py-12 text-center text-sm text-muted-foreground">
+            {t("employees.loading.employees")}
+          </div>
         ) : (
           <DataTable
             columns={columnVisibility.columns}
@@ -527,10 +564,12 @@ export function EmployeesWorkspace() {
             onRowDoubleClick={openEditForm}
             emptyState={
               <>
-                <p className="text-muted-foreground">No employees match your search or filters.</p>
+                <p className="text-muted-foreground">
+                  {hasActiveFilters ? t("employees.empty.noMatch") : t("employees.empty.noneYet")}
+                </p>
                 <Button className="mt-4" onClick={openAddForm}>
                   <Plus className="h-4 w-4" />
-                  Add employee
+                  {t("employees.actions.add")}
                 </Button>
               </>
             }
@@ -538,9 +577,7 @@ export function EmployeesWorkspace() {
         )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {isFetching ? "Refreshing…" : `Showing ${employees.length} of ${totalEmployees} employees`}
-          </p>
+          <p className="text-sm text-muted-foreground">{listSummary}</p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -549,10 +586,10 @@ export function EmployeesWorkspace() {
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              {t("common.actions.previous")}
             </Button>
             <span className="px-2 text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -560,7 +597,7 @@ export function EmployeesWorkspace() {
               disabled={currentPage >= totalPages || isLoading}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
-              Next
+              {t("common.actions.next")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -591,7 +628,9 @@ export function EmployeesWorkspace() {
       >
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>{formMode === "edit" ? "Edit employee" : "Add employee"}</DialogTitle>
+            <DialogTitle>
+              {formMode === "edit" ? t("employees.form.editTitle") : t("employees.form.addTitle")}
+            </DialogTitle>
           </DialogHeader>
           <EmployeeForm
             key={editingEmployee?.id ?? "new"}
@@ -601,7 +640,7 @@ export function EmployeesWorkspace() {
                 : createEmptyEmployeeForm()
             }
             isEditing={formMode === "edit"}
-            submitLabel={formMode === "edit" ? "Save changes" : "Add employee"}
+            submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("employees.actions.add")}
             isSubmitting={isSaving}
             externalError={formError}
             onSubmit={saveEmployee}
@@ -617,21 +656,32 @@ export function EmployeesWorkspace() {
         <DialogContent className="z-[60]">
           <DialogHeader>
             <DialogTitle>
-              Delete employee{Array.isArray(deleteTarget) && deleteTarget.length > 1 ? "s" : ""}?
+              {Array.isArray(deleteTarget) && deleteTarget.length > 1
+                ? t("employees.dialogs.deleteTitlePlural")
+                : t("employees.dialogs.deleteTitle")}
             </DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? `This will permanently remove ${deleteTarget.length} selected employees.`
-                : "This will permanently remove this employee. This action cannot be undone."}
+                ? t("employees.dialogs.deleteMany", {
+                    count: deleteTarget.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
+                : t("employees.dialogs.deleteOne", {
+                    name:
+                      !Array.isArray(deleteTarget) && deleteTarget?.name
+                        ? deleteTarget.name
+                        : t("employees.dialogs.unnamed"),
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
               <Trash2 className="h-4 w-4" />
-              Delete
+              {t("common.actions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

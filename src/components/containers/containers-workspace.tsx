@@ -29,6 +29,11 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { useContainerFilterFields } from "@/lib/containers/hooks/use-container-filter-fields";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
@@ -117,7 +122,7 @@ export function ContainersWorkspace() {
   const updateContainerMutation = useUpdateContainer();
   const deleteContainersMutation = useDeleteContainers();
 
-  const containers = data?.items ?? [];
+  const containers = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalContainers = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalContainers / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -127,6 +132,11 @@ export function ContainersWorkspace() {
     createContainerMutation.isPending ||
     updateContainerMutation.isPending ||
     deleteContainersMutation.isPending;
+
+  useTableSelectionReset<number>(
+    buildTableSelectionResetKey(debouncedQuery, filters.rows),
+    setSelectedIds,
+  );
 
   const suggestedContainerName = useMemo(
     () => suggestNextContainerName(containers),

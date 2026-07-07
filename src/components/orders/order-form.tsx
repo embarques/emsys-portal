@@ -1,11 +1,11 @@
 "use client";
 
 import { CalendarDays, Pencil, UserPlus, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CustomerForm } from "@/components/customers/customer-form";
-import { CustomerPartySelect } from "@/components/customers/customer-party-select";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -20,27 +20,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   SearchableSelect,
+  type SearchableSelectOption,
 } from "@/components/ui/searchable-select";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { UnverifiedAddressNotice } from "@/components/addresses/unverified-address-notice";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
-import { normalizeApiError } from "@/lib/api/axios";
+import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
+import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   useCreateCustomer,
+  useCustomerPicker,
+  useCustomerSearch,
   useUpdateCustomer,
 } from "@/lib/customers/hooks/use-customers";
+import { CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
 import {
   CUSTOMER_TYPE_RECEIVER,
   CUSTOMER_TYPE_SENDER,
   createEmptyCustomerForm,
   customerHasUnverifiedPrimaryAddress,
   customerToFormValues,
+  getCustomerPrimaryCoreAddress,
   type Customer,
   type CustomerFormValues,
 } from "@/lib/customers/types";
+import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/customer-type";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
 import {
@@ -49,6 +56,7 @@ import {
   type OrderFormSubmitResult,
   type OrderFormValues,
 } from "@/lib/orders/types";
+import { useTranslation } from "@/lib/i18n";
 
 type OrderFormProps = {
   initialValues?: OrderFormValues;
@@ -67,6 +75,37 @@ type CustomerDialogState = {
   mode: "add" | "edit";
 };
 
+/** Phone numbers and the primary street address let users find a party without knowing the name. */
+function buildCustomerSearchKeywords(customer: Customer): string[] {
+  const keywords: string[] = [];
+
+  for (const phone of customer.phones) {
+    if (phone.number) keywords.push(phone.number);
+    if (phone.displayNumber) keywords.push(phone.displayNumber);
+  }
+
+  const primaryAddress = getCustomerPrimaryCoreAddress(customer);
+  if (primaryAddress.address1) keywords.push(primaryAddress.address1);
+
+  return keywords;
+}
+
+/** Surface the primary phone and street on their own rows so neither is cut off. */
+function buildCustomerOptionDescriptionLines(customer: Customer): string[] {
+  const phone = getPrimaryPhoneDisplayNumber(customer.phones);
+  const address1 = getCustomerPrimaryCoreAddress(customer).address1.trim();
+  return [phone, address1].filter((line) => line.trim());
+}
+
+function customerToSelectOption(customer: Customer): SearchableSelectOption {
+  return {
+    value: customer.id,
+    label: customer.name,
+    descriptionLines: buildCustomerOptionDescriptionLines(customer),
+    keywords: buildCustomerSearchKeywords(customer),
+  };
+}
+
 function PartyFieldActions({
   hasSelection,
   onAdd,
@@ -76,6 +115,8 @@ function PartyFieldActions({
   onAdd: () => void;
   onEdit: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex items-center gap-1">
       <Button
@@ -86,7 +127,7 @@ function PartyFieldActions({
         onClick={onAdd}
       >
         <UserPlus className="size-3.5" />
-        New
+        {t("orders.form.partyActions.new")}
       </Button>
       {hasSelection ? (
         <Button
@@ -97,7 +138,7 @@ function PartyFieldActions({
           onClick={onEdit}
         >
           <Pencil className="size-3.5" />
-          Edit
+          {t("orders.form.partyActions.edit")}
         </Button>
       ) : null}
     </div>
@@ -113,12 +154,15 @@ export function OrderForm({
   onFormErrorChange,
   onCancel,
 }: OrderFormProps) {
+  const { t } = useTranslation();
+  const { data: customersData } = useCustomerPicker();
   const { data: branchesData } = useBranchPicker();
   const employeesQuery = useEmployees({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, limit: 200 });
   const { notifyAdded, notifyUpdated } = useFeedback();
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
 
+  const customers = customersData?.items ?? [];
   const branches = branchesData?.items ?? [];
   const employees = employeesQuery.data?.items ?? [];
 
@@ -126,6 +170,8 @@ export function OrderForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
+  const [senderQuery, setSenderQuery] = useState("");
+  const [receiverQuery, setReceiverQuery] = useState("");
   const handleEnterNavigation = useFormEnterNavigation();
   const isSavingCustomer = createCustomerMutation.isPending || updateCustomerMutation.isPending;
 
@@ -134,18 +180,97 @@ export function OrderForm({
     setFormError(null);
   }, [initialValues]);
 
+  // Senders are customerType 1, receivers are customerType 2 — keep each picker scoped.
+  const senderCustomers = useMemo(
+    () => customers.filter((customer) => customer.active && isCustomerSenderType(customer.customerType)),
+    [customers],
+  );
+
+  const receiverCustomers = useMemo(
+    () => customers.filter((customer) => customer.active && isCustomerReceiverType(customer.customerType)),
+    [customers],
+  );
+
+  // Typing in a party picker runs the same POST /customers/search filter endpoint, scoped by
+  // customerType and matching name, address 1, or phone (debounced to avoid a request per keystroke).
+  const debouncedSenderQuery = useDebouncedValue(senderQuery, 300).trim();
+  const debouncedReceiverQuery = useDebouncedValue(receiverQuery, 300).trim();
+
+  const senderSearch = useCustomerSearch(
+    debouncedSenderQuery ? { value: debouncedSenderQuery } : undefined,
+    {
+      customerType: CUSTOMER_TYPE_SENDER,
+      orFields: CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS,
+      limit: 40,
+    },
+  );
+
+  const receiverSearch = useCustomerSearch(
+    debouncedReceiverQuery ? { value: debouncedReceiverQuery } : undefined,
+    {
+      customerType: CUSTOMER_TYPE_RECEIVER,
+      orFields: CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS,
+      limit: 40,
+    },
+  );
+
+  const senderSearchResults = useMemo(
+    () =>
+      (senderSearch.data?.items ?? []).filter(
+        (customer) => customer.active && isCustomerSenderType(customer.customerType),
+      ),
+    [senderSearch.data],
+  );
+
+  const receiverSearchResults = useMemo(
+    () =>
+      (receiverSearch.data?.items ?? []).filter(
+        (customer) => customer.active && isCustomerReceiverType(customer.customerType),
+      ),
+    [receiverSearch.data],
+  );
+
+  // While searching, show server results; otherwise the loaded picker page. The currently
+  // selected party is always pinned so its label stays visible even when off the current page
+  // (e.g. a customer that was just created or edited inline).
+  const senderSelectOptions = useMemo(() => {
+    const source = debouncedSenderQuery ? senderSearchResults : senderCustomers;
+    const options = source.map(customerToSelectOption);
+    if (values.sender && !source.some((customer) => customer.id === values.sender!.id)) {
+      options.unshift(customerToSelectOption(values.sender));
+    }
+    return options;
+  }, [debouncedSenderQuery, senderSearchResults, senderCustomers, values.sender]);
+
+  const receiverSelectOptions = useMemo(() => {
+    const source = debouncedReceiverQuery ? receiverSearchResults : receiverCustomers;
+    const options = source.map(customerToSelectOption);
+    if (values.receiver && !source.some((customer) => customer.id === values.receiver!.id)) {
+      options.unshift(customerToSelectOption(values.receiver));
+    }
+    return options;
+  }, [debouncedReceiverQuery, receiverSearchResults, receiverCustomers, values.receiver]);
+
   function updateField<K extends keyof OrderFormValues>(key: K, value: OrderFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
     setFormError(null);
   }
 
-  function updateSender(_senderId: string, sender: Customer) {
-    updateField("senderId", sender.id);
+  function updateSenderId(senderId: string) {
+    const sender =
+      senderCustomers.find((customer) => customer.id === senderId) ??
+      senderSearchResults.find((customer) => customer.id === senderId) ??
+      (values.sender?.id === senderId ? values.sender : null);
+    updateField("senderId", senderId);
     updateField("sender", sender);
   }
 
-  function updateReceiver(_receiverId: string, receiver: Customer) {
-    updateField("receiverId", receiver.id);
+  function updateReceiverId(receiverId: string) {
+    const receiver =
+      receiverCustomers.find((customer) => customer.id === receiverId) ??
+      receiverSearchResults.find((customer) => customer.id === receiverId) ??
+      (values.receiver?.id === receiverId ? values.receiver : null);
+    updateField("receiverId", receiverId);
     updateField("receiver", receiver);
   }
 
@@ -193,21 +318,24 @@ export function OrderForm({
           customerId: dialogCustomer.id,
           values: formValues,
         });
-        notifyUpdated("Customer", customer.name);
+        notifyUpdated(t("customers.entity"), customer.name);
       } else {
         customer = await createCustomerMutation.mutateAsync(formValues);
-        notifyAdded("Customer", customer.name);
+        notifyAdded(t("customers.entity"), customer.name);
       }
 
       applyCustomerToSide(customerDialog.side, customer);
       closeCustomerDialog();
     } catch (mutationError) {
-      setCustomerFormError(normalizeApiError(mutationError).message);
+      setCustomerFormError(
+        formatCustomerMutationError(mutationError, t, {
+          mode: customerDialog.mode === "edit" ? "edit" : "create",
+        }),
+      );
     }
   }
 
-  const unverifiedPartyMessage =
-    "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.";
+  const unverifiedPartyMessage = t("orders.form.validation.unverifiedSenderAddress");
   // Only senders use Google verification; receivers use a predetermined city list.
   const blockForUnverifiedParty =
     isGoogleMapsConfigured() &&
@@ -219,16 +347,16 @@ export function OrderForm({
   // pickup date → sender → at least one comment.
   const blockReason: string | null = (() => {
     if (!hasValidDate) {
-      return "Select a valid pickup date.";
+      return t("orders.form.validation.pickupDateRequired");
     }
     if (!values.sender) {
-      return "Select a sender.";
+      return t("orders.form.validation.senderRequired");
     }
     if (blockForUnverifiedParty) {
       return unverifiedPartyMessage;
     }
     if (values.comments.length === 0) {
-      return "Add at least one comment.";
+      return t("orders.form.validation.commentRequired");
     }
     return null;
   })();
@@ -255,7 +383,7 @@ export function OrderForm({
     <>
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
-      <FormSection icon={CalendarDays} title="Pickup date" required>
+      <FormSection icon={CalendarDays} title={t("orders.form.sections.pickupDate")} required>
         <div className="grid gap-2.5 sm:grid-cols-2">
           <div className="space-y-1">
             <DateInput
@@ -270,13 +398,13 @@ export function OrderForm({
             <>
               <div className="space-y-1">
                 <Label htmlFor="branchId">
-                  Branch <span className="text-destructive">*</span>
+                  {t("orders.form.fields.branch")} <span className="text-destructive">*</span>
                 </Label>
                 <SearchableSelect
                   id="branchId"
                   value={String(values.branchId)}
                   onValueChange={(next) => updateField("branchId", Number(next))}
-                  searchPlaceholder="Search branches…"
+                  searchPlaceholder={t("orders.form.placeholders.searchBranches")}
                   required
                   options={branches.map((branch) => ({
                     value: String(branch.id),
@@ -286,15 +414,15 @@ export function OrderForm({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="employeeId">Employee</Label>
+                <Label htmlFor="employeeId">{t("orders.form.fields.employee")}</Label>
                 <SearchableSelect
                   id="employeeId"
                   value={String(values.employeeId)}
                   onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
-                  placeholder="No employee"
-                  searchPlaceholder="Search employees…"
+                  placeholder={t("orders.form.fields.noEmployee")}
+                  searchPlaceholder={t("orders.form.placeholders.searchEmployees")}
                   options={[
-                    { value: "", label: "No employee" },
+                    { value: "", label: t("orders.form.fields.noEmployee") },
                     ...employees.map((employee) => ({
                       value: String(employee.id),
                       label: `${employee.name} · ${employee.department}`,
@@ -304,7 +432,7 @@ export function OrderForm({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="sectorId">Sector</Label>
+                <Label htmlFor="sectorId">{t("orders.form.fields.sector")}</Label>
                 <Input
                   id="sectorId"
                   type="number"
@@ -320,12 +448,12 @@ export function OrderForm({
         </div>
       </FormSection>
 
-      <FormSection icon={Users} title="Sender & receiver">
+      <FormSection icon={Users} title={t("orders.form.sections.senderReceiver")}>
         <div className="grid gap-2.5 sm:grid-cols-2">
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="senderId">
-                Sender <span className="text-destructive">*</span>
+                {t("orders.form.fields.sender")} <span className="text-destructive">*</span>
               </Label>
               <PartyFieldActions
                 hasSelection={Boolean(values.sender)}
@@ -333,14 +461,22 @@ export function OrderForm({
                 onEdit={() => openEditCustomer("sender")}
               />
             </div>
-            <CustomerPartySelect
+            <SearchableSelect
               id="senderId"
-              partyType="sender"
               value={values.senderId}
-              selectedCustomer={values.sender}
-              onValueChange={updateSender}
-              placeholder="Select sender"
+              onValueChange={updateSenderId}
+              placeholder={t("orders.form.placeholders.selectSender")}
+              searchPlaceholder={t("orders.form.placeholders.searchParty")}
               required
+              manualFiltering
+              loading={senderSearch.isFetching}
+              onSearchChange={setSenderQuery}
+              options={[
+                ...(debouncedSenderQuery
+                  ? []
+                  : [{ value: "", label: t("orders.form.placeholders.selectSender") }]),
+                ...senderSelectOptions,
+              ]}
             />
             {values.sender ? (
               <>
@@ -355,20 +491,28 @@ export function OrderForm({
 
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="receiverId">Receiver</Label>
+              <Label htmlFor="receiverId">{t("orders.form.fields.receiver")}</Label>
               <PartyFieldActions
                 hasSelection={Boolean(values.receiver)}
                 onAdd={() => openAddCustomer("receiver")}
                 onEdit={() => openEditCustomer("receiver")}
               />
             </div>
-            <CustomerPartySelect
+            <SearchableSelect
               id="receiverId"
-              partyType="receiver"
               value={values.receiverId}
-              selectedCustomer={values.receiver}
-              onValueChange={updateReceiver}
-              placeholder="No receiver"
+              onValueChange={updateReceiverId}
+              placeholder={t("orders.form.placeholders.noReceiver")}
+              searchPlaceholder={t("orders.form.placeholders.searchParty")}
+              manualFiltering
+              loading={receiverSearch.isFetching}
+              onSearchChange={setReceiverQuery}
+              options={[
+                ...(debouncedReceiverQuery
+                  ? []
+                  : [{ value: "", label: t("orders.form.placeholders.noReceiver") }]),
+                ...receiverSelectOptions,
+              ]}
             />
             {values.receiver ? (
               <>
@@ -412,8 +556,12 @@ export function OrderForm({
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>
               {customerDialog?.mode === "edit"
-                ? `Edit ${customerDialog.side}`
-                : `Add ${customerDialog?.side ?? "customer"}`}
+                ? customerDialog.side === "receiver"
+                  ? t("orders.form.partyActions.editReceiver")
+                  : t("orders.form.partyActions.editSender")
+                : customerDialog?.side === "receiver"
+                  ? t("orders.form.partyActions.addReceiver")
+                  : t("orders.form.partyActions.addSender")}
             </DialogTitle>
           </DialogHeader>
           {customerDialog ? (
@@ -431,7 +579,11 @@ export function OrderForm({
                     }
               }
               isEditing={customerDialog.mode === "edit"}
-              submitLabel={customerDialog.mode === "edit" ? "Save changes" : "Add customer"}
+              submitLabel={
+                customerDialog.mode === "edit"
+                  ? t("common.actions.saveChanges")
+                  : t("customers.actions.add")
+              }
               isSubmitting={isSavingCustomer}
               externalError={customerFormError}
               lockCustomerType
