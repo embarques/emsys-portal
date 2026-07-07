@@ -134,6 +134,7 @@ type ApiPickupWritePayload = {
   sector?: { id: number; name?: string };
   employee?: ApiPickupEmployeeRef;
   completed?: boolean;
+  route?: ApiRouteRef | null;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -582,65 +583,43 @@ export async function assignPickupsToRoute(
 }
 
 /**
- * Unassign pickups from a scheduled pickup vehicle route via
- * `DELETE /pickups/route/{vehicleRouteId}` with `{ pickupIds }`.
+ * Unassign pickups from their scheduled route via `PUT /pickups/{id}` with `route: null`.
  */
-export async function unassignPickupsFromRoute(
-  vehicleRouteId: string,
-  pickupIds: number[],
-): Promise<void> {
-  const id = vehicleRouteId.trim();
-  if (!id) {
-    throw new Error("A valid pickup route is required.");
+export async function clearPickupRouteAssignment(order: Order): Promise<void> {
+  if (order.id <= 0) {
+    throw new Error("A valid pickup is required.");
   }
 
-  if (pickupIds.length === 0) {
-    throw new Error("Select at least one pickup to unassign.");
-  }
+  const payload = buildPickupWritePayload(orderToFormValues(order));
+  payload.route = null;
 
-  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.PICKUP_ROUTES}/${id}`,
-    { pickupIds },
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/${order.id}`,
+    payload,
   );
 
-  assertMutationSuccess(response, "Unable to unassign pickups from route.");
+  assertMutationSuccess(response, "Unable to clear pickup route.");
 }
 
-export function groupPickupIdsByRouteId(
-  orders: Pick<Order, "id" | "routeId">[],
-): Map<string, number[]> {
-  const byRoute = new Map<string, number[]>();
-
-  for (const order of orders) {
-    const routeId = order.routeId?.trim();
-    if (!routeId || order.id <= 0) continue;
-
-    const pickupIds = byRoute.get(routeId) ?? [];
-    pickupIds.push(order.id);
-    byRoute.set(routeId, pickupIds);
-  }
-
-  return byRoute;
-}
-
-/** Remove route assignments from the given pickups, grouped by their current route. */
-export async function unassignOrdersFromRoutes(
-  orders: Pick<Order, "id" | "routeId">[],
-): Promise<number> {
-  const byRoute = groupPickupIdsByRouteId(orders);
-  if (byRoute.size === 0) {
+/** Remove route assignments from the given pickups. */
+export async function clearPickupRouteAssignments(orders: Order[]): Promise<number> {
+  const ordersWithRoute = orders.filter((order) => Boolean(order.routeId?.trim()) && order.id > 0);
+  if (ordersWithRoute.length === 0) {
     throw new Error("Select at least one order assigned to a route.");
   }
 
-  let cleared = 0;
-  await Promise.all(
-    [...byRoute.entries()].map(async ([routeId, pickupIds]) => {
-      await unassignPickupsFromRoute(routeId, pickupIds);
-      cleared += pickupIds.length;
-    }),
-  );
+  await Promise.all(ordersWithRoute.map((order) => clearPickupRouteAssignment(order)));
+  return ordersWithRoute.length;
+}
 
-  return cleared;
+/** Remove route assignments from the given pickups. */
+export async function unassignOrdersFromRoutes(orders: Order[]): Promise<number> {
+  return clearPickupRouteAssignments(orders);
+}
+
+/** Remove route assignments from the selected pickups on a route. */
+export async function unassignPickupsFromRoute(orders: Order[]): Promise<number> {
+  return clearPickupRouteAssignments(orders);
 }
 
 /** Remove every pickup from a scheduled pickup route. */
@@ -651,13 +630,7 @@ export async function unassignAllPickupsFromRoute(routeId: string): Promise<numb
   }
 
   const pickups = await fetchAllPickupsByRoute(trimmedRouteId);
-  const pickupIds = pickups.map((order) => order.id).filter((id) => id > 0);
-  if (pickupIds.length === 0) {
-    return 0;
-  }
-
-  await unassignPickupsFromRoute(trimmedRouteId, pickupIds);
-  return pickupIds.length;
+  return clearPickupRouteAssignments(pickups);
 }
 
 function resolvePickupBranchRef(branchId: number): ApiBranchDtoPayload {

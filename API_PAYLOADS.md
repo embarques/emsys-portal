@@ -459,7 +459,7 @@ Uses `CreatePickupRequest` (legacy-friendly). **Required:** `sender.name`.
 
 ### `PUT /v1/pickups/{id}`
 
-Same `CreatePickupRequest` shape. `{id}` = numeric.
+Same `CreatePickupRequest` shape. `{id}` = numeric. Set `"route": null` to clear a scheduled vehicle-route assignment.
 
 ### Pickup routes — `POST /v1/pickups/route`
 
@@ -479,9 +479,7 @@ At least one of `states`, `cities`, `zipCodes`, `zipRanges` is required.
 
 Same shape. `{id}` = ObjectID hex. Body: `{ "pickupIds": [1, 2, 3] }` assigns pickups to the scheduled route.
 
-### `DELETE /v1/pickups/route/{id}`
-
-Body: `{ "pickupIds": [1, 2, 3] }` unassigns pickups from the scheduled route. `{id}` = vehicle-route ObjectID hex.
+To unassign, use `PUT /v1/pickups/{pickupId}` with `"route": null` on each pickup (the API does not support `DELETE` on this path).
 
 ### `GET /v1/pickups/search-by-route`
 

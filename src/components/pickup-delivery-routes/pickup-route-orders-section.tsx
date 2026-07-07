@@ -56,6 +56,10 @@ export function PickupRouteOrdersSection({
     () => selectedIds.filter((id) => orderIds.includes(id)),
     [orderIds, selectedIds],
   );
+  const effectiveSelectedOrders = useMemo(
+    () => orders.filter((order) => effectiveSelectedIds.includes(order.id)),
+    [effectiveSelectedIds, orders],
+  );
   const total = data?.total ?? orders.length;
   const errorMessage = isError ? normalizeApiError(error).message : null;
   const dash = t("common.empty.dash");
@@ -78,7 +82,7 @@ export function PickupRouteOrdersSection({
   }
 
   async function handleUnassign() {
-    if (effectiveSelectedIds.length === 0) {
+    if (effectiveSelectedOrders.length === 0) {
       setActionError(t("routes.pickupRoutes.view.orders.selectAtLeastOne"));
       return;
     }
@@ -86,13 +90,13 @@ export function PickupRouteOrdersSection({
     setActionError(null);
 
     try {
-      await unassignMutation.mutateAsync({ routeId, pickupIds: effectiveSelectedIds });
+      await unassignMutation.mutateAsync(effectiveSelectedOrders);
       setSelectedIds([]);
       notifySuccess(
-        effectiveSelectedIds.length === 1
-          ? t("routes.pickupRoutes.view.orders.unassigned", { count: effectiveSelectedIds.length })
+        effectiveSelectedOrders.length === 1
+          ? t("routes.pickupRoutes.view.orders.unassigned", { count: effectiveSelectedOrders.length })
           : t("routes.pickupRoutes.view.orders.unassigned_plural", {
-              count: effectiveSelectedIds.length,
+              count: effectiveSelectedOrders.length,
             }),
       );
     } catch (unassignError) {

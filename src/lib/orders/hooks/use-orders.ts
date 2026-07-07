@@ -255,13 +255,12 @@ export function useAssignPickupsToRoute() {
   });
 }
 
-/** Unassign pickups from a scheduled pickup vehicle route. */
+/** Unassign pickups from their scheduled route (`PUT /pickups/{id}` with `route: null`). */
 export function useUnassignPickupsFromRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ routeId, pickupIds }: { routeId: string; pickupIds: number[] }) =>
-      unassignPickupsFromRoute(routeId, pickupIds),
+    mutationFn: (orders: Order[]) => unassignPickupsFromRoute(orders),
     onSuccess: () => invalidateOrders(queryClient),
   });
 }
@@ -271,7 +270,7 @@ export function useClearOrdersRouteAssignments() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (orders: Pick<Order, "id" | "routeId">[]) => unassignOrdersFromRoutes(orders),
+    mutationFn: (orders: Order[]) => unassignOrdersFromRoutes(orders),
     onSuccess: () => invalidateOrders(queryClient),
   });
 }
