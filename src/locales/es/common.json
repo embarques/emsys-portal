@@ -37,6 +37,8 @@
   },
   "table": {
     "selected": "{{count}} de {{total}} seleccionados",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
     "selectAllOthers": "Seleccionar los demás",
     "clearSelection": "Limpiar selección",
     "deleteSelected": "Eliminar seleccionados",

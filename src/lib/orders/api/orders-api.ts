@@ -499,12 +499,20 @@ export async function fetchPickupsByRoute(
     return { items: [], page: 1, resultsPerPage: 0, total: 0 };
   }
 
-  return fetchOrders({
+  const result = await fetchOrders({
     page: options.page ?? 1,
     limit: options.limit ?? ROUTE_PICKUPS_LIMIT,
     sort: DEFAULT_ORDER_LIST_PARAMS.sort,
     filterRows: buildRoutePickupsFilter(trimmedRouteId),
   });
+
+  return {
+    ...result,
+    items: result.items.map((order) => ({
+      ...order,
+      routeId: order.routeId?.trim() || trimmedRouteId,
+    })),
+  };
 }
 
 /** Load every pickup assigned to a route, paging through search results. */
@@ -582,20 +590,48 @@ export async function assignPickupsToRoute(
   assertMutationSuccess(response, "Unable to assign pickup route.");
 }
 
+function unwrapPickupApiRecord(response: unknown): ApiPickup {
+  const raw =
+    response && typeof response === "object" && "data" in response
+      ? (response as PaginatedApiEnvelope<ApiPickup>).data
+      : response;
+
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Pickup not found.");
+  }
+
+  return raw as ApiPickup;
+}
+
+/** Raw pickup record from `GET /pickups/{id}` — suitable for round-trip `PUT`. */
+export async function fetchPickupApiRecord(orderId: string): Promise<ApiPickup> {
+  const id = orderId.trim();
+  if (!id) {
+    throw new Error("A valid pickup is required.");
+  }
+
+  const response = await apiClient.get<ApiPickup | PaginatedApiEnvelope<ApiPickup>>(
+    `${API_ENDPOINTS.PICKUPS}/${id}`,
+  );
+
+  return unwrapPickupApiRecord(response);
+}
+
 /**
  * Unassign pickups from their scheduled route via `PUT /pickups/{id}` with `route: null`.
+ * Round-trips the current API record so the server receives a complete payload.
  */
 export async function clearPickupRouteAssignment(order: Order): Promise<void> {
   if (order.id <= 0) {
     throw new Error("A valid pickup is required.");
   }
 
-  const payload = buildPickupWritePayload(orderToFormValues(order));
-  payload.route = null;
+  const pickup = await fetchPickupApiRecord(String(order.id));
+  pickup.route = null;
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.PICKUPS}/${order.id}`,
-    payload,
+    pickup,
   );
 
   assertMutationSuccess(response, "Unable to clear pickup route.");
@@ -603,13 +639,13 @@ export async function clearPickupRouteAssignment(order: Order): Promise<void> {
 
 /** Remove route assignments from the given pickups. */
 export async function clearPickupRouteAssignments(orders: Order[]): Promise<number> {
-  const ordersWithRoute = orders.filter((order) => Boolean(order.routeId?.trim()) && order.id > 0);
-  if (ordersWithRoute.length === 0) {
-    throw new Error("Select at least one order assigned to a route.");
+  const eligibleOrders = orders.filter((order) => order.id > 0);
+  if (eligibleOrders.length === 0) {
+    throw new Error("Select at least one pickup to remove from the route.");
   }
 
-  await Promise.all(ordersWithRoute.map((order) => clearPickupRouteAssignment(order)));
-  return ordersWithRoute.length;
+  await Promise.all(eligibleOrders.map((order) => clearPickupRouteAssignment(order)));
+  return eligibleOrders.length;
 }
 
 /** Remove route assignments from the given pickups. */
@@ -810,16 +846,7 @@ async function resolveCreatedOrder(values: OrderFormValues, response: ApiMutatio
 }
 
 export async function fetchOrderById(orderId: string): Promise<Order> {
-  const response = await apiClient.get<ApiPickup | PaginatedApiEnvelope<ApiPickup>>(
-    `${API_ENDPOINTS.PICKUPS}/${orderId}`,
-  );
-
-  const raw =
-    response && typeof response === "object" && "data" in response
-      ? (response as PaginatedApiEnvelope<ApiPickup>).data
-      : response;
-
-  const order = normalizeOrder(raw);
+  const order = normalizeOrder(await fetchPickupApiRecord(orderId));
   if (!order) {
     throw new Error("Pickup not found.");
   }

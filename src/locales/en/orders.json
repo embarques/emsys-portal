@@ -211,6 +211,28 @@
   "errors": {
     "missingCompanyContext": "Company context is missing for this account. EMSYS API requests require the x-company-id header. Add companyId to your Firebase user profile or JWT custom claim, then sign in again."
   },
+  "map": {
+    "title": "Pickup map",
+    "description": "Only verified pickup stops are shown. Click markers to select and assign routes.",
+    "loading": "Loading verified pickup stops…",
+    "empty": "No verified pickup stops match the current filters.",
+    "stopsShown": "{{count}} verified stops",
+    "selected": "{{count}} selected",
+    "clickToSelect": "Click markers to select pickups",
+    "clearSelection": "Clear selection",
+    "selectedStopsTitle": "Selected stops",
+    "removeStop": "Remove {{name}} from selection",
+    "legend": {
+      "unassigned": "Unassigned",
+      "assigned": "Assigned",
+      "selected": "Selected"
+    },
+    "errors": {
+      "notConfigured": "Google Maps is not configured. Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to enable the pickup map.",
+      "loadFailed": "Failed to load Google Maps.",
+      "loadOrdersFailed": "Failed to load pickups for the map."
+    }
+  },
   "filters": {
     "fields": {
       "sender": {

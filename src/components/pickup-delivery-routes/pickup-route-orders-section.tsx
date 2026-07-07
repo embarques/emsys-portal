@@ -39,7 +39,7 @@ export function PickupRouteOrdersSection({
   const { t } = useTranslation();
   const { notifySuccess } = useFeedback();
   const { toErrorMessage } = useUserError();
-  const { data, isLoading, isError, error } = usePickupsByRoute(routeId, { enabled });
+  const { data, isLoading, isError, error, refetch } = usePickupsByRoute(routeId, { enabled });
   const unassignMutation = useUnassignPickupsFromRoute();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -90,13 +90,14 @@ export function PickupRouteOrdersSection({
     setActionError(null);
 
     try {
-      await unassignMutation.mutateAsync(effectiveSelectedOrders);
+      const clearedCount = await unassignMutation.mutateAsync(effectiveSelectedOrders);
       setSelectedIds([]);
+      await refetch();
       notifySuccess(
-        effectiveSelectedOrders.length === 1
-          ? t("routes.pickupRoutes.view.orders.unassigned", { count: effectiveSelectedOrders.length })
+        clearedCount === 1
+          ? t("routes.pickupRoutes.view.orders.unassigned", { count: clearedCount })
           : t("routes.pickupRoutes.view.orders.unassigned_plural", {
-              count: effectiveSelectedOrders.length,
+              count: clearedCount,
             }),
       );
     } catch (unassignError) {

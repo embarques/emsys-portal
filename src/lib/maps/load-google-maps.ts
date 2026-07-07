@@ -20,13 +20,28 @@ export function isGoogleMapsConfigured(): boolean {
 }
 
 type GoogleMapsGlobal = {
-  maps?: {
+  maps?: GoogleMapsCoreApi & {
     importLibrary?: (name: string) => Promise<unknown>;
   };
 };
 
+export type GoogleMapsCoreApi = {
+  Map: new (element: HTMLElement, options: Record<string, unknown>) => unknown;
+  Marker: new (options: Record<string, unknown>) => unknown;
+  SymbolPath: { CIRCLE: number };
+};
+
 function getGoogleGlobal(): GoogleMapsGlobal | undefined {
   return (globalThis as { google?: GoogleMapsGlobal }).google;
+}
+
+/** Core map classes from the loaded global `google.maps` namespace. */
+export function getGoogleMapsCoreApi(): GoogleMapsCoreApi | null {
+  const maps = getGoogleGlobal()?.maps;
+  if (!maps?.Map || !maps.Marker || !maps.SymbolPath) {
+    return null;
+  }
+  return maps;
 }
 
 /**

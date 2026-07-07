@@ -26,6 +26,7 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
+import { writeOrdersMapContext } from "@/lib/orders/store/orders-map-context";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 
@@ -233,7 +234,7 @@ export function OrdersWorkspace() {
     setSelectedIds((current) => (checked ? [...current, orderId] : current.filter((entry) => entry !== orderId)));
   }
 
-  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+  const { openFormTab, openTab, isDesktopTabs } = useWorkspaceTabs();
 
   function openAddForm() {
     if (isDesktopTabs) {
@@ -340,21 +341,32 @@ export function OrdersWorkspace() {
 
     try {
       await assignRouteMutation.mutateAsync({ routeId: selectedRouteId, pickupIds });
-      const selectedRoute = pickupRouteLookup.getByKey(selectedRouteId);
-      const routeName = selectedRoute ? formatOrderRouteName({ routeId: selectedRouteId }, selectedRoute, t) : "";
-      const routeSuffix = routeName
-        ? t("orders.toasts.assignedToRouteNamed", { routeName })
-        : "";
-      notifySuccess(
-        pickupIds.length === 1
-          ? t("orders.toasts.assignedToRoute", { count: pickupIds.length, routeSuffix })
-          : t("orders.toasts.assignedToRoute_plural", { count: pickupIds.length, routeSuffix }),
-      );
+      notifyAssignRouteSuccess(pickupIds, selectedRouteId);
       setAssignRouteOpen(false);
       setSelectedRouteId("");
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
     }
+  }
+
+  function notifyAssignRouteSuccess(pickupIds: number[], routeId: string) {
+    const selectedRoute = pickupRouteLookup.getByKey(routeId);
+    const routeName = selectedRoute ? formatOrderRouteName({ routeId }, selectedRoute, t) : "";
+    const routeSuffix = routeName ? t("orders.toasts.assignedToRouteNamed", { routeName }) : "";
+    notifySuccess(
+      pickupIds.length === 1
+        ? t("orders.toasts.assignedToRoute", { count: pickupIds.length, routeSuffix })
+        : t("orders.toasts.assignedToRoute_plural", { count: pickupIds.length, routeSuffix }),
+    );
+  }
+
+  function openMapView() {
+    writeOrdersMapContext({
+      filters,
+      sort,
+      selectedIds,
+    });
+    openTab("/orders/map", t("orders.map.title"));
   }
 
   function openClearRoute() {
@@ -405,11 +417,6 @@ export function OrdersWorkspace() {
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
     }
-  }
-
-  // TODO: implement map for selected orders.
-  function handleComingSoon(label: string) {
-    notifySuccess(t("orders.toasts.comingSoon", { label }));
   }
 
   const statCards = [
@@ -665,6 +672,10 @@ export function OrdersWorkspace() {
           deleteDisabled={isSaving}
           actions={
             <>
+              <Button variant="outline" size="sm" onClick={openMapView}>
+                <MapIcon className="h-4 w-4" />
+                {t("orders.actions.map")}
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -714,14 +725,6 @@ export function OrdersWorkspace() {
                 {clearRouteMutation.isPending
                   ? t("orders.actions.clearingRoute")
                   : t("orders.actions.clearRoute")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleComingSoon(t("orders.actions.map"))}
-              >
-                <MapIcon className="h-4 w-4" />
-                {t("orders.actions.map")}
               </Button>
             </>
           }

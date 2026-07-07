@@ -14,6 +14,7 @@ import { InvoicesWorkspace } from "@/components/invoices/invoices-workspace";
 import { ItemsWorkspace } from "@/components/items/items-workspace";
 import { LabelUpdaterWorkspace } from "@/components/label-updater/label-updater-workspace";
 import { OrdersWorkspace } from "@/components/orders/orders-workspace";
+import { OrdersMapWorkspace } from "@/components/orders/orders-map-workspace";
 import { RolesWorkspace } from "@/components/roles/roles-workspace";
 import { RouteManagerWorkspace } from "@/components/route-manager/route-manager-workspace";
 import { PickupRoutesWorkspace } from "@/components/pickup-delivery-routes/pickup-routes-workspace";
@@ -30,6 +31,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/": DashboardWorkspace,
   "/customers": CustomersWorkspace,
   "/orders": OrdersWorkspace,
+  "/orders/map": OrdersMapWorkspace,
   "/invoices": InvoicesWorkspace,
   "/label-updater": LabelUpdaterWorkspace,
   "/inventory": InventoryWorkspace,

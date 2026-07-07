@@ -199,6 +199,8 @@ type TableDirectoryToolbarProps = {
   showFilterToggle?: boolean;
   filterPanel?: ReactNode;
   columnLayout?: TableColumnLayout;
+  /** Optional actions rendered beside the search summary and column menu. */
+  actions?: ReactNode;
 };
 
 export function TableDirectoryToolbar({
@@ -210,9 +212,10 @@ export function TableDirectoryToolbar({
   showFilterToggle = true,
   filterPanel,
   columnLayout,
+  actions,
 }: TableDirectoryToolbarProps) {
   const showFilter = showFilterToggle && onFiltersOpenChange;
-  const showRightCluster = searchSummary || columnLayout;
+  const showRightCluster = searchSummary || columnLayout || actions;
 
   return (
     <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2">
@@ -240,6 +243,7 @@ export function TableDirectoryToolbar({
             </span>
           ) : null}
           {columnLayout ? <ColumnVisibilityMenu columnLayout={columnLayout} /> : null}
+          {actions}
         </div>
       ) : null}
     </div>

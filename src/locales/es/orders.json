@@ -211,6 +211,28 @@
   "errors": {
     "missingCompanyContext": "Falta el contexto de empresa para esta cuenta. Las solicitudes a la API de EMSYS requieren el encabezado x-company-id. Agregue companyId a su perfil de Firebase o al claim personalizado del JWT y vuelva a iniciar sesión."
   },
+  "map": {
+    "title": "Mapa de recogidas",
+    "description": "Solo se muestran paradas de recogida verificadas. Haga clic en los marcadores para seleccionar y asignar rutas.",
+    "loading": "Cargando paradas de recogida verificadas…",
+    "empty": "No hay paradas de recogida verificadas que coincidan con los filtros actuales.",
+    "stopsShown": "{{count}} paradas verificadas",
+    "selected": "{{count}} seleccionadas",
+    "clickToSelect": "Haga clic en los marcadores para seleccionar recogidas",
+    "clearSelection": "Limpiar selección",
+    "selectedStopsTitle": "Paradas seleccionadas",
+    "removeStop": "Quitar {{name}} de la selección",
+    "legend": {
+      "unassigned": "Sin asignar",
+      "assigned": "Asignada",
+      "selected": "Seleccionada"
+    },
+    "errors": {
+      "notConfigured": "Google Maps no está configurado. Agregue NEXT_PUBLIC_GOOGLE_MAPS_API_KEY para habilitar el mapa de recogidas.",
+      "loadFailed": "No se pudo cargar Google Maps.",
+      "loadOrdersFailed": "No se pudieron cargar las recogidas para el mapa."
+    }
+  },
   "filters": {
     "fields": {
       "sender": {
