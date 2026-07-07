@@ -21,12 +21,14 @@ import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
 import { DEFAULT_ORDER_LIST_PARAMS } from "@/lib/orders/types";
 import { useOrders } from "@/lib/orders/hooks/use-orders";
 import { ClipboardList, Eye, Receipt, Users, Wallet } from "lucide-react";
-import type { InvoiceWizardStep } from "@/components/invoices/invoice-wizard-stepper";
+import type { InvoiceWizardFormStep } from "@/components/invoices/invoice-wizard-stepper";
 
 type Props = {
   values: InvoiceFormValues;
   appearance?: "default" | "wizard";
-  onEditStep?: (step: Exclude<InvoiceWizardStep, 4>) => void;
+  onEditStep?: (step: InvoiceWizardFormStep) => void;
+  showPaymentSection?: boolean;
+  onEditPayment?: () => void;
 };
 
 function usePreviewLabels(values: InvoiceFormValues) {
@@ -94,7 +96,9 @@ function PreviewField({ label, value }: { label: string; value: string }) {
 function InvoiceWizardCheckoutReview({
   values,
   onEditStep,
-}: Required<Pick<Props, "values">> & Pick<Props, "onEditStep">) {
+  showPaymentSection,
+  onEditPayment,
+}: Required<Pick<Props, "values">> & Pick<Props, "onEditStep" | "showPaymentSection" | "onEditPayment">) {
   const {
     catalogItems,
     containerLabel,
@@ -190,7 +194,20 @@ function InvoiceWizardCheckoutReview({
         )}
       </InvoiceWizardReviewSection>
 
-      <InvoiceWizardReviewSection number={4} title="Review & save invoice">
+      {showPaymentSection ? (
+        <InvoiceWizardReviewSection number={4} title="Daily Income payment" onEdit={onEditPayment}>
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+            <div>
+              <p className="font-medium text-foreground">Registration confirmed</p>
+              <p className="text-muted-foreground">
+                Initial payment: {formatInvoiceMoney(Number(values.amountPaid) || 0)}
+              </p>
+            </div>
+          </div>
+        </InvoiceWizardReviewSection>
+      ) : null}
+
+      <InvoiceWizardReviewSection number={showPaymentSection ? 5 : 4} title="Review & save invoice">
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Review your items below. When you are ready, save the invoice from the action bar.
@@ -252,6 +269,8 @@ export function InvoiceFormPreviewStep({
   values,
   appearance = "default",
   onEditStep,
+  showPaymentSection = false,
+  onEditPayment,
 }: Props) {
   const isWizard = appearance === "wizard";
   const { subtotal, discount, amountPaid, balance, lineItemRows, catalogItems, containerLabel, pickupLabel, routeLabel } =
@@ -259,7 +278,12 @@ export function InvoiceFormPreviewStep({
 
   if (isWizard) {
     return (
-      <InvoiceWizardCheckoutReview values={values} onEditStep={onEditStep} />
+      <InvoiceWizardCheckoutReview
+        values={values}
+        onEditStep={onEditStep}
+        showPaymentSection={showPaymentSection}
+        onEditPayment={onEditPayment}
+      />
     );
   }
 

@@ -16,6 +16,7 @@ type Props = {
   values: InvoiceFormValues;
   className?: string;
   onDiscountChange?: (discount: string) => void;
+  showPayment?: boolean;
 };
 
 const summaryPanelClassName =
@@ -196,6 +197,7 @@ function SummaryDiscountControl({
 function InvoiceSummaryCard({
   values,
   onDiscountChange,
+  showPayment = false,
   defaultExpanded = true,
 }: Props & { defaultExpanded?: boolean }) {
   const [summaryOpen, setSummaryOpen] = useState(defaultExpanded);
@@ -261,7 +263,7 @@ function InvoiceSummaryCard({
               ) : null}
             </div>
 
-            {showPaidAdjustment ? (
+            {showPaidAdjustment && !showPayment ? (
               <div className={cn("pt-1", summaryDividerClassName)}>
                 <SummaryLineRow label="Paid" value={`−${formatInvoiceMoney(amountPaid)}`} muted />
               </div>
@@ -274,10 +276,17 @@ function InvoiceSummaryCard({
                 discountAmount={discount}
                 onDiscountChange={onDiscountChange}
               />
+              {showPayment ? (
+                <div className="text-emerald-700 dark:text-emerald-400">
+                  <SummaryLineRow label="Payment" value={formatInvoiceMoney(amountPaid)} />
+                </div>
+              ) : null}
             </div>
 
             <div className={cn("flex items-end justify-between gap-3 pt-1", summaryDividerClassName)}>
-              <span className="text-sm font-bold text-foreground">Total</span>
+              <span className="text-sm font-bold text-foreground">
+                {showPayment ? "Balance due" : "Total"}
+              </span>
               <span className="text-xl font-bold leading-none text-foreground">
                 {formatInvoiceMoney(balance)}
               </span>
@@ -285,7 +294,9 @@ function InvoiceSummaryCard({
           </div>
         ) : (
           <div className={cn("flex items-center justify-between px-4 pb-4 pt-1", summaryDividerClassName)}>
-            <span className="text-sm font-bold text-foreground">Total</span>
+            <span className="text-sm font-bold text-foreground">
+              {showPayment ? "Balance due" : "Total"}
+            </span>
             <span className="text-lg font-bold text-foreground">{formatInvoiceMoney(balance)}</span>
           </div>
         )}
@@ -299,6 +310,7 @@ export function InvoiceWizardSummarySidebar({
   values,
   className,
   onDiscountChange,
+  showPayment,
 }: Props) {
   return (
     <aside
@@ -308,7 +320,11 @@ export function InvoiceWizardSummarySidebar({
         className,
       )}
     >
-      <InvoiceSummaryCard values={values} onDiscountChange={onDiscountChange} />
+      <InvoiceSummaryCard
+        values={values}
+        onDiscountChange={onDiscountChange}
+        showPayment={showPayment}
+      />
     </aside>
   );
 }
@@ -318,6 +334,7 @@ export function InvoiceWizardSummaryMobileBar({
   values,
   className,
   onDiscountChange,
+  showPayment,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const { balance } = useInvoiceTotals(values);
@@ -332,6 +349,7 @@ export function InvoiceWizardSummaryMobileBar({
           <InvoiceSummaryCard
             values={values}
             onDiscountChange={onDiscountChange}
+            showPayment={showPayment}
             defaultExpanded
           />
           <button
