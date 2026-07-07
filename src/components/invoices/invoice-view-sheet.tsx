@@ -298,7 +298,13 @@ export function InvoiceViewSheet({
           </RecordViewSheetSection>
 
           <PartySection title="Sender" party={invoice.sender} />
-          <PartySection title="Receiver" party={invoice.receiver} />
+          {invoice.receivers.length === 0 ? null : invoice.receivers.length === 1 ? (
+            <PartySection title="Receiver" party={invoice.receivers[0]!} />
+          ) : (
+            invoice.receivers.map((party, index) => (
+              <PartySection key={`${party.id}-${index}`} title={`Receiver ${index + 1}`} party={party} />
+            ))
+          )}
 
           <RecordViewSheetSection title={`Items (${invoice.lineItems.length})`} padding="relaxed">
             <div className="overflow-x-auto">

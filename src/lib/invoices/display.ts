@@ -3,7 +3,7 @@ import { getContainerById } from "@/lib/containers/mock-data";
 import { formatItemPrice } from "@/lib/items/display";
 import { getBranchLabel } from "@/lib/vehicles/display";
 import type { Invoice, InvoiceLineItem, InvoicePaymentLocation, InvoicePaymentMethod } from "./types";
-import { INVOICE_PAYMENT_METHODS, getInvoiceBalanceAmount, getInvoiceTotal } from "./types";
+import { INVOICE_PAYMENT_METHODS, getInvoiceBalanceAmount, getInvoicePrimaryReceiver, getInvoiceTotal } from "./types";
 import { getOrderPartyAddress } from "./types";
 import { formatAddressLine } from "@/lib/customers/display";
 
@@ -108,7 +108,8 @@ export function getContainerLabelForInvoice(
   return "—";
 }
 
-export function formatInvoicePartySummary(party: Invoice["sender"]): string {
+export function formatInvoicePartySummary(party: Invoice["sender"] | undefined): string {
+  if (!party?.name?.trim()) return "—";
   const address = getOrderPartyAddress(party);
   const addressLine = address ? formatAddressLine(address) : "—";
   return `${party.name} · ${addressLine}`;
@@ -151,7 +152,7 @@ export function invoiceMatchesQuery(invoice: Invoice, query: string): boolean {
     getInvoicePaidStatusLabel(resolveInvoicePaidStatus(invoice)),
     getContainerLabelForInvoice(invoice),
     formatInvoicePartySummary(invoice.sender),
-    formatInvoicePartySummary(invoice.receiver),
+    formatInvoicePartySummary(getInvoicePrimaryReceiver(invoice)),
     invoice.lineItems.map(formatLineItemSummary).join(" "),
     invoice.comments.map((comment) => comment.description).join(" "),
     invoice.comments.map((comment) => comment.createdBy).join(" "),

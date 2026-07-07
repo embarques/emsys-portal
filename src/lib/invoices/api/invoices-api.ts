@@ -52,12 +52,15 @@ import type { TableFilterRowState } from "@/lib/table/filter-builder";
 const INVOICE_LIST_SEARCH_FIELD = "number";
 
 type ApiAddress = {
+  id?: string;
   address1?: string;
   address2?: string;
+  apartment?: string;
   city?: string;
   state?: string;
   country?: string;
   zipcode?: string;
+  isPrimary?: boolean;
 };
 
 type ApiInvoicePhone = {
@@ -72,6 +75,7 @@ type ApiInvoiceParty = {
   name?: string;
   phones?: ApiInvoicePhone[];
   address?: ApiAddress;
+  addresses?: ApiAddress[];
 };
 
 type ApiInvoiceUser = {
@@ -155,6 +159,8 @@ type ApiInvoice = {
   pickup?: ApiInvoicePickup;
   comments?: ApiInvoiceComment[];
   sender?: ApiInvoiceParty;
+  receivers?: ApiInvoiceParty[];
+  /** @deprecated Legacy responses only — prefer `receivers`. */
   receiver?: ApiInvoiceParty;
   invoiceDetails?: ApiInvoiceDetail[];
 };
@@ -183,6 +189,61 @@ function readInvoiceCreatedBy(user: unknown): string {
   return String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim() || DEFAULT_CREATED_BY;
 }
 
+function normalizeApiInvoicePartyAddresses(party: ApiInvoiceParty): OrderParty["addresses"] {
+  const rawAddresses = Array.isArray(party.addresses) ? party.addresses : [];
+  const mapped = rawAddresses
+    .map((address, index) => {
+      const addressId = readStringId(address.id) ?? createRecordId();
+      const streetAddress = String(address.address1 ?? "").trim();
+      const city = String(address.city ?? "").trim();
+      const state = String(address.state ?? "").trim();
+      const zipCode = String(address.zipcode ?? "").trim();
+      const apt = String(address.address2 ?? address.apartment ?? "").trim();
+
+      if (!streetAddress && !city && !state && !zipCode && !apt) {
+        return null;
+      }
+
+      return {
+        id: addressId,
+        streetAddress,
+        apt: apt || undefined,
+        city,
+        state,
+        provinceCountry: String(address.country ?? "").trim(),
+        zipCode,
+        isPrimary: address.isPrimary === true || index === 0,
+      };
+    })
+    .filter((address): address is NonNullable<typeof address> => address != null);
+
+  if (mapped.length > 0) {
+    return mapped.map((address, index) => ({
+      ...address,
+      isPrimary: mapped.some((entry) => entry.isPrimary) ? address.isPrimary : index === 0,
+    }));
+  }
+
+  const address = party.address;
+  if (!address || typeof address !== "object") {
+    return [];
+  }
+
+  const addressId = readStringId(address.id) ?? createRecordId();
+  return [
+    {
+      id: addressId,
+      streetAddress: String(address.address1 ?? "").trim(),
+      apt: String(address.address2 ?? address.apartment ?? "").trim() || undefined,
+      city: String(address.city ?? "").trim(),
+      state: String(address.state ?? "").trim(),
+      provinceCountry: String(address.country ?? "").trim(),
+      zipCode: String(address.zipcode ?? "").trim(),
+      isPrimary: true,
+    },
+  ];
+}
+
 function normalizeApiInvoiceParty(raw: unknown): OrderParty {
   if (!raw || typeof raw !== "object") {
     const empty = createEmptyOrderParty();
@@ -196,24 +257,7 @@ function normalizeApiInvoiceParty(raw: unknown): OrderParty {
   }
 
   const party = raw as ApiInvoiceParty;
-  const addressId = createRecordId();
-  const address = party.address;
-
-  const addresses =
-    address && typeof address === "object"
-      ? [
-          {
-            id: addressId,
-            streetAddress: String(address.address1 ?? "").trim(),
-            apt: String(address.address2 ?? "").trim() || undefined,
-            city: String(address.city ?? "").trim(),
-            state: String(address.state ?? "").trim(),
-            provinceCountry: String(address.country ?? "").trim(),
-            zipCode: String(address.zipcode ?? "").trim(),
-            isPrimary: true,
-          },
-        ]
-      : [];
+  const addresses = normalizeApiInvoicePartyAddresses(party);
 
   const id = readStringId(party.id) ?? createRecordId();
   const phones = Array.isArray(party.phones)
@@ -241,8 +285,20 @@ function normalizeApiInvoiceParty(raw: unknown): OrderParty {
     name: String(party.name ?? "").trim() || "—",
     phones,
     addresses,
-    orderAddressId: addresses[0]?.id ?? addressId,
+    orderAddressId: addresses.find((address) => address.isPrimary)?.id ?? addresses[0]?.id ?? id,
   };
+}
+
+function normalizeApiInvoiceReceivers(item: ApiInvoice): OrderParty[] {
+  if (Array.isArray(item.receivers)) {
+    return item.receivers.map((entry) => normalizeApiInvoiceParty(entry));
+  }
+
+  if (item.receiver) {
+    return [normalizeApiInvoiceParty(item.receiver)];
+  }
+
+  return [];
 }
 
 function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
@@ -373,7 +429,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     branch: item.branch,
     pickupId: item.pickup?.id != null ? String(item.pickup.id) : undefined,
     sender: normalizeApiInvoiceParty(item.sender),
-    receiver: normalizeApiInvoiceParty(item.receiver),
+    receivers: normalizeApiInvoiceReceivers(item),
     lineItems,
     comments: normalizeInvoiceComments(item.comments ?? item.pickup?.comments),
     activity: [],
@@ -710,7 +766,7 @@ type ApiInvoiceWritePayload = {
   employee: InvoiceWriteContext["employee"];
   container: InvoiceWriteContext["container"];
   sender: ApiInvoiceCustomerWriteRef;
-  receiver?: ApiInvoiceCustomerWriteRef;
+  receivers?: ApiInvoiceCustomerWriteRef[];
   pickup?: { id: string | number };
   invoiceDetails: ApiInvoiceDetailWriteRef[];
   isVoid?: boolean;
@@ -862,7 +918,7 @@ function buildInvoiceWritePayload(
   };
 
   if (values.receiver) {
-    payload.receiver = buildInvoiceCustomerWriteRef(values.receiver, CUSTOMER_TYPE_RECEIVER);
+    payload.receivers = [buildInvoiceCustomerWriteRef(values.receiver, CUSTOMER_TYPE_RECEIVER)];
   }
 
   const pickupId = values.pickupId.trim();

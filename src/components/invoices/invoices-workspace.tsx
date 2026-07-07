@@ -93,6 +93,7 @@ import {
   computeTotalPayments,
   DEFAULT_INVOICE_LIST_PARAMS,
   getInvoiceRecordId,
+  getInvoicePrimaryReceiver,
   type Invoice,
   type InvoiceFilterState,
   type InvoicePaymentInput,
@@ -492,7 +493,8 @@ export function InvoicesWorkspace() {
       id: "receiver",
       label: "Receiver",
       sortField: "receiver.name",
-      renderCell: (invoice) => formatInvoicePartySummary(invoice.receiver),
+      renderCell: (invoice) =>
+        formatInvoicePartySummary(getInvoicePrimaryReceiver(invoice)),
     },
     {
       id: "total",

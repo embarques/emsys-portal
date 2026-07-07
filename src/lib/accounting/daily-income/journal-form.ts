@@ -38,11 +38,21 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     invoiceNumber: row.invoice?.number ?? "",
     invoiceCost: row.invoice?.cost,
     includeSender: Boolean(row.invoice?.sender?.id),
-    includeReceiver: Boolean(row.invoice?.receiver?.id),
+    includeReceiver: Boolean(
+      row.invoice?.receiver?.id ??
+        row.invoice?.receivers?.find((receiver) => receiver?.id)?.id,
+    ),
     senderId: row.invoice?.sender?.id != null ? String(row.invoice.sender.id) : undefined,
     senderName: row.invoice?.sender?.name,
-    receiverId: row.invoice?.receiver?.id != null ? String(row.invoice.receiver.id) : undefined,
-    receiverName: row.invoice?.receiver?.name,
+    receiverId:
+      row.invoice?.receiver?.id != null
+        ? String(row.invoice.receiver.id)
+        : row.invoice?.receivers?.find((receiver) => receiver?.id)?.id != null
+          ? String(row.invoice.receivers.find((receiver) => receiver?.id)!.id)
+          : undefined,
+    receiverName:
+      row.invoice?.receiver?.name ??
+      row.invoice?.receivers?.find((receiver) => receiver?.name)?.name,
     paymentMethodId: row.paymentMethod?.id,
     paymentMethodName: row.paymentMethod?.name,
     zelleTransactionDate: row.zelleTransactionDate,

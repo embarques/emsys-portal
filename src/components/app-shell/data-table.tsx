@@ -400,7 +400,7 @@ function DataTableContent<T>({
                 >
                   {selectable ? (
                     <td
-                      className={cn("px-4 py-3", renderSelectCellActions ? "w-24" : "w-14")}
+                      className={cn("px-4 py-3 align-top", renderSelectCellActions ? "w-24" : "w-14")}
                       onClick={(event) => event.stopPropagation()}
                     >
                       <div className="flex items-center gap-1">
@@ -427,8 +427,8 @@ function DataTableContent<T>({
                       key={column.id}
                       style={{ width: getColumnWidth(column.id) }}
                       className={cn(
-                        "px-2 py-3",
-                        column.truncateCell === false ? "whitespace-normal align-top" : "overflow-hidden",
+                        "px-2 py-3 align-top",
+                        column.truncateCell === false ? "whitespace-normal" : "overflow-hidden",
                         column.cellClassName,
                       )}
                       onClick={column.stopRowClick ? (event) => event.stopPropagation() : undefined}

@@ -31,7 +31,7 @@ import {
 } from "@/lib/accounting/types";
 import { todayDateInputValue } from "@/lib/orders/types";
 import { formatInvoiceMoney, getInvoiceBalance, getInvoiceSubtotal } from "@/lib/invoices/display";
-import { INVOICE_PAYMENT_METHODS, type Invoice } from "@/lib/invoices/types";
+import { INVOICE_PAYMENT_METHODS, getInvoicePrimaryReceiverName, type Invoice } from "@/lib/invoices/types";
 import { formatRouteCopyLabel } from "@/lib/route-manager/display";
 import type { Route } from "@/lib/route-manager/types";
 
@@ -115,7 +115,7 @@ export function AccountingEntryForm({
       invoiceId: matched?.invoiceId ?? "",
       invoiceTotal: matched ? String(getInvoiceTotalForAccounting(matched)) : current.invoiceTotal,
       senderName: matched?.sender.name ?? current.senderName,
-      receiverName: matched?.receiver.name ?? current.receiverName,
+      receiverName: matched ? getInvoicePrimaryReceiverName(matched) : current.receiverName,
       branch: matched?.paymentLocation ?? current.branch,
     }));
   }

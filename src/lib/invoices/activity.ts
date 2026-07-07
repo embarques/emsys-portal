@@ -3,6 +3,7 @@ import { createRecordId } from "@/lib/customers/types";
 import { formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
 import {
   computeInvoiceSubtotal,
+  getInvoicePrimaryReceiver,
   type Invoice,
   type InvoiceActivityAction,
   type InvoiceActivityEntry,
@@ -101,7 +102,9 @@ export function buildInvoiceUpdateActivities(
     );
   }
   if (previous.sender.name !== next.sender.name) changedFields.push("sender");
-  if (previous.receiver.name !== next.receiver.name) changedFields.push("receiver");
+  const previousReceiver = getInvoicePrimaryReceiver(previous);
+  const nextReceiver = getInvoicePrimaryReceiver(next);
+  if ((previousReceiver?.name ?? "") !== (nextReceiver?.name ?? "")) changedFields.push("receiver");
 
   const previousSubtotal = computeInvoiceSubtotal(previous.lineItems);
   const nextSubtotal = computeInvoiceSubtotal(next.lineItems);

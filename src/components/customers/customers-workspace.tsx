@@ -8,6 +8,7 @@ import {
   Search,
   Trash2,
   UserCheck,
+  UserRound,
   Users,
 } from "lucide-react";
 
@@ -225,6 +226,10 @@ export function CustomersWorkspace() {
     setFormError(null);
   }
 
+  function openViewCustomer(customer: Customer) {
+    setViewCustomer(customer);
+  }
+
   async function saveCustomer(values: CustomerFormValues) {
     setFormError(null);
 
@@ -375,10 +380,35 @@ export function CustomersWorkspace() {
   const tableColumns: DataTableColumn<Customer>[] = useMemo(
     () => [
     {
+      id: "actions",
+      label: t("customers.workspace.actionsColumn"),
+      hideable: false,
+      sortable: false,
+      truncateCell: false,
+      stopRowClick: true,
+      cellClassName: "align-top overflow-visible",
+      renderCell: (customer) => (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+          aria-label={t("customers.workspace.viewCustomerFor", { name: customer.name })}
+          title={t("customers.workspace.viewCustomer")}
+          onClick={(event) => {
+            event.stopPropagation();
+            openViewCustomer(customer);
+          }}
+        >
+          <UserRound className="size-3.5" />
+        </Button>
+      ),
+    },
+    {
       id: "customerType",
       label: t("customers.columns.customerType"),
       truncateCell: false,
-      cellClassName: "overflow-visible",
+      cellClassName: "align-top overflow-visible",
       renderCell: (customer) => {
         const clientType = getCustomerClientType(customer) ?? "sender";
         const typeLabel = isCustomerReceiverType(customer.customerType)
@@ -408,6 +438,7 @@ export function CustomersWorkspace() {
     {
       id: "IDNumber",
       label: t("customers.columns.IDNumber"),
+      cellClassName: "align-top",
       renderCell: (customer) => customer.IDNumber || t("common.empty.dash"),
     },
     {
@@ -417,43 +448,46 @@ export function CustomersWorkspace() {
       defaultWidth: 225,
       autoFitColumn: false,
       truncateCell: false,
+      stopRowClick: true,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
       renderCell: (customer) => <CustomerTableAddressCell customer={customer} />,
     },
     {
       id: "email",
       label: t("customers.columns.email"),
+      cellClassName: "align-top",
       renderCell: (customer) => customer.email || t("common.empty.dash"),
     },
     {
       id: "accountBalance",
       label: t("customers.columns.accountBalance"),
+      cellClassName: "align-top",
       renderCell: (customer) => formatAccountBalance(customer.accountBalance),
     },
     {
       id: "notes",
       label: t("customers.columns.notes"),
-      cellClassName: "max-w-[240px] truncate",
+      cellClassName: "max-w-[240px] truncate align-top",
       renderCell: (customer) => customer.notes || t("common.empty.dash"),
     },
     {
       id: "createdByID",
       label: t("customers.columns.createdByID"),
-      cellClassName: "text-muted-foreground",
+      cellClassName: "align-top text-muted-foreground",
       renderCell: (customer) =>
         customer.createdByID != null ? String(customer.createdByID) : t("common.empty.dash"),
     },
     {
       id: "createdAt",
       label: t("common.audit.dateCreated"),
-      cellClassName: "text-muted-foreground",
+      cellClassName: "align-top text-muted-foreground",
       renderCell: (customer) =>
         customer.createdAt ? formatAuditDateTime(customer.createdAt) : t("common.empty.dash"),
     },
     {
       id: "updatedAt",
       label: t("common.audit.dateModified"),
-      cellClassName: "text-muted-foreground",
+      cellClassName: "align-top text-muted-foreground",
       renderCell: (customer) =>
         customer.updatedAt ? formatAuditDateTime(customer.updatedAt) : t("common.empty.dash"),
     },
@@ -623,7 +657,6 @@ export function CustomersWorkspace() {
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
-            onRowClick={setViewCustomer}
             onRowDoubleClick={canUpdateCustomers ? openEditForm : undefined}
             emptyState={
               <>

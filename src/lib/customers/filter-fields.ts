@@ -6,7 +6,7 @@ import {
 import { CUSTOMER_ADDRESS_COUNTRY_FILTER_OPTIONS } from "@/lib/customers/customer-country";
 import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 
-const TEXT_FIELDS = new Set(["name", "email", "IDNumber", "id", "addresses.address1"]);
+const TEXT_FIELDS = new Set(["name", "email", "IDNumber", "id", "address.address1"]);
 
 const TEXT_FILTER_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
 

@@ -17,7 +17,7 @@ import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type 
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import type { Employee } from "@/lib/employees/types";
-import { getInvoiceBalanceAmount, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
+import { getInvoiceBalanceAmount, getInvoicePrimaryReceiver, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
 import { cn } from "@/lib/utils";
 
 const selectClassName =
@@ -135,13 +135,14 @@ export function DailyIncomeTransactionForm({
   const invoiceOptions = useMemo(
     () =>
       invoices.map((invoice) => {
-        const phones = [...(invoice.sender?.phones ?? []), ...(invoice.receiver?.phones ?? [])];
+        const primaryReceiver = getInvoicePrimaryReceiver(invoice);
+        const phones = [...(invoice.sender?.phones ?? []), ...(primaryReceiver?.phones ?? [])];
         const phoneKeywords = phones.flatMap((phone) =>
           [phone.number, phone.displayNumber].filter((value): value is string => Boolean(value)),
         );
         const descriptionLines = [
           invoice.sender?.name ? `Sender: ${invoice.sender.name}` : null,
-          invoice.receiver?.name ? `Receiver: ${invoice.receiver.name}` : null,
+          primaryReceiver?.name ? `Receiver: ${primaryReceiver.name}` : null,
         ].filter((line): line is string => Boolean(line));
         return {
           value: invoice.invoiceId,
@@ -150,7 +151,7 @@ export function DailyIncomeTransactionForm({
           keywords: [
             invoice.invoiceNumber,
             invoice.sender?.name ?? "",
-            invoice.receiver?.name ?? "",
+            primaryReceiver?.name ?? "",
             ...phoneKeywords,
           ].filter(Boolean),
         };

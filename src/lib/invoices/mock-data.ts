@@ -28,7 +28,7 @@ export const MOCK_INVOICES: Invoice[] = [
       ],
       orderAddressId: "ipa-001",
     },
-    receiver: {
+    receivers: [{
       id: "party-ir-001",
       clientId: "b2c3d4e5-f6a7-8901-bcde-f12345678901",
       name: "María Rodríguez",
@@ -45,7 +45,7 @@ export const MOCK_INVOICES: Invoice[] = [
         },
       ],
       orderAddressId: "ipa-002",
-    },
+    }],
     lineItems: [
       {
         id: "ili-001",
@@ -198,7 +198,7 @@ export const MOCK_INVOICES: Invoice[] = [
       ],
       orderAddressId: "ipa-003",
     },
-    receiver: {
+    receivers: [{
       id: "party-ir-002",
       clientId: "d4e5f6a7-b8c9-0123-def0-234567890123",
       name: "Carlos Méndez",
@@ -213,7 +213,7 @@ export const MOCK_INVOICES: Invoice[] = [
         },
       ],
       orderAddressId: "ipa-004",
-    },
+    }],
     lineItems: [
       {
         id: "ili-003",
@@ -313,7 +313,7 @@ export const MOCK_INVOICES: Invoice[] = [
       ],
       orderAddressId: "ipa-005",
     },
-    receiver: {
+    receivers: [{
       id: "party-ir-003",
       clientId: "f6a7b8c9-d0e1-2345-f012-456789012345",
       name: "Ana Lucía Pérez",
@@ -329,7 +329,7 @@ export const MOCK_INVOICES: Invoice[] = [
         },
       ],
       orderAddressId: "ipa-006",
-    },
+    }],
     lineItems: [
       {
         id: "ili-005",
@@ -408,11 +408,11 @@ export function cloneInvoices(): Invoice[] {
       phones: invoice.sender.phones.map((phone) => ({ ...phone })),
       addresses: invoice.sender.addresses.map((address) => ({ ...address })),
     },
-    receiver: {
-      ...invoice.receiver,
-      phones: invoice.receiver.phones.map((phone) => ({ ...phone })),
-      addresses: invoice.receiver.addresses.map((address) => ({ ...address })),
-    },
+    receivers: invoice.receivers.map((receiver) => ({
+      ...receiver,
+      phones: receiver.phones.map((phone) => ({ ...phone })),
+      addresses: receiver.addresses.map((address) => ({ ...address })),
+    })),
     lineItems: invoice.lineItems.map((item) => ({ ...item })),
     comments: invoice.comments.map((comment) => ({ ...comment })),
     activity: invoice.activity.map((entry) => ({ ...entry })),

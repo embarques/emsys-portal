@@ -3,6 +3,7 @@ import { createRecordId } from "@/lib/customers/types";
 import {
   createInvoicePayment,
   computeInvoiceSubtotal,
+  getInvoicePrimaryReceiverName,
   type Invoice,
   type InvoicePaymentMethod,
 } from "@/lib/invoices/types";
@@ -300,7 +301,9 @@ export function formValuesToAccountingEntry(
       invoiceId: matchedInvoice?.invoiceId,
       invoiceNumber: values.invoiceNumber.trim(),
       senderName: values.senderName.trim() || matchedInvoice?.sender.name || "—",
-      receiverName: values.receiverName.trim() || matchedInvoice?.receiver.name || "—",
+      receiverName:
+        values.receiverName.trim() ||
+        (matchedInvoice ? getInvoicePrimaryReceiverName(matchedInvoice) : "—"),
       paymentMethod: values.paymentMethod,
       referenceNumber: values.referenceNumber.trim() || undefined,
       createdAt: createdAt ?? new Date().toISOString(),
@@ -342,7 +345,7 @@ export function formValuesToAccountingEntry(
       invoiceId: invoice.invoiceId,
       invoiceNumber: invoice.invoiceNumber,
       senderName: invoice.sender.name,
-      receiverName: invoice.receiver.name,
+      receiverName: getInvoicePrimaryReceiverName(invoice),
       paymentMethod: values.paymentMethod,
       receiptNumber,
       referenceNumber: receiptNumber,
@@ -384,7 +387,7 @@ export function formValuesToAccountingEntry(
       invoiceId: invoice.invoiceId,
       invoiceNumber: invoice.invoiceNumber,
       senderName: invoice.sender.name,
-      receiverName: invoice.receiver.name,
+      receiverName: getInvoicePrimaryReceiverName(invoice),
       paymentMethod: values.paymentMethod,
       receiptNumber,
       referenceNumber: receiptNumber,
