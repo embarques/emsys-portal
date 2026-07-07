@@ -42,6 +42,14 @@ export type CustomerAddressLabel =
   | "Delivery"
   | "Other";
 
+export type CustomerSearchMatchField = "name" | "phone" | "idNumber" | "email" | "address";
+
+export type CustomerSearchResult = {
+  customer: Customer;
+  matchedBy?: CustomerSearchMatchField;
+  matchedAddressId?: string;
+};
+
 export type CustomerCoreAddress = {
   id?: string;
   label?: CustomerAddressLabel;

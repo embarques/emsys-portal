@@ -1,0 +1,11 @@
+---
+description: Keep changes tightly scoped and preserve working behavior
+alwaysApply: true
+---
+
+# Change Scope Discipline
+
+- Do not change behavior that is already working unless the user explicitly asks to modify that part.
+- Keep edits tightly scoped to the request; avoid replacing adjacent components, flows, or patterns just because another implementation also works.
+- Before touching a working area that may be affected by the requested change, call out the risk and explain why that area needs to be touched.
+- When fixing one issue, preserve the current behavior of nearby features unless the user asks for a broader cleanup or refactor.

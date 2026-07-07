@@ -55,6 +55,8 @@ import {
   coreAddressHasContent,
   validateCustomerFormValues,
   type CustomerListParams,
+  type CustomerSearchMatchField,
+  type CustomerSearchResult,
 } from "@/lib/customers/types";
 import { fetchBranches } from "@/lib/branches/api/branches-api";
 import { CUSTOMER_BAR_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
@@ -79,6 +81,7 @@ type ApiAddressVerification = {
 };
 
 type ApiAddress = {
+  id?: string;
   address1?: string;
   address2?: string;
   apartment?: string;
@@ -214,6 +217,7 @@ function normalizeAddress(raw?: ApiAddress, isPrimary = false): CustomerCoreAddr
   const primaryFlag = raw?.isPrimary ?? raw?.is_primary;
 
   return {
+    id: String(address.id ?? "").trim() || undefined,
     address1: String(address.address1 ?? "").trim(),
     address2: String(address.address2 ?? "").trim(),
     apartment: String(address.apartment ?? "").trim(),
@@ -804,6 +808,96 @@ export async function updateCustomerAddressGoogleVerification(
   assertMutationSuccess(response, "Unable to update address verification.");
 
   return extractCustomerFromMutationResponse(response.data) ?? fetchCustomerById(customerId);
+}
+
+type ApiCustomerSearchResult = {
+  customer?: unknown;
+  matchedBy?: string;
+  matched_by?: string;
+  matchedAddressId?: string;
+  matched_address_id?: string;
+};
+
+const CUSTOMER_SEARCH_MATCH_FIELDS: CustomerSearchMatchField[] = [
+  "name",
+  "phone",
+  "idNumber",
+  "email",
+  "address",
+];
+
+function normalizeCustomerSearchMatchField(raw?: string): CustomerSearchMatchField | undefined {
+  const value = String(raw ?? "").trim();
+  if (!value) return undefined;
+
+  return CUSTOMER_SEARCH_MATCH_FIELDS.find(
+    (field) => field.toLowerCase() === value.toLowerCase(),
+  );
+}
+
+function normalizeCustomerSearchResult(raw: unknown): CustomerSearchResult | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const item = raw as ApiCustomerSearchResult;
+  const customer = normalizeApiCustomer(item.customer ?? raw);
+  if (!customer) return null;
+
+  const matchedBy = normalizeCustomerSearchMatchField(item.matchedBy ?? item.matched_by);
+  const matchedAddressId = String(item.matchedAddressId ?? item.matched_address_id ?? "").trim();
+
+  return {
+    customer,
+    matchedBy,
+    matchedAddressId: matchedAddressId || undefined,
+  };
+}
+
+export type CustomerAutocompleteParams = {
+  q: string;
+  customerType: "sender" | "receiver";
+  limit?: number;
+};
+
+/** GET /customers/autocomplete — address-aware customer search for party pickers. */
+export async function fetchCustomerAutocomplete(
+  params: CustomerAutocompleteParams,
+): Promise<CustomerSearchResult[]> {
+  const query = params.q.trim();
+  if (!query) return [];
+
+  const limit = params.limit ?? 20;
+
+  const searchParams = new URLSearchParams({
+    q: query,
+    customerType: params.customerType,
+    limit: String(limit),
+  });
+
+  try {
+    const response = await apiClient.get<
+      ApiCustomerSearchResult[] | PaginatedApiEnvelope<ApiCustomerSearchResult[]>
+    >(`${API_ENDPOINTS.CUSTOMERS_AUTOCOMPLETE}?${searchParams.toString()}`);
+
+    const rawItems = Array.isArray(response)
+      ? response
+      : Array.isArray((response as PaginatedApiEnvelope<ApiCustomerSearchResult[]>).data)
+        ? ((response as PaginatedApiEnvelope<ApiCustomerSearchResult[]>).data ?? [])
+        : [];
+
+    return rawItems
+      .map(normalizeCustomerSearchResult)
+      .filter((entry): entry is CustomerSearchResult => entry != null);
+  } catch {
+    const customerType = params.customerType === "sender" ? 1 : 2;
+    const fallback = await fetchCustomers({
+      ...DEFAULT_CUSTOMER_LIST_PARAMS,
+      limit,
+      search: { field: "name", operator: "contains", value: query },
+      customerType,
+    });
+
+    return fallback.items.map((customer) => ({ customer }));
+  }
 }
 
 export async function fetchCustomerById(customerId: string): Promise<Customer> {
