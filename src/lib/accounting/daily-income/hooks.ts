@@ -93,17 +93,14 @@ export function useDailyIncomeJournals(params: DailyIncomeJournalListParams) {
 }
 
 export function useDailyIncomeInvoiceRegistration(
-  incomeStatementId: number,
   invoiceNumber: string,
 ) {
   const normalizedNumber = invoiceNumber.trim();
-  const queryEnabled = useAccountingQueryEnabled(
-    incomeStatementId > 0 && Boolean(normalizedNumber),
-  );
+  const queryEnabled = useAccountingQueryEnabled(Boolean(normalizedNumber));
 
   return useWorkspaceQuery({
-    queryKey: queryKeys.accounting.invoiceRegistration(incomeStatementId, normalizedNumber),
-    queryFn: () => fetchDailyIncomeInvoiceRegistration(incomeStatementId, normalizedNumber),
+    queryKey: queryKeys.accounting.invoiceRegistration(normalizedNumber),
+    queryFn: () => fetchDailyIncomeInvoiceRegistration(normalizedNumber),
     enabled: queryEnabled,
   });
 }

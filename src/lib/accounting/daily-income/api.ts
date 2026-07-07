@@ -423,11 +423,10 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
 
 /** Find the initial Daily Income registration that authorizes a new invoice. */
 export async function fetchDailyIncomeInvoiceRegistration(
-  incomeStatementId: number,
   invoiceNumber: string,
 ): Promise<DailyIncomeJournal | null> {
   const number = invoiceNumber.trim();
-  if (!incomeStatementId || !number) return null;
+  if (!number) return null;
 
   const payload = await apiClient.post<ApiEnvelope>(
     `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search`,
@@ -436,7 +435,6 @@ export async function fetchDailyIncomeInvoiceRegistration(
       limit: 1,
       sort: { field: "createdAt", direction: "desc" },
       filters: [
-        { field: "incomeStatement.id", operator: "eq", value: incomeStatementId },
         { field: "invoice.number", operator: "eq", value: number },
         { field: "transactionType", operator: "eq", value: "INITIAL-PAYMENT" },
       ],

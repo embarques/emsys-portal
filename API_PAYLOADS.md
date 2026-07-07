@@ -585,7 +585,6 @@ POST /v1/journals/search
 {
   "operator": "and",
   "filters": [
-    { "field": "incomeStatement.id", "operator": "eq", "value": 123 },
     { "field": "invoice.number", "operator": "eq", "value": "INV-1001" },
     { "field": "transactionType", "operator": "eq", "value": "INITIAL-PAYMENT" }
   ],
@@ -594,7 +593,9 @@ POST /v1/journals/search
 }
 ```
 
-When missing, the wizard creates the registration with `POST /v1/journals`. A zero payment is valid and does not require `paymentMethod` or `paymentAccount`:
+This lookup is global within the authenticated company. It is not restricted by Daily Income date or status; a historical registration, including one in a closed Daily Income, authorizes the invoice to continue.
+
+When missing, the wizard may create the registration only in today's open Daily Income for the current branch. A zero payment is valid and does not require `paymentMethod` or `paymentAccount`:
 
 ```json
 {

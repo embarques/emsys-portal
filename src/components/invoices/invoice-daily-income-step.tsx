@@ -21,17 +21,23 @@ type Props = {
   onRegistrationChange: (registration: DailyIncomeJournal | null) => void;
 };
 
+function todayDateValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const currentUserQuery = useCurrentUser();
   const branchId = currentUserQuery.data?.branch.id ?? 0;
-  const statementQuery = useIncomeStatement(branchId, values.date);
-  const statement = statementQuery.data ?? null;
-  const registrationQuery = useDailyIncomeInvoiceRegistration(
-    statement?.id ?? 0,
-    values.invoiceNumber,
-  );
+  const currentDate = todayDateValue();
+  const registrationQuery = useDailyIncomeInvoiceRegistration(values.invoiceNumber);
   const registration = registrationQuery.data ?? null;
+  const statementQuery = useIncomeStatement(branchId, currentDate);
+  const statement = statementQuery.data ?? null;
 
   useEffect(() => {
     if (!registrationQuery.isSuccess) return;
@@ -40,16 +46,23 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
 
   const isLoading =
     currentUserQuery.isLoading ||
-    statementQuery.isLoading ||
-    (Boolean(statement) && registrationQuery.isLoading);
-  const queryError = currentUserQuery.error ?? statementQuery.error ?? registrationQuery.error;
-  const dailyIncomeHref = `/accounting/daily-income?date=${encodeURIComponent(values.date)}${
+    registrationQuery.isLoading ||
+    (!registration && statementQuery.isLoading);
+  const queryError =
+    currentUserQuery.error ??
+    registrationQuery.error ??
+    (!registration ? statementQuery.error : null);
+  const dailyIncomeHref = `/accounting/daily-income?date=${encodeURIComponent(currentDate)}${
     branchId ? `&branchId=${branchId}` : ""
   }&invoice=${encodeURIComponent(values.invoiceNumber)}`;
 
   async function handleRegistered(journal: DailyIncomeJournal) {
     onRegistrationChange(journal);
     await registrationQuery.refetch();
+  }
+
+  async function refreshMissingRegistration() {
+    await Promise.all([registrationQuery.refetch(), statementQuery.refetch()]);
   }
 
   if (isLoading) {
@@ -73,7 +86,7 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
             </div>
           </div>
         </div>
-      ) : registration && statement ? (
+      ) : registration ? (
         <>
           <div className="rounded-lg border border-emerald-300 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
             <div className="flex items-start gap-3">
@@ -83,8 +96,8 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
                   Daily income entry found
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
-                  <span>Daily income #{statement.id} · Open</span>
-                  <span>{statement.date} · {statement.branch?.name || statement.branch?.code || "Current branch"}</span>
+                  <span>Daily income #{registration.incomeStatementId}</span>
+                  <span>{registration.date || "Previously registered"}</span>
                   <span>Payment recorded: {formatInvoiceMoney(registration.amount)}</span>
                   {registration.paymentMethod?.name ? <span>{registration.paymentMethod.name}</span> : null}
                   {registration.refNumber ? <span>Reference: {registration.refNumber}</span> : null}
@@ -121,10 +134,10 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
                 <p className="font-semibold text-destructive">Daily income entry required</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {statement?.status === "CLOSED"
-                    ? "The Daily Income for this date and branch is closed. Reopen it before registering this invoice."
+                    ? "Today’s Daily Income is closed. Reopen it before registering a new payment for this invoice."
                     : statement
                       ? "This invoice cannot be created until it is registered in Daily Income."
-                      : "No Daily Income exists for this date and branch. Create it before registering this invoice."}
+                      : "No Daily Income exists for today and the current branch. Create it before registering this invoice."}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
@@ -139,17 +152,10 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
                     <ExternalLink className="size-4" />
                   </Link>
                 </Button>
-                {statement ? (
-                  <Button type="button" variant="ghost" onClick={() => registrationQuery.refetch()}>
-                    <RefreshCw className="size-4" />
-                    Refresh
-                  </Button>
-                ) : (
-                  <Button type="button" variant="ghost" onClick={() => statementQuery.refetch()}>
-                    <RefreshCw className="size-4" />
-                    Refresh
-                  </Button>
-                )}
+                <Button type="button" variant="ghost" onClick={refreshMissingRegistration}>
+                  <RefreshCw className="size-4" />
+                  Refresh
+                </Button>
               </div>
             </div>
           </div>
