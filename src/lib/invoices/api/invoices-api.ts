@@ -159,9 +159,7 @@ type ApiInvoice = {
   pickup?: ApiInvoicePickup;
   comments?: ApiInvoiceComment[];
   sender?: ApiInvoiceParty;
-  receivers?: ApiInvoiceParty[];
-  /** @deprecated Legacy responses only — prefer `receivers`. */
-  receiver?: ApiInvoiceParty;
+  receiver?: ApiInvoiceParty | null;
   invoiceDetails?: ApiInvoiceDetail[];
 };
 
@@ -289,16 +287,12 @@ function normalizeApiInvoiceParty(raw: unknown): OrderParty {
   };
 }
 
-function normalizeApiInvoiceReceivers(item: ApiInvoice): OrderParty[] {
-  if (Array.isArray(item.receivers)) {
-    return item.receivers.map((entry) => normalizeApiInvoiceParty(entry));
+function normalizeApiInvoiceReceiver(item: ApiInvoice): OrderParty | null {
+  if (!item.receiver) {
+    return null;
   }
 
-  if (item.receiver) {
-    return [normalizeApiInvoiceParty(item.receiver)];
-  }
-
-  return [];
+  return normalizeApiInvoiceParty(item.receiver);
 }
 
 function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
@@ -429,7 +423,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     branch: item.branch,
     pickupId: item.pickup?.id != null ? String(item.pickup.id) : undefined,
     sender: normalizeApiInvoiceParty(item.sender),
-    receivers: normalizeApiInvoiceReceivers(item),
+    receiver: normalizeApiInvoiceReceiver(item),
     lineItems,
     comments: normalizeInvoiceComments(item.comments ?? item.pickup?.comments),
     activity: [],
@@ -766,7 +760,7 @@ type ApiInvoiceWritePayload = {
   employee: InvoiceWriteContext["employee"];
   container: InvoiceWriteContext["container"];
   sender: ApiInvoiceCustomerWriteRef;
-  receivers?: ApiInvoiceCustomerWriteRef[];
+  receiver?: ApiInvoiceCustomerWriteRef;
   pickup?: { id: string | number };
   invoiceDetails: ApiInvoiceDetailWriteRef[];
   isVoid?: boolean;
@@ -918,7 +912,7 @@ function buildInvoiceWritePayload(
   };
 
   if (values.receiver) {
-    payload.receivers = [buildInvoiceCustomerWriteRef(values.receiver, CUSTOMER_TYPE_RECEIVER)];
+    payload.receiver = buildInvoiceCustomerWriteRef(values.receiver, CUSTOMER_TYPE_RECEIVER);
   }
 
   const pickupId = values.pickupId.trim();

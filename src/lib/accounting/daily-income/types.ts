@@ -86,7 +86,6 @@ export type DailyIncomeJournal = {
     balance?: number;
     sender?: DailyIncomePartyRef;
     receiver?: DailyIncomePartyRef;
-    receivers?: DailyIncomePartyRef[];
   };
   paymentMethod?: AccountingLookup;
   zelleTransactionDate?: string;
