@@ -1,6 +1,7 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/lib/pickup-delivery-routes/api/pickup-delivery-routes-api";
 import {
   DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
+  type ActiveRoute,
   type ActiveRouteFormValues,
   type ActiveRouteListParams,
   type ActiveRouteLookupParams,
@@ -40,6 +42,34 @@ export function useActiveRoutePicker(
     enabled: options.enabled ?? true,
     staleTime: 60_000,
   });
+}
+
+/** Lookup scheduled pickup/delivery routes by vehicle-route record id. */
+export function useActiveRouteLookup(
+  routeType: RouteType,
+  limit = 200,
+  options: { enabled?: boolean } = {},
+) {
+  const query = useActiveRoutePicker(routeType, limit, options);
+  const items = useMemo(() => query.data?.items ?? [], [query.data]);
+
+  const byKey = useMemo(() => {
+    const map = new Map<string, ActiveRoute>();
+    for (const item of items) {
+      if (item.id) {
+        map.set(item.id, item);
+      }
+    }
+    return map;
+  }, [items]);
+
+  return {
+    items,
+    getByKey: (key: string | undefined): ActiveRoute | undefined =>
+      key ? byKey.get(key) : undefined,
+    isLoading: query.isLoading,
+    isError: query.isError,
+  };
 }
 
 export function useActiveRoutes(params: ActiveRouteListParams) {

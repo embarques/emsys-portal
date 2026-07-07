@@ -14,6 +14,7 @@ import {
   Plus,
   Printer,
   Route as RouteIcon,
+  RouteOff,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -69,11 +70,12 @@ import {
   getOrderBranchLabel,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
-import { buildRouteFilterOptions } from "@/lib/route-manager/display";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
-import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
+  useAssignPickupsToRoute,
+  useClearOrdersRouteAssignments,
   useCreateOrder,
   useDeleteOrders,
   useOrderStats,
@@ -92,10 +94,6 @@ import {
   type OrderFormValues,
 } from "@/lib/orders/types";
 import { useUsers } from "@/lib/users/hooks/use-users";
-import {
-  useAssignPickupsToRoute,
-  useRouteLookup,
-} from "@/lib/route-manager/hooks/use-route-manager";
 import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Label } from "@/components/ui/label";
@@ -127,6 +125,7 @@ export function OrdersWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Order | Order[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
+  const [clearRouteOpen, setClearRouteOpen] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState("");
   const listParams = useMemo(
     () =>
@@ -156,10 +155,10 @@ export function OrdersWorkspace() {
   const deleteOrdersMutation = useDeleteOrders();
   const setOrdersCompletedMutation = useSetOrdersCompleted();
   const assignRouteMutation = useAssignPickupsToRoute();
+  const clearRouteMutation = useClearOrdersRouteAssignments();
   const generatePickupReportMutation = useGeneratePickupReport();
-  const routeLookup = useRouteLookup();
+  const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
   const orderFilterFields = useOrderFilterFields();
-  const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, { enabled: assignRouteOpen });
   const orders = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalOrders = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
@@ -171,7 +170,8 @@ export function OrdersWorkspace() {
     updateOrderMutation.isPending ||
     deleteOrdersMutation.isPending ||
     setOrdersCompletedMutation.isPending ||
-    assignRouteMutation.isPending;
+    assignRouteMutation.isPending ||
+    clearRouteMutation.isPending;
   const isPrinting = generatePickupReportMutation.isPending;
 
   useTableSelectionReset(
@@ -183,15 +183,15 @@ export function OrdersWorkspace() {
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
     [orders, selectedIds],
   );
-  const routes = routeLookup.items;
-  const routeOptions = useMemo(() => buildRouteFilterOptions(routes), [routes]);
-  const pickupRoutes = pickupRoutesQuery.data?.items ?? [];
-  const assignRouteOptions = useMemo(
-    () => buildActiveRouteAssignmentOptions(pickupRoutes),
-    [pickupRoutes],
+  const selectedOrdersWithRoute = useMemo(
+    () => selectedOrders.filter((order) => Boolean(order.routeId?.trim())),
+    [selectedOrders],
   );
-  const routesLoading = routeLookup.isLoading;
-  const assignRoutesLoading = pickupRoutesQuery.isLoading;
+  const assignRouteOptions = useMemo(
+    () => buildActiveRouteAssignmentOptions(pickupRouteLookup.items, t),
+    [pickupRouteLookup.items, t],
+  );
+  const assignRoutesLoading = pickupRouteLookup.isLoading;
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const missingCompanyContext = !authLoading && !companyId;
 
@@ -340,7 +340,8 @@ export function OrdersWorkspace() {
 
     try {
       await assignRouteMutation.mutateAsync({ routeId: selectedRouteId, pickupIds });
-      const routeName = pickupRoutes.find((route) => route.id === selectedRouteId)?.name;
+      const selectedRoute = pickupRouteLookup.getByKey(selectedRouteId);
+      const routeName = selectedRoute ? formatOrderRouteName({ routeId: selectedRouteId }, selectedRoute, t) : "";
       const routeSuffix = routeName
         ? t("orders.toasts.assignedToRouteNamed", { routeName })
         : "";
@@ -353,6 +354,31 @@ export function OrdersWorkspace() {
       setSelectedRouteId("");
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
+    }
+  }
+
+  function openClearRoute() {
+    if (selectedOrdersWithRoute.length === 0) {
+      notifyError(t("orders.actions.noAssignedRoute"));
+      return;
+    }
+    setClearRouteOpen(true);
+  }
+
+  async function confirmClearRoute() {
+    if (selectedOrdersWithRoute.length === 0) return;
+
+    try {
+      const cleared = await clearRouteMutation.mutateAsync(selectedOrdersWithRoute);
+      setClearRouteOpen(false);
+      notifySuccess(
+        cleared === 1
+          ? t("orders.toasts.routeCleared", { count: cleared })
+          : t("orders.toasts.routeCleared_plural", { count: cleared }),
+      );
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+      setClearRouteOpen(false);
     }
   }
 
@@ -497,7 +523,7 @@ export function OrdersWorkspace() {
       sortField: "route.name",
       cellClassName: "text-muted-foreground",
       renderCell: (order) =>
-        formatOrderRouteName(order, routeLookup.getByKey(order.routeId)),
+        formatOrderRouteName(order, pickupRouteLookup.getByKey(order.routeId), t),
     },
     {
       id: "updatedAt",
@@ -506,7 +532,7 @@ export function OrdersWorkspace() {
       renderCell: (order) => formatAuditDateTime(order.updatedAt),
     },
   ],
-    [routeLookup, t],
+    [pickupRouteLookup, t],
   );
 
   const columnVisibility = useColumnVisibility("orders-v3", tableColumns);
@@ -602,7 +628,7 @@ export function OrdersWorkspace() {
                   fields={orderFilterFields}
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
-                    routes: routeOptions,
+                    pickupRoutes: assignRoutesLoading ? [] : assignRouteOptions,
                     branches: branchesLoading ? [] : branchFilterOptionsById,
                     branchCodes: branchesLoading ? [] : branchFilterOptionsByCode,
                   }}
@@ -676,6 +702,18 @@ export function OrdersWorkspace() {
               >
                 <RouteIcon className="h-4 w-4" />
                 {t("orders.actions.assignRoute")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isSaving || selectedOrdersWithRoute.length === 0}
+                onClick={openClearRoute}
+                className="border-amber-500/30 bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+              >
+                <RouteOff className="h-4 w-4" />
+                {clearRouteMutation.isPending
+                  ? t("orders.actions.clearingRoute")
+                  : t("orders.actions.clearRoute")}
               </Button>
               <Button
                 variant="outline"
@@ -854,6 +892,42 @@ export function OrdersWorkspace() {
             <Button onClick={confirmAssignRoute} disabled={!selectedRouteId || isSaving}>
               <RouteIcon className="h-4 w-4" />
               {t("orders.actions.assignRoute")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={clearRouteOpen} onOpenChange={setClearRouteOpen}>
+        <DialogContent className="z-[60]">
+          <DialogHeader>
+            <DialogTitle>{t("orders.dialogs.clearRouteTitle")}</DialogTitle>
+            <DialogDescription>
+              {selectedOrdersWithRoute.length === 1
+                ? t("orders.dialogs.clearRouteDescription", {
+                    count: selectedOrdersWithRoute.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
+                : t("orders.dialogs.clearRouteDescription_plural", {
+                    count: selectedOrdersWithRoute.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setClearRouteOpen(false)}
+              disabled={clearRouteMutation.isPending}
+            >
+              {t("common.actions.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void confirmClearRoute()}
+              disabled={clearRouteMutation.isPending}
+            >
+              <RouteOff className="h-4 w-4" />
+              {t("orders.actions.clearRoute")}
             </Button>
           </DialogFooter>
         </DialogContent>

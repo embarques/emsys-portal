@@ -47,6 +47,7 @@ import {
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   computeVehicleKpis,
   formatVehicleDate,
@@ -86,6 +87,8 @@ export function VehiclesWorkspace() {
   const { t } = useTranslation();
   const vehicleLabels = useVehicleLabels();
   const vehicleFilterFields = useVehicleFilterFields();
+  const branchesQuery = useBranchPicker(200);
+  const branches = branchesQuery.data?.items ?? [];
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
   const [filters, setFilters] = useState<VehicleFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -280,7 +283,7 @@ export function VehiclesWorkspace() {
         truncateCell: false,
         cellClassName: "overflow-visible",
         renderCell: (vehicle) => (
-          <TableTagText className={getBranchBadgeClass(vehicle.branch.code)}>
+          <TableTagText className={getBranchBadgeClass(vehicle.branch.code, branches)}>
             {vehicleLabels.branch(vehicle.branch.code)}
           </TableTagText>
         ),
@@ -329,7 +332,7 @@ export function VehiclesWorkspace() {
         renderCell: (vehicle) => (vehicle.updatedAt ? formatAuditDateTime(vehicle.updatedAt) : dash),
       },
     ],
-    [dash, t, vehicleLabels],
+    [branches, dash, t, vehicleLabels],
   );
 
   const columnVisibility = useColumnVisibility("vehicles-v2", tableColumns);

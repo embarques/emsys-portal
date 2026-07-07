@@ -7,10 +7,13 @@ import {
   customerHasUnverifiedPrimaryAddress,
   type Customer,
 } from "@/lib/customers/types";
+import { customerHasUnverifiedAddressAtIndex } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
 
 type UnverifiedAddressNoticeProps = {
   customer: Pick<Customer, "addresses" | "customerType">;
+  /** When set, checks this address index instead of the primary address. */
+  addressIndex?: number;
   /** Opens the customer edit flow so the address can be verified via Google. */
   onUpdateAddress: () => void;
   className?: string;
@@ -22,10 +25,16 @@ type UnverifiedAddressNoticeProps = {
  */
 export function UnverifiedAddressNotice({
   customer,
+  addressIndex,
   onUpdateAddress,
   className,
 }: UnverifiedAddressNoticeProps) {
-  if (!customerHasUnverifiedPrimaryAddress(customer)) return null;
+  const isUnverified =
+    addressIndex == null
+      ? customerHasUnverifiedPrimaryAddress(customer)
+      : customerHasUnverifiedAddressAtIndex(customer, addressIndex);
+
+  if (!isUnverified) return null;
 
   return (
     <div

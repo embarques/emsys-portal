@@ -271,6 +271,13 @@ export function buildStripeStyleSearchBody(options: {
     return body;
   }
 
+  // Bar search only: one OR group with no other constraints → root OR + flat leaf filters.
+  if (filterGroups.length === 1 && filterGroups[0].operator === "or") {
+    body.operator = "or";
+    body.filters = filterGroups[0].filters;
+    return body;
+  }
+
   if (filterGroups.length === 1 && filterGroups[0].operator === "and") {
     body.operator = filterGroups[0].operator;
     body.filters = filterGroups[0].filters;

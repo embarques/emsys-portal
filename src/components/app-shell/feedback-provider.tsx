@@ -82,7 +82,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   return (
     <FeedbackContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[300] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0">
+      <div className="pointer-events-none fixed bottom-4 right-4 z-[300] flex w-full max-w-md flex-col gap-2 px-4 sm:px-0">
         {toasts.map((toast) => (
           <ToastCard
             key={toast.id}
@@ -130,7 +130,7 @@ function ToastCard({
       ) : (
         <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
       )}
-      <p className="flex-1 text-sm font-medium">{message}</p>
+      <p className="min-w-0 flex-1 break-words text-sm font-medium leading-snug">{message}</p>
       <button
         type="button"
         onClick={onDismiss}

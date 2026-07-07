@@ -1,12 +1,16 @@
 /**
- * Customer address search paths on the `addresses[]` array.
- * POST /customers/search matches any embedded address entry via these fields.
+ * Customer address search paths for POST /customers/search.
+ * The API exposes virtual `address.*` fields that match any entry in `addresses[]`
+ * (primary and additional). Do not duplicate with `addresses.*` — that breaks OR search.
  */
 export function buildCustomerAddressSearchFields(...parts: readonly string[]): string[] {
-  return parts.map((part) => `addresses.${part}`);
+  return parts.map((part) => `address.${part}`);
 }
 
-/** Bar + filter OR paths for street-level address matching. */
+/**
+ * Bar + filter OR paths for street-level address matching.
+ * `address.address1` is the API virtual field for `addresses[].address1` on any entry.
+ */
 export const CUSTOMER_ADDRESS_LINE_SEARCH_FIELDS = buildCustomerAddressSearchFields(
   "address1",
   "address2",

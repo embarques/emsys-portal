@@ -1,7 +1,8 @@
+import { formatBranchCodeLabel, getBranchCodeBadgeClass } from "@/lib/branches/display";
+import type { Branch } from "@/lib/branches/types";
 import type { Vehicle, VehiclePortalBranch } from "./types";
 import {
   VEHICLE_ACTIVE_OPTIONS,
-  VEHICLE_BRANCHES,
   VEHICLE_FUEL_TYPES,
   getVehiclePortalBranch,
 } from "./types";
@@ -17,16 +18,15 @@ export function getFuelTypeBadgeClass(fuelType: string): string {
     : "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300";
 }
 
-export function getBranchLabel(branch: string): string {
-  const portal = getVehiclePortalBranch(branch);
-  return VEHICLE_BRANCHES.find((entry) => entry.value === portal)?.label ?? (branch || "—");
+export function getBranchLabel(branch: string, branches: Pick<Branch, "id" | "name" | "code">[] = []): string {
+  return formatBranchCodeLabel(branch, branches);
 }
 
-export function getBranchBadgeClass(branch: string): string {
-  const portal = getVehiclePortalBranch(branch);
-  return portal === "usa"
-    ? "border-transparent bg-blue-500/15 text-blue-700 dark:text-blue-300"
-    : "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+export function getBranchBadgeClass(
+  branch: string,
+  branches: Pick<Branch, "id" | "name" | "code" | "type">[] = [],
+): string {
+  return getBranchCodeBadgeClass(branch, branches);
 }
 
 export function getVehicleActiveLabel(active: boolean): string {

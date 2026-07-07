@@ -11,6 +11,7 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
 import {
   formatVehicleDate,
@@ -34,6 +35,8 @@ type VehicleViewSheetProps = {
 export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete }: VehicleViewSheetProps) {
   const { t } = useTranslation();
   const vehicleLabels = useVehicleLabels();
+  const branchesQuery = useBranchPicker(200);
+  const branches = branchesQuery.data?.items ?? [];
 
   if (!vehicle) return null;
 
@@ -50,7 +53,7 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
               <Badge className={getFuelTypeBadgeClass(vehicle.fuelType)}>
                 {vehicleLabels.fuelType(vehicle.fuelType)}
               </Badge>
-              <Badge className={getBranchBadgeClass(vehicle.branch.code)}>
+              <Badge className={getBranchBadgeClass(vehicle.branch.code, branches)}>
                 {vehicleLabels.branch(vehicle.branch.code)}
               </Badge>
               <Badge className={getVehicleActiveBadgeClass(vehicle.active)}>

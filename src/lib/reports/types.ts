@@ -1,5 +1,5 @@
 /** Document types supported by the `/reports/*` endpoints. */
-export type ReportType = "income" | "invoice" | "journal" | "label" | "pickup";
+export type ReportType = "income" | "invoice" | "journal" | "label" | "pickup" | "delivery";
 
 /** Collections the `values` identifiers can be resolved against. */
 export type ReportCollection =
@@ -7,7 +7,8 @@ export type ReportCollection =
   | "invoices"
   | "journals"
   | "barcodes"
-  | "pickups";
+  | "pickups"
+  | "deliveries";
 
 /**
  * Shared payload structure accepted by every `POST /reports/*` endpoint.
@@ -21,6 +22,8 @@ export type ReportCollection =
  *   `{ type: "label", collection: "barcodes", values: ["ET045260333"], lookupField: "number" }`
  * - Pickup manifest (`/reports/pickups`):
  *   `{ type: "pickup", collection: "pickups", values: ["42"], lookupField: "id" }`
+ * - Delivery report (`/reports/deliveries`):
+ *   `{ type: "delivery", collection: "deliveries", values: ["1001"], lookupField: "id" }`
  */
 export type ReportRequest = {
   /** Document type to render. */

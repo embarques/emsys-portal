@@ -16,6 +16,9 @@
     "markComplete": "Mark complete",
     "markIncomplete": "Mark incomplete",
     "assignRoute": "Assign route",
+    "clearRoute": "Clear route",
+    "clearingRoute": "Clearing…",
+    "noAssignedRoute": "None of the selected orders are assigned to a route.",
     "map": "Map"
   },
   "stats": {
@@ -97,6 +100,8 @@
       "sector": "Sector",
       "sender": "Sender",
       "receiver": "Receiver",
+      "address": "Address",
+      "primaryAddress": "Primary",
       "noEmployee": "No employee"
     },
     "placeholders": {
@@ -104,7 +109,9 @@
       "searchEmployees": "Search employees…",
       "selectSender": "Select sender",
       "noReceiver": "No receiver",
-      "searchParty": "Search by name, phone, or address…"
+      "searchParty": "Search by name, phone, or address…",
+      "selectAddress": "Select address",
+      "searchAddress": "Search addresses…"
     },
     "partyActions": {
       "new": "New",
@@ -154,6 +161,7 @@
   },
   "view": {
     "pickup": "Pickup",
+    "pickupId": "Pickup ID",
     "summary": "Summary",
     "system": "System information",
     "senderAddress": "{{party}} address",
@@ -166,7 +174,6 @@
   },
   "history": {
     "title": "{{name}} pickup history ({{count}})",
-    "description": "Previous and current pickups for this sender, loaded by customer id.",
     "pendingSavedSender": "Pickup history appears once the sender is saved.",
     "current": "Current",
     "defaultSenderName": "Sender"
@@ -175,6 +182,9 @@
     "assignRouteTitle": "Assign route",
     "assignRouteDescription": "Assign {{count}} selected order to a route.",
     "assignRouteDescription_plural": "Assign {{count}} selected orders to a route.",
+    "clearRouteTitle": "Clear route?",
+    "clearRouteDescription": "This will remove the route assignment from {{count}} selected order. {{cannotBeUndone}}",
+    "clearRouteDescription_plural": "This will remove the route assignment from {{count}} selected orders. {{cannotBeUndone}}",
     "selectRoute": "Select a route",
     "searchRoutes": "Search routes…",
     "loadingRoutes": "Loading routes…",
@@ -192,6 +202,8 @@
     "assignedToRoute": "{{count}} order assigned{{routeSuffix}}.",
     "assignedToRoute_plural": "{{count}} orders assigned{{routeSuffix}}.",
     "assignedToRouteNamed": " to {{routeName}}",
+    "routeCleared": "Cleared route assignment from {{count}} order.",
+    "routeCleared_plural": "Cleared route assignment from {{count}} orders.",
     "manifestReady": "Pickup manifest ready for {{count}} order.",
     "manifestReady_plural": "Pickup manifest ready for {{count}} orders.",
     "comingSoon": "{{label}} is coming soon."
@@ -215,7 +227,7 @@
       },
       "purpose": { "label": "Purpose", "placeholder": "Enter purpose…" },
       "route": {
-        "id": { "label": "Route" }
+        "id": { "label": "Pickup route" }
       },
       "branch": {
         "id": { "label": "Branch" },

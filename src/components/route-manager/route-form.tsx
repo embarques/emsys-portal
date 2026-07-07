@@ -58,19 +58,31 @@ export function RouteForm({
     setEmployeeError(null);
   }, [initialValues, isEditing]);
 
-  // Resolve branch id/name from the branch list when only a code is known.
+  // Keep branch id/name in sync with the branch directory (API requires both on save).
   useEffect(() => {
-    if (values.branch.id > 0 || !branchCode) return;
+    if (!branchCode || branches.length === 0) return;
+
     const match = branches.find(
       (branch) => branch.code.trim().toLowerCase() === branchCode.toLowerCase(),
     );
     if (!match) return;
-    setValues((current) =>
-      current.branch.id > 0
-        ? current
-        : { ...current, branch: { id: match.id, code: match.code, name: match.name } },
-    );
-  }, [branches, branchCode, values.branch.id]);
+
+    setValues((current) => {
+      const name = match.name.trim();
+      if (
+        current.branch.id === match.id &&
+        current.branch.code === match.code &&
+        current.branch.name?.trim() === name
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        branch: { id: match.id, code: match.code, name },
+      };
+    });
+  }, [branches, branchCode]);
 
   // Default new routes to the logged-in user's branch (same pattern as vehicle form).
   useEffect(() => {
@@ -103,7 +115,8 @@ export function RouteForm({
   }
 
   function handleBranchChange(nextBranchCode: string) {
-    const branch = branches.find((entry) => entry.code === nextBranchCode);
+    const normalized = nextBranchCode.trim().toLowerCase();
+    const branch = branches.find((entry) => entry.code.trim().toLowerCase() === normalized);
     // Vehicle and crew belong to a branch — clear them when the branch changes.
     setValues((current) => ({
       ...current,
@@ -142,7 +155,7 @@ export function RouteForm({
     [branches],
   );
 
-  const hasBranch = values.branch.id > 0 || Boolean(values.branch.code.trim());
+  const hasBranch = values.branch.id > 0 && Boolean(values.branch.name?.trim());
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();

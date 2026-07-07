@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { CalendarRange, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import { ActiveRouteViewSheet } from "@/components/pickup-delivery-routes/pickup-delivery-route-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
-import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
@@ -23,12 +22,13 @@ import {
 } from "@/components/ui/dialog";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useUserError } from "@/lib/errors/use-user-error";
 import {
   formatActiveRouteAppraiserName,
   formatActiveRouteContainerLabel,
   formatActiveRouteDriverNames,
+  formatActiveRouteHelperNames,
   formatActiveRouteRowLabel,
   formatActiveRouteRouteName,
   formatActiveRouteTypeLabel,
@@ -51,6 +51,7 @@ import {
   useResolvedPaginatedItems,
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
 
 const ACTIVE_ROUTE_PAGE_SIZE = DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.limit;
@@ -62,9 +63,20 @@ const defaultActiveRouteFilters: ActiveRouteFilterState = {
 
 type ActiveRoutesDirectoryWorkspaceProps = {
   variant: ActiveRoutesDirectoryVariant;
+  /** Delivery routes only — shows GET `id` in the table. */
+  showRecordIdColumn?: boolean;
+  /** Delivery routes only — e.g. print report action. */
+  renderSelectionActions?: (context: {
+    activeRoutes: ActiveRoute[];
+    selectedIds: string[];
+  }) => ReactNode;
 };
 
-export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirectoryWorkspaceProps) {
+export function ActiveRoutesDirectoryWorkspace({
+  variant,
+  showRecordIdColumn = false,
+  renderSelectionActions,
+}: ActiveRoutesDirectoryWorkspaceProps) {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const copyPrefix = variant.copyPrefix;
@@ -166,7 +178,7 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
         mode: "edit",
         entityId: record.id,
         label: t(`routes.${copyPrefix}.editTabLabel`, {
-          name: formatActiveRouteRowLabel(record),
+          name: formatActiveRouteRowLabel(record, dash, t),
         }),
       });
       return;
@@ -215,7 +227,13 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
         id: "name",
         label: t("routes.columns.name"),
         cellClassName: "font-medium",
-        renderCell: (record) => formatActiveRouteRowLabel(record),
+        renderCell: (record) => formatActiveRouteRowLabel(record, dash, t),
+      },
+      {
+        id: "id",
+        label: t("routes.columns.recordId"),
+        cellClassName: "font-mono text-xs text-muted-foreground tabular-nums",
+        renderCell: (record) => record.id || dash,
       },
       {
         id: "routeType",
@@ -246,6 +264,11 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
         renderCell: (record) => formatActiveRouteAppraiserName(record) || dash,
       },
       {
+        id: "helper.name",
+        label: t("routes.columns.helper"),
+        renderCell: (record) => formatActiveRouteHelperNames(record) || dash,
+      },
+      {
         id: "createdAt",
         label: t("routes.columns.createdAt"),
         cellClassName: "text-muted-foreground",
@@ -257,9 +280,21 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
     return columns.filter((column) => {
       if (column.id === "routeType" && !variant.showRouteTypeField) return false;
       if (column.id === "container.name" && !variant.showContainerField) return false;
+      if (column.id === "id" && !showRecordIdColumn) return false;
+      if (showRecordIdColumn && (column.id === "route.name" || column.id === "driver.name" || column.id === "appraiser.name" || column.id === "helper.name")) {
+        return false;
+      }
       return true;
     });
-  }, [dash, routeLookup.getByKey, t, variant.id, variant.showContainerField, variant.showRouteTypeField]);
+  }, [
+    dash,
+    routeLookup.getByKey,
+    showRecordIdColumn,
+    t,
+    variant.id,
+    variant.showContainerField,
+    variant.showRouteTypeField,
+  ]);
 
   const activeRouteColumnVisibility = useColumnVisibility(
     variant.columnVisibilityKey,
@@ -324,6 +359,10 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
               activeRoutes.filter((record) => selectedActiveRouteIds.includes(record.id)),
             )
           }
+          actions={renderSelectionActions?.({
+            activeRoutes,
+            selectedIds: selectedActiveRouteIds,
+          })}
         />
 
         {activeRoutesQuery.isError ? (
@@ -337,7 +376,7 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
             page={currentActiveRoutePage}
             isPageDataPending={activeRoutesQuery.isFetching}
             rowKey={(record) => record.id}
-            rowLabel={(record) => formatActiveRouteRowLabel(record)}
+            rowLabel={(record) => formatActiveRouteRowLabel(record, dash, t)}
             columnLayout={activeRouteColumnVisibility}
             sortUnavailable
             minWidth={1200}
@@ -476,7 +515,7 @@ export function ActiveRoutesDirectoryWorkspace({ variant }: ActiveRoutesDirector
                 : t("common.dialogs.deleteOneDescription", {
                     name: deleteActiveRouteTarget
                       ? String(deleteActiveRouteTarget.name ?? "").trim() ||
-                        formatActiveRouteRowLabel(deleteActiveRouteTarget)
+                        formatActiveRouteRowLabel(deleteActiveRouteTarget, dash, t)
                       : t(`routes.${copyPrefix}.entities.activeRoute`),
                     cannotBeUndone: t("common.dialogs.cannotBeUndone"),
                   })}

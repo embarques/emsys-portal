@@ -5,13 +5,18 @@ import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import {
+  assignPickupsToRoute,
   createOrder,
   deleteOrder,
   deleteOrders,
   fetchOrderById,
   fetchOrders,
+  fetchPickupsByRoute,
   fetchSenderOrderHistory,
   setOrdersCompleted,
+  unassignAllPickupsFromRoute,
+  unassignOrdersFromRoutes,
+  unassignPickupsFromRoute,
   updateOrder,
 } from "@/lib/orders/api/orders-api";
 import {
@@ -71,6 +76,23 @@ export function useOrderSearch(
 }
 
 const SENDER_HISTORY_LIMIT = 50;
+const ROUTE_PICKUPS_LIMIT = 50;
+
+/** Load pickups assigned to a scheduled pickup route. */
+export function usePickupsByRoute(
+  routeId: string | null | undefined,
+  options: { enabled?: boolean; limit?: number } = {},
+) {
+  const { enabled = true, limit = ROUTE_PICKUPS_LIMIT } = options;
+  const queryEnabled = useOrdersQueryEnabled();
+  const id = routeId?.trim() ?? "";
+
+  return useWorkspaceQuery({
+    queryKey: queryKeys.orders.byRoute(id, 1, limit),
+    queryFn: () => fetchPickupsByRoute(id, { page: 1, limit }),
+    enabled: queryEnabled && enabled && id.length > 0,
+  });
+}
 
 /** Load a sender's pickup history via GET /pickups filtered by their customer id. */
 export function useSenderOrderHistory(
@@ -218,6 +240,48 @@ export function useSetOrdersCompleted() {
   return useMutation({
     mutationFn: ({ orders, completed }: { orders: Order[]; completed: boolean }) =>
       setOrdersCompleted(orders, completed),
+    onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+/** Assign pickups to a scheduled pickup vehicle route (`PUT /pickups/route/{id}`). */
+export function useAssignPickupsToRoute() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ routeId, pickupIds }: { routeId: string; pickupIds: number[] }) =>
+      assignPickupsToRoute(routeId, pickupIds),
+    onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+/** Unassign pickups from a scheduled pickup vehicle route. */
+export function useUnassignPickupsFromRoute() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ routeId, pickupIds }: { routeId: string; pickupIds: number[] }) =>
+      unassignPickupsFromRoute(routeId, pickupIds),
+    onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+/** Clear route assignments from selected orders (may span multiple routes). */
+export function useClearOrdersRouteAssignments() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orders: Pick<Order, "id" | "routeId">[]) => unassignOrdersFromRoutes(orders),
+    onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+/** Clear every pickup from a scheduled pickup route. */
+export function useClearPickupRoute() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (routeId: string) => unassignAllPickupsFromRoute(routeId),
     onSuccess: () => invalidateOrders(queryClient),
   });
 }

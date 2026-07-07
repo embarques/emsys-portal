@@ -6,6 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import {
+  employeeHasRole,
   resolveCrewRole,
   type RouteCrewRole,
   type RouteEmployeeRef,
@@ -18,6 +19,8 @@ type CrewRolePickerProps = {
   onRemove?: (employeeId: number) => void;
   /** Roles to offer, in order. Defaults to driver/appraiser/helper. */
   roles?: RouteCrewRole[];
+  /** When true, driver and appraiser can both be active on the same employee. */
+  toggleLeadRoles?: boolean;
   loading?: boolean;
   emptyMessage?: string;
 };
@@ -53,6 +56,7 @@ export function CrewRolePicker({
   onRoleChange,
   onRemove,
   roles,
+  toggleLeadRoles = false,
   loading = false,
   emptyMessage,
 }: CrewRolePickerProps) {
@@ -75,7 +79,16 @@ export function CrewRolePicker({
     <div className="overflow-hidden rounded-md border border-border bg-background">
       <ul className="divide-y divide-border">
         {employees.map((employee) => {
-          const activeRole = resolveCrewRole(employee.role);
+          const isDriver = employeeHasRole(employee, "driver");
+          const isAppraiser = employeeHasRole(employee, "appraiser");
+          const isHelper = toggleLeadRoles ? !isDriver && !isAppraiser : resolveCrewRole(employee.role) === "helper";
+          const activeRole = toggleLeadRoles
+            ? isHelper
+              ? "helper"
+              : isDriver
+                ? "driver"
+                : "appraiser"
+            : resolveCrewRole(employee.role);
           return (
             <li
               key={employee.id}
@@ -90,7 +103,13 @@ export function CrewRolePicker({
                 {visibleRoles.map((role, index) => {
                   const meta = ROLE_META[role];
                   const Icon = meta.icon;
-                  const selected = activeRole === role;
+                  const selected = toggleLeadRoles
+                    ? role === "driver"
+                      ? isDriver
+                      : role === "appraiser"
+                        ? isAppraiser
+                        : isHelper
+                    : activeRole === role;
                   const rounded = cn(
                     index === 0 && "rounded-l-lg",
                     index === visibleRoles.length - 1 && "rounded-r-lg",

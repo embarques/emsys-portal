@@ -80,6 +80,11 @@ export function generatePickupReport(request: ReportRequest): Promise<ReportResu
   return postReport(API_ENDPOINTS.REPORTS_PICKUPS, request);
 }
 
+/** Generate a delivery route report (`POST /reports/deliveries`). */
+export function generateDeliveryReport(request: ReportRequest): Promise<ReportResult> {
+  return postReport(API_ENDPOINTS.REPORTS_DELIVERIES, request);
+}
+
 /**
  * Build the absolute URL for downloading a public report by token
  * (`GET /public/reports/{token}`).

@@ -8,5 +8,8 @@ export const apiClient = {
     axiosInstance.put<T>(url, data).then((response) => response.data),
   patch: <T>(url: string, data?: unknown) =>
     axiosInstance.patch<T>(url, data).then((response) => response.data),
-  delete: <T>(url: string) => axiosInstance.delete<T>(url).then((response) => response.data),
+  delete: <T>(url: string, data?: unknown) =>
+    axiosInstance
+      .delete<T>(url, data !== undefined ? { data } : undefined)
+      .then((response) => response.data),
 };

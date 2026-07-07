@@ -19,7 +19,7 @@ import {
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
 import { expandOrderFilterNode } from "@/lib/orders/order-filters";
 import { ORDER_BAR_OR_SEARCH_FIELDS } from "@/lib/orders/search-fields";
-import { isCompleteFilterRow } from "@/lib/table/filter-builder";
+import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import {
   buildApiAddressPayload,
   buildApiBranchDto,
@@ -30,7 +30,7 @@ import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { normalizeApiCustomer } from "@/lib/customers/api/customers-api";
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
 import type { Customer } from "@/lib/customers/types";
-import { CUSTOMER_PORTAL_BRANCHES, getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
+import { CUSTOMER_PORTAL_BRANCHES, getCustomerPrimaryCoreAddress, type CustomerCoreAddress } from "@/lib/customers/types";
 import { createDefaultRecordPhones, getPhoneAtDisplayIndex, getPrimaryPhoneNumber, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
 import type { Employee } from "@/lib/employees/types";
 import { normalizeApiUser } from "@/lib/users/api/users-api";
@@ -38,6 +38,7 @@ import type { User } from "@/lib/users/types";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
   deriveOrderPurpose,
+  getOrderPartyAddressAtIndex,
   orderCommentPurposeRequiresItem,
   orderToFormValues,
   resolveOrderCommentUnit,
@@ -148,6 +149,9 @@ const SENDER_HISTORY_FILTER_FIELD = "sender.id";
 
 /** Default number of historical pickups loaded for a sender. */
 const SENDER_HISTORY_LIMIT = 50;
+
+/** Default number of pickups shown for a scheduled pickup route. */
+const ROUTE_PICKUPS_LIMIT = 50;
 
 const EMPTY_CUSTOMER: Customer = {
   id: "",
@@ -328,6 +332,7 @@ function normalizeOrder(raw: unknown): Order | null {
     purpose: String(item.purpose ?? "").trim(),
     comments,
     sector: normalizePickupSector(item.sector),
+    /** Vehicle-route record id (`GET /vehicle-routes`, `routeType: pickup`), not `/routes`. */
     routeId: routeRef?.id || String(item.routeAssignmentId ?? "").trim() || undefined,
     routeName: routeRef?.name || undefined,
   };
@@ -480,6 +485,181 @@ export async function fetchSenderOrderHistory(
   return normalizePaginatedOrders(response);
 }
 
+/**
+ * Pickups assigned to a scheduled pickup route.
+ * `POST /pickups/search` with `route.id eq <vehicle_route_id>`.
+ */
+export async function fetchPickupsByRoute(
+  routeId: string,
+  options: { page?: number; limit?: number } = {},
+): Promise<PaginatedResult<Order>> {
+  const trimmedRouteId = routeId.trim();
+  if (!trimmedRouteId) {
+    return { items: [], page: 1, resultsPerPage: 0, total: 0 };
+  }
+
+  return fetchOrders({
+    page: options.page ?? 1,
+    limit: options.limit ?? ROUTE_PICKUPS_LIMIT,
+    sort: DEFAULT_ORDER_LIST_PARAMS.sort,
+    filterRows: buildRoutePickupsFilter(trimmedRouteId),
+  });
+}
+
+/** Load every pickup assigned to a route, paging through search results. */
+export async function fetchAllPickupsByRoute(routeId: string): Promise<Order[]> {
+  const trimmedRouteId = routeId.trim();
+  if (!trimmedRouteId) return [];
+
+  const limit = 100;
+  let page = 1;
+  const items: Order[] = [];
+  let total = 0;
+
+  while (true) {
+    const result = await fetchPickupsByRoute(trimmedRouteId, { page, limit });
+    items.push(...result.items);
+    total = result.total;
+    if (items.length >= total || result.items.length === 0) break;
+    page += 1;
+  }
+
+  return items;
+}
+
+/** Load every pickup assigned to any of the given scheduled routes. */
+export async function fetchAllPickupsByRoutes(routeIds: string[]): Promise<Order[]> {
+  const uniqueRouteIds = [...new Set(routeIds.map((id) => id.trim()).filter(Boolean))];
+  if (uniqueRouteIds.length === 0) return [];
+
+  const batches = await Promise.all(uniqueRouteIds.map((routeId) => fetchAllPickupsByRoute(routeId)));
+  const byId = new Map<number, Order>();
+
+  for (const batch of batches) {
+    for (const order of batch) {
+      byId.set(order.id, order);
+    }
+  }
+
+  return [...byId.values()];
+}
+
+function buildRoutePickupsFilter(routeId: string): TableFilterRowState[] {
+  return [
+    {
+      id: "route-id",
+      join: "and",
+      field: "route.id",
+      operator: "eq",
+      value: routeId,
+    },
+  ];
+}
+
+/**
+ * Assign pickups to a scheduled pickup vehicle route via
+ * `PUT /pickups/route/{vehicleRouteId}` with `{ pickupIds }`.
+ */
+export async function assignPickupsToRoute(
+  vehicleRouteId: string,
+  pickupIds: number[],
+): Promise<void> {
+  const id = vehicleRouteId.trim();
+  if (!id) {
+    throw new Error("A valid pickup route is required.");
+  }
+
+  if (pickupIds.length === 0) {
+    throw new Error("Select at least one pickup to assign.");
+  }
+
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUP_ROUTES}/${id}`,
+    { pickupIds },
+  );
+
+  assertMutationSuccess(response, "Unable to assign pickup route.");
+}
+
+/**
+ * Unassign pickups from a scheduled pickup vehicle route via
+ * `DELETE /pickups/route/{vehicleRouteId}` with `{ pickupIds }`.
+ */
+export async function unassignPickupsFromRoute(
+  vehicleRouteId: string,
+  pickupIds: number[],
+): Promise<void> {
+  const id = vehicleRouteId.trim();
+  if (!id) {
+    throw new Error("A valid pickup route is required.");
+  }
+
+  if (pickupIds.length === 0) {
+    throw new Error("Select at least one pickup to unassign.");
+  }
+
+  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUP_ROUTES}/${id}`,
+    { pickupIds },
+  );
+
+  assertMutationSuccess(response, "Unable to unassign pickups from route.");
+}
+
+export function groupPickupIdsByRouteId(
+  orders: Pick<Order, "id" | "routeId">[],
+): Map<string, number[]> {
+  const byRoute = new Map<string, number[]>();
+
+  for (const order of orders) {
+    const routeId = order.routeId?.trim();
+    if (!routeId || order.id <= 0) continue;
+
+    const pickupIds = byRoute.get(routeId) ?? [];
+    pickupIds.push(order.id);
+    byRoute.set(routeId, pickupIds);
+  }
+
+  return byRoute;
+}
+
+/** Remove route assignments from the given pickups, grouped by their current route. */
+export async function unassignOrdersFromRoutes(
+  orders: Pick<Order, "id" | "routeId">[],
+): Promise<number> {
+  const byRoute = groupPickupIdsByRouteId(orders);
+  if (byRoute.size === 0) {
+    throw new Error("Select at least one order assigned to a route.");
+  }
+
+  let cleared = 0;
+  await Promise.all(
+    [...byRoute.entries()].map(async ([routeId, pickupIds]) => {
+      await unassignPickupsFromRoute(routeId, pickupIds);
+      cleared += pickupIds.length;
+    }),
+  );
+
+  return cleared;
+}
+
+/** Remove every pickup from a scheduled pickup route. */
+export async function unassignAllPickupsFromRoute(routeId: string): Promise<number> {
+  const trimmedRouteId = routeId.trim();
+  if (!trimmedRouteId) {
+    throw new Error("A valid pickup route is required.");
+  }
+
+  const pickups = await fetchAllPickupsByRoute(trimmedRouteId);
+  const pickupIds = pickups.map((order) => order.id).filter((id) => id > 0);
+  if (pickupIds.length === 0) {
+    return 0;
+  }
+
+  await unassignPickupsFromRoute(trimmedRouteId, pickupIds);
+  return pickupIds.length;
+}
+
 function resolvePickupBranchRef(branchId: number): ApiBranchDtoPayload {
   const config =
     CUSTOMER_PORTAL_BRANCHES.find((entry) => entry.id === branchId) ?? CUSTOMER_PORTAL_BRANCHES[0];
@@ -491,13 +671,18 @@ function resolvePickupBranchRef(branchId: number): ApiBranchDtoPayload {
   });
 }
 
-function buildPickupCustomerRef(customer: Customer): ApiPickupCustomerRef {
+function buildPickupCustomerRef(
+  customer: Customer,
+  selectedAddress?: CustomerCoreAddress,
+): ApiPickupCustomerRef {
   const name = customer.name.trim();
   const phone1 = getPrimaryPhoneNumber(customer.phones);
   const email = customer.email.trim();
   const idNumber = customer.IDNumber.trim();
   const phone2 = getPhoneAtDisplayIndex(customer.phones, 1);
-  const address = buildApiAddressPayload(getCustomerPrimaryCoreAddress(customer));
+  const address = buildApiAddressPayload(
+    selectedAddress ?? getCustomerPrimaryCoreAddress(customer),
+  );
 
   const payload: ApiPickupCustomerRef = {
     name,
@@ -561,7 +746,10 @@ function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload
   const payload: ApiPickupWritePayload = {
     date,
     branch: resolvePickupBranchRef(values.branchId),
-    sender: buildPickupCustomerRef(values.sender),
+    sender: buildPickupCustomerRef(
+      values.sender,
+      getOrderPartyAddressAtIndex(values.sender, values.senderAddressIndex),
+    ),
   };
 
   if (purpose) {
@@ -573,7 +761,10 @@ function buildPickupWritePayload(values: OrderFormValues): ApiPickupWritePayload
   }
 
   if (values.receiver) {
-    payload.receiver = buildPickupCustomerRef(values.receiver);
+    payload.receiver = buildPickupCustomerRef(
+      values.receiver,
+      getOrderPartyAddressAtIndex(values.receiver, values.receiverAddressIndex),
+    );
   }
 
   if (values.sectorId !== "" && values.sectorId > 0) {

@@ -23,6 +23,7 @@ import {
   type SearchableSelectOption,
 } from "@/components/ui/searchable-select";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
+import { PartyAddressSelect } from "@/components/orders/party-address-select";
 import { UnverifiedAddressNotice } from "@/components/addresses/unverified-address-notice";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
@@ -41,7 +42,6 @@ import {
   CUSTOMER_TYPE_RECEIVER,
   CUSTOMER_TYPE_SENDER,
   createEmptyCustomerForm,
-  customerHasUnverifiedPrimaryAddress,
   customerToFormValues,
   getCustomerPrimaryCoreAddress,
   type Customer,
@@ -52,7 +52,10 @@ import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
 import {
   createEmptyOrderForm,
+  customerHasUnverifiedAddressAtIndex,
+  getDefaultOrderPartyAddressIndex,
   resetOrderFormForNextEntry,
+  resolveOrderPartyAddressIndex,
   type OrderFormSubmitResult,
   type OrderFormValues,
 } from "@/lib/orders/types";
@@ -261,8 +264,14 @@ export function OrderForm({
       senderCustomers.find((customer) => customer.id === senderId) ??
       senderSearchResults.find((customer) => customer.id === senderId) ??
       (values.sender?.id === senderId ? values.sender : null);
-    updateField("senderId", senderId);
-    updateField("sender", sender);
+
+    setValues((current) => ({
+      ...current,
+      senderId,
+      sender,
+      senderAddressIndex: sender ? getDefaultOrderPartyAddressIndex(sender) : 0,
+    }));
+    setFormError(null);
   }
 
   function updateReceiverId(receiverId: string) {
@@ -270,8 +279,14 @@ export function OrderForm({
       receiverCustomers.find((customer) => customer.id === receiverId) ??
       receiverSearchResults.find((customer) => customer.id === receiverId) ??
       (values.receiver?.id === receiverId ? values.receiver : null);
-    updateField("receiverId", receiverId);
-    updateField("receiver", receiver);
+
+    setValues((current) => ({
+      ...current,
+      receiverId,
+      receiver: receiver ?? null,
+      receiverAddressIndex: receiver ? getDefaultOrderPartyAddressIndex(receiver) : 0,
+    }));
+    setFormError(null);
   }
 
   const dialogCustomer =
@@ -298,12 +313,27 @@ export function OrderForm({
 
   function applyCustomerToSide(side: PartySide, customer: Customer) {
     if (side === "sender") {
-      updateField("senderId", customer.id);
-      updateField("sender", customer);
+      setValues((current) => ({
+        ...current,
+        senderId: customer.id,
+        sender: customer,
+        senderAddressIndex: resolveOrderPartyAddressIndex(
+          customer,
+          current.senderAddressIndex,
+        ),
+      }));
     } else {
-      updateField("receiverId", customer.id);
-      updateField("receiver", customer);
+      setValues((current) => ({
+        ...current,
+        receiverId: customer.id,
+        receiver: customer,
+        receiverAddressIndex: resolveOrderPartyAddressIndex(
+          customer,
+          current.receiverAddressIndex,
+        ),
+      }));
     }
+    setFormError(null);
   }
 
   async function handleCustomerSubmit(formValues: CustomerFormValues) {
@@ -339,7 +369,10 @@ export function OrderForm({
   // Only senders use Google verification; receivers use a predetermined city list.
   const blockForUnverifiedParty =
     isGoogleMapsConfigured() &&
-    Boolean(values.sender && customerHasUnverifiedPrimaryAddress(values.sender));
+    Boolean(
+      values.sender &&
+        customerHasUnverifiedAddressAtIndex(values.sender, values.senderAddressIndex),
+    );
 
   const hasValidDate = Boolean(values.date.trim()) && !Number.isNaN(new Date(values.date).getTime());
 
@@ -384,7 +417,7 @@ export function OrderForm({
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
       <FormSection icon={CalendarDays} title={t("orders.form.sections.pickupDate")} required>
-        <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="space-y-2.5">
           <div className="space-y-1">
             <DateInput
               id="date"
@@ -395,7 +428,7 @@ export function OrderForm({
           </div>
 
           {isEditing ? (
-            <>
+            <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="branchId">
                   {t("orders.form.fields.branch")} <span className="text-destructive">*</span>
@@ -443,7 +476,7 @@ export function OrderForm({
                   }
                 />
               </div>
-            </>
+            </div>
           ) : null}
         </div>
       </FormSection>
@@ -480,9 +513,19 @@ export function OrderForm({
             />
             {values.sender ? (
               <>
-                <CustomerContactSummary customer={values.sender} />
+                <PartyAddressSelect
+                  id="senderAddress"
+                  customer={values.sender}
+                  value={values.senderAddressIndex}
+                  onChange={(index) => updateField("senderAddressIndex", index)}
+                />
+                <CustomerContactSummary
+                  customer={values.sender}
+                  addressIndex={values.senderAddressIndex}
+                />
                 <UnverifiedAddressNotice
                   customer={values.sender}
+                  addressIndex={values.senderAddressIndex}
                   onUpdateAddress={() => openEditCustomer("sender")}
                 />
               </>
@@ -516,9 +559,19 @@ export function OrderForm({
             />
             {values.receiver ? (
               <>
-                <CustomerContactSummary customer={values.receiver} />
+                <PartyAddressSelect
+                  id="receiverAddress"
+                  customer={values.receiver}
+                  value={values.receiverAddressIndex}
+                  onChange={(index) => updateField("receiverAddressIndex", index)}
+                />
+                <CustomerContactSummary
+                  customer={values.receiver}
+                  addressIndex={values.receiverAddressIndex}
+                />
                 <UnverifiedAddressNotice
                   customer={values.receiver}
+                  addressIndex={values.receiverAddressIndex}
                   onUpdateAddress={() => openEditCustomer("receiver")}
                 />
               </>

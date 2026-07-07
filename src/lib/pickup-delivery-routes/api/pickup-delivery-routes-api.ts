@@ -14,20 +14,23 @@ import {
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 import type { VehicleRouteWritePayload } from "@/lib/pickup-delivery-routes/api-schemas";
+import { buildApiBranchDto } from "@/lib/api/payloads";
 import {
   assertActiveRouteFormValues,
   DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
+  ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS,
   deriveRouteType,
+  getActiveRouteAppraiser,
+  getActiveRouteEmployeesByRole,
   type ActiveRoute,
   type ActiveRouteFormValues,
   type ActiveRouteListParams,
   type ActiveRouteLookupParams,
   type RouteType,
 } from "@/lib/pickup-delivery-routes/types";
-import { ROUTES_USE_MOCK_DATA } from "@/lib/route-manager/data-source";
-import * as activeRoutesMockApi from "@/lib/pickup-delivery-routes/api/pickup-delivery-routes-mock-api";
 import {
   DEFAULT_ROUTE_CREW_ROLE,
+  getEmployeeRoles,
   resolveCrewRole,
   toRouteDateIso,
   type RouteCrewRole,
@@ -55,6 +58,7 @@ type ApiContainerRef = {
 type ApiBranchRef = {
   id?: string | number;
   code?: string;
+  name?: string;
 };
 
 type ApiEmployeeRef = {
@@ -65,14 +69,18 @@ type ApiEmployeeRef = {
 
 type ApiVehicleRoute = {
   id?: string | number;
+  _id?: string | number;
   name?: string;
   routeType?: string;
+  type?: string;
   active?: boolean;
   date?: string;
   dayOfWeek?: string | string[] | null;
   branch?: ApiBranchRef | null;
   container?: ApiContainerRef | null;
   route?: ApiRef | null;
+  driver?: ApiEmployeeRef | null;
+  appraiser?: ApiEmployeeRef | null;
   employees?: ApiEmployeeRef[] | null;
   createdAt?: string;
   createdBy?: ApiUser | string | null;
@@ -86,13 +94,7 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
-const VEHICLE_ROUTE_BAR_OR_SEARCH_FIELDS = [
-  "name",
-  "route.name",
-  "employees.name",
-  "container.name",
-  "date",
-] as const;
+const VEHICLE_ROUTE_BAR_OR_SEARCH_FIELDS = ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS;
 
 function readUserName(user: unknown): string {
   if (!user) return "";
@@ -117,16 +119,59 @@ function normalizeDaysOfWeek(raw: unknown): string[] {
     .filter(Boolean);
 }
 
+function normalizeEmployeeRef(
+  raw?: ApiEmployeeRef | null,
+  fallbackRole?: RouteCrewRole,
+): ActiveRoute["employees"][number] | null {
+  if (!raw || typeof raw !== "object") return null;
+  const id = Number(raw.id);
+  const name = String(raw.name ?? "").trim();
+  if (!Number.isInteger(id) || id <= 0 || !name) return null;
+  return { id, name, role: normalizeCrewRole(raw.role ?? fallbackRole) };
+}
+
 function normalizeEmployees(raw?: ApiEmployeeRef[] | null): ActiveRoute["employees"] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .map((entry) => {
-      const id = Number(entry?.id);
-      const name = String(entry?.name ?? "").trim();
-      if (!Number.isInteger(id) || id <= 0 || !name) return null;
-      return { id, name, role: normalizeCrewRole(entry?.role) };
-    })
+    .map((entry) => normalizeEmployeeRef(entry))
     .filter((employee): employee is NonNullable<typeof employee> => employee != null);
+}
+
+function normalizeVehicleRouteCrew(item: ApiVehicleRoute): ActiveRoute["employees"] {
+  const driver = normalizeEmployeeRef(item.driver, "driver");
+  const appraiser = normalizeEmployeeRef(item.appraiser, "appraiser");
+  const fromEmployees = normalizeEmployees(item.employees);
+
+  if (driver && appraiser && driver.id === appraiser.id) {
+    const dualRoleEmployee = toEmployeeWithRoles(
+      { id: driver.id, name: driver.name },
+      ["driver", "appraiser"],
+    );
+    const others = fromEmployees.filter((employee) => employee.id !== driver.id);
+    if (fromEmployees.length > 0) {
+      return [dualRoleEmployee, ...others];
+    }
+    return [dualRoleEmployee];
+  }
+
+  if (fromEmployees.length > 0) return fromEmployees;
+
+  const crew: ActiveRoute["employees"] = [];
+  if (driver) crew.push(driver);
+  if (appraiser) crew.push(appraiser);
+  return crew;
+}
+
+function toEmployeeWithRoles(
+  employee: Pick<ActiveRoute["employees"][number], "id" | "name">,
+  roles: RouteCrewRole[],
+): ActiveRoute["employees"][number] {
+  const unique = [...new Set(roles)];
+  if (unique.length === 1) {
+    return { id: employee.id, name: employee.name, role: unique[0] };
+  }
+  const primary = unique.includes("driver") ? "driver" : unique.includes("appraiser") ? "appraiser" : "helper";
+  return { id: employee.id, name: employee.name, role: primary, roles: unique };
 }
 
 function normalizeContainerRef(raw?: ApiContainerRef | null): ActiveRoute["container"] {
@@ -141,8 +186,9 @@ function normalizeBranchRef(raw?: ApiBranchRef | null): ActiveRoute["branch"] {
   if (!raw || typeof raw !== "object") return null;
   const id = Number(raw.id);
   const code = String(raw.code ?? "").trim();
+  const name = String(raw.name ?? "").trim();
   if (!Number.isInteger(id) || id <= 0) return null;
-  return { id, code };
+  return { id, code, ...(name ? { name } : {}) };
 }
 
 function normalizeRouteRef(raw?: ApiRef | null): ActiveRoute["route"] | null {
@@ -171,12 +217,12 @@ export function normalizeApiVehicleRoute(raw: unknown): ActiveRoute | null {
   if (!raw || typeof raw !== "object") return null;
 
   const item = raw as ApiVehicleRoute;
-  const id = String(item.id ?? "").trim();
+  const id = String(item.id ?? item._id ?? "").trim();
   const route = normalizeRouteRef(item.route);
   if (!id || !route) return null;
 
   const container = normalizeContainerRef(item.container);
-  const rawType = String(item.routeType ?? "").trim().toLowerCase();
+  const rawType = String(item.routeType ?? item.type ?? "").trim().toLowerCase();
   const routeType: RouteType =
     rawType === "pickup" || rawType === "delivery" ? rawType : deriveRouteType(container);
 
@@ -192,7 +238,7 @@ export function normalizeApiVehicleRoute(raw: unknown): ActiveRoute | null {
     branch: normalizeBranchRef(item.branch),
     active: item.active !== false,
     route,
-    employees: normalizeEmployees(item.employees),
+    employees: normalizeVehicleRouteCrew(item),
     ...normalizeAuditFields(item),
   };
 }
@@ -207,25 +253,43 @@ function unwrapRecord(payload: unknown): unknown {
 }
 
 function buildEmployeeWriteRefs(values: ActiveRouteFormValues) {
-  return values.employees.map((employee) => ({
-    id: employee.id,
-    name: employee.name.trim(),
-    role: resolveCrewRole(employee.role),
-  }));
+  return values.employees.map((employee) => {
+    const roles = getEmployeeRoles(employee);
+    const role = roles.includes("driver")
+      ? "driver"
+      : roles.includes("appraiser")
+        ? "appraiser"
+        : resolveCrewRole(employee.role);
+    return {
+      id: employee.id,
+      name: employee.name.trim(),
+      role,
+    };
+  });
 }
 
 function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRouteWritePayload {
   assertActiveRouteFormValues(values);
 
+  const employees = buildEmployeeWriteRefs(values);
+  const driver = getActiveRouteEmployeesByRole(values, "driver")[0];
+  const appraiser = getActiveRouteAppraiser(values);
+
   const payload: VehicleRouteWritePayload = {
     routeType: values.routeType,
     active: values.active,
-    branch: { id: values.branch.id, code: values.branch.code.trim() },
+    branch: buildApiBranchDto({
+      id: values.branch.id,
+      code: values.branch.code.trim(),
+      name: values.branch.name?.trim(),
+    }),
     route: {
       id: values.routeRecordId.trim(),
       name: values.routeAssignmentName.trim() || values.routeRecordId.trim(),
     },
-    employees: buildEmployeeWriteRefs(values),
+    employees,
+    ...(driver ? { driver: { id: driver.id, name: driver.name.trim() } } : {}),
+    ...(appraiser ? { appraiser: { id: appraiser.id, name: appraiser.name.trim() } } : {}),
   };
 
   if (values.scheduleType === "dayOfWeek") {
@@ -308,10 +372,6 @@ export async function fetchActiveRoutes(
 ): Promise<PaginatedResult<ActiveRoute>> {
   const routeType = params.routeType ?? "pickup";
 
-  if (ROUTES_USE_MOCK_DATA) {
-    return activeRoutesMockApi.fetchActiveRoutes(params);
-  }
-
   const page = params.page ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.page;
   const limit = params.limit ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.limit;
 
@@ -369,13 +429,11 @@ async function searchActiveRouteByLookup(
   if (!isoDate) return null;
   if (params.routeType === "delivery" && !params.containerId) return null;
 
-  const filters = [
-    ...buildDayRangeFilters(isoDate),
-    { field: "routeType", operator: "eq", value: params.routeType },
-  ];
+  const filters = [...buildDayRangeFilters(isoDate)];
   if (params.routeType === "delivery" && params.containerId) {
     filters.push({ field: "container.id", operator: "eq", value: String(params.containerId) });
   }
+  filters.push({ field: "routeType", operator: "eq", value: params.routeType });
 
   const searchBody = buildStripeStyleSearchBody({
     sort: { field: "date", direction: "desc" },
@@ -389,6 +447,7 @@ async function searchActiveRouteByLookup(
   );
 
   const items = Array.isArray(payload.data) ? payload.data : [];
+
   for (const row of items) {
     const record = normalizeApiVehicleRoute(row);
     if (record && matchesActiveRouteLookup(record, params)) {
@@ -401,10 +460,6 @@ async function searchActiveRouteByLookup(
 export async function fetchActiveRoute(
   params: ActiveRouteLookupParams,
 ): Promise<ActiveRoute | null> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return activeRoutesMockApi.fetchActiveRoute(params);
-  }
-
   const date = params.date.trim().slice(0, 10);
   if (!date) return null;
   if (params.routeType === "delivery" && !params.containerId) return null;
@@ -414,18 +469,13 @@ export async function fetchActiveRoute(
 
 export async function fetchActiveRouteById(
   recordId: string,
-  routeType: RouteType,
+  _routeType?: RouteType,
 ): Promise<ActiveRoute> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return activeRoutesMockApi.fetchActiveRouteById(recordId);
-  }
-
   const id = recordId.trim();
   if (!id) {
     throw new Error("A valid route id is required.");
   }
 
-  void routeType;
   const response = await apiClient.get<ApiVehicleRoute | PaginatedApiEnvelope<ApiVehicleRoute>>(
     `${API_ENDPOINTS.VEHICLE_ROUTES}/${id}`,
   );
@@ -451,7 +501,7 @@ async function resolveSavedActiveRoute(
   if (fromResponse) return fromResponse;
 
   if (recordId) {
-    return fetchActiveRouteById(recordId, values.routeType);
+    return fetchActiveRouteById(recordId);
   }
 
   const message = response.message || response.error;
@@ -459,10 +509,6 @@ async function resolveSavedActiveRoute(
 }
 
 export async function createActiveRoute(values: ActiveRouteFormValues): Promise<ActiveRoute> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return activeRoutesMockApi.createActiveRoute(values);
-  }
-
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.VEHICLE_ROUTES,
     buildVehicleRouteWritePayload(values),
@@ -476,10 +522,6 @@ export async function updateActiveRoute(
   recordId: string,
   values: ActiveRouteFormValues,
 ): Promise<ActiveRoute> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return activeRoutesMockApi.updateActiveRoute(recordId, values);
-  }
-
   const id = recordId.trim();
   if (!id) {
     throw new Error("A valid route id is required to update.");
@@ -498,10 +540,6 @@ export async function upsertActiveRoute(
   values: ActiveRouteFormValues,
   existingId?: string | null,
 ): Promise<ActiveRoute> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return activeRoutesMockApi.upsertActiveRoute(values, existingId);
-  }
-
   const recordId = existingId?.trim();
   if (recordId) {
     return updateActiveRoute(recordId, values);
@@ -510,17 +548,12 @@ export async function upsertActiveRoute(
   return createActiveRoute(values);
 }
 
-export async function deleteActiveRoute(recordId: string, routeType: RouteType): Promise<void> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return activeRoutesMockApi.deleteActiveRoute(recordId);
-  }
-
+export async function deleteActiveRoute(recordId: string, _routeType?: RouteType): Promise<void> {
   const id = recordId.trim();
   if (!id) {
     throw new Error("A valid route id is required to delete.");
   }
 
-  void routeType;
   const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.VEHICLE_ROUTES}/${id}`,
   );
@@ -530,11 +563,7 @@ export async function deleteActiveRoute(recordId: string, routeType: RouteType):
 
 export async function deleteActiveRoutes(
   recordIds: string[],
-  routeType: RouteType,
+  routeType?: RouteType,
 ): Promise<void> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return activeRoutesMockApi.deleteActiveRoutes(recordIds);
-  }
-
   await Promise.all(recordIds.map((id) => deleteActiveRoute(id, routeType)));
 }

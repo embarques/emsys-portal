@@ -141,6 +141,8 @@ export const queryKeys = {
       [...queryKeys.orders.all, "search", search, limit] as const,
     history: (senderId: string, limit: number) =>
       [...queryKeys.orders.all, "history", senderId, limit] as const,
+    byRoute: (routeId: string, page: number, limit: number) =>
+      [...queryKeys.orders.all, "by-route", routeId, page, limit] as const,
     stats: (
       scope:
         | "pending"

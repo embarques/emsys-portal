@@ -3,7 +3,7 @@ import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
 import type { RouteCrewRole, RouteEmployeeRef } from "@/lib/route-manager/types";
 import {
-  resolveCrewRole,
+  employeeHasRole,
   todayDateInputValue,
   toRouteDateInput,
 } from "@/lib/route-manager/types";
@@ -46,6 +46,7 @@ export type ActiveRouteRouteRef = {
 export type ActiveRouteBranchRef = {
   id: number;
   code: string;
+  name?: string;
 };
 
 export type ActiveRoute = {
@@ -110,10 +111,13 @@ export const DEFAULT_ACTIVE_ROUTE_LIST_PARAMS = {
   sort: "date:desc",
 } as const satisfies ActiveRouteListParams;
 
-/** Fields the bar search fans out across with an OR group. */
+/** Fields the bar search fans out across with an OR group (`POST /vehicle-routes/search`). */
 export const ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS = [
   "name",
   "route.name",
+  "driver.name",
+  "appraiser.name",
+  "helper.name",
   "employees.name",
   "container.name",
   "date",
@@ -123,11 +127,25 @@ export function deriveRouteType(container: ActiveRouteContainerRef | null): Rout
   return container && container.id > 0 ? "delivery" : "pickup";
 }
 
-/** Crew member acting as appraiser (at most one), or null. */
+/** Crew members acting as appraiser. */
+export function getActiveRouteAppraisers(
+  record: Pick<ActiveRoute, "employees">,
+): RouteEmployeeRef[] {
+  return getActiveRouteEmployeesByRole(record, "appraiser");
+}
+
+/** First appraiser on the route, if any (legacy API denormalization). */
 export function getActiveRouteAppraiser(
   record: Pick<ActiveRoute, "employees">,
 ): RouteEmployeeRef | null {
-  return record.employees.find((employee) => resolveCrewRole(employee.role) === "appraiser") ?? null;
+  return getActiveRouteAppraisers(record)[0] ?? null;
+}
+
+/** Crew members acting as helper. */
+export function getActiveRouteHelpers(
+  record: Pick<ActiveRoute, "employees">,
+): RouteEmployeeRef[] {
+  return getActiveRouteEmployeesByRole(record, "helper");
 }
 
 /** Crew members with the given role. */
@@ -135,7 +153,7 @@ export function getActiveRouteEmployeesByRole(
   record: Pick<ActiveRoute, "employees">,
   role: RouteCrewRole,
 ): RouteEmployeeRef[] {
-  return record.employees.filter((employee) => resolveCrewRole(employee.role) === role);
+  return record.employees.filter((employee) => employeeHasRole(employee, role));
 }
 
 export function createEmptyActiveRouteForm(routeType: RouteType = "pickup"): ActiveRouteFormValues {

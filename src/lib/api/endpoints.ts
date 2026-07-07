@@ -41,6 +41,7 @@ export const API_ENDPOINTS = {
   REPORTS_JOURNALS: "/reports/journals",
   REPORTS_LABELS: "/reports/labels",
   REPORTS_PICKUPS: "/reports/pickups",
+  REPORTS_DELIVERIES: "/reports/deliveries",
   /** Public PDF download; append `/{token}`. */
   REPORTS_PUBLIC: "/public/reports",
   FILTER_PRESETS: "/filter-presets",

@@ -2,6 +2,11 @@ import { formatCoreAddressLine } from "@/lib/customers/display";
 import { formatPrimaryPhonesDisplayOrDash, getPhoneDisplayAtIndex } from "@/lib/phones/phones";
 import { getBranchLabel } from "@/lib/vehicles/display";
 import type { Route } from "@/lib/route-manager/types";
+import { truncateObjectId } from "@/lib/route-manager/display";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+import {
+  formatActiveRouteReferenceLabel,
+} from "@/lib/pickup-delivery-routes/display";
 import type { Customer } from "@/lib/customers/types";
 import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
@@ -20,17 +25,46 @@ export function formatOrderDate(date: string): string {
   const trimmed = date?.trim();
   if (!trimmed) return "—";
 
-  const parsed = trimmed.includes("T")
-    ? new Date(trimmed)
-    : new Date(`${trimmed.slice(0, 10)}T12:00:00`);
-
-  if (Number.isNaN(parsed.getTime())) return "—";
+  const parsed = parseOrderDateValue(trimmed);
+  if (!parsed) return "—";
 
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   }).format(parsed);
+}
+
+const ORDER_DATE_LOCALE_TAGS: Record<string, string> = {
+  en: "en-US",
+  es: "es-US",
+};
+
+function parseOrderDateValue(date: string): Date | null {
+  const parsed = date.includes("T")
+    ? new Date(date)
+    : new Date(`${date.slice(0, 10)}T12:00:00`);
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** e.g. "Tuesday July 6 2026" — weekday, month, day, and year without commas. */
+export function formatOrderDateWithWeekday(date: string, locale = "en"): string {
+  const trimmed = date?.trim();
+  if (!trimmed) return "—";
+
+  const parsed = parseOrderDateValue(trimmed);
+  if (!parsed) return "—";
+
+  const parts = new Intl.DateTimeFormat(ORDER_DATE_LOCALE_TAGS[locale] ?? "en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).formatToParts(parsed);
+
+  const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return [lookup.weekday, lookup.month, lookup.day, lookup.year].filter(Boolean).join(" ");
 }
 
 export function formatOrderId(order: Pick<Order, "id">): string {
@@ -43,9 +77,8 @@ export function formatCustomerPartySummary(customer: Customer): string {
 }
 
 /**
- * Formats a route for display. The route catalog now comes from the
- * live API, so callers resolve the assignment (e.g. via a TanStack Query picker
- * lookup) and pass it in. Without a resolved assignment the raw id is shown.
+ * Formats a route manager assignment for display (accounting and legacy callers).
+ * Pickup orders use `formatOrderRouteName` with a scheduled pickup vehicle route.
  */
 export function getRouteLabel(
   routeId: string,
@@ -66,10 +99,21 @@ export function formatOrderRoute(
 
 export function formatOrderRouteName(
   order: Pick<Order, "routeId" | "routeName">,
-  assignment?: Pick<Route, "name">,
+  scheduledRoute?: ActiveRoute | null,
+  t?: (key: string) => string,
 ): string {
   if (!order.routeId && !order.routeName) return "—";
-  return assignment?.name.trim() || order.routeName?.trim() || order.routeId || "—";
+
+  if (scheduledRoute) {
+    return formatActiveRouteReferenceLabel(scheduledRoute, t);
+  }
+
+  const embeddedName = order.routeName?.trim();
+  if (embeddedName && embeddedName !== order.routeId) {
+    return embeddedName;
+  }
+
+  return order.routeId ? truncateObjectId(order.routeId) : "—";
 }
 
 export function formatPickupCommentSummary(comment: PickupComment): string {

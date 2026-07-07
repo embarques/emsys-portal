@@ -6,6 +6,7 @@ import { ListChecks, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type TableSelectionToolbarProps = {
@@ -106,7 +107,12 @@ export function TableSelectionToolbar({
       {hasRecordActions ? (
         <div className="flex flex-wrap items-center gap-1.5">
           {showEdit ? (
-            <Button variant="outline" size="sm" className="whitespace-nowrap" onClick={onEdit}>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+              onClick={onEdit}
+            >
               <Pencil className="h-4 w-4" />
               {t("common.actions.edit")}
             </Button>
@@ -119,7 +125,7 @@ export function TableSelectionToolbar({
                 variant="outline"
                 size="sm"
                 disabled={deleteDisabled}
-                className="whitespace-nowrap border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/15 hover:text-destructive"
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
                 onClick={onDelete}
               >
                 <Trash2 className="h-4 w-4" />

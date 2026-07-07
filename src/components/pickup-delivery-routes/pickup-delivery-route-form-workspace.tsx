@@ -38,7 +38,7 @@ export function ActiveRouteFormWorkspace({ tabId, mode, entityId, variant }: Act
   const copyPrefix = variant.copyPrefix;
 
   const editing = isEditing ? (detailQuery.data ?? null) : null;
-  const editingLabel = editing ? formatActiveRouteRowLabel(editing) : undefined;
+  const editingLabel = editing ? formatActiveRouteRowLabel(editing, t("common.empty.dash"), t) : undefined;
 
   useEffect(() => {
     if (isEditing && editingLabel) {

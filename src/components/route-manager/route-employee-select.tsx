@@ -17,6 +17,8 @@ type RouteEmployeeSelectProps = {
   error?: string | null;
   /** Branch code to scope the crew list to (e.g. "NY"). */
   branchCode?: string;
+  /** When false, only the add picker is shown (selection list is elsewhere). */
+  showSelectedList?: boolean;
 };
 
 export function RouteEmployeeSelect({
@@ -24,6 +26,7 @@ export function RouteEmployeeSelect({
   onChange,
   error = null,
   branchCode,
+  showSelectedList = true,
 }: RouteEmployeeSelectProps) {
   const { t } = useTranslation();
   const [employeeQuery, setEmployeeQuery] = useState("");
@@ -136,30 +139,32 @@ export function RouteEmployeeSelect({
         options={pickerOptions}
       />
 
-      {sortedSelection.length > 0 ? (
-        <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-background">
-          {sortedSelection.map((employee) => (
-            <li
-              key={employee.id}
-              className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm"
-            >
-              <span className="min-w-0 font-medium">{employee.name}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
-                onClick={() => removeEmployee(employee.id)}
-                aria-label={t("routes.form.removeCrewMember", { name: employee.name })}
+      {showSelectedList ? (
+        sortedSelection.length > 0 ? (
+          <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-background">
+            {sortedSelection.map((employee) => (
+              <li
+                key={employee.id}
+                className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm"
               >
-                <X className="size-4" />
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-xs text-muted-foreground">{t("routes.form.selectAtLeastOneCrewMember")}</p>
-      )}
+                <span className="min-w-0 font-medium">{employee.name}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeEmployee(employee.id)}
+                  aria-label={t("routes.form.removeCrewMember", { name: employee.name })}
+                >
+                  <X className="size-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground">{t("routes.form.selectAtLeastOneCrewMember")}</p>
+        )
+      ) : null}
 
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

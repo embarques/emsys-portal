@@ -27,27 +27,68 @@ export type RouteEmployeeRef = {
   id: number;
   name: string;
   role?: RouteCrewRole;
+  /** When set, the employee holds multiple lead roles (e.g. driver + appraiser). */
+  roles?: RouteCrewRole[];
 };
 
 export function resolveCrewRole(role?: RouteCrewRole): RouteCrewRole {
   return role ?? DEFAULT_ROUTE_CREW_ROLE;
 }
 
+export function getEmployeeRoles(
+  employee: Pick<RouteEmployeeRef, "role" | "roles">,
+): RouteCrewRole[] {
+  if (employee.roles?.length) return employee.roles;
+  return [resolveCrewRole(employee.role)];
+}
+
+export function employeeHasRole(
+  employee: Pick<RouteEmployeeRef, "role" | "roles">,
+  role: RouteCrewRole,
+): boolean {
+  return getEmployeeRoles(employee).includes(role);
+}
+
+function primaryEmployeeRole(roles: RouteCrewRole[]): RouteCrewRole {
+  if (roles.includes("driver")) return "driver";
+  if (roles.includes("appraiser")) return "appraiser";
+  return "helper";
+}
+
+function toEmployeeWithRoles(employee: RouteEmployeeRef, roles: RouteCrewRole[]): RouteEmployeeRef {
+  const unique = [...new Set(roles.filter((role) => role !== "helper"))];
+  if (unique.length === 0) {
+    return { id: employee.id, name: employee.name, role: "helper" };
+  }
+  const primary = primaryEmployeeRole(unique);
+  if (unique.length === 1) {
+    return { id: employee.id, name: employee.name, role: primary };
+  }
+  return { id: employee.id, name: employee.name, role: primary, roles: unique };
+}
+
 /** Roles that only one crew member can hold at a time. */
 export const SINGLETON_CREW_ROLES: RouteCrewRole[] = ["driver", "appraiser"];
 
+type SetCrewMemberRoleOptions = {
+  /** When set, only these roles demote other members holding the same role. */
+  singletonRoles?: RouteCrewRole[];
+};
+
 /**
- * Assign `role` to the crew member with `employeeId`. Driver and appraiser are
- * singleton roles (only one each), so promoting a member to one of them demotes
- * any other member currently holding that role back to helper. Helper is
- * unlimited.
+ * Assign `role` to the crew member with `employeeId`. By default driver and
+ * appraiser are singleton roles (only one each), so promoting a member to one
+ * of them demotes any other member currently holding that role back to helper.
+ * Helper is unlimited.
  */
 export function setCrewMemberRole(
   employees: RouteEmployeeRef[],
   employeeId: number,
   role: RouteCrewRole,
+  options?: SetCrewMemberRoleOptions,
 ): RouteEmployeeRef[] {
-  const isSingleton = SINGLETON_CREW_ROLES.includes(role);
+  const singletonRoles = options?.singletonRoles ?? SINGLETON_CREW_ROLES;
+  const isSingleton = singletonRoles.includes(role);
   return employees.map((employee) => {
     if (employee.id === employeeId) {
       return { ...employee, role };
@@ -55,6 +96,44 @@ export function setCrewMemberRole(
     if (isSingleton && resolveCrewRole(employee.role) === role) {
       return { ...employee, role: "helper" as RouteCrewRole };
     }
+    return employee;
+  });
+}
+
+/**
+ * Toggle driver/appraiser on pickup and delivery routes. Each lead role has at
+ * most one holder, but the same employee may hold both. Helper clears lead roles.
+ */
+export function setVehicleRouteCrewRole(
+  employees: RouteEmployeeRef[],
+  employeeId: number,
+  role: RouteCrewRole,
+): RouteEmployeeRef[] {
+  if (role === "helper") {
+    return employees.map((employee) =>
+      employee.id === employeeId
+        ? { id: employee.id, name: employee.name, role: "helper" }
+        : employee,
+    );
+  }
+
+  return employees.map((employee) => {
+    if (employee.id === employeeId) {
+      const leadRoles = getEmployeeRoles(employee).filter(
+        (entry) => entry === "driver" || entry === "appraiser",
+      );
+      const hasRole = leadRoles.includes(role);
+      const nextLeadRoles = hasRole
+        ? leadRoles.filter((entry) => entry !== role)
+        : [...leadRoles, role];
+      return toEmployeeWithRoles(employee, nextLeadRoles.length > 0 ? nextLeadRoles : ["helper"]);
+    }
+
+    if (employeeHasRole(employee, role)) {
+      const nextLeadRoles = getEmployeeRoles(employee).filter((entry) => entry !== role);
+      return toEmployeeWithRoles(employee, nextLeadRoles.length > 0 ? nextLeadRoles : ["helper"]);
+    }
+
     return employee;
   });
 }

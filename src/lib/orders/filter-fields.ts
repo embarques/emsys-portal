@@ -71,10 +71,10 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "route.id",
-    label: "Route",
+    label: "Pickup route",
     operators: ["eq", "neq"],
     valueType: "select",
-    optionsSource: "routes",
+    optionsSource: "pickupRoutes",
   },
   {
     field: "branch.id",

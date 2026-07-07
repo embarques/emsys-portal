@@ -181,7 +181,12 @@ export function buildVehicleListParams(input: {
 
 export function getVehiclePortalBranch(branch: string): VehiclePortalBranch {
   const normalized = (branch ?? "").trim().toLowerCase();
-  if (normalized === "dr" || normalized === "do" || normalized === "dominican republic") {
+  if (
+    normalized === "dr" ||
+    normalized === "do" ||
+    normalized === "rd" ||
+    normalized === "dominican republic"
+  ) {
     return "dr";
   }
   return "usa";

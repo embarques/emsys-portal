@@ -11,11 +11,9 @@ import {
   createTextSearchFilter,
   type ApiSearchFilterGroup,
 } from "@/lib/api/search-query";
-import { buildApiBranchRef, type ApiBranchRefPayload } from "@/lib/api/payloads";
+import { buildApiBranchDto, type ApiBranchDtoPayload } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
-import { ROUTES_USE_MOCK_DATA } from "@/lib/route-manager/data-source";
-import * as routesMockApi from "@/lib/route-manager/api/route-manager-mock-api";
 import {
   DEFAULT_ROUTE_CREW_ROLE,
   DEFAULT_ROUTE_LIST_PARAMS,
@@ -75,7 +73,7 @@ type ApiRoute = {
 type ApiRouteWritePayload = {
   routeId?: string;
   name?: string;
-  branch?: ApiBranchRefPayload;
+  branch?: ApiBranchDtoPayload;
   vehicle: { id: string; name: string; branch?: string };
   employees: { id: number; name: string; role: RouteCrewRole }[];
   active: boolean;
@@ -228,10 +226,6 @@ function buildRouteSearchBody(params: RouteListParams) {
 export async function fetchRoutes(
   params: RouteListParams = {},
 ): Promise<PaginatedResult<Route>> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return routesMockApi.fetchRoutes(params);
-  }
-
   const page = params.page ?? DEFAULT_ROUTE_LIST_PARAMS.page;
   const limit = params.limit ?? DEFAULT_ROUTE_LIST_PARAMS.limit;
 
@@ -261,10 +255,6 @@ export async function fetchRoutes(
 export async function fetchRoutesByDate(
   dateInput: string,
 ): Promise<PaginatedResult<Route>> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return routesMockApi.fetchRoutesByDate(dateInput);
-  }
-
   const start = toRouteDateIso(dateInput);
   const next = new Date(`${dateInput}T00:00:00Z`);
   next.setUTCDate(next.getUTCDate() + 1);
@@ -293,10 +283,6 @@ export async function fetchRoutesByDate(
 }
 
 export async function fetchRouteById(routeId: string): Promise<Route> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return routesMockApi.fetchRouteById(routeId);
-  }
-
   const id = routeId.trim();
   if (!id) {
     throw new Error("A valid route id is required.");
@@ -346,10 +332,20 @@ function buildRouteWritePayload(
     active: values.active,
   };
 
-  const branchCode = values.branch?.code.trim();
-  if (values.branch && (values.branch.id > 0 || branchCode)) {
-    payload.branch = buildApiBranchRef({ id: values.branch.id, code: branchCode });
+  const branchCode = values.branch?.code.trim() ?? "";
+  const branchName = values.branch?.name?.trim() ?? "";
+  if (!values.branch || !(values.branch.id > 0)) {
+    throw new Error("Branch is required.");
   }
+  if (!branchName) {
+    throw new Error("Branch name is required.");
+  }
+
+  payload.branch = buildApiBranchDto({
+    id: values.branch.id,
+    code: branchCode,
+    name: branchName,
+  });
 
   if (mode === "update") {
     if (values.name.trim()) {
@@ -415,10 +411,6 @@ async function resolveCreatedRoute(
 export async function createRoute(
   values: RouteFormValues,
 ): Promise<Route> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return routesMockApi.createRoute(values);
-  }
-
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.ROUTES,
     buildRouteWritePayload(values, "create"),
@@ -433,10 +425,6 @@ export async function updateRoute(
   recordId: string,
   values: RouteFormValues,
 ): Promise<Route> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return routesMockApi.updateRoute(recordId, values);
-  }
-
   const id = recordId.trim();
   if (!id) {
     throw new Error("A valid route id is required to update.");
@@ -453,10 +441,6 @@ export async function updateRoute(
 }
 
 export async function deleteRoute(recordId: string): Promise<void> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return routesMockApi.deleteRoute(recordId);
-  }
-
   const id = recordId.trim();
   if (!id) {
     throw new Error("A valid route id is required to delete.");
@@ -470,39 +454,5 @@ export async function deleteRoute(recordId: string): Promise<void> {
 }
 
 export async function deleteRoutes(recordIds: string[]): Promise<void> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return routesMockApi.deleteRoutes(recordIds);
-  }
-
   await Promise.all(recordIds.map((id) => deleteRoute(id)));
-}
-
-/**
- * Assign pickups (orders) to a route via PUT /pickups/route/{routeId} with
- * `{ pickupIds }`. Each pickup then stores a `{ id, name }` route reference,
- * which the orders table can filter on via `route.id` / `route.name`.
- */
-export async function assignPickupsToRoute(
-  routeId: string,
-  pickupIds: number[],
-): Promise<void> {
-  if (ROUTES_USE_MOCK_DATA) {
-    return routesMockApi.assignPickupsToRoute(routeId, pickupIds);
-  }
-
-  const id = routeId.trim();
-  if (!id) {
-    throw new Error("A valid route is required.");
-  }
-
-  if (pickupIds.length === 0) {
-    throw new Error("Select at least one pickup to assign.");
-  }
-
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.PICKUP_ROUTES}/${id}`,
-    { pickupIds },
-  );
-
-  assertMutationSuccess(response, "Unable to assign route.");
 }

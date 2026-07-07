@@ -1,21 +1,31 @@
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
-import { getActiveRouteAppraiser } from "@/lib/pickup-delivery-routes/types";
+import { DAYS_OF_WEEK } from "@/lib/pickup-delivery-routes/types";
+import {
+  getActiveRouteAppraisers,
+  getActiveRouteEmployeesByRole,
+  getActiveRouteHelpers,
+} from "@/lib/pickup-delivery-routes/types";
 import type { Route } from "@/lib/route-manager/types";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import { formatRouteDate } from "@/lib/route-manager/display";
-import { resolveCrewRole } from "@/lib/route-manager/types";
 
-/** Names of every crew member acting as a driver (or unassigned). */
+/** Names of every crew member acting as a driver. */
 export function formatActiveRouteDriverNames(record: ActiveRoute): string {
-  return record.employees
-    .filter((employee) => resolveCrewRole(employee.role) === "driver")
-    .map((employee) => employee.name)
-    .join(", ");
+  return formatEmployeeNames(getActiveRouteEmployeesByRole(record, "driver"));
 }
 
-/** Name of the appraiser assigned to the route, if any. */
+function formatEmployeeNames(employees: { name: string }[]): string {
+  return employees.map((employee) => employee.name).join(", ");
+}
+
+/** Names of every crew member acting as appraiser. */
 export function formatActiveRouteAppraiserName(record: ActiveRoute): string {
-  return getActiveRouteAppraiser(record)?.name ?? "";
+  return formatEmployeeNames(getActiveRouteAppraisers(record));
+}
+
+/** Names of every crew member acting as helper. */
+export function formatActiveRouteHelperNames(record: ActiveRoute): string {
+  return formatEmployeeNames(getActiveRouteHelpers(record));
 }
 
 export function formatActiveRouteTypeLabel(
@@ -60,25 +70,84 @@ export function formatActiveRouteRouteName(
 export function formatActiveRouteRowLabel(
   record: ActiveRoute | null | undefined,
   emptyValue = "—",
+  t?: (key: string) => string,
 ): string {
   if (!record) return emptyValue;
+  return formatActiveRouteReferenceLabel(record, t, emptyValue);
+}
+
+/** Schedule portion of a pickup/delivery route label (date or recurring weekdays). */
+export function formatActiveRouteScheduleLabel(
+  record: ActiveRoute,
+  t?: (key: string) => string,
+  emptyValue = "",
+): string {
+  if (record.date?.trim()) {
+    return formatRouteDate(record.date);
+  }
+
+  if (record.dayOfWeek.length > 0) {
+    const days = record.dayOfWeek;
+    const isEveryDay =
+      days.length === DAYS_OF_WEEK.length &&
+      DAYS_OF_WEEK.every((day) => days.includes(day));
+
+    if (isEveryDay) {
+      return t?.("routes.activeRoute.days.everyDay") ?? "Every day";
+    }
+
+    if (t) {
+      return days.map((day) => t(`routes.activeRoute.days.${day}`)).join(", ");
+    }
+
+    return days
+      .map((day) => day.slice(0, 3).replace(/^./, (character) => character.toUpperCase()))
+      .join(", ");
+  }
+
+  return emptyValue;
+}
+
+/**
+ * Human-readable pickup/delivery route reference: schedule · route manager name · container.
+ * Used in assignment pickers, order route columns, and feedback toasts.
+ */
+export function formatActiveRouteReferenceLabel(
+  record: ActiveRoute,
+  t?: (key: string) => string,
+  emptyValue = "—",
+): string {
+  const schedule = formatActiveRouteScheduleLabel(record, t, "");
+  const routeName = record.route?.name?.trim();
+  const container = record.container?.name?.trim();
+  const parts = [schedule, routeName, container].filter(Boolean);
+
+  if (parts.length > 0) {
+    return parts.join(" · ");
+  }
 
   const name = String(record.name ?? "").trim();
-  const routeName = String(record.route?.name ?? "").trim();
-  return name || routeName || record.id || emptyValue;
+  return name || record.id || emptyValue;
+}
+
+/** Report ids from vehicle-route directory rows (`GET /vehicle-routes`). */
+export function resolveActiveRouteReportIds(
+  records: readonly ActiveRoute[],
+  selectedIds: readonly string[],
+): string[] {
+  const idByRecord = new Map(records.map((record) => [record.id, record.id.trim()]));
+
+  return selectedIds
+    .map((selectedId) => idByRecord.get(selectedId) ?? selectedId.trim())
+    .filter(Boolean);
 }
 
 /** Label for pickup/delivery route assignment pickers. */
-export function formatActiveRouteAssignmentLabel(record: ActiveRoute): string {
-  const name = formatActiveRouteRowLabel(record);
-  const date = formatRouteDate(record.date);
-  const container = record.container?.name?.trim();
-
-  if (container) {
-    return `${name} · ${date} · ${container}`;
-  }
-
-  return `${name} · ${date}`;
+export function formatActiveRouteAssignmentLabel(
+  record: ActiveRoute,
+  t?: (key: string) => string,
+): string {
+  return formatActiveRouteReferenceLabel(record, t);
 }
 
 function compareActiveRoutesByDateDesc(left: ActiveRoute, right: ActiveRoute): number {
@@ -90,10 +159,11 @@ function compareActiveRoutesByDateDesc(left: ActiveRoute, right: ActiveRoute): n
 /** Searchable options for assigning pickups or invoice barcodes to scheduled routes. */
 export function buildActiveRouteAssignmentOptions(
   records: ActiveRoute[],
+  t?: (key: string) => string,
 ): TableFilterFieldOption[] {
   return [...records].sort(compareActiveRoutesByDateDesc).map((record) => ({
     value: record.id,
-    label: formatActiveRouteAssignmentLabel(record),
+    label: formatActiveRouteAssignmentLabel(record, t),
     keywords: [
       record.name,
       record.route?.name,
@@ -143,6 +213,9 @@ export function activeRouteMatchesSearch(
         return formatActiveRouteDriverNames(record);
       case "appraiser.name":
         return formatActiveRouteAppraiserName(record);
+      case "helper.name":
+      case "helpers.name":
+        return formatActiveRouteHelperNames(record);
       case "container.name":
         return record.container?.name ?? "";
       case "createdBy":

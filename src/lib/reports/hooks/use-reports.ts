@@ -7,6 +7,7 @@ import {
   generateInvoiceReport,
   generateJournalReport,
   generateLabelReport,
+  generateDeliveryReport,
   generatePickupReport,
 } from "@/lib/reports/api/reports-api";
 import type { ReportRequest } from "@/lib/reports/types";
@@ -38,5 +39,11 @@ export function useGenerateLabelReport() {
 export function useGeneratePickupReport() {
   return useMutation({
     mutationFn: (request: ReportRequest) => generatePickupReport(request),
+  });
+}
+
+export function useGenerateDeliveryReport() {
+  return useMutation({
+    mutationFn: (request: ReportRequest) => generateDeliveryReport(request),
   });
 }

@@ -30,8 +30,42 @@
     "view": {
       "editLabel": "Editar ruta de recogida",
       "sections": {
-        "assignment": "Asignación"
+        "assignment": "Asignación",
+        "orders": "Órdenes asignadas"
+      },
+      "orders": {
+        "title": "Órdenes asignadas ({{count}})",
+        "description": "Recogidas asignadas a esta ruta.",
+        "editDescription": "Seleccione órdenes para quitarlas de esta ruta.",
+        "loading": "Cargando órdenes asignadas…",
+        "empty": "Aún no hay órdenes asignadas a esta ruta.",
+        "removeFromRoute": "Quitar de la ruta",
+        "selectAtLeastOne": "Seleccione al menos una orden para quitarla de esta ruta.",
+        "selectAllOrders": "Seleccionar todas las órdenes asignadas",
+        "selectOrder": "Seleccionar orden {{orderId}}",
+        "unassigned": "Se quitó {{count}} orden de esta ruta.",
+        "unassigned_plural": "Se quitaron {{count}} órdenes de esta ruta."
       }
+    },
+    "actions": {
+      "selectAtLeastOne": "Seleccione al menos una ruta de recogida.",
+      "noPickupsOnRoute": "No hay recogidas asignadas a la ruta seleccionada.",
+      "print": "Imprimir ruta",
+      "preparing": "Preparando…",
+      "optimize": "Optimizar ruta",
+      "clearRoute": "Limpiar ruta",
+      "clearing": "Limpiando…"
+    },
+    "dialogs": {
+      "clearRouteTitle": "¿Limpiar ruta?",
+      "clearRouteDescription": "Esto quitará todas las órdenes asignadas a esta ruta. {{cannotBeUndone}}"
+    },
+    "toasts": {
+      "comingSoon": "{{label}} estará disponible pronto.",
+      "manifestReady": "Manifiesto de recogida listo para {{count}} recogida.",
+      "manifestReady_plural": "Manifiesto de recogida listo para {{count}} recogidas.",
+      "routeCleared": "Se quitó {{count}} orden de esta ruta.",
+      "routeCleared_plural": "Se quitaron {{count}} órdenes de esta ruta."
     }
   },
   "deliveryRoutes": {
@@ -62,6 +96,15 @@
       "sections": {
         "assignment": "Asignación"
       }
+    },
+    "actions": {
+      "selectAtLeastOne": "Seleccione al menos una ruta de entrega para imprimir.",
+      "print": "Imprimir",
+      "preparing": "Preparando…"
+    },
+    "toasts": {
+      "reportReady": "Informe de entrega listo para {{count}} ruta.",
+      "reportReady_plural": "Informe de entrega listo para {{count}} rutas."
     }
   },
   "tabs": {
@@ -97,6 +140,7 @@
     "route": "Ruta",
     "driver": "Conductor",
     "appraiser": "Tasador",
+    "helper": "Ayudante",
     "recordId": "ID de registro"
   },
   "table": {
@@ -156,7 +200,8 @@
       "thursday": "Jueves",
       "friday": "Viernes",
       "saturday": "Sábado",
-      "sunday": "Domingo"
+      "sunday": "Domingo",
+      "everyDay": "Todos los días"
     },
     "namePlaceholder": "Nombre de ruta (opcional)",
     "status": "Estado",

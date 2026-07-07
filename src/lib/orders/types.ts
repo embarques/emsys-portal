@@ -1,9 +1,16 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
-import type { Customer, CustomerAddress, CustomerPhone } from "@/lib/customers/types";
+import type { Customer, CustomerAddress, CustomerCoreAddress, CustomerPhone } from "@/lib/customers/types";
+import {
+  coreAddressHasContent,
+  coreAddressRequiresVerification,
+  createRecordId,
+  getCustomerPrimaryCoreAddress,
+  isAddressVerified,
+} from "@/lib/customers/types";
+import { isCustomerSenderType } from "@/lib/customers/customer-type";
 import { REQUIRED_PHONE_DIGITS, isCompletePhoneNumber } from "@/lib/phones/phones";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
-import { createRecordId } from "@/lib/customers/types";
 import type { Employee } from "@/lib/employees/types";
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
@@ -116,6 +123,9 @@ export type OrderFormValues = {
   receiverId: string;
   sender: Customer | null;
   receiver: Customer | null;
+  /** Index into the selected party's addresses with content. */
+  senderAddressIndex: number;
+  receiverAddressIndex: number;
   employeeId: number | "";
   sectorId: number | "";
   comments: OrderCommentFormValues[];
@@ -286,6 +296,52 @@ export function deriveOrderPurpose(comments: OrderCommentFormValues[]): string {
   return keywords.join(", ");
 }
 
+export function getCustomerContentAddresses(
+  customer: Pick<Customer, "addresses">,
+): CustomerCoreAddress[] {
+  return customer.addresses.filter(coreAddressHasContent);
+}
+
+export function getDefaultOrderPartyAddressIndex(
+  customer: Pick<Customer, "addresses">,
+): number {
+  const addresses = getCustomerContentAddresses(customer);
+  const primaryIndex = addresses.findIndex((entry) => entry.isPrimary);
+  return primaryIndex >= 0 ? primaryIndex : 0;
+}
+
+export function resolveOrderPartyAddressIndex(
+  customer: Pick<Customer, "addresses"> | null,
+  currentIndex: number,
+): number {
+  if (!customer) return 0;
+
+  const addresses = getCustomerContentAddresses(customer);
+  if (addresses.length === 0) return 0;
+  if (currentIndex >= 0 && currentIndex < addresses.length) return currentIndex;
+  return getDefaultOrderPartyAddressIndex(customer);
+}
+
+export function getOrderPartyAddressAtIndex(
+  customer: Pick<Customer, "addresses">,
+  index: number,
+): CustomerCoreAddress {
+  const addresses = getCustomerContentAddresses(customer);
+  return addresses[index] ?? addresses[0] ?? getCustomerPrimaryCoreAddress(customer);
+}
+
+export function customerHasUnverifiedAddressAtIndex(
+  customer: Pick<Customer, "addresses" | "customerType">,
+  index: number,
+): boolean {
+  if (!isCustomerSenderType(customer.customerType)) return false;
+
+  const address = getCustomerContentAddresses(customer)[index];
+  if (!address) return false;
+
+  return coreAddressRequiresVerification(address) && !isAddressVerified(address);
+}
+
 export function todayDateInputValue(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -301,6 +357,8 @@ export function createEmptyOrderForm(): OrderFormValues {
     receiverId: "",
     sender: null,
     receiver: null,
+    senderAddressIndex: 0,
+    receiverAddressIndex: 0,
     employeeId: "",
     sectorId: "",
     comments: [],
@@ -355,6 +413,10 @@ export function orderToFormValues(order: Order): OrderFormValues {
     receiverId: order.receiver?.id ?? "",
     sender: order.sender,
     receiver: order.receiver,
+    senderAddressIndex: resolveOrderPartyAddressIndex(order.sender, 0),
+    receiverAddressIndex: order.receiver
+      ? resolveOrderPartyAddressIndex(order.receiver, 0)
+      : 0,
     employeeId: order.employee?.id ?? "",
     sectorId: order.sector?.id ?? "",
     comments: order.comments.map(orderCommentToFormValues),

@@ -281,7 +281,7 @@ export function resolveCustomerBranchId(input: { id?: number | null; code?: stri
 /**
  * Customer search field + operator pairs verified against the live API.
  * Customer list filters use POST /customers/search with the standard advanced-search body.
- * Address filters also query `addresses.*` via `queryFields` in filter-fields.ts.
+ * Address filters query virtual `address.*` paths (see address-search-fields.ts).
  */
 export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   field: CustomerSearchField;

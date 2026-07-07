@@ -1,10 +1,13 @@
 import { useMemo } from "react";
 
+import { formatBranchCodeLabel } from "@/lib/branches/display";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
-import { getVehiclePortalBranch } from "@/lib/vehicles/types";
 
 export function useVehicleLabels() {
   const { t } = useTranslation();
+  const branchesQuery = useBranchPicker(200);
+  const branches = branchesQuery.data?.items ?? [];
 
   return useMemo(
     () => ({
@@ -18,12 +21,11 @@ export function useVehicleLabels() {
       branch: (code: string) => {
         const trimmed = code.trim();
         if (!trimmed) return t("common.empty.dash");
-        const portal = getVehiclePortalBranch(trimmed);
-        return t(`vehicles.enums.branch.${portal}`);
+        return formatBranchCodeLabel(trimmed, branches);
       },
       active: (active: boolean) =>
         t(active ? "vehicles.enums.status.active" : "vehicles.enums.status.inactive"),
     }),
-    [t],
+    [branches, t],
   );
 }

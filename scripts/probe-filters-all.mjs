@@ -97,7 +97,7 @@ const customers = {
     ["address.address2", TEXT], ["address.city", TEXT], ["address.state", TEXT], ["address.zipcode", TEXT],
     ["address.country", EQ2], ["phones.number", TEXT], ["customerType", EQ2], ["branch.id", EQ2],
   ],
-  bar: ["name", "phones.number", "phone1", "phone2", "addresses.address1", "addresses.address2", "addresses.apartment", "addresses.city", "addresses.state", "addresses.zipcode"],
+  bar: ["name", "phones.number", "phone1", "phone2", "address.address1", "address.address2", "address.apartment", "address.city", "address.state", "address.zipcode"],
 };
 const orders = {
   label: "ORDERS (pickups)", path: "/pickups",

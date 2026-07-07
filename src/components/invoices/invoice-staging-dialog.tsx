@@ -231,8 +231,8 @@ export function InvoiceStagingWorkflow({
   });
   const routes = routesData?.items ?? [];
   const routeOptions = useMemo(
-    () => buildActiveRouteAssignmentOptions(routes),
-    [routes],
+    () => buildActiveRouteAssignmentOptions(routes, t),
+    [routes, t],
   );
 
   const isGenerating = generateLabelsMutation.isPending;

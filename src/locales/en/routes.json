@@ -30,8 +30,42 @@
     "view": {
       "editLabel": "Edit pickup route",
       "sections": {
-        "assignment": "Assignment"
+        "assignment": "Assignment",
+        "orders": "Assigned orders"
+      },
+      "orders": {
+        "title": "Assigned orders ({{count}})",
+        "description": "Pickups assigned to this route.",
+        "editDescription": "Select orders to remove them from this route.",
+        "loading": "Loading assigned orders…",
+        "empty": "No orders are assigned to this route yet.",
+        "removeFromRoute": "Remove from route",
+        "selectAtLeastOne": "Select at least one order to remove from this route.",
+        "selectAllOrders": "Select all assigned orders",
+        "selectOrder": "Select order {{orderId}}",
+        "unassigned": "Removed {{count}} order from this route.",
+        "unassigned_plural": "Removed {{count}} orders from this route."
       }
+    },
+    "actions": {
+      "selectAtLeastOne": "Select at least one pickup route.",
+      "noPickupsOnRoute": "No pickups are assigned to the selected route.",
+      "print": "Print route",
+      "preparing": "Preparing…",
+      "optimize": "Optimize route",
+      "clearRoute": "Clear route",
+      "clearing": "Clearing…"
+    },
+    "dialogs": {
+      "clearRouteTitle": "Clear route?",
+      "clearRouteDescription": "This will unassign all orders from this route. {{cannotBeUndone}}"
+    },
+    "toasts": {
+      "comingSoon": "{{label}} is coming soon.",
+      "manifestReady": "Pickup manifest ready for {{count}} pickup.",
+      "manifestReady_plural": "Pickup manifest ready for {{count}} pickups.",
+      "routeCleared": "Cleared {{count}} order from this route.",
+      "routeCleared_plural": "Cleared {{count}} orders from this route."
     }
   },
   "deliveryRoutes": {
@@ -62,6 +96,15 @@
       "sections": {
         "assignment": "Assignment"
       }
+    },
+    "actions": {
+      "selectAtLeastOne": "Select at least one delivery route to print.",
+      "print": "Print",
+      "preparing": "Preparing…"
+    },
+    "toasts": {
+      "reportReady": "Delivery report ready for {{count}} route.",
+      "reportReady_plural": "Delivery report ready for {{count}} routes."
     }
   },
   "tabs": {
@@ -97,6 +140,7 @@
     "route": "Route",
     "driver": "Driver",
     "appraiser": "Appraiser",
+    "helper": "Helper",
     "recordId": "Record ID"
   },
   "table": {
@@ -156,7 +200,8 @@
       "thursday": "Thursday",
       "friday": "Friday",
       "saturday": "Saturday",
-      "sunday": "Sunday"
+      "sunday": "Sunday",
+      "everyDay": "Every day"
     },
     "namePlaceholder": "Optional route name",
     "status": "Status",

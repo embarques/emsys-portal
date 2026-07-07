@@ -10,12 +10,14 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { PickupRouteOrdersSection } from "@/components/pickup-delivery-routes/pickup-route-orders-section";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
 import {
   formatActiveRouteAppraiserName,
   formatActiveRouteContainerLabel,
   formatActiveRouteDriverNames,
+  formatActiveRouteHelperNames,
   formatActiveRouteRowLabel,
   formatActiveRouteTypeLabel,
 } from "@/lib/pickup-delivery-routes/display";
@@ -62,7 +64,7 @@ export function ActiveRouteViewSheet({
 
   if (!record) return null;
 
-  const title = formatActiveRouteRowLabel(record, dash);
+  const title = formatActiveRouteRowLabel(record, dash, t);
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -124,13 +126,21 @@ export function ActiveRouteViewSheet({
               label={t("routes.columns.driver")}
               value={formatActiveRouteDriverNames(record) || dash}
             />
-            {record.routeType === "pickup" ? (
-              <RecordViewSheetDetailRow
-                label={t("routes.columns.appraiser")}
-                value={formatActiveRouteAppraiserName(record) || dash}
-              />
-            ) : null}
+            <RecordViewSheetDetailRow
+              label={t("routes.columns.appraiser")}
+              value={formatActiveRouteAppraiserName(record) || dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("routes.columns.helper")}
+              value={formatActiveRouteHelperNames(record) || dash}
+            />
           </RecordViewSheetSection>
+
+          {record.routeType === "pickup" ? (
+            <RecordViewSheetSection title={t("routes.pickupRoutes.view.sections.orders")}>
+              <PickupRouteOrdersSection routeId={record.id} enabled={open} />
+            </RecordViewSheetSection>
+          ) : null}
 
           <RecordViewSheetSection title={t("routes.viewSheet.sections.audit")}>
             <RecordViewSheetDetailRow

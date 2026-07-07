@@ -1,3 +1,4 @@
+import type { ApiBranchDtoPayload } from "@/lib/api/payloads";
 import type { RouteCrewRole } from "@/lib/route-manager/types";
 
 import type {
@@ -7,10 +8,15 @@ import type {
   RouteType,
 } from "./types";
 
-/** Crew member on a vehicle route write payload. */
-export type VehicleRouteEmployeeWriteRef = {
+/** Employee ref on vehicle route read/write payloads. */
+export type VehicleRouteEmployeeRef = {
   id: number;
   name: string;
+  role?: RouteCrewRole;
+};
+
+/** Crew member on a vehicle route write payload. */
+export type VehicleRouteEmployeeWriteRef = VehicleRouteEmployeeRef & {
   role: RouteCrewRole;
 };
 
@@ -33,9 +39,11 @@ export type VehicleRouteWritePayload = {
   name?: string;
   routeType: RouteType;
   active: boolean;
-  branch: ActiveRouteBranchRef;
+  branch: ApiBranchDtoPayload;
   route: { id: string; name: string };
   employees: VehicleRouteEmployeeWriteRef[];
+  driver?: VehicleRouteEmployeeRef;
+  appraiser?: VehicleRouteEmployeeRef;
   date?: string;
   dayOfWeek?: string[];
   container?: VehicleRouteContainerWriteRef;
@@ -64,19 +72,25 @@ export const PICKUP_VEHICLE_ROUTE_WRITE_EXAMPLE = {
   name: "",
   routeType: "pickup",
   active: true,
-  branch: { id: 1, code: "NYC" },
+  branch: { id: 1, code: "NY", name: "Embarque Tenares" },
   date: "2026-07-03T08:00:00Z",
   route: { id: "674a1b2c3d4e5f6789012345", name: "Jane Driver-Truck 1" },
+  driver: { id: 5, name: "Jane Driver" },
   employees: [{ id: 5, name: "Jane Driver", role: "driver" }],
 } as const satisfies VehicleRouteWritePayload;
 
-/** Example `POST /v1/vehicle-routes` delivery body (recurring weekday). */
+/** Example `POST /v1/vehicle-routes` delivery body (date-based). */
 export const DELIVERY_VEHICLE_ROUTE_WRITE_EXAMPLE = {
   routeType: "delivery",
   active: true,
-  branch: { id: 1, code: "NYC" },
-  dayOfWeek: ["monday", "thursday"],
-  route: { id: "674a1b2c3d4e5f6789012345", name: "Route 1" },
-  employees: [{ id: 5, name: "Jane Driver", role: "driver" }],
+  branch: { id: 2, code: "RD", name: "Embarque RD" },
+  date: "2026-06-10T00:00:00Z",
+  route: { id: "674a1b2c3d4e5f6789012348", name: "Route 1" },
+  driver: { id: 8, name: "Driver A" },
+  appraiser: { id: 9, name: "Helper B" },
+  employees: [
+    { id: 8, name: "Driver A", role: "driver" },
+    { id: 9, name: "Helper B", role: "appraiser" },
+  ],
   container: { id: 674, number: "95-25" },
 } as const satisfies VehicleRouteWritePayload;

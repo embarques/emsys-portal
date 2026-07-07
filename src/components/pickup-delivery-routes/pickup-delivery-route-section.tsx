@@ -42,8 +42,9 @@ import {
 import {
   createEmptyRouteForm,
   resolveCrewRole,
-  setCrewMemberRole,
+  setVehicleRouteCrewRole,
   type RouteCrewRole,
+  type RouteEmployeeRef,
   type RouteFormValues,
 } from "@/lib/route-manager/types";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
@@ -109,7 +110,7 @@ export function ActiveRouteSection({
     setValues((current) =>
       current.branch.id === match.id && current.branch.code === match.code
         ? current
-        : { ...current, branch: { id: match.id, code: match.code } },
+        : { ...current, branch: { id: match.id, code: match.code, name: match.name } },
     );
   }, [branches, fixedBranchCode, initialRecord]);
 
@@ -125,9 +126,43 @@ export function ActiveRouteSection({
     setValues((current) =>
       current.branch.id > 0
         ? current
-        : { ...current, branch: { id: userBranch.id, code: userBranch.code } },
+        : {
+            ...current,
+            branch: {
+              id: userBranch.id,
+              code: userBranch.code,
+              name: userBranch.name || "",
+            },
+          },
     );
   }, [currentUserQuery.data?.branch, fixedBranchCode, initialRecord]);
+
+  // Keep branch name in sync with the branch directory (required on API write).
+  useEffect(() => {
+    const code = values.branch.code.trim();
+    if (!code || branches.length === 0) return;
+
+    const match = branches.find(
+      (branch) => branch.code.trim().toLowerCase() === code.toLowerCase(),
+    );
+    if (!match) return;
+
+    setValues((current) => {
+      const name = match.name.trim();
+      if (
+        current.branch.id === match.id &&
+        current.branch.code === match.code &&
+        current.branch.name?.trim() === name
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        branch: { id: match.id, code: match.code, name },
+      };
+    });
+  }, [branches, values.branch.code]);
 
   const upsertMutation = useUpsertActiveRoute();
   const createRouteMutation = useCreateRoute();
@@ -175,22 +210,25 @@ export function ActiveRouteSection({
     const crew = selectedRoute.employees;
 
     setValues((current) => {
-      const rolesById = new Map(current.employees.map((employee) => [employee.id, employee.role]));
-      const employees = crew.map((employee) => {
-        let role = rolesById.get(employee.id) ?? resolveCrewRole(employee.role);
-        if (effectiveRouteType === "delivery" && role === "appraiser") {
-          role = "driver";
-        }
-        return { id: employee.id, name: employee.name, role };
+      const existingById = new Map(current.employees.map((employee) => [employee.id, employee]));
+      const templateIds = new Set(crew.map((employee) => employee.id));
+      const employeesFromTemplate = crew.map((employee) => {
+        const existing = existingById.get(employee.id);
+        return {
+          id: employee.id,
+          name: employee.name,
+          role: existing?.role ?? resolveCrewRole(employee.role),
+          ...(existing?.roles ? { roles: existing.roles } : {}),
+        };
       });
+      const extraEmployees = current.employees.filter((employee) => !templateIds.has(employee.id));
       return {
         ...current,
         routeAssignmentName: formatRouteAssignmentName(selectedRoute),
-        employees,
+        employees: [...employeesFromTemplate, ...extraEmployees],
       };
     });
   }, [
-    effectiveRouteType,
     selectedRoute,
     selectedRouteQuery.isLoading,
     values.employees.length,
@@ -277,9 +315,14 @@ export function ActiveRouteSection({
   }
 
   function handleBranchChange(nextBranchCode: string) {
-    const branch = branches.find((entry) => entry.code === nextBranchCode);
+    const normalized = nextBranchCode.trim().toLowerCase();
+    const branch = branches.find((entry) => entry.code.trim().toLowerCase() === normalized);
     resetSchedule({
-      branch: { id: branch?.id ?? 0, code: branch?.code ?? nextBranchCode },
+      branch: {
+        id: branch?.id ?? 0,
+        code: branch?.code ?? nextBranchCode,
+        name: branch?.name ?? "",
+      },
     });
   }
 
@@ -297,7 +340,20 @@ export function ActiveRouteSection({
   function handleRoleChange(employeeId: number, role: RouteCrewRole) {
     setValues((current) => ({
       ...current,
-      employees: setCrewMemberRole(current.employees, employeeId, role),
+      employees: setVehicleRouteCrewRole(current.employees, employeeId, role),
+    }));
+    setFormError(null);
+  }
+
+  function handleEmployeesChange(employees: RouteEmployeeRef[]) {
+    setValues((current) => ({ ...current, employees }));
+    setFormError(null);
+  }
+
+  function handleRemoveEmployee(employeeId: number) {
+    setValues((current) => ({
+      ...current,
+      employees: current.employees.filter((employee) => employee.id !== employeeId),
     }));
     setFormError(null);
   }
@@ -425,6 +481,8 @@ export function ActiveRouteSection({
           setFormError(null);
         }}
         onRoleChange={handleRoleChange}
+        onEmployeesChange={handleEmployeesChange}
+        onRemoveEmployee={handleRemoveEmployee}
         onActiveChange={(active) => {
           setValues((current) => ({ ...current, active }));
         }}
@@ -443,6 +501,7 @@ export function ActiveRouteSection({
         }}
         onSubmit={saveActiveRoute}
         onCancel={onCancel}
+        vehicleRouteId={isEditing && !isDelivery ? initialRecord?.id : undefined}
       />
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

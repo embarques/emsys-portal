@@ -16,6 +16,9 @@
     "markComplete": "Marcar completada",
     "markIncomplete": "Marcar incompleta",
     "assignRoute": "Asignar ruta",
+    "clearRoute": "Limpiar ruta",
+    "clearingRoute": "Limpiando…",
+    "noAssignedRoute": "Ninguna de las órdenes seleccionadas está asignada a una ruta.",
     "map": "Mapa"
   },
   "stats": {
@@ -97,6 +100,8 @@
       "sector": "Sector",
       "sender": "Remitente",
       "receiver": "Destinatario",
+      "address": "Dirección",
+      "primaryAddress": "Principal",
       "noEmployee": "Sin empleado"
     },
     "placeholders": {
@@ -104,7 +109,9 @@
       "searchEmployees": "Buscar empleados…",
       "selectSender": "Seleccionar remitente",
       "noReceiver": "Sin destinatario",
-      "searchParty": "Buscar por nombre, teléfono o dirección…"
+      "searchParty": "Buscar por nombre, teléfono o dirección…",
+      "selectAddress": "Seleccionar dirección",
+      "searchAddress": "Buscar direcciones…"
     },
     "partyActions": {
       "new": "Nuevo",
@@ -154,6 +161,7 @@
   },
   "view": {
     "pickup": "Recogida",
+    "pickupId": "ID de recogida",
     "summary": "Resumen",
     "system": "Información del sistema",
     "senderAddress": "Dirección de {{party}}",
@@ -166,7 +174,6 @@
   },
   "history": {
     "title": "Historial de recogidas de {{name}} ({{count}})",
-    "description": "Recogidas anteriores y actuales de este remitente, cargadas por ID de cliente.",
     "pendingSavedSender": "El historial aparece una vez que el remitente esté guardado.",
     "current": "Actual",
     "defaultSenderName": "Remitente"
@@ -175,6 +182,9 @@
     "assignRouteTitle": "Asignar ruta",
     "assignRouteDescription": "Asignar {{count}} orden seleccionada a una ruta.",
     "assignRouteDescription_plural": "Asignar {{count}} órdenes seleccionadas a una ruta.",
+    "clearRouteTitle": "¿Limpiar ruta?",
+    "clearRouteDescription": "Esto quitará la asignación de ruta de {{count}} orden seleccionada. {{cannotBeUndone}}",
+    "clearRouteDescription_plural": "Esto quitará la asignación de ruta de {{count}} órdenes seleccionadas. {{cannotBeUndone}}",
     "selectRoute": "Seleccionar una ruta",
     "searchRoutes": "Buscar rutas…",
     "loadingRoutes": "Cargando rutas…",
@@ -192,6 +202,8 @@
     "assignedToRoute": "{{count}} orden asignada{{routeSuffix}}.",
     "assignedToRoute_plural": "{{count}} órdenes asignadas{{routeSuffix}}.",
     "assignedToRouteNamed": " a {{routeName}}",
+    "routeCleared": "Se quitó la asignación de ruta de {{count}} orden.",
+    "routeCleared_plural": "Se quitó la asignación de ruta de {{count}} órdenes.",
     "manifestReady": "Manifiesto de recogida listo para {{count}} orden.",
     "manifestReady_plural": "Manifiesto de recogida listo para {{count}} órdenes.",
     "comingSoon": "{{label}} estará disponible pronto."
@@ -215,7 +227,7 @@
       },
       "purpose": { "label": "Propósito", "placeholder": "Ingrese el propósito…" },
       "route": {
-        "id": { "label": "Ruta" }
+        "id": { "label": "Ruta de recogida" }
       },
       "branch": {
         "id": { "label": "Sucursal" },

@@ -1,25 +1,31 @@
 "use client";
 
-import { getPhoneDisplayAtIndex } from "@/lib/phones/phones";
+import { getOrderedRecordPhones } from "@/lib/phones/phones";
+import { formatCoreAddressLines } from "@/lib/customers/display";
 import { getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
+import { getOrderPartyAddressAtIndex } from "@/lib/orders/types";
 
-export function CustomerContactSummary({ customer }: { customer: Customer }) {
-  const address = getCustomerPrimaryCoreAddress(customer);
-  const phone1 = getPhoneDisplayAtIndex(customer.phones, 0);
-  const phone2 = getPhoneDisplayAtIndex(customer.phones, 1);
+type CustomerContactSummaryProps = {
+  customer: Customer;
+  /** When set, shows this address instead of the customer's primary address. */
+  addressIndex?: number;
+};
 
-  const lines = [
-    [phone1, phone2].filter((value) => value.trim()).join("  ·  "),
-    [address.address1, address.apartment].filter((value) => value.trim()).join(", "),
-    address.address2.trim(),
-    [
-      address.city,
-      [address.state, address.zipcode].filter((value) => value.trim()).join(" "),
-      address.country,
-    ]
-      .filter((value) => value.trim())
-      .join(", "),
-  ].filter((line) => line.trim());
+export function CustomerContactSummary({ customer, addressIndex }: CustomerContactSummaryProps) {
+  const address =
+    addressIndex == null
+      ? getCustomerPrimaryCoreAddress(customer)
+      : getOrderPartyAddressAtIndex(customer, addressIndex);
+  const phones = getOrderedRecordPhones(customer.phones);
+
+  const phoneLine = phones
+    .map((phone) => phone.displayNumber?.trim() || phone.number.trim())
+    .filter(Boolean)
+    .join("  ·  ");
+
+  const addressLines = formatCoreAddressLines(address);
+
+  const lines = [phoneLine, ...addressLines].filter((line) => line.trim());
 
   return (
     <div className="rounded-lg border bg-muted/20 p-3">

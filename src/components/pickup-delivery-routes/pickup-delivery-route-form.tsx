@@ -7,12 +7,15 @@ import {
   ClipboardList,
   Container,
   Plus,
+  Package,
   Route as RouteIcon,
   Tag,
   Users,
 } from "lucide-react";
 
 import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
+import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
+import { PickupRouteOrdersSection } from "@/components/pickup-delivery-routes/pickup-route-orders-section";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { Button } from "@/components/ui/button";
@@ -20,7 +23,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { SearchableSelectOption } from "@/components/ui/searchable-select";
-import type { RouteCrewRole } from "@/lib/route-manager/types";
+import type { RouteCrewRole, RouteEmployeeRef } from "@/lib/route-manager/types";
 import type {
   ActiveRouteFormValues,
   RouteScheduleType,
@@ -58,10 +61,13 @@ type ActiveRouteFormProps = {
   onContainerChange: (containerId: string) => void;
   onRouteRecordChange: (routeRecordId: string) => void;
   onRoleChange: (employeeId: number, role: RouteCrewRole) => void;
+  onEmployeesChange: (employees: RouteEmployeeRef[]) => void;
+  onRemoveEmployee: (employeeId: number) => void;
   onActiveChange: (active: boolean) => void;
   onCreateRouteClick: () => void;
   onSubmit: () => void;
   onCancel?: () => void;
+  vehicleRouteId?: string;
 };
 
 function routeTypeLabel(routeType: RouteType, t: (key: string) => string): string {
@@ -99,10 +105,13 @@ export function ActiveRouteForm({
   onContainerChange,
   onRouteRecordChange,
   onRoleChange,
+  onEmployeesChange,
+  onRemoveEmployee,
   onActiveChange,
   onCreateRouteClick,
   onSubmit,
   onCancel,
+  vehicleRouteId,
 }: ActiveRouteFormProps) {
   const { t } = useTranslation();
   const handleEnterNavigation = useFormEnterNavigation();
@@ -113,9 +122,7 @@ export function ActiveRouteForm({
   // Day-of-week pickups can be named by the user; delivery names and one-time
   // (date) pickup names are server-generated.
   const showNameField = values.routeType === "pickup" && isDayOfWeek;
-  // Deliveries have no appraiser role.
-  const crewRoles: RouteCrewRole[] =
-    values.routeType === "delivery" ? ["driver", "helper"] : ["driver", "appraiser", "helper"];
+  const crewRoles: RouteCrewRole[] = ["driver", "appraiser", "helper"];
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -341,12 +348,28 @@ export function ActiveRouteForm({
 
         {values.routeRecordId ? (
           <FormSection icon={Users} title={t("routes.activeRoute.crewRoles")}>
-            <CrewRolePicker
-              employees={values.employees}
-              onRoleChange={onRoleChange}
-              roles={crewRoles}
-              loading={selectedRouteLoading}
-            />
+            <div className="space-y-3">
+              <RouteEmployeeSelect
+                value={values.employees}
+                onChange={onEmployeesChange}
+                branchCode={branchCode}
+                showSelectedList={false}
+              />
+              <CrewRolePicker
+                employees={values.employees}
+                onRoleChange={onRoleChange}
+                onRemove={onRemoveEmployee}
+                roles={crewRoles}
+                toggleLeadRoles
+                loading={selectedRouteLoading}
+              />
+            </div>
+          </FormSection>
+        ) : null}
+
+        {isEditing && !isDelivery && vehicleRouteId ? (
+          <FormSection icon={Package} title={t("routes.pickupRoutes.view.sections.orders")}>
+            <PickupRouteOrdersSection routeId={vehicleRouteId} editable />
           </FormSection>
         ) : null}
 
