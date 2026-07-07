@@ -114,7 +114,7 @@ export type Invoice = {
   cost?: number;
   branch?: InvoiceBranch;
   sender: OrderParty;
-  receivers: OrderParty[];
+  receiver: OrderParty | null;
   lineItems: InvoiceLineItem[];
   comments: InvoiceComment[];
   activity: InvoiceActivityEntry[];
@@ -194,16 +194,14 @@ export function getInvoiceRecordId(invoice: Pick<Invoice, "invoiceId">): string 
   return invoice.invoiceId;
 }
 
-/** Primary receiver for single-line UI: first named entry, else first item. */
 export function getInvoicePrimaryReceiver(
-  invoice: Pick<Invoice, "receivers">,
+  invoice: Pick<Invoice, "receiver">,
 ): OrderParty | undefined {
-  const receivers = invoice.receivers ?? [];
-  return receivers.find((receiver) => receiver.name?.trim()) ?? receivers[0];
+  return invoice.receiver ?? undefined;
 }
 
-export function getInvoicePrimaryReceiverName(invoice: Pick<Invoice, "receivers">): string {
-  return getInvoicePrimaryReceiver(invoice)?.name?.trim() || "—";
+export function getInvoicePrimaryReceiverName(invoice: Pick<Invoice, "receiver">): string {
+  return invoice.receiver?.name?.trim() || "—";
 }
 
 export function createInvoiceSearchFilter(value: string): InvoiceSearchFilter | undefined {
@@ -580,8 +578,7 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
 
 export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
   const sender = orderPartyToInvoiceFormCustomer(invoice.sender);
-  const primaryReceiver = getInvoicePrimaryReceiver(invoice);
-  const receiver = primaryReceiver ? orderPartyToInvoiceFormCustomer(primaryReceiver) : null;
+  const receiver = invoice.receiver ? orderPartyToInvoiceFormCustomer(invoice.receiver) : null;
 
   return {
     invoiceId: invoice.invoiceId,
@@ -593,7 +590,7 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     routeId: invoice.routeId ?? "",
     senderId: invoice.sender.clientId ?? sender?.id ?? "",
     sender,
-    receiverId: primaryReceiver?.clientId ?? receiver?.id ?? "",
+    receiverId: invoice.receiver?.clientId ?? receiver?.id ?? "",
     receiver,
     lineItems:
       invoice.lineItems.length > 0
@@ -659,7 +656,7 @@ export function formValuesToInvoice(
   }
 
   const sender = customerToInvoiceParty(values.sender);
-  const receivers = values.receiver ? [customerToInvoiceParty(values.receiver)] : [];
+  const receiver = values.receiver ? customerToInvoiceParty(values.receiver) : null;
 
   return {
     invoiceId: values.invoiceId,
@@ -670,7 +667,7 @@ export function formValuesToInvoice(
     paymentLocation: values.paymentLocation,
     routeId: values.routeId.trim() || undefined,
     sender,
-    receivers,
+    receiver,
     lineItems,
     comments: comments.map((comment) => ({ ...comment })),
     activity: activity.map((entry) => ({ ...entry })),

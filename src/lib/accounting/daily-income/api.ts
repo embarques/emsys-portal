@@ -154,14 +154,7 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
           payment: numberValue(invoice.payment),
           balance: numberValue(invoice.balance),
           sender: normalizePartyRef(invoice.sender),
-          receiver: normalizePartyRef(
-            Array.isArray(invoice.receivers) ? invoice.receivers[0] : invoice.receiver,
-          ),
-          receivers: Array.isArray(invoice.receivers)
-            ? invoice.receivers
-                .map((entry) => normalizePartyRef(entry))
-                .filter((entry): entry is NonNullable<typeof entry> => entry != null)
-            : undefined,
+          receiver: normalizePartyRef(invoice.receiver),
         }
       : undefined,
     createdAt: stringValue(raw.createdAt) || undefined,
@@ -480,9 +473,9 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     sender: values.transactionType === "INITIAL-PAYMENT" && values.senderId
       ? { id: values.senderId, name: values.senderName ?? "" }
       : undefined,
-    receivers:
+    receiver:
       values.transactionType === "INITIAL-PAYMENT" && values.receiverId
-        ? [{ id: values.receiverId, name: values.receiverName ?? "" }]
+        ? { id: values.receiverId, name: values.receiverName ?? "" }
         : undefined,
     paymentMethod: values.paymentMethodId
       ? { id: values.paymentMethodId, name: values.paymentMethodName }
