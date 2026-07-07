@@ -31,6 +31,7 @@ import {
 } from "@/lib/orders/display";
 import { useRouteLookup } from "@/lib/route-manager/hooks/use-route-manager";
 import type { Customer } from "@/lib/customers/types";
+import { getAllAddresses } from "@/lib/customers/utils/address-utils";
 import type { Order } from "@/lib/orders/types";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
 
@@ -44,12 +45,7 @@ type OrderViewSheetProps = {
 
 function CustomerCard({ title, customer }: { title: string; customer: Customer }) {
   const phones = getOrderedRecordPhones(customer.phones);
-  const addresses =
-    customer.addresses.length > 0
-      ? customer.addresses
-      : customer.address.address1
-        ? [customer.address]
-        : [];
+  const addresses = getAllAddresses(customer);
 
   return (
     <>

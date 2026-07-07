@@ -5,10 +5,10 @@
 export const CUSTOMER_BAR_OR_SEARCH_FIELDS = [
   "name",
   "phones.number",
-  "address.address1",
-  "address.city",
-  "address.state",
-  "address.zipcode",
+  "addresses.address1",
+  "addresses.city",
+  "addresses.state",
+  "addresses.zipcode",
 ] as const;
 
 export type CustomerBarOrSearchField = (typeof CUSTOMER_BAR_OR_SEARCH_FIELDS)[number];
@@ -19,7 +19,7 @@ export type CustomerBarOrSearchField = (typeof CUSTOMER_BAR_OR_SEARCH_FIELDS)[nu
  */
 export const CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS = [
   "name",
-  "address.address1",
+  "addresses.address1",
   "phones.number",
 ] as const;
 

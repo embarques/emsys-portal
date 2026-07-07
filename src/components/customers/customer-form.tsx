@@ -353,12 +353,13 @@ export function CustomerForm({
 
     setValues((current) => {
       const next = applyCustomerTypeBranch({ ...current, customerType: nextType });
-      const emptyAddress = createEmptyCustomerCoreAddress(next.address.country);
+      const emptyAddress = createEmptyCustomerCoreAddress(
+        next.addresses[0]?.country || "US",
+      );
 
       return syncCustomerFormAddresses({
         ...next,
-        address: emptyAddress,
-        addresses: [emptyAddress],
+        addresses: [{ ...emptyAddress, isPrimary: true, active: true }],
       });
     });
     setShowAddresses(false);
@@ -380,12 +381,13 @@ export function CustomerForm({
     key: K,
     value: CustomerCoreAddress[K],
   ) {
-    setValues((current) =>
-      syncCustomerFormAddresses({
-        ...current,
-        address: applyAddressFieldEdit(current.address, key, value),
-      }),
-    );
+    setValues((current) => {
+      const addresses = current.addresses.map((entry, index) =>
+        index === 0 ? applyAddressFieldEdit(entry, key, value) : entry,
+      );
+
+      return syncCustomerFormAddresses({ ...current, addresses });
+    });
   }
 
   function updateAdditionalAddressField<K extends keyof CustomerCoreAddress>(
@@ -403,12 +405,13 @@ export function CustomerForm({
   }
 
   function applyPlaceToPrimaryAddress(place: ParsedPlaceAddress) {
-    setValues((current) =>
-      syncCustomerFormAddresses({
-        ...current,
-        address: applyPlaceToCoreAddress(current.address, place),
-      }),
-    );
+    setValues((current) => {
+      const addresses = current.addresses.map((entry, index) =>
+        index === 0 ? applyPlaceToCoreAddress(entry, place) : entry,
+      );
+
+      return syncCustomerFormAddresses({ ...current, addresses });
+    });
   }
 
   function applyPlaceToAdditionalAddress(index: number, place: ParsedPlaceAddress) {
@@ -429,12 +432,13 @@ export function CustomerForm({
   }
 
   function applyCityToPrimaryAddress(city: DominicanCity) {
-    setValues((current) =>
-      syncCustomerFormAddresses({
-        ...current,
-        address: applyCityToCoreAddress(current.address, city),
-      }),
-    );
+    setValues((current) => {
+      const addresses = current.addresses.map((entry, index) =>
+        index === 0 ? applyCityToCoreAddress(entry, city) : entry,
+      );
+
+      return syncCustomerFormAddresses({ ...current, addresses });
+    });
   }
 
   function applyCityToAdditionalAddress(index: number, city: DominicanCity) {
@@ -451,12 +455,10 @@ export function CustomerForm({
     let newIndex = 0;
     setValues((current) => {
       newIndex = current.addresses.length;
+      const country = current.addresses[0]?.country || "US";
       return syncCustomerFormAddresses({
         ...current,
-        addresses: [
-          ...current.addresses,
-          createEmptyCustomerCoreAddress(current.address.country),
-        ],
+        addresses: [...current.addresses, createEmptyCustomerCoreAddress(country)],
       });
     });
     focusAddressLine1(`additional-${newIndex}`);
@@ -479,11 +481,11 @@ export function CustomerForm({
 
     setValues((current) => {
       if (current.addresses.length <= 1) {
-        const empty = createEmptyCustomerCoreAddress(current.address.country);
+        const country = current.addresses[0]?.country || "US";
+        const empty = createEmptyCustomerCoreAddress(country);
         return syncCustomerFormAddresses({
           ...current,
-          address: empty,
-          addresses: [empty],
+          addresses: [{ ...empty, isPrimary: true, active: true }],
         });
       }
 
@@ -491,11 +493,7 @@ export function CustomerForm({
         (_, addressIndex) => addressIndex !== index,
       );
 
-      return syncCustomerFormAddresses({
-        ...current,
-        address: { ...addresses[0] },
-        addresses,
-      });
+      return syncCustomerFormAddresses({ ...current, addresses });
     });
 
     if (isLastAddress) {
@@ -510,12 +508,14 @@ export function CustomerForm({
     setValues((current) => {
       const addresses = [...current.addresses];
       const [chosen] = addresses.splice(index, 1);
-      addresses.unshift(chosen);
+      addresses.unshift(chosen!);
 
       return syncCustomerFormAddresses({
         ...current,
-        address: { ...chosen },
-        addresses,
+        addresses: addresses.map((entry, addressIndex) => ({
+          ...entry,
+          isPrimary: addressIndex === 0,
+        })),
       });
     });
   }

@@ -8,10 +8,13 @@ import {
   Search,
   Trash2,
   UserCheck,
+  UserRound,
   Users,
 } from "lucide-react";
 
 import { CustomerForm } from "@/components/customers/customer-form";
+import { CustomerTableAddressCell } from "@/components/customers/customer-addresses-sheet";
+import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
 import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -38,10 +41,10 @@ import {
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
 import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
+import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatPrimaryPhonesDisplayOrDash } from "@/lib/phones/phones";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatAccountBalance,
@@ -50,6 +53,7 @@ import {
 } from "@/lib/customers/display";
 import {
   useCreateCustomer,
+  useCustomerDetailsBatch,
   useCustomerStats,
   useCustomers,
   useDeleteCustomers,
@@ -75,10 +79,24 @@ import {
 } from "@/lib/customers/types";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTableSort } from "@/lib/table/use-table-sort";
+import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const PAGE_SIZE = DEFAULT_CUSTOMER_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
+const CUSTOMERS_TABLE_COLUMN_STORAGE_KEY = "customers-v7";
+
+function pinActionsColumnFirst<T extends { id: string }>(columns: T[]): T[] {
+  const actionsIndex = columns.findIndex((column) => column.id === "actions");
+  if (actionsIndex <= 0) return columns;
+
+  const next = [...columns];
+  const [actionsColumn] = next.splice(actionsIndex, 1);
+  if (!actionsColumn) return columns;
+
+  return [actionsColumn, ...next];
+}
 
 const defaultFilters: CustomerFilterState = {
   query: "",
@@ -90,6 +108,7 @@ type CustomerDeleteTarget =
   | { mode: "bulk"; ids: string[] };
 
 export function CustomersWorkspace() {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifyError, notifySuccess } = useFeedback();
@@ -151,6 +170,21 @@ export function CustomersWorkspace() {
   const deleteCustomersMutation = useDeleteCustomers();
 
   const customers = data?.items ?? [];
+  const customerIds = useMemo(() => customers.map((customer) => customer.id), [customers]);
+  const customerDetailQueries = useCustomerDetailsBatch(customerIds, customers.length > 0);
+  const customersWithAddressDetails = useMemo(() => {
+    const detailById = new Map<string, Customer>();
+
+    for (let index = 0; index < customerIds.length; index += 1) {
+      const customerId = customerIds[index];
+      const detail = customerDetailQueries[index]?.data;
+      if (customerId && detail) {
+        detailById.set(customerId, detail);
+      }
+    }
+
+    return customers.map((customer) => detailById.get(customer.id) ?? customer);
+  }, [customerDetailQueries, customerIds, customers]);
   const totalCustomers = data?.total ?? 0;
   const showInitialTableLoading = isPending && customers.length === 0;
   const totalPages = Math.max(1, Math.ceil(totalCustomers / PAGE_SIZE));
@@ -316,6 +350,31 @@ export function CustomersWorkspace() {
 
   const tableColumns: DataTableColumn<Customer>[] = [
     {
+      id: "actions",
+      label: t("customers.workspace.actionsColumn"),
+      hideable: false,
+      sortable: false,
+      truncateCell: false,
+      stopRowClick: true,
+      cellClassName: "overflow-visible",
+      renderCell: (customer) => (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+          aria-label={t("customers.workspace.viewCustomerFor", { name: customer.name })}
+          title={t("customers.workspace.viewCustomer")}
+          onClick={(event) => {
+            event.stopPropagation();
+            setViewCustomer(customer);
+          }}
+        >
+          <UserRound className="size-3.5" />
+        </Button>
+      ),
+    },
+    {
       id: "customerType",
       label: "customerType",
       truncateCell: false,
@@ -332,14 +391,16 @@ export function CustomersWorkspace() {
     {
       id: "name",
       label: "name",
-      cellClassName: "font-medium",
+      cellClassName: "align-top font-medium",
       renderCell: (customer) => customer.name,
     },
     {
       id: "phone",
       label: "Phone",
       sortField: "phones.number",
-      renderCell: (customer) => formatPrimaryPhonesDisplayOrDash(customer.phones),
+      truncateCell: false,
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      renderCell: (customer) => <CustomerTablePhoneCell customer={customer} />,
     },
     {
       id: "IDNumber",
@@ -349,26 +410,12 @@ export function CustomersWorkspace() {
     {
       id: "address",
       label: "address",
-      sortField: "address.address1",
-      renderCell: (customer) =>
-        [customer.address.address1, customer.address.apartment, customer.address.address2]
-          .filter((value) => value.trim())
-          .join(", ") || "—",
-    },
-    {
-      id: "address.city",
-      label: "address.city",
-      renderCell: (customer) => customer.address.city || "—",
-    },
-    {
-      id: "address.state",
-      label: "address.state",
-      renderCell: (customer) => customer.address.state || "—",
-    },
-    {
-      id: "address.zipcode",
-      label: "address.zipcode",
-      renderCell: (customer) => customer.address.zipcode || "—",
+      sortField: "addresses.address1",
+      defaultWidth: 225,
+      autoFitColumn: false,
+      truncateCell: false,
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      renderCell: (customer) => <CustomerTableAddressCell customer={customer} />,
     },
     {
       id: "email",
@@ -432,7 +479,11 @@ export function CustomersWorkspace() {
     catalogLoading: stats.isLoading,
   });
 
-  const columnVisibility = useColumnVisibility("customers-v3", tableColumns);
+  const columnVisibility = useColumnVisibility(CUSTOMERS_TABLE_COLUMN_STORAGE_KEY, tableColumns);
+  const displayColumns = useMemo(
+    () => pinActionsColumnFirst(columnVisibility.columns),
+    [columnVisibility.columns],
+  );
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
@@ -521,11 +572,11 @@ export function CustomersWorkspace() {
 
         <TableSelectionToolbar
           selectedIds={selectedIds}
-          pageRowIds={customers.map((customer) => customer.id)}
+          pageRowIds={customersWithAddressDetails.map((customer) => customer.id)}
           totalCount={totalCustomers}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
-            const customer = customers.find((entry) => entry.id === selectedIds[0]);
+            const customer = customersWithAddressDetails.find((entry) => entry.id === selectedIds[0]);
             if (customer) openEditForm(customer);
           }}
           canEdit={canUpdateCustomers}
@@ -543,8 +594,8 @@ export function CustomersWorkspace() {
           />
         ) : (
           <DataTable
-            columns={columnVisibility.columns}
-            rows={customers}
+            columns={displayColumns}
+            rows={customersWithAddressDetails}
             page={currentPage}
             isPageDataPending={isFetching}
             rowKey={(customer) => customer.id}
@@ -558,7 +609,6 @@ export function CustomersWorkspace() {
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
-            onRowClick={setViewCustomer}
             onRowDoubleClick={canUpdateCustomers ? openEditForm : undefined}
             emptyState={
               <>

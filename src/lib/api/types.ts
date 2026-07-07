@@ -25,8 +25,9 @@ type ResolvePaginatedListTotalOptions = {
 
 /**
  * EMSYS list/search envelopes expose `total` and sometimes `subtotal`.
- * On POST /search, `subtotal` is often the filtered match count while `total`
- * may still reflect the unfiltered catalog size.
+ * Unfiltered lists use `total` as the catalog size.
+ * Filtered POST /search responses use `total` for the match count; `subtotal`
+ * may be zero or carry the catalog size depending on the endpoint version.
  */
 export function resolvePaginatedListTotal(
   payload: PaginatedApiEnvelope<unknown>,
@@ -37,9 +38,19 @@ export function resolvePaginatedListTotal(
   const apiSubtotal = payload.subtotal;
 
   if (options.isFiltered) {
-    if (typeof apiSubtotal === "number" && apiSubtotal >= 0) {
+    if (typeof apiSubtotal === "number" && apiSubtotal > 0) {
       return apiSubtotal;
     }
+
+    if (typeof apiTotal === "number" && apiTotal >= 0) {
+      return apiTotal;
+    }
+
+    if (itemsLength > 0) {
+      return itemsLength;
+    }
+
+    return 0;
   }
 
   if (typeof apiTotal === "number" && apiTotal >= 0) {

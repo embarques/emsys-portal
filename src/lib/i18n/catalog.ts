@@ -2,12 +2,14 @@ import type { LanguagePreference } from "@/lib/configuration/types";
 
 import enCommon from "@/locales/en/common.json";
 import enContainers from "@/locales/en/containers.json";
+import enCustomers from "@/locales/en/customers.json";
 import enInsights from "@/locales/en/insights.json";
 import enNavigation from "@/locales/en/navigation.json";
 import enRoutes from "@/locales/en/routes.json";
 import enShell from "@/locales/en/shell.json";
 import esCommon from "@/locales/es/common.json";
 import esContainers from "@/locales/es/containers.json";
+import esCustomers from "@/locales/es/customers.json";
 import esInsights from "@/locales/es/insights.json";
 import esNavigation from "@/locales/es/navigation.json";
 import esRoutes from "@/locales/es/routes.json";
@@ -21,6 +23,7 @@ const catalogs: Record<Locale, MessageTree> = {
   en: {
     common: enCommon,
     containers: enContainers,
+    customers: enCustomers,
     insights: enInsights,
     navigation: enNavigation,
     routes: enRoutes,
@@ -29,6 +32,7 @@ const catalogs: Record<Locale, MessageTree> = {
   es: {
     common: esCommon,
     containers: esContainers,
+    customers: esCustomers,
     insights: esInsights,
     navigation: esNavigation,
     routes: esRoutes,

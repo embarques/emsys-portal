@@ -174,6 +174,8 @@ export const queryKeys = {
     stats: (scope: "all" | "active" | "inactive" | "senders" | "receivers") =>
       [...queryKeys.customers.all, "stats", scope] as const,
     detail: (customerId: string) => [...queryKeys.customers.all, "detail", customerId] as const,
+    autocomplete: (query: string, customerType: "sender" | "receiver", limit: number) =>
+      [...queryKeys.customers.all, "autocomplete", query, customerType, limit] as const,
   },
   users: {
     all: ["users"] as const,

@@ -12,8 +12,13 @@ import {
   getCustomerAddresses,
   getCustomerClientType,
   getCustomerPortalBranch,
-  getPrimaryAddress,
 } from "./types";
+import {
+  formatAddressLine as formatAddressLineFromUtils,
+  formatCoreAddressLines as formatCoreAddressLinesFromUtils,
+  getAllAddresses,
+  getPrimaryAddress,
+} from "./utils/address-utils";
 
 export function getClientTypeLabel(clientType: ClientType): string {
   return CLIENT_TYPES.find((entry) => entry.value === clientType)?.label ?? clientType;
@@ -48,29 +53,12 @@ export function formatCustomerDate(iso: string): string {
 }
 
 export function formatCoreAddressLine(address: CustomerCoreAddress): string {
-  const parts = [
-    address.address1,
-    address.address2,
-    address.apartment,
-    address.city,
-    address.state,
-    address.zipcode,
-    address.country,
-  ].filter(Boolean);
-
-  return parts.length > 0 ? parts.join(", ") : "—";
+  return formatAddressLineFromUtils(address, "full");
 }
 
-/** Human-friendly address grouped into a few display lines (street / city-state-zip / country). */
+/** Grouped address lines (street / city-state-zip or city-province for DR). */
 export function formatCoreAddressLines(address: CustomerCoreAddress): string[] {
-  const streetParts = [address.address1, address.apartment || address.address2].filter(Boolean);
-  const cityLineParts = [address.city, [address.state, address.zipcode].filter(Boolean).join(" ")].filter(Boolean);
-
-  return [
-    streetParts.join(", "),
-    cityLineParts.join(", "),
-    address.country,
-  ].filter((line) => line.trim().length > 0);
+  return formatCoreAddressLinesFromUtils(address);
 }
 
 /** Single-line query string suitable for Google Maps search/directions URLs. */
@@ -101,13 +89,7 @@ export function formatAddressLine(address: CustomerAddress): string {
 }
 
 function getCustomerCoreAddresses(customer: Customer): CustomerCoreAddress[] {
-  const source = customer.addresses.length > 0 ? customer.addresses : [customer.address];
-
-  return source.filter((address) =>
-    [address.address1, address.address2, address.apartment, address.city, address.state, address.zipcode, address.country].some(
-      (value) => value.trim(),
-    ),
-  );
+  return getAllAddresses(customer);
 }
 
 export function formatAddressSummary(customer: Customer): string {

@@ -11,7 +11,7 @@ export const CUSTOMER_ADDRESS_COUNTRY_FILTER_OPTIONS: TableFilterFieldOption[] =
 ];
 
 export function isCustomerAddressCountryField(field: string): boolean {
-  return field.trim() === "address.country";
+  return field.trim() === "addresses.country";
 }
 
 function isDominicanRepublicPortalValue(value: string): boolean {
@@ -24,20 +24,20 @@ function isDominicanRepublicPortalValue(value: string): boolean {
   );
 }
 
-/** Portal filter value → EMSYS API `address.country` search value. */
+/** Portal filter value → EMSYS API `addresses.country` search value. */
 export function portalCustomerCountryToApiFilterValue(portalValue: string): string {
   return isDominicanRepublicPortalValue(portalValue) ? "Do" : "us";
 }
 
 function countryUsaSearchNode(): ApiSearchFilterNode {
-  return { field: "address.country", operator: "eq", value: "us" };
+  return { field: "addresses.country", operator: "eq", value: "us" };
 }
 
 function countryDoSearchNode(): ApiSearchFilterNode {
-  return { field: "address.country", operator: "eq", value: "Do" };
+  return { field: "addresses.country", operator: "eq", value: "Do" };
 }
 
-/** Maps portal address.country filters to API-friendly operators/values. */
+/** Maps portal addresses.country filters to API-friendly operators/values. */
 export function expandCustomerCountrySearchNode(node: ApiSearchFilterNode): ApiSearchFilterNode {
   if ("filters" in node) {
     return {

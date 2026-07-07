@@ -4,6 +4,8 @@ export type ColumnVisibilityDefinition = {
   hideable?: boolean;
   /** When false, column starts hidden until toggled in the Columns menu. Defaults to true. */
   defaultVisible?: boolean;
+  /** Preferred width (px) when no saved column width exists. Defaults to 160. */
+  defaultWidth?: number;
 };
 
 export type DataTableColumn<T> = ColumnVisibilityDefinition & {
@@ -16,5 +18,7 @@ export type DataTableColumn<T> = ColumnVisibilityDefinition & {
   sortable?: boolean;
   /** API sort field for this column (e.g. `phones.number`). Defaults to the column `id`. */
   sortField?: string;
+  /** When false, table auto-fit will not resize this column to content width. Defaults to true. */
+  autoFitColumn?: boolean;
   renderCell: (row: T) => React.ReactNode;
 };

@@ -4,7 +4,7 @@ import {
 import { CUSTOMER_ADDRESS_COUNTRY_FILTER_OPTIONS } from "@/lib/customers/customer-country";
 import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 
-const TEXT_FIELDS = new Set(["name", "email", "IDNumber", "id", "address.address1"]);
+const TEXT_FIELDS = new Set(["name", "email", "IDNumber", "id", "addresses.address1"]);
 
 const TEXT_FILTER_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
 
@@ -18,35 +18,35 @@ const PHONE_FILTER_OPERATORS =
 
 const CUSTOMER_ADDRESS_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
-    field: "address.address2",
+    field: "addresses.address2",
     label: "Address line 2",
     operators: [...TEXT_FILTER_OPERATORS],
     valueType: "text",
     placeholder: "Enter address line 2…",
   },
   {
-    field: "address.city",
+    field: "addresses.city",
     label: "City",
     operators: [...TEXT_FILTER_OPERATORS],
     valueType: "text",
     placeholder: "Enter city…",
   },
   {
-    field: "address.state",
+    field: "addresses.state",
     label: "State",
     operators: [...TEXT_FILTER_OPERATORS],
     valueType: "text",
     placeholder: "Enter state…",
   },
   {
-    field: "address.zipcode",
+    field: "addresses.zipcode",
     label: "Zip code",
     operators: [...TEXT_FILTER_OPERATORS],
     valueType: "text",
     placeholder: "Enter zip code…",
   },
   {
-    field: "address.country",
+    field: "addresses.country",
     label: "Country",
     operators: ["eq", "neq"],
     valueType: "select",

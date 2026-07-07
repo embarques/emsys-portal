@@ -1,6 +1,6 @@
 "use client";
 
-import { Info, MapPin, Phone as PhoneIcon, User, Wallet } from "lucide-react";
+import { Info, Phone as PhoneIcon, User, Wallet } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,7 +14,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDate } from "@/lib/audit/display";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
-import { AddressActionRow } from "@/components/addresses/address-action-row";
+import { FlippableCustomerAddresses } from "@/components/customers/flippable-customer-addresses";
 import {
   formatRecordPhoneTypeLabel,
   getOrderedRecordPhones,
@@ -25,6 +25,10 @@ import {
   getClientTypeLabel,
 } from "@/lib/customers/display";
 import { getCustomerClientType } from "@/lib/customers/types";
+import {
+  getAllAddresses,
+  resolveCustomerAddressCount,
+} from "@/lib/customers/utils/address-utils";
 import type { Customer } from "@/lib/customers/types";
 
 type CustomerViewSheetProps = {
@@ -49,9 +53,9 @@ export function CustomerViewSheet({
   if (!customer) return null;
 
   const clientType = getCustomerClientType(customer);
-  const addresses =
-    customer.addresses.length > 0 ? customer.addresses : customer.address.address1 ? [customer.address] : [];
   const phones = getOrderedRecordPhones(customer.phones);
+  const hasAddresses =
+    getAllAddresses(customer).length > 0 || resolveCustomerAddressCount(customer) > 0;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -93,17 +97,7 @@ export function CustomerViewSheet({
             )}
           </RecordViewSheetSection>
 
-          {addresses.length > 0 ? (
-            <RecordViewSheetSection title="Addresses" icon={MapPin}>
-              {addresses.map((address, index) => (
-                <AddressActionRow
-                  key={index}
-                  label={index === 0 ? "Primary address" : `Additional address ${index}`}
-                  address={address}
-                />
-              ))}
-            </RecordViewSheetSection>
-          ) : null}
+          {hasAddresses ? <FlippableCustomerAddresses customer={customer} /> : null}
 
           <RecordViewSheetSection title="Account" icon={Wallet}>
             <RecordViewSheetDetailRow

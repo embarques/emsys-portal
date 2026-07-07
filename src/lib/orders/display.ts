@@ -1,4 +1,5 @@
 import { formatCoreAddressLine } from "@/lib/customers/display";
+import { getPrimaryAddress } from "@/lib/customers/utils/address-utils";
 import { formatPrimaryPhonesDisplayOrDash, getPhoneDisplayAtIndex } from "@/lib/phones/phones";
 import { getBranchLabel } from "@/lib/vehicles/display";
 import type { Route } from "@/lib/route-manager/types";
@@ -128,7 +129,8 @@ export function formatEmployeeSummary(employee: Order["employee"]): string {
 }
 
 export function getCustomerAddressLine(customer: Customer): string {
-  return formatCoreAddressLine(customer.address) || "—";
+  const primary = getPrimaryAddress(customer);
+  return primary ? formatCoreAddressLine(primary) : "—";
 }
 
 export function getCustomerPhone(customer: Customer, index = 0): string {

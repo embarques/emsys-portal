@@ -63,6 +63,7 @@ import {
   getOrderBranchLabel,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
+import { getPrimaryAddress } from "@/lib/customers/utils/address-utils";
 import { buildRouteFilterOptions } from "@/lib/route-manager/display";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
@@ -430,20 +431,22 @@ export function OrdersWorkspace() {
       id: "sender.address",
       label: "Address",
       sortField: "sender.address.address1",
-      renderCell: (order) =>
-        [order.sender.address.address1, order.sender.address.apartment]
-          .filter((value) => value.trim())
-          .join(", ") || "—",
+      renderCell: (order) => {
+        const primary = getPrimaryAddress(order.sender);
+        return primary
+          ? [primary.address1, primary.apartment].filter((value) => value.trim()).join(", ") || "—"
+          : "—";
+      },
     },
     {
       id: "sender.address.city",
       label: "City",
-      renderCell: (order) => order.sender.address.city.trim() || "—",
+      renderCell: (order) => getPrimaryAddress(order.sender)?.city.trim() || "—",
     },
     {
       id: "sender.address.zipcode",
       label: "Zip",
-      renderCell: (order) => order.sender.address.zipcode.trim() || "—",
+      renderCell: (order) => getPrimaryAddress(order.sender)?.zipcode.trim() || "—",
     },
     {
       id: "sender.phone1",

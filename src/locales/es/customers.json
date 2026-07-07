@@ -1,0 +1,39 @@
+{
+  "addresses": {
+    "sheetTitle": "Direcciones del cliente",
+    "addAddressTodo": "Agregar dirección (próximamente)",
+    "matchedBadge": "Coincidencia",
+    "primaryPrefix": "Principal:",
+    "countBadge": "{{count}} direcciones",
+    "countBadgeOne": "1 dirección",
+    "moreOne": "+1 dirección más",
+    "moreMany": "+{{count}} direcciones más",
+    "searchPlaceholder": "Buscar por nombre, teléfono o dirección…",
+    "emptyResults": "No se encontraron clientes.",
+    "loading": "Buscando clientes…",
+    "viewAll": "Ver direcciones",
+    "loadingAddresses": "Cargando direcciones…",
+    "openOptions": "Abrir opciones",
+    "closeOptions": "Cerrar opciones",
+    "expandAddresses": "Expandir direcciones",
+    "collapseAddresses": "Contraer direcciones",
+    "viewAllAddresses": "Ver todas las direcciones",
+    "backToPrimary": "Volver a la dirección principal",
+    "allAddressesTitle": "Todas las direcciones ({{count}})",
+    "tableLabel": "Etiqueta",
+    "tableAddress": "Dirección",
+    "labels": {
+      "primary": "Principal",
+      "home": "Casa",
+      "work": "Trabajo",
+      "billing": "Facturación",
+      "delivery": "Entrega",
+      "other": "Otra"
+    }
+  },
+  "workspace": {
+    "actionsColumn": "Acciones",
+    "viewCustomer": "Ver cliente",
+    "viewCustomerFor": "Ver {{name}}"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "addresses": {
+    "sheetTitle": "Customer addresses",
+    "addAddressTodo": "Add address (coming soon)",
+    "matchedBadge": "Matched",
+    "primaryPrefix": "Primary:",
+    "countBadge": "{{count}} addresses",
+    "countBadgeOne": "1 address",
+    "moreOne": "+1 more address",
+    "moreMany": "+{{count}} more addresses",
+    "searchPlaceholder": "Search by name, phone, or address…",
+    "emptyResults": "No customers found.",
+    "loading": "Searching customers…",
+    "viewAll": "View addresses",
+    "loadingAddresses": "Loading addresses…",
+    "openOptions": "Open options",
+    "closeOptions": "Close options",
+    "expandAddresses": "Expand addresses",
+    "collapseAddresses": "Collapse addresses",
+    "viewAllAddresses": "View all addresses",
+    "backToPrimary": "Back to primary address",
+    "allAddressesTitle": "All addresses ({{count}})",
+    "tableLabel": "Label",
+    "tableAddress": "Address",
+    "labels": {
+      "primary": "Primary",
+      "home": "Home",
+      "work": "Work",
+      "billing": "Billing",
+      "delivery": "Delivery",
+      "other": "Other"
+    }
+  },
+  "workspace": {
+    "actionsColumn": "Actions",
+    "viewCustomer": "View customer",
+    "viewCustomerFor": "View {{name}}"
+  }
+}

@@ -29,8 +29,9 @@ import {
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { normalizeApiCustomer } from "@/lib/customers/api/customers-api";
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
-import type { Customer } from "@/lib/customers/types";
+import type { Customer, CustomerCoreAddress } from "@/lib/customers/types";
 import { CUSTOMER_PORTAL_BRANCHES } from "@/lib/customers/types";
+import { getPrimaryAddress } from "@/lib/customers/utils/address-utils";
 import { createDefaultRecordPhones, getPhoneAtDisplayIndex, getPrimaryPhoneNumber, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
 import type { Employee } from "@/lib/employees/types";
 import { normalizeApiUser } from "@/lib/users/api/users-api";
@@ -168,17 +169,6 @@ const EMPTY_CUSTOMER: Customer = {
     code: "NY",
   },
   createdByID: null,
-  address: {
-    address1: "",
-    address2: "",
-    apartment: "",
-    city: "",
-    state: "",
-    zipcode: "",
-    country: "US",
-    location: null,
-    verification: null,
-  },
   addresses: [],
   receivers: [],
 };
@@ -224,9 +214,51 @@ function normalizePickupComment(raw: ApiComment): PickupComment {
   };
 }
 
+function mapEmbeddedPartyAddress(raw: unknown): CustomerCoreAddress | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+
+  const address = (raw as Record<string, unknown>).address;
+  if (!address || typeof address !== "object") return undefined;
+
+  const item = address as Record<string, unknown>;
+  const core: CustomerCoreAddress = {
+    address1: String(item.address1 ?? "").trim(),
+    address2: String(item.address2 ?? "").trim(),
+    apartment: String(item.apartment ?? "").trim(),
+    city: String(item.city ?? "").trim(),
+    state: String(item.state ?? "").trim(),
+    zipcode: String(item.zipcode ?? item.zipCode ?? "").trim(),
+    country: String(item.country ?? "").trim(),
+    location: null,
+    verification: null,
+    isPrimary: true,
+    active: true,
+  };
+
+  const hasContent = [
+    core.address1,
+    core.address2,
+    core.apartment,
+    core.city,
+    core.state,
+    core.zipcode,
+    core.country,
+  ].some((value) => value.trim());
+
+  return hasContent ? core : undefined;
+}
+
 function normalizePickupCustomer(raw: unknown, fallbackName: string): Customer {
   const customer = normalizeApiCustomer(raw);
-  if (customer) return customer;
+  if (customer) {
+    if (customer.addresses.length === 0) {
+      const embedded = mapEmbeddedPartyAddress(raw);
+      if (embedded) {
+        return { ...customer, addresses: [embedded] };
+      }
+    }
+    return customer;
+  }
 
   if (!raw || typeof raw !== "object") {
     return { ...EMPTY_CUSTOMER, name: fallbackName };
@@ -508,7 +540,7 @@ function buildPickupCustomerRef(customer: Customer): ApiPickupCustomerRef {
   const email = customer.email.trim();
   const idNumber = customer.IDNumber.trim();
   const phone2 = getPhoneAtDisplayIndex(customer.phones, 1);
-  const address = buildApiAddressPayload(customer.address);
+  const address = buildApiAddressPayload(getPrimaryAddress(customer) ?? {});
 
   const payload: ApiPickupCustomerRef = {
     name,

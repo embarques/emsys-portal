@@ -42,13 +42,17 @@ import {
   CUSTOMER_PORTAL_BRANCHES,
   type Customer,
   type CustomerBranch,
+  type CustomerAddressLabel,
   type CustomerCoreAddress,
   type CustomerFormValues,
   DEFAULT_CUSTOMER_LIST_PARAMS,
   normalizeCustomerType,
   resolveCustomerBranchId,
+  syncCustomerFormAddresses,
   validateCustomerFormValues,
   type CustomerListParams,
+  type CustomerSearchMatchField,
+  type CustomerSearchResult,
 } from "@/lib/customers/types";
 import { CUSTOMER_BAR_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
 import { buildApiPhonesPayload, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
@@ -67,15 +71,30 @@ type ApiAddressVerification = {
 };
 
 type ApiAddress = {
+  id?: string;
+  label?: string;
   address1?: string;
   address2?: string;
   apartment?: string;
   city?: string;
   state?: string;
   zipcode?: string;
+  zipCode?: string;
   country?: string;
+  phone?: string;
+  isPrimary?: boolean;
+  is_primary?: boolean;
+  active?: boolean;
   location?: ApiGeoLocation | null;
   verification?: ApiAddressVerification | null;
+};
+
+type ApiCustomerSearchResult = {
+  customer?: ApiCustomer;
+  matchedBy?: string;
+  matched_by?: string;
+  matchedAddressId?: string;
+  matched_address_id?: string;
 };
 
 type ApiBranch = {
@@ -90,8 +109,6 @@ type ApiCustomer = {
   name?: string;
   customerType?: number;
   CustomerType?: number;
-  phone1?: string;
-  phone2?: string;
   phones?: RecordPhone[];
   email?: string;
   active?: boolean;
@@ -102,9 +119,20 @@ type ApiCustomer = {
   accountBalance?: number;
   branch?: ApiBranch;
   createdByID?: number;
-  address?: ApiAddress;
   addresses?: ApiAddress[];
+  addressCount?: number;
+  addressesCount?: number;
+  address_count?: number;
   receivers?: string[];
+};
+
+/** POST/PUT /customers — see API_PAYLOADS.md */
+type ApiCustomerAddressWritePayload = ApiAddressPayload & {
+  id?: string;
+  label?: string;
+  isPrimary?: boolean;
+  active?: boolean;
+  phone?: string;
 };
 
 /** POST/PUT /customers — see API_PAYLOADS.md */
@@ -117,7 +145,7 @@ type ApiCustomerWritePayload = {
   IDNumber?: string;
   notes?: string;
   accountBalance?: number;
-  address?: ApiAddressPayload;
+  addresses?: ApiCustomerAddressWritePayload[];
   branch: ApiBranchDtoPayload;
   receivers?: string[];
   id?: string;
@@ -192,17 +220,44 @@ function normalizeAddressVerification(
   };
 }
 
+function normalizeAddressLabel(raw?: string): CustomerCoreAddress["label"] | undefined {
+  const value = String(raw ?? "").trim();
+  if (!value) return undefined;
+
+  const allowed: CustomerAddressLabel[] = [
+    "Primary",
+    "Home",
+    "Work",
+    "Billing",
+    "Delivery",
+    "Other",
+  ];
+
+  for (const entry of allowed) {
+    if (entry.toLowerCase() === value.toLowerCase()) {
+      return entry;
+    }
+  }
+
+  return undefined;
+}
+
 function normalizeAddress(raw?: ApiAddress): CustomerCoreAddress {
   const address = raw ?? {};
 
   return {
+    id: String(address.id ?? "").trim() || undefined,
+    label: normalizeAddressLabel(address.label),
     address1: String(address.address1 ?? "").trim(),
     address2: String(address.address2 ?? "").trim(),
     apartment: String(address.apartment ?? "").trim(),
     city: String(address.city ?? "").trim(),
     state: String(address.state ?? "").trim(),
-    zipcode: String(address.zipcode ?? "").trim(),
+    zipcode: String(address.zipcode ?? address.zipCode ?? "").trim(),
     country: String(address.country ?? "").trim(),
+    phone: String(address.phone ?? "").trim() || undefined,
+    isPrimary: address.isPrimary === true || address.is_primary === true,
+    active: address.active !== false,
     location: normalizeAddressLocation(address.location),
     verification: normalizeAddressVerification(address.verification),
   };
@@ -240,6 +295,45 @@ function coreAddressHasContent(address: CustomerCoreAddress): boolean {
   ].some((value) => value.trim());
 }
 
+function readAddressCount(raw: ApiCustomer): number | undefined {
+  const value = raw.addressCount ?? raw.addressesCount ?? raw.address_count;
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return undefined;
+  return Math.floor(value);
+}
+
+function buildApiCustomerAddressWritePayload(
+  address: CustomerCoreAddress,
+): ApiCustomerAddressWritePayload | undefined {
+  const base = buildApiAddressPayload(address);
+  if (!base) return undefined;
+
+  const payload: ApiCustomerAddressWritePayload = { ...base };
+  const id = address.id?.trim();
+  if (id) payload.id = id;
+
+  const label = address.label?.trim();
+  if (label) payload.label = label;
+
+  payload.isPrimary = address.isPrimary === true;
+  payload.active = address.active !== false;
+
+  const phone = address.phone?.trim();
+  if (phone) payload.phone = phone;
+
+  return payload;
+}
+
+function buildCustomerAddressesWritePayload(
+  values: CustomerFormValues,
+): ApiCustomerAddressWritePayload[] {
+  const synced = syncCustomerFormAddresses(values);
+
+  return synced.addresses
+    .filter(coreAddressHasContent)
+    .map(buildApiCustomerAddressWritePayload)
+    .filter((entry): entry is ApiCustomerAddressWritePayload => entry != null);
+}
+
 export function normalizeApiCustomer(raw: unknown): Customer | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -247,14 +341,12 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
   const id = String(item.id ?? "").trim();
   if (!id) return null;
 
-  const address = normalizeAddress(item.address);
   const addresses = Array.isArray(item.addresses)
     ? item.addresses.map(normalizeAddress).filter(coreAddressHasContent)
-    : coreAddressHasContent(address)
-      ? [address]
-      : [];
-  const primaryAddress = addresses[0] ?? address;
+    : [];
   const branch = normalizeBranch(item.branch);
+
+  const addressCount = readAddressCount(item);
 
   return {
     id,
@@ -271,8 +363,8 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
     accountBalance: Number(item.accountBalance ?? 0),
     branch,
     createdByID: readNumericId(item.createdByID) ?? null,
-    address: primaryAddress,
     addresses,
+    addressCount,
     receivers: normalizeReceivers(item.receivers),
   };
 }
@@ -463,7 +555,7 @@ function buildCustomerWritePayload(
   const email = values.email.trim();
   const idNumber = values.IDNumber.trim();
   const notes = values.notes.trim();
-  const primaryAddress = buildApiAddressPayload(values.address);
+  const addresses = buildCustomerAddressesWritePayload(values);
 
   const payload: ApiCustomerWritePayload = {
     name,
@@ -485,8 +577,8 @@ function buildCustomerWritePayload(
     payload.notes = notes;
   }
 
-  if (primaryAddress) {
-    payload.address = primaryAddress;
+  if (addresses.length > 0) {
+    payload.addresses = addresses;
   }
 
   if (options.customerId) {
@@ -671,4 +763,86 @@ export async function fetchCustomerById(customerId: string): Promise<Customer> {
   }
 
   return customer;
+}
+
+const CUSTOMER_SEARCH_MATCH_FIELDS: CustomerSearchMatchField[] = [
+  "name",
+  "phone",
+  "idNumber",
+  "email",
+  "address",
+];
+
+function normalizeCustomerSearchMatchField(raw?: string): CustomerSearchMatchField | undefined {
+  const value = String(raw ?? "").trim();
+  if (!value) return undefined;
+
+  return CUSTOMER_SEARCH_MATCH_FIELDS.find(
+    (field) => field.toLowerCase() === value.toLowerCase(),
+  );
+}
+
+function normalizeCustomerSearchResult(raw: unknown): CustomerSearchResult | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const item = raw as ApiCustomerSearchResult;
+  const customer = normalizeApiCustomer(item.customer ?? raw);
+  if (!customer) return null;
+
+  const matchedBy = normalizeCustomerSearchMatchField(item.matchedBy ?? item.matched_by);
+  const matchedAddressId = String(item.matchedAddressId ?? item.matched_address_id ?? "").trim();
+
+  return {
+    customer,
+    matchedBy,
+    matchedAddressId: matchedAddressId || undefined,
+  };
+}
+
+export type CustomerAutocompleteParams = {
+  q: string;
+  customerType: "sender" | "receiver";
+  limit?: number;
+};
+
+/** GET /customers/autocomplete — address-aware customer search for party pickers. */
+export async function fetchCustomerAutocomplete(
+  params: CustomerAutocompleteParams,
+): Promise<CustomerSearchResult[]> {
+  const query = params.q.trim();
+  if (!query) return [];
+
+  const limit = params.limit ?? 20;
+
+  const searchParams = new URLSearchParams({
+    q: query,
+    customerType: params.customerType,
+    limit: String(limit),
+  });
+
+  try {
+    const response = await apiClient.get<
+      ApiCustomerSearchResult[] | PaginatedApiEnvelope<ApiCustomerSearchResult[]>
+    >(`${API_ENDPOINTS.CUSTOMERS_AUTOCOMPLETE}?${searchParams.toString()}`);
+
+    const rawItems = Array.isArray(response)
+      ? response
+      : Array.isArray((response as PaginatedApiEnvelope<ApiCustomerSearchResult[]>).data)
+        ? ((response as PaginatedApiEnvelope<ApiCustomerSearchResult[]>).data ?? [])
+        : [];
+
+    return rawItems
+      .map(normalizeCustomerSearchResult)
+      .filter((entry): entry is CustomerSearchResult => entry != null);
+  } catch {
+    const customerType = params.customerType === "sender" ? 1 : 2;
+    const fallback = await fetchCustomers({
+      ...DEFAULT_CUSTOMER_LIST_PARAMS,
+      limit,
+      search: { field: "name", operator: "contains", value: query },
+      customerType,
+    });
+
+    return fallback.items.map((customer) => ({ customer }));
+  }
 }

@@ -38,6 +38,8 @@ type RecordViewSheetSectionProps = {
   title?: string;
   /** Optional leading icon, matching the add/edit form section style. */
   icon?: React.ComponentType<{ className?: string }>;
+  /** Optional control aligned to the right of the section header (e.g. flip / expand). */
+  headerAction?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
   padding?: "default" | "relaxed";
@@ -115,6 +117,7 @@ export function RecordViewSheetBody({ children, className }: RecordViewSheetBody
 export function RecordViewSheetSection({
   title,
   icon: Icon,
+  headerAction,
   children,
   className,
   padding = "default",
@@ -127,15 +130,18 @@ export function RecordViewSheetSection({
       )}
     >
       {title ? (
-        <div className="flex items-center gap-2.5 border-b border-border bg-muted/50 px-4 py-2.5">
-          {Icon ? (
-            <Icon className="size-4 shrink-0 text-primary" />
-          ) : (
-            <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-primary/80" aria-hidden />
-          )}
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-foreground/75">
-            {title}
-          </h3>
+        <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/50 px-4 py-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            {Icon ? (
+              <Icon className="size-4 shrink-0 text-primary" />
+            ) : (
+              <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-primary/80" aria-hidden />
+            )}
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-foreground/75">
+              {title}
+            </h3>
+          </div>
+          {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
         </div>
       ) : null}
       <div className={cn(padding === "relaxed" ? "p-4" : "px-0 py-0")}>{children}</div>

@@ -23,7 +23,9 @@ export function buildDefaultOrder(columns: ColumnVisibilityDefinition[]): string
 }
 
 export function buildDefaultWidths(columns: ColumnVisibilityDefinition[]): Record<string, number> {
-  return Object.fromEntries(columns.map((column) => [column.id, DEFAULT_COLUMN_WIDTH]));
+  return Object.fromEntries(
+    columns.map((column) => [column.id, column.defaultWidth ?? DEFAULT_COLUMN_WIDTH]),
+  );
 }
 
 export function normalizeColumnOrder(order: string[], columns: ColumnVisibilityDefinition[]): string[] {

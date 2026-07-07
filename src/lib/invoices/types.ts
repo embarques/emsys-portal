@@ -527,18 +527,23 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
     accountBalance: 0,
     branch: { id: 0, name: "", code: "" },
     createdByID: null,
-    address: {
-      address1: primaryAddress?.streetAddress.trim() ?? "",
-      address2: primaryAddress?.apt?.trim() ?? "",
-      apartment: primaryAddress?.apt?.trim() ?? "",
-      city: primaryAddress?.city.trim() ?? "",
-      state: primaryAddress?.state?.trim() ?? "",
-      zipcode: primaryAddress?.zipCode?.trim() ?? "",
-      country: primaryAddress?.provinceCountry?.trim() ?? "",
-      location: null,
-      verification: null,
-    },
-    addresses: [],
+    addresses: primaryAddress
+      ? [
+          {
+            address1: primaryAddress.streetAddress.trim(),
+            address2: primaryAddress.apt?.trim() ?? "",
+            apartment: primaryAddress.apt?.trim() ?? "",
+            city: primaryAddress.city.trim(),
+            state: primaryAddress.state?.trim() ?? "",
+            zipcode: primaryAddress.zipCode?.trim() ?? "",
+            country: primaryAddress.provinceCountry?.trim() ?? "",
+            location: null,
+            verification: null,
+            isPrimary: true,
+            active: true,
+          },
+        ]
+      : [],
     receivers: [],
   };
 }
