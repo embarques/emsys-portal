@@ -153,6 +153,8 @@ export function InvoiceDailyIncomeDialog({
   const statementOpen = activeStatement?.status === "OPEN";
   const statementCurrency = statementForm.watch("currency");
   const statementBranchId = statementForm.watch("branchId");
+  const selectedStatementBranch = branches.find((branch) => branch.id === statementBranchId);
+  const showExchangeRate = selectedStatementBranch?.code.trim().toUpperCase() === "RD";
   const statementErrors = statementForm.formState.errors;
   const branchOptions = branches.map((branch) => ({
     value: String(branch.id),
@@ -161,10 +163,10 @@ export function InvoiceDailyIncomeDialog({
   }));
 
   useEffect(() => {
-    if (statementCurrency !== "DOP") {
+    if (!showExchangeRate) {
       statementForm.setValue("rate", 1, { shouldValidate: true });
     }
-  }, [statementCurrency, statementForm]);
+  }, [showExchangeRate, statementForm]);
 
   useEffect(() => {
     const user = currentUserQuery.data;
@@ -286,7 +288,9 @@ export function InvoiceDailyIncomeDialog({
                         </p>
                         <div className="flex gap-8 text-xs text-muted-foreground">
                           <span>Currency <strong className="text-foreground">{activeStatement.currency}</strong></span>
-                          <span>Rate <strong className="text-foreground">{activeStatement.rate.toFixed(2)}</strong></span>
+                          {activeStatement.branch?.code?.trim().toUpperCase() === "RD" ? (
+                            <span>Rate <strong className="text-foreground">{activeStatement.rate.toFixed(2)}</strong></span>
+                          ) : null}
                         </div>
                       </>
                     ) : (
@@ -397,7 +401,7 @@ export function InvoiceDailyIncomeDialog({
                         placeholder="Select currency"
                       />
                     </div>
-                    {statementCurrency === "DOP" ? (
+                    {showExchangeRate ? (
                       <div className="space-y-1.5">
                         <Label htmlFor="invoice-statement-rate">Exchange rate</Label>
                         <Input
