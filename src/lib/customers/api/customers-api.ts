@@ -244,6 +244,39 @@ function normalizeCustomerAddressesFromApi(item: ApiCustomer): CustomerCoreAddre
   return coreAddressHasContent(legacy) ? [legacy] : [];
 }
 
+type TransactionPartyAddressHolder = {
+  address?: ApiAddress;
+  addresses?: ApiAddress[];
+};
+
+/** Prefer the transaction snapshot (`address`) over embedded customer `addresses[]`. */
+export function normalizeTransactionPartyAddresses(
+  raw?: TransactionPartyAddressHolder | null,
+): CustomerCoreAddress[] | null {
+  if (!raw?.address || typeof raw.address !== "object") {
+    return null;
+  }
+
+  const snapshot = normalizeAddress(raw.address, true);
+  return coreAddressHasContent(snapshot) ? [snapshot] : null;
+}
+
+export function withTransactionPartyAddressSnapshot<T extends { addresses: CustomerCoreAddress[] }>(
+  party: T,
+  raw: unknown,
+): T {
+  if (!raw || typeof raw !== "object") {
+    return party;
+  }
+
+  const snapshotAddresses = normalizeTransactionPartyAddresses(raw as TransactionPartyAddressHolder);
+  if (!snapshotAddresses) {
+    return party;
+  }
+
+  return { ...party, addresses: snapshotAddresses };
+}
+
 function normalizeBranch(raw?: ApiBranch): CustomerBranch {
   const branch = raw ?? {};
   const id = resolveCustomerBranchId({ id: readNumericId(branch.id), code: branch.code });

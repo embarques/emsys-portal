@@ -29,7 +29,7 @@ import {
   type ApiBranchDtoPayload,
 } from "@/lib/api/payloads";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
-import { normalizeApiCustomer } from "@/lib/customers/api/customers-api";
+import { normalizeApiCustomer, withTransactionPartyAddressSnapshot } from "@/lib/customers/api/customers-api";
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
 import type { Customer } from "@/lib/customers/types";
 import { CUSTOMER_PORTAL_BRANCHES, getCustomerPrimaryCoreAddress, type CustomerCoreAddress } from "@/lib/customers/types";
@@ -221,7 +221,9 @@ function normalizePickupComment(raw: ApiComment): PickupComment {
 
 function normalizePickupCustomer(raw: unknown, fallbackName: string): Customer {
   const customer = normalizeApiCustomer(raw);
-  if (customer) return customer;
+  if (customer) {
+    return withTransactionPartyAddressSnapshot(customer, raw);
+  }
 
   if (!raw || typeof raw !== "object") {
     return { ...EMPTY_CUSTOMER, name: fallbackName };
@@ -230,13 +232,16 @@ function normalizePickupCustomer(raw: unknown, fallbackName: string): Customer {
   const item = raw as Record<string, unknown>;
   const name = String(item.name ?? fallbackName).trim() || fallbackName;
 
-  return {
-    ...EMPTY_CUSTOMER,
-    id: String(item.id ?? "").trim(),
-    name,
-    phones: normalizeRecordPhonesFromApi(item),
-    email: String(item.email ?? "").trim(),
-  };
+  return withTransactionPartyAddressSnapshot(
+    {
+      ...EMPTY_CUSTOMER,
+      id: String(item.id ?? "").trim(),
+      name,
+      phones: normalizeRecordPhonesFromApi(item),
+      email: String(item.email ?? "").trim(),
+    },
+    raw,
+  );
 }
 
 function normalizePickupEmployee(raw: unknown): Employee | null {
