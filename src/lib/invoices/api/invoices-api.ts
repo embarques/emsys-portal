@@ -195,12 +195,13 @@ function normalizeApiInvoicePartyAddresses(party: ApiInvoiceParty): OrderParty["
 
   const addressId = readStringId(snapshotAddress.id) ?? createRecordId();
   const streetAddress = String(snapshotAddress.address1 ?? "").trim();
+  const apartment = String(snapshotAddress.apartment ?? "").trim();
+  const address2 = String(snapshotAddress.address2 ?? "").trim();
   const city = String(snapshotAddress.city ?? "").trim();
   const state = String(snapshotAddress.state ?? "").trim();
   const zipCode = String(snapshotAddress.zipcode ?? "").trim();
-  const apt = String(snapshotAddress.address2 ?? snapshotAddress.apartment ?? "").trim();
 
-  if (!streetAddress && !city && !state && !zipCode && !apt) {
+  if (!streetAddress && !apartment && !address2 && !city && !state && !zipCode) {
     return [];
   }
 
@@ -208,7 +209,8 @@ function normalizeApiInvoicePartyAddresses(party: ApiInvoiceParty): OrderParty["
     {
       id: addressId,
       streetAddress,
-      apt: apt || undefined,
+      apt: apartment || undefined,
+      crossStreet: address2 || undefined,
       city,
       state,
       provinceCountry: String(snapshotAddress.country ?? "").trim(),

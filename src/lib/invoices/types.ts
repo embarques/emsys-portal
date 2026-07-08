@@ -522,6 +522,7 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
       [
         address.streetAddress,
         address.apt,
+        address.crossStreet,
         address.city,
         address.state,
         address.zipCode,
@@ -530,7 +531,7 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
     )
     .map((address) => ({
       address1: address.streetAddress.trim(),
-      address2: address.apt?.trim() ?? "",
+      address2: address.crossStreet?.trim() ?? "",
       apartment: address.apt?.trim() ?? "",
       city: address.city.trim(),
       state: address.state?.trim() ?? "",
