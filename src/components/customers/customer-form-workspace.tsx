@@ -26,7 +26,12 @@ import {
 } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 
-export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+export function CustomerFormWorkspace({
+  tabId,
+  mode,
+  entityId,
+  customerType,
+}: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const { formatError, toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
@@ -44,6 +49,8 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
   const editingCustomer = isEditing ? (customerQuery.data ?? null) : null;
   const isSaving = createCustomerMutation.isPending || updateCustomerMutation.isPending;
+  // When opened from the order form's "New sender/receiver", the party type is preset and locked.
+  const hasPresetCustomerType = !isEditing && customerType != null;
 
   useEffect(() => {
     if (isEditing && editingCustomer?.name) {
@@ -122,9 +129,13 @@ export function CustomerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
         initialValues={
           isEditing && editingCustomer
             ? customerToFormValues(editingCustomer)
-            : createEmptyCustomerForm()
+            : {
+                ...createEmptyCustomerForm(),
+                ...(hasPresetCustomerType ? { customerType } : {}),
+              }
         }
         isEditing={isEditing}
+        lockCustomerType={hasPresetCustomerType}
         submitLabel={
           isEditing ? t("common.actions.saveChanges") : t("customers.actions.add")
         }

@@ -502,6 +502,11 @@ export function resolveLineTotal(values: InvoiceLineItemFormValues): number {
   return computeLineTotal(quantity, unitPrice);
 }
 
+/** Whether a line item row has enough data to count toward invoice validation. */
+export function hasInvoiceLineItemContent(values: InvoiceLineItemFormValues): boolean {
+  return Boolean(values.itemName.trim() || values.itemId || resolveLineTotal(values) > 0);
+}
+
 /** Labels default to the quantity but can be overridden directly. */
 export function resolveLineLabelCount(values: InvoiceLineItemFormValues): number {
   const quantity = Number(values.quantity);

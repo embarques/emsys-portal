@@ -116,6 +116,8 @@ export function useWorkspaceTabs() {
       mode: WorkspaceTabForm["mode"];
       entityId?: string;
       label: string;
+      /** Preset/locked customer type when opening the customers add form for a party. */
+      customerType?: number;
     }) => {
       if (!isDesktopTabs) {
         router.push(params.baseHref);
@@ -123,7 +125,13 @@ export function useWorkspaceTabs() {
       }
 
       const currentTabs = store.getState().layoutTabs.tabs;
-      const existing = findFormTab(currentTabs, params.feature, params.mode, params.entityId);
+      const existing = findFormTab(
+        currentTabs,
+        params.feature,
+        params.mode,
+        params.entityId,
+        params.customerType,
+      );
       if (existing) {
         dispatch(setActiveWorkspaceTab(existing.id));
         navigateToTab(existing);
@@ -144,6 +152,7 @@ export function useWorkspaceTabs() {
             mode: params.mode,
             entityId: params.entityId,
             returnToTabId,
+            ...(params.customerType != null ? { customerType: params.customerType } : {}),
           },
         }),
       );

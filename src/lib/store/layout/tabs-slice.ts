@@ -289,11 +289,14 @@ export function findFormTab(
   feature: string,
   mode: WorkspaceTabForm["mode"],
   entityId?: string,
+  customerType?: number,
 ): WorkspaceTab | undefined {
   return tabs.find(
     (tab) =>
       tab.form?.feature === feature &&
       tab.form.mode === mode &&
+      // A preset party type is a distinct add form (sender vs receiver vs plain).
+      tab.form.customerType === customerType &&
       (mode === "add"
         ? !entityId || tab.form.entityId === entityId
         : tab.form.entityId === entityId),

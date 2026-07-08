@@ -34,7 +34,7 @@ import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 
 import {
   TableSelectionActionDivider,
-  TableSelectionActionGroup,
+  TableSelectionExpandableActionGroup,
 } from "@/components/app-shell/table-selection-action-group";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
@@ -175,6 +175,9 @@ export function OrdersWorkspace() {
   const [formError, setFormError] = useState<string | null>(null);
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
   const [clearRouteOpen, setClearRouteOpen] = useState(false);
+  const [completionConfirm, setCompletionConfirm] = useState<boolean | null>(null);
+  const [completionExpanded, setCompletionExpanded] = useState(false);
+  const [routesExpanded, setRoutesExpanded] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState("");
   const listParams = useMemo(
     () =>
@@ -364,20 +367,31 @@ export function OrdersWorkspace() {
   async function handleSetCompleted(completed: boolean) {
     if (selectedOrders.length === 0) return;
 
+    const affectedIds = selectedOrders.map((order) => getOrderRecordId(order));
+    const affectedCount = selectedOrders.length;
+
     try {
       await setOrdersCompletedMutation.mutateAsync({ orders: selectedOrders, completed });
+      setSelectedIds((current) => current.filter((id) => !affectedIds.includes(id)));
+      setCompletionConfirm(null);
       notifySuccess(
-        selectedOrders.length === 1
+        affectedCount === 1
           ? t(completed ? "orders.toasts.markedComplete" : "orders.toasts.markedIncomplete", {
-              count: selectedOrders.length,
+              count: affectedCount,
             })
           : t(completed ? "orders.toasts.markedComplete_plural" : "orders.toasts.markedIncomplete_plural", {
-              count: selectedOrders.length,
+              count: affectedCount,
             }),
       );
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
+      setCompletionConfirm(null);
     }
+  }
+
+  function openCompletionConfirm(completed: boolean) {
+    if (selectedOrders.length === 0) return;
+    setCompletionConfirm(completed);
   }
 
   function openAssignRoute() {
@@ -768,12 +782,18 @@ export function OrdersWorkspace() {
                 {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
               </Button>
               <TableSelectionActionDivider />
-              <TableSelectionActionGroup aria-label={t("orders.actions.completionGroup")}>
+              <TableSelectionExpandableActionGroup
+                label={t("orders.actions.manageCompletion")}
+                icon={CheckCircle2}
+                expanded={completionExpanded}
+                onExpandedChange={setCompletionExpanded}
+                aria-label={t("orders.actions.completionGroup")}
+              >
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={isSaving}
-                  onClick={() => handleSetCompleted(true)}
+                  onClick={() => openCompletionConfirm(true)}
                   className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
                 >
                   <CheckCircle2 className="h-4 w-4" />
@@ -783,15 +803,21 @@ export function OrdersWorkspace() {
                   variant="outline"
                   size="sm"
                   disabled={isSaving}
-                  onClick={() => handleSetCompleted(false)}
+                  onClick={() => openCompletionConfirm(false)}
                   className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
                 >
                   <XCircle className="h-4 w-4" />
                   {t("orders.actions.markIncomplete")}
                 </Button>
-              </TableSelectionActionGroup>
+              </TableSelectionExpandableActionGroup>
               <TableSelectionActionDivider />
-              <TableSelectionActionGroup aria-label={t("orders.actions.routeGroup")}>
+              <TableSelectionExpandableActionGroup
+                label={t("orders.actions.manageRoutes")}
+                icon={RouteIcon}
+                expanded={routesExpanded}
+                onExpandedChange={setRoutesExpanded}
+                aria-label={t("orders.actions.routeGroup")}
+              >
                 <Button
                   variant="outline"
                   size="sm"
@@ -813,7 +839,7 @@ export function OrdersWorkspace() {
                     ? t("orders.actions.clearingRoute")
                     : t("orders.actions.clearRoute")}
                 </Button>
-              </TableSelectionActionGroup>
+              </TableSelectionExpandableActionGroup>
             </>
           }
         />
@@ -984,6 +1010,66 @@ export function OrdersWorkspace() {
             <Button onClick={confirmAssignRoute} disabled={!selectedRouteId || isSaving}>
               <RouteIcon className="h-4 w-4" />
               {t("orders.actions.assignRoute")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={completionConfirm !== null}
+        onOpenChange={(open) => !open && setCompletionConfirm(null)}
+      >
+        <DialogContent className="z-[60]">
+          <DialogHeader>
+            <DialogTitle>
+              {completionConfirm
+                ? t("orders.dialogs.markCompleteTitle")
+                : t("orders.dialogs.markIncompleteTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedOrders.length === 1
+                ? t(
+                    completionConfirm
+                      ? "orders.dialogs.markCompleteDescription"
+                      : "orders.dialogs.markIncompleteDescription",
+                    { count: selectedOrders.length },
+                  )
+                : t(
+                    completionConfirm
+                      ? "orders.dialogs.markCompleteDescription_plural"
+                      : "orders.dialogs.markIncompleteDescription_plural",
+                    { count: selectedOrders.length },
+                  )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCompletionConfirm(null)}
+              disabled={setOrdersCompletedMutation.isPending}
+            >
+              {t("common.actions.cancel")}
+            </Button>
+            <Button
+              onClick={() => completionConfirm !== null && void handleSetCompleted(completionConfirm)}
+              disabled={setOrdersCompletedMutation.isPending}
+              className={
+                completionConfirm
+                  ? "bg-emerald-600 text-white hover:bg-emerald-600/90"
+                  : "bg-amber-600 text-white hover:bg-amber-600/90"
+              }
+            >
+              {completionConfirm ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  {t("orders.actions.markComplete")}
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-4 w-4" />
+                  {t("orders.actions.markIncomplete")}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

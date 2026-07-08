@@ -26,6 +26,8 @@
     "clearingRoute": "Limpiando…",
     "noAssignedRoute": "Ninguna de las órdenes seleccionadas está asignada a una ruta.",
     "map": "Mapa",
+    "manageCompletion": "Gestionar completado",
+    "manageRoutes": "Gestionar rutas",
     "completionGroup": "Estado de completado",
     "routeGroup": "Asignación de ruta"
   },
@@ -132,6 +134,8 @@
     "validation": {
       "pickupDateRequired": "Seleccione una fecha de recogida válida.",
       "senderRequired": "Seleccione un remitente.",
+      "senderAddressRequired": "Seleccione la dirección del remitente.",
+      "receiverAddressRequired": "Seleccione la dirección del destinatario.",
       "unverifiedSenderAddress": "Verifique la dirección del remitente antes de guardar. Abra el remitente y actualícela con una sugerencia de Google.",
       "commentRequired": "Agregue al menos un comentario."
     }
@@ -193,6 +197,12 @@
     "clearRouteTitle": "¿Limpiar ruta?",
     "clearRouteDescription": "Esto quitará la asignación de ruta de {{count}} orden seleccionada. {{cannotBeUndone}}",
     "clearRouteDescription_plural": "Esto quitará la asignación de ruta de {{count}} órdenes seleccionadas. {{cannotBeUndone}}",
+    "markCompleteTitle": "¿Marcar como completada?",
+    "markCompleteDescription": "¿Marcar {{count}} orden seleccionada como completada?",
+    "markCompleteDescription_plural": "¿Marcar {{count}} órdenes seleccionadas como completadas?",
+    "markIncompleteTitle": "¿Marcar como incompleta?",
+    "markIncompleteDescription": "¿Marcar {{count}} orden seleccionada como incompleta?",
+    "markIncompleteDescription_plural": "¿Marcar {{count}} órdenes seleccionadas como incompletas?",
     "selectRoute": "Seleccionar una ruta",
     "searchRoutes": "Buscar rutas…",
     "loadingRoutes": "Cargando rutas…",

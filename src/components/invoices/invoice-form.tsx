@@ -172,6 +172,8 @@ function PartyFieldActions({
   onAdd: () => void;
   onEdit: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex items-center gap-1">
       <Button
@@ -182,7 +184,7 @@ function PartyFieldActions({
         onClick={onAdd}
       >
         <UserPlus className="size-3.5" />
-        New
+        {t("invoices.form.partyActions.new")}
       </Button>
       {hasSelection ? (
         <Button
@@ -193,7 +195,7 @@ function PartyFieldActions({
           onClick={onEdit}
         >
           <Pencil className="size-3.5" />
-          Edit
+          {t("invoices.form.partyActions.edit")}
         </Button>
       ) : null}
     </div>
@@ -300,15 +302,9 @@ export function InvoiceForm({
 
   const commitValues = useCallback(
     (updater: InvoiceFormValues | ((current: InvoiceFormValues) => InvoiceFormValues)) => {
-      setValues((current) => {
-        const next = typeof updater === "function" ? updater(current) : updater;
-        if (isWizard) {
-          onValuesChange?.(next);
-        }
-        return next;
-      });
+      setValues((current) => (typeof updater === "function" ? updater(current) : updater));
     },
-    [isWizard, onValuesChange],
+    [],
   );
 
   useEffect(() => {
@@ -324,9 +320,8 @@ export function InvoiceForm({
   }, [initialValues, isEditing, isWizard, suggestedInvoiceNumber]);
 
   useEffect(() => {
-    if (isWizard) return;
     onValuesChange?.(values);
-  }, [isWizard, onValuesChange, values]);
+  }, [onValuesChange, values]);
 
   const showAllSections = wizardStep == null;
   const showDetailsSection = showAllSections || wizardStep === 1;
@@ -471,10 +466,10 @@ export function InvoiceForm({
           customerId: dialogCustomer.id,
           values: formValues,
         });
-        notifyUpdated("Customer", customer.name);
+        notifyUpdated(t("customers.entity"), customer.name);
       } else {
         customer = await createCustomerMutation.mutateAsync(formValues);
-        notifyAdded("Customer", customer.name);
+        notifyAdded(t("customers.entity"), customer.name);
       }
 
       applyCustomerToSide(customerDialog.side, customer);
@@ -496,8 +491,7 @@ export function InvoiceForm({
   const amountPaid = Number(values.amountPaid) || 0;
   const balance = computeInvoiceBalance(subtotal, discount, amountPaid);
 
-  const unverifiedPartyMessage =
-    "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.";
+  const unverifiedPartyMessage = t("invoices.wizard.validation.unverifiedSenderAddress");
   // Only senders use Google verification; receivers use a predetermined city list.
   const blockForUnverifiedParty =
     isGoogleMapsConfigured() &&
@@ -507,7 +501,7 @@ export function InvoiceForm({
     event.preventDefault();
 
     if (!values.sender) {
-      const message = "Sender is required.";
+      const message = t("invoices.form.validation.senderRequired");
       setFormError(message);
       onFormErrorChange?.(message);
       return;
@@ -585,7 +579,7 @@ export function InvoiceForm({
   const detailsFields = (
     <div className={cn("grid gap-5", isWizard ? "sm:grid-cols-2" : "gap-2.5 sm:grid-cols-2")}>
       {renderField(
-        "Date",
+        t("invoices.form.fields.date"),
         "date",
         true,
         <DateInput
@@ -597,32 +591,32 @@ export function InvoiceForm({
         />,
       )}
       {renderField(
-        "Invoice number",
+        t("invoices.form.fields.invoiceNumber"),
         "invoiceNumber",
         true,
         <Input
           id="invoiceNumber"
           value={values.invoiceNumber}
           onChange={(event) => updateField("invoiceNumber", event.target.value)}
-          placeholder="INV-2026-0001"
+          placeholder={t("invoices.form.placeholders.invoiceNumber")}
           {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
           required
         />,
       )}
       {renderField(
-        "Container",
+        t("invoices.form.fields.container"),
         "containerId",
         true,
         <SearchableSelect
           id="containerId"
           value={values.containerId}
           onValueChange={(next) => updateField("containerId", next)}
-          placeholder="Select a container"
-          searchPlaceholder="Search containers…"
+          placeholder={t("invoices.form.placeholders.selectContainer")}
+          searchPlaceholder={t("invoices.form.placeholders.searchContainers")}
           {...(isWizard ? wizardSelectFieldProps(values.containerId) : {})}
           required
           options={[
-            { value: "", label: "Select a container" },
+            { value: "", label: t("invoices.form.placeholders.selectContainer") },
             ...containers.map((container) => ({
               value: String(container.id),
               label: formatContainerLabel(container),
@@ -631,7 +625,7 @@ export function InvoiceForm({
         />,
       )}
       {renderField(
-        "Pending",
+        t("invoices.form.fields.pending"),
         "paymentLocation",
         true,
         <SearchableSelect
@@ -720,11 +714,11 @@ export function InvoiceForm({
         <div className="flex items-center justify-between gap-2">
           {isWizard ? (
             <Label htmlFor="senderId" className="text-xs font-normal text-muted-foreground">
-              Sender <span className="text-destructive">*</span>
+              {t("invoices.form.fields.sender")} <span className="text-destructive">*</span>
             </Label>
           ) : (
             <Label htmlFor="senderId">
-              Sender <span className="text-destructive">*</span>
+              {t("invoices.form.fields.sender")} <span className="text-destructive">*</span>
             </Label>
           )}
           <PartyFieldActions
@@ -739,8 +733,9 @@ export function InvoiceForm({
           value={values.senderId}
           selectedCustomer={values.sender}
           onValueChange={updateSender}
-          placeholder="Select sender"
+          placeholder={t("invoices.form.placeholders.selectSender")}
           required
+          showAddressLabels={false}
           triggerClassName={isWizard ? wizardSelectClassNameFor(values.senderId) : undefined}
         />
         {values.sender ? (
@@ -758,10 +753,10 @@ export function InvoiceForm({
         <div className="flex items-center justify-between gap-2">
           {isWizard ? (
             <Label htmlFor="receiverId" className="text-xs font-normal text-muted-foreground">
-              Receiver
+              {t("invoices.form.fields.receiver")}
             </Label>
           ) : (
-            <Label htmlFor="receiverId">Receiver</Label>
+            <Label htmlFor="receiverId">{t("invoices.form.fields.receiver")}</Label>
           )}
           <PartyFieldActions
             hasSelection={Boolean(values.receiver)}
@@ -775,7 +770,8 @@ export function InvoiceForm({
           value={values.receiverId}
           selectedCustomer={values.receiver}
           onValueChange={updateReceiver}
-          placeholder="No receiver"
+          placeholder={t("invoices.form.placeholders.noReceiver")}
+          showAddressLabels={false}
           triggerClassName={isWizard ? wizardSelectClassNameFor(values.receiverId) : undefined}
         />
         {values.receiver ? (
@@ -803,7 +799,7 @@ export function InvoiceForm({
             isWizard ? (
               detailsFields
             ) : (
-              <FormSection icon={Receipt} title="Invoice details" required>
+              <FormSection icon={Receipt} title={t("invoices.form.sections.invoiceDetails")} required>
                 {detailsFields}
               </FormSection>
             )
@@ -813,7 +809,7 @@ export function InvoiceForm({
             isWizard ? (
               partiesFields
             ) : (
-              <FormSection icon={Users} title="Sender & receiver">
+              <FormSection icon={Users} title={t("invoices.form.sections.senderReceiver")}>
                 {partiesFields}
               </FormSection>
             )
@@ -828,7 +824,7 @@ export function InvoiceForm({
                 onChange={(lineItems) => updateField("lineItems", lineItems)}
               />
             ) : (
-              <FormSection icon={ClipboardList} title="Description">
+              <FormSection icon={ClipboardList} title={t("invoices.form.sections.description")}>
                 <InvoiceLineItemsEditor
                   lineItems={values.lineItems}
                   catalogItems={catalogItems}
@@ -902,8 +898,12 @@ export function InvoiceForm({
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>
               {customerDialog?.mode === "edit"
-                ? `Edit ${customerDialog.side}`
-                : `Add ${customerDialog?.side ?? "customer"}`}
+                ? customerDialog.side === "receiver"
+                  ? t("invoices.form.partyActions.editReceiver")
+                  : t("invoices.form.partyActions.editSender")
+                : customerDialog?.side === "receiver"
+                  ? t("invoices.form.partyActions.addReceiver")
+                  : t("invoices.form.partyActions.addSender")}
             </DialogTitle>
           </DialogHeader>
           {customerDialog ? (
@@ -921,7 +921,11 @@ export function InvoiceForm({
                     }
               }
               isEditing={customerDialog.mode === "edit"}
-              submitLabel={customerDialog.mode === "edit" ? "Save changes" : "Add customer"}
+              submitLabel={
+                customerDialog.mode === "edit"
+                  ? t("common.actions.saveChanges")
+                  : t("customers.actions.add")
+              }
               isSubmitting={isSavingCustomer}
               externalError={customerFormError}
               lockCustomerType

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type InvoiceWizardReviewSectionProps = {
@@ -16,10 +17,13 @@ export function InvoiceWizardReviewSection({
   number,
   title,
   onEdit,
-  editLabel = "Edit this step",
+  editLabel,
   className,
   children,
 }: InvoiceWizardReviewSectionProps) {
+  const { t } = useTranslation();
+  const resolvedEditLabel = editLabel ?? t("invoices.wizard.review.editStep");
+
   return (
     <section className={cn("py-6 first:pt-2", className)}>
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -39,7 +43,7 @@ export function InvoiceWizardReviewSection({
             className="h-auto shrink-0 px-0 text-primary"
             onClick={onEdit}
           >
-            {editLabel}
+            {resolvedEditLabel}
           </Button>
         ) : null}
       </div>

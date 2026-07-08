@@ -36,12 +36,14 @@ export type CustomerPartySelectProps = {
   partyType: "sender" | "receiver";
   value: string;
   selectedCustomer?: Customer | null;
-  onValueChange: (customerId: string, customer: Customer) => void;
+  onValueChange: (customerId: string, customer: Customer, addressId?: string) => void;
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
   className?: string;
   triggerClassName?: string;
+  /** Show the Primary/Other label badge next to each expanded address. */
+  showAddressLabels?: boolean;
 };
 
 type CollapsedAddressPreview = {
@@ -101,6 +103,7 @@ export function CustomerPartySelect({
   disabled = false,
   className,
   triggerClassName,
+  showAddressLabels = true,
 }: CustomerPartySelectProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -167,8 +170,7 @@ export function CustomerPartySelect({
     return customer;
   }
 
-  async function selectCustomer(customer: Customer, _addressId?: string) {
-    // TODO: persist selectedAddressId on invoice/order forms when the API supports it.
+  async function selectCustomer(customer: Customer, addressId?: string) {
     let resolved = customer;
     try {
       resolved = await ensureCustomerDetail(customer.id);
@@ -176,11 +178,35 @@ export function CustomerPartySelect({
       resolved = customer;
     }
 
-    onValueChange(resolved.id, resolved);
+    onValueChange(resolved.id, resolved, addressId);
     setOpen(false);
     setQuery("");
     setExpandedIds(new Set());
     setDetailCustomerId(null);
+  }
+
+  function expandCustomer(customerId: string) {
+    setExpandedIds((current) => {
+      if (current.has(customerId)) return current;
+      const next = new Set(current);
+      next.add(customerId);
+      return next;
+    });
+    setDetailCustomerId(customerId);
+    void ensureCustomerDetail(customerId);
+  }
+
+  /**
+   * A customer with more than one address must be confirmed by pressing a specific
+   * address, so activating the row only expands it. Single-address customers select
+   * immediately.
+   */
+  function activateCustomerRow(customer: Customer, addressCount: number) {
+    if (addressCount > 1) {
+      expandCustomer(customer.id);
+      return;
+    }
+    void selectCustomer(customer);
   }
 
   async function toggleExpanded(customerId: string) {
@@ -230,7 +256,8 @@ export function CustomerPartySelect({
 
     if (event.key === "Enter" && open && results[highlightedIndex]) {
       event.preventDefault();
-      void selectCustomer(results[highlightedIndex]!.customer);
+      const displayCustomer = resolveDisplayCustomer(results[highlightedIndex]!.customer);
+      activateCustomerRow(displayCustomer, resolveCustomerAddressCount(displayCustomer));
       return;
     }
 
@@ -359,7 +386,7 @@ export function CustomerPartySelect({
                       isHighlighted && "bg-muted/60",
                     )}
                     onMouseEnter={() => setHighlightedIndex(index)}
-                    onClick={() => void selectCustomer(displayCustomer)}
+                    onClick={() => activateCustomerRow(displayCustomer, addressCount)}
                   >
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1">
@@ -458,9 +485,11 @@ export function CustomerPartySelect({
                                 className="flex w-full items-start gap-2 rounded-md px-2 py-2 text-left text-xs hover:bg-muted/70"
                                 onClick={() => void selectCustomer(displayCustomer, address.id)}
                               >
-                                <Badge variant="secondary" className="mt-0.5 shrink-0">
-                                  {t(getAddressLabelKey(address, addressIndex))}
-                                </Badge>
+                                {showAddressLabels ? (
+                                  <Badge variant="secondary" className="mt-0.5 shrink-0">
+                                    {t(getAddressLabelKey(address, addressIndex))}
+                                  </Badge>
+                                ) : null}
                                 <span className="min-w-0 flex-1">
                                   <span className={cn("block", ADDRESS_TEXT_WRAP_CLASSNAME, "text-foreground")}>
                                     {formatAddress(address, "full")}

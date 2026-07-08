@@ -151,6 +151,10 @@ export async function fillInvoiceWizardStep3(
 
   const unitPriceInput = wizard.locator('input[id$="-unitPrice"]').first();
   await unitPriceInput.fill(unitPrice);
+  await unitPriceInput.press("Enter");
+
+  const totalInput = wizard.locator('input[id$="-total"]').first();
+  await totalInput.press("Enter");
 
   await wizard.getByRole("button", { name: "Next" }).click();
   await expect(wizard.getByText("Step 4 of 5")).toBeVisible({ timeout: 10_000 });

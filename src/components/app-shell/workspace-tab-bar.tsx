@@ -12,6 +12,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { WorkspaceTabOverflowMenu } from "@/components/app-shell/workspace-tab-overflow-menu";
+import { Button } from "@/components/ui/button";
 import { useUpdateWorkspaceTabColor, useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { getWorkspaceTabChromeStyle } from "@/lib/layout/workspace-tab-colors";
 import { getWorkspaceTabDisplayLabel, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
@@ -126,7 +127,7 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
 });
 
 export function WorkspaceTabBar() {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
   const { tabs, activeTabId, activateTab, closeTab, closeOtherTabs, closeTabsToRight, closeAllTabs, openTab } =
     useWorkspaceTabs();
   const updateTabColor = useUpdateWorkspaceTabColor();
@@ -195,8 +196,27 @@ export function WorkspaceTabBar() {
             />
           ))}
         </div>
+        {tabs.length >= 2 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            data-testid="workspace-close-all-tabs"
+            className="mb-1 mr-1 mt-2 h-9 shrink-0 rounded-lg px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            aria-label={t("shell.tabs.closeAllTabs")}
+            title={t("shell.tabs.closeAllTabs")}
+            onClick={closeAllTabs}
+          >
+            {t("shell.tabs.closeAll")}
+          </Button>
+        ) : null}
         {showOverflowMenu ? (
-          <WorkspaceTabOverflowMenu tabs={tabs} activeTabId={activeTabId} onActivate={activateTab} />
+          <WorkspaceTabOverflowMenu
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onActivate={activateTab}
+            onCloseAll={closeAllTabs}
+          />
         ) : null}
       </div>
     </div>

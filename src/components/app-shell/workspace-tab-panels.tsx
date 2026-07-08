@@ -23,7 +23,12 @@ const WorkspaceTabPanel = memo(function WorkspaceTabPanel({ tab, active }: Works
     <div hidden={!active} aria-hidden={!active} className={active ? "block" : "hidden"}>
       <WorkspaceTabScope tabId={tab.id} isActive={active}>
         {tab.form && FormComponent ? (
-          <FormComponent tabId={tab.id} mode={tab.form.mode} entityId={tab.form.entityId} />
+          <FormComponent
+            tabId={tab.id}
+            mode={tab.form.mode}
+            entityId={tab.form.entityId}
+            customerType={tab.form.customerType}
+          />
         ) : Component ? (
           <Component />
         ) : (

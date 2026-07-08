@@ -3,18 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { KeyRound, LogOut, Settings, User, UserCircle } from "lucide-react";
+import { Bell, KeyRound, LogOut, Settings, UserCircle } from "lucide-react";
 
 import { ChangePasswordDialog } from "@/components/configuration/change-password-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
+import { useCurrentUser } from "@/lib/users/hooks/use-users";
 
 function getInitials(displayName: string | null, email: string | null): string {
   if (displayName?.trim()) {
     const parts = displayName.trim().split(/\s+/);
     if (parts.length >= 2) {
-      return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+      return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
     }
     return displayName.slice(0, 2).toUpperCase();
   }
@@ -30,12 +31,19 @@ export function UserMenu() {
   const router = useRouter();
   const { t } = useTranslation();
   const { displayName, email, role, roleLoading, signOut } = useAuth();
+  const currentUserQuery = useCurrentUser();
   const [open, setOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const initials = getInitials(displayName, email);
-  const username = email?.split("@")[0] ?? "user";
-  const roleLabel = roleLoading ? t("common.loading") : role;
+
+  const profileName =
+    currentUserQuery.data?.name?.trim() ||
+    displayName?.trim() ||
+    email?.split("@")[0] ||
+    t("shell.profileMenu.defaultUser");
+  const profileEmail = currentUserQuery.data?.email?.trim() || email?.trim() || null;
+  const profileRole = roleLoading ? t("common.loading") : role?.trim() || null;
+  const initials = getInitials(currentUserQuery.data?.name ?? displayName, profileEmail);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -64,51 +72,60 @@ export function UserMenu() {
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/40 text-sm font-bold text-primary">
           {initials}
         </div>
         <div className="hidden text-left sm:block">
-          <p className="text-sm font-medium leading-none">{displayName ?? username}</p>
-          {roleLabel ? (
-            <p className="mt-1 text-xs text-muted-foreground">{roleLabel}</p>
+          <p className="text-sm font-medium leading-none">{profileName}</p>
+          {profileRole ? (
+            <p className="mt-1 text-xs text-muted-foreground">{profileRole}</p>
           ) : null}
         </div>
       </Button>
 
       {open ? (
         <div className="absolute right-0 top-12 z-[220] w-64 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl">
-          <div className="border-b p-4">
-            <p className="text-sm font-semibold">{displayName ?? username}</p>
-            {roleLabel ? (
-              <p className="mt-1 text-xs font-medium text-muted-foreground">{roleLabel}</p>
-            ) : null}
-            <p className="mt-1 text-xs text-muted-foreground">{email ?? `@${username}`}</p>
+          <div className="m-2 rounded-lg border bg-card p-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/40 text-sm font-bold text-primary">
+                {initials}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{profileName}</p>
+                {profileEmail ? (
+                  <p className="truncate text-xs text-muted-foreground">{profileEmail}</p>
+                ) : null}
+                {profileRole ? (
+                  <p className="truncate text-xs text-muted-foreground">{profileRole}</p>
+                ) : null}
+              </div>
+            </div>
           </div>
 
-          <div className="p-2">
-            <Link
-              href="/settings"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-            >
-              <User className="h-4 w-4" />
-              {t("shell.userMenu.profile")}
-            </Link>
-            <Link
-              href="/settings"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-            >
-              <Settings className="h-4 w-4" />
-              {t("shell.userMenu.settings")}
-            </Link>
+          <div className="space-y-0.5 px-2 pb-2">
             <Link
               href="/security"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition hover:bg-accent hover:text-accent-foreground"
             >
-              <UserCircle className="h-4 w-4" />
-              {t("shell.userMenu.account")}
+              <UserCircle className="h-4 w-4 shrink-0" />
+              {t("shell.profileMenu.account")}
+            </Link>
+            <Link
+              href="/settings"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition hover:bg-accent hover:text-accent-foreground"
+            >
+              <Settings className="h-4 w-4 shrink-0" />
+              {t("shell.profileMenu.settings")}
+            </Link>
+            <Link
+              href="/settings"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition hover:bg-accent hover:text-accent-foreground"
+            >
+              <Bell className="h-4 w-4 shrink-0" />
+              {t("shell.profileMenu.notifications")}
             </Link>
             <button
               type="button"
@@ -116,10 +133,10 @@ export function UserMenu() {
                 setOpen(false);
                 setChangePasswordOpen(true);
               }}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition hover:bg-accent hover:text-accent-foreground"
             >
-              <KeyRound className="h-4 w-4" />
-              {t("shell.userMenu.changePassword")}
+              <KeyRound className="h-4 w-4 shrink-0" />
+              {t("shell.profileMenu.changePassword")}
             </button>
           </div>
 
@@ -127,10 +144,10 @@ export function UserMenu() {
             <button
               type="button"
               onClick={() => void handleSignOut()}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-destructive transition hover:bg-destructive/10"
             >
-              <LogOut className="h-4 w-4" />
-              {t("shell.userMenu.signOut")}
+              <LogOut className="h-4 w-4 shrink-0" />
+              {t("shell.profileMenu.logOut")}
             </button>
           </div>
         </div>

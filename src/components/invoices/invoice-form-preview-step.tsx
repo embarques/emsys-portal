@@ -137,6 +137,7 @@ function InvoiceWizardCheckoutReview({
   errorMessage,
 }: Required<Pick<Props, "values">> &
   Pick<Props, "onEditStep" | "showPaymentSection" | "onEditPayment" | "errorMessage">) {
+  const { t } = useTranslation();
   const {
     catalogItems,
     containerLabel,
@@ -158,27 +159,35 @@ function InvoiceWizardCheckoutReview({
       ) : null}
       <InvoiceWizardReviewSection
         number={1}
-        title="Invoice details"
+        title={t("invoices.wizard.review.invoiceDetails")}
         onEdit={onEditStep ? () => onEditStep(1) : undefined}
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <InvoiceWizardReviewTextBlock
-            label="Invoice"
+            label={t("invoices.wizard.review.invoice")}
             value={
               <>
-                <p>{values.invoiceNumber || "—"}</p>
-                <p>{formatInvoiceDate(values.date) || values.date || "—"}</p>
+                <p>{values.invoiceNumber || t("common.empty.dash")}</p>
+                <p>{formatInvoiceDate(values.date) || values.date || t("common.empty.dash")}</p>
               </>
             }
           />
           <InvoiceWizardReviewTextBlock
-            label="Shipment"
+            label={t("invoices.wizard.review.shipment")}
             value={
               <>
-                <p>Container: {containerLabel}</p>
-                <p>{pickupFieldLabel}: {pickupLabel}</p>
-                <p>{pickupAssignmentFieldLabel}: {pickupAssignmentLabel}</p>
-                <p>Pending: {getPaymentLocationLabel(values.paymentLocation)}</p>
+                <p>
+                  {t("invoices.wizard.review.container")}: {containerLabel}
+                </p>
+                <p>
+                  {pickupFieldLabel}: {pickupLabel}
+                </p>
+                <p>
+                  {pickupAssignmentFieldLabel}: {pickupAssignmentLabel}
+                </p>
+                <p>
+                  {t("invoices.wizard.review.pending")}: {getPaymentLocationLabel(values.paymentLocation)}
+                </p>
               </>
             }
           />
@@ -187,24 +196,24 @@ function InvoiceWizardCheckoutReview({
 
       <InvoiceWizardReviewSection
         number={2}
-        title="Sender & receiver"
+        title={t("invoices.wizard.review.senderReceiver")}
         onEdit={onEditStep ? () => onEditStep(2) : undefined}
       >
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-foreground">Sender</p>
+            <p className="text-sm font-semibold text-foreground">{t("invoices.wizard.review.sender")}</p>
             {values.sender ? (
               <CustomerContactSummary customer={values.sender} />
             ) : (
-              <p className="text-sm text-muted-foreground">Not selected</p>
+              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.notSelected")}</p>
             )}
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-foreground">Receiver</p>
+            <p className="text-sm font-semibold text-foreground">{t("invoices.wizard.review.receiver")}</p>
             {values.receiver ? (
               <CustomerContactSummary customer={values.receiver} />
             ) : (
-              <p className="text-sm text-muted-foreground">No receiver</p>
+              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noReceiver")}</p>
             )}
           </div>
         </div>
@@ -212,25 +221,30 @@ function InvoiceWizardCheckoutReview({
 
       <InvoiceWizardReviewSection
         number={3}
-        title="Line items"
+        title={t("invoices.wizard.review.lineItems")}
         onEdit={onEditStep ? () => onEditStep(3) : undefined}
       >
         {lineItemRows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No line items</p>
+          <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
         ) : (
           <div className="space-y-2 text-sm text-muted-foreground">
             <p>
-              {lineItemRows.length} item{lineItemRows.length === 1 ? "" : "s"} · Subtotal{" "}
-              {formatInvoiceMoney(subtotal)}
-              {discount > 0 ? ` · Discount ${formatInvoiceMoney(discount)}` : ""}
+              {t(lineItemRows.length === 1 ? "invoices.wizard.review.itemsSummary" : "invoices.wizard.review.itemsSummary_plural", {
+                count: lineItemRows.length,
+                subtotal: formatInvoiceMoney(subtotal),
+              })}
+              {discount > 0
+                ? t("invoices.wizard.review.discountSuffix", { discount: formatInvoiceMoney(discount) })
+                : ""}
             </p>
             <ul className="list-inside list-disc space-y-1">
               {lineItemRows.map((item) => {
                 const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                const label = item.itemName.trim() || catalogItem?.description || "Line item";
+                const label = item.itemName.trim() || catalogItem?.description || t("invoices.wizard.summary.lineItem");
                 return (
                   <li key={item.id}>
-                    {label} · Qty {item.quantity || "1"} · {formatInvoiceMoney(resolveLineTotal(item))}
+                    {label} · {t("invoices.wizard.review.qty")} {item.quantity || "1"} ·{" "}
+                    {formatInvoiceMoney(resolveLineTotal(item))}
                   </li>
                 );
               })}
@@ -240,56 +254,66 @@ function InvoiceWizardCheckoutReview({
       </InvoiceWizardReviewSection>
 
       {showPaymentSection ? (
-        <InvoiceWizardReviewSection number={4} title="Daily Income payment" onEdit={onEditPayment}>
+        <InvoiceWizardReviewSection
+          number={4}
+          title={t("invoices.wizard.review.dailyIncomePayment")}
+          onEdit={onEditPayment}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <div>
-              <p className="font-medium text-foreground">Registration confirmed</p>
+              <p className="font-medium text-foreground">{t("invoices.wizard.review.registrationConfirmed")}</p>
               <p className="text-muted-foreground">
-                Initial payment: {formatInvoiceMoney(Number(values.amountPaid) || 0)}
+                {t("invoices.wizard.review.initialPayment", {
+                  amount: formatInvoiceMoney(Number(values.amountPaid) || 0),
+                })}
               </p>
             </div>
           </div>
         </InvoiceWizardReviewSection>
       ) : null}
 
-      <InvoiceWizardReviewSection number={showPaymentSection ? 5 : 4} title="Review & save invoice">
+      <InvoiceWizardReviewSection
+        number={showPaymentSection ? 5 : 4}
+        title={t("invoices.wizard.stepTitles.reviewAndSave")}
+      >
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Review your items below. When you are ready, save the invoice from the action bar.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.reviewIntro")}</p>
 
           <div>
             <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-foreground">
-              Your items
+              {t("invoices.wizard.review.yourItems")}
             </h4>
             {lineItemRows.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No line items</p>
+              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
             ) : (
               <div className="overflow-x-auto rounded-lg border">
                 <table className="w-full min-w-[32rem] text-sm">
                   <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Item</th>
-                      <th className="px-4 py-3 font-medium">Qty</th>
-                      <th className="px-4 py-3 font-medium">Unit price</th>
-                      <th className="px-4 py-3 font-medium text-right">Subtotal</th>
+                      <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.item")}</th>
+                      <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.qty")}</th>
+                      <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.unitPrice")}</th>
+                      <th className="px-4 py-3 font-medium text-right">{t("invoices.wizard.review.table.subtotal")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {lineItemRows.map((item) => {
                       const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                      const label = item.itemName.trim() || catalogItem?.description || "Line item";
+                      const label = item.itemName.trim() || catalogItem?.description || t("invoices.wizard.summary.lineItem");
+                      const labelCount = Number(item.labelCount) || 0;
                       return (
                         <tr key={item.id} className="border-b last:border-b-0">
                           <td className="px-4 py-3">
                             <p className="font-medium text-foreground">{label}</p>
                             {item.labelCount ? (
                               <p className="text-xs text-muted-foreground">
-                                {item.labelCount} label{item.labelCount === "1" ? "" : "s"}
+                                {t(labelCount === 1 ? "invoices.wizard.review.labels" : "invoices.wizard.review.labels_plural", {
+                                  count: labelCount,
+                                })}
                               </p>
                             ) : null}
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">{item.quantity || "—"}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{item.quantity || t("common.empty.dash")}</td>
                           <td className="px-4 py-3 text-muted-foreground">
                             {formatInvoiceMoney(Number(item.unitPrice) || 0)}
                           </td>

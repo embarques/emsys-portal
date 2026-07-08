@@ -23,6 +23,8 @@ export type WorkspaceFormHostProps = {
   mode: WorkspaceTabForm["mode"];
   /** Target record id when editing. */
   entityId?: string;
+  /** Preset/locked customer type when the form was opened with one (customers add). */
+  customerType?: number;
 };
 
 /** Maps a feature key to the form host component rendered inside a form tab. */

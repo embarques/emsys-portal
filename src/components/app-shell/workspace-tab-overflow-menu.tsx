@@ -7,6 +7,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getWorkspaceTabDisplayLabel } from "@/lib/layout/workspace-registry";
@@ -19,9 +20,15 @@ type WorkspaceTabOverflowMenuProps = {
   tabs: WorkspaceTab[];
   activeTabId: string | null;
   onActivate: (tabId: string) => void;
+  onCloseAll: () => void;
 };
 
-export function WorkspaceTabOverflowMenu({ tabs, activeTabId, onActivate }: WorkspaceTabOverflowMenuProps) {
+export function WorkspaceTabOverflowMenu({
+  tabs,
+  activeTabId,
+  onActivate,
+  onCloseAll,
+}: WorkspaceTabOverflowMenuProps) {
   const { locale, t } = useTranslation();
 
   return (
@@ -61,6 +68,8 @@ export function WorkspaceTabOverflowMenu({ tabs, activeTabId, onActivate }: Work
             </DropdownMenuItem>
           );
         })}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => onCloseAll()}>{t("shell.tabs.closeAllTabs")}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

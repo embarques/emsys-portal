@@ -17,24 +17,25 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { InvoiceLineItemDescriptionCombobox } from "@/components/invoices/invoice-line-item-description-combobox";
-import {
-  wizardInputFieldProps,
-} from "@/components/invoices/invoice-wizard-styles";
+import { wizardInputFieldProps } from "@/components/invoices/invoice-wizard-styles";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
   computeLineTotal,
   createEmptyInvoiceLineItem,
+  hasInvoiceLineItemContent,
+  resolveLineLabelCount,
   resolveLineTotal,
   type InvoiceLineItemFormValues,
 } from "@/lib/invoices/types";
+import { useTranslation } from "@/lib/i18n";
 import type { Item } from "@/lib/items/types";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +46,31 @@ type InvoiceLineItemsEditorProps = {
   onChange: (lineItems: InvoiceLineItemFormValues[]) => void;
 };
 
+type LineItemFieldHandlers = {
+  onUpdate: (patch: Partial<InvoiceLineItemFormValues>) => void;
+  onChangeDescription: (itemName: string) => void;
+  onLoadCatalogItem: (catalogItem: Item) => void;
+  onChangeQuantity: (quantity: string) => void;
+  onChangeUnitPrice: (unitPrice: string) => void;
+  onChangeTotal: (total: string) => void;
+};
+
+type LineItemEntryFieldsProps = {
+  item: InvoiceLineItemFormValues;
+  catalogItems: Item[];
+  inputClass: (value: string) => ReturnType<typeof wizardInputFieldProps> | { className?: undefined };
+  labelClass?: string;
+  descriptionPlaceholder: string;
+  descriptionLabel: string;
+  quantityLabel: string;
+  labelsLabel: string;
+  unitPriceLabel: string;
+  totalLabel: string;
+  autoFocusDescription?: boolean;
+  onDescriptionFocused?: () => void;
+  onCommitFromTotal: () => void;
+} & LineItemFieldHandlers;
+
 type SortableLineItemRowProps = {
   item: InvoiceLineItemFormValues;
   index: number;
@@ -53,6 +79,16 @@ type SortableLineItemRowProps = {
   inputClass?: (value: string) => ReturnType<typeof wizardInputFieldProps> | { className?: undefined };
   labelClass?: string;
   catalogItems: Item[];
+  descriptionPlaceholder: string;
+  descriptionLabel: string;
+  quantityLabel: string;
+  labelsLabel: string;
+  unitPriceLabel: string;
+  totalLabel: string;
+  deleteLabel: string;
+  moveUpLabel: string;
+  moveDownLabel: string;
+  dragToReorderLabel: string;
   onMove: (index: number, direction: "up" | "down") => void;
   onRemove: (index: number) => void;
   onUpdate: (index: number, patch: Partial<InvoiceLineItemFormValues>) => void;
@@ -60,10 +96,30 @@ type SortableLineItemRowProps = {
   onLoadCatalogItem: (index: number, catalogItem: Item) => void;
   onChangeQuantity: (index: number, quantity: string) => void;
   onChangeUnitPrice: (index: number, unitPrice: string) => void;
+  onChangeTotal: (index: number, total: string) => void;
   deriveTotalString: (item: InvoiceLineItemFormValues) => string;
   autoFocusDescription?: boolean;
   onDescriptionFocused?: () => void;
   onCommitFromTotal: () => void;
+};
+
+type WizardLineItemsTableProps = {
+  items: InvoiceLineItemFormValues[];
+  editingId: string | null;
+  descriptionColumn: string;
+  quantityColumn: string;
+  labelsColumn: string;
+  unitPriceColumn: string;
+  totalColumn: string;
+  actionsColumn: string;
+  emptyMessage: string;
+  editLabel: string;
+  deleteLabel: string;
+  moveUpLabel: string;
+  moveDownLabel: string;
+  onEdit: (id: string) => void;
+  onRemove: (id: string) => void;
+  onMove: (id: string, direction: "up" | "down") => void;
 };
 
 /** Move keyboard focus to a sibling field within the same line item row. */
@@ -82,6 +138,328 @@ function deriveTotalString(item: InvoiceLineItemFormValues): string {
   return computeLineTotal(quantity, unitPrice).toFixed(2);
 }
 
+function finalizeLineItemDraft(item: InvoiceLineItemFormValues): InvoiceLineItemFormValues {
+  const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
+  const totalValue = item.totalManual ? item.lineTotal : deriveTotalString(item);
+
+  return {
+    ...item,
+    labelCount: labelsValue,
+    lineTotal: totalValue,
+  };
+}
+
+function isDraftReadyToCommit(item: InvoiceLineItemFormValues): boolean {
+  return Boolean(item.itemName.trim() && item.quantity.trim() && item.unitPrice.trim());
+}
+
+function buildQuantityPatch(
+  item: InvoiceLineItemFormValues,
+  quantity: string,
+): Partial<InvoiceLineItemFormValues> {
+  const patch: Partial<InvoiceLineItemFormValues> = { quantity };
+
+  if (!item.labelsManual) patch.labelCount = quantity;
+  if (!item.totalManual) {
+    patch.lineTotal = deriveTotalString({ ...item, quantity });
+  }
+
+  return patch;
+}
+
+function buildUnitPricePatch(
+  item: InvoiceLineItemFormValues,
+  unitPrice: string,
+): Partial<InvoiceLineItemFormValues> {
+  return {
+    unitPrice,
+    lineTotal: deriveTotalString({ ...item, unitPrice }),
+    totalManual: false,
+  };
+}
+
+function buildTotalPatch(
+  item: InvoiceLineItemFormValues,
+  total: string,
+): Partial<InvoiceLineItemFormValues> {
+  const patch: Partial<InvoiceLineItemFormValues> = {
+    lineTotal: total,
+    totalManual: true,
+  };
+
+  const quantity = Number(item.quantity);
+  const parsedTotal = Number(total);
+  if (
+    total.trim() !== "" &&
+    Number.isFinite(quantity) &&
+    quantity !== 0 &&
+    Number.isFinite(parsedTotal)
+  ) {
+    patch.unitPrice = (parsedTotal / quantity).toFixed(2);
+  }
+
+  return patch;
+}
+
+function LineItemEntryFields({
+  item,
+  catalogItems,
+  inputClass,
+  labelClass,
+  descriptionPlaceholder,
+  descriptionLabel,
+  quantityLabel,
+  labelsLabel,
+  unitPriceLabel,
+  totalLabel,
+  autoFocusDescription = false,
+  onDescriptionFocused,
+  onCommitFromTotal,
+  onUpdate,
+  onChangeDescription,
+  onLoadCatalogItem,
+  onChangeQuantity,
+  onChangeUnitPrice,
+  onChangeTotal,
+}: LineItemEntryFieldsProps) {
+  const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
+  const totalValue = item.totalManual ? item.lineTotal : deriveTotalString(item);
+
+  const advanceOnEnter =
+    (nextFieldId: string) => (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      focusFieldById(nextFieldId);
+    };
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="space-y-2 sm:col-span-2">
+        <Label htmlFor={`${item.id}-description`} className={labelClass}>
+          {descriptionLabel} <span className="text-destructive">*</span>
+        </Label>
+        <InvoiceLineItemDescriptionCombobox
+          id={`${item.id}-description`}
+          value={item.itemName}
+          catalogItems={catalogItems}
+          onValueChange={onChangeDescription}
+          onCatalogItemSelect={onLoadCatalogItem}
+          placeholder={descriptionPlaceholder}
+          required
+          autoFocus={autoFocusDescription}
+          onAutoFocusComplete={onDescriptionFocused}
+          onEnterCommit={() => focusFieldById(`${item.id}-quantity`)}
+          {...inputClass(item.itemName)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`${item.id}-quantity`} className={labelClass}>
+          {quantityLabel} <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id={`${item.id}-quantity`}
+          type="number"
+          min={1}
+          step="1"
+          value={item.quantity}
+          onChange={(event) => onChangeQuantity(event.target.value)}
+          onKeyDown={advanceOnEnter(`${item.id}-labels`)}
+          {...inputClass(item.quantity)}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`${item.id}-labels`} className={labelClass}>
+          {labelsLabel}
+        </Label>
+        <Input
+          id={`${item.id}-labels`}
+          type="number"
+          min={0}
+          step="1"
+          value={labelsValue}
+          onChange={(event) =>
+            onUpdate({ labelCount: event.target.value, labelsManual: true })
+          }
+          onKeyDown={advanceOnEnter(`${item.id}-unitPrice`)}
+          {...inputClass(labelsValue)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`${item.id}-unitPrice`} className={labelClass}>
+          {unitPriceLabel} <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id={`${item.id}-unitPrice`}
+          type="number"
+          min={0}
+          step="0.01"
+          value={item.unitPrice}
+          onChange={(event) => onChangeUnitPrice(event.target.value)}
+          onKeyDown={advanceOnEnter(`${item.id}-total`)}
+          {...inputClass(item.unitPrice)}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`${item.id}-total`} className={labelClass}>
+          {totalLabel}
+        </Label>
+        <Input
+          id={`${item.id}-total`}
+          type="number"
+          min={0}
+          step="0.01"
+          value={totalValue}
+          onChange={(event) => onChangeTotal(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            onCommitFromTotal();
+          }}
+          {...inputClass(totalValue)}
+        />
+      </div>
+    </div>
+  );
+}
+
+function WizardLineItemsTable({
+  items,
+  editingId,
+  descriptionColumn,
+  quantityColumn,
+  labelsColumn,
+  unitPriceColumn,
+  totalColumn,
+  actionsColumn,
+  emptyMessage,
+  editLabel,
+  deleteLabel,
+  moveUpLabel,
+  moveDownLabel,
+  onEdit,
+  onRemove,
+  onMove,
+}: WizardLineItemsTableProps) {
+  const visibleItems = items.filter((item) => item.id !== editingId);
+
+  return (
+    <div className="overflow-hidden rounded-xl border">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2.5 font-medium">{descriptionColumn}</th>
+              <th className="w-20 px-3 py-2.5 font-medium">{quantityColumn}</th>
+              <th className="w-20 px-3 py-2.5 font-medium">{labelsColumn}</th>
+              <th className="w-28 px-3 py-2.5 font-medium">{unitPriceColumn}</th>
+              <th className="w-28 px-3 py-2.5 font-medium">{totalColumn}</th>
+              <th className="w-36 px-3 py-2.5 font-medium">{actionsColumn}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleItems.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                  {emptyMessage}
+                </td>
+              </tr>
+            ) : (
+              visibleItems.map((item, index) => (
+                <tr key={item.id} className="border-b last:border-b-0">
+                  <td className="px-3 py-2.5 font-medium">{item.itemName.trim() || "—"}</td>
+                  <td className="px-3 py-2.5 tabular-nums">{item.quantity}</td>
+                  <td className="px-3 py-2.5 tabular-nums">{resolveLineLabelCount(item)}</td>
+                  <td className="px-3 py-2.5 tabular-nums">
+                    {item.unitPrice.trim() ? formatInvoiceMoney(Number(item.unitPrice)) : "—"}
+                  </td>
+                  <td className="px-3 py-2.5 tabular-nums">
+                    {formatInvoiceMoney(resolveLineTotal(item))}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            aria-label={editLabel}
+                            onClick={() => onEdit(item.id)}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{editLabel}</TooltipContent>
+                      </Tooltip>
+                      <div className="flex items-center rounded-md border border-border bg-muted/40 p-0.5">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-sm text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700 disabled:text-muted-foreground dark:text-emerald-400 dark:hover:text-emerald-300"
+                              disabled={index === 0}
+                              aria-label={moveUpLabel}
+                              onClick={() => onMove(item.id, "up")}
+                            >
+                              <ArrowUp className="size-4" strokeWidth={2.25} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{moveUpLabel}</TooltipContent>
+                        </Tooltip>
+                        <div className="mx-0.5 h-5 w-px bg-border" aria-hidden />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-sm text-blue-600 hover:bg-blue-500/10 hover:text-blue-700 disabled:text-muted-foreground dark:text-blue-400 dark:hover:text-blue-300"
+                              disabled={index === visibleItems.length - 1}
+                              aria-label={moveDownLabel}
+                              onClick={() => onMove(item.id, "down")}
+                            >
+                              <ArrowDown className="size-4" strokeWidth={2.25} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{moveDownLabel}</TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-destructive hover:text-destructive"
+                            aria-label={deleteLabel}
+                            onClick={() => onRemove(item.id)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{deleteLabel}</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function SortableLineItemRow({
   item,
   index,
@@ -90,6 +468,16 @@ function SortableLineItemRow({
   inputClass,
   labelClass,
   catalogItems,
+  descriptionPlaceholder,
+  descriptionLabel,
+  quantityLabel,
+  labelsLabel,
+  unitPriceLabel,
+  totalLabel,
+  deleteLabel,
+  moveUpLabel,
+  moveDownLabel,
+  dragToReorderLabel,
   onMove,
   onRemove,
   onUpdate,
@@ -97,11 +485,13 @@ function SortableLineItemRow({
   onLoadCatalogItem,
   onChangeQuantity,
   onChangeUnitPrice,
+  onChangeTotal,
   deriveTotalString: getTotalString,
   autoFocusDescription = false,
   onDescriptionFocused,
   onCommitFromTotal,
 }: SortableLineItemRowProps) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -120,7 +510,6 @@ function SortableLineItemRow({
   const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
   const totalValue = item.totalManual ? item.lineTotal : getTotalString(item);
 
-  /** Advance to the next field on Enter instead of submitting the wizard form. */
   const advanceOnEnter =
     (nextFieldId: string) => (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key !== "Enter") return;
@@ -139,11 +528,11 @@ function SortableLineItemRow({
       )}
     >
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="truncate text-sm font-medium">Item {index + 1}</p>
+        <p className="truncate text-sm font-medium">{t("invoices.form.lineItems.itemNumber", { number: index + 1 })}</p>
         <div className="flex items-center gap-2">
           <div
             className="flex items-center rounded-md border border-border bg-muted/40 p-0.5"
-            aria-label={`Reorder item ${index + 1}`}
+            aria-label={dragToReorderLabel}
           >
             <Tooltip>
               <TooltipTrigger asChild>
@@ -151,14 +540,14 @@ function SortableLineItemRow({
                   ref={setActivatorNodeRef}
                   type="button"
                   className="inline-flex size-8 cursor-grab items-center justify-center rounded-sm text-violet-600 transition-colors hover:bg-violet-500/10 hover:text-violet-700 active:cursor-grabbing dark:text-violet-400 dark:hover:text-violet-300"
-                  aria-label={`Drag to reorder item ${index + 1}`}
+                  aria-label={dragToReorderLabel}
                   {...attributes}
                   {...listeners}
                 >
                   <ArrowUpDown className="size-4" strokeWidth={2.25} />
                 </button>
               </TooltipTrigger>
-              <TooltipContent>Drag to reorder</TooltipContent>
+              <TooltipContent>{dragToReorderLabel}</TooltipContent>
             </Tooltip>
             <div className="mx-0.5 h-5 w-px bg-border" aria-hidden />
             <Tooltip>
@@ -169,13 +558,13 @@ function SortableLineItemRow({
                   size="icon"
                   className="size-8 rounded-sm text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700 disabled:text-muted-foreground dark:text-emerald-400 dark:hover:text-emerald-300"
                   disabled={index === 0}
-                  aria-label={`Move item ${index + 1} up`}
+                  aria-label={moveUpLabel}
                   onClick={() => onMove(index, "up")}
                 >
                   <ArrowUp className="size-4" strokeWidth={2.25} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Move up</TooltipContent>
+              <TooltipContent>{moveUpLabel}</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -185,13 +574,13 @@ function SortableLineItemRow({
                   size="icon"
                   className="size-8 rounded-sm text-blue-600 hover:bg-blue-500/10 hover:text-blue-700 disabled:text-muted-foreground dark:text-blue-400 dark:hover:text-blue-300"
                   disabled={index === lineItemCount - 1}
-                  aria-label={`Move item ${index + 1} down`}
+                  aria-label={moveDownLabel}
                   onClick={() => onMove(index, "down")}
                 >
                   <ArrowDown className="size-4" strokeWidth={2.25} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Move down</TooltipContent>
+              <TooltipContent>{moveDownLabel}</TooltipContent>
             </Tooltip>
           </div>
           <Button
@@ -203,7 +592,7 @@ function SortableLineItemRow({
             onClick={() => onRemove(index)}
           >
             <Trash2 className="size-4" />
-            Delete
+            {deleteLabel}
           </Button>
         </div>
       </div>
@@ -211,7 +600,7 @@ function SortableLineItemRow({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor={`${item.id}-description`} className={labelClass}>
-            Description <span className="text-destructive">*</span>
+            {descriptionLabel} <span className="text-destructive">*</span>
           </Label>
           <InvoiceLineItemDescriptionCombobox
             id={`${item.id}-description`}
@@ -219,7 +608,7 @@ function SortableLineItemRow({
             catalogItems={catalogItems}
             onValueChange={(next) => onChangeDescription(index, next)}
             onCatalogItemSelect={(catalogItem) => onLoadCatalogItem(index, catalogItem)}
-            placeholder="Type or search catalog items…"
+            placeholder={descriptionPlaceholder}
             required
             autoFocus={autoFocusDescription}
             onAutoFocusComplete={onDescriptionFocused}
@@ -230,7 +619,7 @@ function SortableLineItemRow({
 
         <div className="space-y-2">
           <Label htmlFor={`${item.id}-quantity`} className={labelClass}>
-            Quantity <span className="text-destructive">*</span>
+            {quantityLabel} <span className="text-destructive">*</span>
           </Label>
           <Input
             id={`${item.id}-quantity`}
@@ -247,7 +636,7 @@ function SortableLineItemRow({
 
         <div className="space-y-2">
           <Label htmlFor={`${item.id}-labels`} className={labelClass}>
-            Labels
+            {labelsLabel}
           </Label>
           <Input
             id={`${item.id}-labels`}
@@ -265,7 +654,7 @@ function SortableLineItemRow({
 
         <div className="space-y-2">
           <Label htmlFor={`${item.id}-unitPrice`} className={labelClass}>
-            Unit price <span className="text-destructive">*</span>
+            {unitPriceLabel} <span className="text-destructive">*</span>
           </Label>
           <Input
             id={`${item.id}-unitPrice`}
@@ -282,7 +671,7 @@ function SortableLineItemRow({
 
         <div className="space-y-2">
           <Label htmlFor={`${item.id}-total`} className={labelClass}>
-            Total
+            {totalLabel}
           </Label>
           <Input
             id={`${item.id}-total`}
@@ -290,9 +679,7 @@ function SortableLineItemRow({
             min={0}
             step="0.01"
             value={totalValue}
-            onChange={(event) =>
-              onUpdate(index, { lineTotal: event.target.value, totalManual: true })
-            }
+            onChange={(event) => onChangeTotal(index, event.target.value)}
             onKeyDown={(event) => {
               if (event.key !== "Enter") return;
               event.preventDefault();
@@ -306,12 +693,209 @@ function SortableLineItemRow({
   );
 }
 
+function useLineItemLabels() {
+  const { t } = useTranslation();
+
+  return useMemo(
+    () => ({
+      addTitle: t("invoices.form.lineItems.addTitle"),
+      editingTitle: t("invoices.form.lineItems.editingTitle"),
+      cancelEdit: t("invoices.form.lineItems.cancelEdit"),
+      addItem: t("invoices.form.lineItems.addItem"),
+      itemsSubtotal: t("invoices.form.lineItems.itemsSubtotal"),
+      emptyTable: t("invoices.form.lineItems.emptyTable"),
+      descriptionPlaceholder: t("invoices.form.lineItems.descriptionPlaceholder"),
+      descriptionLabel: t("invoices.form.lineItems.fields.description"),
+      quantityLabel: t("invoices.form.lineItems.fields.quantity"),
+      labelsLabel: t("invoices.form.lineItems.fields.labels"),
+      unitPriceLabel: t("invoices.form.lineItems.fields.unitPrice"),
+      totalLabel: t("invoices.form.lineItems.fields.total"),
+      descriptionColumn: t("invoices.form.lineItems.columns.description"),
+      quantityColumn: t("invoices.form.lineItems.columns.quantity"),
+      labelsColumn: t("invoices.form.lineItems.columns.labels"),
+      unitPriceColumn: t("invoices.form.lineItems.columns.unitPrice"),
+      totalColumn: t("invoices.form.lineItems.columns.total"),
+      actionsColumn: t("invoices.form.lineItems.columns.actions"),
+      editLabel: t("common.actions.edit"),
+      deleteLabel: t("common.actions.delete"),
+      moveUpLabel: t("invoices.form.lineItems.moveUp"),
+      moveDownLabel: t("invoices.form.lineItems.moveDown"),
+      dragToReorderLabel: t("invoices.form.lineItems.dragToReorder"),
+    }),
+    [t],
+  );
+}
+
+function InvoiceLineItemsWizardEditor({
+  lineItems,
+  catalogItems,
+  onChange,
+}: Omit<InvoiceLineItemsEditorProps, "appearance">) {
+  const labels = useLineItemLabels();
+  const wizardInputProps = (value: string) => wizardInputFieldProps(value);
+  const labelClass = "text-xs font-normal text-muted-foreground";
+
+  const committedItems = useMemo(
+    () => lineItems.filter(hasInvoiceLineItemContent),
+    [lineItems],
+  );
+
+  const [draft, setDraft] = useState(createEmptyInvoiceLineItem);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [focusDescription, setFocusDescription] = useState(true);
+  const clearFocusDescription = useCallback(() => setFocusDescription(false), []);
+
+  useEffect(() => {
+    if (committedItems.length > 0 || editingId) return;
+    setDraft(createEmptyInvoiceLineItem());
+    setFocusDescription(true);
+  }, [committedItems.length, editingId]);
+
+  function emitCommittedItems(items: InvoiceLineItemFormValues[]) {
+    onChange(items.filter(hasInvoiceLineItemContent));
+  }
+
+  function updateDraft(patch: Partial<InvoiceLineItemFormValues>) {
+    setDraft((current) => ({ ...current, ...patch }));
+  }
+
+  function resetDraft() {
+    setDraft(createEmptyInvoiceLineItem());
+    setEditingId(null);
+    setFocusDescription(true);
+  }
+
+  function commitDraft() {
+    if (!isDraftReadyToCommit(draft)) return;
+
+    const finalized = finalizeLineItemDraft(draft);
+
+    if (editingId) {
+      emitCommittedItems(
+        committedItems.map((item) => (item.id === editingId ? finalized : item)),
+      );
+      resetDraft();
+      return;
+    }
+
+    emitCommittedItems([...committedItems, finalized]);
+    resetDraft();
+  }
+
+  function cancelEdit() {
+    if (!editingId) return;
+    resetDraft();
+  }
+
+  function startEdit(id: string) {
+    const item = committedItems.find((entry) => entry.id === id);
+    if (!item) return;
+    setDraft({ ...item });
+    setEditingId(id);
+    setFocusDescription(true);
+  }
+
+  function removeCommittedItem(id: string) {
+    emitCommittedItems(committedItems.filter((item) => item.id !== id));
+    if (editingId === id) {
+      resetDraft();
+    }
+  }
+
+  function moveCommittedItem(id: string, direction: "up" | "down") {
+    const index = committedItems.findIndex((item) => item.id === id);
+    if (index < 0) return;
+
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= committedItems.length) return;
+    emitCommittedItems(arrayMove(committedItems, index, targetIndex));
+  }
+
+  const draftHandlers: LineItemFieldHandlers = {
+    onUpdate: updateDraft,
+    onChangeDescription: (itemName) => updateDraft({ itemName, itemId: "" }),
+    onLoadCatalogItem: (catalogItem) => {
+      const unitPrice = catalogItem.price.toFixed(2);
+      const patch: Partial<InvoiceLineItemFormValues> = {
+        itemId: catalogItem.itemId,
+        itemName: catalogItem.description,
+        unitPrice,
+      };
+      if (!draft.totalManual) {
+        patch.lineTotal = deriveTotalString({ ...draft, unitPrice });
+      }
+      updateDraft(patch);
+    },
+    onChangeQuantity: (quantity) => updateDraft(buildQuantityPatch(draft, quantity)),
+    onChangeUnitPrice: (unitPrice) => updateDraft(buildUnitPricePatch(draft, unitPrice)),
+    onChangeTotal: (total) => updateDraft(buildTotalPatch(draft, total)),
+  };
+
+  return (
+    <div className="space-y-6">
+      <section className="space-y-4 border-b border-border pb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              {editingId ? labels.editingTitle : labels.addTitle}
+            </h3>
+          </div>
+          {editingId ? (
+            <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>
+              {labels.cancelEdit}
+            </Button>
+          ) : null}
+        </div>
+
+        <LineItemEntryFields
+          item={draft}
+          catalogItems={catalogItems}
+          inputClass={wizardInputProps}
+          labelClass={labelClass}
+          descriptionPlaceholder={labels.descriptionPlaceholder}
+          descriptionLabel={labels.descriptionLabel}
+          quantityLabel={labels.quantityLabel}
+          labelsLabel={labels.labelsLabel}
+          unitPriceLabel={labels.unitPriceLabel}
+          totalLabel={labels.totalLabel}
+          autoFocusDescription={focusDescription}
+          onDescriptionFocused={clearFocusDescription}
+          onCommitFromTotal={commitDraft}
+          {...draftHandlers}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <WizardLineItemsTable
+          items={committedItems}
+          editingId={editingId}
+          descriptionColumn={labels.descriptionColumn}
+          quantityColumn={labels.quantityColumn}
+          labelsColumn={labels.labelsColumn}
+          unitPriceColumn={labels.unitPriceColumn}
+          totalColumn={labels.totalColumn}
+          actionsColumn={labels.actionsColumn}
+          emptyMessage={labels.emptyTable}
+          editLabel={labels.editLabel}
+          deleteLabel={labels.deleteLabel}
+          moveUpLabel={labels.moveUpLabel}
+          moveDownLabel={labels.moveDownLabel}
+          onEdit={startEdit}
+          onRemove={removeCommittedItem}
+          onMove={moveCommittedItem}
+        />
+      </section>
+    </div>
+  );
+}
+
 export function InvoiceLineItemsEditor({
   lineItems,
   catalogItems,
   appearance = "default",
   onChange,
 }: InvoiceLineItemsEditorProps) {
+  const labels = useLineItemLabels();
   const isWizard = appearance === "wizard";
   const wizardInputProps = (value: string) =>
     isWizard ? wizardInputFieldProps(value) : { className: undefined };
@@ -326,6 +910,16 @@ export function InvoiceLineItemsEditor({
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  if (isWizard) {
+    return (
+      <InvoiceLineItemsWizardEditor
+        lineItems={lineItems}
+        catalogItems={catalogItems}
+        onChange={onChange}
+      />
+    );
+  }
 
   function updateLineItem(index: number, patch: Partial<InvoiceLineItemFormValues>) {
     onChange(lineItems.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)));
@@ -361,25 +955,15 @@ export function InvoiceLineItemsEditor({
   }
 
   function changeQuantity(index: number, quantity: string) {
-    const item = lineItems[index];
-    const patch: Partial<InvoiceLineItemFormValues> = { quantity };
-
-    // Labels and total follow the quantity unless the user has overridden them.
-    if (!item.labelsManual) patch.labelCount = quantity;
-    if (!item.totalManual) {
-      patch.lineTotal = deriveTotalString({ ...item, quantity });
-    }
-
-    updateLineItem(index, patch);
+    updateLineItem(index, buildQuantityPatch(lineItems[index], quantity));
   }
 
   function changeUnitPrice(index: number, unitPrice: string) {
-    const item = lineItems[index];
-    const patch: Partial<InvoiceLineItemFormValues> = { unitPrice };
-    if (!item.totalManual) {
-      patch.lineTotal = deriveTotalString({ ...item, unitPrice });
-    }
-    updateLineItem(index, patch);
+    updateLineItem(index, buildUnitPricePatch(lineItems[index], unitPrice));
+  }
+
+  function changeTotal(index: number, total: string) {
+    updateLineItem(index, buildTotalPatch(lineItems[index], total));
   }
 
   function loadCatalogItem(index: number, catalogItem: Item) {
@@ -405,9 +989,9 @@ export function InvoiceLineItemsEditor({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-end">
-        <Button type="button" variant={isWizard ? "default" : "outline"} size="sm" onClick={addLineItem}>
+        <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
           <Plus className="size-4" />
-          Add item
+          {labels.addItem}
         </Button>
       </div>
 
@@ -420,10 +1004,20 @@ export function InvoiceLineItemsEditor({
                 item={item}
                 index={index}
                 lineItemCount={lineItems.length}
-                isWizard={isWizard}
+                isWizard={false}
                 inputClass={wizardInputProps}
                 labelClass={labelClass}
                 catalogItems={catalogItems}
+                descriptionPlaceholder={labels.descriptionPlaceholder}
+                descriptionLabel={labels.descriptionLabel}
+                quantityLabel={labels.quantityLabel}
+                labelsLabel={labels.labelsLabel}
+                unitPriceLabel={labels.unitPriceLabel}
+                totalLabel={labels.totalLabel}
+                deleteLabel={labels.deleteLabel}
+                moveUpLabel={labels.moveUpLabel}
+                moveDownLabel={labels.moveDownLabel}
+                dragToReorderLabel={labels.dragToReorderLabel}
                 onMove={moveLineItem}
                 onRemove={removeLineItem}
                 onUpdate={updateLineItem}
@@ -431,6 +1025,7 @@ export function InvoiceLineItemsEditor({
                 onLoadCatalogItem={loadCatalogItem}
                 onChangeQuantity={changeQuantity}
                 onChangeUnitPrice={changeUnitPrice}
+                onChangeTotal={changeTotal}
                 deriveTotalString={deriveTotalString}
                 autoFocusDescription={focusItemId === item.id}
                 onDescriptionFocused={clearFocusItemId}
@@ -441,12 +1036,10 @@ export function InvoiceLineItemsEditor({
         </SortableContext>
       </DndContext>
 
-      {!isWizard ? (
-        <div className="rounded-xl border bg-muted/20 px-4 py-3 text-right">
-          <p className="text-sm text-muted-foreground">Items subtotal</p>
-          <p className="text-lg font-semibold">{formatInvoiceMoney(subtotal)}</p>
-        </div>
-      ) : null}
+      <div className="rounded-xl border bg-muted/20 px-4 py-3 text-right">
+        <p className="text-sm text-muted-foreground">{labels.itemsSubtotal}</p>
+        <p className="text-lg font-semibold">{formatInvoiceMoney(subtotal)}</p>
+      </div>
     </div>
   );
 }

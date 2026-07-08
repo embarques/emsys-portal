@@ -13,6 +13,7 @@ import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import { type InvoiceFormValues } from "@/lib/invoices/types";
+import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 
 type Props = {
@@ -29,6 +30,7 @@ function todayDateValue() {
 }
 
 export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) {
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const currentUserQuery = useCurrentUser();
   const branchId = currentUserQuery.data?.branch.id ?? 0;
@@ -68,7 +70,7 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
     return (
       <div className="flex min-h-52 items-center justify-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
-        Checking Daily Income registration…
+        {t("invoices.wizard.dailyIncome.checking")}
       </div>
     );
   }
@@ -80,7 +82,7 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
             <div className="space-y-1">
-              <p className="font-semibold text-destructive">Unable to check Daily Income</p>
+              <p className="font-semibold text-destructive">{t("invoices.wizard.dailyIncome.unableToCheck")}</p>
               <p className="text-sm text-muted-foreground">{normalizeApiError(queryError).message}</p>
             </div>
           </div>
@@ -92,14 +94,24 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
               <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-emerald-900 dark:text-emerald-100">
-                  Daily income entry found
+                  {t("invoices.wizard.dailyIncome.entryFound")}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
-                  <span>Daily income #{registration.incomeStatementId}</span>
-                  <span>{registration.date || "Previously registered"}</span>
-                  <span>Payment recorded: {formatInvoiceMoney(registration.amount)}</span>
+                  <span>
+                    {t("invoices.wizard.dailyIncome.incomeStatement", {
+                      id: registration.incomeStatementId,
+                    })}
+                  </span>
+                  <span>{registration.date || t("invoices.wizard.dailyIncome.previouslyRegistered")}</span>
+                  <span>
+                    {t("invoices.wizard.dailyIncome.paymentRecorded", {
+                      amount: formatInvoiceMoney(registration.amount),
+                    })}
+                  </span>
                   {registration.paymentMethod?.name ? <span>{registration.paymentMethod.name}</span> : null}
-                  {registration.refNumber ? <span>Reference: {registration.refNumber}</span> : null}
+                  {registration.refNumber ? (
+                    <span>{t("invoices.wizard.dailyIncome.reference", { ref: registration.refNumber })}</span>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -109,17 +121,23 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="grid flex-1 gap-5 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Amount</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("invoices.wizard.dailyIncome.amount")}
+                  </p>
                   <p className="mt-1 text-xl font-semibold">{formatInvoiceMoney(registration.amount)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Payment method</p>
-                  <p className="mt-1 text-sm font-medium">{registration.paymentMethod?.name || "No payment method (zero payment)"}</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("invoices.wizard.dailyIncome.paymentMethod")}
+                  </p>
+                  <p className="mt-1 text-sm font-medium">
+                    {registration.paymentMethod?.name || t("invoices.wizard.dailyIncome.noPaymentMethod")}
+                  </p>
                 </div>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={() => registrationQuery.refetch()}>
                 <RefreshCw className="size-4" />
-                Refresh
+                {t("invoices.wizard.dailyIncome.refresh")}
               </Button>
             </div>
           </div>
@@ -130,22 +148,22 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
             <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
             <div className="min-w-0 flex-1 space-y-2">
               <div>
-                <p className="font-semibold text-destructive">Daily income entry required</p>
+                <p className="font-semibold text-destructive">{t("invoices.wizard.dailyIncome.entryRequired")}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {statement?.status === "CLOSED"
-                    ? "Today’s Daily Income is closed. Reopen it before registering a new payment for this invoice."
+                    ? t("invoices.wizard.dailyIncome.closedStatement")
                     : statement
-                      ? "This invoice cannot be created until it is registered in Daily Income."
-                      : "No Daily Income exists for today and the current branch. Create it before registering this invoice."}
+                      ? t("invoices.wizard.dailyIncome.registerRequired")
+                      : t("invoices.wizard.dailyIncome.noStatement")}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(true)}>
-                  Open full Daily Income page
+                  {t("invoices.wizard.dailyIncome.openFullPage")}
                 </Button>
                 <Button type="button" variant="ghost" onClick={refreshMissingRegistration}>
                   <RefreshCw className="size-4" />
-                  Refresh
+                  {t("invoices.wizard.dailyIncome.refresh")}
                 </Button>
               </div>
             </div>

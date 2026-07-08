@@ -26,6 +26,8 @@
     "clearingRoute": "Clearing…",
     "noAssignedRoute": "None of the selected orders are assigned to a route.",
     "map": "Map",
+    "manageCompletion": "Manage completion",
+    "manageRoutes": "Manage routes",
     "completionGroup": "Completion status",
     "routeGroup": "Route assignment"
   },
@@ -132,6 +134,8 @@
     "validation": {
       "pickupDateRequired": "Select a valid pickup date.",
       "senderRequired": "Select a sender.",
+      "senderAddressRequired": "Select the sender's address.",
+      "receiverAddressRequired": "Select the receiver's address.",
       "unverifiedSenderAddress": "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.",
       "commentRequired": "Add at least one comment."
     }
@@ -193,6 +197,12 @@
     "clearRouteTitle": "Clear route?",
     "clearRouteDescription": "This will remove the route assignment from {{count}} selected order. {{cannotBeUndone}}",
     "clearRouteDescription_plural": "This will remove the route assignment from {{count}} selected orders. {{cannotBeUndone}}",
+    "markCompleteTitle": "Mark complete?",
+    "markCompleteDescription": "Mark {{count}} selected order as complete?",
+    "markCompleteDescription_plural": "Mark {{count}} selected orders as complete?",
+    "markIncompleteTitle": "Mark incomplete?",
+    "markIncompleteDescription": "Mark {{count}} selected order as incomplete?",
+    "markIncompleteDescription_plural": "Mark {{count}} selected orders as incomplete?",
     "selectRoute": "Select a route",
     "searchRoutes": "Search routes…",
     "loadingRoutes": "Loading routes…",

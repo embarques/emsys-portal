@@ -12,8 +12,8 @@ import {
   InvoiceWizardSummarySidebar,
 } from "@/components/invoices/invoice-wizard-summary-panel";
 import {
-  INVOICE_WIZARD_STEP_TITLES,
-  INVOICE_WIZARD_STEPS,
+  getInvoiceWizardStepLabelKey,
+  getInvoiceWizardStepTitleKey,
   InvoiceWizardStepper,
   type InvoiceWizardStep,
   type InvoiceWizardFormStep,
@@ -27,12 +27,13 @@ import { Button } from "@/components/ui/button";
 import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { customerHasUnverifiedPrimaryAddress } from "@/lib/customers/types";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   createEmptyInvoiceForm,
   isInvoiceEmployeePickupSource,
   resetInvoiceFormForNextEntry,
-  resolveLineTotal,
+  hasInvoiceLineItemContent,
   type InvoiceFormSubmitResult,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
@@ -55,43 +56,6 @@ type Props = {
   onCancel: () => void;
 };
 
-const UNVERIFIED_SENDER_MESSAGE =
-  "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.";
-
-function validateStep1(values: InvoiceFormValues): string | null {
-  if (!values.date.trim()) return "Date is required.";
-  if (!values.invoiceNumber.trim()) return "Invoice number is required.";
-  if (!values.containerId) return "Container is required.";
-  if (!values.paymentLocation) return "Pending payment location is required.";
-  if (values.pickupSource === "route") {
-    if (!values.routeId) return "Pickup route is required.";
-  } else if (isInvoiceEmployeePickupSource(values.pickupSource)) {
-    if (!values.pickupEmployeeId) {
-      return values.pickupSource === "warehouse"
-        ? "Warehouse employee is required."
-        : "Office employee is required.";
-    }
-  }
-  return null;
-}
-
-function validateStep2(values: InvoiceFormValues): string | null {
-  if (!values.sender) return "Sender is required.";
-  return null;
-}
-
-function validateStep3(values: InvoiceFormValues): string | null {
-  const hasContent = values.lineItems.some(
-    (item) => item.itemName.trim() || item.itemId || resolveLineTotal(item) > 0,
-  );
-  if (!hasContent) return "Add at least one line item.";
-  return null;
-}
-
-function validateForSave(values: InvoiceFormValues): string | null {
-  return validateStep1(values) ?? validateStep2(values) ?? validateStep3(values);
-}
-
 export function InvoiceFormWizard({
   initialValues,
   suggestedInvoiceNumber,
@@ -107,6 +71,7 @@ export function InvoiceFormWizard({
   isPrinting = false,
   onCancel,
 }: Props) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<InvoiceWizardStep>(1);
   const [values, setValues] = useState<InvoiceFormValues>(
     initialValues ?? createEmptyInvoiceForm(),
@@ -123,6 +88,53 @@ export function InvoiceFormWizard({
   useEffect(() => {
     valuesRef.current = values;
   }, [values]);
+
+  const validateStep1 = useCallback(
+    (formValues: InvoiceFormValues): string | null => {
+      if (!formValues.date.trim()) return t("invoices.wizard.validation.dateRequired");
+      if (!formValues.invoiceNumber.trim()) return t("invoices.wizard.validation.invoiceNumberRequired");
+      if (!formValues.containerId) return t("invoices.wizard.validation.containerRequired");
+      if (!formValues.paymentLocation) return t("invoices.wizard.validation.paymentLocationRequired");
+      if (formValues.pickupSource === "route") {
+        if (!formValues.routeId) return t("invoices.wizard.validation.pickupRouteRequired");
+      } else if (isInvoiceEmployeePickupSource(formValues.pickupSource)) {
+        if (!formValues.pickupEmployeeId) {
+          return formValues.pickupSource === "warehouse"
+            ? t("invoices.wizard.validation.warehouseEmployeeRequired")
+            : t("invoices.wizard.validation.officeEmployeeRequired");
+        }
+      }
+      return null;
+    },
+    [t],
+  );
+
+  const validateStep2 = useCallback(
+    (formValues: InvoiceFormValues): string | null => {
+      if (!formValues.sender) return t("invoices.wizard.validation.senderRequired");
+      if (isGoogleMapsConfigured() && customerHasUnverifiedPrimaryAddress(formValues.sender)) {
+        return t("invoices.wizard.validation.unverifiedSenderAddress");
+      }
+      return null;
+    },
+    [t],
+  );
+
+  const validateStep3 = useCallback(
+    (formValues: InvoiceFormValues): string | null => {
+      const hasContent = formValues.lineItems.some(hasInvoiceLineItemContent);
+      if (!hasContent) return t("invoices.wizard.validation.lineItemRequired");
+      return null;
+    },
+    [t],
+  );
+
+  const validateForSave = useCallback(
+    (formValues: InvoiceFormValues): string | null => {
+      return validateStep1(formValues) ?? validateStep2(formValues) ?? validateStep3(formValues);
+    },
+    [validateStep1, validateStep2, validateStep3],
+  );
 
   const handleValuesChange = useCallback((next: InvoiceFormValues) => {
     setValues((current) => {
@@ -174,7 +186,7 @@ export function InvoiceFormWizard({
           : step === 3
             ? validateStep3(currentValues)
             : requireDailyIncomeRegistration && step === 4 && !dailyIncomeRegistration
-              ? "Register this invoice in Daily Income before continuing."
+              ? t("invoices.wizard.validation.dailyIncomeContinueRequired")
               : null;
     if (error) {
       setStepError(error);
@@ -218,7 +230,7 @@ export function InvoiceFormWizard({
     const error =
       validateForSave(values) ??
       (requireDailyIncomeRegistration && !dailyIncomeRegistration
-        ? "Register this invoice in Daily Income before saving."
+        ? t("invoices.wizard.validation.dailyIncomeSaveRequired")
         : null);
     if (error) {
       setSubmitError(error);
@@ -262,13 +274,22 @@ export function InvoiceFormWizard({
     Boolean(values.sender && customerHasUnverifiedPrimaryAddress(values.sender));
   const footerWarning =
     showUnverifiedSenderWarning && (step === 2 || step === previewStep)
-      ? UNVERIFIED_SENDER_MESSAGE
+      ? t("invoices.wizard.validation.unverifiedSenderAddress")
       : null;
   const showPrint = allowPrint && Boolean(onPrint);
   const summaryDiscountChange =
     requireDailyIncomeRegistration && dailyIncomeRegistration
       ? undefined
       : handleDiscountChange;
+
+  const stepLabelKey =
+    !requireDailyIncomeRegistration && step === 4
+      ? "invoices.wizard.steps.preview"
+      : getInvoiceWizardStepLabelKey(step);
+  const stepTitleKey =
+    !requireDailyIncomeRegistration && step === 4
+      ? "invoices.wizard.stepTitles.reviewAndSave"
+      : getInvoiceWizardStepTitleKey(step);
 
   return (
     <div
@@ -286,17 +307,13 @@ export function InvoiceFormWizard({
             className="shrink-0 space-y-1 border-b border-border px-5 py-4 sm:px-8"
           >
             <p className={invoiceStepEyebrowClassName}>
-              Step {step} of {previewStep} · {requireDailyIncomeRegistration
-                ? INVOICE_WIZARD_STEPS[step - 1]?.label
-                : step === 4
-                  ? "Preview"
-                  : INVOICE_WIZARD_STEPS[step - 1]?.label}
+              {t("invoices.wizard.stepEyebrow", {
+                step,
+                total: previewStep,
+                label: t(stepLabelKey),
+              })}
             </p>
-            <h2 className={invoiceStepTitleClassName}>
-              {!requireDailyIncomeRegistration && step === 4
-                ? "Review & save invoice"
-                : INVOICE_WIZARD_STEP_TITLES[step]}
-            </h2>
+            <h2 className={invoiceStepTitleClassName}>{t(stepTitleKey)}</h2>
           </div>
 
           {footerError ? (
@@ -370,7 +387,7 @@ export function InvoiceFormWizard({
             {step > 1 ? (
               <Button type="button" variant="outline" onClick={handleBack}>
                 <ArrowLeft className="size-4" />
-                Back
+                {t("invoices.wizard.actions.back")}
               </Button>
             ) : (
               <span className="flex-1" aria-hidden />
@@ -379,7 +396,7 @@ export function InvoiceFormWizard({
 
           <div className="flex shrink-0 items-center gap-2">
             <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             {step < previewStep ? (
               <Button
@@ -387,7 +404,7 @@ export function InvoiceFormWizard({
                 onClick={handleNext}
                 disabled={requireDailyIncomeRegistration && step === 4 && !dailyIncomeRegistration}
               >
-                Next
+                {t("common.actions.next")}
                 <ArrowRight className="size-4" />
               </Button>
             ) : (
@@ -400,12 +417,12 @@ export function InvoiceFormWizard({
                     disabled={isPrinting}
                   >
                     <Printer className="size-4" />
-                    {isPrinting ? "Preparing…" : "Print"}
+                    {isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
                   </Button>
                 ) : null}
                 <Button type="button" onClick={handleSave} disabled={isSubmitting}>
                   <Save className="size-4" />
-                  {isSubmitting ? "Saving…" : submitLabel}
+                  {isSubmitting ? t("common.actions.saving") : submitLabel}
                 </Button>
               </>
             )}

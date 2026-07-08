@@ -14,6 +14,11 @@ export type WorkspaceTabForm = {
   entityId?: string;
   /** Tab to re-activate after the form tab closes (the tab that opened it). */
   returnToTabId?: string | null;
+  /**
+   * Preset customer type (sender/receiver) locked in the customers add form when
+   * the tab is opened from the order form's "New" party actions.
+   */
+  customerType?: number;
 };
 
 export type WorkspaceTab = {

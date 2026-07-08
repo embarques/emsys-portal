@@ -316,6 +316,66 @@ export function getDefaultOrderPartyAddressIndex(
   return primaryIndex >= 0 ? primaryIndex : 0;
 }
 
+/** Sentinel meaning "the user has not picked an address yet". */
+export const ORDER_PARTY_ADDRESS_UNSET = -1;
+
+/**
+ * Initial address index when a party is first selected. Customers with a single
+ * (or no) usable address resolve to it immediately; customers with more than one
+ * address stay unset so the user must explicitly press an address to confirm.
+ */
+export function getInitialOrderPartyAddressIndex(
+  customer: Pick<Customer, "addresses">,
+): number {
+  const addresses = getCustomerContentAddresses(customer);
+  if (addresses.length > 1) return ORDER_PARTY_ADDRESS_UNSET;
+  return getDefaultOrderPartyAddressIndex(customer);
+}
+
+/**
+ * True when the party's address requirement is satisfied: either there is
+ * nothing to choose (0 or 1 address) or the user has picked a valid index.
+ */
+export function isOrderPartyAddressChosen(
+  customer: Pick<Customer, "addresses"> | null | undefined,
+  index: number,
+): boolean {
+  if (!customer) return false;
+  const addresses = getCustomerContentAddresses(customer);
+  if (addresses.length <= 1) return true;
+  return index >= 0 && index < addresses.length;
+}
+
+/**
+ * Map an address id (as reported by the party picker) back to its index into the
+ * party's content addresses. Returns {@link ORDER_PARTY_ADDRESS_UNSET} when the id
+ * is missing or cannot be resolved.
+ */
+export function getOrderPartyAddressIndexById(
+  customer: Pick<Customer, "addresses">,
+  addressId?: string,
+): number {
+  const normalizedId = addressId?.trim();
+  if (!normalizedId) return ORDER_PARTY_ADDRESS_UNSET;
+
+  const addresses = getCustomerContentAddresses(customer);
+  return addresses.findIndex((address) => address.id?.trim() === normalizedId);
+}
+
+/**
+ * Resolve the address index to store when a party is picked through the searchable
+ * party dropdown. A specific address press reports its id; otherwise (single- or
+ * no-address customers picked directly) fall back to the initial index.
+ */
+export function resolveSelectedOrderPartyAddressIndex(
+  customer: Pick<Customer, "addresses">,
+  addressId?: string,
+): number {
+  const matched = getOrderPartyAddressIndexById(customer, addressId);
+  if (matched >= 0) return matched;
+  return getInitialOrderPartyAddressIndex(customer);
+}
+
 export function resolveOrderPartyAddressIndex(
   customer: Pick<Customer, "addresses"> | null,
   currentIndex: number,

@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Minus, Pencil, Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
+import { useTranslation } from "@/lib/i18n";
 import {
   computeInvoiceBalance,
   resolveLineTotal,
@@ -96,12 +97,17 @@ function SummaryDiscountControl({
   discountAmount: number;
   onDiscountChange?: (discount: string) => void;
 }) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const isApplied = discountAmount > 0;
 
   if (!onDiscountChange) {
     return isApplied ? (
-      <SummaryLineRow label="Discount" value={`−${formatInvoiceMoney(discountAmount)}`} muted />
+      <SummaryLineRow
+        label={t("invoices.wizard.summary.discount")}
+        value={`−${formatInvoiceMoney(discountAmount)}`}
+        muted
+      />
     ) : null;
   }
 
@@ -129,7 +135,7 @@ function SummaryDiscountControl({
         className="text-left text-sm font-medium text-primary hover:underline"
         onClick={() => setEditing(true)}
       >
-        + Add discount
+        {t("invoices.wizard.summary.addDiscount")}
       </button>
     );
   }
@@ -137,7 +143,9 @@ function SummaryDiscountControl({
   if (editing) {
     return (
       <div className="space-y-2">
-        <span className="text-xs font-medium text-muted-foreground">Discount amount</span>
+        <span className="text-xs font-medium text-muted-foreground">
+          {t("invoices.wizard.summary.discountAmount")}
+        </span>
         <Input
           type="number"
           min={0}
@@ -172,19 +180,21 @@ function SummaryDiscountControl({
     <div className="flex items-center gap-2">
       <button
         type="button"
-        aria-label="Remove discount"
+        aria-label={t("invoices.wizard.summary.removeDiscount")}
         className="flex size-5 shrink-0 items-center justify-center rounded-full bg-destructive text-white"
         onClick={removeDiscount}
       >
         <Minus className="size-3" />
       </button>
-      <span className="min-w-0 flex-1 text-sm font-semibold text-foreground">Discount</span>
+      <span className="min-w-0 flex-1 text-sm font-semibold text-foreground">
+        {t("invoices.wizard.summary.discount")}
+      </span>
       <span className="shrink-0 text-sm font-medium text-foreground">
         −{formatInvoiceMoney(discountAmount)}
       </span>
       <button
         type="button"
-        aria-label="Edit discount"
+        aria-label={t("invoices.wizard.summary.editDiscount")}
         className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground"
         onClick={() => setEditing(true)}
       >
@@ -200,11 +210,12 @@ function InvoiceSummaryCard({
   showPayment = false,
   defaultExpanded = true,
 }: Props & { defaultExpanded?: boolean }) {
+  const { t } = useTranslation();
   const [summaryOpen, setSummaryOpen] = useState(defaultExpanded);
   const [detailsOpen, setDetailsOpen] = useState(true);
 
   const { lineRows, subtotal, discount, amountPaid, balance } = useInvoiceTotals(values);
-  const invoiceLabel = values.invoiceNumber.trim() || "New invoice";
+  const invoiceLabel = values.invoiceNumber.trim() || t("invoices.wizard.summary.newInvoice");
   const showPaidAdjustment = amountPaid > 0;
 
   return (
@@ -216,7 +227,7 @@ function InvoiceSummaryCard({
           onClick={() => setSummaryOpen((open) => !open)}
           aria-expanded={summaryOpen}
         >
-          <span className="text-sm font-semibold text-foreground">Invoice summary</span>
+          <span className="text-sm font-semibold text-foreground">{t("invoices.wizard.summary.title")}</span>
           {summaryOpen ? (
             <ChevronUp className="size-4 text-muted-foreground" />
           ) : (
@@ -231,28 +242,33 @@ function InvoiceSummaryCard({
               {values.sender ? (
                 <p className="text-muted-foreground">{values.sender.name}</p>
               ) : (
-                <p className="text-muted-foreground">Sender not selected</p>
+                <p className="text-muted-foreground">{t("invoices.wizard.summary.senderNotSelected")}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                Pending · {getPaymentLocationLabel(values.paymentLocation)}
+                {t("invoices.wizard.summary.pending")} · {getPaymentLocationLabel(values.paymentLocation)}
               </p>
             </div>
 
             <div className={cn("space-y-3 pt-1", summaryDividerClassName)}>
               <SummarySectionToggle
                 expanded={detailsOpen}
-                label="Order details"
+                label={t("invoices.wizard.summary.orderDetails")}
                 onToggle={() => setDetailsOpen((open) => !open)}
               />
               {detailsOpen ? (
                 <div className="space-y-2">
                   {lineRows.length === 0 ? (
-                    <SummaryLineRow label="Line items" value="—" muted indent />
+                    <SummaryLineRow
+                      label={t("invoices.wizard.summary.lineItems")}
+                      value={t("common.empty.dash")}
+                      muted
+                      indent
+                    />
                   ) : (
                     lineRows.map((item) => (
                       <SummaryLineRow
                         key={item.id}
-                        label={item.itemName.trim() || "Line item"}
+                        label={item.itemName.trim() || t("invoices.wizard.summary.lineItem")}
                         value={formatInvoiceMoney(resolveLineTotal(item))}
                         muted
                         indent
@@ -265,12 +281,16 @@ function InvoiceSummaryCard({
 
             {showPaidAdjustment && !showPayment ? (
               <div className={cn("pt-1", summaryDividerClassName)}>
-                <SummaryLineRow label="Paid" value={`−${formatInvoiceMoney(amountPaid)}`} muted />
+                <SummaryLineRow
+                  label={t("invoices.wizard.summary.paid")}
+                  value={`−${formatInvoiceMoney(amountPaid)}`}
+                  muted
+                />
               </div>
             ) : null}
 
             <div className={cn("space-y-3 pt-1", summaryDividerClassName)}>
-              <SummaryLineRow label="Subtotal" value={formatInvoiceMoney(subtotal)} />
+              <SummaryLineRow label={t("invoices.wizard.summary.subtotal")} value={formatInvoiceMoney(subtotal)} />
               <SummaryDiscountControl
                 discountValue={values.discount}
                 discountAmount={discount}
@@ -278,14 +298,17 @@ function InvoiceSummaryCard({
               />
               {showPayment ? (
                 <div className="text-emerald-700 dark:text-emerald-400">
-                  <SummaryLineRow label="Payment" value={formatInvoiceMoney(amountPaid)} />
+                  <SummaryLineRow
+                    label={t("invoices.wizard.summary.payment")}
+                    value={formatInvoiceMoney(amountPaid)}
+                  />
                 </div>
               ) : null}
             </div>
 
             <div className={cn("flex items-end justify-between gap-3 pt-1", summaryDividerClassName)}>
               <span className="text-sm font-bold text-foreground">
-                {showPayment ? "Balance due" : "Total"}
+                {showPayment ? t("invoices.wizard.summary.balanceDue") : t("invoices.wizard.summary.total")}
               </span>
               <span className="text-xl font-bold leading-none text-foreground">
                 {formatInvoiceMoney(balance)}
@@ -295,7 +318,7 @@ function InvoiceSummaryCard({
         ) : (
           <div className={cn("flex items-center justify-between px-4 pb-4 pt-1", summaryDividerClassName)}>
             <span className="text-sm font-bold text-foreground">
-              {showPayment ? "Balance due" : "Total"}
+              {showPayment ? t("invoices.wizard.summary.balanceDue") : t("invoices.wizard.summary.total")}
             </span>
             <span className="text-lg font-bold text-foreground">{formatInvoiceMoney(balance)}</span>
           </div>
@@ -336,6 +359,7 @@ export function InvoiceWizardSummaryMobileBar({
   onDiscountChange,
   showPayment,
 }: Props) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const { balance } = useInvoiceTotals(values);
 
@@ -357,7 +381,7 @@ export function InvoiceWizardSummaryMobileBar({
             className="flex w-full items-center justify-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline"
             onClick={() => setExpanded(false)}
           >
-            Hide details
+            {t("invoices.wizard.summary.hideDetails")}
             <ChevronDown className="size-4" />
           </button>
         </div>
@@ -367,7 +391,7 @@ export function InvoiceWizardSummaryMobileBar({
           className={cn("flex w-full items-center justify-between gap-3 px-3 py-3 text-left", summaryPanelClassName)}
           onClick={() => setExpanded(true)}
         >
-          <span className="text-sm font-semibold text-foreground">Invoice summary</span>
+          <span className="text-sm font-semibold text-foreground">{t("invoices.wizard.summary.title")}</span>
           <span className="flex items-center gap-2">
             <span className="text-base font-bold text-foreground">{formatInvoiceMoney(balance)}</span>
             <ChevronUp className="size-4 text-muted-foreground" />

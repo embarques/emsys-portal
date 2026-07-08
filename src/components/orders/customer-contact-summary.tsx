@@ -33,7 +33,7 @@ export function CustomerContactSummary({ customer, addressIndex }: CustomerConta
       {lines.length > 0 ? (
         <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground">
           {lines.map((line, index) => (
-            <p key={index} className="truncate">
+            <p key={index} className="break-words">
               {line}
             </p>
           ))}

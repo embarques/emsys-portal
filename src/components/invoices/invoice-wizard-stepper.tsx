@@ -2,26 +2,37 @@
 
 import { Check } from "lucide-react";
 
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-export const INVOICE_WIZARD_STEPS = [
-  { id: 1 as const, label: "Details" },
-  { id: 2 as const, label: "Parties" },
-  { id: 3 as const, label: "Line items" },
-  { id: 4 as const, label: "Payment" },
-  { id: 5 as const, label: "Preview" },
-] as const;
+export const INVOICE_WIZARD_STEP_ORDER = [1, 2, 3, 4, 5] as const;
 
-export type InvoiceWizardStep = (typeof INVOICE_WIZARD_STEPS)[number]["id"];
+export type InvoiceWizardStep = (typeof INVOICE_WIZARD_STEP_ORDER)[number];
 export type InvoiceWizardFormStep = 1 | 2 | 3;
 
-export const INVOICE_WIZARD_STEP_TITLES: Record<InvoiceWizardStep, string> = {
-  1: "Enter invoice details",
-  2: "Select sender & receiver",
-  3: "Add line items",
-  4: "Payment information",
-  5: "Review & save invoice",
+const STEP_LABEL_KEYS: Record<InvoiceWizardStep, string> = {
+  1: "invoices.wizard.steps.details",
+  2: "invoices.wizard.steps.parties",
+  3: "invoices.wizard.steps.lineItems",
+  4: "invoices.wizard.steps.payment",
+  5: "invoices.wizard.steps.preview",
 };
+
+const STEP_TITLE_KEYS: Record<InvoiceWizardStep, string> = {
+  1: "invoices.wizard.stepTitles.enterDetails",
+  2: "invoices.wizard.stepTitles.selectParties",
+  3: "invoices.wizard.stepTitles.addLineItems",
+  4: "invoices.wizard.stepTitles.paymentInfo",
+  5: "invoices.wizard.stepTitles.reviewAndSave",
+};
+
+export function getInvoiceWizardStepLabelKey(step: InvoiceWizardStep): string {
+  return STEP_LABEL_KEYS[step];
+}
+
+export function getInvoiceWizardStepTitleKey(step: InvoiceWizardStep): string {
+  return STEP_TITLE_KEYS[step];
+}
 
 type Props = {
   step: InvoiceWizardStep;
@@ -59,17 +70,19 @@ function StepCircle({
 }
 
 export function InvoiceWizardStepper({ step, includePaymentStep = true }: Props) {
+  const { t } = useTranslation();
+
   const steps = includePaymentStep
-    ? INVOICE_WIZARD_STEPS
+    ? INVOICE_WIZARD_STEP_ORDER.map((id) => ({ id, labelKey: STEP_LABEL_KEYS[id] }))
     : [
-        INVOICE_WIZARD_STEPS[0],
-        INVOICE_WIZARD_STEPS[1],
-        INVOICE_WIZARD_STEPS[2],
-        { id: 4 as const, label: "Preview" },
+        { id: 1 as const, labelKey: STEP_LABEL_KEYS[1] },
+        { id: 2 as const, labelKey: STEP_LABEL_KEYS[2] },
+        { id: 3 as const, labelKey: STEP_LABEL_KEYS[3] },
+        { id: 4 as const, labelKey: "invoices.wizard.steps.preview" },
       ];
 
   return (
-    <nav aria-label="Invoice steps" className="shrink-0 border-b border-border bg-card px-4 py-5 sm:px-8">
+    <nav aria-label={t("invoices.wizard.navAriaLabel")} className="shrink-0 border-b border-border bg-card px-4 py-5 sm:px-8">
       <div className="relative mx-auto max-w-3xl">
         <div
           className="absolute top-[1.125rem] h-0.5 bg-border"
@@ -98,7 +111,7 @@ export function InvoiceWizardStepper({ step, includePaymentStep = true }: Props)
                     status === "upcoming" ? "text-muted-foreground" : "text-foreground",
                   )}
                 >
-                  {entry.label}
+                  {t(entry.labelKey)}
                 </span>
               </li>
             );
