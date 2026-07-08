@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, Printer, Save } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { InvoiceDailyIncomeStep } from "@/components/invoices/invoice-daily-income-step";
@@ -30,6 +30,7 @@ import { customerHasUnverifiedPrimaryAddress } from "@/lib/customers/types";
 import { cn } from "@/lib/utils";
 import {
   createEmptyInvoiceForm,
+  isInvoiceEmployeePickupSource,
   resetInvoiceFormForNextEntry,
   resolveLineTotal,
   type InvoiceFormSubmitResult,
@@ -62,6 +63,15 @@ function validateStep1(values: InvoiceFormValues): string | null {
   if (!values.invoiceNumber.trim()) return "Invoice number is required.";
   if (!values.containerId) return "Container is required.";
   if (!values.paymentLocation) return "Pending payment location is required.";
+  if (values.pickupSource === "route") {
+    if (!values.routeId) return "Pickup route is required.";
+  } else if (isInvoiceEmployeePickupSource(values.pickupSource)) {
+    if (!values.pickupEmployeeId) {
+      return values.pickupSource === "warehouse"
+        ? "Warehouse employee is required."
+        : "Office employee is required.";
+    }
+  }
   return null;
 }
 
@@ -103,35 +113,50 @@ export function InvoiceFormWizard({
   );
   const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null);
   const [formSessionKey, setFormSessionKey] = useState(0);
-  const [formSeed, setFormSeed] = useState<InvoiceFormValues>(
-    initialValues ?? createEmptyInvoiceForm(),
-  );
   const [stepError, setStepError] = useState<string | null>(null);
+  const valuesRef = useRef(values);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [dailyIncomeRegistration, setDailyIncomeRegistration] =
     useState<DailyIncomeJournal | null>(null);
   const previewStep: InvoiceWizardStep = requireDailyIncomeRegistration ? 5 : 4;
 
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
+
   const handleValuesChange = useCallback((next: InvoiceFormValues) => {
-    setValues((current) => ({
-      ...next,
-      discount: current.discount,
-    }));
+    setValues((current) => {
+      const merged = {
+        ...next,
+        discount: current.discount,
+        amountPaid: current.amountPaid,
+      };
+      valuesRef.current = merged;
+      return merged;
+    });
   }, []);
 
   const handleDailyIncomeRegistrationChange = useCallback(
     (registration: DailyIncomeJournal | null) => {
       setDailyIncomeRegistration(registration);
-      setValues((current) => ({
-        ...current,
-        amountPaid: String(registration?.amount ?? 0),
-      }));
+      setValues((current) => {
+        const next = {
+          ...current,
+          amountPaid: String(registration?.amount ?? 0),
+        };
+        valuesRef.current = next;
+        return next;
+      });
     },
     [],
   );
 
   function handleDiscountChange(discount: string) {
-    setValues((current) => ({ ...current, discount }));
+    setValues((current) => {
+      const next = { ...current, discount };
+      valuesRef.current = next;
+      return next;
+    });
   }
 
   function clearErrors() {
@@ -140,13 +165,14 @@ export function InvoiceFormWizard({
   }
 
   function handleNext() {
+    const currentValues = valuesRef.current;
     const error =
       step === 1
-        ? validateStep1(values)
+        ? validateStep1(currentValues)
         : step === 2
-          ? validateStep2(values)
+          ? validateStep2(currentValues)
           : step === 3
-            ? validateStep3(values)
+            ? validateStep3(currentValues)
             : requireDailyIncomeRegistration && step === 4 && !dailyIncomeRegistration
               ? "Register this invoice in Daily Income before continuing."
               : null;
@@ -163,17 +189,11 @@ export function InvoiceFormWizard({
   }
 
   function handleBack() {
-    if (step >= 4) {
-      setFormSeed(values);
-    }
     clearErrors();
     setStep((current) => (current - 1) as InvoiceWizardStep);
   }
 
   function goToStep(target: InvoiceWizardFormStep) {
-    if (step >= 4) {
-      setFormSeed(values);
-    }
     clearErrors();
     setStep(target);
   }
@@ -229,7 +249,7 @@ export function InvoiceFormWizard({
       result.nextInvoiceNumber ?? suggestedInvoiceNumber ?? "",
     );
     setValues(nextValues);
-    setFormSeed(nextValues);
+    valuesRef.current = nextValues;
     setFormSessionKey((key) => key + 1);
     setSavedInvoiceId(null);
     setDailyIncomeRegistration(null);
@@ -285,28 +305,35 @@ export function InvoiceFormWizard({
             <InvoiceWizardNotice tone="warning" message={footerWarning} />
           ) : null}
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {step <= 3 ? (
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div
+              className={cn(
+                "flex min-h-0 flex-1 flex-col overflow-hidden",
+                step > 3 && "pointer-events-none invisible absolute inset-0",
+              )}
+              aria-hidden={step > 3}
+            >
               <InvoiceForm
                 key={`invoice-wizard-form-${formSessionKey}`}
                 appearance="wizard"
-                wizardStep={step as InvoiceWizardFormStep}
+                wizardStep={(step <= 3 ? step : 3) as InvoiceWizardFormStep}
                 showFooter={false}
-                initialValues={formSeed}
+                initialValues={initialValues ?? createEmptyInvoiceForm()}
                 suggestedInvoiceNumber={suggestedInvoiceNumber}
                 submitLabel={submitLabel}
                 onSubmit={() => ({ error: null })}
                 onValuesChange={handleValuesChange}
                 onCancel={onCancel}
               />
-            ) : requireDailyIncomeRegistration && step === 4 ? (
+            </div>
+            {requireDailyIncomeRegistration && step === 4 ? (
               <div className="min-h-0 flex-1 overflow-y-auto pb-10 sm:pb-12">
                 <InvoiceDailyIncomeStep
                   values={values}
                   onRegistrationChange={handleDailyIncomeRegistrationChange}
                 />
               </div>
-            ) : (
+            ) : step === previewStep ? (
               <div className="min-h-0 flex-1 overflow-y-auto pb-10 sm:pb-12">
                 <InvoiceFormPreviewStep
                   values={values}
@@ -317,7 +344,7 @@ export function InvoiceFormWizard({
                   errorMessage={previewError}
                 />
               </div>
-            )}
+            ) : null}
           </div>
 
           <InvoiceWizardSummaryMobileBar

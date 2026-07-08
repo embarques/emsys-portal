@@ -13,5 +13,30 @@
     "actionsColumn": "Acciones",
     "viewInvoice": "Ver factura",
     "viewInvoiceFor": "Ver factura {{number}}"
+  },
+  "form": {
+    "fields": {
+      "pickupReference": "Referencia de recogida",
+      "pickupSource": "Origen de recogida",
+      "pickupSourceRoute": "Ruta",
+      "pickupSourceWarehouse": "Almacén",
+      "pickupSourceOffice": "Oficina",
+      "pickupRoute": "Ruta de recogida",
+      "warehouseEmployee": "Empleado de almacén",
+      "officeEmployee": "Empleado de oficina"
+    },
+    "placeholders": {
+      "noPickupReference": "Sin referencia de recogida",
+      "searchPickupReferences": "Buscar referencias de recogida…",
+      "selectPickupRoute": "Seleccionar ruta de recogida",
+      "noPickupRoute": "Sin ruta de recogida",
+      "searchPickupRoutes": "Buscar rutas de recogida…",
+      "selectWarehouseEmployee": "Seleccionar empleado de almacén",
+      "selectOfficeEmployee": "Seleccionar empleado de oficina",
+      "searchEmployees": "Buscar empleados…"
+    },
+    "preview": {
+      "noEmployeeAssignment": "Sin empleado seleccionado"
+    }
   }
 }

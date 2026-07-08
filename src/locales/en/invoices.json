@@ -13,5 +13,30 @@
     "actionsColumn": "Actions",
     "viewInvoice": "View invoice",
     "viewInvoiceFor": "View invoice {{number}}"
+  },
+  "form": {
+    "fields": {
+      "pickupReference": "Pickup Reference",
+      "pickupSource": "Pickup Source",
+      "pickupSourceRoute": "Route",
+      "pickupSourceWarehouse": "Warehouse",
+      "pickupSourceOffice": "Office",
+      "pickupRoute": "Pickup route",
+      "warehouseEmployee": "Warehouse employee",
+      "officeEmployee": "Office employee"
+    },
+    "placeholders": {
+      "noPickupReference": "No pickup reference",
+      "searchPickupReferences": "Search pickup references…",
+      "selectPickupRoute": "Select pickup route",
+      "noPickupRoute": "No pickup route",
+      "searchPickupRoutes": "Search pickup routes…",
+      "selectWarehouseEmployee": "Select warehouse employee",
+      "selectOfficeEmployee": "Select office employee",
+      "searchEmployees": "Search employees…"
+    },
+    "preview": {
+      "noEmployeeAssignment": "No employee selected"
+    }
   }
 }

@@ -38,7 +38,7 @@ function isPlaceholderOption(label: string) {
   const normalized = label.trim();
   if (!normalized) return true;
   if (/^Select /i.test(normalized)) return true;
-  if (/^No (pickup|receiver|route)$/i.test(normalized)) return true;
+  if (/^No (pickup route|pickup|receiver|route)$/i.test(normalized)) return true;
   return false;
 }
 

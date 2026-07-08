@@ -1,8 +1,9 @@
 "use client";
 
 import { ClipboardList, Pencil, Receipt, UserPlus, Users, Wallet } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { CustomerPartySelect } from "@/components/customers/customer-party-select";
@@ -20,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   SearchableSelect,
+  type SearchableSelectOption,
 } from "@/components/ui/searchable-select";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { UnverifiedAddressNotice } from "@/components/addresses/unverified-address-notice";
@@ -45,23 +47,34 @@ import {
   createEmptyCustomerForm,
   customerHasUnverifiedPrimaryAddress,
   customerToFormValues,
+  getCustomerPrimaryCoreAddress,
   type Customer,
   type CustomerFormValues,
 } from "@/lib/customers/types";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
+import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
+import { buildTransactionAssigneeOptions } from "@/lib/accounting/daily-income/assignee";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import type { Branch } from "@/lib/branches/types";
+import { useEmployeeSearch, useEmployees } from "@/lib/employees/hooks/use-employees";
+import { DEFAULT_EMPLOYEE_LIST_PARAMS, type Employee } from "@/lib/employees/types";
 import {
   INVOICE_PAYMENT_LOCATIONS,
+  INVOICE_PICKUP_SOURCES,
   computeInvoiceBalance,
   createEmptyInvoiceForm,
+  isInvoiceEmployeePickupSource,
   resetInvoiceFormForNextEntry,
   resolveLineTotal,
   type InvoiceFormSubmitResult,
   type InvoiceFormValues,
+  type InvoicePickupSource,
 } from "@/lib/invoices/types";
 import { useItemPicker } from "@/lib/items/hooks/use-items";
-import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
-import { DEFAULT_ORDER_LIST_PARAMS } from "@/lib/orders/types";
-import { useOrders } from "@/lib/orders/hooks/use-orders";
+import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
+import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import { DEFAULT_ORDER_LIST_PARAMS, type Order } from "@/lib/orders/types";
+import { useOrder, useOrderSearch, useOrders } from "@/lib/orders/hooks/use-orders";
 import { cn } from "@/lib/utils";
 
 type InvoiceFormProps = {
@@ -87,6 +100,68 @@ type CustomerDialogState = {
   side: PartySide;
   mode: "add" | "edit";
 };
+
+/** Sender name, phone, and street let users find a pickup without knowing the order id. */
+function buildPickupSearchKeywords(order: Order): string[] {
+  const sender = order.sender;
+  if (!sender) return [];
+
+  const keywords: string[] = [];
+  const name = sender.name.trim();
+  if (name) keywords.push(name);
+
+  for (const phone of sender.phones) {
+    if (phone.number) keywords.push(phone.number);
+    if (phone.displayNumber) keywords.push(phone.displayNumber);
+  }
+
+  const primaryAddress = getCustomerPrimaryCoreAddress(sender);
+  if (primaryAddress.address1) keywords.push(primaryAddress.address1);
+
+  return keywords;
+}
+
+function buildPickupOptionDescriptionLines(order: Order): string[] {
+  const sender = order.sender;
+  if (!sender) return [];
+
+  const phone = getPrimaryPhoneDisplayNumber(sender.phones);
+  const address1 = getCustomerPrimaryCoreAddress(sender).address1.trim();
+  return [phone, address1].filter((line) => line.trim());
+}
+
+function orderToPickupSelectOption(order: Order): SearchableSelectOption {
+  const senderName = order.sender?.name?.trim() ?? "";
+  return {
+    value: String(order.id),
+    label: senderName ? `#${order.id} ${senderName}` : `#${order.id}`,
+    descriptionLines: buildPickupOptionDescriptionLines(order),
+    keywords: buildPickupSearchKeywords(order),
+  };
+}
+
+function employeeMatchesPickupSource(
+  employee: Employee,
+  pickupSource: InvoicePickupSource,
+  branchesById: Map<number, Pick<Branch, "type">>,
+): boolean {
+  if (!employee.active) return false;
+
+  const branchType = branchesById.get(employee.branch.id)?.type.trim().toLowerCase() ?? "";
+  const department = employee.department.trim().toLowerCase();
+  const title = employee.title.trim().toLowerCase();
+  const isWarehouseRole = department === "warehouse" || title === "warehouse";
+
+  if (pickupSource === "warehouse") {
+    return branchType === "warehouse" || isWarehouseRole;
+  }
+
+  if (pickupSource === "office") {
+    return branchType === "office" || (!isWarehouseRole && branchType !== "warehouse");
+  }
+
+  return false;
+}
 
 function PartyFieldActions({
   hasSelection,
@@ -142,26 +217,103 @@ export function InvoiceForm({
   const { t } = useTranslation();
   const isWizard = appearance === "wizard";
   const { data: containersData } = useContainerPicker();
-  const ordersQuery = useOrders({ ...DEFAULT_ORDER_LIST_PARAMS, limit: 200 });
+  const ordersQuery = useOrders(DEFAULT_ORDER_LIST_PARAMS);
   const { notifyAdded, notifyUpdated } = useFeedback();
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
 
   const { data: itemsData } = useItemPicker();
   const containers = containersData?.items ?? [];
-  const orders = ordersQuery.data?.items ?? [];
+  const defaultOrders = ordersQuery.data?.items ?? [];
   const catalogItems = itemsData?.items ?? [];
-  const { data: routesData } = useRoutePicker();
-  const routes = routesData?.items ?? [];
 
-  const [values, setValues] = useState<InvoiceFormValues>(initialValues ?? createEmptyInvoiceForm());
+  const [values, setValues] = useState<InvoiceFormValues>(() => {
+    const base = initialValues ?? createEmptyInvoiceForm();
+    if (!isEditing && suggestedInvoiceNumber && !base.invoiceNumber) {
+      return { ...base, invoiceNumber: suggestedInvoiceNumber };
+    }
+    return base;
+  });
   const [formError, setFormError] = useState<string | null>(null);
   const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
+  const [pickupQuery, setPickupQuery] = useState("");
+  const [pickupEmployeeQuery, setPickupEmployeeQuery] = useState("");
   const handleEnterNavigation = useFormEnterNavigation();
   const isSavingCustomer = createCustomerMutation.isPending || updateCustomerMutation.isPending;
 
+  const pickupRoutesQuery = useActiveRoutePicker("pickup", 200);
+  const pickupRoutes = pickupRoutesQuery.data?.items ?? [];
+  const { data: branchesData } = useBranchPicker();
+  const branches = branchesData?.items ?? [];
+  const branchesById = useMemo(
+    () => new Map(branches.map((branch) => [branch.id, branch])),
+    [branches],
+  );
+  const isEmployeePickupSource = isInvoiceEmployeePickupSource(values.pickupSource);
+  const employeesQuery = useEmployees({
+    ...DEFAULT_EMPLOYEE_LIST_PARAMS,
+    limit: 200,
+    active: true,
+  });
+  const debouncedPickupEmployeeQuery = useDebouncedValue(pickupEmployeeQuery, 300).trim();
+  const pickupEmployeeSearch = useEmployeeSearch(
+    debouncedPickupEmployeeQuery
+      ? { field: "name", operator: "contains", value: debouncedPickupEmployeeQuery }
+      : undefined,
+    { enabled: isEmployeePickupSource },
+  );
+  const pickupRouteOptions = useMemo(
+    () => buildActiveRouteAssignmentOptions(pickupRoutes, t),
+    [pickupRoutes, t],
+  );
+  const pickupSourceEmployees = useMemo(() => {
+    const source = debouncedPickupEmployeeQuery
+      ? (pickupEmployeeSearch.data?.items ?? [])
+      : (employeesQuery.data?.items ?? []);
+
+    const filtered = source.filter((employee) =>
+      employeeMatchesPickupSource(employee, values.pickupSource, branchesById),
+    );
+
+    return filtered.length > 0 ? filtered : source.filter((employee) => employee.active);
+  }, [
+    branchesById,
+    debouncedPickupEmployeeQuery,
+    employeesQuery.data?.items,
+    pickupEmployeeSearch.data?.items,
+    values.pickupSource,
+  ]);
+  const pickupEmployeeOptions = useMemo(() => {
+    const options = buildTransactionAssigneeOptions(pickupSourceEmployees);
+    if (
+      values.pickupEmployeeId &&
+      !options.some((option) => option.value === values.pickupEmployeeId)
+    ) {
+      const name = values.pickupEmployeeName.trim();
+      if (name) {
+        options.unshift({ value: values.pickupEmployeeId, label: name });
+      }
+    }
+    return options;
+  }, [pickupSourceEmployees, values.pickupEmployeeId, values.pickupEmployeeName]);
+
+  const commitValues = useCallback(
+    (updater: InvoiceFormValues | ((current: InvoiceFormValues) => InvoiceFormValues)) => {
+      setValues((current) => {
+        const next = typeof updater === "function" ? updater(current) : updater;
+        if (isWizard) {
+          onValuesChange?.(next);
+        }
+        return next;
+      });
+    },
+    [isWizard, onValuesChange],
+  );
+
   useEffect(() => {
+    if (isWizard) return;
+
     const base = initialValues ?? createEmptyInvoiceForm();
     setValues(
       !isEditing && suggestedInvoiceNumber && !base.invoiceNumber
@@ -169,11 +321,12 @@ export function InvoiceForm({
         : base,
     );
     setFormError(null);
-  }, [initialValues, isEditing, suggestedInvoiceNumber]);
+  }, [initialValues, isEditing, isWizard, suggestedInvoiceNumber]);
 
   useEffect(() => {
+    if (isWizard) return;
     onValuesChange?.(values);
-  }, [onValuesChange, values]);
+  }, [isWizard, onValuesChange, values]);
 
   const showAllSections = wizardStep == null;
   const showDetailsSection = showAllSections || wizardStep === 1;
@@ -181,18 +334,97 @@ export function InvoiceForm({
   const showLineItemsSection = showAllSections || wizardStep === 3;
   const showTotalsSection = (showAllSections || wizardStep === 3) && !isWizard;
 
+  const debouncedPickupQuery = useDebouncedValue(pickupQuery, 300).trim();
+  const pickupSearch = useOrderSearch(
+    debouncedPickupQuery ? { value: debouncedPickupQuery } : undefined,
+    { limit: 40 },
+  );
+  const selectedPickupQuery = useOrder(values.pickupId || null, Boolean(values.pickupId));
+
+  const pickupSearchResults = pickupSearch.data?.items ?? [];
+
+  const pickupSelectOptions = useMemo(() => {
+    const source = debouncedPickupQuery ? pickupSearchResults : defaultOrders;
+    const options = source.map(orderToPickupSelectOption);
+
+    const selectedOrder =
+      source.find((order) => String(order.id) === values.pickupId) ??
+      (selectedPickupQuery.data && String(selectedPickupQuery.data.id) === values.pickupId
+        ? selectedPickupQuery.data
+        : null);
+
+    if (selectedOrder && !source.some((order) => String(order.id) === values.pickupId)) {
+      options.unshift(orderToPickupSelectOption(selectedOrder));
+    }
+
+    return options;
+  }, [
+    debouncedPickupQuery,
+    defaultOrders,
+    pickupSearchResults,
+    selectedPickupQuery.data,
+    values.pickupId,
+  ]);
+
   function updateField<K extends keyof InvoiceFormValues>(key: K, value: InvoiceFormValues[K]) {
-    setValues((current) => ({ ...current, [key]: value }));
+    commitValues((current) => ({ ...current, [key]: value }));
+    setFormError(null);
+  }
+
+  function updatePickupSource(next: InvoicePickupSource) {
+    if (next === values.pickupSource) return;
+    commitValues((current) => ({
+      ...current,
+      pickupSource: next,
+      routeId: next === "route" ? current.routeId : "",
+      officeBranchId: "",
+      officeBranchName: "",
+      pickupEmployeeId: "",
+      pickupEmployeeName: "",
+    }));
+    setFormError(null);
+    setPickupEmployeeQuery("");
+  }
+
+  function updatePickupEmployee(employeeId: string) {
+    const employee = pickupSourceEmployees.find((entry) => String(entry.id) === employeeId);
+    commitValues((current) => ({
+      ...current,
+      pickupEmployeeId: employeeId,
+      pickupEmployeeName: employee?.name ?? "",
+      officeBranchId: employee ? String(employee.branch.id) : "",
+      officeBranchName: employee
+        ? `${employee.branch.code} — ${employee.branch.name}`.trim()
+        : "",
+    }));
+    setFormError(null);
+  }
+
+  function updatePickupReference(next: string) {
+    const source = debouncedPickupQuery ? pickupSearchResults : defaultOrders;
+    const selectedOrder =
+      source.find((order) => String(order.id) === next) ??
+      (selectedPickupQuery.data && String(selectedPickupQuery.data.id) === next
+        ? selectedPickupQuery.data
+        : undefined);
+
+    commitValues((current) => ({
+      ...current,
+      pickupId: next,
+      ...(selectedOrder?.sender
+        ? { senderId: selectedOrder.sender.id, sender: selectedOrder.sender }
+        : {}),
+    }));
     setFormError(null);
   }
 
   function updateSender(_senderId: string, sender: Customer) {
-    setValues((current) => ({ ...current, senderId: sender.id, sender }));
+    commitValues((current) => ({ ...current, senderId: sender.id, sender }));
     setFormError(null);
   }
 
   function updateReceiver(_receiverId: string, receiver: Customer) {
-    setValues((current) => ({ ...current, receiverId: receiver.id, receiver }));
+    commitValues((current) => ({ ...current, receiverId: receiver.id, receiver }));
     setFormError(null);
   }
 
@@ -220,9 +452,9 @@ export function InvoiceForm({
 
   function applyCustomerToSide(side: PartySide, customer: Customer) {
     if (side === "sender") {
-      setValues((current) => ({ ...current, senderId: customer.id, sender: customer }));
+      commitValues((current) => ({ ...current, senderId: customer.id, sender: customer }));
     } else {
-      setValues((current) => ({ ...current, receiverId: customer.id, receiver: customer }));
+      commitValues((current) => ({ ...current, receiverId: customer.id, receiver: customer }));
     }
     setFormError(null);
   }
@@ -293,6 +525,15 @@ export function InvoiceForm({
 
   const errorMessage = formError ?? externalError;
 
+  const pickupEmployeeFieldLabel =
+    values.pickupSource === "warehouse"
+      ? t("invoices.form.fields.warehouseEmployee")
+      : t("invoices.form.fields.officeEmployee");
+  const pickupEmployeePlaceholder =
+    values.pickupSource === "warehouse"
+      ? t("invoices.form.placeholders.selectWarehouseEmployee")
+      : t("invoices.form.placeholders.selectOfficeEmployee");
+
   function renderField(
     label: string,
     htmlFor: string,
@@ -317,6 +558,29 @@ export function InvoiceForm({
       </div>
     );
   }
+
+  const pickupReferenceField = renderField(
+    t("invoices.form.fields.pickupReference"),
+    "pickupId",
+    false,
+    <SearchableSelect
+      id="pickupId"
+      value={values.pickupId}
+      onValueChange={updatePickupReference}
+      placeholder={t("invoices.form.placeholders.noPickupReference")}
+      searchPlaceholder={t("invoices.form.placeholders.searchPickupReferences")}
+      manualFiltering
+      loading={pickupSearch.isFetching}
+      onSearchChange={setPickupQuery}
+      {...(isWizard ? wizardSelectFieldProps(values.pickupId) : {})}
+      options={[
+        ...(debouncedPickupQuery
+          ? []
+          : [{ value: "", label: t("invoices.form.placeholders.noPickupReference") }]),
+        ...pickupSelectOptions,
+      ]}
+    />,
+  );
 
   const detailsFields = (
     <div className={cn("grid gap-5", isWizard ? "sm:grid-cols-2" : "gap-2.5 sm:grid-cols-2")}>
@@ -343,27 +607,6 @@ export function InvoiceForm({
           placeholder="INV-2026-0001"
           {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
           required
-        />,
-      )}
-      {renderField(
-        "Pickup",
-        "pickupId",
-        false,
-        <SearchableSelect
-          id="pickupId"
-          value={values.pickupId}
-          onValueChange={(next) => updateField("pickupId", next)}
-          placeholder="No pickup"
-          searchPlaceholder="Search pickups…"
-          {...(isWizard ? wizardSelectFieldProps(values.pickupId) : {})}
-          options={[
-            { value: "", label: "No pickup" },
-            ...orders.map((order) => ({
-              value: String(order.id),
-              label: `#${order.id}`,
-              descriptionLines: [order.sender?.name ?? ""].filter((line) => line.trim()),
-            })),
-          ]}
         />,
       )}
       {renderField(
@@ -406,31 +649,73 @@ export function InvoiceForm({
         />,
       )}
       {renderField(
-        "Route",
-        "routeId",
+        t("invoices.form.fields.pickupSource"),
+        "pickupSource",
         false,
         <SearchableSelect
-          id="routeId"
-          value={values.routeId}
-          onValueChange={(next) => updateField("routeId", next)}
-          placeholder="No route"
-          searchPlaceholder="Search routes…"
-          {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
-          options={[
-            { value: "", label: "No route" },
-            ...routes.map((assignment) => ({
-              value: assignment.id,
-              label: assignment.name,
-              descriptionLines: [assignment.vehicle.name].filter((line) => line.trim()),
-            })),
-          ]}
+          id="pickupSource"
+          value={values.pickupSource}
+          onValueChange={(next) => updatePickupSource(next as InvoicePickupSource)}
+          searchable={false}
+          {...(isWizard ? wizardSelectFieldProps(values.pickupSource) : {})}
+          options={INVOICE_PICKUP_SOURCES.map((option) => ({
+            value: option.value,
+            label: t(option.labelKey),
+          }))}
         />,
       )}
+      {values.pickupSource === "route"
+        ? renderField(
+            t("invoices.form.fields.pickupRoute"),
+            "routeId",
+            true,
+            <SearchableSelect
+              id="routeId"
+              value={values.routeId}
+              onValueChange={(next) => updateField("routeId", next)}
+              placeholder={t("invoices.form.placeholders.selectPickupRoute")}
+              searchPlaceholder={t("invoices.form.placeholders.searchPickupRoutes")}
+              loading={pickupRoutesQuery.isFetching}
+              required
+              {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
+              options={[
+                { value: "", label: t("invoices.form.placeholders.selectPickupRoute") },
+                ...pickupRouteOptions.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                })),
+              ]}
+            />,
+          )
+        : renderField(
+            pickupEmployeeFieldLabel,
+            "pickupEmployeeId",
+            true,
+            <SearchableSelect
+              id="pickupEmployeeId"
+              value={values.pickupEmployeeId}
+              onValueChange={updatePickupEmployee}
+              placeholder={pickupEmployeePlaceholder}
+              searchPlaceholder={t("invoices.form.placeholders.searchEmployees")}
+              manualFiltering
+              loading={pickupEmployeeSearch.isFetching || employeesQuery.isFetching}
+              onSearchChange={setPickupEmployeeQuery}
+              required
+              {...(isWizard ? wizardSelectFieldProps(values.pickupEmployeeId) : {})}
+              options={[
+                ...(debouncedPickupEmployeeQuery
+                  ? []
+                  : [{ value: "", label: pickupEmployeePlaceholder }]),
+                ...pickupEmployeeOptions,
+              ]}
+            />,
+          )}
     </div>
   );
 
   const partiesFields = (
     <div className={cn("grid gap-5", isWizard ? "sm:grid-cols-2" : "gap-2.5 sm:grid-cols-2")}>
+      <div className="sm:col-span-2">{pickupReferenceField}</div>
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-2">
           {isWizard ? (

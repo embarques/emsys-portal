@@ -4,6 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckSquare, ListChecks, Loader2, MapPin, Route as RouteIcon, RouteOff, Square, X } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import {
+  TableSelectionActionDivider,
+  TableSelectionActionGroup,
+} from "@/components/app-shell/table-selection-action-group";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -415,51 +419,58 @@ export function OrdersMapView({
             ) : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={baseIds.length === 0 || allBaseSelected}
-              onClick={() => setMapSelectedIds(baseIds)}
-            >
-              <CheckSquare className="h-4 w-4" />
-              {t("common.table.selectAll")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={mapSelectedIds.length === 0}
-              onClick={() => setMapSelectedIds([])}
-            >
-              <X className="h-4 w-4" />
-              {t("common.table.deselectAll")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!othersAvailable}
-              onClick={() => setMapSelectedIds(selectAllOthers(baseIds, mapSelectedIds))}
-            >
-              <ListChecks className="h-4 w-4" />
-              {t("common.table.selectAllOthers")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={selectedAssignedStops.length === 0 || isMutating}
-              onClick={openUnassignDialog}
-            >
-              <RouteOff className="h-4 w-4" />
-              {t("orders.actions.unassignRoute")}
-            </Button>
-            <Button
-              size="sm"
-              disabled={selectedStops.length === 0 || isMutating}
-              onClick={openAssignRouteDialog}
-            >
-              <RouteIcon className="h-4 w-4" />
-              {t("orders.actions.assignRoute")}
-            </Button>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <TableSelectionActionGroup aria-label={t("common.table.selectionActionsGroup")}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={baseIds.length === 0 || allBaseSelected}
+                onClick={() => setMapSelectedIds(baseIds)}
+              >
+                <CheckSquare className="h-4 w-4" />
+                {t("common.table.selectAll")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={mapSelectedIds.length === 0}
+                onClick={() => setMapSelectedIds([])}
+              >
+                <X className="h-4 w-4" />
+                {t("common.table.deselectAll")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!othersAvailable}
+                onClick={() => setMapSelectedIds(selectAllOthers(baseIds, mapSelectedIds))}
+              >
+                <ListChecks className="h-4 w-4" />
+                {t("common.table.selectAllOthers")}
+              </Button>
+            </TableSelectionActionGroup>
+            <TableSelectionActionDivider />
+            <TableSelectionActionGroup aria-label={t("orders.actions.routeGroup")}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={selectedStops.length === 0 || isMutating}
+                onClick={openAssignRouteDialog}
+              >
+                <RouteIcon className="h-4 w-4" />
+                {t("orders.actions.assignRoute")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={selectedAssignedStops.length === 0 || isMutating}
+                onClick={openUnassignDialog}
+                className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+              >
+                <RouteOff className="h-4 w-4" />
+                {t("orders.actions.unassignRoute")}
+              </Button>
+            </TableSelectionActionGroup>
           </div>
         </div>
 

@@ -19,6 +19,7 @@ type InvoiceLineItemDescriptionComboboxProps = {
   autoFocus?: boolean;
   onAutoFocusComplete?: () => void;
   onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
+  onEnterCommit?: () => void;
 };
 
 export function InvoiceLineItemDescriptionCombobox({
@@ -33,6 +34,7 @@ export function InvoiceLineItemDescriptionCombobox({
   autoFocus = false,
   onAutoFocusComplete,
   onFocus,
+  onEnterCommit,
 }: InvoiceLineItemDescriptionComboboxProps) {
   const generatedId = useId();
   const listboxId = `${id ?? generatedId}-catalog-suggestions`;
@@ -116,6 +118,22 @@ export function InvoiceLineItemDescriptionCombobox({
       return;
     }
 
+    if (event.key === "Enter") {
+      // Selecting a highlighted suggestion takes priority over advancing.
+      if (open && suggestions.length > 0 && activeIndex >= 0) {
+        event.preventDefault();
+        handleSelect(suggestions[activeIndex]!);
+        return;
+      }
+
+      // Otherwise Enter keeps the typed value and advances to the next field.
+      event.preventDefault();
+      setOpen(false);
+      setActiveIndex(-1);
+      onEnterCommit?.();
+      return;
+    }
+
     if (!open || suggestions.length === 0) return;
 
     if (event.key === "ArrowDown") {
@@ -124,9 +142,6 @@ export function InvoiceLineItemDescriptionCombobox({
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setActiveIndex((current) => (current <= 0 ? suggestions.length - 1 : current - 1));
-    } else if (event.key === "Enter" && activeIndex >= 0) {
-      event.preventDefault();
-      handleSelect(suggestions[activeIndex]!);
     }
   }
 

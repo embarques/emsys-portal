@@ -14,13 +14,16 @@ import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { formatInvoiceDate, formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
 import {
   computeInvoiceBalance,
+  isInvoiceEmployeePickupSource,
   resolveLineTotal,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
+import { useTranslation } from "@/lib/i18n";
 import { useItemPicker } from "@/lib/items/hooks/use-items";
-import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
+import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/display";
+import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { DEFAULT_ORDER_LIST_PARAMS } from "@/lib/orders/types";
-import { useOrders } from "@/lib/orders/hooks/use-orders";
+import { useOrder, useOrders } from "@/lib/orders/hooks/use-orders";
 import { ClipboardList, Eye, Receipt, Users, Wallet } from "lucide-react";
 import type { InvoiceWizardFormStep } from "@/components/invoices/invoice-wizard-stepper";
 
@@ -34,14 +37,16 @@ type Props = {
 };
 
 function usePreviewLabels(values: InvoiceFormValues) {
+  const { t } = useTranslation();
   const { data: containersData } = useContainerPicker();
   const ordersQuery = useOrders({ ...DEFAULT_ORDER_LIST_PARAMS, limit: 200 });
-  const { data: routesData } = useRoutePicker();
+  const selectedPickupQuery = useOrder(values.pickupId || null, Boolean(values.pickupId));
+  const pickupRoutesQuery = useActiveRoutePicker("pickup", 200);
   const { data: itemsData } = useItemPicker();
 
   const containers = containersData?.items ?? [];
   const orders = ordersQuery.data?.items ?? [];
-  const routes = routesData?.items ?? [];
+  const pickupRoutes = pickupRoutesQuery.data?.items ?? [];
   const catalogItems = itemsData?.items ?? [];
 
   const containerLabel = useMemo(() => {
@@ -50,16 +55,43 @@ function usePreviewLabels(values: InvoiceFormValues) {
   }, [containers, values.containerId]);
 
   const pickupLabel = useMemo(() => {
-    if (!values.pickupId) return "No pickup";
-    const order = orders.find((entry) => String(entry.id) === values.pickupId);
+    if (!values.pickupId) return t("invoices.form.placeholders.noPickupReference");
+    const order =
+      orders.find((entry) => String(entry.id) === values.pickupId) ??
+      (selectedPickupQuery.data && String(selectedPickupQuery.data.id) === values.pickupId
+        ? selectedPickupQuery.data
+        : null);
     return order ? `#${order.id}${order.sender?.name ? ` · ${order.sender.name}` : ""}` : values.pickupId;
-  }, [orders, values.pickupId]);
+  }, [orders, selectedPickupQuery.data, t, values.pickupId]);
 
-  const routeLabel = useMemo(() => {
-    if (!values.routeId) return "No route";
-    const route = routes.find((entry) => entry.id === values.routeId);
-    return route?.name ?? values.routeId;
-  }, [routes, values.routeId]);
+  const pickupFieldLabel = t("invoices.form.fields.pickupReference");
+
+  const pickupAssignmentLabel = useMemo(() => {
+    if (isInvoiceEmployeePickupSource(values.pickupSource)) {
+      const employee = values.pickupEmployeeName.trim() || values.pickupEmployeeId;
+      if (!employee) return t("invoices.form.preview.noEmployeeAssignment");
+      const branch = values.officeBranchName.trim();
+      return branch ? `${employee} · ${branch}` : employee;
+    }
+
+    if (!values.routeId) return t("invoices.form.placeholders.noPickupRoute");
+    const route = pickupRoutes.find((entry) => entry.id === values.routeId);
+    return route ? formatActiveRouteAssignmentLabel(route, t) : values.routeId;
+  }, [
+    pickupRoutes,
+    t,
+    values.officeBranchName,
+    values.pickupEmployeeId,
+    values.pickupEmployeeName,
+    values.pickupSource,
+    values.routeId,
+  ]);
+
+  const pickupAssignmentFieldLabel = useMemo(() => {
+    if (values.pickupSource === "warehouse") return t("invoices.form.fields.warehouseEmployee");
+    if (values.pickupSource === "office") return t("invoices.form.fields.officeEmployee");
+    return t("invoices.form.fields.pickupRoute");
+  }, [t, values.pickupSource]);
 
   const subtotal = useMemo(
     () => values.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0),
@@ -77,7 +109,9 @@ function usePreviewLabels(values: InvoiceFormValues) {
     catalogItems,
     containerLabel,
     pickupLabel,
-    routeLabel,
+    pickupFieldLabel,
+    pickupAssignmentLabel,
+    pickupAssignmentFieldLabel,
     subtotal,
     discount,
     amountPaid,
@@ -107,7 +141,9 @@ function InvoiceWizardCheckoutReview({
     catalogItems,
     containerLabel,
     pickupLabel,
-    routeLabel,
+    pickupFieldLabel,
+    pickupAssignmentLabel,
+    pickupAssignmentFieldLabel,
     subtotal,
     discount,
     lineItemRows,
@@ -140,8 +176,8 @@ function InvoiceWizardCheckoutReview({
             value={
               <>
                 <p>Container: {containerLabel}</p>
-                <p>Pickup: {pickupLabel}</p>
-                <p>Route: {routeLabel}</p>
+                <p>{pickupFieldLabel}: {pickupLabel}</p>
+                <p>{pickupAssignmentFieldLabel}: {pickupAssignmentLabel}</p>
                 <p>Pending: {getPaymentLocationLabel(values.paymentLocation)}</p>
               </>
             }
@@ -283,7 +319,7 @@ export function InvoiceFormPreviewStep({
   errorMessage = null,
 }: Props) {
   const isWizard = appearance === "wizard";
-  const { subtotal, discount, amountPaid, balance, lineItemRows, catalogItems, containerLabel, pickupLabel, routeLabel } =
+  const { subtotal, discount, amountPaid, balance, lineItemRows, catalogItems, containerLabel, pickupLabel, pickupFieldLabel, pickupAssignmentLabel, pickupAssignmentFieldLabel } =
     usePreviewLabels(values);
 
   if (isWizard) {
@@ -313,10 +349,10 @@ export function InvoiceFormPreviewStep({
         <div className="grid gap-3 sm:grid-cols-2">
           <PreviewField label="Date" value={values.date} />
           <PreviewField label="Invoice number" value={values.invoiceNumber} />
-          <PreviewField label="Pickup" value={pickupLabel} />
+          <PreviewField label={pickupFieldLabel} value={pickupLabel} />
           <PreviewField label="Container" value={containerLabel} />
           <PreviewField label="Pending" value={getPaymentLocationLabel(values.paymentLocation)} />
-          <PreviewField label="Route" value={routeLabel} />
+          <PreviewField label={pickupAssignmentFieldLabel} value={pickupAssignmentLabel} />
         </div>
       </FormSection>
 

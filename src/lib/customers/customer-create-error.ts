@@ -33,13 +33,13 @@ function readCustomerDuplicateConflict(error: unknown): CustomerDuplicateConflic
   return { matchedBy, existingCustomerId };
 }
 
-/** User-facing message for customer create/update failures (409 duplicate on create). */
+/** User-facing message for customer create/update failures (409 duplicate on create or edit). */
 export function formatCustomerMutationError(
   error: unknown,
   t: TranslateFn,
   options?: FormatUserErrorOptions & { mode?: "create" | "edit" },
 ): string {
-  if (options?.mode === "create" && isDuplicateCustomerError(error)) {
+  if (isDuplicateCustomerError(error)) {
     const conflict = readCustomerDuplicateConflict(error);
     if (conflict) {
       const matchedFields = conflict.matchedBy

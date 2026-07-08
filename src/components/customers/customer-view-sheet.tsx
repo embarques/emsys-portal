@@ -1,6 +1,6 @@
 "use client";
 
-import { Info, Phone as PhoneIcon, User, Wallet } from "lucide-react";
+import { Info, Loader2, Phone as PhoneIcon, User, Wallet } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,7 +21,8 @@ import {
 } from "@/lib/phones/phones";
 import { formatAccountBalance, getClientTypeBadgeClass } from "@/lib/customers/display";
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
-import { getCustomerClientType, coreAddressHasContent } from "@/lib/customers/types";
+import { useCustomer } from "@/lib/customers/hooks/use-customers";
+import { getCustomerClientType } from "@/lib/customers/types";
 import {
   getAllAddresses,
   resolveCustomerAddressCount,
@@ -49,20 +50,21 @@ export function CustomerViewSheet({
   canDelete = true,
 }: CustomerViewSheetProps) {
   const { t } = useTranslation();
+  const detailQuery = useCustomer(customer?.id ?? null, open && Boolean(customer));
+  const resolvedCustomer = detailQuery.data ?? customer;
+  const dash = t("common.empty.dash");
 
-  if (!customer) return null;
+  if (!customer || !resolvedCustomer) return null;
 
-  const clientType = getCustomerClientType(customer);
-  const typeLabel = isCustomerReceiverType(customer.customerType)
+  const clientType = getCustomerClientType(resolvedCustomer);
+  const typeLabel = isCustomerReceiverType(resolvedCustomer.customerType)
     ? t("customers.types.receiver")
     : t("customers.types.sender");
-  const addresses = customer.addresses.filter(coreAddressHasContent);
   const hasAddresses =
-    addresses.length > 0 ||
-    getAllAddresses(customer).length > 0 ||
-    resolveCustomerAddressCount(customer) > 0;
-  const phones = getOrderedRecordPhones(customer.phones);
-  const dash = t("common.empty.dash");
+    getAllAddresses(resolvedCustomer).length > 0 ||
+    resolveCustomerAddressCount(resolvedCustomer) > 0;
+  const phones = getOrderedRecordPhones(resolvedCustomer.phones);
+  const isLoadingPhones = detailQuery.isFetching && phones.length === 0;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -70,7 +72,7 @@ export function CustomerViewSheet({
         <RecordViewSheetHeader
           title={
             <span className="flex flex-wrap items-center gap-2">
-              <span>{customer.name}</span>
+              <span>{resolvedCustomer.name}</span>
               {clientType ? (
                 <Badge className={getClientTypeBadgeClass(clientType)}>{typeLabel}</Badge>
               ) : null}
@@ -80,21 +82,32 @@ export function CustomerViewSheet({
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("customers.view.general")} icon={User}>
-            <RecordViewSheetDetailRow label={t("customers.view.email")} value={customer.email || dash} />
+            <RecordViewSheetDetailRow
+              label={t("customers.view.email")}
+              value={resolvedCustomer.email || dash}
+            />
             <RecordViewSheetDetailRow
               label={t("customers.view.idNumber")}
-              value={customer.IDNumber || dash}
+              value={resolvedCustomer.IDNumber || dash}
             />
-            <RecordViewSheetDetailRow label={t("customers.view.notes")} value={customer.notes || dash} />
+            <RecordViewSheetDetailRow
+              label={t("customers.view.notes")}
+              value={resolvedCustomer.notes || dash}
+            />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("customers.view.phones")} icon={PhoneIcon}>
-            {phones.length === 0 ? (
+            {isLoadingPhones ? (
+              <div className="flex items-center gap-2 px-4 py-6 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                {t("common.loading")}
+              </div>
+            ) : phones.length === 0 ? (
               <RecordViewSheetDetailRow label={t("customers.view.phones")} value={dash} />
             ) : (
               phones.map((phone, index) => (
                 <PhoneActionRow
-                  key={`phone-${index}`}
+                  key={`${phone.number}-${phone.type}-${index}`}
                   label={
                     phone.isPrimary
                       ? t("customers.view.primaryPhone", {
@@ -109,40 +122,45 @@ export function CustomerViewSheet({
             )}
           </RecordViewSheetSection>
 
-          {hasAddresses ? <FlippableCustomerAddresses customer={customer} /> : null}
+          {hasAddresses || detailQuery.isFetching ? (
+            <FlippableCustomerAddresses
+              customer={resolvedCustomer}
+              isLoading={detailQuery.isFetching}
+            />
+          ) : null}
 
           <RecordViewSheetSection title={t("customers.view.account")} icon={Wallet}>
             <RecordViewSheetDetailRow
               label={t("customers.view.accountBalance")}
-              value={formatAccountBalance(customer.accountBalance)}
+              value={formatAccountBalance(resolvedCustomer.accountBalance)}
             />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("customers.view.system")} icon={Info}>
-            <RecordViewSheetDetailRow label={t("customers.view.customerId")} value={customer.id} />
+            <RecordViewSheetDetailRow label={t("customers.view.customerId")} value={resolvedCustomer.id} />
             <RecordViewSheetDetailRow
               label={t("customers.view.branchName")}
-              value={customer.branch.name || dash}
+              value={resolvedCustomer.branch.name || dash}
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.branchCode")}
-              value={customer.branch.code || dash}
+              value={resolvedCustomer.branch.code || dash}
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.branchId")}
-              value={String(customer.branch.id)}
+              value={String(resolvedCustomer.branch.id)}
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.createdBy")}
-              value={customer.createdByID != null ? String(customer.createdByID) : dash}
+              value={resolvedCustomer.createdByID != null ? String(resolvedCustomer.createdByID) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.createdAt")}
-              value={customer.createdAt ? formatAuditDate(customer.createdAt) : dash}
+              value={resolvedCustomer.createdAt ? formatAuditDate(resolvedCustomer.createdAt) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.updatedAt")}
-              value={customer.updatedAt ? formatAuditDate(customer.updatedAt) : dash}
+              value={resolvedCustomer.updatedAt ? formatAuditDate(resolvedCustomer.updatedAt) : dash}
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>

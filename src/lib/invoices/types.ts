@@ -16,6 +16,31 @@ import {
 
 export type InvoicePaymentLocation = "usa" | "dr";
 
+/** Where the pickup was handled: on a route, or by an employee at a warehouse or office. */
+export type InvoicePickupSource = "route" | "warehouse" | "office";
+
+export const INVOICE_PICKUP_SOURCES = [
+  { value: "route" as const, labelKey: "invoices.form.fields.pickupSourceRoute" },
+  { value: "warehouse" as const, labelKey: "invoices.form.fields.pickupSourceWarehouse" },
+  { value: "office" as const, labelKey: "invoices.form.fields.pickupSourceOffice" },
+] as const;
+
+/** Warehouse and office pickups are attributed to an employee instead of a route. */
+export function isInvoiceEmployeePickupSource(source: InvoicePickupSource): boolean {
+  return source === "warehouse" || source === "office";
+}
+
+/** @deprecated Use InvoicePickupSource */
+export type InvoiceRouteSource = InvoicePickupSource;
+
+/** @deprecated Use INVOICE_PICKUP_SOURCES */
+export const INVOICE_ROUTE_SOURCES = INVOICE_PICKUP_SOURCES;
+
+/** @deprecated Use isInvoiceEmployeePickupSource */
+export function isInvoiceDropoffSource(source: InvoicePickupSource): boolean {
+  return isInvoiceEmployeePickupSource(source);
+}
+
 export type InvoiceLineItemBarcode = {
   id: string;
   /** Canonical `/barcodes` id when the API exposes it separately from the embedded record id. */
@@ -106,9 +131,16 @@ export type Invoice = {
   containerId: string;
   containerName?: string;
   paymentLocation: InvoicePaymentLocation;
-  /** Linked route id from the routes table. */
+  /** Linked scheduled pickup route id (`vehicle-routes` with `routeType: pickup`). */
   routeId?: string;
   routeName?: string;
+  /** Warehouse/office branch when the pickup was created in-house instead of on a route. */
+  officeBranchId?: string;
+  officeBranchName?: string;
+  /** Employee who created the pickup when `officeBranchId` is set. */
+  pickupEmployeeId?: string;
+  pickupEmployeeName?: string;
+  pickupSource?: InvoicePickupSource;
   paidRegion?: string;
   paidStatus?: string;
   cost?: number;
@@ -154,7 +186,12 @@ export type InvoiceFormValues = {
   pickupId: string;
   containerId: string;
   paymentLocation: InvoicePaymentLocation;
+  pickupSource: InvoicePickupSource;
   routeId: string;
+  officeBranchId: string;
+  officeBranchName: string;
+  pickupEmployeeId: string;
+  pickupEmployeeName: string;
   senderId: string;
   sender: Customer | null;
   receiverId: string;
@@ -395,7 +432,12 @@ export function createEmptyInvoiceForm(createdBy = DEFAULT_CREATED_BY): InvoiceF
     pickupId: "",
     containerId: "",
     paymentLocation: "usa",
+    pickupSource: "route",
     routeId: "",
+    officeBranchId: "",
+    officeBranchName: "",
+    pickupEmployeeId: "",
+    pickupEmployeeName: "",
     senderId: "",
     sender: null,
     receiverId: "",
@@ -424,7 +466,12 @@ export function resetInvoiceFormForNextEntry(
     date: previous.date,
     containerId: previous.containerId,
     paymentLocation: previous.paymentLocation,
+    pickupSource: previous.pickupSource,
     routeId: previous.routeId,
+    officeBranchId: previous.officeBranchId,
+    officeBranchName: previous.officeBranchName,
+    pickupEmployeeId: previous.pickupEmployeeId,
+    pickupEmployeeName: previous.pickupEmployeeName,
     invoiceNumber: nextInvoiceNumber,
   };
 }
@@ -577,6 +624,21 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
   };
 }
 
+function normalizeInvoicePickupSource(
+  source: InvoicePickupSource | string | undefined,
+  officeBranchId?: string,
+): InvoicePickupSource {
+  if (source === "route" || source === "warehouse" || source === "office") {
+    return source;
+  }
+
+  if (source === "route-pickup" || source === "pickup-route") return "route";
+  if (source === "warehouse-dropoff") return "warehouse";
+  if (source === "office-dropoff" || source === "office") return "office";
+
+  return officeBranchId ? "office" : "route";
+}
+
 export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
   const sender = orderPartyToInvoiceFormCustomer(invoice.sender);
   const receiver = invoice.receiver ? orderPartyToInvoiceFormCustomer(invoice.receiver) : null;
@@ -588,7 +650,12 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     pickupId: invoice.pickupId ?? "",
     containerId: invoice.containerId,
     paymentLocation: invoice.paymentLocation,
+    pickupSource: normalizeInvoicePickupSource(invoice.pickupSource, invoice.officeBranchId),
     routeId: invoice.routeId ?? "",
+    officeBranchId: invoice.officeBranchId ?? "",
+    officeBranchName: invoice.officeBranchName ?? "",
+    pickupEmployeeId: invoice.pickupEmployeeId ?? "",
+    pickupEmployeeName: invoice.pickupEmployeeName ?? "",
     senderId: invoice.sender.clientId ?? sender?.id ?? "",
     sender,
     receiverId: invoice.receiver?.clientId ?? receiver?.id ?? "",
@@ -666,7 +733,12 @@ export function formValuesToInvoice(
     pickupId: values.pickupId.trim() || undefined,
     containerId: values.containerId,
     paymentLocation: values.paymentLocation,
-    routeId: values.routeId.trim() || undefined,
+    pickupSource: values.pickupSource,
+    routeId: values.pickupSource === "route" ? values.routeId.trim() || undefined : undefined,
+    officeBranchId: isInvoiceEmployeePickupSource(values.pickupSource) ? values.officeBranchId.trim() || undefined : undefined,
+    officeBranchName: isInvoiceEmployeePickupSource(values.pickupSource) ? values.officeBranchName.trim() || undefined : undefined,
+    pickupEmployeeId: isInvoiceEmployeePickupSource(values.pickupSource) ? values.pickupEmployeeId.trim() || undefined : undefined,
+    pickupEmployeeName: isInvoiceEmployeePickupSource(values.pickupSource) ? values.pickupEmployeeName.trim() || undefined : undefined,
     sender,
     receiver,
     lineItems,

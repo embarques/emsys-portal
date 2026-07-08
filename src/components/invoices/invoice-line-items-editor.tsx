@@ -63,7 +63,16 @@ type SortableLineItemRowProps = {
   deriveTotalString: (item: InvoiceLineItemFormValues) => string;
   autoFocusDescription?: boolean;
   onDescriptionFocused?: () => void;
+  onCommitFromTotal: () => void;
 };
+
+/** Move keyboard focus to a sibling field within the same line item row. */
+function focusFieldById(fieldId: string) {
+  const element = document.getElementById(fieldId) as HTMLInputElement | null;
+  if (!element) return;
+  element.focus();
+  element.select?.();
+}
 
 /** Default total tracks unit price × quantity until the user overrides it. */
 function deriveTotalString(item: InvoiceLineItemFormValues): string {
@@ -91,6 +100,7 @@ function SortableLineItemRow({
   deriveTotalString: getTotalString,
   autoFocusDescription = false,
   onDescriptionFocused,
+  onCommitFromTotal,
 }: SortableLineItemRowProps) {
   const {
     attributes,
@@ -109,6 +119,14 @@ function SortableLineItemRow({
 
   const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
   const totalValue = item.totalManual ? item.lineTotal : getTotalString(item);
+
+  /** Advance to the next field on Enter instead of submitting the wizard form. */
+  const advanceOnEnter =
+    (nextFieldId: string) => (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      focusFieldById(nextFieldId);
+    };
 
   return (
     <div
@@ -205,6 +223,7 @@ function SortableLineItemRow({
             required
             autoFocus={autoFocusDescription}
             onAutoFocusComplete={onDescriptionFocused}
+            onEnterCommit={() => focusFieldById(`${item.id}-quantity`)}
             {...(inputClass ? inputClass(item.itemName) : {})}
           />
         </div>
@@ -220,6 +239,7 @@ function SortableLineItemRow({
             step="1"
             value={item.quantity}
             onChange={(event) => onChangeQuantity(index, event.target.value)}
+            onKeyDown={advanceOnEnter(`${item.id}-labels`)}
             {...(inputClass ? inputClass(item.quantity) : {})}
             required
           />
@@ -238,6 +258,7 @@ function SortableLineItemRow({
             onChange={(event) =>
               onUpdate(index, { labelCount: event.target.value, labelsManual: true })
             }
+            onKeyDown={advanceOnEnter(`${item.id}-unitPrice`)}
             {...(inputClass ? inputClass(labelsValue) : {})}
           />
         </div>
@@ -253,6 +274,7 @@ function SortableLineItemRow({
             step="0.01"
             value={item.unitPrice}
             onChange={(event) => onChangeUnitPrice(index, event.target.value)}
+            onKeyDown={advanceOnEnter(`${item.id}-total`)}
             {...(inputClass ? inputClass(item.unitPrice) : {})}
             required
           />
@@ -271,6 +293,11 @@ function SortableLineItemRow({
             onChange={(event) =>
               onUpdate(index, { lineTotal: event.target.value, totalManual: true })
             }
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              event.preventDefault();
+              onCommitFromTotal();
+            }}
             {...(inputClass ? inputClass(totalValue) : {})}
           />
         </div>
@@ -407,6 +434,7 @@ export function InvoiceLineItemsEditor({
                 deriveTotalString={deriveTotalString}
                 autoFocusDescription={focusItemId === item.id}
                 onDescriptionFocused={clearFocusItemId}
+                onCommitFromTotal={addLineItem}
               />
             ))}
           </div>

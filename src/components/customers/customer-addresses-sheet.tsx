@@ -1,25 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Loader2, MapPin, Plus } from "lucide-react";
 
+import { AddressActionRow } from "@/components/addresses/address-action-row";
+import {
+  RecordViewSheet,
+  RecordViewSheetBody,
+  RecordViewSheetContent,
+  RecordViewSheetHeader,
+  RecordViewSheetSection,
+} from "@/components/app-shell/record-view-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { formatCoreAddressLines } from "@/lib/customers/display";
 import { useCustomer } from "@/lib/customers/hooks/use-customers";
 import type { Customer } from "@/lib/customers/types";
 import {
-  formatAddress,
   formatAddressLine,
-  ADDRESS_TEXT_WRAP_CLASSNAME,
   getAddressLabelKey,
+  ADDRESS_TEXT_WRAP_CLASSNAME,
   getPrimaryAddress,
   orderAddressesForDisplay,
   resolveCustomerAddressCount,
@@ -56,76 +55,53 @@ export function CustomerAddressesSheet({
       : t("customers.addresses.countBadge", { count: addressCount });
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col sm:max-w-md">
-        <SheetHeader className="border-b border-border pb-4">
-          <SheetTitle className="flex flex-wrap items-center gap-2">
-            <span>{resolvedCustomer?.name ?? customer.name}</span>
-            {addressCount > 0 ? (
-              <Badge variant="secondary" className="text-xs font-normal">
-                {countLabel}
-              </Badge>
-            ) : null}
-          </SheetTitle>
-          <SheetDescription>{phone || t("customers.addresses.sheetTitle")}</SheetDescription>
-        </SheetHeader>
+    <RecordViewSheet open={open} onOpenChange={onOpenChange}>
+      <RecordViewSheetContent>
+        <RecordViewSheetHeader
+          title={
+            <span className="flex flex-wrap items-center gap-2">
+              <span>{resolvedCustomer?.name ?? customer.name}</span>
+              {addressCount > 0 ? (
+                <Badge variant="secondary" className="text-xs font-normal">
+                  {countLabel}
+                </Badge>
+              ) : null}
+            </span>
+          }
+          description={phone || t("customers.addresses.sheetTitle")}
+        />
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto py-4">
-          {detailQuery.isFetching && addresses.length <= 1 ? (
-            <p className="text-sm text-muted-foreground">{t("customers.addresses.loading")}</p>
-          ) : null}
-
-          {!detailQuery.isFetching && addresses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">—</p>
-          ) : null}
-
-          {addresses.map((address, index) => {
-            const lines = formatCoreAddressLines(address);
-            const labelKey = getAddressLabelKey(address, index);
-
-            return (
-              <div
-                key={address.id ?? `${labelKey}-${index}`}
-                className="rounded-lg border border-border bg-card p-4 shadow-sm"
-              >
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary">{t(labelKey)}</Badge>
-                  {address.isPrimary ? (
-                    <Badge className="border-transparent bg-primary/15 text-primary">
-                      {t("customers.addresses.labels.primary")}
-                    </Badge>
-                  ) : null}
-                </div>
-
-                <div className="space-y-1 text-sm">
-                  {lines.map((line) => (
-                    <p key={line} className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "text-foreground")}>
-                      {line}
-                    </p>
-                  ))}
-                  {!lines.length ? (
-                    <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "text-muted-foreground")}>
-                      {formatAddress(address, "full")}
-                    </p>
-                  ) : null}
-                </div>
-
-                {address.phone?.trim() ? (
-                  <p className="mt-3 text-sm text-muted-foreground">{address.phone.trim()}</p>
-                ) : null}
+        <RecordViewSheetBody>
+          <RecordViewSheetSection title={t("customers.view.addresses")} icon={MapPin}>
+            {detailQuery.isFetching && addresses.length <= 1 ? (
+              <div className="flex items-center gap-2 px-4 py-6 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                {t("customers.addresses.loadingAddresses")}
               </div>
-            );
-          })}
-        </div>
+            ) : null}
 
-        <div className="border-t border-border pt-4">
+            {!detailQuery.isFetching && addresses.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted-foreground">{t("common.empty.dash")}</p>
+            ) : null}
+
+            {addresses.map((address, index) => (
+              <AddressActionRow
+                key={address.id ?? `${getAddressLabelKey(address, index)}-${index}`}
+                label={t(getAddressLabelKey(address, index))}
+                address={address}
+              />
+            ))}
+          </RecordViewSheetSection>
+        </RecordViewSheetBody>
+
+        <div className="shrink-0 border-t border-border bg-card px-6 py-4">
           <Button type="button" variant="outline" className="w-full" disabled>
             <Plus className="size-4" />
             {t("customers.addresses.addAddressTodo")}
           </Button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </RecordViewSheetContent>
+    </RecordViewSheet>
   );
 }
 
