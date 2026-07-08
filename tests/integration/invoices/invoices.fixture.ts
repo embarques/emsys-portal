@@ -100,7 +100,7 @@ export async function openAddInvoiceWizard(page: Page, main: Locator) {
   const wizard = page.getByTestId("invoice-form-wizard");
   await expect(wizard).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("button", { name: "Add invoice" }).first()).toBeVisible();
-  await expect(wizard.getByText("Step 1 of 4")).toBeVisible();
+  await expect(wizard.getByText("Step 1 of 5")).toBeVisible();
 
   return wizard;
 }
@@ -127,7 +127,7 @@ export async function fillInvoiceWizardStep1(
   const nextButton = wizard.getByRole("button", { name: "Next" });
   await nextButton.scrollIntoViewIfNeeded();
   await nextButton.click();
-  await expect(wizard.getByText("Step 2 of 4")).toBeVisible({ timeout: 10_000 });
+  await expect(wizard.getByText("Step 2 of 5")).toBeVisible({ timeout: 10_000 });
 
   return invoiceNumber;
 }
@@ -144,7 +144,7 @@ export async function fillInvoiceWizardStep2(page: Page, wizard: Locator) {
       continue;
     }
 
-    await expect(wizard.getByText("Step 3 of 4")).toBeVisible({ timeout: 10_000 });
+    await expect(wizard.getByText("Step 3 of 5")).toBeVisible({ timeout: 10_000 });
     return;
   }
 
@@ -171,7 +171,47 @@ export async function fillInvoiceWizardStep3(
   await unitPriceInput.fill(unitPrice);
 
   await wizard.getByRole("button", { name: "Next" }).click();
-  await expect(wizard.getByText("Step 4 of 4")).toBeVisible({ timeout: 10_000 });
+  await expect(wizard.getByText("Step 4 of 5")).toBeVisible({ timeout: 10_000 });
+}
+
+export async function confirmInvoiceDailyIncomeRegistration(page: Page, wizard: Locator) {
+  const foundBanner = wizard.getByText("Daily income entry found");
+
+  if (!(await foundBanner.isVisible().catch(() => false))) {
+    const registerButton = wizard.getByRole("button", { name: "Open full Daily Income page" });
+    await expect(registerButton).toBeVisible({ timeout: 15_000 });
+    await registerButton.click();
+
+    const dialog = page.getByRole("dialog", { name: "Register daily income" });
+    await expect(dialog).toBeVisible();
+    const paymentAmount = dialog.locator("#daily-income-payment-amount");
+    if (!(await paymentAmount.isEnabled())) {
+      const flipButton = dialog.getByTestId("invoice-daily-income-flip-create");
+      await expect(flipButton).toBeEnabled();
+      await flipButton.click();
+      const statementResponse = waitForApiResponse(page, "/income-statements", "POST", {
+        requireOk: false,
+      });
+      await dialog.getByTestId("invoice-daily-income-create").click();
+      const createdStatement = await statementResponse;
+      expect(
+        createdStatement.ok(),
+        `Daily Income creation failed with HTTP ${createdStatement.status()}`,
+      ).toBe(true);
+      await expect(paymentAmount).toBeEnabled({ timeout: 15_000 });
+    }
+    await paymentAmount.fill("0");
+    const createResponse = waitForApiResponse(page, "/journals", "POST", { requireOk: false });
+    await dialog.getByRole("button", { name: "Register & continue" }).click();
+    const response = await createResponse;
+    expect(response.ok(), `Daily Income registration failed with HTTP ${response.status()}`).toBe(true);
+  }
+
+  await expect(foundBanner).toBeVisible({ timeout: 15_000 });
+  const nextButton = wizard.getByRole("button", { name: "Next" });
+  await expect(nextButton).toBeEnabled();
+  await nextButton.click();
+  await expect(wizard.getByText("Step 5 of 5")).toBeVisible({ timeout: 10_000 });
 }
 
 export async function saveInvoiceWizard(page: Page, wizard: Locator) {
@@ -196,7 +236,7 @@ export async function expectInvoiceCreateSuccessToast(page: Page, invoiceNumber:
 }
 
 export async function expectInvoiceWizardReadyForNextEntry(wizard: Locator) {
-  await expect(wizard.getByText("Step 1 of 4")).toBeVisible({ timeout: 10_000 });
+  await expect(wizard.getByText("Step 1 of 5")).toBeVisible({ timeout: 10_000 });
   await expect(wizard.locator("#invoiceNumber")).not.toHaveValue("");
 }
 
@@ -208,6 +248,7 @@ export async function completeInvoiceCreateWizard(
   const invoiceNumber = await fillInvoiceWizardStep1(page, wizard, options);
   await fillInvoiceWizardStep2(page, wizard);
   await fillInvoiceWizardStep3(wizard, options);
+  await confirmInvoiceDailyIncomeRegistration(page, wizard);
 
   const response = await saveInvoiceWizard(page, wizard);
 

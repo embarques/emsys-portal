@@ -45,6 +45,7 @@ type InvoiceWizardShellProps = {
   submitLabel: string;
   allowPrint?: boolean;
   resetAfterSave?: boolean;
+  requireDailyIncomeRegistration?: boolean;
   isSubmitting?: boolean;
   onSubmit: (values: InvoiceFormValues) => Promise<InvoiceFormSubmitResult>;
   onSaved?: () => void;
@@ -60,6 +61,7 @@ function InvoiceWizardShell({
   submitLabel,
   allowPrint = false,
   resetAfterSave = true,
+  requireDailyIncomeRegistration = false,
   isSubmitting = false,
   onSubmit,
   onSaved,
@@ -85,11 +87,12 @@ function InvoiceWizardShell({
       <div className="mx-auto w-full max-w-6xl">
         <div className="flex max-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           <InvoiceFormWizard
-            key={`${initialValues.invoiceId || "new"}-${initialValues.invoiceNumber}`}
+            key={initialValues.invoiceId || "new"}
             initialValues={initialValues}
             submitLabel={submitLabel}
             allowPrint={allowPrint}
             resetAfterSave={resetAfterSave}
+            requireDailyIncomeRegistration={requireDailyIncomeRegistration}
             isSubmitting={isSubmitting}
             onSubmit={onSubmit}
             onSaved={onSaved}
@@ -143,6 +146,7 @@ export function InvoiceCreateWizard({
 }: InvoiceCreateWizardProps) {
   const { notifyAdded } = useFeedback();
   const createMutation = useCreateInvoice();
+  const initialValues = useMemo(() => createEmptyInvoiceForm(), []);
 
   async function handleSubmit(values: InvoiceFormValues): Promise<InvoiceFormSubmitResult> {
     try {
@@ -163,10 +167,11 @@ export function InvoiceCreateWizard({
   return (
     <InvoiceWizardShell
       title="Add invoice"
-      description="Create a new invoice in four steps: enter invoice details, select the sender and receiver, add line items, then review totals and save. Use Next to move forward, Back to revise a step, and the summary panel to apply an optional discount before saving."
+      description="Create a new invoice in five steps: enter invoice details, select the sender and receiver, add line items, confirm its Daily Income registration, then review totals and save."
       onCancel={onCancel}
-      initialValues={createEmptyInvoiceForm()}
+      initialValues={initialValues}
       submitLabel={submitLabel}
+      requireDailyIncomeRegistration
       isSubmitting={createMutation.isPending}
       onSubmit={handleSubmit}
     />

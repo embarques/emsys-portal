@@ -66,6 +66,7 @@ export function DailyIncomeWorkspace() {
   const feedback = useFeedback();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const [branchCode, setBranchCode] = useState("");
+  const [requestedBranchId, setRequestedBranchId] = useState<number | null>(null);
   const [date, setDate] = useState(today());
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
@@ -78,7 +79,19 @@ export function DailyIncomeWorkspace() {
 
   const branchesQuery = useBranchPicker(200);
   const branches = branchesQuery.data?.items ?? [];
-  useEffect(() => { if (!branchCode && branches[0]?.code) setBranchCode(branches[0].code); }, [branchCode, branches]);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedDate = params.get("date")?.slice(0, 10);
+    const branchId = Number(params.get("branchId"));
+    if (requestedDate) setDate(requestedDate);
+    if (Number.isInteger(branchId) && branchId > 0) setRequestedBranchId(branchId);
+  }, []);
+  useEffect(() => {
+    if (branchCode) return;
+    const requestedBranch = branches.find((branch) => branch.id === requestedBranchId);
+    const nextBranchCode = requestedBranch?.code ?? branches[0]?.code;
+    if (nextBranchCode) setBranchCode(nextBranchCode);
+  }, [branchCode, branches, requestedBranchId]);
   const selectedBranch = branches.find((branch) => branch.code === branchCode);
   const statementQuery = useIncomeStatement(selectedBranch?.id ?? 0, date);
   const statement = statementQuery.data ?? null;

@@ -23,8 +23,8 @@ export const dailyIncomeJournalSchema = z.object({
     "LOAN",
   ]),
   amount: z
-    .number({ error: "Amount must be greater than zero." })
-    .positive("Amount must be greater than zero.")
+    .number({ error: "Amount is required." })
+    .nonnegative("Amount cannot be negative.")
     .optional(),
   refNumber: z.string().trim().max(20, "Reference number is too long."),
   description: z.string().trim().max(500, "Description is too long."),
@@ -44,6 +44,7 @@ export const dailyIncomeJournalSchema = z.object({
   invoiceId: z.string().optional(),
   invoiceNumber: z.string().optional(),
   invoiceCost: z.number().positive("Cost must be greater than zero.").optional(),
+  invoiceDiscount: z.number().nonnegative("Discount cannot be negative.").optional(),
   invoiceBalance: z.number().optional(),
   includeSender: z.boolean().optional(),
   includeReceiver: z.boolean().optional(),
@@ -57,6 +58,13 @@ export const dailyIncomeJournalSchema = z.object({
   zelleTransactionName: z.string().optional(),
 }).superRefine((values, context) => {
   if (values.amount == null) {
+    context.addIssue({
+      code: "custom",
+      path: ["amount"],
+      message: "Amount is required.",
+    });
+  }
+  if (values.transactionType !== "INITIAL-PAYMENT" && (values.amount ?? 0) <= 0) {
     context.addIssue({
       code: "custom",
       path: ["amount"],
@@ -106,10 +114,14 @@ export const dailyIncomeJournalSchema = z.object({
     if (!values.invoiceCost || values.invoiceCost <= 0) {
       context.addIssue({ code: "custom", path: ["invoiceCost"], message: "Cost must be greater than zero." });
     }
-    if (!values.paymentMethodId) {
+    if ((values.amount ?? 0) > 0 && !values.paymentMethodId) {
       context.addIssue({ code: "custom", path: ["paymentMethodId"], message: "Payment method is required." });
     }
-    if (values.invoiceCost != null && values.amount != null && values.amount > values.invoiceCost) {
+    if (
+      values.invoiceCost != null &&
+      values.amount != null &&
+      values.amount > Math.max(0, values.invoiceCost - (values.invoiceDiscount ?? 0))
+    ) {
       context.addIssue({
         code: "custom",
         path: ["amount"],

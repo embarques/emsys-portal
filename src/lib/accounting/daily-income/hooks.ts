@@ -11,6 +11,7 @@ import {
   fetchAccountingPaymentMethods,
   fetchDailyIncomeJournal,
   fetchDailyIncomeJournals,
+  fetchDailyIncomeInvoiceRegistration,
   fetchIncomeStatement,
   fetchIncomeStatementById,
   fetchIncomeStatementSummaryTotals,
@@ -88,6 +89,19 @@ export function useDailyIncomeJournals(params: DailyIncomeJournalListParams) {
     queryFn: () => fetchDailyIncomeJournals(params),
     enabled: queryEnabled,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useDailyIncomeInvoiceRegistration(
+  invoiceNumber: string,
+) {
+  const normalizedNumber = invoiceNumber.trim();
+  const queryEnabled = useAccountingQueryEnabled(Boolean(normalizedNumber));
+
+  return useWorkspaceQuery({
+    queryKey: queryKeys.accounting.invoiceRegistration(normalizedNumber),
+    queryFn: () => fetchDailyIncomeInvoiceRegistration(normalizedNumber),
+    enabled: queryEnabled,
   });
 }
 

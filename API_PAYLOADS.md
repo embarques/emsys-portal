@@ -573,6 +573,54 @@ Uses `PostEntryRequest`. **Required:** `transactionType`.
 
 **Transaction types:** `PAYMENT`, `SALES`, `EXPENSE`, `DISCOUNT`, `SURCHARGE`, `TRANSFER`, `LOAN`, `LOAN-PAYMENT`, `REFUND`, `VOID`, `COMMISSION`, `OTHER`, `INITIAL-PAYMENT`.
 
+### New invoice wizard Daily Income registration
+
+Before `POST /v1/invoices`, the portal searches for the invoice's initial registration:
+
+```http
+POST /v1/journals/search
+```
+
+```json
+{
+  "operator": "and",
+  "filters": [
+    { "field": "invoice.number", "operator": "eq", "value": "INV-1001" },
+    { "field": "transactionType", "operator": "eq", "value": "INITIAL-PAYMENT" }
+  ],
+  "pagination": { "page": 1, "limit": 1, "offset": 0 },
+  "sort": [{ "field": "createdAt", "direction": "desc" }]
+}
+```
+
+This lookup is global within the authenticated company. It is not restricted by Daily Income date or status; a historical registration, including one in a closed Daily Income, authorizes the invoice to continue.
+
+When missing, the wizard may create the registration only in today's open Daily Income for the current branch. A zero payment is valid and does not require `paymentMethod` or `paymentAccount`:
+
+```json
+{
+  "incomeStatementId": 123,
+  "incomeStatement": { "id": 123 },
+  "date": "2026-06-10",
+  "transactionType": "INITIAL-PAYMENT",
+  "amount": 0,
+  "refNumber": "",
+  "description": "Initial invoice registration",
+  "currency": "USD",
+  "rate": 1,
+  "employee": { "id": 5, "name": "Tasador" },
+  "invoice": {
+    "number": "INV-1001",
+    "cost": 120,
+    "discount": 0
+  },
+  "sender": { "id": "sender-id", "name": "Sender Co" },
+  "receivers": [{ "id": "receiver-id", "name": "Receiver Co" }]
+}
+```
+
+The API should enforce one `INITIAL-PAYMENT` registration per company, income statement, and invoice number. The invoice wizard uses the returned journal amount as the authoritative payment total.
+
 **Example — SALES:**
 
 ```json

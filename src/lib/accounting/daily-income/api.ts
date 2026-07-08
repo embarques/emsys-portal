@@ -421,6 +421,30 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
   };
 }
 
+/** Find the initial Daily Income registration that authorizes a new invoice. */
+export async function fetchDailyIncomeInvoiceRegistration(
+  invoiceNumber: string,
+): Promise<DailyIncomeJournal | null> {
+  const number = invoiceNumber.trim();
+  if (!number) return null;
+
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search`,
+    buildAdvancedSearchBody({
+      page: 1,
+      limit: 1,
+      sort: { field: "createdAt", direction: "desc" },
+      filters: [
+        { field: "invoice.number", operator: "eq", value: number },
+        { field: "transactionType", operator: "eq", value: "INITIAL-PAYMENT" },
+      ],
+    }),
+  );
+
+  const row = parseJournalSearchRows(payload)[0];
+  return row ? normalizeJournal(row) : null;
+}
+
 function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJournalValues) {
   if (!statement.id) {
     throw new Error("A daily closeout id is required to save a transaction.");
@@ -440,7 +464,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
       ? {
           number: values.invoiceNumber.trim(),
           cost: values.invoiceCost,
-          discount: 0,
+          discount: values.invoiceDiscount ?? 0,
         }
       : undefined;
 
@@ -525,4 +549,3 @@ export async function fetchAccountingPaymentMethods(): Promise<AccountingLookup[
     { id: 5, name: "CREDIT-CARD" },
   ];
 }
-

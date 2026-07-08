@@ -156,6 +156,7 @@ export type DailyIncomeJournalValues = {
   invoiceId?: string;
   invoiceNumber?: string;
   invoiceCost?: number;
+  invoiceDiscount?: number;
   invoiceBalance?: number;
   includeSender?: boolean;
   includeReceiver?: boolean;

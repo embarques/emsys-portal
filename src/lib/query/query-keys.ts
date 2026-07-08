@@ -120,6 +120,8 @@ export const queryKeys = {
     summaryTotals: (incomeStatementId: number) =>
       [...queryKeys.accounting.all, "income-statement-summary-total", incomeStatementId] as const,
     journals: (params: unknown) => [...queryKeys.accounting.all, "journals", params] as const,
+    invoiceRegistration: (invoiceNumber: string) =>
+      [...queryKeys.accounting.all, "invoice-registration", invoiceNumber] as const,
     journalById: (id: string) => [...queryKeys.accounting.all, "journal", id] as const,
     accounts: (params: unknown) => [...queryKeys.accounting.all, "accounts", params] as const,
     paymentMethods: () => [...queryKeys.accounting.all, "payment-methods"] as const,
