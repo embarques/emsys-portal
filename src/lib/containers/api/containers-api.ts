@@ -95,29 +95,91 @@ function readNumericId(value: number | string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function readContainerString(item: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const value = item[key];
+    if (value == null) continue;
+    const normalized = String(value).trim();
+    if (normalized) return normalized;
+  }
+
+  return "";
+}
+
+function readContainerNumber(item: Record<string, unknown>, ...keys: string[]): number {
+  for (const key of keys) {
+    const value = item[key];
+    if (value == null) continue;
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+
+  return 0;
+}
+
 function normalizeContainer(raw: unknown): Container | null {
   if (!raw || typeof raw !== "object") return null;
 
-  const item = raw as ApiContainer;
+  const item = raw as ApiContainer & Record<string, unknown>;
   const id = readNumericId(item.id);
   if (id == null || id <= 0) return null;
 
+  const containerNumber = readContainerString(
+    item,
+    "containerNumber",
+    "container_number",
+    "numeroContenedor",
+    "numero_contenedor",
+  );
+  const booking = readContainerString(item, "booking", "bookingNumber", "booking_number", "numeroBooking");
+  const sealValue = readContainerString(item, "sealNumber", "seal_number", "seal", "numeroSello", "numero_sello");
+  const broker = readContainerString(item, "broker", "customsBroker", "customs_broker", "agenteAduanal");
+  const company = readContainerString(
+    item,
+    "company",
+    "transportCompany",
+    "transport_company",
+    "carrier",
+    "shippingCompany",
+    "shipping_company",
+  );
+  const departureDate = readContainerString(
+    item,
+    "departureDate",
+    "departure_date",
+    "fechaSalida",
+    "fecha_salida",
+  );
+  const arrivalDate = readContainerString(item, "arrivalDate", "arrival_date", "fechaLlegada", "fecha_llegada");
+
   return {
     id,
-    name: String(item.name ?? "").trim(),
-    containerNumber: String(item.containerNumber ?? "").trim().toUpperCase(),
-    booking: String(item.booking ?? "").trim(),
-    sealNumber: String(item.sealNumber ?? item.seal ?? "").trim(),
-    seal: String(item.seal ?? item.sealNumber ?? "").trim(),
-    broker: String(item.broker ?? "").trim(),
-    company: String(item.company ?? "").trim(),
-    cost: Number(item.cost ?? 0),
-    departureDate: String(item.departureDate ?? "").trim(),
-    arrivalDate: String(item.arrivalDate ?? "").trim(),
-    barcodeSequence: Number(item.barcodeSequence ?? 0),
-    deliverySequence: Number(item.deliverySequence ?? 0),
-    createdAt: String(item.createdAt ?? "").trim(),
-    updatedAt: String(item.updatedAt ?? "").trim(),
+    name: readContainerString(item, "name", "containerName", "container_name") || String(item.name ?? "").trim(),
+    containerNumber: containerNumber.toUpperCase(),
+    booking,
+    sealNumber: sealValue,
+    seal: sealValue,
+    broker,
+    company,
+    cost: readContainerNumber(item, "cost", "containerCost", "container_cost"),
+    departureDate,
+    arrivalDate,
+    barcodeSequence: readContainerNumber(
+      item,
+      "barcodeSequence",
+      "barcode_sequence",
+      "barcodeSeq",
+      "barcode_seq",
+    ),
+    deliverySequence: readContainerNumber(
+      item,
+      "deliverySequence",
+      "delivery_sequence",
+      "deliverySeq",
+      "delivery_seq",
+    ),
+    createdAt: readContainerString(item, "createdAt", "created_at"),
+    updatedAt: readContainerString(item, "updatedAt", "updated_at"),
   };
 }
 
