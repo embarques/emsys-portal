@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
+import { buildTransactionAssigneeOptions } from "@/lib/accounting/daily-income/assignee";
 import {
   useAccountingPaymentMethods,
   useCreateDailyIncomeJournal,
@@ -34,6 +35,7 @@ import {
 } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
   invoiceDailyIncomeRegistrationSchema,
@@ -73,6 +75,7 @@ export function InvoiceDailyIncomeDialog({
   const [activeStatement, setActiveStatement] = useState(statement);
   const currentUserQuery = useCurrentUser();
   const branchesQuery = useBranchPicker(200, { enabled: open });
+  const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc", active: true });
   const paymentMethodsQuery = useAccountingPaymentMethods(open);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, open);
   const createJournal = useCreateDailyIncomeJournal();
@@ -87,6 +90,7 @@ export function InvoiceDailyIncomeDialog({
   const {
     formState: { errors },
     handleSubmit,
+    getValues,
     register,
     reset,
     setValue,
@@ -135,11 +139,17 @@ export function InvoiceDailyIncomeDialog({
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const paymentAccountId = watch("paymentAccountId");
+  const employeeId = watch("employeeId");
   const paymentRequired = amount > 0;
   const needsBankAccount = paymentRequired && requiresBankAccount(paymentMethodName);
   const isZelle = paymentRequired && isZellePaymentMethod(paymentMethodName);
   const paymentMethods = paymentMethodsQuery.data ?? [];
   const bankAccounts = bankAccountsQuery.data?.items ?? [];
+  const employees = useMemo(
+    () => (employeesQuery.data?.items ?? []).filter((employee) => employee.active),
+    [employeesQuery.data?.items],
+  );
+  const employeeOptions = useMemo(() => buildTransactionAssigneeOptions(employees), [employees]);
   const statementOpen = activeStatement?.status === "OPEN";
   const statementCurrency = statementForm.watch("currency");
   const statementBranchId = statementForm.watch("branchId");
@@ -155,6 +165,19 @@ export function InvoiceDailyIncomeDialog({
       statementForm.setValue("rate", 1, { shouldValidate: true });
     }
   }, [statementCurrency, statementForm]);
+
+  useEffect(() => {
+    const user = currentUserQuery.data;
+    if (!open || !user || employees.length === 0 || getValues("employeeId")) return;
+    const normalizedEmail = user.email.trim().toLowerCase();
+    const employee =
+      employees.find((item) => item.user?.id === user.id) ??
+      employees.find((item) => item.email.trim().toLowerCase() === normalizedEmail) ??
+      employees.find((item) => item.name.trim().toLowerCase() === user.name.trim().toLowerCase());
+    if (!employee) return;
+    setValue("employeeId", employee.id, { shouldValidate: true });
+    setValue("employeeName", employee.name, { shouldValidate: true });
+  }, [currentUserQuery.data, employees, getValues, open, setValue]);
 
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
@@ -188,8 +211,8 @@ export function InvoiceDailyIncomeDialog({
           amount: values.amount,
           refNumber: values.refNumber,
           description: values.description,
-          employeeId: currentUser.id,
-          employeeName: currentUser.name,
+          employeeId: values.employeeId,
+          employeeName: values.employeeName,
           invoiceNumber: invoice.invoiceNumber,
           invoiceCost: invoiceSubtotal,
           invoiceDiscount: Number(invoice.discount) || 0,
@@ -230,7 +253,7 @@ export function InvoiceDailyIncomeDialog({
         <form className="space-y-5" onSubmit={handleSubmit(submit)}>
           <div
             className="relative transition-[height] duration-300 [perspective:1200px]"
-            style={{ height: cardFlipped ? (statementCurrency === "DOP" ? 350 : 286) : 164 }}
+            style={{ height: cardFlipped ? 286 : 190 }}
           >
             <div
               className="absolute inset-0 transition-transform duration-500 [transform-style:preserve-3d]"
@@ -294,6 +317,27 @@ export function InvoiceDailyIncomeDialog({
                       <p className="mt-1 text-xs text-muted-foreground">Already created</p>
                     ) : null}
                   </div>
+                </div>
+                <div className="mt-3 space-y-1.5 sm:absolute sm:bottom-4 sm:right-4 sm:mt-0 sm:w-[46%]">
+                  <Label htmlFor="invoice-payment-employee">
+                    Employee <span className="text-destructive">*</span>
+                  </Label>
+                  <SearchableSelect
+                    id="invoice-payment-employee"
+                    value={employeeId ? String(employeeId) : ""}
+                    onValueChange={(next) => {
+                      const employee = employees.find((item) => item.id === Number(next));
+                      setValue("employeeId", employee?.id, { shouldValidate: true });
+                      setValue("employeeName", employee?.name ?? "", { shouldValidate: true });
+                    }}
+                    options={employeeOptions}
+                    loading={employeesQuery.isLoading}
+                    placeholder="Select employee"
+                    searchPlaceholder="Search employees…"
+                  />
+                  {errors.employeeId ? (
+                    <p className="text-xs text-destructive">{errors.employeeId.message}</p>
+                  ) : null}
                 </div>
               </section>
 
@@ -369,17 +413,6 @@ export function InvoiceDailyIncomeDialog({
                         ) : null}
                       </div>
                     ) : null}
-                    <div className={statementCurrency === "DOP" ? "space-y-1.5 sm:col-span-2" : "space-y-1.5"}>
-                      <Label htmlFor="invoice-statement-employee">Employee</Label>
-                      <Input
-                        id="invoice-statement-employee"
-                        value={currentUserQuery.data?.name ?? "Loading employee…"}
-                        disabled
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Recorded as the employee who receives the invoice payment.
-                      </p>
-                    </div>
                   </div>
                   {statementError ? <p className="text-xs text-destructive">{statementError}</p> : null}
                   <div className="flex justify-between gap-2 border-t border-blue-200 pt-3 dark:border-blue-900">

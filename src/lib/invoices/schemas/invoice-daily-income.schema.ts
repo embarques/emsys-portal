@@ -5,6 +5,8 @@ import { isZellePaymentMethod, requiresBankAccount } from "@/lib/accounting/dail
 export const invoiceDailyIncomeRegistrationSchema = z
   .object({
     amount: z.number().nonnegative("Payment amount cannot be negative."),
+    employeeId: z.number().optional(),
+    employeeName: z.string().optional(),
     paymentMethodId: z.number().optional(),
     paymentMethodName: z.string().optional(),
     paymentAccountId: z.number().optional(),
@@ -16,6 +18,14 @@ export const invoiceDailyIncomeRegistrationSchema = z
     zelleTransactionName: z.string().optional(),
   })
   .superRefine((values, context) => {
+    if (!values.employeeId) {
+      context.addIssue({
+        code: "custom",
+        path: ["employeeId"],
+        message: "Employee is required.",
+      });
+    }
+
     if (values.amount <= 0) return;
 
     if (!values.paymentMethodId) {
