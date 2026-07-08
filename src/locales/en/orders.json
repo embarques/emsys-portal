@@ -3,6 +3,11 @@
   "entityPlural": "orders",
   "title": "Orders",
   "noun": "orders",
+  "workspace": {
+    "actionsColumn": "Actions",
+    "viewOrder": "View pickup",
+    "viewOrderFor": "View {{name}}"
+  },
   "pickup": "Pickup",
   "pickupNamed": "Pickup {{id}}",
   "actions": {
@@ -51,7 +56,7 @@
     "senderAddress": "Address",
     "senderCity": "City",
     "senderZip": "Zip",
-    "senderPhone1": "Phone 1",
+    "senderPhone": "Phone",
     "comments": "Comments",
     "route": "Route",
     "updatedAt": "Updated",
@@ -70,7 +75,7 @@
     "receiverAddress": "Receiver address"
   },
   "search": {
-    "placeholder": "Search by sender/receiver name, phone, or address…"
+    "placeholder": "Search by sender/receiver name, phone, address, or comments…"
   },
   "loading": {
     "title": "Loading orders",

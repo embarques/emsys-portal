@@ -285,31 +285,58 @@ Current pickup fields commonly used in search filters:
 
 ```txt
 sender.name
-sender.phone1
-sender.phones.number
-sender.address.address1
-sender.address.address2
-sender.address.apartment
-sender.address.city
-sender.address.state
-sender.address.zipcode
-receiver.name
-receiver.phone1
-receiver.phones.number
-receiver.address.address1
-receiver.address.address2
-receiver.address.apartment
-receiver.address.city
-receiver.address.state
-receiver.address.zipcode
+sender.phone
+sender.address
+receivers.name
+receivers.phone
+receivers.address
 purpose
+comments
 sector.id
 branch.id
+branch.code
+branch.name
 employee.id
-user.name
+createdBy.name
 completed
 date
 createdAt
+```
+
+Global bar search uses whole-address aliases (`sender.address`, `receivers.address`) — not per-subfield paths like `sender.address.city`. Phone aliases (`sender.phone`, `receivers.phone`) expand server-side to `phones.number`, `phone1`, and `phone2`. When the search term contains letters, omit phone filters; for digit-only terms, send digits only to phone filters. Legacy `receiver.*` and `sender.address.*` subfield paths are rewritten to `receivers.*` / whole-address aliases via `resolvePickupSearchField`.
+
+Example bar search body for `"342 main"`:
+
+```json
+{
+  "sort": [{ "field": "date", "direction": "desc" }],
+  "operator": "or",
+  "filters": [
+    { "field": "sender.name", "operator": "contains", "value": "342 main" },
+    { "field": "sender.address", "operator": "contains", "value": "342 main" },
+    { "field": "receivers.name", "operator": "contains", "value": "342 main" },
+    { "field": "receivers.address", "operator": "contains", "value": "342 main" },
+    { "field": "comments", "operator": "contains", "value": "342 main" }
+  ]
+}
+```
+
+Example bar search body for digit-only `"347"`:
+
+```json
+{
+  "sort": [{ "field": "date", "direction": "desc" }],
+  "operator": "or",
+  "filters": [
+    { "field": "sender.name", "operator": "contains", "value": "347" },
+    { "field": "sender.phone", "operator": "contains", "value": "347" },
+    { "field": "sender.address", "operator": "contains", "value": "347" },
+    { "field": "receivers.name", "operator": "contains", "value": "347" },
+    { "field": "receivers.phone", "operator": "contains", "value": "347" },
+    { "field": "receivers.address", "operator": "contains", "value": "347" },
+    { "field": "comments", "operator": "contains", "value": "347" }
+  ]
+}
 ```
 
 ## CRUD Operations

@@ -7,13 +7,20 @@ import {
   resolveApiListSort,
 } from "@/lib/api/list-query";
 import {
-  buildResourceSearchFilterGroups,
+  buildApiFilterNodeFromTableRows,
   buildStripeStyleSearchBody,
   hasResourceListFilters,
+  isApiSearchFilter,
+  resolveSearchOperator,
+  type ApiSearchFilterGroup,
 } from "@/lib/api/search-query";
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
 import { expandOrderFilterNode } from "@/lib/orders/order-filters";
-import { ORDER_BAR_OR_SEARCH_FIELDS } from "@/lib/orders/search-fields";
+import {
+  createPickupBarSearchFilterGroup,
+  createPickupTextSearchFilter,
+  resolvePickupSearchField,
+} from "@/lib/orders/pickup-search";
 import { type TableFilterRowState } from "@/lib/table/filter-builder";
 import {
   buildApiAddressPayload,
@@ -349,14 +356,48 @@ function normalizePaginatedOrders(payload: PaginatedApiEnvelope<unknown[] | unkn
   };
 }
 
-function buildOrderSearchFilterGroups(params: OrderListParams) {
-  return buildResourceSearchFilterGroups({
-    search: params.search,
-    barOrSearchFields: ORDER_BAR_OR_SEARCH_FIELDS,
-    filterRows: params.filterRows,
-    tableFilterFields: ORDER_TABLE_FILTER_FIELDS,
-    expandNode: expandOrderFilterNode,
-  });
+function buildOrderSearchFilterGroups(params: OrderListParams): ApiSearchFilterGroup[] {
+  const groups: ApiSearchFilterGroup[] = [];
+
+  if (params.search?.value.trim()) {
+    const trimmed = params.search.value.trim();
+
+    if (params.search.field) {
+      const explicitFilter = createPickupTextSearchFilter(
+        resolvePickupSearchField(params.search.field),
+        trimmed,
+        resolveSearchOperator(params.search),
+      );
+      if (explicitFilter) {
+        if (isApiSearchFilter(explicitFilter)) {
+          groups.push({ operator: "and", filters: [explicitFilter] });
+        } else {
+          groups.push(explicitFilter);
+        }
+      }
+    } else {
+      const orGroup = createPickupBarSearchFilterGroup(trimmed);
+      if (orGroup) {
+        groups.push(orGroup);
+      }
+    }
+  }
+
+  const rowFilterNode = buildApiFilterNodeFromTableRows(
+    params.filterRows ?? [],
+    ORDER_TABLE_FILTER_FIELDS,
+  );
+  const expandedRowFilter = rowFilterNode ? expandOrderFilterNode(rowFilterNode) : null;
+
+  if (expandedRowFilter) {
+    if (isApiSearchFilter(expandedRowFilter)) {
+      groups.push({ operator: "and", filters: [expandedRowFilter] });
+    } else {
+      groups.push(expandedRowFilter);
+    }
+  }
+
+  return groups;
 }
 
 function hasOrderListFilters(params: OrderListParams): boolean {

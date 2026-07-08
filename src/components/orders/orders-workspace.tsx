@@ -16,11 +16,13 @@ import {
   Route as RouteIcon,
   RouteOff,
   Trash2,
+  Truck,
   XCircle,
 } from "lucide-react";
 
 import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
+import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
@@ -67,8 +69,6 @@ import {
   formatOrderId,
   formatOrderRouteName,
   buildOrderCreatedByFilterOptions,
-  getCustomerPhone,
-  getOrderBranchLabel,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
@@ -99,11 +99,54 @@ import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Label } from "@/components/ui/label";
 import { useTableSort } from "@/lib/table/use-table-sort";
-import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
+import {
+  ADDRESS_TEXT_WRAP_CLASSNAME,
+  formatAddressLine,
+  getPrimaryAddress,
+} from "@/lib/customers/utils/address-utils";
+import type { Customer } from "@/lib/customers/types";
+import { cn } from "@/lib/utils";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
+
+function pinActionsColumnFirst<T extends { id: string }>(columns: T[]): T[] {
+  const actionsIndex = columns.findIndex((column) => column.id === "actions");
+  if (actionsIndex <= 0) return columns;
+
+  const next = [...columns];
+  const [actionsColumn] = next.splice(actionsIndex, 1);
+  if (!actionsColumn) return columns;
+
+  return [actionsColumn, ...next];
+}
+
+function PickupSenderAddressCell({ customer }: { customer: Customer }) {
+  const { t } = useTranslation();
+  const primary = getPrimaryAddress(customer);
+  const primaryLine = primary ? formatAddressLine(primary, "full") : t("common.empty.dash");
+
+  return (
+    <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME)}>
+      <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")} title={primaryLine}>
+        {primaryLine}
+      </p>
+    </div>
+  );
+}
+
+function PickupCommentsCell({ order }: { order: Order }) {
+  const summary = formatOrderCommentsSummary(order);
+
+  return (
+    <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME)}>
+      <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")} title={summary}>
+        {summary}
+      </p>
+    </div>
+  );
+}
 
 const defaultFilters: OrderFilterState = {
   query: "",
@@ -262,6 +305,10 @@ export function OrdersWorkspace() {
     setFormMode("edit");
     setViewOrder(null);
     setFormError(null);
+  }
+
+  function openViewOrder(order: Order) {
+    setViewOrder(order);
   }
 
   async function saveOrder(values: OrderFormValues) {
@@ -450,6 +497,31 @@ export function OrdersWorkspace() {
   const tableColumns: DataTableColumn<Order>[] = useMemo(
     () => [
     {
+      id: "actions",
+      label: t("orders.workspace.actionsColumn"),
+      hideable: false,
+      sortable: false,
+      truncateCell: false,
+      stopRowClick: true,
+      cellClassName: "align-top overflow-visible",
+      renderCell: (order) => (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+          aria-label={t("orders.workspace.viewOrderFor", { name: formatOrderId(order) })}
+          title={t("orders.workspace.viewOrder")}
+          onClick={(event) => {
+            event.stopPropagation();
+            openViewOrder(order);
+          }}
+        >
+          <Truck className="size-3.5" />
+        </Button>
+      ),
+    },
+    {
       id: "completed",
       label: t("orders.columns.completed"),
       truncateCell: false,
@@ -472,57 +544,51 @@ export function OrdersWorkspace() {
       renderCell: (order) => formatOrderDate(order.date),
     },
     {
-      id: "branch.name",
+      id: "branch.code",
       label: t("orders.columns.branchName"),
-      sortField: "branch.name",
+      sortField: "branch.code",
       cellClassName: "text-muted-foreground",
-      renderCell: (order) => getOrderBranchLabel(order.branch) || t("common.empty.dash"),
+      renderCell: (order) => order.branch.code.trim() || t("common.empty.dash"),
     },
     {
       id: "createdAt",
       label: t("orders.columns.createdAt"),
+      defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDateTime(order.createdAt),
     },
     {
       id: "sender.name",
       label: t("orders.columns.senderName"),
-      cellClassName: "font-medium",
+      cellClassName: "align-top font-medium",
       renderCell: (order) => order.sender.name.trim() || t("common.empty.dash"),
+    },
+    {
+      id: "sender.phone",
+      label: t("orders.columns.senderPhone"),
+      sortField: "sender.phone1",
+      truncateCell: false,
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      renderCell: (order) => <CustomerTablePhoneCell customer={order.sender} />,
     },
     {
       id: "sender.address",
       label: t("orders.columns.senderAddress"),
       sortField: "sender.address.address1",
-      renderCell: (order) => {
-        const address = getCustomerPrimaryCoreAddress(order.sender);
-        return (
-          [address.address1, address.apartment].filter((value) => value.trim()).join(", ") ||
-          t("common.empty.dash")
-        );
-      },
-    },
-    {
-      id: "sender.address.city",
-      label: t("orders.columns.senderCity"),
-      renderCell: (order) =>
-        getCustomerPrimaryCoreAddress(order.sender).city.trim() || t("common.empty.dash"),
-    },
-    {
-      id: "sender.address.zipcode",
-      label: t("orders.columns.senderZip"),
-      renderCell: (order) =>
-        getCustomerPrimaryCoreAddress(order.sender).zipcode.trim() || t("common.empty.dash"),
-    },
-    {
-      id: "sender.phone1",
-      label: t("orders.columns.senderPhone1"),
-      renderCell: (order) => getCustomerPhone(order.sender),
+      defaultWidth: 360,
+      autoFitColumn: false,
+      truncateCell: false,
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      renderCell: (order) => <PickupSenderAddressCell customer={order.sender} />,
     },
     {
       id: "comments",
       label: t("orders.columns.comments"),
-      renderCell: (order) => formatOrderCommentsSummary(order),
+      defaultWidth: 225,
+      autoFitColumn: false,
+      truncateCell: false,
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      renderCell: (order) => <PickupCommentsCell order={order} />,
     },
     {
       id: "route.name",
@@ -535,6 +601,7 @@ export function OrdersWorkspace() {
     {
       id: "updatedAt",
       label: t("orders.columns.updatedAt"),
+      defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDateTime(order.updatedAt),
     },
@@ -542,7 +609,11 @@ export function OrdersWorkspace() {
     [pickupRouteLookup, t],
   );
 
-  const columnVisibility = useColumnVisibility("orders-v3", tableColumns);
+  const columnVisibility = useColumnVisibility("orders-v4", tableColumns);
+  const displayColumns = useMemo(
+    () => pinActionsColumnFirst(columnVisibility.columns),
+    [columnVisibility.columns],
+  );
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== deferredQuery.trim();
@@ -739,7 +810,7 @@ export function OrdersWorkspace() {
           />
         ) : (
           <DataTable
-            columns={columnVisibility.columns}
+            columns={displayColumns}
             rows={orders}
             page={currentPage}
             isPageDataPending={isFetching}
@@ -754,7 +825,6 @@ export function OrdersWorkspace() {
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
-            onRowClick={setViewOrder}
             onRowDoubleClick={openEditForm}
             emptyState={
               <>

@@ -146,10 +146,13 @@ export type OrderSearchField =
   | "date"
   | "completed"
   | "purpose"
+  | "comments"
   | "sender.name"
-  | "sender.phone1"
-  | "receiver.name"
-  | "receiver.phone1"
+  | "sender.phone"
+  | "sender.address"
+  | "receivers.name"
+  | "receivers.phone"
+  | "receivers.address"
   | "sector.id"
   | "branch.id"
   | "employee.id"
@@ -185,10 +188,13 @@ export const ORDER_SEARCH_FIELDS: { value: OrderSearchField; label: string }[] =
   { value: "date", label: "date" },
   { value: "completed", label: "completed" },
   { value: "purpose", label: "purpose" },
+  { value: "comments", label: "comments" },
   { value: "sender.name", label: "sender.name" },
-  { value: "sender.phone1", label: "sender.phone1" },
-  { value: "receiver.name", label: "receiver.name" },
-  { value: "receiver.phone1", label: "receiver.phone1" },
+  { value: "sender.phone", label: "sender.phone" },
+  { value: "sender.address", label: "sender.address" },
+  { value: "receivers.name", label: "receivers.name" },
+  { value: "receivers.phone", label: "receivers.phone" },
+  { value: "receivers.address", label: "receivers.address" },
   { value: "sector.id", label: "sector.id" },
   { value: "branch.id", label: "branch.id" },
   { value: "employee.id", label: "employee.id" },
