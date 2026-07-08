@@ -156,7 +156,13 @@
       "createForbidden": "Pida a un administrador que habilite la creación de clientes (canCreateCustomer) en su rol.",
       "updateForbidden": "Pida a un administrador que habilite la actualización de clientes (canUpdateCustomer) en su rol.",
       "deleteForbidden": "Pida a un administrador que habilite la eliminación de clientes (canDeleteCustomer) en su rol.",
-      "duplicateCustomer": "Ya existe un cliente con este nombre, teléfono principal y dirección principal."
+      "duplicateCustomer": "Ya existe un cliente con este nombre, teléfono y dirección.",
+      "duplicateCustomerDetails": "Ya existe un cliente que coincide por {{matchedFields}} (ID de cliente: {{customerId}}).",
+      "duplicateFields": {
+        "name": "nombre",
+        "phone": "teléfono",
+        "address": "dirección"
+      }
     }
   },
   "view": {
