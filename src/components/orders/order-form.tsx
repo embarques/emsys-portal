@@ -385,9 +385,6 @@ export function OrderForm({
     if (!values.sender) {
       return t("orders.form.validation.senderRequired");
     }
-    if (blockForUnverifiedParty) {
-      return unverifiedPartyMessage;
-    }
     if (values.comments.length === 0) {
       return t("orders.form.validation.commentRequired");
     }
@@ -395,6 +392,7 @@ export function OrderForm({
   })();
 
   const isBlocked = blockReason != null;
+  const unverifiedSenderWarning = blockForUnverifiedParty ? unverifiedPartyMessage : null;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -592,7 +590,7 @@ export function OrderForm({
 
       <FormFooter
         error={formError}
-        warning={blockReason}
+        warning={unverifiedSenderWarning}
         submitLabel={submitLabel}
         submitDisabled={isBlocked}
         onCancel={onCancel}

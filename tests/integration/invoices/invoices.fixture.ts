@@ -2,9 +2,6 @@ import { expect, type Locator, type Page, type Response } from "@playwright/test
 
 import { attachApiCurlToTest, logApiResponse, waitForApiResponse } from "../workspace.fixture";
 
-const UNVERIFIED_SENDER_STEP_ERROR =
-  "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.";
-
 export type InvoiceCreateWizardOptions = {
   invoiceNumber?: string;
   description?: string;
@@ -133,24 +130,9 @@ export async function fillInvoiceWizardStep1(
 }
 
 export async function fillInvoiceWizardStep2(page: Page, wizard: Locator) {
-  const maxAttempts = 25;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    await selectSearchableOptionByIndex(page, wizard, "senderId", attempt, "sender");
-    await wizard.getByRole("button", { name: "Next" }).click();
-
-    const stepError = wizard.getByText(UNVERIFIED_SENDER_STEP_ERROR);
-    if (await stepError.isVisible().catch(() => false)) {
-      continue;
-    }
-
-    await expect(wizard.getByText("Step 3 of 5")).toBeVisible({ timeout: 10_000 });
-    return;
-  }
-
-  throw new Error(
-    "Could not select a sender that passes validation. Verify a sender address in the app or set PLAYWRIGHT_INVOICE_SENDER in .env.local.",
-  );
+  await selectSearchableOptionByIndex(page, wizard, "senderId", 0, "sender");
+  await wizard.getByRole("button", { name: "Next" }).click();
+  await expect(wizard.getByText("Step 3 of 5")).toBeVisible({ timeout: 10_000 });
 }
 
 export async function fillInvoiceWizardStep3(

@@ -67,13 +67,6 @@ function validateStep1(values: InvoiceFormValues): string | null {
 
 function validateStep2(values: InvoiceFormValues): string | null {
   if (!values.sender) return "Sender is required.";
-  if (
-    isGoogleMapsConfigured() &&
-    values.sender &&
-    customerHasUnverifiedPrimaryAddress(values.sender)
-  ) {
-    return UNVERIFIED_SENDER_MESSAGE;
-  }
   return null;
 }
 
@@ -244,11 +237,13 @@ export function InvoiceFormWizard({
 
   const previewError = submitError ?? externalError;
   const footerError = step === previewStep ? null : stepError ?? externalError;
-  const blockForUnverifiedParty =
+  const showUnverifiedSenderWarning =
     isGoogleMapsConfigured() &&
     Boolean(values.sender && customerHasUnverifiedPrimaryAddress(values.sender));
   const footerWarning =
-    step === previewStep && blockForUnverifiedParty ? UNVERIFIED_SENDER_MESSAGE : null;
+    showUnverifiedSenderWarning && (step === 2 || step === previewStep)
+      ? UNVERIFIED_SENDER_MESSAGE
+      : null;
   const showPrint = allowPrint && Boolean(onPrint);
   const summaryDiscountChange =
     requireDailyIncomeRegistration && dailyIncomeRegistration
@@ -381,7 +376,7 @@ export function InvoiceFormWizard({
                     {isPrinting ? "Preparing…" : "Print"}
                   </Button>
                 ) : null}
-                <Button type="button" onClick={handleSave} disabled={blockForUnverifiedParty || isSubmitting}>
+                <Button type="button" onClick={handleSave} disabled={isSubmitting}>
                   <Save className="size-4" />
                   {isSubmitting ? "Saving…" : submitLabel}
                 </Button>

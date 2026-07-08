@@ -281,12 +281,6 @@ export function InvoiceForm({
       return;
     }
 
-    if (blockForUnverifiedParty) {
-      setFormError(unverifiedPartyMessage);
-      onFormErrorChange?.(unverifiedPartyMessage);
-      return;
-    }
-
     const result = onSubmit(values);
     setFormError(result.error);
     onFormErrorChange?.(result.error);
@@ -608,7 +602,6 @@ export function InvoiceForm({
           error={errorMessage}
           warning={blockForUnverifiedParty ? unverifiedPartyMessage : null}
           submitLabel={submitLabel}
-          submitDisabled={blockForUnverifiedParty}
           onCancel={onCancel}
         />
         ) : null}
