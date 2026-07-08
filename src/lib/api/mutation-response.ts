@@ -1,11 +1,18 @@
 import type { PaginatedApiEnvelope } from "@/lib/api/types";
 
-/** Reads the best user-facing message from a failed mutation envelope. */
+/** Throws when the API reports `success: false`, using a consistent message order. */
 export function readMutationFailureMessage(
   response: PaginatedApiEnvelope<unknown>,
   fallbackMessage: string,
 ): string {
-  return response.message?.trim() || response.error?.trim() || fallbackMessage;
+  const message = response.message?.trim();
+  const error = response.error?.trim();
+
+  if (message && error && message !== error) {
+    return `${message}. ${error}`;
+  }
+
+  return error || message || fallbackMessage;
 }
 
 /** Throws when the API reports `success: false`, using a consistent message order. */

@@ -38,7 +38,7 @@ import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
-  invoiceDailyIncomeRegistrationSchema,
+  createInvoiceDailyIncomeRegistrationSchema,
   type InvoiceDailyIncomeRegistrationValues,
 } from "@/lib/invoices/schemas/invoice-daily-income.schema";
 import { resolveLineTotal, type InvoiceFormValues } from "@/lib/invoices/types";
@@ -86,6 +86,10 @@ export function InvoiceDailyIncomeDialog({
     [invoice.lineItems],
   );
   const invoiceTotal = Math.max(0, invoiceSubtotal - (Number(invoice.discount) || 0));
+  const registrationSchema = useMemo(
+    () => createInvoiceDailyIncomeRegistrationSchema(invoiceTotal),
+    [invoiceTotal],
+  );
 
   const {
     formState: { errors },
@@ -96,7 +100,7 @@ export function InvoiceDailyIncomeDialog({
     setValue,
     watch,
   } = useForm<InvoiceDailyIncomeRegistrationValues>({
-    resolver: zodResolver(invoiceDailyIncomeRegistrationSchema),
+    resolver: zodResolver(registrationSchema),
     defaultValues: DEFAULT_VALUES,
   });
 
@@ -136,6 +140,9 @@ export function InvoiceDailyIncomeDialog({
   }, [branches, currentUserQuery.data?.branch, date, open, statementForm]);
 
   const amount = watch("amount") ?? 0;
+  const paymentAmount = Number(amount) || 0;
+  const balance = invoiceTotal - paymentAmount;
+  const balanceIsNegative = balance < 0;
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const paymentAccountId = watch("paymentAccountId");
@@ -458,7 +465,7 @@ export function InvoiceDailyIncomeDialog({
                 </div>
               ) : null}
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="daily-income-invoice-total">Invoice total</Label>
               <Input id="daily-income-invoice-total" value={formatInvoiceMoney(invoiceTotal)} disabled />
@@ -479,6 +486,20 @@ export function InvoiceDailyIncomeDialog({
                 Payment is optional. Zero creates an unpaid invoice.
               </p>
               {errors.amount ? <p className="text-xs text-destructive">{errors.amount.message}</p> : null}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="daily-income-balance">Balance</Label>
+              <Input
+                id="daily-income-balance"
+                value={formatInvoiceMoney(balance)}
+                disabled
+                className={balanceIsNegative ? "border-destructive text-destructive" : undefined}
+              />
+              {balanceIsNegative ? (
+                <p className="text-xs text-destructive">
+                  Balance cannot be negative. Reduce the payment amount to continue.
+                </p>
+              ) : null}
             </div>
               </div>
 
@@ -588,7 +609,12 @@ export function InvoiceDailyIncomeDialog({
             {activeStatement ? (
               <Button
                 type="submit"
-                disabled={!statementOpen || createJournal.isPending || currentUserQuery.isLoading}
+                disabled={
+                  !statementOpen ||
+                  createJournal.isPending ||
+                  currentUserQuery.isLoading ||
+                  balanceIsNegative
+                }
               >
                 {createJournal.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                 {createJournal.isPending ? "Registering…" : "Register & continue"}

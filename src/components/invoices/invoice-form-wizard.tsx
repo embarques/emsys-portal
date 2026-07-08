@@ -212,10 +212,15 @@ export function InvoiceFormWizard({
       return;
     }
 
-    clearErrors();
     const result = await onSubmit(values);
-    setSubmitError(result.error);
-    if (result.error) return;
+    if (result.error) {
+      setSubmitError(result.error);
+      setStepError(null);
+      return;
+    }
+
+    setSubmitError(null);
+    setStepError(null);
 
     if (result.savedInvoiceId) {
       setSavedInvoiceId(result.savedInvoiceId);
@@ -225,7 +230,6 @@ export function InvoiceFormWizard({
 
     if (!resetAfterSave) return;
 
-    clearErrors();
     setStep(1);
     const nextValues = resetInvoiceFormForNextEntry(
       values,
@@ -238,7 +242,8 @@ export function InvoiceFormWizard({
     setDailyIncomeRegistration(null);
   }
 
-  const footerError = step === previewStep ? submitError ?? externalError : stepError;
+  const previewError = submitError ?? externalError;
+  const footerError = step === previewStep ? null : stepError ?? externalError;
   const blockForUnverifiedParty =
     isGoogleMapsConfigured() &&
     Boolean(values.sender && customerHasUnverifiedPrimaryAddress(values.sender));
@@ -314,6 +319,7 @@ export function InvoiceFormWizard({
                   onEditStep={goToStep}
                   showPaymentSection={requireDailyIncomeRegistration}
                   onEditPayment={requireDailyIncomeRegistration ? () => setStep(4) : undefined}
+                  errorMessage={previewError}
                 />
               </div>
             )}

@@ -87,7 +87,7 @@ function InvoiceWizardShell({
       <div className="mx-auto w-full max-w-6xl">
         <div className="flex max-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           <InvoiceFormWizard
-            key={`${initialValues.invoiceId || "new"}-${initialValues.invoiceNumber}`}
+            key={initialValues.invoiceId || "new"}
             initialValues={initialValues}
             submitLabel={submitLabel}
             allowPrint={allowPrint}
@@ -146,6 +146,7 @@ export function InvoiceCreateWizard({
 }: InvoiceCreateWizardProps) {
   const { notifyAdded } = useFeedback();
   const createMutation = useCreateInvoice();
+  const initialValues = useMemo(() => createEmptyInvoiceForm(), []);
 
   async function handleSubmit(values: InvoiceFormValues): Promise<InvoiceFormSubmitResult> {
     try {
@@ -168,7 +169,7 @@ export function InvoiceCreateWizard({
       title="Add invoice"
       description="Create a new invoice in five steps: enter invoice details, select the sender and receiver, add line items, confirm its Daily Income registration, then review totals and save."
       onCancel={onCancel}
-      initialValues={createEmptyInvoiceForm()}
+      initialValues={initialValues}
       submitLabel={submitLabel}
       requireDailyIncomeRegistration
       isSubmitting={createMutation.isPending}

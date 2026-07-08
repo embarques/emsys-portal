@@ -8,6 +8,7 @@ import {
   InvoiceWizardReviewSection,
   InvoiceWizardReviewTextBlock,
 } from "@/components/invoices/invoice-wizard-review-section";
+import { InvoiceWizardNotice } from "@/components/invoices/invoice-wizard-notice";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { formatInvoiceDate, formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
@@ -29,6 +30,7 @@ type Props = {
   onEditStep?: (step: InvoiceWizardFormStep) => void;
   showPaymentSection?: boolean;
   onEditPayment?: () => void;
+  errorMessage?: string | null;
 };
 
 function usePreviewLabels(values: InvoiceFormValues) {
@@ -98,7 +100,9 @@ function InvoiceWizardCheckoutReview({
   onEditStep,
   showPaymentSection,
   onEditPayment,
-}: Required<Pick<Props, "values">> & Pick<Props, "onEditStep" | "showPaymentSection" | "onEditPayment">) {
+  errorMessage,
+}: Required<Pick<Props, "values">> &
+  Pick<Props, "onEditStep" | "showPaymentSection" | "onEditPayment" | "errorMessage">) {
   const {
     catalogItems,
     containerLabel,
@@ -111,6 +115,11 @@ function InvoiceWizardCheckoutReview({
 
   return (
     <div id="invoice-wizard-print-area" className="divide-y divide-border px-5 py-2 sm:px-8">
+      {errorMessage ? (
+        <div className="py-3 print:hidden">
+          <InvoiceWizardNotice tone="error" message={errorMessage} className="rounded-lg border" />
+        </div>
+      ) : null}
       <InvoiceWizardReviewSection
         number={1}
         title="Invoice details"
@@ -271,6 +280,7 @@ export function InvoiceFormPreviewStep({
   onEditStep,
   showPaymentSection = false,
   onEditPayment,
+  errorMessage = null,
 }: Props) {
   const isWizard = appearance === "wizard";
   const { subtotal, discount, amountPaid, balance, lineItemRows, catalogItems, containerLabel, pickupLabel, routeLabel } =
@@ -283,12 +293,16 @@ export function InvoiceFormPreviewStep({
         onEditStep={onEditStep}
         showPaymentSection={showPaymentSection}
         onEditPayment={onEditPayment}
+        errorMessage={errorMessage}
       />
     );
   }
 
   return (
     <FormBody>
+      {errorMessage ? (
+        <InvoiceWizardNotice tone="error" message={errorMessage} className="rounded-lg border" />
+      ) : null}
       <FormSection icon={Eye} title="Review before saving">
         <p className="text-sm text-muted-foreground">
           Confirm the invoice details below. Use Back to make changes.
