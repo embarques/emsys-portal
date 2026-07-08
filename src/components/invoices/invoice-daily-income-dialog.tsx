@@ -301,43 +301,42 @@ export function InvoiceDailyIncomeDialog({
                       </>
                     )}
                   </div>
-                  <div className="text-right">
-                    <Button
-                      data-testid="invoice-daily-income-flip-create"
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={Boolean(activeStatement)}
-                      onClick={() => setCardFlipped(true)}
-                    >
-                      <RotateCcw className="size-4" />
-                      Create daily income
-                    </Button>
+                  <div className={activeStatement ? "w-[46%] space-y-1.5" : "text-right"}>
                     {activeStatement ? (
-                      <p className="mt-1 text-xs text-muted-foreground">Already created</p>
-                    ) : null}
+                      <>
+                        <Label htmlFor="invoice-payment-employee">
+                          Employee <span className="text-destructive">*</span>
+                        </Label>
+                        <SearchableSelect
+                          id="invoice-payment-employee"
+                          value={employeeId ? String(employeeId) : ""}
+                          onValueChange={(next) => {
+                            const employee = employees.find((item) => item.id === Number(next));
+                            setValue("employeeId", employee?.id, { shouldValidate: true });
+                            setValue("employeeName", employee?.name ?? "", { shouldValidate: true });
+                          }}
+                          options={employeeOptions}
+                          loading={employeesQuery.isLoading}
+                          placeholder="Select employee"
+                          searchPlaceholder="Search employees…"
+                        />
+                        {errors.employeeId ? (
+                          <p className="text-xs text-destructive">{errors.employeeId.message}</p>
+                        ) : null}
+                      </>
+                    ) : (
+                      <Button
+                        data-testid="invoice-daily-income-flip-create"
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCardFlipped(true)}
+                      >
+                        <RotateCcw className="size-4" />
+                        Create daily income
+                      </Button>
+                    )}
                   </div>
-                </div>
-                <div className="mt-3 space-y-1.5 sm:absolute sm:bottom-4 sm:right-4 sm:mt-0 sm:w-[46%]">
-                  <Label htmlFor="invoice-payment-employee">
-                    Employee <span className="text-destructive">*</span>
-                  </Label>
-                  <SearchableSelect
-                    id="invoice-payment-employee"
-                    value={employeeId ? String(employeeId) : ""}
-                    onValueChange={(next) => {
-                      const employee = employees.find((item) => item.id === Number(next));
-                      setValue("employeeId", employee?.id, { shouldValidate: true });
-                      setValue("employeeName", employee?.name ?? "", { shouldValidate: true });
-                    }}
-                    options={employeeOptions}
-                    loading={employeesQuery.isLoading}
-                    placeholder="Select employee"
-                    searchPlaceholder="Search employees…"
-                  />
-                  {errors.employeeId ? (
-                    <p className="text-xs text-destructive">{errors.employeeId.message}</p>
-                  ) : null}
                 </div>
               </section>
 
