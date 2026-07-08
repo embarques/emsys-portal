@@ -48,7 +48,7 @@ import {
   computeInvoiceKpis,
   formatInvoiceDate,
   formatInvoiceMoney,
-  formatInvoicePartySummary,
+  formatInvoicePartyAddressLine,
   formatInvoiceTabLabel,
   getContainerLabelForInvoice,
   getInvoiceBalance,
@@ -103,9 +103,26 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { useSyncWorkspaceTabTitle } from "@/lib/layout/hooks/use-sync-workspace-tab-title";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
+import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
+import type { OrderParty } from "@/lib/orders/types";
+import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
+
+function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefined }) {
+  const { t } = useTranslation();
+  const addressLine = formatInvoicePartyAddressLine(party);
+  const displayLine = addressLine === "—" ? t("common.empty.dash") : addressLine;
+
+  return (
+    <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME)}>
+      <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")} title={displayLine}>
+        {displayLine}
+      </p>
+    </div>
+  );
+}
 
 const defaultFilters: InvoiceFilterState = {
   query: "",
@@ -484,17 +501,35 @@ export function InvoicesWorkspace() {
       ),
     },
     {
-      id: "sender",
-      label: "Sender",
+      id: "sender.name",
+      label: t("invoices.columns.senderName"),
       sortField: "sender.name",
-      renderCell: (invoice) => formatInvoicePartySummary(invoice.sender),
+      renderCell: (invoice) => invoice.sender.name.trim() || t("common.empty.dash"),
     },
     {
-      id: "receiver",
-      label: "Receiver",
+      id: "sender.address",
+      label: t("invoices.columns.senderAddress"),
+      sortField: "sender.address.address1",
+      defaultWidth: 220,
+      renderCell: (invoice) => <InvoicePartyAddressCell party={invoice.sender} />,
+    },
+    {
+      id: "receiver.name",
+      label: t("invoices.columns.receiverName"),
       sortField: "receiver.name",
-      renderCell: (invoice) =>
-        formatInvoicePartySummary(getInvoicePrimaryReceiver(invoice)),
+      renderCell: (invoice) => {
+        const receiver = getInvoicePrimaryReceiver(invoice);
+        return receiver?.name?.trim() || t("common.empty.dash");
+      },
+    },
+    {
+      id: "receiver.address",
+      label: t("invoices.columns.receiverAddress"),
+      sortField: "receiver.address.address1",
+      defaultWidth: 220,
+      renderCell: (invoice) => (
+        <InvoicePartyAddressCell party={getInvoicePrimaryReceiver(invoice)} />
+      ),
     },
     {
       id: "total",
@@ -538,7 +573,7 @@ export function InvoicesWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("invoices-v4", tableColumns);
+  const columnVisibility = useColumnVisibility("invoices-v5", tableColumns);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount;
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;

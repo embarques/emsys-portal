@@ -2,5 +2,11 @@
   "staging": {
     "tableAction": "Manage invoice items",
     "title": "Select invoice items for processing"
+  },
+  "columns": {
+    "senderName": "Sender",
+    "senderAddress": "Sender address",
+    "receiverName": "Receiver",
+    "receiverAddress": "Receiver address"
   }
 }
