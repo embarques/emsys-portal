@@ -3,9 +3,9 @@
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatCoreAddressLine } from "@/lib/customers/display";
+import type { Customer } from "@/lib/customers/types";
 import {
   getCustomerContentAddresses,
-  type Customer,
 } from "@/lib/orders/types";
 import { useTranslation } from "@/lib/i18n";
 
