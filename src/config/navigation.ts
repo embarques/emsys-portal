@@ -44,6 +44,46 @@ export const topNavigationItems: NavigationItem[] = [
   { labelKey: "navigation.items.dashboard", href: "/", icon: Home, permission: PERMISSIONS.dashboardView },
 ];
 
+/** Primary workspace shortcuts shown in the dashboard top bar (sorted alphabetically by label). */
+export const topbarNavigationItems: NavigationItem[] = [
+  {
+    labelKey: "navigation.items.pickups",
+    href: "/orders",
+    icon: Package,
+    permission: PERMISSIONS.pickupsView,
+  },
+  {
+    labelKey: "navigation.items.invoices",
+    href: "/invoices",
+    icon: FileText,
+    permission: PERMISSIONS.invoicesView,
+  },
+  {
+    labelKey: "navigation.items.labelManager",
+    href: "/label-updater",
+    icon: ScanBarcode,
+    permission: PERMISSIONS.packagesView,
+  },
+  {
+    labelKey: "navigation.items.dailyIncome",
+    href: "/accounting/daily-income",
+    icon: Wallet,
+    permission: PERMISSIONS.incomeView,
+  },
+  {
+    labelKey: "navigation.items.reports",
+    href: "/reports",
+    icon: FileText,
+    permission: PERMISSIONS.reportsView,
+  },
+  {
+    labelKey: "navigation.items.analytics",
+    href: "/analytics",
+    icon: BarChart3,
+    permission: PERMISSIONS.reportsView,
+  },
+];
+
 const navigationGroups: NavigationGroup[] = [
   {
     titleKey: "navigation.groups.workspace",

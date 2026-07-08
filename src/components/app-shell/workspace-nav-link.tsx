@@ -10,6 +10,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { useIsDesktopWorkspaceTabs, useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
+import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { isWorkspaceRoute } from "@/lib/layout/workspace-registry";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ export function WorkspaceNavLink({
   const isMobile = useIsMobileViewport();
   const isDesktopTabs = useIsDesktopWorkspaceTabs();
   const { openTab } = useWorkspaceTabs();
+  const { t } = useTranslation();
 
   if (isMobile || !isDesktopTabs || !isWorkspaceRoute(href)) {
     return (
@@ -63,7 +65,7 @@ export function WorkspaceNavLink({
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         <ContextMenuItem onSelect={() => openTab(href, label, { forceNew: true })}>
-          Open in new tab
+          {t("shell.tabs.openInNewTab")}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

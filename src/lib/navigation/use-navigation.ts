@@ -2,7 +2,12 @@
 
 import { useMemo } from "react";
 
-import { navigation, topNavigationItems, type NavigationItem } from "@/config/navigation";
+import {
+  navigation,
+  topbarNavigationItems,
+  topNavigationItems,
+  type NavigationItem,
+} from "@/config/navigation";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import type { Permission } from "@/lib/auth/types/permission";
 import { useTranslation } from "@/lib/i18n";
@@ -58,12 +63,15 @@ function translateNavItems(
     .filter((item): item is TranslatedNavigationItem => item != null);
 }
 
-function sortTranslatedNavItems(items: TranslatedNavigationItem[]): TranslatedNavigationItem[] {
+function sortTranslatedNavItems(
+  items: TranslatedNavigationItem[],
+  locale: string,
+): TranslatedNavigationItem[] {
   return [...items]
-    .sort((a, b) => a.label.localeCompare(b.label))
+    .sort((a, b) => a.label.localeCompare(b.label, locale, { sensitivity: "base" }))
     .map((item) => ({
       ...item,
-      children: item.children ? sortTranslatedNavItems(item.children) : undefined,
+      children: item.children ? sortTranslatedNavItems(item.children, locale) : undefined,
     }));
 }
 
@@ -71,22 +79,33 @@ function translateAndSortNavItems(
   items: NavigationItem[],
   t: (key: string) => string,
   hasPermission: (name: string, resourceType: string) => boolean,
+  locale: string,
 ): TranslatedNavigationItem[] {
-  return sortTranslatedNavItems(translateNavItems(items, t, hasPermission));
+  return sortTranslatedNavItems(translateNavItems(items, t, hasPermission), locale);
 }
 
 export function useTopNavigation(): TranslatedNavigationItem[] {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const { hasPermission } = useAuth();
 
   return useMemo(
-    () => translateAndSortNavItems(topNavigationItems, t, hasPermission),
-    [hasPermission, t],
+    () => translateAndSortNavItems(topNavigationItems, t, hasPermission, locale),
+    [hasPermission, locale, t],
+  );
+}
+
+export function useTopbarNavigation(): TranslatedNavigationItem[] {
+  const { locale, t } = useTranslation();
+  const { hasPermission } = useAuth();
+
+  return useMemo(
+    () => translateAndSortNavItems(topbarNavigationItems, t, hasPermission, locale),
+    [hasPermission, locale, t],
   );
 }
 
 export function useNavigation(): TranslatedNavigationGroup[] {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const { hasPermission } = useAuth();
 
   return useMemo(
@@ -95,10 +114,10 @@ export function useNavigation(): TranslatedNavigationGroup[] {
         .map((group) => ({
           ...group,
           title: t(group.titleKey),
-          items: translateAndSortNavItems(group.items, t, hasPermission),
+          items: translateAndSortNavItems(group.items, t, hasPermission, locale),
         }))
         .filter((group) => group.items.length > 0),
-    [hasPermission, t],
+    [hasPermission, locale, t],
   );
 }
 

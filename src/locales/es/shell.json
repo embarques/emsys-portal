@@ -10,10 +10,7 @@
   "topbar": {
     "collapseSidebar": "Contraer barra lateral",
     "openSidebarMenu": "Abrir menú lateral",
-    "pricing": "Precios",
-    "docs": "Documentación",
-    "reports": "Reportes",
-    "support": "Soporte",
+    "workspaceShortcuts": "Accesos directos del espacio de trabajo",
     "notifications": "Notificaciones"
   },
   "search": {
@@ -88,7 +85,9 @@
     "hide": "Ocultar bloc de notas",
     "title": "Bloc de notas",
     "clear": "Borrar bloc de notas",
-    "clearConfirm": "¿Borrar todas las notas del bloc?",
+    "clearTitle": "¿Borrar el bloc de notas?",
+    "clearConfirm": "Se eliminarán todas las notas del bloc. Esta acción no se puede deshacer.",
+    "clearAction": "Borrar notas",
     "close": "Cerrar bloc de notas",
     "saving": "Guardando…",
     "saved": "Guardado",

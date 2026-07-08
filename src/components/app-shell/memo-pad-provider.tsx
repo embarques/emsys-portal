@@ -2,8 +2,11 @@
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
+import { nextPanelOpenSequence } from "@/components/app-shell/floating-utility-panel-styles";
+
 type MemoPadContextValue = {
   open: boolean;
+  openedAt: number | null;
   toggle: () => void;
   close: () => void;
 };
@@ -12,22 +15,29 @@ const MemoPadContext = createContext<MemoPadContextValue | null>(null);
 
 export function MemoPadProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [openedAt, setOpenedAt] = useState<number | null>(null);
 
   const toggle = useCallback(() => {
-    setOpen((current) => !current);
+    setOpen((current) => {
+      const next = !current;
+      setOpenedAt(next ? nextPanelOpenSequence() : null);
+      return next;
+    });
   }, []);
 
   const close = useCallback(() => {
     setOpen(false);
+    setOpenedAt(null);
   }, []);
 
   const value = useMemo(
     () => ({
       open,
+      openedAt,
       toggle,
       close,
     }),
-    [close, open, toggle]
+    [close, open, openedAt, toggle]
   );
 
   return <MemoPadContext.Provider value={value}>{children}</MemoPadContext.Provider>;

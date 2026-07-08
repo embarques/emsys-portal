@@ -1,15 +1,20 @@
 "use client";
 
 import { Bell, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 import { CalculatorToggleButton } from "@/components/app-shell/floating-calculator";
 import { LanguageToggle } from "@/components/app-shell/language-toggle";
 import { MemoPadToggleButton } from "@/components/app-shell/floating-memo-pad";
 import { Button } from "@/components/ui/button";
+import { navigationItemMatchesPath } from "@/lib/navigation/nav-utils";
+import { useTopbarNavigation } from "@/lib/navigation/use-navigation";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { SearchMenu } from "./search-menu";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
+import { WorkspaceNavLink } from "./workspace-nav-link";
 
 export function Topbar({
   expanded,
@@ -19,6 +24,8 @@ export function Topbar({
   onToggleSidebar: () => void;
 }) {
   const { t } = useTranslation();
+  const pathname = usePathname();
+  const topbarNavigation = useTopbarNavigation();
 
   return (
     <header className="sticky top-0 z-40 flex h-20 items-center gap-4 border-b bg-background/90 px-4 backdrop-blur md:px-6">
@@ -46,11 +53,29 @@ export function Topbar({
         )}
       </Button>
 
-      <nav className="hidden items-center gap-7 text-sm font-medium lg:flex">
-        <a href="#" className="text-foreground hover:text-primary">{t("shell.topbar.pricing")}</a>
-        <a href="#" className="text-foreground hover:text-primary">{t("shell.topbar.docs")}</a>
-        <a href="/reports" className="text-foreground hover:text-primary">{t("shell.topbar.reports")}</a>
-        <a href="#" className="text-foreground hover:text-primary">{t("shell.topbar.support")}</a>
+      <nav
+        aria-label={t("shell.topbar.workspaceShortcuts")}
+        className="hidden items-center gap-7 text-sm font-medium lg:flex"
+      >
+        {topbarNavigation.map((item) => {
+          if (!item.href) return null;
+
+          const active = navigationItemMatchesPath(item, pathname);
+
+          return (
+            <WorkspaceNavLink
+              key={item.href}
+              href={item.href}
+              label={item.label}
+              className={cn(
+                "text-foreground hover:text-primary",
+                active && "text-primary",
+              )}
+            >
+              {item.label}
+            </WorkspaceNavLink>
+          );
+        })}
       </nav>
 
       <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">

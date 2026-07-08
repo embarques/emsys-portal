@@ -10,10 +10,7 @@
   "topbar": {
     "collapseSidebar": "Collapse sidebar",
     "openSidebarMenu": "Open sidebar menu",
-    "pricing": "Pricing",
-    "docs": "Docs",
-    "reports": "Reports",
-    "support": "Support",
+    "workspaceShortcuts": "Workspace shortcuts",
     "notifications": "Notifications"
   },
   "search": {
@@ -88,7 +85,9 @@
     "hide": "Hide memo pad",
     "title": "Memo pad",
     "clear": "Clear memo pad",
-    "clearConfirm": "Clear all memo pad notes?",
+    "clearTitle": "Clear memo pad?",
+    "clearConfirm": "This will remove all notes from your memo pad. This action cannot be undone.",
+    "clearAction": "Clear notes",
     "close": "Close memo pad",
     "saving": "Saving…",
     "saved": "Saved",

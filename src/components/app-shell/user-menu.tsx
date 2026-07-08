@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, KeyRound, LogOut, Settings, UserCircle } from "lucide-react";
 
 import { ChangePasswordDialog } from "@/components/configuration/change-password-dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
@@ -27,6 +28,29 @@ function getInitials(displayName: string | null, email: string | null): string {
   return "U";
 }
 
+function resolveProfileIdentity(
+  rawName: string | null | undefined,
+  rawEmail: string | null | undefined,
+  defaultUserLabel: string,
+) {
+  const email = rawEmail?.trim() || null;
+  let name = rawName?.trim() || null;
+
+  if (!name && email) {
+    name = email.split("@")[0] || defaultUserLabel;
+  }
+
+  if (!name) {
+    name = defaultUserLabel;
+  }
+
+  const emailLocalPart = email?.split("@")[0]?.toLowerCase() ?? null;
+  const nameIsFullEmail = email !== null && name.toLowerCase() === email.toLowerCase();
+  const displayName = nameIsFullEmail ? emailLocalPart ?? name : name;
+
+  return { displayName, email };
+}
+
 export function UserMenu() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -36,14 +60,19 @@ export function UserMenu() {
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const profileName =
+  const rawProfileName =
     currentUserQuery.data?.name?.trim() ||
     displayName?.trim() ||
     email?.split("@")[0] ||
-    t("shell.profileMenu.defaultUser");
+    null;
   const profileEmail = currentUserQuery.data?.email?.trim() || email?.trim() || null;
+  const { displayName: profileName } = resolveProfileIdentity(
+    rawProfileName,
+    profileEmail,
+    t("shell.profileMenu.defaultUser"),
+  );
   const profileRole = roleLoading ? t("common.loading") : role?.trim() || null;
-  const initials = getInitials(currentUserQuery.data?.name ?? displayName, profileEmail);
+  const initials = getInitials(rawProfileName ?? profileName, profileEmail);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -72,33 +101,39 @@ export function UserMenu() {
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/40 text-sm font-bold text-primary">
-          {initials}
-        </div>
+        <Avatar className="h-8 w-8 border border-primary/15 bg-primary/10">
+          <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
         <div className="hidden text-left sm:block">
-          <p className="text-sm font-medium leading-none">{profileName}</p>
+          <p className="text-sm font-medium leading-tight">{profileName}</p>
           {profileRole ? (
-            <p className="mt-1 text-xs text-muted-foreground">{profileRole}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{profileRole}</p>
           ) : null}
         </div>
       </Button>
 
       {open ? (
         <div className="absolute right-0 top-12 z-[220] w-64 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl">
-          <div className="m-2 rounded-lg border bg-card p-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/40 text-sm font-bold text-primary">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{profileName}</p>
+          <div className="border-b px-3 py-3">
+            <div className="flex items-start gap-3">
+              <Avatar className="h-9 w-9 border border-primary/15 bg-primary/10">
+                <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold leading-tight">{profileName}</p>
                 {profileEmail ? (
-                  <p className="truncate text-xs text-muted-foreground">{profileEmail}</p>
-                ) : null}
-                {profileRole ? (
-                  <p className="truncate text-xs text-muted-foreground">{profileRole}</p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{profileEmail}</p>
                 ) : null}
               </div>
+              {profileRole ? (
+                <span className="inline-flex shrink-0 max-w-[45%] truncate rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  {profileRole}
+                </span>
+              ) : null}
             </div>
           </div>
 

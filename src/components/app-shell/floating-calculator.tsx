@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import { Calculator, Delete, X } from "lucide-react";
 
 import { useCalculator } from "@/components/app-shell/calculator-provider";
+import { useMemoPad } from "@/components/app-shell/memo-pad-provider";
+import {
+  floatingUtilityPanelBasePositionClassName,
+  floatingUtilityPanelBodyClassName,
+  floatingUtilityPanelClassName,
+  floatingUtilityPanelStackedPositionClassName,
+} from "@/components/app-shell/floating-utility-panel-styles";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -136,7 +143,8 @@ function reduceState(state: CalculatorState, action: { type: string; payload?: s
 const digitButtons = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "0", "."];
 
 export function FloatingCalculator() {
-  const { open, close } = useCalculator();
+  const { open, close, openedAt } = useCalculator();
+  const { open: memoOpen, openedAt: memoOpenedAt } = useMemoPad();
   const { t } = useTranslation();
   const [state, setState] = useState<CalculatorState>(initialState);
 
@@ -201,17 +209,25 @@ export function FloatingCalculator() {
     setState((current) => reduceState(current, { type, payload }));
   }
 
+  const stacked =
+    memoOpen && memoOpenedAt !== null && openedAt !== null && memoOpenedAt < openedAt;
+
   return (
     <div
-      className="pointer-events-none fixed bottom-4 right-4 z-[100] sm:bottom-6 sm:right-6"
+      className={cn(
+        "pointer-events-none fixed right-4 z-[100] sm:right-6",
+        stacked
+          ? floatingUtilityPanelStackedPositionClassName
+          : floatingUtilityPanelBasePositionClassName
+      )}
       aria-live="polite"
     >
       <div
-        className="pointer-events-auto w-[min(100vw-2rem,18rem)] overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-2xl"
+        className={floatingUtilityPanelClassName}
         role="dialog"
         aria-label={t("shell.calculator.title")}
       >
-        <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
+        <div className="flex shrink-0 items-center justify-between border-b bg-muted/40 px-3 py-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Calculator className="h-4 w-4" />
             {t("shell.calculator.title")}
@@ -221,7 +237,7 @@ export function FloatingCalculator() {
           </Button>
         </div>
 
-        <div className="space-y-3 p-3">
+        <div className={cn(floatingUtilityPanelBodyClassName, "space-y-3")}>
           <div className="rounded-xl border bg-background px-3 py-3 text-right">
             <p className="truncate font-mono text-3xl font-semibold tracking-tight">{state.display}</p>
             {state.pendingOperator ? (

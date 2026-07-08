@@ -3,16 +3,33 @@
 import { useEffect, useRef, useState } from "react";
 import { Eraser, StickyNote, X } from "lucide-react";
 
+import { useCalculator } from "@/components/app-shell/calculator-provider";
 import { useMemoPad } from "@/components/app-shell/memo-pad-provider";
+import {
+  floatingUtilityPanelBasePositionClassName,
+  floatingUtilityPanelBodyClassName,
+  floatingUtilityPanelClassName,
+  floatingUtilityPanelStackedPositionClassName,
+} from "@/components/app-shell/floating-utility-panel-styles";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTranslation } from "@/lib/i18n";
 import {
   useFloatingMemoPad,
   useMemoPadHasNotes,
 } from "@/lib/memo-pads/hooks/use-floating-memo-pad";
+import { cn } from "@/lib/utils";
 
 export function FloatingMemoPad() {
-  const { open, close } = useMemoPad();
+  const { open, close, openedAt } = useMemoPad();
+  const { open: calculatorOpen, openedAt: calculatorOpenedAt } = useCalculator();
   const { t } = useTranslation();
   const {
     content,
@@ -23,6 +40,7 @@ export function FloatingMemoPad() {
     isSaving,
   } = useFloatingMemoPad();
   const [savedHint, setSavedHint] = useState(false);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const wasSavingRef = useRef(false);
 
   useEffect(() => {
@@ -56,24 +74,43 @@ export function FloatingMemoPad() {
   }
 
   function handleClear() {
-    if (content.trim() && !window.confirm(t("shell.memoPad.clearConfirm"))) return;
+    if (content.trim()) {
+      setConfirmClearOpen(true);
+      return;
+    }
     clearContent();
+  }
+
+  function handleConfirmClear() {
+    clearContent();
+    setConfirmClearOpen(false);
   }
 
   const lineCount = content.trim() ? content.split("\n").length : 0;
   const charCount = content.length;
 
+  const stacked =
+    calculatorOpen &&
+    calculatorOpenedAt !== null &&
+    openedAt !== null &&
+    calculatorOpenedAt < openedAt;
+
   return (
     <div
-      className="pointer-events-none fixed bottom-4 left-4 z-[100] sm:bottom-6 sm:left-6"
+      className={cn(
+        "pointer-events-none fixed right-4 z-[100] sm:right-6",
+        stacked
+          ? floatingUtilityPanelStackedPositionClassName
+          : floatingUtilityPanelBasePositionClassName
+      )}
       aria-live="polite"
     >
       <div
-        className="pointer-events-auto flex w-[min(100vw-2rem,22rem)] flex-col overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-2xl sm:w-[24rem]"
+        className={floatingUtilityPanelClassName}
         role="dialog"
         aria-label={t("shell.memoPad.title")}
       >
-        <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
+        <div className="flex shrink-0 items-center justify-between border-b bg-muted/40 px-3 py-2">
           <div className="flex min-w-0 items-center gap-2 text-sm font-medium">
             <StickyNote className="h-4 w-4 shrink-0" />
             {t("shell.memoPad.title")}
@@ -107,7 +144,7 @@ export function FloatingMemoPad() {
           </div>
         </div>
 
-        <div className="p-3">
+        <div className={floatingUtilityPanelBodyClassName}>
           <textarea
             value={content}
             onChange={(event) => handleChange(event.target.value)}
@@ -115,10 +152,10 @@ export function FloatingMemoPad() {
               isLoading ? t("shell.memoPad.loadingNotes") : t("shell.memoPad.notesPlaceholder")
             }
             disabled={isLoading}
-            className="min-h-[220px] w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-h-0 flex-1 w-full resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60"
             spellCheck
           />
-          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="mt-2 flex shrink-0 items-center justify-between text-xs text-muted-foreground">
             <span>
               {lineCount} {lineCount === 1 ? t("shell.memoPad.line") : t("shell.memoPad.lines")} · {charCount}{" "}
               {t("shell.memoPad.chars")}
@@ -127,6 +164,24 @@ export function FloatingMemoPad() {
           </div>
         </div>
       </div>
+
+      <Dialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <DialogContent className="pointer-events-auto z-[110]">
+          <DialogHeader>
+            <DialogTitle>{t("shell.memoPad.clearTitle")}</DialogTitle>
+            <DialogDescription>{t("shell.memoPad.clearConfirm")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmClearOpen(false)}>
+              {t("common.actions.cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmClear}>
+              <Eraser className="h-4 w-4" />
+              {t("shell.memoPad.clearAction")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
