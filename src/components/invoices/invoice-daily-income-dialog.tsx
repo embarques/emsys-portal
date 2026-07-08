@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ import {
   type DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
+import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
   invoiceDailyIncomeRegistrationSchema,
@@ -70,10 +72,12 @@ export function InvoiceDailyIncomeDialog({
   const [cardFlipped, setCardFlipped] = useState(false);
   const [activeStatement, setActiveStatement] = useState(statement);
   const currentUserQuery = useCurrentUser();
+  const branchesQuery = useBranchPicker(200, { enabled: open });
   const paymentMethodsQuery = useAccountingPaymentMethods(open);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, open);
   const createJournal = useCreateDailyIncomeJournal();
   const createStatement = useCreateIncomeStatement();
+  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
   const invoiceSubtotal = useMemo(
     () => invoice.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0),
     [invoice.lineItems],
@@ -114,8 +118,9 @@ export function InvoiceDailyIncomeDialog({
   }, [open, reset, statement]);
 
   useEffect(() => {
-    const branch = currentUserQuery.data?.branch;
-    if (!open || !branch) return;
+    const userBranch = currentUserQuery.data?.branch;
+    if (!open || !userBranch || branches.length === 0) return;
+    const branch = branches.find((item) => item.id === userBranch.id) ?? branches[0];
     statementForm.reset({
       date,
       branchId: branch.id,
@@ -124,7 +129,7 @@ export function InvoiceDailyIncomeDialog({
       currency: "USD",
       rate: 1,
     });
-  }, [currentUserQuery.data?.branch, date, open, statementForm]);
+  }, [branches, currentUserQuery.data?.branch, date, open, statementForm]);
 
   const amount = watch("amount") ?? 0;
   const paymentMethodId = watch("paymentMethodId");
@@ -137,6 +142,19 @@ export function InvoiceDailyIncomeDialog({
   const bankAccounts = bankAccountsQuery.data?.items ?? [];
   const statementOpen = activeStatement?.status === "OPEN";
   const statementCurrency = statementForm.watch("currency");
+  const statementBranchId = statementForm.watch("branchId");
+  const statementErrors = statementForm.formState.errors;
+  const branchOptions = branches.map((branch) => ({
+    value: String(branch.id),
+    label: `${branch.code} — ${branch.name}`,
+    keywords: [branch.code, branch.name],
+  }));
+
+  useEffect(() => {
+    if (statementCurrency !== "DOP") {
+      statementForm.setValue("rate", 1, { shouldValidate: true });
+    }
+  }, [statementCurrency, statementForm]);
 
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
@@ -289,21 +307,39 @@ export function InvoiceDailyIncomeDialog({
                   <div>
                     <p className="font-semibold">Create daily income</p>
                     <p className="text-xs text-muted-foreground">
-                      Create today&apos;s closeout for the current branch without leaving the wizard.
+                      Create a closeout without leaving the invoice wizard.
                     </p>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label htmlFor="invoice-statement-date">Date</Label>
-                      <Input id="invoice-statement-date" value={date} disabled />
+                      <DateInput
+                        id="invoice-statement-date"
+                        {...statementForm.register("date")}
+                      />
+                      {statementErrors.date ? (
+                        <p className="text-xs text-destructive">{statementErrors.date.message}</p>
+                      ) : null}
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="invoice-statement-branch">Branch</Label>
-                      <Input
+                      <SearchableSelect
                         id="invoice-statement-branch"
-                        value={currentUserQuery.data?.branch.name || currentUserQuery.data?.branch.code || "Loading branch…"}
-                        disabled
+                        value={statementBranchId ? String(statementBranchId) : ""}
+                        onValueChange={(next) => {
+                          const branch = branches.find((item) => item.id === Number(next));
+                          statementForm.setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
+                          statementForm.setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
+                          statementForm.setValue("branchName", branch?.name ?? "", { shouldValidate: true });
+                        }}
+                        options={branchOptions}
+                        loading={branchesQuery.isLoading}
+                        placeholder="Select branch"
+                        searchPlaceholder="Search branches…"
                       />
+                      {statementErrors.branchId ? (
+                        <p className="text-xs text-destructive">{statementErrors.branchId.message}</p>
+                      ) : null}
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="invoice-statement-currency">Currency</Label>
@@ -318,21 +354,21 @@ export function InvoiceDailyIncomeDialog({
                         placeholder="Select currency"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="invoice-statement-rate">Exchange rate</Label>
-                      <Input
-                        id="invoice-statement-rate"
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        {...statementForm.register("rate", { valueAsNumber: true })}
-                      />
-                      {statementForm.formState.errors.rate ? (
-                        <p className="text-xs text-destructive">
-                          {statementForm.formState.errors.rate.message}
-                        </p>
-                      ) : null}
-                    </div>
+                    {statementCurrency === "DOP" ? (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="invoice-statement-rate">Exchange rate</Label>
+                        <Input
+                          id="invoice-statement-rate"
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          {...statementForm.register("rate", { valueAsNumber: true })}
+                        />
+                        {statementErrors.rate ? (
+                          <p className="text-xs text-destructive">{statementErrors.rate.message}</p>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                   {statementError ? <p className="text-xs text-destructive">{statementError}</p> : null}
                   <div className="flex justify-between gap-2 border-t border-blue-200 pt-3 dark:border-blue-900">
@@ -344,7 +380,12 @@ export function InvoiceDailyIncomeDialog({
                       data-testid="invoice-daily-income-create"
                       type="button"
                       size="sm"
-                      disabled={createStatement.isPending || !currentUserQuery.data}
+                      disabled={
+                        createStatement.isPending ||
+                        !currentUserQuery.data ||
+                        branchesQuery.isLoading ||
+                        !statementBranchId
+                      }
                       onClick={statementForm.handleSubmit(createDailyIncome)}
                     >
                       {createStatement.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
