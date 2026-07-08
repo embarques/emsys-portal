@@ -189,65 +189,33 @@ function readInvoiceCreatedBy(user: unknown): string {
 
 function normalizeApiInvoicePartyAddresses(party: ApiInvoiceParty): OrderParty["addresses"] {
   const snapshotAddress = party.address;
-  if (snapshotAddress && typeof snapshotAddress === "object") {
-    const addressId = readStringId(snapshotAddress.id) ?? createRecordId();
-    const streetAddress = String(snapshotAddress.address1 ?? "").trim();
-    const city = String(snapshotAddress.city ?? "").trim();
-    const state = String(snapshotAddress.state ?? "").trim();
-    const zipCode = String(snapshotAddress.zipcode ?? "").trim();
-    const apt = String(snapshotAddress.address2 ?? snapshotAddress.apartment ?? "").trim();
-
-    if (streetAddress || city || state || zipCode || apt) {
-      return [
-        {
-          id: addressId,
-          streetAddress,
-          apt: apt || undefined,
-          city,
-          state,
-          provinceCountry: String(snapshotAddress.country ?? "").trim(),
-          zipCode,
-          isPrimary: true,
-        },
-      ];
-    }
+  if (!snapshotAddress || typeof snapshotAddress !== "object") {
+    return [];
   }
 
-  const rawAddresses = Array.isArray(party.addresses) ? party.addresses : [];
-  const mapped = rawAddresses
-    .map((address, index) => {
-      const addressId = readStringId(address.id) ?? createRecordId();
-      const streetAddress = String(address.address1 ?? "").trim();
-      const city = String(address.city ?? "").trim();
-      const state = String(address.state ?? "").trim();
-      const zipCode = String(address.zipcode ?? "").trim();
-      const apt = String(address.address2 ?? address.apartment ?? "").trim();
+  const addressId = readStringId(snapshotAddress.id) ?? createRecordId();
+  const streetAddress = String(snapshotAddress.address1 ?? "").trim();
+  const city = String(snapshotAddress.city ?? "").trim();
+  const state = String(snapshotAddress.state ?? "").trim();
+  const zipCode = String(snapshotAddress.zipcode ?? "").trim();
+  const apt = String(snapshotAddress.address2 ?? snapshotAddress.apartment ?? "").trim();
 
-      if (!streetAddress && !city && !state && !zipCode && !apt) {
-        return null;
-      }
-
-      return {
-        id: addressId,
-        streetAddress,
-        apt: apt || undefined,
-        city,
-        state,
-        provinceCountry: String(address.country ?? "").trim(),
-        zipCode,
-        isPrimary: address.isPrimary === true || index === 0,
-      };
-    })
-    .filter((address): address is NonNullable<typeof address> => address != null);
-
-  if (mapped.length > 0) {
-    return mapped.map((address, index) => ({
-      ...address,
-      isPrimary: mapped.some((entry) => entry.isPrimary) ? address.isPrimary : index === 0,
-    }));
+  if (!streetAddress && !city && !state && !zipCode && !apt) {
+    return [];
   }
 
-  return [];
+  return [
+    {
+      id: addressId,
+      streetAddress,
+      apt: apt || undefined,
+      city,
+      state,
+      provinceCountry: String(snapshotAddress.country ?? "").trim(),
+      zipCode,
+      isPrimary: true,
+    },
+  ];
 }
 
 function normalizeApiInvoiceParty(raw: unknown): OrderParty {
