@@ -25,7 +25,7 @@ import {
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
 import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
-import { coreAddressHasContent, type Customer } from "@/lib/customers/types";
+import { coreAddressHasContent, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 import type { Order } from "@/lib/orders/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -41,7 +41,7 @@ function SenderViewSections({ customer }: { customer: Customer }) {
   const { t } = useTranslation();
   const partyLabel = t("orders.columns.sender");
   const phones = getOrderedRecordPhones(customer.phones);
-  const addresses = customer.addresses.filter(coreAddressHasContent);
+  const address = getCustomerPrimaryCoreAddress(customer);
 
   return (
     <>
@@ -77,22 +77,15 @@ function SenderViewSections({ customer }: { customer: Customer }) {
         </RecordViewSheetSection>
       ) : null}
 
-      {addresses.length > 0 ? (
+      {coreAddressHasContent(address) ? (
         <RecordViewSheetSection
           title={t("orders.view.senderAddress", { party: partyLabel })}
           icon={MapPin}
         >
-          {addresses.map((address, index) => (
-            <AddressActionRow
-              key={`sender-address-${index}`}
-              label={
-                index === 0
-                  ? t("orders.view.primaryAddress")
-                  : t("orders.view.additionalAddress", { index })
-              }
-              address={address}
-            />
-          ))}
+          <AddressActionRow
+            label={t("orders.view.primaryAddress")}
+            address={address}
+          />
         </RecordViewSheetSection>
       ) : null}
     </>

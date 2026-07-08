@@ -249,7 +249,7 @@ type TransactionPartyAddressHolder = {
   addresses?: ApiAddress[];
 };
 
-/** Prefer the transaction snapshot (`address`) over embedded customer `addresses[]`. */
+/** Transaction snapshot from `party.address` only — not `party.addresses[]`. */
 export function normalizeTransactionPartyAddresses(
   raw?: TransactionPartyAddressHolder | null,
 ): CustomerCoreAddress[] | null {
@@ -261,20 +261,20 @@ export function normalizeTransactionPartyAddresses(
   return coreAddressHasContent(snapshot) ? [snapshot] : null;
 }
 
+/**
+ * Pickup/invoice parties carry a single address snapshot at create time.
+ * Prefer `raw.address`; never hydrate the full customer address book from `addresses[]`.
+ */
 export function withTransactionPartyAddressSnapshot<T extends { addresses: CustomerCoreAddress[] }>(
   party: T,
   raw: unknown,
 ): T {
-  if (!raw || typeof raw !== "object") {
-    return party;
-  }
+  const snapshotAddresses =
+    raw && typeof raw === "object"
+      ? normalizeTransactionPartyAddresses(raw as TransactionPartyAddressHolder)
+      : null;
 
-  const snapshotAddresses = normalizeTransactionPartyAddresses(raw as TransactionPartyAddressHolder);
-  if (!snapshotAddresses) {
-    return party;
-  }
-
-  return { ...party, addresses: snapshotAddresses };
+  return { ...party, addresses: snapshotAddresses ?? [] };
 }
 
 function normalizeBranch(raw?: ApiBranch): CustomerBranch {
