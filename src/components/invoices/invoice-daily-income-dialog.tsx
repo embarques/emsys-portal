@@ -230,7 +230,7 @@ export function InvoiceDailyIncomeDialog({
         <form className="space-y-5" onSubmit={handleSubmit(submit)}>
           <div
             className="relative transition-[height] duration-300 [perspective:1200px]"
-            style={{ height: cardFlipped ? 286 : 164 }}
+            style={{ height: cardFlipped ? (statementCurrency === "DOP" ? 350 : 286) : 164 }}
           >
             <div
               className="absolute inset-0 transition-transform duration-500 [transform-style:preserve-3d]"
@@ -369,6 +369,17 @@ export function InvoiceDailyIncomeDialog({
                         ) : null}
                       </div>
                     ) : null}
+                    <div className={statementCurrency === "DOP" ? "space-y-1.5 sm:col-span-2" : "space-y-1.5"}>
+                      <Label htmlFor="invoice-statement-employee">Employee</Label>
+                      <Input
+                        id="invoice-statement-employee"
+                        value={currentUserQuery.data?.name ?? "Loading employee…"}
+                        disabled
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Recorded as the employee who receives the invoice payment.
+                      </p>
+                    </div>
                   </div>
                   {statementError ? <p className="text-xs text-destructive">{statementError}</p> : null}
                   <div className="flex justify-between gap-2 border-t border-blue-200 pt-3 dark:border-blue-900">
@@ -524,11 +535,7 @@ export function InvoiceDailyIncomeDialog({
             </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Employee</Label>
-              <Input value={currentUserQuery.data?.name ?? "Loading employee…"} disabled />
-            </div>
+              <div>
             <div className="space-y-2">
               <Label htmlFor="daily-income-description">Description</Label>
               <Input id="daily-income-description" disabled={!statementOpen} {...register("description")} />
