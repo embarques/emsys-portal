@@ -4,6 +4,10 @@ import { type ReactNode } from "react";
 import { ListChecks, Pencil, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  TableSelectionActionDivider,
+  TableSelectionActionGroup,
+} from "@/components/app-shell/table-selection-action-group";
 import { useTranslation } from "@/lib/i18n";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
@@ -53,8 +57,9 @@ export function TableSelectionToolbar({
 
   const total = totalCount ?? pageRowIds.length;
 
-  const showEdit = selectedIds.length === 1 && onEdit && canEdit;
-  const showDelete = onDelete && canDelete;
+  const showEdit = Boolean(onEdit && canEdit);
+  const editDisabled = selectedIds.length !== 1;
+  const showDelete = Boolean(onDelete && canDelete);
   const othersAvailable = canSelectAllOthers(pageRowIds, selectedIds);
   const hasRecordActions = Boolean(showEdit || actions || showDelete);
 
@@ -99,31 +104,36 @@ export function TableSelectionToolbar({
       {/* Record actions: operate on the selected rows */}
       {hasRecordActions ? (
         <div className="flex flex-wrap items-center gap-1.5">
-          {showEdit ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
-              onClick={onEdit}
-            >
-              <Pencil className="h-4 w-4" />
-              {t("common.actions.edit")}
-            </Button>
-          ) : null}
           {actions}
-          {showDelete ? (
+          {showEdit || showDelete ? (
             <>
-              <span className="mx-1 hidden h-6 w-px bg-border sm:block" aria-hidden />
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={deleteDisabled}
-                className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
-                onClick={onDelete}
-              >
-                <Trash2 className="h-4 w-4" />
-                {t("common.table.deleteSelected")}
-              </Button>
+              {actions ? <TableSelectionActionDivider /> : null}
+              <TableSelectionActionGroup aria-label={t("common.table.recordActionsGroup")}>
+                {showEdit ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={editDisabled}
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
+                    onClick={onEdit}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    {t("common.actions.edit")}
+                  </Button>
+                ) : null}
+                {showDelete ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={deleteDisabled}
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
+                    onClick={onDelete}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {t("common.actions.delete")}
+                  </Button>
+                ) : null}
+              </TableSelectionActionGroup>
             </>
           ) : null}
         </div>

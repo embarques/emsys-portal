@@ -21,10 +21,13 @@
     "markComplete": "Marcar completada",
     "markIncomplete": "Marcar incompleta",
     "assignRoute": "Asignar ruta",
+    "unassignRoute": "Desasignar ruta",
     "clearRoute": "Limpiar ruta",
     "clearingRoute": "Limpiando…",
     "noAssignedRoute": "Ninguna de las órdenes seleccionadas está asignada a una ruta.",
-    "map": "Mapa"
+    "map": "Mapa",
+    "completionGroup": "Estado de completado",
+    "routeGroup": "Asignación de ruta"
   },
   "stats": {
     "pendingOrders": {
@@ -218,13 +221,16 @@
   },
   "map": {
     "title": "Mapa de recogidas",
-    "description": "Solo se muestran paradas de recogida verificadas. Haga clic en los marcadores para seleccionar y asignar rutas.",
+    "description": "Solo se trazan en el mapa las paradas de recogida verificadas que estén seleccionadas. Seleccione recogidas en la lista o use Seleccionar todo.",
     "loading": "Cargando paradas de recogida verificadas…",
     "empty": "No hay paradas de recogida verificadas que coincidan con los filtros actuales.",
-    "stopsShown": "{{count}} paradas verificadas",
+    "stopsShown": "{{count}} en el mapa",
     "selected": "{{count}} seleccionadas",
-    "clickToSelect": "Haga clic en los marcadores para seleccionar recogidas",
+    "noMappableStops": "Ninguna de las recogidas seleccionadas tiene una dirección verificada con coordenadas, por lo que no hay nada que trazar en el mapa.",
+    "selectToMap": "Seleccione varias recogidas en la lista o haga clic en Seleccionar todo para trazar {{count}} paradas verificadas.",
+    "clickToSelect": "Seleccione paradas para asignar o desasignar rutas",
     "clearSelection": "Limpiar selección",
+    "mappedStopsTitle": "Paradas en el mapa",
     "selectedStopsTitle": "Paradas seleccionadas",
     "removeStop": "Quitar {{name}} de la selección",
     "legend": {

@@ -41,7 +41,7 @@
     "deselectAll": "Deseleccionar todo",
     "selectAllOthers": "Seleccionar los demás",
     "clearSelection": "Limpiar selección",
-    "deleteSelected": "Eliminar seleccionados",
+    "recordActionsGroup": "Acciones de registro",
     "showFilters": "Mostrar filtros",
     "hideFilters": "Ocultar filtros",
     "filter": "Filtrar",

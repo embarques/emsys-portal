@@ -21,10 +21,13 @@
     "markComplete": "Mark complete",
     "markIncomplete": "Mark incomplete",
     "assignRoute": "Assign route",
+    "unassignRoute": "Unassign route",
     "clearRoute": "Clear route",
     "clearingRoute": "Clearing…",
     "noAssignedRoute": "None of the selected orders are assigned to a route.",
-    "map": "Map"
+    "map": "Map",
+    "completionGroup": "Completion status",
+    "routeGroup": "Route assignment"
   },
   "stats": {
     "pendingOrders": {
@@ -218,13 +221,16 @@
   },
   "map": {
     "title": "Pickup map",
-    "description": "Only verified pickup stops are shown. Click markers to select and assign routes.",
+    "description": "Only multi-selected verified pickup stops are plotted on the map. Select pickups in the orders list or use Select all.",
     "loading": "Loading verified pickup stops…",
     "empty": "No verified pickup stops match the current filters.",
-    "stopsShown": "{{count}} verified stops",
+    "stopsShown": "{{count}} on map",
     "selected": "{{count}} selected",
-    "clickToSelect": "Click markers to select pickups",
+    "noMappableStops": "None of the selected pickups have a verified address with map coordinates, so there is nothing to map.",
+    "selectToMap": "Multi-select pickups in the orders list or click Select all to map {{count}} verified stops.",
+    "clickToSelect": "Select stops to assign or unassign routes",
     "clearSelection": "Clear selection",
+    "mappedStopsTitle": "Mapped stops",
     "selectedStopsTitle": "Selected stops",
     "removeStop": "Remove {{name}} from selection",
     "legend": {

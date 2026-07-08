@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckSquare, ListChecks, Loader2, MapPin, Route as RouteIcon, X } from "lucide-react";
+import { CheckSquare, ListChecks, Loader2, MapPin, Route as RouteIcon, RouteOff, Square, X } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import { useOrders } from "@/lib/orders/hooks/use-orders";
 import {
   buildOrderListParams,
   getOrderRecordId,
+  type Order,
   type OrderFilterState,
   type OrderListParams,
 } from "@/lib/orders/types";
@@ -39,6 +40,15 @@ import { cn } from "@/lib/utils";
 const MAP_ORDERS_LIMIT = 500;
 const DEFAULT_MAP_CENTER = { lat: 40.7128, lng: -74.006 };
 const DEFAULT_MAP_ZOOM = 11;
+
+/** Clean street map: hide points of interest, business labels, and transit. */
+const PLAIN_MAP_STYLES = [
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.business", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.park", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "transit.station", stylers: [{ visibility: "off" }] },
+] as const;
 
 type LatLngLiteral = { lat: number; lng: number };
 
@@ -77,13 +87,15 @@ export type OrdersMapViewProps = {
   active: boolean;
   filters: OrderFilterState;
   sort: OrderListParams["sort"];
-  selectedIds: string[];
-  onSelectedIdsChange: (ids: string[]) => void;
+  /** Fixed set of orders mapped from the orders/pickups table selection. */
+  baseSelectedIds: string[];
   assignRouteOptions: SearchableSelectOption[];
   assignRoutesLoading: boolean;
   getRouteByKey: (routeId: string | undefined) => ActiveRoute | undefined;
   onAssignRoute: (routeId: string, pickupIds: number[]) => Promise<void>;
+  onUnassignRoute: (orders: Order[]) => Promise<void>;
   isAssigning: boolean;
+  isUnassigning: boolean;
 };
 
 function buildMarkerIcon(
@@ -92,17 +104,13 @@ function buildMarkerIcon(
 ) {
   const { selected, hasRoute } = options;
 
-  let fillColor = "#2563eb";
-  if (hasRoute) fillColor = "#7c3aed";
-  if (selected) fillColor = "#ea580c";
-
   return {
     path: maps.SymbolPath.CIRCLE,
-    fillColor,
+    fillColor: hasRoute ? "#7c3aed" : "#2563eb",
     fillOpacity: 1,
-    strokeColor: selected ? "#ffffff" : "#1e3a8a",
-    strokeWeight: selected ? 2.5 : 1.5,
-    scale: selected ? 11 : 9,
+    strokeColor: selected ? "#ea580c" : "#ffffff",
+    strokeWeight: selected ? 4 : 2,
+    scale: selected ? 12 : 9,
   };
 }
 
@@ -128,13 +136,14 @@ export function OrdersMapView({
   active,
   filters,
   sort,
-  selectedIds,
-  onSelectedIdsChange,
+  baseSelectedIds,
   assignRouteOptions,
   assignRoutesLoading,
   getRouteByKey,
   onAssignRoute,
+  onUnassignRoute,
   isAssigning,
+  isUnassigning,
 }: OrdersMapViewProps) {
   const { t } = useTranslation();
   const { notifyError } = useFeedback();
@@ -142,10 +151,14 @@ export function OrdersMapView({
   const mapRef = useRef<GoogleMapInstance | null>(null);
   const mapsLibRef = useRef<GoogleMapsCore | null>(null);
   const markersRef = useRef<MarkerBinding[]>([]);
+  const initializedSelectionRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
+  const [unassignOpen, setUnassignOpen] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState("");
+  /** Map-local selection, independent from the table selection that seeded the map. */
+  const [mapSelectedIds, setMapSelectedIds] = useState<string[]>([]);
 
   const mapListParams = useMemo(
     () =>
@@ -160,27 +173,63 @@ export function OrdersMapView({
   );
 
   const { data, isLoading, isError } = useOrders(mapListParams);
-  const orders = data?.items ?? [];
+  const orders = useMemo(() => data?.items ?? [], [data?.items]);
 
-  const { stops } = useMemo(
+  const orderByRecordId = useMemo(() => {
+    const lookup = new Map<string, Order>();
+    for (const order of orders) {
+      lookup.set(getOrderRecordId(order), order);
+    }
+    return lookup;
+  }, [orders]);
+
+  const { stops: allStops } = useMemo(
     () => buildPickupMapStops(orders, getOrderRecordId),
     [orders],
   );
 
-  const selectedStops = useMemo(
-    () => stops.filter((stop) => selectedIds.includes(stop.orderRecordId)),
-    [selectedIds, stops],
+  /** Fixed set plotted on the map: verified stops from the table selection. */
+  const mappedStops = useMemo(
+    () => allStops.filter((stop) => baseSelectedIds.includes(stop.orderRecordId)),
+    [allStops, baseSelectedIds],
   );
 
-  const stopIds = useMemo(() => stops.map((stop) => stop.orderRecordId), [stops]);
-  const allStopsSelected = stopIds.length > 0 && stopIds.every((id) => selectedIds.includes(id));
-  const othersAvailable = canSelectAllOthers(stopIds, selectedIds);
+  const baseIds = useMemo(() => mappedStops.map((stop) => stop.orderRecordId), [mappedStops]);
+  const selectedStops = useMemo(
+    () => mappedStops.filter((stop) => mapSelectedIds.includes(stop.orderRecordId)),
+    [mappedStops, mapSelectedIds],
+  );
+  const selectedAssignedStops = useMemo(
+    () => selectedStops.filter((stop) => Boolean(stop.routeId?.trim())),
+    [selectedStops],
+  );
 
+  const allBaseSelected = baseIds.length > 0 && baseIds.every((id) => mapSelectedIds.includes(id));
+  const othersAvailable = canSelectAllOthers(baseIds, mapSelectedIds);
+
+  function toggleMapSelection(orderRecordId: string) {
+    setMapSelectedIds((current) =>
+      current.includes(orderRecordId)
+        ? current.filter((id) => id !== orderRecordId)
+        : [...current, orderRecordId],
+    );
+  }
+
+  // Default every mapped stop to selected on first load, then keep selection pruned to the plotted set.
   useEffect(() => {
-    if (stops.length === 0 && selectedIds.length > 0) {
-      onSelectedIdsChange([]);
+    const ids = mappedStops.map((stop) => stop.orderRecordId);
+    if (ids.length === 0) {
+      initializedSelectionRef.current = false;
+      setMapSelectedIds((prev) => (prev.length ? [] : prev));
+      return;
     }
-  }, [onSelectedIdsChange, selectedIds.length, stops.length]);
+    if (!initializedSelectionRef.current) {
+      initializedSelectionRef.current = true;
+      setMapSelectedIds(ids);
+      return;
+    }
+    setMapSelectedIds((prev) => prev.filter((id) => ids.includes(id)));
+  }, [mappedStops]);
 
   useEffect(() => {
     if (!active) {
@@ -213,6 +262,8 @@ export function OrdersMapView({
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: true,
+          clickableIcons: false,
+          styles: PLAIN_MAP_STYLES,
         });
         mapRef.current = map;
         setMapReady(true);
@@ -237,6 +288,7 @@ export function OrdersMapView({
     };
   }, [active, t]);
 
+  // Plot all mapped stops once per base change; selection styling is handled separately.
   useEffect(() => {
     const map = mapRef.current;
     const maps = mapsLibRef.current;
@@ -247,53 +299,45 @@ export function OrdersMapView({
     }
     markersRef.current = [];
 
-    for (const stop of stops) {
-      const position = { lat: stop.lat, lng: stop.lng };
-
-      const selected = selectedIds.includes(stop.orderRecordId);
+    for (const stop of mappedStops) {
       const marker = new maps.Marker({
         map,
-        position,
+        position: { lat: stop.lat, lng: stop.lng },
         title: stop.senderName,
         icon: buildMarkerIcon(maps, {
-          selected,
+          selected: false,
           hasRoute: Boolean(stop.routeId?.trim()),
         }),
-        zIndex: selected ? 2 : 1,
+        zIndex: 1,
       });
 
-      marker.addListener("click", () => {
-        onSelectedIdsChange(
-          selectedIds.includes(stop.orderRecordId)
-            ? selectedIds.filter((id) => id !== stop.orderRecordId)
-            : [...selectedIds, stop.orderRecordId],
-        );
-      });
+      marker.addListener("click", () => toggleMapSelection(stop.orderRecordId));
 
       markersRef.current.push({ marker, stop });
     }
 
-    if (stops.length === 1) {
-      map.setCenter({ lat: stops[0].lat, lng: stops[0].lng });
+    if (mappedStops.length === 1) {
+      map.setCenter({ lat: mappedStops[0].lat, lng: mappedStops[0].lng });
       map.setZoom(14);
       return;
     }
 
-    const bounds = buildStopsBoundsLiteral(stops);
+    const bounds = buildStopsBoundsLiteral(mappedStops);
     if (bounds) {
       map.fitBounds(bounds, 56);
     } else {
       map.setCenter(DEFAULT_MAP_CENTER);
       map.setZoom(DEFAULT_MAP_ZOOM);
     }
-  }, [active, mapReady, onSelectedIdsChange, selectedIds, stops]);
+  }, [active, mapReady, mappedStops]);
 
+  // Repaint marker styling when the map selection (or plotted set) changes.
   useEffect(() => {
     const maps = mapsLibRef.current;
     if (!maps) return;
 
     for (const binding of markersRef.current) {
-      const selected = selectedIds.includes(binding.stop.orderRecordId);
+      const selected = mapSelectedIds.includes(binding.stop.orderRecordId);
       binding.marker.setIcon(
         buildMarkerIcon(maps, {
           selected,
@@ -302,7 +346,7 @@ export function OrdersMapView({
       );
       binding.marker.setZIndex(selected ? 2 : 1);
     }
-  }, [selectedIds]);
+  }, [mapSelectedIds, mappedStops]);
 
   function openAssignRouteDialog() {
     if (selectedStops.length === 0) return;
@@ -324,30 +368,59 @@ export function OrdersMapView({
     }
   }
 
+  function openUnassignDialog() {
+    if (selectedAssignedStops.length === 0) return;
+    setUnassignOpen(true);
+  }
+
+  async function confirmUnassign() {
+    if (selectedAssignedStops.length === 0) return;
+
+    const ordersToClear = selectedAssignedStops
+      .map((stop) => orderByRecordId.get(stop.orderRecordId))
+      .filter((order): order is Order => Boolean(order));
+
+    if (ordersToClear.length === 0) return;
+
+    try {
+      await onUnassignRoute(ordersToClear);
+      setUnassignOpen(false);
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
+  }
+
+  const isMutating = isAssigning || isUnassigning;
+
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/30 px-4 py-3">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border shadow-md ring-1 ring-black/5 bg-card dark:ring-white/10">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 font-medium text-foreground shadow-sm">
               <MapPin className="h-3.5 w-3.5" />
-              {t("orders.map.stopsShown", { count: stops.length })}
+              {t("orders.map.stopsShown", { count: mappedStops.length })}
             </span>
-            {selectedStops.length > 0 ? (
-              <span className="font-medium text-primary">
-                {t("common.table.selected", { count: selectedStops.length, total: stops.length })}
-              </span>
-            ) : (
-              <span>{t("orders.map.clickToSelect")}</span>
-            )}
+            {mappedStops.length > 0 ? (
+              selectedStops.length > 0 ? (
+                <span className="font-medium text-primary">
+                  {t("common.table.selected", {
+                    count: selectedStops.length,
+                    total: mappedStops.length,
+                  })}
+                </span>
+              ) : (
+                <span>{t("orders.map.clickToSelect")}</span>
+              )
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={stopIds.length === 0 || allStopsSelected}
-              onClick={() => onSelectedIdsChange(stopIds)}
+              disabled={baseIds.length === 0 || allBaseSelected}
+              onClick={() => setMapSelectedIds(baseIds)}
             >
               <CheckSquare className="h-4 w-4" />
               {t("common.table.selectAll")}
@@ -355,8 +428,8 @@ export function OrdersMapView({
             <Button
               variant="outline"
               size="sm"
-              disabled={selectedIds.length === 0}
-              onClick={() => onSelectedIdsChange([])}
+              disabled={mapSelectedIds.length === 0}
+              onClick={() => setMapSelectedIds([])}
             >
               <X className="h-4 w-4" />
               {t("common.table.deselectAll")}
@@ -365,14 +438,23 @@ export function OrdersMapView({
               variant="outline"
               size="sm"
               disabled={!othersAvailable}
-              onClick={() => onSelectedIdsChange(selectAllOthers(stopIds, selectedIds))}
+              onClick={() => setMapSelectedIds(selectAllOthers(baseIds, mapSelectedIds))}
             >
               <ListChecks className="h-4 w-4" />
               {t("common.table.selectAllOthers")}
             </Button>
             <Button
+              variant="outline"
               size="sm"
-              disabled={selectedStops.length === 0 || isAssigning}
+              disabled={selectedAssignedStops.length === 0 || isMutating}
+              onClick={openUnassignDialog}
+            >
+              <RouteOff className="h-4 w-4" />
+              {t("orders.actions.unassignRoute")}
+            </Button>
+            <Button
+              size="sm"
+              disabled={selectedStops.length === 0 || isMutating}
               onClick={openAssignRouteDialog}
             >
               <RouteIcon className="h-4 w-4" />
@@ -384,6 +466,7 @@ export function OrdersMapView({
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <div className="relative min-h-[min(72vh,48rem)] flex-1">
             <div ref={mapContainerRef} className="absolute inset-0 bg-muted" aria-label={t("orders.map.title")} />
+            <div className="pointer-events-none absolute inset-0 z-[5] rounded-sm shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]" />
 
             {isLoading ? (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70">
@@ -406,75 +489,93 @@ export function OrdersMapView({
               </div>
             ) : null}
 
-            {!isLoading && !isError && !mapError && stops.length === 0 ? (
+            {!isLoading && !isError && !mapError && mappedStops.length === 0 ? (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 px-6 text-center text-sm text-muted-foreground">
                 {t("orders.map.empty")}
               </div>
             ) : null}
 
-            <div className="pointer-events-none absolute bottom-4 left-4 z-10 rounded-lg border bg-background/95 px-3 py-2 text-xs shadow-sm">
+            <div className="pointer-events-none absolute bottom-4 left-4 z-10 rounded-lg border border-border bg-background px-3 py-2 text-xs shadow-md ring-1 ring-black/5 dark:ring-white/10">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className={cn("h-2.5 w-2.5 rounded-full bg-blue-600")} />
+                  <span className={cn("h-2.5 w-2.5 rounded-full bg-blue-600 ring-1 ring-blue-900/40")} />
                   {t("orders.map.legend.unassigned")}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className={cn("h-2.5 w-2.5 rounded-full bg-violet-600")} />
+                  <span className={cn("h-2.5 w-2.5 rounded-full bg-violet-600 ring-1 ring-violet-900/40")} />
                   {t("orders.map.legend.assigned")}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className={cn("h-2.5 w-2.5 rounded-full bg-orange-600 ring-2 ring-white")} />
+                  <span className={cn("h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-orange-500")} />
                   {t("orders.map.legend.selected")}
                 </span>
               </div>
             </div>
           </div>
 
-          {selectedStops.length > 0 ? (
-            <aside className="flex w-full shrink-0 flex-col border-t bg-background lg:w-80 lg:border-l lg:border-t-0">
-              <div className="border-b px-4 py-3">
-                <h3 className="text-sm font-semibold">{t("orders.map.selectedStopsTitle")}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {t("orders.map.selected", { count: selectedStops.length })}
+          {mappedStops.length > 0 ? (
+            <aside className="flex w-full shrink-0 flex-col border-t border-border bg-muted/25 lg:w-80 lg:border-l lg:border-t-0 lg:shadow-[-6px_0_16px_-8px_rgba(0,0,0,0.12)] dark:lg:shadow-[-6px_0_16px_-8px_rgba(0,0,0,0.45)]">
+              <div className="border-b border-border bg-muted/50 px-4 py-3">
+                <h3 className="text-sm font-semibold text-foreground">{t("orders.map.mappedStopsTitle")}</h3>
+                <p className="text-xs text-foreground/70">
+                  {t("common.table.selected", {
+                    count: selectedStops.length,
+                    total: mappedStops.length,
+                  })}
                 </p>
               </div>
-              <ul className="max-h-[min(40vh,24rem)] flex-1 space-y-0 overflow-y-auto lg:max-h-none">
-                {selectedStops.map((stop) => (
-                  <li key={stop.orderRecordId} className="border-b last:border-b-0">
-                    <div className="flex items-start gap-2 px-4 py-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium leading-snug">{stop.senderName}</p>
-                        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                          {stop.addressLine}
-                        </p>
-                        {stop.routeId ? (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {t("orders.columns.route")}:{" "}
-                            {formatOrderRouteName(
-                              { routeId: stop.routeId, routeName: stop.routeName },
-                              getRouteByKey(stop.routeId),
-                              t,
-                            )}
-                          </p>
-                        ) : null}
-                      </div>
-                      <Button
+              <ul className="max-h-[min(40vh,24rem)] flex-1 space-y-2 overflow-y-auto p-3 lg:max-h-none">
+                {mappedStops.map((stop) => {
+                  const selected = mapSelectedIds.includes(stop.orderRecordId);
+                  const assigned = Boolean(stop.routeId?.trim());
+                  return (
+                    <li key={stop.orderRecordId}>
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0 text-muted-foreground"
-                        aria-label={t("orders.map.removeStop", { name: stop.senderName })}
-                        onClick={() =>
-                          onSelectedIdsChange(
-                            selectedIds.filter((id) => id !== stop.orderRecordId),
-                          )
-                        }
+                        onClick={() => toggleMapSelection(stop.orderRecordId)}
+                        aria-pressed={selected}
+                        className={cn(
+                          "flex w-full items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left shadow-sm ring-1 transition",
+                          selected
+                            ? "border-orange-500/60 bg-orange-500/[0.06] ring-orange-500/25"
+                            : "border-border bg-background ring-black/5 hover:bg-muted/50 dark:ring-white/10",
+                        )}
                       >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
+                        {selected ? (
+                          <CheckSquare className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+                        ) : (
+                          <Square className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                        )}
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold leading-snug text-foreground">
+                            {stop.senderName}
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-relaxed text-foreground/75">
+                            {stop.addressLine}
+                          </span>
+                          <span className="mt-1 inline-flex items-center gap-1.5">
+                            <span
+                              className={cn(
+                                "h-2 w-2 shrink-0 rounded-full",
+                                assigned ? "bg-violet-600" : "bg-blue-600",
+                              )}
+                              aria-hidden
+                            />
+                            <span className="text-xs text-foreground/70">
+                              {assigned
+                                ? formatOrderRouteName(
+                                    { routeId: stop.routeId, routeName: stop.routeName },
+                                    getRouteByKey(stop.routeId),
+                                    t,
+                                  )
+                                : t("orders.map.legend.unassigned")}
+                            </span>
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </aside>
           ) : null}
@@ -529,6 +630,43 @@ export function OrdersMapView({
             <Button onClick={() => void confirmAssignRoute()} disabled={!selectedRouteId || isAssigning}>
               <RouteIcon className="h-4 w-4" />
               {t("orders.actions.assignRoute")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={unassignOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setUnassignOpen(false);
+        }}
+      >
+        <DialogContent className="z-[70]" onOpenAutoFocus={(event) => event.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>{t("orders.dialogs.clearRouteTitle")}</DialogTitle>
+            <DialogDescription>
+              {selectedAssignedStops.length === 1
+                ? t("orders.dialogs.clearRouteDescription", {
+                    count: selectedAssignedStops.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
+                : t("orders.dialogs.clearRouteDescription_plural", {
+                    count: selectedAssignedStops.length,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUnassignOpen(false)}>
+              {t("common.actions.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void confirmUnassign()}
+              disabled={isUnassigning}
+            >
+              <RouteOff className="h-4 w-4" />
+              {t("orders.actions.unassignRoute")}
             </Button>
           </DialogFooter>
         </DialogContent>

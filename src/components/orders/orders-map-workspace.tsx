@@ -6,7 +6,10 @@ import { OrdersMapView } from "@/components/orders/orders-map-view";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { formatOrderRouteName } from "@/lib/orders/display";
-import { useAssignPickupsToRoute } from "@/lib/orders/hooks/use-orders";
+import {
+  useAssignPickupsToRoute,
+  useUnassignPickupsFromRoute,
+} from "@/lib/orders/hooks/use-orders";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useWorkspaceTabScope } from "@/lib/layout/workspace-tab-scope";
@@ -14,7 +17,7 @@ import {
   DEFAULT_ORDERS_MAP_CONTEXT,
   readOrdersMapContext,
 } from "@/lib/orders/store/orders-map-context";
-import type { OrderFilterState, OrderListParams } from "@/lib/orders/types";
+import type { Order, OrderFilterState, OrderListParams } from "@/lib/orders/types";
 import { useTranslation } from "@/lib/i18n";
 
 export function OrdersMapWorkspace() {
@@ -37,6 +40,7 @@ export function OrdersMapWorkspace() {
   }, [mapActive, tabScope?.tabId]);
 
   const assignRouteMutation = useAssignPickupsToRoute();
+  const unassignRouteMutation = useUnassignPickupsFromRoute();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
   const assignRouteOptions = useMemo(
     () => buildActiveRouteAssignmentOptions(pickupRouteLookup.items, t),
@@ -55,6 +59,15 @@ export function OrdersMapWorkspace() {
     );
   }
 
+  async function handleUnassignRoute(ordersToClear: Order[]) {
+    const cleared = await unassignRouteMutation.mutateAsync(ordersToClear);
+    notifySuccess(
+      cleared === 1
+        ? t("orders.toasts.routeCleared", { count: cleared })
+        : t("orders.toasts.routeCleared_plural", { count: cleared }),
+    );
+  }
+
   return (
     <div className="flex min-h-[min(80vh,52rem)] flex-col">
       <PageHeader title={t("orders.map.title")} description={t("orders.map.description")} />
@@ -62,13 +75,14 @@ export function OrdersMapWorkspace() {
         active={mapActive}
         filters={filters}
         sort={sort}
-        selectedIds={selectedIds}
-        onSelectedIdsChange={setSelectedIds}
+        baseSelectedIds={selectedIds}
         assignRouteOptions={assignRouteOptions}
         assignRoutesLoading={pickupRouteLookup.isLoading}
         getRouteByKey={pickupRouteLookup.getByKey}
         onAssignRoute={handleAssignRoute}
+        onUnassignRoute={handleUnassignRoute}
         isAssigning={assignRouteMutation.isPending}
+        isUnassigning={unassignRouteMutation.isPending}
       />
     </div>
   );

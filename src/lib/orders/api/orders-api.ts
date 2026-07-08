@@ -33,7 +33,8 @@ import { normalizeApiCustomer, withTransactionPartyAddressSnapshot } from "@/lib
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
 import type { Customer } from "@/lib/customers/types";
 import { CUSTOMER_PORTAL_BRANCHES, getCustomerPrimaryCoreAddress, type CustomerCoreAddress } from "@/lib/customers/types";
-import { createDefaultRecordPhones, getPhoneAtDisplayIndex, getPrimaryPhoneNumber, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
+import { buildApiPhonesPayload, createDefaultRecordPhones, getPhoneAtDisplayIndex, getPrimaryPhoneNumber, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
+import type { RecordPhoneWritePayload } from "@/lib/phones/types";
 import type { Employee } from "@/lib/employees/types";
 import { normalizeApiUser } from "@/lib/users/api/users-api";
 import type { User } from "@/lib/users/types";
@@ -110,6 +111,8 @@ type ApiPickupCustomerRef = {
   name: string;
   customerType: number;
   phone1: string;
+  /** Modern phones array — sent so the pickup upsert does not wipe the party's saved phones. */
+  phones?: RecordPhoneWritePayload[];
   email?: string;
   IDNumber?: string;
   phone2?: string;
@@ -617,20 +620,23 @@ export async function fetchPickupApiRecord(orderId: string): Promise<ApiPickup> 
 }
 
 /**
- * Unassign pickups from their scheduled route via `PUT /pickups/{id}` with `route: null`.
- * Round-trips the current API record so the server receives a complete payload.
+ * Unassign a pickup from its scheduled route via `PUT /pickups/{id}` with `route: null`.
+ *
+ * Builds the same `CreatePickupRequest` write payload used by update/mark-complete so the
+ * server receives a valid body. PUTting the raw read-shaped GET record does not reliably
+ * clear the route assignment.
  */
 export async function clearPickupRouteAssignment(order: Order): Promise<void> {
   if (order.id <= 0) {
     throw new Error("A valid pickup is required.");
   }
 
-  const pickup = await fetchPickupApiRecord(String(order.id));
-  pickup.route = null;
+  const payload = buildPickupWritePayload(orderToFormValues(order));
+  payload.route = null;
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.PICKUPS}/${order.id}`,
-    pickup,
+    payload,
   );
 
   assertMutationSuccess(response, "Unable to clear pickup route.");
@@ -688,6 +694,7 @@ function buildPickupCustomerRef(
   const email = customer.email.trim();
   const idNumber = customer.IDNumber.trim();
   const phone2 = getPhoneAtDisplayIndex(customer.phones, 1);
+  const phones = buildApiPhonesPayload(customer.phones).filter((phone) => phone.number.trim());
   const address = buildApiAddressPayload(
     selectedAddress ?? getCustomerPrimaryCoreAddress(customer),
   );
@@ -697,6 +704,10 @@ function buildPickupCustomerRef(
     customerType: coerceCustomerTypeFromApi(customer.customerType),
     phone1,
   };
+
+  if (phones.length > 0) {
+    payload.phones = phones;
+  }
 
   if (customer.id.trim()) {
     payload.id = customer.id.trim();

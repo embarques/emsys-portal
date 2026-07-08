@@ -32,6 +32,10 @@ import { writeOrdersMapContext } from "@/lib/orders/store/orders-map-context";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 
+import {
+  TableSelectionActionDivider,
+  TableSelectionActionGroup,
+} from "@/components/app-shell/table-selection-action-group";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
@@ -94,6 +98,7 @@ import {
   type OrderFilterState,
   type OrderFormValues,
 } from "@/lib/orders/types";
+import { isOrderMappable } from "@/lib/orders/utils/pickup-map";
 import { useUsers } from "@/lib/users/hooks/use-users";
 import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -408,6 +413,12 @@ export function OrdersWorkspace() {
   }
 
   function openMapView() {
+    const mappableSelected = selectedOrders.filter(isOrderMappable);
+    if (mappableSelected.length === 0) {
+      notifyError(t("orders.map.noMappableStops"));
+      return;
+    }
+
     writeOrdersMapContext({
       filters,
       sort,
@@ -756,47 +767,53 @@ export function OrdersWorkspace() {
                 <Printer className="h-4 w-4" />
                 {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isSaving}
-                onClick={() => handleSetCompleted(true)}
-                className="border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                {t("orders.actions.markComplete")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isSaving}
-                onClick={() => handleSetCompleted(false)}
-                className="border-amber-500/30 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
-              >
-                <XCircle className="h-4 w-4" />
-                {t("orders.actions.markIncomplete")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isSaving}
-                onClick={openAssignRoute}
-              >
-                <RouteIcon className="h-4 w-4" />
-                {t("orders.actions.assignRoute")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isSaving || selectedOrdersWithRoute.length === 0}
-                onClick={openClearRoute}
-                className="border-amber-500/30 bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
-              >
-                <RouteOff className="h-4 w-4" />
-                {clearRouteMutation.isPending
-                  ? t("orders.actions.clearingRoute")
-                  : t("orders.actions.clearRoute")}
-              </Button>
+              <TableSelectionActionDivider />
+              <TableSelectionActionGroup aria-label={t("orders.actions.completionGroup")}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSaving}
+                  onClick={() => handleSetCompleted(true)}
+                  className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  {t("orders.actions.markComplete")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSaving}
+                  onClick={() => handleSetCompleted(false)}
+                  className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+                >
+                  <XCircle className="h-4 w-4" />
+                  {t("orders.actions.markIncomplete")}
+                </Button>
+              </TableSelectionActionGroup>
+              <TableSelectionActionDivider />
+              <TableSelectionActionGroup aria-label={t("orders.actions.routeGroup")}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSaving}
+                  onClick={openAssignRoute}
+                >
+                  <RouteIcon className="h-4 w-4" />
+                  {t("orders.actions.assignRoute")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSaving || selectedOrdersWithRoute.length === 0}
+                  onClick={openClearRoute}
+                  className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+                >
+                  <RouteOff className="h-4 w-4" />
+                  {clearRouteMutation.isPending
+                    ? t("orders.actions.clearingRoute")
+                    : t("orders.actions.clearRoute")}
+                </Button>
+              </TableSelectionActionGroup>
             </>
           }
         />
