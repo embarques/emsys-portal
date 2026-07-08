@@ -1,15 +1,15 @@
 /**
- * Customer address search paths for POST /customers/search.
- * The API exposes virtual `address.*` fields that match any entry in `addresses[]`
- * (primary and additional). Do not duplicate with `addresses.*` — that breaks OR search.
+ * Canonical customer address search paths for POST /customers/search.
+ * MongoDB dot notation matches the field on any entry in `addresses[]`, so these
+ * paths cover primary and additional addresses without compatibility aliases.
  */
 export function buildCustomerAddressSearchFields(...parts: readonly string[]): string[] {
-  return parts.map((part) => `address.${part}`);
+  return parts.map((part) => `addresses.${part}`);
 }
 
 /**
  * Bar + filter OR paths for street-level address matching.
- * `address.address1` is the API virtual field for `addresses[].address1` on any entry.
+ * `addresses.address1` matches `address1` on any entry in `addresses[]`.
  */
 export const CUSTOMER_ADDRESS_LINE_SEARCH_FIELDS = buildCustomerAddressSearchFields(
   "address1",

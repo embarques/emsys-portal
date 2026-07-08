@@ -5,7 +5,7 @@ export const CUSTOMER_PHONE_SEARCH_FIELDS = ["phones.number", "phone1", "phone2"
 
 /**
  * Customer directory search bar — POST /customers/search OR + contains.
- * Street search uses virtual `address.address1`, which matches any `addresses[].address1`.
+ * Street search uses `addresses.address1`, which matches any `addresses[]` entry.
  */
 export const CUSTOMER_BAR_OR_SEARCH_FIELDS = [
   "name",
