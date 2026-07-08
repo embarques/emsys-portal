@@ -18,7 +18,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: [...PHONE_OPERATORS],
     valueType: "text",
     placeholder: "Enter phone…",
-    queryFields: ["sender.phones.number", "sender.phone1"],
+    queryFields: ["sender.phone1"],
   },
   {
     field: "sender.address.address1",
@@ -110,7 +110,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     operators: [...PHONE_OPERATORS],
     valueType: "text",
     placeholder: "Enter phone…",
-    queryFields: ["receiver.phones.number", "receiver.phone1"],
+    queryFields: ["receiver.phone1"],
   },
   {
     field: "receiver.address.address1",
@@ -148,7 +148,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter zip code…",
   },
   {
-    field: "createdBy.name",
+    field: "user.name",
     label: "Created by",
     operators: ["eq", "neq", "contains", "startsWith"],
     valueType: "select",

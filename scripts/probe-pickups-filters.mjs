@@ -97,7 +97,7 @@ const PHONE = ["startsWith", "contains", "eq", "neq"];
 /** Each entry mirrors ORDER_TABLE_FILTER_FIELDS with a representative sample value. */
 const FIELDS = [
   { field: "sender.name", ops: TEXT, sample: "a" },
-  { field: "sender.phone", ops: PHONE, sample: "8095551234", queryFields: ["sender.phones.number", "sender.phone1"] },
+  { field: "sender.phone", ops: PHONE, sample: "8095551234", queryFields: ["sender.phone1"] },
   { field: "sender.address.address1", ops: TEXT, sample: "a" },
   { field: "sender.address.address2", ops: TEXT, sample: "a" },
   { field: "sender.address.city", ops: TEXT, sample: "a" },
@@ -106,13 +106,16 @@ const FIELDS = [
   { field: "sender.zipRange", ops: ["eq"], sample: "10001-10282", expand: "zipRange" },
   { field: "purpose", ops: TEXT, sample: "a" },
   { field: "receiver.name", ops: TEXT, sample: "a" },
-  { field: "receiver.phone", ops: PHONE, sample: "8095551234", queryFields: ["receiver.phones.number", "receiver.phone1"] },
+  { field: "receiver.phone", ops: PHONE, sample: "8095551234", queryFields: ["receiver.phone1"] },
   { field: "receiver.address.address1", ops: TEXT, sample: "a" },
   { field: "receiver.address.address2", ops: TEXT, sample: "a" },
   { field: "receiver.address.city", ops: TEXT, sample: "a" },
   { field: "receiver.address.state", ops: TEXT, sample: "NY" },
   { field: "receiver.address.zipcode", ops: [...TEXT, "gte", "lte"], sample: "10001" },
   { field: "user.name", ops: ["eq", "neq", "contains", "startsWith"], sample: "a" },
+  { field: "branch.id", ops: ["eq", "neq"], sample: "1" },
+  { field: "branch.code", ops: ["eq", "neq"], sample: "NY" },
+  { field: "branch.name", ops: TEXT, sample: "a" },
   { field: "completed", ops: ["eq", "neq"], sample: "true", expand: "completed" },
   { field: "date", ops: DATE, sample: "2026-01-01" },
   { field: "dateRange", ops: ["eq"], sample: "2026-01-01 to 2026-06-30", expand: "dateRange:date" },
@@ -178,15 +181,14 @@ function buildNode(entry, op) {
   return { field: entry.field, operator: op, value: entry.sample };
 }
 
-/** Wrap a node into the POST /search body, matching buildAdvancedSearchBody. */
+/** Wrap a node into the POST /search body, matching buildStripeStyleSearchBody (pagination in query). */
 function buildBody(node) {
-  const pagination = { page: 1, limit: 1, offset: 0 };
   const sort = [{ field: "date", direction: "desc" }];
 
   if ("filters" in node) {
-    return { operator: node.operator, filters: node.filters, pagination, sort };
+    return { operator: node.operator, filters: node.filters, sort };
   }
-  return { operator: "and", filters: [node], pagination, sort };
+  return { operator: "and", filters: [node], sort };
 }
 
 async function request(path, body) {
