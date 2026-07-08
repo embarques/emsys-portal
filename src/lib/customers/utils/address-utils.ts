@@ -108,7 +108,7 @@ function formatStreetLine(address: CustomerCoreAddress): string {
   return [address.address1, address.apartment, address.address2]
     .map(trimAddressPart)
     .filter(Boolean)
-    .join(", ");
+    .join(" ");
 }
 
 function formatUsaLocationLine(city: string, state: string, zipcode: string): string {

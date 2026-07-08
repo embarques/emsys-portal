@@ -262,7 +262,7 @@ export function normalizeTransactionPartyAddresses(
 }
 
 /**
- * Pickup/invoice parties carry a single address snapshot at create time.
+ * Pickup/invoice parties carry a single address snapshot at create time (API PR #150).
  * Prefer `raw.address`; never hydrate the full customer address book from `addresses[]`.
  */
 export function withTransactionPartyAddressSnapshot<T extends { addresses: CustomerCoreAddress[] }>(

@@ -49,26 +49,32 @@ export function formatCustomerDate(iso: string): string {
 }
 
 export function formatCoreAddressLine(address: CustomerCoreAddress): string {
-  const parts = [
-    address.address1,
-    address.address2,
-    address.apartment,
+  const street = [address.address1, address.apartment, address.address2]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(" ");
+  const location = [
     address.city,
-    address.state,
-    address.zipcode,
+    [address.state, address.zipcode].filter(Boolean).join(" "),
     address.country,
-  ].filter(Boolean);
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean);
 
+  const parts = [street, ...location].filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : "—";
 }
 
 /** Human-friendly address grouped into a few display lines (street / city-state-zip / country). */
 export function formatCoreAddressLines(address: CustomerCoreAddress): string[] {
-  const streetParts = [address.address1, address.apartment || address.address2].filter(Boolean);
+  const streetLine = [address.address1, address.apartment, address.address2]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(" ");
   const cityLineParts = [address.city, [address.state, address.zipcode].filter(Boolean).join(" ")].filter(Boolean);
 
   return [
-    streetParts.join(", "),
+    streetLine,
     cityLineParts.join(", "),
     address.country,
   ].filter((line) => line.trim().length > 0);
@@ -78,7 +84,8 @@ export function formatCoreAddressLines(address: CustomerCoreAddress): string[] {
 export function buildCoreAddressMapsQuery(address: CustomerCoreAddress): string {
   return [
     address.address1,
-    address.apartment || address.address2,
+    address.apartment,
+    address.address2,
     address.city,
     address.state,
     address.zipcode,
@@ -89,14 +96,13 @@ export function buildCoreAddressMapsQuery(address: CustomerCoreAddress): string 
 }
 
 export function formatAddressLine(address: CustomerAddress): string {
-  const parts = [
-    address.streetAddress,
-    address.apt,
-    address.city,
-    address.state,
-    address.provinceCountry,
-    address.zipCode,
-  ].filter(Boolean);
+  const street = [address.streetAddress, address.apt, address.crossStreet]
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean)
+    .join(" ");
+  const parts = [street, address.city, address.state, address.provinceCountry, address.zipCode].filter(
+    (value) => String(value ?? "").trim(),
+  );
 
   return parts.join(", ");
 }
@@ -116,7 +122,7 @@ export function formatPrimaryAddressStreetLine(
 
   return [address.address1, address.apartment, address.address2]
     .filter((value) => value.trim())
-    .join(", ");
+    .join(" ");
 }
 
 export function formatAddressSummary(customer: Customer): string {
