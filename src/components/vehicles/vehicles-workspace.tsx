@@ -462,6 +462,7 @@ export function VehiclesWorkspace() {
             onToggleSelect={toggleSelect}
             onRowClick={setViewVehicle}
             onRowDoubleClick={openEditForm}
+            activeRowId={viewVehicle?.id}
             emptyState={
               <>
                 <p className="text-muted-foreground">

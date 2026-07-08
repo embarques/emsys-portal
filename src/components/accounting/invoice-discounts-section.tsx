@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { AccountingEntryForm } from "@/components/accounting/accounting-entry-form";
 import { AccountingSectionRowActions } from "@/components/accounting/accounting-section-row-actions";
+import { InteractiveTableRow } from "@/components/app-shell/interactive-table-row";
+import { TableCopyableCell } from "@/components/app-shell/table-copyable-cell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   formatAccountingMoney,
@@ -20,6 +22,7 @@ type InvoiceDiscountsSectionProps = {
   onRowClick?: (entry: AccountingEntry) => void;
   onEdit?: (entry: AccountingEntry) => void;
   onDelete?: (entry: AccountingEntry) => void;
+  activeEntryId?: string;
 };
 
 export function InvoiceDiscountsSection({
@@ -30,6 +33,7 @@ export function InvoiceDiscountsSection({
   onRowClick,
   onEdit,
   onDelete,
+  activeEntryId,
 }: InvoiceDiscountsSectionProps) {
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -89,27 +93,41 @@ export function InvoiceDiscountsSection({
                   </td>
                 </tr>
               ) : (
-                discounts.map((entry) => (
-                  <tr
-                    key={entry.entryId}
-                    className="border-b last:border-0 hover:bg-muted/30"
-                    onClick={() => onRowClick?.(entry)}
-                    role={onRowClick ? "button" : undefined}
-                    tabIndex={onRowClick ? 0 : undefined}
-                  >
-                    <td className="px-4 py-3 font-medium">{entry.invoiceNumber ?? "—"}</td>
-                    <td className="px-4 py-3 font-mono text-xs">
-                      {entry.receiptNumber ?? entry.referenceNumber ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 font-medium">{formatAccountingMoney(entry.amount)}</td>
-                    <td className="px-4 py-3">
-                      {entry.paymentMethod ? getPaymentMethodLabel(entry.paymentMethod) : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <AccountingSectionRowActions entry={entry} onEdit={onEdit} onDelete={onDelete} />
-                    </td>
-                  </tr>
-                ))
+                discounts.map((entry) => {
+                  const receiptNumber = entry.receiptNumber ?? entry.referenceNumber;
+
+                  return (
+                    <InteractiveTableRow
+                      key={entry.entryId}
+                      active={entry.entryId === activeEntryId}
+                      onRowClick={onRowClick ? () => onRowClick(entry) : undefined}
+                    >
+                      <td className="px-4 py-3 font-medium">
+                        {entry.invoiceNumber ? (
+                          <TableCopyableCell value={entry.invoiceNumber} />
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs">
+                        {receiptNumber ? <TableCopyableCell value={receiptNumber} /> : "—"}
+                      </td>
+                      <td className="px-4 py-3 font-medium">
+                        <TableCopyableCell value={formatAccountingMoney(entry.amount)} />
+                      </td>
+                      <td className="px-4 py-3">
+                        {entry.paymentMethod ? (
+                          <TableCopyableCell value={getPaymentMethodLabel(entry.paymentMethod)} />
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
+                        <AccountingSectionRowActions entry={entry} onEdit={onEdit} onDelete={onDelete} />
+                      </td>
+                    </InteractiveTableRow>
+                  );
+                })
               )}
             </tbody>
           </table>

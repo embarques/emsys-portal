@@ -657,7 +657,9 @@ export function CustomersWorkspace() {
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
+            onRowClick={openViewCustomer}
             onRowDoubleClick={canUpdateCustomers ? openEditForm : undefined}
+            activeRowId={viewCustomer?.id}
             emptyState={
               <>
                 <p className="text-muted-foreground">{t("customers.empty.noMatch")}</p>

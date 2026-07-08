@@ -477,6 +477,7 @@ export function ContainersWorkspace() {
             onToggleSelect={(id, checked) => toggleSelect(Number(id), checked)}
             onRowClick={setViewContainer}
             onRowDoubleClick={openEditForm}
+            activeRowId={viewContainer ? String(viewContainer.id) : undefined}
             emptyState={
               <>
                 <p className="text-muted-foreground">

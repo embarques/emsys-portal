@@ -563,6 +563,7 @@ export function RolesWorkspace() {
             onToggleSelect={toggleSelect}
             onRowClick={setViewRole}
             onRowDoubleClick={openEditForm}
+            activeRowId={viewRole?.roleId}
             emptyState={
               <>
                 <p className="text-muted-foreground">

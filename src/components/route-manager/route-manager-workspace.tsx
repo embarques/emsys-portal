@@ -377,6 +377,7 @@ export function RouteManagerWorkspace() {
             onToggleSelect={toggleSelect}
             onRowClick={setViewAssignment}
             onRowDoubleClick={openEditForm}
+            activeRowId={viewAssignment?.id}
             emptyState={
               <>
                 <p className="text-muted-foreground">

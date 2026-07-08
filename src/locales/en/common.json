@@ -60,6 +60,11 @@
     "toggleColumn": "Toggle {{column}}",
     "moveColumnUp": "Move {{column}} up",
     "moveColumnDown": "Move {{column}} down",
+    "copy": {
+      "action": "Copy",
+      "success": "Copied to clipboard",
+      "error": "Could not copy to clipboard"
+    },
     "clearSearch": "Clear search",
     "search": "Search...",
     "field": "Field",

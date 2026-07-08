@@ -453,6 +453,7 @@ export function BranchesWorkspace() {
             onToggleSelect={(id, checked) => toggleSelect(Number(id), checked)}
             onRowClick={setViewBranch}
             onRowDoubleClick={openEditForm}
+            activeRowId={viewBranch ? String(viewBranch.id) : undefined}
             emptyState={
               <>
                 <p className="text-muted-foreground">

@@ -429,6 +429,7 @@ export function InventoryWorkspace() {
           onToggleSelect={toggleSelect}
           onRowClick={setViewItem}
           onRowDoubleClick={openEditForm}
+          activeRowId={viewItem?.id}
           emptyState={
             <p className="text-muted-foreground">No inventory items match your search or filters.</p>
           }

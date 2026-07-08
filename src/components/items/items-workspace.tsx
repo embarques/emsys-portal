@@ -405,6 +405,7 @@ export function ItemsWorkspace() {
             onToggleSelect={toggleSelect}
             onRowClick={setViewItem}
             onRowDoubleClick={openEditForm}
+            activeRowId={viewItem?.itemId}
             emptyState={
               <>
                 <p className="text-muted-foreground">

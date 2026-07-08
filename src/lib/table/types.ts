@@ -14,6 +14,10 @@ export type DataTableColumn<T> = ColumnVisibilityDefinition & {
   /** When false, cell content is not wrapped in a truncating div (use for badges/pills). */
   truncateCell?: boolean;
   stopRowClick?: boolean;
+  /** When false, the cell does not show copy-on-hover UI. Defaults to true for plain text cells. */
+  copyable?: boolean;
+  /** Raw text copied to the clipboard. Use for formatted or custom-rendered cells. */
+  copyValue?: (row: T) => string | undefined;
   /** When false, the column header is not clickable for sorting. Defaults to true. */
   sortable?: boolean;
   /** API sort field for this column (e.g. `phones.number`). Defaults to the column `id`. */

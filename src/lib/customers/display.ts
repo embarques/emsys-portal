@@ -65,19 +65,22 @@ export function formatCoreAddressLine(address: CustomerCoreAddress): string {
   return parts.length > 0 ? parts.join(", ") : "—";
 }
 
-/** Human-friendly address grouped into a few display lines (street / city-state-zip / country). */
+/** Human-friendly address grouped into a few display lines (street / city-state-zip-country). */
 export function formatCoreAddressLines(address: CustomerCoreAddress): string[] {
   const streetLine = [address.address1, address.apartment, address.address2]
     .map((value) => value.trim())
     .filter(Boolean)
     .join(" ");
-  const cityLineParts = [address.city, [address.state, address.zipcode].filter(Boolean).join(" ")].filter(Boolean);
-
-  return [
-    streetLine,
-    cityLineParts.join(", "),
+  const locationLine = [
+    address.city,
+    [address.state, address.zipcode].filter(Boolean).join(" "),
     address.country,
-  ].filter((line) => line.trim().length > 0);
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(", ");
+
+  return [streetLine, locationLine].filter((line) => line.trim().length > 0);
 }
 
 /** Single-line query string suitable for Google Maps search/directions URLs. */

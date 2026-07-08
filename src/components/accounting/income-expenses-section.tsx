@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { AccountingEntryForm } from "@/components/accounting/accounting-entry-form";
 import { AccountingSectionRowActions } from "@/components/accounting/accounting-section-row-actions";
+import { InteractiveTableRow } from "@/components/app-shell/interactive-table-row";
+import { TableCopyableCell } from "@/components/app-shell/table-copyable-cell";
 import { UniformPillWidthProvider, UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +28,7 @@ type IncomeExpensesSectionProps = {
   onRowClick?: (entry: AccountingEntry) => void;
   onEdit?: (entry: AccountingEntry) => void;
   onDelete?: (entry: AccountingEntry) => void;
+  activeEntryId?: string;
 };
 
 function InlineCategoryForm({
@@ -79,6 +82,7 @@ export function IncomeExpensesSection({
   onRowClick,
   onEdit,
   onDelete,
+  activeEntryId,
 }: IncomeExpensesSectionProps) {
   const ledgerEntries = entries
     .filter((entry) => entry.type === "expense" || entry.type === "income")
@@ -134,12 +138,10 @@ export function IncomeExpensesSection({
                   </tr>
                 ) : (
                   ledgerEntries.map((entry) => (
-                    <tr
+                    <InteractiveTableRow
                       key={entry.entryId}
-                      className="border-b last:border-0 hover:bg-muted/30"
-                      onClick={() => onRowClick?.(entry)}
-                      role={onRowClick ? "button" : undefined}
-                      tabIndex={onRowClick ? 0 : undefined}
+                      active={entry.entryId === activeEntryId}
+                      onRowClick={onRowClick ? () => onRowClick(entry) : undefined}
                     >
                       <td className="px-4 py-3">
                         <UniformWidthPill columnKey="type">
@@ -148,20 +150,42 @@ export function IncomeExpensesSection({
                           </Badge>
                         </UniformWidthPill>
                       </td>
-                      <td className="px-4 py-3">{formatAccountingCategory(entry)}</td>
                       <td className="px-4 py-3">
-                        {entry.paymentMethod ? getPaymentMethodLabel(entry.paymentMethod) : "—"}
+                        <TableCopyableCell value={formatAccountingCategory(entry)} />
+                      </td>
+                      <td className="px-4 py-3">
+                        {entry.paymentMethod ? (
+                          <TableCopyableCell value={getPaymentMethodLabel(entry.paymentMethod)} />
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="px-4 py-3 font-medium">
-                        {formatAccountingMoney(entry.amountPaid ?? entry.amount)}
+                        <TableCopyableCell
+                          value={formatAccountingMoney(entry.amountPaid ?? entry.amount)}
+                        />
                       </td>
-                      <td className="max-w-[240px] truncate px-4 py-3">{entry.description}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{formatAccountingDate(entry.date)}</td>
-                      <td className="px-4 py-3 font-mono text-xs">{entry.referenceNumber ?? "—"}</td>
-                      <td className="px-4 py-3">
+                      <td className="max-w-[240px] px-4 py-3">
+                        {entry.description ? (
+                          <TableCopyableCell value={entry.description} />
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        <TableCopyableCell value={formatAccountingDate(entry.date)} />
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs">
+                        {entry.referenceNumber ? (
+                          <TableCopyableCell value={entry.referenceNumber} />
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
                         <AccountingSectionRowActions entry={entry} onEdit={onEdit} onDelete={onDelete} />
                       </td>
-                    </tr>
+                    </InteractiveTableRow>
                   ))
                 )}
               </tbody>

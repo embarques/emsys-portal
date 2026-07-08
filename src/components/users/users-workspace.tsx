@@ -553,6 +553,7 @@ export function UsersWorkspace() {
             onToggleSelect={toggleSelect}
             onRowClick={setViewUser}
             onRowDoubleClick={openEditForm}
+            activeRowId={viewUser ? String(viewUser.id) : undefined}
             emptyState={
               <>
                 <p className="text-muted-foreground">

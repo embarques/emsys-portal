@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { AccountingEntryForm } from "@/components/accounting/accounting-entry-form";
 import { AccountingSectionRowActions } from "@/components/accounting/accounting-section-row-actions";
+import { InteractiveTableRow } from "@/components/app-shell/interactive-table-row";
+import { TableCopyableCell } from "@/components/app-shell/table-copyable-cell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   formatAccountingMoney,
@@ -21,6 +23,7 @@ type NewInvoicePaymentsSectionProps = {
   onRowClick?: (entry: AccountingEntry) => void;
   onEdit?: (entry: AccountingEntry) => void;
   onDelete?: (entry: AccountingEntry) => void;
+  activeEntryId?: string;
 };
 
 export function NewInvoicePaymentsSection({
@@ -31,6 +34,7 @@ export function NewInvoicePaymentsSection({
   onRowClick,
   onEdit,
   onDelete,
+  activeEntryId,
 }: NewInvoicePaymentsSectionProps) {
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -94,34 +98,50 @@ export function NewInvoicePaymentsSection({
                 </tr>
               ) : (
                 newInvoicePayments.map((entry) => (
-                  <tr
+                  <InteractiveTableRow
                     key={entry.entryId}
-                    className="border-b last:border-0 hover:bg-muted/30"
-                    onClick={() => onRowClick?.(entry)}
-                    role={onRowClick ? "button" : undefined}
-                    tabIndex={onRowClick ? 0 : undefined}
+                    active={entry.entryId === activeEntryId}
+                    onRowClick={onRowClick ? () => onRowClick(entry) : undefined}
                   >
-                    <td className="px-4 py-3 font-medium">{entry.invoiceNumber ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      {entry.invoiceTotal !== undefined
-                        ? formatAccountingMoney(entry.invoiceTotal)
-                        : "—"}
+                    <td className="px-4 py-3 font-medium">
+                      {entry.invoiceNumber ? (
+                        <TableCopyableCell value={entry.invoiceNumber} />
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      {formatAccountingMoney(entry.amountPaid ?? entry.amount)}
+                      {entry.invoiceTotal !== undefined ? (
+                        <TableCopyableCell value={formatAccountingMoney(entry.invoiceTotal)} />
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <TableCopyableCell
+                        value={formatAccountingMoney(entry.amountPaid ?? entry.amount)}
+                      />
                     </td>
                     <td className="px-4 py-3 font-medium">
-                      {formatAccountingMoney(getNewInvoicePaymentBalance(entry))}
+                      <TableCopyableCell value={formatAccountingMoney(getNewInvoicePaymentBalance(entry))} />
                     </td>
                     <td className="px-4 py-3">
-                      {entry.paymentMethod ? getPaymentMethodLabel(entry.paymentMethod) : "—"}
+                      {entry.paymentMethod ? (
+                        <TableCopyableCell value={getPaymentMethodLabel(entry.paymentMethod)} />
+                      ) : (
+                        "—"
+                      )}
                     </td>
-                    <td className="px-4 py-3">{entry.senderName ?? "—"}</td>
-                    <td className="px-4 py-3">{entry.receiverName ?? "—"}</td>
                     <td className="px-4 py-3">
+                      {entry.senderName ? <TableCopyableCell value={entry.senderName} /> : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {entry.receiverName ? <TableCopyableCell value={entry.receiverName} /> : "—"}
+                    </td>
+                    <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
                       <AccountingSectionRowActions entry={entry} onEdit={onEdit} onDelete={onDelete} />
                     </td>
-                  </tr>
+                  </InteractiveTableRow>
                 ))
               )}
             </tbody>

@@ -763,7 +763,9 @@ export function InvoicesWorkspace() {
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
+            onRowClick={openView}
             onRowDoubleClick={openEditForm}
+            activeRowId={viewInvoiceId ?? undefined}
             renderSelectCellActions={(invoice) => (
               <DirectoryTableRowActions
                 row={invoice}

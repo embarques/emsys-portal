@@ -4,11 +4,18 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
 
 import { ScrollableTable } from "@/components/app-shell/scrollable-table";
+import { TableCopyableCell } from "@/components/app-shell/table-copyable-cell";
 import { UniformPillWidthProvider } from "@/components/app-shell/uniform-width-pill";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
 import { getPrimarySortSpec, type SortDirection } from "@/lib/api/list-query";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
+import { resolveCopyableText } from "@/lib/table/copyable-cell";
 import { measureTableColumnContentWidth } from "@/lib/table/measure-column-width";
+import {
+  createRowPointerState,
+  shouldIgnoreRowClick,
+  type RowPointerState,
+} from "@/lib/table/row-click";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +34,8 @@ type DataTableProps<T> = {
   rowLabel?: (row: T) => string;
   onRowClick?: (row: T) => void;
   onRowDoubleClick?: (row: T) => void;
+  /** Highlights the row whose key matches (e.g. when a view sheet is open). */
+  activeRowId?: string;
   /** Optional edit/delete controls rendered beside the row checkbox. */
   renderSelectCellActions?: (row: T) => React.ReactNode;
   /** When set, visible columns auto-fit on first load and whenever this page changes. */
@@ -60,6 +69,7 @@ function DataTableContent<T>({
   rowLabel,
   onRowClick,
   onRowDoubleClick,
+  activeRowId,
   renderSelectCellActions,
   page,
   isPageDataPending = false,
@@ -89,6 +99,7 @@ function DataTableContent<T>({
   const [dragOverHeaderId, setDragOverHeaderId] = useState<string | null>(null);
   const [resizingColumnId, setResizingColumnId] = useState<string | null>(null);
   const pendingRowClickRef = useRef<number | null>(null);
+  const rowPointerRef = useRef<RowPointerState | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const [emptyViewportWidth, setEmptyViewportWidth] = useState<number | null>(null);
   const lastAutoFitSignatureRef = useRef<string | null>(null);
@@ -97,7 +108,7 @@ function DataTableContent<T>({
 
   const delaySingleClick = Boolean(onRowClick && onRowDoubleClick);
 
-  function handleRowClick(row: T) {
+  function triggerRowClick(row: T) {
     if (!onRowClick) return;
 
     if (!delaySingleClick) {
@@ -113,6 +124,20 @@ function DataTableContent<T>({
       pendingRowClickRef.current = null;
       onRowClick(row);
     }, 250);
+  }
+
+  function handleRowClick(event: React.MouseEvent<HTMLTableRowElement>, row: T) {
+    if (shouldIgnoreRowClick(rowPointerRef.current, event.clientX, event.clientY, event.target)) {
+      rowPointerRef.current = null;
+      return;
+    }
+
+    rowPointerRef.current = null;
+    triggerRowClick(row);
+  }
+
+  function handleRowMouseDown(event: React.MouseEvent<HTMLTableRowElement>) {
+    rowPointerRef.current = createRowPointerState(event.clientX, event.clientY);
   }
 
   function handleRowDoubleClick(row: T) {
@@ -386,6 +411,7 @@ function DataTableContent<T>({
             rows.map((row) => {
               const id = rowKey(row);
               const selected = selectedIds.includes(id);
+              const active = activeRowId === id;
 
               return (
                 <tr
@@ -393,9 +419,10 @@ function DataTableContent<T>({
                   className={cn(
                     (onRowClick || onRowDoubleClick) && "cursor-pointer",
                     "border-b transition-colors last:border-0 hover:bg-muted/25",
-                    selected && "bg-primary/[0.06]"
+                    (selected || active) && "bg-primary/[0.06]"
                   )}
-                  onClick={() => handleRowClick(row)}
+                  onMouseDown={handleRowMouseDown}
+                  onClick={(event) => handleRowClick(event, row)}
                   onDoubleClick={() => handleRowDoubleClick(row)}
                 >
                   {selectable ? (
@@ -421,6 +448,7 @@ function DataTableContent<T>({
                       typeof cellContent === "string" || typeof cellContent === "number"
                         ? String(cellContent)
                         : undefined;
+                    const copyText = resolveCopyableText(column, row, cellContent);
 
                     return (
                     <td
@@ -432,9 +460,18 @@ function DataTableContent<T>({
                         column.cellClassName,
                       )}
                       onClick={column.stopRowClick ? (event) => event.stopPropagation() : undefined}
-                      title={column.truncateCell !== false && cellText ? cellText : undefined}
+                      title={
+                        !copyText && column.truncateCell !== false && cellText ? cellText : undefined
+                      }
                     >
-                      {column.truncateCell === false ? (
+                      {copyText ? (
+                        <TableCopyableCell
+                          value={copyText}
+                          truncate={column.truncateCell !== false}
+                        >
+                          {column.truncateCell === false ? cellContent : undefined}
+                        </TableCopyableCell>
+                      ) : column.truncateCell === false ? (
                         <div className="min-w-0 max-w-full">{cellContent}</div>
                       ) : (
                         <div className="truncate">{cellContent}</div>

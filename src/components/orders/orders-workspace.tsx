@@ -825,7 +825,9 @@ export function OrdersWorkspace() {
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
+            onRowClick={openViewOrder}
             onRowDoubleClick={openEditForm}
+            activeRowId={viewOrder ? getOrderRecordId(viewOrder) : undefined}
             emptyState={
               <>
                 <p className="text-muted-foreground">{t("orders.empty.noMatch")}</p>

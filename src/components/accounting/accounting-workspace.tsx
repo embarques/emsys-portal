@@ -172,6 +172,7 @@ export function AccountingWorkspace() {
     onRowClick: setViewEntry,
     onEdit: openEditForm,
     onDelete: setDeleteTarget,
+    activeEntryId: viewEntry?.entryId,
   };
 
   return (

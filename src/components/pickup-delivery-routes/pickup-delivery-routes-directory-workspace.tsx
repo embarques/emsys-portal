@@ -387,6 +387,7 @@ export function ActiveRoutesDirectoryWorkspace({
             onToggleSelect={toggleActiveRouteSelect}
             onRowClick={setViewActiveRoute}
             onRowDoubleClick={openEditActiveRoute}
+            activeRowId={viewActiveRoute?.id}
             emptyState={
               <>
                 <p className="text-muted-foreground">
