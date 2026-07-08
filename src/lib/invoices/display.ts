@@ -122,6 +122,7 @@ function orderPartyAddressToCore(
   address: NonNullable<ReturnType<typeof getOrderPartyAddress>>,
 ): CustomerCoreAddress {
   return {
+    id: address.id,
     address1: address.streetAddress,
     apartment: address.apt ?? "",
     address2: address.crossStreet ?? "",
@@ -130,6 +131,8 @@ function orderPartyAddressToCore(
     zipcode: address.zipCode ?? "",
     country: address.provinceCountry ?? "",
     isPrimary: address.isPrimary,
+    location: null,
+    verification: null,
   };
 }
 
