@@ -8,5 +8,10 @@
     "senderAddress": "Sender address",
     "receiverName": "Receiver",
     "receiverAddress": "Receiver address"
+  },
+  "workspace": {
+    "actionsColumn": "Actions",
+    "viewInvoice": "View invoice",
+    "viewInvoiceFor": "View invoice {{number}}"
   }
 }

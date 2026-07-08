@@ -8,5 +8,10 @@
     "senderAddress": "Dirección del remitente",
     "receiverName": "Destinatario",
     "receiverAddress": "Dirección del destinatario"
+  },
+  "workspace": {
+    "actionsColumn": "Acciones",
+    "viewInvoice": "Ver factura",
+    "viewInvoiceFor": "Ver factura {{number}}"
   }
 }

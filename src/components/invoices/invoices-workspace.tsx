@@ -110,6 +110,17 @@ import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
 
+function pinActionsColumnFirst<T extends { id: string }>(columns: T[]): T[] {
+  const actionsIndex = columns.findIndex((column) => column.id === "actions");
+  if (actionsIndex <= 0) return columns;
+
+  const next = [...columns];
+  const [actionsColumn] = next.splice(actionsIndex, 1);
+  if (!actionsColumn) return columns;
+
+  return [actionsColumn, ...next];
+}
+
 function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefined }) {
   const { t } = useTranslation();
   const addressLine = formatInvoicePartyAddressLine(party);
@@ -455,7 +466,35 @@ export function InvoicesWorkspace() {
     },
   ];
 
-  const tableColumns: DataTableColumn<Invoice>[] = [
+  const tableColumns: DataTableColumn<Invoice>[] = useMemo(
+    () => [
+    {
+      id: "actions",
+      label: t("invoices.workspace.actionsColumn"),
+      hideable: false,
+      sortable: false,
+      truncateCell: false,
+      stopRowClick: true,
+      defaultWidth: 72,
+      headerClassName: "text-center [&>div]:justify-center [&_span]:text-center",
+      cellClassName: "align-top overflow-visible",
+      renderCell: (invoice) => (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+          aria-label={t("invoices.workspace.viewInvoiceFor", { number: invoice.invoiceNumber })}
+          title={t("invoices.workspace.viewInvoice")}
+          onClick={(event) => {
+            event.stopPropagation();
+            openView(invoice);
+          }}
+        >
+          <Receipt className="size-3.5" />
+        </Button>
+      ),
+    },
     {
       id: "invoiceNumber",
       label: "Invoice number",
@@ -571,9 +610,15 @@ export function InvoicesWorkspace() {
         return <span className={getInvoiceBalanceMoneyClass(amount)}>{formatInvoiceMoney(amount)}</span>;
       },
     },
-  ];
+  ],
+    [t],
+  );
 
   const columnVisibility = useColumnVisibility("invoices-v5", tableColumns);
+  const displayColumns = useMemo(
+    () => pinActionsColumnFirst(columnVisibility.columns),
+    [columnVisibility.columns],
+  );
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount;
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;
@@ -703,7 +748,7 @@ export function InvoicesWorkspace() {
           />
         ) : (
           <DataTable
-            columns={columnVisibility.columns}
+            columns={displayColumns}
             rows={invoices}
             page={currentPage}
             isPageDataPending={isFetching}
@@ -718,7 +763,6 @@ export function InvoicesWorkspace() {
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
-            onRowClick={openView}
             onRowDoubleClick={openEditForm}
             renderSelectCellActions={(invoice) => (
               <DirectoryTableRowActions
