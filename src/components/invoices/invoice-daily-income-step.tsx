@@ -1,7 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, ExternalLink, Loader2, RefreshCw } from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { InvoiceDailyIncomeDialog } from "@/components/invoices/invoice-daily-income-dialog";
@@ -52,13 +51,13 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
     currentUserQuery.error ??
     registrationQuery.error ??
     (!registration ? statementQuery.error : null);
-  const dailyIncomeHref = `/accounting/daily-income?date=${encodeURIComponent(currentDate)}${
-    branchId ? `&branchId=${branchId}` : ""
-  }&invoice=${encodeURIComponent(values.invoiceNumber)}`;
-
   async function handleRegistered(journal: DailyIncomeJournal) {
     onRegistrationChange(journal);
     await registrationQuery.refetch();
+  }
+
+  async function handleStatementCreated() {
+    await statementQuery.refetch();
   }
 
   async function refreshMissingRegistration() {
@@ -141,16 +140,8 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
-                {statement?.status === "OPEN" ? (
-                  <Button type="button" onClick={() => setDialogOpen(true)}>
-                    Register daily income
-                  </Button>
-                ) : null}
-                <Button asChild type="button" variant="outline">
-                  <Link href={dailyIncomeHref} target="_blank">
-                    Open full Daily Income page
-                    <ExternalLink className="size-4" />
-                  </Link>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(true)}>
+                  Open full Daily Income page
                 </Button>
                 <Button type="button" variant="ghost" onClick={refreshMissingRegistration}>
                   <RefreshCw className="size-4" />
@@ -162,15 +153,15 @@ export function InvoiceDailyIncomeStep({ values, onRegistrationChange }: Props) 
         </div>
       )}
 
-      {statement?.status === "OPEN" ? (
-        <InvoiceDailyIncomeDialog
-          open={dialogOpen}
-          statement={statement}
-          invoice={values}
-          onOpenChange={setDialogOpen}
-          onRegistered={handleRegistered}
-        />
-      ) : null}
+      <InvoiceDailyIncomeDialog
+        open={dialogOpen}
+        statement={statement}
+        date={currentDate}
+        invoice={values}
+        onOpenChange={setDialogOpen}
+        onStatementCreated={handleStatementCreated}
+        onRegistered={handleRegistered}
+      />
     </div>
   );
 }

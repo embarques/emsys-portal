@@ -178,13 +178,29 @@ export async function confirmInvoiceDailyIncomeRegistration(page: Page, wizard: 
   const foundBanner = wizard.getByText("Daily income entry found");
 
   if (!(await foundBanner.isVisible().catch(() => false))) {
-    const registerButton = wizard.getByRole("button", { name: "Register daily income" });
+    const registerButton = wizard.getByRole("button", { name: "Open full Daily Income page" });
     await expect(registerButton).toBeVisible({ timeout: 15_000 });
     await registerButton.click();
 
     const dialog = page.getByRole("dialog", { name: "Register daily income" });
     await expect(dialog).toBeVisible();
-    await dialog.locator("#daily-income-payment-amount").fill("0");
+    const paymentAmount = dialog.locator("#daily-income-payment-amount");
+    if (!(await paymentAmount.isEnabled())) {
+      const flipButton = dialog.getByTestId("invoice-daily-income-flip-create");
+      await expect(flipButton).toBeEnabled();
+      await flipButton.click();
+      const statementResponse = waitForApiResponse(page, "/income-statements", "POST", {
+        requireOk: false,
+      });
+      await dialog.getByTestId("invoice-daily-income-create").click();
+      const createdStatement = await statementResponse;
+      expect(
+        createdStatement.ok(),
+        `Daily Income creation failed with HTTP ${createdStatement.status()}`,
+      ).toBe(true);
+      await expect(paymentAmount).toBeEnabled({ timeout: 15_000 });
+    }
+    await paymentAmount.fill("0");
     const createResponse = waitForApiResponse(page, "/journals", "POST", { requireOk: false });
     await dialog.getByRole("button", { name: "Register & continue" }).click();
     const response = await createResponse;
