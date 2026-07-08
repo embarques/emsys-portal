@@ -156,7 +156,13 @@
       "createForbidden": "Ask an admin to enable customer create (canCreateCustomer) on your role.",
       "updateForbidden": "Ask an admin to enable customer update (canUpdateCustomer) on your role.",
       "deleteForbidden": "Ask an admin to enable customer delete (canDeleteCustomer) on your role.",
-      "duplicateCustomer": "A customer with this name, primary phone, and primary address already exists."
+      "duplicateCustomer": "A customer with this name, phone, and address already exists.",
+      "duplicateCustomerDetails": "A customer matching {{matchedFields}} already exists (customer ID: {{customerId}}).",
+      "duplicateFields": {
+        "name": "name",
+        "phone": "phone",
+        "address": "address"
+      }
     }
   },
   "view": {
