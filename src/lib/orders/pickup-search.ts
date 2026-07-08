@@ -5,31 +5,30 @@ import {
   type ApiSearchFilterNode,
   type ApiSearchOperator,
 } from "@/lib/api/search-query";
-import { normalizeStoredPhone } from "@/lib/utils/phone";
 
-/** Whole-address alias fields for POST /pickups/search global bar search. */
-export const PICKUP_BAR_NAME_FIELDS = ["sender.name", "receivers.name"] as const;
-
-export const PICKUP_BAR_ADDRESS_FIELDS = ["sender.address", "receivers.address"] as const;
-
-export const PICKUP_BAR_PHONE_FIELDS = ["sender.phone", "receivers.phone"] as const;
-
-/** Optional bar search field — not in the base API examples but supported by POST /pickups/search. */
-export const PICKUP_BAR_COMMENT_FIELDS = ["comments"] as const;
-
-function searchTermHasLetters(value: string): boolean {
-  return /[a-zA-Z]/.test(value);
-}
+/** POST /pickups/search global bar OR fields — one term, same value on each filter. */
+export const PICKUP_BAR_OR_FIELDS = [
+  "sender.name",
+  "receivers.name",
+  "sender.phone",
+  "receivers.phone",
+  "sender.address",
+  "receivers.address",
+  "comments",
+] as const;
 
 /**
- * Map legacy pickup search field paths to current API alias fields.
- * Global bar search must not send receiver.* or sender.address.* subfield paths.
+ * Map legacy / invalid pickup search field paths to canonical API alias fields.
+ * @see POST /pickups/search pickup search contract (dev)
  */
 export function resolvePickupSearchField(field: string): string {
   const trimmed = field.trim();
   if (!trimmed) return trimmed;
 
   if (trimmed === "user.name") return "createdBy.name";
+  if (trimmed === "employee") return "employee.name";
+  if (trimmed === "sector") return "sector.name";
+  if (trimmed === "receiver") return "receivers.name";
 
   if (trimmed.startsWith("receiver.address.")) return "receivers.address";
   if (trimmed.startsWith("sender.address.")) return "sender.address";
@@ -50,48 +49,28 @@ export function resolvePickupSearchField(field: string): string {
     return "receivers.phone";
   }
 
+  if (trimmed === "comment") return "comments";
+
   return trimmed;
 }
 
 /**
  * POST /pickups/search global bar OR group.
- *
- * - Whole-address aliases only (`sender.address`, `receivers.address`) — no per-subfield paths.
- * - Text terms (letters present): name + address (+ comments); omit phone filters.
- * - Digit-only terms: name + address + phone (digits only in phone filters).
+ * API adds completed=false by default (incomplete pickups only).
  */
 export function createPickupBarSearchFilterGroup(value: string): ApiSearchFilterGroup | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
 
-  const filters: ApiSearchFilter[] = [];
-  const includePhone = !searchTermHasLetters(trimmed);
-  const phoneDigits = normalizeStoredPhone(trimmed);
-
-  for (const field of PICKUP_BAR_NAME_FIELDS) {
-    filters.push({ field, operator: "contains", value: trimmed });
-  }
-
-  for (const field of PICKUP_BAR_ADDRESS_FIELDS) {
-    filters.push({ field, operator: "contains", value: trimmed });
-  }
-
-  for (const field of PICKUP_BAR_COMMENT_FIELDS) {
-    filters.push({ field, operator: "contains", value: trimmed });
-  }
-
-  if (includePhone && phoneDigits) {
-    for (const field of PICKUP_BAR_PHONE_FIELDS) {
-      filters.push({ field, operator: "contains", value: phoneDigits });
-    }
-  }
-
-  if (filters.length === 0) return null;
+  const filters: ApiSearchFilter[] = PICKUP_BAR_OR_FIELDS.map((field) => ({
+    field,
+    operator: "contains",
+    value: trimmed,
+  }));
 
   return { operator: "or", filters };
 }
 
-/** Explicit pickup search/filter leaf with legacy field resolution and phone normalization. */
 export function createPickupTextSearchFilter(
   field: string,
   value: string,

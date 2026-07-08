@@ -303,40 +303,32 @@ date
 createdAt
 ```
 
-Global bar search uses whole-address aliases (`sender.address`, `receivers.address`) — not per-subfield paths like `sender.address.city`. Phone aliases (`sender.phone`, `receivers.phone`) expand server-side to `phones.number`, `phone1`, and `phone2`. When the search term contains letters, omit phone filters; for digit-only terms, send digits only to phone filters. Legacy `receiver.*` and `sender.address.*` subfield paths are rewritten to `receivers.*` / whole-address aliases via `resolvePickupSearchField`.
+Global bar search sends one OR group with the same term on name, phone, address, and comments aliases. Phone and address aliases expand server-side (phones.number/phone1/phone2; legacy address.* and addresses.*). Use `receivers.*` (not `receiver.*`), `createdBy.name` (not `user.name`), and `sender.address` / `receivers.address` for address text (not per-subfield paths in the bar). Incomplete pickups only: API adds `completed=false` unless you pass `completed` explicitly.
 
-Example bar search body for `"342 main"`:
+Example bar search body for `"2490 david"`:
 
 ```json
 {
   "sort": [{ "field": "date", "direction": "desc" }],
   "operator": "or",
   "filters": [
-    { "field": "sender.name", "operator": "contains", "value": "342 main" },
-    { "field": "sender.address", "operator": "contains", "value": "342 main" },
-    { "field": "receivers.name", "operator": "contains", "value": "342 main" },
-    { "field": "receivers.address", "operator": "contains", "value": "342 main" },
-    { "field": "comments", "operator": "contains", "value": "342 main" }
+    { "field": "sender.name", "operator": "contains", "value": "2490 david" },
+    { "field": "receivers.name", "operator": "contains", "value": "2490 david" },
+    { "field": "sender.phone", "operator": "contains", "value": "2490 david" },
+    { "field": "receivers.phone", "operator": "contains", "value": "2490 david" },
+    { "field": "sender.address", "operator": "contains", "value": "2490 david" },
+    { "field": "receivers.address", "operator": "contains", "value": "2490 david" },
+    { "field": "comments", "operator": "contains", "value": "2490 david" }
   ]
 }
 ```
 
-Example bar search body for digit-only `"347"`:
+Validation failures return `success: false` with `message` / `error` — show to the user; do not retry the same invalid field.
+
+To include completed pickups in search, add:
 
 ```json
-{
-  "sort": [{ "field": "date", "direction": "desc" }],
-  "operator": "or",
-  "filters": [
-    { "field": "sender.name", "operator": "contains", "value": "347" },
-    { "field": "sender.phone", "operator": "contains", "value": "347" },
-    { "field": "sender.address", "operator": "contains", "value": "347" },
-    { "field": "receivers.name", "operator": "contains", "value": "347" },
-    { "field": "receivers.phone", "operator": "contains", "value": "347" },
-    { "field": "receivers.address", "operator": "contains", "value": "347" },
-    { "field": "comments", "operator": "contains", "value": "347" }
-  ]
-}
+{ "field": "completed", "operator": "eq", "value": true }
 ```
 
 ## CRUD Operations
