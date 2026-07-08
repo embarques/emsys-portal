@@ -397,19 +397,21 @@ export function InvoiceDailyIncomeDialog({
             </div>
           </div>
 
-          {activeStatement && !statementOpen ? (
-            <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
-              Today&apos;s Daily Income is closed. Payment entry remains disabled until it is reopened.
-            </div>
-          ) : null}
+          {activeStatement ? (
+            <>
+              {!statementOpen ? (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                  Today&apos;s Daily Income is closed. Payment entry remains disabled until it is reopened.
+                </div>
+              ) : null}
 
-          {submitError ? (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {submitError}
-            </div>
-          ) : null}
+              {submitError ? (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                  {submitError}
+                </div>
+              ) : null}
 
-          <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="daily-income-invoice-total">Invoice total</Label>
               <Input id="daily-income-invoice-total" value={formatInvoiceMoney(invoiceTotal)} disabled />
@@ -431,9 +433,9 @@ export function InvoiceDailyIncomeDialog({
               </p>
               {errors.amount ? <p className="text-xs text-destructive">{errors.amount.message}</p> : null}
             </div>
-          </div>
+              </div>
 
-          <div className="space-y-4 rounded-lg border p-4">
+              <div className="space-y-4 rounded-lg border p-4">
             <div>
               <p className="text-sm font-semibold">Payment details</p>
               <p className="text-xs text-muted-foreground">
@@ -520,9 +522,9 @@ export function InvoiceDailyIncomeDialog({
                 </>
               ) : null}
             </div>
-          </div>
+              </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Employee</Label>
               <Input value={currentUserQuery.data?.name ?? "Loading employee…"} disabled />
@@ -532,19 +534,23 @@ export function InvoiceDailyIncomeDialog({
               <Input id="daily-income-description" disabled={!statementOpen} {...register("description")} />
               {errors.description ? <p className="text-xs text-destructive">{errors.description.message}</p> : null}
             </div>
-          </div>
+              </div>
+            </>
+          ) : null}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={!statementOpen || createJournal.isPending || currentUserQuery.isLoading}
-            >
-              {createJournal.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {createJournal.isPending ? "Registering…" : "Register & continue"}
-            </Button>
+            {activeStatement ? (
+              <Button
+                type="submit"
+                disabled={!statementOpen || createJournal.isPending || currentUserQuery.isLoading}
+              >
+                {createJournal.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                {createJournal.isPending ? "Registering…" : "Register & continue"}
+              </Button>
+            ) : null}
           </DialogFooter>
         </form>
       </DialogContent>
