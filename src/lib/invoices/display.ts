@@ -1,11 +1,14 @@
 import { formatContainerLabel } from "@/lib/containers/display";
 import { getContainerById } from "@/lib/containers/mock-data";
+import { formatAddressLine } from "@/lib/customers/display";
+import type { CustomerCoreAddress } from "@/lib/customers/types";
+import { formatAddressLine as formatSnapshotAddressLine } from "@/lib/customers/utils/address-utils";
 import { formatItemPrice } from "@/lib/items/display";
+import { getOrderPartyAddress, type OrderParty } from "@/lib/orders/types";
 import { getBranchLabel } from "@/lib/vehicles/display";
+
 import type { Invoice, InvoiceLineItem, InvoicePaymentLocation, InvoicePaymentMethod } from "./types";
 import { INVOICE_PAYMENT_METHODS, getInvoiceBalanceAmount, getInvoicePrimaryReceiver, getInvoiceTotal } from "./types";
-import { getOrderPartyAddress } from "./types";
-import { formatAddressLine } from "@/lib/customers/display";
 
 export function getPaymentLocationLabel(location: InvoicePaymentLocation): string {
   return getBranchLabel(location);
@@ -115,6 +118,31 @@ export function formatInvoicePartySummary(party: Invoice["sender"] | undefined):
   return `${party.name} · ${addressLine}`;
 }
 
+function orderPartyAddressToCore(
+  address: NonNullable<ReturnType<typeof getOrderPartyAddress>>,
+): CustomerCoreAddress {
+  return {
+    address1: address.streetAddress,
+    apartment: address.apt ?? "",
+    address2: address.crossStreet ?? "",
+    city: address.city,
+    state: address.state ?? "",
+    zipcode: address.zipCode ?? "",
+    country: address.provinceCountry ?? "",
+    isPrimary: address.isPrimary,
+  };
+}
+
+/** Full snapshot address line for invoice table cells (matches pickup address formatting). */
+export function formatInvoicePartyAddressLine(party: OrderParty | null | undefined): string {
+  if (!party) return "—";
+
+  const address = getOrderPartyAddress(party);
+  if (!address) return "—";
+
+  return formatSnapshotAddressLine(orderPartyAddressToCore(address), "full");
+}
+
 /** displayNumber is presentation-only; stored number remains the search/write value. */
 export function getInvoicePartyDisplayPhone(party: Invoice["sender"]): string {
   const phone = party.phones.find((entry) => entry.displayNumber?.trim());
@@ -152,7 +180,9 @@ export function invoiceMatchesQuery(invoice: Invoice, query: string): boolean {
     getInvoicePaidStatusLabel(resolveInvoicePaidStatus(invoice)),
     getContainerLabelForInvoice(invoice),
     formatInvoicePartySummary(invoice.sender),
+    formatInvoicePartyAddressLine(invoice.sender),
     formatInvoicePartySummary(getInvoicePrimaryReceiver(invoice)),
+    formatInvoicePartyAddressLine(getInvoicePrimaryReceiver(invoice)),
     invoice.lineItems.map(formatLineItemSummary).join(" "),
     invoice.comments.map((comment) => comment.description).join(" "),
     invoice.comments.map((comment) => comment.createdBy).join(" "),
