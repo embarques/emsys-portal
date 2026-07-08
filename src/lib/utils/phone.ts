@@ -85,6 +85,7 @@ export function isPhoneApiField(field: string): boolean {
   const normalized = field.trim().toLowerCase();
   if (normalized === "phone1" || normalized === "phone2") return true;
   if (normalized.endsWith(".phone1") || normalized.endsWith(".phone2")) return true;
+  if (normalized.endsWith(".phone")) return true;
   return normalized.includes(".phones.") || normalized.endsWith(".phones.number");
 }
 

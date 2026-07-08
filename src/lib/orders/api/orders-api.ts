@@ -1,25 +1,27 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import {
   buildApiListQuery,
   resolveApiListSort,
 } from "@/lib/api/list-query";
 import {
-  buildAdvancedSearchBody,
-  createOrTextSearchFilterGroup,
-  createTextSearchFilter,
-  hasListTextSearch,
-  isApiSearchFilter,
-  resolveSearchField,
-  resolveSearchOperator,
   buildApiFilterNodeFromTableRows,
+  buildStripeStyleSearchBody,
+  hasResourceListFilters,
+  isApiSearchFilter,
+  resolveSearchOperator,
   type ApiSearchFilterGroup,
 } from "@/lib/api/search-query";
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
 import { expandOrderFilterNode } from "@/lib/orders/order-filters";
-import { ORDER_BAR_OR_SEARCH_FIELDS } from "@/lib/orders/search-fields";
-import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
+import {
+  createPickupBarSearchFilterGroup,
+  createPickupTextSearchFilter,
+  resolvePickupSearchField,
+} from "@/lib/orders/pickup-search";
+import { type TableFilterRowState } from "@/lib/table/filter-builder";
 import {
   buildApiAddressPayload,
   buildApiBranchDto,
@@ -143,7 +145,6 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   error?: string;
 };
 
-const ORDER_LIST_SEARCH_FIELD = "sender.name";
 
 /** Pickup field holding the sender's customer id, used to load a sender's pickup history. */
 const SENDER_HISTORY_FILTER_FIELD = "sender.id";
@@ -359,21 +360,23 @@ function buildOrderSearchFilterGroups(params: OrderListParams): ApiSearchFilterG
   const groups: ApiSearchFilterGroup[] = [];
 
   if (params.search?.value.trim()) {
+    const trimmed = params.search.value.trim();
+
     if (params.search.field) {
-      const explicitFilter = createTextSearchFilter(
-        resolveSearchField(params.search, ORDER_LIST_SEARCH_FIELD),
-        params.search.value,
+      const explicitFilter = createPickupTextSearchFilter(
+        resolvePickupSearchField(params.search.field),
+        trimmed,
         resolveSearchOperator(params.search),
       );
       if (explicitFilter) {
-        groups.push({ operator: "and", filters: [explicitFilter] });
+        if (isApiSearchFilter(explicitFilter)) {
+          groups.push({ operator: "and", filters: [explicitFilter] });
+        } else {
+          groups.push(explicitFilter);
+        }
       }
     } else {
-      const orGroup = createOrTextSearchFilterGroup(
-        params.search.value,
-        [...ORDER_BAR_OR_SEARCH_FIELDS],
-        "contains",
-      );
+      const orGroup = createPickupBarSearchFilterGroup(trimmed);
       if (orGroup) {
         groups.push(orGroup);
       }
@@ -398,14 +401,11 @@ function buildOrderSearchFilterGroups(params: OrderListParams): ApiSearchFilterG
 }
 
 function hasOrderListFilters(params: OrderListParams): boolean {
-  return (
-    hasListTextSearch(params.search) ||
-    (params.filterRows ?? []).some((row) => isCompleteFilterRow(row, ORDER_TABLE_FILTER_FIELDS))
-  );
-}
-
-function shouldUsePickupSearch(params: OrderListParams): boolean {
-  return hasOrderListFilters(params);
+  return hasResourceListFilters({
+    search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: ORDER_TABLE_FILTER_FIELDS,
+  });
 }
 
 function resolveOrdersSort(params: OrderListParams): string | undefined {
@@ -422,9 +422,7 @@ function buildOrdersQuery(params: OrderListParams): string {
 }
 
 function buildPickupSearchBody(params: OrderListParams) {
-  return buildAdvancedSearchBody({
-    page: params.page ?? DEFAULT_ORDER_LIST_PARAMS.page,
-    limit: params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
+  return buildStripeStyleSearchBody({
     sort: params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort,
     filterGroups: buildOrderSearchFilterGroups(params),
   });
@@ -436,20 +434,16 @@ function buildPickupSearchBody(params: OrderListParams) {
  * - Search/filters: POST /pickups/search
  */
 export async function fetchOrders(params: OrderListParams = {}): Promise<PaginatedResult<Order>> {
-  if (shouldUsePickupSearch(params)) {
-    const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
-      `${API_ENDPOINTS.PICKUPS}/search`,
-      buildPickupSearchBody(params),
-    );
-    return normalizePaginatedOrders(response);
-  }
-
-  const query = buildOrdersQuery(params);
-  const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
-    `${API_ENDPOINTS.PICKUPS}?${query}`,
-  );
-
-  return normalizePaginatedOrders(response);
+  return fetchPaginatedResourceList({
+    endpoint: API_ENDPOINTS.PICKUPS,
+    page: params.page ?? DEFAULT_ORDER_LIST_PARAMS.page,
+    limit: params.limit ?? DEFAULT_ORDER_LIST_PARAMS.limit,
+    offset: params.offset,
+    isFiltered: hasOrderListFilters(params),
+    buildGetQuery: () => buildOrdersQuery(params),
+    buildSearchBody: () => buildPickupSearchBody(params),
+    normalize: normalizePaginatedOrders,
+  });
 }
 
 /**

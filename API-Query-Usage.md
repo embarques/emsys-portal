@@ -285,22 +285,50 @@ Current pickup fields commonly used in search filters:
 
 ```txt
 sender.name
-sender.phone1
-sender.oldID
-sender.address.city
-sender.address.state
-sender.address.zipcode
-receiver.name
-receiver.phone1
-receiver.oldID
+sender.phone
+sender.address
+receivers.name
+receivers.phone
+receivers.address
 purpose
+comments
 sector.id
 branch.id
+branch.code
+branch.name
 employee.id
-user.name
+createdBy.name
 completed
 date
 createdAt
+```
+
+Global bar search sends one OR group with the same term on name, phone, address, and comments aliases. Phone and address aliases expand server-side (phones.number/phone1/phone2; legacy address.* and addresses.*). Use `receivers.*` (not `receiver.*`), `createdBy.name` (not `user.name`), and `sender.address` / `receivers.address` for address text (not per-subfield paths in the bar). Incomplete pickups only: API adds `completed=false` unless you pass `completed` explicitly.
+
+Example bar search body for `"2490 david"`:
+
+```json
+{
+  "sort": [{ "field": "date", "direction": "desc" }],
+  "operator": "or",
+  "filters": [
+    { "field": "sender.name", "operator": "contains", "value": "2490 david" },
+    { "field": "receivers.name", "operator": "contains", "value": "2490 david" },
+    { "field": "sender.phone", "operator": "contains", "value": "2490 david" },
+    { "field": "receivers.phone", "operator": "contains", "value": "2490 david" },
+    { "field": "sender.address", "operator": "contains", "value": "2490 david" },
+    { "field": "receivers.address", "operator": "contains", "value": "2490 david" },
+    { "field": "comments", "operator": "contains", "value": "2490 david" }
+  ]
+}
+```
+
+Validation failures return `success: false` with `message` / `error` — show to the user; do not retry the same invalid field.
+
+To include completed pickups in search, add:
+
+```json
+{ "field": "completed", "operator": "eq", "value": true }
 ```
 
 ## CRUD Operations

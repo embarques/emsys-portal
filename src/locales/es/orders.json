@@ -3,6 +3,11 @@
   "entityPlural": "órdenes",
   "title": "Órdenes",
   "noun": "órdenes",
+  "workspace": {
+    "actionsColumn": "Acciones",
+    "viewOrder": "Ver recogida",
+    "viewOrderFor": "Ver {{name}}"
+  },
   "pickup": "Recogida",
   "pickupNamed": "Recogida {{id}}",
   "actions": {
@@ -51,7 +56,7 @@
     "senderAddress": "Dirección",
     "senderCity": "Ciudad",
     "senderZip": "Código postal",
-    "senderPhone1": "Teléfono 1",
+    "senderPhone": "Teléfono",
     "comments": "Comentarios",
     "route": "Ruta",
     "updatedAt": "Actualizada",
@@ -70,7 +75,7 @@
     "receiverAddress": "Dirección del destinatario"
   },
   "search": {
-    "placeholder": "Buscar por nombre, teléfono o dirección del remitente/destinatario…"
+    "placeholder": "Buscar por nombre, teléfono, dirección o comentarios del remitente/destinatario…"
   },
   "loading": {
     "title": "Cargando órdenes",

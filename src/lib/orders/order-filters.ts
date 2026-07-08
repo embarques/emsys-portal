@@ -4,6 +4,7 @@ import {
   type ApiSearchFilter,
   type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
+import { resolvePickupSearchField } from "@/lib/orders/pickup-search";
 
 const NUMERIC_FILTER_FIELDS: ReadonlySet<string> = new Set([
   "branch.id",
@@ -97,7 +98,10 @@ function expandOrderLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | n
     case "completed":
       return expandCompletedFilter(filter);
     default:
-      return coerceTypedLeafFilter(filter, { numericFields: NUMERIC_FILTER_FIELDS });
+      return coerceTypedLeafFilter(
+        { ...filter, field: resolvePickupSearchField(filter.field) },
+        { numericFields: NUMERIC_FILTER_FIELDS },
+      );
   }
 }
 
