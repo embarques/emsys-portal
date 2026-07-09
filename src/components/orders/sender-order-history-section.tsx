@@ -4,8 +4,7 @@ import { useMemo } from "react";
 import { History, Loader2 } from "lucide-react";
 
 import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
-import { Badge } from "@/components/ui/badge";
-import { UniformPillWidthProvider, UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { FormSection } from "@/components/forms/form-shell";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDate } from "@/lib/audit/display";
@@ -64,9 +63,8 @@ export function SenderOrderHistorySection({
   ) : history.length === 0 ? (
     <p className="text-sm text-muted-foreground">{t("orders.empty.noPickupHistory")}</p>
   ) : (
-    <UniformPillWidthProvider resetKey={history.map((order) => order.id).join(",")}>
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full min-w-[960px] text-left text-sm">
+    <div className="overflow-x-auto rounded-lg border">
+      <table className="w-full min-w-[960px] text-left text-sm">
           <thead>
             <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
               <th className="px-3 py-2 font-medium">{t("orders.columns.orderId")}</th>
@@ -104,19 +102,15 @@ export function SenderOrderHistorySection({
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-xs">{formatOrderDate(order.date)}</td>
                   <td className="px-3 py-2">
-                    <UniformWidthPill columnKey="completed">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "text-[10px]",
-                          order.completed
-                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                            : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-                        )}
-                      >
-                        {getOrderCompletedLabel(order.completed, t)}
-                      </Badge>
-                    </UniformWidthPill>
+                    <TableTagText
+                      className={
+                        order.completed
+                          ? "text-emerald-700 dark:text-emerald-300"
+                          : "text-amber-700 dark:text-amber-300"
+                      }
+                    >
+                      {getOrderCompletedLabel(order.completed, t)}
+                    </TableTagText>
                   </td>
                   <td className="px-3 py-2 text-xs">{order.sender.name}</td>
                   <td className="px-3 py-2 text-xs">{getCustomerAddressLine(order.sender)}</td>
@@ -139,9 +133,8 @@ export function SenderOrderHistorySection({
               );
             })}
           </tbody>
-        </table>
-      </div>
-    </UniformPillWidthProvider>
+      </table>
+    </div>
   );
 
   if (variant === "view") {

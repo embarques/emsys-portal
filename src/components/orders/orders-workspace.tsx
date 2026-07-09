@@ -16,7 +16,6 @@ import {
   Route as RouteIcon,
   RouteOff,
   Trash2,
-  Truck,
   XCircle,
 } from "lucide-react";
 
@@ -120,17 +119,6 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
-
-function pinActionsColumnFirst<T extends { id: string }>(columns: T[]): T[] {
-  const actionsIndex = columns.findIndex((column) => column.id === "actions");
-  if (actionsIndex <= 0) return columns;
-
-  const next = [...columns];
-  const [actionsColumn] = next.splice(actionsIndex, 1);
-  if (!actionsColumn) return columns;
-
-  return [actionsColumn, ...next];
-}
 
 function PickupSenderAddressCell({ customer }: { customer: Customer }) {
   const { t } = useTranslation();
@@ -543,31 +531,6 @@ export function OrdersWorkspace() {
   const tableColumns: DataTableColumn<Order>[] = useMemo(
     () => [
     {
-      id: "actions",
-      label: t("orders.workspace.actionsColumn"),
-      hideable: false,
-      sortable: false,
-      truncateCell: false,
-      stopRowClick: true,
-      cellClassName: "align-top overflow-visible",
-      renderCell: (order) => (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label={t("orders.workspace.viewOrderFor", { name: formatOrderId(order) })}
-          title={t("orders.workspace.viewOrder")}
-          onClick={(event) => {
-            event.stopPropagation();
-            openViewOrder(order);
-          }}
-        >
-          <Truck className="size-3.5" />
-        </Button>
-      ),
-    },
-    {
       id: "completed",
       label: t("orders.columns.completed"),
       truncateCell: false,
@@ -656,10 +619,6 @@ export function OrdersWorkspace() {
   );
 
   const columnVisibility = useColumnVisibility("orders-v4", tableColumns);
-  const displayColumns = useMemo(
-    () => pinActionsColumnFirst(columnVisibility.columns),
-    [columnVisibility.columns],
-  );
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== deferredQuery.trim();
@@ -782,6 +741,10 @@ export function OrdersWorkspace() {
           pageRowIds={orders.map((order) => getOrderRecordId(order))}
           totalCount={totalOrders}
           onSelectedIdsChange={setSelectedIds}
+          onView={() => {
+            const order = orders.find((entry) => getOrderRecordId(entry) === selectedIds[0]);
+            if (order) openViewOrder(order);
+          }}
           onEdit={() => {
             const order = orders.find((entry) => getOrderRecordId(entry) === selectedIds[0]);
             if (order) openEditForm(order);
@@ -875,7 +838,7 @@ export function OrdersWorkspace() {
           />
         ) : (
           <DataTable
-            columns={displayColumns}
+            columns={columnVisibility.columns}
             rows={orders}
             page={currentPage}
             isPageDataPending={isFetching}

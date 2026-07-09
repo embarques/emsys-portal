@@ -38,6 +38,9 @@
     "number": "Código de barras",
     "status": "Estado",
     "container": "Contenedor",
+    "deliveryRoute": "Ruta de entrega",
+    "tripNumber": "Viaje #",
+    "delivery": "Entrega",
     "scanDate": "Último escaneo"
   },
   "search": {
@@ -82,9 +85,11 @@
   },
   "view": {
     "sections": {
-      "details": "Detalles del código"
+      "details": "Detalles del código",
+      "audit": "Auditoría"
     },
-    "barcodeId": "ID del código"
+    "barcodeId": "ID del código",
+    "previousStatus": "Estado anterior"
   },
   "dialogs": {
     "deleteTitle": "¿Eliminar código de barras?",
@@ -96,9 +101,13 @@
     "fields": {
       "id": { "label": "ID del código", "placeholder": "Ingrese el ID…" },
       "number": { "label": "Código de barras", "placeholder": "Ingrese el número…" },
-      "status.name": { "label": "Estado", "placeholder": "Ingrese el estado…" },
-      "container.name": { "label": "Contenedor", "placeholder": "Ingrese el contenedor…" },
-      "scanDate": { "label": "Fecha de escaneo", "placeholder": "AAAA-MM-DD" }
+      "scanDate": { "label": "Fecha de escaneo", "placeholder": "AAAA-MM-DD" },
+      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" },
+      "updatedAt": { "label": "Fecha de modificación", "placeholder": "AAAA-MM-DD" },
+      "createdBy.name": { "label": "Creado por", "placeholder": "Ingrese el creador…" },
+      "updatedBy.name": { "label": "Actualizado por", "placeholder": "Ingrese el editor…" },
+      "createdBy.id": { "label": "ID del creador", "placeholder": "Ingrese el ID del creador…" },
+      "updatedBy.id": { "label": "ID del editor", "placeholder": "Ingrese el ID del editor…" }
     }
   }
 }

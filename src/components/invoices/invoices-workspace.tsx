@@ -19,7 +19,6 @@ import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/in
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
-import { DirectoryTableRowActions } from "@/components/app-shell/directory-table-row-actions";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
@@ -109,17 +108,6 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
-
-function pinActionsColumnFirst<T extends { id: string }>(columns: T[]): T[] {
-  const actionsIndex = columns.findIndex((column) => column.id === "actions");
-  if (actionsIndex <= 0) return columns;
-
-  const next = [...columns];
-  const [actionsColumn] = next.splice(actionsIndex, 1);
-  if (!actionsColumn) return columns;
-
-  return [actionsColumn, ...next];
-}
 
 function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefined }) {
   const { t } = useTranslation();
@@ -469,33 +457,6 @@ export function InvoicesWorkspace() {
   const tableColumns: DataTableColumn<Invoice>[] = useMemo(
     () => [
     {
-      id: "actions",
-      label: t("invoices.workspace.actionsColumn"),
-      hideable: false,
-      sortable: false,
-      truncateCell: false,
-      stopRowClick: true,
-      defaultWidth: 72,
-      headerClassName: "text-center [&>div]:justify-center [&_span]:text-center",
-      cellClassName: "align-top overflow-visible",
-      renderCell: (invoice) => (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label={t("invoices.workspace.viewInvoiceFor", { number: invoice.invoiceNumber })}
-          title={t("invoices.workspace.viewInvoice")}
-          onClick={(event) => {
-            event.stopPropagation();
-            openView(invoice);
-          }}
-        >
-          <Receipt className="size-3.5" />
-        </Button>
-      ),
-    },
-    {
       id: "invoiceNumber",
       label: "Invoice number",
       sortField: "number",
@@ -615,10 +576,6 @@ export function InvoicesWorkspace() {
   );
 
   const columnVisibility = useColumnVisibility("invoices-v5", tableColumns);
-  const displayColumns = useMemo(
-    () => pinActionsColumnFirst(columnVisibility.columns),
-    [columnVisibility.columns],
-  );
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount;
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;
@@ -709,6 +666,10 @@ export function InvoicesWorkspace() {
           pageRowIds={invoices.map((invoice) => invoice.invoiceId)}
           totalCount={totalInvoices}
           onSelectedIdsChange={setSelectedIds}
+          onView={() => {
+            const invoice = selectedInvoices[0];
+            if (invoice) openView(invoice);
+          }}
           onEdit={() => {
             const invoice = selectedInvoices[0];
             if (invoice) openEditForm(invoice);
@@ -749,7 +710,7 @@ export function InvoicesWorkspace() {
           />
         ) : (
           <DataTable
-            columns={displayColumns}
+            columns={columnVisibility.columns}
             rows={invoices}
             page={currentPage}
             isPageDataPending={isFetching}
@@ -767,14 +728,6 @@ export function InvoicesWorkspace() {
             onRowClick={openView}
             onRowDoubleClick={openEditForm}
             activeRowId={viewInvoiceId ?? undefined}
-            renderSelectCellActions={(invoice) => (
-              <DirectoryTableRowActions
-                row={invoice}
-                onEdit={openEditForm}
-                onDelete={openDeleteInvoice}
-                deleteDisabled={isDeleting}
-              />
-            )}
             emptyState={
               <p className="text-muted-foreground">No invoices match your search or filters.</p>
             }

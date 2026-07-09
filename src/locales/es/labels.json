@@ -1,5 +1,5 @@
 {
-  "title": "Administrador de etiquetas",
+  "title": "Escáner de códigos de barras",
   "pages": {
     "barcodesDescription": "Consulte y administre códigos de barras de envío en facturas, contenedores y rutas.",
     "description": "Actualice el estado de códigos de barras, transfiera contenedores, asigne rutas y procese escaneos para etiquetas de envío."
@@ -93,7 +93,7 @@
       "selectNewStatus": "Seleccione un nuevo estado.",
       "selectNewContainer": "Seleccione un nuevo contenedor.",
       "selectNewRoute": "Seleccione una nueva ruta.",
-      "notFound": "No se encontró etiqueta para el código \"{{barcode}}\".",
+      "notFound": "No se encontró código de barras para \"{{barcode}}\".",
       "noChanges": "No se aplicaron cambios: los valores seleccionados coinciden con la etiqueta actual."
     },
     "success": {

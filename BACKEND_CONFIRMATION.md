@@ -8,7 +8,7 @@
 
 ## Overview
 
-The portal verified live API behavior against production (`2026-07-09`, company `64d5c0b0d1eab2aaf30b1819`) for **customers**, **pickups**, **invoices**, **containers**, **invoice descriptions** (items catalog), **routes** (route manager / crew templates), and **vehicle routes** (pickup + delivery schedules). Before broader API cleanup and more portal integration, we need **written confirmation** of these contracts and how they relate to other resources.
+The portal verified live API behavior against production (`2026-07-09`, company `64d5c0b0d1eab2aaf30b1819`) for **customers**, **pickups**, **invoices**, **containers**, **invoice descriptions** (items catalog), **routes** (route manager / crew templates), **vehicle routes** (pickup + delivery schedules), and **barcodes** (directory + barcode scanner). Before broader API cleanup and more portal integration, we need **written confirmation** of these contracts and how they relate to other resources.
 
 **Audit metadata goal:** Every directory / transaction resource the portal lists should expose the same four fields on **list, read, and mutation responses**:
 
@@ -50,6 +50,15 @@ See **Confirmed decisions (backend must implement)** for full action items.
 - `src/lib/route-manager/types.ts`
 - `src/components/route-manager/route-manager-workspace.tsx`
 - `src/components/label-updater/label-updater-workspace.tsx`
+- `src/lib/labels/api/label-updater-api.ts`
+- `src/lib/labels/api/barcodes-api.ts`
+- `src/lib/labels/types.ts` — `BARCODE_STATUS_OPTIONS` (scanner status catalog)
+- `src/lib/barcodes/api/barcodes-catalog-api.ts`
+- `src/lib/barcodes/types.ts`
+- `src/lib/barcodes/filter-fields.ts`
+- `src/lib/barcodes/search-fields.ts`
+- `src/components/barcodes/barcodes-workspace.tsx`
+- `scripts/probe-barcodes-live.mjs`
 - `src/lib/items/api/items-api.ts`
 - `src/lib/items/types.ts`
 - `src/lib/items/filter-fields.ts`
@@ -228,6 +237,7 @@ createdAt, updatedAt, createdBy.name, updatedBy.name
 | **Routes** (crew template) | `/routes`                                 | ✅                       | ✅ (nullable on some rows) | ⚠️ `string                                                               | core.User`→ **target:`core.User` only\*\*              | ⚠️ Same                                                                           | Normalize per confirmed decision §1                       |
 | **Pickup routes**          | `/vehicle-routes` (`routeType: pickup`)   | ⚠️ Optional on read      | ⚠️ Optional on read        | ⚠️ `string                                                               | core.User`→ **target:`core.User` only\*\*              | ⚠️ Same                                                                           | Search allowlist **will add** audit fields (confirmed §4) |
 | **Delivery routes**        | `/vehicle-routes` (`routeType: delivery`) | ⚠️ Same as pickup routes | ⚠️ Same                    | ⚠️ Same                                                                  | ⚠️ Same                                                | Same resource as pickup routes                                                    |
+| **Barcodes**               | `/barcodes`                               | ✅                       | ✅                         | ✅ `core.User` on list + GET                                             | ✅ `core.User` on list + GET                           | See Part VIII — search allowlist narrower than read model                           |
 
 **Legend:** ✅ present and usable · ⚠️ partial / inconsistent · ❌ missing on live read
 
@@ -819,7 +829,7 @@ The portal still models `date`, `routeId`, and `tripNumber` on `/routes` in some
 - Branch filter should use **`vehicle.branch`** (source of truth — confirmed).
 - Bar search: `name`, `vehicle.name`, `employees.name` only until `routeId` is in search allowlist.
 - Create / update require `branch`, `vehicle`, `employees[]`, and `active`.
-- Label updater and barcode assignment use a route identifier — portal currently prefers `routeId` but barcodes API path uses Mongo `id`.
+- Barcode scanner route assignment: `PUT /barcodes/{id}` with `route.id` = **vehicle-route Mongo `_id`** (confirmed `2026-07-09`). Invoice staging still uses `PUT /invoices/item/barcode/route/{id}` — path id type **open** (see VIII.6, III.6).
 
 ---
 
@@ -861,7 +871,7 @@ tripNumber     int
 
 | Question | Why the portal needs it |
 | --- | --- |
-| `routeId` format and uniqueness rules? | View sheet, label updater, search |
+| `routeId` format and uniqueness rules? | View sheet, invoice staging route assign, search |
 | Are audit fields guaranteed on **list** responses? | Directory columns |
 
 **Confirmed:**
@@ -997,7 +1007,9 @@ The portal references `/routes` from several features. We need one documented id
 | Feature                  | Portal usage today                                                           | Question for backend                                           |
 | ------------------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | Vehicle-routes           | `route.id` = Mongo ObjectID from `/routes`                                   | Confirmed?                                                     |
-| Label updater            | `PUT /invoices/item/barcode/route/{routeId}` — portal passes `routeId` field | **Which id goes in the path — Mongo `id` or human `routeId`?** |
+| **Barcode scanner**      | `PUT /barcodes/{id}` with `route: { id, name }` — `id` = **vehicle-route** Mongo `_id` | **Confirmed working** (`2026-07-09` probe) — document in OpenAPI |
+| **Barcode scanner (legacy)** | `PUT /invoices/item/barcode/route/{id}` — **not used** by scanner after `2026-07-09` | Returns **404** for catalog `/barcodes` rows — invoice-embedded only? |
+| Invoices (label staging) | `PUT /invoices/item/barcode/route/{vehicleRouteId}` + `barcodeIds[]`       | **Which id goes in the path — vehicle-route `_id` or `/routes` `routeId`?** |
 | Invoices (pickup source) | Uses **vehicle-routes** (`pickupRouteOptions`), not `/routes`                | Confirm invoice `routeId` is vehicle-route id                  |
 | Orders                   | `route.id` filter on orders search                                           | Maps to vehicle-route or `/routes`?                            |
 | Accounting / journals    | `routeId` on entries                                                         | Which resource id type?                                        |
@@ -1029,7 +1041,7 @@ The portal references `/routes` from several features. We need one documented id
 | **Routes bar search** (text query) | III.4 — remove `routeId` from OR group until backend adds to allowlist |
 | **Route view sheet `routeId` column** | III.2 — `routeId` confirmed on read; backend must expose on live API |
 | **`fetchRoutesByDate` / `useRouteKpis`** | **Confirmed:** query `/vehicle-routes/search` by `date` — portal to migrate |
-| **Label updater route select** | III.6 — Mongo `id` vs `routeId` for barcode assign |
+| **Label updater route select** | **Resolved for scanner:** `PUT /barcodes/{id}` + `route.id` = vehicle-route `_id`. Invoice staging still uses `PUT /invoices/item/barcode/route/{id}` — confirm path id type |
 | **Default sort `date:desc`** | III.4 — remove from `/routes` list (date not on resource) |
 | Update `API_PAYLOADS.md` routes section | III.5 — `branch`, `active`, employee role vs route crew, search allowlist |
 
@@ -1728,6 +1740,275 @@ invoice.Invoice {
 
 ---
 
+# Part VIII — Barcodes (`/barcodes`) & Barcode Scanner (`/label-updater`)
+
+## VIII.1 Context
+
+Barcodes are shipment label identifiers stored in the **`/barcodes`** catalog. The portal has two live surfaces:
+
+| Surface | Route | Portal code |
+| ------- | ----- | ----------- |
+| **Barcodes directory** | `/barcodes` | `src/lib/barcodes/api/barcodes-catalog-api.ts`, `src/components/barcodes/barcodes-workspace.tsx` |
+| **Barcode scanner** | `/label-updater` | `src/lib/labels/api/label-updater-api.ts`, `src/components/label-updater/label-updater-workspace.tsx` |
+
+Both are wired to the **live API** (mock in-memory label store removed `2026-07-09`).  
+**Probe script:** `scripts/probe-barcodes-live.mjs` (28/28 passed on `2026-07-09`).
+
+Invoice **label staging** (`invoice-staging-dialog`) still uses a **dual write path** for barcodes embedded in `invoiceDetails.barcodes` vs catalog rows — see VIII.6.
+
+---
+
+## VIII.2 Canonical `barcode.Barcode` read model
+
+**Live today** (`GET /barcodes`, `GET /barcodes/{id}`):
+
+```txt
+barcode.Barcode {
+  id           uint32
+  number       string
+  status       barcode.BarcodeStatus {
+                 id         integer
+                 name       string          // e.g. "CREATED", "CONDUCE", "IN TRANSIT"
+                 prevStatus string?         // returned on read — semantics OPEN
+               }
+  container    core.ContainerRef { id, name }
+  route        core.RouteReference? { id, name, routeId? }   // delivery route = vehicle-route schedule
+  delivery     { id, name }?                                 // separate from route — semantics OPEN
+  tripNumber   number?
+  scanDate     datetime
+  createdAt    datetime
+  updatedAt    datetime
+  createdBy    core.User { id, name }
+  updatedBy    core.User { id, name }
+}
+```
+
+**Observed on live row (`id=1`, `2026-07-09`):**
+
+- `status`: `{ id: 4, name: "CONDUCE" }` — no `prevStatus` on that row
+- `route` / `delivery` / `tripNumber`: **absent** on sample row (not yet assigned)
+- `scanDate`: `"0001-01-01T00:00:00Z"` — likely sentinel / unset — **confirm meaning**
+
+### Questions — read model
+
+| Question | Why the portal needs it |
+| -------- | ----------------------- |
+| What is `scanDate` when unset — always `0001-01-01T00:00:00Z`, or nullable? | Table + view sheet display |
+| What is `status.prevStatus` — previous status name on transition, audit only, or writable? | Scanner shows when present |
+| Semantic difference between **`route`** (vehicle-route ref) and **`delivery`** (numeric id + name)? | Directory columns + scanner route vs delivery writes |
+| Is `route.id` always the **`/vehicle-routes` Mongo `_id`** (not `/routes` template id, not human `routeId`)? | Scanner + directory route column |
+| Does `tripNumber` come from the linked vehicle-route, or stored independently on the barcode? | Directory `tripNumber` column |
+| Should barcodes link to **invoice line items** on read (invoice number, line id)? | Scanner results table has empty Invoice column today |
+
+---
+
+## VIII.3 Write payload (`POST` / `PUT /barcodes`)
+
+**Documented in `API_PAYLOADS.md`:**
+
+```txt
+POST /v1/barcodes
+PUT  /v1/barcodes/{id}
+
+{
+  "number": "LBL-00001",
+  "status": { "id": 1, "name": "CREATED" },
+  "container": { "id": 1, "name": "Container A" },
+  "delivery": { "id": 1, "name": "Route 1" }
+}
+```
+
+**Verified additionally (`2026-07-09` probe):**
+
+```txt
+"route": { "id": "<vehicle-route-mongo-id>", "name": "<display label>" }
+```
+
+- `PUT` with `route` sets `barcode.route.id` on read; clears when replaced by `delivery` write (last write wins — **confirm intended**)
+- `PUT /invoices/item/barcode/route/{vehicleRouteId}` with catalog barcode id → **404 Route not found** — **not** the scanner path for `/barcodes` rows
+
+### Questions — write rules
+
+| Question | Why the portal needs it |
+| -------- | ----------------------- |
+| Is `route` or `delivery` the canonical way to assign a barcode to a delivery trip? | Scanner + directory edit form |
+| Are `status.id` and `status.name` both required on write? Must they match a server catalog? | Scanner + directory CRUD |
+| Valid status transitions (e.g. CREATED → PRINTED → IN TRANSIT → DELIVERED)? | Scanner UX / validation |
+| Is `container` required before `route` assignment? | Probe sample had container; invoice route assign docs mention container |
+| Delete rules when barcode is referenced by invoice line item? | Directory bulk delete |
+
+---
+
+## VIII.4 Barcode status catalog — **how the scanner gets status options**
+
+**There is no live API endpoint today.** The portal does **not** call `GET /barcode-statuses` (or similar).
+
+**Current portal implementation:**
+
+| Item | Value |
+| ---- | ----- |
+| Source | **Hard-coded** `BARCODE_STATUS_OPTIONS` in `src/lib/labels/types.ts` |
+| Used by | Barcode scanner (`useBarcodeStatusOptions`), barcodes directory form, invoice label staging |
+| Hook | `useBarcodeStatusOptions()` → maps options to localized labels via `labels.barcodeStatuses.*` |
+| Default scan status | `IN TRANSIT` (`id: 3`) — scanner default when “Change status” is checked |
+
+```txt
+// Portal constants — NOT from API (ids 2,3,5,6 are best-guesses)
+BARCODE_STATUS_OPTIONS = [
+  { id: 1, name: "CREATED" },      // confirmed from API payloads
+  { id: 2, name: "PRINTED" },
+  { id: 3, name: "IN TRANSIT" },
+  { id: 4, name: "CONDUCE" },      // confirmed — seen live on id=1
+  { id: 5, name: "DELIVERED" },
+  { id: 6, name: "CANCELLED" },
+]
+```
+
+**Scanner write path:** selected `id` → `resolveStatusRef()` → `PUT /barcodes/{id}` with `{ status: { id, name } }`.
+
+### Questions — status catalog (**highest priority for scanner**)
+
+| Question | Why the portal needs it |
+| -------- | ----------------------- |
+| **Will there be a `GET /barcode-statuses` (or enum in OpenAPI) listing id + name?** | Replace hard-coded `BARCODE_STATUS_OPTIONS` |
+| **Confirm authoritative id ↔ name mapping** for all six statuses above | Wrong id/name pairs may be rejected or corrupt data |
+| Are status **names** case-sensitive (`"IN TRANSIT"` vs `"IN_TRANSIT"`)? | Search/display normalization |
+| Is `CONDUCE` a distinct terminal state or alias for in-transit/delivered? | KPI buckets + badge colors |
+| Should scanner offer only **allowed next statuses** per current `status.id`? | Needs transition matrix from backend |
+| Who sets `prevStatus` — automatic on `PUT`, or client-supplied? | Read model + audit |
+
+**Requested deliverable:** publish `barcode.BarcodeStatus` catalog (ids, names, optional `prevStatus` rules) in OpenAPI; portal will switch scanner + directory form to API-driven options.
+
+---
+
+## VIII.5 Search & filter allowlist (`POST /barcodes/search`)
+
+**Verified working** (`scripts/probe-barcodes-live.mjs`, `2026-07-09`):
+
+| Field | Operators tested | Notes |
+| ----- | ---------------- | ----- |
+| `number` | `contains`, `startsWith`, `eq`, `neq` | Primary scanner lookup uses `eq` |
+| `id` | `eq`, `neq`, `gte`, `lte` — **JSON number**; `contains` / `startsWith` — **JSON string** | Portal coerces in `expandBarcodeFilterNode` |
+| `scanDate` | `eq`, `neq`, `gte`, `lte` | |
+| `createdAt`, `updatedAt` | `eq`, `neq`, `gte`, `lte` | |
+| `createdBy.name`, `updatedBy.name` | `contains`, `startsWith`, `eq`, `neq` | |
+| `createdBy.id`, `updatedBy.id` | `eq` (numeric); `contains` (string) | |
+
+**Bar search (root `operator: "or"` + `contains` on each field):**  
+`number`, `id`, `scanDate`, `createdAt`, `updatedAt`, `createdBy.name`, `updatedBy.name`, `createdBy.id`, `updatedBy.id`
+
+**Rejected today (400 `SEARCH_QUERY_VALIDATION_FAILED`):**
+
+| Field | Error |
+| ----- | ----- |
+| `status.name` | `field "status.name" is not allowed` |
+| `container.name` | not allowed |
+| `route.name` | not allowed |
+| `delivery.name` | not allowed |
+| `tripNumber` | not allowed |
+| `id` + `contains` with JSON **number** | must be JSON **string** for `contains` |
+
+**Allowed fields (from API error message):**  
+`createdAt`, `createdBy.id`, `createdBy.name`, `id`, `number`, `scanDate`, `updatedAt`, `updatedBy.id`, `updatedBy.name`
+
+**Portal alignment (`2026-07-09`):** directory search + advanced filters **only** expose the allowed list above. Table columns still show `status`, `container`, `route`, `tripNumber`, `delivery` from GET — but users **cannot filter** on those embedded refs until backend adds them.
+
+### Questions — search
+
+| Question | Why the portal needs it |
+| -------- | ----------------------- |
+| Will `status.name`, `container.name`, `route.name`, `delivery.name`, `tripNumber` be added to search allowlist? | Directory filters + bar search |
+| Sortable fields on `GET /barcodes?sort=` — same as search allowlist? | Table column sort |
+| `scanDate gte "0001-01-01"` returns 0 rows on live data — is unset scan date indexed? | Scan-date filters |
+
+---
+
+## VIII.6 Dual barcode storage (catalog vs invoice-embedded)
+
+The portal still supports **two write targets** in `src/lib/labels/api/barcodes-api.ts`:
+
+| Target | Detection | Write path |
+| ------ | --------- | ---------- |
+| **Catalog** | `POST /barcodes/search` finds row by `number` | `PUT /barcodes/{id}` |
+| **Invoice-embedded** | Barcode exists only under `invoiceDetails.barcodes` | `PATCH` invoice embedded barcodes |
+
+**Barcode scanner (`/label-updater`) uses catalog path only** — `fetchBarcodeByNumber` → `PUT /barcodes/{id}`.  
+Scans of invoice-only barcodes **fail** with “No barcode found” unless a catalog row exists.
+
+**Invoice label staging** uses `assignInvoiceItemBarcodesToRoute` → `PUT /invoices/item/barcode/route/{vehicleRouteId}`.
+
+### Questions — dual storage
+
+| Question | Why the portal needs it |
+| -------- | ----------------------- |
+| Are all shipment barcodes migrating to `/barcodes`, or will invoice-embedded rows remain indefinitely? | Scanner + staging unification |
+| Should scanner fall back to invoice-embedded lookup + patch? | Operator workflow |
+| When invoice labels are generated, is a catalog `/barcodes` row always created? | `generateLabels` in `barcodes-api.ts` |
+
+---
+
+## VIII.7 Barcode scanner — live flow (portal)
+
+```mermaid
+sequenceDiagram
+  participant Op as Operator
+  participant UI as /label-updater
+  participant API as EMSYS API
+
+  Op->>UI: Scan barcode number
+  UI->>API: POST /barcodes/search (number eq)
+  API-->>UI: barcode row
+  UI->>API: PUT /barcodes/{id} (status / container / route)
+  API-->>UI: updated barcode
+  UI-->>Op: result row (prev/new status, container, route)
+```
+
+| Step | Endpoint | Portal code |
+| ---- | -------- | ----------- |
+| Lookup | `POST /barcodes/search?page=1&limit=1` + `{ field: "number", operator: "eq", value }` | `fetchBarcodeByNumber()` |
+| Update status / container / route | `PUT /barcodes/{id}` | `applyBarcodeScanUpdate()` → `updateBarcode()` |
+| Route assignment | Same PUT with `route: { id: vehicleRouteMongoId, name }` | Scanner route picker = `useActiveRoutePicker("delivery")` |
+| Container picker | `GET /containers?limit=200` | `useContainerPicker()` |
+| Status options | **Hard-coded** `BARCODE_STATUS_OPTIONS` | `useBarcodeStatusOptions()` — **not API** |
+
+**Not used by scanner after `2026-07-09`:** in-memory `labels/store.ts`; `PUT /invoices/item/barcode/route/{id}` for catalog rows.
+
+---
+
+## VIII.8 Portal gaps & frontend/backend misalignment
+
+| Topic | Portal today | Backend / spec | Action |
+| ----- | ------------ | -------------- | ------ |
+| **Status options** | Hard-coded ids 1–6 | No catalog endpoint | **Backend:** publish status enum endpoint; **Portal:** fetch options |
+| **Search vs read** | Table shows status, container, route, tripNumber | Search rejects embedded `*.name` fields | **Backend:** extend allowlist OR document as read-only |
+| **`LabelStatus` vs `BarcodeStatus`** | Legacy `LabelStatus` (`pending`, `generated`, …) still in types for old label store / staging UI | API uses `CREATED`, `PRINTED`, `IN TRANSIT`, … | Scanner uses `BarcodeStatus` only; staging may still mix — **confirm one vocabulary** |
+| **Route id type** | Scanner sends vehicle-route `_id` on `PUT` | `PUT /invoices/item/barcode/route/{id}` 404 with same id | Document which endpoints accept which id |
+| **`route` vs `delivery` on write** | Scanner writes `route`; `API_PAYLOADS.md` documents `delivery` | Both accepted on PUT — different read fields | **Backend:** canonical assignment field |
+| **Invoice column in scanner** | Always empty | No invoice link on barcode read | Add `invoice` ref on read or drop column |
+| **Permission** | `packagesView` on `/barcodes` and `/label-updater` | `API_PAYLOADS.md` lists `labels` permission | **Confirm** permission name |
+| **`scanDate` updates** | Scanner does not set `scanDate` on scan | Should scan auto-stamp `scanDate`? | **Confirm** whether PUT or dedicated scan endpoint should set it |
+
+---
+
+## VIII.9 Permissions & endpoints
+
+| Method | Path | Permission (`API_PAYLOADS.md`) | Portal usage |
+| ------ | ---- | -------------------------------- | ------------ |
+| GET | `/barcodes` | `labels` | Directory list |
+| POST | `/barcodes` | `labels` | Create |
+| GET | `/barcodes/{id}` | `labels` | View sheet / edit load |
+| PUT | `/barcodes/{id}` | `labels` | Edit + **scanner update** |
+| DELETE | `/barcodes/{id}` | `labels` | Delete |
+| POST | `/barcodes/search` | `labels` | Directory filter + scanner lookup |
+| PUT | `/invoices/item/barcode/route/{id}` | `invoice` (assumed) | Invoice label staging only |
+
+### Questions
+
+- Confirm `labels` vs `packages` permission naming for portal `packagesView` gate.
+- Is there (or will there be) a dedicated **scan** endpoint that sets `scanDate` + `status` in one call?
+
+---
+
 # Cross-cutting — Search & filter standardization
 
 Verified working on **customers**, **containers**, **invoice descriptions**, **routes**, and **vehicle routes**:
@@ -1741,6 +2022,7 @@ Verified working on **customers**, **containers**, **invoice descriptions**, **r
 | Vehicle routes        | `GET /vehicle-routes` (mixed types)    | `POST /vehicle-routes/search`       | —                                |
 | Pickups               | `GET /pickups` (pending scope)         | `POST /pickups/search`              | —                                |
 | Invoices              | `GET /invoices`                        | `POST /invoices/search`             | —                                |
+| **Barcodes**          | `GET /barcodes`                        | `POST /barcodes/search`             | —                                |
 | Pickup vehicle-routes | — (use search + `routeType eq pickup`) | `POST /vehicle-routes/search`       | —                                |
 
 Please confirm as standard for list resources the portal uses today (`customers`, `pickups`, `invoices`, `employees`, `vehicles`, `containers`, `deliveries`, `journals`, `routes`, `vehicle-routes`, etc.):
@@ -1768,12 +2050,15 @@ Please confirm as standard for list resources the portal uses today (`customers`
 
 # Requested deliverables from backend
 
-1. **Written answers** to Part I–VII and **Cross-cutting — Audit metadata** (inline on this doc or linked spec).
+1. **Written answers** to Part I–**VIII** and **Cross-cutting — Audit metadata** (inline on this doc or linked spec).
 2. **Updated API spec** (`OpenAPI` or equivalent) with:
 
 - **Shared audit block** on every resource below: `createdAt`, `updatedAt`, `createdBy`, `updatedBy` as `core.User { id, name }`
 - canonical `customer.Customer`, `pickup.Pickup`, `invoice.Invoice`, `container.Container`, `route.Route`, `vehicle_route.VehicleRoute`, and `invoicedescription.InvoiceDescription`
 - `ContainerRef` embedded DTO per resource (invoice, delivery, vehicle-route, barcode)
+- **`barcode.Barcode` read/write model** — `status`, `route` vs `delivery`, `scanDate`, `prevStatus`
+- **`GET /barcode-statuses` (or equivalent)** — authoritative status catalog for scanner + directory (**portal hard-codes today**)
+- `POST /barcodes/search` allowlist — add embedded fields (`status.name`, `container.name`, `route.name`, …) or document as read-only
 - party snapshot DTO used by pickups / invoices
 - `receivers[]` semantics on customer and journal
 - search field alias tables (pickup `receiver` vs `receivers.*`; vehicle-route crew fields)
@@ -1817,6 +2102,8 @@ Please confirm as standard for list resources the portal uses today (`customers`
 - container create (server-assigned id) + invoice `container` snapshot
 - routes bar search without rejected fields
 - successful delivery report from vehicle-route id
+- barcode create + scanner `PUT` (status / container / `route` assignment) + `POST /barcodes/search` lookup
+- barcode status catalog sample (all valid `status.id` + `name` pairs)
 
 ---
 
@@ -1849,6 +2136,15 @@ Please confirm as standard for list resources the portal uses today (`customers`
 
 1. **Is `purpose` server-derived from `comments[]` or client-owned on write?**
 2. **Invoices: does `employee` remain as assigned appraiser after `user`/`employee`-as-creator retirement?**
+
+**Barcodes (`/barcodes`) & scanner**
+
+1. **Status catalog:** publish `GET /barcode-statuses` (or OpenAPI enum) — portal hard-codes ids 1–6 in `BARCODE_STATUS_OPTIONS`; only `CREATED` (1) and `CONDUCE` (4) confirmed live.
+2. **`route` vs `delivery` on write** — which field should scanner/directory use for delivery-trip assignment?
+3. **Search allowlist** — will `status.name`, `container.name`, `route.name`, `tripNumber` be searchable? (Returned on GET but rejected by `POST /barcodes/search` today.)
+4. **`scanDate`** — sentinel `0001-01-01T00:00:00Z` meaning; should scanner auto-set on scan?
+5. **Catalog vs invoice-embedded** — will all barcodes live in `/barcodes`, or should scanner support invoice-embedded fallback?
+6. **`PUT /invoices/item/barcode/route/{id}`** — confirm path id = vehicle-route `_id` (invoice staging); catalog rows use `PUT /barcodes/{id}` + `route` instead.
 
 ---
 
@@ -1998,6 +2294,30 @@ Please confirm as standard for list resources the portal uses today (`customers`
 | `GET ?sort=createdBy:desc`       | list sort                                                  | **400**                                                   |
 | Invoice line item link           | `invoiceDetails.description`                               | **Unverified** — live invoice GET lacked `invoiceDetails` |
 
+## Barcodes (`/barcodes`) & scanner
+
+| Check | Endpoint | Result |
+| ----- | -------- | ------ |
+| List | `GET /barcodes` | 200 |
+| Read | `GET /barcodes/{id}` | 200 |
+| Create | `POST /barcodes` | 201 — server assigns `id` |
+| Update (status / container) | `PUT /barcodes/{id}` | 200 |
+| Update (route assign) | `PUT /barcodes/{id}` + `route: { id: vehicleRouteMongoId, name }` | 200 — sets `barcode.route` on read |
+| Update (`delivery` field) | `PUT /barcodes/{id}` + `delivery: { id, name }` | 200 — sets `barcode.delivery`; clears `route` on probe |
+| Delete | `DELETE /barcodes/{id}` | 200 — subsequent GET **404** |
+| Scanner lookup | `POST /barcodes/search` + `number eq` | 200 |
+| Bar search (aligned OR `contains`) | `POST /barcodes/search` | 200 — 9 fields |
+| Advanced filters | `number`, `id`, audit fields, `scanDate` | 200 |
+| Search `status.name` | `POST /barcodes/search` | **400** — not in allowlist |
+| Search `container.name` | `POST /barcodes/search` | **400** |
+| Search `route.name` / `tripNumber` | `POST /barcodes/search` | **400** |
+| `id eq` with JSON number | `POST /barcodes/search` | 200 |
+| `id eq` with JSON string | `POST /barcodes/search` | **400** |
+| Invoice route assign (catalog barcode) | `PUT /invoices/item/barcode/route/{vehicleRouteId}` | **404** — not for catalog rows |
+| Audit on read | list / GET | `createdAt`, `updatedAt`, `createdBy`, `updatedBy` ✅ (`core.User`) |
+| Status catalog API | — | **Does not exist** — portal uses hard-coded `BARCODE_STATUS_OPTIONS` |
+| Full CRUD + search | `scripts/probe-barcodes-live.mjs` | **28/28 passed** (`2026-07-09`) |
+
 _Filtered directory lists in the portal use `POST /<resource>/search`, not legacy GET filter params._
 
 ---
@@ -2039,6 +2359,11 @@ _Use this section for answers. Date and author optional._
 | VI.5 Pickup portal gaps                         |          |       |
 | VI.6 Pickup backend checklist                   |          |       |
 | VII.2 Invoice audit fields                      |          |       |
+| VIII.2 Barcode read model                     |          |       |
+| VIII.3 Barcode write rules                    |          |       |
+| VIII.4 Barcode status catalog (scanner options) |          |       |
+| VIII.5 Barcode search & filters               |          |       |
+| VIII.6 Catalog vs invoice-embedded barcodes   |          |       |
 | Cross-cutting search standardization            |          |       |
 
 ---

@@ -4,10 +4,7 @@ import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Eye,
   KeyRound,
-  MoreHorizontal,
-  Pencil,
   Plus,
   Shield,
   Trash2,
@@ -49,13 +46,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { normalizeApiError } from "@/lib/api/axios";
 import {
   Sheet,
@@ -360,54 +350,6 @@ export function RolesWorkspace() {
       cellClassName: "text-muted-foreground",
       renderCell: (role) => formatAuditDateTime(role.updatedAt),
     },
-    {
-      id: "actions",
-      label: t("roles.columns.action"),
-      hideable: false,
-      sortable: false,
-      truncateCell: false,
-      stopRowClick: true,
-      headerClassName: "text-right",
-      cellClassName: "text-right",
-      renderCell: (role) => (
-        <div className="flex justify-end" onDoubleClick={(event) => event.stopPropagation()}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={t("roles.table.actionsFor", { name: role.name })}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-36">
-              <DropdownMenuItem onSelect={() => setViewRole(role)}>
-                <Eye className="h-4 w-4" />
-                {t("roles.actions.view")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => openEditForm(role)}>
-                <Pencil className="h-4 w-4" />
-                {t("common.actions.edit")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={role.systemRole}
-                className="text-destructive focus:text-destructive"
-                onSelect={() => {
-                  setFormError(null);
-                  setDeleteTarget(role);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-                {t("common.actions.delete")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
-    },
   ];
 
   const columnVisibility = useColumnVisibility("roles", tableColumns);
@@ -530,6 +472,10 @@ export function RolesWorkspace() {
           pageRowIds={pageRoles.map((role) => role.roleId)}
           totalCount={totalRoles}
           onSelectedIdsChange={setSelectedIds}
+          onView={() => {
+            const role = pageRoles.find((entry) => entry.roleId === selectedIds[0]);
+            if (role) setViewRole(role);
+          }}
           onEdit={() => {
             const role = pageRoles.find((entry) => entry.roleId === selectedIds[0]);
             if (role) openEditForm(role);

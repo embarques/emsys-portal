@@ -6,8 +6,7 @@ import { AccountingEntryForm } from "@/components/accounting/accounting-entry-fo
 import { AccountingSectionRowActions } from "@/components/accounting/accounting-section-row-actions";
 import { InteractiveTableRow } from "@/components/app-shell/interactive-table-row";
 import { TableCopyableCell } from "@/components/app-shell/table-copyable-cell";
-import { UniformPillWidthProvider, UniformWidthPill } from "@/components/app-shell/uniform-width-pill";
-import { Badge } from "@/components/ui/badge";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   formatAccountingCategory,
@@ -114,9 +113,8 @@ export function IncomeExpensesSection({
           />
         </div>
 
-        <UniformPillWidthProvider resetKey={ledgerEntries.map((entry) => entry.entryId).join(",")}>
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[1100px] text-left text-sm">
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[1100px] text-left text-sm">
               <thead>
                 <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
                   <th className="px-4 py-3 font-medium">Type</th>
@@ -144,11 +142,9 @@ export function IncomeExpensesSection({
                       onRowClick={onRowClick ? () => onRowClick(entry) : undefined}
                     >
                       <td className="px-4 py-3">
-                        <UniformWidthPill columnKey="type">
-                          <Badge className={getAccountingEntryTypeBadgeClass(entry.type)}>
-                            {getAccountingEntryTypeLabel(entry.type)}
-                          </Badge>
-                        </UniformWidthPill>
+                        <TableTagText className={getAccountingEntryTypeBadgeClass(entry.type)}>
+                          {getAccountingEntryTypeLabel(entry.type)}
+                        </TableTagText>
                       </td>
                       <td className="px-4 py-3">
                         <TableCopyableCell value={formatAccountingCategory(entry)} />
@@ -189,9 +185,8 @@ export function IncomeExpensesSection({
                   ))
                 )}
               </tbody>
-            </table>
-          </div>
-        </UniformPillWidthProvider>
+          </table>
+        </div>
       </CardContent>
     </Card>
   );

@@ -47,19 +47,19 @@ export const topNavigationItems: NavigationItem[] = [
 /** Primary workspace shortcuts shown in the dashboard top bar (sorted alphabetically by label). */
 export const topbarNavigationItems: NavigationItem[] = [
   {
-    labelKey: "navigation.items.orderManager",
+    labelKey: "navigation.items.orders",
     href: "/orders",
     icon: Package,
     permission: PERMISSIONS.pickupsView,
   },
   {
-    labelKey: "navigation.items.invoicesManager",
+    labelKey: "navigation.items.invoices",
     href: "/invoices",
     icon: FileText,
     permission: PERMISSIONS.invoicesView,
   },
   {
-    labelKey: "navigation.items.barcodeManager",
+    labelKey: "navigation.items.barcodes",
     href: "/barcodes",
     icon: ScanBarcode,
     permission: PERMISSIONS.packagesView,

@@ -32,13 +32,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
 import {
@@ -373,39 +366,6 @@ export function UsersWorkspace() {
         label: t("users.columns.updatedAt"),
         cellClassName: "text-muted-foreground",
         renderCell: (user) => (user.updatedAt ? formatAuditDateTime(user.updatedAt) : dash),
-      },
-      {
-        id: "actions",
-        label: t("users.columns.actions"),
-        sortable: false,
-        truncateCell: false,
-        renderCell: (user) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(event) => event.stopPropagation()}
-                aria-label={t("users.table.actionsFor", { name: user.name })}
-              >
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
-              <DropdownMenuItem onClick={() => openEditForm(user)}>
-                {t("users.actions.edit")}
-              </DropdownMenuItem>
-              {user.active ? (
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={() => setDeactivateTarget(user)}
-                >
-                  {t("users.actions.deactivate")}
-                </DropdownMenuItem>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
       },
     ],
     [dash, t, userLabels],

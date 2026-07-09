@@ -256,5 +256,75 @@
         "registerAndContinue": "Register & continue"
       }
     }
+  },
+  "view": {
+    "comments": {
+      "title": "Comments ({{count}})",
+      "description": "Notes about reaching out, delivery preferences, and other follow-ups. Comments cannot be deleted.",
+      "empty": "No comments yet.",
+      "addLabel": "Add comment",
+      "placeholder": "e.g. Tried reaching out — customer only wants delivery in the morning.",
+      "postAction": "Post comment",
+      "validationRequired": "Comment description is required.",
+      "fields": {
+        "description": "Description",
+        "date": "Date",
+        "createdBy": "Created by"
+      }
+    },
+    "payments": {
+      "title": "Payments ({{count}})",
+      "description": "Recorded payments for this invoice. Total paid: {{totalPaid}}.",
+      "empty": "No payments recorded yet.",
+      "recordTitle": "Record payment",
+      "recordAction": "Record payment",
+      "recordError": "Unable to record payment.",
+      "descriptionPlaceholder": "e.g. Partial payment collected at front desk",
+      "referencePlaceholder": "Check #, transaction ID, confirmation code...",
+      "searchMethods": "Search methods…",
+      "fields": {
+        "description": "Description",
+        "amount": "Amount",
+        "method": "Method",
+        "date": "Date",
+        "referenceNumber": "Reference number",
+        "createdBy": "Created by"
+      }
+    },
+    "barcodeStatus": {
+      "title": "Barcode status ({{count}})",
+      "description": "Barcode scan status, container assignment, and delivery route for each label on this invoice.",
+      "empty": "No barcode status records yet.",
+      "fields": {
+        "invoiceNumber": "Invoice number",
+        "barcode": "Barcode",
+        "status": "Status",
+        "quantity": "Quantity",
+        "labels": "Labels",
+        "container": "Container",
+        "deliveryRoute": "Delivery route",
+        "description": "Description"
+      }
+    },
+    "packageTracker": {
+      "title": "Package tracker ({{count}})",
+      "description": "Scan events and tracking updates for packages on this invoice.",
+      "empty": "No package tracking events yet.",
+      "fields": {
+        "dateTime": "Date & time",
+        "createdBy": "Created by",
+        "description": "Description"
+      }
+    },
+    "activity": {
+      "title": "Invoice activity ({{count}})",
+      "description": "Creation, payments, edits, discounts, and comments on this invoice.",
+      "empty": "No invoice activity yet.",
+      "fields": {
+        "dateTime": "Date & time",
+        "createdBy": "Created by",
+        "description": "Description"
+      }
+    }
   }
 }

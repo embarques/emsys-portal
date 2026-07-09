@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Edit, Lock, LockOpen, Plus, ScrollText, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit, Lock, LockOpen, Plus, ScrollText } from "lucide-react";
 
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomeStatementForm } from "@/components/accounting/daily-income-statement-form";
@@ -11,8 +11,10 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards, type StatCardItem } from "@/components/app-shell/stat-cards-carousel";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,6 +50,10 @@ import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { useTranslation } from "@/lib/i18n";
+import {
+  buildTableSelectionResetKey,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import type { DataTableColumn } from "@/lib/table/types";
 
@@ -78,6 +84,7 @@ export function DailyIncomeWorkspace() {
   const [transactionDialog, setTransactionDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<DailyIncomeJournal | null>(null);
   const [deleteJournal, setDeleteJournal] = useState<DailyIncomeJournal | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
   const branchesQuery = useBranchPicker(200);
@@ -120,6 +127,31 @@ export function DailyIncomeWorkspace() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const displayCurrency = summaryTotalsQuery.data?.currency ?? statement?.currency ?? "USD";
 
+  useTableSelectionReset(
+    buildTableSelectionResetKey(deferredQuery, page, statement?.id),
+    setSelectedIds,
+  );
+
+  const allPageSelected =
+    rows.length > 0 && rows.every((row) => selectedIds.includes(row.id));
+
+  function toggleSelectAll(checked: boolean) {
+    if (checked) {
+      setSelectedIds((current) => Array.from(new Set([...current, ...rows.map((row) => row.id)])));
+      return;
+    }
+    setSelectedIds((current) => current.filter((id) => !rows.some((row) => row.id === id)));
+  }
+
+  function toggleSelect(journalId: string, checked: boolean) {
+    setSelectedIds((current) =>
+      checked ? [...current, journalId] : current.filter((entry) => entry !== journalId),
+    );
+  }
+
+  const selectedJournal = rows.find((row) => row.id === selectedIds[0]);
+  const statementOpen = statement?.status === "OPEN";
+
   const stats = useMemo((): StatCardItem[] => {
     const summary = summaryTotalsQuery.data;
     if (!summary) return [];
@@ -144,12 +176,11 @@ export function DailyIncomeWorkspace() {
     { id: "date", label: t("accounting.dailyIncome.columns.date"), renderCell: (row) => row.date || t("common.empty.dash") },
     { id: "invoice", label: t("accounting.dailyIncome.columns.accountInvoice"), renderCell: (row) => row.invoice?.number ?? row.account?.displayName ?? row.account?.name ?? t("common.empty.dash") },
     { id: "employee", label: t("accounting.dailyIncome.columns.employee"), renderCell: (row) => getTransactionAssigneeDisplayName(row.employee?.name, row.employeeGroup?.name) || t("common.empty.dash") },
-    { id: "type", label: t("accounting.dailyIncome.columns.type"), truncateCell: false, renderCell: (row) => <Badge variant="outline">{transactionTypeLabel(row.transactionType, t)}</Badge> },
+    { id: "type", label: t("accounting.dailyIncome.columns.type"), truncateCell: false, renderCell: (row) => <TableTagText>{transactionTypeLabel(row.transactionType, t)}</TableTagText> },
     { id: "reference", label: t("accounting.dailyIncome.columns.reference"), renderCell: (row) => row.refNumber || t("common.empty.dash") },
     { id: "paymentMethod", label: t("accounting.dailyIncome.columns.paymentMethod"), renderCell: (row) => row.paymentMethod?.name ?? t("common.empty.dash") },
     { id: "amount", label: t("accounting.dailyIncome.columns.amount"), cellClassName: "font-medium tabular-nums", renderCell: (row) => formatDailyIncomeMoney(row.amount, displayCurrency) },
-    { id: "actions", label: t("accounting.dailyIncome.columns.actions"), hideable: false, stopRowClick: true, truncateCell: false, renderCell: (row) => <div className="flex justify-end gap-1"><Button size="icon" variant="ghost" aria-label={t("accounting.dailyIncome.actions.editTransaction")} disabled={statement?.status !== "OPEN"} onClick={() => openEditTransactionForm(row)}><Edit className="h-4 w-4" /></Button><Button size="icon" variant="ghost" aria-label={t("accounting.dailyIncome.actions.deleteTransaction")} disabled={statement?.status !== "OPEN"} onClick={() => setDeleteJournal(row)}><Trash2 className="h-4 w-4" /></Button></div> },
-  ], [displayCurrency, statement?.status, t]);
+  ], [displayCurrency, t]);
   const columnLayout = useColumnVisibility("daily-income-v1", columns);
   const statementValues: DailyIncomeStatementValues = { date, branchId: selectedBranch?.id ?? 0, branchCode, branchName: selectedBranch?.name ?? "", currency: statement?.currency ?? "USD", rate: statement?.rate ?? 1 };
   const mutationPending = createStatement.isPending || updateStatement.isPending;
@@ -301,7 +332,24 @@ export function DailyIncomeWorkspace() {
     <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={openAddTransactionForm} disabled={statement.status !== "OPEN"}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
 
     <Card className="gap-0"><CardHeader className="gap-3 border-b py-4 pb-3"><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={buildToolbarSearchSummary({ isFiltered: Boolean(deferredQuery.trim()), query: deferredQuery, isSearchPending: query !== deferredQuery, matched: total, catalogTotal: total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isLoading, catalogLoading: journalsQuery.isLoading }, t)} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")} />} /></CardHeader>
-      {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title={t("accounting.dailyIncome.transactions.loadingTitle")} description={t("accounting.dailyIncome.transactions.loadingDescription")} columns={[t("accounting.dailyIncome.columns.date"), t("accounting.dailyIncome.columns.accountInvoice"), t("accounting.dailyIncome.columns.employee"), t("accounting.dailyIncome.columns.type"), t("accounting.dailyIncome.columns.reference"), t("accounting.dailyIncome.columns.amount")]} /> : <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionTypeLabel(row.transactionType, t)} columnLayout={columnLayout} minWidth={1100} emptyState={<p className="text-muted-foreground">{t("accounting.dailyIncome.transactions.empty")}</p>} />}
+      {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title={t("accounting.dailyIncome.transactions.loadingTitle")} description={t("accounting.dailyIncome.transactions.loadingDescription")} columns={[t("accounting.dailyIncome.columns.date"), t("accounting.dailyIncome.columns.accountInvoice"), t("accounting.dailyIncome.columns.employee"), t("accounting.dailyIncome.columns.type"), t("accounting.dailyIncome.columns.reference"), t("accounting.dailyIncome.columns.amount")]} /> : <>
+        <TableSelectionToolbar
+          selectedIds={selectedIds}
+          pageRowIds={rows.map((row) => row.id)}
+          totalCount={total}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={() => {
+            if (selectedJournal) openEditTransactionForm(selectedJournal);
+          }}
+          onDelete={() => {
+            if (selectedJournal) setDeleteJournal(selectedJournal);
+          }}
+          canEdit={statementOpen}
+          canDelete={statementOpen}
+          deleteDisabled={deleteMutation.isPending}
+        />
+        <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionTypeLabel(row.transactionType, t)} columnLayout={columnLayout} minWidth={1100} selectable selectedIds={selectedIds} allPageSelected={allPageSelected} onToggleSelectAll={toggleSelectAll} onToggleSelect={toggleSelect} emptyState={<p className="text-muted-foreground">{t("accounting.dailyIncome.transactions.empty")}</p>} />
+      </>}
       {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: PAGE_SIZE, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-4 w-4" /> {t("common.actions.previous")}</Button><span className="px-2 text-sm text-muted-foreground">{t("common.pagination.pageOf", { current: page, total: totalPages })}</span><Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>{t("common.actions.next")} <ChevronRight className="h-4 w-4" /></Button></div></div> : null}
     </Card>
     </> : null}

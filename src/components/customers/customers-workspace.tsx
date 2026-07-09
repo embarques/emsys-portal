@@ -8,7 +8,6 @@ import {
   Search,
   Trash2,
   UserCheck,
-  UserRound,
   Users,
 } from "lucide-react";
 
@@ -91,17 +90,6 @@ import type { DataTableColumn } from "@/lib/table/types";
 const PAGE_SIZE = DEFAULT_CUSTOMER_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 const CUSTOMERS_TABLE_COLUMN_STORAGE_KEY = "customers-v7";
-
-function pinActionsColumnFirst<T extends { id: string }>(columns: T[]): T[] {
-  const actionsIndex = columns.findIndex((column) => column.id === "actions");
-  if (actionsIndex <= 0) return columns;
-
-  const next = [...columns];
-  const [actionsColumn] = next.splice(actionsIndex, 1);
-  if (!actionsColumn) return columns;
-
-  return [actionsColumn, ...next];
-}
 
 const defaultFilters: CustomerFilterState = {
   query: "",
@@ -380,31 +368,6 @@ export function CustomersWorkspace() {
   const tableColumns: DataTableColumn<Customer>[] = useMemo(
     () => [
     {
-      id: "actions",
-      label: t("customers.workspace.actionsColumn"),
-      hideable: false,
-      sortable: false,
-      truncateCell: false,
-      stopRowClick: true,
-      cellClassName: "align-top overflow-visible",
-      renderCell: (customer) => (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label={t("customers.workspace.viewCustomerFor", { name: customer.name })}
-          title={t("customers.workspace.viewCustomer")}
-          onClick={(event) => {
-            event.stopPropagation();
-            openViewCustomer(customer);
-          }}
-        >
-          <UserRound className="size-3.5" />
-        </Button>
-      ),
-    },
-    {
       id: "customerType",
       label: t("customers.columns.customerType"),
       truncateCell: false,
@@ -528,10 +491,6 @@ export function CustomersWorkspace() {
   );
 
   const columnVisibility = useColumnVisibility(CUSTOMERS_TABLE_COLUMN_STORAGE_KEY, tableColumns);
-  const displayColumns = useMemo(
-    () => pinActionsColumnFirst(columnVisibility.columns),
-    [columnVisibility.columns],
-  );
   const listErrorMessage = isError ? toErrorMessage(error) : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
@@ -624,6 +583,10 @@ export function CustomersWorkspace() {
           pageRowIds={customers.map((customer) => customer.id)}
           totalCount={totalCustomers}
           onSelectedIdsChange={setSelectedIds}
+          onView={() => {
+            const customer = customers.find((entry) => entry.id === selectedIds[0]);
+            if (customer) openViewCustomer(customer);
+          }}
           onEdit={() => {
             const customer = customers.find((entry) => entry.id === selectedIds[0]);
             if (customer) openEditForm(customer);
@@ -643,7 +606,7 @@ export function CustomersWorkspace() {
           />
         ) : (
           <DataTable
-            columns={displayColumns}
+            columns={columnVisibility.columns}
             rows={customers}
             page={currentPage}
             isPageDataPending={isFetching}

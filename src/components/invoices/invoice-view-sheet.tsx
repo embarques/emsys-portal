@@ -4,10 +4,13 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Container } from "lucide-react";
 
 import { InvoiceActivitySection } from "@/components/invoices/invoice-activity-section";
+import { InvoiceBarcodeStatusSection } from "@/components/invoices/invoice-barcode-status-section";
 import { InvoicePaymentsSection } from "@/components/invoices/invoice-payments-section";
 import { InvoiceCommentsSection } from "@/components/invoices/invoice-comments-section";
-import { InvoiceLabelActivitySection } from "@/components/invoices/invoice-label-activity-section";
+import { InvoicePackageTrackerSection } from "@/components/invoices/invoice-package-tracker-section";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
+import { getBarcodeStatusBadgeClass } from "@/lib/barcodes/display";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -191,9 +194,9 @@ function InvoiceLineItemRow({ item }: { item: InvoiceLineItem }) {
                       </td>
                       <td className="px-3 py-2 align-middle">
                         {barcode.statusName ? (
-                          <Badge variant="outline" className="text-[10px]">
+                          <TableTagText className={getBarcodeStatusBadgeClass(barcode.statusName)}>
                             {barcode.statusName}
-                          </Badge>
+                          </TableTagText>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
@@ -321,19 +324,21 @@ export function InvoiceViewSheet({
             </div>
           </RecordViewSheetSection>
 
-          <InvoicePaymentsSection
-            invoice={invoice}
-            onRecordPayment={(input) => onRecordPayment(invoice.invoiceId, input)}
-          />
-
           <InvoiceCommentsSection
             comments={invoice.comments}
             onAddComment={(description) => onAddComment(invoice.invoiceId, description)}
           />
 
-          <InvoiceActivitySection invoice={invoice} />
+          <InvoicePaymentsSection
+            invoice={invoice}
+            onRecordPayment={(input) => onRecordPayment(invoice.invoiceId, input)}
+          />
 
-          <InvoiceLabelActivitySection invoice={invoice} />
+          <InvoiceBarcodeStatusSection invoice={invoice} />
+
+          <InvoicePackageTrackerSection invoice={invoice} />
+
+          <InvoiceActivitySection invoice={invoice} />
         </RecordViewSheetBody>
 
         <RecordViewSheetActions

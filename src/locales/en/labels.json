@@ -1,5 +1,5 @@
 {
-  "title": "Labels Manager",
+  "title": "Barcode Scanner",
   "pages": {
     "barcodesDescription": "Browse and manage shipment barcodes across invoices, containers, and routes.",
     "description": "Update barcode status, transfer containers, assign routes, and process barcode scans for shipment labels."
@@ -93,7 +93,7 @@
       "selectNewStatus": "Select a new status.",
       "selectNewContainer": "Select a new container.",
       "selectNewRoute": "Select a new route.",
-      "notFound": "No label found for barcode \"{{barcode}}\".",
+      "notFound": "No barcode found for \"{{barcode}}\".",
       "noChanges": "No changes applied — selected values match the current label."
     },
     "success": {

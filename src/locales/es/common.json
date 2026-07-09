@@ -3,6 +3,7 @@
   "actions": {
     "add": "Agregar",
     "edit": "Editar",
+    "view": "Ver",
     "delete": "Eliminar",
     "cancel": "Cancelar",
     "save": "Guardar",
@@ -19,7 +20,9 @@
   },
   "audit": {
     "dateCreated": "Fecha de creación",
-    "dateModified": "Fecha de modificación"
+    "dateModified": "Fecha de modificación",
+    "createdBy": "Creado por",
+    "updatedBy": "Actualizado por"
   },
   "pagination": {
     "pageOf": "Página {{current}} de {{total}}",

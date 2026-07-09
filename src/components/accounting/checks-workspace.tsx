@@ -23,7 +23,7 @@ import { TableSelectionToolbar } from "@/components/app-shell/table-selection-to
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -47,7 +47,6 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import type { DataTableColumn } from "@/lib/table/types";
-import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 40;
 
@@ -111,9 +110,9 @@ export function ChecksWorkspace() {
         label: t("accounting.checks.columns.status"),
         truncateCell: false,
         renderCell: (check) => (
-          <Badge variant="outline" className={cn("font-medium", getCheckStatusBadgeClass(check.status))}>
+          <TableTagText className={getCheckStatusBadgeClass(check.status)}>
             {t(`accounting.checks.status.${check.status}`)}
-          </Badge>
+          </TableTagText>
         ),
       },
       {

@@ -14,11 +14,15 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import {
   formatBarcodeContainer,
+  formatBarcodeDelivery,
+  formatBarcodeDeliveryRoute,
   formatBarcodeId,
   formatBarcodeScanDate,
   formatBarcodeStatus,
+  formatBarcodeTripNumber,
   getBarcodeStatusBadgeClass,
 } from "@/lib/barcodes/display";
+import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
 import type { Barcode } from "@/lib/barcodes/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -42,6 +46,7 @@ export function BarcodeViewSheet({
   if (!barcode) return null;
 
   const statusName = barcode.status?.name ?? "";
+  const dash = t("common.empty.dash");
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -72,8 +77,45 @@ export function BarcodeViewSheet({
               value={formatBarcodeContainer(barcode.container, t)}
             />
             <RecordViewSheetDetailRow
+              label={t("barcodes.columns.deliveryRoute")}
+              value={formatBarcodeDeliveryRoute(barcode.route, t)}
+            />
+            <RecordViewSheetDetailRow
+              label={t("barcodes.columns.tripNumber")}
+              value={formatBarcodeTripNumber(barcode.tripNumber, t)}
+            />
+            <RecordViewSheetDetailRow
+              label={t("barcodes.columns.delivery")}
+              value={formatBarcodeDelivery(barcode.delivery, t)}
+            />
+            <RecordViewSheetDetailRow
               label={t("barcodes.columns.scanDate")}
               value={formatBarcodeScanDate(barcode.scanDate, locale)}
+            />
+            {barcode.status?.prevStatus ? (
+              <RecordViewSheetDetailRow
+                label={t("barcodes.view.previousStatus")}
+                value={formatBarcodeStatus({ name: barcode.status.prevStatus }, t)}
+              />
+            ) : null}
+          </RecordViewSheetSection>
+
+          <RecordViewSheetSection title={t("barcodes.view.sections.audit")}>
+            <RecordViewSheetDetailRow
+              label={t("common.audit.dateCreated")}
+              value={barcode.createdAt ? formatAuditDateTime(barcode.createdAt) : dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("common.audit.createdBy")}
+              value={barcode.createdBy || dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("common.audit.dateModified")}
+              value={barcode.updatedAt ? formatAuditDate(barcode.updatedAt) : dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("common.audit.updatedBy")}
+              value={barcode.updatedBy || dash}
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>

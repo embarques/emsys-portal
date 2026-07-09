@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ScanBarcode } from "lucide-react";
 
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -11,12 +11,13 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
-import { useLabelStatusOptions } from "@/lib/labels/hooks/use-label-display";
-import { applyLabelBarcodeUpdate } from "@/lib/labels/updater";
-import { type LabelStatus, type LabelUpdateResult } from "@/lib/labels/types";
+import { useUserError } from "@/lib/errors";
+import { useApplyBarcodeScan, useApplyBarcodeScanBulk } from "@/lib/labels/hooks/use-label-updater";
+import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
+import { BARCODE_STATUS_OPTIONS, type LabelUpdateResult } from "@/lib/labels/types";
 import { useTranslation } from "@/lib/i18n";
-import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
-import { formatRouteCopyLabel } from "@/lib/route-manager/display";
+import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/display";
+import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { cn } from "@/lib/utils";
 
 function ResultCell({ value }: { value?: string | number }) {
@@ -24,24 +25,44 @@ function ResultCell({ value }: { value?: string | number }) {
   return <span>{value}</span>;
 }
 
+const DEFAULT_SCAN_STATUS_ID = BARCODE_STATUS_OPTIONS.find((entry) => entry.name === "IN TRANSIT")?.id ?? 3;
+
 export function LabelUpdaterWorkspace() {
   const { t } = useTranslation();
-  const labelStatusOptions = useLabelStatusOptions();
+  const { toErrorMessage } = useUserError();
+  const barcodeStatusOptions = useBarcodeStatusOptions();
   const { data: containersData } = useContainerPicker();
   const containers = containersData?.items ?? [];
-  const { data: routesData } = useRoutePicker();
+  const { data: routesData } = useActiveRoutePicker("delivery", 200);
   const routes = routesData?.items ?? [];
+  const applyScanMutation = useApplyBarcodeScan();
+  const applyBulkMutation = useApplyBarcodeScanBulk();
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   const [changeStatus, setChangeStatus] = useState(true);
   const [changeContainer, setChangeContainer] = useState(false);
   const [changeRoute, setChangeRoute] = useState(false);
-  const [newStatus, setNewStatus] = useState<LabelStatus>("in_transit");
+  const [newStatusId, setNewStatusId] = useState(String(DEFAULT_SCAN_STATUS_ID));
   const [newContainerId, setNewContainerId] = useState("");
-  const [newRouteId, setNewRouteId] = useState("");
+  const [newRouteRecordId, setNewRouteRecordId] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
   const [bulkBarcodes, setBulkBarcodes] = useState("");
   const [results, setResults] = useState<LabelUpdateResult[]>([]);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const isSubmitting = applyScanMutation.isPending || applyBulkMutation.isPending;
+
+  const routeOptions = useMemo(
+    () =>
+      routes.map((route) => ({
+        value: route.id,
+        label: formatActiveRouteAssignmentLabel(route, t),
+        keywords: [route.name, route.route?.name, route.container?.name, route.date].filter(
+          (entry): entry is string => Boolean(entry?.trim()),
+        ),
+      })),
+    [routes, t],
+  );
 
   useEffect(() => {
     barcodeInputRef.current?.focus();
@@ -54,78 +75,86 @@ export function LabelUpdaterWorkspace() {
   }, [containers, newContainerId]);
 
   useEffect(() => {
-    if (!newRouteId && routes[0]) {
-      setNewRouteId(routes[0].routeId);
+    if (!newRouteRecordId && routes[0]) {
+      setNewRouteRecordId(routes[0].id);
     }
-  }, [routes, newRouteId]);
+  }, [routes, newRouteRecordId]);
 
   function focusBarcodeInput() {
     requestAnimationFrame(() => barcodeInputRef.current?.focus());
   }
 
-  function resolveRouteLabel(routeId: string): string {
-    const assignment = routes.find((entry) => entry.routeId === routeId);
-    return assignment ? formatRouteCopyLabel(assignment) : routeId;
+  function resolveRouteLabel(routeRecordId: string): string {
+    const route = routes.find((entry) => entry.id === routeRecordId);
+    return route ? formatActiveRouteAssignmentLabel(route, t) : routeRecordId;
   }
 
-  function submitBarcode(rawBarcode: string) {
+  function resolveContainerLabel(containerId: string): string {
+    const container = containers.find((entry) => String(entry.id) === containerId);
+    return container ? formatContainerLabel(container) : containerId;
+  }
+
+  function buildScannerOptions() {
+    return {
+      changeStatus,
+      newStatusId: changeStatus ? Number(newStatusId) : undefined,
+      changeContainer,
+      newContainerId: changeContainer ? newContainerId : undefined,
+      changeRoute,
+      newRouteRecordId: changeRoute ? newRouteRecordId : undefined,
+      resolveRouteLabel,
+      resolveContainerLabel,
+    };
+  }
+
+  async function submitBarcode(rawBarcode: string) {
     const barcode = rawBarcode.trim();
-    if (!barcode) return;
+    if (!barcode || isSubmitting) return;
 
-    const result = applyLabelBarcodeUpdate(
-      barcode,
-      {
-        changeStatus,
-        newStatus: changeStatus ? newStatus : undefined,
-        changeContainer,
-        newContainerId: changeContainer ? newContainerId : undefined,
-        changeRoute,
-        newRouteId: changeRoute ? newRouteId : undefined,
-        resolveRouteLabel,
-      },
-      undefined,
-      t,
-    );
+    setFormError(null);
 
-    setResults((current) => [result, ...current]);
-    setBarcodeInput("");
-    focusBarcodeInput();
+    try {
+      const result = await applyScanMutation.mutateAsync({
+        barcode,
+        options: buildScannerOptions(),
+      });
+      setResults((current) => [result, ...current]);
+      setBarcodeInput("");
+      focusBarcodeInput();
+    } catch (error) {
+      setFormError(toErrorMessage(error));
+      focusBarcodeInput();
+    }
   }
 
   function handleBarcodeKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter") return;
     event.preventDefault();
-    submitBarcode(barcodeInput);
+    void submitBarcode(barcodeInput);
   }
 
-  function applyBulkBarcodes() {
+  async function applyBulkBarcodes() {
     const barcodes = bulkBarcodes
       .split(/[\n,]+/)
       .map((entry) => entry.trim())
       .filter(Boolean);
 
-    if (barcodes.length === 0) return;
+    if (barcodes.length === 0 || isSubmitting) return;
 
-    const nextResults = barcodes.map((barcode) =>
-      applyLabelBarcodeUpdate(
-        barcode,
-        {
-          changeStatus,
-          newStatus: changeStatus ? newStatus : undefined,
-          changeContainer,
-          newContainerId: changeContainer ? newContainerId : undefined,
-          changeRoute,
-          newRouteId: changeRoute ? newRouteId : undefined,
-          resolveRouteLabel,
-        },
-        undefined,
-        t,
-      ),
-    );
+    setFormError(null);
 
-    setResults((current) => [...nextResults.reverse(), ...current]);
-    setBulkBarcodes("");
-    focusBarcodeInput();
+    try {
+      const nextResults = await applyBulkMutation.mutateAsync({
+        barcodes,
+        options: buildScannerOptions(),
+      });
+      setResults((current) => [...nextResults.reverse(), ...current]);
+      setBulkBarcodes("");
+      focusBarcodeInput();
+    } catch (error) {
+      setFormError(toErrorMessage(error));
+      focusBarcodeInput();
+    }
   }
 
   return (
@@ -154,10 +183,14 @@ export function LabelUpdaterWorkspace() {
                   <Label htmlFor="newStatus">{t("labels.updater.options.newStatus")}</Label>
                   <SearchableSelect
                     id="newStatus"
-                    value={newStatus}
-                    onValueChange={(next) => setNewStatus(next as LabelStatus)}
+                    value={newStatusId}
+                    onValueChange={setNewStatusId}
                     searchPlaceholder={t("labels.updater.search.statuses")}
-                    options={labelStatusOptions}
+                    options={barcodeStatusOptions.map((option) => ({
+                      value: String(option.id),
+                      label: option.label,
+                      keywords: [option.name],
+                    }))}
                   />
                 </div>
               ) : null}
@@ -205,13 +238,10 @@ export function LabelUpdaterWorkspace() {
                   <Label htmlFor="newRoute">{t("labels.updater.options.newRoute")}</Label>
                   <SearchableSelect
                     id="newRoute"
-                    value={newRouteId}
-                    onValueChange={setNewRouteId}
+                    value={newRouteRecordId}
+                    onValueChange={setNewRouteRecordId}
                     searchPlaceholder={t("labels.updater.search.routes")}
-                    options={routes.map((assignment) => ({
-                      value: assignment.routeId,
-                      label: formatRouteCopyLabel(assignment),
-                    }))}
+                    options={routeOptions}
                   />
                 </div>
               ) : null}
@@ -230,13 +260,19 @@ export function LabelUpdaterWorkspace() {
                 placeholder={t("labels.updater.options.barcodePlaceholder")}
                 className="font-mono text-sm"
                 autoComplete="off"
+                disabled={isSubmitting}
               />
-              <Button type="button" onClick={() => submitBarcode(barcodeInput)}>
+              <Button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => void submitBarcode(barcodeInput)}
+              >
                 <ScanBarcode className="h-4 w-4" />
                 {t("labels.updater.options.apply")}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">{t("labels.updater.options.barcodeHint")}</p>
+            {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
           </div>
 
           <div className="space-y-2">
@@ -246,10 +282,17 @@ export function LabelUpdaterWorkspace() {
               value={bulkBarcodes}
               onChange={(event) => setBulkBarcodes(event.target.value)}
               rows={4}
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+              disabled={isSubmitting}
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:opacity-50"
               placeholder={t("labels.updater.options.bulkPlaceholder")}
             />
-            <Button type="button" variant="outline" size="sm" onClick={applyBulkBarcodes}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isSubmitting}
+              onClick={() => void applyBulkBarcodes()}
+            >
               {t("labels.updater.options.applyAll")}
             </Button>
           </div>

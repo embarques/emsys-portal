@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { ListChecks, Pencil, Trash2, X } from "lucide-react";
+import { Eye, ListChecks, Pencil, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { TableSelectionActionDivider } from "@/components/app-shell/table-selection-action-group";
@@ -16,10 +16,12 @@ type TableSelectionToolbarProps = {
   /** Total selectable records (across pages). Falls back to the current page count. */
   totalCount?: number;
   onSelectedIdsChange: (ids: string[]) => void;
+  onView?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
-  /** Feature-specific bulk actions rendered between Edit and Delete. */
+  /** Feature-specific bulk actions rendered before View/Edit/Delete. */
   actions?: ReactNode;
+  canView?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
   deleteDisabled?: boolean;
@@ -40,9 +42,11 @@ export function TableSelectionToolbar({
   pageRowIds,
   totalCount,
   onSelectedIdsChange,
+  onView,
   onEdit,
   onDelete,
   actions,
+  canView = true,
   canEdit = true,
   canDelete = true,
   deleteDisabled = false,
@@ -54,11 +58,13 @@ export function TableSelectionToolbar({
 
   const total = totalCount ?? pageRowIds.length;
 
+  const showView = Boolean(onView && canView);
+  const viewDisabled = selectedIds.length !== 1;
   const showEdit = Boolean(onEdit && canEdit);
   const editDisabled = selectedIds.length !== 1;
   const showDelete = Boolean(onDelete && canDelete);
   const othersAvailable = canSelectAllOthers(pageRowIds, selectedIds);
-  const hasRecordActions = Boolean(showEdit || actions || showDelete);
+  const hasRecordActions = Boolean(showView || showEdit || actions || showDelete);
 
   return (
     <div
@@ -102,7 +108,19 @@ export function TableSelectionToolbar({
       {hasRecordActions ? (
         <div className="flex flex-wrap items-center gap-1.5">
           {actions}
-          {actions && (showEdit || showDelete) ? <TableSelectionActionDivider /> : null}
+          {actions && (showView || showEdit || showDelete) ? <TableSelectionActionDivider /> : null}
+          {showView ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={viewDisabled}
+              className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
+              onClick={onView}
+            >
+              <Eye className="h-4 w-4" />
+              {t("common.actions.view")}
+            </Button>
+          ) : null}
           {showEdit ? (
             <Button
               variant="outline"

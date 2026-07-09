@@ -5,7 +5,6 @@ import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
 
 import { ScrollableTable } from "@/components/app-shell/scrollable-table";
 import { TableCopyableCell } from "@/components/app-shell/table-copyable-cell";
-import { UniformPillWidthProvider } from "@/components/app-shell/uniform-width-pill";
 import type { TableColumnLayout } from "@/components/app-shell/use-column-visibility";
 import { getPrimarySortSpec, type SortDirection } from "@/lib/api/list-query";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
@@ -501,14 +500,5 @@ function DataTableContent<T>({
 }
 
 export function DataTable<T>(props: DataTableProps<T>) {
-  const pillResetKey = useMemo(
-    () => `${props.page ?? 0}:${props.rows.map(props.rowKey).join(",")}`,
-    [props.page, props.rows, props.rowKey],
-  );
-
-  return (
-    <UniformPillWidthProvider resetKey={pillResetKey}>
-      <DataTableContent {...props} />
-    </UniformPillWidthProvider>
-  );
+  return <DataTableContent {...props} />;
 }

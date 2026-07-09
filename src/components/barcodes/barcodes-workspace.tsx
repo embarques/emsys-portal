@@ -37,7 +37,7 @@ import {
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -52,9 +52,12 @@ import { useUserError } from "@/lib/errors";
 import {
   computeBarcodeKpis,
   formatBarcodeContainer,
+  formatBarcodeDelivery,
+  formatBarcodeDeliveryRoute,
   formatBarcodeId,
   formatBarcodeScanDate,
   formatBarcodeStatus,
+  formatBarcodeTripNumber,
   getBarcodeStatusBadgeClass,
 } from "@/lib/barcodes/display";
 import {
@@ -281,9 +284,9 @@ export function BarcodesWorkspace() {
         const statusName = barcode.status?.name ?? "";
         if (!statusName) return t("common.empty.dash");
         return (
-          <Badge variant="outline" className={getBarcodeStatusBadgeClass(statusName)}>
+          <TableTagText className={getBarcodeStatusBadgeClass(statusName)}>
             {formatBarcodeStatus(barcode.status, t)}
-          </Badge>
+          </TableTagText>
         );
       },
     },
@@ -291,6 +294,27 @@ export function BarcodesWorkspace() {
       id: "container",
       label: t("barcodes.columns.container"),
       renderCell: (barcode) => formatBarcodeContainer(barcode.container, t),
+    },
+    {
+      id: "route.name",
+      label: t("barcodes.columns.deliveryRoute"),
+      sortField: "route.name",
+      renderCell: (barcode) => formatBarcodeDeliveryRoute(barcode.route, t),
+    },
+    {
+      id: "tripNumber",
+      label: t("barcodes.columns.tripNumber"),
+      sortField: "tripNumber",
+      defaultVisible: false,
+      cellClassName: "font-mono text-xs",
+      renderCell: (barcode) => formatBarcodeTripNumber(barcode.tripNumber, t),
+    },
+    {
+      id: "delivery.name",
+      label: t("barcodes.columns.delivery"),
+      sortField: "delivery.name",
+      defaultVisible: false,
+      renderCell: (barcode) => formatBarcodeDelivery(barcode.delivery, t),
     },
     {
       id: "scanDate",
@@ -422,6 +446,7 @@ export function BarcodesWorkspace() {
               t("barcodes.columns.number"),
               t("barcodes.columns.status"),
               t("barcodes.columns.container"),
+              t("barcodes.columns.deliveryRoute"),
               t("barcodes.columns.scanDate"),
             ]}
           />

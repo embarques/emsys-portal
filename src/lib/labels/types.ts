@@ -93,6 +93,19 @@ export type LabelUpdaterOptions = {
   resolveRouteLabel?: (routeId: string) => string;
 };
 
+/** Options for the live barcode scanner (`PUT /barcodes/{id}`). */
+export type BarcodeScannerOptions = {
+  changeStatus: boolean;
+  newStatusId?: number;
+  changeContainer: boolean;
+  newContainerId?: string;
+  changeRoute: boolean;
+  /** Vehicle-route record id (`ActiveRoute.id`). */
+  newRouteRecordId?: string;
+  resolveRouteLabel?: (routeRecordId: string) => string;
+  resolveContainerLabel?: (containerId: string) => string;
+};
+
 export type LabelFilterState = {
   query: string;
   status: LabelStatus | "all";
@@ -102,10 +115,24 @@ export type LabelFilterState = {
 export type BarcodeStatusRef = {
   id?: number;
   name: string;
+  prevStatus?: string;
 };
 
 /** Container reference returned by / sent to the EMSYS barcode API. */
 export type BarcodeContainerRef = {
+  id?: number;
+  name: string;
+};
+
+/** Delivery route reference embedded on a barcode (`route` on GET /barcodes). */
+export type BarcodeRouteRef = {
+  id: string;
+  name: string;
+  routeId?: string;
+};
+
+/** Delivery record reference embedded on a barcode. */
+export type BarcodeDeliveryRef = {
   id?: number;
   name: string;
 };
@@ -116,7 +143,15 @@ export type Barcode = {
   number: string;
   status: BarcodeStatusRef | null;
   container: BarcodeContainerRef | null;
+  /** Assigned delivery route (vehicle-route), not the route-manager catalog row. */
+  route: BarcodeRouteRef | null;
+  delivery: BarcodeDeliveryRef | null;
+  tripNumber?: number;
   scanDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
 };
 
 export type GeneratedLabelSource = "created" | "existing";

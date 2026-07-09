@@ -38,6 +38,9 @@
     "number": "Barcode",
     "status": "Status",
     "container": "Container",
+    "deliveryRoute": "Delivery route",
+    "tripNumber": "Trip #",
+    "delivery": "Delivery",
     "scanDate": "Last scan"
   },
   "search": {
@@ -82,9 +85,11 @@
   },
   "view": {
     "sections": {
-      "details": "Barcode details"
+      "details": "Barcode details",
+      "audit": "Audit"
     },
-    "barcodeId": "Barcode ID"
+    "barcodeId": "Barcode ID",
+    "previousStatus": "Previous status"
   },
   "dialogs": {
     "deleteTitle": "Delete barcode?",
@@ -96,9 +101,13 @@
     "fields": {
       "id": { "label": "Barcode ID", "placeholder": "Enter barcode ID…" },
       "number": { "label": "Barcode", "placeholder": "Enter barcode number…" },
-      "status.name": { "label": "Status", "placeholder": "Enter status…" },
-      "container.name": { "label": "Container", "placeholder": "Enter container…" },
-      "scanDate": { "label": "Scan date", "placeholder": "YYYY-MM-DD" }
+      "scanDate": { "label": "Scan date", "placeholder": "YYYY-MM-DD" },
+      "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" },
+      "updatedAt": { "label": "Date modified", "placeholder": "YYYY-MM-DD" },
+      "createdBy.name": { "label": "Created by", "placeholder": "Enter creator…" },
+      "updatedBy.name": { "label": "Updated by", "placeholder": "Enter editor…" },
+      "createdBy.id": { "label": "Creator ID", "placeholder": "Enter creator ID…" },
+      "updatedBy.id": { "label": "Editor ID", "placeholder": "Enter editor ID…" }
     }
   }
 }

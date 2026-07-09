@@ -256,5 +256,75 @@
         "registerAndContinue": "Registrar y continuar"
       }
     }
+  },
+  "view": {
+    "comments": {
+      "title": "Comentarios ({{count}})",
+      "description": "Notas sobre contacto, preferencias de entrega y otros seguimientos. Los comentarios no se pueden eliminar.",
+      "empty": "Aún no hay comentarios.",
+      "addLabel": "Agregar comentario",
+      "placeholder": "p. ej. Intenté contactar — el cliente solo quiere entrega por la mañana.",
+      "postAction": "Publicar comentario",
+      "validationRequired": "La descripción del comentario es obligatoria.",
+      "fields": {
+        "description": "Descripción",
+        "date": "Fecha",
+        "createdBy": "Creado por"
+      }
+    },
+    "payments": {
+      "title": "Pagos ({{count}})",
+      "description": "Pagos registrados para esta factura. Total pagado: {{totalPaid}}.",
+      "empty": "Aún no hay pagos registrados.",
+      "recordTitle": "Registrar pago",
+      "recordAction": "Registrar pago",
+      "recordError": "No se pudo registrar el pago.",
+      "descriptionPlaceholder": "p. ej. Pago parcial recibido en recepción",
+      "referencePlaceholder": "N.º de cheque, ID de transacción, código de confirmación...",
+      "searchMethods": "Buscar métodos…",
+      "fields": {
+        "description": "Descripción",
+        "amount": "Monto",
+        "method": "Método",
+        "date": "Fecha",
+        "referenceNumber": "Número de referencia",
+        "createdBy": "Creado por"
+      }
+    },
+    "barcodeStatus": {
+      "title": "Estado de códigos de barras ({{count}})",
+      "description": "Estado de escaneo, asignación de contenedor y ruta de entrega de cada etiqueta en esta factura.",
+      "empty": "Aún no hay registros de estado de códigos de barras.",
+      "fields": {
+        "invoiceNumber": "Número de factura",
+        "barcode": "Código de barras",
+        "status": "Estado",
+        "quantity": "Cantidad",
+        "labels": "Etiquetas",
+        "container": "Contenedor",
+        "deliveryRoute": "Ruta de entrega",
+        "description": "Descripción"
+      }
+    },
+    "packageTracker": {
+      "title": "Rastreador de paquetes ({{count}})",
+      "description": "Eventos de escaneo y actualizaciones de seguimiento de los paquetes de esta factura.",
+      "empty": "Aún no hay eventos de seguimiento de paquetes.",
+      "fields": {
+        "dateTime": "Fecha y hora",
+        "createdBy": "Creado por",
+        "description": "Descripción"
+      }
+    },
+    "activity": {
+      "title": "Actividad de factura ({{count}})",
+      "description": "Creación, pagos, ediciones, descuentos y comentarios de esta factura.",
+      "empty": "Aún no hay actividad en la factura.",
+      "fields": {
+        "dateTime": "Fecha y hora",
+        "createdBy": "Creado por",
+        "description": "Descripción"
+      }
+    }
   }
 }

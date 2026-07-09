@@ -26,12 +26,37 @@ type ApiBarcodeContainer = {
   name?: string;
 };
 
+type ApiBarcodeRoute = {
+  id?: string;
+  name?: string;
+  routeId?: string;
+};
+
+type ApiBarcodeDelivery = {
+  id?: number | string;
+  name?: string;
+};
+
+type ApiBarcodeUser = {
+  id?: number;
+  name?: string;
+  userName?: string;
+  fullName?: string;
+};
+
 type ApiBarcode = {
   id?: number | string;
   number?: string;
   status?: ApiBarcodeStatus;
   container?: ApiBarcodeContainer;
+  route?: ApiBarcodeRoute;
+  delivery?: ApiBarcodeDelivery;
+  tripNumber?: number;
   scanDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string | ApiBarcodeUser;
+  updatedBy?: string | ApiBarcodeUser;
 };
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
@@ -46,6 +71,8 @@ export type BarcodeWritePayload = {
   status: { id: number; name: string };
   container?: { id: number; name: string };
   delivery?: { id: number; name: string };
+  /** Delivery route (vehicle-route record id). */
+  route?: { id: string; name: string };
 };
 
 /** One selected invoice line item to generate (or retrieve) labels for. */
@@ -88,6 +115,41 @@ function readNumericId(value: unknown): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function readUserName(user: unknown): string {
+  if (!user) return "";
+  if (typeof user === "string") return user.trim();
+  if (typeof user === "object") {
+    const entry = user as ApiBarcodeUser;
+    return String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim();
+  }
+  return "";
+}
+
+function normalizeBarcodeRoute(raw: ApiBarcodeRoute | undefined) {
+  const id = String(raw?.id ?? "").trim();
+  const name = String(raw?.name ?? "").trim();
+  const routeId = String(raw?.routeId ?? "").trim();
+
+  if (!id && !name && !routeId) return null;
+
+  return {
+    id: id || routeId,
+    name: name || id || routeId,
+    routeId: routeId || undefined,
+  };
+}
+
+function normalizeBarcodeDelivery(raw: ApiBarcodeDelivery | undefined) {
+  const name = String(raw?.name ?? "").trim();
+  const id = readNumericId(raw?.id);
+  if (!name && id == null) return null;
+
+  return {
+    id,
+    name: name || (id != null ? String(id) : ""),
+  };
+}
+
 export function normalizeBarcode(raw: unknown): Barcode | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -97,16 +159,33 @@ export function normalizeBarcode(raw: unknown): Barcode | null {
   if (!number && id <= 0) return null;
 
   const statusName = String(item.status?.name ?? "").trim();
+  const prevStatus = String(item.status?.prevStatus ?? "").trim();
   const containerName = String(item.container?.name ?? "").trim();
+  const tripNumber = readNumericId(item.tripNumber);
+  const createdBy = readUserName(item.createdBy);
+  const updatedBy = readUserName(item.updatedBy);
 
   return {
     id,
     number,
-    status: statusName ? { id: item.status?.id, name: statusName } : null,
+    status: statusName
+      ? {
+          id: item.status?.id,
+          name: statusName,
+          prevStatus: prevStatus || undefined,
+        }
+      : null,
     container: containerName
       ? { id: readNumericId(item.container?.id), name: containerName }
       : null,
+    route: normalizeBarcodeRoute(item.route),
+    delivery: normalizeBarcodeDelivery(item.delivery),
+    tripNumber: tripNumber && tripNumber > 0 ? tripNumber : undefined,
     scanDate: String(item.scanDate ?? "").trim() || undefined,
+    createdAt: String(item.createdAt ?? "").trim() || undefined,
+    updatedAt: String(item.updatedAt ?? "").trim() || undefined,
+    createdBy: createdBy || undefined,
+    updatedBy: updatedBy || undefined,
   };
 }
 
@@ -139,6 +218,8 @@ export async function createBarcode(payload: BarcodeWritePayload): Promise<Barco
     number: payload.number,
     status: payload.status,
     container: payload.container ?? null,
+    route: null,
+    delivery: null,
   };
 }
 
@@ -155,6 +236,8 @@ export async function updateBarcode(id: number, payload: BarcodeWritePayload): P
       number: payload.number,
       status: payload.status,
       container: payload.container ?? null,
+      route: null,
+      delivery: null,
     }
   );
 }
@@ -263,6 +346,8 @@ export async function updateBarcodes(updates: BarcodeUpdate[]): Promise<Barcode[
         number: patch.number,
         status: patch.status,
         container: patch.container ?? null,
+        route: null,
+        delivery: null,
       });
     }
   }
@@ -352,6 +437,14 @@ async function retrieveExistingBarcode(
         container: snapshot.containerName
           ? { id: readNumericId(snapshot.containerId), name: snapshot.containerName }
           : null,
+        route: null,
+        delivery:
+          snapshot.deliveryName?.trim()
+            ? {
+                id: readNumericId(snapshot.deliveryId),
+                name: snapshot.deliveryName.trim(),
+              }
+            : null,
         scanDate: snapshot.scanDate,
       },
       writeTarget: "invoice-embedded",

@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
 
@@ -33,7 +33,7 @@ export function SampleTable() {
                 <td className="px-6 py-4">{row.customer}</td>
                 <td className="px-6 py-4">{row.amount}</td>
                 <td className="px-6 py-4">
-                  <Badge variant="secondary">{t(`insights.sampleTable.statuses.${row.statusKey}`)}</Badge>
+                  <TableTagText>{t(`insights.sampleTable.statuses.${row.statusKey}`)}</TableTagText>
                 </td>
               </tr>
             ))}

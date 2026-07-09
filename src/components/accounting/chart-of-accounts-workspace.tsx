@@ -1,16 +1,17 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Edit, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 import { ChartAccountForm } from "@/components/accounting/chart-account-form";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
-import { Badge } from "@/components/ui/badge";
+import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -31,6 +32,10 @@ import type { ChartAccount, ChartAccountValues } from "@/lib/accounting/chart-ac
 import { normalizeApiError } from "@/lib/api/axios";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
+import {
+  buildTableSelectionResetKey,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import type { DataTableColumn } from "@/lib/table/types";
 
@@ -60,6 +65,7 @@ export function ChartOfAccountsWorkspace() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ChartAccount | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ChartAccount | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const accountsQuery = useChartAccounts({ page, limit: PAGE_SIZE, query: deferredQuery });
   const accountOptionsQuery = useChartAccounts({ page: 1, limit: 500 }, dialogOpen);
@@ -73,6 +79,33 @@ export function ChartOfAccountsWorkspace() {
   const noun = t("accounting.chartOfAccounts.noun");
   const dash = t("common.empty.dash");
 
+  useTableSelectionReset(buildTableSelectionResetKey(deferredQuery, page), setSelectedIds);
+
+  const allPageSelected =
+    rows.length > 0 && rows.every((account) => selectedIds.includes(String(account.id)));
+
+  function toggleSelectAll(checked: boolean) {
+    if (checked) {
+      setSelectedIds((current) =>
+        Array.from(new Set([...current, ...rows.map((account) => String(account.id))])),
+      );
+      return;
+    }
+    setSelectedIds((current) =>
+      current.filter((id) => !rows.some((account) => String(account.id) === id)),
+    );
+  }
+
+  function toggleSelect(accountId: string, checked: boolean) {
+    setSelectedIds((current) =>
+      checked ? [...current, accountId] : current.filter((entry) => entry !== accountId),
+    );
+  }
+
+  const selectedAccount = rows.find((account) => String(account.id) === selectedIds[0]);
+  const deleteDisabled =
+    selectedIds.length !== 1 || Boolean(selectedAccount?.systemAccount);
+
   const columns: DataTableColumn<ChartAccount>[] = useMemo(
     () => [
       {
@@ -85,7 +118,7 @@ export function ChartOfAccountsWorkspace() {
         label: t("accounting.chartOfAccounts.columns.type"),
         truncateCell: false,
         renderCell: (account) => (
-          <Badge variant="outline">{t(`accounting.chartOfAccounts.types.${account.type}`)}</Badge>
+          <TableTagText>{t(`accounting.chartOfAccounts.types.${account.type}`)}</TableTagText>
         ),
       },
       {
@@ -116,41 +149,10 @@ export function ChartOfAccountsWorkspace() {
         truncateCell: false,
         renderCell: (account) =>
           account.systemAccount ? (
-            <Badge>{t("accounting.chartOfAccounts.values.systemAccount")}</Badge>
+            <TableTagText>{t("accounting.chartOfAccounts.values.systemAccount")}</TableTagText>
           ) : (
             dash
           ),
-      },
-      {
-        id: "actions",
-        label: t("accounting.chartOfAccounts.columns.actions"),
-        hideable: false,
-        truncateCell: false,
-        renderCell: (account) => (
-          <div className="flex justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t("accounting.chartOfAccounts.actions.edit")}
-              onClick={() => {
-                setEditing(account);
-                setFormError(null);
-                setDialogOpen(true);
-              }}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t("accounting.chartOfAccounts.actions.delete")}
-              disabled={account.systemAccount}
-              onClick={() => setDeleteTarget(account)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
       },
     ],
     [dash, t],
@@ -251,17 +253,41 @@ export function ChartOfAccountsWorkspace() {
             {t("accounting.chartOfAccounts.loading")}
           </div>
         ) : (
-          <DataTable
-            columns={columnLayout.columns}
-            rows={rows}
-            page={page}
-            isPageDataPending={accountsQuery.isFetching}
-            rowKey={(account) => String(account.id)}
-            rowLabel={(account) => account.displayName}
-            columnLayout={columnLayout}
-            minWidth={1100}
-            emptyState={<p className="text-muted-foreground">{t("accounting.chartOfAccounts.empty")}</p>}
-          />
+          <>
+            <TableSelectionToolbar
+              selectedIds={selectedIds}
+              pageRowIds={rows.map((account) => String(account.id))}
+              totalCount={total}
+              onSelectedIdsChange={setSelectedIds}
+              onEdit={() => {
+                if (!selectedAccount) return;
+                setEditing(selectedAccount);
+                setFormError(null);
+                setDialogOpen(true);
+              }}
+              onDelete={() => {
+                if (!selectedAccount) return;
+                setDeleteTarget(selectedAccount);
+              }}
+              deleteDisabled={deleteDisabled}
+            />
+            <DataTable
+              columns={columnLayout.columns}
+              rows={rows}
+              page={page}
+              isPageDataPending={accountsQuery.isFetching}
+              rowKey={(account) => String(account.id)}
+              rowLabel={(account) => account.displayName}
+              columnLayout={columnLayout}
+              minWidth={1100}
+              selectable
+              selectedIds={selectedIds}
+              allPageSelected={allPageSelected}
+              onToggleSelectAll={toggleSelectAll}
+              onToggleSelect={toggleSelect}
+              emptyState={<p className="text-muted-foreground">{t("accounting.chartOfAccounts.empty")}</p>}
+            />
+          </>
         )}
 
         {!accountsQuery.isLoading && !accountsQuery.isError ? (

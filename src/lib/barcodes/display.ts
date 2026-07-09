@@ -22,6 +22,40 @@ export function formatBarcodeContainer(
   return container.name.trim();
 }
 
+export function formatBarcodeDeliveryRoute(
+  route: Barcode["route"],
+  t: TranslateFn,
+): string {
+  if (!route) return t("common.empty.dash");
+
+  const name = route.name?.trim();
+  const routeId = route.routeId?.trim();
+  if (name && routeId && name !== routeId) {
+    return `${name} (${routeId})`;
+  }
+
+  return name || routeId || route.id?.trim() || t("common.empty.dash");
+}
+
+export function formatBarcodeDelivery(
+  delivery: Barcode["delivery"],
+  t: TranslateFn,
+): string {
+  if (!delivery?.name?.trim()) {
+    return t("common.empty.dash");
+  }
+
+  return delivery.name.trim();
+}
+
+export function formatBarcodeTripNumber(tripNumber: number | undefined, t: TranslateFn): string {
+  if (tripNumber == null || !Number.isFinite(tripNumber) || tripNumber <= 0) {
+    return t("common.empty.dash");
+  }
+
+  return String(tripNumber);
+}
+
 export function formatBarcodeStatus(
   status: Barcode["status"],
   t: TranslateFn,
