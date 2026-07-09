@@ -28,6 +28,13 @@ export function formatContainerId(containerId: number): string {
   return String(containerId);
 }
 
+/** Fallback label when only a container id is available (no API lookup). */
+export function formatContainerIdLabel(containerId: string | number): string {
+  const trimmed = String(containerId).trim();
+  if (!trimmed) return "—";
+  return `#${trimmed}`;
+}
+
 export function formatContainerLabel(container: Pick<Container, "name" | "containerNumber">): string {
   const number = container.containerNumber.trim();
   return number ? `${container.name} · ${number}` : container.name;

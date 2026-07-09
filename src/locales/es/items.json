@@ -30,7 +30,9 @@
     "description": "Descripción",
     "price": "Precio",
     "createdAt": "Fecha de creación",
-    "updatedAt": "Fecha de modificación"
+    "createdBy": "Creado por",
+    "updatedAt": "Fecha de modificación",
+    "updatedBy": "Actualizado por"
   },
   "search": {
     "placeholder": "Buscar artículos..."
@@ -72,7 +74,9 @@
     "itemId": "ID de artículo",
     "price": "Precio",
     "dateCreated": "Fecha de creación",
+    "createdBy": "Creado por",
     "dateModified": "Fecha de modificación",
+    "updatedBy": "Actualizado por",
     "edit": "Editar artículo"
   },
   "dialogs": {

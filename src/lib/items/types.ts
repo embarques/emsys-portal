@@ -13,6 +13,10 @@ export type Item = {
   price: number;
   createdAt: string;
   updatedAt: string;
+  /** Display name from API `createdBy` (string or core.User). */
+  createdBy: string;
+  /** Display name from API `updatedBy` (string or core.User). */
+  updatedBy: string;
 };
 
 export type ItemFormValues = {

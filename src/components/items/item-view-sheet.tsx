@@ -24,6 +24,7 @@ type ItemViewSheetProps = {
 
 export function ItemViewSheet({ item, open, onOpenChange, onEdit, onDelete }: ItemViewSheetProps) {
   const { t } = useTranslation();
+  const dash = t("common.empty.dash");
 
   if (!item) return null;
 
@@ -48,8 +49,16 @@ export function ItemViewSheet({ item, open, onOpenChange, onEdit, onDelete }: It
               value={formatItemDate(item.createdAt)}
             />
             <RecordViewSheetDetailRow
+              label={t("items.view.createdBy")}
+              value={item.createdBy || dash}
+            />
+            <RecordViewSheetDetailRow
               label={t("items.view.dateModified")}
               value={formatAuditDate(item.updatedAt)}
+            />
+            <RecordViewSheetDetailRow
+              label={t("items.view.updatedBy")}
+              value={item.updatedBy || dash}
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>

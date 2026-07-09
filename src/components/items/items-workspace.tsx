@@ -80,6 +80,7 @@ const defaultFilters: ItemFilterState = {
 
 export function ItemsWorkspace() {
   const { t } = useTranslation();
+  const dash = t("common.empty.dash");
   const { toErrorMessage } = useUserError();
   const itemFilterFields = useItemFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
@@ -256,13 +257,27 @@ export function ItemsWorkspace() {
         renderCell: (item) => formatAuditDateTime(item.createdAt),
       },
       {
+        id: "createdBy",
+        label: t("items.columns.createdBy"),
+        defaultVisible: false,
+        cellClassName: "text-muted-foreground",
+        renderCell: (item) => item.createdBy || dash,
+      },
+      {
         id: "updatedAt",
         label: t("items.columns.updatedAt"),
         cellClassName: "text-muted-foreground",
         renderCell: (item) => formatAuditDateTime(item.updatedAt),
       },
+      {
+        id: "updatedBy",
+        label: t("items.columns.updatedBy"),
+        defaultVisible: false,
+        cellClassName: "text-muted-foreground",
+        renderCell: (item) => item.updatedBy || dash,
+      },
     ],
-    [t],
+    [dash, t],
   );
 
   const columnVisibility = useColumnVisibility("items-v2", tableColumns);

@@ -1,5 +1,4 @@
-import { formatContainerLabel } from "@/lib/containers/display";
-import { getContainerById } from "@/lib/containers/mock-data";
+import { formatContainerIdLabel } from "@/lib/containers/display";
 import { formatAddressLine } from "@/lib/customers/display";
 import type { CustomerCoreAddress } from "@/lib/customers/types";
 import { formatAddressLine as formatSnapshotAddressLine } from "@/lib/customers/utils/address-utils";
@@ -94,9 +93,7 @@ export function truncateInvoiceId(invoiceId: string): string {
 }
 
 export function getContainerLabel(containerId: string): string {
-  const container = getContainerById(containerId);
-  if (!container) return "Unknown container";
-  return formatContainerLabel(container);
+  return formatContainerIdLabel(containerId);
 }
 
 export function getContainerLabelForInvoice(

@@ -1,5 +1,4 @@
-import { formatContainerLabel } from "@/lib/containers/display";
-import { getContainerById } from "@/lib/containers/mock-data";
+import { formatContainerIdLabel } from "@/lib/containers/display";
 import type { TranslateFn } from "@/lib/feedback/messages";
 import type { Invoice } from "@/lib/invoices/types";
 
@@ -53,9 +52,9 @@ export function formatLabelTimestamp(iso: string): string {
 }
 
 export function getLabelContainerLabel(containerId: string, t?: TranslateFn): string {
-  const container = getContainerById(containerId);
-  if (!container) return t ? t("labels.unknownContainer") : "Unknown container";
-  return formatContainerLabel(container);
+  const trimmed = containerId.trim();
+  if (!trimmed) return t ? t("labels.unknownContainer") : "Unknown container";
+  return formatContainerIdLabel(trimmed);
 }
 
 export function truncateBarcode(barcode: string): string {

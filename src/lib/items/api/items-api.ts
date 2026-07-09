@@ -20,12 +20,21 @@ import {
   type ItemListParams,
 } from "@/lib/items/types";
 
+type ApiUser = {
+  id?: number;
+  name?: string;
+  userName?: string;
+  fullName?: string;
+};
+
 type ApiInvoiceDescription = {
   id?: number;
   name?: string;
   price?: number;
   createdAt?: string;
   updatedAt?: string;
+  createdBy?: string | ApiUser;
+  updatedBy?: string | ApiUser;
 };
 
 /** POST/PUT /invoice-descriptions */
@@ -47,6 +56,17 @@ function readNumericId(value: number | string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/** The API may return createdBy/updatedBy as core.User objects; surface a display name. */
+function readUserName(user: unknown): string {
+  if (!user) return "";
+  if (typeof user === "string") return user.trim();
+  if (typeof user === "object") {
+    const entry = user as ApiUser;
+    return String(entry.fullName ?? entry.userName ?? entry.name ?? "").trim();
+  }
+  return "";
+}
+
 function normalizeItem(raw: unknown): Item | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -60,6 +80,8 @@ function normalizeItem(raw: unknown): Item | null {
     price: Number(item.price ?? 0),
     createdAt: String(item.createdAt ?? "").trim(),
     updatedAt: String(item.updatedAt ?? "").trim(),
+    createdBy: readUserName(item.createdBy),
+    updatedBy: readUserName(item.updatedBy),
   };
 }
 
