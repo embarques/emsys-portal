@@ -14,10 +14,14 @@ import {
 import { WorkspaceTabOverflowMenu } from "@/components/app-shell/workspace-tab-overflow-menu";
 import { Button } from "@/components/ui/button";
 import { useUpdateWorkspaceTabColor, useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
-import { getWorkspaceTabChromeStyle } from "@/lib/layout/workspace-tab-colors";
+import {
+  getWorkspaceTabTopAccentStyle,
+  resolveWorkspaceTabAccentColor,
+  resolveWorkspaceTabSection,
+} from "@/lib/layout/workspace-tab-colors";
 import { getWorkspaceTabDisplayLabel, resolveWorkspaceLabel } from "@/lib/layout/workspace-registry";
 import { WORKSPACE_TAB_OVERFLOW_THRESHOLD } from "@/lib/layout/workspace-tab-types";
-import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
+import type { WorkspaceTab, WorkspaceTabSection } from "@/lib/layout/workspace-tab-types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -27,13 +31,14 @@ type WorkspaceTabItemProps = {
   active: boolean;
   index: number;
   totalTabs: number;
+  sectionColorOverrides?: Partial<Record<WorkspaceTabSection, string>>;
   onActivate: (tabId: string) => void;
   onClose: (tabId: string) => void;
   onCloseOthers: (tabId: string) => void;
   onCloseToRight: (tabId: string) => void;
   onCloseAll: () => void;
   onDuplicate: (tab: WorkspaceTab) => void;
-  onColorChange: (tabId: string, color: string | null) => void;
+  onColorChange: (tabId: string, color: string | null, options?: { swapWithSections?: boolean }) => void;
   tabRef?: (node: HTMLDivElement | null) => void;
 };
 
@@ -50,12 +55,15 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
   onCloseAll,
   onDuplicate,
   onColorChange,
+  sectionColorOverrides,
   tabRef,
 }: WorkspaceTabItemProps) {
   const { t } = useTranslation();
   const hasTabsToRight = index < totalTabs - 1;
   const hasOtherTabs = totalTabs > 1;
-  const colorStyle = getWorkspaceTabChromeStyle(tab.color, active);
+  const accentColor = resolveWorkspaceTabAccentColor(tab, sectionColorOverrides);
+  const tabSection = resolveWorkspaceTabSection(tab);
+  const topAccentStyle = getWorkspaceTabTopAccentStyle(accentColor, active);
 
   return (
     <ContextMenu>
@@ -63,21 +71,21 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
         <div
           ref={tabRef}
           data-tab-id={tab.id}
-          style={colorStyle}
           className={cn(
-            "group mr-1 mt-1.5 flex min-w-0 max-w-[220px] shrink-0 cursor-default items-center rounded-t-lg border px-3 py-2 text-sm transition",
+            "group relative mr-1 mt-1.5 flex min-w-0 max-w-[220px] shrink-0 cursor-default items-center overflow-hidden rounded-t-lg border px-3 py-2 text-sm transition",
             active
-              ? "relative z-10 -mb-px border-border border-b-background font-medium text-foreground shadow-[0_1px_0_0_var(--background),0_-1px_4px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_0_0_var(--background),0_-1px_4px_rgba(0,0,0,0.25)]"
-              : "mb-0 border-transparent border-b-transparent text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-            tab.color
-              ? active
-                ? "bg-background"
-                : "bg-muted/50 hover:brightness-[0.98]"
-              : active
-                ? "border-t-2 border-t-primary bg-background"
-                : "bg-muted/50 hover:bg-muted/70",
+              ? "relative z-10 -mb-px border-border border-b-background bg-background font-medium text-foreground shadow-[0_1px_0_0_var(--background),0_-1px_4px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_0_0_var(--background),0_-1px_4px_rgba(0,0,0,0.25)]"
+              : "mb-0 border-transparent border-b-transparent bg-muted/50 text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+            !accentColor && active && "border-t-2 border-t-primary",
           )}
         >
+          {topAccentStyle ? (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0"
+              style={topAccentStyle}
+            />
+          ) : null}
           <button
             type="button"
             className="min-w-0 flex-1 truncate text-left"
@@ -110,7 +118,12 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
 
       <ContextMenuContent className="w-52">
         <ContextMenuItem onSelect={() => onDuplicate(tab)}>{t("shell.tabs.openInNewTab")}</ContextMenuItem>
-        <WorkspaceTabColorMenu tabId={tab.id} currentColor={tab.color} onColorChange={onColorChange} />
+        <WorkspaceTabColorMenu
+          tabId={tab.id}
+          currentColor={accentColor}
+          canReset={Boolean(tab.color) || Boolean(tabSection && sectionColorOverrides?.[tabSection])}
+          onColorChange={onColorChange}
+        />
         <ContextMenuSeparator />
         <ContextMenuItem onSelect={() => onClose(tab.id)}>{t("shell.tabs.closeTab")}</ContextMenuItem>
         <ContextMenuItem disabled={!hasOtherTabs} onSelect={() => onCloseOthers(tab.id)}>
@@ -128,7 +141,7 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
 
 export function WorkspaceTabBar() {
   const { locale, t } = useTranslation();
-  const { tabs, activeTabId, activateTab, closeTab, closeOtherTabs, closeTabsToRight, closeAllTabs, openTab } =
+  const { tabs, activeTabId, sectionColorOverrides, activateTab, closeTab, closeOtherTabs, closeTabsToRight, closeAllTabs, openTab } =
     useWorkspaceTabs();
   const updateTabColor = useUpdateWorkspaceTabColor();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -178,6 +191,7 @@ export function WorkspaceTabBar() {
               displayLabel={getWorkspaceTabDisplayLabel(tab, locale)}
               index={index}
               totalTabs={tabs.length}
+              sectionColorOverrides={sectionColorOverrides}
               active={tab.id === activeTabId}
               onActivate={activateTab}
               onClose={closeTab}
@@ -214,6 +228,7 @@ export function WorkspaceTabBar() {
           <WorkspaceTabOverflowMenu
             tabs={tabs}
             activeTabId={activeTabId}
+            sectionColorOverrides={sectionColorOverrides}
             onActivate={activateTab}
             onCloseAll={closeAllTabs}
           />

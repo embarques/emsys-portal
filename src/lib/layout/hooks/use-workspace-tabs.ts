@@ -49,6 +49,7 @@ export function useWorkspaceTabs() {
 
   const tabs = useAppSelector((state) => state.layoutTabs.tabs);
   const activeTabId = useAppSelector((state) => state.layoutTabs.activeTabId);
+  const sectionColorOverrides = useAppSelector((state) => state.layoutTabs.sectionColorOverrides);
 
   const navigateToTab = useCallback(
     (tab: Pick<WorkspaceTab, "href" | "number">) => {
@@ -279,6 +280,7 @@ export function useWorkspaceTabs() {
   return {
     tabs,
     activeTabId,
+    sectionColorOverrides,
     isDesktopTabs,
     openTab,
     openFormTab,
@@ -304,8 +306,14 @@ export function useUpdateWorkspaceTabLabel() {
 export function useUpdateWorkspaceTabColor() {
   const dispatch = useAppDispatch();
   return useCallback(
-    (id: string, color: string | null) => {
-      dispatch(updateWorkspaceTabColor({ id, color }));
+    (id: string, color: string | null, options?: { swapWithSections?: boolean }) => {
+      dispatch(
+        updateWorkspaceTabColor({
+          id,
+          color,
+          swapWithSections: options?.swapWithSections,
+        }),
+      );
     },
     [dispatch],
   );

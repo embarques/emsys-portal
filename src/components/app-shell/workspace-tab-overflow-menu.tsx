@@ -11,14 +11,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getWorkspaceTabDisplayLabel } from "@/lib/layout/workspace-registry";
-import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
-import { normalizeWorkspaceTabColor } from "@/lib/layout/workspace-tab-colors";
+import type { WorkspaceTab, WorkspaceTabSection } from "@/lib/layout/workspace-tab-types";
+import { resolveWorkspaceTabAccentColor } from "@/lib/layout/workspace-tab-colors";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type WorkspaceTabOverflowMenuProps = {
   tabs: WorkspaceTab[];
   activeTabId: string | null;
+  sectionColorOverrides?: Partial<Record<WorkspaceTabSection, string>>;
   onActivate: (tabId: string) => void;
   onCloseAll: () => void;
 };
@@ -26,6 +27,7 @@ type WorkspaceTabOverflowMenuProps = {
 export function WorkspaceTabOverflowMenu({
   tabs,
   activeTabId,
+  sectionColorOverrides,
   onActivate,
   onCloseAll,
 }: WorkspaceTabOverflowMenuProps) {
@@ -48,7 +50,7 @@ export function WorkspaceTabOverflowMenu({
       <DropdownMenuContent align="end" className="max-h-80 w-64 overflow-y-auto">
         {tabs.map((tab) => {
           const active = tab.id === activeTabId;
-          const color = normalizeWorkspaceTabColor(tab.color);
+          const color = resolveWorkspaceTabAccentColor(tab, sectionColorOverrides);
           const displayLabel = getWorkspaceTabDisplayLabel(tab, locale);
 
           return (

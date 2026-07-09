@@ -8,13 +8,38 @@ import {
   type WorkspaceTabsState,
 } from "@/lib/layout/workspace-tab-types";
 import { getMaxWorkspaceTabs } from "@/lib/layout/workspace-tab-limits";
-import { normalizeWorkspaceTabColor } from "@/lib/layout/workspace-tab-colors";
+import {
+  normalizeWorkspaceTabColor,
+  resetWorkspaceSectionColor,
+  resolveWorkspaceTabSection,
+  setWorkspaceSectionColorOverride,
+  swapWorkspaceSectionColor,
+  WORKSPACE_TAB_SECTION_COLORS,
+  type WorkspaceTabSection,
+} from "@/lib/layout/workspace-tab-colors";
 
 const initialState: WorkspaceTabsState = {
   tabs: [],
   activeTabId: null,
   nextTabNumber: 1,
+  sectionColorOverrides: undefined,
 };
+
+function normalizeSectionColorOverrides(
+  overrides: Partial<Record<WorkspaceTabSection, string>> | undefined | null,
+): Partial<Record<WorkspaceTabSection, string>> | undefined {
+  if (!overrides || typeof overrides !== "object") return undefined;
+
+  const next: Partial<Record<WorkspaceTabSection, string>> = {};
+  for (const section of Object.keys(WORKSPACE_TAB_SECTION_COLORS) as WorkspaceTabSection[]) {
+    const normalized = normalizeWorkspaceTabColor(overrides[section]);
+    if (normalized) {
+      next[section] = normalized;
+    }
+  }
+
+  return Object.keys(next).length > 0 ? next : undefined;
+}
 
 function dedupeTabs(tabs: WorkspaceTab[]): WorkspaceTab[] {
   const seen = new Set<string>();
@@ -52,6 +77,7 @@ function normalizePersistedState(state: Partial<WorkspaceTabsState> | null): Wor
     tabs,
     activeTabId,
     nextTabNumber: 1,
+    sectionColorOverrides: normalizeSectionColorOverrides(state?.sectionColorOverrides),
   };
   renumberTabs(normalized);
   return normalized;
@@ -63,6 +89,7 @@ function serializeTabsState(state: WorkspaceTabsState): string {
     tabs: plain.tabs.map((tab) => ({ ...tab })),
     activeTabId: plain.activeTabId,
     nextTabNumber: plain.nextTabNumber,
+    sectionColorOverrides: plain.sectionColorOverrides,
   };
   return JSON.stringify(payload);
 }
@@ -144,6 +171,7 @@ const tabsSlice = createSlice({
       state.tabs = normalized.tabs;
       state.activeTabId = normalized.activeTabId;
       state.nextTabNumber = normalized.nextTabNumber;
+      state.sectionColorOverrides = normalized.sectionColorOverrides;
       trimTabsToLimit(state);
       persistTabs(state, true);
     },
@@ -179,9 +207,35 @@ const tabsSlice = createSlice({
       tab.label = action.payload.label;
       persistTabs(state);
     },
-    updateWorkspaceTabColor(state, action: PayloadAction<{ id: string; color: string | null }>) {
+    updateWorkspaceTabColor(
+      state,
+      action: PayloadAction<{ id: string; color: string | null; swapWithSections?: boolean }>,
+    ) {
       const tab = state.tabs.find((entry) => entry.id === action.payload.id);
       if (!tab) return;
+
+      const section = resolveWorkspaceTabSection(tab);
+      if (section) {
+        if (action.payload.color === null) {
+          state.sectionColorOverrides = resetWorkspaceSectionColor(state.sectionColorOverrides, section);
+        } else if (action.payload.swapWithSections) {
+          state.sectionColorOverrides = swapWorkspaceSectionColor(
+            state.sectionColorOverrides,
+            section,
+            action.payload.color,
+          );
+        } else {
+          state.sectionColorOverrides = setWorkspaceSectionColorOverride(
+            state.sectionColorOverrides,
+            section,
+            action.payload.color,
+          );
+        }
+        tab.color = undefined;
+        persistTabs(state);
+        return;
+      }
+
       tab.color = normalizeWorkspaceTabColor(action.payload.color);
       persistTabs(state);
     },
@@ -239,6 +293,7 @@ const tabsSlice = createSlice({
       state.tabs = [];
       state.activeTabId = null;
       state.nextTabNumber = 1;
+      state.sectionColorOverrides = undefined;
       if (typeof window !== "undefined") {
         window.sessionStorage.removeItem(WORKSPACE_TABS_STORAGE_KEY);
       }

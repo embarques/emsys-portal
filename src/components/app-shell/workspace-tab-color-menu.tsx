@@ -15,14 +15,20 @@ import { cn } from "@/lib/utils";
 type WorkspaceTabColorMenuProps = {
   tabId: string;
   currentColor?: string | null;
-  onColorChange: (tabId: string, color: string | null) => void;
+  canReset?: boolean;
+  onColorChange: (tabId: string, color: string | null, options?: { swapWithSections?: boolean }) => void;
 };
 
-export function WorkspaceTabColorMenu({ tabId, currentColor, onColorChange }: WorkspaceTabColorMenuProps) {
+export function WorkspaceTabColorMenu({
+  tabId,
+  currentColor,
+  canReset = false,
+  onColorChange,
+}: WorkspaceTabColorMenuProps) {
   const activeColor = normalizeWorkspaceTabColor(currentColor);
 
-  function applyColor(color: string | null) {
-    onColorChange(tabId, color);
+  function applyColor(color: string | null, options?: { swapWithSections?: boolean }) {
+    onColorChange(tabId, color, options);
   }
 
   return (
@@ -46,7 +52,7 @@ export function WorkspaceTabColorMenu({ tabId, currentColor, onColorChange }: Wo
                 )}
                 style={{ backgroundColor: color }}
                 onPointerDown={(event) => event.preventDefault()}
-                onClick={() => applyColor(color)}
+                onClick={() => applyColor(color, { swapWithSections: true })}
               />
             );
           })}
@@ -62,12 +68,12 @@ export function WorkspaceTabColorMenu({ tabId, currentColor, onColorChange }: Wo
             value={activeColor ?? "#3b82f6"}
             aria-label="Pick a custom tab color"
             className="h-8 w-full cursor-pointer rounded border border-border bg-transparent p-0.5"
-            onChange={(event) => applyColor(event.target.value)}
+            onChange={(event) => applyColor(event.target.value, { swapWithSections: false })}
           />
         </label>
 
         <ContextMenuItem
-          disabled={!activeColor}
+          disabled={!canReset}
           onSelect={() => applyColor(null)}
           className="mt-1"
         >

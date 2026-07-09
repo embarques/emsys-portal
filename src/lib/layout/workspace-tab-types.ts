@@ -1,3 +1,7 @@
+import type { WorkspaceTabSection } from "@/lib/layout/workspace-tab-colors";
+
+export type { WorkspaceTabSection };
+
 export const WORKSPACE_TAB_PARAM = "tab";
 
 export const WORKSPACE_TABS_STORAGE_KEY = "emsys-workspace-tabs";
@@ -40,6 +44,8 @@ export type WorkspaceTabsState = {
   activeTabId: string | null;
   /** Next tab number to assign (= open tab count + 1). */
   nextTabNumber: number;
+  /** User overrides for default section accent colors (session-persisted). */
+  sectionColorOverrides?: Partial<Record<WorkspaceTabSection, string>>;
 };
 
 export type PersistedWorkspaceTabs = WorkspaceTabsState;
