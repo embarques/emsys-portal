@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useTranslation } from "@/lib/i18n";
+import { getRecipientTypeOptions } from "@/lib/inventory/display";
 import {
-  RECIPIENT_TYPES,
   createEmptyRecipientForm,
   type RecipientFormValues,
 } from "@/lib/inventory/types/recipients";
@@ -48,7 +48,7 @@ export function InventoryRecipientForm({
         <FormSection title={t("inventory.form.sections.recipient")}>
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="name">{t("inventory.form.fields.name")}</Label>
+              <Label htmlFor="name">{t("inventory.form.fields.recipientName")}</Label>
               <Input
                 id="name"
                 value={values.name}
@@ -64,7 +64,7 @@ export function InventoryRecipientForm({
                 onValueChange={(next) =>
                   setValues((current) => ({ ...current, type: next as RecipientFormValues["type"] }))
                 }
-                options={RECIPIENT_TYPES.map((option) => ({ value: option.value, label: option.label }))}
+                options={getRecipientTypeOptions(t)}
               />
             </div>
             <div className="space-y-1">

@@ -48,6 +48,36 @@ export function formatContainerRouteNumber(
   return number || container.name.trim();
 }
 
+export const DEPARTED_PERIOD_DAYS = {
+  past30Days: 30,
+  past90Days: 90,
+  past180Days: 180,
+  past360Days: 360,
+} as const;
+
+/** Extrapolates a departed count over `periodDays` to an annual pace. */
+export function formatDepartedAnnualPace(
+  departedCount: number,
+  periodDays: number,
+  locale = "en",
+): string {
+  if (periodDays <= 0 || !Number.isFinite(departedCount)) return "0";
+
+  const pace = (departedCount * 365) / periodDays;
+  if (!Number.isFinite(pace) || pace === 0) return "0";
+  if (pace >= 100 || Math.abs(pace - Math.round(pace)) < 0.05) {
+    return Math.round(pace).toLocaleString(locale);
+  }
+
+  return pace.toLocaleString(locale, { maximumFractionDigits: 1 });
+}
+
+function subtractDays(from: Date, days: number): Date {
+  const result = new Date(from);
+  result.setDate(result.getDate() - days);
+  return result;
+}
+
 export function computeContainerKpis(containers: Container[]) {
   const totalCost = containers.reduce((sum, container) => sum + (container.cost > 0 ? container.cost : 0), 0);
   const inTransit = containers.filter((container) => {
@@ -57,16 +87,15 @@ export function computeContainerKpis(containers: Container[]) {
   }).length;
 
   const now = new Date();
-  const oneMonthAgo = new Date(now);
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-  const ninetyDaysAgo = new Date(now);
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-  const oneYearAgo = new Date(now);
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const thirtyDaysAgo = subtractDays(now, DEPARTED_PERIOD_DAYS.past30Days);
+  const ninetyDaysAgo = subtractDays(now, DEPARTED_PERIOD_DAYS.past90Days);
+  const oneEightyDaysAgo = subtractDays(now, DEPARTED_PERIOD_DAYS.past180Days);
+  const threeSixtyDaysAgo = subtractDays(now, DEPARTED_PERIOD_DAYS.past360Days);
 
-  let departedPastMonth = 0;
+  let departedPast30Days = 0;
   let departedPast90Days = 0;
-  let departedPastYear = 0;
+  let departedPast180Days = 0;
+  let departedPast360Days = 0;
 
   for (const container of containers) {
     const departure = toFormDate(container.departureDate);
@@ -75,13 +104,16 @@ export function computeContainerKpis(containers: Container[]) {
     const departedAt = new Date(`${departure}T12:00:00`);
     if (departedAt > now) continue;
 
-    if (departedAt >= oneYearAgo) {
-      departedPastYear += 1;
-      if (departedAt >= ninetyDaysAgo) {
-        departedPast90Days += 1;
-      }
-      if (departedAt >= oneMonthAgo) {
-        departedPastMonth += 1;
+    if (departedAt >= threeSixtyDaysAgo) {
+      departedPast360Days += 1;
+      if (departedAt >= oneEightyDaysAgo) {
+        departedPast180Days += 1;
+        if (departedAt >= ninetyDaysAgo) {
+          departedPast90Days += 1;
+          if (departedAt >= thirtyDaysAgo) {
+            departedPast30Days += 1;
+          }
+        }
       }
     }
   }
@@ -90,8 +122,9 @@ export function computeContainerKpis(containers: Container[]) {
     total: containers.length,
     inTransit,
     totalCost,
-    departedPastMonth,
+    departedPast30Days,
     departedPast90Days,
-    departedPastYear,
+    departedPast180Days,
+    departedPast360Days,
   };
 }

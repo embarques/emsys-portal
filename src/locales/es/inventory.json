@@ -154,6 +154,7 @@
     "fields": {
       "sku": "SKU",
       "name": "Nombre del artículo",
+      "recipientName": "Nombre",
       "unit": "Unidad",
       "category": "Categoría",
       "location": "Ubicación",
@@ -239,5 +240,41 @@
   "errors": {
     "insufficientStock": "Stock insuficiente para una o más líneas.",
     "saveFailed": "No se pudo guardar. Inténtelo de nuevo."
+  },
+  "statuses": {
+    "in_stock": "En stock",
+    "low_stock": "Stock bajo",
+    "out_of_stock": "Sin stock",
+    "reserved": "Reservado",
+    "review": "Requiere revisión"
+  },
+  "locations": {
+    "ny_warehouse": "Almacén NY",
+    "rd_warehouse": "Almacén RD",
+    "in_transit": "En tránsito",
+    "dock": "Muelle de carga"
+  },
+  "categories": {
+    "packaging": "Embalaje",
+    "labels": "Etiquetas",
+    "supplies": "Suministros",
+    "equipment": "Equipo"
+  },
+  "recipientTypes": {
+    "customer": "Cliente",
+    "vendor": "Proveedor",
+    "branch": "Sucursal",
+    "internal": "Interno"
+  },
+  "dispatchStatuses": {
+    "pending": "Pendiente",
+    "sent": "Enviado",
+    "confirmed": "Confirmado"
+  },
+  "adjustmentReasons": {
+    "damaged": "Dañado",
+    "recount": "Reconteo",
+    "lost": "Perdido",
+    "other": "Otro"
   }
 }

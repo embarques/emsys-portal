@@ -46,7 +46,7 @@ export function InventoryRecipientViewSheet({
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
-        <RecordViewSheetHeader title={recipient.name} description={getRecipientTypeLabel(recipient.type)} />
+        <RecordViewSheetHeader title={recipient.name} description={getRecipientTypeLabel(recipient.type, t)} />
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("inventory.form.sections.recipient")}>
             {recipient.contactInfo ? (

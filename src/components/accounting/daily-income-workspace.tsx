@@ -47,6 +47,8 @@ import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
+import { useTranslation } from "@/lib/i18n";
+import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import type { DataTableColumn } from "@/lib/table/types";
 
 const PAGE_SIZE = 20;
@@ -63,6 +65,7 @@ function today() {
 }
 
 export function DailyIncomeWorkspace() {
+  const { t } = useTranslation();
   const feedback = useFeedback();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const [branchCode, setBranchCode] = useState("");
@@ -122,7 +125,7 @@ export function DailyIncomeWorkspace() {
     if (!summary) return [];
 
     const icon = getDailyIncomeCurrencyIcon(summary.currency);
-    const description = dailyIncomeCurrencyDescription(summary.currency, summary.rate);
+    const description = dailyIncomeCurrencyDescription(summary.currency, summary.rate, t);
     const formatAmount = (value: number) => formatDailyIncomeMoney(value, summary.currency);
 
     return summary.totals.map((total) => ({
@@ -135,18 +138,18 @@ export function DailyIncomeWorkspace() {
         value: formatAmount(detail.value),
       })),
     }));
-  }, [summaryTotalsQuery.data, summaryTotalsQuery.isFetching, summaryTotalsQuery.isLoading]);
+  }, [summaryTotalsQuery.data, summaryTotalsQuery.isFetching, summaryTotalsQuery.isLoading, t]);
 
   const columns: DataTableColumn<DailyIncomeJournal>[] = useMemo(() => [
-    { id: "date", label: "Date", renderCell: (row) => row.date || "—" },
-    { id: "invoice", label: "Account / invoice", renderCell: (row) => row.invoice?.number ?? row.account?.displayName ?? row.account?.name ?? "—" },
-    { id: "employee", label: "Employee", renderCell: (row) => getTransactionAssigneeDisplayName(row.employee?.name, row.employeeGroup?.name) || "—" },
-    { id: "type", label: "Transaction", truncateCell: false, renderCell: (row) => <Badge variant="outline">{transactionTypeLabel(row.transactionType)}</Badge> },
-    { id: "reference", label: "Reference #", renderCell: (row) => row.refNumber || "—" },
-    { id: "paymentMethod", label: "Payment method", renderCell: (row) => row.paymentMethod?.name ?? "—" },
-    { id: "amount", label: "Amount", cellClassName: "font-medium tabular-nums", renderCell: (row) => formatDailyIncomeMoney(row.amount, displayCurrency) },
-    { id: "actions", label: "Actions", hideable: false, stopRowClick: true, truncateCell: false, renderCell: (row) => <div className="flex justify-end gap-1"><Button size="icon" variant="ghost" aria-label="Edit transaction" disabled={statement?.status !== "OPEN"} onClick={() => openEditTransactionForm(row)}><Edit className="h-4 w-4" /></Button><Button size="icon" variant="ghost" aria-label="Delete transaction" disabled={statement?.status !== "OPEN"} onClick={() => setDeleteJournal(row)}><Trash2 className="h-4 w-4" /></Button></div> },
-  ], [displayCurrency, statement?.status]);
+    { id: "date", label: t("accounting.dailyIncome.columns.date"), renderCell: (row) => row.date || t("common.empty.dash") },
+    { id: "invoice", label: t("accounting.dailyIncome.columns.accountInvoice"), renderCell: (row) => row.invoice?.number ?? row.account?.displayName ?? row.account?.name ?? t("common.empty.dash") },
+    { id: "employee", label: t("accounting.dailyIncome.columns.employee"), renderCell: (row) => getTransactionAssigneeDisplayName(row.employee?.name, row.employeeGroup?.name) || t("common.empty.dash") },
+    { id: "type", label: t("accounting.dailyIncome.columns.type"), truncateCell: false, renderCell: (row) => <Badge variant="outline">{transactionTypeLabel(row.transactionType, t)}</Badge> },
+    { id: "reference", label: t("accounting.dailyIncome.columns.reference"), renderCell: (row) => row.refNumber || t("common.empty.dash") },
+    { id: "paymentMethod", label: t("accounting.dailyIncome.columns.paymentMethod"), renderCell: (row) => row.paymentMethod?.name ?? t("common.empty.dash") },
+    { id: "amount", label: t("accounting.dailyIncome.columns.amount"), cellClassName: "font-medium tabular-nums", renderCell: (row) => formatDailyIncomeMoney(row.amount, displayCurrency) },
+    { id: "actions", label: t("accounting.dailyIncome.columns.actions"), hideable: false, stopRowClick: true, truncateCell: false, renderCell: (row) => <div className="flex justify-end gap-1"><Button size="icon" variant="ghost" aria-label={t("accounting.dailyIncome.actions.editTransaction")} disabled={statement?.status !== "OPEN"} onClick={() => openEditTransactionForm(row)}><Edit className="h-4 w-4" /></Button><Button size="icon" variant="ghost" aria-label={t("accounting.dailyIncome.actions.deleteTransaction")} disabled={statement?.status !== "OPEN"} onClick={() => setDeleteJournal(row)}><Trash2 className="h-4 w-4" /></Button></div> },
+  ], [displayCurrency, statement?.status, t]);
   const columnLayout = useColumnVisibility("daily-income-v1", columns);
   const statementValues: DailyIncomeStatementValues = { date, branchId: selectedBranch?.id ?? 0, branchCode, branchName: selectedBranch?.name ?? "", currency: statement?.currency ?? "USD", rate: statement?.rate ?? 1 };
   const mutationPending = createStatement.isPending || updateStatement.isPending;
@@ -154,10 +157,10 @@ export function DailyIncomeWorkspace() {
   function saveStatement(values: DailyIncomeStatementValues) {
     setFormError(null);
     const action = statement ? updateStatement.mutateAsync({ id: statement.id, values }) : createStatement.mutateAsync(values);
-    action.then(() => { setStatementDialog(false); setBranchCode(values.branchCode); setDate(values.date); feedback.notifySuccess(statement ? "Daily income updated." : "Daily income created."); }).catch((error) => setFormError(normalizeApiError(error).message));
+    action.then(() => { setStatementDialog(false); setBranchCode(values.branchCode); setDate(values.date); feedback.notifySuccess(statement ? t("accounting.dailyIncome.toasts.statementUpdated") : t("accounting.dailyIncome.toasts.statementCreated")); }).catch((error) => setFormError(normalizeApiError(error).message));
   }
   function saveJournal(values: DailyIncomeJournalValues): Promise<void> {
-    if (!statement) return Promise.reject(new Error("No closeout loaded."));
+    if (!statement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
     setFormError(null);
     return (editingJournal
       ? updateJournal.mutateAsync({ id: editingJournal.id, statement, values })
@@ -165,7 +168,7 @@ export function DailyIncomeWorkspace() {
     )
       .then(() => {
         if (editingJournal) {
-          feedback.notifySuccess("Transaction updated.");
+          feedback.notifySuccess(t("accounting.dailyIncome.toasts.transactionUpdated"));
           setTransactionDialog(false);
           setEditingJournal(null);
           return;
@@ -173,11 +176,11 @@ export function DailyIncomeWorkspace() {
 
         if (values.transactionType === "INITIAL-PAYMENT") {
           const invoiceNumber = values.invoiceNumber?.trim() || "invoice";
-          feedback.notifySuccess(`New invoice #${invoiceNumber} created and payment registered.`);
+          feedback.notifySuccess(t("accounting.dailyIncome.toasts.invoiceRegistered", { invoiceNumber }));
           return;
         }
 
-        feedback.notifySuccess("Transaction created.");
+        feedback.notifySuccess(t("accounting.dailyIncome.toasts.transactionCreated"));
       })
       .catch((error) => {
         setFormError(normalizeApiError(error).message);
@@ -186,7 +189,7 @@ export function DailyIncomeWorkspace() {
   }
   function changeStatus(open: boolean) {
     if (!statement) return;
-    statusMutation.mutateAsync({ statement, open }).then(() => feedback.notifySuccess(`Daily income ${open ? "opened" : "closed"}.`)).catch((error) => feedback.notifyError(normalizeApiError(error).message));
+    statusMutation.mutateAsync({ statement, open }).then(() => feedback.notifySuccess(open ? t("accounting.dailyIncome.toasts.statementOpened") : t("accounting.dailyIncome.toasts.statementClosed"))).catch((error) => feedback.notifyError(normalizeApiError(error).message));
   }
 
   function openAddTransactionForm() {
@@ -197,7 +200,7 @@ export function DailyIncomeWorkspace() {
         baseHref: "/accounting/daily-income",
         mode: "add",
         entityId: String(statement.id),
-        label: "Add transaction",
+        label: t("accounting.dailyIncome.actions.addTransaction"),
       });
       return;
     }
@@ -213,7 +216,7 @@ export function DailyIncomeWorkspace() {
         baseHref: "/accounting/daily-income",
         mode: "edit",
         entityId: row.id,
-        label: `Edit ${transactionTypeLabel(row.transactionType)}`,
+        label: t("accounting.dailyIncome.tabs.editType", { type: transactionTypeLabel(row.transactionType, t) }),
       });
       return;
     }
@@ -223,16 +226,16 @@ export function DailyIncomeWorkspace() {
   }
 
   return <div>
-    <PageHeader title="Daily Income" description="Create and reconcile the daily accounting closeout." actions={<>
-      {statement ? <Button variant="outline" onClick={() => setStatementDialog(true)}><Edit className="h-4 w-4" /> Edit closeout</Button> : <Button onClick={() => setStatementDialog(true)} disabled={!branchCode}><Plus className="h-4 w-4" /> Create closeout</Button>}
-      {statement ? <Button variant={statement.status === "OPEN" ? "destructive" : "default"} onClick={() => changeStatus(statement.status !== "OPEN")} disabled={statusMutation.isPending}>{statement.status === "OPEN" ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}{statement.status === "OPEN" ? "Close day" : "Reopen day"}</Button> : null}
+    <PageHeader title={t("accounting.dailyIncome.title")} description={t("accounting.dailyIncome.description")} actions={<>
+      {statement ? <Button variant="outline" onClick={() => setStatementDialog(true)}><Edit className="h-4 w-4" /> {t("accounting.dailyIncome.actions.editCloseout")}</Button> : <Button onClick={() => setStatementDialog(true)} disabled={!branchCode}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.createCloseout")}</Button>}
+      {statement ? <Button variant={statement.status === "OPEN" ? "destructive" : "default"} onClick={() => changeStatus(statement.status !== "OPEN")} disabled={statusMutation.isPending}>{statement.status === "OPEN" ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}{statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}</Button> : null}
     </>} />
 
     {statement ? (
       summaryTotalsQuery.isError ? (
         <p className="mb-6 text-sm text-destructive">{normalizeApiError(summaryTotalsQuery.error).message}</p>
       ) : summaryTotalsQuery.isLoading ? (
-        <p className="mb-6 text-sm text-muted-foreground">Loading summary totals…</p>
+        <p className="mb-6 text-sm text-muted-foreground">{t("accounting.dailyIncome.summary.loadingTotals")}</p>
       ) : stats.length > 0 ? (
         <StatCards items={stats} className="mb-6" />
       ) : null
@@ -241,7 +244,7 @@ export function DailyIncomeWorkspace() {
     <Card className="mb-6 gap-0 py-0">
       <CardContent className="flex flex-wrap items-start gap-4 py-4">
         <div className="flex w-fit flex-col gap-2">
-          <Label htmlFor="daily-branch">Branch</Label>
+          <Label htmlFor="daily-branch">{t("accounting.dailyIncome.filters.branch")}</Label>
           <SearchableSelect
             id="daily-branch"
             className="w-auto"
@@ -256,12 +259,12 @@ export function DailyIncomeWorkspace() {
               label: `${branch.code} — ${branch.name}`,
               keywords: [branch.code, branch.name],
             }))}
-            placeholder="Select branch"
-            searchPlaceholder="Search branches…"
+            placeholder={t("accounting.dailyIncome.filters.selectBranch")}
+            searchPlaceholder={t("accounting.dailyIncome.filters.searchBranches")}
           />
         </div>
         <div className="flex w-fit flex-col gap-2">
-          <Label htmlFor="daily-date">Date</Label>
+          <Label htmlFor="daily-date">{t("accounting.dailyIncome.filters.date")}</Label>
           <DateInput
             id="daily-date"
             className={toolbarFieldControlClassName}
@@ -273,7 +276,7 @@ export function DailyIncomeWorkspace() {
           />
         </div>
         <div className="flex w-fit flex-col gap-2">
-          <Label>Status</Label>
+          <Label>{t("accounting.dailyIncome.filters.status")}</Label>
           <Badge
             className={
               statement?.status === "OPEN"
@@ -284,24 +287,27 @@ export function DailyIncomeWorkspace() {
             }
           >
             {statement
-              ? `${statement.status} · #${String(statement.id).padStart(5, "0")}`
-              : "No closeout for this date"}
+              ? t("accounting.dailyIncome.status.badge", {
+                  status: statement.status === "OPEN" ? t("accounting.dailyIncome.status.open") : t("accounting.dailyIncome.status.closed"),
+                  id: String(statement.id).padStart(5, "0"),
+                })
+              : t("accounting.dailyIncome.filters.noCloseout")}
           </Badge>
         </div>
       </CardContent>
     </Card>
 
     {statement ? <>
-    <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>Transactions</CardTitle><Button onClick={openAddTransactionForm} disabled={statement.status !== "OPEN"}><Plus className="h-4 w-4" /> Add transaction</Button></div>
+    <div className="mt-6 mb-3 flex items-center justify-between gap-3"><CardTitle>{t("accounting.dailyIncome.transactions.title")}</CardTitle><Button onClick={openAddTransactionForm} disabled={statement.status !== "OPEN"}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.addTransaction")}</Button></div>
 
-    <Card className="gap-0"><CardHeader className="gap-3 border-b py-4 pb-3"><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={`Showing ${rows.length} of ${total} transactions`} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder="Search transactions…" />} /></CardHeader>
-      {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title="Loading transactions" description="Syncing journal entries, payments, and closeout totals…" columns={["Date", "Account", "Employee", "Type", "Reference", "Amount"]} /> : <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionTypeLabel(row.transactionType)} columnLayout={columnLayout} minWidth={1100} emptyState={<p className="text-muted-foreground">No transactions match this closeout.</p>} />}
-      {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{journalsQuery.isFetching ? "Refreshing transactions…" : `Showing ${rows.length} of ${total} transactions`}</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-4 w-4" /> Previous</Button><span className="px-2 text-sm text-muted-foreground">Page {page} of {totalPages}</span><Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next <ChevronRight className="h-4 w-4" /></Button></div></div> : null}
+    <Card className="gap-0"><CardHeader className="gap-3 border-b py-4 pb-3"><TableDirectoryToolbar showFilterToggle={false} columnLayout={columnLayout} searchSummary={buildToolbarSearchSummary({ isFiltered: Boolean(deferredQuery.trim()), query: deferredQuery, isSearchPending: query !== deferredQuery, matched: total, catalogTotal: total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isLoading, catalogLoading: journalsQuery.isLoading }, t)} search={<TableSearchInput value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")} />} /></CardHeader>
+      {journalsQuery.isError ? <div className="px-6 py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div> : journalsQuery.isLoading ? <DirectoryTableLoader icon={ScrollText} title={t("accounting.dailyIncome.transactions.loadingTitle")} description={t("accounting.dailyIncome.transactions.loadingDescription")} columns={[t("accounting.dailyIncome.columns.date"), t("accounting.dailyIncome.columns.accountInvoice"), t("accounting.dailyIncome.columns.employee"), t("accounting.dailyIncome.columns.type"), t("accounting.dailyIncome.columns.reference"), t("accounting.dailyIncome.columns.amount")]} /> : <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionTypeLabel(row.transactionType, t)} columnLayout={columnLayout} minWidth={1100} emptyState={<p className="text-muted-foreground">{t("accounting.dailyIncome.transactions.empty")}</p>} />}
+      {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: PAGE_SIZE, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-4 w-4" /> {t("common.actions.previous")}</Button><span className="px-2 text-sm text-muted-foreground">{t("common.pagination.pageOf", { current: page, total: totalPages })}</span><Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>{t("common.actions.next")} <ChevronRight className="h-4 w-4" /></Button></div></div> : null}
     </Card>
     </> : null}
 
-    <Dialog open={statementDialog} onOpenChange={(open) => { setStatementDialog(open); if (!open) setFormError(null); }}><DialogContent className="sm:max-w-xl"><DialogHeader><DialogTitle>{statement ? "Edit daily income" : "Create daily income"}</DialogTitle><DialogDescription>Set the branch, date, currency, and exchange rate for this closeout.</DialogDescription></DialogHeader><DailyIncomeStatementForm branches={branches} initialValues={statementValues} isSubmitting={mutationPending} error={formError} onSubmit={saveStatement} onCancel={() => setStatementDialog(false)} /></DialogContent></Dialog>
+    <Dialog open={statementDialog} onOpenChange={(open) => { setStatementDialog(open); if (!open) setFormError(null); }}><DialogContent className="sm:max-w-xl"><DialogHeader><DialogTitle>{statement ? t("accounting.dailyIncome.statement.editTitle") : t("accounting.dailyIncome.statement.createTitle")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.statement.description")}</DialogDescription></DialogHeader><DailyIncomeStatementForm branches={branches} initialValues={statementValues} isSubmitting={mutationPending} error={formError} onSubmit={saveStatement} onCancel={() => setStatementDialog(false)} /></DialogContent></Dialog>
     <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">{editingJournal ? <AddTransactionWizard open={transactionDialog} mode="edit" initialValues={journalToFormValues(editingJournal)} employees={employees} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" employees={employees} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
-    <Dialog open={Boolean(deleteJournal)} onOpenChange={(open) => !open && setDeleteJournal(null)}><DialogContent><DialogHeader><DialogTitle>Delete transaction?</DialogTitle><DialogDescription>This removes the entry and recalculates the daily totals.</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setDeleteJournal(null)}>Cancel</Button><Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (!deleteJournal) return; deleteMutation.mutateAsync(deleteJournal.id).then(() => { setDeleteJournal(null); feedback.notifyDeleted("Transaction", 1); }).catch((error) => feedback.notifyError(normalizeApiError(error).message)); }}>Delete</Button></DialogFooter></DialogContent></Dialog>
+    <Dialog open={Boolean(deleteJournal)} onOpenChange={(open) => !open && setDeleteJournal(null)}><DialogContent><DialogHeader><DialogTitle>{t("accounting.dailyIncome.delete.title")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.delete.description")}</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setDeleteJournal(null)}>{t("common.actions.cancel")}</Button><Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (!deleteJournal) return; deleteMutation.mutateAsync(deleteJournal.id).then(() => { setDeleteJournal(null); feedback.notifyDeleted(t("accounting.dailyIncome.transactionNoun"), 1); }).catch((error) => feedback.notifyError(normalizeApiError(error).message)); }}>{t("common.actions.delete")}</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }

@@ -15,6 +15,8 @@ import enPhones from "@/locales/en/phones.json";
 import enRoutes from "@/locales/en/routes.json";
 import enSettings from "@/locales/en/settings.json";
 import enShell from "@/locales/en/shell.json";
+import enBarcodes from "@/locales/en/barcodes.json";
+import enAccounting from "@/locales/en/accounting.json";
 import enBranches from "@/locales/en/branches.json";
 import enVehicles from "@/locales/en/vehicles.json";
 import enRoles from "@/locales/en/roles.json";
@@ -34,6 +36,8 @@ import esPhones from "@/locales/es/phones.json";
 import esRoutes from "@/locales/es/routes.json";
 import esSettings from "@/locales/es/settings.json";
 import esShell from "@/locales/es/shell.json";
+import esBarcodes from "@/locales/es/barcodes.json";
+import esAccounting from "@/locales/es/accounting.json";
 import esBranches from "@/locales/es/branches.json";
 import esUsers from "@/locales/es/users.json";
 import esVehicles from "@/locales/es/vehicles.json";
@@ -45,6 +49,8 @@ type MessageTree = Record<string, unknown>;
 
 const catalogs: Record<Locale, MessageTree> = {
   en: {
+    accounting: enAccounting,
+    barcodes: enBarcodes,
     common: enCommon,
     containers: enContainers,
     customers: enCustomers,
@@ -66,6 +72,8 @@ const catalogs: Record<Locale, MessageTree> = {
     users: enUsers,
   },
   es: {
+    accounting: esAccounting,
+    barcodes: esBarcodes,
     common: esCommon,
     containers: esContainers,
     customers: esCustomers,

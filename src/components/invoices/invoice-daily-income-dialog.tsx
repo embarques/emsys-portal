@@ -25,7 +25,7 @@ import {
   useCreateDailyIncomeJournal,
   useCreateIncomeStatement,
 } from "@/lib/accounting/daily-income/hooks";
-import { dailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
+import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import {
   isZellePaymentMethod,
   requiresBankAccount,
@@ -92,6 +92,16 @@ export function InvoiceDailyIncomeDialog({
     () => createInvoiceDailyIncomeRegistrationSchema(invoiceTotal),
     [invoiceTotal],
   );
+  const statementSchema = useMemo(
+    () =>
+      createDailyIncomeStatementSchema({
+        dateRequired: t("accounting.dailyIncome.form.validation.dateRequired"),
+        branchRequired: t("accounting.dailyIncome.form.validation.branchRequired"),
+        currencyRequired: t("accounting.dailyIncome.form.validation.currencyRequired"),
+        rateNonNegative: t("accounting.dailyIncome.form.validation.rateNonNegative"),
+      }),
+    [t],
+  );
 
   const {
     formState: { errors },
@@ -107,7 +117,7 @@ export function InvoiceDailyIncomeDialog({
   });
 
   const statementForm = useForm<DailyIncomeStatementValues>({
-    resolver: zodResolver(dailyIncomeStatementSchema),
+    resolver: zodResolver(statementSchema),
     defaultValues: {
       date,
       branchId: 0,

@@ -1,0 +1,404 @@
+{
+  "chartOfAccounts": {
+    "title": "Catálogo de cuentas",
+    "description": "Administre las cuentas utilizadas por las transacciones de ingresos diarios.",
+    "noun": "cuentas",
+    "entity": "Cuenta",
+    "searchPlaceholder": "Buscar por cuenta…",
+    "empty": "Ninguna cuenta coincide con su búsqueda.",
+    "addAccount": "Agregar cuenta",
+    "loading": "Cargando cuentas…",
+    "card": {
+      "title": "Cuentas",
+      "description": "Jerarquía de cuentas, tipo, sucursal y disponibilidad."
+    },
+    "columns": {
+      "id": "#",
+      "type": "Tipo",
+      "displayName": "Cuenta",
+      "branch": "Sucursal",
+      "parent": "Cuenta padre",
+      "description": "Descripción",
+      "system": "Sistema",
+      "actions": "Acciones"
+    },
+    "types": {
+      "ASSET": "Activo",
+      "EXPENSE": "Gasto",
+      "REVENUE": "Ingreso",
+      "BANK": "Banco",
+      "LOAN": "Préstamo"
+    },
+    "values": {
+      "allBranches": "Todas",
+      "systemAccount": "Sistema"
+    },
+    "actions": {
+      "edit": "Editar cuenta",
+      "delete": "Eliminar cuenta"
+    },
+    "form": {
+      "createTitle": "Crear cuenta",
+      "editTitle": "Editar cuenta",
+      "createDescription": "Agregue una nueva cuenta al catálogo contable.",
+      "editDescription": "Actualice la cuenta del catálogo seleccionada.",
+      "fields": {
+        "displayName": "Nombre de cuenta",
+        "type": "Tipo de cuenta",
+        "branch": "Sucursal",
+        "parent": "Cuenta padre",
+        "description": "Descripción"
+      },
+      "placeholders": {
+        "type": "Seleccione el tipo de cuenta",
+        "branch": "Todas las sucursales",
+        "branchSearch": "Buscar sucursales…",
+        "parent": "No es subcuenta",
+        "parentSearch": "Buscar cuentas…"
+      },
+      "options": {
+        "allBranches": "Todas las sucursales",
+        "notSubAccount": "No es subcuenta"
+      },
+      "hints": {
+        "typeChange": "Cambiar el tipo puede afectar cómo se usa esta cuenta en los informes."
+      },
+      "validation": {
+        "displayNameRequired": "El nombre de la cuenta es obligatorio."
+      },
+      "createSubmit": "Crear cuenta"
+    },
+    "delete": {
+      "title": "¿Eliminar cuenta?",
+      "description": "Esto elimina \"{{name}}\" del catálogo de cuentas."
+    },
+    "toasts": {
+      "created": "Cuenta creada.",
+      "updated": "Cuenta actualizada."
+    }
+  },
+  "checks": {
+    "title": "Cheques",
+    "description": "Controle cheques pendientes y cobrados vinculados a facturas y recibos.",
+    "noun": "cheques",
+    "searchPlaceholder": "Buscar cheques…",
+    "empty": "Ningún cheque coincide con su búsqueda.",
+    "addCheck": "Agregar cheque",
+    "columns": {
+      "status": "Estado",
+      "invoiceNumber": "Factura #",
+      "receiptNumber": "Recibo #",
+      "createdAt": "Creado el",
+      "createdBy": "Creado por",
+      "depositedAt": "Depositado el",
+      "depositedOn": "Depositado en",
+      "depositedBy": "Depositado por"
+    },
+    "status": {
+      "outstanding": "Pendiente",
+      "cleared": "Cobrado"
+    },
+    "actions": {
+      "edit": "Editar cheque",
+      "manageStatus": "Estado",
+      "statusGroup": "Acciones de estado del cheque",
+      "markOutstanding": "Marcar pendiente",
+      "markCleared": "Marcar cobrado"
+    },
+    "form": {
+      "createTitle": "Agregar cheque",
+      "createDescription": "Registre un nuevo pago con cheque.",
+      "editTitle": "Editar cheque",
+      "editDescription": "Actualice el cheque seleccionado.",
+      "sections": {
+        "details": "Detalles del cheque",
+        "deposit": "Detalles del depósito"
+      },
+      "fields": {
+        "invoiceNumber": "Número de factura",
+        "receiptNumber": "Número de recibo",
+        "status": "Estado",
+        "createdBy": "Creado por",
+        "depositedAt": "Depositado el",
+        "depositedOn": "Depositado en",
+        "depositedBy": "Depositado por"
+      },
+      "placeholders": {
+        "invoiceNumber": "INV-2026-0001",
+        "receiptNumber": "CHK-8842",
+        "createdBy": "Ingrese el nombre",
+        "depositedOn": "Cuenta bancaria",
+        "depositedBy": "Ingrese el nombre"
+      },
+      "selectEmpty": "No hay opciones coincidentes.",
+      "validation": {
+        "invoiceNumberRequired": "El número de factura es obligatorio.",
+        "receiptNumberRequired": "El número de recibo es obligatorio.",
+        "createdByRequired": "El campo creado por es obligatorio.",
+        "depositRequired": "Los datos de depósito son obligatorios para cheques cobrados."
+      }
+    },
+    "view": {
+      "sections": {
+        "audit": "Auditoría"
+      }
+    },
+    "delete": {
+      "title": "¿Eliminar cheque?",
+      "title_plural": "¿Eliminar {{count}} cheques?",
+      "description": "Esto elimina el cheque {{receiptNumber}} de la lista.",
+      "description_plural": "Esto elimina {{count}} cheques de la lista."
+    },
+    "toasts": {
+      "created": "Cheque agregado.",
+      "updated": "Cheque actualizado.",
+      "deleted": "Cheque eliminado.",
+      "deleted_plural": "{{count}} cheques eliminados.",
+      "markedOutstanding": "{{count}} cheque marcado como pendiente.",
+      "markedOutstanding_plural": "{{count}} cheques marcados como pendientes.",
+      "markedCleared": "{{count}} cheque marcado como cobrado.",
+      "markedCleared_plural": "{{count}} cheques marcados como cobrados."
+    }
+  },
+  "dailyIncome": {
+    "title": "Ingresos diarios",
+    "description": "Cree y concilie el cierre contable diario.",
+    "noun": "transacciones",
+    "transactionNoun": "transacción",
+    "actions": {
+      "createCloseout": "Crear cierre",
+      "editCloseout": "Editar cierre",
+      "closeDay": "Cerrar día",
+      "reopenDay": "Reabrir día",
+      "addTransaction": "Agregar transacción",
+      "editTransaction": "Editar transacción",
+      "deleteTransaction": "Eliminar transacción"
+    },
+    "filters": {
+      "branch": "Sucursal",
+      "date": "Fecha",
+      "status": "Estado",
+      "selectBranch": "Seleccionar sucursal",
+      "searchBranches": "Buscar sucursales…",
+      "noCloseout": "Sin cierre para esta fecha"
+    },
+    "status": {
+      "open": "ABIERTO",
+      "closed": "CERRADO",
+      "badge": "{{status}} · #{{id}}"
+    },
+    "summary": {
+      "loadingTotals": "Cargando totales del resumen…",
+      "currencyRate": "{{code}} · tasa {{rate}}"
+    },
+    "currency": {
+      "usd": "Dólar",
+      "dop": "Peso",
+      "select": "Seleccionar moneda"
+    },
+    "transactions": {
+      "title": "Transacciones",
+      "searchPlaceholder": "Buscar transacciones…",
+      "empty": "Ninguna transacción coincide con este cierre.",
+      "loadingTitle": "Cargando transacciones",
+      "loadingDescription": "Sincronizando asientos, pagos y totales del cierre…"
+    },
+    "columns": {
+      "date": "Fecha",
+      "accountInvoice": "Cuenta / factura",
+      "employee": "Empleado",
+      "type": "Transacción",
+      "reference": "Referencia #",
+      "paymentMethod": "Método de pago",
+      "amount": "Monto",
+      "actions": "Acciones"
+    },
+    "statement": {
+      "createTitle": "Crear ingresos diarios",
+      "editTitle": "Editar ingresos diarios",
+      "description": "Configure la sucursal, fecha, moneda y tasa de cambio para este cierre.",
+      "save": "Guardar ingresos diarios",
+      "fields": {
+        "branch": "Sucursal",
+        "date": "Fecha",
+        "currency": "Moneda",
+        "exchangeRate": "Tasa de cambio"
+      },
+      "placeholders": {
+        "selectBranch": "Seleccionar sucursal",
+        "searchBranches": "Buscar sucursales…"
+      }
+    },
+    "delete": {
+      "title": "¿Eliminar transacción?",
+      "description": "Esto elimina el registro y recalcula los totales diarios."
+    },
+    "toasts": {
+      "statementCreated": "Ingresos diarios creados.",
+      "statementUpdated": "Ingresos diarios actualizados.",
+      "statementOpened": "Ingresos diarios abiertos.",
+      "statementClosed": "Ingresos diarios cerrados.",
+      "transactionCreated": "Transacción creada.",
+      "transactionUpdated": "Transacción actualizada.",
+      "invoiceRegistered": "Nueva factura #{{invoiceNumber}} creada y pago registrado."
+    },
+    "errors": {
+      "noCloseoutLoaded": "No hay cierre cargado.",
+      "transactionNotFound": "No se encontró esta transacción.",
+      "closeoutNotFound": "No se encontró este cierre diario."
+    },
+    "tabs": {
+      "editType": "Editar {{type}}",
+      "closeoutLabel": "Cierre #{{id}} · {{date}}"
+    },
+    "loading": {
+      "transaction": "Cargando transacción…",
+      "closeout": "Cargando cierre…"
+    },
+    "wizard": {
+      "addTitle": "Agregar transacción",
+      "editTitle": "Editar transacción",
+      "description": "Registre un asiento en el cierre diario seleccionado.",
+      "saving": "Guardando transacción…",
+      "saveTransaction": "Guardar transacción",
+      "steps": {
+        "selectType": "Seleccionar tipo",
+        "enterDetails": "Ingresar detalles"
+      },
+      "typeSelector": {
+        "title": "Elija un tipo de transacción",
+        "description": "Seleccione el tipo de transacción que desea registrar.",
+        "ariaLabel": "Tipo de transacción"
+      }
+    },
+    "transactionTypes": {
+      "initialPayment": {
+        "label": "Registrar factura",
+        "shortLabel": "Factura",
+        "description": "Registrar un cliente",
+        "sectionTitle": "Información de la factura"
+      },
+      "payment": {
+        "label": "Registrar pago",
+        "shortLabel": "Pago",
+        "description": "Registrar un pago recibido",
+        "sectionTitle": "Información del pago"
+      },
+      "expense": {
+        "label": "Registrar gasto",
+        "shortLabel": "Gasto",
+        "description": "Registrar un gasto",
+        "sectionTitle": "Información del gasto"
+      },
+      "sales": {
+        "label": "Registrar ingreso",
+        "shortLabel": "Ingreso",
+        "description": "Registrar un ingreso",
+        "sectionTitle": "Información del ingreso"
+      },
+      "discount": {
+        "label": "Aplicar descuento",
+        "shortLabel": "Descuento",
+        "description": "Aplicar un descuento",
+        "sectionTitle": "Información del descuento"
+      },
+      "surcharge": {
+        "label": "Aplicar recargo",
+        "shortLabel": "Recargo",
+        "description": "Aplicar un recargo",
+        "sectionTitle": "Información del recargo"
+      },
+      "transfer": {
+        "label": "Transferir cuenta",
+        "shortLabel": "Transferencia",
+        "description": "Transferir entre cuentas",
+        "sectionTitle": "Información de la transferencia"
+      },
+      "loan": {
+        "label": "Registrar préstamo",
+        "shortLabel": "Préstamo",
+        "description": "Registrar una transacción de préstamo",
+        "sectionTitle": "Información del préstamo"
+      }
+    },
+    "form": {
+      "fields": {
+        "employee": "Empleado",
+        "paymentMethod": "Método de pago",
+        "bankAccount": "Cuenta bancaria",
+        "zelleDate": "Fecha de transacción Zelle",
+        "zelleName": "Nombre de transacción Zelle (como aparece en la cuenta bancaria)",
+        "invoice": "Factura",
+        "referenceNumber": "Número de referencia",
+        "account": "Cuenta",
+        "sourceAccount": "Cuenta origen",
+        "amount": "Monto",
+        "description": "Descripción",
+        "cost": "Costo",
+        "balance": "Saldo",
+        "includeSender": "Incluir cliente remitente",
+        "senderClient": "Cliente remitente",
+        "includeReceiver": "Incluir cliente destinatario",
+        "receiverClient": "Cliente destinatario"
+      },
+      "placeholders": {
+        "selectEmployee": "Seleccionar empleado",
+        "searchEmployees": "Buscar empleados…",
+        "selectPaymentMethod": "Seleccionar método de pago",
+        "searchPaymentMethods": "Buscar métodos de pago…",
+        "selectBankAccount": "Seleccionar cuenta bancaria",
+        "searchBankAccounts": "Buscar cuentas bancarias…",
+        "selectAccount": "Seleccionar cuenta",
+        "searchAccounts": "Buscar cuentas…",
+        "selectSourceAccount": "Seleccionar cuenta origen",
+        "selectInvoice": "Seleccionar factura",
+        "searchInvoices": "Buscar por factura #, teléfono del remitente o destinatario…",
+        "enterZelleName": "Ingrese el nombre de la transacción Zelle",
+        "enterReferenceNumber": "Ingrese el número de referencia",
+        "enterDescription": "Ingrese la descripción (opcional)",
+        "enterInvoiceNumber": "Ingrese el número de la nueva factura",
+        "searchSender": "Buscar remitente por nombre, teléfono o dirección…",
+        "searchSenders": "Buscar remitentes…",
+        "selectSender": "Seleccionar remitente",
+        "searchReceiver": "Buscar destinatario por nombre, teléfono o dirección…",
+        "searchReceivers": "Buscar destinatarios…",
+        "selectReceiver": "Seleccionar destinatario",
+        "amount": "0.00"
+      },
+      "invoiceSummary": {
+        "total": "Total",
+        "discount": "Descuento",
+        "paid": "Pagado",
+        "balance": "Saldo",
+        "sender": "Remitente: {{name}}",
+        "receiver": "Destinatario: {{name}}"
+      },
+      "validation": {
+        "dateRequired": "La fecha es obligatoria.",
+        "branchRequired": "La sucursal es obligatoria.",
+        "currencyRequired": "La moneda es obligatoria.",
+        "rateNonNegative": "La tasa no puede ser negativa.",
+        "amountRequired": "El monto es obligatorio.",
+        "amountNonNegative": "El monto no puede ser negativo.",
+        "amountPositive": "El monto debe ser mayor que cero.",
+        "refNumberTooLong": "El número de referencia es demasiado largo.",
+        "descriptionTooLong": "La descripción es demasiado larga.",
+        "costPositive": "El costo debe ser mayor que cero.",
+        "discountNonNegative": "El descuento no puede ser negativo.",
+        "zelleDateRequired": "La fecha de transacción Zelle es obligatoria.",
+        "zelleNameRequired": "El nombre de transacción Zelle es obligatorio.",
+        "bankAccountRequired": "Seleccione una cuenta bancaria para este método de pago.",
+        "employeeRequired": "El empleado es obligatorio.",
+        "invoiceRequired": "La factura es obligatoria.",
+        "paymentMethodRequired": "El método de pago es obligatorio.",
+        "amountExceedsCost": "El monto no puede exceder el costo.",
+        "senderRequired": "El cliente remitente es obligatorio.",
+        "receiverRequired": "El cliente destinatario es obligatorio.",
+        "amountExceedsBalance": "El monto no puede exceder el saldo de la factura.",
+        "accountRequired": "La cuenta es obligatoria.",
+        "sourceAccountRequired": "La cuenta origen es obligatoria.",
+        "balanceNegative": "El saldo no puede ser negativo."
+      }
+    }
+  }
+}

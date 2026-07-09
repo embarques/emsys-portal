@@ -136,7 +136,7 @@ export function InventoryReportsWorkspace() {
                       {item.quantity} {item.unit}
                     </div>
                     <TableTagText className={getStatusBadgeClass(item.status)}>
-                      {getStatusLabel(item.status)}
+                      {getStatusLabel(item.status, t)}
                     </TableTagText>
                   </div>
                 </div>

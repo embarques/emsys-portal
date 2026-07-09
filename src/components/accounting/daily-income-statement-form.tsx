@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,10 @@ import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { dailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
+import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import type { DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import type { Branch } from "@/lib/branches/types";
-
-const currencyOptions = [
-  { value: "USD", label: "Dollar" },
-  { value: "DOP", label: "Peso" },
-];
+import { useTranslation } from "@/lib/i18n";
 
 type Props = {
   branches: Branch[];
@@ -28,8 +24,26 @@ type Props = {
 };
 
 export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting, error, onSubmit, onCancel }: Props) {
+  const { t } = useTranslation();
+  const schema = useMemo(
+    () =>
+      createDailyIncomeStatementSchema({
+        dateRequired: t("accounting.dailyIncome.form.validation.dateRequired"),
+        branchRequired: t("accounting.dailyIncome.form.validation.branchRequired"),
+        currencyRequired: t("accounting.dailyIncome.form.validation.currencyRequired"),
+        rateNonNegative: t("accounting.dailyIncome.form.validation.rateNonNegative"),
+      }),
+    [t],
+  );
+  const currencyOptions = useMemo(
+    () => [
+      { value: "USD", label: t("accounting.dailyIncome.currency.usd") },
+      { value: "DOP", label: t("accounting.dailyIncome.currency.dop") },
+    ],
+    [t],
+  );
   const { formState: { errors }, handleSubmit, register, reset, setValue, watch } = useForm<DailyIncomeStatementValues>({
-    resolver: zodResolver(dailyIncomeStatementSchema),
+    resolver: zodResolver(schema),
     defaultValues: initialValues,
   });
 
@@ -42,7 +56,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="statement-branch">Branch</Label>
+          <Label htmlFor="statement-branch">{t("accounting.dailyIncome.statement.fields.branch")}</Label>
           <SearchableSelect
             id="statement-branch"
             value={branchId ? String(branchId) : ""}
@@ -53,28 +67,28 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
               setValue("branchName", branch?.name ?? "", { shouldValidate: true });
             }}
             options={branchOptions}
-            placeholder="Select branch"
-            searchPlaceholder="Search branches…"
+            placeholder={t("accounting.dailyIncome.statement.placeholders.selectBranch")}
+            searchPlaceholder={t("accounting.dailyIncome.statement.placeholders.searchBranches")}
           />
           {errors.branchId ? <p className="text-sm text-destructive">{errors.branchId.message}</p> : null}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="statement-date">Date</Label>
+          <Label htmlFor="statement-date">{t("accounting.dailyIncome.statement.fields.date")}</Label>
           <DateInput id="statement-date" {...register("date")} />
           {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="statement-currency">Currency</Label>
+          <Label htmlFor="statement-currency">{t("accounting.dailyIncome.statement.fields.currency")}</Label>
           <SearchableSelect
             id="statement-currency"
             value={currency ?? ""}
             onValueChange={(next) => setValue("currency", next, { shouldValidate: true })}
             options={currencyOptions}
-            placeholder="Select currency"
+            placeholder={t("accounting.dailyIncome.currency.select")}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="statement-rate">Exchange rate</Label>
+          <Label htmlFor="statement-rate">{t("accounting.dailyIncome.statement.fields.exchangeRate")}</Label>
           <Input id="statement-rate" type="number" step="0.01" {...register("rate", { valueAsNumber: true })} />
           {errors.rate ? <p className="text-sm text-destructive">{errors.rate.message}</p> : null}
         </div>
@@ -84,8 +98,12 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
       <input type="hidden" {...register("branchName")} />
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <div className="flex justify-end gap-2 border-t pt-4">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
-        <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving…" : "Save daily income"}</Button>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          {t("common.actions.cancel")}
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? t("common.actions.saving") : t("accounting.dailyIncome.statement.save")}
+        </Button>
       </div>
     </form>
   );

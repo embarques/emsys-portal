@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export function TransactionWizardStepper({ step }: Props) {
+  const { t } = useTranslation();
   const stepOneComplete = step === 2;
 
   return (
@@ -32,7 +34,7 @@ export function TransactionWizardStepper({ step }: Props) {
             step === 1 || stepOneComplete ? "text-foreground" : "text-muted-foreground",
           )}
         >
-          Select type
+          {t("accounting.dailyIncome.wizard.steps.selectType")}
         </span>
       </div>
 
@@ -56,7 +58,7 @@ export function TransactionWizardStepper({ step }: Props) {
             step === 2 ? "text-foreground" : "text-muted-foreground",
           )}
         >
-          Enter details
+          {t("accounting.dailyIncome.wizard.steps.enterDetails")}
         </span>
       </div>
     </div>

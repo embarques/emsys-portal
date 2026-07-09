@@ -154,6 +154,7 @@
     "fields": {
       "sku": "SKU",
       "name": "Item name",
+      "recipientName": "Name",
       "unit": "Unit",
       "category": "Category",
       "location": "Location",
@@ -239,5 +240,41 @@
   "errors": {
     "insufficientStock": "Insufficient stock for one or more line items.",
     "saveFailed": "Could not save. Please try again."
+  },
+  "statuses": {
+    "in_stock": "In stock",
+    "low_stock": "Low stock",
+    "out_of_stock": "Out of stock",
+    "reserved": "Reserved",
+    "review": "Needs review"
+  },
+  "locations": {
+    "ny_warehouse": "NY Warehouse",
+    "rd_warehouse": "RD Warehouse",
+    "in_transit": "In Transit",
+    "dock": "Loading Dock"
+  },
+  "categories": {
+    "packaging": "Packaging",
+    "labels": "Labels",
+    "supplies": "Supplies",
+    "equipment": "Equipment"
+  },
+  "recipientTypes": {
+    "customer": "Customer",
+    "vendor": "Vendor",
+    "branch": "Branch",
+    "internal": "Internal"
+  },
+  "dispatchStatuses": {
+    "pending": "Pending",
+    "sent": "Sent",
+    "confirmed": "Confirmed"
+  },
+  "adjustmentReasons": {
+    "damaged": "Damaged",
+    "recount": "Recount",
+    "lost": "Lost",
+    "other": "Other"
   }
 }

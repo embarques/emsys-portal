@@ -16,9 +16,11 @@
       "label": "Total containers",
       "description": "Containers on record"
     },
-    "departedPastMonth": "Departed (past month)",
+    "departedPast30Days": "Departed (past 30 days)",
     "departedPast90Days": "Departed (past 90 days)",
-    "departedPastYear": "Departed (past year)"
+    "departedPast180Days": "Departed (past 180 days)",
+    "departedPast360Days": "Departed (past 360 days)",
+    "annualPace": "~{{pace}} containers/year at current pace"
   },
   "columns": {
     "id": "#",

@@ -3,37 +3,37 @@
   "noun": "rutas",
   "pages": {
     "routeManager": "Defina plantillas de rutas reutilizables con vehículos y asignaciones de equipo para operaciones de recogida y entrega.",
-    "pickupRoutes": "Planifique rutas diarias de recogida, asigne órdenes a conductores y controle la finalización de rutas para la fecha seleccionada.",
+    "pickupRoutes": "Planifique rutas diarias de órdenes, asigne órdenes a conductores y controle la finalización de rutas para la fecha seleccionada.",
     "deliveryRoutes": "Planifique rutas diarias de entrega por contenedor, asigne roles de equipo y coordine la entrega de última milla."
   },
   "routeManager": {
     "title": "Manejador de rutas"
   },
   "pickupRoutes": {
-    "title": "Rutas de recogida",
-    "editTitle": "Editar ruta de recogida",
-    "addTabLabel": "Agregar ruta de recogida",
+    "title": "Rutas de órdenes",
+    "editTitle": "Editar ruta de órdenes",
+    "addTabLabel": "Agregar ruta de órdenes",
     "editTabLabel": "Editar {{name}}",
-    "loading": "Cargando ruta de recogida…",
-    "notFound": "No se encontró esta ruta de recogida.",
-    "description": "Defina la ruta de recogida de trabajo para esta fecha. Elija una ruta existente o cree una nueva.",
-    "searchPlaceholder": "Buscar rutas de recogida…",
-    "searchNoun": "rutas de recogida",
-    "empty": "Aún no hay rutas de recogida.",
-    "emptyFiltered": "Ninguna ruta de recogida coincide con su búsqueda o filtros.",
-    "setActiveRoute": "Agregar ruta de recogida",
-    "pagination": "Mostrando {{shown}} de {{total}} rutas de recogida",
+    "loading": "Cargando ruta de órdenes…",
+    "notFound": "No se encontró esta ruta de órdenes.",
+    "description": "Defina la ruta de órdenes de trabajo para esta fecha. Elija una ruta existente o cree una nueva.",
+    "searchPlaceholder": "Buscar rutas de órdenes…",
+    "searchNoun": "rutas de órdenes",
+    "empty": "Aún no hay rutas de órdenes.",
+    "emptyFiltered": "Ninguna ruta de órdenes coincide con su búsqueda o filtros.",
+    "setActiveRoute": "Agregar ruta de órdenes",
+    "pagination": "Mostrando {{shown}} de {{total}} rutas de órdenes",
     "entities": {
-      "activeRoute": "ruta de recogida",
-      "activeRoutes": "rutas de recogida"
+      "activeRoute": "ruta de órdenes",
+      "activeRoutes": "rutas de órdenes"
     },
     "form": {
-      "save": "Guardar ruta de recogida",
-      "saved": "Ruta de recogida guardada.",
-      "editHint": "Actualice la asignación de recogida y los roles de la cuadrilla, luego guarde."
+      "save": "Guardar ruta de órdenes",
+      "saved": "Ruta de órdenes guardada.",
+      "editHint": "Actualice la asignación de la ruta de órdenes y los roles de la cuadrilla, luego guarde."
     },
     "view": {
-      "editLabel": "Editar ruta de recogida",
+      "editLabel": "Editar ruta de órdenes",
       "sections": {
         "assignment": "Asignación",
         "orders": "Órdenes asignadas"
@@ -53,7 +53,7 @@
       }
     },
     "actions": {
-      "selectAtLeastOne": "Seleccione al menos una ruta de recogida.",
+      "selectAtLeastOne": "Seleccione al menos una ruta de órdenes.",
       "noPickupsOnRoute": "No hay recogidas asignadas a la ruta seleccionada.",
       "print": "Imprimir ruta",
       "preparing": "Preparando…",
@@ -294,7 +294,7 @@
       "dayOfWeek": "Selecciona al menos un día.",
       "branch": "La sucursal es obligatoria.",
       "route": "La ruta es obligatoria.",
-      "pickupContainer": "Las rutas de recogida no pueden incluir un contenedor."
+      "pickupContainer": "Las rutas de órdenes no pueden incluir un contenedor."
     }
   },
   "routeDetails": {

@@ -3,11 +3,13 @@
 import { memo } from "react";
 
 import { useTranslation } from "@/lib/i18n";
+import { workspaceContentFrameClassName } from "@/lib/layout/workspace-content-layout";
 import { resolveWorkspaceComponent } from "@/lib/layout/workspace-registry";
 import { resolveWorkspaceFormComponent } from "@/lib/layout/workspace-form-registry";
 import { WorkspaceTabScope } from "@/lib/layout/workspace-tab-scope";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
+import { cn } from "@/lib/utils";
 
 type WorkspaceTabPanelProps = {
   tab: WorkspaceTab;
@@ -47,7 +49,7 @@ export function WorkspaceTabPanels() {
 
   if (tabs.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-[1600px] p-4 md:p-6 lg:p-8">
+      <div className={workspaceContentFrameClassName}>
         <div
           data-testid="workspace-empty-tabs"
           className="rounded-xl border border-dashed bg-muted/20 p-10 text-center text-sm text-muted-foreground"
@@ -59,7 +61,7 @@ export function WorkspaceTabPanels() {
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-[1600px] p-4 md:p-6 lg:p-8">
+    <div className={cn("relative", workspaceContentFrameClassName)}>
       {tabs.map((tab) => (
         <WorkspaceTabPanel key={tab.id} tab={tab} active={tab.id === activeTabId} />
       ))}

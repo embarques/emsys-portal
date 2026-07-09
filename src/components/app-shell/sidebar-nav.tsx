@@ -8,6 +8,7 @@ import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
 import {
   navigationGroupHasActiveRoute,
   navigationItemMatchesPath,
+  isFlatNavigationGroup,
   submenuHasActiveRoute,
 } from "@/lib/navigation/nav-utils";
 import {
@@ -16,6 +17,26 @@ import {
   type TranslatedNavigationItem,
 } from "@/lib/navigation/use-navigation";
 import { cn } from "@/lib/utils";
+
+const navRowBaseClassName =
+  "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition";
+
+const navRowInactiveClassName =
+  "text-muted-foreground hover:bg-accent hover:text-accent-foreground";
+
+const navRowActiveClassName = "bg-primary/10 font-medium text-primary";
+
+const navIconClassName = "h-4 w-4 shrink-0";
+
+const navLabelClassName = "min-w-0 flex-1 truncate";
+
+const navChevronClassName = "h-4 w-4 shrink-0 text-muted-foreground";
+
+const navNestedClassName = "ml-4 space-y-1 border-l border-border pl-3";
+
+function navRowClassName(active: boolean) {
+  return cn(navRowBaseClassName, active ? navRowActiveClassName : navRowInactiveClassName);
+}
 
 function NavLeafLink({
   item,
@@ -38,17 +59,42 @@ function NavLeafLink({
       href={item.href}
       label={item.label}
       onClick={onNavigate}
-      className={cn(
-        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
-        active
-          ? "bg-primary/10 font-medium text-primary"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-        className,
-      )}
+      className={cn(navRowClassName(active), className)}
     >
-      <Icon className="h-4 w-4 shrink-0" />
-      <span className="truncate">{item.label}</span>
+      <Icon className={navIconClassName} />
+      <span className={navLabelClassName}>{item.label}</span>
     </WorkspaceNavLink>
+  );
+}
+
+function NavExpandRow({
+  label,
+  icon: Icon,
+  open,
+  active,
+  onToggle,
+}: {
+  label: string;
+  icon?: TranslatedNavigationItem["icon"];
+  open: boolean;
+  active: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      onClick={onToggle}
+      className={navRowClassName(active)}
+    >
+      {Icon ? <Icon className={navIconClassName} /> : null}
+      <span className={navLabelClassName}>{label}</span>
+      {open ? (
+        <ChevronDown className={navChevronClassName} />
+      ) : (
+        <ChevronRight className={navChevronClassName} />
+      )}
+    </button>
   );
 }
 
@@ -61,10 +107,8 @@ function NavSubmenu({
   pathname: string;
   onNavigate?: () => void;
 }) {
-  const submenuKey = item.labelKey;
   const hasActiveChild = submenuHasActiveRoute(item, pathname);
   const [open, setOpen] = React.useState(hasActiveChild);
-  const Icon = item.icon;
 
   React.useEffect(() => {
     if (hasActiveChild) setOpen(true);
@@ -72,28 +116,41 @@ function NavSubmenu({
 
   if (!item.children?.length) return null;
 
+  if (item.children.length === 1) {
+    const [onlyChild] = item.children;
+    return (
+      <NavLeafLink
+        item={{
+          ...onlyChild,
+          label: item.label,
+          labelKey: item.labelKey,
+          icon: item.icon,
+        }}
+        pathname={pathname}
+        onNavigate={onNavigate}
+      />
+    );
+  }
+
   return (
     <div className="space-y-1">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-        className={cn(
-          "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition",
-          hasActiveChild && !open
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-        )}
-      >
-        <Icon className="h-4 w-4 shrink-0" />
-        <span className="min-w-0 flex-1 truncate">{item.label}</span>
-        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-      </button>
+      <NavExpandRow
+        label={item.label}
+        icon={item.icon}
+        open={open}
+        active={hasActiveChild && !open}
+        onToggle={() => setOpen((current) => !current)}
+      />
 
       {open ? (
-        <div className="ml-4 space-y-1 border-l border-border pl-3">
+        <div className={navNestedClassName}>
           {item.children.map((child) => (
-            <NavLeafLink key={child.href ?? child.labelKey} item={child} pathname={pathname} onNavigate={onNavigate} />
+            <NavLeafLink
+              key={child.href ?? child.labelKey}
+              item={child}
+              pathname={pathname}
+              onNavigate={onNavigate}
+            />
           ))}
         </div>
       ) : null}
@@ -136,32 +193,43 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       {topNavigation.length > 0 && visibleNavigation.length > 0 ? <div className="my-2" /> : null}
 
       {visibleNavigation.map((group) => {
+        if (isFlatNavigationGroup(group.items)) {
+          const onlyItem = group.items[0];
+          return (
+            <NavLeafLink
+              key={group.titleKey}
+              item={{
+                ...onlyItem,
+                label: group.title,
+                labelKey: group.titleKey,
+                icon: group.icon ?? onlyItem.icon,
+                children: undefined,
+              }}
+              pathname={pathname}
+              onNavigate={onNavigate}
+            />
+          );
+        }
+
         const isOpen = openGroups[group.titleKey] ?? false;
         const hasActiveRoute = navigationGroupHasActiveRoute(group.items, pathname);
         const isParentSelected = !isOpen && hasActiveRoute;
         const GroupIcon = group.icon ?? group.items[0]?.icon;
 
         return (
-          <div key={group.titleKey} className="rounded-xl">
-            <button
-              type="button"
-              aria-expanded={isOpen}
-              aria-current={isParentSelected ? "true" : undefined}
-              onClick={() => setOpenGroups((current) => ({ ...current, [group.titleKey]: !isOpen }))}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition",
-                isParentSelected
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-              )}
-            >
-              {GroupIcon ? <GroupIcon className="h-5 w-5 shrink-0" /> : null}
-              <span className="min-w-0 flex-1 truncate">{group.title}</span>
-              {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </button>
+          <div key={group.titleKey} className="space-y-1">
+            <NavExpandRow
+              label={group.title}
+              icon={GroupIcon}
+              open={isOpen}
+              active={isParentSelected}
+              onToggle={() =>
+                setOpenGroups((current) => ({ ...current, [group.titleKey]: !isOpen }))
+              }
+            />
 
             {isOpen ? (
-              <div className="mt-1 ml-4 space-y-1 pl-3">
+              <div className={navNestedClassName}>
                 {group.items.map((item) =>
                   item.children?.length ? (
                     <NavSubmenu

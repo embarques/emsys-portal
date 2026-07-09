@@ -2,12 +2,10 @@
 
 import { Check } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-import {
-  TRANSACTION_TYPE_OPTIONS,
-  type TransactionTypeOption,
-} from "@/lib/accounting/daily-income/transaction-type-config";
+import { buildTransactionTypeOptions, type TransactionTypeOption } from "@/lib/accounting/daily-income/transaction-type-config";
 import type { JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 type Props = {
   value: JournalTransactionType | null;
@@ -59,20 +57,23 @@ function TypeCard({
 }
 
 export function TransactionTypeSelector({ value, onChange }: Props) {
+  const { t } = useTranslation();
+  const options = buildTransactionTypeOptions(t);
+
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-base font-semibold">Choose a transaction type</h3>
+        <h3 className="text-base font-semibold">{t("accounting.dailyIncome.wizard.typeSelector.title")}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Select the type of transaction you want to record.
+          {t("accounting.dailyIncome.wizard.typeSelector.description")}
         </p>
       </div>
       <div
         role="radiogroup"
-        aria-label="Transaction type"
+        aria-label={t("accounting.dailyIncome.wizard.typeSelector.ariaLabel")}
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
       >
-        {TRANSACTION_TYPE_OPTIONS.map((option) => (
+        {options.map((option) => (
           <TypeCard
             key={option.value}
             option={option}

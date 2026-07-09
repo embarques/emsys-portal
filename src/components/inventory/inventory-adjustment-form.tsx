@@ -10,8 +10,8 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { useTranslation } from "@/lib/i18n";
 import { getItemStock } from "@/lib/inventory/mock-store";
+import { getAdjustmentReasonOptions } from "@/lib/inventory/display";
 import {
-  ADJUSTMENT_REASONS,
   type AdjustmentFormValues,
 } from "@/lib/inventory/types/movements";
 import type { InventoryItem } from "@/lib/inventory/types/catalog";
@@ -133,7 +133,7 @@ export function InventoryAdjustmentForm({
                 onValueChange={(next) =>
                   setValues((current) => ({ ...current, reason: next as AdjustmentFormValues["reason"] }))
                 }
-                options={ADJUSTMENT_REASONS.map((option) => ({ value: option.value, label: option.label }))}
+                options={getAdjustmentReasonOptions(t)}
               />
             </div>
             <div className="space-y-1">

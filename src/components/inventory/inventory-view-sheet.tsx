@@ -18,6 +18,7 @@ import { useTranslation } from "@/lib/i18n";
 import {
   getAvailableQuantity,
   getCategoryLabel,
+  getDispatchStatusLabel,
   getLocationLabel,
   getMovementDirectionLabel,
   getReferenceTypeLabel,
@@ -93,15 +94,15 @@ export function InventoryViewSheet({
           description={item.sku}
           meta={
             <>
-              <Badge className={getStatusBadgeClass(item.status)}>{getStatusLabel(item.status)}</Badge>
-              <Badge variant="outline">{getCategoryLabel(item.category)}</Badge>
+              <Badge className={getStatusBadgeClass(item.status)}>{getStatusLabel(item.status, t)}</Badge>
+              <Badge variant="outline">{getCategoryLabel(item.category, t)}</Badge>
             </>
           }
         />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("inventory.view.stock")}>
-            <RecordViewSheetDetailRow label={t("inventory.columns.location")} value={getLocationLabel(item.location)} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.location")} value={getLocationLabel(item.location, t)} />
             <RecordViewSheetDetailRow label={t("inventory.columns.onHand")} value={`${item.quantity} ${item.unit}`} />
             <RecordViewSheetDetailRow label={t("inventory.form.fields.reserved")} value={`${item.reserved} ${item.unit}`} />
             <RecordViewSheetDetailRow
@@ -191,7 +192,7 @@ export function InventoryViewSheet({
                       <div key={dispatch.id} className="rounded-md border border-border px-3 py-2 text-sm">
                         <div className="font-medium">{recipient?.name ?? dispatch.recipientId}</div>
                         <div className="text-xs text-muted-foreground">
-                          {formatAuditDateTime(dispatch.dispatchDate)} · {line?.quantity ?? 0} {item.unit} · {dispatch.status}
+                          {formatAuditDateTime(dispatch.dispatchDate)} · {line?.quantity ?? 0} {item.unit} · {getDispatchStatusLabel(dispatch.status, t)}
                         </div>
                       </div>
                     );

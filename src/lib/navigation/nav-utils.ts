@@ -51,3 +51,24 @@ export function submenuHasActiveRoute(item: NavigationItem, pathname: string): b
   if (!item.children?.length) return false;
   return item.children.some((child) => navigationItemMatchesPath(child, pathname));
 }
+
+/** When a submenu has one visible child, render it as a single link using the parent label. */
+export function flattenSingleChildNavItem(item: NavigationItem): NavigationItem {
+  if (item.children?.length !== 1) return item;
+
+  const [onlyChild] = item.children;
+  return {
+    ...onlyChild,
+    labelKey: item.labelKey,
+    icon: item.icon,
+  };
+}
+
+export function flattenSingleChildNavItems(items: NavigationItem[]): NavigationItem[] {
+  return items.map(flattenSingleChildNavItem);
+}
+
+export function isFlatNavigationGroup(items: NavigationItem[]): boolean {
+  const normalized = flattenSingleChildNavItems(items);
+  return normalized.length === 1 && !normalized[0]?.children?.length && Boolean(normalized[0]?.href);
+}

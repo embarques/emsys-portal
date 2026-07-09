@@ -11,6 +11,7 @@ import {
 } from "@/lib/accounting/daily-income/assignee";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
+import { useTranslation } from "@/lib/i18n";
 
 type Props = {
   id?: string;
@@ -36,6 +37,7 @@ export function TransactionAssigneeSelect({
   error,
   setValue,
 }: Props) {
+  const { t } = useTranslation();
   const options = useMemo(() => buildTransactionAssigneeOptions(employees), [employees]);
   const value = getTransactionAssigneeSelectValue(employeeId);
 
@@ -57,13 +59,13 @@ export function TransactionAssigneeSelect({
 
   return (
     <div className="space-y-2">
-      <RequiredLabel htmlFor={id}>Employee</RequiredLabel>
+      <RequiredLabel htmlFor={id}>{t("accounting.dailyIncome.form.fields.employee")}</RequiredLabel>
       <SearchableSelect
         id={id}
         value={value}
         onValueChange={handleValueChange}
-        placeholder="Select employee"
-        searchPlaceholder="Search employees…"
+        placeholder={t("accounting.dailyIncome.form.placeholders.selectEmployee")}
+        searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchEmployees")}
         options={options}
       />
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

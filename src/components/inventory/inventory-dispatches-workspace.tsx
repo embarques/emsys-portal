@@ -27,7 +27,8 @@ import {
   useInventorySnapshotData,
   useUpdateDispatchStatus,
 } from "@/lib/inventory/hooks/use-inventory";
-import { DISPATCH_STATUSES, type InventoryDispatch } from "@/lib/inventory/types/documents";
+import { getDispatchStatusLabel } from "@/lib/inventory/display";
+import type { InventoryDispatch } from "@/lib/inventory/types/documents";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
@@ -93,7 +94,7 @@ export function InventoryDispatchesWorkspace() {
       cellClassName: "overflow-visible",
       renderCell: (row) => (
         <TableTagText className={getDispatchStatusClass(row.status)}>
-          {DISPATCH_STATUSES.find((entry) => entry.value === row.status)?.label ?? row.status}
+          {getDispatchStatusLabel(row.status, t)}
         </TableTagText>
       ),
     },

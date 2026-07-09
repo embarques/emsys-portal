@@ -16,9 +16,11 @@
       "label": "Total de contenedores",
       "description": "Contenedores registrados"
     },
-    "departedPastMonth": "Salidos (último mes)",
+    "departedPast30Days": "Salidos (últimos 30 días)",
     "departedPast90Days": "Salidos (últimos 90 días)",
-    "departedPastYear": "Salidos (último año)"
+    "departedPast180Days": "Salidos (últimos 180 días)",
+    "departedPast360Days": "Salidos (últimos 360 días)",
+    "annualPace": "~{{pace}} contenedores/año al ritmo actual"
   },
   "columns": {
     "id": "#",

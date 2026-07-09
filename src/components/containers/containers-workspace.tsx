@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   CalendarClock,
+  CalendarDays,
   CalendarRange,
   ChevronLeft,
   ChevronRight,
@@ -50,9 +51,11 @@ import {
 import { useUserError } from "@/lib/errors";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
+  DEPARTED_PERIOD_DAYS,
   computeContainerKpis,
   formatContainerDate,
   formatContainerId,
+  formatDepartedAnnualPace,
   formatOptionalContainerCost,
 } from "@/lib/containers/display";
 import {
@@ -86,7 +89,7 @@ const defaultFilters: ContainerFilterState = {
 };
 
 export function ContainersWorkspace() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { toErrorMessage } = useUserError();
   const containerFilterFields = useContainerFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
@@ -231,6 +234,13 @@ export function ContainersWorkspace() {
     }
   }
 
+  function departedPaceDescription(count: number, periodDays: number) {
+    if (kpiQuery.isLoading) return "…";
+    return t("containers.stats.annualPace", {
+      pace: formatDepartedAnnualPace(count, periodDays, locale),
+    });
+  }
+
   const statCards = [
     {
       label: t("containers.stats.total.label"),
@@ -239,21 +249,39 @@ export function ContainersWorkspace() {
       icon: Container,
     },
     {
-      label: t("containers.stats.departedPastMonth"),
-      value: kpiQuery.isLoading ? "…" : kpis.departedPastMonth.toString(),
-      description: undefined,
+      label: t("containers.stats.departedPast30Days"),
+      value: kpiQuery.isLoading ? "…" : kpis.departedPast30Days.toString(),
+      description: departedPaceDescription(
+        kpis.departedPast30Days,
+        DEPARTED_PERIOD_DAYS.past30Days,
+      ),
       icon: Ship,
     },
     {
       label: t("containers.stats.departedPast90Days"),
       value: kpiQuery.isLoading ? "…" : kpis.departedPast90Days.toString(),
-      description: undefined,
+      description: departedPaceDescription(
+        kpis.departedPast90Days,
+        DEPARTED_PERIOD_DAYS.past90Days,
+      ),
       icon: CalendarClock,
     },
     {
-      label: t("containers.stats.departedPastYear"),
-      value: kpiQuery.isLoading ? "…" : kpis.departedPastYear.toString(),
-      description: undefined,
+      label: t("containers.stats.departedPast180Days"),
+      value: kpiQuery.isLoading ? "…" : kpis.departedPast180Days.toString(),
+      description: departedPaceDescription(
+        kpis.departedPast180Days,
+        DEPARTED_PERIOD_DAYS.past180Days,
+      ),
+      icon: CalendarDays,
+    },
+    {
+      label: t("containers.stats.departedPast360Days"),
+      value: kpiQuery.isLoading ? "…" : kpis.departedPast360Days.toString(),
+      description: departedPaceDescription(
+        kpis.departedPast360Days,
+        DEPARTED_PERIOD_DAYS.past360Days,
+      ),
       icon: CalendarRange,
     },
   ];

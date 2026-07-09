@@ -68,12 +68,12 @@ export function InventoryRecipientsWorkspace() {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return recipients;
     return recipients.filter((recipient) =>
-      [recipient.name, recipient.type, recipient.contactInfo ?? "", recipient.address ?? ""]
+      [recipient.name, getRecipientTypeLabel(recipient.type, t), recipient.contactInfo ?? "", recipient.address ?? ""]
         .join(" ")
         .toLowerCase()
         .includes(normalized),
     );
-  }, [query, recipients]);
+  }, [query, recipients, t]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -81,8 +81,8 @@ export function InventoryRecipientsWorkspace() {
   const allPageSelected = pageRows.length > 0 && pageRows.every((row) => selectedIds.includes(row.id));
 
   const columns: DataTableColumn<InventoryRecipient>[] = [
-    { id: "name", label: t("inventory.form.fields.name"), cellClassName: "font-medium", renderCell: (row) => row.name },
-    { id: "type", label: t("inventory.columns.type"), renderCell: (row) => getRecipientTypeLabel(row.type) },
+    { id: "name", label: t("inventory.form.fields.recipientName"), cellClassName: "font-medium", renderCell: (row) => row.name },
+    { id: "type", label: t("inventory.columns.type"), renderCell: (row) => getRecipientTypeLabel(row.type, t) },
     { id: "contact", label: t("inventory.columns.contact"), renderCell: (row) => row.contactInfo ?? "—" },
     { id: "address", label: t("inventory.columns.address"), renderCell: (row) => row.address ?? "—" },
   ];
@@ -190,7 +190,7 @@ export function InventoryRecipientsWorkspace() {
             icon={Users}
             title={t("inventory.loading.recipients.title")}
             description={t("inventory.loading.recipients.description")}
-            columns={[t("inventory.form.fields.name"), t("inventory.columns.type"), t("inventory.columns.contact")]}
+            columns={[t("inventory.form.fields.recipientName"), t("inventory.columns.type"), t("inventory.columns.contact")]}
           />
         ) : (
           <DataTable

@@ -9,9 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useTranslation } from "@/lib/i18n";
+import { getInventoryCategoryOptions, getInventoryLocationOptions } from "@/lib/inventory/display";
 import {
-  INVENTORY_CATEGORIES,
-  INVENTORY_LOCATIONS,
   createEmptyInventoryForm,
   type InventoryFormValues,
 } from "@/lib/inventory/types";
@@ -84,7 +83,7 @@ export function InventoryItemForm({
                   value={values.category}
                   onValueChange={(next) => updateField("category", next as InventoryFormValues["category"])}
                   searchPlaceholder={t("inventory.filters.allCategories")}
-                  options={INVENTORY_CATEGORIES.map((option) => ({ value: option.value, label: option.label }))}
+                  options={getInventoryCategoryOptions(t)}
                 />
               </div>
               <div className="space-y-1">
@@ -94,7 +93,7 @@ export function InventoryItemForm({
                   value={values.location}
                   onValueChange={(next) => updateField("location", next as InventoryFormValues["location"])}
                   searchPlaceholder={t("inventory.filters.allLocations")}
-                  options={INVENTORY_LOCATIONS.map((option) => ({ value: option.value, label: option.label }))}
+                  options={getInventoryLocationOptions(t)}
                 />
               </div>
             </div>

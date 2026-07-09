@@ -14,6 +14,7 @@ import { MobileSidebar } from "./mobile-sidebar";
 import { Topbar } from "./topbar";
 import { useIsDesktopWorkspaceTabs } from "@/hooks/use-is-mobile-viewport";
 import { useTranslation } from "@/lib/i18n";
+import { workspaceContentFrameClassName } from "@/lib/layout/workspace-content-layout";
 import { cn } from "@/lib/utils";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -65,7 +66,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {isDesktopTabs ? (
             <Suspense
               fallback={
-                <div className="mx-auto w-full max-w-[1600px] p-4 md:p-6 lg:p-8 text-sm text-muted-foreground">
+                <div className={`${workspaceContentFrameClassName} text-sm text-muted-foreground`}>
                   {t("shell.dashboard.loadingWorkspace")}
                 </div>
               }
@@ -75,7 +76,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <WorkspaceTabPanels />
             </Suspense>
           ) : (
-            <div className="mx-auto w-full max-w-7xl p-4 md:p-6 lg:p-8">{children}</div>
+            <div className={workspaceContentFrameClassName}>{children}</div>
           )}
         </main>
       </div>

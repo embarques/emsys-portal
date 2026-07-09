@@ -1,17 +1,79 @@
+import type { TranslateFn } from "@/lib/feedback/messages";
 import type { InventoryCategory, InventoryItem, InventoryLocation, InventoryStatus } from "./types";
-import { INVENTORY_CATEGORIES, INVENTORY_LOCATIONS, INVENTORY_STATUSES } from "./types";
+import {
+  INVENTORY_CATEGORIES,
+  INVENTORY_LOCATIONS,
+  INVENTORY_STATUSES,
+} from "./types";
+import type { DispatchStatus } from "./types/documents";
+import { DISPATCH_STATUSES } from "./types/documents";
+import type { AdjustmentReason } from "./types/movements";
+import { ADJUSTMENT_REASONS } from "./types/movements";
+import type { RecipientType } from "./types/recipients";
 import { RECIPIENT_TYPES } from "./types/recipients";
 
-export function getLocationLabel(location: InventoryLocation): string {
-  return INVENTORY_LOCATIONS.find((entry) => entry.value === location)?.label ?? location;
+function translateEnum(t: TranslateFn, key: string, fallback: string): string {
+  const translated = t(key);
+  return translated === key ? fallback : translated;
 }
 
-export function getStatusLabel(status: InventoryStatus): string {
-  return INVENTORY_STATUSES.find((entry) => entry.value === status)?.label ?? status;
+export function getLocationLabel(location: InventoryLocation, t: TranslateFn): string {
+  return translateEnum(t, `inventory.locations.${location}`, location);
 }
 
-export function getCategoryLabel(category: InventoryCategory): string {
-  return INVENTORY_CATEGORIES.find((entry) => entry.value === category)?.label ?? category;
+export function getStatusLabel(status: InventoryStatus, t: TranslateFn): string {
+  return translateEnum(t, `inventory.statuses.${status}`, status);
+}
+
+export function getCategoryLabel(category: InventoryCategory, t: TranslateFn): string {
+  return translateEnum(t, `inventory.categories.${category}`, category);
+}
+
+export function getRecipientTypeLabel(type: RecipientType | string, t: TranslateFn): string {
+  return translateEnum(t, `inventory.recipientTypes.${type}`, type);
+}
+
+export function getDispatchStatusLabel(status: DispatchStatus, t: TranslateFn): string {
+  return translateEnum(t, `inventory.dispatchStatuses.${status}`, status);
+}
+
+export function getAdjustmentReasonLabel(reason: AdjustmentReason, t: TranslateFn): string {
+  return translateEnum(t, `inventory.adjustmentReasons.${reason}`, reason);
+}
+
+export function getInventoryStatusOptions(t: TranslateFn) {
+  return INVENTORY_STATUSES.map((option) => ({
+    value: option.value,
+    label: getStatusLabel(option.value, t),
+  }));
+}
+
+export function getInventoryLocationOptions(t: TranslateFn) {
+  return INVENTORY_LOCATIONS.map((option) => ({
+    value: option.value,
+    label: getLocationLabel(option.value, t),
+  }));
+}
+
+export function getInventoryCategoryOptions(t: TranslateFn) {
+  return INVENTORY_CATEGORIES.map((option) => ({
+    value: option.value,
+    label: getCategoryLabel(option.value, t),
+  }));
+}
+
+export function getRecipientTypeOptions(t: TranslateFn) {
+  return RECIPIENT_TYPES.map((option) => ({
+    value: option.value,
+    label: getRecipientTypeLabel(option.value, t),
+  }));
+}
+
+export function getAdjustmentReasonOptions(t: TranslateFn) {
+  return ADJUSTMENT_REASONS.map((option) => ({
+    value: option.value,
+    label: getAdjustmentReasonLabel(option.value, t),
+  }));
 }
 
 export function formatInventoryDate(iso: string): string {
@@ -45,11 +107,18 @@ export function getStatusBadgeClass(status: InventoryStatus): string {
   }
 }
 
-export function inventoryMatchesQuery(item: InventoryItem, query: string): boolean {
+export function inventoryMatchesQuery(item: InventoryItem, query: string, t: TranslateFn): boolean {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
 
-  return [item.sku, item.name, item.notes ?? "", getLocationLabel(item.location), getCategoryLabel(item.category)]
+  return [
+    item.sku,
+    item.name,
+    item.notes ?? "",
+    getLocationLabel(item.location, t),
+    getCategoryLabel(item.category, t),
+    getStatusLabel(item.status, t),
+  ]
     .join(" ")
     .toLowerCase()
     .includes(normalized);
@@ -65,8 +134,6 @@ export function computeInventoryKpis(items: InventoryItem[]) {
   };
 }
 
-type TranslateFn = (key: string) => string;
-
 export function getMovementDirectionLabel(direction: string, t: TranslateFn): string {
   const key = `inventory.directions.${direction}`;
   const translated = t(key);
@@ -77,8 +144,4 @@ export function getReferenceTypeLabel(referenceType: string, t: TranslateFn): st
   const key = `inventory.references.${referenceType}`;
   const translated = t(key);
   return translated === key ? referenceType : translated;
-}
-
-export function getRecipientTypeLabel(type: string): string {
-  return RECIPIENT_TYPES.find((entry) => entry.value === type)?.label ?? type;
 }

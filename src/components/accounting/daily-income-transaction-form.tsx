@@ -12,12 +12,13 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
-import { dailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
+import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
 import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import type { Employee } from "@/lib/employees/types";
 import { getInvoiceBalanceAmount, getInvoicePrimaryReceiver, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const selectClassName =
@@ -59,9 +60,35 @@ export function DailyIncomeTransactionForm({
   focusSecondFieldSignal,
   onSubmit,
 }: Props) {
-  const typeOption = getTransactionTypeOption(transactionType);
+  const { t } = useTranslation();
+  const typeOption = getTransactionTypeOption(transactionType, t);
   const TypeIcon = typeOption.icon;
   const handleEnterNavigation = useFormEnterNavigation();
+  const schema = useMemo(
+    () =>
+      createDailyIncomeJournalSchema({
+        amountRequired: t("accounting.dailyIncome.form.validation.amountRequired"),
+        amountNonNegative: t("accounting.dailyIncome.form.validation.amountNonNegative"),
+        amountPositive: t("accounting.dailyIncome.form.validation.amountPositive"),
+        refNumberTooLong: t("accounting.dailyIncome.form.validation.refNumberTooLong"),
+        descriptionTooLong: t("accounting.dailyIncome.form.validation.descriptionTooLong"),
+        costPositive: t("accounting.dailyIncome.form.validation.costPositive"),
+        discountNonNegative: t("accounting.dailyIncome.form.validation.discountNonNegative"),
+        zelleDateRequired: t("accounting.dailyIncome.form.validation.zelleDateRequired"),
+        zelleNameRequired: t("accounting.dailyIncome.form.validation.zelleNameRequired"),
+        bankAccountRequired: t("accounting.dailyIncome.form.validation.bankAccountRequired"),
+        employeeRequired: t("accounting.dailyIncome.form.validation.employeeRequired"),
+        invoiceRequired: t("accounting.dailyIncome.form.validation.invoiceRequired"),
+        paymentMethodRequired: t("accounting.dailyIncome.form.validation.paymentMethodRequired"),
+        amountExceedsCost: t("accounting.dailyIncome.form.validation.amountExceedsCost"),
+        senderRequired: t("accounting.dailyIncome.form.validation.senderRequired"),
+        receiverRequired: t("accounting.dailyIncome.form.validation.receiverRequired"),
+        amountExceedsBalance: t("accounting.dailyIncome.form.validation.amountExceedsBalance"),
+        accountRequired: t("accounting.dailyIncome.form.validation.accountRequired"),
+        sourceAccountRequired: t("accounting.dailyIncome.form.validation.sourceAccountRequired"),
+      }),
+    [t],
+  );
 
   const {
     formState: { errors },
@@ -71,7 +98,7 @@ export function DailyIncomeTransactionForm({
     setValue,
     watch,
   } = useForm<DailyIncomeJournalValues>({
-    resolver: zodResolver(dailyIncomeJournalSchema),
+    resolver: zodResolver(schema),
     defaultValues: { ...initialValues, transactionType },
   });
 
@@ -101,36 +128,36 @@ export function DailyIncomeTransactionForm({
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
   const accountOptions = useMemo(
     () => [
-      { value: "", label: "Select account" },
+      { value: "", label: t("accounting.dailyIncome.form.placeholders.selectAccount") },
       ...accounts.map((account) => ({
         value: String(account.id),
         label: account.displayName,
         keywords: [account.displayName],
       })),
     ],
-    [accounts],
+    [accounts, t],
   );
   const bankAccountOptions = useMemo(
     () => [
-      { value: "", label: "Select bank account" },
+      { value: "", label: t("accounting.dailyIncome.form.placeholders.selectBankAccount") },
       ...bankAccounts.map((account) => ({
         value: String(account.id),
         label: account.displayName,
         keywords: [account.displayName],
       })),
     ],
-    [bankAccounts],
+    [bankAccounts, t],
   );
   const paymentMethodOptions = useMemo(
     () => [
-      { value: "", label: "Select payment method" },
+      { value: "", label: t("accounting.dailyIncome.form.placeholders.selectPaymentMethod") },
       ...paymentMethods.map((method) => ({
         value: String(method.id),
         label: method.name,
         keywords: [method.name],
       })),
     ],
-    [paymentMethods],
+    [paymentMethods, t],
   );
   const invoiceOptions = useMemo(
     () =>
@@ -141,8 +168,12 @@ export function DailyIncomeTransactionForm({
           [phone.number, phone.displayNumber].filter((value): value is string => Boolean(value)),
         );
         const descriptionLines = [
-          invoice.sender?.name ? `Sender: ${invoice.sender.name}` : null,
-          primaryReceiver?.name ? `Receiver: ${primaryReceiver.name}` : null,
+          invoice.sender?.name
+            ? t("accounting.dailyIncome.form.invoiceSummary.sender", { name: invoice.sender.name })
+            : null,
+          primaryReceiver?.name
+            ? t("accounting.dailyIncome.form.invoiceSummary.receiver", { name: primaryReceiver.name })
+            : null,
         ].filter((line): line is string => Boolean(line));
         return {
           value: invoice.invoiceId,
@@ -156,7 +187,7 @@ export function DailyIncomeTransactionForm({
           ].filter(Boolean),
         };
       }),
-    [invoices],
+    [invoices, t],
   );
   const needsExistingInvoice = ["PAYMENT", "DISCOUNT", "SURCHARGE"].includes(type);
   const isRegisterInvoice = type === "INITIAL-PAYMENT";
@@ -212,7 +243,7 @@ export function DailyIncomeTransactionForm({
           <div className="grid gap-4 sm:grid-cols-2">
             {needsExistingInvoice ? (
               <div className="space-y-2 sm:col-span-2">
-                <RequiredLabel htmlFor="journal-invoice">Invoice</RequiredLabel>
+                <RequiredLabel htmlFor="journal-invoice">{t("accounting.dailyIncome.form.fields.invoice")}</RequiredLabel>
                 <SearchableSelect
                   id="journal-invoice"
                   value={invoiceId ?? ""}
@@ -226,8 +257,8 @@ export function DailyIncomeTransactionForm({
                       { shouldValidate: true },
                     );
                   }}
-                  placeholder="Select invoice"
-                  searchPlaceholder="Search by invoice #, sender or receiver phone…"
+                  placeholder={t("accounting.dailyIncome.form.placeholders.selectInvoice")}
+                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchInvoices")}
                   options={invoiceOptions}
                 />
                 {errors.invoiceId ? (
@@ -236,19 +267,19 @@ export function DailyIncomeTransactionForm({
                 {selectedInvoice ? (
                   <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 rounded-md border border-blue-100 bg-card px-3 py-2 text-sm sm:grid-cols-4">
                     <div>
-                      <p className="text-xs text-muted-foreground">Total</p>
+                      <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.total")}</p>
                       <p className="font-medium">{formatAccountingMoney(getInvoiceTotal(selectedInvoice))}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Discount</p>
+                      <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.discount")}</p>
                       <p className="font-medium">{formatAccountingMoney(selectedInvoice.discount)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Paid</p>
+                      <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.paid")}</p>
                       <p className="font-medium">{formatAccountingMoney(selectedInvoice.amountPaid)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Balance</p>
+                      <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.invoiceSummary.balance")}</p>
                       <p className="font-medium">{formatAccountingMoney(getInvoiceBalanceAmount(selectedInvoice))}</p>
                     </div>
                   </div>
@@ -267,9 +298,9 @@ export function DailyIncomeTransactionForm({
 
             <div className="space-y-2 sm:col-span-2">
               {needsPaymentMethod ? (
-                <RequiredLabel htmlFor="journal-payment">Payment method</RequiredLabel>
+                <RequiredLabel htmlFor="journal-payment">{t("accounting.dailyIncome.form.fields.paymentMethod")}</RequiredLabel>
               ) : (
-                <Label htmlFor="journal-payment">Payment method</Label>
+                <Label htmlFor="journal-payment">{t("accounting.dailyIncome.form.fields.paymentMethod")}</Label>
               )}
               <SearchableSelect
                 id="journal-payment"
@@ -283,8 +314,8 @@ export function DailyIncomeTransactionForm({
                     setValue("zelleTransactionName", undefined, { shouldValidate: true });
                   }
                 }}
-                placeholder="Select payment method"
-                searchPlaceholder="Search payment methods…"
+                placeholder={t("accounting.dailyIncome.form.placeholders.selectPaymentMethod")}
+                searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchPaymentMethods")}
                 options={paymentMethodOptions}
               />
               {errors.paymentMethodId ? (
@@ -294,7 +325,7 @@ export function DailyIncomeTransactionForm({
 
             {needsBankAccount ? (
               <div className="space-y-2 sm:col-span-2">
-                <RequiredLabel htmlFor="journal-bank-account">Bank account</RequiredLabel>
+                <RequiredLabel htmlFor="journal-bank-account">{t("accounting.dailyIncome.form.fields.bankAccount")}</RequiredLabel>
                 <SearchableSelect
                   id="journal-bank-account"
                   value={paymentAccountId != null ? String(paymentAccountId) : ""}
@@ -304,8 +335,8 @@ export function DailyIncomeTransactionForm({
                     setValue("paymentAccountName", account?.displayName ?? "");
                     setValue("paymentAccountType", account?.type);
                   }}
-                  placeholder="Select bank account"
-                  searchPlaceholder="Search bank accounts…"
+                  placeholder={t("accounting.dailyIncome.form.placeholders.selectBankAccount")}
+                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBankAccounts")}
                   options={bankAccountOptions}
                 />
                 {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
@@ -315,7 +346,7 @@ export function DailyIncomeTransactionForm({
             {isZelle ? (
               <>
                 <div className="space-y-2 sm:col-span-2">
-                  <RequiredLabel htmlFor="journal-zelle-date">Zelle transaction date</RequiredLabel>
+                  <RequiredLabel htmlFor="journal-zelle-date">{t("accounting.dailyIncome.form.fields.zelleDate")}</RequiredLabel>
                   <Input id="journal-zelle-date" type="date" {...register("zelleTransactionDate")} />
                   {errors.zelleTransactionDate ? (
                     <p className="text-sm text-destructive">{errors.zelleTransactionDate.message}</p>
@@ -324,11 +355,11 @@ export function DailyIncomeTransactionForm({
 
                 <div className="space-y-2 sm:col-span-2">
                   <RequiredLabel htmlFor="journal-zelle-name">
-                    Zelle transaction name (as it appears in bank account)
+                    {t("accounting.dailyIncome.form.fields.zelleName")}
                   </RequiredLabel>
                   <Input
                     id="journal-zelle-name"
-                    placeholder="Enter Zelle transaction name"
+                    placeholder={t("accounting.dailyIncome.form.placeholders.enterZelleName")}
                     {...register("zelleTransactionName")}
                   />
                   {errors.zelleTransactionName ? (
@@ -339,13 +370,17 @@ export function DailyIncomeTransactionForm({
             ) : null}
 
             <div className="space-y-2">
-              <Label htmlFor="journal-reference">Reference number</Label>
-              <Input id="journal-reference" placeholder="Enter reference number" {...register("refNumber")} />
+              <Label htmlFor="journal-reference">{t("accounting.dailyIncome.form.fields.referenceNumber")}</Label>
+              <Input
+                id="journal-reference"
+                placeholder={t("accounting.dailyIncome.form.placeholders.enterReferenceNumber")}
+                {...register("refNumber")}
+              />
             </div>
 
             {needsAccount ? (
               <div className="space-y-2">
-                <RequiredLabel htmlFor="journal-account">Account</RequiredLabel>
+                <RequiredLabel htmlFor="journal-account">{t("accounting.dailyIncome.form.fields.account")}</RequiredLabel>
                 <SearchableSelect
                   id="journal-account"
                   value={accountId != null ? String(accountId) : ""}
@@ -355,8 +390,8 @@ export function DailyIncomeTransactionForm({
                     setValue("accountName", account?.displayName ?? "");
                     setValue("accountType", account?.type);
                   }}
-                  placeholder="Select account"
-                  searchPlaceholder="Search accounts…"
+                  placeholder={t("accounting.dailyIncome.form.placeholders.selectAccount")}
+                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
                   options={accountOptions}
                 />
                 {errors.accountId ? (
@@ -367,7 +402,7 @@ export function DailyIncomeTransactionForm({
 
             {needsSourceAccount ? (
               <div className="space-y-2">
-                <RequiredLabel htmlFor="journal-source">Source account</RequiredLabel>
+                <RequiredLabel htmlFor="journal-source">{t("accounting.dailyIncome.form.fields.sourceAccount")}</RequiredLabel>
                 <SearchableSelect
                   id="journal-source"
                   value={sourceAccountId != null ? String(sourceAccountId) : ""}
@@ -377,8 +412,8 @@ export function DailyIncomeTransactionForm({
                     setValue("sourceAccountName", account?.displayName ?? "");
                     setValue("sourceAccountType", account?.type);
                   }}
-                  placeholder="Select source account"
-                  searchPlaceholder="Search accounts…"
+                  placeholder={t("accounting.dailyIncome.form.placeholders.selectSourceAccount")}
+                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
                   options={accountOptions}
                 />
                 {errors.sourceAccountId ? (
@@ -388,24 +423,24 @@ export function DailyIncomeTransactionForm({
             ) : null}
 
             <div className="space-y-2">
-              <RequiredLabel htmlFor="journal-amount">Amount</RequiredLabel>
+              <RequiredLabel htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</RequiredLabel>
               <Input
                 id="journal-amount"
                 type="number"
                 min="0.01"
                 step="0.01"
-                placeholder="0.00"
+                placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
                 {...register("amount", { setValueAs: moneyFormSetValueAs })}
               />
               {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="journal-description">Description</Label>
+              <Label htmlFor="journal-description">{t("accounting.dailyIncome.form.fields.description")}</Label>
               <textarea
                 id="journal-description"
                 rows={3}
-                placeholder="Enter description (optional)"
+                placeholder={t("accounting.dailyIncome.form.placeholders.enterDescription")}
                 className={cn(selectClassName, "h-auto py-2 bg-card")}
                 {...register("description")}
               />

@@ -1,18 +1,21 @@
 import type { DailyIncomeJournal, DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import type { TranslateFn } from "@/lib/feedback/messages";
 
-export function transactionTypeLabel(value: string) {
-  return (
-    {
-      "INITIAL-PAYMENT": "Invoice",
-      PAYMENT: "Payment",
-      DISCOUNT: "Discount",
-      SURCHARGE: "Surcharge",
-      EXPENSE: "Expense",
-      SALES: "Income",
-      TRANSFER: "Transfer",
-      LOAN: "Loan",
-    } as Record<string, string>
-  )[value] ?? value;
+const TRANSACTION_TYPE_I18N_KEYS: Record<string, string> = {
+  "INITIAL-PAYMENT": "initialPayment",
+  PAYMENT: "payment",
+  EXPENSE: "expense",
+  SALES: "sales",
+  DISCOUNT: "discount",
+  SURCHARGE: "surcharge",
+  TRANSFER: "transfer",
+  LOAN: "loan",
+};
+
+export function transactionTypeLabel(value: string, t: TranslateFn) {
+  const key = TRANSACTION_TYPE_I18N_KEYS[value];
+  if (!key) return value;
+  return t(`accounting.dailyIncome.transactionTypes.${key}.shortLabel`);
 }
 
 export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournalValues {

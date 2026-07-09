@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 
+import { BarcodeFormWorkspace } from "@/components/barcodes/barcode-form-workspace";
 import { BranchFormWorkspace } from "@/components/branches/branch-form-workspace";
 import { ContainerFormWorkspace } from "@/components/containers/container-form-workspace";
 import { CustomerFormWorkspace } from "@/components/customers/customer-form-workspace";
@@ -29,6 +30,7 @@ export type WorkspaceFormHostProps = {
 
 /** Maps a feature key to the form host component rendered inside a form tab. */
 export const workspaceFormRegistry: Record<string, ComponentType<WorkspaceFormHostProps>> = {
+  barcodes: BarcodeFormWorkspace,
   customers: CustomerFormWorkspace,
   orders: OrderFormWorkspace,
   invoices: InvoiceFormWorkspace,

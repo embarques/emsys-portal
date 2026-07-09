@@ -23,6 +23,7 @@ import { getWorkspaceTabDisplayLabel, resolveWorkspaceLabel } from "@/lib/layout
 import { WORKSPACE_TAB_OVERFLOW_THRESHOLD } from "@/lib/layout/workspace-tab-types";
 import type { WorkspaceTab, WorkspaceTabSection } from "@/lib/layout/workspace-tab-types";
 import { useTranslation } from "@/lib/i18n";
+import { workspaceTabBarFrameClassName } from "@/lib/layout/workspace-content-layout";
 import { cn } from "@/lib/utils";
 
 type WorkspaceTabItemProps = {
@@ -182,7 +183,7 @@ export function WorkspaceTabBar() {
 
   return (
     <div className="border-b bg-muted/30">
-      <div className="mx-auto flex w-full max-w-[1600px] items-end px-2 md:px-4">
+      <div className={workspaceTabBarFrameClassName}>
         <div ref={scrollRef} className="flex min-w-0 flex-1 items-end overflow-x-auto">
           {tabs.map((tab, index) => (
             <WorkspaceTabItem

@@ -4,6 +4,7 @@ import { AnalyticsWorkspace, ReportsWorkspace, SecurityWorkspace } from "@/compo
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { DailyIncomeWorkspace } from "@/components/accounting/daily-income-workspace";
 import { ChartOfAccountsWorkspace } from "@/components/accounting/chart-of-accounts-workspace";
+import { ChecksWorkspace } from "@/components/accounting/checks-workspace";
 import { BranchesWorkspace } from "@/components/branches/branches-workspace";
 import { ConfigurationWorkspace } from "@/components/configuration/configuration-workspace";
 import { ContainersWorkspace } from "@/components/containers/containers-workspace";
@@ -52,6 +53,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/delivery-routes": DeliveryRoutesWorkspace,
   "/vehicles": VehiclesWorkspace,
   "/accounting/daily-income": DailyIncomeWorkspace,
+  "/accounting/checks": ChecksWorkspace,
   "/accounting/accounts": ChartOfAccountsWorkspace,
   "/reports": ReportsWorkspace,
   "/analytics": AnalyticsWorkspace,

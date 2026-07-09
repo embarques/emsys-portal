@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { useTranslation } from "@/lib/i18n";
+import { getRecipientTypeLabel } from "@/lib/inventory/display";
 import { getItemStock } from "@/lib/inventory/mock-store";
 import {
   createEmptyDispatchLine,
@@ -69,9 +70,9 @@ export function InventoryDispatchForm({
       recipients.map((recipient) => ({
         value: recipient.id,
         label: recipient.name,
-        description: recipient.type,
+        description: getRecipientTypeLabel(recipient.type, t),
       })),
-    [recipients],
+    [recipients, t],
   );
 
   useEffect(() => {

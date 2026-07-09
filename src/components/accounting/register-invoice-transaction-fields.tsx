@@ -18,6 +18,7 @@ import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type 
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
+import { useTranslation } from "@/lib/i18n";
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
@@ -73,6 +74,7 @@ export function RegisterInvoiceTransactionFields({
   setValue,
   watch,
 }: Props) {
+  const { t } = useTranslation();
   const employeeId = watch("employeeId");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
@@ -137,25 +139,25 @@ export function RegisterInvoiceTransactionFields({
 
   const paymentMethodOptions = useMemo(
     () => [
-      { value: "", label: "Select payment method" },
+      { value: "", label: t("accounting.dailyIncome.form.placeholders.selectPaymentMethod") },
       ...paymentMethods.map((method) => ({
         value: String(method.id),
         label: method.name,
         keywords: [method.name],
       })),
     ],
-    [paymentMethods],
+    [paymentMethods, t],
   );
   const bankAccountOptions = useMemo(
     () => [
-      { value: "", label: "Select bank account" },
+      { value: "", label: t("accounting.dailyIncome.form.placeholders.selectBankAccount") },
       ...bankAccounts.map((account) => ({
         value: String(account.id),
         label: account.displayName,
         keywords: [account.displayName],
       })),
     ],
-    [bankAccounts],
+    [bankAccounts, t],
   );
   const receiverOptions = useMemo(() => {
     const source = debouncedReceiverQuery
@@ -201,7 +203,7 @@ export function RegisterInvoiceTransactionFields({
       </div>
 
       <div className="space-y-2 sm:col-span-2">
-        <RequiredLabel htmlFor="journal-payment">Payment method</RequiredLabel>
+        <RequiredLabel htmlFor="journal-payment">{t("accounting.dailyIncome.form.fields.paymentMethod")}</RequiredLabel>
         <SearchableSelect
           id="journal-payment"
           value={paymentMethodId != null ? String(paymentMethodId) : ""}
@@ -214,8 +216,8 @@ export function RegisterInvoiceTransactionFields({
               setValue("zelleTransactionName", undefined, { shouldValidate: true });
             }
           }}
-          placeholder="Select payment method"
-          searchPlaceholder="Search payment methods…"
+          placeholder={t("accounting.dailyIncome.form.placeholders.selectPaymentMethod")}
+          searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchPaymentMethods")}
           options={paymentMethodOptions}
         />
         {errors.paymentMethodId ? (
@@ -225,7 +227,7 @@ export function RegisterInvoiceTransactionFields({
 
       {needsBankAccount ? (
         <div className="space-y-2 sm:col-span-2">
-          <RequiredLabel htmlFor="journal-bank-account">Bank account</RequiredLabel>
+          <RequiredLabel htmlFor="journal-bank-account">{t("accounting.dailyIncome.form.fields.bankAccount")}</RequiredLabel>
           <SearchableSelect
             id="journal-bank-account"
             value={paymentAccountId != null ? String(paymentAccountId) : ""}
@@ -235,8 +237,8 @@ export function RegisterInvoiceTransactionFields({
               setValue("paymentAccountName", account?.displayName ?? "");
               setValue("paymentAccountType", account?.type);
             }}
-            placeholder="Select bank account"
-            searchPlaceholder="Search bank accounts…"
+            placeholder={t("accounting.dailyIncome.form.placeholders.selectBankAccount")}
+            searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBankAccounts")}
             options={bankAccountOptions}
           />
           {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
@@ -246,7 +248,7 @@ export function RegisterInvoiceTransactionFields({
       {isZelle ? (
         <>
           <div className="space-y-2 sm:col-span-2">
-            <RequiredLabel htmlFor="journal-zelle-date">Zelle transaction date</RequiredLabel>
+            <RequiredLabel htmlFor="journal-zelle-date">{t("accounting.dailyIncome.form.fields.zelleDate")}</RequiredLabel>
             <Input id="journal-zelle-date" type="date" {...register("zelleTransactionDate")} />
             {errors.zelleTransactionDate ? (
               <p className="text-sm text-destructive">{errors.zelleTransactionDate.message}</p>
@@ -255,11 +257,11 @@ export function RegisterInvoiceTransactionFields({
 
           <div className="space-y-2 sm:col-span-2">
             <RequiredLabel htmlFor="journal-zelle-name">
-              Zelle transaction name (as it appears in bank account)
+              {t("accounting.dailyIncome.form.fields.zelleName")}
             </RequiredLabel>
             <Input
               id="journal-zelle-name"
-              placeholder="Enter Zelle transaction name"
+              placeholder={t("accounting.dailyIncome.form.placeholders.enterZelleName")}
               {...register("zelleTransactionName")}
             />
             {errors.zelleTransactionName ? (
@@ -270,10 +272,10 @@ export function RegisterInvoiceTransactionFields({
       ) : null}
 
       <div className="space-y-2 sm:col-span-2">
-        <RequiredLabel htmlFor="journal-invoice-number">Invoice</RequiredLabel>
+        <RequiredLabel htmlFor="journal-invoice-number">{t("accounting.dailyIncome.form.fields.invoice")}</RequiredLabel>
         <Input
           id="journal-invoice-number"
-          placeholder="Enter new invoice number"
+          placeholder={t("accounting.dailyIncome.form.placeholders.enterInvoiceNumber")}
           {...register("invoiceNumber")}
         />
         {errors.invoiceNumber ? (
@@ -282,33 +284,33 @@ export function RegisterInvoiceTransactionFields({
       </div>
 
       <div className="space-y-2 sm:col-span-2">
-        <RequiredLabel htmlFor="journal-invoice-cost">Cost</RequiredLabel>
+        <RequiredLabel htmlFor="journal-invoice-cost">{t("accounting.dailyIncome.form.fields.cost")}</RequiredLabel>
         <Input
           id="journal-invoice-cost"
           type="number"
           min="0.01"
           step="0.01"
-          placeholder="0.00"
+          placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
           {...register("invoiceCost", { setValueAs: moneyFormSetValueAs })}
         />
         {errors.invoiceCost ? <p className="text-sm text-destructive">{errors.invoiceCost.message}</p> : null}
       </div>
 
       <div className="space-y-2 sm:col-span-2">
-        <RequiredLabel htmlFor="journal-amount">Amount</RequiredLabel>
+        <RequiredLabel htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</RequiredLabel>
         <Input
           id="journal-amount"
           type="number"
           min="0.01"
           step="0.01"
-          placeholder="0.00"
+          placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
           {...register("amount", { setValueAs: moneyFormSetValueAs })}
         />
         {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
       </div>
 
       <div className="space-y-2 sm:col-span-2">
-        <Label htmlFor="journal-invoice-balance">Balance</Label>
+        <Label htmlFor="journal-invoice-balance">{t("accounting.dailyIncome.form.fields.balance")}</Label>
         <Input
           id="journal-invoice-balance"
           readOnly
@@ -318,7 +320,7 @@ export function RegisterInvoiceTransactionFields({
           aria-invalid={balance != null && balance < 0}
         />
         {balance != null && balance < 0 ? (
-          <p className="text-sm text-destructive">Balance cannot be negative.</p>
+          <p className="text-sm text-destructive">{t("accounting.dailyIncome.form.validation.balanceNegative")}</p>
         ) : null}
       </div>
 
@@ -339,21 +341,21 @@ export function RegisterInvoiceTransactionFields({
               }
             }}
           />
-          Include sender client
+          {t("accounting.dailyIncome.form.fields.includeSender")}
         </label>
         {includeSender ? (
           <div className="space-y-2">
-            <Label htmlFor="journal-sender">Sender client</Label>
+            <Label htmlFor="journal-sender">{t("accounting.dailyIncome.form.fields.senderClient")}</Label>
             <SearchableSelect
               id="journal-sender"
               value={senderId ?? ""}
               onValueChange={updateSender}
-              placeholder="Search sender by name, phone, or address…"
-              searchPlaceholder="Search senders…"
+              placeholder={t("accounting.dailyIncome.form.placeholders.searchSender")}
+              searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSenders")}
               manualFiltering
               loading={senderSearch.isFetching}
               onSearchChange={setSenderQuery}
-              options={[{ value: "", label: "Select sender" }, ...senderOptions]}
+              options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectSender") }, ...senderOptions]}
             />
             {errors.senderId ? <p className="text-sm text-destructive">{errors.senderId.message}</p> : null}
           </div>
@@ -377,21 +379,21 @@ export function RegisterInvoiceTransactionFields({
               }
             }}
           />
-          Include receiver client
+          {t("accounting.dailyIncome.form.fields.includeReceiver")}
         </label>
         {includeReceiver ? (
           <div className="space-y-2">
-            <Label htmlFor="journal-receiver">Receiver client</Label>
+            <Label htmlFor="journal-receiver">{t("accounting.dailyIncome.form.fields.receiverClient")}</Label>
             <SearchableSelect
               id="journal-receiver"
               value={receiverId ?? ""}
               onValueChange={updateReceiver}
-              placeholder="Search receiver by name, phone, or address…"
-              searchPlaceholder="Search receivers…"
+              placeholder={t("accounting.dailyIncome.form.placeholders.searchReceiver")}
+              searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchReceivers")}
               manualFiltering
               loading={receiverSearch.isFetching}
               onSearchChange={setReceiverQuery}
-              options={[{ value: "", label: "Select receiver" }, ...receiverOptions]}
+              options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectReceiver") }, ...receiverOptions]}
             />
             {errors.receiverId ? <p className="text-sm text-destructive">{errors.receiverId.message}</p> : null}
           </div>

@@ -25,8 +25,10 @@ import {
   useWorkspaceTabs,
 } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
+import { useTranslation } from "@/lib/i18n";
 
 export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+  const { t } = useTranslation();
   const isEditing = mode === "edit";
   const { notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -54,23 +56,23 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
   const statement = statementQuery.data ?? null;
   const editingJournal = journalQuery.data ?? null;
   const initialValues = isEditing && editingJournal ? journalToFormValues(editingJournal) : undefined;
-  const typeLabel = initialValues ? transactionTypeLabel(initialValues.transactionType) : null;
+  const typeLabel = initialValues ? transactionTypeLabel(initialValues.transactionType, t) : null;
   const isSubmitting = createJournal.isPending || updateJournal.isPending;
 
   useEffect(() => {
     if (isEditing && typeLabel) {
-      updateTabLabel(tabId, `Edit ${typeLabel}`);
+      updateTabLabel(tabId, t("accounting.dailyIncome.tabs.editType", { type: typeLabel }));
     }
-  }, [isEditing, tabId, typeLabel, updateTabLabel]);
+  }, [isEditing, tabId, t, typeLabel, updateTabLabel]);
 
   async function saveJournal(values: DailyIncomeJournalValues): Promise<void> {
-    if (!statement) return Promise.reject(new Error("No closeout loaded."));
+    if (!statement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
     setFormError(null);
 
     try {
       if (isEditing && editingJournal) {
         await updateJournal.mutateAsync({ id: editingJournal.id, statement, values });
-        notifySuccess("Transaction updated.");
+        notifySuccess(t("accounting.dailyIncome.toasts.transactionUpdated"));
         closeFormTabAndReturn(tabId);
         return;
       }
@@ -79,11 +81,11 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
 
       if (values.transactionType === "INITIAL-PAYMENT") {
         const invoiceNumber = values.invoiceNumber?.trim() || "invoice";
-        notifySuccess(`New invoice #${invoiceNumber} created and payment registered.`);
+        notifySuccess(t("accounting.dailyIncome.toasts.invoiceRegistered", { invoiceNumber }));
         return;
       }
 
-      notifySuccess("Transaction created.");
+      notifySuccess(t("accounting.dailyIncome.toasts.transactionCreated"));
     } catch (error) {
       const message = normalizeApiError(error).message;
       setFormError(message);
@@ -93,10 +95,10 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
 
   if (isEditing && journalQuery.isLoading) {
     return (
-      <FormTabShell title="Edit transaction">
+      <FormTabShell title={t("accounting.dailyIncome.wizard.editTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading transaction…
+          {t("accounting.dailyIncome.loading.transaction")}
         </div>
       </FormTabShell>
     );
@@ -105,13 +107,13 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
   if (isEditing && (journalQuery.isError || !editingJournal)) {
     const message = journalQuery.isError
       ? normalizeApiError(journalQuery.error).message
-      : "This transaction could not be found.";
+      : t("accounting.dailyIncome.errors.transactionNotFound");
     return (
-      <FormTabShell title="Edit transaction">
+      <FormTabShell title={t("accounting.dailyIncome.wizard.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
-            Close
+            {t("common.actions.close")}
           </Button>
         </div>
       </FormTabShell>
@@ -120,10 +122,10 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
 
   if (!isEditing && statementQuery.isLoading) {
     return (
-      <FormTabShell title="Add transaction">
+      <FormTabShell title={t("accounting.dailyIncome.wizard.addTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
-          Loading closeout…
+          {t("accounting.dailyIncome.loading.closeout")}
         </div>
       </FormTabShell>
     );
@@ -132,27 +134,30 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
   if (!statement) {
     const message = statementQuery.isError
       ? normalizeApiError(statementQuery.error).message
-      : "This daily closeout could not be found.";
+      : t("accounting.dailyIncome.errors.closeoutNotFound");
     return (
-      <FormTabShell title={isEditing ? "Edit transaction" : "Add transaction"}>
+      <FormTabShell title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">
           <p className="text-sm text-destructive">{message}</p>
           <Button variant="outline" onClick={() => closeFormTabAndReturn(tabId)}>
-            Close
+            {t("common.actions.close")}
           </Button>
         </div>
       </FormTabShell>
     );
   }
 
-  const closeoutLabel = `Closeout #${String(statement.id).padStart(5, "0")} · ${statement.date}`;
+  const closeoutLabel = t("accounting.dailyIncome.tabs.closeoutLabel", {
+    id: String(statement.id).padStart(5, "0"),
+    date: statement.date,
+  });
   const description = isEditing && typeLabel
     ? `${typeLabel} · ${closeoutLabel}`
     : closeoutLabel;
 
   return (
     <FormTabShell
-      title={isEditing ? "Edit transaction" : "Add transaction"}
+      title={isEditing ? t("accounting.dailyIncome.wizard.editTitle") : t("accounting.dailyIncome.wizard.addTitle")}
       description={description}
       className="max-w-3xl"
     >

@@ -57,7 +57,13 @@ function translateNavItems(
       return {
         ...item,
         label: t(item.labelKey),
-        children,
+        children: children?.length === 1 ? undefined : children,
+        ...(children?.length === 1
+          ? {
+              href: children[0].href,
+              permission: children[0].permission,
+            }
+          : {}),
       } as TranslatedNavigationItem;
     })
     .filter((item): item is TranslatedNavigationItem => item != null);
@@ -116,7 +122,8 @@ export function useNavigation(): TranslatedNavigationGroup[] {
           title: t(group.titleKey),
           items: translateAndSortNavItems(group.items, t, hasPermission, locale),
         }))
-        .filter((group) => group.items.length > 0),
+        .filter((group) => group.items.length > 0)
+        .sort((a, b) => a.title.localeCompare(b.title, locale, { sensitivity: "base" })),
     [hasPermission, locale, t],
   );
 }

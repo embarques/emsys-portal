@@ -3,6 +3,7 @@ import type {
   RouteType,
 } from "@/lib/pickup-delivery-routes/types";
 import type { BranchListParams, BranchSearchFilter } from "@/lib/branches/types";
+import type { BarcodeListParams, BarcodeSearchFilter } from "@/lib/barcodes/types";
 import type { ContainerListParams, ContainerSearchFilter } from "@/lib/containers/types";
 import type { InvoiceListParams, InvoiceSearchFilter } from "@/lib/invoices/types";
 import type { ItemListParams, ItemSearchFilter } from "@/lib/items/types";
@@ -91,6 +92,15 @@ export const queryKeys = {
       ] as const,
     byId: (recordId: string) =>
       [...queryKeys.deliveryRouteSchedules.all, "by-id", recordId] as const,
+  },
+  barcodes: {
+    all: ["barcodes"] as const,
+    lists: () => [...queryKeys.barcodes.all, "list"] as const,
+    list: (params: BarcodeListParams) => [...queryKeys.barcodes.lists(), params] as const,
+    search: (search: BarcodeSearchFilter | undefined, limit: number) =>
+      [...queryKeys.barcodes.all, "search", search, limit] as const,
+    stats: (scope: "all" | "kpis") => [...queryKeys.barcodes.all, "stats", scope] as const,
+    detail: (barcodeId: number) => [...queryKeys.barcodes.all, "detail", barcodeId] as const,
   },
   containers: {
     all: ["containers"] as const,

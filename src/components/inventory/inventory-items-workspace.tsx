@@ -50,6 +50,9 @@ import {
   computeInventoryKpis,
   getAvailableQuantity,
   getCategoryLabel,
+  getInventoryCategoryOptions,
+  getInventoryLocationOptions,
+  getInventoryStatusOptions,
   getLocationLabel,
   getStatusBadgeClass,
   getStatusLabel,
@@ -67,9 +70,6 @@ import {
   useUpdateInventoryItem,
 } from "@/lib/inventory/hooks/use-inventory";
 import {
-  INVENTORY_CATEGORIES,
-  INVENTORY_LOCATIONS,
-  INVENTORY_STATUSES,
   type InventoryFilterState,
   type InventoryFormValues,
   type InventoryItem,
@@ -131,13 +131,13 @@ export function InventoryItemsWorkspace() {
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      if (!inventoryMatchesQuery(item, filters.query)) return false;
+      if (!inventoryMatchesQuery(item, filters.query, t)) return false;
       if (filters.status !== "all" && item.status !== filters.status) return false;
       if (filters.location !== "all" && item.location !== filters.location) return false;
       if (filters.category !== "all" && item.category !== filters.category) return false;
       return true;
     });
-  }, [filters, items]);
+  }, [filters, items, t]);
 
   const kpis = useMemo(() => computeInventoryKpis(items), [items]);
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
@@ -246,14 +246,14 @@ export function InventoryItemsWorkspace() {
       renderCell: (item) => (
         <>
           <div className="font-medium">{item.name}</div>
-          <div className="text-xs text-muted-foreground">{getCategoryLabel(item.category)}</div>
+          <div className="text-xs text-muted-foreground">{getCategoryLabel(item.category, t)}</div>
         </>
       ),
     },
     {
       id: "location",
       label: t("inventory.columns.location"),
-      renderCell: (item) => getLocationLabel(item.location),
+      renderCell: (item) => getLocationLabel(item.location, t),
     },
     {
       id: "onHand",
@@ -289,7 +289,7 @@ export function InventoryItemsWorkspace() {
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (item) => (
-        <TableTagText className={getStatusBadgeClass(item.status)}>{getStatusLabel(item.status)}</TableTagText>
+        <TableTagText className={getStatusBadgeClass(item.status)}>{getStatusLabel(item.status, t)}</TableTagText>
       ),
     },
     {
@@ -397,7 +397,7 @@ export function InventoryItemsWorkspace() {
                     searchPlaceholder={t("inventory.filters.allStatuses")}
                     options={[
                       { value: "all", label: t("inventory.filters.allStatuses") },
-                      ...INVENTORY_STATUSES.map((option) => ({ value: option.value, label: option.label })),
+                      ...getInventoryStatusOptions(t),
                     ]}
                   />
                 </TableFilterSection>
@@ -417,7 +417,7 @@ export function InventoryItemsWorkspace() {
                     searchPlaceholder={t("inventory.filters.allLocations")}
                     options={[
                       { value: "all", label: t("inventory.filters.allLocations") },
-                      ...INVENTORY_LOCATIONS.map((option) => ({ value: option.value, label: option.label })),
+                      ...getInventoryLocationOptions(t),
                     ]}
                   />
                 </TableFilterSection>
@@ -437,7 +437,7 @@ export function InventoryItemsWorkspace() {
                     searchPlaceholder={t("inventory.filters.allCategories")}
                     options={[
                       { value: "all", label: t("inventory.filters.allCategories") },
-                      ...INVENTORY_CATEGORIES.map((option) => ({ value: option.value, label: option.label })),
+                      ...getInventoryCategoryOptions(t),
                     ]}
                   />
                 </TableFilterSection>

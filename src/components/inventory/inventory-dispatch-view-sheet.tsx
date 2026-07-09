@@ -13,6 +13,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
+import { getDispatchStatusLabel } from "@/lib/inventory/display";
 import type { getInventoryStoreSnapshot } from "@/lib/inventory/mock-store";
 import type { InventoryItem } from "@/lib/inventory/types";
 import type { InventoryDispatch } from "@/lib/inventory/types/documents";
@@ -53,7 +54,7 @@ export function InventoryDispatchViewSheet({
         <RecordViewSheetHeader
           title={recipient?.name ?? dispatch.recipientId}
           description={t("inventory.references.dispatch")}
-          meta={<Badge variant="outline">{dispatch.status}</Badge>}
+          meta={<Badge variant="outline">{getDispatchStatusLabel(dispatch.status, t)}</Badge>}
         />
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("inventory.form.sections.header")}>

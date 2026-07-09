@@ -1,0 +1,404 @@
+{
+  "chartOfAccounts": {
+    "title": "Chart of Accounts",
+    "description": "Manage the accounts used by daily income transactions.",
+    "noun": "accounts",
+    "entity": "Account",
+    "searchPlaceholder": "Search by account…",
+    "empty": "No accounts match your search.",
+    "addAccount": "Add account",
+    "loading": "Loading accounts…",
+    "card": {
+      "title": "Accounts",
+      "description": "Account hierarchy, type, branch, and availability."
+    },
+    "columns": {
+      "id": "#",
+      "type": "Type",
+      "displayName": "Account",
+      "branch": "Branch",
+      "parent": "Parent account",
+      "description": "Description",
+      "system": "System",
+      "actions": "Actions"
+    },
+    "types": {
+      "ASSET": "Asset",
+      "EXPENSE": "Expense",
+      "REVENUE": "Revenue",
+      "BANK": "Bank",
+      "LOAN": "Loan"
+    },
+    "values": {
+      "allBranches": "All",
+      "systemAccount": "System"
+    },
+    "actions": {
+      "edit": "Edit account",
+      "delete": "Delete account"
+    },
+    "form": {
+      "createTitle": "Create account",
+      "editTitle": "Edit account",
+      "createDescription": "Add a new account to the accounting catalog.",
+      "editDescription": "Update the selected chart account.",
+      "fields": {
+        "displayName": "Account name",
+        "type": "Account type",
+        "branch": "Branch",
+        "parent": "Parent account",
+        "description": "Description"
+      },
+      "placeholders": {
+        "type": "Select account type",
+        "branch": "All branches",
+        "branchSearch": "Search branches…",
+        "parent": "Not a sub-account",
+        "parentSearch": "Search accounts…"
+      },
+      "options": {
+        "allBranches": "All branches",
+        "notSubAccount": "Not a sub-account"
+      },
+      "hints": {
+        "typeChange": "Changing the type can affect how this account is used in reports."
+      },
+      "validation": {
+        "displayNameRequired": "Account name is required."
+      },
+      "createSubmit": "Create account"
+    },
+    "delete": {
+      "title": "Delete account?",
+      "description": "This removes \"{{name}}\" from the chart of accounts."
+    },
+    "toasts": {
+      "created": "Account created.",
+      "updated": "Account updated."
+    }
+  },
+  "checks": {
+    "title": "Checks",
+    "description": "Track outstanding and cleared checks linked to invoices and receipts.",
+    "noun": "checks",
+    "searchPlaceholder": "Search checks…",
+    "empty": "No checks match your search.",
+    "addCheck": "Add check",
+    "columns": {
+      "status": "Status",
+      "invoiceNumber": "Invoice #",
+      "receiptNumber": "Receipt #",
+      "createdAt": "Created at",
+      "createdBy": "Created by",
+      "depositedAt": "Deposited at",
+      "depositedOn": "Deposited on",
+      "depositedBy": "Deposited by"
+    },
+    "status": {
+      "outstanding": "Outstanding",
+      "cleared": "Cleared"
+    },
+    "actions": {
+      "edit": "Edit check",
+      "manageStatus": "Status",
+      "statusGroup": "Check status actions",
+      "markOutstanding": "Mark outstanding",
+      "markCleared": "Mark cleared"
+    },
+    "form": {
+      "createTitle": "Add check",
+      "createDescription": "Record a new check payment.",
+      "editTitle": "Edit check",
+      "editDescription": "Update the selected check.",
+      "sections": {
+        "details": "Check details",
+        "deposit": "Deposit details"
+      },
+      "fields": {
+        "invoiceNumber": "Invoice number",
+        "receiptNumber": "Receipt number",
+        "status": "Status",
+        "createdBy": "Created by",
+        "depositedAt": "Deposited at",
+        "depositedOn": "Deposited on",
+        "depositedBy": "Deposited by"
+      },
+      "placeholders": {
+        "invoiceNumber": "INV-2026-0001",
+        "receiptNumber": "CHK-8842",
+        "createdBy": "Enter name",
+        "depositedOn": "Bank account",
+        "depositedBy": "Enter name"
+      },
+      "selectEmpty": "No matching options.",
+      "validation": {
+        "invoiceNumberRequired": "Invoice number is required.",
+        "receiptNumberRequired": "Receipt number is required.",
+        "createdByRequired": "Created by is required.",
+        "depositRequired": "Deposit details are required for cleared checks."
+      }
+    },
+    "view": {
+      "sections": {
+        "audit": "Audit"
+      }
+    },
+    "delete": {
+      "title": "Delete check?",
+      "title_plural": "Delete {{count}} checks?",
+      "description": "This removes check {{receiptNumber}} from the list.",
+      "description_plural": "This removes {{count}} checks from the list."
+    },
+    "toasts": {
+      "created": "Check added.",
+      "updated": "Check updated.",
+      "deleted": "Check deleted.",
+      "deleted_plural": "{{count}} checks deleted.",
+      "markedOutstanding": "Marked {{count}} check as outstanding.",
+      "markedOutstanding_plural": "Marked {{count}} checks as outstanding.",
+      "markedCleared": "Marked {{count}} check as cleared.",
+      "markedCleared_plural": "Marked {{count}} checks as cleared."
+    }
+  },
+  "dailyIncome": {
+    "title": "Daily Income",
+    "description": "Create and reconcile the daily accounting closeout.",
+    "noun": "transactions",
+    "transactionNoun": "transaction",
+    "actions": {
+      "createCloseout": "Create closeout",
+      "editCloseout": "Edit closeout",
+      "closeDay": "Close day",
+      "reopenDay": "Reopen day",
+      "addTransaction": "Add transaction",
+      "editTransaction": "Edit transaction",
+      "deleteTransaction": "Delete transaction"
+    },
+    "filters": {
+      "branch": "Branch",
+      "date": "Date",
+      "status": "Status",
+      "selectBranch": "Select branch",
+      "searchBranches": "Search branches…",
+      "noCloseout": "No closeout for this date"
+    },
+    "status": {
+      "open": "OPEN",
+      "closed": "CLOSED",
+      "badge": "{{status}} · #{{id}}"
+    },
+    "summary": {
+      "loadingTotals": "Loading summary totals…",
+      "currencyRate": "{{code}} · rate {{rate}}"
+    },
+    "currency": {
+      "usd": "Dollar",
+      "dop": "Peso",
+      "select": "Select currency"
+    },
+    "transactions": {
+      "title": "Transactions",
+      "searchPlaceholder": "Search transactions…",
+      "empty": "No transactions match this closeout.",
+      "loadingTitle": "Loading transactions",
+      "loadingDescription": "Syncing journal entries, payments, and closeout totals…"
+    },
+    "columns": {
+      "date": "Date",
+      "accountInvoice": "Account / invoice",
+      "employee": "Employee",
+      "type": "Transaction",
+      "reference": "Reference #",
+      "paymentMethod": "Payment method",
+      "amount": "Amount",
+      "actions": "Actions"
+    },
+    "statement": {
+      "createTitle": "Create daily income",
+      "editTitle": "Edit daily income",
+      "description": "Set the branch, date, currency, and exchange rate for this closeout.",
+      "save": "Save daily income",
+      "fields": {
+        "branch": "Branch",
+        "date": "Date",
+        "currency": "Currency",
+        "exchangeRate": "Exchange rate"
+      },
+      "placeholders": {
+        "selectBranch": "Select branch",
+        "searchBranches": "Search branches…"
+      }
+    },
+    "delete": {
+      "title": "Delete transaction?",
+      "description": "This removes the entry and recalculates the daily totals."
+    },
+    "toasts": {
+      "statementCreated": "Daily income created.",
+      "statementUpdated": "Daily income updated.",
+      "statementOpened": "Daily income opened.",
+      "statementClosed": "Daily income closed.",
+      "transactionCreated": "Transaction created.",
+      "transactionUpdated": "Transaction updated.",
+      "invoiceRegistered": "New invoice #{{invoiceNumber}} created and payment registered."
+    },
+    "errors": {
+      "noCloseoutLoaded": "No closeout loaded.",
+      "transactionNotFound": "This transaction could not be found.",
+      "closeoutNotFound": "This daily closeout could not be found."
+    },
+    "tabs": {
+      "editType": "Edit {{type}}",
+      "closeoutLabel": "Closeout #{{id}} · {{date}}"
+    },
+    "loading": {
+      "transaction": "Loading transaction…",
+      "closeout": "Loading closeout…"
+    },
+    "wizard": {
+      "addTitle": "Add transaction",
+      "editTitle": "Edit transaction",
+      "description": "Record an entry in the selected daily closeout.",
+      "saving": "Saving transaction…",
+      "saveTransaction": "Save transaction",
+      "steps": {
+        "selectType": "Select type",
+        "enterDetails": "Enter details"
+      },
+      "typeSelector": {
+        "title": "Choose a transaction type",
+        "description": "Select the type of transaction you want to record.",
+        "ariaLabel": "Transaction type"
+      }
+    },
+    "transactionTypes": {
+      "initialPayment": {
+        "label": "Register invoice",
+        "shortLabel": "Invoice",
+        "description": "Record a customer",
+        "sectionTitle": "Invoice information"
+      },
+      "payment": {
+        "label": "Register payment",
+        "shortLabel": "Payment",
+        "description": "Record a payment received",
+        "sectionTitle": "Payment information"
+      },
+      "expense": {
+        "label": "Register expense",
+        "shortLabel": "Expense",
+        "description": "Record an expense",
+        "sectionTitle": "Expense information"
+      },
+      "sales": {
+        "label": "Register income",
+        "shortLabel": "Income",
+        "description": "Record income",
+        "sectionTitle": "Income information"
+      },
+      "discount": {
+        "label": "Apply discount",
+        "shortLabel": "Discount",
+        "description": "Apply a discount",
+        "sectionTitle": "Discount information"
+      },
+      "surcharge": {
+        "label": "Apply surcharge",
+        "shortLabel": "Surcharge",
+        "description": "Apply a surcharge",
+        "sectionTitle": "Surcharge information"
+      },
+      "transfer": {
+        "label": "Transfer account",
+        "shortLabel": "Transfer",
+        "description": "Transfer between accounts",
+        "sectionTitle": "Transfer information"
+      },
+      "loan": {
+        "label": "Register loan",
+        "shortLabel": "Loan",
+        "description": "Record a loan transaction",
+        "sectionTitle": "Loan information"
+      }
+    },
+    "form": {
+      "fields": {
+        "employee": "Employee",
+        "paymentMethod": "Payment method",
+        "bankAccount": "Bank account",
+        "zelleDate": "Zelle transaction date",
+        "zelleName": "Zelle transaction name (as it appears in bank account)",
+        "invoice": "Invoice",
+        "referenceNumber": "Reference number",
+        "account": "Account",
+        "sourceAccount": "Source account",
+        "amount": "Amount",
+        "description": "Description",
+        "cost": "Cost",
+        "balance": "Balance",
+        "includeSender": "Include sender client",
+        "senderClient": "Sender client",
+        "includeReceiver": "Include receiver client",
+        "receiverClient": "Receiver client"
+      },
+      "placeholders": {
+        "selectEmployee": "Select employee",
+        "searchEmployees": "Search employees…",
+        "selectPaymentMethod": "Select payment method",
+        "searchPaymentMethods": "Search payment methods…",
+        "selectBankAccount": "Select bank account",
+        "searchBankAccounts": "Search bank accounts…",
+        "selectAccount": "Select account",
+        "searchAccounts": "Search accounts…",
+        "selectSourceAccount": "Select source account",
+        "selectInvoice": "Select invoice",
+        "searchInvoices": "Search by invoice #, sender or receiver phone…",
+        "enterZelleName": "Enter Zelle transaction name",
+        "enterReferenceNumber": "Enter reference number",
+        "enterDescription": "Enter description (optional)",
+        "enterInvoiceNumber": "Enter new invoice number",
+        "searchSender": "Search sender by name, phone, or address…",
+        "searchSenders": "Search senders…",
+        "selectSender": "Select sender",
+        "searchReceiver": "Search receiver by name, phone, or address…",
+        "searchReceivers": "Search receivers…",
+        "selectReceiver": "Select receiver",
+        "amount": "0.00"
+      },
+      "invoiceSummary": {
+        "total": "Total",
+        "discount": "Discount",
+        "paid": "Paid",
+        "balance": "Balance",
+        "sender": "Sender: {{name}}",
+        "receiver": "Receiver: {{name}}"
+      },
+      "validation": {
+        "dateRequired": "Date is required.",
+        "branchRequired": "Branch is required.",
+        "currencyRequired": "Currency is required.",
+        "rateNonNegative": "Rate cannot be negative.",
+        "amountRequired": "Amount is required.",
+        "amountNonNegative": "Amount cannot be negative.",
+        "amountPositive": "Amount must be greater than zero.",
+        "refNumberTooLong": "Reference number is too long.",
+        "descriptionTooLong": "Description is too long.",
+        "costPositive": "Cost must be greater than zero.",
+        "discountNonNegative": "Discount cannot be negative.",
+        "zelleDateRequired": "Zelle transaction date is required.",
+        "zelleNameRequired": "Zelle transaction name is required.",
+        "bankAccountRequired": "Select a bank account for this payment method.",
+        "employeeRequired": "Employee is required.",
+        "invoiceRequired": "Invoice is required.",
+        "paymentMethodRequired": "Payment method is required.",
+        "amountExceedsCost": "Amount cannot exceed cost.",
+        "senderRequired": "Sender client is required.",
+        "receiverRequired": "Receiver client is required.",
+        "amountExceedsBalance": "Amount cannot exceed the invoice balance.",
+        "accountRequired": "Account is required.",
+        "sourceAccountRequired": "Source account is required.",
+        "balanceNegative": "Balance cannot be negative."
+      }
+    }
+  }
+}

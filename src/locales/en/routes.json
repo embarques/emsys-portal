@@ -3,37 +3,37 @@
   "noun": "routes",
   "pages": {
     "routeManager": "Define reusable route templates with vehicles and crew assignments for pickup and delivery operations.",
-    "pickupRoutes": "Plan daily pickup routes, assign orders to drivers, and track route completion for a selected date.",
+    "pickupRoutes": "Plan daily order routes, assign orders to drivers, and track route completion for a selected date.",
     "deliveryRoutes": "Plan daily delivery routes by container, assign crew roles, and coordinate last-mile delivery."
   },
   "routeManager": {
     "title": "Route Manager"
   },
   "pickupRoutes": {
-    "title": "Pickup routes",
-    "editTitle": "Edit pickup route",
-    "addTabLabel": "Add pickup route",
+    "title": "Order routes",
+    "editTitle": "Edit order route",
+    "addTabLabel": "Add order route",
     "editTabLabel": "Edit {{name}}",
-    "loading": "Loading pickup route…",
-    "notFound": "This pickup route could not be found.",
-    "description": "Set the working pickup route for this date. Pick an existing route or create one.",
-    "searchPlaceholder": "Search pickup routes…",
-    "searchNoun": "pickup routes",
-    "empty": "No pickup routes yet.",
-    "emptyFiltered": "No pickup routes match your search or filters.",
-    "setActiveRoute": "Add pickup route",
-    "pagination": "Showing {{shown}} of {{total}} pickup routes",
+    "loading": "Loading order route…",
+    "notFound": "This order route could not be found.",
+    "description": "Set the working order route for this date. Pick an existing route or create one.",
+    "searchPlaceholder": "Search order routes…",
+    "searchNoun": "order routes",
+    "empty": "No order routes yet.",
+    "emptyFiltered": "No order routes match your search or filters.",
+    "setActiveRoute": "Add order route",
+    "pagination": "Showing {{shown}} of {{total}} order routes",
     "entities": {
-      "activeRoute": "pickup route",
-      "activeRoutes": "pickup routes"
+      "activeRoute": "order route",
+      "activeRoutes": "order routes"
     },
     "form": {
-      "save": "Save pickup route",
-      "saved": "Pickup route saved.",
-      "editHint": "Update the pickup assignment and crew roles, then save."
+      "save": "Save order route",
+      "saved": "Order route saved.",
+      "editHint": "Update the order route assignment and crew roles, then save."
     },
     "view": {
-      "editLabel": "Edit pickup route",
+      "editLabel": "Edit order route",
       "sections": {
         "assignment": "Assignment",
         "orders": "Assigned orders"
@@ -53,7 +53,7 @@
       }
     },
     "actions": {
-      "selectAtLeastOne": "Select at least one pickup route.",
+      "selectAtLeastOne": "Select at least one order route.",
       "noPickupsOnRoute": "No pickups are assigned to the selected route.",
       "print": "Print route",
       "preparing": "Preparing…",
@@ -294,7 +294,7 @@
       "dayOfWeek": "Select at least one day.",
       "branch": "Branch is required.",
       "route": "Route is required.",
-      "pickupContainer": "Pickup routes cannot include a container."
+      "pickupContainer": "Order routes cannot include a container."
     }
   },
   "routeDetails": {

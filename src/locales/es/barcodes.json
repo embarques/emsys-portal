@@ -1,0 +1,104 @@
+{
+  "entity": "Código de barras",
+  "entityPlural": "códigos de barras",
+  "title": "Códigos de barras",
+  "pages": {
+    "description": "Consulte y administre códigos de barras de envío en facturas, contenedores y rutas."
+  },
+  "noun": "códigos de barras",
+  "actions": {
+    "add": "Agregar código de barras",
+    "edit": "Editar código de barras",
+    "editNamed": "Editar {{number}}"
+  },
+  "stats": {
+    "total": {
+      "label": "Total de códigos",
+      "description": "Códigos registrados"
+    },
+    "created": {
+      "label": "Creados",
+      "description": "Pendientes de impresión o asignación"
+    },
+    "printed": {
+      "label": "Impresos",
+      "description": "Etiquetas impresas y listas"
+    },
+    "inTransit": {
+      "label": "En tránsito",
+      "description": "En movimiento en una ruta"
+    },
+    "delivered": {
+      "label": "Entregados",
+      "description": "Entregas completadas"
+    }
+  },
+  "columns": {
+    "id": "#",
+    "number": "Código de barras",
+    "status": "Estado",
+    "container": "Contenedor",
+    "scanDate": "Último escaneo"
+  },
+  "search": {
+    "placeholder": "Buscar códigos de barras..."
+  },
+  "loading": {
+    "title": "Cargando códigos de barras",
+    "description": "Obteniendo números, estados, contenedores y actividad de escaneo…",
+    "barcode": "Cargando código de barras…"
+  },
+  "empty": {
+    "none": "Aún no hay códigos de barras.",
+    "noMatch": "Ningún código coincide con sus filtros."
+  },
+  "form": {
+    "addTitle": "Agregar código de barras",
+    "editTitle": "Editar código de barras",
+    "addDescription": "Cree un nuevo código de barras de envío.",
+    "notFound": "No se encontró este código de barras.",
+    "sections": {
+      "barcode": "Código de barras",
+      "assignment": "Asignación"
+    },
+    "fields": {
+      "number": "Número de código",
+      "status": "Estado",
+      "container": "Contenedor"
+    },
+    "placeholders": {
+      "number": "LBL-00001",
+      "status": "Seleccione un estado",
+      "container": "Seleccione un contenedor (opcional)"
+    },
+    "search": {
+      "statuses": "Buscar estados…",
+      "containers": "Buscar contenedores…"
+    },
+    "validation": {
+      "numberRequired": "Ingrese un número de código de barras.",
+      "statusRequired": "Seleccione un estado."
+    }
+  },
+  "view": {
+    "sections": {
+      "details": "Detalles del código"
+    },
+    "barcodeId": "ID del código"
+  },
+  "dialogs": {
+    "deleteTitle": "¿Eliminar código de barras?",
+    "deleteTitlePlural": "¿Eliminar códigos de barras?",
+    "deleteOne": "Esto eliminará permanentemente el código {{number}}. {{cannotBeUndone}}",
+    "deleteMany": "Esto eliminará permanentemente {{count}} códigos seleccionados. {{cannotBeUndone}}"
+  },
+  "filters": {
+    "fields": {
+      "id": { "label": "ID del código", "placeholder": "Ingrese el ID…" },
+      "number": { "label": "Código de barras", "placeholder": "Ingrese el número…" },
+      "status.name": { "label": "Estado", "placeholder": "Ingrese el estado…" },
+      "container.name": { "label": "Contenedor", "placeholder": "Ingrese el contenedor…" },
+      "scanDate": { "label": "Fecha de escaneo", "placeholder": "AAAA-MM-DD" }
+    }
+  }
+}

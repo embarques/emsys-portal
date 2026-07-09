@@ -273,7 +273,7 @@
       },
       "purpose": { "label": "Propósito", "placeholder": "Ingrese el propósito…" },
       "route": {
-        "id": { "label": "Ruta de recogida" }
+        "id": { "label": "Ruta de órdenes" }
       },
       "branch": {
         "id": { "label": "Sucursal" },

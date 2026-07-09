@@ -10,6 +10,10 @@ import { Button } from "@/components/ui/button";
 import { navigationItemMatchesPath } from "@/lib/navigation/nav-utils";
 import { useTopbarNavigation } from "@/lib/navigation/use-navigation";
 import { useTranslation } from "@/lib/i18n";
+import {
+  workspaceContentHorizontalPaddingClassName,
+  workspaceContentShellClassName,
+} from "@/lib/layout/workspace-content-layout";
 import { cn } from "@/lib/utils";
 import { SearchMenu } from "./search-menu";
 import { ThemeToggle } from "./theme-toggle";
@@ -28,7 +32,14 @@ export function Topbar({
   const topbarNavigation = useTopbarNavigation();
 
   return (
-    <header className="sticky top-0 z-40 flex h-20 items-center gap-4 border-b bg-background/90 px-4 backdrop-blur md:px-6">
+    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
+      <div
+        className={cn(
+          workspaceContentShellClassName,
+          workspaceContentHorizontalPaddingClassName,
+          "flex h-20 items-center gap-4",
+        )}
+      >
       <Button
         type="button"
         variant="outline"
@@ -97,6 +108,7 @@ export function Topbar({
         </Button>
 
         <UserMenu />
+      </div>
       </div>
     </header>
   );

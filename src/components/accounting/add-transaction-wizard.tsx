@@ -11,6 +11,7 @@ import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/di
 import type { AccountingLookup, ChartAccount, DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
 import type { Invoice } from "@/lib/invoices/types";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type SharedProps = {
@@ -77,6 +78,7 @@ function clearTypeSpecificFields(
 }
 
 export function AddTransactionWizard(props: Props) {
+  const { t } = useTranslation();
   const formId = useId();
   const presentation = props.presentation ?? "dialog";
   const isEdit = props.mode === "edit";
@@ -146,8 +148,12 @@ export function AddTransactionWizard(props: Props) {
       {presentation === "dialog" ? (
         <DialogHeader className="shrink-0 space-y-4 border-b border-border px-6 py-4 pr-12">
           <div>
-            <DialogTitle>{isEdit ? "Edit transaction" : "Add transaction"}</DialogTitle>
-            <DialogDescription>Record an entry in the selected daily closeout.</DialogDescription>
+            <DialogTitle>
+              {isEdit
+                ? t("accounting.dailyIncome.wizard.editTitle")
+                : t("accounting.dailyIncome.wizard.addTitle")}
+            </DialogTitle>
+            <DialogDescription>{t("accounting.dailyIncome.wizard.description")}</DialogDescription>
           </div>
           <TransactionWizardStepper step={step} />
         </DialogHeader>
@@ -174,7 +180,7 @@ export function AddTransactionWizard(props: Props) {
               >
                 <div className="flex items-center gap-2 rounded-lg border bg-card px-4 py-3 text-sm shadow-sm">
                   <Loader2 className="size-4 animate-spin text-primary" />
-                  Saving transaction…
+                  {t("accounting.dailyIncome.wizard.saving")}
                 </div>
               </div>
             ) : null}
@@ -205,10 +211,10 @@ export function AddTransactionWizard(props: Props) {
         {step === 1 ? (
           <div className="flex items-center justify-between gap-3">
             <Button type="button" variant="outline" onClick={props.onCancel} disabled={props.isSubmitting}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button type="button" onClick={handleNext} disabled={!selectedType || props.isSubmitting}>
-              Next
+              {t("common.actions.next")}
               <ArrowRight className="size-4" />
             </Button>
           </div>
@@ -218,7 +224,7 @@ export function AddTransactionWizard(props: Props) {
               {!isEdit ? (
                 <Button type="button" variant="outline" onClick={handleBack} disabled={props.isSubmitting}>
                   <ArrowLeft className="size-4" />
-                  Back
+                  {t("common.actions.previous")}
                 </Button>
               ) : (
                 <span className="flex-1" aria-hidden />
@@ -229,11 +235,11 @@ export function AddTransactionWizard(props: Props) {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <Button type="button" variant="outline" onClick={props.onCancel} disabled={props.isSubmitting}>
-                Cancel
+                {t("common.actions.cancel")}
               </Button>
               <Button type="submit" form={formId} disabled={props.isSubmitting}>
                 {props.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                {props.isSubmitting ? "Saving…" : "Save transaction"}
+                {props.isSubmitting ? t("common.actions.saving") : t("accounting.dailyIncome.wizard.saveTransaction")}
               </Button>
             </div>
           </div>

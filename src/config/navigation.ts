@@ -1,10 +1,10 @@
 import {
   BarChart3,
+  Banknote,
   BookOpenText,
   Building2,
   Boxes,
   Car,
-  ClipboardList,
   Container,
   FileText,
   Home,
@@ -85,6 +85,21 @@ export const topbarNavigationItems: NavigationItem[] = [
 ];
 
 function navigationItemToGroup(item: NavigationItem): NavigationGroup {
+  if (item.children?.length === 1) {
+    const [onlyChild] = item.children;
+    return {
+      titleKey: item.labelKey,
+      icon: item.icon,
+      items: [
+        {
+          ...onlyChild,
+          labelKey: item.labelKey,
+          icon: item.icon,
+        },
+      ],
+    };
+  }
+
   if (item.children?.length) {
     return {
       titleKey: item.labelKey,
@@ -149,9 +164,9 @@ const primaryNavigationItems: NavigationItem[] = [
         permission: PERMISSIONS.pickupsView,
       },
       {
-        labelKey: "navigation.items.routes",
+        labelKey: "navigation.items.orderRoutes",
         href: "/pickup-routes",
-        icon: ClipboardList,
+        icon: Truck,
         permission: PERMISSIONS.dispatchView,
       },
     ],
@@ -213,6 +228,7 @@ const navigationGroups: NavigationGroup[] = [
     titleKey: "navigation.groups.accounting",
     items: [
       { labelKey: "navigation.items.dailyIncome", href: "/accounting/daily-income", icon: Wallet, permission: PERMISSIONS.incomeView },
+      { labelKey: "navigation.items.checks", href: "/accounting/checks", icon: Banknote, permission: PERMISSIONS.incomeView },
       { labelKey: "navigation.items.chartOfAccounts", href: "/accounting/accounts", icon: BookOpenText, permission: PERMISSIONS.accountsView },
     ],
   },
