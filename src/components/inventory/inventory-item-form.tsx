@@ -8,12 +8,11 @@ import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useTranslation } from "@/lib/i18n";
 import {
   INVENTORY_CATEGORIES,
   INVENTORY_LOCATIONS,
-  INVENTORY_STATUSES,
   createEmptyInventoryForm,
-  deriveInventoryStatus,
   type InventoryFormValues,
 } from "@/lib/inventory/types";
 
@@ -23,7 +22,8 @@ const textareaClassName =
 type InventoryItemFormProps = {
   initialValues?: InventoryFormValues;
   isEditing?: boolean;
-  updatedAt?: string;
+  currentStock?: number;
+  unit?: string;
   submitLabel: string;
   onSubmit: (values: InventoryFormValues) => void;
   onCancel: () => void;
@@ -32,11 +32,13 @@ type InventoryItemFormProps = {
 export function InventoryItemForm({
   initialValues,
   isEditing = false,
-  updatedAt,
+  currentStock,
+  unit,
   submitLabel,
   onSubmit,
   onCancel,
 }: InventoryItemFormProps) {
+  const { t } = useTranslation();
   const [values, setValues] = useState<InventoryFormValues>(initialValues ?? createEmptyInventoryForm());
   const handleEnterNavigation = useFormEnterNavigation();
 
@@ -45,13 +47,7 @@ export function InventoryItemForm({
   }, [initialValues]);
 
   function updateField<K extends keyof InventoryFormValues>(key: K, value: InventoryFormValues[K]) {
-    setValues((current) => {
-      const next = { ...current, [key]: value };
-      if (key === "quantity" || key === "reserved" || key === "reorderLevel") {
-        next.status = deriveInventoryStatus(next.quantity, next.reserved, next.reorderLevel);
-      }
-      return next;
-    });
+    setValues((current) => ({ ...current, [key]: value }));
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -62,73 +58,62 @@ export function InventoryItemForm({
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody>
-        <FormSection icon={Tag} title="Identification">
+        <FormSection icon={Tag} title={t("inventory.form.sections.identification")}>
           <div className="space-y-2.5">
             <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor="sku">SKU</Label>
+                <Label htmlFor="sku">{t("inventory.form.fields.sku")}</Label>
                 <Input id="sku" value={values.sku} onChange={(event) => updateField("sku", event.target.value)} required />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="unit">Unit</Label>
+                <Label htmlFor="unit">{t("inventory.form.fields.unit")}</Label>
                 <Input id="unit" value={values.unit} onChange={(event) => updateField("unit", event.target.value)} required />
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="name">Item name</Label>
+              <Label htmlFor="name">{t("inventory.form.fields.name")}</Label>
               <Input id="name" value={values.name} onChange={(event) => updateField("name", event.target.value)} required />
             </div>
 
-            <div className="grid gap-2.5 sm:grid-cols-3">
+            <div className="grid gap-2.5 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">{t("inventory.form.fields.category")}</Label>
                 <SearchableSelect
                   id="category"
                   value={values.category}
                   onValueChange={(next) => updateField("category", next as InventoryFormValues["category"])}
-                  searchPlaceholder="Search categories…"
+                  searchPlaceholder={t("inventory.filters.allCategories")}
                   options={INVENTORY_CATEGORIES.map((option) => ({ value: option.value, label: option.label }))}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">{t("inventory.form.fields.location")}</Label>
                 <SearchableSelect
                   id="location"
                   value={values.location}
                   onValueChange={(next) => updateField("location", next as InventoryFormValues["location"])}
-                  searchPlaceholder="Search locations…"
+                  searchPlaceholder={t("inventory.filters.allLocations")}
                   options={INVENTORY_LOCATIONS.map((option) => ({ value: option.value, label: option.label }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="status">Status</Label>
-                <SearchableSelect
-                  id="status"
-                  value={values.status}
-                  onValueChange={(next) => updateField("status", next as InventoryFormValues["status"])}
-                  searchPlaceholder="Search statuses…"
-                  options={INVENTORY_STATUSES.map((option) => ({ value: option.value, label: option.label }))}
                 />
               </div>
             </div>
           </div>
         </FormSection>
 
-        <FormSection icon={Boxes} title="Stock levels">
-          <div className="grid gap-2.5 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label htmlFor="quantity">On hand</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min={0}
-                value={values.quantity}
-                onChange={(event) => updateField("quantity", Number(event.target.value))}
-              />
+        <FormSection icon={Boxes} title={t("inventory.form.sections.stockLevels")}>
+          {isEditing && currentStock !== undefined ? (
+            <div className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+              <span className="text-muted-foreground">{t("inventory.form.fields.currentStock")}: </span>
+              <span className="font-medium">
+                {currentStock} {unit ?? values.unit}
+              </span>
+              <p className="mt-1 text-xs text-muted-foreground">{t("inventory.form.readOnlyStockHint")}</p>
             </div>
+          ) : null}
+          <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label htmlFor="reserved">Reserved</Label>
+              <Label htmlFor="reserved">{t("inventory.form.fields.reserved")}</Label>
               <Input
                 id="reserved"
                 type="number"
@@ -138,7 +123,7 @@ export function InventoryItemForm({
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="reorderLevel">Reorder level</Label>
+              <Label htmlFor="reorderLevel">{t("inventory.form.fields.reorderLevel")}</Label>
               <Input
                 id="reorderLevel"
                 type="number"
@@ -150,14 +135,14 @@ export function InventoryItemForm({
           </div>
         </FormSection>
 
-        <FormSection icon={StickyNote} title="Notes">
+        <FormSection icon={StickyNote} title={t("inventory.form.sections.notes")}>
           <textarea
             id="notes"
             value={values.notes}
             onChange={(event) => updateField("notes", event.target.value)}
             rows={3}
             className={textareaClassName}
-            placeholder="Optional notes about stock, vendor, or recounts"
+            placeholder={t("inventory.form.placeholders.notes")}
           />
         </FormSection>
       </FormBody>

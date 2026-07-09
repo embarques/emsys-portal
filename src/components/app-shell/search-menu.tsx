@@ -31,7 +31,7 @@ export function SearchMenu() {
       {
         label: t("shell.search.inventoryLookup.label"),
         description: t("shell.search.inventoryLookup.description"),
-        href: "/inventory",
+        href: "/inventory/items",
         icon: Package,
       },
       {

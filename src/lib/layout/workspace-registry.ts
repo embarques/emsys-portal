@@ -9,7 +9,11 @@ import { ConfigurationWorkspace } from "@/components/configuration/configuration
 import { ContainersWorkspace } from "@/components/containers/containers-workspace";
 import { CustomersWorkspace } from "@/components/customers/customers-workspace";
 import { EmployeesWorkspace } from "@/components/employees/employees-workspace";
-import { InventoryWorkspace } from "@/components/inventory/inventory-workspace";
+import { InventoryItemsWorkspace } from "@/components/inventory/inventory-items-workspace";
+import { InventoryReceiptsWorkspace } from "@/components/inventory/inventory-receipts-workspace";
+import { InventoryDispatchesWorkspace } from "@/components/inventory/inventory-dispatches-workspace";
+import { InventoryRecipientsWorkspace } from "@/components/inventory/inventory-recipients-workspace";
+import { InventoryReportsWorkspace } from "@/components/inventory/inventory-reports-workspace";
 import { InvoicesWorkspace } from "@/components/invoices/invoices-workspace";
 import { ItemsWorkspace } from "@/components/items/items-workspace";
 import { LabelUpdaterWorkspace } from "@/components/label-updater/label-updater-workspace";
@@ -34,7 +38,11 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/orders/map": OrdersMapWorkspace,
   "/invoices": InvoicesWorkspace,
   "/label-updater": LabelUpdaterWorkspace,
-  "/inventory": InventoryWorkspace,
+  "/inventory/items": InventoryItemsWorkspace,
+  "/inventory/receipts": InventoryReceiptsWorkspace,
+  "/inventory/dispatches": InventoryDispatchesWorkspace,
+  "/inventory/recipients": InventoryRecipientsWorkspace,
+  "/inventory/reports": InventoryReportsWorkspace,
   "/items": ItemsWorkspace,
   "/containers": ContainersWorkspace,
   "/routes": RouteManagerWorkspace,

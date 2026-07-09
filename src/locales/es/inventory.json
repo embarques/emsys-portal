@@ -1,0 +1,243 @@
+{
+  "title": "Inventario",
+  "entity": "Artículo de inventario",
+  "entityPlural": "artículos",
+  "noun": "artículos",
+  "actions": {
+    "addItem": "Agregar artículo",
+    "editItem": "Editar artículo",
+    "newReceipt": "Nuevo ingreso",
+    "newDispatch": "Nuevo despacho",
+    "adjustStock": "Ajustar stock",
+    "addRecipient": "Agregar destinatario",
+    "saveReceipt": "Guardar ingreso",
+    "saveDispatch": "Guardar despacho",
+    "saveAndSend": "Guardar y marcar enviado",
+    "submitAdjustment": "Enviar ajuste",
+    "markSent": "Marcar enviado",
+    "markConfirmed": "Marcar confirmado"
+  },
+  "submenus": {
+    "items": "Stock",
+    "receipts": "Ingresos",
+    "dispatches": "Despachos",
+    "recipients": "Destinatarios",
+    "reports": "Reportes"
+  },
+  "pages": {
+    "items": "Consulte cantidades en mano, estado de stock y ubicaciones de almacén por SKU. Registre ingresos, despachos y ajustes para actualizar los saldos.",
+    "receipts": "Registre entradas de stock de proveedores y devoluciones. Cada ingreso guardado aumenta las cantidades en mano en el libro de movimientos.",
+    "dispatches": "Gestione envíos salientes a clientes, proveedores y sucursales. Controle el estado pendiente, enviado y confirmado.",
+    "recipients": "Administre destinos para stock saliente: clientes, proveedores, sucursales y ubicaciones internas usadas en despachos.",
+    "reports": "Analice stock en mano, actividad de despachos por destinatario y alertas de stock bajo según el rango de fechas y filtros seleccionados."
+  },
+  "stats": {
+    "totalSkus": {
+      "label": "SKUs totales",
+      "description": "Artículos de inventario registrados"
+    },
+    "inStock": {
+      "label": "En stock",
+      "description": "Disponibles para despacho"
+    },
+    "lowStock": {
+      "label": "Stock bajo",
+      "description": "Por debajo del nivel de reorden"
+    },
+    "needsReview": {
+      "label": "Requiere revisión",
+      "description": "Sin stock o marcados"
+    },
+    "totalReceipts": {
+      "label": "Ingresos",
+      "description": "Documentos de entrada"
+    },
+    "pendingDispatches": {
+      "label": "Despachos pendientes",
+      "description": "En espera de confirmación de envío"
+    },
+    "recipients": {
+      "label": "Destinatarios",
+      "description": "Clientes, proveedores y sucursales"
+    }
+  },
+  "columns": {
+    "sku": "SKU",
+    "item": "Artículo",
+    "location": "Ubicación",
+    "onHand": "En mano",
+    "available": "Disponible",
+    "currentStock": "Stock actual",
+    "reorderLevel": "Nivel de reorden",
+    "status": "Estado",
+    "date": "Fecha",
+    "source": "Origen",
+    "receivedBy": "Recibido por",
+    "recipient": "Destinatario",
+    "dispatchedBy": "Despachado por",
+    "invoiceNumber": "Factura #",
+    "type": "Tipo",
+    "contact": "Contacto",
+    "address": "Dirección",
+    "direction": "Dirección",
+    "quantity": "Cantidad",
+    "reference": "Referencia",
+    "movementDate": "Fecha de movimiento",
+    "createdBy": "Creado por",
+    "dateCreated": "Fecha de creación",
+    "userCreated": "Usuario creador",
+    "dateModified": "Fecha de modificación"
+  },
+  "search": {
+    "items": "Buscar inventario…",
+    "receipts": "Buscar ingresos…",
+    "dispatches": "Buscar despachos…",
+    "recipients": "Buscar destinatarios…",
+    "movements": "Buscar movimientos…"
+  },
+  "loading": {
+    "items": {
+      "title": "Cargando inventario",
+      "description": "Contando stock disponible, reservas y ubicaciones…"
+    },
+    "receipts": {
+      "title": "Cargando ingresos",
+      "description": "Obteniendo documentos de entrada y líneas…"
+    },
+    "dispatches": {
+      "title": "Cargando despachos",
+      "description": "Obteniendo envíos salientes y estado…"
+    },
+    "recipients": {
+      "title": "Cargando destinatarios",
+      "description": "Obteniendo clientes, proveedores y sucursales…"
+    },
+    "reports": {
+      "title": "Cargando reportes",
+      "description": "Calculando stock y resúmenes de despacho…"
+    }
+  },
+  "empty": {
+    "items": "Ningún artículo coincide con su búsqueda o filtros.",
+    "receipts": "Ningún ingreso coincide con su búsqueda.",
+    "dispatches": "Ningún despacho coincide con su búsqueda.",
+    "recipients": "Ningún destinatario coincide con su búsqueda.",
+    "movements": "Aún no hay movimientos para este artículo.",
+    "reports": "No hay datos para los filtros seleccionados."
+  },
+  "filters": {
+    "allStatuses": "Todos los estados",
+    "allLocations": "Todas las ubicaciones",
+    "allCategories": "Todas las categorías",
+    "allTypes": "Todos los tipos",
+    "allDirections": "Todas las direcciones",
+    "status": "Estado",
+    "location": "Ubicación",
+    "category": "Categoría"
+  },
+  "form": {
+    "addItemTitle": "Agregar artículo de inventario",
+    "editItemTitle": "Editar artículo de inventario",
+    "newReceiptTitle": "Nuevo ingreso",
+    "newDispatchTitle": "Nuevo despacho",
+    "adjustStockTitle": "Ajustar stock",
+    "addRecipientTitle": "Agregar destinatario",
+    "editRecipientTitle": "Editar destinatario",
+    "sections": {
+      "identification": "Identificación",
+      "stockLevels": "Niveles de stock",
+      "notes": "Notas",
+      "header": "Detalles del documento",
+      "lines": "Líneas",
+      "recipient": "Destinatario"
+    },
+    "fields": {
+      "sku": "SKU",
+      "name": "Nombre del artículo",
+      "unit": "Unidad",
+      "category": "Categoría",
+      "location": "Ubicación",
+      "onHand": "En mano",
+      "reserved": "Reservado",
+      "reorderLevel": "Nivel de reorden",
+      "currentStock": "Stock actual",
+      "availableStock": "Stock disponible",
+      "notes": "Notas",
+      "receiptDate": "Fecha de ingreso",
+      "source": "Origen",
+      "receivedBy": "Recibido por",
+      "dispatchDate": "Fecha de despacho",
+      "recipient": "Destinatario",
+      "dispatchedBy": "Despachado por",
+      "invoiceNumber": "Número de factura",
+      "item": "Artículo",
+      "quantity": "Cantidad",
+      "adjustmentSign": "Dirección",
+      "reason": "Motivo",
+      "movementDate": "Fecha de ajuste",
+      "contactInfo": "Contacto",
+      "address": "Dirección",
+      "type": "Tipo"
+    },
+    "placeholders": {
+      "notes": "Notas opcionales sobre stock, proveedor o reconteo",
+      "source": "Nombre del proveedor o devolución",
+      "invoiceNumber": "Referencia de factura opcional",
+      "contactInfo": "Correo o teléfono",
+      "address": "Dirección"
+    },
+    "adjustmentSign": {
+      "increase": "Aumentar (+)",
+      "decrease": "Disminuir (−)"
+    },
+    "addLine": "Agregar línea",
+    "removeLine": "Quitar",
+    "readOnlyStockHint": "El stock se calcula a partir de ingresos, despachos y ajustes."
+  },
+  "view": {
+    "stock": "Stock",
+    "movementHistory": "Historial de movimientos",
+    "receipts": "Ingresos",
+    "dispatches": "Despachos",
+    "lines": "Líneas",
+    "movements": "Movimientos generados",
+    "dispatchHistory": "Historial de despachos"
+  },
+  "reports": {
+    "title": "Reportes de inventario",
+    "stockOnHand": "Stock en mano",
+    "dispatchSummary": "Resumen de despachos por destinatario",
+    "lowStockAlerts": "Alertas de stock bajo",
+    "filters": {
+      "dateFrom": "Desde",
+      "dateTo": "Hasta",
+      "item": "Artículo",
+      "recipient": "Destinatario",
+      "allItems": "Todos los artículos",
+      "allRecipients": "Todos los destinatarios"
+    },
+    "asOf": "Al {{date}}",
+    "noLowStock": "Ningún artículo está por debajo del nivel de reorden."
+  },
+  "delete": {
+    "itemsTitle": "¿Eliminar artículos de inventario?",
+    "itemsDescription": "Esto eliminará permanentemente {{count}} artículos seleccionados del catálogo.",
+    "itemDescription": "Esto eliminará permanentemente {{name}} del catálogo.",
+    "recipientsTitle": "¿Eliminar destinatarios?",
+    "recipientsDescription": "Esto eliminará permanentemente {{count}} destinatarios seleccionados."
+  },
+  "directions": {
+    "IN": "Entrada",
+    "OUT": "Salida",
+    "ADJUSTMENT": "Ajuste"
+  },
+  "references": {
+    "receipt": "Ingreso",
+    "dispatch": "Despacho",
+    "adjustment": "Ajuste"
+  },
+  "errors": {
+    "insufficientStock": "Stock insuficiente para una o más líneas.",
+    "saveFailed": "No se pudo guardar. Inténtelo de nuevo."
+  }
+}

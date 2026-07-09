@@ -8,7 +8,8 @@
   "submenus": {
     "pickups": "Pickups",
     "invoices": "Invoices",
-    "routeManager": "Route Manager"
+    "routeManager": "Route Manager",
+    "inventory": "Inventory"
   },
   "items": {
     "dashboard": "Dashboard",
@@ -18,6 +19,11 @@
     "invoices": "Invoices",
     "labelManager": "Label Manager",
     "inventory": "Inventory",
+    "inventoryStock": "Stock",
+    "inventoryReceipts": "Receipts",
+    "inventoryDispatches": "Dispatches",
+    "inventoryRecipients": "Recipients",
+    "inventoryReports": "Reports",
     "items": "Items",
     "containers": "Containers",
     "routeManager": "Route Manager",

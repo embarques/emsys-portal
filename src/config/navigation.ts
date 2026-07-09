@@ -11,6 +11,7 @@ import {
   KeyRound,
   LayoutGrid,
   Package,
+  PackageCheck,
   ScanBarcode,
   Settings,
   ShieldCheck,
@@ -89,7 +90,42 @@ const navigationGroups: NavigationGroup[] = [
     titleKey: "navigation.groups.workspace",
     icon: LayoutGrid,
     items: [
-      { labelKey: "navigation.items.inventory", href: "/inventory", icon: Boxes, permission: PERMISSIONS.inventoryView },
+      {
+        labelKey: "navigation.submenus.inventory",
+        icon: Boxes,
+        children: [
+          {
+            labelKey: "navigation.items.inventoryStock",
+            href: "/inventory/items",
+            icon: Boxes,
+            permission: PERMISSIONS.inventoryView,
+          },
+          {
+            labelKey: "navigation.items.inventoryReceipts",
+            href: "/inventory/receipts",
+            icon: PackageCheck,
+            permission: PERMISSIONS.inventoryView,
+          },
+          {
+            labelKey: "navigation.items.inventoryDispatches",
+            href: "/inventory/dispatches",
+            icon: Truck,
+            permission: PERMISSIONS.inventoryView,
+          },
+          {
+            labelKey: "navigation.items.inventoryRecipients",
+            href: "/inventory/recipients",
+            icon: Users,
+            permission: PERMISSIONS.inventoryView,
+          },
+          {
+            labelKey: "navigation.items.inventoryReports",
+            href: "/inventory/reports",
+            icon: FileText,
+            permission: PERMISSIONS.inventoryView,
+          },
+        ],
+      },
       { labelKey: "navigation.items.customers", href: "/customers", icon: Users, permission: PERMISSIONS.clientsView },
       {
         labelKey: "navigation.items.pickups",

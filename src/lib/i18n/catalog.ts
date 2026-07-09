@@ -6,6 +6,7 @@ import enCustomers from "@/locales/en/customers.json";
 import enEmployees from "@/locales/en/employees.json";
 import enInsights from "@/locales/en/insights.json";
 import enItems from "@/locales/en/items.json";
+import enInventory from "@/locales/en/inventory.json";
 import enInvoices from "@/locales/en/invoices.json";
 import enLabels from "@/locales/en/labels.json";
 import enNavigation from "@/locales/en/navigation.json";
@@ -24,6 +25,7 @@ import esCustomers from "@/locales/es/customers.json";
 import esEmployees from "@/locales/es/employees.json";
 import esInsights from "@/locales/es/insights.json";
 import esItems from "@/locales/es/items.json";
+import esInventory from "@/locales/es/inventory.json";
 import esInvoices from "@/locales/es/invoices.json";
 import esLabels from "@/locales/es/labels.json";
 import esNavigation from "@/locales/es/navigation.json";
@@ -48,6 +50,7 @@ const catalogs: Record<Locale, MessageTree> = {
     customers: enCustomers,
     employees: enEmployees,
     insights: enInsights,
+    inventory: enInventory,
     items: enItems,
     invoices: enInvoices,
     labels: enLabels,
@@ -68,6 +71,7 @@ const catalogs: Record<Locale, MessageTree> = {
     customers: esCustomers,
     employees: esEmployees,
     insights: esInsights,
+    inventory: esInventory,
     items: esItems,
     invoices: esInvoices,
     labels: esLabels,

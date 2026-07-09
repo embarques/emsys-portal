@@ -8,7 +8,8 @@
   "submenus": {
     "pickups": "Recogidas",
     "invoices": "Facturas",
-    "routeManager": "Manejador de Rutas"
+    "routeManager": "Manejador de Rutas",
+    "inventory": "Inventario"
   },
   "items": {
     "dashboard": "Panel",
@@ -18,6 +19,11 @@
     "invoices": "Facturas",
     "labelManager": "Manejador de etiquetas",
     "inventory": "Inventario",
+    "inventoryStock": "Stock",
+    "inventoryReceipts": "Ingresos",
+    "inventoryDispatches": "Despachos",
+    "inventoryRecipients": "Destinatarios",
+    "inventoryReports": "Reportes",
     "items": "Artículos",
     "containers": "Contenedores",
     "routeManager": "Manejador de Rutas",

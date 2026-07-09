@@ -1,0 +1,243 @@
+{
+  "title": "Inventory",
+  "entity": "Inventory item",
+  "entityPlural": "items",
+  "noun": "items",
+  "actions": {
+    "addItem": "Add item",
+    "editItem": "Edit item",
+    "newReceipt": "New receipt",
+    "newDispatch": "New dispatch",
+    "adjustStock": "Adjust stock",
+    "addRecipient": "Add recipient",
+    "saveReceipt": "Save receipt",
+    "saveDispatch": "Save dispatch",
+    "saveAndSend": "Save & mark sent",
+    "submitAdjustment": "Submit adjustment",
+    "markSent": "Mark sent",
+    "markConfirmed": "Mark confirmed"
+  },
+  "submenus": {
+    "items": "Stock",
+    "receipts": "Receipts",
+    "dispatches": "Dispatches",
+    "recipients": "Recipients",
+    "reports": "Reports"
+  },
+  "pages": {
+    "items": "View on-hand quantities, stock status, and warehouse locations for every SKU. Record receipts, dispatches, and adjustments to update balances.",
+    "receipts": "Record inbound stock from suppliers and returns. Each saved receipt increases on-hand quantities through the movement ledger.",
+    "dispatches": "Manage outbound shipments to customers, vendors, and branches. Track pending, sent, and confirmed fulfillment status.",
+    "recipients": "Maintain destinations for outbound stock — customers, vendors, branches, and internal locations used on dispatches.",
+    "reports": "Analyze stock on hand, dispatch activity by recipient, and low-stock alerts for the selected date range and filters."
+  },
+  "stats": {
+    "totalSkus": {
+      "label": "Total SKUs",
+      "description": "Tracked inventory items"
+    },
+    "inStock": {
+      "label": "In stock",
+      "description": "Available for fulfillment"
+    },
+    "lowStock": {
+      "label": "Low stock",
+      "description": "Below reorder threshold"
+    },
+    "needsReview": {
+      "label": "Needs review",
+      "description": "Out of stock or flagged"
+    },
+    "totalReceipts": {
+      "label": "Receipts",
+      "description": "Stock-in documents"
+    },
+    "pendingDispatches": {
+      "label": "Pending dispatches",
+      "description": "Awaiting send confirmation"
+    },
+    "recipients": {
+      "label": "Recipients",
+      "description": "Customers, vendors, and branches"
+    }
+  },
+  "columns": {
+    "sku": "SKU",
+    "item": "Item",
+    "location": "Location",
+    "onHand": "On hand",
+    "available": "Available",
+    "currentStock": "Current stock",
+    "reorderLevel": "Reorder level",
+    "status": "Status",
+    "date": "Date",
+    "source": "Source",
+    "receivedBy": "Received by",
+    "recipient": "Recipient",
+    "dispatchedBy": "Dispatched by",
+    "invoiceNumber": "Invoice #",
+    "type": "Type",
+    "contact": "Contact",
+    "address": "Address",
+    "direction": "Direction",
+    "quantity": "Quantity",
+    "reference": "Reference",
+    "movementDate": "Movement date",
+    "createdBy": "Created by",
+    "dateCreated": "Date created",
+    "userCreated": "User created",
+    "dateModified": "Date modified"
+  },
+  "search": {
+    "items": "Search inventory…",
+    "receipts": "Search receipts…",
+    "dispatches": "Search dispatches…",
+    "recipients": "Search recipients…",
+    "movements": "Search movements…"
+  },
+  "loading": {
+    "items": {
+      "title": "Loading inventory",
+      "description": "Counting available stock, reservations, and warehouse locations…"
+    },
+    "receipts": {
+      "title": "Loading receipts",
+      "description": "Fetching stock-in documents and line items…"
+    },
+    "dispatches": {
+      "title": "Loading dispatches",
+      "description": "Fetching outbound shipments and fulfillment status…"
+    },
+    "recipients": {
+      "title": "Loading recipients",
+      "description": "Fetching customers, vendors, and branch destinations…"
+    },
+    "reports": {
+      "title": "Loading reports",
+      "description": "Calculating stock on hand and dispatch summaries…"
+    }
+  },
+  "empty": {
+    "items": "No inventory items match your search or filters.",
+    "receipts": "No receipts match your search.",
+    "dispatches": "No dispatches match your search.",
+    "recipients": "No recipients match your search.",
+    "movements": "No movements recorded for this item yet.",
+    "reports": "No report data for the selected filters."
+  },
+  "filters": {
+    "allStatuses": "All statuses",
+    "allLocations": "All locations",
+    "allCategories": "All categories",
+    "allTypes": "All types",
+    "allDirections": "All directions",
+    "status": "Status",
+    "location": "Location",
+    "category": "Category"
+  },
+  "form": {
+    "addItemTitle": "Add inventory item",
+    "editItemTitle": "Edit inventory item",
+    "newReceiptTitle": "New receipt",
+    "newDispatchTitle": "New dispatch",
+    "adjustStockTitle": "Adjust stock",
+    "addRecipientTitle": "Add recipient",
+    "editRecipientTitle": "Edit recipient",
+    "sections": {
+      "identification": "Identification",
+      "stockLevels": "Stock levels",
+      "notes": "Notes",
+      "header": "Document details",
+      "lines": "Line items",
+      "recipient": "Recipient"
+    },
+    "fields": {
+      "sku": "SKU",
+      "name": "Item name",
+      "unit": "Unit",
+      "category": "Category",
+      "location": "Location",
+      "onHand": "On hand",
+      "reserved": "Reserved",
+      "reorderLevel": "Reorder level",
+      "currentStock": "Current stock",
+      "availableStock": "Available stock",
+      "notes": "Notes",
+      "receiptDate": "Receipt date",
+      "source": "Source",
+      "receivedBy": "Received by",
+      "dispatchDate": "Dispatch date",
+      "recipient": "Recipient",
+      "dispatchedBy": "Dispatched by",
+      "invoiceNumber": "Invoice number",
+      "item": "Item",
+      "quantity": "Quantity",
+      "adjustmentSign": "Direction",
+      "reason": "Reason",
+      "movementDate": "Adjustment date",
+      "contactInfo": "Contact info",
+      "address": "Address",
+      "type": "Type"
+    },
+    "placeholders": {
+      "notes": "Optional notes about stock, vendor, or recounts",
+      "source": "Supplier name or return",
+      "invoiceNumber": "Optional invoice reference",
+      "contactInfo": "Email or phone",
+      "address": "Street address"
+    },
+    "adjustmentSign": {
+      "increase": "Increase (+)",
+      "decrease": "Decrease (−)"
+    },
+    "addLine": "Add line",
+    "removeLine": "Remove",
+    "readOnlyStockHint": "Stock is calculated from receipts, dispatches, and adjustments."
+  },
+  "view": {
+    "stock": "Stock",
+    "movementHistory": "Movement history",
+    "receipts": "Receipts",
+    "dispatches": "Dispatches",
+    "lines": "Line items",
+    "movements": "Generated movements",
+    "dispatchHistory": "Dispatch history"
+  },
+  "reports": {
+    "title": "Inventory reports",
+    "stockOnHand": "Stock on hand",
+    "dispatchSummary": "Dispatch summary by recipient",
+    "lowStockAlerts": "Low stock alerts",
+    "filters": {
+      "dateFrom": "From",
+      "dateTo": "To",
+      "item": "Item",
+      "recipient": "Recipient",
+      "allItems": "All items",
+      "allRecipients": "All recipients"
+    },
+    "asOf": "As of {{date}}",
+    "noLowStock": "No items are below reorder level."
+  },
+  "delete": {
+    "itemsTitle": "Delete inventory items?",
+    "itemsDescription": "This will permanently remove {{count}} selected items from the catalog.",
+    "itemDescription": "This will permanently remove {{name}} from the catalog.",
+    "recipientsTitle": "Delete recipients?",
+    "recipientsDescription": "This will permanently remove {{count}} selected recipients."
+  },
+  "directions": {
+    "IN": "In",
+    "OUT": "Out",
+    "ADJUSTMENT": "Adjustment"
+  },
+  "references": {
+    "receipt": "Receipt",
+    "dispatch": "Dispatch",
+    "adjustment": "Adjustment"
+  },
+  "errors": {
+    "insufficientStock": "Insufficient stock for one or more line items.",
+    "saveFailed": "Could not save. Please try again."
+  }
+}

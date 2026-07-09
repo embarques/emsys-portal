@@ -215,6 +215,17 @@ export const queryKeys = {
       [...queryKeys.memoPads.all, "search", search, limit] as const,
     detail: (memoPadId: string) => [...queryKeys.memoPads.all, "detail", memoPadId] as const,
   },
+  inventory: {
+    all: ["inventory"] as const,
+    snapshot: () => [...queryKeys.inventory.all, "snapshot"] as const,
+    items: () => [...queryKeys.inventory.all, "items"] as const,
+    movements: (itemId?: string) =>
+      [...queryKeys.inventory.all, "movements", itemId ?? "all"] as const,
+    receipts: () => [...queryKeys.inventory.all, "receipts"] as const,
+    dispatches: () => [...queryKeys.inventory.all, "dispatches"] as const,
+    recipients: () => [...queryKeys.inventory.all, "recipients"] as const,
+    stock: (itemId: string) => [...queryKeys.inventory.all, "stock", itemId] as const,
+  },
 } as const;
 
 export function getScheduledRouteQueryKeys(routeType: RouteType) {

@@ -1,5 +1,6 @@
 import type { InventoryCategory, InventoryItem, InventoryLocation, InventoryStatus } from "./types";
 import { INVENTORY_CATEGORIES, INVENTORY_LOCATIONS, INVENTORY_STATUSES } from "./types";
+import { RECIPIENT_TYPES } from "./types/recipients";
 
 export function getLocationLabel(location: InventoryLocation): string {
   return INVENTORY_LOCATIONS.find((entry) => entry.value === location)?.label ?? location;
@@ -62,4 +63,22 @@ export function computeInventoryKpis(items: InventoryItem[]) {
     needsReview: items.filter((item) => item.status === "review" || item.status === "out_of_stock").length,
     totalUnits: items.reduce((sum, item) => sum + item.quantity, 0),
   };
+}
+
+type TranslateFn = (key: string) => string;
+
+export function getMovementDirectionLabel(direction: string, t: TranslateFn): string {
+  const key = `inventory.directions.${direction}`;
+  const translated = t(key);
+  return translated === key ? direction : translated;
+}
+
+export function getReferenceTypeLabel(referenceType: string, t: TranslateFn): string {
+  const key = `inventory.references.${referenceType}`;
+  const translated = t(key);
+  return translated === key ? referenceType : translated;
+}
+
+export function getRecipientTypeLabel(type: string): string {
+  return RECIPIENT_TYPES.find((entry) => entry.value === type)?.label ?? type;
 }
