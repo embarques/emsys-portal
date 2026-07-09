@@ -1,6 +1,7 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import type { ApiListSortInput } from "@/lib/api/list-query";
-import type { ApiListTextSearch } from "@/lib/api/search-query";
+import { createApiListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import type { RouteCrewRole, RouteEmployeeRef } from "@/lib/route-manager/types";
 import {
   employeeHasRole,
@@ -92,6 +93,7 @@ export type ActiveRouteLookupParams = {
 
 export type ActiveRouteFilterState = {
   query: string;
+  rows: TableFilterRowState[];
 };
 
 export type ActiveRouteListParams = {
@@ -100,6 +102,7 @@ export type ActiveRouteListParams = {
   offset?: number;
   sort?: ApiListSortInput;
   search?: ApiListTextSearch;
+  filterRows?: TableFilterRowState[];
   routeType?: RouteType;
 };
 
@@ -111,17 +114,48 @@ export const DEFAULT_ACTIVE_ROUTE_LIST_PARAMS = {
   sort: "date:desc",
 } as const satisfies ActiveRouteListParams;
 
-/** Fields the bar search fans out across with an OR group (`POST /vehicle-routes/search`). */
+/**
+ * Fields the bar search fans out across with an OR group (`POST /vehicle-routes/search`).
+ * Must match the API search allowlist — crew names use `employees.name` (not driver/appraiser/
+ * helper), and container uses `container.number` (not `container.name`).
+ */
 export const ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS = [
   "name",
   "route.name",
-  "driver.name",
-  "appraiser.name",
-  "helper.name",
   "employees.name",
-  "container.name",
+  "container.number",
   "date",
+  "tripNumber",
 ] as const;
+
+export function buildActiveRouteListParams(input: {
+  page: number;
+  limit?: number;
+  query: string;
+  rows: TableFilterRowState[];
+  routeType: RouteType;
+  sort?: ApiListSortInput;
+}): ActiveRouteListParams {
+  const params: ActiveRouteListParams = {
+    ...DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
+    page: input.page,
+    limit: input.limit ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.sort,
+    routeType: input.routeType,
+  };
+
+  const search = createApiListTextSearch(input.query);
+  if (search) {
+    params.search = search;
+  }
+
+  const completeRows = input.rows.filter((row) => isCompleteFilterRow(row));
+  if (completeRows.length > 0) {
+    params.filterRows = completeRows;
+  }
+
+  return params;
+}
 
 export function deriveRouteType(container: ActiveRouteContainerRef | null): RouteType {
   return container && container.id > 0 ? "delivery" : "pickup";

@@ -20,7 +20,7 @@
     "searchPlaceholder": "Search pickup routes…",
     "searchNoun": "pickup routes",
     "empty": "No pickup routes yet.",
-    "emptyFiltered": "No pickup routes match your search.",
+    "emptyFiltered": "No pickup routes match your search or filters.",
     "setActiveRoute": "Add pickup route",
     "pagination": "Showing {{shown}} of {{total}} pickup routes",
     "entities": {
@@ -84,7 +84,7 @@
     "searchPlaceholder": "Search delivery routes…",
     "searchNoun": "delivery routes",
     "empty": "No delivery routes yet.",
-    "emptyFiltered": "No delivery routes match your search.",
+    "emptyFiltered": "No delivery routes match your search or filters.",
     "setActiveRoute": "Add delivery route",
     "pagination": "Showing {{shown}} of {{total}} delivery routes",
     "entities": {
@@ -147,6 +147,46 @@
     "appraiser": "Appraiser",
     "helper": "Helper",
     "recordId": "Record ID"
+  },
+  "filters": {
+    "fields": {
+      "id": { "label": "Record ID", "placeholder": "Enter record id…" },
+      "name": { "label": "Name", "placeholder": "Enter name…" },
+      "date": { "label": "Date", "placeholder": "YYYY-MM-DD" },
+      "route": {
+        "name": { "label": "Route assignment", "placeholder": "Enter route name…" },
+        "id": { "label": "Route ID", "placeholder": "Enter route id…" }
+      },
+      "employees": {
+        "name": { "label": "Crew member", "placeholder": "Enter crew name…" },
+        "id": { "label": "Crew member ID", "placeholder": "Enter employee id…" },
+        "role": { "label": "Crew role", "placeholder": "Select crew role…" }
+      },
+      "branch": {
+        "code": { "label": "Branch code", "placeholder": "Enter branch code…" },
+        "id": { "label": "Branch ID", "placeholder": "Enter branch id…" },
+        "name": { "label": "Branch name", "placeholder": "Enter branch name…" }
+      },
+      "container": {
+        "number": { "label": "Container number", "placeholder": "Enter container number…" },
+        "id": { "label": "Container ID", "placeholder": "Enter container id…" }
+      },
+      "active": { "label": "Status", "placeholder": "Select status…" },
+      "dayOfWeek": { "label": "Day of week", "placeholder": "Select day…" },
+      "tripNumber": { "label": "Trip number", "placeholder": "Enter trip number…" },
+      "rate": { "label": "Rate", "placeholder": "Enter rate…" }
+    },
+    "enums": {
+      "crewRole": {
+        "driver": "Driver",
+        "appraiser": "Appraiser",
+        "helper": "Helper"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      }
+    }
   },
   "table": {
     "searchPlaceholder": "Search routes…",

@@ -20,7 +20,7 @@
     "searchPlaceholder": "Buscar rutas de recogida…",
     "searchNoun": "rutas de recogida",
     "empty": "Aún no hay rutas de recogida.",
-    "emptyFiltered": "Ninguna ruta de recogida coincide con su búsqueda.",
+    "emptyFiltered": "Ninguna ruta de recogida coincide con su búsqueda o filtros.",
     "setActiveRoute": "Agregar ruta de recogida",
     "pagination": "Mostrando {{shown}} de {{total}} rutas de recogida",
     "entities": {
@@ -84,7 +84,7 @@
     "searchPlaceholder": "Buscar rutas de entrega…",
     "searchNoun": "rutas de entrega",
     "empty": "Aún no hay rutas de entrega.",
-    "emptyFiltered": "Ninguna ruta de entrega coincide con su búsqueda.",
+    "emptyFiltered": "Ninguna ruta de entrega coincide con su búsqueda o filtros.",
     "setActiveRoute": "Agregar ruta de entrega",
     "pagination": "Mostrando {{shown}} de {{total}} rutas de entrega",
     "entities": {
@@ -147,6 +147,46 @@
     "appraiser": "Tasador",
     "helper": "Ayudante",
     "recordId": "ID de registro"
+  },
+  "filters": {
+    "fields": {
+      "id": { "label": "ID de registro", "placeholder": "Ingrese el id de registro…" },
+      "name": { "label": "Nombre", "placeholder": "Ingrese el nombre…" },
+      "date": { "label": "Fecha", "placeholder": "AAAA-MM-DD" },
+      "route": {
+        "name": { "label": "Asignación de ruta", "placeholder": "Ingrese el nombre de la ruta…" },
+        "id": { "label": "ID de ruta", "placeholder": "Ingrese el id de la ruta…" }
+      },
+      "employees": {
+        "name": { "label": "Miembro de cuadrilla", "placeholder": "Ingrese el nombre del miembro…" },
+        "id": { "label": "ID de empleado", "placeholder": "Ingrese el id del empleado…" },
+        "role": { "label": "Rol de cuadrilla", "placeholder": "Seleccione el rol…" }
+      },
+      "branch": {
+        "code": { "label": "Código de sucursal", "placeholder": "Ingrese el código de sucursal…" },
+        "id": { "label": "ID de sucursal", "placeholder": "Ingrese el id de sucursal…" },
+        "name": { "label": "Nombre de sucursal", "placeholder": "Ingrese el nombre de sucursal…" }
+      },
+      "container": {
+        "number": { "label": "Número de contenedor", "placeholder": "Ingrese el número de contenedor…" },
+        "id": { "label": "ID de contenedor", "placeholder": "Ingrese el id de contenedor…" }
+      },
+      "active": { "label": "Estado", "placeholder": "Seleccione el estado…" },
+      "dayOfWeek": { "label": "Día de la semana", "placeholder": "Seleccione el día…" },
+      "tripNumber": { "label": "Número de viaje", "placeholder": "Ingrese el número de viaje…" },
+      "rate": { "label": "Tarifa", "placeholder": "Ingrese la tarifa…" }
+    },
+    "enums": {
+      "crewRole": {
+        "driver": "Conductor",
+        "appraiser": "Tasador",
+        "helper": "Ayudante"
+      },
+      "status": {
+        "active": "Activo",
+        "inactive": "Inactivo"
+      }
+    }
   },
   "table": {
     "searchPlaceholder": "Buscar rutas…",

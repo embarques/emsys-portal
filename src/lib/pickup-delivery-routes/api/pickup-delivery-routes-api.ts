@@ -6,13 +6,19 @@ import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
   buildApiSearchPaginationQuery,
+  buildResourceSearchFilterGroups,
   buildStripeStyleSearchBody,
-  createOrTextSearchFilterGroup,
-  createTextSearchFilter,
+  coerceTypedFilterNode,
   type ApiSearchFilterGroup,
+  type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
+import {
+  ACTIVE_ROUTE_BOOLEAN_FIELDS,
+  ACTIVE_ROUTE_NUMERIC_FIELDS,
+  getActiveRouteTableFilterFields,
+} from "@/lib/pickup-delivery-routes/filter-fields";
 import type { VehicleRouteWritePayload } from "@/lib/pickup-delivery-routes/api-schemas";
 import { buildApiBranchDto } from "@/lib/api/payloads";
 import {
@@ -95,6 +101,13 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
 };
 
 const VEHICLE_ROUTE_BAR_OR_SEARCH_FIELDS = ACTIVE_ROUTE_BAR_OR_SEARCH_FIELDS;
+
+function expandActiveRouteFilterNode(node: ApiSearchFilterNode) {
+  return coerceTypedFilterNode(node, {
+    numericFields: ACTIVE_ROUTE_NUMERIC_FIELDS,
+    booleanFields: ACTIVE_ROUTE_BOOLEAN_FIELDS,
+  });
+}
 
 function readUserName(user: unknown): string {
   if (!user) return "";
@@ -340,31 +353,22 @@ function normalizePaginatedVehicleRoutes(
 }
 
 function buildVehicleRouteSearchBody(params: ActiveRouteListParams, routeType: RouteType) {
-  const search = params.search;
-  const sort = params.sort ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.sort;
-  const filterGroups: ApiSearchFilterGroup[] = [routeTypeFilterGroup(routeType)];
+  const tableFilterFields = getActiveRouteTableFilterFields(routeType);
+  const filterGroups: ApiSearchFilterGroup[] = [
+    routeTypeFilterGroup(routeType),
+    ...buildResourceSearchFilterGroups({
+      search: params.search,
+      barOrSearchFields: VEHICLE_ROUTE_BAR_OR_SEARCH_FIELDS,
+      filterRows: params.filterRows,
+      tableFilterFields,
+      expandNode: expandActiveRouteFilterNode,
+    }),
+  ];
 
-  if (search?.value.trim()) {
-    if (search.field) {
-      const explicitFilter = createTextSearchFilter(
-        search.field,
-        search.value,
-        search.operator ?? "contains",
-      );
-      if (explicitFilter) {
-        filterGroups.push({ operator: "and", filters: [explicitFilter] });
-      }
-    } else {
-      const orGroup = createOrTextSearchFilterGroup(
-        search.value,
-        [...VEHICLE_ROUTE_BAR_OR_SEARCH_FIELDS],
-        search.operator ?? "contains",
-      );
-      if (orGroup) filterGroups.push(orGroup);
-    }
-  }
-
-  return buildStripeStyleSearchBody({ sort, filterGroups });
+  return buildStripeStyleSearchBody({
+    sort: params.sort ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.sort,
+    filterGroups,
+  });
 }
 
 export async function fetchActiveRoutes(
@@ -376,12 +380,14 @@ export async function fetchActiveRoutes(
   const limit = params.limit ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.limit;
 
   // routeType is always filtered on the shared endpoint, so use POST /search.
+  const isFiltered = true;
+
   return fetchPaginatedResourceList({
     endpoint: API_ENDPOINTS.VEHICLE_ROUTES,
     page,
     limit,
     offset: params.offset,
-    isFiltered: true,
+    isFiltered,
     buildGetQuery: () =>
       buildApiListQuery({
         page,

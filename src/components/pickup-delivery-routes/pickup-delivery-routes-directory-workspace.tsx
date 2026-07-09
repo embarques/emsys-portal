@@ -21,7 +21,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
+import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
+import {
+  TableDirectoryToolbar,
+  TableFilterPanel,
+} from "@/components/app-shell/table-directory-toolbar";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useUserError } from "@/lib/errors/use-user-error";
 import {
@@ -35,17 +39,19 @@ import {
 } from "@/lib/pickup-delivery-routes/display";
 import {
   DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
+  buildActiveRouteListParams,
   type ActiveRoute,
   type ActiveRouteFilterState,
 } from "@/lib/pickup-delivery-routes/types";
+import { useActiveRouteFilterFields } from "@/lib/pickup-delivery-routes/hooks/use-active-route-filter-fields";
 import { useActiveRoutes, useDeleteActiveRoutes } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useRouteLookup } from "@/lib/route-manager/hooks/use-route-manager";
-import { createApiListTextSearch } from "@/lib/api/search-query";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatRouteDate } from "@/lib/route-manager/display";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
 import type { DataTableColumn } from "@/lib/table/types";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import {
   buildTableSelectionResetKey,
   useResolvedPaginatedItems,
@@ -59,6 +65,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultActiveRouteFilters: ActiveRouteFilterState = {
   query: "",
+  rows: [],
 };
 
 type ActiveRoutesDirectoryWorkspaceProps = {
@@ -80,9 +87,11 @@ export function ActiveRoutesDirectoryWorkspace({
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const copyPrefix = variant.copyPrefix;
+  const activeRouteFilterFields = useActiveRouteFilterFields(variant.routeType);
   const { notifyDeleted } = useFeedback();
   const [activeRouteFilters, setActiveRouteFilters] =
     useState<ActiveRouteFilterState>(defaultActiveRouteFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedActiveRouteQuery = useDebouncedValue(activeRouteFilters.query, SEARCH_DEBOUNCE_MS);
   const isActiveRouteSearchPending =
     activeRouteFilters.query.trim() !== debouncedActiveRouteQuery.trim();
@@ -96,14 +105,15 @@ export function ActiveRoutesDirectoryWorkspace({
   const [viewActiveRoute, setViewActiveRoute] = useState<ActiveRoute | null>(null);
 
   const activeRouteListParams = useMemo(
-    () => ({
-      ...DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
-      page: activeRoutePage,
-      limit: ACTIVE_ROUTE_PAGE_SIZE,
-      routeType: variant.routeType,
-      search: createApiListTextSearch(debouncedActiveRouteQuery),
-    }),
-    [activeRoutePage, debouncedActiveRouteQuery, variant.routeType],
+    () =>
+      buildActiveRouteListParams({
+        page: activeRoutePage,
+        limit: ACTIVE_ROUTE_PAGE_SIZE,
+        query: debouncedActiveRouteQuery,
+        rows: activeRouteFilters.rows,
+        routeType: variant.routeType,
+      }),
+    [activeRoutePage, activeRouteFilters.rows, debouncedActiveRouteQuery, variant.routeType],
   );
 
   const activeRoutesQuery = useActiveRoutes(activeRouteListParams);
@@ -128,7 +138,11 @@ export function ActiveRoutesDirectoryWorkspace({
   const isSaving = deleteActiveRoutesMutation.isPending;
 
   useTableSelectionReset(
-    buildTableSelectionResetKey(debouncedActiveRouteQuery, variant.routeType),
+    buildTableSelectionResetKey(
+      debouncedActiveRouteQuery,
+      variant.routeType,
+      activeRouteFilters.rows,
+    ),
     setSelectedActiveRouteIds,
   );
 
@@ -301,7 +315,12 @@ export function ActiveRoutesDirectoryWorkspace({
     activeRouteTableColumns,
   );
 
-  const hasActiveRouteFilters = Boolean(activeRouteFilters.query.trim());
+  const advancedFilterCount = countCompleteFilterRows(
+    activeRouteFilters.rows,
+    activeRouteFilterFields,
+  );
+  const hasActiveRouteFilters =
+    Boolean(activeRouteFilters.query.trim()) || advancedFilterCount > 0;
   const activeRouteSearchSummary = buildToolbarSearchSummary(
     {
       isFiltered: hasActiveRouteFilters,
@@ -310,6 +329,18 @@ export function ActiveRoutesDirectoryWorkspace({
       matched: totalActiveRoutes,
       noun: t(`routes.${copyPrefix}.searchNoun`),
       isLoading: activeRoutesQuery.isFetching && activeRoutes.length === 0,
+    },
+    t,
+  );
+  const activeRouteListSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: activeRoutes.length,
+      page: currentActiveRoutePage,
+      pageSize: ACTIVE_ROUTE_PAGE_SIZE,
+      total: totalActiveRoutes,
+      noun: t(`routes.${copyPrefix}.searchNoun`),
+      isFiltered: hasActiveRouteFilters,
+      isLoading: activeRoutesQuery.isFetching,
     },
     t,
   );
@@ -330,7 +361,9 @@ export function ActiveRoutesDirectoryWorkspace({
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            showFilterToggle={false}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            activeFilterCount={advancedFilterCount}
             columnLayout={activeRouteColumnVisibility}
             searchSummary={activeRouteSearchSummary}
             search={
@@ -342,6 +375,38 @@ export function ActiveRoutesDirectoryWorkspace({
                 }}
                 placeholder={t(`routes.${copyPrefix}.searchPlaceholder`)}
               />
+            }
+            filterPanel={
+              <TableFilterPanel
+                resultSummary={activeRouteListSummary}
+                presets={{
+                  storageKey: variant.columnVisibilityKey,
+                  rows: activeRouteFilters.rows,
+                  fields: activeRouteFilterFields,
+                  onApply: (rows) => {
+                    setActiveRouteFilters((current) => ({ ...current, rows }));
+                    setActiveRoutePage(1);
+                  },
+                }}
+                onClearAll={
+                  hasActiveRouteFilters
+                    ? () => {
+                        setActiveRouteFilters(defaultActiveRouteFilters);
+                        setActiveRoutePage(1);
+                      }
+                    : undefined
+                }
+              >
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={activeRouteFilters.rows}
+                  fields={activeRouteFilterFields}
+                  onChange={(rows) => {
+                    setActiveRouteFilters((current) => ({ ...current, rows }));
+                    setActiveRoutePage(1);
+                  }}
+                />
+              </TableFilterPanel>
             }
           />
         </CardHeader>

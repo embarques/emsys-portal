@@ -20,9 +20,10 @@ import {
   type ActiveRouteLookupParams,
   type RouteType,
 } from "@/lib/pickup-delivery-routes/types";
-import { hasListTextSearch } from "@/lib/api/search-query";
+import { hasResourceListFilters } from "@/lib/api/search-query";
 import { toRouteDateInput } from "@/lib/route-manager/types";
 import { getScheduledRouteQueryKeys } from "@/lib/query/query-keys";
+import { getActiveRouteTableFilterFields } from "@/lib/pickup-delivery-routes/filter-fields";
 
 export function useActiveRoutePicker(
   routeType: RouteType,
@@ -74,7 +75,11 @@ export function useActiveRouteLookup(
 
 export function useActiveRoutes(params: ActiveRouteListParams) {
   const routeType = params.routeType ?? "pickup";
-  const isFiltered = hasListTextSearch(params.search);
+  const isFiltered = hasResourceListFilters({
+    search: params.search,
+    filterRows: params.filterRows,
+    tableFilterFields: getActiveRouteTableFilterFields(routeType),
+  });
   const keys = getScheduledRouteQueryKeys(routeType);
 
   return useWorkspaceQuery({

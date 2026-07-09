@@ -217,6 +217,7 @@ export function activeRouteMatchesSearch(
       case "helpers.name":
         return formatActiveRouteHelperNames(record);
       case "container.name":
+      case "container.number":
         return record.container?.name ?? "";
       case "createdBy":
         return record.createdBy;
