@@ -540,6 +540,7 @@ export function CustomersWorkspace() {
     <div>
       <PageHeader
         title={t("customers.title")}
+        description={t("customers.pages.description")}
         actions={
           canCreateCustomers ? (
             <Button onClick={openAddForm} disabled={isSaving}>

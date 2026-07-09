@@ -635,7 +635,8 @@ export function InvoicesWorkspace() {
   return (
     <div>
       <PageHeader
-        title="Invoices"
+        title={t("invoices.title")}
+        description={t("invoices.pages.description")}
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />

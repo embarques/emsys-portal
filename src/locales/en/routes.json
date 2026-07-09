@@ -1,6 +1,11 @@
 {
   "title": "Routes",
   "noun": "routes",
+  "pages": {
+    "routeManager": "Define reusable route templates with vehicles and crew assignments for pickup and delivery operations.",
+    "pickupRoutes": "Plan daily pickup routes, assign orders to drivers, and track route completion for a selected date.",
+    "deliveryRoutes": "Plan daily delivery routes by container, assign crew roles, and coordinate last-mile delivery."
+  },
   "routeManager": {
     "title": "Route Manager"
   },

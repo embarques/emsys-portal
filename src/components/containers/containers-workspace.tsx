@@ -360,6 +360,7 @@ export function ContainersWorkspace() {
     <div>
       <PageHeader
         title={t("containers.title")}
+        description={t("containers.pages.description")}
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />

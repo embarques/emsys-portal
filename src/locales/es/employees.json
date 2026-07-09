@@ -2,6 +2,9 @@
   "entity": "Empleado",
   "entityPlural": "empleados",
   "title": "Empleados",
+  "pages": {
+    "description": "Mantenga registros de empleados, asignaciones de sucursal, cargos e información de contacto del personal operativo."
+  },
   "noun": "empleados",
   "actions": {
     "add": "Agregar empleado",

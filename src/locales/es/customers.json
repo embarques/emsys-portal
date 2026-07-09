@@ -2,6 +2,9 @@
   "entity": "Cliente",
   "entityPlural": "clientes",
   "title": "Clientes",
+  "pages": {
+    "description": "Administre perfiles de clientes, datos de contacto, direcciones y saldos de cuenta para remitentes y destinatarios."
+  },
   "noun": "clientes",
   "actions": {
     "add": "Agregar cliente",

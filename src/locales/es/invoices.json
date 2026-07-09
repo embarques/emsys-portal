@@ -1,4 +1,8 @@
 {
+  "title": "Facturas",
+  "pages": {
+    "description": "Cree y administre facturas de envío, líneas, cargos y documentación de facturación vinculada a órdenes y clientes."
+  },
   "staging": {
     "tableAction": "Administrar artículos de factura",
     "title": "Seleccionar artículos de factura para procesamiento"

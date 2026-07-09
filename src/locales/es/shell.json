@@ -5,6 +5,8 @@
     "logoAlt": "EMSYS Portal de gestión"
   },
   "dashboard": {
+    "title": "Panel de operaciones",
+    "description": "Resumen de métricas operativas clave, actividad reciente y acceso rápido a flujos de trabajo diarios.",
     "loadingWorkspace": "Cargando espacio de trabajo…"
   },
   "topbar": {

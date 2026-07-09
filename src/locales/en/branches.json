@@ -2,6 +2,9 @@
   "entity": "Branch",
   "entityPlural": "branches",
   "title": "Branches",
+  "pages": {
+    "description": "Manage company branches, codes, addresses, and regional configuration used across the portal."
+  },
   "noun": "branches",
   "actions": {
     "add": "Add branch",

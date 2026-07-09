@@ -130,7 +130,7 @@ export function LabelUpdaterWorkspace() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("labels.title")} />
+      <PageHeader title={t("labels.title")} description={t("labels.pages.description")} />
 
       <Card>
         <CardHeader>

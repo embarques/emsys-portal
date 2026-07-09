@@ -7,6 +7,7 @@ import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import { SampleTable } from "@/components/app-shell/sample-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from "@/lib/i18n";
 
 const stats = [
   { label: "Customers", value: "2,842", description: "+12% from last month", icon: Users },
@@ -16,11 +17,13 @@ const stats = [
 ];
 
 export function DashboardWorkspace() {
+  const { t } = useTranslation();
+
   return (
     <div>
       <PageHeader
-        title="Operations Dashboard"
-        description="A clean responsive app shell using Tailwind and shadcn-style components."
+        title={t("shell.dashboard.title")}
+        description={t("shell.dashboard.description")}
         actions={
           <Button>
             New order <ArrowUpRight className="h-4 w-4" />

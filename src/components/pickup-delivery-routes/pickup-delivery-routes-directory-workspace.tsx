@@ -318,6 +318,7 @@ export function ActiveRoutesDirectoryWorkspace({
     <div className="flex min-h-[calc(100vh-11rem)] flex-col">
       <PageHeader
         title={t(`routes.${copyPrefix}.title`)}
+        description={t(`routes.pages.${copyPrefix}`)}
         actions={
           <Button onClick={openAddActiveRoute}>
             <Plus className="h-4 w-4" />

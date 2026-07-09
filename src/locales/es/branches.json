@@ -2,6 +2,9 @@
   "entity": "Sucursal",
   "entityPlural": "sucursales",
   "title": "Sucursales",
+  "pages": {
+    "description": "Administre sucursales de la empresa, códigos, direcciones y configuración regional usada en el portal."
+  },
   "noun": "sucursales",
   "actions": {
     "add": "Agregar sucursal",

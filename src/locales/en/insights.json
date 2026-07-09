@@ -1,4 +1,9 @@
 {
+  "pages": {
+    "reports": "View operational and business reports across customers, orders, revenue, and fulfillment.",
+    "analytics": "Explore trends, performance metrics, and analytical views of portal activity.",
+    "security": "Review security settings, access controls, and audit information for the portal."
+  },
   "placeholder": {
     "description": "Sample {{title}} page inside the same responsive dashboard shell.",
     "addNew": "Add new",

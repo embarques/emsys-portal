@@ -5,6 +5,8 @@
     "logoAlt": "EMSYS Management Portal"
   },
   "dashboard": {
+    "title": "Operations Dashboard",
+    "description": "Overview of key operations metrics, recent activity, and quick access to daily workflows.",
     "loadingWorkspace": "Loading workspace…"
   },
   "topbar": {

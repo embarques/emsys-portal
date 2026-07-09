@@ -671,6 +671,7 @@ export function OrdersWorkspace() {
     <div>
       <PageHeader
         title={t("orders.title")}
+        description={t("orders.pages.description")}
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />

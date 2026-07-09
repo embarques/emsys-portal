@@ -452,6 +452,7 @@ export function RolesWorkspace() {
     <div>
       <PageHeader
         title={t("roles.title")}
+        description={t("roles.pages.description")}
         actions={
           <Button
             onClick={openAddForm}

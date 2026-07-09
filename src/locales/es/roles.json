@@ -2,6 +2,9 @@
   "entity": "Rol",
   "entityPlural": "roles",
   "title": "Roles",
+  "pages": {
+    "description": "Defina roles y conjuntos de permisos que controlan lo que los usuarios pueden ver y hacer en el portal."
+  },
   "noun": "roles",
   "actions": {
     "add": "Agregar rol",

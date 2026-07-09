@@ -1,4 +1,9 @@
 {
+  "pages": {
+    "reports": "Consulte reportes operativos y de negocio de clientes, órdenes, ingresos y cumplimiento.",
+    "analytics": "Explore tendencias, métricas de rendimiento y vistas analíticas de la actividad del portal.",
+    "security": "Revise configuración de seguridad, controles de acceso e información de auditoría del portal."
+  },
   "placeholder": {
     "description": "Página de ejemplo de {{title}} dentro del mismo panel adaptable.",
     "addNew": "Agregar nuevo",

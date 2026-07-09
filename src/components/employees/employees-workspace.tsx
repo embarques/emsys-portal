@@ -454,6 +454,7 @@ export function EmployeesWorkspace() {
     <div>
       <PageHeader
         title={t("employees.title")}
+        description={t("employees.pages.description")}
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />

@@ -2,6 +2,9 @@
   "entity": "Item",
   "entityPlural": "items",
   "title": "Items",
+  "pages": {
+    "description": "Maintain the product and service catalog with pricing, descriptions, and details used on invoices and orders."
+  },
   "noun": "items",
   "actions": {
     "add": "Add item",

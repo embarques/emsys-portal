@@ -1,6 +1,11 @@
 {
   "title": "Rutas",
   "noun": "rutas",
+  "pages": {
+    "routeManager": "Defina plantillas de rutas reutilizables con vehículos y asignaciones de equipo para operaciones de recogida y entrega.",
+    "pickupRoutes": "Planifique rutas diarias de recogida, asigne órdenes a conductores y controle la finalización de rutas para la fecha seleccionada.",
+    "deliveryRoutes": "Planifique rutas diarias de entrega por contenedor, asigne roles de equipo y coordine la entrega de última milla."
+  },
   "routeManager": {
     "title": "Manejador de rutas"
   },

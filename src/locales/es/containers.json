@@ -2,6 +2,9 @@
   "entity": "Contenedor",
   "entityPlural": "contenedores",
   "title": "Contenedores",
+  "pages": {
+    "description": "Controle contenedores de envío, capacidad, programación de salidas y costos de operaciones de carga saliente."
+  },
   "noun": "contenedores",
   "actions": {
     "add": "Agregar contenedor",

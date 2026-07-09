@@ -300,6 +300,7 @@ export function ItemsWorkspace() {
     <div>
       <PageHeader
         title={t("items.title")}
+        description={t("items.pages.description")}
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />

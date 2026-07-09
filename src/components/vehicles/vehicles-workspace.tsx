@@ -366,6 +366,7 @@ export function VehiclesWorkspace() {
     <div>
       <PageHeader
         title={t("vehicles.title")}
+        description={t("vehicles.pages.description")}
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />

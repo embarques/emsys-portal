@@ -61,7 +61,7 @@ export function ConfigurationWorkspace() {
   if (preferencesQuery.isLoading) {
     return (
       <>
-        <PageHeader title={t("settings.title")} />
+        <PageHeader title={t("settings.title")} description={t("settings.pages.description")} />
         <div className="py-16 text-center text-sm text-muted-foreground">{t("settings.loading")}</div>
       </>
     );
@@ -71,7 +71,7 @@ export function ConfigurationWorkspace() {
   if (loadError) {
     return (
       <>
-        <PageHeader title={t("settings.title")} />
+        <PageHeader title={t("settings.title")} description={t("settings.pages.description")} />
         <div className="py-16 text-center text-sm text-destructive">{normalizeApiError(loadError).message}</div>
       </>
     );
@@ -79,7 +79,7 @@ export function ConfigurationWorkspace() {
 
   return (
     <div>
-      <PageHeader title={t("settings.title")} />
+      <PageHeader title={t("settings.title")} description={t("settings.pages.description")} />
       <div className="mx-auto max-w-3xl space-y-6">
         <form onSubmit={handleSubmit(save)} className="space-y-6">
         <Card>

@@ -447,6 +447,7 @@ export function UsersWorkspace() {
     <div>
       <PageHeader
         title={t("users.title")}
+        description={t("users.pages.description")}
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />

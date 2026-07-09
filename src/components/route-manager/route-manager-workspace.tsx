@@ -293,6 +293,7 @@ export function RouteManagerWorkspace() {
     <div className="flex min-h-[calc(100vh-11rem)] flex-col">
       <PageHeader
         title={t("routes.routeManager.title")}
+        description={t("routes.pages.routeManager")}
         actions={
           <Button onClick={openAddForm}>
             <Plus className="h-4 w-4" />

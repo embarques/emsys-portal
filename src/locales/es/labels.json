@@ -1,5 +1,8 @@
 {
   "title": "Manejador de etiquetas",
+  "pages": {
+    "description": "Actualice el estado de etiquetas, transfiera contenedores, asigne rutas y procese escaneos de código de barras para etiquetas de envío."
+  },
   "statuses": {
     "pending": "Pendiente",
     "generated": "Generada",

@@ -2,6 +2,9 @@
   "entity": "Artículo",
   "entityPlural": "artículos",
   "title": "Artículos",
+  "pages": {
+    "description": "Mantenga el catálogo de productos y servicios con precios, descripciones y detalles usados en facturas y órdenes."
+  },
   "noun": "artículos",
   "actions": {
     "add": "Agregar artículo",

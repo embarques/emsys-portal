@@ -2,6 +2,9 @@
   "entity": "Vehicle",
   "entityPlural": "vehicles",
   "title": "Vehicles",
+  "pages": {
+    "description": "Manage fleet vehicles by branch and country, including registration, capacity, and operational availability."
+  },
   "noun": "vehicles",
   "actions": {
     "add": "Add vehicle",

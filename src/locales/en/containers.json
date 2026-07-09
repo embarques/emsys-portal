@@ -2,6 +2,9 @@
   "entity": "Container",
   "entityPlural": "containers",
   "title": "Containers",
+  "pages": {
+    "description": "Track shipping containers, capacity, departure schedules, and costs for outbound freight operations."
+  },
   "noun": "containers",
   "actions": {
     "add": "Add container",

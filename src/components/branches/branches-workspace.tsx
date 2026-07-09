@@ -341,6 +341,7 @@ export function BranchesWorkspace() {
     <div>
       <PageHeader
         title={t("branches.title")}
+        description={t("branches.pages.description")}
         actions={
           <Button onClick={openAddForm} disabled={isSaving}>
             <Plus className="h-4 w-4" />

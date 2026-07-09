@@ -2,6 +2,9 @@
   "entity": "Order",
   "entityPlural": "orders",
   "title": "Orders",
+  "pages": {
+    "description": "Coordinate pickup orders, assign routes, track verification and completion, and manage daily pickup operations."
+  },
   "noun": "orders",
   "workspace": {
     "actionsColumn": "Actions",

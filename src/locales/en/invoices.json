@@ -1,4 +1,8 @@
 {
+  "title": "Invoices",
+  "pages": {
+    "description": "Create and manage shipping invoices, line items, charges, and billing documentation linked to orders and customers."
+  },
   "staging": {
     "tableAction": "Manage invoice items",
     "title": "Select invoice items for processing"

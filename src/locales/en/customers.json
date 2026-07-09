@@ -2,6 +2,9 @@
   "entity": "Customer",
   "entityPlural": "customers",
   "title": "Customers",
+  "pages": {
+    "description": "Manage customer profiles, contact details, addresses, and account balances for senders and receivers."
+  },
   "noun": "customers",
   "actions": {
     "add": "Add customer",

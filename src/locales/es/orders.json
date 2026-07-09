@@ -2,6 +2,9 @@
   "entity": "Orden",
   "entityPlural": "órdenes",
   "title": "Órdenes",
+  "pages": {
+    "description": "Coordine órdenes de recogida, asigne rutas, controle verificación y finalización, y gestione las operaciones diarias de recogida."
+  },
   "noun": "órdenes",
   "workspace": {
     "actionsColumn": "Acciones",

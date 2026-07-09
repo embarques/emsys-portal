@@ -10,16 +10,17 @@ import { useTranslation } from "@/lib/i18n";
 
 type PlaceholderWorkspaceProps = {
   title: string;
+  descriptionKey: string;
 };
 
-function PlaceholderWorkspace({ title }: PlaceholderWorkspaceProps) {
+function PlaceholderWorkspace({ title, descriptionKey }: PlaceholderWorkspaceProps) {
   const { t } = useTranslation();
 
   return (
     <div>
       <PageHeader
         title={title}
-        description={t("insights.placeholder.description", { title })}
+        description={t(descriptionKey)}
         actions={
           <Button>
             <Plus className="h-4 w-4" /> {t("insights.placeholder.addNew")}
@@ -66,14 +67,30 @@ function PlaceholderWorkspace({ title }: PlaceholderWorkspaceProps) {
 
 export function ReportsWorkspace() {
   const { t } = useTranslation();
-  return <PlaceholderWorkspace title={t("navigation.items.reports")} />;
+  return (
+    <PlaceholderWorkspace
+      title={t("navigation.items.reports")}
+      descriptionKey="insights.pages.reports"
+    />
+  );
 }
 
 export function AnalyticsWorkspace() {
   const { t } = useTranslation();
-  return <PlaceholderWorkspace title={t("navigation.items.analytics")} />;
+  return (
+    <PlaceholderWorkspace
+      title={t("navigation.items.analytics")}
+      descriptionKey="insights.pages.analytics"
+    />
+  );
 }
 
 export function SecurityWorkspace() {
-  return <PlaceholderWorkspace title="Security" />;
+  const { t } = useTranslation();
+  return (
+    <PlaceholderWorkspace
+      title={t("navigation.items.security")}
+      descriptionKey="insights.pages.security"
+    />
+  );
 }

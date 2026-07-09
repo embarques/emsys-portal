@@ -2,6 +2,9 @@
   "entity": "Vehículo",
   "entityPlural": "vehículos",
   "title": "Vehículos",
+  "pages": {
+    "description": "Administre vehículos de la flota por sucursal y país, incluyendo registro, capacidad y disponibilidad operativa."
+  },
   "noun": "vehículos",
   "actions": {
     "add": "Agregar vehículo",

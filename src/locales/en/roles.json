@@ -2,6 +2,9 @@
   "entity": "Role",
   "entityPlural": "roles",
   "title": "Roles",
+  "pages": {
+    "description": "Define roles and permission sets that control what users can view and do across the portal."
+  },
   "noun": "roles",
   "actions": {
     "add": "Add role",

@@ -1,5 +1,8 @@
 {
   "title": "Settings",
+  "pages": {
+    "description": "Configure appearance, language, workspace tabs, and your account password preferences."
+  },
   "loading": "Loading settings…",
   "toast": {
     "saved": "Settings saved."
