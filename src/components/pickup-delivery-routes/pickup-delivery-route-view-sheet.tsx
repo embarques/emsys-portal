@@ -18,6 +18,7 @@ import {
   formatActiveRouteContainerLabel,
   formatActiveRouteDriverNames,
   formatActiveRouteHelperNames,
+  formatActiveRouteRateLabel,
   formatActiveRouteRowLabel,
   formatActiveRouteTypeLabel,
 } from "@/lib/pickup-delivery-routes/display";
@@ -119,6 +120,12 @@ export function ActiveRouteViewSheet({
               label={t("routes.columns.route")}
               value={record.route.name || dash}
             />
+            {record.routeType === "delivery" ? (
+              <RecordViewSheetDetailRow
+                label={t("routes.columns.rate")}
+                value={formatActiveRouteRateLabel(record, dash)}
+              />
+            ) : null}
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("routes.viewSheet.sections.employees")}>

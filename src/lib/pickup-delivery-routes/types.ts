@@ -68,6 +68,8 @@ export type ActiveRoute = {
   createdBy: string;
   updatedAt: string;
   updatedBy: string;
+  /** USD→DOP exchange rate for this delivery trip (delivery routes only). */
+  rate?: number;
 };
 
 export type ActiveRouteFormValues = {
@@ -83,6 +85,8 @@ export type ActiveRouteFormValues = {
   routeAssignmentName: string;
   employees: RouteEmployeeRef[];
   active: boolean;
+  /** DOP per USD for delivery trips; empty when unset. */
+  rate: string;
 };
 
 export type ActiveRouteLookupParams = {
@@ -203,6 +207,7 @@ export function createEmptyActiveRouteForm(routeType: RouteType = "pickup"): Act
     routeAssignmentName: "",
     employees: [],
     active: true,
+    rate: "",
   };
 }
 
@@ -221,6 +226,7 @@ export function activeRouteToFormValues(record: ActiveRoute): ActiveRouteFormVal
     routeAssignmentName: record.route.name,
     employees: record.employees.map((employee) => ({ ...employee })),
     active: record.active,
+    rate: record.rate != null && Number.isFinite(record.rate) ? String(record.rate) : "",
   };
 }
 

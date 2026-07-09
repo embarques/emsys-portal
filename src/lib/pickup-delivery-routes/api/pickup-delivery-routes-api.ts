@@ -88,6 +88,7 @@ type ApiVehicleRoute = {
   driver?: ApiEmployeeRef | null;
   appraiser?: ApiEmployeeRef | null;
   employees?: ApiEmployeeRef[] | null;
+  rate?: number | string | null;
   createdAt?: string;
   createdBy?: ApiUser | string | null;
   updatedAt?: string;
@@ -217,6 +218,20 @@ function normalizeRouteRef(raw?: ApiRef | null): ActiveRoute["route"] | null {
   };
 }
 
+function normalizeRateValue(raw: unknown): number | undefined {
+  if (raw == null || raw === "") return undefined;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseActiveRouteRateInput(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+  return parsed;
+}
+
 function normalizeAuditFields(item: ApiVehicleRoute) {
   return {
     createdAt: String(item.createdAt ?? "").trim(),
@@ -252,6 +267,7 @@ export function normalizeApiVehicleRoute(raw: unknown): ActiveRoute | null {
     active: item.active !== false,
     route,
     employees: normalizeVehicleRouteCrew(item),
+    rate: normalizeRateValue(item.rate),
     ...normalizeAuditFields(item),
   };
 }
@@ -322,6 +338,10 @@ function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRo
       id: values.container.id,
       number: values.container.name.trim(),
     };
+    const rate = parseActiveRouteRateInput(values.rate);
+    if (rate != null) {
+      payload.rate = rate;
+    }
   }
 
   return payload;

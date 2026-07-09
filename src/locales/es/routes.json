@@ -58,6 +58,7 @@
       "print": "Imprimir ruta",
       "preparing": "Preparando…",
       "optimize": "Optimizar ruta",
+      "viewRoute": "Ver ruta",
       "clearRoute": "Limpiar ruta",
       "clearing": "Limpiando…"
     },
@@ -146,7 +147,8 @@
     "driver": "Conductor",
     "appraiser": "Tasador",
     "helper": "Ayudante",
-    "recordId": "ID de registro"
+    "recordId": "ID de registro",
+    "rate": "Tasa de cambio"
   },
   "filters": {
     "fields": {
@@ -256,6 +258,9 @@
     "containerRequired": "Contenedor",
     "containerPlaceholder": "Sin contenedor",
     "containerSearch": "Buscar contenedores…",
+    "rate": "Tasa de cambio",
+    "ratePlaceholder": "58.50",
+    "rateHint": "Cuántos pesos dominicanos vale un dólar estadounidense para este viaje.",
     "branch": "Sucursal",
     "branchPlaceholder": "Todas las sucursales",
     "branchSearch": "Buscar sucursales…",

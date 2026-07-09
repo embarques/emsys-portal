@@ -58,6 +58,7 @@
       "print": "Print route",
       "preparing": "Preparing…",
       "optimize": "Optimize route",
+      "viewRoute": "View route",
       "clearRoute": "Clear route",
       "clearing": "Clearing…"
     },
@@ -146,7 +147,8 @@
     "driver": "Driver",
     "appraiser": "Appraiser",
     "helper": "Helper",
-    "recordId": "Record ID"
+    "recordId": "Record ID",
+    "rate": "Exchange rate"
   },
   "filters": {
     "fields": {
@@ -256,6 +258,9 @@
     "containerRequired": "Container",
     "containerPlaceholder": "No container",
     "containerSearch": "Search containers…",
+    "rate": "Exchange rate",
+    "ratePlaceholder": "58.50",
+    "rateHint": "How many Dominican pesos one US dollar is worth for this trip.",
     "branch": "Branch",
     "branchPlaceholder": "All branches",
     "branchSearch": "Search branches…",

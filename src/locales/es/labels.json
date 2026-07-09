@@ -1,7 +1,8 @@
 {
-  "title": "Manejador de etiquetas",
+  "title": "Administrador de etiquetas",
   "pages": {
-    "description": "Actualice el estado de etiquetas, transfiera contenedores, asigne rutas y procese escaneos de código de barras para etiquetas de envío."
+    "barcodesDescription": "Consulte y administre códigos de barras de envío en facturas, contenedores y rutas.",
+    "description": "Actualice el estado de códigos de barras, transfiera contenedores, asigne rutas y procese escaneos para etiquetas de envío."
   },
   "statuses": {
     "pending": "Pendiente",

@@ -307,6 +307,7 @@ export function ActiveRouteSection({
       scheduleType: routeType === "delivery" ? "date" : values.scheduleType,
       dayOfWeek: routeType === "delivery" ? [] : values.dayOfWeek,
       container: routeType === "delivery" ? values.container : null,
+      rate: routeType === "delivery" ? values.rate : "",
     });
   }
 
@@ -469,6 +470,10 @@ export function ActiveRouteSection({
           setValues((current) => ({ ...current, name }));
         }}
         onContainerChange={updateContainer}
+        onRateChange={(rate) => {
+          setValues((current) => ({ ...current, rate }));
+          setFormError(null);
+        }}
         onRouteRecordChange={(routeRecordId) => {
           syncedRouteRecordIdRef.current = "";
           const assignment = (routesQuery.data?.items ?? []).find((route) => route.id === routeRecordId);

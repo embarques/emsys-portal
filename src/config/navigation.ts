@@ -9,7 +9,6 @@ import {
   FileText,
   Home,
   KeyRound,
-  LayoutGrid,
   Package,
   PackageCheck,
   ScanBarcode,
@@ -48,20 +47,20 @@ export const topNavigationItems: NavigationItem[] = [
 /** Primary workspace shortcuts shown in the dashboard top bar (sorted alphabetically by label). */
 export const topbarNavigationItems: NavigationItem[] = [
   {
-    labelKey: "navigation.items.pickups",
+    labelKey: "navigation.items.orderManager",
     href: "/orders",
     icon: Package,
     permission: PERMISSIONS.pickupsView,
   },
   {
-    labelKey: "navigation.items.invoices",
+    labelKey: "navigation.items.invoicesManager",
     href: "/invoices",
     icon: FileText,
     permission: PERMISSIONS.invoicesView,
   },
   {
-    labelKey: "navigation.items.labelManager",
-    href: "/label-updater",
+    labelKey: "navigation.items.barcodeManager",
+    href: "/barcodes",
     icon: ScanBarcode,
     permission: PERMISSIONS.packagesView,
   },
@@ -85,111 +84,131 @@ export const topbarNavigationItems: NavigationItem[] = [
   },
 ];
 
-const navigationGroups: NavigationGroup[] = [
+function navigationItemToGroup(item: NavigationItem): NavigationGroup {
+  if (item.children?.length) {
+    return {
+      titleKey: item.labelKey,
+      icon: item.icon,
+      items: item.children,
+    };
+  }
+
+  return {
+    titleKey: item.labelKey,
+    icon: item.icon,
+    items: [item],
+  };
+}
+
+const primaryNavigationItems: NavigationItem[] = [
   {
-    titleKey: "navigation.groups.workspace",
-    icon: LayoutGrid,
-    items: [
+    labelKey: "navigation.submenus.inventory",
+    icon: Boxes,
+    children: [
       {
-        labelKey: "navigation.submenus.inventory",
+        labelKey: "navigation.items.inventoryStock",
+        href: "/inventory/items",
         icon: Boxes,
-        children: [
-          {
-            labelKey: "navigation.items.inventoryStock",
-            href: "/inventory/items",
-            icon: Boxes,
-            permission: PERMISSIONS.inventoryView,
-          },
-          {
-            labelKey: "navigation.items.inventoryReceipts",
-            href: "/inventory/receipts",
-            icon: PackageCheck,
-            permission: PERMISSIONS.inventoryView,
-          },
-          {
-            labelKey: "navigation.items.inventoryDispatches",
-            href: "/inventory/dispatches",
-            icon: Truck,
-            permission: PERMISSIONS.inventoryView,
-          },
-          {
-            labelKey: "navigation.items.inventoryRecipients",
-            href: "/inventory/recipients",
-            icon: Users,
-            permission: PERMISSIONS.inventoryView,
-          },
-          {
-            labelKey: "navigation.items.inventoryReports",
-            href: "/inventory/reports",
-            icon: FileText,
-            permission: PERMISSIONS.inventoryView,
-          },
-        ],
+        permission: PERMISSIONS.inventoryView,
       },
-      { labelKey: "navigation.items.customers", href: "/customers", icon: Users, permission: PERMISSIONS.clientsView },
       {
-        labelKey: "navigation.items.pickups",
+        labelKey: "navigation.items.inventoryReceipts",
+        href: "/inventory/receipts",
+        icon: PackageCheck,
+        permission: PERMISSIONS.inventoryView,
+      },
+      {
+        labelKey: "navigation.items.inventoryDispatches",
+        href: "/inventory/dispatches",
+        icon: Truck,
+        permission: PERMISSIONS.inventoryView,
+      },
+      {
+        labelKey: "navigation.items.inventoryRecipients",
+        href: "/inventory/recipients",
+        icon: Users,
+        permission: PERMISSIONS.inventoryView,
+      },
+      {
+        labelKey: "navigation.items.inventoryReports",
+        href: "/inventory/reports",
+        icon: FileText,
+        permission: PERMISSIONS.inventoryView,
+      },
+    ],
+  },
+  { labelKey: "navigation.items.customers", href: "/customers", icon: Users, permission: PERMISSIONS.clientsView },
+  {
+    labelKey: "navigation.items.orderManager",
+    icon: Package,
+    children: [
+      {
+        labelKey: "navigation.items.orders",
         href: "/orders",
         icon: Package,
         permission: PERMISSIONS.pickupsView,
       },
       {
-        labelKey: "navigation.submenus.invoices",
-        icon: FileText,
-        children: [
-          {
-            labelKey: "navigation.items.invoices",
-            href: "/invoices",
-            icon: FileText,
-            permission: PERMISSIONS.invoicesView,
-          },
-          {
-            labelKey: "navigation.items.items",
-            href: "/items",
-            icon: Tag,
-            permission: PERMISSIONS.invoiceItemsView,
-          },
-          {
-            labelKey: "navigation.items.labelManager",
-            href: "/label-updater",
-            icon: ScanBarcode,
-            permission: PERMISSIONS.packagesView,
-          },
-          {
-            labelKey: "navigation.items.containers",
-            href: "/containers",
-            icon: Container,
-            permission: PERMISSIONS.containersView,
-          },
-        ],
-      },
-      {
-        labelKey: "navigation.submenus.routeManager",
+        labelKey: "navigation.items.routes",
+        href: "/pickup-routes",
         icon: ClipboardList,
-        children: [
-          {
-            labelKey: "navigation.items.routes",
-            href: "/routes",
-            icon: ClipboardList,
-            permission: PERMISSIONS.dispatchView,
-          },
-          {
-            labelKey: "navigation.items.deliveryRoutes",
-            href: "/delivery-routes",
-            icon: Truck,
-            permission: PERMISSIONS.dispatchView,
-          },
-          {
-            labelKey: "navigation.items.pickupRoutes",
-            href: "/pickup-routes",
-            icon: Truck,
-            permission: PERMISSIONS.dispatchView,
-          },
-        ],
+        permission: PERMISSIONS.dispatchView,
       },
-      { labelKey: "navigation.items.vehicles", href: "/vehicles", icon: Car, permission: PERMISSIONS.vehiclesView },
     ],
   },
+  {
+    labelKey: "navigation.submenus.invoices",
+    icon: FileText,
+    children: [
+      {
+        labelKey: "navigation.items.invoices",
+        href: "/invoices",
+        icon: FileText,
+        permission: PERMISSIONS.invoicesView,
+      },
+      {
+        labelKey: "navigation.items.items",
+        href: "/items",
+        icon: Tag,
+        permission: PERMISSIONS.invoiceItemsView,
+      },
+      {
+        labelKey: "navigation.items.containers",
+        href: "/containers",
+        icon: Container,
+        permission: PERMISSIONS.containersView,
+      },
+      {
+        labelKey: "navigation.items.deliveryRoutes",
+        href: "/delivery-routes",
+        icon: Truck,
+        permission: PERMISSIONS.dispatchView,
+      },
+    ],
+  },
+  {
+    labelKey: "navigation.submenus.barcodeManager",
+    icon: ScanBarcode,
+    children: [
+      {
+        labelKey: "navigation.items.barcodes",
+        href: "/barcodes",
+        icon: ScanBarcode,
+        permission: PERMISSIONS.packagesView,
+      },
+      {
+        labelKey: "navigation.items.labelManager",
+        href: "/label-updater",
+        icon: ScanBarcode,
+        permission: PERMISSIONS.packagesView,
+      },
+    ],
+  },
+  { labelKey: "navigation.items.vehicles", href: "/vehicles", icon: Car, permission: PERMISSIONS.vehiclesView },
+];
+
+const navigationGroups: NavigationGroup[] = [
+  ...primaryNavigationItems.map(navigationItemToGroup),
   {
     titleKey: "navigation.groups.accounting",
     items: [

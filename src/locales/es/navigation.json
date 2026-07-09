@@ -1,23 +1,29 @@
 {
   "groups": {
-    "workspace": "Espacio de trabajo",
     "accounting": "Contabilidad",
     "insights": "Información",
     "admin": "Administración"
   },
   "submenus": {
     "pickups": "Recogidas",
-    "invoices": "Facturas",
+    "orders": "Órdenes",
+    "invoices": "Administrador de facturas",
+    "routes": "Rutas",
     "routeManager": "Manejador de Rutas",
-    "inventory": "Inventario"
+    "inventory": "Administrador de inventario",
+    "barcodeManager": "Administrador de códigos de barras"
   },
   "items": {
     "dashboard": "Panel",
     "customers": "Clientes",
     "pickups": "Recogidas",
-    "orders": "Recogidas",
+    "orderManager": "Manejador de órdenes",
+    "orders": "Órdenes",
     "invoices": "Facturas",
-    "labelManager": "Manejador de etiquetas",
+    "invoicesManager": "Administrador de facturas",
+    "labelManager": "Administrador de etiquetas",
+    "barcodeManager": "Administrador de códigos de barras",
+    "barcodes": "Códigos de barras",
     "inventory": "Inventario",
     "inventoryStock": "Stock",
     "inventoryReceipts": "Ingresos",
@@ -27,8 +33,8 @@
     "items": "Artículos",
     "containers": "Contenedores",
     "routeManager": "Manejador de Rutas",
-    "pickupRoutes": "Rutas de recogida",
-    "deliveryRoutes": "Rutas de entrega",
+    "pickupRoutes": "Rutas",
+    "deliveryRoutes": "Entregas",
     "routes": "Rutas",
     "vehicles": "Vehículos",
     "dailyIncome": "Ingresos diarios",

@@ -28,6 +28,17 @@ export function formatActiveRouteHelperNames(record: ActiveRoute): string {
   return formatEmployeeNames(getActiveRouteHelpers(record));
 }
 
+export function formatActiveRouteRateLabel(
+  record: Pick<ActiveRoute, "rate">,
+  emptyValue = "—",
+): string {
+  if (record.rate == null || !Number.isFinite(record.rate)) return emptyValue;
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  }).format(record.rate);
+}
+
 export function formatActiveRouteTypeLabel(
   routeType: ActiveRoute["routeType"],
   t: (key: string) => string,

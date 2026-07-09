@@ -1,23 +1,29 @@
 {
   "groups": {
-    "workspace": "Workspace",
     "accounting": "Accounting",
     "insights": "Insights",
     "admin": "Admin"
   },
   "submenus": {
     "pickups": "Pickups",
-    "invoices": "Invoices",
+    "orders": "Orders",
+    "invoices": "Invoices Manager",
+    "routes": "Routes",
     "routeManager": "Route Manager",
-    "inventory": "Inventory"
+    "inventory": "Inventory Manager",
+    "barcodeManager": "Barcode Manager"
   },
   "items": {
     "dashboard": "Dashboard",
     "customers": "Customers",
     "pickups": "Pickups",
-    "orders": "Pickups",
+    "orderManager": "Order Manager",
+    "orders": "Orders",
     "invoices": "Invoices",
-    "labelManager": "Label Manager",
+    "invoicesManager": "Invoices Manager",
+    "labelManager": "Labels Manager",
+    "barcodeManager": "Barcode Manager",
+    "barcodes": "Barcodes",
     "inventory": "Inventory",
     "inventoryStock": "Stock",
     "inventoryReceipts": "Receipts",
@@ -27,8 +33,8 @@
     "items": "Items",
     "containers": "Containers",
     "routeManager": "Route Manager",
-    "pickupRoutes": "Pickup Routes",
-    "deliveryRoutes": "Delivery Routes",
+    "pickupRoutes": "Routes",
+    "deliveryRoutes": "Deliveries",
     "routes": "Routes",
     "vehicles": "Vehicles",
     "dailyIncome": "Daily Income",

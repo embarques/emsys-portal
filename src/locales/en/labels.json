@@ -1,7 +1,8 @@
 {
-  "title": "Label Manager",
+  "title": "Labels Manager",
   "pages": {
-    "description": "Update label status, transfer containers, assign routes, and process barcode scans for shipment labels."
+    "barcodesDescription": "Browse and manage shipment barcodes across invoices, containers, and routes.",
+    "description": "Update barcode status, transfer containers, assign routes, and process barcode scans for shipment labels."
   },
   "statuses": {
     "pending": "Pending",

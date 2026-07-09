@@ -22,6 +22,7 @@ export type WorkspaceTabSection =
   | "pickups"
   | "invoices"
   | "inventory"
+  | "barcodes"
   | "routes"
   | "accounting"
   | "insights"
@@ -34,22 +35,29 @@ export const WORKSPACE_TAB_SECTION_COLORS: Record<WorkspaceTabSection, string> =
   pickups: "#3b82f6",
   invoices: "#f97316",
   inventory: "#06b6d4",
+  barcodes: "#6366f1",
   routes: "#8b5cf6",
   accounting: "#eab308",
   insights: "#ec4899",
   admin: "#ef4444",
 };
 
+/**
+ * Form-tab feature keys → section accents.
+ * Aligns with sidebar manager groups (Order, Invoices, Barcode, Inventory, etc.).
+ */
 const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
   customers: "customers",
   orders: "pickups",
+  "pickup-routes": "pickups",
   invoices: "invoices",
   "invoice-item-staging": "invoices",
   items: "invoices",
   containers: "invoices",
+  "delivery-routes": "invoices",
+  barcodes: "barcodes",
+  "label-updater": "barcodes",
   routes: "routes",
-  "pickup-routes": "routes",
-  "delivery-routes": "routes",
   vehicles: "routes",
   "daily-income-transactions": "accounting",
   users: "admin",
@@ -58,23 +66,26 @@ const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
   branches: "admin",
 };
 
+/** List/map routes → section accents (mirrors navigation manager hierarchy). */
 const WORKSPACE_TAB_PATH_SECTIONS: Record<string, WorkspaceTabSection> = {
   "/": "dashboard",
   "/customers": "customers",
   "/orders": "pickups",
   "/orders/map": "pickups",
+  "/pickup-routes": "pickups",
   "/invoices": "invoices",
   "/items": "invoices",
-  "/label-updater": "invoices",
   "/containers": "invoices",
+  "/delivery-routes": "invoices",
+  "/barcodes": "barcodes",
+  "/label-updater": "barcodes",
+  "/inventory": "inventory",
   "/inventory/items": "inventory",
   "/inventory/receipts": "inventory",
   "/inventory/dispatches": "inventory",
   "/inventory/recipients": "inventory",
   "/inventory/reports": "inventory",
   "/routes": "routes",
-  "/pickup-routes": "routes",
-  "/delivery-routes": "routes",
   "/vehicles": "routes",
   "/accounting/daily-income": "accounting",
   "/accounting/accounts": "accounting",

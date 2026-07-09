@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownToLine,
   CheckCircle2,
@@ -28,7 +28,12 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
+import { useWorkspaceTabScope } from "@/lib/layout/workspace-tab-scope";
 import { writeOrdersMapContext } from "@/lib/orders/store/orders-map-context";
+import {
+  clearOrdersListContext,
+  readOrdersListContext,
+} from "@/lib/orders/store/orders-list-context";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 
@@ -160,6 +165,8 @@ const defaultFilters: OrderFilterState = {
 
 export function OrdersWorkspace() {
   const { t } = useTranslation();
+  const tabScope = useWorkspaceTabScope();
+  const listActive = tabScope?.isActive ?? true;
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const { loading: authLoading, companyId } = useAuth();
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
@@ -230,6 +237,20 @@ export function OrdersWorkspace() {
     buildTableSelectionResetKey(deferredQuery, filters.rows),
     setSelectedIds,
   );
+
+  useEffect(() => {
+    if (!listActive) return;
+
+    const context = readOrdersListContext();
+    if (!context) return;
+
+    clearOrdersListContext();
+    setFilters(context.filters);
+    setPage(1);
+    if (context.openFilters) {
+      setFiltersOpen(true);
+    }
+  }, [listActive, tabScope?.tabId]);
 
   const selectedOrders = useMemo(
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),

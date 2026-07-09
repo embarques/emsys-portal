@@ -47,6 +47,7 @@ export type VehicleRouteWritePayload = {
   date?: string;
   dayOfWeek?: string[];
   container?: VehicleRouteContainerWriteRef;
+  rate?: number;
 };
 
 /** `GET /v1/vehicle-routes` record (normalized shape lives in `types.ts`). */
@@ -65,6 +66,7 @@ export type VehicleRouteRecord = {
   createdBy: string;
   updatedAt: string;
   updatedBy: string;
+  rate?: number;
 };
 
 /** Example `POST /v1/vehicle-routes` pickup body (date-based). */

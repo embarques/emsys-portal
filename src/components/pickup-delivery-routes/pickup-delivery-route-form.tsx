@@ -6,6 +6,7 @@ import {
   CircleCheck,
   ClipboardList,
   Container,
+  DollarSign,
   Plus,
   Package,
   Route as RouteIcon,
@@ -59,6 +60,7 @@ type ActiveRouteFormProps = {
   onDayOfWeekChange: (dayOfWeek: string[]) => void;
   onNameChange: (name: string) => void;
   onContainerChange: (containerId: string) => void;
+  onRateChange: (rate: string) => void;
   onRouteRecordChange: (routeRecordId: string) => void;
   onRoleChange: (employeeId: number, role: RouteCrewRole) => void;
   onEmployeesChange: (employees: RouteEmployeeRef[]) => void;
@@ -103,6 +105,7 @@ export function ActiveRouteForm({
   onDayOfWeekChange,
   onNameChange,
   onContainerChange,
+  onRateChange,
   onRouteRecordChange,
   onRoleChange,
   onEmployeesChange,
@@ -301,6 +304,27 @@ export function ActiveRouteForm({
               options={containerOptions}
               required
             />
+          </FormSection>
+        ) : null}
+
+        {isDelivery ? (
+          <FormSection icon={DollarSign} title={t("routes.activeRoute.rate")}>
+            <div className="space-y-1.5">
+              <Input
+                id="active-route-rate"
+                type="number"
+                min={0}
+                step="0.01"
+                inputMode="decimal"
+                value={values.rate}
+                onChange={(event) => onRateChange(event.target.value)}
+                placeholder={t("routes.activeRoute.ratePlaceholder")}
+                aria-describedby="active-route-rate-hint"
+              />
+              <p id="active-route-rate-hint" className="text-xs text-muted-foreground">
+                {t("routes.activeRoute.rateHint")}
+              </p>
+            </div>
           </FormSection>
         ) : null}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Printer, RouteOff, Sparkles } from "lucide-react";
+import { Eye, Printer, RouteOff, Sparkles } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,10 @@ import {
 } from "@/components/ui/dialog";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { fetchAllPickupsByRoutes } from "@/lib/orders/api/orders-api";
+import { buildPickupRouteFilterRows } from "@/lib/orders/pickup-route-filter";
+import { writeOrdersListContext } from "@/lib/orders/store/orders-list-context";
 import { getOrderRecordId } from "@/lib/orders/types";
 import { resolveActiveRouteReportIds } from "@/lib/pickup-delivery-routes/display";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
@@ -35,6 +38,7 @@ export function PickupRoutesSelectionActions({
 }: PickupRoutesSelectionActionsProps) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
+  const { openTab } = useWorkspaceTabs();
   const generatePickupReportMutation = useGeneratePickupReport();
   const clearPickupRouteMutation = useClearPickupRoute();
   const [clearRouteOpen, setClearRouteOpen] = useState(false);
@@ -84,6 +88,19 @@ export function PickupRoutesSelectionActions({
     );
   }
 
+  function viewSelectedPickupRoute() {
+    if (!singleSelectedRouteId) return;
+
+    writeOrdersListContext({
+      filters: {
+        query: "",
+        rows: buildPickupRouteFilterRows(singleSelectedRouteId),
+      },
+      openFilters: true,
+    });
+    openTab("/orders", t("navigation.items.orderManager"));
+  }
+
   async function confirmClearRoute() {
     if (!singleSelectedRouteId) return;
 
@@ -109,6 +126,28 @@ export function PickupRoutesSelectionActions({
 
   return (
     <>
+      <Button
+        variant="outline"
+        size="sm"
+        className={cn("whitespace-nowrap", tableSelectionActionStyles.optimize)}
+        onClick={optimizeSelectedPickupRoutes}
+        disabled={isPrinting || isClearing}
+      >
+        <Sparkles className="h-4 w-4" />
+        {t("routes.pickupRoutes.actions.optimize")}
+      </Button>
+      {singleSelectedRouteId ? (
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
+          onClick={viewSelectedPickupRoute}
+          disabled={isPrinting || isClearing}
+        >
+          <Eye className="h-4 w-4" />
+          {t("routes.pickupRoutes.actions.viewRoute")}
+        </Button>
+      ) : null}
       <Button
         variant="outline"
         size="sm"
@@ -138,16 +177,6 @@ export function PickupRoutesSelectionActions({
             : t("routes.pickupRoutes.actions.clearRoute")}
         </Button>
       ) : null}
-      <Button
-        variant="outline"
-        size="sm"
-        className={cn("whitespace-nowrap", tableSelectionActionStyles.optimize)}
-        onClick={optimizeSelectedPickupRoutes}
-        disabled={isPrinting || isClearing}
-      >
-        <Sparkles className="h-4 w-4" />
-        {t("routes.pickupRoutes.actions.optimize")}
-      </Button>
 
       <Dialog open={clearRouteOpen} onOpenChange={setClearRouteOpen}>
         <DialogContent className="z-[60]">
