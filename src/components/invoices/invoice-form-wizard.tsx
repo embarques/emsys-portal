@@ -267,13 +267,15 @@ export function InvoiceFormWizard({
     setDailyIncomeRegistration(null);
   }
 
-  const previewError = submitError ?? externalError;
-  const footerError = step === previewStep ? null : stepError ?? externalError;
+  const bannerError =
+    step === previewStep ? submitError ?? externalError : stepError ?? externalError;
   const showUnverifiedSenderWarning =
     isGoogleMapsConfigured() &&
     Boolean(values.sender && customerHasUnverifiedPrimaryAddress(values.sender));
-  const footerWarning =
-    showUnverifiedSenderWarning && (step === 2 || step === previewStep)
+  const bannerWarning =
+    !bannerError &&
+    showUnverifiedSenderWarning &&
+    (step === 2 || step === previewStep)
       ? t("invoices.wizard.validation.unverifiedSenderAddress")
       : null;
   const showPrint = allowPrint && Boolean(onPrint);
@@ -316,10 +318,10 @@ export function InvoiceFormWizard({
             <h2 className={invoiceStepTitleClassName}>{t(stepTitleKey)}</h2>
           </div>
 
-          {footerError ? (
-            <InvoiceWizardNotice tone="error" message={footerError} />
-          ) : footerWarning ? (
-            <InvoiceWizardNotice tone="warning" message={footerWarning} />
+          {bannerError ? (
+            <InvoiceWizardNotice tone="error" message={bannerError} />
+          ) : bannerWarning ? (
+            <InvoiceWizardNotice tone="warning" message={bannerWarning} />
           ) : null}
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -358,7 +360,6 @@ export function InvoiceFormWizard({
                   onEditStep={goToStep}
                   showPaymentSection={requireDailyIncomeRegistration}
                   onEditPayment={requireDailyIncomeRegistration ? () => setStep(4) : undefined}
-                  errorMessage={previewError}
                 />
               </div>
             ) : null}

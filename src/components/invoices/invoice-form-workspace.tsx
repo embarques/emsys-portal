@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
 import { fetchContainerById } from "@/lib/containers/api/containers-api";
+import { fetchEmployeeById } from "@/lib/employees/api/employees-api";
 import { formatInvoiceTabLabel } from "@/lib/invoices/display";
 import {
   useCreateInvoice,
@@ -26,6 +27,7 @@ import {
   createEmptyInvoiceForm,
   getInvoiceRecordId,
   invoiceToFormValues,
+  isInvoiceEmployeePickupSource,
   suggestNextInvoiceNumber,
   type InvoiceFormSubmitResult,
   type InvoiceFormValues,
@@ -106,6 +108,31 @@ function InvoiceWizardShell({
   );
 }
 
+async function resolveInvoiceEmployee(
+  values: InvoiceFormValues,
+): Promise<InvoiceWriteContext["employee"]> {
+  if (isInvoiceEmployeePickupSource(values.pickupSource) && values.pickupEmployeeId.trim()) {
+    const employee = await fetchEmployeeById(values.pickupEmployeeId.trim());
+    const userName = employee.user?.email?.trim() || employee.email.trim() || undefined;
+    const fullName = employee.name.trim();
+
+    return {
+      id: employee.id,
+      name: fullName || values.pickupEmployeeName.trim(),
+      ...(userName ? { userName } : {}),
+      ...(fullName ? { fullName } : {}),
+    };
+  }
+
+  const currentUser = await fetchCurrentUser();
+  return {
+    id: currentUser.id,
+    name: currentUser.name,
+    userName: currentUser.email,
+    fullName: currentUser.name,
+  };
+}
+
 async function buildInvoiceWriteContext(values: InvoiceFormValues): Promise<InvoiceWriteContext> {
   const currentUser = await fetchCurrentUser();
   const containerId = Number(values.containerId);
@@ -114,15 +141,13 @@ async function buildInvoiceWriteContext(values: InvoiceFormValues): Promise<Invo
     throw new Error("A container is required.");
   }
 
-  const container = await fetchContainerById(containerId);
+  const [employee, container] = await Promise.all([
+    resolveInvoiceEmployee(values),
+    fetchContainerById(containerId),
+  ]);
 
   return {
-    employee: {
-      id: currentUser.id,
-      name: currentUser.name,
-      userName: currentUser.email,
-      fullName: currentUser.name,
-    },
+    employee,
     branch: {
       id: currentUser.branch.id,
       code: currentUser.branch.code,

@@ -15,7 +15,7 @@ import {
   type StripeStyleSearchBody,
 } from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
-import { buildApiAddressPayload, buildApiBranchDto } from "@/lib/api/payloads";
+import { buildApiBranchDto } from "@/lib/api/payloads";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, createRecordId, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
@@ -703,6 +703,15 @@ export type InvoiceWriteContext = {
   };
 };
 
+type ApiInvoiceCustomerAddress = {
+  address1?: string;
+  address2?: string;
+  apartment?: string;
+  city?: string;
+  state?: string;
+  zipcode?: string;
+};
+
 type ApiInvoiceCustomerWriteRef = {
   id?: string;
   name: string;
@@ -711,8 +720,27 @@ type ApiInvoiceCustomerWriteRef = {
   phone2?: string;
   email?: string;
   IDNumber?: string;
-  address?: ReturnType<typeof buildApiAddressPayload>;
+  address?: ApiInvoiceCustomerAddress;
 };
+
+function buildInvoiceCustomerAddress(customer: Customer): ApiInvoiceCustomerAddress | undefined {
+  const primary = getCustomerPrimaryCoreAddress(customer);
+  const address: ApiInvoiceCustomerAddress = {};
+  const entries: [keyof ApiInvoiceCustomerAddress, string][] = [
+    ["address1", primary.address1.trim()],
+    ["address2", primary.address2.trim()],
+    ["apartment", primary.apartment.trim()],
+    ["city", primary.city.trim()],
+    ["state", primary.state.trim()],
+    ["zipcode", primary.zipcode.trim()],
+  ];
+
+  for (const [key, value] of entries) {
+    if (value) address[key] = value;
+  }
+
+  return Object.keys(address).length > 0 ? address : undefined;
+}
 
 type ApiInvoiceDetailWriteRef = {
   id?: string;
@@ -753,7 +781,7 @@ function buildInvoiceCustomerWriteRef(
   const phone2 = getPhoneAtDisplayIndex(customer.phones, 1);
   const email = customer.email.trim();
   const idNumber = customer.IDNumber.trim();
-  const address = buildApiAddressPayload(getCustomerPrimaryCoreAddress(customer));
+  const address = buildInvoiceCustomerAddress(customer);
   const customerType = customer.customerType ?? fallbackType;
 
   const payload: ApiInvoiceCustomerWriteRef = {
@@ -893,12 +921,11 @@ function buildInvoiceWritePayload(
     payload.receiver = buildInvoiceCustomerWriteRef(values.receiver, CUSTOMER_TYPE_RECEIVER);
   }
 
-  const pickupId = values.pickupId.trim();
-  if (pickupId) {
-    payload.pickup = { id: pickupId };
-  }
-
   if (options.isUpdate) {
+    const pickupId = values.pickupId.trim();
+    if (pickupId) {
+      payload.pickup = { id: pickupId };
+    }
     payload.isVoid = false;
   }
 
