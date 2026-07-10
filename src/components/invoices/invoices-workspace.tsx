@@ -20,6 +20,7 @@ import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 
@@ -511,6 +512,8 @@ export function InvoicesWorkspace() {
       label: t("invoices.columns.senderAddress"),
       sortField: "sender.address.address1",
       defaultWidth: 220,
+      truncateCell: false,
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (invoice) => <InvoicePartyAddressCell party={invoice.sender} />,
     },
     {
@@ -527,6 +530,8 @@ export function InvoicesWorkspace() {
       label: t("invoices.columns.receiverAddress"),
       sortField: "receiver.address.address1",
       defaultWidth: 220,
+      truncateCell: false,
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (invoice) => (
         <InvoicePartyAddressCell party={getInvoicePrimaryReceiver(invoice)} />
       ),
@@ -843,10 +848,7 @@ export function InvoicesWorkspace() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
-              <Trash2 className="h-4 w-4" />
-              {isDeleting ? "Deleting…" : "Delete"}
-            </Button>
+            <ConfirmDeleteButton isPending={isDeleting} onClick={confirmDelete} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Printer, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Printer, Save } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { InvoiceForm } from "@/components/invoices/invoice-form";
@@ -421,7 +421,7 @@ export function InvoiceFormWizard({
                   </Button>
                 ) : null}
                 <Button type="button" onClick={handleSave} disabled={isSubmitting}>
-                  <Save className="size-4" />
+                  {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                   {isSubmitting ? t("common.actions.saving") : submitLabel}
                 </Button>
               </>

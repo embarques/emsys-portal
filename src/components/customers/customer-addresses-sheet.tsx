@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useCustomer } from "@/lib/customers/hooks/use-customers";
 import type { Customer } from "@/lib/customers/types";
 import {
-  formatAddressLine,
+  formatCoreAddressLines,
   getAddressLabelKey,
   ADDRESS_TEXT_WRAP_CLASSNAME,
   getPrimaryAddress,
@@ -117,7 +117,8 @@ export function CustomerTableAddressCell({ customer, className }: CustomerTableA
   const resolvedCustomer = detailQuery.data ?? customer;
   const total = resolveCustomerAddressCount(resolvedCustomer);
   const primary = getPrimaryAddress(resolvedCustomer);
-  const primaryLine = primary ? formatAddressLine(primary, "full") : "—";
+  const addressLines = primary ? formatCoreAddressLines(primary) : [];
+  const addressTitle = addressLines.length > 0 ? addressLines.join(", ") : "—";
 
   function openSheet(event: React.MouseEvent) {
     event.stopPropagation();
@@ -132,9 +133,17 @@ export function CustomerTableAddressCell({ customer, className }: CustomerTableA
   return (
     <>
       <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME, className)}>
-        <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")} title={primaryLine}>
-          {primaryLine}
-        </p>
+        {addressLines.length > 0 ? (
+          <div className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")} title={addressTitle}>
+            {addressLines.map((line, index) => (
+              <p key={index} className={ADDRESS_TEXT_WRAP_CLASSNAME}>
+                {line}
+              </p>
+            ))}
+          </div>
+        ) : (
+          <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")}>—</p>
+        )}
         {detailQuery.isFetching && total <= 1 ? (
           <p className="mt-0.5 text-xs text-muted-foreground">{t("customers.addresses.loadingAddresses")}</p>
         ) : null}

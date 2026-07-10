@@ -2,9 +2,9 @@ import { getPrimaryRecordPhone, getRecordPhoneDisplayNumber } from "@/lib/phones
 import type { RecordPhone } from "@/lib/phones/types";
 import type { Customer, CustomerCoreAddress } from "@/lib/customers/types";
 
-/** Wrap long address strings at words and, when needed, inside long tokens. */
+/** Wrap long address strings on word boundaries only (never mid-word). */
 export const ADDRESS_TEXT_WRAP_CLASSNAME =
-  "min-w-0 max-w-full whitespace-normal break-all [overflow-wrap:anywhere]";
+  "min-w-0 max-w-full whitespace-normal break-words [overflow-wrap:break-word]";
 
 function addressHasContent(address: CustomerCoreAddress): boolean {
   return [
@@ -137,11 +137,13 @@ function collectFormattedAddressParts(
   const city = trimAddressPart(address.city);
   const state = trimAddressPart(address.state);
   const zipcode = trimAddressPart(address.zipcode);
+  const country = trimAddressPart(address.country);
   const isDr = isDominicanRepublicAddressCountry(address.country);
 
-  const locationLine = isDr
+  const localityLine = isDr
     ? formatDrLocationLine(city, state)
     : formatUsaLocationLine(city, state, zipcode);
+  const locationLine = [localityLine, country].filter(Boolean).join(", ");
 
   if (locationLine) parts.push(locationLine);
 

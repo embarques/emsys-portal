@@ -59,6 +59,7 @@ type OrderFormProps = {
   isEditing?: boolean;
   updatedAt?: string;
   submitLabel: string;
+  isSubmitting?: boolean;
   onSubmit: (values: OrderFormValues) => OrderFormSubmitResult | Promise<OrderFormSubmitResult>;
   onFormErrorChange?: (error: string | null) => void;
   onCancel: () => void;
@@ -115,6 +116,7 @@ export function OrderForm({
   isEditing = false,
   updatedAt,
   submitLabel,
+  isSubmitting: isSubmittingProp = false,
   onSubmit,
   onFormErrorChange,
   onCancel,
@@ -132,10 +134,12 @@ export function OrderForm({
 
   const [values, setValues] = useState<OrderFormValues>(initialValues ?? createEmptyOrderForm());
   const [formError, setFormError] = useState<string | null>(null);
+  const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
   const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
   const isSavingCustomer = createCustomerMutation.isPending || updateCustomerMutation.isPending;
+  const isSubmitting = isSubmittingProp || isLocalSubmitting;
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyOrderForm());
@@ -314,17 +318,22 @@ export function OrderForm({
       return;
     }
 
-    const result = await onSubmit(values);
-    onFormErrorChange?.(result.error);
-    if (!result.error && !isEditing) {
-      setValues(resetOrderFormForNextEntry(values));
+    setIsLocalSubmitting(true);
+    try {
+      const result = await onSubmit(values);
+      onFormErrorChange?.(result.error);
+      if (!result.error && !isEditing) {
+        setValues(resetOrderFormForNextEntry(values));
+      }
+    } finally {
+      setIsLocalSubmitting(false);
     }
   }
 
   return (
     <>
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody>
+      <FormBody isBusy={isSubmitting}>
       <FormSection icon={CalendarDays} title={t("orders.form.sections.pickupDate")} required>
         <div className="space-y-2.5">
           <div className="space-y-1">
@@ -477,6 +486,7 @@ export function OrderForm({
         error={formError}
         warning={unverifiedSenderWarning}
         submitLabel={submitLabel}
+        isSubmitting={isSubmitting}
         submitDisabled={isBlocked}
         onCancel={onCancel}
       />

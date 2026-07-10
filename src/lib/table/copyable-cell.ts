@@ -17,7 +17,10 @@ export function resolveCopyableText<T>(
     return isEmptyCopyValue(explicitValue) ? null : explicitValue;
   }
 
-  if (column.stopRowClick || column.truncateCell === false) return null;
+  if (column.stopRowClick) return null;
+  // Custom / non-plain cells that opt into wrapping often set truncateCell: false
+  // and supply their own markup — skip selectable wrapper unless copyValue is set.
+  if (column.truncateCell === false) return null;
 
   if (typeof cellContent !== "string" && typeof cellContent !== "number") return null;
 

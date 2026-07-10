@@ -64,7 +64,7 @@ export function RoleForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody>
+      <FormBody isBusy={isSubmitting}>
         <FormSection icon={Shield} title={t("roles.form.sections.role")}>
           <div className="space-y-1">
             <Label htmlFor="name">

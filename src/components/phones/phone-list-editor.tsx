@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Star, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -34,6 +34,7 @@ export function PhoneListEditor({
 }: PhoneListEditorProps) {
   const { t } = useTranslation();
   const entries = phones.length > 0 ? phones : createDefaultRecordPhones();
+  const [pendingFocusIndex, setPendingFocusIndex] = useState<number | null>(null);
 
   const phoneTypeOptions = useMemo(
     () =>
@@ -43,6 +44,14 @@ export function PhoneListEditor({
       })),
     [t],
   );
+
+  useEffect(() => {
+    if (pendingFocusIndex == null) return;
+    const input = document.getElementById(`${idPrefix}-number-${pendingFocusIndex}`);
+    if (!input) return;
+    input.focus();
+    setPendingFocusIndex(null);
+  }, [pendingFocusIndex, entries.length, idPrefix]);
 
   function updatePhone(index: number, patch: Partial<RecordPhone>) {
     const next = entries.map((phone, phoneIndex) => {
@@ -57,7 +66,9 @@ export function PhoneListEditor({
   }
 
   function addPhone() {
+    const newIndex = entries.length;
     onChange([...entries, createEmptyRecordPhone(false)]);
+    setPendingFocusIndex(newIndex);
   }
 
   function removePhone(index: number) {
@@ -77,7 +88,7 @@ export function PhoneListEditor({
 
           return (
             <div key={`${idPrefix}-${index}`} className="flex items-center gap-2">
-              <div className="w-28 shrink-0 sm:w-32">
+              <div className="w-36 shrink-0 sm:w-40">
                 <SearchableSelect
                   aria-label={t("phones.aria.type", { index: index + 1 })}
                   value={phone.type}
@@ -89,6 +100,7 @@ export function PhoneListEditor({
 
               <div className="min-w-0 flex-1">
                 <PhoneInput
+                  id={`${idPrefix}-number-${index}`}
                   aria-label={t("phones.aria.number", { index: index + 1 })}
                   value={phone.number}
                   onChange={(nextValue) => updatePhone(index, { number: nextValue })}

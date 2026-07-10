@@ -26,6 +26,7 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useWorkspaceTabScope } from "@/lib/layout/workspace-tab-scope";
 import { writeOrdersMapContext } from "@/lib/orders/store/orders-map-context";
@@ -577,26 +578,24 @@ export function OrdersWorkspace() {
       label: t("orders.columns.senderPhone"),
       sortField: "sender.phone1",
       truncateCell: false,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (order) => <CustomerTablePhoneCell customer={order.sender} />,
     },
     {
       id: "sender.address",
       label: t("orders.columns.senderAddress"),
       sortField: "sender.address.address1",
-      defaultWidth: 360,
-      autoFitColumn: false,
+      defaultWidth: 280,
       truncateCell: false,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (order) => <PickupSenderAddressCell customer={order.sender} />,
     },
     {
       id: "comments",
       label: t("orders.columns.comments"),
       defaultWidth: 225,
-      autoFitColumn: false,
       truncateCell: false,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (order) => <PickupCommentsCell order={order} />,
     },
     {
@@ -934,6 +933,7 @@ export function OrdersWorkspace() {
             isEditing={formMode === "edit"}
             updatedAt={editingOrder?.updatedAt}
             submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("orders.actions.add")}
+            isSubmitting={isSaving}
             onSubmit={saveOrder}
             onFormErrorChange={setFormError}
             onCancel={() => {
@@ -1119,10 +1119,7 @@ export function OrdersWorkspace() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("common.actions.cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
-              <Trash2 className="h-4 w-4" />
-              {t("common.actions.delete")}
-            </Button>
+            <ConfirmDeleteButton isPending={isSaving} onClick={confirmDelete} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

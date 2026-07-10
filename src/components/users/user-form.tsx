@@ -122,7 +122,7 @@ export function UserForm({
       onKeyDown={handleEnterNavigation}
       className="flex min-h-0 flex-1 flex-col"
     >
-      <FormBody>
+      <FormBody isBusy={isSubmitting}>
         <FormSection icon={KeyRound} title={t("users.form.sections.profile")}>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={t("users.form.fields.email")} required error={errors.email?.message}>

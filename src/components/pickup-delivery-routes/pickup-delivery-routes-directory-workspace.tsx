@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { CalendarRange, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { CalendarRange, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import { ActiveRouteViewSheet } from "@/components/pickup-delivery-routes/pickup-delivery-route-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
@@ -596,10 +597,7 @@ export function ActiveRoutesDirectoryWorkspace({
             >
               {t("common.actions.cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDeleteActiveRoutes} disabled={isSaving}>
-              <Trash2 className="h-4 w-4" />
-              {t("common.actions.delete")}
-            </Button>
+            <ConfirmDeleteButton isPending={isSaving} onClick={confirmDeleteActiveRoutes} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

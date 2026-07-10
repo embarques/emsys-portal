@@ -449,31 +449,33 @@ function DataTableContent<T>({
                         : undefined;
                     const copyText = resolveCopyableText(column, row, cellContent);
 
+                    const shouldTruncate = column.truncateCell === true;
+
                     return (
                     <td
                       key={column.id}
                       style={{ width: getColumnWidth(column.id) }}
                       className={cn(
                         "px-2 py-3 align-top",
-                        column.truncateCell === false ? "whitespace-normal" : "overflow-hidden",
+                        shouldTruncate ? "overflow-hidden" : "whitespace-normal break-words",
                         column.cellClassName,
                       )}
                       onClick={column.stopRowClick ? (event) => event.stopPropagation() : undefined}
-                      title={
-                        !copyText && column.truncateCell !== false && cellText ? cellText : undefined
-                      }
+                      title={!copyText && shouldTruncate && cellText ? cellText : undefined}
                     >
                       {copyText ? (
                         <TableCopyableCell
                           value={copyText}
-                          truncate={column.truncateCell !== false}
+                          truncate={shouldTruncate}
                         >
-                          {column.truncateCell === false ? cellContent : undefined}
+                          {!shouldTruncate ? cellContent : undefined}
                         </TableCopyableCell>
-                      ) : column.truncateCell === false ? (
-                        <div className="min-w-0 max-w-full">{cellContent}</div>
-                      ) : (
+                      ) : shouldTruncate ? (
                         <div className="truncate">{cellContent}</div>
+                      ) : (
+                        <div className="min-w-0 max-w-full break-words [overflow-wrap:break-word]">
+                          {cellContent}
+                        </div>
                       )}
                     </td>
                     );

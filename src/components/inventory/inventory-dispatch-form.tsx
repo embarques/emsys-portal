@@ -109,7 +109,7 @@ export function InventoryDispatchForm({
 
   return (
     <form onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody>
+      <FormBody isBusy={isSubmitting}>
         <FormSection title={t("inventory.form.sections.header")}>
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-1">
@@ -211,11 +211,11 @@ export function InventoryDispatchForm({
           {t("common.actions.cancel")}
         </Button>
         <Button type="button" variant="outline" disabled={isSubmitting} onClick={(event) => handleSubmit(event, false)}>
-          {submitLabel}
+          {isSubmitting ? t("common.actions.saving") : submitLabel}
         </Button>
         {secondarySubmitLabel ? (
           <Button type="button" disabled={isSubmitting} onClick={(event) => handleSubmit(event, true)}>
-            {secondarySubmitLabel}
+            {isSubmitting ? t("common.actions.saving") : secondarySubmitLabel}
           </Button>
         ) : null}
       </div>

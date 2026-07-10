@@ -118,7 +118,7 @@ export function EmployeeForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody>
+      <FormBody isBusy={isSubmitting}>
         <FormSection icon={User} title={t("employees.form.sections.employee")}>
           <div className="space-y-2.5">
             <div className="space-y-1">

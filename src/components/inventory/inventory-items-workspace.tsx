@@ -20,6 +20,7 @@ import { InventoryReceiptForm } from "@/components/inventory/inventory-receipt-f
 import { InventoryViewSheet } from "@/components/inventory/inventory-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -568,9 +569,7 @@ export function InventoryItemsWorkspace() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("common.actions.cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              {t("common.actions.delete")}
-            </Button>
+            <ConfirmDeleteButton isPending={deleteItems.isPending} onClick={confirmDelete} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

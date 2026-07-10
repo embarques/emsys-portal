@@ -95,7 +95,7 @@ export function CheckForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody>
+      <FormBody isBusy={isSubmitting}>
         <FormSection icon={Banknote} title={t("accounting.checks.form.sections.details")}>
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-1">

@@ -15,6 +15,7 @@ import { ItemViewSheet } from "@/components/items/item-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
@@ -538,10 +539,7 @@ export function ItemsWorkspace() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
               {t("common.actions.cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
-              <Trash2 className="h-4 w-4" />
-              {t("common.actions.delete")}
-            </Button>
+            <ConfirmDeleteButton isPending={isSaving} onClick={confirmDelete} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

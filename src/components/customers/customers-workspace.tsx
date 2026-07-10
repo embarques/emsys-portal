@@ -19,6 +19,7 @@ import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
@@ -395,7 +396,7 @@ export function CustomersWorkspace() {
       label: t("customers.columns.phone"),
       sortField: "phones.number",
       truncateCell: false,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (customer) => <CustomerTablePhoneCell customer={customer} />,
     },
     {
@@ -409,10 +410,9 @@ export function CustomersWorkspace() {
       label: t("customers.columns.address"),
       sortField: "addresses.address1",
       defaultWidth: 225,
-      autoFitColumn: false,
       truncateCell: false,
       stopRowClick: true,
-      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "max-w-0 align-top"),
+      cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
       renderCell: (customer) => <CustomerTableAddressCell customer={customer} />,
     },
     {
@@ -430,7 +430,7 @@ export function CustomersWorkspace() {
     {
       id: "notes",
       label: t("customers.columns.notes"),
-      cellClassName: "max-w-[240px] truncate align-top",
+      cellClassName: "align-top",
       renderCell: (customer) => customer.notes || t("common.empty.dash"),
     },
     {
@@ -752,10 +752,7 @@ export function CustomersWorkspace() {
             <Button variant="outline" onClick={closeDeleteDialog} disabled={isSaving}>
               {t("common.actions.cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
-              <Trash2 className="h-4 w-4" />
-              {t("common.actions.delete")}
-            </Button>
+            <ConfirmDeleteButton isPending={isSaving} onClick={confirmDelete} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

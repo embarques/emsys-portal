@@ -177,7 +177,7 @@ export function RouteForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody>
+      <FormBody isBusy={isSubmitting}>
         {isEditing && (values.routeId.trim() || values.name.trim()) ? (
           <FormSection icon={ClipboardList} title={t("routes.form.sections.details")}>
             <div className="grid gap-2.5 sm:grid-cols-2">

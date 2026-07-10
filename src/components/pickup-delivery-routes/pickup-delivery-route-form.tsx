@@ -138,7 +138,7 @@ export function ActiveRouteForm({
       onKeyDown={handleEnterNavigation}
       className="flex min-h-0 flex-1 flex-col"
     >
-      <FormBody>
+      <FormBody isBusy={isSubmitting}>
         <FormSection icon={CircleCheck} title={t("routes.activeRoute.status")}>
           <div
             className="inline-flex items-center gap-1 rounded-lg border border-input bg-muted p-1"

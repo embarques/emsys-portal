@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 import { useTranslation } from "@/lib/i18n";
 
@@ -52,14 +52,32 @@ export function FormSection({
 
 type FormBodyProps = {
   className?: string;
+  /** When true, shows a saving overlay so the wait is obvious during CRUD. */
+  isBusy?: boolean;
+  /** Optional busy message (defaults to common.actions.saving). */
+  busyLabel?: string;
   children: React.ReactNode;
 };
 
 /** Scrollable form body with the shared muted background and padding. */
-export function FormBody({ className, children }: FormBodyProps) {
+export function FormBody({ className, isBusy = false, busyLabel, children }: FormBodyProps) {
+  const { t } = useTranslation();
+
   return (
-    <div className={cn("flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", className)}>
+    <div className={cn("relative flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", className)}>
       {children}
+      {isBusy ? (
+        <div
+          className="absolute inset-0 z-10 m-0 flex items-center justify-center bg-background/70 backdrop-blur-[1px]"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="flex items-center gap-2 rounded-lg border bg-card px-4 py-3 text-sm shadow-sm">
+            <Loader2 className="size-4 animate-spin text-primary" />
+            {busyLabel ?? t("common.actions.saving")}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -131,6 +149,7 @@ export function FormFooter({
             </Button>
           ) : null}
           <Button type="submit" disabled={isSubmitting || submitDisabled} title={notice?.message}>
+            {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : null}
             {isSubmitting ? t("common.actions.saving") : submitLabel}
           </Button>
         </div>

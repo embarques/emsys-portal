@@ -108,6 +108,7 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
         isEditing={isEditing}
         updatedAt={editing?.updatedAt}
         submitLabel={isEditing ? t("common.actions.saveChanges") : t("orders.actions.add")}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
         onSubmit={save}
         onFormErrorChange={setFormError}
         onCancel={() => closeFormTabAndReturn(tabId)}

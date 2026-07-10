@@ -11,12 +11,19 @@ export type ColumnVisibilityDefinition = {
 export type DataTableColumn<T> = ColumnVisibilityDefinition & {
   headerClassName?: string;
   cellClassName?: string;
-  /** When false, cell content is not wrapped in a truncating div (use for badges/pills). */
+  /**
+   * When true, cell content is ellipsis-truncated to a single line.
+   * Default is false: content wraps on whole words and columns auto-fit to show values.
+   */
   truncateCell?: boolean;
   stopRowClick?: boolean;
-  /** When false, the cell does not show copy-on-hover UI. Defaults to true for plain text cells. */
+  /**
+   * When false, the cell is not wrapped for text selection helpers.
+   * Defaults to true for plain text cells. Highlight-to-copy still works via native selection;
+   * row click is suppressed while text is selected.
+   */
   copyable?: boolean;
-  /** Raw text copied to the clipboard. Use for formatted or custom-rendered cells. */
+  /** Preferred plain text for the cell when content is custom-rendered. */
   copyValue?: (row: T) => string | undefined;
   /** When false, the column header is not clickable for sorting. Defaults to true. */
   sortable?: boolean;

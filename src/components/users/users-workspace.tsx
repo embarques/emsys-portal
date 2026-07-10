@@ -15,6 +15,7 @@ import { UserForm } from "@/components/users/user-form";
 import { UserViewSheet } from "@/components/users/user-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -623,10 +624,13 @@ export function UsersWorkspace() {
             <Button variant="outline" onClick={() => setDeactivateTarget(null)} disabled={isSaving}>
               {t("common.actions.cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDeactivate} disabled={isSaving}>
-              <UserX className="h-4 w-4" />
-              {t("users.view.deactivate")}
-            </Button>
+            <ConfirmDeleteButton
+              isPending={isSaving}
+              onClick={confirmDeactivate}
+              label={t("users.view.deactivate")}
+              pendingLabel={t("common.actions.deactivating")}
+              icon={UserX}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

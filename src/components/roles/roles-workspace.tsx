@@ -15,6 +15,7 @@ import { RoleViewSheet } from "@/components/roles/role-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
@@ -324,7 +325,7 @@ export function RolesWorkspace() {
       renderCell: (role) => (
         <div className="space-y-1">
           <TableTagText>{t("roles.table.permissionsCount", { count: role.permissions.length })}</TableTagText>
-          <p className="max-w-[320px] truncate text-xs text-muted-foreground">
+          <p className="max-w-[320px] break-words text-xs text-muted-foreground [overflow-wrap:break-word]">
             {formatPermissionsSummary(role, 4)}
           </p>
         </div>
@@ -627,10 +628,7 @@ export function RolesWorkspace() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isSaving}>
               {t("common.actions.cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={isSaving}>
-              <Trash2 className="h-4 w-4" />
-              {t("common.actions.delete")}
-            </Button>
+            <ConfirmDeleteButton isPending={isSaving} onClick={confirmDelete} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

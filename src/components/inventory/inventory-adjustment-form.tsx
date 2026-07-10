@@ -75,7 +75,7 @@ export function InventoryAdjustmentForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody>
+      <FormBody isBusy={isSubmitting}>
         <FormSection title={t("inventory.form.adjustStockTitle")}>
           <div className="grid gap-2.5 sm:grid-cols-2">
             <div className="space-y-1 sm:col-span-2">

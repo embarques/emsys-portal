@@ -9,6 +9,8 @@
     "save": "Guardar",
     "saveChanges": "Guardar cambios",
     "saving": "Guardando…",
+    "deleting": "Eliminando…",
+    "deactivating": "Desactivando…",
     "close": "Cerrar",
     "previous": "Anterior",
     "next": "Siguiente",
@@ -64,11 +66,6 @@
     "toggleColumn": "Alternar {{column}}",
     "moveColumnUp": "Mover {{column}} arriba",
     "moveColumnDown": "Mover {{column}} abajo",
-    "copy": {
-      "action": "Copiar",
-      "success": "Copiado al portapapeles",
-      "error": "No se pudo copiar al portapapeles"
-    },
     "clearSearch": "Limpiar búsqueda",
     "search": "Buscar...",
     "field": "Campo",

@@ -161,9 +161,9 @@ export function IncomeExpensesSection({
                           value={formatAccountingMoney(entry.amountPaid ?? entry.amount)}
                         />
                       </td>
-                      <td className="max-w-[240px] px-4 py-3">
+                      <td className="max-w-[320px] px-4 py-3 break-words [overflow-wrap:break-word]">
                         {entry.description ? (
-                          <TableCopyableCell value={entry.description} />
+                          <TableCopyableCell value={entry.description} truncate={false} />
                         ) : (
                           "—"
                         )}

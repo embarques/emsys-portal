@@ -9,6 +9,8 @@
     "save": "Save",
     "saveChanges": "Save changes",
     "saving": "Saving…",
+    "deleting": "Deleting…",
+    "deactivating": "Deactivating…",
     "close": "Close",
     "previous": "Previous",
     "next": "Next",
@@ -64,11 +66,6 @@
     "toggleColumn": "Toggle {{column}}",
     "moveColumnUp": "Move {{column}} up",
     "moveColumnDown": "Move {{column}} down",
-    "copy": {
-      "action": "Copy",
-      "success": "Copied to clipboard",
-      "error": "Could not copy to clipboard"
-    },
     "clearSearch": "Clear search",
     "search": "Search...",
     "field": "Field",

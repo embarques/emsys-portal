@@ -17,6 +17,7 @@ import { BarcodeViewSheet } from "@/components/barcodes/barcode-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
@@ -595,10 +596,7 @@ export function BarcodesWorkspace() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("common.actions.cancel")}
             </Button>
-            <Button variant="destructive" disabled={isSaving} onClick={confirmDelete}>
-              <Trash2 className="h-4 w-4" />
-              {t("common.actions.delete")}
-            </Button>
+            <ConfirmDeleteButton isPending={isSaving} onClick={confirmDelete} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

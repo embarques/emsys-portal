@@ -60,12 +60,15 @@ const VERIFICATION_SENSITIVE_FIELDS: (keyof CustomerCoreAddress)[] = [
   "country",
 ];
 
-const textareaClassName =
-  "flex min-h-16 w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]";
-
 /** Capitalize the first letter of every word, preserving the rest as typed. */
 function capitalizeWords(value: string): string {
   return value.replace(/(^|\s)(\p{L})/gu, (_match, boundary, letter) => boundary + letter.toUpperCase());
+}
+
+function focusFormField(id: string) {
+  requestAnimationFrame(() => {
+    document.getElementById(id)?.focus();
+  });
 }
 
 type CustomerFormProps = {
@@ -329,6 +332,7 @@ export function CustomerForm({
   const [showAddresses, setShowAddresses] = useState(() =>
     (initialValues?.addresses ?? []).some(coreAddressRequiresVerification),
   );
+  const [pendingAddressFocusIndex, setPendingAddressFocusIndex] = useState<number | null>(null);
   const errorMessage = formError ?? externalError;
   const handleEnterNavigation = useFormEnterNavigation();
 
@@ -340,11 +344,13 @@ export function CustomerForm({
     setFormError(null);
   }, [initialValues?.id, initialValues?.updatedAt]);
 
-  function focusAddressLine1(idPrefix: string) {
-    requestAnimationFrame(() => {
-      document.getElementById(`${idPrefix}-address1`)?.focus();
-    });
-  }
+  useEffect(() => {
+    if (pendingAddressFocusIndex == null || !showAddresses) return;
+    const input = document.getElementById(`address-${pendingAddressFocusIndex}-address1`);
+    if (!input) return;
+    input.focus();
+    setPendingAddressFocusIndex(null);
+  }, [pendingAddressFocusIndex, showAddresses, values.addresses.length]);
 
   function updateField<K extends keyof CustomerFormValues>(
     key: K,
@@ -442,18 +448,15 @@ export function CustomerForm({
   }
 
   function addAddress() {
-    let newIndex = 0;
-    setValues((current) => {
-      newIndex = current.addresses.length;
-      return {
-        ...current,
-        addresses: [
-          ...current.addresses,
-          createEmptyCustomerCoreAddress(getPrimaryAddressCountry(current), false),
-        ],
-      };
-    });
-    focusAddressLine1(`address-${newIndex}`);
+    const newIndex = values.addresses.length;
+    setValues((current) => ({
+      ...current,
+      addresses: [
+        ...current.addresses,
+        createEmptyCustomerCoreAddress(getPrimaryAddressCountry(current), false),
+      ],
+    }));
+    setPendingAddressFocusIndex(newIndex);
   }
 
   /** Reveal the collapsed address section and focus the primary address. */
@@ -464,7 +467,7 @@ export function CustomerForm({
         0,
         values.addresses.findIndex((entry) => entry.isPrimary),
       );
-      focusAddressLine1(`address-${primaryIndex}`);
+      setPendingAddressFocusIndex(primaryIndex < 0 ? 0 : primaryIndex);
       return;
     }
     addAddress();
@@ -557,7 +560,50 @@ export function CustomerForm({
     return null;
   })();
 
-  const isBlocked = blockReason != null;
+  /** Focus the first field that fails the same checks as `blockReason`. */
+  function focusFirstInvalidField(current: CustomerFormValues = values) {
+    if (!current.name.trim()) {
+      focusFormField("name");
+      return;
+    }
+
+    const firstPhone = current.phones[0];
+    if (!firstPhone || !firstPhone.number.trim() || !isCompletePhoneNumber(firstPhone.number)) {
+      focusFormField("customer-phone-number-0");
+      return;
+    }
+
+    for (let index = 1; index < current.phones.length; index += 1) {
+      const phone = current.phones[index];
+      if (phone.number.trim() && !isCompletePhoneNumber(phone.number)) {
+        focusFormField(`customer-phone-number-${index}`);
+        return;
+      }
+    }
+
+    if (showAddresses) {
+      for (let index = 0; index < current.addresses.length; index += 1) {
+        const address = current.addresses[index];
+
+        if (isSender) {
+          if (googleEnabled) {
+            if (!isAddressVerified(address)) {
+              focusFormField(`address-${index}-address1`);
+              return;
+            }
+          } else if (!coreAddressRequiresVerification(address)) {
+            focusFormField(`address-${index}-address1`);
+            return;
+          }
+        } else if (!address.city.trim()) {
+          focusFormField(`address-${index}-city`);
+          return;
+        }
+      }
+    }
+
+    focusFormField("name");
+  }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -566,6 +612,7 @@ export function CustomerForm({
 
     if (blockReason) {
       setFormError(blockReason);
+      focusFirstInvalidField(nextValues);
       return;
     }
 
@@ -577,6 +624,7 @@ export function CustomerForm({
       setFormError(
         error instanceof Error ? error.message : t("customers.form.validation.saveFailed"),
       );
+      focusFirstInvalidField(nextValues);
     }
   }
 
@@ -584,7 +632,7 @@ export function CustomerForm({
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
-      <FormBody>
+      <FormBody isBusy={isSubmitting}>
         <FormSection icon={User} title={t("customers.form.sections.general")}>
           <div className="space-y-2.5">
             <div className="space-y-1">
@@ -731,12 +779,10 @@ export function CustomerForm({
         </FormSection>
 
         <FormSection icon={StickyNote} title={t("customers.form.sections.notes")}>
-          <textarea
+          <Input
             id="notes"
             value={values.notes}
             onChange={(event) => updateField("notes", event.target.value)}
-            rows={2}
-            className={textareaClassName}
             placeholder={t("customers.form.placeholders.notes")}
           />
         </FormSection>
@@ -744,10 +790,8 @@ export function CustomerForm({
 
       <FormFooter
         error={errorMessage}
-        warning={blockReason}
         submitLabel={submitLabel}
         isSubmitting={isSubmitting}
-        submitDisabled={isBlocked}
         onCancel={onCancel}
       />
     </form>

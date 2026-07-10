@@ -7,6 +7,7 @@ import { InventoryRecipientForm } from "@/components/inventory/inventory-recipie
 import { InventoryRecipientViewSheet } from "@/components/inventory/inventory-recipient-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
@@ -292,9 +293,7 @@ export function InventoryRecipientsWorkspace() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("common.actions.cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              {t("common.actions.delete")}
-            </Button>
+            <ConfirmDeleteButton isPending={deleteRecipients.isPending} onClick={confirmDelete} />
           </DialogFooter>
         </DialogContent>
       </Dialog>
