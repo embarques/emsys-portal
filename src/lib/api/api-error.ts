@@ -64,9 +64,10 @@ function readApiErrorPayload(error: AxiosError<{ message?: string; error?: strin
   const status = error.response?.status;
   const apiMessage = error.response?.data?.message;
   const apiError = error.response?.data?.error;
+  // Prefer the detailed `error` field when the API provides both.
   const rawMessage =
+    (apiError && String(apiError).trim()) ||
     (apiMessage && apiMessage !== "Invalid request" ? apiMessage : null) ||
-    apiError ||
     apiMessage ||
     error.message ||
     "Request failed";
