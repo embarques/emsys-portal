@@ -50,6 +50,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
   useEffect(() => reset(initialValues), [initialValues, reset]);
   const branchId = watch("branchId");
   const currency = watch("currency");
+  const showExchangeRate = currency?.trim().toUpperCase() === "DOP";
   const branchOptions = branches.map((branch) => ({ value: String(branch.id), label: `${branch.code} — ${branch.name}`, keywords: [branch.code, branch.name] }));
 
   return (
@@ -82,16 +83,25 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
           <SearchableSelect
             id="statement-currency"
             value={currency ?? ""}
-            onValueChange={(next) => setValue("currency", next, { shouldValidate: true })}
+            onValueChange={(next) => {
+              setValue("currency", next, { shouldValidate: true });
+              if (next.trim().toUpperCase() !== "DOP") {
+                setValue("rate", 1, { shouldValidate: true });
+              }
+            }}
             options={currencyOptions}
             placeholder={t("accounting.dailyIncome.currency.select")}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="statement-rate">{t("accounting.dailyIncome.statement.fields.exchangeRate")}</Label>
-          <Input id="statement-rate" type="number" step="0.01" {...register("rate", { valueAsNumber: true })} />
-          {errors.rate ? <p className="text-sm text-destructive">{errors.rate.message}</p> : null}
-        </div>
+        {showExchangeRate ? (
+          <div className="space-y-2">
+            <Label htmlFor="statement-rate">{t("accounting.dailyIncome.statement.fields.exchangeRate")}</Label>
+            <Input id="statement-rate" type="number" step="0.01" {...register("rate", { valueAsNumber: true })} />
+            {errors.rate ? <p className="text-sm text-destructive">{errors.rate.message}</p> : null}
+          </div>
+        ) : (
+          <input type="hidden" {...register("rate", { valueAsNumber: true })} />
+        )}
       </div>
       <input type="hidden" {...register("branchId", { valueAsNumber: true })} />
       <input type="hidden" {...register("branchCode")} />
