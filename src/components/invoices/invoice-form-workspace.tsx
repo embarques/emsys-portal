@@ -13,6 +13,7 @@ import {
 } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
+import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 import { fetchContainerById } from "@/lib/containers/api/containers-api";
 import { fetchEmployeeById } from "@/lib/employees/api/employees-api";
 import { formatInvoiceTabLabel } from "@/lib/invoices/display";
@@ -49,7 +50,10 @@ type InvoiceWizardShellProps = {
   resetAfterSave?: boolean;
   requireDailyIncomeRegistration?: boolean;
   isSubmitting?: boolean;
-  onSubmit: (values: InvoiceFormValues) => Promise<InvoiceFormSubmitResult>;
+  onSubmit: (
+    values: InvoiceFormValues,
+    context?: { dailyIncomeRegistration: DailyIncomeJournal | null },
+  ) => Promise<InvoiceFormSubmitResult>;
   onSaved?: () => void;
   onPrint?: (values: InvoiceFormValues, savedInvoiceId?: string | null) => Promise<string | null>;
   isPrinting?: boolean;
@@ -173,10 +177,20 @@ export function InvoiceCreateWizard({
   const createMutation = useCreateInvoice();
   const initialValues = useMemo(() => createEmptyInvoiceForm(), []);
 
-  async function handleSubmit(values: InvoiceFormValues): Promise<InvoiceFormSubmitResult> {
+  async function handleSubmit(
+    values: InvoiceFormValues,
+    submitContext?: { dailyIncomeRegistration: DailyIncomeJournal | null },
+  ): Promise<InvoiceFormSubmitResult> {
     try {
+      const incomeStatementId = submitContext?.dailyIncomeRegistration?.incomeStatementId ?? 0;
       const context = await buildInvoiceWriteContext(values);
-      const created = await createMutation.mutateAsync({ values, context });
+      const created = await createMutation.mutateAsync({
+        values,
+        context: {
+          ...context,
+          incomeStatement: incomeStatementId > 0 ? { id: incomeStatementId } : undefined,
+        },
+      });
       const recent = await fetchInvoices({ page: 1, limit: 50, sort: "number:desc" });
       notifyAdded("Invoice", created.invoiceNumber || created.invoiceId);
       return {

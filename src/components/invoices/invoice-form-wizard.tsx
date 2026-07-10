@@ -49,7 +49,10 @@ type Props = {
   resetAfterSave?: boolean;
   /** New invoices must be registered in Daily Income before the final review. */
   requireDailyIncomeRegistration?: boolean;
-  onSubmit: (values: InvoiceFormValues) => InvoiceFormSubmitResult | Promise<InvoiceFormSubmitResult>;
+  onSubmit: (
+    values: InvoiceFormValues,
+    context?: { dailyIncomeRegistration: DailyIncomeJournal | null },
+  ) => InvoiceFormSubmitResult | Promise<InvoiceFormSubmitResult>;
   onSaved?: () => void;
   onPrint?: (values: InvoiceFormValues, savedInvoiceId?: string | null) => Promise<string | null>;
   isPrinting?: boolean;
@@ -237,7 +240,7 @@ export function InvoiceFormWizard({
       return;
     }
 
-    const result = await onSubmit(values);
+    const result = await onSubmit(values, { dailyIncomeRegistration });
     if (result.error) {
       setSubmitError(result.error);
       setStepError(null);
