@@ -2,6 +2,7 @@
  * @deprecated Legacy in-memory label updater. The barcode scanner workspace uses
  * `applyBarcodeScanUpdate` in `src/lib/labels/api/label-updater-api.ts` (live API).
  */
+import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRecordId } from "@/lib/customers/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
 import { getLabelContainerLabel, getLabelStatusLabel } from "@/lib/labels/display";
