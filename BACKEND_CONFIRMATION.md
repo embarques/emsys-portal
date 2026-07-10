@@ -8,7 +8,7 @@
 
 ## Overview
 
-The portal verified live API behavior against production (`2026-07-09`, company `64d5c0b0d1eab2aaf30b1819`) for **customers**, **pickups**, **invoices**, **containers**, **invoice descriptions** (items catalog), **routes** (route manager / crew templates), **vehicle routes** (pickup + delivery schedules), and **barcodes** (directory + barcode scanner). Before broader API cleanup and more portal integration, we need **written confirmation** of these contracts and how they relate to other resources.
+The portal verified live API behavior against production (`2026-07-09`, company `64d5c0b0d1eab2aaf30b1819`) for **pickups**, **invoices**, **containers**, **invoice descriptions** (items catalog), **routes** (route manager / crew templates), **vehicle routes** (pickup + delivery schedules), and **barcodes** (directory + barcode scanner). Customer confirmation is tracked separately in [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md). Before broader API cleanup and more portal integration, we need **written confirmation** of these contracts and how they relate to other resources.
 
 **Audit metadata goal:** Every directory / transaction resource the portal lists should expose the same four fields on **list, read, and mutation responses**:
 
@@ -23,23 +23,22 @@ Search should allow `createdAt`, `updatedAt`, `createdBy.name`, and `updatedBy.n
 
 **Ask:** Please confirm or correct each **open** section below (inline reply or updated OpenAPI / spec).
 
+**Customer backend confirmation** lives in [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md) (issue [#58](https://github.com/embarques/emsys-portal/issues/58)) — do not duplicate customer questions here.
+
 **Backend alignment required (confirmed YES — implement, migrate, publish spec):**
 
 1. **All resources** in the gap matrix adopt the same `core.User { id, name }` shape for `createdBy` / `updatedBy` on list, read, and mutations.
 2. **Pickups + invoices:** retire `user` / `employee` as creator substitutes; migrate historical data into `createdBy` / `updatedBy`.
-3. **Customers:** deprecate `createdByID` → use `createdBy.id`; migrate existing rows. **Full customer pack:** [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md).
-4. **Vehicle-routes search:** add `createdAt`, `updatedAt`, `createdBy.name`, `updatedBy.name` to `POST /vehicle-routes/search` allowlist.
-5. **Customers `receivers[]`:** only `customerType = 2` (Receiver) records may appear. Details in [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md).
-6. **Routes domain model:** `/routes` = dateless template; `/vehicle-routes` = dated schedule; `routeId` returned on create/read; `date` searchable only on vehicle-routes; KPIs query `/vehicle-routes/search` by date.
-7. **Vehicle-route crew:** `driver` / `appraiser` are separate fields (set on create/edit), not derived from `employees[]`; `employees[].role` is the employee's job role — distinct from route crew roles.
-8. **Invoice descriptions:** search adds `createdBy.name` / `updatedBy.name`; delete allowed when referenced (existing invoices keep snapshot); `price: 0` valid; dedicated items permission.
+3. **Vehicle-routes search:** add `createdAt`, `updatedAt`, `createdBy.name`, `updatedBy.name` to `POST /vehicle-routes/search` allowlist.
+4. **Routes domain model:** `/routes` = dateless template; `/vehicle-routes` = dated schedule; `routeId` returned on create/read; `date` searchable only on vehicle-routes; KPIs query `/vehicle-routes/search` by date.
+5. **Vehicle-route crew:** `driver` / `appraiser` are separate fields (set on create/edit), not derived from `employees[]`; `employees[].role` is the employee's job role — distinct from route crew roles.
+6. **Invoice descriptions:** search adds `createdBy.name` / `updatedBy.name`; delete allowed when referenced (existing invoices keep snapshot); `price: 0` valid; dedicated items permission.
 
 See **Confirmed decisions (backend must implement)** for full action items.
 
 **Shared portal code references:**
 
 - `API_PAYLOADS.md`, `API-Query-Usage.md`
-- `src/lib/customers/api/customers-api.ts`
 - `src/lib/orders/api/orders-api.ts`
 - `src/lib/invoices/api/invoices-api.ts`
 - `src/lib/pickup-delivery-routes/api/pickup-delivery-routes-api.ts`
@@ -126,19 +125,7 @@ The following are **confirmed YES**. The API/backend team must align all resourc
 
 **Note:** Invoice `employee` as the **assigned appraiser/tasador** (business role on the invoice) may remain a separate concept from `createdBy` — please confirm in VII.2 if a distinct `employee` ref is still required for that role after audit cleanup.
 
-### 3. Retire `createdByID` on customers
-
-**Decision:** `createdByID` (numeric) is **deprecated** in favor of `createdBy.id` (`core.User`).
-
-**Backend action:**
-
-- Ensure `createdBy` / `updatedBy` are always populated on customer list + read + mutations.
-- Migrate existing rows: `createdBy.id` ← legacy `createdByID` where needed.
-- Mark `createdByID` deprecated in spec; remove after migration window.
-
-**Full customer confirmation (read model, relationships, write payload, verification log):** see [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md).
-
-### 4. Vehicle-routes search audit allowlist
+### 3. Vehicle-routes search audit allowlist
 
 **Decision:** `POST /vehicle-routes/search` **will add** these fields to the search/sort allowlist:
 
@@ -154,18 +141,7 @@ createdAt, updatedAt, createdBy.name, updatedBy.name
 - Ensure matching `createdBy` / `updatedBy` `core.User` objects are returned on vehicle-route **list** rows (today optional/inconsistent — see II.2).
 - Normalize `createdBy` / `updatedBy` on read from `string | core.User` to **`core.User` only**.
 
-### 5. Customer `receivers[]` membership
-
-**Decision:** Only customers with **`customerType = 2` (Receiver)** may appear in `receivers[]`.
-
-**Backend action:**
-
-- Validate on `POST` / `PUT /customers` that every id in `receivers[]` references a Receiver customer.
-- Document in OpenAPI; return clear validation error on violation.
-
-Details and open questions: [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md).
-
-### 6. Routes vs vehicle-routes domain model
+### 4. Routes vs vehicle-routes domain model
 
 **Decision:** `/routes` is a **dateless crew + vehicle template**; `/vehicle-routes` is the **dated schedule** (pickup or delivery).
 
@@ -188,7 +164,7 @@ Details and open questions: [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACK
 
 **Portal action:** Remove `date` / `tripNumber` from `/routes` types; point `useRouteKpis` / `fetchRoutesByDate` at `/vehicle-routes/search`; prefer `vehicle.branch` for branch scoping.
 
-### 7. Vehicle-route crew, `rate`, and branch shape
+### 5. Vehicle-route crew, `rate`, and branch shape
 
 **Decision:** Route crew roles (`driver`, `appraiser`, `helper` on a schedule) are **not** modeled via `employees[].role`. They are set explicitly on create/edit.
 
@@ -210,7 +186,7 @@ Details and open questions: [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACK
 
 **Portal action:** Align pickup/delivery route forms with user-set `rate`; use `driver` / `appraiser` fields; do not infer crew from `employees[].role`.
 
-### 8. Invoice descriptions (`/invoice-descriptions`)
+### 6. Invoice descriptions (`/invoice-descriptions`)
 
 | Topic | Confirmed |
 | --- | --- |
@@ -233,13 +209,12 @@ Details and open questions: [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACK
 
 | Resource                   | Endpoint                                  | `createdAt`              | `updatedAt`                | `createdBy`                                                              | `updatedBy`                                            | Portal notes                                                                      |
 | -------------------------- | ----------------------------------------- | ------------------------ | -------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------ | --------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| **Customers**              | `/customers`                              | ✅                       | ✅                         | ⚠️ Target: `core.User` — `**createdByID` deprecated\*\* → `createdBy.id` | ⚠️ Target: `core.User` on read                         | Portal still maps `createdByID` only — update after backend migration             |
 | **Pickups**                | `/pickups`                                | ✅                       | ✅                         | ✅ `createdBy` on list + GET                                             | ✅ `updatedBy` when updated                            | `**user` retired\*\* (confirmed). Portal bug: client still maps `user` — see VI.5 |
 | **Invoices**               | `/invoices`                               | ✅                       | ✅                         | ⚠️ Live: `user`/`employee` — **target: `createdBy`**                     | ⚠️ Live: search only — **target: `updatedBy` on read** | Backend to migrate off `user`/`employee` as creator — see VII.2                   |
 | **Containers**             | `/containers`                             | ❌                       | ❌                         | ❌                                                                       | ❌                                                     | See Part V                                                                        |
 | **Invoice descriptions**   | `/invoice-descriptions`                   | ✅                       | ✅                         | ❌                                                                       | ❌                                                     | See Part IV                                                                       |
 | **Routes** (crew template) | `/routes`                                 | ✅                       | ✅ (nullable on some rows) | ⚠️ `string                                                               | core.User`→ **target:`core.User` only\*\*              | ⚠️ Same                                                                           | Normalize per confirmed decision §1                       |
-| **Pickup routes**          | `/vehicle-routes` (`routeType: pickup`)   | ⚠️ Optional on read      | ⚠️ Optional on read        | ⚠️ `string                                                               | core.User`→ **target:`core.User` only\*\*              | ⚠️ Same                                                                           | Search allowlist **will add** audit fields (confirmed §4) |
+| **Pickup routes**          | `/vehicle-routes` (`routeType: pickup`)   | ⚠️ Optional on read      | ⚠️ Optional on read        | ⚠️ `string                                                               | core.User`→ **target:`core.User` only\*\*              | ⚠️ Same                                                                           | Search allowlist **will add** audit fields (confirmed §3) |
 | **Delivery routes**        | `/vehicle-routes` (`routeType: delivery`) | ⚠️ Same as pickup routes | ⚠️ Same                    | ⚠️ Same                                                                  | ⚠️ Same                                                | Same resource as pickup routes                                                    |
 | **Barcodes**               | `/barcodes`                               | ✅                       | ✅                         | ✅ `core.User` on list + GET                                             | ✅ `core.User` on list + GET                           | See Part VIII — search allowlist narrower than read model                           |
 
@@ -254,14 +229,6 @@ Details and open questions: [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACK
 | Are audit fields guaranteed on **list** responses, not only GET-by-id?                                                                    | Table columns without N+1 detail fetches |
 | On create/update mutations, are all four audit fields returned in the response body?                                                      | Optimistic UI / form reset after save    |
 | **Invoices:** does `employee` remain as the assigned appraiser (separate from `createdBy`) after `user`/`employee`-as-creator retirement? | Invoice form + view sheet                |
-
----
-
-# Part I — Customers
-
-**Moved:** all customer backend confirmation content now lives in [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md) (canonical read model, relationships, legacy cleanup, write payload, audit decisions, verification log).
-
-Cross-links that previously pointed at Part I sections should use that file. Customer-specific GitHub issues: [#56](https://github.com/embarques/emsys-portal/issues/56), [#57](https://github.com/embarques/emsys-portal/issues/57).
 
 ---
 
@@ -902,7 +869,7 @@ invoicedescription.InvoiceDescription {
   updatedBy   core.User { id, name }   // set on update
 ```
 
-Align with `customer.Customer`, `route.Route`, and `vehicle.Vehicle` audit fields.
+Align with the shared audit fields used across directory resources (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`).
 
 ### Questions
 
@@ -959,7 +926,7 @@ Align with `customer.Customer`, `route.Route`, and `vehicle.Vehicle` audit field
 
 **Operators in allowlist but not UI-tested:** `in`, `notIn` on `id` — **200** in live probe.
 
-**Rejected today (backend will add per confirmed §8):**
+**Rejected today (backend will add per confirmed §6):**
 
 | Field            | Result                            |
 | ---------------- | --------------------------------- |
@@ -1066,7 +1033,7 @@ flowchart LR
 | Item | Blocked on |
 | --- | --- |
 | **Bar search by id or price** | IV.3 — OR `contains` on `id` / `price` returns 0 rows |
-| **Audit columns / filters** | IV.2 — backend to add `createdBy` / `updatedBy` on read + search allowlist (**confirmed §8**) |
+| **Audit columns / filters** | IV.2 — backend to add `createdBy` / `updatedBy` on read + search allowlist (**confirmed §6**) |
 | **Invoice catalog round-trip** | IV.6 — `invoiceDetails.description` semantics + presence on invoice GET |
 | **Duplicate catalog names** | IV.4 — no uniqueness; create-id resolution ambiguous |
 | **Permission** | IV.4 — **confirmed:** dedicated items permission; portal to migrate off `canViewInvoice` |
@@ -1835,11 +1802,10 @@ sequenceDiagram
 
 # Cross-cutting — Search & filter standardization
 
-Verified working on **customers**, **containers**, **invoice descriptions**, **routes**, and **vehicle routes**:
+Verified working on **containers**, **invoice descriptions**, **routes**, and **vehicle routes** (customers: see [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md)):
 
 | Resource              | Unfiltered list                        | Filtered list                       | Autocomplete                     |
 | --------------------- | -------------------------------------- | ----------------------------------- | -------------------------------- |
-| Customers             | `GET /customers`                       | `POST /customers/search`            | `GET /customers/autocomplete`    |
 | Containers            | `GET /containers`                      | `POST /containers/search`           | — (picker uses list `limit=200`) |
 | Invoice descriptions  | `GET /invoice-descriptions`            | `POST /invoice-descriptions/search` | —                                |
 | Routes                | `GET /routes`                          | `POST /routes/search`               | —                                |
@@ -1857,14 +1823,12 @@ Please confirm as standard for list resources the portal uses today (`customers`
 | Unfiltered lists            | `GET /<resource>?page&limit&offset&sort`                                                                                                      |
 | Single simple filter on GET | `field`, `operator`, `value` query params — still supported?                                                                                  |
 | Bar search body             | Root `operator: "or"` when bar-only (containers), or `operator: "and"` + inner `or` group when combined with advanced filters — document both |
-| Customer address search     | Virtual paths: `address.*`, `addresses.*` — document canonical set                                                                            |
 | Phone search                | `phones.number`, `phone1`, `phone2` — document canonical set                                                                                  |
 | Pickup search aliases       | `receivers.*` for search vs `receiver` on write/read — document mapping                                                                       |
 | Pickup list default scope   | Unfiltered `GET /pickups` and empty search return pending (`completed=false`) unless filter overrides                                         |
 | Pickup pagination counters  | Document `total` vs `subtotal` (live: often differ, e.g. `168` / `128` on `limit=40`)                                                         |
-| Vehicle-route crew search | `employees.name` for search; `driver` / `appraiser` are **separate read fields** (not derived from `employees[]`) — confirmed §7 |
-| `/routes` vs `/vehicle-routes` | `/routes` = dateless template; `date` searchable only on `/vehicle-routes`; KPIs use vehicle-routes search — confirmed §6 |
-| `customer.receivers[]` | Only `customerType = 2` (Receiver) — confirmed §5 |
+| Vehicle-route crew search | `employees.name` for search; `driver` / `appraiser` are **separate read fields** (not derived from `employees[]`) — confirmed §5 |
+| `/routes` vs `/vehicle-routes` | `/routes` = dateless template; `date` searchable only on `/vehicle-routes`; KPIs use vehicle-routes search — confirmed §4 |
 | Search allowlist errors     | Return `QUERY_FIELD_NOT_ALLOWED` with `allowedFields` — standard everywhere?                                                                  |
 | Pagination                  | Document `total` vs `subtotal` semantics — live `POST /vehicle-routes/search` returns `subtotal: 0` with `total` = match count                |
 
@@ -1874,17 +1838,17 @@ Please confirm as standard for list resources the portal uses today (`customers`
 
 # Requested deliverables from backend
 
-1. **Written answers** to Part I–**VIII** (Part I → [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md)) and **Cross-cutting — Audit metadata** (inline on this doc or linked spec).
+1. **Written answers** to Part II–**VIII** and **Cross-cutting — Audit metadata** (inline on this doc or linked spec). Customer answers: [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md) / [#58](https://github.com/embarques/emsys-portal/issues/58).
 2. **Updated API spec** (`OpenAPI` or equivalent) with:
 
 - **Shared audit block** on every resource below: `createdAt`, `updatedAt`, `createdBy`, `updatedBy` as `core.User { id, name }`
-- canonical `customer.Customer`, `pickup.Pickup`, `invoice.Invoice`, `container.Container`, `route.Route`, `vehicle_route.VehicleRoute`, and `invoicedescription.InvoiceDescription`
+- canonical `pickup.Pickup`, `invoice.Invoice`, `container.Container`, `route.Route`, `vehicle_route.VehicleRoute`, and `invoicedescription.InvoiceDescription` (customer: see customer confirmation doc)
 - `ContainerRef` embedded DTO per resource (invoice, delivery, vehicle-route, barcode)
 - **`barcode.Barcode` read/write model** — `status`, `route` vs `delivery`, `scanDate`, `prevStatus`
 - **`GET /barcode-statuses` (or equivalent)** — authoritative status catalog for scanner + directory (**portal hard-codes today**)
 - `POST /barcodes/search` allowlist — add embedded fields (`status.name`, `container.name`, `route.name`, …) or document as read-only
 - party snapshot DTO used by pickups / invoices
-- `receivers[]` semantics on customer and journal
+- `receivers[]` semantics on journal (customer `receivers[]`: see customer confirmation doc)
 - search field alias tables (pickup `receiver` vs `receivers.*`; vehicle-route crew fields)
 - `POST /routes/search` allowlist (authoritative) and `routeId` / `date` policy
 - `POST /vehicle-routes/search` allowlist (authoritative)
@@ -1896,25 +1860,22 @@ Please confirm as standard for list resources the portal uses today (`customers`
 - `/deliveries` vs `/vehicle-routes` relationship and deprecation plan
 - `POST /reports/deliveries` accepted id types and `collection` values
 - `PUT /invoices/item/barcode/route/{id}` — accepted route id type
-   - `POST /invoice-descriptions/search` allowlist — **add** `createdBy.name`, `updatedBy.name` (**confirmed §8**); `createdBy` / `updatedBy` on read model
-   - invoice-descriptions delete semantics — allowed when referenced; existing invoices keep snapshot (**confirmed §8**)
-   - invoice-descriptions dedicated permission name (**confirmed §8**)
-   - `customer.receivers[]` — only `customerType = 2` (**confirmed §5**)
-   - `/routes` vs `/vehicle-routes` domain model, `routeId` on read, delete cascade rules (**confirmed §6**)
-   - vehicle-route crew model: `driver` / `appraiser` separate fields; `employees[].role` = employee job role (**confirmed §7**)
-   - `rate` user-set on vehicle-routes (**confirmed §7**)
+   - `POST /invoice-descriptions/search` allowlist — **add** `createdBy.name`, `updatedBy.name` (**confirmed §6**); `createdBy` / `updatedBy` on read model
+   - invoice-descriptions delete semantics — allowed when referenced; existing invoices keep snapshot (**confirmed §6**)
+   - invoice-descriptions dedicated permission name (**confirmed §6**)
+   - `/routes` vs `/vehicle-routes` domain model, `routeId` on read, delete cascade rules (**confirmed §4**)
+   - vehicle-route crew model: `driver` / `appraiser` separate fields; `employees[].role` = employee job role (**confirmed §5**)
+   - `rate` user-set on vehicle-routes (**confirmed §5**)
 - `POST /pickups/search` allowlist (authoritative; **57 combos verified `2026-07-09`**) + read model: `createdBy` / `updatedBy` on list + GET; legacy `user` **retired** (**confirmed**)
 - `POST /vehicle-routes/search` allowlist — **add** `createdAt`, `updatedAt`, `createdBy.name`, `updatedBy.name` (**confirmed**); publish updated OpenAPI
 - `POST /invoices/search` audit allowlist — ensure read model matches search (`createdBy` / `updatedBy` on read; **retire `user` / `employee` as creator**)
-   - customer migration: **`createdByID` deprecated** → `createdBy.id` (**confirmed**)
 - `POST /containers/search` allowlist + numeric type rules for `id` / `cost` + audit fields on read model
 - container delete / referential integrity rules
 - legacy deprecation notes
 
-3. **Relationship diagram** for Customer ↔ Pickup ↔ Invoice ↔ Journal and Route ↔ VehicleRoute.
+3. **Relationship diagram** for Pickup ↔ Invoice ↔ Journal and Route ↔ VehicleRoute (Customer relationships: see customer confirmation doc).
 4. **Sample payloads** for:
 
-- sender with linked receivers on `customer.receivers[]`
 - pickup create referencing an existing customer + specific address
 - invoice with frozen party snapshot after customer master data changes
 - route create (crew template) with server-generated `name` / `routeId`
@@ -1933,11 +1894,12 @@ Please confirm as standard for list resources the portal uses today (`customers`
 
 # Highest-priority questions (remaining open)
 
-**Customers**
+**Customers** — see [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md) / [#58](https://github.com/embarques/emsys-portal/issues/58).
 
-1. **What does `customer.receivers[]` mean, and is it writable?** (membership rule confirmed: Receiver `customerType = 2` only)
-2. **Are pickup / invoice parties snapshots, refs, or both — and which fields are frozen?**
-3. **What is the canonical search vs write naming for receiver fields (`receiver` vs `receivers.*`)?**
+**Party snapshots (pickups / invoices)**
+
+1. **Are pickup / invoice parties snapshots, refs, or both — and which fields are frozen?**
+2. **What is the canonical search vs write naming for receiver fields (`receiver` vs `receivers.*`)?**
 
 **Routes (`/routes`)**
 
@@ -1973,10 +1935,6 @@ Please confirm as standard for list resources the portal uses today (`customers`
 ---
 
 # Portal verification log
-
-## Customers
-
-See verification log in [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_CONFIRMATION.md).
 
 ## Pickups
 
@@ -2037,9 +1995,9 @@ See verification log in [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_
 | Update                        | `PUT /vehicle-routes/{id}`                            | 200 — client `name` persisted when sent                                                                                       |
 | Delete                        | `DELETE /vehicle-routes/{id}`                         | 200 — subsequent GET **404**                                                                                                  |
 | Audit fields on read          | list / GET                                            | **Partial today** — backend to normalize `createdBy` / `updatedBy` as `core.User` only (confirmed §1)                         |
-| Audit fields in search        | `POST /vehicle-routes/search`                         | **Not in allowlist today** — backend **will add** `createdAt`, `updatedAt`, `createdBy.name`, `updatedBy.name` (confirmed §4) |
+| Audit fields in search        | `POST /vehicle-routes/search`                         | **Not in allowlist today** — backend **will add** `createdAt`, `updatedAt`, `createdBy.name`, `updatedBy.name` (confirmed §3) |
 | `route.routeId` on read | list / GET | **Not returned live** — confirmed YES on read; backend to expose |
-| `rate` on read | list / GET | User-set field — portal to expose on create/edit forms (confirmed §7) |
+| `rate` on read | list / GET | User-set field — portal to expose on create/edit forms (confirmed §5) |
 | `branch.name` on read | list / GET | **Required** — some live rows omit `name` (backend to fix) |
 | `type` duplicate              | list / GET                                            | Always equals `routeType`                                                                                                     |
 
@@ -2098,9 +2056,9 @@ See verification log in [`CUSTOMER_BACKEND_CONFIRMATION.md`](./CUSTOMER_BACKEND_
 | Delete                           | `DELETE /invoice-descriptions/{id}`                        | 200                                                       |
 | Bar search                       | `POST /invoice-descriptions/search` OR `name`/`id`/`price` | 200                                                       |
 | Advanced filters                 | `name`, `price`, `id`, `createdAt`, `updatedAt`            | 200                                                       |
-| Audit user filters | `createdBy.name` | **400** today — **will add** (confirmed §8) |
+| Audit user filters | `createdBy.name` | **400** today — **will add** (confirmed §6) |
 | Audit timestamps on read | list / GET / POST / PUT | `createdAt` + `updatedAt` ✅ |
-| Audit users on read | list / GET / POST / PUT | `createdBy` / `updatedBy` **not returned** — backend to add (confirmed §1, §8) |
+| Audit users on read | list / GET / POST / PUT | `createdBy` / `updatedBy` **not returned** — backend to add (confirmed §1, §6) |
 | Delete when referenced by invoices | `DELETE` | **Confirmed:** allowed; existing invoice lines keep snapshot |
 | `price: 0` | `POST` | **Confirmed valid** |
 | Permission | items workspace | **Confirmed:** dedicated items permission (not `invoice`) |
@@ -2144,10 +2102,6 @@ _Use this section for answers. Date and author optional._
 | Section                                         | Answered | Notes |
 | ----------------------------------------------- | -------- | ----- |
 | Cross-cutting audit metadata                    |          |       |
-| I.2 Customer read model                         |          |       |
-| I.3 Customer relationships                      |          |       |
-| I.4 Legacy cleanup                              |          |       |
-| I.5 Customer write payload                      |          |       |
 | II.2 Vehicle route read model                   |          |       |
 | II.9 Pickup orders on vehicle-routes            |          |       |
 | II.3 `/deliveries` vs vehicle-routes            |          |       |
