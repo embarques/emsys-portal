@@ -1,5 +1,11 @@
 import type { CSSProperties } from "react";
 
+import {
+  navigation,
+  topNavigationItems,
+  type NavigationGroup,
+  type NavigationItem,
+} from "@/config/navigation";
 import type { WorkspaceTab } from "@/lib/layout/workspace-tab-types";
 
 /** Preset swatches for the tab color picker (Chrome-style). */
@@ -15,7 +21,10 @@ export const WORKSPACE_TAB_PRESET_COLORS = [
   "#64748b",
 ] as const;
 
-/** Logical workspace sections used for default tab accent colors. */
+/**
+ * Logical workspace sections used for default tab accent colors.
+ * Keys mirror top-level sidebar groups / manager menus (not leaf pages).
+ */
 export type WorkspaceTabSection =
   | "dashboard"
   | "customers"
@@ -23,7 +32,7 @@ export type WorkspaceTabSection =
   | "invoices"
   | "inventory"
   | "barcodes"
-  | "routes"
+  | "vehicles"
   | "accounting"
   | "insights"
   | "admin";
@@ -36,10 +45,27 @@ export const WORKSPACE_TAB_SECTION_COLORS: Record<WorkspaceTabSection, string> =
   invoices: "#f97316",
   inventory: "#06b6d4",
   barcodes: "#6366f1",
-  routes: "#8b5cf6",
+  vehicles: "#8b5cf6",
   accounting: "#eab308",
   insights: "#ec4899",
   admin: "#ef4444",
+};
+
+/**
+ * Sidebar group / manager `labelKey` / `titleKey` → tab section.
+ * Keep in sync with `src/config/navigation.ts` top-level menus.
+ */
+const NAV_LABEL_TO_SECTION: Record<string, WorkspaceTabSection> = {
+  "navigation.items.dashboard": "dashboard",
+  "navigation.items.customers": "customers",
+  "navigation.items.orderManager": "pickups",
+  "navigation.submenus.invoices": "invoices",
+  "navigation.submenus.barcodeManager": "barcodes",
+  "navigation.submenus.inventory": "inventory",
+  "navigation.items.vehicles": "vehicles",
+  "navigation.groups.accounting": "accounting",
+  "navigation.groups.insights": "insights",
+  "navigation.groups.admin": "admin",
 };
 
 /**
@@ -50,6 +76,8 @@ const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
   customers: "customers",
   orders: "pickups",
   "pickup-routes": "pickups",
+  // Route templates are opened from Order Manager (pickup route create flow).
+  routes: "pickups",
   invoices: "invoices",
   "invoice-item-staging": "invoices",
   items: "invoices",
@@ -57,8 +85,7 @@ const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
   "delivery-routes": "invoices",
   barcodes: "barcodes",
   "label-updater": "barcodes",
-  routes: "routes",
-  vehicles: "routes",
+  vehicles: "vehicles",
   "daily-income-transactions": "accounting",
   users: "admin",
   roles: "admin",
@@ -66,38 +93,57 @@ const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
   branches: "admin",
 };
 
-/** List/map routes → section accents (mirrors navigation manager hierarchy). */
-const WORKSPACE_TAB_PATH_SECTIONS: Record<string, WorkspaceTabSection> = {
-  "/": "dashboard",
-  "/customers": "customers",
-  "/orders": "pickups",
+/** Extra list/map routes not present as nav leaves (or opened outside the sidebar). */
+const WORKSPACE_TAB_PATH_SECTION_EXTRAS: Record<string, WorkspaceTabSection> = {
   "/orders/map": "pickups",
-  "/pickup-routes": "pickups",
-  "/invoices": "invoices",
-  "/items": "invoices",
-  "/containers": "invoices",
-  "/delivery-routes": "invoices",
-  "/barcodes": "barcodes",
-  "/label-updater": "barcodes",
   "/inventory": "inventory",
-  "/inventory/items": "inventory",
-  "/inventory/receipts": "inventory",
-  "/inventory/dispatches": "inventory",
-  "/inventory/recipients": "inventory",
-  "/inventory/reports": "inventory",
-  "/routes": "routes",
-  "/vehicles": "routes",
-  "/accounting/daily-income": "accounting",
-  "/accounting/accounts": "accounting",
-  "/reports": "insights",
-  "/analytics": "insights",
-  "/users": "admin",
-  "/roles": "admin",
-  "/employees": "admin",
-  "/security": "admin",
-  "/branches": "admin",
-  "/settings": "admin",
+  "/routes": "pickups",
 };
+
+function collectLeafHrefs(
+  items: NavigationItem[],
+  section: WorkspaceTabSection,
+  into: Record<string, WorkspaceTabSection>,
+) {
+  for (const item of items) {
+    if (item.children?.length) {
+      collectLeafHrefs(item.children, section, into);
+      continue;
+    }
+    if (item.href) {
+      into[item.href] = section;
+    }
+  }
+}
+
+/** Build path → section from the live navigation hierarchy. */
+function buildPathSectionsFromNavigation(
+  groups: NavigationGroup[],
+  topItems: NavigationItem[],
+): Record<string, WorkspaceTabSection> {
+  const pathSections: Record<string, WorkspaceTabSection> = {
+    ...WORKSPACE_TAB_PATH_SECTION_EXTRAS,
+  };
+
+  for (const item of topItems) {
+    const section = NAV_LABEL_TO_SECTION[item.labelKey];
+    if (!section) continue;
+    collectLeafHrefs([item], section, pathSections);
+  }
+
+  for (const group of groups) {
+    const section = NAV_LABEL_TO_SECTION[group.titleKey];
+    if (!section) continue;
+    collectLeafHrefs(group.items, section, pathSections);
+  }
+
+  return pathSections;
+}
+
+const WORKSPACE_TAB_PATH_SECTIONS = buildPathSectionsFromNavigation(
+  navigation,
+  topNavigationItems,
+);
 
 export function normalizeWorkspaceTabColor(value: string | null | undefined): string | null {
   if (!value) return null;
