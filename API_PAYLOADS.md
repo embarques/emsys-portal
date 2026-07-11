@@ -417,6 +417,9 @@ Same shape. `{id}` = numeric.
 ### `POST /v1/pickups`
 
 Uses `CreatePickupRequest`. **Required:** `sender.name`.
+Sender and receiver payloads send phone numbers in `phones[]`. Keep `phones[]`
+on create/update so pickup saves do not replace the linked customer's saved
+phone list with an empty array.
 
 ```json
 {
