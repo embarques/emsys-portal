@@ -99,6 +99,7 @@
     "addTitle": "Add customer",
     "editTitle": "Edit customer",
     "addDescription": "Create a new customer record.",
+    "noChanges": "No customer changes to save.",
     "notFound": "This customer could not be found.",
     "sections": {
       "general": "General",
