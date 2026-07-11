@@ -20,7 +20,6 @@ import {
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
 import {
-  coerceCustomerTypeFromApi,
   expandCustomerTypeSearchNode,
   appendCustomerTypeFilterGroup,
   isCustomerTypeFilterActive,
@@ -101,6 +100,13 @@ type ApiBranch = {
   code?: string;
 };
 
+type ApiUser = {
+  id?: number | string;
+  name?: string;
+  userName?: string;
+  fullName?: string;
+};
+
 type ApiCustomer = {
   id?: string;
   oldID?: number;
@@ -118,7 +124,8 @@ type ApiCustomer = {
   notes?: string;
   accountBalance?: number;
   branch?: ApiBranch;
-  createdByID?: number;
+  createdBy?: ApiUser | string | number | null;
+  updatedBy?: ApiUser | string | number | null;
   address?: ApiAddress;
   addresses?: ApiAddress[];
   receivers?: string[];
@@ -143,7 +150,6 @@ type ApiCustomerWritePayload = {
   id?: string;
   createdAt?: string;
   updatedAt?: string;
-  createdByID?: number;
   oldID?: number;
 };
 
@@ -178,6 +184,25 @@ function readNumericId(value: number | string | undefined): number | undefined {
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function readAuditActor(value: unknown) {
+  if (value == null) return null;
+
+  if (typeof value === "string" || typeof value === "number") {
+    const id = String(value).trim();
+    return id ? { id, name: "" } : null;
+  }
+
+  if (typeof value !== "object") return null;
+
+  const user = value as ApiUser;
+  const id = String(user.id ?? "").trim();
+  const name = String(user.fullName ?? user.userName ?? user.name ?? "").trim();
+
+  if (!id && !name) return null;
+
+  return { id, name };
 }
 
 function readCustomerTypeFromApi(raw?: ApiCustomer): number | null {
@@ -321,7 +346,8 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
     notes: String(item.notes ?? "").trim(),
     accountBalance: Number(item.accountBalance ?? 0),
     branch,
-    createdByID: readNumericId(item.createdByID) ?? null,
+    createdBy: readAuditActor(item.createdBy),
+    updatedBy: readAuditActor(item.updatedBy),
     addresses,
     receivers: normalizeReceivers(item.receivers),
   };
@@ -613,10 +639,6 @@ function buildCustomerWritePayload(
 
   if (values.oldID != null && values.oldID > 0) {
     payload.oldID = values.oldID;
-  }
-
-  if (values.createdByID != null && values.createdByID > 0) {
-    payload.createdByID = values.createdByID;
   }
 
   if (options.customerId) {
