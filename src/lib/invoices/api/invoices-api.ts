@@ -701,6 +701,9 @@ export type InvoiceWriteContext = {
     id: number;
     name: string;
   };
+  incomeStatement?: {
+    id: number;
+  };
 };
 
 type ApiInvoiceCustomerAddress = {
@@ -755,6 +758,7 @@ type ApiInvoiceDetailWriteRef = {
 type ApiInvoiceWritePayload = {
   number: string;
   date: string;
+  incomeStatement?: { id: number };
   branch: ReturnType<typeof buildApiBranchDto>;
   cost: number;
   payment: number;
@@ -854,7 +858,7 @@ function deriveInvoicePaidStatus(cost: number, discount: number, payment: number
 function buildInvoiceWritePayload(
   values: InvoiceFormValues,
   context: InvoiceWriteContext,
-  options: { isUpdate?: boolean } = {},
+  options: { isUpdate?: boolean; requireIncomeStatement?: boolean } = {},
 ): ApiInvoiceWritePayload {
   const invoiceNumber = values.invoiceNumber.trim();
   if (!invoiceNumber) {
@@ -867,6 +871,11 @@ function buildInvoiceWritePayload(
 
   if (!values.sender) {
     throw new Error("Sender is required.");
+  }
+
+  const incomeStatementId = context.incomeStatement?.id ?? 0;
+  if (options.requireIncomeStatement && (!Number.isInteger(incomeStatementId) || incomeStatementId <= 0)) {
+    throw new Error("A Daily Income statement is required.");
   }
 
   const lineItems = values.lineItems.filter(
@@ -917,6 +926,10 @@ function buildInvoiceWritePayload(
     invoiceDetails,
   };
 
+  if (incomeStatementId > 0) {
+    payload.incomeStatement = { id: incomeStatementId };
+  }
+
   if (values.receiver) {
     payload.receiver = buildInvoiceCustomerWriteRef(values.receiver, CUSTOMER_TYPE_RECEIVER);
   }
@@ -961,7 +974,7 @@ export async function createInvoice(
 ): Promise<Invoice> {
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.INVOICES,
-    buildInvoiceWritePayload(values, context),
+    buildInvoiceWritePayload(values, context, { requireIncomeStatement: true }),
   );
 
   assertMutationSuccess(response, "Unable to create invoice.");
