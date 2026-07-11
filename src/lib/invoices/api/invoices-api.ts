@@ -33,9 +33,11 @@ import {
   computeInvoiceBalance,
   DEFAULT_INVOICE_LIST_PARAMS,
   getInvoiceBalanceAmount,
+  isInvoiceEmployeePickupSource,
   mapPaidRegionToPaymentLocation,
   mapPaymentLocationToPaidRegion,
   normalizeApiInvoiceMoney,
+  normalizeInvoicePickupSource,
   resolveLineLabelCount,
   resolveLineTotal,
   type Invoice,
@@ -157,6 +159,13 @@ type ApiInvoice = {
   employee?: ApiInvoiceUser;
   container?: ApiInvoiceContainer;
   pickup?: ApiInvoicePickup;
+  pickupSource?: string;
+  routeId?: string | number;
+  routeName?: string;
+  officeBranchId?: string | number;
+  officeBranchName?: string;
+  pickupEmployeeId?: string | number;
+  pickupEmployeeName?: string;
   comments?: ApiInvoiceComment[];
   sender?: ApiInvoiceParty;
   receiver?: ApiInvoiceParty | null;
@@ -395,6 +404,16 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     containerId: item.container?.id != null ? String(item.container.id) : "",
     containerName: String(item.container?.name ?? "").trim() || undefined,
     paymentLocation: mapPaidRegionToPaymentLocation(paidRegion),
+    pickupSource: normalizeInvoicePickupSource(
+      String(item.pickupSource ?? ""),
+      readStringId(item.officeBranchId),
+    ),
+    routeId: readStringId(item.routeId),
+    routeName: String(item.routeName ?? "").trim() || undefined,
+    officeBranchId: readStringId(item.officeBranchId),
+    officeBranchName: String(item.officeBranchName ?? "").trim() || undefined,
+    pickupEmployeeId: readStringId(item.pickupEmployeeId),
+    pickupEmployeeName: String(item.pickupEmployeeName ?? "").trim() || undefined,
     paidRegion: paidRegion || undefined,
     paidStatus: String(item.paidStatus ?? "").trim() || undefined,
     cost: cost || undefined,
@@ -746,6 +765,12 @@ type ApiInvoiceWritePayload = {
   paidStatus: string;
   employee: InvoiceWriteContext["employee"];
   container: InvoiceWriteContext["container"];
+  pickupSource: InvoiceFormValues["pickupSource"];
+  routeId?: string;
+  pickupEmployeeId?: string;
+  pickupEmployeeName?: string;
+  officeBranchId?: string;
+  officeBranchName?: string;
   sender: ApiInvoiceCustomerWriteRef;
   receiver?: ApiInvoiceCustomerWriteRef;
   pickup?: { id: string | number };
@@ -832,6 +857,45 @@ function deriveInvoicePaidStatus(cost: number, discount: number, payment: number
   return "PARTIAL";
 }
 
+function buildInvoicePickupAssignmentPayload(values: InvoiceFormValues): Pick<
+  ApiInvoiceWritePayload,
+  "pickupSource" | "routeId" | "pickupEmployeeId" | "pickupEmployeeName" | "officeBranchId" | "officeBranchName"
+> {
+  const pickupSource = values.pickupSource;
+
+  if (pickupSource === "route") {
+    const routeId = values.routeId.trim();
+    if (!routeId) {
+      throw new Error("Pickup route is required.");
+    }
+
+    return { pickupSource, routeId };
+  }
+
+  if (isInvoiceEmployeePickupSource(pickupSource)) {
+    const pickupEmployeeId = values.pickupEmployeeId.trim();
+    const officeBranchId = values.officeBranchId.trim();
+
+    if (!pickupEmployeeId) {
+      throw new Error("Pickup employee is required.");
+    }
+
+    if (!officeBranchId) {
+      throw new Error("Office branch is required.");
+    }
+
+    return {
+      pickupSource,
+      pickupEmployeeId,
+      ...(values.pickupEmployeeName.trim() ? { pickupEmployeeName: values.pickupEmployeeName.trim() } : {}),
+      officeBranchId,
+      ...(values.officeBranchName.trim() ? { officeBranchName: values.officeBranchName.trim() } : {}),
+    };
+  }
+
+  throw new Error("Pickup source is required.");
+}
+
 function buildInvoiceWritePayload(
   values: InvoiceFormValues,
   context: InvoiceWriteContext,
@@ -899,6 +963,7 @@ function buildInvoiceWritePayload(
       id: context.container.id,
       name: context.container.name.trim() || String(context.container.id),
     },
+    ...buildInvoicePickupAssignmentPayload(values),
     sender: buildInvoiceCustomerWriteRef(values.sender, CUSTOMER_TYPE_SENDER),
     invoiceDetails,
   };

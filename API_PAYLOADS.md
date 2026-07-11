@@ -518,6 +518,10 @@ GET /v1/pickups/search-by-route?routeId=<pickup_route_object_id>&page=1&limit=40
 ### `POST /v1/invoices`
 
 Uses `CreateInvoiceRequest`. **Required:** `number`, `employee`, `container`, `sender`.
+The portal also sends `pickupSource` and exactly one pickup assignment:
+`routeId` for route pickups, or `pickupEmployeeId` + `officeBranchId` for
+warehouse/office pickups. Denormalized employee and branch names are included
+when available so edit/preview can round-trip display labels.
 
 ```json
 {
@@ -541,6 +545,8 @@ Uses `CreateInvoiceRequest`. **Required:** `number`, `employee`, `container`, `s
     "id": 1,
     "name": "Container A"
   },
+  "pickupSource": "route",
+  "routeId": "6a52bcb0b1c2d3e4f5678901",
   "sender": {
     "name": "Sender Co",
     "customerType": 1,
@@ -577,6 +583,7 @@ Invoice party address snapshots should round-trip `id`, `location`, and `verific
 ### `PUT /v1/invoices/{id}`
 
 Full `Invoice` model (not `CreateInvoiceRequest`). `{id}` = ObjectID hex.
+Uses the same `pickupSource` assignment rule as create.
 
 ```json
 {
@@ -584,6 +591,11 @@ Full `Invoice` model (not `CreateInvoiceRequest`). `{id}` = ObjectID hex.
   "cost": 120.0,
   "payment": 50.0,
   "balance": 70.0,
+  "pickupSource": "warehouse",
+  "pickupEmployeeId": "42",
+  "pickupEmployeeName": "Warehouse Employee",
+  "officeBranchId": "1",
+  "officeBranchName": "USA",
   "isVoid": false,
   "sender": { "name": "Sender Co", "customerType": 1 },
   "container": { "id": 1, "name": "Container A" }

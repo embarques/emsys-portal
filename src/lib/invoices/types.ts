@@ -631,7 +631,7 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
   };
 }
 
-function normalizeInvoicePickupSource(
+export function normalizeInvoicePickupSource(
   source: InvoicePickupSource | string | undefined,
   officeBranchId?: string,
 ): InvoicePickupSource {
