@@ -236,7 +236,7 @@ export function PickupRouteOrdersSection({
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
                         {formatAuditDate(order.createdAt)}
                       </td>
-                      <td className="px-3 py-2 text-xs">{formatUserSummary(order.user)}</td>
+                      <td className="px-3 py-2 text-xs">{formatUserSummary(order.createdBy)}</td>
                     </tr>
                   );
                 })}

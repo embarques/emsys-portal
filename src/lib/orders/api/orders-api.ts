@@ -81,7 +81,6 @@ type ApiPickup = {
   completed?: boolean;
   createdBy?: Record<string, unknown>;
   updatedBy?: Record<string, unknown>;
-  user?: Record<string, unknown>;
   branch?: ApiBranchRef;
   employee?: Record<string, unknown>;
   sender?: Record<string, unknown>;
@@ -324,7 +323,7 @@ function normalizeOrder(raw: unknown): Order | null {
     createdAt: normalizeIsoDate(item.createdAt),
     updatedAt: normalizeIsoDate(item.updatedAt),
     completed: item.completed === true,
-    user: normalizePickupUser(item.createdBy ?? item.user),
+    createdBy: normalizePickupUser(item.createdBy),
     updatedBy: normalizePickupUser(item.updatedBy),
     branch: normalizePickupBranch(item.branch),
     employee: normalizePickupEmployee(item.employee),

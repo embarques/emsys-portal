@@ -170,7 +170,7 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
             />
             <RecordViewSheetDetailRow
               label={t("orders.columns.createdBy")}
-              value={formatUserSummary(order.user)}
+              value={formatUserSummary(order.createdBy)}
             />
             <RecordViewSheetDetailRow
               label={t("orders.columns.updatedAt")}
