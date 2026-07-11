@@ -54,16 +54,6 @@ import {
   type PickupSector,
 } from "@/lib/orders/types";
 
-type ApiAddress = {
-  address1?: string;
-  address2?: string;
-  apartment?: string;
-  city?: string;
-  state?: string;
-  zipcode?: string;
-  country?: string;
-};
-
 type ApiBranchRef = {
   id?: number;
   code?: string;

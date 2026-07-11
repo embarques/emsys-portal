@@ -20,7 +20,6 @@ import {
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
 import {
-  coerceCustomerTypeFromApi,
   expandCustomerTypeSearchNode,
   appendCustomerTypeFilterGroup,
   isCustomerTypeFilterActive,

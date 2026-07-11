@@ -428,10 +428,13 @@ Uses `CreatePickupRequest` (legacy-friendly). **Required:** `sender.name`.
     "email": "sender@example.com",
     "IDNumber": "111",
     "address": {
+      "id": "6a4e77a9940040f71266fc29",
       "address1": "10 Oak Ave",
       "city": "Bronx",
       "state": "NY",
-      "zipcode": "10451"
+      "zipcode": "10451",
+      "location": { "type": "Point", "coordinates": [-73.9, 40.8] },
+      "verification": { "is_verified": true, "verified_at": "2026-07-08T16:15:36.233Z" }
     }
   },
   "receiver": {
@@ -525,9 +528,12 @@ Uses `CreateInvoiceRequest`. **Required:** `number`, `employee`, `container`, `s
     "phone1": "555-1000",
     "IDNumber": "123",
     "address": {
+      "id": "6a4e77a9940040f71266fc29",
       "city": "Miami",
       "state": "FL",
-      "zipcode": "33101"
+      "zipcode": "33101",
+      "location": { "type": "Point", "coordinates": [-80.2, 25.8] },
+      "verification": { "is_verified": true, "verified_at": "2026-07-08T16:15:36.233Z" }
     }
   },
   "receiver": {
