@@ -409,7 +409,7 @@ Same shape. `{id}` = numeric.
 
 ### `POST /v1/pickups`
 
-Uses `CreatePickupRequest` (legacy-friendly). **Required:** `sender.name`.
+Uses `CreatePickupRequest`. **Required:** `sender.name`.
 
 ```json
 {
@@ -418,13 +418,14 @@ Uses `CreatePickupRequest` (legacy-friendly). **Required:** `sender.name`.
   "employee": {
     "id": 5,
     "name": "Jane Driver",
-    "phone1": "555-2000",
     "active": true
   },
   "sender": {
     "name": "Sender Name",
     "customerType": 1,
-    "phone1": "555-3000",
+    "phones": [
+      { "type": "mobile", "number": "555-3000", "isPrimary": true }
+    ],
     "email": "sender@example.com",
     "IDNumber": "111",
     "address": {
@@ -440,7 +441,9 @@ Uses `CreatePickupRequest` (legacy-friendly). **Required:** `sender.name`.
   "receiver": {
     "name": "Receiver Name",
     "customerType": 2,
-    "phone1": "555-4000",
+    "phones": [
+      { "type": "mobile", "number": "555-4000", "isPrimary": true }
+    ],
     "address": {
       "city": "Miami",
       "state": "FL",
