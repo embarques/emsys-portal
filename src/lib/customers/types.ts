@@ -352,7 +352,6 @@ function comparableCustomerFormValues(values: CustomerFormValues) {
 
   return {
     id: normalized.id.trim(),
-    oldID: normalized.oldID,
     name: normalized.name.trim(),
     customerType: normalizeCustomerType(normalized.customerType),
     phones: normalizeRecordPhonesFormValues(normalized.phones).map((phone) => ({
