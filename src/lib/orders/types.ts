@@ -42,7 +42,10 @@ export type Order = {
   createdAt: string;
   updatedAt: string;
   completed: boolean;
+  /** Creator actor from API `createdBy`; `user` remains the UI-facing legacy name. */
   user: User | null;
+  /** Optional updater actor from API `updatedBy`. */
+  updatedBy: User | null;
   branch: PickupBranch;
   employee: Employee | null;
   sender: Customer;
