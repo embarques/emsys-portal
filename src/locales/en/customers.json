@@ -149,10 +149,12 @@
       "nameRequired": "Enter the customer's name.",
       "phoneRequired": "Enter a phone number.",
       "phoneDigits": "Phone {{index}} must have {{digits}} digits.",
+      "duplicatePhone": "Phone {{index}} duplicates another phone on this customer.",
       "addressGoogleVerify": "Street address must be verified with a Google suggestion.",
       "addressGoogleVerifyNamed": "{{label}} street address must be verified with a Google suggestion.",
       "addressCompleteOrRemove": "Complete {{label}} or remove it before saving.",
       "addressCityRequired": "{{label}} needs a city selected.",
+      "duplicateAddress": "{{label}} duplicates another address on this customer.",
       "saveFailed": "Unable to save customer."
     },
     "errors": {

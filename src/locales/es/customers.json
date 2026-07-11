@@ -149,10 +149,12 @@
       "nameRequired": "Ingrese el nombre del cliente.",
       "phoneRequired": "Ingrese un número de teléfono.",
       "phoneDigits": "El teléfono {{index}} debe tener {{digits}} dígitos.",
+      "duplicatePhone": "El teléfono {{index}} duplica otro teléfono de este cliente.",
       "addressGoogleVerify": "La dirección debe verificarse con una sugerencia de Google.",
       "addressGoogleVerifyNamed": "La dirección de {{label}} debe verificarse con una sugerencia de Google.",
       "addressCompleteOrRemove": "Complete {{label}} o elimínela antes de guardar.",
       "addressCityRequired": "{{label}} requiere una ciudad seleccionada.",
+      "duplicateAddress": "{{label}} duplica otra dirección de este cliente.",
       "saveFailed": "No se pudo guardar el cliente."
     },
     "errors": {

@@ -16,6 +16,7 @@ import {
   validateRecordPhones,
 } from "@/lib/phones/phones";
 import type { RecordPhone } from "@/lib/phones/types";
+import { getPhoneDialDigits } from "@/lib/utils/phone";
 
 export type CustomerPortalBranch = "usa" | "dr";
 
@@ -177,6 +178,10 @@ export function validateCustomerFormValues(values: CustomerFormValues): void {
 
   validateRecordPhones(values.phones);
 
+  if (findDuplicateCustomerPhoneIndex(values.phones) >= 0) {
+    throw new Error("Duplicate phone numbers are not allowed.");
+  }
+
   if (!values.branch?.id || values.branch.id <= 0) {
     throw new Error("branch is required.");
   }
@@ -184,6 +189,56 @@ export function validateCustomerFormValues(values: CustomerFormValues): void {
   if (values.customerType !== CUSTOMER_TYPE_SENDER && values.customerType !== CUSTOMER_TYPE_RECEIVER) {
     throw new Error("customerType is required.");
   }
+
+  if (findDuplicateCustomerAddressIndex(values.addresses) >= 0) {
+    throw new Error("Duplicate addresses are not allowed.");
+  }
+}
+
+export function findDuplicateCustomerPhoneIndex(phones: RecordPhone[]): number {
+  const seen = new Set<string>();
+
+  for (let index = 0; index < phones.length; index += 1) {
+    const key = getPhoneDialDigits(phones[index]?.number ?? "");
+    if (!key) continue;
+    if (seen.has(key)) return index;
+    seen.add(key);
+  }
+
+  return -1;
+}
+
+function normalizeDuplicateAddressPart(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function getCustomerAddressDuplicateKey(address: CustomerCoreAddress): string {
+  if (!coreAddressHasContent(address)) return "";
+
+  return [
+    address.address1,
+    address.apartment,
+    address.address2,
+    address.city,
+    address.state,
+    address.zipcode,
+    address.country,
+  ]
+    .map(normalizeDuplicateAddressPart)
+    .join("|");
+}
+
+export function findDuplicateCustomerAddressIndex(addresses: CustomerCoreAddress[]): number {
+  const seen = new Set<string>();
+
+  for (let index = 0; index < addresses.length; index += 1) {
+    const key = getCustomerAddressDuplicateKey(addresses[index]!);
+    if (!key) continue;
+    if (seen.has(key)) return index;
+    seen.add(key);
+  }
+
+  return -1;
 }
 
 export type CustomerBranchFilter = number | "all";
