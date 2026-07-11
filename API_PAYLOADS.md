@@ -193,6 +193,13 @@ No body. Returns current user's role + permission summaries.
 
 `customerType`: `1` = sender, `2` = receiver.
 
+`accountBalance` is returned as a numeric field on customer list/detail responses and is
+displayed by the portal as USD currency. Backend source review on `2026-07-11`
+confirmed it is a stored customer value accepted on create/update, not a
+frontend-derived ledger balance from invoices, payments, or journal entries. The
+portal should trust the customer payload as the display source until a dedicated
+accounting balance endpoint is introduced.
+
 ### `PUT /v1/customers/{id}`
 
 Same shape as create. `{id}` = 24-char hex ObjectID.

@@ -100,6 +100,7 @@ export type Customer = {
   createdAt: string;
   updatedAt: string;
   notes: string;
+  /** Stored customer balance returned by the API; the portal does not derive it from accounting records. */
   accountBalance: number;
   branch: CustomerBranch;
   createdByID: number | null;
