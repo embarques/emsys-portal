@@ -36,6 +36,23 @@ Search should allow `createdAt`, `updatedAt`, `createdBy.name`, and `updatedBy.n
 
 See **Confirmed decisions (backend must implement)** for full action items.
 
+## Portal alignment status (`2026-07-11`)
+
+Portal follow-up PRs opened from the backend-confirmation issue batch:
+
+| Issue | Portal PR | Status | Alignment covered |
+| ----- | --------- | ------ | ----------------- |
+| [#56](https://github.com/embarques/emsys-portal/issues/56) | [#64](https://github.com/embarques/emsys-portal/pull/64) | Open | Documents customer `accountBalance` as a stored API field, not a frontend-derived ledger value. |
+| [#55](https://github.com/embarques/emsys-portal/issues/55) | [#66](https://github.com/embarques/emsys-portal/pull/66) | Open | Skips unchanged customer edit saves so audit updates are not triggered by no-op form submits. |
+| [#54](https://github.com/embarques/emsys-portal/issues/54) | [#65](https://github.com/embarques/emsys-portal/pull/65) | Open | Blocks duplicate customer phones and addresses in the portal before customer create/update. |
+| [#52](https://github.com/embarques/emsys-portal/issues/52) | [#67](https://github.com/embarques/emsys-portal/pull/67) | Open | Sends invoice pickup assignment fields in the invoice write payload. |
+| [#51](https://github.com/embarques/emsys-portal/issues/51) | [#71](https://github.com/embarques/emsys-portal/pull/71) | Open | Documents customer search/filter/picker address scope as any address in `addresses[]`. |
+| [#50](https://github.com/embarques/emsys-portal/issues/50) | [#68](https://github.com/embarques/emsys-portal/pull/68) | Open | Documents pickup party `phones[]` payloads; current portal code already sends them. |
+| [#49](https://github.com/embarques/emsys-portal/issues/49) | [#69](https://github.com/embarques/emsys-portal/pull/69) | Open | Preserves party address snapshot metadata, including address id, location, and verification. |
+| [#48](https://github.com/embarques/emsys-portal/issues/48) | [#70](https://github.com/embarques/emsys-portal/pull/70) | Open | Maps pickup `createdBy` into the UI model, adds optional `updatedBy`, and documents optional pickup read fields. |
+
+Issue [#53](https://github.com/embarques/emsys-portal/issues/53) remains the umbrella tracker for backend responses and API/spec alignment. The portal PRs above cover the frontend-side issues that could be completed without inventing backend answers. Backend-owned response rows below should remain blank until the API team confirms or corrects each section.
+
 **Shared portal code references:**
 
 - `API_PAYLOADS.md`, `API-Query-Usage.md`
