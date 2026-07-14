@@ -286,6 +286,7 @@ Portal today sends on create / update:
 | Delete                                  | `DELETE /customers/{id}`      | 200                                                                                                                   |
 | Bar / advanced search                   | `POST /customers/search`      | 200                                                                                                                   |
 | Autocomplete                            | `GET /customers/autocomplete` | 200                                                                                                                   |
+| Address search scope                    | search / filters / picker     | Matches any entry in `addresses[]` via canonical `addresses.*` paths; not primary-only.                              |
 | Audit `createdBy` / `updatedBy` on read | list / GET                    | Confirmed canonical target. Active create/update writes `createdBy` / `updatedBy`; legacy records may need backfill. |
 
 

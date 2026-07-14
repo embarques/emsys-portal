@@ -178,6 +178,12 @@ GET /customers?page=1&limit=40&offset=0&sort=name:asc&field=name&operator=contai
 GET /customers?page=1&limit=40&offset=0&sort=name:asc&active=true&branchId=1
 ```
 
+Customer address search behavior:
+
+- Directory bar search, advanced address filters, and sender/receiver party picker search match **any** address in `addresses[]`, not only the primary address.
+- Address fields use canonical MongoDB dot-notation paths such as `addresses.address1`, `addresses.city`, `addresses.state`, and `addresses.zipcode`.
+- The party picker can return `matchedAddressId` so the UI can preserve the address that matched the search term.
+
 Users:
 
 ```txt

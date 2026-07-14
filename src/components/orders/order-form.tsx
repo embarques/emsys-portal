@@ -28,6 +28,7 @@ import { formatCustomerMutationError } from "@/lib/customers/customer-create-err
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
   useCreateCustomer,
+  useEnsureCustomerDetail,
   useUpdateCustomer,
 } from "@/lib/customers/hooks/use-customers";
 import {
@@ -46,6 +47,7 @@ import {
   customerHasUnverifiedAddressAtIndex,
   getInitialOrderPartyAddressIndex,
   isOrderPartyAddressChosen,
+  rematchOrderPartyAddressIndex,
   resetOrderFormForNextEntry,
   resolveOrderPartyAddressIndex,
   resolveSelectedOrderPartyAddressIndex,
@@ -128,6 +130,7 @@ export function OrderForm({
   const { isDesktopTabs, openFormTab } = useWorkspaceTabs();
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
+  const ensureCustomerDetail = useEnsureCustomerDetail();
 
   const branches = branchesData?.items ?? [];
   const employees = employeesQuery.data?.items ?? [];
@@ -137,8 +140,12 @@ export function OrderForm({
   const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
   const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
+  const [isLoadingEditCustomer, setIsLoadingEditCustomer] = useState(false);
   const handleEnterNavigation = useFormEnterNavigation();
-  const isSavingCustomer = createCustomerMutation.isPending || updateCustomerMutation.isPending;
+  const isSavingCustomer =
+    createCustomerMutation.isPending ||
+    updateCustomerMutation.isPending ||
+    isLoadingEditCustomer;
   const isSubmitting = isSubmittingProp || isLocalSubmitting;
 
   useEffect(() => {
@@ -200,9 +207,47 @@ export function OrderForm({
     setCustomerDialog({ side, mode: "add" });
   }
 
-  function openEditCustomer(side: PartySide) {
+  async function openEditCustomer(side: PartySide) {
+    const current = side === "sender" ? values.sender : values.receiver;
+    if (!current?.id) return;
+
     setCustomerFormError(null);
-    setCustomerDialog({ side, mode: "edit" });
+    setIsLoadingEditCustomer(true);
+
+    try {
+      // Order parties often hold a single snapshot address (`party.address`), not the
+      // full customer address book. Reload from GET /customers/{id} before editing.
+      const fullCustomer = await ensureCustomerDetail(current.id);
+
+      setValues((currentValues) => {
+        if (side === "sender") {
+          return {
+            ...currentValues,
+            sender: fullCustomer,
+            senderAddressIndex: rematchOrderPartyAddressIndex(
+              currentValues.sender,
+              currentValues.senderAddressIndex,
+              fullCustomer,
+            ),
+          };
+        }
+
+        return {
+          ...currentValues,
+          receiver: fullCustomer,
+          receiverAddressIndex: rematchOrderPartyAddressIndex(
+            currentValues.receiver,
+            currentValues.receiverAddressIndex,
+            fullCustomer,
+          ),
+        };
+      });
+      setCustomerDialog({ side, mode: "edit" });
+    } catch {
+      setCustomerFormError(t("common.errors.fallback"));
+    } finally {
+      setIsLoadingEditCustomer(false);
+    }
   }
 
   function closeCustomerDialog() {
