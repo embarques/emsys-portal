@@ -162,36 +162,56 @@ export async function fillInvoiceWizardStep3(
 
 export async function confirmInvoiceDailyIncomeRegistration(page: Page, wizard: Locator) {
   const foundBanner = wizard.getByText("Daily income entry found");
+  const skipCheckbox = wizard.getByTestId("invoice-skip-payment");
 
-  if (!(await foundBanner.isVisible().catch(() => false))) {
-    const registerButton = wizard.getByRole("button", { name: "Open full Daily Income page" });
-    await expect(registerButton).toBeVisible({ timeout: 15_000 });
-    await registerButton.click();
-
-    const dialog = page.getByRole("dialog", { name: "Register daily income" });
-    await expect(dialog).toBeVisible();
-    const paymentAmount = dialog.locator("#daily-income-payment-amount");
-    if (!(await paymentAmount.isEnabled())) {
-      const flipButton = dialog.getByTestId("invoice-daily-income-flip-create");
-      await expect(flipButton).toBeEnabled();
-      await flipButton.click();
-      const statementResponse = waitForApiResponse(page, "/income-statements", "POST", {
-        requireOk: false,
-      });
-      await dialog.getByTestId("invoice-daily-income-create").click();
-      const createdStatement = await statementResponse;
-      expect(
-        createdStatement.ok(),
-        `Daily Income creation failed with HTTP ${createdStatement.status()}`,
-      ).toBe(true);
-      await expect(paymentAmount).toBeEnabled({ timeout: 15_000 });
-    }
-    await paymentAmount.fill("0");
-    const createResponse = waitForApiResponse(page, "/journals", "POST", { requireOk: false });
-    await dialog.getByRole("button", { name: "Register & continue" }).click();
-    const response = await createResponse;
-    expect(response.ok(), `Daily Income registration failed with HTTP ${response.status()}`).toBe(true);
+  // Default: Skip payment is checked — continue without recording.
+  if (await skipCheckbox.isVisible().catch(() => false)) {
+    await expect(skipCheckbox).toBeChecked();
+    const nextButton = wizard.getByRole("button", { name: "Next" });
+    await expect(nextButton).toBeEnabled({ timeout: 15_000 });
+    await nextButton.click();
+    await expect(wizard.getByText("Step 5 of 5")).toBeVisible({ timeout: 10_000 });
+    return;
   }
+
+  if (await foundBanner.isVisible().catch(() => false)) {
+    const nextButton = wizard.getByRole("button", { name: "Next" });
+    await expect(nextButton).toBeEnabled();
+    await nextButton.click();
+    await expect(wizard.getByText("Step 5 of 5")).toBeVisible({ timeout: 10_000 });
+    return;
+  }
+
+  // Fallback: older dialog path if skip checkbox is not present.
+  const registerButton = wizard.getByRole("button", {
+    name: /Create Cuadre|Open full Daily Income page|Record payment/,
+  });
+  await expect(registerButton).toBeVisible({ timeout: 15_000 });
+  await registerButton.click();
+
+  const dialog = page.getByRole("dialog", { name: "Register daily income" });
+  await expect(dialog).toBeVisible();
+  const paymentAmount = dialog.locator("#daily-income-payment-amount");
+  if (!(await paymentAmount.isEnabled())) {
+    const flipButton = dialog.getByTestId("invoice-daily-income-flip-create");
+    await expect(flipButton).toBeEnabled();
+    await flipButton.click();
+    const statementResponse = waitForApiResponse(page, "/income-statements", "POST", {
+      requireOk: false,
+    });
+    await dialog.getByTestId("invoice-daily-income-create").click();
+    const createdStatement = await statementResponse;
+    expect(
+      createdStatement.ok(),
+      `Daily Income creation failed with HTTP ${createdStatement.status()}`,
+    ).toBe(true);
+    await expect(paymentAmount).toBeEnabled({ timeout: 15_000 });
+  }
+  await paymentAmount.fill("0");
+  const createResponse = waitForApiResponse(page, "/journals", "POST", { requireOk: false });
+  await dialog.getByRole("button", { name: "Register & continue" }).click();
+  const response = await createResponse;
+  expect(response.ok(), `Daily Income registration failed with HTTP ${response.status()}`).toBe(true);
 
   await expect(foundBanner).toBeVisible({ timeout: 15_000 });
   const nextButton = wizard.getByRole("button", { name: "Next" });
