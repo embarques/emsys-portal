@@ -44,6 +44,7 @@ import {
 import {
   CUSTOMER_TYPE_RECEIVER,
   CUSTOMER_TYPE_SENDER,
+  areCustomerFormValuesEquivalent,
   createEmptyCustomerForm,
   customerHasUnverifiedPrimaryAddress,
   customerToFormValues,
@@ -220,7 +221,7 @@ export function InvoiceForm({
   const isWizard = appearance === "wizard";
   const { data: containersData } = useContainerPicker();
   const ordersQuery = useOrders(DEFAULT_ORDER_LIST_PARAMS);
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
 
@@ -462,6 +463,12 @@ export function InvoiceForm({
       let customer: Customer;
 
       if (customerDialog.mode === "edit" && dialogCustomer) {
+        if (areCustomerFormValuesEquivalent(formValues, customerToFormValues(dialogCustomer))) {
+          notifySuccess(t("customers.form.noChanges"));
+          closeCustomerDialog();
+          return;
+        }
+
         customer = await updateCustomerMutation.mutateAsync({
           customerId: dialogCustomer.id,
           values: formValues,
