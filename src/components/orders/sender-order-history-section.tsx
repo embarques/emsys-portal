@@ -7,7 +7,7 @@ import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { FormSection } from "@/components/forms/form-shell";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { useSenderOrderHistory } from "@/lib/orders/hooks/use-orders";
 import {
   formatOrderDate,
@@ -123,11 +123,11 @@ export function SenderOrderHistorySection({
                   <td className="px-3 py-2 text-xs">{getReceiverSummary(order)}</td>
                   <td className="px-3 py-2 text-xs">{getReceiverAddressLine(order)}</td>
                   <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
-                    {formatAuditDate(order.createdAt)}
+                    {formatAuditDateTime(order.createdAt)}
                   </td>
                   <td className="px-3 py-2 text-xs">{formatUserSummary(order.createdBy)}</td>
                   <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
-                    {formatAuditDate(order.updatedAt)}
+                    {formatAuditDateTime(order.updatedAt)}
                   </td>
                 </tr>
               );

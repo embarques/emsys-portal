@@ -34,9 +34,9 @@
       "empty": "Aún no hay actividad de etiquetas. Genere etiquetas desde la pestaña Etiquetas para comenzar a registrar cambios."
     },
     "columns": {
-      "dateCreated": "Fecha de creación",
+      "dateCreated": "Creado el",
       "userCreated": "Usuario creador",
-      "dateModified": "Fecha de modificación",
+      "dateModified": "Actualizado el",
       "barcode": "Código de barras",
       "action": "Acción",
       "description": "Descripción"
@@ -82,9 +82,9 @@
       "prevRoute": "Ruta anterior",
       "newRoute": "Nueva ruta",
       "labels": "Etiquetas",
-      "dateCreated": "Fecha de creación",
+      "dateCreated": "Creado el",
       "userCreated": "Usuario creador",
-      "dateModified": "Fecha de modificación",
+      "dateModified": "Actualizado el",
       "message": "Mensaje"
     },
     "errors": {

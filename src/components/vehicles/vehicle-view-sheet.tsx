@@ -10,7 +10,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -102,7 +102,7 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
           <RecordViewSheetSection title={t("vehicles.view.sections.audit")}>
             <RecordViewSheetDetailRow
               label={t("vehicles.columns.createdAt")}
-              value={vehicle.createdAt ? formatAuditDate(vehicle.createdAt) : dash}
+              value={vehicle.createdAt ? formatAuditDateTime(vehicle.createdAt) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("vehicles.columns.createdBy")}
@@ -110,7 +110,7 @@ export function VehicleViewSheet({ vehicle, open, onOpenChange, onEdit, onDelete
             />
             <RecordViewSheetDetailRow
               label={t("vehicles.columns.updatedAt")}
-              value={vehicle.updatedAt ? formatAuditDate(vehicle.updatedAt) : dash}
+              value={vehicle.updatedAt ? formatAuditDateTime(vehicle.updatedAt) : dash}
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>

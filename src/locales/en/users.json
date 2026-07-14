@@ -39,8 +39,8 @@
     "startTime": "Start time",
     "endTime": "End time",
     "email": "Email",
-    "createdAt": "Created",
-    "updatedAt": "Updated",
+    "createdAt": "Created at",
+    "updatedAt": "Updated at",
     "actions": "Actions"
   },
   "table": {
@@ -138,9 +138,9 @@
     "startTime": "Start time",
     "endTime": "End time",
     "notRestricted": "Not restricted",
-    "created": "Created",
+    "created": "Created at",
     "createdBy": "Created by",
-    "updated": "Updated",
+    "updated": "Updated at",
     "updatedBy": "Updated by",
     "edit": "Edit user",
     "deactivate": "Deactivate"
@@ -170,7 +170,7 @@
         "id": { "label": "Branch", "placeholder": "Select branch…" }
       },
       "active": { "label": "Active", "placeholder": "Select status…" },
-      "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" }
+      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" }
     }
   }
 }

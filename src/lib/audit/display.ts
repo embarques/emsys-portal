@@ -1,3 +1,4 @@
+/** Date-only (calendar days: start/end dates, business dates). */
 export function formatAuditDate(iso: string): string {
   const trimmed = iso.trim();
   if (!trimmed) return "—";
@@ -12,6 +13,7 @@ export function formatAuditDate(iso: string): string {
   }).format(parsed);
 }
 
+/** Date + time for entity audit stamps (`createdAt` / `updatedAt`). */
 export function formatAuditDateTime(iso: string): string {
   const trimmed = iso.trim();
   if (!trimmed) return "—";

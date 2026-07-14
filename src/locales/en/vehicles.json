@@ -35,9 +35,9 @@
     "status": "Status",
     "inspectionDate": "Inspection date",
     "registrationDate": "Registration date",
-    "createdAt": "Created",
+    "createdAt": "Created at",
     "createdBy": "Created by",
-    "updatedAt": "Updated"
+    "updatedAt": "Updated at"
   },
   "search": {
     "placeholder": "Search vehicles..."

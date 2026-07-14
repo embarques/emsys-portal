@@ -9,7 +9,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
 import { formatItemDate, formatItemPrice, truncateItemId } from "@/lib/items/display";
 import type { Item } from "@/lib/items/types";
@@ -54,7 +54,7 @@ export function ItemViewSheet({ item, open, onOpenChange, onEdit, onDelete }: It
             />
             <RecordViewSheetDetailRow
               label={t("items.view.dateModified")}
-              value={formatAuditDate(item.updatedAt)}
+              value={formatAuditDateTime(item.updatedAt)}
             />
             <RecordViewSheetDetailRow
               label={t("items.view.updatedBy")}

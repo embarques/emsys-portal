@@ -59,7 +59,7 @@
     "completed": "Completada",
     "date": "Fecha",
     "branchName": "Sucursal",
-    "createdAt": "Creada",
+    "createdAt": "Creado el",
     "senderName": "Nombre",
     "senderAddress": "Dirección",
     "senderCity": "Ciudad",
@@ -67,7 +67,7 @@
     "senderPhone": "Teléfono",
     "comments": "Comentarios",
     "route": "Ruta",
-    "updatedAt": "Actualizada",
+    "updatedAt": "Actualizado el",
     "purpose": "Propósito",
     "sectorId": "ID de sector",
     "sectorName": "Nombre del sector",
@@ -297,7 +297,7 @@
       "completed": { "label": "Estado de completado" },
       "date": { "label": "Fecha de la orden", "placeholder": "AAAA-MM-DD" },
       "dateRange": { "label": "Rango de fechas de la orden", "placeholder": "2026-01-01 a 2026-06-30" },
-      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" },
+      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
       "createdAtRange": { "label": "Rango de fechas de creación", "placeholder": "2026-01-01 a 2026-06-30" }
     }
   }

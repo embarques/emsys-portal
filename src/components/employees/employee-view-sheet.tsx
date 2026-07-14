@@ -10,7 +10,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import {
   formatRecordPhoneTypeLabel,
@@ -230,11 +230,11 @@ export function EmployeeViewSheet({
           <RecordViewSheetSection title={t("employees.view.sections.audit")}>
             <RecordViewSheetDetailRow
               label={t("employees.columns.createdAt")}
-              value={employee.createdAt ? formatAuditDate(employee.createdAt) : dash}
+              value={employee.createdAt ? formatAuditDateTime(employee.createdAt) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("employees.columns.updatedAt")}
-              value={employee.updatedAt ? formatAuditDate(employee.updatedAt) : dash}
+              value={employee.updatedAt ? formatAuditDateTime(employee.updatedAt) : dash}
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>

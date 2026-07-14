@@ -10,7 +10,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatAccountingCategory,
   formatAccountingDate,
@@ -26,6 +26,7 @@ import {
 import { getRouteLabel } from "@/lib/orders/display";
 import { useRouteLookup } from "@/lib/route-manager/hooks/use-route-manager";
 import type { AccountingEntry } from "@/lib/accounting/types";
+import { useTranslation } from "@/lib/i18n";
 
 type AccountingEntryViewSheetProps = {
   entry: AccountingEntry | null;
@@ -42,6 +43,7 @@ export function AccountingEntryViewSheet({
   onEdit,
   onDelete,
 }: AccountingEntryViewSheetProps) {
+  const { t } = useTranslation();
   const routeLookup = useRouteLookup();
 
   if (!entry) return null;
@@ -142,9 +144,9 @@ export function AccountingEntryViewSheet({
           ) : null}
 
           <RecordViewSheetSection title="Audit">
-            <RecordViewSheetDetailRow label="Date created" value={formatAuditDate(entry.createdAt)} />
+            <RecordViewSheetDetailRow label={t("common.audit.createdAt")} value={formatAuditDateTime(entry.createdAt)} />
             <RecordViewSheetDetailRow label="User created" value={entry.createdBy} />
-            <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(entry.updatedAt)} />
+            <RecordViewSheetDetailRow label={t("common.audit.updatedAt")} value={formatAuditDateTime(entry.updatedAt)} />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 

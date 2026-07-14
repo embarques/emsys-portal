@@ -16,7 +16,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { formatRecordPhoneTypeLabel, getOrderedRecordPhones } from "@/lib/phones/phones";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatOrderDateWithWeekday,
   formatOrderId,
@@ -166,7 +166,7 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
             <RecordViewSheetDetailRow label={t("orders.columns.branchCode")} value={order.branch.code} />
             <RecordViewSheetDetailRow
               label={t("orders.columns.createdAt")}
-              value={formatAuditDate(order.createdAt)}
+              value={formatAuditDateTime(order.createdAt)}
             />
             <RecordViewSheetDetailRow
               label={t("orders.columns.createdBy")}
@@ -174,7 +174,7 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
             />
             <RecordViewSheetDetailRow
               label={t("orders.columns.updatedAt")}
-              value={formatAuditDate(order.updatedAt)}
+              value={formatAuditDateTime(order.updatedAt)}
             />
             <RecordViewSheetDetailRow
               label={t("common.audit.updatedBy")}

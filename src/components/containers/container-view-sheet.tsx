@@ -12,7 +12,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatContainerDate,
   formatContainerId,
@@ -86,8 +86,8 @@ export function ContainerViewSheet({
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("containers.view.sections.audit")}>
-            <RecordViewSheetDetailRow label={t("common.audit.dateCreated")} value={formatAuditDate(container.createdAt)} />
-            <RecordViewSheetDetailRow label={t("common.audit.dateModified")} value={formatAuditDate(container.updatedAt)} />
+            <RecordViewSheetDetailRow label={t("common.audit.dateCreated")} value={formatAuditDateTime(container.createdAt)} />
+            <RecordViewSheetDetailRow label={t("common.audit.dateModified")} value={formatAuditDateTime(container.updatedAt)} />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 

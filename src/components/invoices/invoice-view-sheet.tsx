@@ -21,7 +21,7 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAddressLine, formatPartyPhoneList } from "@/lib/customers/display";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatInvoiceDate,
   formatInvoiceMoney,
@@ -35,6 +35,7 @@ import {
 } from "@/lib/invoices/display";
 import type { Invoice, InvoiceLineItem, InvoicePaymentInput } from "@/lib/invoices/types";
 import { getOrderPartyAddress } from "@/lib/invoices/types";
+import { useTranslation } from "@/lib/i18n";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
 import { cn } from "@/lib/utils";
 
@@ -231,6 +232,7 @@ export function InvoiceViewSheet({
   onAddComment,
   onRecordPayment,
 }: InvoiceViewSheetProps) {
+  const { t } = useTranslation();
   const totals = useMemo(() => {
     if (!invoice) return null;
     const subtotal = getInvoiceSubtotal(invoice);
@@ -277,8 +279,8 @@ export function InvoiceViewSheet({
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Invoice">
             <RecordViewSheetDetailRow label="User created" value={invoice.createdBy} />
-            <RecordViewSheetDetailRow label="Date created" value={formatAuditDate(invoice.createdAt)} />
-            <RecordViewSheetDetailRow label="Date modified" value={formatAuditDate(invoice.updatedAt)} />
+            <RecordViewSheetDetailRow label={t("common.audit.createdAt")} value={formatAuditDateTime(invoice.createdAt)} />
+            <RecordViewSheetDetailRow label={t("common.audit.updatedAt")} value={formatAuditDateTime(invoice.updatedAt)} />
             <div className="border-t border-border bg-muted/20 px-4 py-3.5">
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 <InvoiceTotalCell label="Total" value={formatInvoiceMoney(totals.subtotal)} />

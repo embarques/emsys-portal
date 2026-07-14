@@ -12,7 +12,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { PhoneActionRow } from "@/components/phones/phone-action-row";
 import { FlippableCustomerAddresses } from "@/components/customers/flippable-customer-addresses";
 import {
@@ -160,7 +160,7 @@ export function CustomerViewSheet({
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.createdAt")}
-              value={resolvedCustomer.createdAt ? formatAuditDate(resolvedCustomer.createdAt) : dash}
+              value={resolvedCustomer.createdAt ? formatAuditDateTime(resolvedCustomer.createdAt) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.updatedBy")}
@@ -168,7 +168,7 @@ export function CustomerViewSheet({
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.updatedAt")}
-              value={resolvedCustomer.updatedAt ? formatAuditDate(resolvedCustomer.updatedAt) : dash}
+              value={resolvedCustomer.updatedAt ? formatAuditDateTime(resolvedCustomer.updatedAt) : dash}
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>

@@ -13,7 +13,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
 import {
   getAvailableQuantity,
@@ -113,9 +113,9 @@ export function InventoryViewSheet({
               label={t("inventory.columns.reorderLevel")}
               value={`${item.reorderLevel} ${item.unit}`}
             />
-            <RecordViewSheetDetailRow label={t("inventory.columns.dateCreated")} value={formatAuditDate(item.createdAt)} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.dateCreated")} value={formatAuditDateTime(item.createdAt)} />
             <RecordViewSheetDetailRow label={t("inventory.columns.userCreated")} value={item.createdBy} />
-            <RecordViewSheetDetailRow label={t("inventory.columns.dateModified")} value={formatAuditDate(item.updatedAt)} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.dateModified")} value={formatAuditDateTime(item.updatedAt)} />
           </RecordViewSheetSection>
 
           {item.notes ? (

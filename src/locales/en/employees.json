@@ -45,8 +45,8 @@
     "user": "User",
     "user.id": "User ID",
     "user.name": "User name",
-    "createdAt": "Created",
-    "updatedAt": "Updated"
+    "createdAt": "Created at",
+    "updatedAt": "Updated at"
   },
   "search": {
     "placeholder": "Search employees..."
@@ -184,7 +184,7 @@
         "code": { "label": "Branch", "placeholder": "Select branch…" }
       },
       "cost": { "label": "Cost", "placeholder": "Enter amount…" },
-      "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" }
+      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" }
     }
   }
 }
