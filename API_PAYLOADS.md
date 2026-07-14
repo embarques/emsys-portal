@@ -463,6 +463,8 @@ Uses `CreatePickupRequest`. **Required:** `sender.name`.
 }
 ```
 
+Party address snapshots (`sender.address` / `receiver.address`) should round-trip `id`, `location`, and `verification` when provided. Portal sends them on create/update; live create responses have been observed returning only street fields plus placeholder `id` `000000000000000000000000` (tracked in GitHub #73).
+
 ### `PUT /v1/pickups/{id}`
 
 Same `CreatePickupRequest` shape. `{id}` = numeric. Set `"route": null` to clear a scheduled vehicle-route assignment.
@@ -555,6 +557,8 @@ Uses `CreateInvoiceRequest`. **Required:** `number`, `employee`, `container`, `s
   ]
 }
 ```
+
+Invoice party address snapshots should round-trip `id`, `location`, and `verification` the same way as pickups when the API shares that embedding path (see GitHub #73).
 
 ### `PUT /v1/invoices/{id}`
 
