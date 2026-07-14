@@ -194,6 +194,15 @@ function readNumericId(value: number | string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/**
+ * Customer `accountBalance` is a stored API field (see CUSTOMER_BACKEND_CONFIRMATION /
+ * API_PAYLOADS). Do not derive it from invoices, payments, or journals.
+ */
+function readAccountBalance(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function readAuditActor(value: unknown) {
   if (value == null) return null;
 
@@ -367,7 +376,7 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
     createdAt: item.createdAt ?? "",
     updatedAt: item.updatedAt ?? "",
     notes: String(item.notes ?? "").trim(),
-    accountBalance: Number(item.accountBalance ?? 0),
+    accountBalance: readAccountBalance(item.accountBalance),
     branch,
     createdBy: readAuditActor(item.createdBy) ?? readLegacyCreatedById(item.createdByID),
     updatedBy: readAuditActor(item.updatedBy),
@@ -650,6 +659,11 @@ function buildCustomerWritePayload(
 
   if (notes) {
     payload.notes = notes;
+  }
+
+  // Round-trip the stored API balance (display-only in UI). Never invent a ledger total.
+  if (Number.isFinite(values.accountBalance)) {
+    payload.accountBalance = values.accountBalance;
   }
 
   if (addressesPayload.length > 0) {

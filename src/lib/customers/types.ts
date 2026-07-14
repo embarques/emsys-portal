@@ -107,6 +107,7 @@ export type Customer = {
   createdAt: string;
   updatedAt: string;
   notes: string;
+  /** Stored customer balance returned by the API; the portal does not derive it from accounting records. */
   accountBalance: number;
   branch: CustomerBranch;
   createdBy: CustomerAuditActor | null;
@@ -169,6 +170,7 @@ export type CustomerFormValues = {
   active: boolean;
   IDNumber: string;
   notes: string;
+  /** Stored API `accountBalance`; display-only — not edited or derived in the portal. */
   accountBalance: number;
   branch: CustomerBranch;
   addresses: CustomerCoreAddress[];
