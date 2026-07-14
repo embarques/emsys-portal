@@ -416,7 +416,7 @@ Same shape. `{id}` = numeric.
 
 ### `POST /v1/pickups`
 
-Uses `CreatePickupRequest` (legacy-friendly). **Required:** `sender.name`.
+Uses `CreatePickupRequest`. **Required:** `sender.name`.
 
 ```json
 {
@@ -425,26 +425,32 @@ Uses `CreatePickupRequest` (legacy-friendly). **Required:** `sender.name`.
   "employee": {
     "id": 5,
     "name": "Jane Driver",
-    "phone1": "555-2000",
     "active": true
   },
   "sender": {
     "name": "Sender Name",
     "customerType": 1,
-    "phone1": "555-3000",
+    "phones": [
+      { "type": "mobile", "number": "555-3000", "isPrimary": true }
+    ],
     "email": "sender@example.com",
     "IDNumber": "111",
     "address": {
+      "id": "6a4e77a9940040f71266fc29",
       "address1": "10 Oak Ave",
       "city": "Bronx",
       "state": "NY",
-      "zipcode": "10451"
+      "zipcode": "10451",
+      "location": { "type": "Point", "coordinates": [-73.9, 40.8] },
+      "verification": { "is_verified": true, "verified_at": "2026-07-08T16:15:36.233Z" }
     }
   },
   "receiver": {
     "name": "Receiver Name",
     "customerType": 2,
-    "phone1": "555-4000",
+    "phones": [
+      { "type": "mobile", "number": "555-4000", "isPrimary": true }
+    ],
     "address": {
       "city": "Miami",
       "state": "FL",
@@ -463,6 +469,8 @@ Uses `CreatePickupRequest` (legacy-friendly). **Required:** `sender.name`.
   ]
 }
 ```
+
+Party address snapshots (`sender.address` / `receiver.address`) should round-trip `id`, `location`, and `verification` when provided. Portal sends them on create/update; live create responses have been observed returning only street fields plus placeholder `id` `000000000000000000000000` (tracked in GitHub #73).
 
 ### `PUT /v1/pickups/{id}`
 
@@ -532,9 +540,12 @@ Uses `CreateInvoiceRequest`. **Required:** `number`, `employee`, `container`, `s
     "phone1": "555-1000",
     "IDNumber": "123",
     "address": {
+      "id": "6a4e77a9940040f71266fc29",
       "city": "Miami",
       "state": "FL",
-      "zipcode": "33101"
+      "zipcode": "33101",
+      "location": { "type": "Point", "coordinates": [-80.2, 25.8] },
+      "verification": { "is_verified": true, "verified_at": "2026-07-08T16:15:36.233Z" }
     }
   },
   "receiver": {
@@ -553,6 +564,8 @@ Uses `CreateInvoiceRequest`. **Required:** `number`, `employee`, `container`, `s
   ]
 }
 ```
+
+Invoice party address snapshots should round-trip `id`, `location`, and `verification` the same way as pickups when the API shares that embedding path (see GitHub #73).
 
 ### `PUT /v1/invoices/{id}`
 

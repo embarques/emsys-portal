@@ -16,6 +16,7 @@ export type ApiAddressVerificationPayload = {
 };
 
 export type ApiAddressPayload = {
+  id?: string;
   address1?: string;
   address2?: string;
   apartment?: string;
@@ -76,6 +77,7 @@ export type AddressVerificationInput = {
 } | null;
 
 export type AddressInput = {
+  id?: string;
   address1?: string;
   address2?: string;
   apartment?: string;
@@ -119,6 +121,11 @@ type ApiAddressStringField =
 
 export function buildApiAddressPayload(address: AddressInput): ApiAddressPayload | undefined {
   const payload: ApiAddressPayload = {};
+  const id = address.id?.trim();
+  if (id) {
+    payload.id = id;
+  }
+
   const entries: [ApiAddressStringField, string | undefined][] = [
     ["address1", address.address1?.trim()],
     ["address2", address.address2?.trim()],

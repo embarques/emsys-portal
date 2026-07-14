@@ -33,7 +33,7 @@ import { normalizeApiCustomer, withTransactionPartyAddressSnapshot } from "@/lib
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
 import type { Customer } from "@/lib/customers/types";
 import { CUSTOMER_PORTAL_BRANCHES, getCustomerPrimaryCoreAddress, type CustomerCoreAddress } from "@/lib/customers/types";
-import { buildApiPhonesPayload, createDefaultRecordPhones, getPhoneAtDisplayIndex, getPrimaryPhoneNumber, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
+import { buildApiPhonesPayload, createDefaultRecordPhones, normalizeRecordPhonesFromApi } from "@/lib/phones/phones";
 import type { RecordPhoneWritePayload } from "@/lib/phones/types";
 import type { Employee } from "@/lib/employees/types";
 import { normalizeApiUser } from "@/lib/users/api/users-api";
@@ -100,12 +100,9 @@ type ApiRouteRef = {
 type ApiPickupCustomerRef = {
   name: string;
   customerType: number;
-  phone1: string;
-  /** Modern phones array — sent so the pickup upsert does not wipe the party's saved phones. */
   phones?: RecordPhoneWritePayload[];
   email?: string;
   IDNumber?: string;
-  phone2?: string;
   id?: string;
   oldID?: number;
   address?: ApiAddressPayload;
@@ -681,10 +678,8 @@ function buildPickupCustomerRef(
   selectedAddress?: CustomerCoreAddress,
 ): ApiPickupCustomerRef {
   const name = customer.name.trim();
-  const phone1 = getPrimaryPhoneNumber(customer.phones);
   const email = customer.email.trim();
   const idNumber = customer.IDNumber.trim();
-  const phone2 = getPhoneAtDisplayIndex(customer.phones, 1);
   const phones = buildApiPhonesPayload(customer.phones).filter((phone) => phone.number.trim());
   const address = buildApiAddressPayload(
     selectedAddress ?? getCustomerPrimaryCoreAddress(customer),
@@ -693,7 +688,6 @@ function buildPickupCustomerRef(
   const payload: ApiPickupCustomerRef = {
     name,
     customerType: coerceCustomerTypeFromApi(customer.customerType),
-    phone1,
   };
 
   if (phones.length > 0) {
@@ -710,10 +704,6 @@ function buildPickupCustomerRef(
 
   if (idNumber) {
     payload.IDNumber = idNumber;
-  }
-
-  if (phone2) {
-    payload.phone2 = phone2;
   }
 
   if (address) {
