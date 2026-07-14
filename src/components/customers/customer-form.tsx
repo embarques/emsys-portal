@@ -38,6 +38,8 @@ import {
   coreAddressRequiresVerification,
   createEmptyCustomerCoreAddress,
   createEmptyCustomerForm,
+  findDuplicateCustomerAddressIndex,
+  findDuplicateCustomerPhoneIndex,
   getDefaultCountryForPortalBranch,
   getPortalBranchForCustomerType,
   isAddressVerified,
@@ -536,6 +538,11 @@ export function CustomerForm({
       }
     }
 
+    const duplicatePhoneIndex = findDuplicateCustomerPhoneIndex(values.phones);
+    if (duplicatePhoneIndex >= 0) {
+      return t("customers.form.validation.duplicatePhone", { index: duplicatePhoneIndex + 1 });
+    }
+
     if (showAddresses) {
       for (let index = 0; index < values.addresses.length; index += 1) {
         const address = values.addresses[index];
@@ -554,6 +561,13 @@ export function CustomerForm({
         } else if (!address.city.trim()) {
           return t("customers.form.validation.addressCityRequired", { label });
         }
+      }
+
+      const duplicateAddressIndex = findDuplicateCustomerAddressIndex(values.addresses);
+      if (duplicateAddressIndex >= 0) {
+        return t("customers.form.validation.duplicateAddress", {
+          label: t("customers.form.address.label", { index: duplicateAddressIndex + 1 }),
+        });
       }
     }
 
@@ -581,6 +595,12 @@ export function CustomerForm({
       }
     }
 
+    const duplicatePhoneIndex = findDuplicateCustomerPhoneIndex(current.phones);
+    if (duplicatePhoneIndex >= 0) {
+      focusFormField(`customer-phone-number-${duplicatePhoneIndex}`);
+      return;
+    }
+
     if (showAddresses) {
       for (let index = 0; index < current.addresses.length; index += 1) {
         const address = current.addresses[index];
@@ -599,6 +619,12 @@ export function CustomerForm({
           focusFormField(`address-${index}-city`);
           return;
         }
+      }
+
+      const duplicateAddressIndex = findDuplicateCustomerAddressIndex(current.addresses);
+      if (duplicateAddressIndex >= 0) {
+        focusFormField(`address-${duplicateAddressIndex}-address1`);
+        return;
       }
     }
 

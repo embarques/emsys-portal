@@ -51,6 +51,7 @@ import { formatPaginatedListSummary, buildToolbarSearchSummary } from "@/lib/tab
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatAccountBalance,
+  formatCustomerAuditActor,
   getClientTypeBadgeClass,
 } from "@/lib/customers/display";
 import {
@@ -441,22 +442,27 @@ export function CustomersWorkspace() {
       renderCell: (customer) => customer.notes || t("common.empty.dash"),
     },
     {
-      id: "createdByID",
-      label: t("customers.columns.createdByID"),
+      id: "createdBy",
+      label: t("customers.columns.createdBy"),
       cellClassName: "align-top text-muted-foreground",
-      renderCell: (customer) =>
-        customer.createdByID != null ? String(customer.createdByID) : t("common.empty.dash"),
+      renderCell: (customer) => formatCustomerAuditActor(customer.createdBy),
     },
     {
       id: "createdAt",
-      label: t("common.audit.dateCreated"),
+      label: t("customers.columns.createdAt"),
       cellClassName: "align-top text-muted-foreground",
       renderCell: (customer) =>
         customer.createdAt ? formatAuditDateTime(customer.createdAt) : t("common.empty.dash"),
     },
     {
+      id: "updatedBy",
+      label: t("customers.columns.updatedBy"),
+      cellClassName: "align-top text-muted-foreground",
+      renderCell: (customer) => formatCustomerAuditActor(customer.updatedBy),
+    },
+    {
       id: "updatedAt",
-      label: t("common.audit.dateModified"),
+      label: t("customers.columns.updatedAt"),
       cellClassName: "align-top text-muted-foreground",
       renderCell: (customer) =>
         customer.updatedAt ? formatAuditDateTime(customer.updatedAt) : t("common.empty.dash"),

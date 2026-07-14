@@ -16,6 +16,7 @@ import {
   validateRecordPhones,
 } from "@/lib/phones/phones";
 import type { RecordPhone } from "@/lib/phones/types";
+import { getPhoneDialDigits } from "@/lib/utils/phone";
 
 export type CustomerPortalBranch = "usa" | "dr";
 
@@ -87,6 +88,13 @@ export type CustomerBranch = {
   code: string;
 };
 
+export type CustomerAuditActor = {
+  /** EMSYS user id (`core.User.id`). */
+  id: string;
+  /** Display name (`core.User.name`). Prefer this in UI over `id`. */
+  name: string;
+};
+
 export type Customer = {
   id: string;
   /** Legacy numeric customer ID from the EMSYS API. */
@@ -100,9 +108,11 @@ export type Customer = {
   createdAt: string;
   updatedAt: string;
   notes: string;
+  /** Stored customer balance returned by the API; the portal does not derive it from accounting records. */
   accountBalance: number;
   branch: CustomerBranch;
-  createdByID: number | null;
+  createdBy: CustomerAuditActor | null;
+  updatedBy: CustomerAuditActor | null;
   addresses: CustomerCoreAddress[];
   /** Total address count when the list API omits the full `addresses` array. */
   addressCount?: number;
@@ -161,11 +171,13 @@ export type CustomerFormValues = {
   active: boolean;
   IDNumber: string;
   notes: string;
+  /** Stored API `accountBalance`; display-only — not edited or derived in the portal. */
   accountBalance: number;
   branch: CustomerBranch;
   addresses: CustomerCoreAddress[];
   receivers: string[];
-  createdByID: number | null;
+  createdBy: CustomerAuditActor | null;
+  updatedBy: CustomerAuditActor | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -177,6 +189,10 @@ export function validateCustomerFormValues(values: CustomerFormValues): void {
 
   validateRecordPhones(values.phones);
 
+  if (findDuplicateCustomerPhoneIndex(values.phones) >= 0) {
+    throw new Error("Duplicate phone numbers are not allowed.");
+  }
+
   if (!values.branch?.id || values.branch.id <= 0) {
     throw new Error("branch is required.");
   }
@@ -184,6 +200,56 @@ export function validateCustomerFormValues(values: CustomerFormValues): void {
   if (values.customerType !== CUSTOMER_TYPE_SENDER && values.customerType !== CUSTOMER_TYPE_RECEIVER) {
     throw new Error("customerType is required.");
   }
+
+  if (findDuplicateCustomerAddressIndex(values.addresses) >= 0) {
+    throw new Error("Duplicate addresses are not allowed.");
+  }
+}
+
+export function findDuplicateCustomerPhoneIndex(phones: RecordPhone[]): number {
+  const seen = new Set<string>();
+
+  for (let index = 0; index < phones.length; index += 1) {
+    const key = getPhoneDialDigits(phones[index]?.number ?? "");
+    if (!key) continue;
+    if (seen.has(key)) return index;
+    seen.add(key);
+  }
+
+  return -1;
+}
+
+function normalizeDuplicateAddressPart(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function getCustomerAddressDuplicateKey(address: CustomerCoreAddress): string {
+  if (!coreAddressHasContent(address)) return "";
+
+  return [
+    address.address1,
+    address.apartment,
+    address.address2,
+    address.city,
+    address.state,
+    address.zipcode,
+    address.country,
+  ]
+    .map(normalizeDuplicateAddressPart)
+    .join("|");
+}
+
+export function findDuplicateCustomerAddressIndex(addresses: CustomerCoreAddress[]): number {
+  const seen = new Set<string>();
+
+  for (let index = 0; index < addresses.length; index += 1) {
+    const key = getCustomerAddressDuplicateKey(addresses[index]!);
+    if (!key) continue;
+    if (seen.has(key)) return index;
+    seen.add(key);
+  }
+
+  return -1;
 }
 
 export type CustomerBranchFilter = number | "all";
@@ -211,7 +277,13 @@ export type CustomerSearchField =
   | "IDNumber"
   | "address.address1"
   | "customerType"
-  | "branch.id";
+  | "branch.id"
+  | "createdAt"
+  | "updatedAt"
+  | "createdBy.name"
+  | "updatedBy.name"
+  | "createdBy.id"
+  | "updatedBy.id";
 
 export type CustomerSearchFilter = ApiListTextSearch;
 
@@ -295,6 +367,12 @@ export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   { field: "address.address1", label: "Address 1", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "customerType", label: "Customer type", operators: ["eq", "neq"] },
   { field: "id", label: "Customer ID", operators: ["eq", "neq"] },
+  { field: "createdAt", label: "Created at", operators: ["eq", "neq"] },
+  { field: "updatedAt", label: "Updated at", operators: ["eq", "neq"] },
+  { field: "createdBy.name", label: "Created by", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "updatedBy.name", label: "Updated by", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "createdBy.id", label: "Creator ID", operators: ["eq", "neq"] },
+  { field: "updatedBy.id", label: "Editor ID", operators: ["eq", "neq"] },
 ];
 
 export const CUSTOMER_SEARCH_FIELDS: { value: CustomerSearchField; label: string }[] =
@@ -551,7 +629,8 @@ export function createEmptyCustomerForm(): CustomerFormValues {
     branch,
     addresses: [address],
     receivers: [],
-    createdByID: null,
+    createdBy: null,
+    updatedBy: null,
     createdAt: "",
     updatedAt: "",
   };
@@ -736,7 +815,8 @@ export function customerToFormValues(customer: Customer): CustomerFormValues {
     branch: { ...customer.branch },
     addresses: customer.addresses.map((entry) => ({ ...entry })),
     receivers: [...customer.receivers],
-    createdByID: customer.createdByID,
+    createdBy: customer.createdBy ? { ...customer.createdBy } : null,
+    updatedBy: customer.updatedBy ? { ...customer.updatedBy } : null,
     createdAt: customer.createdAt,
     updatedAt: customer.updatedAt,
   });

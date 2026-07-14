@@ -20,12 +20,13 @@ import {
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
 import {
-  coerceCustomerTypeFromApi,
   expandCustomerTypeSearchNode,
   appendCustomerTypeFilterGroup,
   isCustomerTypeFilterActive,
   portalCustomerTypeToApiFilterValue,
   portalCustomerTypeToApiWriteValue,
+  CUSTOMER_TYPE_RECEIVER,
+  CUSTOMER_TYPE_SENDER,
 } from "@/lib/customers/customer-type";
 import { expandCustomerCountrySearchNode } from "@/lib/customers/customer-country";
 import {
@@ -55,11 +56,14 @@ import {
   coreAddressHasContent,
   validateCustomerFormValues,
   type CustomerListParams,
-  type CustomerSearchMatchField,
   type CustomerSearchResult,
 } from "@/lib/customers/types";
 import { fetchBranches } from "@/lib/branches/api/branches-api";
-import { CUSTOMER_BAR_OR_SEARCH_FIELDS } from "@/lib/customers/search-fields";
+import {
+  CUSTOMER_BAR_OR_SEARCH_FIELDS,
+  CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS,
+} from "@/lib/customers/search-fields";
+import { resolvePartyPickerSearchMatch } from "@/lib/customers/utils/address-utils";
 import {
   buildApiPhonesPayload,
   getPhoneAtDisplayIndex,
@@ -101,6 +105,13 @@ type ApiBranch = {
   code?: string;
 };
 
+type ApiUser = {
+  id?: number | string;
+  name?: string;
+  userName?: string;
+  fullName?: string;
+};
+
 type ApiCustomer = {
   id?: string;
   oldID?: number;
@@ -118,6 +129,10 @@ type ApiCustomer = {
   notes?: string;
   accountBalance?: number;
   branch?: ApiBranch;
+  /** Canonical audit actor — `core.User { id, name }`. */
+  createdBy?: ApiUser | string | number | null;
+  updatedBy?: ApiUser | string | number | null;
+  /** @deprecated Prefer `createdBy.id`. Read-only fallback until backend migration finishes. */
   createdByID?: number;
   address?: ApiAddress;
   addresses?: ApiAddress[];
@@ -143,7 +158,6 @@ type ApiCustomerWritePayload = {
   id?: string;
   createdAt?: string;
   updatedAt?: string;
-  createdByID?: number;
   oldID?: number;
 };
 
@@ -178,6 +192,49 @@ function readNumericId(value: number | string | undefined): number | undefined {
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/**
+ * Customer `accountBalance` is a stored API field (see CUSTOMER_BACKEND_CONFIRMATION /
+ * API_PAYLOADS). Do not derive it from invoices, payments, or journals.
+ */
+function readAccountBalance(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function readAuditActor(value: unknown) {
+  if (value == null) return null;
+
+  // Legacy plain-string actor → `name` (docs target is core.User, not bare strings).
+  if (typeof value === "string") {
+    const name = value.trim();
+    return name ? { id: "", name } : null;
+  }
+
+  // Legacy numeric-only actor → `id`.
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return null;
+    return { id: String(value), name: "" };
+  }
+
+  if (typeof value !== "object") return null;
+
+  const user = value as ApiUser;
+  const id = String(user.id ?? "").trim();
+  // Canonical field is `name`; fold compatibility aliases into that field.
+  const name = String(user.name ?? user.fullName ?? user.userName ?? "").trim();
+
+  if (!id && !name) return null;
+
+  return { id, name };
+}
+
+/** Read-only fallback for deprecated `createdByID` until rows are backfilled to `createdBy`. */
+function readLegacyCreatedById(value: unknown) {
+  const id = readNumericId(value as number | string | undefined);
+  if (id == null || id <= 0) return null;
+  return { id: String(id), name: "" };
 }
 
 function readCustomerTypeFromApi(raw?: ApiCustomer): number | null {
@@ -319,9 +376,10 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
     createdAt: item.createdAt ?? "",
     updatedAt: item.updatedAt ?? "",
     notes: String(item.notes ?? "").trim(),
-    accountBalance: Number(item.accountBalance ?? 0),
+    accountBalance: readAccountBalance(item.accountBalance),
     branch,
-    createdByID: readNumericId(item.createdByID) ?? null,
+    createdBy: readAuditActor(item.createdBy) ?? readLegacyCreatedById(item.createdByID),
+    updatedBy: readAuditActor(item.updatedBy),
     addresses,
     receivers: normalizeReceivers(item.receivers),
   };
@@ -603,6 +661,11 @@ function buildCustomerWritePayload(
     payload.notes = notes;
   }
 
+  // Round-trip the stored API balance (display-only in UI). Never invent a ledger total.
+  if (Number.isFinite(values.accountBalance)) {
+    payload.accountBalance = values.accountBalance;
+  }
+
   if (addressesPayload.length > 0) {
     payload.addresses = addressesPayload;
   }
@@ -613,10 +676,6 @@ function buildCustomerWritePayload(
 
   if (values.oldID != null && values.oldID > 0) {
     payload.oldID = values.oldID;
-  }
-
-  if (values.createdByID != null && values.createdByID > 0) {
-    payload.createdByID = values.createdByID;
   }
 
   if (options.customerId) {
@@ -843,55 +902,17 @@ export async function updateCustomerAddressGoogleVerification(
   return extractCustomerFromMutationResponse(response.data) ?? fetchCustomerById(customerId);
 }
 
-type ApiCustomerSearchResult = {
-  customer?: unknown;
-  matchedBy?: string;
-  matched_by?: string;
-  matchedAddressId?: string;
-  matched_address_id?: string;
-};
-
-const CUSTOMER_SEARCH_MATCH_FIELDS: CustomerSearchMatchField[] = [
-  "name",
-  "phone",
-  "idNumber",
-  "email",
-  "address",
-];
-
-function normalizeCustomerSearchMatchField(raw?: string): CustomerSearchMatchField | undefined {
-  const value = String(raw ?? "").trim();
-  if (!value) return undefined;
-
-  return CUSTOMER_SEARCH_MATCH_FIELDS.find(
-    (field) => field.toLowerCase() === value.toLowerCase(),
-  );
-}
-
-function normalizeCustomerSearchResult(raw: unknown): CustomerSearchResult | null {
-  if (!raw || typeof raw !== "object") return null;
-
-  const item = raw as ApiCustomerSearchResult;
-  const customer = normalizeApiCustomer(item.customer ?? raw);
-  if (!customer) return null;
-
-  const matchedBy = normalizeCustomerSearchMatchField(item.matchedBy ?? item.matched_by);
-  const matchedAddressId = String(item.matchedAddressId ?? item.matched_address_id ?? "").trim();
-
-  return {
-    customer,
-    matchedBy,
-    matchedAddressId: matchedAddressId || undefined,
-  };
-}
-
 export type CustomerAutocompleteParams = {
   q: string;
   customerType: "sender" | "receiver";
   limit?: number;
 };
 
-/** GET /customers/autocomplete — address-aware customer search for party pickers. */
+/**
+ * Party picker search — `POST /customers/search` with
+ * `CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS` (`addresses.*` paths), matching any
+ * address in `addresses[]`. Preserves `matchedAddressId` for the UI.
+ */
 export async function fetchCustomerAutocomplete(
   params: CustomerAutocompleteParams,
 ): Promise<CustomerSearchResult[]> {
@@ -899,38 +920,21 @@ export async function fetchCustomerAutocomplete(
   if (!query) return [];
 
   const limit = params.limit ?? 20;
+  const customerType =
+    params.customerType === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER;
 
-  const searchParams = new URLSearchParams({
-    q: query,
-    customerType: params.customerType,
-    limit: String(limit),
+  const result = await fetchCustomers({
+    ...DEFAULT_CUSTOMER_LIST_PARAMS,
+    limit,
+    search: { value: query },
+    customerType,
+    orFields: CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS,
   });
 
-  try {
-    const response = await apiClient.get<
-      ApiCustomerSearchResult[] | PaginatedApiEnvelope<ApiCustomerSearchResult[]>
-    >(`${API_ENDPOINTS.CUSTOMERS_AUTOCOMPLETE}?${searchParams.toString()}`);
-
-    const rawItems = Array.isArray(response)
-      ? response
-      : Array.isArray((response as PaginatedApiEnvelope<ApiCustomerSearchResult[]>).data)
-        ? ((response as PaginatedApiEnvelope<ApiCustomerSearchResult[]>).data ?? [])
-        : [];
-
-    return rawItems
-      .map(normalizeCustomerSearchResult)
-      .filter((entry): entry is CustomerSearchResult => entry != null);
-  } catch {
-    const customerType = params.customerType === "sender" ? 1 : 2;
-    const fallback = await fetchCustomers({
-      ...DEFAULT_CUSTOMER_LIST_PARAMS,
-      limit,
-      search: { field: "name", operator: "contains", value: query },
-      customerType,
-    });
-
-    return fallback.items.map((customer) => ({ customer }));
-  }
+  return result.items.map((customer) => ({
+    customer,
+    ...resolvePartyPickerSearchMatch(customer, query),
+  }));
 }
 
 export async function fetchCustomerById(customerId: string): Promise<Customer> {

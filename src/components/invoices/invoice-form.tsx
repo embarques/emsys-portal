@@ -39,6 +39,7 @@ import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import {
   useCreateCustomer,
+  useEnsureCustomerDetail,
   useUpdateCustomer,
 } from "@/lib/customers/hooks/use-customers";
 import {
@@ -224,6 +225,7 @@ export function InvoiceForm({
   const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
+  const ensureCustomerDetail = useEnsureCustomerDetail();
 
   const { data: itemsData } = useItemPicker();
   const containers = containersData?.items ?? [];
@@ -240,10 +242,15 @@ export function InvoiceForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
+  const [isLoadingEditCustomer, setIsLoadingEditCustomer] = useState(false);
+  const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
   const [pickupEmployeeQuery, setPickupEmployeeQuery] = useState("");
   const handleEnterNavigation = useFormEnterNavigation();
-  const isSavingCustomer = createCustomerMutation.isPending || updateCustomerMutation.isPending;
+  const isSavingCustomer =
+    createCustomerMutation.isPending ||
+    updateCustomerMutation.isPending ||
+    isLoadingEditCustomer;
 
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200);
   const pickupRoutes = pickupRoutesQuery.data?.items ?? [];
@@ -436,13 +443,31 @@ export function InvoiceForm({
     setCustomerDialog({ side, mode: "add" });
   }
 
-  function openEditCustomer(side: PartySide) {
+  async function openEditCustomer(side: PartySide) {
+    const current = side === "sender" ? values.sender : values.receiver;
+    if (!current?.id) return;
+
     setCustomerFormError(null);
-    setCustomerDialog({ side, mode: "edit" });
+    setIsLoadingEditCustomer(true);
+
+    try {
+      // Invoice parties are often a single `party.address` snapshot (marked primary).
+      // Reload GET /customers/{id} so Edit shows the full address book — same as orders.
+      const fullCustomer = await ensureCustomerDetail(current.id);
+      applyCustomerToSide(side, fullCustomer);
+      setEditCustomer(fullCustomer);
+      setCustomerDialog({ side, mode: "edit" });
+    } catch {
+      setEditCustomer(null);
+      setCustomerFormError(t("common.errors.fallback"));
+    } finally {
+      setIsLoadingEditCustomer(false);
+    }
   }
 
   function closeCustomerDialog() {
     setCustomerDialog(null);
+    setEditCustomer(null);
     setCustomerFormError(null);
   }
 
@@ -470,7 +495,7 @@ export function InvoiceForm({
         }
 
         customer = await updateCustomerMutation.mutateAsync({
-          customerId: dialogCustomer.id,
+          customerId: (editCustomer ?? dialogCustomer).id,
           values: formValues,
         });
         notifyUpdated(t("customers.entity"), customer.name);
@@ -915,10 +940,10 @@ export function InvoiceForm({
           </DialogHeader>
           {customerDialog ? (
             <CustomerForm
-              key={`${customerDialog.side}-${customerDialog.mode}-${dialogCustomer?.id ?? "new"}`}
+              key={`${customerDialog.side}-${customerDialog.mode}-${editCustomer?.id ?? dialogCustomer?.id ?? "new"}-${editCustomer?.addresses.length ?? 0}`}
               initialValues={
-                customerDialog.mode === "edit" && dialogCustomer
-                  ? customerToFormValues(dialogCustomer)
+                customerDialog.mode === "edit" && editCustomer
+                  ? customerToFormValues(editCustomer)
                   : {
                       ...createEmptyCustomerForm(),
                       customerType:
