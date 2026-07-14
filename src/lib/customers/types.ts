@@ -162,6 +162,7 @@ export type CustomerFormValues = {
   active: boolean;
   IDNumber: string;
   notes: string;
+  /** Stored API `accountBalance`; display-only — not edited or derived in the portal. */
   accountBalance: number;
   branch: CustomerBranch;
   addresses: CustomerCoreAddress[];

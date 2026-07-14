@@ -138,11 +138,13 @@ export function formatAddressSummary(customer: Customer): string {
   return `${first}${suffix}`;
 }
 
+/** Format customer `accountBalance` from the API as USD (not a frontend-derived ledger). */
 export function formatAccountBalance(balance: number): string {
+  const amount = Number.isFinite(balance) ? balance : 0;
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(balance);
+  }).format(amount);
 }
 
 export function formatPhoneSummary(customer: Customer): string {
