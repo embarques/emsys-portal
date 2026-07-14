@@ -623,7 +623,8 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
     notes: "",
     accountBalance: 0,
     branch: { id: 0, name: "", code: "" },
-    createdByID: null,
+    createdBy: null,
+    updatedBy: null,
     addresses: resolvedAddresses,
     receivers: [],
   };

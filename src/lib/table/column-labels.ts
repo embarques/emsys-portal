@@ -77,7 +77,6 @@ const EXACT_LABELS: Record<string, string> = {
   createdAt: "Created",
   updatedAt: "Updated",
   createdBy: "Created by",
-  createdByID: "Created by",
   totalLoanGiven: "Total loan given",
   totalPaymentReceived: "Total payment received",
   loanAmountOwed: "Loan owed",

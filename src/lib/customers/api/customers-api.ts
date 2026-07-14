@@ -20,7 +20,6 @@ import {
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import { CUSTOMER_TABLE_FILTER_FIELDS } from "@/lib/customers/filter-fields";
 import {
-  coerceCustomerTypeFromApi,
   expandCustomerTypeSearchNode,
   appendCustomerTypeFilterGroup,
   isCustomerTypeFilterActive,
@@ -106,6 +105,13 @@ type ApiBranch = {
   code?: string;
 };
 
+type ApiUser = {
+  id?: number | string;
+  name?: string;
+  userName?: string;
+  fullName?: string;
+};
+
 type ApiCustomer = {
   id?: string;
   oldID?: number;
@@ -123,6 +129,10 @@ type ApiCustomer = {
   notes?: string;
   accountBalance?: number;
   branch?: ApiBranch;
+  /** Canonical audit actor — `core.User { id, name }`. */
+  createdBy?: ApiUser | string | number | null;
+  updatedBy?: ApiUser | string | number | null;
+  /** @deprecated Prefer `createdBy.id`. Read-only fallback until backend migration finishes. */
   createdByID?: number;
   address?: ApiAddress;
   addresses?: ApiAddress[];
@@ -148,7 +158,6 @@ type ApiCustomerWritePayload = {
   id?: string;
   createdAt?: string;
   updatedAt?: string;
-  createdByID?: number;
   oldID?: number;
 };
 
@@ -183,6 +192,40 @@ function readNumericId(value: number | string | undefined): number | undefined {
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function readAuditActor(value: unknown) {
+  if (value == null) return null;
+
+  // Legacy plain-string actor → `name` (docs target is core.User, not bare strings).
+  if (typeof value === "string") {
+    const name = value.trim();
+    return name ? { id: "", name } : null;
+  }
+
+  // Legacy numeric-only actor → `id`.
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return null;
+    return { id: String(value), name: "" };
+  }
+
+  if (typeof value !== "object") return null;
+
+  const user = value as ApiUser;
+  const id = String(user.id ?? "").trim();
+  // Canonical field is `name`; fold compatibility aliases into that field.
+  const name = String(user.name ?? user.fullName ?? user.userName ?? "").trim();
+
+  if (!id && !name) return null;
+
+  return { id, name };
+}
+
+/** Read-only fallback for deprecated `createdByID` until rows are backfilled to `createdBy`. */
+function readLegacyCreatedById(value: unknown) {
+  const id = readNumericId(value as number | string | undefined);
+  if (id == null || id <= 0) return null;
+  return { id: String(id), name: "" };
 }
 
 function readCustomerTypeFromApi(raw?: ApiCustomer): number | null {
@@ -326,7 +369,8 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
     notes: String(item.notes ?? "").trim(),
     accountBalance: Number(item.accountBalance ?? 0),
     branch,
-    createdByID: readNumericId(item.createdByID) ?? null,
+    createdBy: readAuditActor(item.createdBy) ?? readLegacyCreatedById(item.createdByID),
+    updatedBy: readAuditActor(item.updatedBy),
     addresses,
     receivers: normalizeReceivers(item.receivers),
   };
@@ -618,10 +662,6 @@ function buildCustomerWritePayload(
 
   if (values.oldID != null && values.oldID > 0) {
     payload.oldID = values.oldID;
-  }
-
-  if (values.createdByID != null && values.createdByID > 0) {
-    payload.createdByID = values.createdByID;
   }
 
   if (options.customerId) {

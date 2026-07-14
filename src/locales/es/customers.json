@@ -79,9 +79,10 @@
     "email": "Correo",
     "accountBalance": "Saldo",
     "notes": "Notas",
-    "createdByID": "Creado por",
-    "createdAt": "Creado",
-    "updatedAt": "Actualizado"
+    "createdBy": "Creado por",
+    "createdAt": "Creado el",
+    "updatedBy": "Actualizado por",
+    "updatedAt": "Actualizado el"
   },
   "search": {
     "placeholder": "Buscar por nombre, cualquier teléfono o cualquier dirección…"
@@ -184,6 +185,7 @@
     "branchId": "ID de sucursal",
     "createdBy": "Creado por",
     "createdAt": "Creado el",
+    "updatedBy": "Actualizado por",
     "updatedAt": "Actualizado el",
     "primaryPhone": "{{type}} (principal)",
     "edit": "Editar cliente"
@@ -201,6 +203,16 @@
       "email": { "label": "Correo", "placeholder": "Ingrese correo…" },
       "IDNumber": { "label": "Número de ID", "placeholder": "Ingrese número de ID…" },
       "id": { "label": "ID de cliente", "placeholder": "Ingrese ID de cliente…" },
+      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
+      "updatedAt": { "label": "Actualizado el", "placeholder": "AAAA-MM-DD" },
+      "createdBy": {
+        "name": { "label": "Creado por", "placeholder": "Ingrese creador…" },
+        "id": { "label": "ID del creador", "placeholder": "Ingrese ID del creador…" }
+      },
+      "updatedBy": {
+        "name": { "label": "Actualizado por", "placeholder": "Ingrese editor…" },
+        "id": { "label": "ID del editor", "placeholder": "Ingrese ID del editor…" }
+      },
       "address": {
         "address1": { "label": "Dirección 1", "placeholder": "Ingrese dirección 1…" },
         "address2": { "label": "Línea de dirección 2", "placeholder": "Ingrese línea de dirección 2…" },

@@ -79,9 +79,10 @@
     "email": "Email",
     "accountBalance": "Balance",
     "notes": "Notes",
-    "createdByID": "Created by",
-    "createdAt": "Created",
-    "updatedAt": "Updated"
+    "createdBy": "Created by",
+    "createdAt": "Created at",
+    "updatedBy": "Updated by",
+    "updatedAt": "Updated at"
   },
   "search": {
     "placeholder": "Search by name, any phone, or any address…"
@@ -184,6 +185,7 @@
     "branchId": "Branch ID",
     "createdBy": "Created by",
     "createdAt": "Created at",
+    "updatedBy": "Updated by",
     "updatedAt": "Updated at",
     "primaryPhone": "{{type}} (primary)",
     "edit": "Edit customer"
@@ -201,6 +203,16 @@
       "email": { "label": "Email", "placeholder": "Enter email…" },
       "IDNumber": { "label": "ID number", "placeholder": "Enter id number…" },
       "id": { "label": "Customer ID", "placeholder": "Enter customer id…" },
+      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
+      "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" },
+      "createdBy": {
+        "name": { "label": "Created by", "placeholder": "Enter creator…" },
+        "id": { "label": "Creator ID", "placeholder": "Enter creator ID…" }
+      },
+      "updatedBy": {
+        "name": { "label": "Updated by", "placeholder": "Enter editor…" },
+        "id": { "label": "Editor ID", "placeholder": "Enter editor ID…" }
+      },
       "address": {
         "address1": { "label": "Address 1", "placeholder": "Enter address 1…" },
         "address2": { "label": "Address line 2", "placeholder": "Enter address line 2…" },

@@ -5,11 +5,18 @@ import {
   getRecordPhoneDisplayNumber,
 } from "@/lib/phones/phones";
 import { resolvePhoneDisplayValue } from "@/lib/utils/phone";
-import type { ClientType, Customer, CustomerAddress, CustomerCoreAddress, CustomerPhone, CustomerPortalBranch } from "./types";
+import type {
+  ClientType,
+  Customer,
+  CustomerAddress,
+  CustomerAuditActor,
+  CustomerCoreAddress,
+  CustomerPhone,
+  CustomerPortalBranch,
+} from "./types";
 import { isCustomerReceiverType, isCustomerSenderType } from "./customer-type";
 import {
   CLIENT_TYPES,
-  getCustomerAddresses,
   getCustomerClientType,
   getCustomerPortalBranch,
   getCustomerPrimaryCoreAddress,
@@ -143,6 +150,17 @@ export function formatAccountBalance(balance: number): string {
     style: "currency",
     currency: "USD",
   }).format(balance);
+}
+
+/** Prefer `actor.name`, fall back to `actor.id` (issue #57 / customer audit contract). */
+export function formatCustomerAuditActor(actor: CustomerAuditActor | null): string {
+  const name = actor?.name.trim();
+  if (name) return name;
+
+  const id = actor?.id.trim();
+  if (id) return id;
+
+  return "—";
 }
 
 export function formatPhoneSummary(customer: Customer): string {

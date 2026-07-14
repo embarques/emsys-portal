@@ -87,6 +87,13 @@ export type CustomerBranch = {
   code: string;
 };
 
+export type CustomerAuditActor = {
+  /** EMSYS user id (`core.User.id`). */
+  id: string;
+  /** Display name (`core.User.name`). Prefer this in UI over `id`. */
+  name: string;
+};
+
 export type Customer = {
   id: string;
   /** Legacy numeric customer ID from the EMSYS API. */
@@ -102,7 +109,8 @@ export type Customer = {
   notes: string;
   accountBalance: number;
   branch: CustomerBranch;
-  createdByID: number | null;
+  createdBy: CustomerAuditActor | null;
+  updatedBy: CustomerAuditActor | null;
   addresses: CustomerCoreAddress[];
   /** Total address count when the list API omits the full `addresses` array. */
   addressCount?: number;
@@ -165,7 +173,8 @@ export type CustomerFormValues = {
   branch: CustomerBranch;
   addresses: CustomerCoreAddress[];
   receivers: string[];
-  createdByID: number | null;
+  createdBy: CustomerAuditActor | null;
+  updatedBy: CustomerAuditActor | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -211,7 +220,13 @@ export type CustomerSearchField =
   | "IDNumber"
   | "address.address1"
   | "customerType"
-  | "branch.id";
+  | "branch.id"
+  | "createdAt"
+  | "updatedAt"
+  | "createdBy.name"
+  | "updatedBy.name"
+  | "createdBy.id"
+  | "updatedBy.id";
 
 export type CustomerSearchFilter = ApiListTextSearch;
 
@@ -295,6 +310,12 @@ export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   { field: "address.address1", label: "Address 1", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "customerType", label: "Customer type", operators: ["eq", "neq"] },
   { field: "id", label: "Customer ID", operators: ["eq", "neq"] },
+  { field: "createdAt", label: "Created at", operators: ["eq", "neq"] },
+  { field: "updatedAt", label: "Updated at", operators: ["eq", "neq"] },
+  { field: "createdBy.name", label: "Created by", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "updatedBy.name", label: "Updated by", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "createdBy.id", label: "Creator ID", operators: ["eq", "neq"] },
+  { field: "updatedBy.id", label: "Editor ID", operators: ["eq", "neq"] },
 ];
 
 export const CUSTOMER_SEARCH_FIELDS: { value: CustomerSearchField; label: string }[] =
@@ -498,7 +519,8 @@ export function createEmptyCustomerForm(): CustomerFormValues {
     branch,
     addresses: [address],
     receivers: [],
-    createdByID: null,
+    createdBy: null,
+    updatedBy: null,
     createdAt: "",
     updatedAt: "",
   };
@@ -683,7 +705,8 @@ export function customerToFormValues(customer: Customer): CustomerFormValues {
     branch: { ...customer.branch },
     addresses: customer.addresses.map((entry) => ({ ...entry })),
     receivers: [...customer.receivers],
-    createdByID: customer.createdByID,
+    createdBy: customer.createdBy ? { ...customer.createdBy } : null,
+    updatedBy: customer.updatedBy ? { ...customer.updatedBy } : null,
     createdAt: customer.createdAt,
     updatedAt: customer.updatedAt,
   });
