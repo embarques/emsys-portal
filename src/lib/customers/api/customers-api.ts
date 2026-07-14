@@ -124,8 +124,11 @@ type ApiCustomer = {
   notes?: string;
   accountBalance?: number;
   branch?: ApiBranch;
+  /** Canonical audit actor — `core.User { id, name }`. */
   createdBy?: ApiUser | string | number | null;
   updatedBy?: ApiUser | string | number | null;
+  /** @deprecated Prefer `createdBy.id`. Read-only fallback until backend migration finishes. */
+  createdByID?: number;
   address?: ApiAddress;
   addresses?: ApiAddress[];
   receivers?: string[];
@@ -189,20 +192,35 @@ function readNumericId(value: number | string | undefined): number | undefined {
 function readAuditActor(value: unknown) {
   if (value == null) return null;
 
-  if (typeof value === "string" || typeof value === "number") {
-    const id = String(value).trim();
-    return id ? { id, name: "" } : null;
+  // Legacy plain-string actor → `name` (docs target is core.User, not bare strings).
+  if (typeof value === "string") {
+    const name = value.trim();
+    return name ? { id: "", name } : null;
+  }
+
+  // Legacy numeric-only actor → `id`.
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return null;
+    return { id: String(value), name: "" };
   }
 
   if (typeof value !== "object") return null;
 
   const user = value as ApiUser;
   const id = String(user.id ?? "").trim();
-  const name = String(user.fullName ?? user.userName ?? user.name ?? "").trim();
+  // Canonical field is `name`; fold compatibility aliases into that field.
+  const name = String(user.name ?? user.fullName ?? user.userName ?? "").trim();
 
   if (!id && !name) return null;
 
   return { id, name };
+}
+
+/** Read-only fallback for deprecated `createdByID` until rows are backfilled to `createdBy`. */
+function readLegacyCreatedById(value: unknown) {
+  const id = readNumericId(value as number | string | undefined);
+  if (id == null || id <= 0) return null;
+  return { id: String(id), name: "" };
 }
 
 function readCustomerTypeFromApi(raw?: ApiCustomer): number | null {
@@ -346,7 +364,7 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
     notes: String(item.notes ?? "").trim(),
     accountBalance: Number(item.accountBalance ?? 0),
     branch,
-    createdBy: readAuditActor(item.createdBy),
+    createdBy: readAuditActor(item.createdBy) ?? readLegacyCreatedById(item.createdByID),
     updatedBy: readAuditActor(item.updatedBy),
     addresses,
     receivers: normalizeReceivers(item.receivers),

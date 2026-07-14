@@ -152,6 +152,7 @@ export function formatAccountBalance(balance: number): string {
   }).format(balance);
 }
 
+/** Prefer `actor.name`, fall back to `actor.id` (issue #57 / customer audit contract). */
 export function formatCustomerAuditActor(actor: CustomerAuditActor | null): string {
   const name = actor?.name.trim();
   if (name) return name;

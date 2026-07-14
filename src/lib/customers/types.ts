@@ -88,7 +88,9 @@ export type CustomerBranch = {
 };
 
 export type CustomerAuditActor = {
+  /** EMSYS user id (`core.User.id`). */
   id: string;
+  /** Display name (`core.User.name`). Prefer this in UI over `id`. */
   name: string;
 };
 
