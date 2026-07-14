@@ -34,7 +34,7 @@
     "settings": {
       "labelPrefix": "Label prefix"
     },
-    "created": "Created"
+    "created": "Created at"
   },
   "search": {
     "placeholder": "Search branches..."
@@ -106,7 +106,7 @@
       "type": "Type",
       "logo": "Logo",
       "disclaimer": "Disclaimer",
-      "created": "Created",
+      "created": "Created at",
       "phone1": "Phone 1",
       "phone2": "Phone 2",
       "phones": "Phones",

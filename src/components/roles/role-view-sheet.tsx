@@ -10,7 +10,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
 import { truncateRoleId } from "@/lib/roles/display";
 import type { PermissionCatalogEntry } from "@/lib/roles/permissions-catalog";
@@ -70,7 +70,7 @@ export function RoleViewSheet({
           <RecordViewSheetSection title={t("roles.view.sections.audit")}>
             <RecordViewSheetDetailRow
               label={t("roles.columns.createdAt")}
-              value={formatAuditDate(role.createdAt)}
+              value={formatAuditDateTime(role.createdAt)}
             />
             <RecordViewSheetDetailRow
               label={t("roles.columns.createdBy")}
@@ -78,7 +78,7 @@ export function RoleViewSheet({
             />
             <RecordViewSheetDetailRow
               label={t("roles.columns.updatedAt")}
-              value={formatAuditDate(role.updatedAt)}
+              value={formatAuditDateTime(role.updatedAt)}
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>

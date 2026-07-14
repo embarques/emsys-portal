@@ -39,8 +39,8 @@
     "startTime": "Hora de inicio",
     "endTime": "Hora de fin",
     "email": "Correo electrónico",
-    "createdAt": "Creado",
-    "updatedAt": "Actualizado",
+    "createdAt": "Creado el",
+    "updatedAt": "Actualizado el",
     "actions": "Acciones"
   },
   "table": {
@@ -138,9 +138,9 @@
     "startTime": "Hora de inicio",
     "endTime": "Hora de fin",
     "notRestricted": "Sin restricción",
-    "created": "Creado",
+    "created": "Creado el",
     "createdBy": "Creado por",
-    "updated": "Actualizado",
+    "updated": "Actualizado el",
     "updatedBy": "Actualizado por",
     "edit": "Editar usuario",
     "deactivate": "Desactivar"
@@ -170,7 +170,7 @@
         "id": { "label": "Sucursal", "placeholder": "Seleccionar sucursal…" }
       },
       "active": { "label": "Activo", "placeholder": "Seleccionar estado…" },
-      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" }
+      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" }
     }
   }
 }

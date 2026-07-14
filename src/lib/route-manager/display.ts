@@ -1,5 +1,6 @@
 import type { Route, RouteEmployeeRef, RouteVehicleRef } from "./types";
 import { formatRouteEmployeeNames, toRouteDateInput } from "./types";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import { getVehiclePortalBranch } from "@/lib/vehicles/types";
 
@@ -14,14 +15,9 @@ export function formatRouteDate(date: string): string {
   }).format(new Date(`${input}T12:00:00`));
 }
 
+/** Route audit timestamps use date+time. */
 export function formatRouteTimestamp(iso: string): string {
-  if (!iso) return "—";
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(iso));
+  return formatAuditDateTime(iso);
 }
 
 export function truncateRouteId(routeId: string): string {

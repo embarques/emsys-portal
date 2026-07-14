@@ -24,10 +24,14 @@
     "noCarrier": "No carrier"
   },
   "audit": {
-    "dateCreated": "Date created",
-    "dateModified": "Date modified",
+    "createdAt": "Created at",
+    "updatedAt": "Updated at",
+    "dateCreated": "Created at",
+    "dateModified": "Updated at",
     "createdBy": "Created by",
-    "updatedBy": "Updated by"
+    "updatedBy": "Updated by",
+    "helpCreating": "Created at and updated at are recorded automatically when you save.",
+    "helpEditing": "Created at is preserved from the original record. Updated at changes automatically when you save."
   },
   "pagination": {
     "pageOf": "Page {{current}} of {{total}}",

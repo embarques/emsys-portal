@@ -59,7 +59,7 @@
     "completed": "Completed",
     "date": "Date",
     "branchName": "Branch",
-    "createdAt": "Created",
+    "createdAt": "Created at",
     "senderName": "Name",
     "senderAddress": "Address",
     "senderCity": "City",
@@ -67,7 +67,7 @@
     "senderPhone": "Phone",
     "comments": "Comments",
     "route": "Route",
-    "updatedAt": "Updated",
+    "updatedAt": "Updated at",
     "purpose": "Purpose",
     "sectorId": "Sector ID",
     "sectorName": "Sector name",
@@ -297,7 +297,7 @@
       "completed": { "label": "Completed status" },
       "date": { "label": "Order date", "placeholder": "YYYY-MM-DD" },
       "dateRange": { "label": "Order date range", "placeholder": "2026-01-01 to 2026-06-30" },
-      "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" },
+      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
       "createdAtRange": { "label": "Date created range", "placeholder": "2026-01-01 to 2026-06-30" }
     }
   }

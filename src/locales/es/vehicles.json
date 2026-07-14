@@ -35,9 +35,9 @@
     "status": "Estado",
     "inspectionDate": "Fecha de inspección",
     "registrationDate": "Fecha de registro",
-    "createdAt": "Creado",
+    "createdAt": "Creado el",
     "createdBy": "Creado por",
-    "updatedAt": "Actualizado"
+    "updatedAt": "Actualizado el"
   },
   "search": {
     "placeholder": "Buscar vehículos..."

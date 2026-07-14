@@ -1,16 +1,10 @@
 import type { Item } from "./types";
 
+import { formatAuditDateTime } from "@/lib/audit/display";
+
+/** Item audit timestamps use date+time. */
 export function formatItemDate(iso: string): string {
-  if (!iso?.trim()) return "—";
-
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
+  return formatAuditDateTime(iso);
 }
 
 export function formatItemPrice(price: number): string {

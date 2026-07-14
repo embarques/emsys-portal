@@ -84,9 +84,9 @@
     "reference": "Reference",
     "movementDate": "Movement date",
     "createdBy": "Created by",
-    "dateCreated": "Date created",
+    "dateCreated": "Created at",
     "userCreated": "User created",
-    "dateModified": "Date modified"
+    "dateModified": "Updated at"
   },
   "search": {
     "items": "Search inventory…",

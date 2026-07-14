@@ -30,9 +30,9 @@
     "roleId": "ID de rol",
     "name": "Nombre del rol",
     "permissions": "Permisos",
-    "createdAt": "Fecha de creación",
+    "createdAt": "Creado el",
     "createdBy": "Creado por",
-    "updatedAt": "Fecha de modificación",
+    "updatedAt": "Actualizado el",
     "action": "Acción"
   },
   "table": {
@@ -125,7 +125,7 @@
         }
       },
       "createdAt": {
-        "label": "Fecha de creación",
+        "label": "Creado el",
         "placeholder": "AAAA-MM-DD"
       },
       "createdAtRange": {
@@ -133,7 +133,7 @@
         "placeholder": "2026-01-01 a 2026-06-30"
       },
       "updatedAt": {
-        "label": "Fecha de modificación",
+        "label": "Actualizado el",
         "placeholder": "AAAA-MM-DD"
       },
       "updatedAtRange": {

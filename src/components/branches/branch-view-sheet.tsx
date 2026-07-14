@@ -10,7 +10,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -76,7 +76,7 @@ export function BranchViewSheet({ branch, open, onOpenChange, onEdit, onDelete }
             />
             <RecordViewSheetDetailRow
               label={t("branches.view.fields.created")}
-              value={branch.created ? formatAuditDate(branch.created) : dash}
+              value={branch.created ? formatAuditDateTime(branch.created) : dash}
             />
           </RecordViewSheetSection>
 

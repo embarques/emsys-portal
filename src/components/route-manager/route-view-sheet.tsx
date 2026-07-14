@@ -17,7 +17,7 @@ import {
   truncateObjectId,
   truncateRouteId,
 } from "@/lib/route-manager/display";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
 import type { Route } from "@/lib/route-manager/types";
 
@@ -102,7 +102,7 @@ export function RouteViewSheet({
             />
             <RecordViewSheetDetailRow
               label={t("routes.columns.updatedAt")}
-              value={assignment.updatedAt ? formatAuditDate(assignment.updatedAt) : dash}
+              value={assignment.updatedAt ? formatAuditDateTime(assignment.updatedAt) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("routes.columns.updatedBy")}

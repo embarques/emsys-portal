@@ -7,7 +7,7 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { useUserError } from "@/lib/errors/use-user-error";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -234,7 +234,7 @@ export function PickupRouteOrdersSection({
                       <td className="px-3 py-2 text-xs">{getReceiverSummary(order)}</td>
                       <td className="px-3 py-2 text-xs">{getReceiverAddressLine(order)}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
-                        {formatAuditDate(order.createdAt)}
+                        {formatAuditDateTime(order.createdAt)}
                       </td>
                       <td className="px-3 py-2 text-xs">{formatUserSummary(order.createdBy)}</td>
                     </tr>

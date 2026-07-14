@@ -30,9 +30,9 @@
     "roleId": "Role ID",
     "name": "Role name",
     "permissions": "Permissions",
-    "createdAt": "Date created",
+    "createdAt": "Created at",
     "createdBy": "Created by",
-    "updatedAt": "Date modified",
+    "updatedAt": "Updated at",
     "action": "Action"
   },
   "table": {
@@ -125,7 +125,7 @@
         }
       },
       "createdAt": {
-        "label": "Date created",
+        "label": "Created at",
         "placeholder": "YYYY-MM-DD"
       },
       "createdAtRange": {
@@ -133,7 +133,7 @@
         "placeholder": "2026-01-01 to 2026-06-30"
       },
       "updatedAt": {
-        "label": "Date modified",
+        "label": "Updated at",
         "placeholder": "YYYY-MM-DD"
       },
       "updatedAtRange": {

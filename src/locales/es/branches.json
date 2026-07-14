@@ -34,7 +34,7 @@
     "settings": {
       "labelPrefix": "Prefijo de etiqueta"
     },
-    "created": "Creado"
+    "created": "Creado el"
   },
   "search": {
     "placeholder": "Buscar sucursales..."
@@ -106,7 +106,7 @@
       "type": "Tipo",
       "logo": "Logo",
       "disclaimer": "Descargo de responsabilidad",
-      "created": "Creado",
+      "created": "Creado el",
       "phone1": "Teléfono 1",
       "phone2": "Teléfono 2",
       "phones": "Teléfonos",

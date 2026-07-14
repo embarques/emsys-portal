@@ -29,9 +29,9 @@
     "itemId": "ID de artículo",
     "description": "Descripción",
     "price": "Precio",
-    "createdAt": "Fecha de creación",
+    "createdAt": "Creado el",
     "createdBy": "Creado por",
-    "updatedAt": "Fecha de modificación",
+    "updatedAt": "Actualizado el",
     "updatedBy": "Actualizado por"
   },
   "search": {
@@ -73,9 +73,9 @@
     "details": "Detalles",
     "itemId": "ID de artículo",
     "price": "Precio",
-    "dateCreated": "Fecha de creación",
+    "dateCreated": "Creado el",
     "createdBy": "Creado por",
-    "dateModified": "Fecha de modificación",
+    "dateModified": "Actualizado el",
     "updatedBy": "Actualizado por",
     "edit": "Editar artículo"
   },
@@ -90,9 +90,9 @@
       "id": { "label": "ID de artículo", "placeholder": "Ingrese el ID del artículo…" },
       "name": { "label": "Descripción", "placeholder": "Ingrese la descripción…" },
       "price": { "label": "Precio", "placeholder": "Ingrese el monto…" },
-      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" },
+      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
       "createdAtRange": { "label": "Rango de fecha de creación", "placeholder": "2026-01-01 a 2026-06-30" },
-      "updatedAt": { "label": "Fecha de modificación", "placeholder": "AAAA-MM-DD" },
+      "updatedAt": { "label": "Actualizado el", "placeholder": "AAAA-MM-DD" },
       "updatedAtRange": { "label": "Rango de fecha de modificación", "placeholder": "2026-01-01 a 2026-06-30" }
     }
   }

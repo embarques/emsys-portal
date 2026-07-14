@@ -84,9 +84,9 @@
     "reference": "Referencia",
     "movementDate": "Fecha de movimiento",
     "createdBy": "Creado por",
-    "dateCreated": "Fecha de creación",
+    "dateCreated": "Creado el",
     "userCreated": "Usuario creador",
-    "dateModified": "Fecha de modificación"
+    "dateModified": "Actualizado el"
   },
   "search": {
     "items": "Buscar inventario…",

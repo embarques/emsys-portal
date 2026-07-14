@@ -22,7 +22,7 @@ import {
   formatBarcodeTripNumber,
   getBarcodeStatusBadgeClass,
 } from "@/lib/barcodes/display";
-import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import type { Barcode } from "@/lib/barcodes/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -111,7 +111,7 @@ export function BarcodeViewSheet({
             />
             <RecordViewSheetDetailRow
               label={t("common.audit.dateModified")}
-              value={barcode.updatedAt ? formatAuditDate(barcode.updatedAt) : dash}
+              value={barcode.updatedAt ? formatAuditDateTime(barcode.updatedAt) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("common.audit.updatedBy")}

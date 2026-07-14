@@ -34,9 +34,9 @@
       "empty": "No label activity yet. Generate labels from the Labels tab to start tracking changes."
     },
     "columns": {
-      "dateCreated": "Date created",
+      "dateCreated": "Created at",
       "userCreated": "User created",
-      "dateModified": "Date modified",
+      "dateModified": "Updated at",
       "barcode": "Barcode",
       "action": "Action",
       "description": "Description"
@@ -82,9 +82,9 @@
       "prevRoute": "Prev route",
       "newRoute": "New route",
       "labels": "Labels",
-      "dateCreated": "Date created",
+      "dateCreated": "Created at",
       "userCreated": "User created",
-      "dateModified": "Date modified",
+      "dateModified": "Updated at",
       "message": "Message"
     },
     "errors": {

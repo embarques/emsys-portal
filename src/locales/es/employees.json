@@ -45,8 +45,8 @@
     "user": "Usuario",
     "user.id": "ID de usuario",
     "user.name": "Nombre de usuario",
-    "createdAt": "Creado",
-    "updatedAt": "Actualizado"
+    "createdAt": "Creado el",
+    "updatedAt": "Actualizado el"
   },
   "search": {
     "placeholder": "Buscar empleados..."
@@ -184,7 +184,7 @@
         "code": { "label": "Sucursal", "placeholder": "Seleccionar sucursal…" }
       },
       "cost": { "label": "Costo", "placeholder": "Ingrese monto…" },
-      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" }
+      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" }
     }
   }
 }

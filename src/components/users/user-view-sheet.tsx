@@ -10,7 +10,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDate } from "@/lib/audit/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
 import {
   formatUserBranchLabel,
@@ -93,7 +93,7 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
           <RecordViewSheetSection title={t("users.view.sections.audit")}>
             <RecordViewSheetDetailRow
               label={t("users.view.created")}
-              value={user.createdAt ? formatAuditDate(user.createdAt) : dash}
+              value={user.createdAt ? formatAuditDateTime(user.createdAt) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("users.view.createdBy")}
@@ -101,7 +101,7 @@ export function UserViewSheet({ user, open, onOpenChange, onEdit, onDelete }: Pr
             />
             <RecordViewSheetDetailRow
               label={t("users.view.updated")}
-              value={user.updatedAt ? formatAuditDate(user.updatedAt) : dash}
+              value={user.updatedAt ? formatAuditDateTime(user.updatedAt) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("users.view.updatedBy")}

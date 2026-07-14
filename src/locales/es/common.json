@@ -24,10 +24,14 @@
     "noCarrier": "Sin transportista"
   },
   "audit": {
-    "dateCreated": "Fecha de creación",
-    "dateModified": "Fecha de modificación",
+    "createdAt": "Creado el",
+    "updatedAt": "Actualizado el",
+    "dateCreated": "Creado el",
+    "dateModified": "Actualizado el",
     "createdBy": "Creado por",
-    "updatedBy": "Actualizado por"
+    "updatedBy": "Actualizado por",
+    "helpCreating": "Creado el y actualizado el se registran automáticamente al guardar.",
+    "helpEditing": "Creado el se conserva del registro original. Actualizado el cambia automáticamente al guardar."
   },
   "pagination": {
     "pageOf": "Página {{current}} de {{total}}",
