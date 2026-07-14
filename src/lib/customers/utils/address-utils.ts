@@ -1,6 +1,11 @@
 import { getPrimaryRecordPhone, getRecordPhoneDisplayNumber } from "@/lib/phones/phones";
 import type { RecordPhone } from "@/lib/phones/types";
-import type { Customer, CustomerCoreAddress } from "@/lib/customers/types";
+import type {
+  Customer,
+  CustomerCoreAddress,
+  CustomerSearchMatchField,
+  CustomerSearchResult,
+} from "@/lib/customers/types";
 
 /** Wrap long address strings on word boundaries only (never mid-word). */
 export const ADDRESS_TEXT_WRAP_CLASSNAME =
@@ -87,6 +92,58 @@ export function getMatchedAddress(
   matchedAddressId?: string,
 ): CustomerCoreAddress | undefined {
   return findAddressById(customer, matchedAddressId);
+}
+
+function includesSearchQuery(haystack: string | undefined, query: string): boolean {
+  const value = String(haystack ?? "")
+    .trim()
+    .toLowerCase();
+  return value.length > 0 && value.includes(query);
+}
+
+/**
+ * After `POST /customers/search` with party-picker OR fields, infer which field
+ * (and address id) matched so the UI can preserve `matchedAddressId`.
+ */
+export function resolvePartyPickerSearchMatch(
+  customer: Customer,
+  rawQuery: string,
+): Pick<CustomerSearchResult, "matchedBy" | "matchedAddressId"> {
+  const query = rawQuery.trim().toLowerCase();
+  if (!query) return {};
+
+  if (includesSearchQuery(customer.name, query)) {
+    return { matchedBy: "name" satisfies CustomerSearchMatchField };
+  }
+
+  for (const phone of customer.phones ?? []) {
+    if (
+      includesSearchQuery(phone.number, query) ||
+      includesSearchQuery(getRecordPhoneDisplayNumber(phone), query)
+    ) {
+      return { matchedBy: "phone" };
+    }
+  }
+
+  const matchedAddress = getAllAddresses(customer).find((address) =>
+    [
+      address.address1,
+      address.address2,
+      address.apartment,
+      address.city,
+      address.state,
+      address.zipcode,
+    ].some((part) => includesSearchQuery(part, query)),
+  );
+
+  if (matchedAddress) {
+    return {
+      matchedBy: "address",
+      matchedAddressId: matchedAddress.id?.trim() || undefined,
+    };
+  }
+
+  return {};
 }
 
 function trimAddressPart(value?: string): string {

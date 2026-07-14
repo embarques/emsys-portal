@@ -16,8 +16,8 @@ export const CUSTOMER_BAR_OR_SEARCH_FIELDS = [
 export type CustomerBarOrSearchField = (typeof CUSTOMER_BAR_OR_SEARCH_FIELDS)[number];
 
 /**
- * Sender/receiver picker search (order form) — POST /customers/search OR + contains.
- * Matches by customer name, any phone, or any address line.
+ * Sender/receiver party picker — POST /customers/search OR + contains.
+ * Same address scope as the directory bar: any `addresses[]` entry via `addresses.*`.
  */
 export const CUSTOMER_PARTY_PICKER_OR_SEARCH_FIELDS = [
   "name",

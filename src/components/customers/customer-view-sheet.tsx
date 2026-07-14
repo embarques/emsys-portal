@@ -19,7 +19,11 @@ import {
   formatRecordPhoneTypeLabel,
   getOrderedRecordPhones,
 } from "@/lib/phones/phones";
-import { formatAccountBalance, getClientTypeBadgeClass } from "@/lib/customers/display";
+import {
+  formatAccountBalance,
+  formatCustomerAuditActor,
+  getClientTypeBadgeClass,
+} from "@/lib/customers/display";
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
 import { useCustomer } from "@/lib/customers/hooks/use-customers";
 import { getCustomerClientType } from "@/lib/customers/types";
@@ -152,11 +156,15 @@ export function CustomerViewSheet({
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.createdBy")}
-              value={resolvedCustomer.createdByID != null ? String(resolvedCustomer.createdByID) : dash}
+              value={formatCustomerAuditActor(resolvedCustomer.createdBy)}
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.createdAt")}
               value={resolvedCustomer.createdAt ? formatAuditDate(resolvedCustomer.createdAt) : dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("customers.view.updatedBy")}
+              value={formatCustomerAuditActor(resolvedCustomer.updatedBy)}
             />
             <RecordViewSheetDetailRow
               label={t("customers.view.updatedAt")}

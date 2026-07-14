@@ -388,6 +388,60 @@ export function resolveOrderPartyAddressIndex(
   return getDefaultOrderPartyAddressIndex(customer);
 }
 
+/**
+ * After replacing a party snapshot (often a single `party.address`) with a full
+ * customer `addresses[]` book, keep the previously chosen address when possible.
+ */
+export function rematchOrderPartyAddressIndex(
+  previousCustomer: Pick<Customer, "addresses"> | null | undefined,
+  previousIndex: number,
+  nextCustomer: Pick<Customer, "addresses">,
+): number {
+  const nextAddresses = getCustomerContentAddresses(nextCustomer);
+  if (nextAddresses.length === 0) return 0;
+  if (!previousCustomer) return getDefaultOrderPartyAddressIndex(nextCustomer);
+
+  const previousAddresses = getCustomerContentAddresses(previousCustomer);
+  const previous =
+    previousIndex >= 0 && previousIndex < previousAddresses.length
+      ? previousAddresses[previousIndex]
+      : previousAddresses[0];
+  if (!previous) return getDefaultOrderPartyAddressIndex(nextCustomer);
+
+  const byId = getOrderPartyAddressIndexById(nextCustomer, previous.id);
+  if (byId >= 0) return byId;
+
+  const previousKey = [
+    previous.address1,
+    previous.apartment,
+    previous.address2,
+    previous.city,
+    previous.state,
+    previous.zipcode,
+  ]
+    .map((part) => part.trim().toLowerCase())
+    .filter(Boolean)
+    .join("|");
+
+  const byContent = nextAddresses.findIndex((address) => {
+    const key = [
+      address.address1,
+      address.apartment,
+      address.address2,
+      address.city,
+      address.state,
+      address.zipcode,
+    ]
+      .map((part) => part.trim().toLowerCase())
+      .filter(Boolean)
+      .join("|");
+    return key.length > 0 && key === previousKey;
+  });
+  if (byContent >= 0) return byContent;
+
+  return getDefaultOrderPartyAddressIndex(nextCustomer);
+}
+
 export function getOrderPartyAddressAtIndex(
   customer: Pick<Customer, "addresses">,
   index: number,
