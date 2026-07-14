@@ -22,6 +22,7 @@ import {
   formatOrderId,
   formatOrderRouteName,
   formatPickupCommentSummary,
+  formatUserSummary,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
 import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
@@ -168,8 +169,16 @@ export function OrderViewSheet({ order, open, onOpenChange, onEdit, onDelete }: 
               value={formatAuditDate(order.createdAt)}
             />
             <RecordViewSheetDetailRow
+              label={t("orders.columns.createdBy")}
+              value={formatUserSummary(order.createdBy)}
+            />
+            <RecordViewSheetDetailRow
               label={t("orders.columns.updatedAt")}
               value={formatAuditDate(order.updatedAt)}
+            />
+            <RecordViewSheetDetailRow
+              label={t("common.audit.updatedBy")}
+              value={formatUserSummary(order.updatedBy)}
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>

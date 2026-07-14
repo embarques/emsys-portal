@@ -42,7 +42,9 @@ export type Order = {
   createdAt: string;
   updatedAt: string;
   completed: boolean;
-  user: User | null;
+  createdBy: User | null;
+  /** Optional updater actor from API `updatedBy`. */
+  updatedBy: User | null;
   branch: PickupBranch;
   employee: Employee | null;
   sender: Customer;

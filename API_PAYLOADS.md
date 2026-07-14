@@ -414,6 +414,10 @@ Same shape. `{id}` = numeric.
 
 ## Pickups — permission: `pickup`
 
+### `GET /v1/pickups`
+
+The pickup read model uses `createdBy` and optional `updatedBy` as canonical audit actors. `employee` and `sector` are optional on list/detail reads. `route.name` is optional; `route.id` is enough for assignment and display can fall back to the route lookup or the id.
+
 ### `POST /v1/pickups`
 
 Uses `CreatePickupRequest`. **Required:** `sender.name`.

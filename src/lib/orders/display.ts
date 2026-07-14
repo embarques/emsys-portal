@@ -138,13 +138,13 @@ export function formatOrderCommentsSummary(order: Order, limit = 2): string {
   return `${visible.join("; ")}${suffix}`;
 }
 
-export function getOrderUserDisplayName(user: Order["user"]): string {
+export function getOrderCreatedByDisplayName(user: Order["createdBy"]): string {
   if (!user) return "";
   return user.name.trim();
 }
 
-export function formatUserSummary(user: Order["user"]): string {
-  const name = getOrderUserDisplayName(user);
+export function formatUserSummary(user: Order["createdBy"]): string {
+  const name = getOrderCreatedByDisplayName(user);
   if (name) return name;
   if (!user) return "—";
   return String(user.id);
@@ -156,7 +156,7 @@ export function buildOrderCreatedByFilterOptions(users: User[]): TableFilterFiel
   const options: TableFilterFieldOption[] = [];
 
   for (const user of users) {
-    const name = getOrderUserDisplayName(user);
+    const name = getOrderCreatedByDisplayName(user);
     if (!name) continue;
 
     const key = name.toLowerCase();
