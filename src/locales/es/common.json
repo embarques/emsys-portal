@@ -16,6 +16,9 @@
     "next": "Siguiente",
     "dismissNotification": "Descartar notificación"
   },
+  "form": {
+    "noChanges": "No hay cambios para guardar."
+  },
   "empty": {
     "dash": "—",
     "noCarrier": "Sin transportista"

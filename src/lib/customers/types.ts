@@ -7,6 +7,7 @@ import {
   isCustomerReceiverType,
   isCustomerSenderType,
 } from "@/lib/customers/customer-type";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRandomId } from "@/lib/utils/id";
@@ -458,8 +459,10 @@ export function areCustomerFormValuesEquivalent(
   left: CustomerFormValues,
   right: CustomerFormValues,
 ): boolean {
-  return JSON.stringify(comparableCustomerFormValues(left)) ===
-    JSON.stringify(comparableCustomerFormValues(right));
+  return areFormValuesEquivalent(
+    comparableCustomerFormValues(left),
+    comparableCustomerFormValues(right),
+  );
 }
 
 /** @deprecated Use customerType from the API. */

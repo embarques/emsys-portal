@@ -73,6 +73,7 @@ import {
   type Vehicle,
   type VehicleFilterState,
   type VehicleFormValues,
+  areVehicleFormValuesEquivalent,
 } from "@/lib/vehicles/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -90,7 +91,7 @@ export function VehiclesWorkspace() {
   const vehicleFilterFields = useVehicleFilterFields();
   const branchesQuery = useBranchPicker(200);
   const branches = branchesQuery.data?.items ?? [];
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<VehicleFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -205,6 +206,13 @@ export function VehiclesWorkspace() {
 
     try {
       if (formMode === "edit" && editingVehicle) {
+        if (areVehicleFormValuesEquivalent(values, vehicleToFormValues(editingVehicle))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingVehicle(null);
+          return;
+        }
+
         const nextVehicle = await updateVehicleMutation.mutateAsync({
           vehicleId: editingVehicle.id,
           values,

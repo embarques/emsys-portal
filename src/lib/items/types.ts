@@ -1,5 +1,6 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import type { TableFilterRowState } from "@/lib/table/filter-types";
 import { ITEM_TABLE_FILTER_FIELDS } from "@/lib/items/filter-fields";
@@ -66,6 +67,13 @@ export function itemToFormValues(item: Item): ItemFormValues {
     description: item.description,
     price: item.price > 0 ? item.price.toFixed(2) : "",
   };
+}
+
+export function areItemFormValuesEquivalent(
+  left: ItemFormValues,
+  right: ItemFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
 }
 
 export function createItemSearchFilter(value: string): ItemSearchFilter | undefined {

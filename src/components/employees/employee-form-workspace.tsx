@@ -18,6 +18,7 @@ import {
   createEmptyEmployeeForm,
   employeeToFormValues,
   type EmployeeFormValues,
+  areEmployeeFormValuesEquivalent,
 } from "@/lib/employees/types";
 import {
   useUpdateWorkspaceTabLabel,
@@ -28,7 +29,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -53,6 +54,12 @@ export function EmployeeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHo
 
     try {
       if (isEditing && editing) {
+        if (areEmployeeFormValuesEquivalent(values, employeeToFormValues(editing))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         const next = await updateMutation.mutateAsync({
           employeeId: String(editing.id),
           values,

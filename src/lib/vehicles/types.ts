@@ -1,6 +1,7 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
 export type VehiclePortalBranch = "usa" | "dr";
 
@@ -233,6 +234,14 @@ export function vehicleToFormValues(vehicle: Vehicle): VehicleFormValues {
     updatedAt: vehicle.updatedAt,
   };
 }
+
+export function areVehicleFormValuesEquivalent(
+  left: VehicleFormValues,
+  right: VehicleFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
+}
+
 
 export function validateVehicleFormValues(values: VehicleFormValues): void {
   if (!values.name.trim()) {

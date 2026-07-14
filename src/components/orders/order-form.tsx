@@ -297,7 +297,7 @@ export function OrderForm({
 
       if (customerDialog.mode === "edit" && dialogCustomer) {
         if (areCustomerFormValuesEquivalent(formValues, customerToFormValues(dialogCustomer))) {
-          notifySuccess(t("customers.form.noChanges"));
+          notifySuccess(t("common.form.noChanges"));
           closeCustomerDialog();
           return;
         }

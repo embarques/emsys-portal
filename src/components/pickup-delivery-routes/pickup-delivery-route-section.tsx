@@ -17,6 +17,7 @@ import {
 } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import {
   activeRouteToFormValues,
+  areActiveRouteFormValuesEquivalent,
   createEmptyActiveRouteForm,
   DAYS_OF_WEEK,
   type ActiveRoute,
@@ -384,12 +385,22 @@ export function ActiveRouteSection({
     }
 
     try {
+      const payload = {
+        ...values,
+        routeType: effectiveRouteType,
+        container: isDelivery ? values.container : null,
+      };
+      if (
+        initialRecord &&
+        areActiveRouteFormValuesEquivalent(payload, activeRouteToFormValues(initialRecord))
+      ) {
+        notifySuccess(t("common.form.noChanges"));
+        onSaved?.();
+        return;
+      }
+
       await upsertMutation.mutateAsync({
-        values: {
-          ...values,
-          routeType: effectiveRouteType,
-          container: isDelivery ? values.container : null,
-        },
+        values: payload,
         existingId: initialRecord?.id,
       });
       notifySuccess(

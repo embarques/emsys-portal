@@ -28,6 +28,7 @@ import {
   createEmptyInvoiceForm,
   getInvoiceRecordId,
   invoiceToFormValues,
+  areInvoiceFormValuesEquivalent,
   isInvoiceEmployeePickupSource,
   suggestNextInvoiceNumber,
   type InvoiceFormSubmitResult,
@@ -38,6 +39,7 @@ import {
   useWorkspaceTabs,
 } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
+import { useTranslation } from "@/lib/i18n";
 import { fetchCurrentUser } from "@/lib/users/api/users-api";
 
 type InvoiceWizardShellProps = {
@@ -228,7 +230,8 @@ export function InvoiceEditWizard({
   onCancel,
   submitLabel = "Save changes",
 }: InvoiceEditWizardProps) {
-  const { notifyUpdated } = useFeedback();
+  const { t } = useTranslation();
+  const { notifyUpdated, notifySuccess } = useFeedback();
   const { printInvoice, isPrinting } = usePrintInvoices();
   const updateMutation = useUpdateInvoice();
   const invoiceQuery = useInvoice(invoiceId);
@@ -250,6 +253,14 @@ export function InvoiceEditWizard({
 
   async function handleSubmit(values: InvoiceFormValues): Promise<InvoiceFormSubmitResult> {
     try {
+      if (
+        invoiceQuery.data &&
+        areInvoiceFormValuesEquivalent(values, invoiceToFormValues(invoiceQuery.data))
+      ) {
+        notifySuccess(t("common.form.noChanges"));
+        return { error: null, savedInvoiceId: invoiceQuery.data.invoiceId };
+      }
+
       const context = await buildInvoiceWriteContext(values);
       const updated = await updateMutation.mutateAsync({
         invoiceId: getInvoiceRecordId({ invoiceId: values.invoiceId }),

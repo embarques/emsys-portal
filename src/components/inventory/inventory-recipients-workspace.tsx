@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { useTranslation } from "@/lib/i18n";
 import { getRecipientTypeLabel } from "@/lib/inventory/display";
 import {
@@ -48,7 +49,7 @@ const PAGE_SIZE = 50;
 export function InventoryRecipientsWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const { data: recipients = [], isLoading } = useInventoryRecipients();
   const snapshot = useInventorySnapshotData();
   const createRecipient = useCreateRecipient();
@@ -109,6 +110,12 @@ export function InventoryRecipientsWorkspace() {
   async function saveRecipient(values: RecipientFormValues) {
     try {
       if (formMode === "edit" && editingRecipient) {
+        if (areFormValuesEquivalent(values, recipientToFormValues(editingRecipient))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingRecipient(null);
+          return;
+        }
         const updated = await updateRecipient.mutateAsync({ id: editingRecipient.id, values });
         notifyUpdated(t("inventory.submenus.recipients"), updated.name);
       } else {

@@ -77,6 +77,7 @@ import {
   type Barcode,
   type BarcodeFilterState,
   type BarcodeFormValues,
+  areBarcodeFormValuesEquivalent,
 } from "@/lib/barcodes/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -94,7 +95,7 @@ export function BarcodesWorkspace() {
   const { t, locale } = useTranslation();
   const { toErrorMessage } = useUserError();
   const barcodeFilterFields = useBarcodeFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<BarcodeFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -194,6 +195,13 @@ export function BarcodesWorkspace() {
 
     try {
       if (formMode === "edit" && editingBarcode) {
+        if (areBarcodeFormValuesEquivalent(values, barcodeToFormValues(editingBarcode))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingBarcode(null);
+          return;
+        }
+
         const nextBarcode = await updateBarcodeMutation.mutateAsync({
           barcodeId: editingBarcode.id,
           values,

@@ -10,7 +10,10 @@ import { Button } from "@/components/ui/button";
 import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import { useCreateItem, useItem, useUpdateItem } from "@/lib/items/hooks/use-items";
-import { createEmptyItemForm, itemToFormValues, type ItemFormValues } from "@/lib/items/types";
+import {
+  createEmptyItemForm, itemToFormValues, type ItemFormValues,
+  areItemFormValuesEquivalent,
+} from "@/lib/items/types";
 import { truncateItemId } from "@/lib/items/display";
 import {
   useUpdateWorkspaceTabLabel,
@@ -22,7 +25,7 @@ export function ItemFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -51,6 +54,12 @@ export function ItemFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
     try {
       if (isEditing && editing) {
+        if (areItemFormValuesEquivalent(values, itemToFormValues(editing))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         const next = await updateMutation.mutateAsync({ itemId: editing.itemId, values });
         notifyUpdated(t("items.entity"), next.description || truncateItemId(next.itemId));
         closeFormTabAndReturn(tabId);

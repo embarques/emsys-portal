@@ -15,6 +15,7 @@ import {
   orderToFormValues,
   type OrderFormSubmitResult,
   type OrderFormValues,
+  areOrderFormValuesEquivalent,
 } from "@/lib/orders/types";
 import { formatOrderId } from "@/lib/orders/display";
 import { useTranslation } from "@/lib/i18n";
@@ -27,7 +28,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -51,6 +52,12 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
 
     try {
       if (isEditing && editing) {
+        if (areOrderFormValuesEquivalent(values, orderToFormValues(editing))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return { error: null };
+        }
+
         const next = await updateMutation.mutateAsync({
           orderId: getOrderRecordId(editing),
           values,

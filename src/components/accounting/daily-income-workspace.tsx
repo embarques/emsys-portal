@@ -37,8 +37,9 @@ import {
 } from "@/lib/accounting/daily-income/hooks";
 import { isPaymentReceiptEligible, printPaymentReceipt } from "@/lib/accounting/daily-income/receipt";
 import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income/assignee";
-import { journalToFormValues, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
   dailyIncomeCurrencyDescription,
   formatDailyIncomeMoney,
@@ -187,12 +188,26 @@ export function DailyIncomeWorkspace() {
 
   function saveStatement(values: DailyIncomeStatementValues) {
     setFormError(null);
+    if (statement && areFormValuesEquivalent(values, statementValues)) {
+      feedback.notifySuccess(t("common.form.noChanges"));
+      setStatementDialog(false);
+      return;
+    }
     const action = statement ? updateStatement.mutateAsync({ id: statement.id, values }) : createStatement.mutateAsync(values);
     action.then(() => { setStatementDialog(false); setBranchCode(values.branchCode); setDate(values.date); feedback.notifySuccess(statement ? t("accounting.dailyIncome.toasts.statementUpdated") : t("accounting.dailyIncome.toasts.statementCreated")); }).catch((error) => setFormError(normalizeApiError(error).message));
   }
   function saveJournal(values: DailyIncomeJournalValues): Promise<void> {
     if (!statement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
     setFormError(null);
+    if (
+      editingJournal &&
+      areDailyIncomeJournalValuesEquivalent(values, journalToFormValues(editingJournal))
+    ) {
+      feedback.notifySuccess(t("common.form.noChanges"));
+      setTransactionDialog(false);
+      setEditingJournal(null);
+      return Promise.resolve();
+    }
     return (editingJournal
       ? updateJournal.mutateAsync({ id: editingJournal.id, statement, values })
       : createJournal.mutateAsync({ statement, values })

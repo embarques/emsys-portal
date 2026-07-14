@@ -33,6 +33,7 @@ import { cloneAccountingEntries } from "@/lib/accounting/mock-data";
 import {
   applyAccountingEntryToInvoice,
   accountingToFormValues,
+  areAccountingFormValuesEquivalent,
   findInvoiceByNumber,
   formValuesToAccountingEntry,
   isInvoiceRelatedType,
@@ -41,11 +42,13 @@ import {
 } from "@/lib/accounting/types";
 import { cloneInvoices } from "@/lib/invoices/mock-data";
 import type { Invoice } from "@/lib/invoices/types";
+import { useTranslation } from "@/lib/i18n";
 import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
 
 const ACTIVE_ROUTE_KEY = "emsys-accounting-route";
 
 export function AccountingWorkspace() {
+  const { t } = useTranslation();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const routesQuery = useRoutePicker(200);
   const routes = routesQuery.data?.items ?? [];
@@ -122,6 +125,13 @@ export function AccountingWorkspace() {
     if (!editingEntry) return null;
 
     try {
+      if (areAccountingFormValuesEquivalent(values, accountingToFormValues(editingEntry))) {
+        notifySuccess(t("common.form.noChanges"));
+        setFormMode(null);
+        setEditingEntry(null);
+        setFormError(null);
+        return null;
+      }
       const nextEntry = formValuesToAccountingEntry(
         values,
         invoices,

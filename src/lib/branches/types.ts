@@ -2,6 +2,7 @@ import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { normalizeStoredPhone } from "@/lib/utils/phone";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
 export type BranchAddress = {
   address1: string;
@@ -211,3 +212,11 @@ export function branchToFormValues(branch: Branch): BranchFormValues {
     settings: { ...branch.settings },
   };
 }
+
+export function areBranchFormValuesEquivalent(
+  left: BranchFormValues,
+  right: BranchFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
+}
+

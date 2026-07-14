@@ -54,6 +54,7 @@ import {
   type Route,
   type RouteFilterState,
   type RouteFormValues,
+  areRouteFormValuesEquivalent,
 } from "@/lib/route-manager/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
@@ -70,7 +71,7 @@ const defaultFilters: RouteFilterState = {
 export function RouteManagerWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<RouteFilterState>(defaultFilters);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
@@ -184,6 +185,13 @@ export function RouteManagerWorkspace() {
 
     try {
       if (formMode === "edit" && editingAssignment) {
+        if (areRouteFormValuesEquivalent(values, routeToFormValues(editingAssignment))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingAssignment(null);
+          return;
+        }
+
         const nextAssignment = await updateMutation.mutateAsync({
           recordId: editingAssignment.id,
           values,

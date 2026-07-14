@@ -76,6 +76,7 @@ import {
   type Container as ContainerRecord,
   type ContainerFilterState,
   type ContainerFormValues,
+  areContainerFormValuesEquivalent,
 } from "@/lib/containers/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -93,7 +94,7 @@ export function ContainersWorkspace() {
   const { t, locale } = useTranslation();
   const { toErrorMessage } = useUserError();
   const containerFilterFields = useContainerFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<ContainerFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -198,6 +199,13 @@ export function ContainersWorkspace() {
 
     try {
       if (formMode === "edit" && editingContainer) {
+        if (areContainerFormValuesEquivalent(values, containerToFormValues(editingContainer))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingContainer(null);
+          return;
+        }
+
         const nextContainer = await updateContainerMutation.mutateAsync({
           containerId: editingContainer.id,
           values,

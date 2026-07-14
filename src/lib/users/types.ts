@@ -1,6 +1,7 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
 export type UserReference = {
   id: number;
@@ -158,6 +159,14 @@ export function userToFormValues(user: User): UserFormValues {
     endTime: user.endTime,
   };
 }
+
+export function areUserFormValuesEquivalent(
+  left: UserFormValues,
+  right: UserFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
+}
+
 
 export function isAdminRole(roleName: string): boolean {
   const normalized = roleName.trim().toLowerCase();

@@ -16,7 +16,7 @@ import {
   useIncomeStatementById,
   useUpdateDailyIncomeJournal,
 } from "@/lib/accounting/daily-income/hooks";
-import { journalToFormValues, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
@@ -71,6 +71,12 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
 
     try {
       if (isEditing && editingJournal) {
+        if (areDailyIncomeJournalValuesEquivalent(values, journalToFormValues(editingJournal))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         await updateJournal.mutateAsync({ id: editingJournal.id, statement, values });
         notifySuccess(t("accounting.dailyIncome.toasts.transactionUpdated"));
         closeFormTabAndReturn(tabId);

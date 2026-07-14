@@ -60,6 +60,7 @@ import {
   type Item,
   type ItemFilterState,
   type ItemFormValues,
+  areItemFormValuesEquivalent,
 } from "@/lib/items/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
@@ -84,7 +85,7 @@ export function ItemsWorkspace() {
   const dash = t("common.empty.dash");
   const { toErrorMessage } = useUserError();
   const itemFilterFields = useItemFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<ItemFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -175,6 +176,13 @@ export function ItemsWorkspace() {
 
     try {
       if (formMode === "edit" && editingItem) {
+        if (areItemFormValuesEquivalent(values, itemToFormValues(editingItem))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingItem(null);
+          return;
+        }
+
         const nextItem = await updateItemMutation.mutateAsync({ itemId: editingItem.itemId, values });
         notifyUpdated(t("items.entity"), nextItem.description || truncateItemId(nextItem.itemId));
       } else {

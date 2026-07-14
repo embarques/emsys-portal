@@ -82,6 +82,7 @@ import {
   type Role,
   type RoleFilterState,
   type RoleFormValues,
+  areRoleFormValuesEquivalent,
 } from "@/lib/roles/types";
 
 const PAGE_SIZE = DEFAULT_ROLE_LIST_PARAMS.limit;
@@ -95,7 +96,7 @@ const defaultFilters: RoleFilterState = {
 export function RolesWorkspace() {
   const { t } = useTranslation();
   const roleFilterFields = useRoleFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<RoleFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -242,6 +243,13 @@ export function RolesWorkspace() {
 
     try {
       if (formMode === "edit" && editingRole) {
+        if (areRoleFormValuesEquivalent(values, roleToFormValues(editingRole))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingRole(null);
+          return;
+        }
+
         const nextRole = await updateRoleMutation.mutateAsync({
           roleId: editingRole.roleId,
           values,

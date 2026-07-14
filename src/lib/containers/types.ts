@@ -2,6 +2,7 @@ import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { CONTAINER_TABLE_FILTER_FIELDS } from "@/lib/containers/filter-fields";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
 export type Container = {
   id: number;
@@ -151,6 +152,14 @@ export function containerToFormValues(container: Container): ContainerFormValues
     arrivalDate: toFormDate(container.arrivalDate),
   };
 }
+
+export function areContainerFormValuesEquivalent(
+  left: ContainerFormValues,
+  right: ContainerFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
+}
+
 
 export function suggestNextContainerName(existing: Container[], date = new Date()): string {
   const yearSuffix = String(date.getFullYear()).slice(-2);

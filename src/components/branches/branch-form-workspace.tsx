@@ -14,6 +14,7 @@ import {
   createEmptyBranchForm,
   branchToFormValues,
   type BranchFormValues,
+  areBranchFormValuesEquivalent,
 } from "@/lib/branches/types";
 import {
   useUpdateWorkspaceTabLabel,
@@ -24,7 +25,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -50,6 +51,12 @@ export function BranchFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHost
 
     try {
       if (isEditing && editing) {
+        if (areBranchFormValuesEquivalent(values, branchToFormValues(editing))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         const next = await updateMutation.mutateAsync({ branchId: editing.id, values });
         notifyUpdated(t("branches.entity"), next.name);
         closeFormTabAndReturn(tabId);

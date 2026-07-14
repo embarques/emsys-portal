@@ -78,6 +78,7 @@ import {
   type Employee,
   type EmployeeFilterState,
   type EmployeeFormValues,
+  areEmployeeFormValuesEquivalent,
 } from "@/lib/employees/types";
 import type { DataTableColumn } from "@/lib/table/types";
 
@@ -93,7 +94,7 @@ export function EmployeesWorkspace() {
   const { t } = useTranslation();
   const employeeLabels = useEmployeeLabels();
   const employeeFilterFields = useEmployeeFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<EmployeeFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -197,6 +198,13 @@ export function EmployeesWorkspace() {
 
     try {
       if (formMode === "edit" && editingEmployee) {
+        if (areEmployeeFormValuesEquivalent(values, employeeToFormValues(editingEmployee))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingEmployee(null);
+          return;
+        }
+
         const nextEmployee = await updateEmployeeMutation.mutateAsync({
           employeeId: String(editingEmployee.id),
           values,

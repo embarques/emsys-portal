@@ -17,6 +17,7 @@ import {
   barcodeToFormValues,
   createEmptyBarcodeForm,
   type BarcodeFormValues,
+  areBarcodeFormValuesEquivalent,
 } from "@/lib/barcodes/types";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -29,7 +30,7 @@ export function BarcodeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -55,6 +56,12 @@ export function BarcodeFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
 
     try {
       if (isEditing && editing) {
+        if (areBarcodeFormValuesEquivalent(values, barcodeToFormValues(editing))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         const next = await updateMutation.mutateAsync({ barcodeId: editing.id, values });
         notifyUpdated(t("barcodes.entity"), next.number);
         closeFormTabAndReturn(tabId);

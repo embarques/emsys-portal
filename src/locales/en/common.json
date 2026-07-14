@@ -16,6 +16,9 @@
     "next": "Next",
     "dismissNotification": "Dismiss notification"
   },
+  "form": {
+    "noChanges": "No changes to save."
+  },
   "empty": {
     "dash": "—",
     "noCarrier": "No carrier"

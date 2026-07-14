@@ -19,6 +19,7 @@ import {
   containerToFormValues,
   suggestNextContainerName,
   type ContainerFormValues,
+  areContainerFormValuesEquivalent,
 } from "@/lib/containers/types";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -31,7 +32,7 @@ export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormH
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -63,6 +64,12 @@ export function ContainerFormWorkspace({ tabId, mode, entityId }: WorkspaceFormH
 
     try {
       if (isEditing && editing) {
+        if (areContainerFormValuesEquivalent(values, containerToFormValues(editing))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         const next = await updateMutation.mutateAsync({ containerId: editing.id, values });
         notifyUpdated(t("containers.entity"), next.name);
         closeFormTabAndReturn(tabId);

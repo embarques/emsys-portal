@@ -25,6 +25,7 @@ import {
   type UserPreferenceValues,
 } from "@/lib/configuration/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/lib/configuration/use-configuration";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { useTranslation } from "@/lib/i18n";
 import { enforceWorkspaceTabLimit } from "@/lib/store/layout/tabs-slice";
 import { useAppDispatch } from "@/lib/store/hooks";
@@ -48,6 +49,17 @@ export function ConfigurationWorkspace() {
 
   async function save(next: UserPreferenceValues) {
     try {
+      const current = preferencesQuery.data
+        ? {
+            language: preferencesQuery.data.language,
+            theme: preferencesQuery.data.theme,
+            maxWorkspaceTabs: preferencesQuery.data.maxWorkspaceTabs,
+          }
+        : null;
+      if (current && areFormValuesEquivalent(next, current)) {
+        notifySuccess(t("common.form.noChanges"));
+        return;
+      }
       const saved = await updatePreferences.mutateAsync(next);
       syncConfigurationStore(saved);
       setTheme(saved.theme);

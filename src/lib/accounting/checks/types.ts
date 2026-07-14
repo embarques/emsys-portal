@@ -1,3 +1,5 @@
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
+
 export type CheckStatus = "outstanding" | "cleared";
 
 export type Check = {
@@ -35,7 +37,7 @@ export function createEmptyCheckForm(): CheckFormValues {
 }
 
 function toDateInputValue(iso: string | null): string {
-  if (!iso?.trim()) return "";
+  if (!iso) return "";
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return iso.slice(0, 10);
   return parsed.toISOString().slice(0, 10);
@@ -51,6 +53,13 @@ export function checkToFormValues(check: Check): CheckFormValues {
     depositedOn: check.depositedOn ?? "",
     depositedBy: check.depositedBy ?? "",
   };
+}
+
+export function areCheckFormValuesEquivalent(
+  left: CheckFormValues,
+  right: CheckFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
 }
 
 export function formValuesToCheck(id: string, values: CheckFormValues, createdAt?: string): Check {

@@ -3,6 +3,7 @@ import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-q
 import { BARCODE_STATUS_OPTIONS } from "@/lib/labels/types";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { BARCODE_TABLE_FILTER_FIELDS } from "@/lib/barcodes/filter-fields";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
 export type { Barcode } from "@/lib/labels/types";
 
@@ -98,6 +99,13 @@ export function barcodeToFormValues(barcode: {
     statusId,
     containerId: barcode.container?.id != null && barcode.container.id > 0 ? String(barcode.container.id) : "",
   };
+}
+
+export function areBarcodeFormValuesEquivalent(
+  left: BarcodeFormValues,
+  right: BarcodeFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
 }
 
 export function validateBarcodeFormValues(values: BarcodeFormValues): void {

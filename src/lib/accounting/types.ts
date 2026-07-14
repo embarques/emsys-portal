@@ -1,5 +1,6 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRecordId } from "@/lib/customers/types";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
   createInvoicePayment,
   computeInvoiceSubtotal,
@@ -208,6 +209,13 @@ export function accountingToFormValues(entry: AccountingEntry): AccountingFormVa
     linkedPaymentId: entry.linkedPaymentId ?? "",
     createdBy: entry.createdBy,
   };
+}
+
+export function areAccountingFormValuesEquivalent(
+  left: AccountingFormValues,
+  right: AccountingFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
 }
 
 export function isInvoiceRelatedType(type: AccountingEntryType): boolean {

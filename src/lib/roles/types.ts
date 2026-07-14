@@ -3,6 +3,7 @@ import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { ROLE_TABLE_FILTER_FIELDS } from "@/lib/roles/filter-fields";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
 export type RolePermission = {
   id: string;
@@ -114,3 +115,11 @@ export function roleToFormValues(role: Role): RoleFormValues {
     createdBy: role.createdBy,
   };
 }
+
+export function areRoleFormValuesEquivalent(
+  left: RoleFormValues,
+  right: RoleFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
+}
+

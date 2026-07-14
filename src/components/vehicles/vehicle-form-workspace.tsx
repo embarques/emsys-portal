@@ -18,6 +18,7 @@ import {
   createEmptyVehicleForm,
   vehicleToFormValues,
   type VehicleFormValues,
+  areVehicleFormValuesEquivalent,
 } from "@/lib/vehicles/types";
 import {
   useUpdateWorkspaceTabLabel,
@@ -28,7 +29,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 export function VehicleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -53,6 +54,12 @@ export function VehicleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
 
     try {
       if (isEditing && editing) {
+        if (areVehicleFormValuesEquivalent(values, vehicleToFormValues(editing))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         const next = await updateMutation.mutateAsync({ vehicleId: editing.id, values });
         notifyUpdated(t("vehicles.entity"), next.name);
         closeFormTabAndReturn(tabId);

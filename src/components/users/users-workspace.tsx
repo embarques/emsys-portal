@@ -81,6 +81,7 @@ import {
   type User,
   type UserFilterState,
   type UserFormValues,
+  areUserFormValuesEquivalent,
 } from "@/lib/users/types";
 
 const PAGE_SIZE = DEFAULT_USER_LIST_PARAMS.limit;
@@ -95,7 +96,7 @@ export function UsersWorkspace() {
   const { t } = useTranslation();
   const userLabels = useUserLabels();
   const userFilterFields = useUserFilterFields();
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<UserFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -205,6 +206,13 @@ export function UsersWorkspace() {
 
     try {
       if (formMode === "edit" && editingUser) {
+        if (areUserFormValuesEquivalent(values, userToFormValues(editingUser))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingUser(null);
+          return;
+        }
+
         const nextUser = await updateUserMutation.mutateAsync({
           userId: editingUser.id,
           values,

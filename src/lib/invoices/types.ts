@@ -3,6 +3,7 @@ import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-q
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
   createRecordId,
   getCustomerAddresses,
@@ -675,6 +676,14 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     createdBy: invoice.createdBy,
   };
 }
+
+export function areInvoiceFormValuesEquivalent(
+  left: InvoiceFormValues,
+  right: InvoiceFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
+}
+
 
 /** Build an invoice party snapshot from a selected customer record. */
 export function customerToInvoiceParty(customer: Customer): OrderParty {

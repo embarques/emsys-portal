@@ -46,6 +46,7 @@ import {
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useUserError } from "@/lib/errors";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { useTranslation } from "@/lib/i18n";
 import {
   computeInventoryKpis,
@@ -107,7 +108,7 @@ function itemToFormValues(item: InventoryItem): InventoryFormValues {
 export function InventoryItemsWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const { data: items = [], isLoading } = useInventoryItems();
   const { data: recipients = [] } = useInventoryRecipients();
   const snapshot = useInventorySnapshotData();
@@ -183,6 +184,12 @@ export function InventoryItemsWorkspace() {
   async function saveItem(values: InventoryFormValues) {
     try {
       if (formMode === "edit" && editingItem) {
+        if (areFormValuesEquivalent(values, itemToFormValues(editingItem))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingItem(null);
+          return;
+        }
         const nextItem = await updateItem.mutateAsync({ id: editingItem.id, values });
         notifyUpdated(t("inventory.entity"), nextItem.name);
       } else {

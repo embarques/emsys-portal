@@ -1,5 +1,6 @@
 import type { DailyIncomeJournal, DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
 const TRANSACTION_TYPE_I18N_KEYS: Record<string, string> = {
   "INITIAL-PAYMENT": "initialPayment",
@@ -51,4 +52,11 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     zelleTransactionDate: row.zelleTransactionDate,
     zelleTransactionName: row.zelleTransactionName,
   };
+}
+
+export function areDailyIncomeJournalValuesEquivalent(
+  left: DailyIncomeJournalValues,
+  right: DailyIncomeJournalValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
 }

@@ -18,6 +18,7 @@ import {
   createEmptyRouteForm,
   routeToFormValues,
   type RouteFormValues,
+  areRouteFormValuesEquivalent,
 } from "@/lib/route-manager/types";
 import { formatRouteName } from "@/lib/route-manager/display";
 import {
@@ -30,7 +31,7 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -57,6 +58,12 @@ export function RouteFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
 
     try {
       if (isEditing && editing) {
+        if (areRouteFormValuesEquivalent(values, routeToFormValues(editing))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         const next = await updateMutation.mutateAsync({ recordId: editing.id, values });
         notifyUpdated(t("routes.form.entityLabel"), formatRouteName(next));
         closeFormTabAndReturn(tabId);

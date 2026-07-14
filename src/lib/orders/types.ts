@@ -13,6 +13,7 @@ import { REQUIRED_PHONE_DIGITS, isCompletePhoneNumber } from "@/lib/phones/phone
 import { normalizeStoredPhone } from "@/lib/utils/phone";
 import type { Employee } from "@/lib/employees/types";
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import type { User } from "@/lib/users/types";
 
@@ -542,6 +543,14 @@ export function orderToFormValues(order: Order): OrderFormValues {
     comments: order.comments.map(orderCommentToFormValues),
   };
 }
+
+export function areOrderFormValuesEquivalent(
+  left: OrderFormValues,
+  right: OrderFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
+}
+
 
 // --- Legacy party types used by invoices ---
 

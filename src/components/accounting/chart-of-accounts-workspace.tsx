@@ -30,6 +30,7 @@ import {
 } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import type { ChartAccount, ChartAccountValues } from "@/lib/accounting/chart-accounts/types";
 import { normalizeApiError } from "@/lib/api/axios";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -186,6 +187,12 @@ export function ChartOfAccountsWorkspace() {
 
   function save(values: ChartAccountValues) {
     setFormError(null);
+    if (editing && areFormValuesEquivalent(values, accountValues(editing))) {
+      setDialogOpen(false);
+      setEditing(null);
+      feedback.notifySuccess(t("common.form.noChanges"));
+      return;
+    }
     const action = editing
       ? updateMutation.mutateAsync({ id: editing.id, values })
       : createMutation.mutateAsync(values);

@@ -7,6 +7,7 @@ import {
   formatRecordPhoneList,
 } from "@/lib/phones/phones";
 import type { RecordPhone } from "@/lib/phones/types";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
 export type EmployeePortalBranch = "usa" | "dr";
 
@@ -420,3 +421,11 @@ export function employeeToFormValues(employee: Employee): EmployeeFormValues {
     updatedAt: employee.updatedAt,
   };
 }
+
+export function areEmployeeFormValuesEquivalent(
+  left: EmployeeFormValues,
+  right: EmployeeFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
+}
+

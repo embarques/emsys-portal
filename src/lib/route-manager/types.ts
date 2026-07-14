@@ -2,6 +2,7 @@ import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createMockObjectId } from "@/lib/vehicles/types";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
 export type RouteVehicleRef = {
   id: string;
@@ -269,6 +270,14 @@ export function routeToFormValues(assignment: Route): RouteFormValues {
     updatedBy: assignment.updatedBy,
   };
 }
+
+export function areRouteFormValuesEquivalent(
+  left: RouteFormValues,
+  right: RouteFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
+}
+
 
 export function formValuesToRoute(
   values: RouteFormValues,

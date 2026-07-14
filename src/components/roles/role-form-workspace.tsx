@@ -20,6 +20,7 @@ import {
   createEmptyRoleForm,
   roleToFormValues,
   type RoleFormValues,
+  areRoleFormValuesEquivalent,
 } from "@/lib/roles/types";
 import {
   useUpdateWorkspaceTabLabel,
@@ -30,7 +31,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -86,6 +87,12 @@ export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
     try {
       if (isEditing && editing) {
+        if (areRoleFormValuesEquivalent(values, roleToFormValues(editing))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         const next = await updateMutation.mutateAsync({ roleId: editing.roleId, values });
         notifyUpdated(t("roles.entity"), next.name);
         closeFormTabAndReturn(tabId);

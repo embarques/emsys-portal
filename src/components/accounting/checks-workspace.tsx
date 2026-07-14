@@ -38,6 +38,7 @@ import { formatAuditDateTime } from "@/lib/audit/display";
 import { getCheckStatusBadgeClass } from "@/lib/accounting/checks/display";
 import { cloneChecks } from "@/lib/accounting/checks/mock-data";
 import {
+  areCheckFormValuesEquivalent,
   checkToFormValues,
   createEmptyCheckForm,
   formValuesToCheck,
@@ -177,6 +178,12 @@ export function ChecksWorkspace() {
 
     try {
       if (editing) {
+        if (areCheckFormValuesEquivalent(values, checkToFormValues(editing))) {
+          feedback.notifySuccess(t("common.form.noChanges"));
+          setDialogOpen(false);
+          setEditing(null);
+          return;
+        }
         const updated = formValuesToCheck(editing.id, values, editing.createdAt);
         setChecks((current) => current.map((check) => (check.id === editing.id ? updated : check)));
         feedback.notifySuccess(t("accounting.checks.toasts.updated"));

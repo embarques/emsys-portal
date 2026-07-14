@@ -1,0 +1,52 @@
+---
+description: Skip unnecessary PUT/update when edit form values are unchanged
+globs: **/{*-form-workspace,*workspace,*form}.tsx
+alwaysApply: false
+---
+
+# Skip Unchanged Edit Form Updates
+
+Edit/save handlers must **not** call update/PUT mutations when the submitted
+values are equivalent to the loaded entity.
+
+## Required pattern
+
+1. Convert the loaded entity with the feature `*ToFormValues` helper (or a
+   feature-specific normalizer).
+2. Compare with `areXFormValuesEquivalent` (preferred) or shared
+   `areFormValuesEquivalent` from `@/lib/forms/are-form-values-equivalent`.
+3. On match: toast `t("common.form.noChanges")`, close the form tab/dialog, and
+   **return without calling the mutation**.
+
+```tsx
+// ✅ GOOD
+if (isEditing && editing) {
+  if (areItemFormValuesEquivalent(values, itemToFormValues(editing))) {
+    notifySuccess(t("common.form.noChanges"));
+    closeFormTabAndReturn(tabId);
+    return;
+  }
+  await updateMutation.mutateAsync({ itemId: editing.itemId, values });
+}
+```
+
+```tsx
+// ❌ BAD — always PUTs even when nothing changed
+if (isEditing && editing) {
+  await updateMutation.mutateAsync({ itemId: editing.itemId, values });
+}
+```
+
+## Where helpers live
+
+- Shared: `src/lib/forms/are-form-values-equivalent.ts`
+- Feature wrappers next to `*ToFormValues` in `src/lib/<feature>/types.ts`
+  (e.g. `areCustomerFormValuesEquivalent` may normalize before compare)
+- Locale: `common.form.noChanges` in both `en` and `es` `common.json`
+
+## Scope
+
+- Apply to desktop form tabs (`*-form-workspace.tsx`) **and** directory dialog
+  save handlers (`*-workspace.tsx`).
+- Apply per independent edit section (e.g. daily income statement vs journal).
+- Create paths stay unchanged — only skip update/PUT.

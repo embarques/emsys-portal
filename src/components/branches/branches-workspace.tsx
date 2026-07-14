@@ -69,6 +69,7 @@ import {
   type Branch,
   type BranchFilterState,
   type BranchFormValues,
+  areBranchFormValuesEquivalent,
 } from "@/lib/branches/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -85,7 +86,7 @@ const defaultFilters: BranchFilterState = {
 export function BranchesWorkspace() {
   const { t } = useTranslation();
   const branchFilterFields = useBranchFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const [filters, setFilters] = useState<BranchFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -182,6 +183,13 @@ export function BranchesWorkspace() {
 
     try {
       if (formMode === "edit" && editingBranch) {
+        if (areBranchFormValuesEquivalent(values, branchToFormValues(editingBranch))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingBranch(null);
+          return;
+        }
+
         const nextBranch = await updateBranchMutation.mutateAsync({
           branchId: editingBranch.id,
           values,

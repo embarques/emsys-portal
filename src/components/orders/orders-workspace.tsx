@@ -102,6 +102,7 @@ import {
   type Order,
   type OrderFilterState,
   type OrderFormValues,
+  areOrderFormValuesEquivalent,
 } from "@/lib/orders/types";
 import { isOrderMappable } from "@/lib/orders/utils/pickup-map";
 import { useUsers } from "@/lib/users/hooks/use-users";
@@ -334,6 +335,13 @@ export function OrdersWorkspace() {
 
     try {
       if (formMode === "edit" && editingOrder) {
+        if (areOrderFormValuesEquivalent(values, orderToFormValues(editingOrder))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          setEditingOrder(null);
+          return { error: null };
+        }
+
         const nextOrder = await updateOrderMutation.mutateAsync({
           orderId: getOrderRecordId(editingOrder),
           values,

@@ -65,7 +65,7 @@ export function CustomerFormWorkspace({
     try {
       if (isEditing && editingCustomer) {
         if (areCustomerFormValuesEquivalent(values, customerToFormValues(editingCustomer))) {
-          notifySuccess(t("customers.form.noChanges"));
+          notifySuccess(t("common.form.noChanges"));
           closeFormTabAndReturn(tabId);
           return;
         }

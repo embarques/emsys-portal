@@ -11,7 +11,10 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { createSecondaryFirebaseUser } from "@/lib/auth/firebase/firebase-user-admin";
 import { useTranslation } from "@/lib/i18n";
 import { useCreateUser, useUpdateUser, useUser } from "@/lib/users/hooks/use-users";
-import { createEmptyUserForm, userToFormValues, type UserFormValues } from "@/lib/users/types";
+import {
+  createEmptyUserForm, userToFormValues, type UserFormValues,
+  areUserFormValuesEquivalent,
+} from "@/lib/users/types";
 import {
   useUpdateWorkspaceTabLabel,
   useWorkspaceTabs,
@@ -21,7 +24,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const { t } = useTranslation();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifySuccess } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -45,6 +48,12 @@ export function UserFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
 
     try {
       if (isEditing && editing) {
+        if (areUserFormValuesEquivalent(values, userToFormValues(editing))) {
+          notifySuccess(t("common.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         const next = await updateMutation.mutateAsync({ userId: editing.id, values });
         notifyUpdated(t("users.entity"), next.name);
         closeFormTabAndReturn(tabId);

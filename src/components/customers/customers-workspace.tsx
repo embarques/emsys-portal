@@ -226,7 +226,7 @@ export function CustomersWorkspace() {
     try {
       if (formMode === "edit" && editingCustomer) {
         if (areCustomerFormValuesEquivalent(values, customerToFormValues(editingCustomer))) {
-          notifySuccess(t("customers.form.noChanges"));
+          notifySuccess(t("common.form.noChanges"));
           setFormMode(null);
           setEditingCustomer(null);
           return;

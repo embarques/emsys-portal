@@ -83,6 +83,14 @@ All agents and developers must follow this file when creating or modifying code.
 - **Zod**
   - Handles all validation schemas.
 
+- **Skip unchanged edit saves**
+  - Edit/update handlers must not call PUT/update mutations when submitted
+    values are equivalent to `*ToFormValues(entity)`.
+  - Use `areFormValuesEquivalent` (`src/lib/forms/are-form-values-equivalent.ts`)
+    or a feature `areXFormValuesEquivalent` helper.
+  - On no-op: toast `common.form.noChanges` and close the form without mutating.
+  - See `.cursor/rules/skip-unchanged-edit-updates.mdc`.
+
 ---
 
 ## Authentication

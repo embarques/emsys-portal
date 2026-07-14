@@ -3,6 +3,7 @@ import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import type { RouteCrewRole, RouteEmployeeRef } from "@/lib/route-manager/types";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
   employeeHasRole,
   todayDateInputValue,
@@ -229,6 +230,14 @@ export function activeRouteToFormValues(record: ActiveRoute): ActiveRouteFormVal
     rate: record.rate != null && Number.isFinite(record.rate) ? String(record.rate) : "",
   };
 }
+
+export function areActiveRouteFormValuesEquivalent(
+  left: ActiveRouteFormValues,
+  right: ActiveRouteFormValues,
+): boolean {
+  return areFormValuesEquivalent(left, right);
+}
+
 
 export function assertActiveRouteFormValues(values: ActiveRouteFormValues): void {
   if (values.scheduleType === "date" && !values.date.trim()) {
