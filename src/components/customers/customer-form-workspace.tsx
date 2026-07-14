@@ -16,6 +16,7 @@ import {
   useUpdateCustomer,
 } from "@/lib/customers/hooks/use-customers";
 import {
+  areCustomerFormValuesEquivalent,
   createEmptyCustomerForm,
   customerToFormValues,
   type CustomerFormValues,
@@ -35,7 +36,7 @@ export function CustomerFormWorkspace({
   const { t } = useTranslation();
   const { formatError, toErrorMessage } = useUserError();
   const isEditing = mode === "edit";
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
 
@@ -63,6 +64,12 @@ export function CustomerFormWorkspace({
 
     try {
       if (isEditing && editingCustomer) {
+        if (areCustomerFormValuesEquivalent(values, customerToFormValues(editingCustomer))) {
+          notifySuccess(t("customers.form.noChanges"));
+          closeFormTabAndReturn(tabId);
+          return;
+        }
+
         const nextCustomer = await updateCustomerMutation.mutateAsync({
           customerId: editingCustomer.id,
           values,

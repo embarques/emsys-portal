@@ -100,6 +100,7 @@
     "addTitle": "Agregar cliente",
     "editTitle": "Editar cliente",
     "addDescription": "Crear un nuevo registro de cliente.",
+    "noChanges": "No hay cambios de cliente para guardar.",
     "notFound": "No se encontró este cliente.",
     "sections": {
       "general": "General",

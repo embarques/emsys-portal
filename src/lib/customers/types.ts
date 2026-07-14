@@ -409,6 +409,59 @@ export function normalizeCustomerFormValues(values: CustomerFormValues): Custome
   };
 }
 
+function comparableCustomerAddress(address: CustomerCoreAddress) {
+  return {
+    id: address.id?.trim() ?? "",
+    address1: address.address1.trim(),
+    address2: address.address2.trim(),
+    apartment: address.apartment.trim(),
+    city: address.city.trim(),
+    state: address.state.trim(),
+    zipcode: address.zipcode.trim(),
+    country: address.country.trim(),
+    isPrimary: address.isPrimary,
+    location: address.location,
+    verification: address.verification,
+  };
+}
+
+function comparableCustomerFormValues(values: CustomerFormValues) {
+  const normalized = normalizeCustomerFormValues(values);
+
+  return {
+    id: normalized.id.trim(),
+    name: normalized.name.trim(),
+    customerType: normalizeCustomerType(normalized.customerType),
+    phones: normalizeRecordPhonesFormValues(normalized.phones).map((phone) => ({
+      type: phone.type,
+      number: phone.number.trim(),
+      isPrimary: phone.isPrimary,
+    })),
+    email: normalized.email.trim(),
+    active: true,
+    IDNumber: normalized.IDNumber.trim(),
+    notes: normalized.notes.trim(),
+    accountBalance: normalized.accountBalance,
+    branch: {
+      id: normalized.branch.id,
+      name: normalized.branch.name.trim(),
+      code: normalized.branch.code.trim(),
+    },
+    addresses: normalizeCustomerAddresses(normalized.addresses)
+      .filter(coreAddressHasContent)
+      .map(comparableCustomerAddress),
+    receivers: normalized.receivers.map((entry) => entry.trim()).filter(Boolean).sort(),
+  };
+}
+
+export function areCustomerFormValuesEquivalent(
+  left: CustomerFormValues,
+  right: CustomerFormValues,
+): boolean {
+  return JSON.stringify(comparableCustomerFormValues(left)) ===
+    JSON.stringify(comparableCustomerFormValues(right));
+}
+
 /** @deprecated Use customerType from the API. */
 export const CLIENT_TYPES: { value: ClientType; label: string }[] = [
   { value: "sender", label: "Sender" },

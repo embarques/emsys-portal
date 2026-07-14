@@ -70,6 +70,7 @@ import {
   DEFAULT_CUSTOMER_LIST_PARAMS,
   buildCustomerListParams,
   createEmptyCustomerForm,
+  areCustomerFormValuesEquivalent,
   customerToFormValues,
   CUSTOMER_TYPE_OPTIONS,
   CUSTOMER_TYPE_RECEIVER,
@@ -224,6 +225,13 @@ export function CustomersWorkspace() {
 
     try {
       if (formMode === "edit" && editingCustomer) {
+        if (areCustomerFormValuesEquivalent(values, customerToFormValues(editingCustomer))) {
+          notifySuccess(t("customers.form.noChanges"));
+          setFormMode(null);
+          setEditingCustomer(null);
+          return;
+        }
+
         const nextCustomer = await updateCustomerMutation.mutateAsync({
           customerId: editingCustomer.id,
           values,

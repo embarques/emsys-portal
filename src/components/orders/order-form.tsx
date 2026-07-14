@@ -34,6 +34,7 @@ import {
 import {
   CUSTOMER_TYPE_RECEIVER,
   CUSTOMER_TYPE_SENDER,
+  areCustomerFormValuesEquivalent,
   createEmptyCustomerForm,
   customerToFormValues,
   type Customer,
@@ -126,7 +127,7 @@ export function OrderForm({
   const { t } = useTranslation();
   const { data: branchesData } = useBranchPicker();
   const employeesQuery = useEmployees({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, limit: 200 });
-  const { notifyAdded, notifyUpdated } = useFeedback();
+  const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
   const { isDesktopTabs, openFormTab } = useWorkspaceTabs();
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
@@ -295,6 +296,12 @@ export function OrderForm({
       let customer: Customer;
 
       if (customerDialog.mode === "edit" && dialogCustomer) {
+        if (areCustomerFormValuesEquivalent(formValues, customerToFormValues(dialogCustomer))) {
+          notifySuccess(t("customers.form.noChanges"));
+          closeCustomerDialog();
+          return;
+        }
+
         customer = await updateCustomerMutation.mutateAsync({
           customerId: dialogCustomer.id,
           values: formValues,
