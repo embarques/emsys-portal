@@ -70,14 +70,18 @@ export function AddressAutocompleteInput({
   async function handleSelect(suggestion: PlaceSuggestion) {
     skipNextQueryRef.current = true;
     const street = suggestion.primaryText || suggestion.description;
-    onValueChange(street);
     setOpen(false);
     setQuery("");
     setResolving(true);
     try {
       const parsed = await resolveSuggestion(suggestion);
       if (parsed) {
+        // Apply street + city/state/zip in one place-selected update so the
+        // separate apartment field is not wiped by an intermediate address1-only
+        // change (browser autofill can clear adjacent unit fields).
         onPlaceSelected({ ...parsed, address1: parsed.address1 || street });
+      } else {
+        onValueChange(street);
       }
     } finally {
       setResolving(false);

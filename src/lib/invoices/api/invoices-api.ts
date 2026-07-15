@@ -951,7 +951,8 @@ export async function createInvoice(
 ): Promise<Invoice> {
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
     API_ENDPOINTS.INVOICES,
-    buildInvoiceWritePayload(values, context, { requireIncomeStatement: true }),
+    // Income statement (Cuadre) is optional: skip when none is open, or link an open one.
+    buildInvoiceWritePayload(values, context, { requireIncomeStatement: false }),
   );
 
   assertMutationSuccess(response, "Unable to create invoice.");

@@ -51,6 +51,7 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     paymentMethodName: row.paymentMethod?.name,
     zelleTransactionDate: row.zelleTransactionDate,
     zelleTransactionName: row.zelleTransactionName,
+    checkNumber: row.checkNumber,
   };
 }
 

@@ -515,7 +515,9 @@ export function createAddressGeoLocation(longitude: number, latitude: number): A
 /**
  * Apply a Google Places selection to an address: fills the resolved components,
  * stores the GeoJSON location, and marks the address as verified.
- * Existing apartment/address2 are preserved (Places rarely returns unit data).
+ *
+ * Apartment and address2 are manual fields separate from street autocomplete —
+ * never overwrite whatever the user already entered there.
  */
 export function applyPlaceToCoreAddress(
   address: CustomerCoreAddress,
@@ -524,6 +526,8 @@ export function applyPlaceToCoreAddress(
   return {
     ...address,
     address1: place.address1 || address.address1,
+    apartment: address.apartment,
+    address2: address.address2,
     city: place.city || address.city,
     state: place.state || address.state,
     zipcode: place.zipcode || address.zipcode,

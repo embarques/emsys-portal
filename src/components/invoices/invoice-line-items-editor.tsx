@@ -233,8 +233,8 @@ function LineItemEntryFields({
     };
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <div className="space-y-2 sm:col-span-2">
+    <div className="grid gap-4">
+      <div className="space-y-2">
         <Label htmlFor={`${item.id}-description`} className={labelClass}>
           {descriptionLabel} <span className="text-destructive">*</span>
         </Label>
@@ -253,76 +253,78 @@ function LineItemEntryFields({
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={`${item.id}-quantity`} className={labelClass}>
-          {quantityLabel} <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id={`${item.id}-quantity`}
-          type="number"
-          min={1}
-          step="1"
-          value={item.quantity}
-          onChange={(event) => onChangeQuantity(event.target.value)}
-          onKeyDown={advanceOnEnter(`${item.id}-labels`)}
-          {...inputClass(item.quantity)}
-          required
-        />
-      </div>
+      <div className="grid grid-cols-4 gap-3">
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor={`${item.id}-quantity`} className={labelClass}>
+            {quantityLabel} <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id={`${item.id}-quantity`}
+            type="number"
+            min={1}
+            step="1"
+            value={item.quantity}
+            onChange={(event) => onChangeQuantity(event.target.value)}
+            onKeyDown={advanceOnEnter(`${item.id}-labels`)}
+            {...inputClass(item.quantity)}
+            required
+          />
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={`${item.id}-labels`} className={labelClass}>
-          {labelsLabel}
-        </Label>
-        <Input
-          id={`${item.id}-labels`}
-          type="number"
-          min={0}
-          step="1"
-          value={labelsValue}
-          onChange={(event) =>
-            onUpdate({ labelCount: event.target.value, labelsManual: true })
-          }
-          onKeyDown={advanceOnEnter(`${item.id}-unitPrice`)}
-          {...inputClass(labelsValue)}
-        />
-      </div>
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor={`${item.id}-labels`} className={labelClass}>
+            {labelsLabel}
+          </Label>
+          <Input
+            id={`${item.id}-labels`}
+            type="number"
+            min={0}
+            step="1"
+            value={labelsValue}
+            onChange={(event) =>
+              onUpdate({ labelCount: event.target.value, labelsManual: true })
+            }
+            onKeyDown={advanceOnEnter(`${item.id}-unitPrice`)}
+            {...inputClass(labelsValue)}
+          />
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={`${item.id}-unitPrice`} className={labelClass}>
-          {unitPriceLabel} <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id={`${item.id}-unitPrice`}
-          type="number"
-          min={0}
-          step="0.01"
-          value={item.unitPrice}
-          onChange={(event) => onChangeUnitPrice(event.target.value)}
-          onKeyDown={advanceOnEnter(`${item.id}-total`)}
-          {...inputClass(item.unitPrice)}
-          required
-        />
-      </div>
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor={`${item.id}-unitPrice`} className={labelClass}>
+            {unitPriceLabel} <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id={`${item.id}-unitPrice`}
+            type="number"
+            min={0}
+            step="0.01"
+            value={item.unitPrice}
+            onChange={(event) => onChangeUnitPrice(event.target.value)}
+            onKeyDown={advanceOnEnter(`${item.id}-total`)}
+            {...inputClass(item.unitPrice)}
+            required
+          />
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={`${item.id}-total`} className={labelClass}>
-          {totalLabel}
-        </Label>
-        <Input
-          id={`${item.id}-total`}
-          type="number"
-          min={0}
-          step="0.01"
-          value={totalValue}
-          onChange={(event) => onChangeTotal(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter") return;
-            event.preventDefault();
-            onCommitFromTotal();
-          }}
-          {...inputClass(totalValue)}
-        />
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor={`${item.id}-total`} className={labelClass}>
+            {totalLabel}
+          </Label>
+          <Input
+            id={`${item.id}-total`}
+            type="number"
+            min={0}
+            step="0.01"
+            value={totalValue}
+            onChange={(event) => onChangeTotal(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              event.preventDefault();
+              onCommitFromTotal();
+            }}
+            {...inputClass(totalValue)}
+          />
+        </div>
       </div>
     </div>
   );
@@ -597,8 +599,8 @@ function SortableLineItemRow({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2 sm:col-span-2">
+      <div className="grid gap-4">
+        <div className="space-y-2">
           <Label htmlFor={`${item.id}-description`} className={labelClass}>
             {descriptionLabel} <span className="text-destructive">*</span>
           </Label>
@@ -617,76 +619,78 @@ function SortableLineItemRow({
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor={`${item.id}-quantity`} className={labelClass}>
-            {quantityLabel} <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id={`${item.id}-quantity`}
-            type="number"
-            min={1}
-            step="1"
-            value={item.quantity}
-            onChange={(event) => onChangeQuantity(index, event.target.value)}
-            onKeyDown={advanceOnEnter(`${item.id}-labels`)}
-            {...(inputClass ? inputClass(item.quantity) : {})}
-            required
-          />
-        </div>
+        <div className="grid grid-cols-4 gap-3">
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor={`${item.id}-quantity`} className={labelClass}>
+              {quantityLabel} <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id={`${item.id}-quantity`}
+              type="number"
+              min={1}
+              step="1"
+              value={item.quantity}
+              onChange={(event) => onChangeQuantity(index, event.target.value)}
+              onKeyDown={advanceOnEnter(`${item.id}-labels`)}
+              {...(inputClass ? inputClass(item.quantity) : {})}
+              required
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor={`${item.id}-labels`} className={labelClass}>
-            {labelsLabel}
-          </Label>
-          <Input
-            id={`${item.id}-labels`}
-            type="number"
-            min={0}
-            step="1"
-            value={labelsValue}
-            onChange={(event) =>
-              onUpdate(index, { labelCount: event.target.value, labelsManual: true })
-            }
-            onKeyDown={advanceOnEnter(`${item.id}-unitPrice`)}
-            {...(inputClass ? inputClass(labelsValue) : {})}
-          />
-        </div>
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor={`${item.id}-labels`} className={labelClass}>
+              {labelsLabel}
+            </Label>
+            <Input
+              id={`${item.id}-labels`}
+              type="number"
+              min={0}
+              step="1"
+              value={labelsValue}
+              onChange={(event) =>
+                onUpdate(index, { labelCount: event.target.value, labelsManual: true })
+              }
+              onKeyDown={advanceOnEnter(`${item.id}-unitPrice`)}
+              {...(inputClass ? inputClass(labelsValue) : {})}
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor={`${item.id}-unitPrice`} className={labelClass}>
-            {unitPriceLabel} <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id={`${item.id}-unitPrice`}
-            type="number"
-            min={0}
-            step="0.01"
-            value={item.unitPrice}
-            onChange={(event) => onChangeUnitPrice(index, event.target.value)}
-            onKeyDown={advanceOnEnter(`${item.id}-total`)}
-            {...(inputClass ? inputClass(item.unitPrice) : {})}
-            required
-          />
-        </div>
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor={`${item.id}-unitPrice`} className={labelClass}>
+              {unitPriceLabel} <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id={`${item.id}-unitPrice`}
+              type="number"
+              min={0}
+              step="0.01"
+              value={item.unitPrice}
+              onChange={(event) => onChangeUnitPrice(index, event.target.value)}
+              onKeyDown={advanceOnEnter(`${item.id}-total`)}
+              {...(inputClass ? inputClass(item.unitPrice) : {})}
+              required
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor={`${item.id}-total`} className={labelClass}>
-            {totalLabel}
-          </Label>
-          <Input
-            id={`${item.id}-total`}
-            type="number"
-            min={0}
-            step="0.01"
-            value={totalValue}
-            onChange={(event) => onChangeTotal(index, event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key !== "Enter") return;
-              event.preventDefault();
-              onCommitFromTotal();
-            }}
-            {...(inputClass ? inputClass(totalValue) : {})}
-          />
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor={`${item.id}-total`} className={labelClass}>
+              {totalLabel}
+            </Label>
+            <Input
+              id={`${item.id}-total`}
+              type="number"
+              min={0}
+              step="0.01"
+              value={totalValue}
+              onChange={(event) => onChangeTotal(index, event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                onCommitFromTotal();
+              }}
+              {...(inputClass ? inputClass(totalValue) : {})}
+            />
+          </div>
         </div>
       </div>
     </div>

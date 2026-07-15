@@ -87,7 +87,7 @@
     "columns": {
       "status": "Estado",
       "invoiceNumber": "Factura #",
-      "receiptNumber": "Recibo #",
+      "receiptNumber": "Cheque #",
       "createdAt": "Creado el",
       "createdBy": "Creado por",
       "depositedAt": "Depositado el",
@@ -116,7 +116,7 @@
       },
       "fields": {
         "invoiceNumber": "Número de factura",
-        "receiptNumber": "Número de recibo",
+        "receiptNumber": "Número de cheque",
         "status": "Estado",
         "createdBy": "Creado por",
         "depositedAt": "Depositado el",
@@ -133,7 +133,7 @@
       "selectEmpty": "No hay opciones coincidentes.",
       "validation": {
         "invoiceNumberRequired": "El número de factura es obligatorio.",
-        "receiptNumberRequired": "El número de recibo es obligatorio.",
+        "receiptNumberRequired": "El número de cheque es obligatorio.",
         "createdByRequired": "El campo creado por es obligatorio.",
         "depositRequired": "Los datos de depósito son obligatorios para cheques cobrados."
       }
@@ -328,6 +328,7 @@
         "bankAccount": "Cuenta bancaria",
         "zelleDate": "Fecha de transacción Zelle",
         "zelleName": "Nombre de transacción Zelle (como aparece en la cuenta bancaria)",
+        "checkNumber": "Número de cheque",
         "invoice": "Factura",
         "referenceNumber": "Número de referencia",
         "account": "Cuenta",
@@ -354,6 +355,7 @@
         "selectInvoice": "Seleccionar factura",
         "searchInvoices": "Buscar por factura #, teléfono del remitente o destinatario…",
         "enterZelleName": "Ingrese el nombre de la transacción Zelle",
+        "enterCheckNumber": "Ingrese el número de cheque",
         "enterReferenceNumber": "Ingrese el número de referencia",
         "enterDescription": "Ingrese la descripción (opcional)",
         "enterInvoiceNumber": "Ingrese el número de la nueva factura",
@@ -364,6 +366,11 @@
         "searchReceivers": "Buscar destinatarios…",
         "selectReceiver": "Seleccionar destinatario",
         "amount": "0.00"
+      },
+      "hints": {
+        "amountZeroAllowed": "Se permite cero para el registro inicial sin pago.",
+        "paymentMethodOptionalZero": "Opcional cuando el monto es $0.00.",
+        "costFromLineItems": "Tomado del total de los renglones de la factura."
       },
       "invoiceSummary": {
         "total": "Total",
@@ -387,6 +394,7 @@
         "discountNonNegative": "El descuento no puede ser negativo.",
         "zelleDateRequired": "La fecha de transacción Zelle es obligatoria.",
         "zelleNameRequired": "El nombre de transacción Zelle es obligatorio.",
+        "checkNumberRequired": "El número de cheque es obligatorio.",
         "bankAccountRequired": "Seleccione una cuenta bancaria para este método de pago.",
         "employeeRequired": "El empleado es obligatorio.",
         "invoiceRequired": "La factura es obligatoria.",

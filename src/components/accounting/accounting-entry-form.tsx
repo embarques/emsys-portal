@@ -336,12 +336,22 @@ export function AccountingEntryForm({
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="referenceNumber">Reference number</Label>
+            <Label htmlFor="referenceNumber">
+              {values.paymentMethod === "check" ? (
+                <>
+                  Check number <span className="text-destructive">*</span>
+                </>
+              ) : (
+                "Reference number"
+              )}
+            </Label>
             <Input
               id="referenceNumber"
               value={values.referenceNumber}
               onChange={(event) => updateField("referenceNumber", event.target.value)}
-              placeholder="Check #, transaction ID..."
+              placeholder={values.paymentMethod === "check" ? "e.g. 4521" : "Check #, transaction ID..."}
+              autoComplete="off"
+              required={values.paymentMethod === "check"}
             />
           </div>
         </div>
@@ -629,12 +639,22 @@ export function AccountingEntryForm({
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="referenceNumberCategory">Reference number</Label>
+            <Label htmlFor="referenceNumberCategory">
+              {values.paymentMethod === "check" ? (
+                <>
+                  Check number <span className="text-destructive">*</span>
+                </>
+              ) : (
+                "Reference number"
+              )}
+            </Label>
             <Input
               id="referenceNumberCategory"
               value={values.referenceNumber}
               onChange={(event) => updateField("referenceNumber", event.target.value)}
-              placeholder="Check #, transaction ID..."
+              placeholder={values.paymentMethod === "check" ? "e.g. 4521" : "Check #, transaction ID..."}
+              autoComplete="off"
+              required={values.paymentMethod === "check"}
             />
           </div>
         </div>

@@ -9,6 +9,7 @@ import {
 import {
   EMPTY_DAILY_INCOME_SUMMARY,
   isZellePaymentMethod,
+  isCheckPaymentMethod,
   requiresBankAccount,
   type AccountingLookup,
   type DailyIncomeJournal,
@@ -145,6 +146,7 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     paymentMethod: normalizeLookup(raw.paymentMethod),
     zelleTransactionDate: stringValue(raw.zelleTransactionDate).slice(0, 10) || undefined,
     zelleTransactionName: stringValue(raw.zelleTransactionName) || undefined,
+    checkNumber: stringValue(firstDefined(raw.checkNumber, raw.check_number)) || undefined,
     accounts: accountLines,
     invoice: Object.keys(invoice).length
       ? {
@@ -509,6 +511,9 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
           zelleTransactionDate: values.zelleTransactionDate,
           zelleTransactionName: values.zelleTransactionName,
         }
+      : {}),
+    ...(isCheckPaymentMethod(values.paymentMethodName)
+      ? { checkNumber: values.checkNumber?.trim() || undefined }
       : {}),
   };
 }

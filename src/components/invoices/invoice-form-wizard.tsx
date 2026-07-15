@@ -24,11 +24,17 @@ import {
   invoiceWizardTypographyRoot,
 } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
-import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { customerHasUnverifiedPrimaryAddress } from "@/lib/customers/types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import {
+  canContinueInvoiceDailyIncomeStep,
+  emptyInvoiceDailyIncomeContext,
+  toInvoiceFormSubmitContext,
+  type InvoiceDailyIncomeContext,
+  type InvoiceFormSubmitContext,
+} from "@/lib/invoices/invoice-daily-income-context";
 import {
   createEmptyInvoiceForm,
   isInvoiceEmployeePickupSource,
@@ -47,11 +53,15 @@ type Props = {
   allowPrint?: boolean;
   isSubmitting?: boolean;
   resetAfterSave?: boolean;
-  /** New invoices must be registered in Daily Income before the final review. */
+  /**
+   * Include the payment / Daily Income (Cuadre) step on create.
+   * An open Cuadre must be associated and a payment recorded (amount may be $0)
+   * before continuing — same click-Next-then-error pattern as other steps.
+   */
   requireDailyIncomeRegistration?: boolean;
   onSubmit: (
     values: InvoiceFormValues,
-    context?: { dailyIncomeRegistration: DailyIncomeJournal | null },
+    context?: InvoiceFormSubmitContext,
   ) => InvoiceFormSubmitResult | Promise<InvoiceFormSubmitResult>;
   onSaved?: () => void;
   onPrint?: (values: InvoiceFormValues, savedInvoiceId?: string | null) => Promise<string | null>;
@@ -84,9 +94,11 @@ export function InvoiceFormWizard({
   const [stepError, setStepError] = useState<string | null>(null);
   const valuesRef = useRef(values);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [dailyIncomeRegistration, setDailyIncomeRegistration] =
-    useState<DailyIncomeJournal | null>(null);
+  const [dailyIncomeContext, setDailyIncomeContext] = useState<InvoiceDailyIncomeContext>(
+    emptyInvoiceDailyIncomeContext(),
+  );
   const previewStep: InvoiceWizardStep = requireDailyIncomeRegistration ? 5 : 4;
+  const canContinuePaymentStep = canContinueInvoiceDailyIncomeStep(dailyIncomeContext);
 
   useEffect(() => {
     valuesRef.current = values;
@@ -151,20 +163,17 @@ export function InvoiceFormWizard({
     });
   }, []);
 
-  const handleDailyIncomeRegistrationChange = useCallback(
-    (registration: DailyIncomeJournal | null) => {
-      setDailyIncomeRegistration(registration);
-      setValues((current) => {
-        const next = {
-          ...current,
-          amountPaid: String(registration?.amount ?? 0),
-        };
-        valuesRef.current = next;
-        return next;
-      });
-    },
-    [],
-  );
+  const handleDailyIncomeContextChange = useCallback((context: InvoiceDailyIncomeContext) => {
+    setDailyIncomeContext(context);
+    setValues((current) => {
+      const next = {
+        ...current,
+        amountPaid: String(context.registration?.amount ?? 0),
+      };
+      valuesRef.current = next;
+      return next;
+    });
+  }, []);
 
   function handleDiscountChange(discount: string) {
     setValues((current) => {
@@ -179,7 +188,7 @@ export function InvoiceFormWizard({
     setSubmitError(null);
   }
 
-  function handleNext() {
+  async function handleNext() {
     const currentValues = valuesRef.current;
     const error =
       step === 1
@@ -188,7 +197,7 @@ export function InvoiceFormWizard({
           ? validateStep2(currentValues)
           : step === 3
             ? validateStep3(currentValues)
-            : requireDailyIncomeRegistration && step === 4 && !dailyIncomeRegistration
+            : requireDailyIncomeRegistration && step === 4 && !canContinuePaymentStep
               ? t("invoices.wizard.validation.dailyIncomeContinueRequired")
               : null;
     if (error) {
@@ -198,7 +207,7 @@ export function InvoiceFormWizard({
 
     clearErrors();
     if (requireDailyIncomeRegistration && step === 3) {
-      setDailyIncomeRegistration(null);
+      setDailyIncomeContext(emptyInvoiceDailyIncomeContext());
     }
     setStep((current) => (current + 1) as InvoiceWizardStep);
   }
@@ -232,7 +241,7 @@ export function InvoiceFormWizard({
   async function handleSave() {
     const error =
       validateForSave(values) ??
-      (requireDailyIncomeRegistration && !dailyIncomeRegistration
+      (requireDailyIncomeRegistration && !canContinuePaymentStep
         ? t("invoices.wizard.validation.dailyIncomeSaveRequired")
         : null);
     if (error) {
@@ -240,7 +249,13 @@ export function InvoiceFormWizard({
       return;
     }
 
-    const result = await onSubmit(values, { dailyIncomeRegistration });
+    const result = await onSubmit(
+      {
+        ...values,
+        amountPaid: String(dailyIncomeContext.registration?.amount ?? values.amountPaid ?? 0),
+      },
+      toInvoiceFormSubmitContext(dailyIncomeContext),
+    );
     if (result.error) {
       setSubmitError(result.error);
       setStepError(null);
@@ -267,23 +282,14 @@ export function InvoiceFormWizard({
     valuesRef.current = nextValues;
     setFormSessionKey((key) => key + 1);
     setSavedInvoiceId(null);
-    setDailyIncomeRegistration(null);
+    setDailyIncomeContext(emptyInvoiceDailyIncomeContext());
   }
 
   const bannerError =
     step === previewStep ? submitError ?? externalError : stepError ?? externalError;
-  const showUnverifiedSenderWarning =
-    isGoogleMapsConfigured() &&
-    Boolean(values.sender && customerHasUnverifiedPrimaryAddress(values.sender));
-  const bannerWarning =
-    !bannerError &&
-    showUnverifiedSenderWarning &&
-    (step === 2 || step === previewStep)
-      ? t("invoices.wizard.validation.unverifiedSenderAddress")
-      : null;
   const showPrint = allowPrint && Boolean(onPrint);
   const summaryDiscountChange =
-    requireDailyIncomeRegistration && dailyIncomeRegistration
+    requireDailyIncomeRegistration && dailyIncomeContext.registration
       ? undefined
       : handleDiscountChange;
 
@@ -321,11 +327,7 @@ export function InvoiceFormWizard({
             <h2 className={invoiceStepTitleClassName}>{t(stepTitleKey)}</h2>
           </div>
 
-          {bannerError ? (
-            <InvoiceWizardNotice tone="error" message={bannerError} />
-          ) : bannerWarning ? (
-            <InvoiceWizardNotice tone="warning" message={bannerWarning} />
-          ) : null}
+          {bannerError ? <InvoiceWizardNotice tone="error" message={bannerError} /> : null}
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <div
@@ -352,7 +354,7 @@ export function InvoiceFormWizard({
               <div className="min-h-0 flex-1 overflow-y-auto pb-10 sm:pb-12">
                 <InvoiceDailyIncomeStep
                   values={values}
-                  onRegistrationChange={handleDailyIncomeRegistrationChange}
+                  onContextChange={handleDailyIncomeContextChange}
                 />
               </div>
             ) : step === previewStep ? (
@@ -362,6 +364,15 @@ export function InvoiceFormWizard({
                   appearance="wizard"
                   onEditStep={goToStep}
                   showPaymentSection={requireDailyIncomeRegistration}
+                  paymentSummary={
+                    requireDailyIncomeRegistration
+                      ? {
+                          registration: dailyIncomeContext.registration,
+                          incomeStatementId: dailyIncomeContext.incomeStatementId,
+                          paymentSkipped: dailyIncomeContext.paymentSkipped,
+                        }
+                      : undefined
+                  }
                   onEditPayment={requireDailyIncomeRegistration ? () => setStep(4) : undefined}
                 />
               </div>
@@ -403,11 +414,7 @@ export function InvoiceFormWizard({
               {t("common.actions.cancel")}
             </Button>
             {step < previewStep ? (
-              <Button
-                type="button"
-                onClick={handleNext}
-                disabled={requireDailyIncomeRegistration && step === 4 && !dailyIncomeRegistration}
-              >
+              <Button type="button" onClick={handleNext}>
                 {t("common.actions.next")}
                 <ArrowRight className="size-4" />
               </Button>

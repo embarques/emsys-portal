@@ -13,7 +13,7 @@ import {
 } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
-import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
+import type { InvoiceFormSubmitContext } from "@/lib/invoices/invoice-daily-income-context";
 import { fetchContainerById } from "@/lib/containers/api/containers-api";
 import { fetchEmployeeById } from "@/lib/employees/api/employees-api";
 import { formatInvoiceTabLabel } from "@/lib/invoices/display";
@@ -54,7 +54,7 @@ type InvoiceWizardShellProps = {
   isSubmitting?: boolean;
   onSubmit: (
     values: InvoiceFormValues,
-    context?: { dailyIncomeRegistration: DailyIncomeJournal | null },
+    context?: InvoiceFormSubmitContext,
   ) => Promise<InvoiceFormSubmitResult>;
   onSaved?: () => void;
   onPrint?: (values: InvoiceFormValues, savedInvoiceId?: string | null) => Promise<string | null>;
@@ -181,10 +181,13 @@ export function InvoiceCreateWizard({
 
   async function handleSubmit(
     values: InvoiceFormValues,
-    submitContext?: { dailyIncomeRegistration: DailyIncomeJournal | null },
+    submitContext?: InvoiceFormSubmitContext,
   ): Promise<InvoiceFormSubmitResult> {
     try {
-      const incomeStatementId = submitContext?.dailyIncomeRegistration?.incomeStatementId ?? 0;
+      const incomeStatementId =
+        submitContext?.incomeStatementId ??
+        submitContext?.dailyIncomeRegistration?.incomeStatementId ??
+        0;
       const context = await buildInvoiceWriteContext(values);
       const created = await createMutation.mutateAsync({
         values,
@@ -208,7 +211,7 @@ export function InvoiceCreateWizard({
   return (
     <InvoiceWizardShell
       title="Add invoice"
-      description="Create a new invoice in five steps: enter invoice details, select the sender and receiver, add line items, confirm its Daily Income registration, then review totals and save."
+      description="Create a new invoice in five steps: enter invoice details, select the sender and receiver, add line items, optionally link Daily Income (Cuadre) and payment, then review totals and save."
       onCancel={onCancel}
       initialValues={initialValues}
       submitLabel={submitLabel}

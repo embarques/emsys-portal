@@ -26,12 +26,20 @@ import { DEFAULT_ORDER_LIST_PARAMS } from "@/lib/orders/types";
 import { useOrder, useOrders } from "@/lib/orders/hooks/use-orders";
 import { ClipboardList, Eye, Receipt, Users, Wallet } from "lucide-react";
 import type { InvoiceWizardFormStep } from "@/components/invoices/invoice-wizard-stepper";
+import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
+
+export type InvoicePreviewPaymentSummary = {
+  registration: DailyIncomeJournal | null;
+  incomeStatementId: number | null;
+  paymentSkipped: boolean;
+};
 
 type Props = {
   values: InvoiceFormValues;
   appearance?: "default" | "wizard";
   onEditStep?: (step: InvoiceWizardFormStep) => void;
   showPaymentSection?: boolean;
+  paymentSummary?: InvoicePreviewPaymentSummary;
   onEditPayment?: () => void;
   errorMessage?: string | null;
 };
@@ -133,10 +141,14 @@ function InvoiceWizardCheckoutReview({
   values,
   onEditStep,
   showPaymentSection,
+  paymentSummary,
   onEditPayment,
   errorMessage,
 }: Required<Pick<Props, "values">> &
-  Pick<Props, "onEditStep" | "showPaymentSection" | "onEditPayment" | "errorMessage">) {
+  Pick<
+    Props,
+    "onEditStep" | "showPaymentSection" | "paymentSummary" | "onEditPayment" | "errorMessage"
+  >) {
   const { t } = useTranslation();
   const {
     catalogItems,
@@ -261,12 +273,42 @@ function InvoiceWizardCheckoutReview({
         >
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <div>
-              <p className="font-medium text-foreground">{t("invoices.wizard.review.registrationConfirmed")}</p>
-              <p className="text-muted-foreground">
-                {t("invoices.wizard.review.initialPayment", {
-                  amount: formatInvoiceMoney(Number(values.amountPaid) || 0),
-                })}
-              </p>
+              {paymentSummary?.registration ? (
+                <>
+                  <p className="font-medium text-foreground">
+                    {paymentSummary.paymentSkipped && paymentSummary.registration.amount === 0
+                      ? t("invoices.wizard.review.zeroPaymentRegistered")
+                      : t("invoices.wizard.review.registrationConfirmed")}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {paymentSummary.paymentSkipped && paymentSummary.registration.amount === 0
+                      ? t("invoices.wizard.review.zeroPaymentRegisteredHint")
+                      : t("invoices.wizard.review.initialPayment", {
+                          amount: formatInvoiceMoney(paymentSummary.registration.amount),
+                        })}
+                  </p>
+                </>
+              ) : paymentSummary?.incomeStatementId ? (
+                <>
+                  <p className="font-medium text-foreground">
+                    {t("invoices.wizard.review.cuadreLinked")}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {t("invoices.wizard.review.cuadreLinkedHint", {
+                      id: paymentSummary.incomeStatementId,
+                    })}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium text-foreground">
+                    {t("invoices.wizard.review.paymentSkipped")}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {t("invoices.wizard.review.paymentSkippedHint")}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </InvoiceWizardReviewSection>
@@ -339,6 +381,7 @@ export function InvoiceFormPreviewStep({
   appearance = "default",
   onEditStep,
   showPaymentSection = false,
+  paymentSummary,
   onEditPayment,
   errorMessage = null,
 }: Props) {
@@ -352,6 +395,7 @@ export function InvoiceFormPreviewStep({
         values={values}
         onEditStep={onEditStep}
         showPaymentSection={showPaymentSection}
+        paymentSummary={paymentSummary}
         onEditPayment={onEditPayment}
         errorMessage={errorMessage}
       />

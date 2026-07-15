@@ -27,6 +27,7 @@ import {
 } from "@/lib/accounting/daily-income/hooks";
 import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import {
+  isCheckPaymentMethod,
   isZellePaymentMethod,
   requiresBankAccount,
   type DailyIncomeJournal,
@@ -165,6 +166,7 @@ export function InvoiceDailyIncomeDialog({
   const paymentRequired = amount > 0;
   const needsBankAccount = paymentRequired && requiresBankAccount(paymentMethodName);
   const isZelle = paymentRequired && isZellePaymentMethod(paymentMethodName);
+  const isCheck = paymentRequired && isCheckPaymentMethod(paymentMethodName);
   const paymentMethods = paymentMethodsQuery.data ?? [];
   const bankAccounts = bankAccountsQuery.data?.items ?? [];
   const employees = useMemo(
@@ -253,6 +255,7 @@ export function InvoiceDailyIncomeDialog({
           paymentAccountType: needsBankAccount ? values.paymentAccountType : undefined,
           zelleTransactionDate: isZelle ? values.zelleTransactionDate : undefined,
           zelleTransactionName: isZelle ? values.zelleTransactionName : undefined,
+          checkNumber: isCheck ? values.checkNumber : undefined,
         },
       });
 
@@ -549,6 +552,13 @@ export function InvoiceDailyIncomeDialog({
                     if (!requiresBankAccount(method?.name)) {
                       setValue("paymentAccountId", undefined, { shouldValidate: true });
                     }
+                    if (!isZellePaymentMethod(method?.name)) {
+                      setValue("zelleTransactionDate", undefined, { shouldValidate: true });
+                      setValue("zelleTransactionName", undefined, { shouldValidate: true });
+                    }
+                    if (!isCheckPaymentMethod(method?.name)) {
+                      setValue("checkNumber", undefined, { shouldValidate: true });
+                    }
                   }}
                   placeholder={t("invoices.wizard.dailyIncome.dialog.selectPaymentMethod")}
                   searchPlaceholder={t("invoices.wizard.dailyIncome.dialog.searchPaymentMethods")}
@@ -613,6 +623,25 @@ export function InvoiceDailyIncomeDialog({
                     ) : null}
                   </div>
                 </>
+              ) : null}
+
+              {isCheck ? (
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="daily-income-check-number">
+                    {t("invoices.wizard.dailyIncome.dialog.checkNumber")}{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="daily-income-check-number"
+                    disabled={!statementOpen || !paymentRequired}
+                    placeholder={t("invoices.wizard.dailyIncome.dialog.checkNumberPlaceholder")}
+                    autoComplete="off"
+                    {...register("checkNumber")}
+                  />
+                  {errors.checkNumber ? (
+                    <p className="text-xs text-destructive">{errors.checkNumber.message}</p>
+                  ) : null}
+                </div>
               ) : null}
             </div>
               </div>

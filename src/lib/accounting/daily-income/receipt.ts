@@ -1,4 +1,9 @@
-import { isZellePaymentMethod, type DailyIncomeJournal, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import {
+  isCheckPaymentMethod,
+  isZellePaymentMethod,
+  type DailyIncomeJournal,
+  type JournalTransactionType,
+} from "@/lib/accounting/daily-income/types";
 
 /** Transaction types that represent a payment toward an invoice and can produce a receipt. */
 export function isPaymentReceiptEligible(transactionType: JournalTransactionType): boolean {
@@ -47,6 +52,7 @@ function field(label: string, value: string): string {
 function buildReceiptHtml(journal: DailyIncomeJournal, options: PaymentReceiptOptions): string {
   const currency = journal.currency || "USD";
   const isZelle = isZellePaymentMethod(journal.paymentMethod?.name);
+  const isCheck = isCheckPaymentMethod(journal.paymentMethod?.name);
   const receiptNumber = String(journal.id);
   const logo = options.logoUrl
     ? `<img class="logo" src="${escapeHtml(options.logoUrl)}" alt="Company logo" />`
@@ -55,6 +61,9 @@ function buildReceiptHtml(journal: DailyIncomeJournal, options: PaymentReceiptOp
   const zelleFields = isZelle
     ? field("Zelle name / Nombre Zelle", journal.zelleTransactionName || "—") +
       field("Zelle date / Fecha Zelle", formatDate(journal.zelleTransactionDate))
+    : "";
+  const checkFields = isCheck
+    ? field("Check number / Número de cheque", journal.checkNumber || "—")
     : "";
 
   const heading = options.companyName || options.branchName || "Company";
@@ -164,6 +173,7 @@ function buildReceiptHtml(journal: DailyIncomeJournal, options: PaymentReceiptOp
       ${field("Reference # / Referencia", journal.refNumber || "—")}
       ${field("Payment method / Método de pago", journal.paymentMethod?.name || "—")}
       ${zelleFields}
+      ${checkFields}
     </div>
 
     <div class="totals">
