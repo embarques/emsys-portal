@@ -13,7 +13,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
-import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { isCheckPaymentMethod, isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import type { Employee } from "@/lib/employees/types";
@@ -76,6 +76,7 @@ export function DailyIncomeTransactionForm({
         discountNonNegative: t("accounting.dailyIncome.form.validation.discountNonNegative"),
         zelleDateRequired: t("accounting.dailyIncome.form.validation.zelleDateRequired"),
         zelleNameRequired: t("accounting.dailyIncome.form.validation.zelleNameRequired"),
+        checkNumberRequired: t("accounting.dailyIncome.form.validation.checkNumberRequired"),
         bankAccountRequired: t("accounting.dailyIncome.form.validation.bankAccountRequired"),
         employeeRequired: t("accounting.dailyIncome.form.validation.employeeRequired"),
         invoiceRequired: t("accounting.dailyIncome.form.validation.invoiceRequired"),
@@ -124,6 +125,7 @@ export function DailyIncomeTransactionForm({
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const isZelle = isZellePaymentMethod(paymentMethodName);
+  const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
   const accountOptions = useMemo(
@@ -313,6 +315,9 @@ export function DailyIncomeTransactionForm({
                     setValue("zelleTransactionDate", undefined, { shouldValidate: true });
                     setValue("zelleTransactionName", undefined, { shouldValidate: true });
                   }
+                  if (!isCheckPaymentMethod(method?.name)) {
+                    setValue("checkNumber", undefined, { shouldValidate: true });
+                  }
                 }}
                 placeholder={t("accounting.dailyIncome.form.placeholders.selectPaymentMethod")}
                 searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchPaymentMethods")}
@@ -367,6 +372,23 @@ export function DailyIncomeTransactionForm({
                   ) : null}
                 </div>
               </>
+            ) : null}
+
+            {isCheck ? (
+              <div className="space-y-2 sm:col-span-2">
+                <RequiredLabel htmlFor="journal-check-number">
+                  {t("accounting.dailyIncome.form.fields.checkNumber")}
+                </RequiredLabel>
+                <Input
+                  id="journal-check-number"
+                  placeholder={t("accounting.dailyIncome.form.placeholders.enterCheckNumber")}
+                  autoComplete="off"
+                  {...register("checkNumber")}
+                />
+                {errors.checkNumber ? (
+                  <p className="text-sm text-destructive">{errors.checkNumber.message}</p>
+                ) : null}
+              </div>
             ) : null}
 
             <div className="space-y-2">

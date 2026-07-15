@@ -14,7 +14,7 @@ import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/cu
 import type { Customer } from "@/lib/customers/types";
 import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
-import { isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { isCheckPaymentMethod, isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
@@ -63,6 +63,14 @@ type Props = {
   register: ReturnType<typeof import("react-hook-form").useForm<DailyIncomeJournalValues>>["register"];
   setValue: UseFormSetValue<DailyIncomeJournalValues>;
   watch: UseFormWatch<DailyIncomeJournalValues>;
+  /** Hide employee assignee (still required in form values when hidden). */
+  showEmployee?: boolean;
+  /** Hide invoice number (still required in form values when hidden). */
+  showInvoiceNumber?: boolean;
+  /** Hide sender / receiver party pickers. */
+  showParties?: boolean;
+  /** When true, cost is shown but not editable (driven by invoice line items). */
+  invoiceCostReadOnly?: boolean;
 };
 
 export function RegisterInvoiceTransactionFields({
@@ -73,16 +81,22 @@ export function RegisterInvoiceTransactionFields({
   register,
   setValue,
   watch,
+  showEmployee = true,
+  showInvoiceNumber = true,
+  showParties = true,
+  invoiceCostReadOnly = false,
 }: Props) {
   const { t } = useTranslation();
   const employeeId = watch("employeeId");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const isZelle = isZellePaymentMethod(paymentMethodName);
+  const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
   const paymentAccountId = watch("paymentAccountId");
   const invoiceCost = watch("invoiceCost");
   const amount = watch("amount");
+  const paymentDetailsRequired = (Number(amount) || 0) > 0;
   const balance = computeInvoiceBalance(invoiceCost, amount);
   const includeSender = watch("includeSender");
   const includeReceiver = watch("includeReceiver");
@@ -90,12 +104,14 @@ export function RegisterInvoiceTransactionFields({
   const receiverId = watch("receiverId");
 
   useEffect(() => {
-    if (!needsBankAccount || bankAccounts.some((account) => account.id === paymentAccountId) || !bankAccounts[0]) return;
+    if (!paymentDetailsRequired || !needsBankAccount || bankAccounts.some((account) => account.id === paymentAccountId) || !bankAccounts[0]) {
+      return;
+    }
     const account = bankAccounts[0];
     setValue("paymentAccountId", account.id, { shouldValidate: true });
     setValue("paymentAccountName", account.displayName);
     setValue("paymentAccountType", account.type);
-  }, [bankAccounts, needsBankAccount, paymentAccountId, setValue]);
+  }, [bankAccounts, needsBankAccount, paymentAccountId, paymentDetailsRequired, setValue]);
 
   const [senderQuery, setSenderQuery] = useState("");
   const [receiverQuery, setReceiverQuery] = useState("");
@@ -193,17 +209,25 @@ export function RegisterInvoiceTransactionFields({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <div className="sm:col-span-2">
-        <TransactionAssigneeSelect
-          employees={employees}
-          employeeId={employeeId}
-          error={errors.employeeId?.message}
-          setValue={setValue}
-        />
-      </div>
+      {showEmployee ? (
+        <div className="sm:col-span-2">
+          <TransactionAssigneeSelect
+            employees={employees}
+            employeeId={employeeId}
+            error={errors.employeeId?.message}
+            setValue={setValue}
+          />
+        </div>
+      ) : null}
 
       <div className="space-y-2 sm:col-span-2">
-        <RequiredLabel htmlFor="journal-payment">{t("accounting.dailyIncome.form.fields.paymentMethod")}</RequiredLabel>
+        {paymentDetailsRequired ? (
+          <RequiredLabel htmlFor="journal-payment">
+            {t("accounting.dailyIncome.form.fields.paymentMethod")}
+          </RequiredLabel>
+        ) : (
+          <Label htmlFor="journal-payment">{t("accounting.dailyIncome.form.fields.paymentMethod")}</Label>
+        )}
         <SearchableSelect
           id="journal-payment"
           value={paymentMethodId != null ? String(paymentMethodId) : ""}
@@ -215,17 +239,25 @@ export function RegisterInvoiceTransactionFields({
               setValue("zelleTransactionDate", undefined, { shouldValidate: true });
               setValue("zelleTransactionName", undefined, { shouldValidate: true });
             }
+            if (!isCheckPaymentMethod(method?.name)) {
+              setValue("checkNumber", undefined, { shouldValidate: true });
+            }
           }}
           placeholder={t("accounting.dailyIncome.form.placeholders.selectPaymentMethod")}
           searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchPaymentMethods")}
           options={paymentMethodOptions}
         />
+        {!paymentDetailsRequired ? (
+          <p className="text-xs text-muted-foreground">
+            {t("accounting.dailyIncome.form.hints.paymentMethodOptionalZero")}
+          </p>
+        ) : null}
         {errors.paymentMethodId ? (
           <p className="text-sm text-destructive">{errors.paymentMethodId.message}</p>
         ) : null}
       </div>
 
-      {needsBankAccount ? (
+      {paymentDetailsRequired && needsBankAccount ? (
         <div className="space-y-2 sm:col-span-2">
           <RequiredLabel htmlFor="journal-bank-account">{t("accounting.dailyIncome.form.fields.bankAccount")}</RequiredLabel>
           <SearchableSelect
@@ -245,7 +277,7 @@ export function RegisterInvoiceTransactionFields({
         </div>
       ) : null}
 
-      {isZelle ? (
+      {paymentDetailsRequired && isZelle ? (
         <>
           <div className="space-y-2 sm:col-span-2">
             <RequiredLabel htmlFor="journal-zelle-date">{t("accounting.dailyIncome.form.fields.zelleDate")}</RequiredLabel>
@@ -271,17 +303,36 @@ export function RegisterInvoiceTransactionFields({
         </>
       ) : null}
 
-      <div className="space-y-2 sm:col-span-2">
-        <RequiredLabel htmlFor="journal-invoice-number">{t("accounting.dailyIncome.form.fields.invoice")}</RequiredLabel>
-        <Input
-          id="journal-invoice-number"
-          placeholder={t("accounting.dailyIncome.form.placeholders.enterInvoiceNumber")}
-          {...register("invoiceNumber")}
-        />
-        {errors.invoiceNumber ? (
-          <p className="text-sm text-destructive">{errors.invoiceNumber.message}</p>
-        ) : null}
-      </div>
+      {paymentDetailsRequired && isCheck ? (
+        <div className="space-y-2 sm:col-span-2">
+          <RequiredLabel htmlFor="journal-check-number">
+            {t("accounting.dailyIncome.form.fields.checkNumber")}
+          </RequiredLabel>
+          <Input
+            id="journal-check-number"
+            placeholder={t("accounting.dailyIncome.form.placeholders.enterCheckNumber")}
+            autoComplete="off"
+            {...register("checkNumber")}
+          />
+          {errors.checkNumber ? (
+            <p className="text-sm text-destructive">{errors.checkNumber.message}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {showInvoiceNumber ? (
+        <div className="space-y-2 sm:col-span-2">
+          <RequiredLabel htmlFor="journal-invoice-number">{t("accounting.dailyIncome.form.fields.invoice")}</RequiredLabel>
+          <Input
+            id="journal-invoice-number"
+            placeholder={t("accounting.dailyIncome.form.placeholders.enterInvoiceNumber")}
+            {...register("invoiceNumber")}
+          />
+          {errors.invoiceNumber ? (
+            <p className="text-sm text-destructive">{errors.invoiceNumber.message}</p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="space-y-2 sm:col-span-2">
         <RequiredLabel htmlFor="journal-invoice-cost">{t("accounting.dailyIncome.form.fields.cost")}</RequiredLabel>
@@ -291,21 +342,36 @@ export function RegisterInvoiceTransactionFields({
           min="0.01"
           step="0.01"
           placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
+          readOnly={invoiceCostReadOnly}
+          disabled={invoiceCostReadOnly}
           {...register("invoiceCost", { setValueAs: moneyFormSetValueAs })}
         />
+        {invoiceCostReadOnly ? (
+          <p className="text-xs text-muted-foreground">
+            {t("accounting.dailyIncome.form.hints.costFromLineItems")}
+          </p>
+        ) : null}
         {errors.invoiceCost ? <p className="text-sm text-destructive">{errors.invoiceCost.message}</p> : null}
       </div>
 
       <div className="space-y-2 sm:col-span-2">
-        <RequiredLabel htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</RequiredLabel>
+        <Label htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</Label>
         <Input
           id="journal-amount"
           type="number"
-          min="0.01"
+          min="0"
           step="0.01"
           placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
-          {...register("amount", { setValueAs: moneyFormSetValueAs })}
+          {...register("amount", {
+            setValueAs: (value) => {
+              const parsed = moneyFormSetValueAs(value);
+              return parsed == null ? 0 : parsed;
+            },
+          })}
         />
+        <p className="text-xs text-muted-foreground">
+          {t("accounting.dailyIncome.form.hints.amountZeroAllowed")}
+        </p>
         {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
       </div>
 
@@ -324,81 +390,85 @@ export function RegisterInvoiceTransactionFields({
         ) : null}
       </div>
 
-      <div className="space-y-3 sm:col-span-2">
-        <label className="flex items-center gap-2 text-sm font-medium">
-          <input
-            id="journal-include-sender"
-            type="checkbox"
-            className="size-4 rounded border border-input"
-            checked={Boolean(includeSender)}
-            onChange={(event) => {
-              const enabled = event.target.checked;
-              setValue("includeSender", enabled, { shouldValidate: true });
-              if (!enabled) {
-                setValue("senderId", undefined, { shouldValidate: true });
-                setValue("senderName", "");
-                setSenderQuery("");
-              }
-            }}
-          />
-          {t("accounting.dailyIncome.form.fields.includeSender")}
-        </label>
-        {includeSender ? (
-          <div className="space-y-2">
-            <Label htmlFor="journal-sender">{t("accounting.dailyIncome.form.fields.senderClient")}</Label>
-            <SearchableSelect
-              id="journal-sender"
-              value={senderId ?? ""}
-              onValueChange={updateSender}
-              placeholder={t("accounting.dailyIncome.form.placeholders.searchSender")}
-              searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSenders")}
-              manualFiltering
-              loading={senderSearch.isFetching}
-              onSearchChange={setSenderQuery}
-              options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectSender") }, ...senderOptions]}
-            />
-            {errors.senderId ? <p className="text-sm text-destructive">{errors.senderId.message}</p> : null}
+      {showParties ? (
+        <>
+          <div className="space-y-3 sm:col-span-2">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                id="journal-include-sender"
+                type="checkbox"
+                className="size-4 rounded border border-input"
+                checked={Boolean(includeSender)}
+                onChange={(event) => {
+                  const enabled = event.target.checked;
+                  setValue("includeSender", enabled, { shouldValidate: true });
+                  if (!enabled) {
+                    setValue("senderId", undefined, { shouldValidate: true });
+                    setValue("senderName", "");
+                    setSenderQuery("");
+                  }
+                }}
+              />
+              {t("accounting.dailyIncome.form.fields.includeSender")}
+            </label>
+            {includeSender ? (
+              <div className="space-y-2">
+                <Label htmlFor="journal-sender">{t("accounting.dailyIncome.form.fields.senderClient")}</Label>
+                <SearchableSelect
+                  id="journal-sender"
+                  value={senderId ?? ""}
+                  onValueChange={updateSender}
+                  placeholder={t("accounting.dailyIncome.form.placeholders.searchSender")}
+                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSenders")}
+                  manualFiltering
+                  loading={senderSearch.isFetching}
+                  onSearchChange={setSenderQuery}
+                  options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectSender") }, ...senderOptions]}
+                />
+                {errors.senderId ? <p className="text-sm text-destructive">{errors.senderId.message}</p> : null}
+              </div>
+            ) : null}
           </div>
-        ) : null}
-      </div>
 
-      <div className="space-y-3 sm:col-span-2">
-        <label className="flex items-center gap-2 text-sm font-medium">
-          <input
-            id="journal-include-receiver"
-            type="checkbox"
-            className="size-4 rounded border border-input"
-            checked={Boolean(includeReceiver)}
-            onChange={(event) => {
-              const enabled = event.target.checked;
-              setValue("includeReceiver", enabled, { shouldValidate: true });
-              if (!enabled) {
-                setValue("receiverId", undefined, { shouldValidate: true });
-                setValue("receiverName", "");
-                setReceiverQuery("");
-              }
-            }}
-          />
-          {t("accounting.dailyIncome.form.fields.includeReceiver")}
-        </label>
-        {includeReceiver ? (
-          <div className="space-y-2">
-            <Label htmlFor="journal-receiver">{t("accounting.dailyIncome.form.fields.receiverClient")}</Label>
-            <SearchableSelect
-              id="journal-receiver"
-              value={receiverId ?? ""}
-              onValueChange={updateReceiver}
-              placeholder={t("accounting.dailyIncome.form.placeholders.searchReceiver")}
-              searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchReceivers")}
-              manualFiltering
-              loading={receiverSearch.isFetching}
-              onSearchChange={setReceiverQuery}
-              options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectReceiver") }, ...receiverOptions]}
-            />
-            {errors.receiverId ? <p className="text-sm text-destructive">{errors.receiverId.message}</p> : null}
+          <div className="space-y-3 sm:col-span-2">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                id="journal-include-receiver"
+                type="checkbox"
+                className="size-4 rounded border border-input"
+                checked={Boolean(includeReceiver)}
+                onChange={(event) => {
+                  const enabled = event.target.checked;
+                  setValue("includeReceiver", enabled, { shouldValidate: true });
+                  if (!enabled) {
+                    setValue("receiverId", undefined, { shouldValidate: true });
+                    setValue("receiverName", "");
+                    setReceiverQuery("");
+                  }
+                }}
+              />
+              {t("accounting.dailyIncome.form.fields.includeReceiver")}
+            </label>
+            {includeReceiver ? (
+              <div className="space-y-2">
+                <Label htmlFor="journal-receiver">{t("accounting.dailyIncome.form.fields.receiverClient")}</Label>
+                <SearchableSelect
+                  id="journal-receiver"
+                  value={receiverId ?? ""}
+                  onValueChange={updateReceiver}
+                  placeholder={t("accounting.dailyIncome.form.placeholders.searchReceiver")}
+                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchReceivers")}
+                  manualFiltering
+                  loading={receiverSearch.isFetching}
+                  onSearchChange={setReceiverQuery}
+                  options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectReceiver") }, ...receiverOptions]}
+                />
+                {errors.receiverId ? <p className="text-sm text-destructive">{errors.receiverId.message}</p> : null}
+              </div>
+            ) : null}
           </div>
-        ) : null}
-      </div>
+        </>
+      ) : null}
     </div>
   );
 }

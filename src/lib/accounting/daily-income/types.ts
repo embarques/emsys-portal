@@ -90,6 +90,8 @@ export type DailyIncomeJournal = {
   paymentMethod?: AccountingLookup;
   zelleTransactionDate?: string;
   zelleTransactionName?: string;
+  /** Check number when payment method is CHECK. */
+  checkNumber?: string;
   accounts: Array<{
     id: number;
     name: string;
@@ -130,6 +132,12 @@ export function isZellePaymentMethod(name?: string | null): boolean {
   return name?.trim().toLowerCase() === "zelle";
 }
 
+/** Check payments require the paper check number for reconciliation. */
+export function isCheckPaymentMethod(name?: string | null): boolean {
+  const normalized = name?.trim().toLowerCase();
+  return normalized === "check" || normalized === "cheque";
+}
+
 export function requiresBankAccount(name?: string | null): boolean {
   const normalizedName = name?.trim().toUpperCase();
   return normalizedName === "DEPOSIT" || normalizedName === "ZELLE";
@@ -168,6 +176,7 @@ export type DailyIncomeJournalValues = {
   paymentMethodName?: string;
   zelleTransactionDate?: string;
   zelleTransactionName?: string;
+  checkNumber?: string;
 };
 
 export type {

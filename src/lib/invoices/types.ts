@@ -399,6 +399,10 @@ export function createInvoicePayment(
     throw new Error("Payment amount must be greater than 0.");
   }
 
+  if (input.paymentMethod === "check" && !input.referenceNumber.trim()) {
+    throw new Error("Check number is required.");
+  }
+
   return {
     id: createRecordId(),
     invoiceId,

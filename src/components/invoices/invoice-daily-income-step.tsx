@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { InvoiceDailyIncomeDialog } from "@/components/invoices/invoice-daily-income-dialog";
 import { InvoicePaymentTransactionForm } from "@/components/invoices/invoice-payment-transaction-form";
@@ -15,8 +15,13 @@ import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { type InvoiceDailyIncomeContext } from "@/lib/invoices/invoice-daily-income-context";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
-import { type InvoiceFormValues } from "@/lib/invoices/types";
+import {
+  isInvoiceEmployeePickupSource,
+  type InvoiceFormValues,
+} from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
+import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/display";
+import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 
 type Props = {
@@ -34,8 +39,6 @@ function todayDateValue() {
 
 export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
   const { t } = useTranslation();
-  /** Checked by default — payment fields stay hidden until unchecked. */
-  const [skipPayment, setSkipPayment] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
   const currentUserQuery = useCurrentUser();
@@ -46,9 +49,33 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
   const statementQuery = useIncomeStatement(branchId, currentDate);
   const statement = statementQuery.data ?? null;
   const reopenMutation = useSetIncomeStatementStatus();
+  const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, {
+    enabled: values.pickupSource === "route" && Boolean(values.routeId),
+  });
 
   const statementOpen = statement?.status === "OPEN";
   const associatedStatementId = statementOpen && statement ? statement.id : null;
+
+  const pickupAssignmentLabel = useMemo(() => {
+    if (isInvoiceEmployeePickupSource(values.pickupSource)) {
+      const employee = values.pickupEmployeeName.trim() || values.pickupEmployeeId;
+      if (!employee) return null;
+      const branch = values.officeBranchName.trim();
+      return branch ? `${employee} · ${branch}` : employee;
+    }
+
+    if (!values.routeId) return null;
+    const route = (pickupRoutesQuery.data?.items ?? []).find((entry) => entry.id === values.routeId);
+    return route ? formatActiveRouteAssignmentLabel(route, t) : values.routeId;
+  }, [
+    pickupRoutesQuery.data?.items,
+    t,
+    values.officeBranchName,
+    values.pickupEmployeeId,
+    values.pickupEmployeeName,
+    values.pickupSource,
+    values.routeId,
+  ]);
 
   useEffect(() => {
     if (!registrationQuery.isSuccess) return;
@@ -57,7 +84,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
       onContextChange({
         registration,
         incomeStatementId: registration.incomeStatementId || associatedStatementId,
-        paymentSkipped: false,
+        paymentSkipped: registration.amount === 0,
       });
       return;
     }
@@ -65,15 +92,26 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     onContextChange({
       registration: null,
       incomeStatementId: associatedStatementId,
-      paymentSkipped: skipPayment,
+      paymentSkipped: false,
     });
   }, [
     associatedStatementId,
     onContextChange,
     registration,
     registrationQuery.isSuccess,
-    skipPayment,
   ]);
+
+  const applyRegistration = useCallback(
+    async (journal: DailyIncomeJournal) => {
+      onContextChange({
+        registration: journal,
+        incomeStatementId: journal.incomeStatementId || associatedStatementId,
+        paymentSkipped: journal.amount === 0,
+      });
+      await registrationQuery.refetch();
+    },
+    [associatedStatementId, onContextChange, registrationQuery],
+  );
 
   const isLoading =
     currentUserQuery.isLoading ||
@@ -85,13 +123,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     (!registration ? statementQuery.error : null);
 
   async function handleRegistered(journal: DailyIncomeJournal) {
-    setSkipPayment(false);
-    onContextChange({
-      registration: journal,
-      incomeStatementId: journal.incomeStatementId || associatedStatementId,
-      paymentSkipped: false,
-    });
-    await registrationQuery.refetch();
+    await applyRegistration(journal);
   }
 
   async function handleStatementCreated() {
@@ -112,17 +144,6 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
       await statementQuery.refetch();
     } catch (error) {
       setStatusError(normalizeApiError(error).message);
-    }
-  }
-
-  function handleSkipChange(checked: boolean) {
-    setSkipPayment(checked);
-    if (checked && !registration) {
-      onContextChange({
-        registration: null,
-        incomeStatementId: associatedStatementId,
-        paymentSkipped: true,
-      });
     }
   }
 
@@ -232,6 +253,12 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
                     {statement.branch?.name ||
                       statement.branch?.code ||
                       t("invoices.wizard.dailyIncome.dialog.currentBranch")}
+                    {pickupAssignmentLabel ? (
+                      <>
+                        {" · "}
+                        {pickupAssignmentLabel}
+                      </>
+                    ) : null}
                   </div>
                 ) : null}
                 {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
@@ -264,40 +291,17 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
             ) : null}
           </div>
 
-          <label
-            htmlFor="invoice-skip-payment"
-            className="flex cursor-pointer items-start gap-3 rounded-lg border bg-muted/30 px-4 py-3"
-          >
-            <input
-              id="invoice-skip-payment"
-              type="checkbox"
-              className="mt-0.5 size-4 rounded border border-input"
-              checked={skipPayment}
-              onChange={(event) => handleSkipChange(event.target.checked)}
-              data-testid="invoice-skip-payment"
-            />
-            <span className="min-w-0 space-y-0.5">
-              <span className="block text-sm font-semibold leading-none">
-                {t("invoices.wizard.dailyIncome.skipPayment")}
-              </span>
+          {statementOpen && statement ? (
+            <>
               <p className="text-sm text-muted-foreground">
-                {t("invoices.wizard.dailyIncome.skipPaymentHint")}
+                {t("invoices.wizard.dailyIncome.recordBeforeContinueHint")}
               </p>
-            </span>
-          </label>
-
-          {skipPayment ? (
-            <p className="text-sm text-muted-foreground">
-              {associatedStatementId
-                ? t("invoices.wizard.dailyIncome.skipWithCuadreHint", { id: associatedStatementId })
-                : t("invoices.wizard.dailyIncome.paymentSkipped")}
-            </p>
-          ) : statementOpen && statement ? (
-            <InvoicePaymentTransactionForm
-              statement={statement}
-              invoice={values}
-              onRegistered={handleRegistered}
-            />
+              <InvoicePaymentTransactionForm
+                statement={statement}
+                invoice={values}
+                onRegistered={handleRegistered}
+              />
+            </>
           ) : (
             <div className="rounded-lg border border-amber-300 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
               <p className="text-sm font-medium text-amber-950 dark:text-amber-100">

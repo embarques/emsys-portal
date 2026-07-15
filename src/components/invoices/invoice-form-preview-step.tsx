@@ -276,12 +276,16 @@ function InvoiceWizardCheckoutReview({
               {paymentSummary?.registration ? (
                 <>
                   <p className="font-medium text-foreground">
-                    {t("invoices.wizard.review.registrationConfirmed")}
+                    {paymentSummary.paymentSkipped && paymentSummary.registration.amount === 0
+                      ? t("invoices.wizard.review.zeroPaymentRegistered")
+                      : t("invoices.wizard.review.registrationConfirmed")}
                   </p>
                   <p className="text-muted-foreground">
-                    {t("invoices.wizard.review.initialPayment", {
-                      amount: formatInvoiceMoney(paymentSummary.registration.amount),
-                    })}
+                    {paymentSummary.paymentSkipped && paymentSummary.registration.amount === 0
+                      ? t("invoices.wizard.review.zeroPaymentRegisteredHint")
+                      : t("invoices.wizard.review.initialPayment", {
+                          amount: formatInvoiceMoney(paymentSummary.registration.amount),
+                        })}
                   </p>
                 </>
               ) : paymentSummary?.incomeStatementId ? (

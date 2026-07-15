@@ -673,6 +673,21 @@ The API should enforce one `INITIAL-PAYMENT` registration per company, income st
 }
 ```
 
+When `paymentMethod.name` is `CHECK` (or `CHEQUE`), `checkNumber` is required:
+
+```json
+{
+  "transactionType": "PAYMENT",
+  "amount": 50.0,
+  "invoiceId": "674a1b2c3d4e5f6789012345",
+  "paymentMethod": { "id": 3, "name": "CHECK" },
+  "checkNumber": "4521",
+  "description": "Invoice payment by check"
+}
+```
+
+Same rule applies to `INITIAL-PAYMENT` and any other journal with `paymentMethod` CHECK: persist and return `checkNumber` on create/update/read.
+
 **Example — EXPENSE:**
 
 ```json

@@ -294,6 +294,10 @@ export function formValuesToAccountingEntry(
       throw new Error("Amount paid cannot exceed invoice total.");
     }
 
+    if (values.paymentMethod === "check" && !values.referenceNumber.trim()) {
+      throw new Error("Check number is required.");
+    }
+
     const matchedInvoice = findInvoiceByNumber(invoices, values.invoiceNumber);
 
     return {
@@ -420,6 +424,10 @@ export function formValuesToAccountingEntry(
 
     if (!values.description.trim()) {
       throw new Error("Description is required.");
+    }
+
+    if (values.paymentMethod === "check" && !values.referenceNumber.trim()) {
+      throw new Error("Check number is required.");
     }
 
     return {

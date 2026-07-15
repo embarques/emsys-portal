@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { isZellePaymentMethod, requiresBankAccount } from "@/lib/accounting/daily-income/types";
+import {
+  isCheckPaymentMethod,
+  isZellePaymentMethod,
+  requiresBankAccount,
+} from "@/lib/accounting/daily-income/types";
 
 const invoiceDailyIncomeRegistrationBaseSchema = z.object({
   amount: z.number().nonnegative("Payment amount cannot be negative."),
@@ -15,6 +19,7 @@ const invoiceDailyIncomeRegistrationBaseSchema = z.object({
   description: z.string().trim().max(500, "Description is too long."),
   zelleTransactionDate: z.string().optional(),
   zelleTransactionName: z.string().optional(),
+  checkNumber: z.string().optional(),
 });
 
 function refineInvoiceDailyIncomeRegistration(
@@ -71,6 +76,14 @@ function refineInvoiceDailyIncomeRegistration(
         message: "Zelle transaction name is required.",
       });
     }
+  }
+
+  if (isCheckPaymentMethod(values.paymentMethodName) && !values.checkNumber?.trim()) {
+    context.addIssue({
+      code: "custom",
+      path: ["checkNumber"],
+      message: "Check number is required.",
+    });
   }
 }
 

@@ -106,7 +106,10 @@ export function InvoicePaymentsSection({ invoice, onRecordPayment }: InvoicePaym
               <SearchableSelect
                 id="paymentMethod"
                 value={paymentMethod}
-                onValueChange={(next) => setPaymentMethod(next as InvoicePaymentMethod)}
+                onValueChange={(next) => {
+                  setPaymentMethod(next as InvoicePaymentMethod);
+                  if (error) setError(null);
+                }}
                 searchPlaceholder={t("invoices.view.payments.searchMethods")}
                 options={INVOICE_PAYMENT_METHODS.map((option) => ({
                   value: option.value,
@@ -115,12 +118,25 @@ export function InvoicePaymentsSection({ invoice, onRecordPayment }: InvoicePaym
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="paymentReference">{t("invoices.view.payments.fields.referenceNumber")}</Label>
+              <Label htmlFor="paymentReference">
+                {paymentMethod === "check"
+                  ? t("invoices.view.payments.fields.checkNumber")
+                  : t("invoices.view.payments.fields.referenceNumber")}
+                {paymentMethod === "check" ? <span className="text-destructive"> *</span> : null}
+              </Label>
               <Input
                 id="paymentReference"
                 value={referenceNumber}
-                onChange={(event) => setReferenceNumber(event.target.value)}
-                placeholder={t("invoices.view.payments.referencePlaceholder")}
+                onChange={(event) => {
+                  setReferenceNumber(event.target.value);
+                  if (error) setError(null);
+                }}
+                placeholder={
+                  paymentMethod === "check"
+                    ? t("invoices.view.payments.checkNumberPlaceholder")
+                    : t("invoices.view.payments.referencePlaceholder")
+                }
+                autoComplete="off"
               />
             </div>
           </div>
@@ -154,7 +170,11 @@ export function InvoicePaymentsSection({ invoice, onRecordPayment }: InvoicePaym
                 value={formatInvoiceCommentDateTime(payment.createdAt)}
               />
               <InvoiceViewField
-                label={t("invoices.view.payments.fields.referenceNumber")}
+                label={
+                  payment.paymentMethod === "check"
+                    ? t("invoices.view.payments.fields.checkNumber")
+                    : t("invoices.view.payments.fields.referenceNumber")
+                }
                 value={payment.referenceNumber || undefined}
                 mono
               />

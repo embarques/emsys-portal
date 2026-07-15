@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { isZellePaymentMethod, requiresBankAccount } from "@/lib/accounting/daily-income/types";
+import {
+  isCheckPaymentMethod,
+  isZellePaymentMethod,
+  requiresBankAccount,
+} from "@/lib/accounting/daily-income/types";
 
 export type DailyIncomeStatementSchemaMessages = {
   dateRequired: string;
@@ -19,6 +23,7 @@ export type DailyIncomeJournalSchemaMessages = {
   discountNonNegative: string;
   zelleDateRequired: string;
   zelleNameRequired: string;
+  checkNumberRequired: string;
   bankAccountRequired: string;
   employeeRequired: string;
   invoiceRequired: string;
@@ -89,6 +94,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       paymentMethodName: z.string().optional(),
       zelleTransactionDate: z.string().optional(),
       zelleTransactionName: z.string().optional(),
+      checkNumber: z.string().optional(),
     })
     .superRefine((values, context) => {
       if (values.amount == null) {
@@ -106,7 +112,9 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         });
       }
 
-      if (isZellePaymentMethod(values.paymentMethodName)) {
+      const paymentDetailsRequired = (values.amount ?? 0) > 0;
+
+      if (paymentDetailsRequired && isZellePaymentMethod(values.paymentMethodName)) {
         if (!values.zelleTransactionDate?.trim()) {
           context.addIssue({
             code: "custom",
@@ -124,6 +132,19 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       }
 
       if (
+        paymentDetailsRequired &&
+        isCheckPaymentMethod(values.paymentMethodName) &&
+        !values.checkNumber?.trim()
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["checkNumber"],
+          message: messages.checkNumberRequired,
+        });
+      }
+
+      if (
+        paymentDetailsRequired &&
         requiresBankAccount(values.paymentMethodName) &&
         (!values.paymentAccountId || values.paymentAccountType !== "BANK")
       ) {
@@ -148,7 +169,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         if (!values.invoiceCost || values.invoiceCost <= 0) {
           context.addIssue({ code: "custom", path: ["invoiceCost"], message: messages.costPositive });
         }
-        if ((values.amount ?? 0) > 0 && !values.paymentMethodId) {
+        if (paymentDetailsRequired && !values.paymentMethodId) {
           context.addIssue({
             code: "custom",
             path: ["paymentMethodId"],
@@ -256,6 +277,7 @@ const defaultJournalMessages: DailyIncomeJournalSchemaMessages = {
   discountNonNegative: "Discount cannot be negative.",
   zelleDateRequired: "Zelle transaction date is required.",
   zelleNameRequired: "Zelle transaction name is required.",
+  checkNumberRequired: "Check number is required.",
   bankAccountRequired: "Select a bank account for this payment method.",
   employeeRequired: "Employee is required.",
   invoiceRequired: "Invoice is required.",

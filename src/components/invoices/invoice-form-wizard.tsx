@@ -55,7 +55,8 @@ type Props = {
   resetAfterSave?: boolean;
   /**
    * Include the payment / Daily Income (Cuadre) step on create.
-   * Payment recording is optional; an open Cuadre is auto-associated.
+   * An open Cuadre must be associated and a payment recorded (amount may be $0)
+   * before continuing — same click-Next-then-error pattern as other steps.
    */
   requireDailyIncomeRegistration?: boolean;
   onSubmit: (
@@ -187,7 +188,7 @@ export function InvoiceFormWizard({
     setSubmitError(null);
   }
 
-  function handleNext() {
+  async function handleNext() {
     const currentValues = valuesRef.current;
     const error =
       step === 1
@@ -248,7 +249,13 @@ export function InvoiceFormWizard({
       return;
     }
 
-    const result = await onSubmit(values, toInvoiceFormSubmitContext(dailyIncomeContext));
+    const result = await onSubmit(
+      {
+        ...values,
+        amountPaid: String(dailyIncomeContext.registration?.amount ?? values.amountPaid ?? 0),
+      },
+      toInvoiceFormSubmitContext(dailyIncomeContext),
+    );
     if (result.error) {
       setSubmitError(result.error);
       setStepError(null);
@@ -280,15 +287,6 @@ export function InvoiceFormWizard({
 
   const bannerError =
     step === previewStep ? submitError ?? externalError : stepError ?? externalError;
-  const showUnverifiedSenderWarning =
-    isGoogleMapsConfigured() &&
-    Boolean(values.sender && customerHasUnverifiedPrimaryAddress(values.sender));
-  const bannerWarning =
-    !bannerError &&
-    showUnverifiedSenderWarning &&
-    (step === 2 || step === previewStep)
-      ? t("invoices.wizard.validation.unverifiedSenderAddress")
-      : null;
   const showPrint = allowPrint && Boolean(onPrint);
   const summaryDiscountChange =
     requireDailyIncomeRegistration && dailyIncomeContext.registration
@@ -329,11 +327,7 @@ export function InvoiceFormWizard({
             <h2 className={invoiceStepTitleClassName}>{t(stepTitleKey)}</h2>
           </div>
 
-          {bannerError ? (
-            <InvoiceWizardNotice tone="error" message={bannerError} />
-          ) : bannerWarning ? (
-            <InvoiceWizardNotice tone="warning" message={bannerWarning} />
-          ) : null}
+          {bannerError ? <InvoiceWizardNotice tone="error" message={bannerError} /> : null}
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <div
@@ -420,11 +414,7 @@ export function InvoiceFormWizard({
               {t("common.actions.cancel")}
             </Button>
             {step < previewStep ? (
-              <Button
-                type="button"
-                onClick={handleNext}
-                disabled={requireDailyIncomeRegistration && step === 4 && !canContinuePaymentStep}
-              >
+              <Button type="button" onClick={handleNext}>
                 {t("common.actions.next")}
                 <ArrowRight className="size-4" />
               </Button>

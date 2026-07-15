@@ -87,7 +87,7 @@
     "columns": {
       "status": "Status",
       "invoiceNumber": "Invoice #",
-      "receiptNumber": "Receipt #",
+      "receiptNumber": "Check #",
       "createdAt": "Created at",
       "createdBy": "Created by",
       "depositedAt": "Deposited at",
@@ -116,7 +116,7 @@
       },
       "fields": {
         "invoiceNumber": "Invoice number",
-        "receiptNumber": "Receipt number",
+        "receiptNumber": "Check number",
         "status": "Status",
         "createdBy": "Created by",
         "depositedAt": "Deposited at",
@@ -133,7 +133,7 @@
       "selectEmpty": "No matching options.",
       "validation": {
         "invoiceNumberRequired": "Invoice number is required.",
-        "receiptNumberRequired": "Receipt number is required.",
+        "receiptNumberRequired": "Check number is required.",
         "createdByRequired": "Created by is required.",
         "depositRequired": "Deposit details are required for cleared checks."
       }
@@ -328,6 +328,7 @@
         "bankAccount": "Bank account",
         "zelleDate": "Zelle transaction date",
         "zelleName": "Zelle transaction name (as it appears in bank account)",
+        "checkNumber": "Check number",
         "invoice": "Invoice",
         "referenceNumber": "Reference number",
         "account": "Account",
@@ -354,6 +355,7 @@
         "selectInvoice": "Select invoice",
         "searchInvoices": "Search by invoice #, sender or receiver phone…",
         "enterZelleName": "Enter Zelle transaction name",
+        "enterCheckNumber": "Enter check number",
         "enterReferenceNumber": "Enter reference number",
         "enterDescription": "Enter description (optional)",
         "enterInvoiceNumber": "Enter new invoice number",
@@ -364,6 +366,11 @@
         "searchReceivers": "Search receivers…",
         "selectReceiver": "Select receiver",
         "amount": "0.00"
+      },
+      "hints": {
+        "amountZeroAllowed": "Zero is allowed for unpaid initial registration.",
+        "paymentMethodOptionalZero": "Optional when amount is $0.00.",
+        "costFromLineItems": "Taken from the invoice line items total."
       },
       "invoiceSummary": {
         "total": "Total",
@@ -387,6 +394,7 @@
         "discountNonNegative": "Discount cannot be negative.",
         "zelleDateRequired": "Zelle transaction date is required.",
         "zelleNameRequired": "Zelle transaction name is required.",
+        "checkNumberRequired": "Check number is required.",
         "bankAccountRequired": "Select a bank account for this payment method.",
         "employeeRequired": "Employee is required.",
         "invoiceRequired": "Invoice is required.",

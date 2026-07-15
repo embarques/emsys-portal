@@ -170,6 +170,7 @@ function AddressFieldGrid({
             value={address.apartment}
             onChange={(event) => onChange("apartment", event.target.value)}
             placeholder={t("customers.form.placeholders.apartment")}
+            autoComplete="off"
           />
         </div>
       </div>
@@ -181,6 +182,7 @@ function AddressFieldGrid({
           value={address.address2}
           onChange={(event) => onChange("address2", event.target.value)}
           placeholder={t("customers.form.placeholders.crossStreet")}
+          autoComplete="off"
         />
       </div>
 
