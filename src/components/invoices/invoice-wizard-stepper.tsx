@@ -58,7 +58,7 @@ function StepCircle({
   return (
     <span
       className={cn(
-        "relative z-10 flex size-9 items-center justify-center rounded-full text-sm font-semibold",
+        "relative z-10 flex size-8 items-center justify-center rounded-full text-xs font-semibold sm:size-9 sm:text-sm",
         status === "complete" && "bg-primary text-primary-foreground",
         status === "current" && "border-2 border-primary bg-card text-primary",
         status === "upcoming" && "bg-muted text-muted-foreground",
@@ -82,15 +82,15 @@ export function InvoiceWizardStepper({ step, includePaymentStep = true }: Props)
       ];
 
   return (
-    <nav aria-label={t("invoices.wizard.navAriaLabel")} className="shrink-0 border-b border-border bg-card px-4 py-5 sm:px-8">
+    <nav aria-label={t("invoices.wizard.navAriaLabel")} className="shrink-0 border-b border-border bg-card px-3 py-3 sm:px-8 sm:py-5">
       <div className="relative mx-auto max-w-3xl">
         <div
-          className="absolute top-[1.125rem] h-0.5 bg-border"
+          className="absolute top-4 h-0.5 bg-border sm:top-[1.125rem]"
           style={{ left: `${50 / steps.length}%`, right: `${50 / steps.length}%` }}
           aria-hidden
         />
         <div
-          className="absolute top-[1.125rem] h-0.5 bg-primary transition-[width]"
+          className="absolute top-4 h-0.5 bg-primary transition-[width] sm:top-[1.125rem]"
           style={{
             left: `${50 / steps.length}%`,
             width: `${((step - 1) / (steps.length - 1)) * (100 - 100 / steps.length)}%`,
@@ -98,16 +98,16 @@ export function InvoiceWizardStepper({ step, includePaymentStep = true }: Props)
           aria-hidden
         />
 
-        <ol className={cn("relative grid gap-2", includePaymentStep ? "grid-cols-5" : "grid-cols-4")}>
+        <ol className={cn("relative grid gap-1 sm:gap-2", includePaymentStep ? "grid-cols-5" : "grid-cols-4")}>
           {steps.map((entry) => {
             const status = stepStatus(entry.id, step);
 
             return (
-              <li key={entry.id} className="flex flex-col items-center gap-2 text-center">
+              <li key={entry.id} className="flex flex-col items-center gap-1.5 text-center sm:gap-2">
                 <StepCircle stepNumber={entry.id} status={status} />
                 <span
                   className={cn(
-                    "max-w-[5.5rem] text-xs font-medium leading-tight sm:text-sm",
+                    "max-w-[4.25rem] text-[0.6875rem] font-medium leading-tight sm:max-w-[5.5rem] sm:text-sm",
                     status === "upcoming" ? "text-muted-foreground" : "text-foreground",
                   )}
                 >

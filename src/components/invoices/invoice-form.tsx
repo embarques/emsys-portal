@@ -609,7 +609,7 @@ export function InvoiceForm({
   );
 
   const detailsFields = (
-    <div className={cn("grid gap-5", isWizard ? "sm:grid-cols-2" : "gap-2.5 sm:grid-cols-2")}>
+    <div className={cn("grid", isWizard ? "gap-4 sm:grid-cols-2 sm:gap-5" : "gap-2.5 sm:grid-cols-2")}>
       {renderField(
         t("invoices.form.fields.date"),
         "date",
@@ -740,7 +740,7 @@ export function InvoiceForm({
   );
 
   const partiesFields = (
-    <div className={cn("grid gap-5", isWizard ? "sm:grid-cols-2" : "gap-2.5 sm:grid-cols-2")}>
+    <div className={cn("grid", isWizard ? "gap-4 sm:grid-cols-2 sm:gap-5" : "gap-2.5 sm:grid-cols-2")}>
       <div className="sm:col-span-2">{pickupReferenceField}</div>
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-2">
@@ -824,7 +824,9 @@ export function InvoiceForm({
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
         <FormBody
           className={
-            isWizard ? "flex-1 space-y-6 overflow-y-auto bg-card px-5 pt-4 pb-10 sm:px-8 sm:pb-12" : undefined
+            isWizard
+              ? "flex-1 space-y-5 overflow-y-auto bg-card px-4 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:space-y-6 sm:px-8 sm:pt-4 sm:pb-12"
+              : undefined
           }
         >
           {showDetailsSection ? (
