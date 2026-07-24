@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { focusNextFormField } from "@/hooks/use-form-enter-navigation";
+import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import {
   Command,
   CommandEmpty,
@@ -18,6 +19,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 export type SearchableSelectOption = {
   value: string;
@@ -58,6 +65,8 @@ type SearchableSelectProps = {
   onClose?: () => void;
   /** When true, focuses select all visible text so it can be replaced immediately. */
   selectAllOnFocus?: boolean;
+  /** Opens options in a bottom sheet on phones. Desktop keeps the normal popover. */
+  mobileSheet?: boolean;
   "aria-label"?: string;
   "aria-labelledby"?: string;
 };
@@ -112,6 +121,8 @@ const popoverContentClassName =
 const listItemClassName =
   "cursor-pointer rounded-none px-4 py-3 text-sm data-[selected=true]:bg-muted/60 data-[selected=true]:text-foreground";
 
+const MOBILE_SHEET_SEARCH_THRESHOLD = 8;
+
 /**
  * Keep wheel/touch scrolling working when the list is portaled out of a Radix modal (Dialog).
  * The Dialog's scroll-lock cancels scroll events that bubble up to `document` from outside its
@@ -150,6 +161,7 @@ export function SearchableSelect({
   defaultOpen = false,
   onClose,
   selectAllOnFocus = false,
+  mobileSheet = false,
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
 }: SearchableSelectProps) {
@@ -158,6 +170,7 @@ export function SearchableSelect({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const scrollIsolationRef = useScrollIsolation();
+  const isMobile = useIsMobileViewport();
 
   function handleOpenChange(next: boolean) {
     if (disabled) return;
@@ -231,32 +244,109 @@ export function SearchableSelect({
   const showSelectionLabel =
     !truncateSelection && !open && hasSelection && !query;
 
-  const optionItems = options.map((option, index) => {
-    const detailLines = [option.description, ...(option.descriptionLines ?? [])].filter(
-      (line): line is string => Boolean(line && line.trim()),
-    );
+  function renderOptionItems(selectOptions: SearchableSelectOption[]) {
+    return selectOptions.map((option, index) => {
+      const detailLines = [option.description, ...(option.descriptionLines ?? [])].filter(
+        (line): line is string => Boolean(line && line.trim()),
+      );
+
+      return (
+        <CommandItem
+          key={`${option.value}-${index}`}
+          value={option.value}
+          keywords={[option.label, ...(option.keywords ?? [])]}
+          disabled={option.disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          onSelect={() => handleSelect(option.value)}
+          className={cn(listItemClassName, detailLines.length > 0 && "items-start")}
+        >
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate">{option.label}</span>
+            {detailLines.map((line, lineIndex) => (
+              <span key={lineIndex} className="truncate text-xs text-muted-foreground">
+                {line}
+              </span>
+            ))}
+          </span>
+        </CommandItem>
+      );
+    });
+  }
+
+  const optionItems = renderOptionItems(options);
+
+  if (mobileSheet && isMobile) {
+    const sheetTitle = ariaLabel ?? placeholder;
+    const mobileOptions = options.filter((option) => !isPseudoPlaceholderOption(option));
+    const showMobileSearch = searchable && mobileOptions.length > MOBILE_SHEET_SEARCH_THRESHOLD;
 
     return (
-      <CommandItem
-        key={`${option.value}-${index}`}
-        value={option.value}
-        keywords={[option.label, ...(option.keywords ?? [])]}
-        disabled={option.disabled}
-        onMouseDown={(event) => event.preventDefault()}
-        onSelect={() => handleSelect(option.value)}
-        className={cn(listItemClassName, detailLines.length > 0 && "items-start")}
-      >
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate">{option.label}</span>
-          {detailLines.map((line, lineIndex) => (
-            <span key={lineIndex} className="truncate text-xs text-muted-foreground">
-              {line}
+      <div className="relative">
+        <Sheet open={open} onOpenChange={handleOpenChange}>
+          <button
+            ref={triggerRef}
+            type="button"
+            id={id}
+            role="combobox"
+            aria-expanded={open}
+            aria-label={ariaLabel}
+            aria-labelledby={ariaLabelledBy}
+            autoFocus={autoFocus}
+            disabled={disabled}
+            data-state={open ? "open" : "closed"}
+            onClick={() => handleOpenChange(true)}
+            className={cn(
+              triggerClassName,
+              "disabled:cursor-not-allowed disabled:opacity-50",
+              className,
+              "pr-9 pl-3",
+            )}
+          >
+            <span className={cn(selectionClassName, !hasSelection && "text-muted-foreground")}>
+              {hasSelection && selectedOption ? selectedOption.label : placeholder}
             </span>
-          ))}
-        </span>
-      </CommandItem>
+            <span className={cn(chevronButtonClassName, disabled && "pointer-events-none opacity-50")}>
+              <ChevronDown className="size-4" aria-hidden />
+            </span>
+          </button>
+
+          <SheetContent
+            side="bottom"
+            className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)]"
+          >
+            <SheetHeader className="shrink-0 border-b px-4 py-4 pr-14">
+              <SheetTitle>{sheetTitle}</SheetTitle>
+            </SheetHeader>
+            <Command
+              className="flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent"
+              shouldFilter={searchable && !manualFiltering}
+              filter={accentInsensitiveFilter}
+            >
+              {showMobileSearch ? (
+                <div className="shrink-0 border-b px-4 py-3">
+                  <CommandPrimitive.Input
+                    ref={inputRef}
+                    disabled={disabled}
+                    value={query}
+                    onValueChange={changeQuery}
+                    placeholder={searchPlaceholder ?? placeholder}
+                    className="h-11 w-full rounded-lg border bg-background px-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                  />
+                </div>
+              ) : null}
+              <CommandList ref={scrollIsolationRef} className="max-h-none flex-1 overflow-y-auto p-0">
+                <CommandEmpty className="px-4 py-4 text-sm">
+                  {loading ? loadingMessage : emptyMessage}
+                </CommandEmpty>
+                {renderOptionItems(mobileOptions)}
+              </CommandList>
+            </Command>
+          </SheetContent>
+        </Sheet>
+        {requiredField}
+      </div>
     );
-  });
+  }
 
   // Plain select: trigger is a button, no inline typing.
   if (!searchable) {

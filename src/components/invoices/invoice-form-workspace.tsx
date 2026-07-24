@@ -40,6 +40,7 @@ import {
 } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 import { useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { fetchCurrentUser } from "@/lib/users/api/users-api";
 
 type InvoiceWizardShellProps = {
@@ -77,23 +78,23 @@ function InvoiceWizardShell({
   isPrinting = false,
 }: InvoiceWizardShellProps) {
   return (
-    <div className={invoiceWizardTypographyRoot}>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+    <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden sm:block", invoiceWizardTypographyRoot)}>
+      <div className="shrink-0 border-b border-border px-4 py-2.5 sm:mb-6 sm:flex sm:flex-col sm:gap-4 sm:border-0 sm:px-0 sm:py-0 md:flex-row md:items-start md:justify-between">
+        <div className="hidden sm:block">
           <p className={invoicePageEyebrowClassName}>Invoice wizard</p>
           <h1 className={invoicePageTitleClassName}>{title}</h1>
           <p className={invoicePageDescriptionClassName}>{description}</p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="outline" className="h-9 px-3 sm:h-10 sm:px-4" onClick={onCancel}>
             <ArrowLeft className="h-4 w-4" />
             Back to invoices
           </Button>
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-6xl">
-        <div className="flex max-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="mx-auto flex min-h-0 w-full flex-1 flex-col sm:block sm:max-w-6xl">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-card sm:max-h-[calc(100vh-11rem)] sm:rounded-xl sm:border sm:border-border sm:shadow-sm">
           <InvoiceFormWizard
             key={initialValues.invoiceId || "new"}
             initialValues={initialValues}

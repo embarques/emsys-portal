@@ -109,6 +109,8 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
+const invoiceWizardDialogClassName =
+  "left-0 top-0 flex h-[100dvh] max-h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border";
 
 function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefined }) {
   const { t } = useTranslation();
@@ -607,7 +609,7 @@ export function InvoicesWorkspace() {
         }
       />
 
-      <StatCards items={stats} />
+      <StatCards items={stats} mobileLayout="stack" />
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
@@ -797,8 +799,8 @@ export function InvoicesWorkspace() {
           if (!open) setAddFormOpen(false);
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-6xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <DialogContent className={invoiceWizardDialogClassName}>
+          <DialogHeader className="shrink-0 border-b border-border px-5 py-4 sm:px-6">
             <DialogTitle>Add invoice</DialogTitle>
           </DialogHeader>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -813,8 +815,8 @@ export function InvoicesWorkspace() {
           if (!open) setEditInvoiceId(null);
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-6xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <DialogContent className={invoiceWizardDialogClassName}>
+          <DialogHeader className="shrink-0 border-b border-border px-5 py-4 sm:px-6">
             <DialogTitle>
               {editingInvoice
                 ? `Edit invoice ${formatInvoiceTabLabel(editingInvoice)}`

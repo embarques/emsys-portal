@@ -28,6 +28,7 @@ type StatCardsCarouselProps = {
   className?: string;
   desktopMinimumVisibleItems?: number;
   desktopMinimumCardWidth?: number;
+  mobileLayout?: "carousel" | "stack";
   mobileVisibleItems?: number;
 };
 
@@ -262,6 +263,16 @@ function MobileStatCardsCarousel({
   );
 }
 
+function MobileStatCardsStack({ children }: StatCardsCarouselTrackProps) {
+  return (
+    <div className="space-y-4">
+      {children.map((child, index) => (
+        <div key={index}>{child}</div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Reusable summary-card carousel. Desktop capacity is calculated from the
  * available width; mobile uses a fixed three-card viewport by default.
@@ -271,6 +282,7 @@ export function StatCardsCarousel({
   className,
   desktopMinimumVisibleItems = 1,
   desktopMinimumCardWidth = 280,
+  mobileLayout = "carousel",
   mobileVisibleItems = 3,
 }: StatCardsCarouselProps) {
   const items = Children.toArray(children);
@@ -280,9 +292,13 @@ export function StatCardsCarousel({
   return (
     <div className={className}>
       <div className="sm:hidden">
-        <MobileStatCardsCarousel requestedVisibleItems={mobileVisibleItems}>
-          {items}
-        </MobileStatCardsCarousel>
+        {mobileLayout === "stack" ? (
+          <MobileStatCardsStack>{items}</MobileStatCardsStack>
+        ) : (
+          <MobileStatCardsCarousel requestedVisibleItems={mobileVisibleItems}>
+            {items}
+          </MobileStatCardsCarousel>
+        )}
       </div>
       <div className="hidden sm:block">
         <DesktopStatCardsCarousel

@@ -315,9 +315,9 @@ export function InvoiceFormWizard({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card">
           <div
             data-print-hide
-            className="shrink-0 space-y-1 border-b border-border px-5 py-4 sm:px-8"
+            className="shrink-0 space-y-1 border-b border-border px-4 py-3 sm:px-8 sm:py-4"
           >
-            <p className={invoiceStepEyebrowClassName}>
+            <p className={cn(invoiceStepEyebrowClassName, "hidden sm:block")}>
               {t("invoices.wizard.stepEyebrow", {
                 step,
                 total: previewStep,
@@ -351,14 +351,14 @@ export function InvoiceFormWizard({
               />
             </div>
             {requireDailyIncomeRegistration && step === 4 ? (
-              <div className="min-h-0 flex-1 overflow-y-auto pb-10 sm:pb-12">
+              <div className="min-h-0 flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-12">
                 <InvoiceDailyIncomeStep
                   values={values}
                   onContextChange={handleDailyIncomeContextChange}
                 />
               </div>
             ) : step === previewStep ? (
-              <div className="min-h-0 flex-1 overflow-y-auto pb-10 sm:pb-12">
+              <div className="min-h-0 flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-12">
                 <InvoiceFormPreviewStep
                   values={values}
                   appearance="wizard"
@@ -395,9 +395,9 @@ export function InvoiceFormWizard({
 
       <div
         data-print-hide
-        className="shrink-0 border-t border-border bg-card px-5 py-3 sm:px-8"
+        className="shrink-0 border-t border-border bg-card px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-8 sm:pb-3"
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             {step > 1 ? (
               <Button type="button" variant="outline" onClick={handleBack}>
@@ -410,11 +410,11 @@ export function InvoiceFormWizard({
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" className="max-sm:px-3" onClick={onCancel}>
               {t("common.actions.cancel")}
             </Button>
             {step < previewStep ? (
-              <Button type="button" onClick={handleNext}>
+              <Button type="button" className="max-sm:px-3" onClick={handleNext}>
                 {t("common.actions.next")}
                 <ArrowRight className="size-4" />
               </Button>
@@ -424,6 +424,7 @@ export function InvoiceFormWizard({
                   <Button
                     type="button"
                     variant="outline"
+                    className="max-sm:px-3"
                     onClick={handlePrint}
                     disabled={isPrinting}
                   >
@@ -431,7 +432,7 @@ export function InvoiceFormWizard({
                     {isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
                   </Button>
                 ) : null}
-                <Button type="button" onClick={handleSave} disabled={isSubmitting}>
+                <Button type="button" className="max-sm:px-3" onClick={handleSave} disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                   {isSubmitting ? t("common.actions.saving") : submitLabel}
                 </Button>

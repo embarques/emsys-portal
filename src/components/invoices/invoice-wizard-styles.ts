@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 
 /** Underline-style inputs used in the invoice wizard (checkout layout). */
 export const wizardInputClassName =
-  "h-11 rounded-none border-0 border-b-2 border-input bg-transparent px-0 text-base font-normal shadow-none placeholder:font-normal placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:border-muted-foreground/50";
+  "h-10 rounded-none border-0 border-b-2 border-input bg-transparent px-0 text-sm font-normal shadow-none placeholder:font-normal placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:border-muted-foreground/50 sm:h-11 sm:text-base";
 
 export const wizardSelectClassName =
-  "min-h-11 rounded-none border-0 border-b-2 border-input bg-transparent py-2 pl-0 pr-9 text-base font-normal shadow-none focus-within:border-muted-foreground/50 data-[state=open]:border-muted-foreground/50 [&>span:first-child]:font-normal";
+  "min-h-10 rounded-none border-0 border-b-2 border-input bg-transparent py-1.5 pl-0 pr-9 text-sm font-normal shadow-none focus-within:border-muted-foreground/50 data-[state=open]:border-muted-foreground/50 sm:min-h-11 sm:py-2 sm:text-base [&>span:first-child]:font-normal";
 
 export const wizardDateInputClassName = cn(
   wizardInputClassName,
@@ -54,6 +54,7 @@ export function wizardInputFieldProps(
 export function wizardSelectFieldProps(value: string | number | undefined | null) {
   return {
     className: wizardSelectClassNameFor(value),
+    mobileSheet: true,
     selectAllOnFocus: hasWizardFieldValue(value),
   };
 }
