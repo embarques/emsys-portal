@@ -58,7 +58,7 @@ function StepCircle({
   return (
     <span
       className={cn(
-        "relative z-10 flex size-8 items-center justify-center rounded-full text-xs font-semibold sm:size-9 sm:text-sm",
+        "relative z-10 flex size-9 items-center justify-center rounded-full text-sm font-semibold",
         status === "complete" && "bg-primary text-primary-foreground",
         status === "current" && "border-2 border-primary bg-card text-primary",
         status === "upcoming" && "bg-muted text-muted-foreground",
@@ -80,17 +80,42 @@ export function InvoiceWizardStepper({ step, includePaymentStep = true }: Props)
         { id: 3 as const, labelKey: STEP_LABEL_KEYS[3] },
         { id: 4 as const, labelKey: "invoices.wizard.steps.preview" },
       ];
+  const currentStepIndex = Math.max(
+    steps.findIndex((entry) => entry.id === step),
+    0,
+  );
+  const currentStepLabel = t(steps[currentStepIndex]?.labelKey ?? STEP_LABEL_KEYS[step]);
+  const progressValue = ((currentStepIndex + 1) / steps.length) * 100;
 
   return (
-    <nav aria-label={t("invoices.wizard.navAriaLabel")} className="shrink-0 border-b border-border bg-card px-3 py-3 sm:px-8 sm:py-5">
-      <div className="relative mx-auto max-w-3xl">
+    <nav
+      aria-label={t("invoices.wizard.navAriaLabel")}
+      className="shrink-0 border-b border-border bg-card px-4 py-3 sm:px-8 sm:py-5"
+    >
+      <div className="sm:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-foreground">{currentStepLabel}</p>
+          <p className="shrink-0 text-xs font-medium text-muted-foreground">
+            Step {currentStepIndex + 1} of {steps.length}
+          </p>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-[width]"
+            style={{ width: `${progressValue}%` }}
+            aria-hidden
+          />
+        </div>
+      </div>
+
+      <div className="relative mx-auto hidden max-w-3xl sm:block">
         <div
-          className="absolute top-4 h-0.5 bg-border sm:top-[1.125rem]"
+          className="absolute top-[1.125rem] h-0.5 bg-border"
           style={{ left: `${50 / steps.length}%`, right: `${50 / steps.length}%` }}
           aria-hidden
         />
         <div
-          className="absolute top-4 h-0.5 bg-primary transition-[width] sm:top-[1.125rem]"
+          className="absolute top-[1.125rem] h-0.5 bg-primary transition-[width]"
           style={{
             left: `${50 / steps.length}%`,
             width: `${((step - 1) / (steps.length - 1)) * (100 - 100 / steps.length)}%`,
@@ -98,16 +123,16 @@ export function InvoiceWizardStepper({ step, includePaymentStep = true }: Props)
           aria-hidden
         />
 
-        <ol className={cn("relative grid gap-1 sm:gap-2", includePaymentStep ? "grid-cols-5" : "grid-cols-4")}>
+        <ol className={cn("relative grid gap-2", includePaymentStep ? "grid-cols-5" : "grid-cols-4")}>
           {steps.map((entry) => {
             const status = stepStatus(entry.id, step);
 
             return (
-              <li key={entry.id} className="flex flex-col items-center gap-1.5 text-center sm:gap-2">
+              <li key={entry.id} className="flex flex-col items-center gap-2 text-center">
                 <StepCircle stepNumber={entry.id} status={status} />
                 <span
                   className={cn(
-                    "max-w-[4.25rem] text-[0.6875rem] font-medium leading-tight sm:max-w-[5.5rem] sm:text-sm",
+                    "max-w-[5.5rem] text-sm font-medium leading-tight",
                     status === "upcoming" ? "text-muted-foreground" : "text-foreground",
                   )}
                 >

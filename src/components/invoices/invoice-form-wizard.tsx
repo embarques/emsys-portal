@@ -317,7 +317,7 @@ export function InvoiceFormWizard({
             data-print-hide
             className="shrink-0 space-y-1 border-b border-border px-4 py-3 sm:px-8 sm:py-4"
           >
-            <p className={invoiceStepEyebrowClassName}>
+            <p className={cn(invoiceStepEyebrowClassName, "hidden sm:block")}>
               {t("invoices.wizard.stepEyebrow", {
                 step,
                 total: previewStep,
