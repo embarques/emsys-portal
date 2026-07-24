@@ -54,6 +54,7 @@ export function wizardInputFieldProps(
 export function wizardSelectFieldProps(value: string | number | undefined | null) {
   return {
     className: wizardSelectClassNameFor(value),
+    mobileSheet: true,
     selectAllOnFocus: hasWizardFieldValue(value),
   };
 }
