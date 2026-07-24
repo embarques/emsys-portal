@@ -121,6 +121,8 @@ const popoverContentClassName =
 const listItemClassName =
   "cursor-pointer rounded-none px-4 py-3 text-sm data-[selected=true]:bg-muted/60 data-[selected=true]:text-foreground";
 
+const MOBILE_SHEET_SEARCH_THRESHOLD = 8;
+
 /**
  * Keep wheel/touch scrolling working when the list is portaled out of a Radix modal (Dialog).
  * The Dialog's scroll-lock cancels scroll events that bubble up to `document` from outside its
@@ -276,6 +278,7 @@ export function SearchableSelect({
   if (mobileSheet && isMobile) {
     const sheetTitle = ariaLabel ?? placeholder;
     const mobileOptions = options.filter((option) => !isPseudoPlaceholderOption(option));
+    const showMobileSearch = searchable && mobileOptions.length > MOBILE_SHEET_SEARCH_THRESHOLD;
 
     return (
       <div className="relative">
@@ -319,14 +322,13 @@ export function SearchableSelect({
               shouldFilter={searchable && !manualFiltering}
               filter={accentInsensitiveFilter}
             >
-              {searchable ? (
+              {showMobileSearch ? (
                 <div className="shrink-0 border-b px-4 py-3">
                   <CommandPrimitive.Input
                     ref={inputRef}
                     disabled={disabled}
                     value={query}
                     onValueChange={changeQuery}
-                    autoFocus
                     placeholder={searchPlaceholder ?? placeholder}
                     className="h-11 w-full rounded-lg border bg-background px-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                   />

@@ -666,6 +666,7 @@ export function InvoiceForm({
           onValueChange={(next) =>
             updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
           }
+          placeholder={t("invoices.form.fields.pending")}
           {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
           required
           options={INVOICE_PAYMENT_LOCATIONS.map((option) => ({
@@ -682,6 +683,7 @@ export function InvoiceForm({
           id="pickupSource"
           value={values.pickupSource}
           onValueChange={(next) => updatePickupSource(next as InvoicePickupSource)}
+          placeholder={t("invoices.form.fields.pickupSource")}
           searchable={false}
           {...(isWizard ? wizardSelectFieldProps(values.pickupSource) : {})}
           options={INVOICE_PICKUP_SOURCES.map((option) => ({
