@@ -90,9 +90,9 @@ export function InvoiceWizardStepper({ step, includePaymentStep = true }: Props)
   return (
     <nav
       aria-label={t("invoices.wizard.navAriaLabel")}
-      className="shrink-0 border-b border-border bg-card px-4 py-3 sm:px-8 sm:py-5"
+      className="shrink-0 border-b border-border bg-card px-4 py-3 md:px-8 md:py-5"
     >
-      <div className="sm:hidden">
+      <div className="md:hidden">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-foreground">{currentStepLabel}</p>
           <p className="shrink-0 text-xs font-medium text-muted-foreground">
@@ -108,7 +108,7 @@ export function InvoiceWizardStepper({ step, includePaymentStep = true }: Props)
         </div>
       </div>
 
-      <div className="relative mx-auto hidden max-w-3xl sm:block">
+      <div className="relative mx-auto hidden max-w-3xl md:block">
         <div
           className="absolute top-[1.125rem] h-0.5 bg-border"
           style={{ left: `${50 / steps.length}%`, right: `${50 / steps.length}%` }}

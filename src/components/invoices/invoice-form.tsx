@@ -565,10 +565,11 @@ export function InvoiceForm({
     htmlFor: string,
     required: boolean | undefined,
     control: React.ReactNode,
+    fieldClassName?: string,
   ) {
     if (isWizard) {
       return (
-        <WizardField label={label} htmlFor={htmlFor} required={required}>
+        <WizardField label={label} htmlFor={htmlFor} required={required} className={fieldClassName}>
           {control}
         </WizardField>
       );
@@ -609,7 +610,7 @@ export function InvoiceForm({
   );
 
   const detailsFields = (
-    <div className={cn("grid", isWizard ? "gap-4 sm:grid-cols-2 sm:gap-5" : "gap-2.5 sm:grid-cols-2")}>
+    <div className={cn("grid", isWizard ? "grid-cols-2 gap-4 md:gap-5" : "gap-2.5 sm:grid-cols-2")}>
       {renderField(
         t("invoices.form.fields.date"),
         "date",
@@ -618,9 +619,10 @@ export function InvoiceForm({
           id="date"
           value={values.date}
           onChange={(event) => updateField("date", event.target.value)}
-          {...(isWizard ? wizardInputFieldProps(values.date, "pl-8") : {})}
+          {...(isWizard ? wizardInputFieldProps(values.date, "pl-9 md:pl-8") : {})}
           required
         />,
+        isWizard ? "col-span-1" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.invoiceNumber"),
@@ -634,6 +636,7 @@ export function InvoiceForm({
           {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
           required
         />,
+        isWizard ? "col-span-1" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.container"),
@@ -655,6 +658,7 @@ export function InvoiceForm({
             })),
           ]}
         />,
+        isWizard ? "col-span-2" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.pending"),
@@ -674,6 +678,7 @@ export function InvoiceForm({
             label: option.label,
           }))}
         />,
+        isWizard ? "col-span-1" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.pickupSource"),
@@ -691,6 +696,7 @@ export function InvoiceForm({
             label: t(option.labelKey),
           }))}
         />,
+        isWizard ? "col-span-1" : undefined,
       )}
       {values.pickupSource === "route"
         ? renderField(
@@ -714,6 +720,7 @@ export function InvoiceForm({
                 })),
               ]}
             />,
+            isWizard ? "col-span-2" : undefined,
           )
         : renderField(
             pickupEmployeeFieldLabel,
@@ -737,12 +744,13 @@ export function InvoiceForm({
                 ...pickupEmployeeOptions,
               ]}
             />,
+            isWizard ? "col-span-2" : undefined,
           )}
     </div>
   );
 
   const partiesFields = (
-    <div className={cn("grid", isWizard ? "gap-4 sm:grid-cols-2 sm:gap-5" : "gap-2.5 sm:grid-cols-2")}>
+    <div className={cn("grid", isWizard ? "gap-5 md:grid-cols-2" : "gap-2.5 sm:grid-cols-2")}>
       <div className="sm:col-span-2">{pickupReferenceField}</div>
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-2">
@@ -827,7 +835,7 @@ export function InvoiceForm({
         <FormBody
           className={
             isWizard
-              ? "flex-1 space-y-5 overflow-y-auto bg-card px-4 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:space-y-6 sm:px-8 sm:pt-4 sm:pb-12"
+              ? "flex-1 space-y-6 overflow-y-auto bg-muted/25 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:bg-card md:px-8 md:pb-12"
               : undefined
           }
         >
