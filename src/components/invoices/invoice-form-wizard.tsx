@@ -24,6 +24,7 @@ import {
   invoiceWizardTypographyRoot,
 } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
+import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { customerHasUnverifiedPrimaryAddress } from "@/lib/customers/types";
 import { useTranslation } from "@/lib/i18n";
@@ -85,6 +86,7 @@ export function InvoiceFormWizard({
   onCancel,
 }: Props) {
   const { t } = useTranslation();
+  const isMobileLayout = useIsMobileViewport();
   const [step, setStep] = useState<InvoiceWizardStep>(1);
   const [values, setValues] = useState<InvoiceFormValues>(
     initialValues ?? createEmptyInvoiceForm(),
@@ -302,6 +304,145 @@ export function InvoiceFormWizard({
       ? "invoices.wizard.stepTitles.reviewAndSave"
       : getInvoiceWizardStepTitleKey(step);
 
+  const formStep = (
+    <InvoiceForm
+      key={`invoice-wizard-form-${formSessionKey}`}
+      appearance="wizard"
+      wizardStep={(step <= 3 ? step : 3) as InvoiceWizardFormStep}
+      showFooter={false}
+      initialValues={initialValues ?? createEmptyInvoiceForm()}
+      suggestedInvoiceNumber={suggestedInvoiceNumber}
+      submitLabel={submitLabel}
+      onSubmit={() => ({ error: null })}
+      onValuesChange={handleValuesChange}
+      onCancel={onCancel}
+    />
+  );
+
+  const paymentStep = (
+    <InvoiceDailyIncomeStep
+      values={values}
+      onContextChange={handleDailyIncomeContextChange}
+    />
+  );
+
+  const previewContent = (
+    <InvoiceFormPreviewStep
+      values={values}
+      appearance="wizard"
+      onEditStep={goToStep}
+      showPaymentSection={requireDailyIncomeRegistration}
+      paymentSummary={
+        requireDailyIncomeRegistration
+          ? {
+              registration: dailyIncomeContext.registration,
+              incomeStatementId: dailyIncomeContext.incomeStatementId,
+              paymentSkipped: dailyIncomeContext.paymentSkipped,
+            }
+          : undefined
+      }
+      onEditPayment={requireDailyIncomeRegistration ? () => setStep(4) : undefined}
+    />
+  );
+
+  const backButton =
+    step > 1 ? (
+      <Button type="button" variant="outline" onClick={handleBack}>
+        <ArrowLeft className="size-4" />
+        {t("invoices.wizard.actions.back")}
+      </Button>
+    ) : null;
+
+  const nextOrSaveButton =
+    step < previewStep ? (
+      <Button type="button" className="max-sm:px-3" onClick={handleNext}>
+        {t("common.actions.next")}
+        <ArrowRight className="size-4" />
+      </Button>
+    ) : (
+      <>
+        {showPrint ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="max-sm:px-3"
+            onClick={handlePrint}
+            disabled={isPrinting}
+          >
+            <Printer className="size-4" />
+            {isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
+          </Button>
+        ) : null}
+        <Button type="button" className="max-sm:px-3" onClick={handleSave} disabled={isSubmitting}>
+          {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+          {isSubmitting ? t("common.actions.saving") : submitLabel}
+        </Button>
+      </>
+    );
+
+  if (isMobileLayout) {
+    return (
+      <div
+        data-testid="invoice-form-wizard"
+        className={cn("flex min-h-0 flex-1 flex-col bg-card", invoiceWizardTypographyRoot)}
+      >
+        <div data-print-hide>
+          <InvoiceWizardStepper step={step} includePaymentStep={requireDailyIncomeRegistration} />
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div data-print-hide className="shrink-0 border-b border-border px-4 py-3">
+            <h2 className="font-[family-name:var(--font-invoice-display)] text-lg font-extrabold uppercase tracking-wide text-foreground">
+              {t(stepTitleKey)}
+            </h2>
+          </div>
+
+          {bannerError ? <InvoiceWizardNotice tone="error" message={bannerError} /> : null}
+
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {step <= 3 ? (
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{formStep}</div>
+            ) : requireDailyIncomeRegistration && step === 4 ? (
+              <div className="h-full overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
+                {paymentStep}
+              </div>
+            ) : (
+              <div className="h-full overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
+                {previewContent}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <InvoiceWizardSummaryMobileBar
+          values={values}
+          onDiscountChange={summaryDiscountChange}
+          showPayment={requireDailyIncomeRegistration}
+          className="px-3 py-2"
+        />
+
+        <div
+          data-print-hide
+          className="shrink-0 border-t border-border bg-card px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+        >
+          {step > 1 ? (
+            <div className="grid grid-cols-2 gap-2">
+              {backButton}
+              {nextOrSaveButton}
+            </div>
+          ) : (
+            <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-2">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                {t("common.actions.cancel")}
+              </Button>
+              {nextOrSaveButton}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       data-testid="invoice-form-wizard"
@@ -337,44 +478,15 @@ export function InvoiceFormWizard({
               )}
               aria-hidden={step > 3}
             >
-              <InvoiceForm
-                key={`invoice-wizard-form-${formSessionKey}`}
-                appearance="wizard"
-                wizardStep={(step <= 3 ? step : 3) as InvoiceWizardFormStep}
-                showFooter={false}
-                initialValues={initialValues ?? createEmptyInvoiceForm()}
-                suggestedInvoiceNumber={suggestedInvoiceNumber}
-                submitLabel={submitLabel}
-                onSubmit={() => ({ error: null })}
-                onValuesChange={handleValuesChange}
-                onCancel={onCancel}
-              />
+              {formStep}
             </div>
             {requireDailyIncomeRegistration && step === 4 ? (
               <div className="min-h-0 flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-12">
-                <InvoiceDailyIncomeStep
-                  values={values}
-                  onContextChange={handleDailyIncomeContextChange}
-                />
+                {paymentStep}
               </div>
             ) : step === previewStep ? (
               <div className="min-h-0 flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-12">
-                <InvoiceFormPreviewStep
-                  values={values}
-                  appearance="wizard"
-                  onEditStep={goToStep}
-                  showPaymentSection={requireDailyIncomeRegistration}
-                  paymentSummary={
-                    requireDailyIncomeRegistration
-                      ? {
-                          registration: dailyIncomeContext.registration,
-                          incomeStatementId: dailyIncomeContext.incomeStatementId,
-                          paymentSkipped: dailyIncomeContext.paymentSkipped,
-                        }
-                      : undefined
-                  }
-                  onEditPayment={requireDailyIncomeRegistration ? () => setStep(4) : undefined}
-                />
+                {previewContent}
               </div>
             ) : null}
           </div>
@@ -399,45 +511,14 @@ export function InvoiceFormWizard({
       >
         <div className="flex items-center justify-between gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            {step > 1 ? (
-              <Button type="button" variant="outline" onClick={handleBack}>
-                <ArrowLeft className="size-4" />
-                {t("invoices.wizard.actions.back")}
-              </Button>
-            ) : (
-              <span className="flex-1" aria-hidden />
-            )}
+            {backButton ?? <span className="flex-1" aria-hidden />}
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
             <Button type="button" variant="outline" className="max-sm:px-3" onClick={onCancel}>
               {t("common.actions.cancel")}
             </Button>
-            {step < previewStep ? (
-              <Button type="button" className="max-sm:px-3" onClick={handleNext}>
-                {t("common.actions.next")}
-                <ArrowRight className="size-4" />
-              </Button>
-            ) : (
-              <>
-                {showPrint ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="max-sm:px-3"
-                    onClick={handlePrint}
-                    disabled={isPrinting}
-                  >
-                    <Printer className="size-4" />
-                    {isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
-                  </Button>
-                ) : null}
-                <Button type="button" className="max-sm:px-3" onClick={handleSave} disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                  {isSubmitting ? t("common.actions.saving") : submitLabel}
-                </Button>
-              </>
-            )}
+            {nextOrSaveButton}
           </div>
         </div>
       </div>
