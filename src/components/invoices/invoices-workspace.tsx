@@ -7,9 +7,11 @@ import {
   CircleAlert,
   DollarSign,
   FileText,
+  Filter,
   Plus,
   Printer,
   Receipt,
+  Search,
   Tags,
   Trash2,
 } from "lucide-react";
@@ -123,6 +125,64 @@ function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefin
         {displayLine}
       </p>
     </div>
+  );
+}
+
+function getInvoiceMobileInitials(invoice: Invoice): string {
+  const name = invoice.sender?.name?.trim() || getInvoicePrimaryReceiver(invoice)?.name?.trim() || invoice.invoiceNumber;
+  const parts = name.split(/\s+/).filter(Boolean);
+  const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
+  return initials || "IN";
+}
+
+function getInvoiceMobilePartyName(invoice: Invoice, emptyLabel: string): string {
+  return invoice.sender?.name?.trim() || getInvoicePrimaryReceiver(invoice)?.name?.trim() || emptyLabel;
+}
+
+function MobileInvoiceRow({
+  invoice,
+  onOpen,
+}: {
+  invoice: Invoice;
+  onOpen: (invoice: Invoice) => void;
+}) {
+  const { t } = useTranslation();
+  const status = resolveInvoicePaidStatus(invoice);
+  const balance = getInvoiceBalance(invoice);
+
+  return (
+    <button
+      type="button"
+      className="grid w-full grid-cols-[4rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-border/70 px-1 py-4 text-left last:border-b-0"
+      onClick={() => onOpen(invoice)}
+    >
+      <span className="flex size-14 items-center justify-center rounded-xl border bg-card text-sm font-semibold text-muted-foreground shadow-xs">
+        {getInvoiceMobileInitials(invoice)}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-lg font-semibold leading-tight text-foreground">
+          {getInvoiceMobilePartyName(invoice, t("common.empty.dash"))}
+        </span>
+        <span className="mt-1 block truncate text-sm text-muted-foreground">
+          {invoice.invoiceNumber || t("common.empty.dash")} | {formatInvoiceDate(invoice.date)}
+        </span>
+      </span>
+      <span className="flex flex-col items-end gap-2">
+        <span className="text-lg font-bold leading-none text-foreground">
+          {formatInvoiceMoney(balance)}
+        </span>
+        <span
+          className={cn(
+            "text-xs font-semibold uppercase tracking-wide",
+            status === "closed"
+              ? "text-emerald-600"
+              : "text-amber-600",
+          )}
+        >
+          {getInvoicePaidStatusLabel(status)}
+        </span>
+      </span>
+    </button>
   );
 }
 
@@ -598,17 +658,159 @@ export function InvoicesWorkspace() {
 
   return (
     <div>
-      <PageHeader
-        title={t("invoices.title")}
-        description={t("invoices.pages.description")}
-        actions={
-          <Button onClick={openAddForm}>
-            <Plus className="h-4 w-4" />
-            Add invoice
-          </Button>
-        }
-      />
+      <div className="[&>div>div>p]:max-md:hidden">
+        <PageHeader
+          title={t("invoices.title")}
+          description={t("invoices.pages.description")}
+          actions={
+            <Button onClick={openAddForm}>
+              <Plus className="h-4 w-4" />
+              Add invoice
+            </Button>
+          }
+        />
+      </div>
 
+      <section className="space-y-5 md:hidden">
+        <div className="flex items-center gap-3">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/80" />
+            <input
+              value={filters.query}
+              onChange={(event) => {
+                setFilters((current) => ({ ...current, query: event.target.value }));
+                setPage(1);
+              }}
+              className="h-12 w-full rounded-xl border-0 bg-muted/70 pl-12 pr-4 text-base outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+              placeholder="Search invoice"
+              aria-label="Search invoice"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn(
+              "size-12 shrink-0 rounded-full border-primary/30 text-primary",
+              filtersOpen || activeFilterCount > 0 ? "bg-primary/10" : "bg-background",
+            )}
+            onClick={() => setFiltersOpen((open) => !open)}
+            aria-label="Filter invoices"
+          >
+            <Filter className="size-5" />
+          </Button>
+        </div>
+
+        {filtersOpen ? (
+          <TableFilterPanel
+            resultSummary={`Showing ${invoices.length} of ${totalInvoices} invoices`}
+            className="rounded-xl shadow-sm"
+            presets={{
+              storageKey: "invoices",
+              rows: filters.rows,
+              fields: INVOICE_TABLE_FILTER_FIELDS,
+              onApply: (rows) => {
+                setFilters((current) => ({ ...current, rows }));
+                setPage(1);
+              },
+            }}
+            onClearAll={
+              hasActiveFilters
+                ? () => {
+                    setFilters(defaultFilters);
+                    setPage(1);
+                  }
+                : undefined
+            }
+          >
+            <TableAdvancedFilterBuilder
+              open={filtersOpen}
+              rows={filters.rows}
+              fields={INVOICE_TABLE_FILTER_FIELDS}
+              dynamicOptions={{
+                users: usersLoading ? [] : userFilterOptions,
+                routes: routeOptions,
+              }}
+              onChange={(rows) => {
+                setFilters((current) => ({ ...current, rows }));
+                setPage(1);
+              }}
+            />
+          </TableFilterPanel>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-4 rounded-xl bg-primary/10 px-4 py-4 text-primary">
+          <span className="text-base font-semibold">Outstanding receivables</span>
+          <span className="shrink-0 text-xl font-bold">
+            {isLoading ? "…" : formatInvoiceMoney(kpis.outstanding)}
+          </span>
+        </div>
+
+        <div className="rounded-xl bg-background">
+          {isError ? (
+            <div className="px-4 py-8 text-sm text-destructive">
+              {normalizeApiError(error).message}
+            </div>
+          ) : isLoading ? (
+            <div className="space-y-4 px-1 py-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-[4rem_minmax(0,1fr)_4.5rem] items-center gap-3 border-b border-border/70 pb-4 last:border-b-0"
+                >
+                  <div className="size-14 rounded-xl bg-muted" />
+                  <div className="space-y-2">
+                    <div className="h-5 w-36 rounded bg-muted" />
+                    <div className="h-4 w-44 rounded bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="ml-auto h-5 w-16 rounded bg-muted" />
+                    <div className="ml-auto h-4 w-12 rounded bg-muted" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : invoices.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+              No invoices match your search or filters.
+            </p>
+          ) : (
+            <div>
+              {invoices.map((invoice) => (
+                <MobileInvoiceRow key={invoice.invoiceId} invoice={invoice} onOpen={openView} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {!isLoading && !isError ? (
+          <div className="flex items-center justify-between gap-3 pb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : null}
+      </section>
+
+      <div className="hidden md:block">
       <StatCards items={stats} mobileLayout="stack" />
 
       <Card className="mt-6 gap-0">
@@ -774,6 +976,7 @@ export function InvoicesWorkspace() {
           </div>
         ) : null}
       </Card>
+      </div>
 
       <InvoiceStagingDialog
         open={stagingOpen}
