@@ -113,7 +113,7 @@ import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
 const invoiceWizardDialogClassName =
-  "left-0 top-0 flex h-[100dvh] max-h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border";
+  "left-0 top-0 flex h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none border-0 p-0 max-sm:[&>button:last-child]:hidden sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border";
 
 function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefined }) {
   const { t } = useTranslation();
@@ -228,12 +228,12 @@ function MobileInvoiceRow({
   return (
     <button
       type="button"
-      className="grid w-full grid-cols-[4.25rem_minmax(0,1fr)_auto] items-start gap-3 border-b border-border/70 px-1 py-4 text-left last:border-b-0"
+      className="grid w-full grid-cols-[3.75rem_minmax(0,1fr)_auto] items-start gap-3 border-b border-border/70 px-1 py-4 text-left transition-colors active:bg-muted/50 last:border-b-0"
       onClick={() => onOpen(invoice)}
     >
       <span
         className={cn(
-          "flex size-14 items-center justify-center rounded-full text-sm font-semibold shadow-xs",
+          "flex size-12 items-center justify-center rounded-full text-sm font-semibold shadow-xs",
           getInvoiceMobileAvatarClass(invoice),
         )}
       >
@@ -256,7 +256,7 @@ function MobileInvoiceRow({
           {getInvoiceMobileAddress(invoice, emptyLabel)}
         </span>
       </span>
-      <span className="flex flex-col items-end gap-3 pt-1">
+      <span className="flex flex-col items-end gap-2 pt-1">
         <span
           className={cn(
             "text-lg font-bold leading-none",
@@ -777,7 +777,7 @@ export function InvoicesWorkspace() {
                 setFilters((current) => ({ ...current, query: event.target.value }));
                 setPage(1);
               }}
-              className="h-12 w-full rounded-xl border-0 bg-muted/70 pl-12 pr-4 text-base outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="h-12 w-full rounded-xl border border-border/70 bg-card pl-12 pr-4 text-base shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
               placeholder="Search invoice"
               aria-label="Search invoice"
             />
@@ -787,7 +787,7 @@ export function InvoicesWorkspace() {
             variant="outline"
             size="icon"
             className={cn(
-              "size-12 shrink-0 rounded-full border-primary/30 text-primary",
+              "size-12 shrink-0 rounded-xl border-primary/30 text-primary shadow-xs",
               mobileFiltersOpen || activeFilterCount > 0 ? "bg-primary/10" : "bg-background",
             )}
             onClick={() => setMobileFiltersOpen((open) => !open)}
@@ -835,7 +835,7 @@ export function InvoicesWorkspace() {
           </TableFilterPanel>
         ) : null}
 
-        <div className="flex items-center justify-between gap-4 rounded-xl bg-primary/10 px-4 py-4 text-primary">
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-primary/15 bg-primary/10 px-4 py-4 text-primary shadow-xs">
           <span className="text-base font-semibold">Outstanding receivables</span>
           <span className="shrink-0 text-xl font-bold">
             {isLoading ? "…" : formatInvoiceMoney(kpis.outstanding)}
@@ -843,22 +843,22 @@ export function InvoicesWorkspace() {
         </div>
 
         {!isLoading && !isError ? (
-          <div className="flex items-center justify-between gap-3">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
             <Button
               variant="outline"
-              size="sm"
+              className="h-11 rounded-xl"
               disabled={currentPage <= 1}
               onClick={() => setPage((value) => Math.max(1, value - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">
               Page {currentPage} of {totalPages}
             </span>
             <Button
               variant="outline"
-              size="sm"
+              className="h-11 rounded-xl"
               disabled={currentPage >= totalPages}
               onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
@@ -906,7 +906,7 @@ export function InvoicesWorkspace() {
                 >
                   <h2
                     className={cn(
-                      "px-1 pb-1 text-lg font-medium text-muted-foreground",
+                      "px-1 pb-1 text-lg font-semibold text-muted-foreground",
                       groupIndex === 0 ? "pt-0" : "pt-4",
                     )}
                   >
@@ -1121,7 +1121,7 @@ export function InvoicesWorkspace() {
         }}
       >
         <DialogContent className={invoiceWizardDialogClassName}>
-          <DialogHeader className="shrink-0 border-b border-border px-5 py-4 sm:px-6">
+          <DialogHeader className="hidden shrink-0 border-b border-border px-5 py-4 sm:block sm:px-6">
             <DialogTitle>Add invoice</DialogTitle>
           </DialogHeader>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -1137,7 +1137,7 @@ export function InvoicesWorkspace() {
         }}
       >
         <DialogContent className={invoiceWizardDialogClassName}>
-          <DialogHeader className="shrink-0 border-b border-border px-5 py-4 sm:px-6">
+          <DialogHeader className="hidden shrink-0 border-b border-border px-5 py-4 sm:block sm:px-6">
             <DialogTitle>
               {editingInvoice
                 ? `Edit invoice ${formatInvoiceTabLabel(editingInvoice)}`

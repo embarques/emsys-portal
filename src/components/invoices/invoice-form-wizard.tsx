@@ -17,6 +17,7 @@ import {
   InvoiceWizardStepper,
   type InvoiceWizardStep,
   type InvoiceWizardFormStep,
+  INVOICE_WIZARD_STEP_ORDER,
 } from "@/components/invoices/invoice-wizard-stepper";
 import {
   invoiceStepEyebrowClassName,
@@ -307,8 +308,9 @@ export function InvoiceFormWizard({
   const formStep = (
     <InvoiceForm
       key={`invoice-wizard-form-${formSessionKey}`}
-      appearance="wizard"
+      appearance={isMobileLayout ? "phoneWizard" : "wizard"}
       wizardStep={(step <= 3 ? step : 3) as InvoiceWizardFormStep}
+      wizardTotalSteps={previewStep}
       showFooter={false}
       initialValues={initialValues ?? createEmptyInvoiceForm()}
       suggestedInvoiceNumber={suggestedInvoiceNumber}
@@ -329,7 +331,7 @@ export function InvoiceFormWizard({
   const previewContent = (
     <InvoiceFormPreviewStep
       values={values}
-      appearance="wizard"
+      appearance={isMobileLayout ? "phoneWizard" : "wizard"}
       onEditStep={goToStep}
       showPaymentSection={requireDailyIncomeRegistration}
       paymentSummary={
@@ -381,64 +383,138 @@ export function InvoiceFormWizard({
     );
 
   if (isMobileLayout) {
+    const steps = requireDailyIncomeRegistration
+      ? INVOICE_WIZARD_STEP_ORDER
+      : ([1, 2, 3, 4] as const);
+    const currentStepIndex = Math.max(
+      steps.findIndex((entry) => entry === step),
+      0,
+    );
+    const phoneTitle =
+      step === previewStep
+        ? t("invoices.wizard.steps.preview")
+        : t(stepLabelKey);
+    const phoneBackLabel =
+      step > 1 ? t("invoices.wizard.actions.back") : t("common.actions.cancel");
+    const phonePrimary =
+      step < previewStep ? (
+        <Button type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleNext}>
+          {t("common.actions.next")}
+          <ArrowRight className="size-4" />
+        </Button>
+      ) : showPrint ? (
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-12 rounded-xl text-muted-foreground"
+            onClick={handlePrint}
+            disabled={isPrinting}
+            aria-label={isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
+          >
+            {isPrinting ? <Loader2 className="size-4 animate-spin" /> : <Printer className="size-4" />}
+          </Button>
+          <Button type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {isSubmitting ? t("common.actions.saving") : submitLabel}
+          </Button>
+        </div>
+      ) : (
+        <Button type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={isSubmitting}>
+          {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+          {isSubmitting ? t("common.actions.saving") : submitLabel}
+        </Button>
+      );
+    const phoneBackControl = (
+      <Button
+        type="button"
+        variant="outline"
+        className="h-12 rounded-xl px-4 text-base"
+        onClick={step > 1 ? handleBack : onCancel}
+      >
+        {step > 1 ? <ArrowLeft className="size-4" /> : null}
+        {phoneBackLabel}
+      </Button>
+    );
+
     return (
       <div
         data-testid="invoice-form-wizard"
-        className={cn("flex min-h-0 flex-1 flex-col bg-card", invoiceWizardTypographyRoot)}
+        className={cn(
+          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-slate-50",
+          invoiceWizardTypographyRoot,
+        )}
       >
-        <div data-print-hide>
-          <InvoiceWizardStepper step={step} includePaymentStep={requireDailyIncomeRegistration} />
+        <div data-print-hide className="shrink-0 border-b border-border/70 bg-card">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="min-w-0 truncate text-sm font-semibold text-foreground">
+                {phoneTitle}
+              </p>
+              <p className="shrink-0 text-xs font-medium text-muted-foreground">
+                Step {currentStepIndex + 1} of {steps.length}
+              </p>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-primary transition-[width]"
+                style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
+                aria-hidden
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div data-print-hide className="shrink-0 border-b border-border px-4 py-3">
-            <h2 className="font-[family-name:var(--font-invoice-display)] text-lg font-extrabold uppercase tracking-wide text-foreground">
-              {t(stepTitleKey)}
-            </h2>
-          </div>
-
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {bannerError ? <InvoiceWizardNotice tone="error" message={bannerError} /> : null}
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <div
+              data-print-hide
+              className="grid shrink-0 grid-cols-2 gap-3 border-b border-border/70 bg-slate-50 px-4 py-3"
+            >
+              {phoneBackControl}
+              {phonePrimary}
+            </div>
             {step <= 3 ? (
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{formStep}</div>
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{formStep}</div>
             ) : requireDailyIncomeRegistration && step === 4 ? (
-              <div className="h-full overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
+              <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+                <p className={cn(invoiceStepEyebrowClassName, "mb-1")}>
+                  {t("invoices.wizard.stepEyebrow", {
+                    step,
+                    total: previewStep,
+                    label: t(stepLabelKey),
+                  })}
+                </p>
+                <h2 className={cn(invoiceStepTitleClassName, "mb-4")}>{t(stepTitleKey)}</h2>
                 {paymentStep}
               </div>
             ) : (
-              <div className="h-full overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
+              <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+                <p className={cn(invoiceStepEyebrowClassName, "mb-1")}>
+                  {t("invoices.wizard.stepEyebrow", {
+                    step,
+                    total: previewStep,
+                    label: t(stepLabelKey),
+                  })}
+                </p>
+                <h2 className={cn(invoiceStepTitleClassName, "mb-4")}>{t(stepTitleKey)}</h2>
                 {previewContent}
               </div>
             )}
           </div>
         </div>
 
-        <InvoiceWizardSummaryMobileBar
-          values={values}
-          onDiscountChange={summaryDiscountChange}
-          showPayment={requireDailyIncomeRegistration}
-          className="px-3 py-2"
-        />
-
-        <div
-          data-print-hide
-          className="shrink-0 border-t border-border bg-card px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
-        >
-          {step > 1 ? (
-            <div className="grid grid-cols-2 gap-2">
-              {backButton}
-              {nextOrSaveButton}
-            </div>
-          ) : (
-            <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-2">
-              <Button type="button" variant="outline" onClick={onCancel}>
-                {t("common.actions.cancel")}
-              </Button>
-              {nextOrSaveButton}
-            </div>
-          )}
-        </div>
+        {step >= 3 ? (
+          <InvoiceWizardSummaryMobileBar
+            values={values}
+            onDiscountChange={summaryDiscountChange}
+            showPayment={requireDailyIncomeRegistration}
+            className="shrink-0 border-t border-border/70 bg-card px-3 py-2"
+          />
+        ) : null}
       </div>
     );
   }

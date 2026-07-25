@@ -42,7 +42,7 @@ import { cn } from "@/lib/utils";
 type InvoiceLineItemsEditorProps = {
   lineItems: InvoiceLineItemFormValues[];
   catalogItems: Item[];
-  appearance?: "default" | "wizard";
+  appearance?: "default" | "wizard" | "phoneWizard";
   onChange: (lineItems: InvoiceLineItemFormValues[]) => void;
 };
 
@@ -60,6 +60,7 @@ type LineItemEntryFieldsProps = {
   catalogItems: Item[];
   inputClass: (value: string) => ReturnType<typeof wizardInputFieldProps> | { className?: undefined };
   labelClass?: string;
+  isPhoneWizard?: boolean;
   descriptionPlaceholder: string;
   descriptionLabel: string;
   quantityLabel: string;
@@ -208,6 +209,7 @@ function LineItemEntryFields({
   catalogItems,
   inputClass,
   labelClass,
+  isPhoneWizard = false,
   descriptionPlaceholder,
   descriptionLabel,
   quantityLabel,
@@ -255,7 +257,7 @@ function LineItemEntryFields({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className={cn("grid gap-4", isPhoneWizard ? "grid-cols-1" : "grid-cols-2 gap-3 md:grid-cols-4")}>
         <div className="min-w-0 space-y-2">
           <Label htmlFor={`${item.id}-quantity`} className={labelClass}>
             {quantityLabel} <span className="text-destructive">*</span>
@@ -846,8 +848,10 @@ function useLineItemLabels() {
 function InvoiceLineItemsWizardEditor({
   lineItems,
   catalogItems,
+  isPhoneWizard = false,
   onChange,
-}: Omit<InvoiceLineItemsEditorProps, "appearance">) {
+}: Omit<InvoiceLineItemsEditorProps, "appearance"> & { isPhoneWizard?: boolean }) {
+  const { t } = useTranslation();
   const labels = useLineItemLabels();
   const wizardInputProps = (value: string) => wizardInputFieldProps(value);
   const labelClass = "text-xs font-normal text-muted-foreground";
@@ -949,9 +953,19 @@ function InvoiceLineItemsWizardEditor({
   };
 
   return (
-    <div className="space-y-6">
-      <section className="space-y-4 border-b border-border pb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className={cn("min-w-0 space-y-5", isPhoneWizard && "space-y-4")}>
+      {isPhoneWizard ? (
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("invoices.wizard.steps.lineItems")}
+          </p>
+          <h2 className="mt-1 font-[family-name:var(--font-invoice-display)] text-2xl font-extrabold uppercase leading-tight text-foreground">
+            {labels.addTitle}
+          </h2>
+        </div>
+      ) : null}
+      <section className={cn("space-y-4 border-b border-border pb-6", isPhoneWizard && "px-1")}>
+        <div className={cn("flex flex-wrap items-center justify-between gap-3", isPhoneWizard && !editingId && "sr-only")}>
           <div>
             <h3 className="text-sm font-semibold text-foreground">
               {editingId ? labels.editingTitle : labels.addTitle}
@@ -969,6 +983,7 @@ function InvoiceLineItemsWizardEditor({
           catalogItems={catalogItems}
           inputClass={wizardInputProps}
           labelClass={labelClass}
+          isPhoneWizard={isPhoneWizard}
           descriptionPlaceholder={labels.descriptionPlaceholder}
           descriptionLabel={labels.descriptionLabel}
           quantityLabel={labels.quantityLabel}
@@ -1031,7 +1046,8 @@ export function InvoiceLineItemsEditor({
   onChange,
 }: InvoiceLineItemsEditorProps) {
   const labels = useLineItemLabels();
-  const isWizard = appearance === "wizard";
+  const isPhoneWizard = appearance === "phoneWizard";
+  const isWizard = appearance === "wizard" || isPhoneWizard;
   const wizardInputProps = (value: string) =>
     isWizard ? wizardInputFieldProps(value) : { className: undefined };
   const labelClass = isWizard ? "text-xs font-normal text-muted-foreground" : undefined;
@@ -1051,6 +1067,7 @@ export function InvoiceLineItemsEditor({
       <InvoiceLineItemsWizardEditor
         lineItems={lineItems}
         catalogItems={catalogItems}
+        isPhoneWizard={isPhoneWizard}
         onChange={onChange}
       />
     );

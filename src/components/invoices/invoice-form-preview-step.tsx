@@ -36,7 +36,7 @@ export type InvoicePreviewPaymentSummary = {
 
 type Props = {
   values: InvoiceFormValues;
-  appearance?: "default" | "wizard";
+  appearance?: "default" | "wizard" | "phoneWizard";
   onEditStep?: (step: InvoiceWizardFormStep) => void;
   showPaymentSection?: boolean;
   paymentSummary?: InvoicePreviewPaymentSummary;
@@ -139,6 +139,7 @@ function PreviewField({ label, value }: { label: string; value: string }) {
 
 function InvoiceWizardCheckoutReview({
   values,
+  isPhoneWizard = false,
   onEditStep,
   showPaymentSection,
   paymentSummary,
@@ -148,7 +149,7 @@ function InvoiceWizardCheckoutReview({
   Pick<
     Props,
     "onEditStep" | "showPaymentSection" | "paymentSummary" | "onEditPayment" | "errorMessage"
-  >) {
+  > & { isPhoneWizard?: boolean }) {
   const { t } = useTranslation();
   const {
     catalogItems,
@@ -163,7 +164,10 @@ function InvoiceWizardCheckoutReview({
   } = usePreviewLabels(values);
 
   return (
-    <div id="invoice-wizard-print-area" className="divide-y divide-border px-5 py-2 sm:px-8">
+    <div
+      id="invoice-wizard-print-area"
+      className={isPhoneWizard ? "space-y-4" : "divide-y divide-border px-5 py-2 sm:px-8"}
+    >
       {errorMessage ? (
         <div className="py-3 print:hidden">
           <InvoiceWizardNotice tone="error" message={errorMessage} className="rounded-lg border" />
@@ -328,46 +332,106 @@ function InvoiceWizardCheckoutReview({
             {lineItemRows.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
             ) : (
-              <div className="overflow-x-auto rounded-lg border">
-                <table className="w-full min-w-[32rem] text-sm">
-                  <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.item")}</th>
-                      <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.qty")}</th>
-                      <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.unitPrice")}</th>
-                      <th className="px-4 py-3 font-medium text-right">{t("invoices.wizard.review.table.subtotal")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lineItemRows.map((item) => {
-                      const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                      const label = item.itemName.trim() || catalogItem?.description || t("invoices.wizard.summary.lineItem");
-                      const labelCount = Number(item.labelCount) || 0;
-                      return (
-                        <tr key={item.id} className="border-b last:border-b-0">
-                          <td className="px-4 py-3">
-                            <p className="font-medium text-foreground">{label}</p>
+              isPhoneWizard ? (
+                <div className="space-y-3">
+                  {lineItemRows.map((item) => {
+                    const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
+                    const label =
+                      item.itemName.trim() ||
+                      catalogItem?.description ||
+                      t("invoices.wizard.summary.lineItem");
+                    const labelCount = Number(item.labelCount) || 0;
+
+                    return (
+                      <article key={item.id} className="rounded-xl border bg-card p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="line-clamp-2 text-sm font-semibold text-foreground">{label}</p>
                             {item.labelCount ? (
-                              <p className="text-xs text-muted-foreground">
-                                {t(labelCount === 1 ? "invoices.wizard.review.labels" : "invoices.wizard.review.labels_plural", {
-                                  count: labelCount,
-                                })}
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {t(
+                                  labelCount === 1
+                                    ? "invoices.wizard.review.labels"
+                                    : "invoices.wizard.review.labels_plural",
+                                  { count: labelCount },
+                                )}
                               </p>
                             ) : null}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">{item.quantity || t("common.empty.dash")}</td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {formatInvoiceMoney(Number(item.unitPrice) || 0)}
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium">
+                          </div>
+                          <p className="shrink-0 text-sm font-semibold">
                             {formatInvoiceMoney(resolveLineTotal(item))}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </p>
+                        </div>
+                        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                          <div className="rounded-lg bg-muted/40 px-3 py-2">
+                            <dt>{t("invoices.wizard.review.table.qty")}</dt>
+                            <dd className="mt-1 font-semibold text-foreground">
+                              {item.quantity || t("common.empty.dash")}
+                            </dd>
+                          </div>
+                          <div className="rounded-lg bg-muted/40 px-3 py-2">
+                            <dt>{t("invoices.wizard.review.table.unitPrice")}</dt>
+                            <dd className="mt-1 font-semibold text-foreground">
+                              {formatInvoiceMoney(Number(item.unitPrice) || 0)}
+                            </dd>
+                          </div>
+                        </dl>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="w-full min-w-[32rem] text-sm">
+                    <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.item")}</th>
+                        <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.qty")}</th>
+                        <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.unitPrice")}</th>
+                        <th className="px-4 py-3 font-medium text-right">
+                          {t("invoices.wizard.review.table.subtotal")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lineItemRows.map((item) => {
+                        const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
+                        const label =
+                          item.itemName.trim() ||
+                          catalogItem?.description ||
+                          t("invoices.wizard.summary.lineItem");
+                        const labelCount = Number(item.labelCount) || 0;
+                        return (
+                          <tr key={item.id} className="border-b last:border-b-0">
+                            <td className="px-4 py-3">
+                              <p className="font-medium text-foreground">{label}</p>
+                              {item.labelCount ? (
+                                <p className="text-xs text-muted-foreground">
+                                  {t(
+                                    labelCount === 1
+                                      ? "invoices.wizard.review.labels"
+                                      : "invoices.wizard.review.labels_plural",
+                                    { count: labelCount },
+                                  )}
+                                </p>
+                              ) : null}
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {item.quantity || t("common.empty.dash")}
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {formatInvoiceMoney(Number(item.unitPrice) || 0)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium">
+                              {formatInvoiceMoney(resolveLineTotal(item))}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -385,7 +449,8 @@ export function InvoiceFormPreviewStep({
   onEditPayment,
   errorMessage = null,
 }: Props) {
-  const isWizard = appearance === "wizard";
+  const isPhoneWizard = appearance === "phoneWizard";
+  const isWizard = appearance === "wizard" || isPhoneWizard;
   const { subtotal, discount, amountPaid, balance, lineItemRows, catalogItems, containerLabel, pickupLabel, pickupFieldLabel, pickupAssignmentLabel, pickupAssignmentFieldLabel } =
     usePreviewLabels(values);
 
@@ -393,6 +458,7 @@ export function InvoiceFormPreviewStep({
     return (
       <InvoiceWizardCheckoutReview
         values={values}
+        isPhoneWizard={isPhoneWizard}
         onEditStep={onEditStep}
         showPaymentSection={showPaymentSection}
         paymentSummary={paymentSummary}

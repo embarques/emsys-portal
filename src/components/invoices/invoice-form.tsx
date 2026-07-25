@@ -91,7 +91,8 @@ type InvoiceFormProps = {
   onCancel: () => void;
   /** When set, only the matching section is rendered (wizard mode). */
   wizardStep?: 1 | 2 | 3;
-  appearance?: "default" | "wizard";
+  wizardTotalSteps?: number;
+  appearance?: "default" | "wizard" | "phoneWizard";
   showFooter?: boolean;
   onValuesChange?: (values: InvoiceFormValues) => void;
 };
@@ -204,6 +205,30 @@ function PartyFieldActions({
   );
 }
 
+function PhoneWizardSection({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="min-w-0 space-y-5">
+      <div className="px-1">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {eyebrow}
+        </p>
+        <h2 className="mt-1 font-[family-name:var(--font-invoice-display)] text-2xl font-extrabold uppercase leading-tight text-foreground">
+          {title}
+        </h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export function InvoiceForm({
   initialValues,
   isEditing = false,
@@ -214,12 +239,14 @@ export function InvoiceForm({
   onFormErrorChange,
   onCancel,
   wizardStep,
+  wizardTotalSteps = 5,
   appearance = "default",
   showFooter = true,
   onValuesChange,
 }: InvoiceFormProps) {
   const { t } = useTranslation();
-  const isWizard = appearance === "wizard";
+  const isPhoneWizard = appearance === "phoneWizard";
+  const isWizard = appearance === "wizard" || isPhoneWizard;
   const { data: containersData } = useContainerPicker();
   const ordersQuery = useOrders(DEFAULT_ORDER_LIST_PARAMS);
   const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
@@ -612,8 +639,12 @@ export function InvoiceForm({
   const detailsFields = (
     <div
       className={cn(
-        "grid",
-        isWizard ? "grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5" : "gap-2.5 sm:grid-cols-2",
+        "grid min-w-0",
+        isPhoneWizard
+          ? "grid-cols-1 gap-4"
+          : isWizard
+            ? "grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5"
+            : "gap-2.5 sm:grid-cols-2",
       )}
     >
       {renderField(
@@ -627,7 +658,7 @@ export function InvoiceForm({
           {...(isWizard ? wizardInputFieldProps(values.date, "pl-9 md:pl-8") : {})}
           required
         />,
-        isWizard ? "sm:col-span-1" : undefined,
+        isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.invoiceNumber"),
@@ -641,7 +672,7 @@ export function InvoiceForm({
           {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
           required
         />,
-        isWizard ? "sm:col-span-1" : undefined,
+        isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.container"),
@@ -663,7 +694,7 @@ export function InvoiceForm({
             })),
           ]}
         />,
-        isWizard ? "sm:col-span-2" : undefined,
+        isPhoneWizard ? undefined : isWizard ? "sm:col-span-2" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.pending"),
@@ -683,7 +714,7 @@ export function InvoiceForm({
             label: option.label,
           }))}
         />,
-        isWizard ? "sm:col-span-1" : undefined,
+        isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.pickupSource"),
@@ -701,7 +732,7 @@ export function InvoiceForm({
             label: t(option.labelKey),
           }))}
         />,
-        isWizard ? "sm:col-span-1" : undefined,
+        isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined,
       )}
       {values.pickupSource === "route"
         ? renderField(
@@ -725,7 +756,7 @@ export function InvoiceForm({
                 })),
               ]}
             />,
-            isWizard ? "sm:col-span-2" : undefined,
+            isPhoneWizard ? undefined : isWizard ? "sm:col-span-2" : undefined,
           )
         : renderField(
             pickupEmployeeFieldLabel,
@@ -749,15 +780,25 @@ export function InvoiceForm({
                 ...pickupEmployeeOptions,
               ]}
             />,
-            isWizard ? "sm:col-span-2" : undefined,
+            isPhoneWizard ? undefined : isWizard ? "sm:col-span-2" : undefined,
           )}
     </div>
   );
 
   const partiesFields = (
-    <div className={cn("grid", isWizard ? "gap-5 md:grid-cols-2" : "gap-2.5 sm:grid-cols-2")}>
-      <div className="sm:col-span-2">{pickupReferenceField}</div>
-      <div className="space-y-1">
+    <div
+      className={cn(
+        "grid min-w-0",
+        isPhoneWizard ? "gap-4" : isWizard ? "gap-5 md:grid-cols-2" : "gap-2.5 sm:grid-cols-2",
+      )}
+    >
+      <div className={isPhoneWizard ? undefined : "sm:col-span-2"}>{pickupReferenceField}</div>
+      <div
+        className={cn(
+          "space-y-2",
+          isPhoneWizard && "border-b border-border/70 px-1 pb-4",
+        )}
+      >
         <div className="flex items-center justify-between gap-2">
           {isWizard ? (
             <Label htmlFor="senderId" className="text-xs font-normal text-muted-foreground">
@@ -796,7 +837,12 @@ export function InvoiceForm({
         ) : null}
       </div>
 
-      <div className="space-y-1">
+      <div
+        className={cn(
+          "space-y-2",
+          isPhoneWizard && "border-b border-border/70 px-1 pb-4",
+        )}
+      >
         <div className="flex items-center justify-between gap-2">
           {isWizard ? (
             <Label htmlFor="receiverId" className="text-xs font-normal text-muted-foreground">
@@ -839,13 +885,26 @@ export function InvoiceForm({
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
         <FormBody
           className={
-            isWizard
+            isPhoneWizard
+              ? "min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto bg-slate-50 px-4 py-5 pb-[calc(5rem+env(safe-area-inset-bottom))]"
+              : isWizard
               ? "flex-1 space-y-6 overflow-y-auto bg-muted/25 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:bg-card md:px-8 md:pb-12"
               : undefined
           }
         >
           {showDetailsSection ? (
-            isWizard ? (
+            isPhoneWizard ? (
+              <PhoneWizardSection
+                eyebrow={t("invoices.wizard.stepEyebrow", {
+                  step: 1,
+                  total: wizardTotalSteps,
+                  label: t("invoices.wizard.steps.details"),
+                })}
+                title={t("invoices.wizard.stepTitles.enterDetails")}
+              >
+                {detailsFields}
+              </PhoneWizardSection>
+            ) : isWizard ? (
               detailsFields
             ) : (
               <FormSection icon={Receipt} title={t("invoices.form.sections.invoiceDetails")} required>
@@ -855,7 +914,23 @@ export function InvoiceForm({
           ) : null}
 
           {showPartiesSection ? (
-            isWizard ? (
+            isPhoneWizard ? (
+              <section className="min-w-0 space-y-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {t("invoices.wizard.stepEyebrow", {
+                      step: 2,
+                      total: wizardTotalSteps,
+                      label: t("invoices.wizard.steps.parties"),
+                    })}
+                  </p>
+                  <h2 className="mt-1 font-[family-name:var(--font-invoice-display)] text-2xl font-extrabold uppercase leading-tight text-foreground">
+                    {t("invoices.wizard.stepTitles.selectParties")}
+                  </h2>
+                </div>
+                {partiesFields}
+              </section>
+            ) : isWizard ? (
               partiesFields
             ) : (
               <FormSection icon={Users} title={t("invoices.form.sections.senderReceiver")}>
@@ -869,7 +944,7 @@ export function InvoiceForm({
               <InvoiceLineItemsEditor
                 lineItems={values.lineItems}
                 catalogItems={catalogItems}
-                appearance="wizard"
+                appearance={isPhoneWizard ? "phoneWizard" : "wizard"}
                 onChange={(lineItems) => updateField("lineItems", lineItems)}
               />
             ) : (

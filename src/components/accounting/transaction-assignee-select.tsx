@@ -66,6 +66,7 @@ export function TransactionAssigneeSelect({
         onValueChange={handleValueChange}
         placeholder={t("accounting.dailyIncome.form.placeholders.selectEmployee")}
         searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchEmployees")}
+        mobileSheet
         options={options}
       />
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
