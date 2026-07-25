@@ -208,7 +208,7 @@ export function RegisterInvoiceTransactionFields({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid min-w-0 gap-4 sm:grid-cols-2">
       {showEmployee ? (
         <div className="sm:col-span-2">
           <TransactionAssigneeSelect
@@ -245,6 +245,7 @@ export function RegisterInvoiceTransactionFields({
           }}
           placeholder={t("accounting.dailyIncome.form.placeholders.selectPaymentMethod")}
           searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchPaymentMethods")}
+          mobileSheet
           options={paymentMethodOptions}
         />
         {!paymentDetailsRequired ? (
@@ -271,6 +272,7 @@ export function RegisterInvoiceTransactionFields({
             }}
             placeholder={t("accounting.dailyIncome.form.placeholders.selectBankAccount")}
             searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBankAccounts")}
+            mobileSheet
             options={bankAccountOptions}
           />
           {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
@@ -421,6 +423,7 @@ export function RegisterInvoiceTransactionFields({
                   placeholder={t("accounting.dailyIncome.form.placeholders.searchSender")}
                   searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchSenders")}
                   manualFiltering
+                  mobileSheet
                   loading={senderSearch.isFetching}
                   onSearchChange={setSenderQuery}
                   options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectSender") }, ...senderOptions]}
@@ -459,6 +462,7 @@ export function RegisterInvoiceTransactionFields({
                   placeholder={t("accounting.dailyIncome.form.placeholders.searchReceiver")}
                   searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchReceivers")}
                   manualFiltering
+                  mobileSheet
                   loading={receiverSearch.isFetching}
                   onSearchChange={setReceiverQuery}
                   options={[{ value: "", label: t("accounting.dailyIncome.form.placeholders.selectReceiver") }, ...receiverOptions]}

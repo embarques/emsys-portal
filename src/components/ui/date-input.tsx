@@ -11,7 +11,7 @@ const DateInput = React.forwardRef<HTMLInputElement, React.ComponentProps<"input
     React.useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement);
 
     return (
-      <div className="relative">
+      <div className="relative min-w-0 w-full max-w-full">
         <button
           type="button"
           aria-label="Open date picker"
@@ -25,7 +25,7 @@ const DateInput = React.forwardRef<HTMLInputElement, React.ComponentProps<"input
           ref={inputRef}
           type="date"
           className={cn(
-            "pl-9 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden",
+            "min-w-0 w-full max-w-full pl-9 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden",
             className
           )}
           {...props}
