@@ -7,9 +7,11 @@ import {
   CircleAlert,
   DollarSign,
   FileText,
+  Filter,
   Plus,
   Printer,
   Receipt,
+  Search,
   Tags,
   Trash2,
 } from "lucide-react";
@@ -57,6 +59,7 @@ import {
   getInvoicePaidMoneyClass,
   getInvoicePaidStatusBadgeClass,
   getInvoicePaidStatusLabel,
+  getInvoicePartyDisplayPhone,
   getInvoiceSubtotal,
   getInvoiceTotalMoneyClass,
   getPaymentLocationLabel,
@@ -126,6 +129,150 @@ function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefin
   );
 }
 
+function getInvoiceMobileInitials(invoice: Invoice): string {
+  const name =
+    invoice.sender?.name?.trim() ||
+    getInvoicePrimaryReceiver(invoice)?.name?.trim() ||
+    invoice.invoiceNumber;
+  const parts = name.split(/\s+/).filter(Boolean);
+  const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
+  return initials || "IN";
+}
+
+function getInvoiceMobilePartyName(invoice: Invoice, emptyLabel: string): string {
+  return invoice.sender?.name?.trim() || getInvoicePrimaryReceiver(invoice)?.name?.trim() || emptyLabel;
+}
+
+function getInvoiceMobilePhone(invoice: Invoice, emptyLabel: string): string {
+  const senderPhone = getInvoicePartyDisplayPhone(invoice.sender);
+  if (senderPhone !== "—") return senderPhone;
+
+  const phone = invoice.sender.phones.find((entry) => entry.number?.trim());
+  return phone?.number?.trim() || emptyLabel;
+}
+
+function getInvoiceMobileAddress(invoice: Invoice, emptyLabel: string): string {
+  const addressLine = formatInvoicePartyAddressLine(invoice.sender);
+  return addressLine === "—" ? emptyLabel : addressLine;
+}
+
+function formatInvoiceMonth(date: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(`${date}T12:00:00`));
+}
+
+function groupInvoicesByMonth(invoices: Invoice[]): Array<{ month: string; invoices: Invoice[] }> {
+  const groups: Array<{ month: string; invoices: Invoice[] }> = [];
+  const groupIndexByMonth = new Map<string, number>();
+  const sortedInvoices = [...invoices].sort((left, right) => {
+    const leftTime = new Date(`${left.date}T12:00:00`).getTime();
+    const rightTime = new Date(`${right.date}T12:00:00`).getTime();
+
+    if (rightTime !== leftTime) {
+      return rightTime - leftTime;
+    }
+
+    return right.invoiceNumber.localeCompare(left.invoiceNumber, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+
+  for (const invoice of sortedInvoices) {
+    const month = formatInvoiceMonth(invoice.date);
+    const existingIndex = groupIndexByMonth.get(month);
+
+    if (existingIndex === undefined) {
+      groupIndexByMonth.set(month, groups.length);
+      groups.push({ month, invoices: [invoice] });
+      continue;
+    }
+
+    groups[existingIndex]?.invoices.push(invoice);
+  }
+
+  return groups;
+}
+
+function getInvoiceMobileAvatarClass(invoice: Invoice): string {
+  const avatarClasses = [
+    "bg-blue-500 text-white",
+    "bg-fuchsia-500 text-white",
+    "bg-violet-500 text-white",
+    "bg-cyan-600 text-white",
+    "bg-emerald-600 text-white",
+  ];
+  const seed = Array.from(invoice.invoiceId || invoice.invoiceNumber).reduce(
+    (total, character) => total + character.charCodeAt(0),
+    0,
+  );
+
+  return avatarClasses[seed % avatarClasses.length] ?? avatarClasses[0];
+}
+
+function MobileInvoiceRow({
+  invoice,
+  onOpen,
+}: {
+  invoice: Invoice;
+  onOpen: (invoice: Invoice) => void;
+}) {
+  const { t } = useTranslation();
+  const status = resolveInvoicePaidStatus(invoice);
+  const balance = getInvoiceBalance(invoice);
+  const emptyLabel = t("common.empty.dash");
+  const isClosed = status === "closed";
+
+  return (
+    <button
+      type="button"
+      className="grid w-full grid-cols-[4.25rem_minmax(0,1fr)_auto] items-start gap-3 border-b border-border/70 px-1 py-4 text-left last:border-b-0"
+      onClick={() => onOpen(invoice)}
+    >
+      <span
+        className={cn(
+          "flex size-14 items-center justify-center rounded-full text-sm font-semibold shadow-xs",
+          getInvoiceMobileAvatarClass(invoice),
+        )}
+      >
+        {getInvoiceMobileInitials(invoice)}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-lg font-bold leading-tight text-foreground">
+          {invoice.invoiceNumber || emptyLabel}
+        </span>
+        <span className="mt-1 block truncate text-base font-medium uppercase leading-tight text-foreground/80">
+          {getInvoiceMobilePartyName(invoice, emptyLabel)}
+        </span>
+        <span className="mt-1 block truncate text-sm text-muted-foreground">
+          {formatInvoiceDate(invoice.date)}
+        </span>
+        <span className="mt-1 block truncate text-sm text-muted-foreground">
+          {getInvoiceMobilePhone(invoice, emptyLabel)}
+        </span>
+        <span className="mt-1 block truncate text-sm text-muted-foreground">
+          {getInvoiceMobileAddress(invoice, emptyLabel)}
+        </span>
+      </span>
+      <span className="flex flex-col items-end gap-3 pt-1">
+        <span
+          className={cn(
+            "text-lg font-bold leading-none",
+            isClosed ? "text-emerald-600" : "text-rose-600",
+          )}
+        >
+          {formatInvoiceMoney(balance)}
+        </span>
+        <span className="text-sm font-medium text-muted-foreground">
+          {getInvoicePaidStatusLabel(status)}
+        </span>
+      </span>
+    </button>
+  );
+}
+
 const defaultFilters: InvoiceFilterState = {
   query: "",
   rows: [],
@@ -136,7 +283,8 @@ export function InvoicesWorkspace() {
   const { t } = useTranslation();
   const { notifyAdded, notifyDeleted, notifyError } = useFeedback();
   const [filters, setFilters] = useState<InvoiceFilterState>(defaultFilters);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
@@ -220,7 +368,9 @@ export function InvoicesWorkspace() {
   });
   const deleteInvoicesMutation = useDeleteInvoices();
   const { printInvoiceIds, isPrinting } = usePrintInvoices();
-  const { data: routesData } = useRoutePicker(undefined, { enabled: filtersOpen });
+  const { data: routesData } = useRoutePicker(undefined, {
+    enabled: desktopFiltersOpen || mobileFiltersOpen,
+  });
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
 
   const invoices = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
@@ -264,6 +414,7 @@ export function InvoicesWorkspace() {
     () => invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)),
     [invoices, selectedIds],
   );
+  const mobileInvoiceGroups = useMemo(() => groupInvoicesByMonth(invoices), [invoices]);
 
   const routes = useMemo(
     () => routesData?.items ?? [],
@@ -598,24 +749,179 @@ export function InvoicesWorkspace() {
 
   return (
     <div>
-      <PageHeader
-        title={t("invoices.title")}
-        description={t("invoices.pages.description")}
-        actions={
-          <Button onClick={openAddForm}>
-            <Plus className="h-4 w-4" />
-            Add invoice
-          </Button>
-        }
-      />
+      <div className="[&>div>div>p]:max-md:hidden">
+        <PageHeader
+          title={t("invoices.title")}
+          description={t("invoices.pages.description")}
+          actions={
+            <Button onClick={openAddForm}>
+              <Plus className="h-4 w-4" />
+              Add invoice
+            </Button>
+          }
+        />
+      </div>
 
+      <section className="space-y-5 md:hidden">
+        <div className="flex items-center gap-3">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/80" />
+            <input
+              value={filters.query}
+              onChange={(event) => {
+                setFilters((current) => ({ ...current, query: event.target.value }));
+                setPage(1);
+              }}
+              className="h-12 w-full rounded-xl border-0 bg-muted/70 pl-12 pr-4 text-base outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+              placeholder="Search invoice"
+              aria-label="Search invoice"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn(
+              "size-12 shrink-0 rounded-full border-primary/30 text-primary",
+              mobileFiltersOpen || activeFilterCount > 0 ? "bg-primary/10" : "bg-background",
+            )}
+            onClick={() => setMobileFiltersOpen((open) => !open)}
+            aria-label="Filter invoices"
+          >
+            <Filter className="size-5" />
+          </Button>
+        </div>
+
+        {mobileFiltersOpen ? (
+          <TableFilterPanel
+            resultSummary={`Showing ${invoices.length} of ${totalInvoices} invoices`}
+            className="rounded-xl shadow-sm"
+            presets={{
+              storageKey: "invoices",
+              rows: filters.rows,
+              fields: INVOICE_TABLE_FILTER_FIELDS,
+              onApply: (rows) => {
+                setFilters((current) => ({ ...current, rows }));
+                setPage(1);
+              },
+            }}
+            onClearAll={
+              hasActiveFilters
+                ? () => {
+                    setFilters(defaultFilters);
+                    setPage(1);
+                  }
+                : undefined
+            }
+          >
+            <TableAdvancedFilterBuilder
+              open={mobileFiltersOpen}
+              rows={filters.rows}
+              fields={INVOICE_TABLE_FILTER_FIELDS}
+              dynamicOptions={{
+                users: usersLoading ? [] : userFilterOptions,
+                routes: routeOptions,
+              }}
+              onChange={(rows) => {
+                setFilters((current) => ({ ...current, rows }));
+                setPage(1);
+              }}
+            />
+          </TableFilterPanel>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-4 rounded-xl bg-primary/10 px-4 py-4 text-primary">
+          <span className="text-base font-semibold">Outstanding receivables</span>
+          <span className="shrink-0 text-xl font-bold">
+            {isLoading ? "…" : formatInvoiceMoney(kpis.outstanding)}
+          </span>
+        </div>
+
+        {!isLoading && !isError ? (
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <span className="text-sm font-medium text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : null}
+
+        <div className="rounded-xl bg-background">
+          {isError ? (
+            <div className="px-4 py-8 text-sm text-destructive">
+              {normalizeApiError(error).message}
+            </div>
+          ) : isLoading ? (
+            <div className="space-y-4 px-1 py-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-[4rem_minmax(0,1fr)_4.5rem] items-center gap-3 border-b border-border/70 pb-4 last:border-b-0"
+                >
+                  <div className="size-14 rounded-xl bg-muted" />
+                  <div className="space-y-2">
+                    <div className="h-5 w-36 rounded bg-muted" />
+                    <div className="h-4 w-44 rounded bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="ml-auto h-5 w-16 rounded bg-muted" />
+                    <div className="ml-auto h-4 w-12 rounded bg-muted" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : invoices.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+              No invoices match your search or filters.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {mobileInvoiceGroups.map((group) => (
+                <section key={group.month} aria-label={group.month}>
+                  <h2 className="px-1 pb-1 pt-3 text-lg font-medium text-muted-foreground first:pt-0">
+                    {group.month}
+                  </h2>
+                  <div>
+                    {group.invoices.map((invoice) => (
+                      <MobileInvoiceRow
+                        key={invoice.invoiceId}
+                        invoice={invoice}
+                        onOpen={openView}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="hidden md:block">
       <StatCards items={stats} mobileLayout="stack" />
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            filtersOpen={filtersOpen}
-            onFiltersOpenChange={setFiltersOpen}
+            filtersOpen={desktopFiltersOpen}
+            onFiltersOpenChange={setDesktopFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
@@ -651,7 +957,7 @@ export function InvoicesWorkspace() {
                 }
               >
                 <TableAdvancedFilterBuilder
-                  open={filtersOpen}
+                  open={desktopFiltersOpen}
                   rows={filters.rows}
                   fields={INVOICE_TABLE_FILTER_FIELDS}
                   dynamicOptions={{
@@ -774,6 +1080,7 @@ export function InvoicesWorkspace() {
           </div>
         ) : null}
       </Card>
+      </div>
 
       <InvoiceStagingDialog
         open={stagingOpen}
