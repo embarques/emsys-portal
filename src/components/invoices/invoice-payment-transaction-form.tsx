@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -64,6 +64,17 @@ function resolveEmployeeForCurrentUser(
     employees.find((item) => item.name.trim().toLowerCase() === user.name.trim().toLowerCase()) ??
     null
   );
+}
+
+function getFirstValidationMessage(errors: FieldErrors<DailyIncomeJournalValues>): string | null {
+  for (const error of Object.values(errors)) {
+    if (!error) continue;
+    if ("message" in error && typeof error.message === "string") {
+      return error.message;
+    }
+  }
+
+  return null;
 }
 
 export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered }: Props) {
@@ -225,9 +236,16 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     }
   }
 
+  function handleInvalid(nextErrors: FieldErrors<DailyIncomeJournalValues>) {
+    const message = getFirstValidationMessage(nextErrors);
+    if (!message) return;
+    setSubmitError(message);
+    notifyError(message);
+  }
+
   return (
     <div className="space-y-4">
-      <form id={formId} className="space-y-4" onSubmit={handleSubmit(submit)}>
+      <form id={formId} className="space-y-4" onSubmit={handleSubmit(submit, handleInvalid)}>
         <RegisterInvoiceTransactionFields
           employees={employees}
           bankAccounts={bankAccounts}

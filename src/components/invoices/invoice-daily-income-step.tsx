@@ -41,17 +41,22 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
   const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [localRegistration, setLocalRegistration] = useState<DailyIncomeJournal | null>(null);
   const currentUserQuery = useCurrentUser();
   const branchId = currentUserQuery.data?.branch.id ?? 0;
   const currentDate = todayDateValue();
   const registrationQuery = useDailyIncomeInvoiceRegistration(values.invoiceNumber);
-  const registration = registrationQuery.data ?? null;
+  const registration = registrationQuery.data ?? localRegistration;
   const statementQuery = useIncomeStatement(branchId, currentDate);
   const statement = statementQuery.data ?? null;
   const reopenMutation = useSetIncomeStatementStatus();
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, {
     enabled: values.pickupSource === "route" && Boolean(values.routeId),
   });
+
+  useEffect(() => {
+    setLocalRegistration(null);
+  }, [values.invoiceNumber]);
 
   const statementOpen = statement?.status === "OPEN";
   const associatedStatementId = statementOpen && statement ? statement.id : null;
@@ -78,7 +83,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
   ]);
 
   useEffect(() => {
-    if (!registrationQuery.isSuccess) return;
+    if (!registrationQuery.isSuccess && !localRegistration) return;
 
     if (registration) {
       onContextChange({
@@ -96,6 +101,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     });
   }, [
     associatedStatementId,
+    localRegistration,
     onContextChange,
     registration,
     registrationQuery.isSuccess,
@@ -103,6 +109,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
 
   const applyRegistration = useCallback(
     async (journal: DailyIncomeJournal) => {
+      setLocalRegistration(journal);
       onContextChange({
         registration: journal,
         incomeStatementId: journal.incomeStatementId || associatedStatementId,
