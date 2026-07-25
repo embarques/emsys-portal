@@ -14,7 +14,7 @@ type WizardFieldProps = {
 
 export function WizardField({ label, htmlFor, required, className, children }: WizardFieldProps) {
   return (
-    <div className={cn("space-y-1.5 sm:space-y-2", className)}>
+    <div className={cn("space-y-2 md:space-y-2", className)}>
       <Label htmlFor={htmlFor} className={wizardLabelClassName(required)}>
         {label}
         {required ? <span className="req"> *</span> : null}
