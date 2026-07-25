@@ -166,8 +166,21 @@ function formatInvoiceMonth(date: string): string {
 function groupInvoicesByMonth(invoices: Invoice[]): Array<{ month: string; invoices: Invoice[] }> {
   const groups: Array<{ month: string; invoices: Invoice[] }> = [];
   const groupIndexByMonth = new Map<string, number>();
+  const sortedInvoices = [...invoices].sort((left, right) => {
+    const leftTime = new Date(`${left.date}T12:00:00`).getTime();
+    const rightTime = new Date(`${right.date}T12:00:00`).getTime();
 
-  for (const invoice of invoices) {
+    if (rightTime !== leftTime) {
+      return rightTime - leftTime;
+    }
+
+    return right.invoiceNumber.localeCompare(left.invoiceNumber, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+
+  for (const invoice of sortedInvoices) {
     const month = formatInvoiceMonth(invoice.date);
     const existingIndex = groupIndexByMonth.get(month);
 
