@@ -824,6 +824,32 @@ export function InvoicesWorkspace() {
           </span>
         </div>
 
+        {!isLoading && !isError ? (
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <span className="text-sm font-medium text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : null}
+
         <div className="rounded-xl bg-background">
           {isError ? (
             <div className="px-4 py-8 text-sm text-destructive">
@@ -873,32 +899,6 @@ export function InvoicesWorkspace() {
             </div>
           )}
         </div>
-
-        {!isLoading && !isError ? (
-          <div className="flex items-center justify-between gap-3 pb-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : null}
       </section>
 
       <div className="hidden md:block">
