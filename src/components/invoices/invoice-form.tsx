@@ -610,7 +610,12 @@ export function InvoiceForm({
   );
 
   const detailsFields = (
-    <div className={cn("grid", isWizard ? "grid-cols-2 gap-4 md:gap-5" : "gap-2.5 sm:grid-cols-2")}>
+    <div
+      className={cn(
+        "grid",
+        isWizard ? "grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5" : "gap-2.5 sm:grid-cols-2",
+      )}
+    >
       {renderField(
         t("invoices.form.fields.date"),
         "date",
@@ -622,7 +627,7 @@ export function InvoiceForm({
           {...(isWizard ? wizardInputFieldProps(values.date, "pl-9 md:pl-8") : {})}
           required
         />,
-        isWizard ? "col-span-1" : undefined,
+        isWizard ? "sm:col-span-1" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.invoiceNumber"),
@@ -636,7 +641,7 @@ export function InvoiceForm({
           {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
           required
         />,
-        isWizard ? "col-span-1" : undefined,
+        isWizard ? "sm:col-span-1" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.container"),
@@ -658,7 +663,7 @@ export function InvoiceForm({
             })),
           ]}
         />,
-        isWizard ? "col-span-2" : undefined,
+        isWizard ? "sm:col-span-2" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.pending"),
@@ -678,7 +683,7 @@ export function InvoiceForm({
             label: option.label,
           }))}
         />,
-        isWizard ? "col-span-1" : undefined,
+        isWizard ? "sm:col-span-1" : undefined,
       )}
       {renderField(
         t("invoices.form.fields.pickupSource"),
@@ -696,7 +701,7 @@ export function InvoiceForm({
             label: t(option.labelKey),
           }))}
         />,
-        isWizard ? "col-span-1" : undefined,
+        isWizard ? "sm:col-span-1" : undefined,
       )}
       {values.pickupSource === "route"
         ? renderField(
@@ -720,7 +725,7 @@ export function InvoiceForm({
                 })),
               ]}
             />,
-            isWizard ? "col-span-2" : undefined,
+            isWizard ? "sm:col-span-2" : undefined,
           )
         : renderField(
             pickupEmployeeFieldLabel,
@@ -744,7 +749,7 @@ export function InvoiceForm({
                 ...pickupEmployeeOptions,
               ]}
             />,
-            isWizard ? "col-span-2" : undefined,
+            isWizard ? "sm:col-span-2" : undefined,
           )}
     </div>
   );

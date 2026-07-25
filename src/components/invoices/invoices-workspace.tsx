@@ -252,7 +252,7 @@ function MobileInvoiceRow({
         <span className="mt-1 block truncate text-sm text-muted-foreground">
           {getInvoiceMobilePhone(invoice, emptyLabel)}
         </span>
-        <span className="mt-1 block truncate text-sm text-muted-foreground">
+        <span className="mt-1 line-clamp-2 text-sm leading-snug text-muted-foreground">
           {getInvoiceMobileAddress(invoice, emptyLabel)}
         </span>
       </span>
@@ -265,7 +265,12 @@ function MobileInvoiceRow({
         >
           {formatInvoiceMoney(balance)}
         </span>
-        <span className="text-sm font-medium text-muted-foreground">
+        <span
+          className={cn(
+            "text-sm font-semibold",
+            isClosed ? "text-emerald-600" : "text-rose-600",
+          )}
+        >
           {getInvoicePaidStatusLabel(status)}
         </span>
       </span>
@@ -893,9 +898,18 @@ export function InvoicesWorkspace() {
             </p>
           ) : (
             <div className="space-y-2">
-              {mobileInvoiceGroups.map((group) => (
-                <section key={group.month} aria-label={group.month}>
-                  <h2 className="px-1 pb-1 pt-3 text-lg font-medium text-muted-foreground first:pt-0">
+              {mobileInvoiceGroups.map((group, groupIndex) => (
+                <section
+                  key={group.month}
+                  aria-label={group.month}
+                  className="border-b border-border pb-2 last:border-b-0 last:pb-0"
+                >
+                  <h2
+                    className={cn(
+                      "px-1 pb-1 text-lg font-medium text-muted-foreground",
+                      groupIndex === 0 ? "pt-0" : "pt-4",
+                    )}
+                  >
                     {group.month}
                   </h2>
                   <div>

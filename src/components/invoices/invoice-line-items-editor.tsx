@@ -122,6 +122,8 @@ type WizardLineItemsTableProps = {
   onMove: (id: string, direction: "up" | "down") => void;
 };
 
+type WizardLineItemsMobileCardsProps = WizardLineItemsTableProps;
+
 /** Move keyboard focus to a sibling field within the same line item row. */
 function focusFieldById(fieldId: string) {
   const element = document.getElementById(fieldId) as HTMLInputElement | null;
@@ -253,7 +255,7 @@ function LineItemEntryFields({
         />
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="min-w-0 space-y-2">
           <Label htmlFor={`${item.id}-quantity`} className={labelClass}>
             {quantityLabel} <span className="text-destructive">*</span>
@@ -330,6 +332,117 @@ function LineItemEntryFields({
   );
 }
 
+function WizardLineItemsMobileCards({
+  items,
+  editingId,
+  quantityColumn,
+  labelsColumn,
+  unitPriceColumn,
+  emptyMessage,
+  editLabel,
+  deleteLabel,
+  moveUpLabel,
+  moveDownLabel,
+  onEdit,
+  onRemove,
+  onMove,
+}: WizardLineItemsMobileCardsProps) {
+  const visibleItems = items.filter((item) => item.id !== editingId);
+
+  if (visibleItems.length === 0) {
+    return (
+      <div className="rounded-xl border bg-background px-4 py-8 text-center text-sm text-muted-foreground md:hidden">
+        {emptyMessage}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 md:hidden">
+      {visibleItems.map((item, index) => (
+        <article key={item.id} className="rounded-xl border bg-background p-4 shadow-xs">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="line-clamp-2 text-base font-semibold text-foreground">
+                {item.itemName.trim() || "—"}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {formatInvoiceMoney(resolveLineTotal(item))}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                aria-label={editLabel}
+                onClick={() => onEdit(item.id)}
+              >
+                <Pencil className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 text-destructive hover:text-destructive"
+                aria-label={deleteLabel}
+                onClick={() => onRemove(item.id)}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          </div>
+
+          <dl className="mt-4 grid grid-cols-3 gap-3 text-sm">
+            <div className="min-w-0 rounded-lg bg-muted/40 px-3 py-2">
+              <dt className="truncate text-xs text-muted-foreground">{quantityColumn}</dt>
+              <dd className="mt-1 font-semibold tabular-nums text-foreground">
+                {item.quantity || "—"}
+              </dd>
+            </div>
+            <div className="min-w-0 rounded-lg bg-muted/40 px-3 py-2">
+              <dt className="truncate text-xs text-muted-foreground">{labelsColumn}</dt>
+              <dd className="mt-1 font-semibold tabular-nums text-foreground">
+                {resolveLineLabelCount(item)}
+              </dd>
+            </div>
+            <div className="min-w-0 rounded-lg bg-muted/40 px-3 py-2">
+              <dt className="truncate text-xs text-muted-foreground">{unitPriceColumn}</dt>
+              <dd className="mt-1 font-semibold tabular-nums text-foreground">
+                {item.unitPrice.trim() ? formatInvoiceMoney(Number(item.unitPrice)) : "—"}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="mt-3 flex items-center justify-end gap-2 border-t pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={index === 0}
+              aria-label={moveUpLabel}
+              onClick={() => onMove(item.id, "up")}
+            >
+              <ArrowUp className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={index === visibleItems.length - 1}
+              aria-label={moveDownLabel}
+              onClick={() => onMove(item.id, "down")}
+            >
+              <ArrowDown className="size-4" />
+            </Button>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function WizardLineItemsTable({
   items,
   editingId,
@@ -351,7 +464,7 @@ function WizardLineItemsTable({
   const visibleItems = items.filter((item) => item.id !== editingId);
 
   return (
-    <div className="overflow-hidden rounded-xl border">
+    <div className="hidden overflow-hidden rounded-xl border md:block">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
@@ -870,6 +983,24 @@ function InvoiceLineItemsWizardEditor({
       </section>
 
       <section className="space-y-3">
+        <WizardLineItemsMobileCards
+          items={committedItems}
+          editingId={editingId}
+          descriptionColumn={labels.descriptionColumn}
+          quantityColumn={labels.quantityColumn}
+          labelsColumn={labels.labelsColumn}
+          unitPriceColumn={labels.unitPriceColumn}
+          totalColumn={labels.totalColumn}
+          actionsColumn={labels.actionsColumn}
+          emptyMessage={labels.emptyTable}
+          editLabel={labels.editLabel}
+          deleteLabel={labels.deleteLabel}
+          moveUpLabel={labels.moveUpLabel}
+          moveDownLabel={labels.moveDownLabel}
+          onEdit={startEdit}
+          onRemove={removeCommittedItem}
+          onMove={moveCommittedItem}
+        />
         <WizardLineItemsTable
           items={committedItems}
           editingId={editingId}
