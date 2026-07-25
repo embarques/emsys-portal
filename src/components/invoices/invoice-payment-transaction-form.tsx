@@ -8,6 +8,7 @@ import { useForm, type FieldErrors } from "react-hook-form";
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
+import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import {
   useAccountingPaymentMethods,
@@ -80,6 +81,7 @@ function getFirstValidationMessage(errors: FieldErrors<DailyIncomeJournalValues>
 export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered }: Props) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
+  const isMobileLayout = useIsMobileViewport();
   const formId = useId();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const currentUserQuery = useCurrentUser();
@@ -254,7 +256,7 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
           register={register}
           setValue={setValue}
           watch={watch}
-          showEmployee={false}
+          showEmployee={isMobileLayout}
           showInvoiceNumber={false}
           showParties={false}
           invoiceCostReadOnly

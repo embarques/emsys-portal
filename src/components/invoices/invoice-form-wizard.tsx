@@ -384,13 +384,16 @@ export function InvoiceFormWizard({
     return (
       <div
         data-testid="invoice-form-wizard"
-        className={cn("flex min-h-0 flex-1 flex-col bg-card", invoiceWizardTypographyRoot)}
+        className={cn(
+          "flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden bg-card",
+          invoiceWizardTypographyRoot,
+        )}
       >
         <div data-print-hide>
           <InvoiceWizardStepper step={step} includePaymentStep={requireDailyIncomeRegistration} />
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden overflow-x-hidden">
           <div data-print-hide className="shrink-0 border-b border-border px-4 py-3">
             <h2 className="font-[family-name:var(--font-invoice-display)] text-lg font-extrabold uppercase tracking-wide text-foreground">
               {t(stepTitleKey)}
@@ -399,15 +402,17 @@ export function InvoiceFormWizard({
 
           {bannerError ? <InvoiceWizardNotice tone="error" message={bannerError} /> : null}
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden overflow-x-hidden">
             {step <= 3 ? (
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{formStep}</div>
+              <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden overflow-x-hidden">
+                {formStep}
+              </div>
             ) : requireDailyIncomeRegistration && step === 4 ? (
-              <div className="h-full overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
+              <div className="h-full max-w-full overflow-x-hidden overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
                 {paymentStep}
               </div>
             ) : (
-              <div className="h-full overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
+              <div className="h-full max-w-full overflow-x-hidden overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
                 {previewContent}
               </div>
             )}
