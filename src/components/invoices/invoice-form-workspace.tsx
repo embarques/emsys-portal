@@ -78,12 +78,7 @@ function InvoiceWizardShell({
   isPrinting = false,
 }: InvoiceWizardShellProps) {
   return (
-    <div
-      className={cn(
-        "flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden overflow-x-hidden md:block",
-        invoiceWizardTypographyRoot,
-      )}
-    >
+    <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden md:block", invoiceWizardTypographyRoot)}>
       <div className="shrink-0 border-b border-border px-4 py-2.5 md:mb-6 md:flex md:flex-row md:items-start md:justify-between md:gap-4 md:border-0 md:px-0 md:py-0">
         <div className="hidden md:block">
           <p className={invoicePageEyebrowClassName}>Invoice wizard</p>
@@ -98,8 +93,8 @@ function InvoiceWizardShell({
         </div>
       </div>
 
-      <div className="mx-auto flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden md:block md:max-w-6xl">
-        <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden overflow-x-hidden bg-card md:max-h-[calc(100vh-11rem)] md:rounded-xl md:border md:border-border md:shadow-sm">
+      <div className="mx-auto flex min-h-0 w-full flex-1 flex-col md:block md:max-w-6xl">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-card md:max-h-[calc(100vh-11rem)] md:rounded-xl md:border md:border-border md:shadow-sm">
           <InvoiceFormWizard
             key={initialValues.invoiceId || "new"}
             initialValues={initialValues}

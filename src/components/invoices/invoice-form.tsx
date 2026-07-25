@@ -840,7 +840,7 @@ export function InvoiceForm({
         <FormBody
           className={
             isWizard
-              ? "max-w-full flex-1 space-y-6 overflow-x-hidden overflow-y-auto bg-muted/25 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:bg-card md:px-8 md:pb-12"
+              ? "flex-1 space-y-6 overflow-y-auto bg-muted/25 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:bg-card md:px-8 md:pb-12"
               : undefined
           }
         >
