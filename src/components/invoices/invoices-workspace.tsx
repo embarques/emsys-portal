@@ -900,9 +900,12 @@ export function InvoicesWorkspace() {
             <div className="space-y-2">
               {mobileInvoiceGroups.map((group) => (
                 <section key={group.month} aria-label={group.month}>
-                  <h2 className="px-1 pb-1 pt-3 text-lg font-medium text-muted-foreground first:pt-0">
-                    {group.month}
-                  </h2>
+                  <div className="flex items-center gap-3 px-1 pb-1 pt-4 first:pt-0">
+                    <h2 className="shrink-0 text-lg font-medium text-muted-foreground">
+                      {group.month}
+                    </h2>
+                    <div className="h-px flex-1 bg-border" aria-hidden />
+                  </div>
                   <div>
                     {group.invoices.map((invoice) => (
                       <MobileInvoiceRow
