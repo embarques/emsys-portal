@@ -59,6 +59,7 @@ import {
   getInvoicePaidMoneyClass,
   getInvoicePaidStatusBadgeClass,
   getInvoicePaidStatusLabel,
+  getInvoicePartyDisplayPhone,
   getInvoiceSubtotal,
   getInvoiceTotalMoneyClass,
   getPaymentLocationLabel,
@@ -129,7 +130,10 @@ function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefin
 }
 
 function getInvoiceMobileInitials(invoice: Invoice): string {
-  const name = invoice.sender?.name?.trim() || getInvoicePrimaryReceiver(invoice)?.name?.trim() || invoice.invoiceNumber;
+  const name =
+    invoice.sender?.name?.trim() ||
+    getInvoicePrimaryReceiver(invoice)?.name?.trim() ||
+    invoice.invoiceNumber;
   const parts = name.split(/\s+/).filter(Boolean);
   const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
   return initials || "IN";
@@ -137,6 +141,62 @@ function getInvoiceMobileInitials(invoice: Invoice): string {
 
 function getInvoiceMobilePartyName(invoice: Invoice, emptyLabel: string): string {
   return invoice.sender?.name?.trim() || getInvoicePrimaryReceiver(invoice)?.name?.trim() || emptyLabel;
+}
+
+function getInvoiceMobilePhone(invoice: Invoice, emptyLabel: string): string {
+  const senderPhone = getInvoicePartyDisplayPhone(invoice.sender);
+  if (senderPhone !== "—") return senderPhone;
+
+  const phone = invoice.sender.phones.find((entry) => entry.number?.trim());
+  return phone?.number?.trim() || emptyLabel;
+}
+
+function getInvoiceMobileAddress(invoice: Invoice, emptyLabel: string): string {
+  const addressLine = formatInvoicePartyAddressLine(invoice.sender);
+  return addressLine === "—" ? emptyLabel : addressLine;
+}
+
+function formatInvoiceMonth(date: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(`${date}T12:00:00`));
+}
+
+function groupInvoicesByMonth(invoices: Invoice[]): Array<{ month: string; invoices: Invoice[] }> {
+  const groups: Array<{ month: string; invoices: Invoice[] }> = [];
+  const groupIndexByMonth = new Map<string, number>();
+
+  for (const invoice of invoices) {
+    const month = formatInvoiceMonth(invoice.date);
+    const existingIndex = groupIndexByMonth.get(month);
+
+    if (existingIndex === undefined) {
+      groupIndexByMonth.set(month, groups.length);
+      groups.push({ month, invoices: [invoice] });
+      continue;
+    }
+
+    groups[existingIndex]?.invoices.push(invoice);
+  }
+
+  return groups;
+}
+
+function getInvoiceMobileAvatarClass(invoice: Invoice): string {
+  const avatarClasses = [
+    "bg-blue-500 text-white",
+    "bg-fuchsia-500 text-white",
+    "bg-violet-500 text-white",
+    "bg-cyan-600 text-white",
+    "bg-emerald-600 text-white",
+  ];
+  const seed = Array.from(invoice.invoiceId || invoice.invoiceNumber).reduce(
+    (total, character) => total + character.charCodeAt(0),
+    0,
+  );
+
+  return avatarClasses[seed % avatarClasses.length] ?? avatarClasses[0];
 }
 
 function MobileInvoiceRow({
@@ -149,36 +209,50 @@ function MobileInvoiceRow({
   const { t } = useTranslation();
   const status = resolveInvoicePaidStatus(invoice);
   const balance = getInvoiceBalance(invoice);
+  const emptyLabel = t("common.empty.dash");
+  const isClosed = status === "closed";
 
   return (
     <button
       type="button"
-      className="grid w-full grid-cols-[4rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-border/70 px-1 py-4 text-left last:border-b-0"
+      className="grid w-full grid-cols-[4.25rem_minmax(0,1fr)_auto] items-start gap-3 border-b border-border/70 px-1 py-4 text-left last:border-b-0"
       onClick={() => onOpen(invoice)}
     >
-      <span className="flex size-14 items-center justify-center rounded-xl border bg-card text-sm font-semibold text-muted-foreground shadow-xs">
+      <span
+        className={cn(
+          "flex size-14 items-center justify-center rounded-full text-sm font-semibold shadow-xs",
+          getInvoiceMobileAvatarClass(invoice),
+        )}
+      >
         {getInvoiceMobileInitials(invoice)}
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-lg font-semibold leading-tight text-foreground">
-          {getInvoiceMobilePartyName(invoice, t("common.empty.dash"))}
+        <span className="block truncate text-lg font-bold leading-tight text-foreground">
+          {invoice.invoiceNumber || emptyLabel}
+        </span>
+        <span className="mt-1 block truncate text-base font-medium uppercase leading-tight text-foreground/80">
+          {getInvoiceMobilePartyName(invoice, emptyLabel)}
         </span>
         <span className="mt-1 block truncate text-sm text-muted-foreground">
-          {invoice.invoiceNumber || t("common.empty.dash")} | {formatInvoiceDate(invoice.date)}
+          {formatInvoiceDate(invoice.date)}
+        </span>
+        <span className="mt-1 block truncate text-sm text-muted-foreground">
+          {getInvoiceMobilePhone(invoice, emptyLabel)}
+        </span>
+        <span className="mt-1 block truncate text-sm text-muted-foreground">
+          {getInvoiceMobileAddress(invoice, emptyLabel)}
         </span>
       </span>
-      <span className="flex flex-col items-end gap-2">
-        <span className="text-lg font-bold leading-none text-foreground">
-          {formatInvoiceMoney(balance)}
-        </span>
+      <span className="flex flex-col items-end gap-3 pt-1">
         <span
           className={cn(
-            "text-xs font-semibold uppercase tracking-wide",
-            status === "closed"
-              ? "text-emerald-600"
-              : "text-amber-600",
+            "text-lg font-bold leading-none",
+            isClosed ? "text-emerald-600" : "text-rose-600",
           )}
         >
+          {formatInvoiceMoney(balance)}
+        </span>
+        <span className="text-sm font-medium text-muted-foreground">
           {getInvoicePaidStatusLabel(status)}
         </span>
       </span>
@@ -196,7 +270,8 @@ export function InvoicesWorkspace() {
   const { t } = useTranslation();
   const { notifyAdded, notifyDeleted, notifyError } = useFeedback();
   const [filters, setFilters] = useState<InvoiceFilterState>(defaultFilters);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
@@ -280,7 +355,9 @@ export function InvoicesWorkspace() {
   });
   const deleteInvoicesMutation = useDeleteInvoices();
   const { printInvoiceIds, isPrinting } = usePrintInvoices();
-  const { data: routesData } = useRoutePicker(undefined, { enabled: filtersOpen });
+  const { data: routesData } = useRoutePicker(undefined, {
+    enabled: desktopFiltersOpen || mobileFiltersOpen,
+  });
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
 
   const invoices = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
@@ -324,6 +401,7 @@ export function InvoicesWorkspace() {
     () => invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)),
     [invoices, selectedIds],
   );
+  const mobileInvoiceGroups = useMemo(() => groupInvoicesByMonth(invoices), [invoices]);
 
   const routes = useMemo(
     () => routesData?.items ?? [],
@@ -692,16 +770,16 @@ export function InvoicesWorkspace() {
             size="icon"
             className={cn(
               "size-12 shrink-0 rounded-full border-primary/30 text-primary",
-              filtersOpen || activeFilterCount > 0 ? "bg-primary/10" : "bg-background",
+              mobileFiltersOpen || activeFilterCount > 0 ? "bg-primary/10" : "bg-background",
             )}
-            onClick={() => setFiltersOpen((open) => !open)}
+            onClick={() => setMobileFiltersOpen((open) => !open)}
             aria-label="Filter invoices"
           >
             <Filter className="size-5" />
           </Button>
         </div>
 
-        {filtersOpen ? (
+        {mobileFiltersOpen ? (
           <TableFilterPanel
             resultSummary={`Showing ${invoices.length} of ${totalInvoices} invoices`}
             className="rounded-xl shadow-sm"
@@ -724,7 +802,7 @@ export function InvoicesWorkspace() {
             }
           >
             <TableAdvancedFilterBuilder
-              open={filtersOpen}
+              open={mobileFiltersOpen}
               rows={filters.rows}
               fields={INVOICE_TABLE_FILTER_FIELDS}
               dynamicOptions={{
@@ -775,9 +853,22 @@ export function InvoicesWorkspace() {
               No invoices match your search or filters.
             </p>
           ) : (
-            <div>
-              {invoices.map((invoice) => (
-                <MobileInvoiceRow key={invoice.invoiceId} invoice={invoice} onOpen={openView} />
+            <div className="space-y-2">
+              {mobileInvoiceGroups.map((group) => (
+                <section key={group.month} aria-label={group.month}>
+                  <h2 className="px-1 pb-1 pt-3 text-lg font-medium text-muted-foreground first:pt-0">
+                    {group.month}
+                  </h2>
+                  <div>
+                    {group.invoices.map((invoice) => (
+                      <MobileInvoiceRow
+                        key={invoice.invoiceId}
+                        invoice={invoice}
+                        onOpen={openView}
+                      />
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           )}
@@ -816,8 +907,8 @@ export function InvoicesWorkspace() {
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            filtersOpen={filtersOpen}
-            onFiltersOpenChange={setFiltersOpen}
+            filtersOpen={desktopFiltersOpen}
+            onFiltersOpenChange={setDesktopFiltersOpen}
             activeFilterCount={activeFilterCount}
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
@@ -853,7 +944,7 @@ export function InvoicesWorkspace() {
                 }
               >
                 <TableAdvancedFilterBuilder
-                  open={filtersOpen}
+                  open={desktopFiltersOpen}
                   rows={filters.rows}
                   fields={INVOICE_TABLE_FILTER_FIELDS}
                   dynamicOptions={{
