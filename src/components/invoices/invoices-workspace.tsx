@@ -252,7 +252,7 @@ function MobileInvoiceRow({
         <span className="mt-1 block truncate text-sm text-muted-foreground">
           {getInvoiceMobilePhone(invoice, emptyLabel)}
         </span>
-        <span className="mt-1 block truncate text-sm text-muted-foreground">
+        <span className="mt-1 line-clamp-2 text-sm leading-snug text-muted-foreground">
           {getInvoiceMobileAddress(invoice, emptyLabel)}
         </span>
       </span>
@@ -265,7 +265,12 @@ function MobileInvoiceRow({
         >
           {formatInvoiceMoney(balance)}
         </span>
-        <span className="text-sm font-medium text-muted-foreground">
+        <span
+          className={cn(
+            "text-sm font-semibold",
+            isClosed ? "text-emerald-600" : "text-rose-600",
+          )}
+        >
           {getInvoicePaidStatusLabel(status)}
         </span>
       </span>
