@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 type SharedProps = {
   open: boolean;
   presentation?: "dialog" | "tab";
+  appearance?: "default" | "phone";
   employees: Employee[];
   accounts: ChartAccount[];
   bankAccounts: ChartAccount[];
@@ -81,6 +82,8 @@ export function AddTransactionWizard(props: Props) {
   const { t } = useTranslation();
   const formId = useId();
   const presentation = props.presentation ?? "dialog";
+  const appearance = props.appearance ?? "default";
+  const isPhone = appearance === "phone";
   const isEdit = props.mode === "edit";
   const [step, setStep] = useState<1 | 2>(isEdit ? 2 : 1);
   const [selectedType, setSelectedType] = useState<JournalTransactionType | null>(
@@ -141,37 +144,43 @@ export function AddTransactionWizard(props: Props) {
     <div
       data-testid="transaction-wizard"
       className={cn(
-        "flex flex-col",
+        "flex min-w-0 flex-col overflow-x-hidden",
         presentation === "dialog" ? "max-h-[90vh]" : "min-h-0 flex-1",
+        isPhone && "h-full max-h-[100dvh] bg-background",
       )}
     >
       {presentation === "dialog" ? (
-        <DialogHeader className="shrink-0 space-y-4 border-b border-border px-6 py-4 pr-12">
+        <DialogHeader
+          className={cn(
+            "shrink-0 space-y-4 border-b border-border px-6 py-4 pr-12",
+            isPhone && "space-y-3 px-4 pb-4 pt-5 pr-12",
+          )}
+        >
           <div>
-            <DialogTitle>
+            <DialogTitle className={cn(isPhone && "text-2xl")}>
               {isEdit
                 ? t("accounting.dailyIncome.wizard.editTitle")
                 : t("accounting.dailyIncome.wizard.addTitle")}
             </DialogTitle>
-            <DialogDescription>{t("accounting.dailyIncome.wizard.description")}</DialogDescription>
+            <DialogDescription className={cn(isPhone && "text-base")}>{t("accounting.dailyIncome.wizard.description")}</DialogDescription>
           </div>
-          <TransactionWizardStepper step={step} />
+          <TransactionWizardStepper step={step} appearance={appearance} />
         </DialogHeader>
       ) : (
         <div className="shrink-0 border-b border-border px-5 py-3">
-          <TransactionWizardStepper step={step} />
+          <TransactionWizardStepper step={step} appearance={appearance} />
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {step === 1 ? (
-          <div className="flex-1 overflow-y-auto px-6 py-5">
-            <TransactionTypeSelector value={selectedType} onChange={handleTypeChange} />
+          <div className={cn("flex-1 overflow-y-auto px-6 py-5", isPhone && "overflow-x-hidden px-4 py-4")}>
+            <TransactionTypeSelector value={selectedType} onChange={handleTypeChange} appearance={appearance} />
           </div>
         ) : null}
 
         {selectedType ? (
-          <div className={cn("relative min-h-0 flex-1 flex-col", step === 2 ? "flex" : "hidden")}>
+          <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", step === 2 ? "flex" : "hidden")}>
             {props.isSubmitting && step === 2 ? (
               <div
                 className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-[1px]"
@@ -195,6 +204,7 @@ export function AddTransactionWizard(props: Props) {
               invoices={props.invoices}
               paymentMethods={props.paymentMethods}
               showTypeSummary={!isEdit}
+              appearance={appearance}
               focusSecondFieldSignal={!isEdit ? focusSecondFieldSignal : undefined}
               onSubmit={handleFormSubmit}
             />
@@ -206,23 +216,24 @@ export function AddTransactionWizard(props: Props) {
         className={cn(
           "shrink-0 border-t border-border bg-card",
           presentation === "dialog" ? "px-6 py-3" : "px-5 py-3",
+          isPhone && "pb-[calc(env(safe-area-inset-bottom)+0.75rem)] px-4 py-3",
         )}
       >
         {step === 1 ? (
-          <div className="flex items-center justify-between gap-3">
-            <Button type="button" variant="outline" onClick={props.onCancel} disabled={props.isSubmitting}>
+          <div className={cn("flex items-center justify-between gap-3", isPhone && "grid grid-cols-2")}>
+            <Button type="button" variant="outline" onClick={props.onCancel} disabled={props.isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
               {t("common.actions.cancel")}
             </Button>
-            <Button type="button" onClick={handleNext} disabled={!selectedType || props.isSubmitting}>
+            <Button type="button" onClick={handleNext} disabled={!selectedType || props.isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
               {t("common.actions.next")}
               <ArrowRight className="size-4" />
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-3">
+          <div className={cn("flex items-center justify-between gap-3", isPhone && "flex-col items-stretch")}>
             <div className="flex min-w-0 flex-1 items-center">
               {!isEdit ? (
-                <Button type="button" variant="outline" onClick={handleBack} disabled={props.isSubmitting}>
+                <Button type="button" variant="outline" onClick={handleBack} disabled={props.isSubmitting} className={cn(isPhone && "hidden")}>
                   <ArrowLeft className="size-4" />
                   {t("common.actions.previous")}
                 </Button>
@@ -233,11 +244,18 @@ export function AddTransactionWizard(props: Props) {
                 <p className="ml-3 min-w-0 truncate text-sm text-destructive">{props.error}</p>
               ) : null}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button type="button" variant="outline" onClick={props.onCancel} disabled={props.isSubmitting}>
-                {t("common.actions.cancel")}
+            <div className={cn("flex shrink-0 items-center gap-2", isPhone && "grid grid-cols-2")}>
+              <Button type="button" variant="outline" onClick={isPhone && !isEdit ? handleBack : props.onCancel} disabled={props.isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
+                {isPhone && !isEdit ? (
+                  <>
+                    <ArrowLeft className="size-4" />
+                    {t("common.actions.previous")}
+                  </>
+                ) : (
+                  t("common.actions.cancel")
+                )}
               </Button>
-              <Button type="submit" form={formId} disabled={props.isSubmitting}>
+              <Button type="submit" form={formId} disabled={props.isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
                 {props.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                 {props.isSubmitting ? t("common.actions.saving") : t("accounting.dailyIncome.wizard.saveTransaction")}
               </Button>
