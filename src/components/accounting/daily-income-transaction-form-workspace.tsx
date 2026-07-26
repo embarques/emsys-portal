@@ -16,7 +16,7 @@ import {
   useIncomeStatementById,
   useUpdateDailyIncomeJournal,
 } from "@/lib/accounting/daily-income/hooks";
-import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, transactionCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
@@ -91,7 +91,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
         return;
       }
 
-      notifySuccess(t("accounting.dailyIncome.toasts.transactionCreated"));
+      notifySuccess(transactionCreatedToastMessage(values, t));
     } catch (error) {
       const message = normalizeApiError(error).message;
       setFormError(message);

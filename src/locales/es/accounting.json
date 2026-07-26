@@ -243,6 +243,8 @@
       "statementOpened": "Ingresos diarios abiertos.",
       "statementClosed": "Ingresos diarios cerrados.",
       "transactionCreated": "Transacción creada.",
+      "transactionCreatedWithType": "Transacción creada: {{type}}.",
+      "transactionCreatedWithTarget": "Transacción creada: {{type}} - {{target}}.",
       "transactionUpdated": "Transacción actualizada.",
       "invoiceRegistered": "Nueva factura #{{invoiceNumber}} creada y pago registrado."
     },

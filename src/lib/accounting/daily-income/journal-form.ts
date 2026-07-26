@@ -19,6 +19,25 @@ export function transactionTypeLabel(value: string, t: TranslateFn) {
   return t(`accounting.dailyIncome.transactionTypes.${key}.shortLabel`);
 }
 
+function transactionCreatedToastTarget(values: DailyIncomeJournalValues) {
+  return (
+    values.accountName?.trim() ||
+    values.invoiceNumber?.trim() ||
+    values.sourceAccountName?.trim() ||
+    values.paymentAccountName?.trim() ||
+    values.paymentMethodName?.trim() ||
+    values.refNumber?.trim()
+  );
+}
+
+export function transactionCreatedToastMessage(values: DailyIncomeJournalValues, t: TranslateFn) {
+  const type = transactionTypeLabel(values.transactionType, t);
+  const target = transactionCreatedToastTarget(values);
+  return target
+    ? t("accounting.dailyIncome.toasts.transactionCreatedWithTarget", { type, target })
+    : t("accounting.dailyIncome.toasts.transactionCreatedWithType", { type });
+}
+
 export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournalValues {
   return {
     transactionType: row.transactionType,

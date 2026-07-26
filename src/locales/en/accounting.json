@@ -243,6 +243,8 @@
       "statementOpened": "Daily income opened.",
       "statementClosed": "Daily income closed.",
       "transactionCreated": "Transaction created.",
+      "transactionCreatedWithType": "Transaction created: {{type}}.",
+      "transactionCreatedWithTarget": "Transaction created: {{type}} - {{target}}.",
       "transactionUpdated": "Transaction updated.",
       "invoiceRegistered": "New invoice #{{invoiceNumber}} created and payment registered."
     },
