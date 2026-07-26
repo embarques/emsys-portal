@@ -53,6 +53,10 @@ function isCashAccount(account: ChartAccount) {
   return /\bcash\b/.test(searchable) || /\befectivo\b/.test(searchable);
 }
 
+function isUserRevenueAccount(account: ChartAccount) {
+  return account.type === "REVENUE" && !account.systemAccount;
+}
+
 export function DailyIncomeTransactionForm({
   transactionType,
   initialValues,
@@ -139,8 +143,9 @@ export function DailyIncomeTransactionForm({
   const needsBankAccount = requiresBankAccount(paymentMethodName);
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
   const expenseAccounts = useMemo(() => accounts.filter((account) => account.type === "EXPENSE"), [accounts]);
+  const revenueAccounts = useMemo(() => accounts.filter(isUserRevenueAccount), [accounts]);
   const expenseSourceAccounts = useMemo(() => accounts.filter((account) => account.type === "ASSET"), [accounts]);
-  const accountSelectAccounts = type === "EXPENSE" ? expenseAccounts : accounts;
+  const accountSelectAccounts = type === "EXPENSE" ? expenseAccounts : type === "SALES" ? revenueAccounts : accounts;
   const sourceAccountSelectAccounts = type === "EXPENSE" ? expenseSourceAccounts : accounts;
   const accountOptions = useMemo(
     () =>
@@ -225,12 +230,12 @@ export function DailyIncomeTransactionForm({
   }, [bankAccounts, needsBankAccount, paymentAccountId, setValue]);
 
   useEffect(() => {
-    if (type !== "EXPENSE") return;
-    if (!accountId || expenseAccounts.some((account) => account.id === accountId)) return;
+    if (type !== "EXPENSE" && type !== "SALES") return;
+    if (!accountId || accountSelectAccounts.some((account) => account.id === accountId)) return;
     setValue("accountId", undefined, { shouldValidate: true });
     setValue("accountName", "");
     setValue("accountType", undefined);
-  }, [accountId, expenseAccounts, setValue, type]);
+  }, [accountId, accountSelectAccounts, setValue, type]);
 
   useEffect(() => {
     if (type !== "EXPENSE" || expenseSourceAccounts.length === 0) return;
