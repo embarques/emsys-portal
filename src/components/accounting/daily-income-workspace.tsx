@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Edit, Lock, LockOpen, Plus, ScrollText } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Edit, Lock, LockOpen, Plus, ScrollText, Trash2 } from "lucide-react";
 
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomeStatementForm } from "@/components/accounting/daily-income-statement-form";
@@ -45,6 +45,7 @@ import {
   formatDailyIncomeMoney,
   getDailyIncomeCurrencyIcon,
 } from "@/lib/accounting/daily-income/display";
+import { formatAccountingDate } from "@/lib/accounting/display";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -57,6 +58,7 @@ import {
 } from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import type { DataTableColumn } from "@/lib/table/types";
+import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 
@@ -69,6 +71,121 @@ function today() {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function transactionTitle(row: DailyIncomeJournal, fallback: string) {
+  return (row.invoice?.number ?? row.account?.displayName ?? row.account?.name ?? row.refNumber) || fallback;
+}
+
+function transactionParty(row: DailyIncomeJournal, fallback: string) {
+  return row.invoice?.receiver?.name ?? row.invoice?.sender?.name ?? row.account?.name ?? fallback;
+}
+
+function transactionAmountClassName(row: DailyIncomeJournal) {
+  if (row.amount === 0) return "text-emerald-700";
+  if (row.transactionType === "EXPENSE" || row.transactionType === "DISCOUNT") return "text-rose-600";
+  return "text-emerald-700";
+}
+
+function DailyIncomeMobileSummary({
+  stats,
+  loading,
+  error,
+}: {
+  stats: StatCardItem[];
+  loading: boolean;
+  error?: string | null;
+}) {
+  if (error) {
+    return <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</p>;
+  }
+
+  if (loading) {
+    return <p className="rounded-2xl border bg-card px-4 py-5 text-sm text-muted-foreground">Loading summary totals…</p>;
+  }
+
+  if (stats.length === 0) return null;
+
+  const primary = stats[0];
+  const secondary = stats.slice(1, 5);
+
+  return (
+    <section className="rounded-3xl bg-primary px-5 py-5 text-primary-foreground shadow-sm">
+      <p className="text-sm font-medium opacity-85">{primary.label}</p>
+      <p className="mt-2 text-4xl font-bold tracking-normal">{primary.value}</p>
+      {primary.description ? <p className="mt-1 text-xs opacity-75">{primary.description}</p> : null}
+      {secondary.length > 0 ? (
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          {secondary.map((item) => (
+            <div key={item.label} className="rounded-2xl bg-white/12 px-3 py-3">
+              <p className="text-xs opacity-75">{item.label}</p>
+              <p className="mt-1 text-lg font-semibold">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function DailyIncomeMobileTransactionRow({
+  row,
+  currency,
+  canModify,
+  onEdit,
+  onDelete,
+  t,
+}: {
+  row: DailyIncomeJournal;
+  currency: string;
+  canModify: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  t: ReturnType<typeof useTranslation>["t"];
+}) {
+  const title = transactionTitle(row, t("common.empty.dash"));
+  const party = transactionParty(row, t("common.empty.dash"));
+  const employee = getTransactionAssigneeDisplayName(row.employee?.name, row.employeeGroup?.name);
+
+  return (
+    <div className="border-b border-border/80 py-4 last:border-b-0">
+      <button
+        type="button"
+        onClick={canModify ? onEdit : undefined}
+        disabled={!canModify}
+        className="grid w-full grid-cols-[1fr_auto] gap-4 text-left disabled:cursor-default"
+      >
+        <span className="min-w-0">
+          <span className="block truncate text-lg font-bold leading-tight text-foreground">{title}</span>
+          <span className="mt-1 block truncate text-base text-foreground/80">{party}</span>
+          <span className="mt-1 block text-sm text-muted-foreground">{formatAccountingDate(row.date)}</span>
+          <span className="mt-2 flex min-w-0 flex-wrap gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            <span>{transactionTypeLabel(row.transactionType, t)}</span>
+            {row.paymentMethod?.name ? <span>- {row.paymentMethod.name}</span> : null}
+            {employee ? <span>- {employee}</span> : null}
+          </span>
+        </span>
+        <span className="shrink-0 text-right">
+          <span className={cn("block text-xl font-bold tabular-nums", transactionAmountClassName(row))}>
+            {formatDailyIncomeMoney(row.amount, currency)}
+          </span>
+          {row.refNumber ? <span className="mt-1 block text-xs text-muted-foreground">#{row.refNumber}</span> : null}
+        </span>
+      </button>
+      {canModify ? (
+        <div className="mt-3 flex justify-end gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onEdit}>
+            <Edit className="size-4" />
+            {t("common.actions.edit")}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={onDelete} className="text-destructive">
+            <Trash2 className="size-4" />
+            {t("common.actions.delete")}
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export function DailyIncomeWorkspace() {
@@ -271,7 +388,168 @@ export function DailyIncomeWorkspace() {
     setTransactionDialog(true);
   }
 
-  return <div>
+  return <div className="overflow-x-hidden">
+    <div className="space-y-5 md:hidden">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-4xl font-bold tracking-normal">{t("accounting.dailyIncome.title")}</h1>
+            <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+              <CalendarDays className="size-4 shrink-0" />
+              <span className="truncate">{formatAccountingDate(date)}</span>
+              {selectedBranch ? <span className="truncate">- {selectedBranch.code}</span> : null}
+            </div>
+          </div>
+          <Badge
+            className={cn(
+              "mt-1 shrink-0 rounded-full px-3 py-1 text-xs font-semibold",
+              statement?.status === "OPEN"
+                ? "border-transparent bg-emerald-100 text-emerald-700"
+                : statement
+                  ? "border-transparent bg-slate-100 text-slate-700"
+                  : "border-transparent bg-amber-100 text-amber-700",
+            )}
+          >
+            {statement
+              ? statement.status === "OPEN"
+                ? t("accounting.dailyIncome.status.open")
+                : t("accounting.dailyIncome.status.closed")
+              : t("accounting.dailyIncome.filters.noCloseout")}
+          </Badge>
+        </div>
+
+        <div className="grid gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="daily-branch-mobile">{t("accounting.dailyIncome.filters.branch")}</Label>
+            <SearchableSelect
+              id="daily-branch-mobile"
+              className="min-h-12 rounded-xl border-border bg-card text-base"
+              value={branchCode}
+              onValueChange={(next) => {
+                setBranchCode(next);
+                setPage(1);
+              }}
+              options={branches.map((branch) => ({
+                value: branch.code,
+                label: `${branch.code} — ${branch.name}`,
+                keywords: [branch.code, branch.name],
+              }))}
+              placeholder={t("accounting.dailyIncome.filters.selectBranch")}
+              searchPlaceholder={t("accounting.dailyIncome.filters.searchBranches")}
+              mobileSheet
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="daily-date-mobile">{t("accounting.dailyIncome.filters.date")}</Label>
+            <DateInput
+              id="daily-date-mobile"
+              className="h-12 min-h-12 w-full max-w-full rounded-xl border-border bg-card text-base"
+              value={date}
+              onChange={(event) => {
+                setDate(event.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {statement ? (
+        <DailyIncomeMobileSummary
+          stats={stats}
+          loading={summaryTotalsQuery.isLoading}
+          error={summaryTotalsQuery.isError ? normalizeApiError(summaryTotalsQuery.error).message : null}
+        />
+      ) : (
+        <div className="rounded-3xl border bg-card px-5 py-6 shadow-sm">
+          <p className="text-lg font-semibold">{t("accounting.dailyIncome.filters.noCloseout")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("accounting.dailyIncome.description")}</p>
+          <Button className="mt-5 h-12 w-full rounded-xl text-base" onClick={() => setStatementDialog(true)} disabled={!branchCode}>
+            <Plus className="size-5" />
+            {t("accounting.dailyIncome.actions.createCloseout")}
+          </Button>
+        </div>
+      )}
+
+      {statement ? (
+        <div className="space-y-4">
+          <div className="grid gap-3">
+            <Button className="h-12 rounded-xl text-base" onClick={openAddTransactionForm} disabled={statement.status !== "OPEN"}>
+              <Plus className="size-5" />
+              {t("accounting.dailyIncome.actions.addTransaction")}
+            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" className="h-11 rounded-xl" onClick={() => setStatementDialog(true)}>
+                <Edit className="size-4" />
+                {t("accounting.dailyIncome.actions.editCloseout")}
+              </Button>
+              <Button
+                variant={statement.status === "OPEN" ? "destructive" : "default"}
+                className="h-11 rounded-xl"
+                onClick={() => changeStatus(statement.status !== "OPEN")}
+                disabled={statusMutation.isPending}
+              >
+                {statement.status === "OPEN" ? <Lock className="size-4" /> : <LockOpen className="size-4" />}
+                {statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-2xl font-bold tracking-normal">{t("accounting.dailyIncome.transactions.title")}</h2>
+              <span className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: PAGE_SIZE, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</span>
+            </div>
+            <TableSearchInput
+              value={query}
+              onChange={(value) => {
+                setQuery(value);
+                setPage(1);
+              }}
+              placeholder={t("accounting.dailyIncome.transactions.searchPlaceholder")}
+              className="min-w-0"
+              inputClassName="h-12 rounded-2xl border-0 bg-blue-50 text-base shadow-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <Button variant="outline" className="h-11 rounded-xl" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+              <ChevronLeft className="size-4" />
+              {t("common.actions.previous")}
+            </Button>
+            <span className="text-sm font-medium text-muted-foreground">{t("common.pagination.pageOf", { current: page, total: totalPages })}</span>
+            <Button variant="outline" className="h-11 rounded-xl" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
+              {t("common.actions.next")}
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+
+          <div className="rounded-3xl bg-card px-4 shadow-sm">
+            {journalsQuery.isError ? (
+              <div className="py-8 text-sm text-destructive">{normalizeApiError(journalsQuery.error).message}</div>
+            ) : journalsQuery.isLoading ? (
+              <div className="py-8 text-sm text-muted-foreground">{t("accounting.dailyIncome.transactions.loadingTitle")}</div>
+            ) : rows.length === 0 ? (
+              <div className="py-8 text-sm text-muted-foreground">{t("accounting.dailyIncome.transactions.empty")}</div>
+            ) : (
+              rows.map((row) => (
+                <DailyIncomeMobileTransactionRow
+                  key={row.id}
+                  row={row}
+                  currency={displayCurrency}
+                  canModify={statementOpen}
+                  onEdit={() => openEditTransactionForm(row)}
+                  onDelete={() => setDeleteJournal(row)}
+                  t={t}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+
+    <div className="hidden md:block">
     <PageHeader title={t("accounting.dailyIncome.title")} description={t("accounting.dailyIncome.description")} actions={<>
       {statement ? <Button variant="outline" onClick={() => setStatementDialog(true)}><Edit className="h-4 w-4" /> {t("accounting.dailyIncome.actions.editCloseout")}</Button> : <Button onClick={() => setStatementDialog(true)} disabled={!branchCode}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.createCloseout")}</Button>}
       {statement ? <Button variant={statement.status === "OPEN" ? "destructive" : "default"} onClick={() => changeStatus(statement.status !== "OPEN")} disabled={statusMutation.isPending}>{statement.status === "OPEN" ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}{statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}</Button> : null}
@@ -368,9 +646,10 @@ export function DailyIncomeWorkspace() {
       {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: PAGE_SIZE, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-4 w-4" /> {t("common.actions.previous")}</Button><span className="px-2 text-sm text-muted-foreground">{t("common.pagination.pageOf", { current: page, total: totalPages })}</span><Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>{t("common.actions.next")} <ChevronRight className="h-4 w-4" /></Button></div></div> : null}
     </Card>
     </> : null}
+    </div>
 
     <Dialog open={statementDialog} onOpenChange={(open) => { setStatementDialog(open); if (!open) setFormError(null); }}><DialogContent className="sm:max-w-xl"><DialogHeader><DialogTitle>{statement ? t("accounting.dailyIncome.statement.editTitle") : t("accounting.dailyIncome.statement.createTitle")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.statement.description")}</DialogDescription></DialogHeader><DailyIncomeStatementForm branches={branches} initialValues={statementValues} isSubmitting={mutationPending} error={formError} onSubmit={saveStatement} onCancel={() => setStatementDialog(false)} /></DialogContent></Dialog>
-    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">{editingJournal ? <AddTransactionWizard open={transactionDialog} mode="edit" initialValues={journalToFormValues(editingJournal)} employees={employees} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" employees={employees} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
+    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={journalToFormValues(editingJournal)} employees={employees} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
     <Dialog open={Boolean(deleteJournal)} onOpenChange={(open) => !open && setDeleteJournal(null)}><DialogContent><DialogHeader><DialogTitle>{t("accounting.dailyIncome.delete.title")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.delete.description")}</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setDeleteJournal(null)}>{t("common.actions.cancel")}</Button><Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (!deleteJournal) return; deleteMutation.mutateAsync(deleteJournal.id).then(() => { setDeleteJournal(null); feedback.notifyDeleted(t("accounting.dailyIncome.transactionNoun"), 1); }).catch((error) => feedback.notifyError(normalizeApiError(error).message)); }}>{t("common.actions.delete")}</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }

@@ -34,6 +34,7 @@ type Props = {
   paymentMethods: AccountingLookup[];
   formId: string;
   showTypeSummary?: boolean;
+  appearance?: "default" | "phone";
   focusSecondFieldSignal?: number;
   onSubmit: (values: DailyIncomeJournalValues) => void | Promise<void>;
 };
@@ -57,10 +58,12 @@ export function DailyIncomeTransactionForm({
   paymentMethods,
   formId,
   showTypeSummary = false,
+  appearance = "default",
   focusSecondFieldSignal,
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
+  const isPhone = appearance === "phone";
   const typeOption = getTransactionTypeOption(transactionType, t);
   const TypeIcon = typeOption.icon;
   const handleEnterNavigation = useFormEnterNavigation();
@@ -210,11 +213,16 @@ export function DailyIncomeTransactionForm({
       id={formId}
       onSubmit={handleSubmit((values) => onSubmit(values))}
       onKeyDown={handleEnterNavigation}
-      className="flex min-h-0 flex-1 flex-col"
+      className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden", isPhone && "bg-background")}
     >
-      <FormBody>
+      <FormBody
+        className={cn(
+          isPhone &&
+            "space-y-5 overflow-x-hidden bg-background px-4 py-5 [&_input]:h-12 [&_input]:rounded-xl [&_input]:text-base [&_label]:text-base [&_textarea]:min-h-28 [&_textarea]:rounded-xl [&_textarea]:text-base",
+        )}
+      >
         {showTypeSummary ? (
-          <div className="flex items-center gap-3 rounded-lg border border-blue-100 bg-card px-4 py-3">
+          <div className={cn("flex items-center gap-3 rounded-lg border border-blue-100 bg-card px-4 py-3", isPhone && "rounded-2xl shadow-sm")}>
             <span
               className={cn(
                 "flex size-9 shrink-0 items-center justify-center rounded-lg",
@@ -230,7 +238,7 @@ export function DailyIncomeTransactionForm({
           </div>
         ) : null}
 
-        <FormSection title={typeOption.sectionTitle} required>
+        <FormSection title={typeOption.sectionTitle} required className={cn(isPhone && "space-y-4")}>
           {isRegisterInvoice ? (
             <RegisterInvoiceTransactionFields
               employees={employees}
@@ -261,6 +269,7 @@ export function DailyIncomeTransactionForm({
                   }}
                   placeholder={t("accounting.dailyIncome.form.placeholders.selectInvoice")}
                   searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchInvoices")}
+                  mobileSheet
                   options={invoiceOptions}
                 />
                 {errors.invoiceId ? (
@@ -321,6 +330,7 @@ export function DailyIncomeTransactionForm({
                 }}
                 placeholder={t("accounting.dailyIncome.form.placeholders.selectPaymentMethod")}
                 searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchPaymentMethods")}
+                mobileSheet
                 options={paymentMethodOptions}
               />
               {errors.paymentMethodId ? (
@@ -342,6 +352,7 @@ export function DailyIncomeTransactionForm({
                   }}
                   placeholder={t("accounting.dailyIncome.form.placeholders.selectBankAccount")}
                   searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchBankAccounts")}
+                  mobileSheet
                   options={bankAccountOptions}
                 />
                 {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
@@ -414,6 +425,7 @@ export function DailyIncomeTransactionForm({
                   }}
                   placeholder={t("accounting.dailyIncome.form.placeholders.selectAccount")}
                   searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
+                  mobileSheet
                   options={accountOptions}
                 />
                 {errors.accountId ? (
@@ -436,6 +448,7 @@ export function DailyIncomeTransactionForm({
                   }}
                   placeholder={t("accounting.dailyIncome.form.placeholders.selectSourceAccount")}
                   searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
+                  mobileSheet
                   options={accountOptions}
                 />
                 {errors.sourceAccountId ? (
