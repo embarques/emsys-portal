@@ -78,6 +78,13 @@ function clearTypeSpecificFields(
   return emptyTransaction(nextType);
 }
 
+function isTextEntryTarget(target: EventTarget | null): target is HTMLInputElement | HTMLTextAreaElement {
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return false;
+  if (target instanceof HTMLTextAreaElement) return true;
+
+  return !["button", "checkbox", "radio", "submit", "reset", "hidden"].includes(target.type);
+}
+
 export function AddTransactionWizard(props: Props) {
   const { t } = useTranslation();
   const formId = useId();
@@ -94,6 +101,7 @@ export function AddTransactionWizard(props: Props) {
   );
   const [formSessionKey, setFormSessionKey] = useState(0);
   const [focusSecondFieldSignal, setFocusSecondFieldSignal] = useState(0);
+  const [isPhoneFieldFocused, setIsPhoneFieldFocused] = useState(false);
 
   useEffect(() => {
     if (!props.open) return;
@@ -102,6 +110,7 @@ export function AddTransactionWizard(props: Props) {
       setStep(2);
       setSelectedType(props.initialValues.transactionType);
       setDetailValues(props.initialValues);
+      setIsPhoneFieldFocused(false);
       return;
     }
 
@@ -110,6 +119,7 @@ export function AddTransactionWizard(props: Props) {
     setDetailValues(emptyTransaction("INITIAL-PAYMENT"));
     setFormSessionKey(0);
     setFocusSecondFieldSignal(0);
+    setIsPhoneFieldFocused(false);
   }, [props.open, isEdit, isEdit ? props.initialValues : null]);
 
   async function handleFormSubmit(values: DailyIncomeJournalValues) {
@@ -131,11 +141,13 @@ export function AddTransactionWizard(props: Props) {
   }
 
   function handleBack() {
+    setIsPhoneFieldFocused(false);
     setStep(1);
   }
 
   function handleNext() {
     if (!selectedType) return;
+    setIsPhoneFieldFocused(false);
     setDetailValues((current) => clearTypeSpecificFields(current, selectedType));
     setStep(2);
   }
@@ -143,6 +155,17 @@ export function AddTransactionWizard(props: Props) {
   return (
     <div
       data-testid="transaction-wizard"
+      onFocusCapture={(event) => {
+        if (isPhone && isTextEntryTarget(event.target)) {
+          setIsPhoneFieldFocused(true);
+        }
+      }}
+      onBlurCapture={() => {
+        if (!isPhone) return;
+        window.setTimeout(() => {
+          setIsPhoneFieldFocused(isTextEntryTarget(document.activeElement));
+        }, 0);
+      }}
       className={cn(
         "flex min-w-0 flex-col overflow-x-hidden",
         presentation === "dialog" ? "max-h-[90vh]" : "min-h-0 flex-1",
@@ -217,6 +240,7 @@ export function AddTransactionWizard(props: Props) {
           "shrink-0 border-t border-border bg-card",
           presentation === "dialog" ? "px-6 py-3" : "px-5 py-3",
           isPhone && "pb-[calc(env(safe-area-inset-bottom)+0.75rem)] px-4 py-3",
+          isPhone && step === 2 && isPhoneFieldFocused && "hidden",
         )}
       >
         {step === 1 ? (
