@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
@@ -48,6 +48,11 @@ function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React
   );
 }
 
+function isCashAccount(account: ChartAccount) {
+  const searchable = [account.name, account.displayName].filter(Boolean).join(" ").toLowerCase();
+  return /\bcash\b/.test(searchable) || /\befectivo\b/.test(searchable);
+}
+
 export function DailyIncomeTransactionForm({
   transactionType,
   initialValues,
@@ -67,6 +72,7 @@ export function DailyIncomeTransactionForm({
   const typeOption = getTransactionTypeOption(transactionType, t);
   const TypeIcon = typeOption.icon;
   const handleEnterNavigation = useFormEnterNavigation();
+  const [sourceAccountDefaultCleared, setSourceAccountDefaultCleared] = useState(false);
   const schema = useMemo(
     () =>
       createDailyIncomeJournalSchema({
@@ -108,6 +114,7 @@ export function DailyIncomeTransactionForm({
 
   useEffect(() => {
     reset({ ...initialValues, transactionType });
+    setSourceAccountDefaultCleared(false);
   }, [initialValues, reset, transactionType]);
 
   useEffect(() => {
@@ -131,16 +138,27 @@ export function DailyIncomeTransactionForm({
   const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
+  const expenseAccounts = useMemo(() => accounts.filter((account) => account.type === "EXPENSE"), [accounts]);
+  const expenseSourceAccounts = useMemo(() => accounts.filter((account) => account.type === "ASSET"), [accounts]);
+  const accountSelectAccounts = type === "EXPENSE" ? expenseAccounts : accounts;
+  const sourceAccountSelectAccounts = type === "EXPENSE" ? expenseSourceAccounts : accounts;
   const accountOptions = useMemo(
-    () => [
-      { value: "", label: t("accounting.dailyIncome.form.placeholders.selectAccount") },
-      ...accounts.map((account) => ({
+    () =>
+      accountSelectAccounts.map((account) => ({
         value: String(account.id),
         label: account.displayName,
         keywords: [account.displayName],
       })),
-    ],
-    [accounts, t],
+    [accountSelectAccounts],
+  );
+  const sourceAccountOptions = useMemo(
+    () =>
+      sourceAccountSelectAccounts.map((account) => ({
+        value: String(account.id),
+        label: account.displayName,
+        keywords: [account.displayName],
+      })),
+    [sourceAccountSelectAccounts],
   );
   const bankAccountOptions = useMemo(
     () => [
@@ -154,15 +172,13 @@ export function DailyIncomeTransactionForm({
     [bankAccounts, t],
   );
   const paymentMethodOptions = useMemo(
-    () => [
-      { value: "", label: t("accounting.dailyIncome.form.placeholders.selectPaymentMethod") },
-      ...paymentMethods.map((method) => ({
+    () =>
+      paymentMethods.map((method) => ({
         value: String(method.id),
         label: method.name,
         keywords: [method.name],
       })),
-    ],
-    [paymentMethods, t],
+    [paymentMethods],
   );
   const invoiceOptions = useMemo(
     () =>
@@ -207,6 +223,25 @@ export function DailyIncomeTransactionForm({
     setValue("paymentAccountName", account.displayName);
     setValue("paymentAccountType", account.type);
   }, [bankAccounts, needsBankAccount, paymentAccountId, setValue]);
+
+  useEffect(() => {
+    if (type !== "EXPENSE") return;
+    if (!accountId || expenseAccounts.some((account) => account.id === accountId)) return;
+    setValue("accountId", undefined, { shouldValidate: true });
+    setValue("accountName", "");
+    setValue("accountType", undefined);
+  }, [accountId, expenseAccounts, setValue, type]);
+
+  useEffect(() => {
+    if (type !== "EXPENSE" || expenseSourceAccounts.length === 0) return;
+    if (sourceAccountDefaultCleared) return;
+    if (sourceAccountId && expenseSourceAccounts.some((account) => account.id === sourceAccountId)) return;
+
+    const account = expenseSourceAccounts.find(isCashAccount) ?? expenseSourceAccounts[0];
+    setValue("sourceAccountId", account.id, { shouldValidate: true });
+    setValue("sourceAccountName", account.displayName);
+    setValue("sourceAccountType", account.type);
+  }, [expenseSourceAccounts, setValue, sourceAccountDefaultCleared, sourceAccountId, type]);
 
   return (
     <form
@@ -407,15 +442,6 @@ export function DailyIncomeTransactionForm({
               </div>
             ) : null}
 
-            <div className="space-y-2">
-              <Label htmlFor="journal-reference">{t("accounting.dailyIncome.form.fields.referenceNumber")}</Label>
-              <Input
-                id="journal-reference"
-                placeholder={t("accounting.dailyIncome.form.placeholders.enterReferenceNumber")}
-                {...register("refNumber")}
-              />
-            </div>
-
             {needsAccount ? (
               <div className="space-y-2">
                 <RequiredLabel htmlFor="journal-account">{t("accounting.dailyIncome.form.fields.account")}</RequiredLabel>
@@ -423,13 +449,14 @@ export function DailyIncomeTransactionForm({
                   id="journal-account"
                   value={accountId != null ? String(accountId) : ""}
                   onValueChange={(next) => {
-                    const account = accounts.find((item) => item.id === Number(next));
+                    const account = accountSelectAccounts.find((item) => item.id === Number(next));
                     setValue("accountId", account?.id, { shouldValidate: true });
                     setValue("accountName", account?.displayName ?? "");
                     setValue("accountType", account?.type);
                   }}
                   placeholder={t("accounting.dailyIncome.form.placeholders.selectAccount")}
                   searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
+                  selectAllOnFocus
                   mobileSheet
                   options={accountOptions}
                 />
@@ -446,15 +473,17 @@ export function DailyIncomeTransactionForm({
                   id="journal-source"
                   value={sourceAccountId != null ? String(sourceAccountId) : ""}
                   onValueChange={(next) => {
-                    const account = accounts.find((item) => item.id === Number(next));
+                    setSourceAccountDefaultCleared(next === "");
+                    const account = sourceAccountSelectAccounts.find((item) => item.id === Number(next));
                     setValue("sourceAccountId", account?.id, { shouldValidate: true });
                     setValue("sourceAccountName", account?.displayName ?? "");
                     setValue("sourceAccountType", account?.type);
                   }}
                   placeholder={t("accounting.dailyIncome.form.placeholders.selectSourceAccount")}
                   searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
+                  selectAllOnFocus
                   mobileSheet
-                  options={accountOptions}
+                  options={sourceAccountOptions}
                 />
                 {errors.sourceAccountId ? (
                   <p className="text-sm text-destructive">{errors.sourceAccountId.message}</p>
@@ -473,6 +502,15 @@ export function DailyIncomeTransactionForm({
                 {...register("amount", { setValueAs: moneyFormSetValueAs })}
               />
               {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="journal-reference">{t("accounting.dailyIncome.form.fields.referenceNumber")}</Label>
+              <Input
+                id="journal-reference"
+                placeholder={t("accounting.dailyIncome.form.placeholders.enterReferenceNumber")}
+                {...register("refNumber")}
+              />
             </div>
 
             <div className="space-y-2 sm:col-span-2">

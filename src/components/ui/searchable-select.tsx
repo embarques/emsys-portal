@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Command as CommandPrimitive, defaultFilter } from "cmdk";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { focusNextFormField } from "@/hooks/use-form-enter-navigation";
@@ -169,6 +169,7 @@ export function SearchableSelect({
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const suppressNextFocusSearchRef = React.useRef(false);
   const scrollIsolationRef = useScrollIsolation();
   const isMobile = useIsMobileViewport();
 
@@ -186,6 +187,13 @@ export function SearchableSelect({
 
   function focusSearchInput(shouldSelectAll = false) {
     if (disabled) return;
+    if (suppressNextFocusSearchRef.current) {
+      suppressNextFocusSearchRef.current = false;
+      return;
+    }
+    if (shouldSelectAll && hasSelection && selectedOption && !open) {
+      changeQuery(selectedOption.label);
+    }
     setOpen(true);
     window.requestAnimationFrame(() => {
       const input = inputRef.current;
@@ -243,6 +251,15 @@ export function SearchableSelect({
     : "whitespace-nowrap text-left";
   const showSelectionLabel =
     !truncateSelection && !open && hasSelection && !query;
+  const canClearSelection = hasSelection && value !== "";
+
+  function clearSelection() {
+    suppressNextFocusSearchRef.current = true;
+    onValueChange("");
+    changeQuery("");
+    setOpen(false);
+    window.setTimeout(() => inputRef.current?.focus(), 0);
+  }
 
   function renderOptionItems(selectOptions: SearchableSelectOption[]) {
     return selectOptions.map((option, index) => {
@@ -273,11 +290,12 @@ export function SearchableSelect({
     });
   }
 
-  const optionItems = renderOptionItems(options);
+  const selectableOptions = options.filter((option) => !isPseudoPlaceholderOption(option));
+  const optionItems = renderOptionItems(selectableOptions);
 
   if (mobileSheet && isMobile) {
     const sheetTitle = ariaLabel ?? placeholder;
-    const mobileOptions = options.filter((option) => !isPseudoPlaceholderOption(option));
+    const mobileOptions = selectableOptions;
     const showMobileSearch = searchable && mobileOptions.length > MOBILE_SHEET_SEARCH_THRESHOLD;
 
     return (
@@ -429,7 +447,7 @@ export function SearchableSelect({
                 triggerClassName,
                 disabled && "cursor-not-allowed opacity-50",
                 className,
-                "pr-9 pl-3",
+                canClearSelection ? "pr-16 pl-3" : "pr-9 pl-3",
               )}
             >
               {showSelectionLabel ? (
@@ -475,6 +493,29 @@ export function SearchableSelect({
                   !hasSelection && !open && "text-muted-foreground",
                 )}
               />
+              {canClearSelection ? (
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  disabled={disabled}
+                  aria-label="Clear selection"
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    clearSelection();
+                  }}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
+                  className="absolute inset-y-0 right-8 flex w-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              ) : null}
               <button
                 type="button"
                 tabIndex={-1}
