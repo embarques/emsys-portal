@@ -110,15 +110,15 @@ function DailyIncomeMobileSummary({
   const secondary = stats.slice(1, 5);
 
   return (
-    <section className="rounded-3xl bg-primary px-5 py-5 text-primary-foreground shadow-sm">
-      <p className="text-sm font-medium opacity-85">{primary.label}</p>
+    <section className="rounded-3xl border bg-card px-5 py-5 text-foreground shadow-sm">
+      <p className="text-sm font-medium text-muted-foreground">{primary.label}</p>
       <p className="mt-2 text-4xl font-bold tracking-normal">{primary.value}</p>
-      {primary.description ? <p className="mt-1 text-xs opacity-75">{primary.description}</p> : null}
+      {primary.description ? <p className="mt-1 text-xs text-muted-foreground">{primary.description}</p> : null}
       {secondary.length > 0 ? (
         <div className="mt-5 grid grid-cols-2 gap-3">
           {secondary.map((item) => (
-            <div key={item.label} className="rounded-2xl bg-white/12 px-3 py-3">
-              <p className="text-xs opacity-75">{item.label}</p>
+            <div key={item.label} className="rounded-2xl border bg-muted/35 px-3 py-3">
+              <p className="text-xs text-muted-foreground">{item.label}</p>
               <p className="mt-1 text-lg font-semibold">{item.value}</p>
             </div>
           ))}
