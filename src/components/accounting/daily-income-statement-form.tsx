@@ -54,8 +54,8 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
   const branchOptions = branches.map((branch) => ({ value: String(branch.id), label: `${branch.code} — ${branch.name}`, keywords: [branch.code, branch.name] }));
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit(onSubmit)} className="min-w-0 space-y-5">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="statement-branch">{t("accounting.dailyIncome.statement.fields.branch")}</Label>
           <SearchableSelect
@@ -70,6 +70,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
             options={branchOptions}
             placeholder={t("accounting.dailyIncome.statement.placeholders.selectBranch")}
             searchPlaceholder={t("accounting.dailyIncome.statement.placeholders.searchBranches")}
+            mobileSheet
           />
           {errors.branchId ? <p className="text-sm text-destructive">{errors.branchId.message}</p> : null}
         </div>
@@ -91,6 +92,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
             }}
             options={currencyOptions}
             placeholder={t("accounting.dailyIncome.currency.select")}
+            mobileSheet
           />
         </div>
         {showExchangeRate ? (
@@ -106,12 +108,12 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
       <input type="hidden" {...register("branchId", { valueAsNumber: true })} />
       <input type="hidden" {...register("branchCode")} />
       <input type="hidden" {...register("branchName")} />
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <div className="flex justify-end gap-2 border-t pt-4">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+      {error ? <p className="break-words text-sm text-destructive">{error}</p> : null}
+      <div className="grid grid-cols-2 gap-2 border-t pt-4 sm:flex sm:justify-end">
+        <Button type="button" variant="outline" className="min-w-0" onClick={onCancel} disabled={isSubmitting}>
           {t("common.actions.cancel")}
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" className="min-w-0 whitespace-normal" disabled={isSubmitting}>
           {isSubmitting ? t("common.actions.saving") : t("accounting.dailyIncome.statement.save")}
         </Button>
       </div>
