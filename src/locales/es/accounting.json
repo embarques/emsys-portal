@@ -31,7 +31,11 @@
     },
     "values": {
       "allBranches": "Todas",
-      "systemAccount": "Sistema"
+      "systemAccount": "Sistema",
+      "defaultAccount": "Predeterminada"
+    },
+    "mobile": {
+      "allTypes": "Todos los tipos"
     },
     "actions": {
       "edit": "Editar cuenta",
