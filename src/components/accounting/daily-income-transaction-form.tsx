@@ -221,8 +221,13 @@ export function DailyIncomeTransactionForm({
             "space-y-5 overflow-x-hidden bg-background px-4 py-5 [&_input]:h-12 [&_input]:rounded-xl [&_input]:text-base [&_label]:text-base [&_textarea]:min-h-28 [&_textarea]:rounded-xl [&_textarea]:text-base",
         )}
       >
-        {showTypeSummary ? (
-          <div className={cn("flex items-center gap-3 rounded-lg border border-blue-100 bg-card px-4 py-3", isPhone && "rounded-2xl shadow-sm")}>
+        {showTypeSummary && isPhone ? (
+          <div className="space-y-1">
+            <h2 className="text-3xl font-bold tracking-normal text-foreground">{typeOption.label}</h2>
+            <p className="text-base text-muted-foreground">{typeOption.description}</p>
+          </div>
+        ) : showTypeSummary ? (
+          <div className="flex items-center gap-3 rounded-lg border border-blue-100 bg-card px-4 py-3">
             <span
               className={cn(
                 "flex size-9 shrink-0 items-center justify-center rounded-lg",
