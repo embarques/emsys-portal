@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Edit, Lock, LockOpen, Plus, ScrollText, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, ChevronUp, Edit, Lock, LockOpen, Plus, ScrollText, Trash2 } from "lucide-react";
 
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomeStatementForm } from "@/components/accounting/daily-income-statement-form";
@@ -96,6 +96,8 @@ function DailyIncomeMobileSummary({
   loading: boolean;
   error?: string | null;
 }) {
+  const [expanded, setExpanded] = useState(true);
+
   if (error) {
     return <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</p>;
   }
@@ -110,16 +112,26 @@ function DailyIncomeMobileSummary({
   const secondary = stats.slice(1, 5);
 
   return (
-    <section className="rounded-3xl border bg-card px-5 py-5 text-foreground shadow-sm">
-      <p className="text-sm font-medium text-muted-foreground">{primary.label}</p>
-      <p className="mt-2 text-4xl font-bold tracking-normal">{primary.value}</p>
-      {primary.description ? <p className="mt-1 text-xs text-muted-foreground">{primary.description}</p> : null}
-      {secondary.length > 0 ? (
-        <div className="mt-5 grid grid-cols-2 gap-3">
+    <section className="overflow-hidden rounded-3xl border bg-card text-foreground shadow-sm">
+      <button
+        type="button"
+        className="flex w-full items-start justify-between gap-4 px-5 py-5 text-left"
+        onClick={() => setExpanded((value) => !value)}
+        aria-expanded={expanded}
+      >
+        <span className="min-w-0">
+          <span className="block text-sm font-medium text-muted-foreground">{primary.label}</span>
+          <span className="mt-2 block text-4xl font-bold tracking-normal">{primary.value}</span>
+          {primary.description ? <span className="mt-1 block text-xs text-muted-foreground">{primary.description}</span> : null}
+        </span>
+        <ChevronUp className={cn("mt-1 size-5 shrink-0 transition-transform", !expanded && "rotate-180")} />
+      </button>
+      {expanded && secondary.length > 0 ? (
+        <div className="border-t px-5 py-2">
           {secondary.map((item) => (
-            <div key={item.label} className="rounded-2xl border bg-muted/35 px-3 py-3">
-              <p className="text-xs text-muted-foreground">{item.label}</p>
-              <p className="mt-1 text-lg font-semibold">{item.value}</p>
+            <div key={item.label} className="flex items-center justify-between gap-4 border-b py-3 last:border-b-0">
+              <span className="min-w-0 text-base text-muted-foreground">{item.label}</span>
+              <span className="shrink-0 text-lg font-semibold tabular-nums">{item.value}</span>
             </div>
           ))}
         </div>
