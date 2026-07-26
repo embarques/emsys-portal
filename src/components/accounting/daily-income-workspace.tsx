@@ -87,6 +87,78 @@ function transactionAmountClassName(row: DailyIncomeJournal) {
   return "text-emerald-700";
 }
 
+function isTotalCashSummaryLabel(label: string) {
+  const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return normalized.includes("total") && (normalized.includes("efectivo") || normalized.includes("cash"));
+}
+
+function isNetIncomeSummaryLabel(label: string) {
+  const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return normalized.includes("ingresos neto") || normalized.includes("net income");
+}
+
+function isExpenseSummaryLabel(label: string) {
+  const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return normalized.includes("gasto") || normalized.includes("expense");
+}
+
+function isDiscountSummaryLabel(label: string) {
+  const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return normalized.includes("descuento") || normalized.includes("discount");
+}
+
+function prioritizeTotalCashStat(stats: StatCardItem[]) {
+  const totalCashIndex = stats.findIndex((stat) => isTotalCashSummaryLabel(stat.label));
+  if (totalCashIndex <= 0) return stats;
+  const nextStats = [...stats];
+  const [totalCashStat] = nextStats.splice(totalCashIndex, 1);
+  if (totalCashStat) nextStats.unshift(totalCashStat);
+  return nextStats;
+}
+
+function totalCashFormulaDetails(stats: StatCardItem[], totalCash: StatCardItem) {
+  const netIncome = stats.find((stat) => isNetIncomeSummaryLabel(stat.label));
+  const expenses = stats.find((stat) => isExpenseSummaryLabel(stat.label));
+  if (!netIncome || !expenses) return undefined;
+
+  return [
+    { label: netIncome.label, value: netIncome.value },
+    { label: expenses.label, value: `- ${expenses.value}` },
+    { label: totalCash.label, value: totalCash.value },
+  ];
+}
+
+function promoteExpenseAndDiscountDetails(stats: StatCardItem[]) {
+  const hasExpenseCard = stats.some((stat) => isExpenseSummaryLabel(stat.label));
+  const hasDiscountCard = stats.some((stat) => isDiscountSummaryLabel(stat.label));
+  const promoted: StatCardItem[] = [];
+
+  const cleanedStats = stats.map((stat) => {
+    if (!stat.details?.length) return stat;
+
+    const remainingDetails = stat.details.filter((detail) => {
+      const shouldPromoteExpense = !hasExpenseCard && isExpenseSummaryLabel(detail.label);
+      const shouldPromoteDiscount = !hasDiscountCard && isDiscountSummaryLabel(detail.label);
+
+      if (shouldPromoteExpense || shouldPromoteDiscount) {
+        promoted.push({
+          label: detail.label,
+          value: detail.value,
+          description: stat.description,
+          icon: stat.icon,
+        });
+        return false;
+      }
+
+      return true;
+    });
+
+    return { ...stat, details: remainingDetails.length > 0 ? remainingDetails : undefined };
+  });
+
+  return [...cleanedStats, ...promoted];
+}
+
 function DailyIncomeMobileSummary({
   stats,
   loading,
@@ -109,7 +181,7 @@ function DailyIncomeMobileSummary({
   if (stats.length === 0) return null;
 
   const primary = stats[0];
-  const secondary = stats.slice(1, 5);
+  const secondary = stats.slice(1);
 
   return (
     <section className="overflow-hidden rounded-3xl border bg-card text-foreground shadow-sm">
@@ -290,7 +362,7 @@ export function DailyIncomeWorkspace() {
     const description = dailyIncomeCurrencyDescription(summary.currency, summary.rate, t);
     const formatAmount = (value: number) => formatDailyIncomeMoney(value, summary.currency);
 
-    return summary.totals.map((total) => ({
+    const nextStats = promoteExpenseAndDiscountDetails(summary.totals.map((total) => ({
       label: total.header,
       value: summaryTotalsQuery.isFetching && !summaryTotalsQuery.isLoading ? "…" : formatAmount(total.value),
       description,
@@ -299,7 +371,11 @@ export function DailyIncomeWorkspace() {
         label: detail.header,
         value: formatAmount(detail.value),
       })),
-    }));
+    })));
+
+    return prioritizeTotalCashStat(nextStats.map((stat) =>
+      isTotalCashSummaryLabel(stat.label) ? { ...stat, details: totalCashFormulaDetails(nextStats, stat) ?? stat.details } : stat,
+    ));
   }, [summaryTotalsQuery.data, summaryTotalsQuery.isFetching, summaryTotalsQuery.isLoading, t]);
 
   const columns: DataTableColumn<DailyIncomeJournal>[] = useMemo(() => [
