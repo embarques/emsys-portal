@@ -96,7 +96,7 @@ function DailyIncomeMobileSummary({
   loading: boolean;
   error?: string | null;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   if (error) {
     return <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</p>;
@@ -406,10 +406,39 @@ export function DailyIncomeWorkspace() {
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-4xl font-bold tracking-normal">{t("accounting.dailyIncome.title")}</h1>
-            <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-              <CalendarDays className="size-4 shrink-0" />
-              <span className="truncate">{formatAccountingDate(date)}</span>
-              {selectedBranch ? <span className="truncate">- {selectedBranch.code}</span> : null}
+            <div className="mt-2 flex min-w-0 items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                <CalendarDays className="size-4 shrink-0" />
+                <span className="truncate">{formatAccountingDate(date)}</span>
+                {selectedBranch ? <span className="truncate">- {selectedBranch.code}</span> : null}
+              </div>
+              {statement ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-9 rounded-full bg-card"
+                    onClick={() => setStatementDialog(true)}
+                    aria-label={t("accounting.dailyIncome.actions.editCloseout")}
+                    title={t("accounting.dailyIncome.actions.editCloseout")}
+                  >
+                    <Edit className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={statement.status === "OPEN" ? "destructive" : "default"}
+                    size="icon"
+                    className="size-9 rounded-full"
+                    onClick={() => changeStatus(statement.status !== "OPEN")}
+                    disabled={statusMutation.isPending}
+                    aria-label={statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}
+                    title={statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}
+                  >
+                    {statement.status === "OPEN" ? <Lock className="size-4" /> : <LockOpen className="size-4" />}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
           <Badge
@@ -490,21 +519,6 @@ export function DailyIncomeWorkspace() {
               <Plus className="size-5" />
               {t("accounting.dailyIncome.actions.addTransaction")}
             </Button>
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-11 rounded-xl" onClick={() => setStatementDialog(true)}>
-                <Edit className="size-4" />
-                {t("accounting.dailyIncome.actions.editCloseout")}
-              </Button>
-              <Button
-                variant={statement.status === "OPEN" ? "destructive" : "default"}
-                className="h-11 rounded-xl"
-                onClick={() => changeStatus(statement.status !== "OPEN")}
-                disabled={statusMutation.isPending}
-              >
-                {statement.status === "OPEN" ? <Lock className="size-4" /> : <LockOpen className="size-4" />}
-                {statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}
-              </Button>
-            </div>
           </div>
 
           <div className="space-y-3">
