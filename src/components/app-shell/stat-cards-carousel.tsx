@@ -53,6 +53,7 @@ type CarouselHeightStyle = CSSProperties & {
 };
 
 const CARD_GAP_PX = 16;
+const DESKTOP_ARROW_GUTTER_PX = 40;
 
 function clampVisibleItems(value: number, minimum: number, itemCount: number) {
   const safeMinimum = Math.min(Math.max(minimum, 1), itemCount);
@@ -102,8 +103,9 @@ function DesktopStatCardsCarousel({
     const container = containerRef.current;
     if (!container) return;
 
+    const contentWidth = Math.max(container.clientWidth - DESKTOP_ARROW_GUTTER_PX * 2, 0);
     const fittingItems = Math.floor(
-      (container.clientWidth + CARD_GAP_PX) / (minimumCardWidth + CARD_GAP_PX),
+      (contentWidth + CARD_GAP_PX) / (minimumCardWidth + CARD_GAP_PX),
     );
     const nextVisibleItems = clampVisibleItems(
       fittingItems,
@@ -136,6 +138,7 @@ function DesktopStatCardsCarousel({
     <div ref={containerRef}>
       <Carousel
         aria-label="Summary cards"
+        className="px-10"
         opts={{ align: "start", containScroll: "trimSnaps", slidesToScroll: 1 }}
       >
         <CarouselContent>
@@ -150,8 +153,8 @@ function DesktopStatCardsCarousel({
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-0 -translate-x-1/2 shadow-sm" />
-        <CarouselNext className="right-0 translate-x-1/2 shadow-sm" />
+        <CarouselPrevious className="left-1 translate-x-0 shadow-sm" />
+        <CarouselNext className="right-1 translate-x-0 shadow-sm" />
       </Carousel>
     </div>
   );
