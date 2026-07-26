@@ -37,7 +37,7 @@ import {
 } from "@/lib/accounting/daily-income/hooks";
 import { isPaymentReceiptEligible, printPaymentReceipt } from "@/lib/accounting/daily-income/receipt";
 import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income/assignee";
-import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, transactionCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
@@ -431,7 +431,7 @@ export function DailyIncomeWorkspace() {
           return;
         }
 
-        feedback.notifySuccess(t("accounting.dailyIncome.toasts.transactionCreated"));
+        feedback.notifySuccess(transactionCreatedToastMessage(values, t));
       })
       .catch((error) => {
         setFormError(normalizeApiError(error).message);
