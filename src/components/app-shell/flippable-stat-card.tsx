@@ -103,9 +103,11 @@ export function FlippableStatCard({
             aria-hidden={!showDetails}
             className="absolute inset-0 h-full gap-2 py-4 [backface-visibility:hidden] [transform:rotateY(180deg)]"
           >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 px-5">
-              <CardTitle className="text-sm font-semibold">{label} details</CardTitle>
-              <Icon className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-5">
+              <CardTitle className="min-w-0 truncate text-sm font-semibold">{label} details</CardTitle>
+              <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
+                {value}
+              </span>
             </CardHeader>
             <CardContent className="space-y-0 px-5 pr-16 text-xs">
               {details?.map((detail, index) => (
