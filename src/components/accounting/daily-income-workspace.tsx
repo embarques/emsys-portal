@@ -406,57 +406,57 @@ export function DailyIncomeWorkspace() {
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-4xl font-bold tracking-normal">{t("accounting.dailyIncome.title")}</h1>
-            <div className="mt-2 flex min-w-0 items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-                <CalendarDays className="size-4 shrink-0" />
-                <span className="truncate">{formatAccountingDate(date)}</span>
-                {selectedBranch ? <span className="truncate">- {selectedBranch.code}</span> : null}
-              </div>
-              {statement ? (
-                <div className="flex shrink-0 items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="size-9 rounded-full bg-card"
-                    onClick={() => setStatementDialog(true)}
-                    aria-label={t("accounting.dailyIncome.actions.editCloseout")}
-                    title={t("accounting.dailyIncome.actions.editCloseout")}
-                  >
-                    <Edit className="size-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={statement.status === "OPEN" ? "destructive" : "default"}
-                    size="icon"
-                    className="size-9 rounded-full"
-                    onClick={() => changeStatus(statement.status !== "OPEN")}
-                    disabled={statusMutation.isPending}
-                    aria-label={statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}
-                    title={statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}
-                  >
-                    {statement.status === "OPEN" ? <Lock className="size-4" /> : <LockOpen className="size-4" />}
-                  </Button>
-                </div>
-              ) : null}
+            <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+              <CalendarDays className="size-4 shrink-0" />
+              <span className="truncate">{formatAccountingDate(date)}</span>
+              {selectedBranch ? <span className="truncate">- {selectedBranch.code}</span> : null}
             </div>
           </div>
-          <Badge
-            className={cn(
-              "mt-1 shrink-0 rounded-full px-3 py-1 text-xs font-semibold",
-              statement?.status === "OPEN"
-                ? "border-transparent bg-emerald-100 text-emerald-700"
-                : statement
-                  ? "border-transparent bg-slate-100 text-slate-700"
-                  : "border-transparent bg-amber-100 text-amber-700",
-            )}
-          >
-            {statement
-              ? statement.status === "OPEN"
-                ? t("accounting.dailyIncome.status.open")
-                : t("accounting.dailyIncome.status.closed")
-              : t("accounting.dailyIncome.filters.noCloseout")}
-          </Badge>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <Badge
+              className={cn(
+                "mt-1 rounded-full px-3 py-1 text-xs font-semibold",
+                statement?.status === "OPEN"
+                  ? "border-transparent bg-emerald-100 text-emerald-700"
+                  : statement
+                    ? "border-transparent bg-slate-100 text-slate-700"
+                    : "border-transparent bg-amber-100 text-amber-700",
+              )}
+            >
+              {statement
+                ? statement.status === "OPEN"
+                  ? t("accounting.dailyIncome.status.open")
+                  : t("accounting.dailyIncome.status.closed")
+                : t("accounting.dailyIncome.filters.noCloseout")}
+            </Badge>
+            {statement ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-9 rounded-full bg-card"
+                  onClick={() => setStatementDialog(true)}
+                  aria-label={t("accounting.dailyIncome.actions.editCloseout")}
+                  title={t("accounting.dailyIncome.actions.editCloseout")}
+                >
+                  <Edit className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant={statement.status === "OPEN" ? "destructive" : "default"}
+                  size="icon"
+                  className="size-9 rounded-full"
+                  onClick={() => changeStatus(statement.status !== "OPEN")}
+                  disabled={statusMutation.isPending}
+                  aria-label={statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}
+                  title={statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}
+                >
+                  {statement.status === "OPEN" ? <Lock className="size-4" /> : <LockOpen className="size-4" />}
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <div className="grid gap-3">
