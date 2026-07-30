@@ -312,7 +312,7 @@ export function InvoiceFormWizard({
       wizardStep={(step <= 3 ? step : 3) as InvoiceWizardFormStep}
       wizardTotalSteps={previewStep}
       showFooter={false}
-      initialValues={initialValues ?? createEmptyInvoiceForm()}
+      initialValues={values}
       suggestedInvoiceNumber={suggestedInvoiceNumber}
       submitLabel={submitLabel}
       onSubmit={() => ({ error: null })}
