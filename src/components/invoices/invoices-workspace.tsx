@@ -919,51 +919,34 @@ export function InvoicesWorkspace() {
           </div>
         ) : null}
 
-        {!isLoading && !isError && invoices.length > 0 ? (
+        {!isLoading && !isError && invoices.length > 0 && selectedCount > 0 ? (
           <div className="rounded-xl border bg-card px-3 py-3 shadow-sm">
-            {selectedCount > 0 ? (
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="text-sm font-semibold text-foreground">
-                  {selectedCount} selected
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-9 rounded-lg"
-                    onClick={() => setSelectedIds([])}
-                  >
-                    Clear
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="h-9 rounded-lg"
-                    onClick={printSelectedInvoices}
-                    disabled={isPrinting}
-                  >
-                    <Printer className="size-4" />
-                    {isPrinting ? "Preparing..." : "Print"}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-muted-foreground">
-                  Select invoices to print.
-                </span>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-foreground">
+                {selectedCount} selected
+              </span>
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   className="h-9 rounded-lg"
-                  onClick={() => toggleSelectAll(true)}
+                  onClick={() => setSelectedIds([])}
                 >
-                  Select page
+                  Clear
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-9 rounded-lg"
+                  onClick={printSelectedInvoices}
+                  disabled={isPrinting}
+                >
+                  <Printer className="size-4" />
+                  {isPrinting ? "Preparing..." : "Print"}
                 </Button>
               </div>
-            )}
+            </div>
           </div>
         ) : null}
 
