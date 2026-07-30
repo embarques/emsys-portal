@@ -394,6 +394,7 @@ export function InvoiceFormWizard({
       step === previewStep
         ? t("invoices.wizard.steps.preview")
         : t(stepLabelKey);
+    const phoneStepText = `${currentStepIndex + 1} of ${steps.length}`;
     const phoneBackLabel =
       step > 1 ? t("invoices.wizard.actions.back") : t("common.actions.cancel");
     const phonePrimary =
@@ -442,26 +443,28 @@ export function InvoiceFormWizard({
       <div
         data-testid="invoice-form-wizard"
         className={cn(
-          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-slate-50",
+          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background",
           invoiceWizardTypographyRoot,
         )}
       >
-        <div data-print-hide className="shrink-0 border-b border-border/70 bg-card">
-          <div className="px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="min-w-0 truncate text-sm font-semibold text-foreground">
-                {phoneTitle}
-              </p>
-              <p className="shrink-0 text-xs font-medium text-muted-foreground">
-                Step {currentStepIndex + 1} of {steps.length}
-              </p>
-            </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
-              <div
-                className="h-full rounded-full bg-primary transition-[width]"
-                style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
-                aria-hidden
-              />
+        <div
+          data-print-hide
+          className="shrink-0 border-b-4 border-primary/30 bg-primary px-4 py-4 text-primary-foreground"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 truncate text-lg font-semibold">
+              {phoneTitle}
+            </p>
+            <div className="flex shrink-0 items-center gap-3">
+              <p className="text-sm font-semibold">{phoneStepText}</p>
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-8 px-2 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                onClick={onCancel}
+              >
+                {t("common.actions.cancel")}
+              </Button>
             </div>
           </div>
         </div>
@@ -470,37 +473,14 @@ export function InvoiceFormWizard({
           {bannerError ? <InvoiceWizardNotice tone="error" message={bannerError} /> : null}
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            <div
-              data-print-hide
-              className="grid shrink-0 grid-cols-2 gap-3 border-b border-border/70 bg-slate-50 px-4 py-3"
-            >
-              {phoneBackControl}
-              {phonePrimary}
-            </div>
             {step <= 3 ? (
               <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{formStep}</div>
             ) : requireDailyIncomeRegistration && step === 4 ? (
               <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-                <p className={cn(invoiceStepEyebrowClassName, "mb-1")}>
-                  {t("invoices.wizard.stepEyebrow", {
-                    step,
-                    total: previewStep,
-                    label: t(stepLabelKey),
-                  })}
-                </p>
-                <h2 className={cn(invoiceStepTitleClassName, "mb-4")}>{t(stepTitleKey)}</h2>
                 {paymentStep}
               </div>
             ) : (
               <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-                <p className={cn(invoiceStepEyebrowClassName, "mb-1")}>
-                  {t("invoices.wizard.stepEyebrow", {
-                    step,
-                    total: previewStep,
-                    label: t(stepLabelKey),
-                  })}
-                </p>
-                <h2 className={cn(invoiceStepTitleClassName, "mb-4")}>{t(stepTitleKey)}</h2>
                 {previewContent}
               </div>
             )}
@@ -515,6 +495,14 @@ export function InvoiceFormWizard({
             className="shrink-0 border-t border-border/70 bg-card px-3 py-2"
           />
         ) : null}
+
+        <div
+          data-print-hide
+          className="grid shrink-0 grid-cols-2 gap-3 border-t border-border bg-background px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+        >
+          {phoneBackControl}
+          {phonePrimary}
+        </div>
       </div>
     );
   }

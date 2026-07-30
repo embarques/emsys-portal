@@ -205,30 +205,6 @@ function PartyFieldActions({
   );
 }
 
-function PhoneWizardSection({
-  eyebrow,
-  title,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="min-w-0 space-y-5">
-      <div className="px-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          {eyebrow}
-        </p>
-        <h2 className="mt-1 font-[family-name:var(--font-invoice-display)] text-2xl font-extrabold uppercase leading-tight text-foreground">
-          {title}
-        </h2>
-      </div>
-      {children}
-    </section>
-  );
-}
-
 export function InvoiceForm({
   initialValues,
   isEditing = false,
@@ -239,7 +215,6 @@ export function InvoiceForm({
   onFormErrorChange,
   onCancel,
   wizardStep,
-  wizardTotalSteps = 5,
   appearance = "default",
   showFooter = true,
   onValuesChange,
@@ -886,7 +861,7 @@ export function InvoiceForm({
         <FormBody
           className={
             isPhoneWizard
-              ? "min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto bg-slate-50 px-4 py-5 pb-[calc(5rem+env(safe-area-inset-bottom))]"
+              ? "min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto bg-background px-4 py-5 pb-[calc(5rem+env(safe-area-inset-bottom))]"
               : isWizard
               ? "flex-1 space-y-6 overflow-y-auto bg-muted/25 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:bg-card md:px-8 md:pb-12"
               : undefined
@@ -894,16 +869,9 @@ export function InvoiceForm({
         >
           {showDetailsSection ? (
             isPhoneWizard ? (
-              <PhoneWizardSection
-                eyebrow={t("invoices.wizard.stepEyebrow", {
-                  step: 1,
-                  total: wizardTotalSteps,
-                  label: t("invoices.wizard.steps.details"),
-                })}
-                title={t("invoices.wizard.stepTitles.enterDetails")}
-              >
+              <section className="min-w-0 space-y-5">
                 {detailsFields}
-              </PhoneWizardSection>
+              </section>
             ) : isWizard ? (
               detailsFields
             ) : (
@@ -916,18 +884,6 @@ export function InvoiceForm({
           {showPartiesSection ? (
             isPhoneWizard ? (
               <section className="min-w-0 space-y-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    {t("invoices.wizard.stepEyebrow", {
-                      step: 2,
-                      total: wizardTotalSteps,
-                      label: t("invoices.wizard.steps.parties"),
-                    })}
-                  </p>
-                  <h2 className="mt-1 font-[family-name:var(--font-invoice-display)] text-2xl font-extrabold uppercase leading-tight text-foreground">
-                    {t("invoices.wizard.stepTitles.selectParties")}
-                  </h2>
-                </div>
                 {partiesFields}
               </section>
             ) : isWizard ? (
