@@ -253,18 +253,52 @@ function InvoiceWizardCheckoutReview({
                 ? t("invoices.wizard.review.discountSuffix", { discount: formatInvoiceMoney(discount) })
                 : ""}
             </p>
-            <ul className="list-inside list-disc space-y-1">
-              {lineItemRows.map((item) => {
-                const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                const label = item.itemName.trim() || catalogItem?.description || t("invoices.wizard.summary.lineItem");
-                return (
-                  <li key={item.id}>
-                    {label} · {t("invoices.wizard.review.qty")} {item.quantity || "1"} ·{" "}
-                    {formatInvoiceMoney(resolveLineTotal(item))}
-                  </li>
-                );
-              })}
-            </ul>
+            {isPhoneWizard ? (
+              <div className="overflow-hidden rounded-xl border bg-card">
+                {lineItemRows.map((item) => {
+                  const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
+                  const label =
+                    item.itemName.trim() ||
+                    catalogItem?.description ||
+                    t("invoices.wizard.summary.lineItem");
+                  const unitPrice = Number(item.unitPrice) || 0;
+                  const quantity = Number(item.quantity) || 0;
+                  return (
+                    <article key={item.id} className="border-b px-4 py-4 last:border-b-0">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+                        <div className="min-w-0">
+                          <p className="line-clamp-2 text-base font-semibold leading-snug text-foreground">
+                            {label}
+                          </p>
+                          <p className="mt-2 text-sm tabular-nums text-muted-foreground">
+                            {formatInvoiceMoney(unitPrice)} x {quantity || t("common.empty.dash")}
+                          </p>
+                        </div>
+                        <p className="shrink-0 text-base font-semibold tabular-nums text-foreground">
+                          {formatInvoiceMoney(resolveLineTotal(item))}
+                        </p>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <ul className="list-inside list-disc space-y-1">
+                {lineItemRows.map((item) => {
+                  const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
+                  const label =
+                    item.itemName.trim() ||
+                    catalogItem?.description ||
+                    t("invoices.wizard.summary.lineItem");
+                  return (
+                    <li key={item.id}>
+                      {label} · {t("invoices.wizard.review.qty")} {item.quantity || "1"} ·{" "}
+                      {formatInvoiceMoney(resolveLineTotal(item))}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         )}
       </InvoiceWizardReviewSection>
