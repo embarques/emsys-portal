@@ -821,6 +821,7 @@ function useLineItemLabels() {
       editingTitle: t("invoices.form.lineItems.editingTitle"),
       cancelEdit: t("invoices.form.lineItems.cancelEdit"),
       addItem: t("invoices.form.lineItems.addItem"),
+      saveChanges: t("common.actions.saveChanges"),
       itemsSubtotal: t("invoices.form.lineItems.itemsSubtotal"),
       emptyTable: t("invoices.form.lineItems.emptyTable"),
       descriptionPlaceholder: t("invoices.form.lineItems.descriptionPlaceholder"),
@@ -995,6 +996,17 @@ function InvoiceLineItemsWizardEditor({
           onCommitFromTotal={commitDraft}
           {...draftHandlers}
         />
+        {isPhoneWizard ? (
+          <Button
+            type="button"
+            className="mt-4 h-12 w-full rounded-xl text-base font-semibold"
+            onClick={commitDraft}
+            disabled={!isDraftReadyToCommit(draft)}
+          >
+            <Plus className="size-5" />
+            {editingId ? labels.saveChanges : labels.addItem}
+          </Button>
+        ) : null}
       </section>
 
       <section className="space-y-3">
