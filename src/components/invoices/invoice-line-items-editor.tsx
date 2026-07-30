@@ -337,9 +337,7 @@ function LineItemEntryFields({
 function WizardLineItemsMobileCards({
   items,
   editingId,
-  quantityColumn,
   labelsColumn,
-  unitPriceColumn,
   emptyMessage,
   editLabel,
   deleteLabel,
@@ -361,88 +359,81 @@ function WizardLineItemsMobileCards({
 
   return (
     <div className="overflow-hidden rounded-xl border bg-background shadow-xs md:hidden">
-      {visibleItems.map((item, index) => (
-        <article key={item.id} className="border-b px-4 py-4 last:border-b-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 text-base font-bold leading-snug text-foreground">
-                {item.itemName.trim() || "—"}
-              </p>
-              <p className="mt-2 text-xl font-semibold tabular-nums text-muted-foreground">
-                {formatInvoiceMoney(resolveLineTotal(item))}
-              </p>
+      {visibleItems.map((item, index) => {
+        const unitPrice = item.unitPrice.trim() ? Number(item.unitPrice) : 0;
+        const quantity = Number(item.quantity) || 0;
+        const labels = resolveLineLabelCount(item);
+
+        return (
+          <article key={item.id} className="border-b px-4 py-4 last:border-b-0">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+              <div className="min-w-0">
+                <p className="line-clamp-2 text-lg font-semibold leading-snug text-foreground">
+                  {item.itemName.trim() || "—"}
+                </p>
+                <p className="mt-3 text-base tabular-nums text-muted-foreground">
+                  {formatInvoiceMoney(unitPrice)} x {quantity || "—"}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {labelsColumn}: {labels}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-3">
+                <p className="text-lg font-semibold tabular-nums text-foreground">
+                  {formatInvoiceMoney(resolveLineTotal(item))}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 text-foreground hover:bg-muted"
+                    aria-label={editLabel}
+                    onClick={() => onEdit(item.id)}
+                  >
+                    <Pencil className="size-5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    aria-label={deleteLabel}
+                    onClick={() => onRemove(item.id)}
+                  >
+                    <Trash2 className="size-5" />
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+
+            <div className="mt-4 flex items-center justify-end gap-2 border-t pt-3">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="size-9 text-foreground hover:bg-muted"
-                aria-label={editLabel}
-                onClick={() => onEdit(item.id)}
+                className="size-9 rounded-lg text-muted-foreground"
+                disabled={index === 0}
+                aria-label={moveUpLabel}
+                onClick={() => onMove(item.id, "up")}
               >
-                <Pencil className="size-5" />
+                <ArrowUp className="size-5" />
               </Button>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="size-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                aria-label={deleteLabel}
-                onClick={() => onRemove(item.id)}
+                className="size-9 rounded-lg text-muted-foreground"
+                disabled={index === visibleItems.length - 1}
+                aria-label={moveDownLabel}
+                onClick={() => onMove(item.id, "down")}
               >
-                <Trash2 className="size-5" />
+                <ArrowDown className="size-5" />
               </Button>
             </div>
-          </div>
-
-          <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
-            <div className="min-w-0 rounded-lg bg-muted/35 px-3 py-3">
-              <dt className="truncate text-muted-foreground">{quantityColumn}</dt>
-              <dd className="mt-2 text-base font-bold tabular-nums text-foreground">
-                {item.quantity || "—"}
-              </dd>
-            </div>
-            <div className="min-w-0 rounded-lg bg-muted/35 px-3 py-3">
-              <dt className="truncate text-muted-foreground">{labelsColumn}</dt>
-              <dd className="mt-2 text-base font-bold tabular-nums text-foreground">
-                {resolveLineLabelCount(item)}
-              </dd>
-            </div>
-            <div className="min-w-0 rounded-lg bg-muted/35 px-3 py-3">
-              <dt className="truncate text-muted-foreground">{unitPriceColumn}</dt>
-              <dd className="mt-2 text-base font-bold tabular-nums text-foreground">
-                {item.unitPrice.trim() ? formatInvoiceMoney(Number(item.unitPrice)) : "—"}
-              </dd>
-            </div>
-          </dl>
-
-          <div className="mt-4 flex items-center justify-end gap-2 border-t pt-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="size-9 rounded-lg text-muted-foreground"
-              disabled={index === 0}
-              aria-label={moveUpLabel}
-              onClick={() => onMove(item.id, "up")}
-            >
-              <ArrowUp className="size-5" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="size-9 rounded-lg text-muted-foreground"
-              disabled={index === visibleItems.length - 1}
-              aria-label={moveDownLabel}
-              onClick={() => onMove(item.id, "down")}
-            >
-              <ArrowDown className="size-5" />
-            </Button>
-          </div>
-        </article>
-      ))}
+          </article>
+        );
+      })}
     </div>
   );
 }
