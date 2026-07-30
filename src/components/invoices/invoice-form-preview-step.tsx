@@ -166,7 +166,7 @@ function InvoiceWizardCheckoutReview({
   return (
     <div
       id="invoice-wizard-print-area"
-      className={isPhoneWizard ? "space-y-4" : "divide-y divide-border px-5 py-2 sm:px-8"}
+      className={isPhoneWizard ? "space-y-4 pb-2" : "divide-y divide-border px-5 py-2 sm:px-8"}
     >
       {errorMessage ? (
         <div className="py-3 print:hidden">
@@ -177,6 +177,7 @@ function InvoiceWizardCheckoutReview({
         number={1}
         title={t("invoices.wizard.review.invoiceDetails")}
         onEdit={onEditStep ? () => onEditStep(1) : undefined}
+        variant={isPhoneWizard ? "phonePanel" : "default"}
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <InvoiceWizardReviewTextBlock
@@ -214,6 +215,7 @@ function InvoiceWizardCheckoutReview({
         number={2}
         title={t("invoices.wizard.review.senderReceiver")}
         onEdit={onEditStep ? () => onEditStep(2) : undefined}
+        variant={isPhoneWizard ? "phonePanel" : "default"}
       >
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
@@ -239,6 +241,7 @@ function InvoiceWizardCheckoutReview({
         number={3}
         title={t("invoices.wizard.review.lineItems")}
         onEdit={onEditStep ? () => onEditStep(3) : undefined}
+        variant={isPhoneWizard ? "phonePanel" : "default"}
       >
         {lineItemRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
@@ -308,6 +311,7 @@ function InvoiceWizardCheckoutReview({
           number={4}
           title={t("invoices.wizard.review.dailyIncomePayment")}
           onEdit={onEditPayment}
+          variant={isPhoneWizard ? "phonePanel" : "default"}
         >
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <div>
@@ -355,6 +359,7 @@ function InvoiceWizardCheckoutReview({
       <InvoiceWizardReviewSection
         number={showPaymentSection ? 5 : 4}
         title={t("invoices.wizard.stepTitles.reviewAndSave")}
+        variant={isPhoneWizard ? "phonePanel" : "default"}
       >
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.reviewIntro")}</p>

@@ -9,6 +9,7 @@ type InvoiceWizardReviewSectionProps = {
   title: string;
   onEdit?: () => void;
   editLabel?: string;
+  variant?: "default" | "phonePanel";
   className?: string;
   children: React.ReactNode;
 };
@@ -18,11 +19,33 @@ export function InvoiceWizardReviewSection({
   title,
   onEdit,
   editLabel,
+  variant = "default",
   className,
   children,
 }: InvoiceWizardReviewSectionProps) {
   const { t } = useTranslation();
   const resolvedEditLabel = editLabel ?? t("invoices.wizard.review.editStep");
+
+  if (variant === "phonePanel") {
+    return (
+      <section className={cn("rounded-xl bg-muted/45 p-4", className)}>
+        <div className="mb-4 flex items-center justify-between gap-4 border-b border-border pb-3">
+          <h3 className="min-w-0 text-xl font-bold leading-tight text-foreground">{title}</h3>
+          {onEdit ? (
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto shrink-0 px-0 text-lg font-bold text-primary"
+              onClick={onEdit}
+            >
+              {resolvedEditLabel}
+            </Button>
+          ) : null}
+        </div>
+        <div>{children}</div>
+      </section>
+    );
+  }
 
   return (
     <section className={cn("py-6 first:pt-2", className)}>
