@@ -1,5 +1,7 @@
 "use client";
 
+import { Pencil } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -34,11 +36,13 @@ export function InvoiceWizardReviewSection({
           {onEdit ? (
             <Button
               type="button"
-              variant="link"
-              className="h-auto shrink-0 px-0 text-lg font-bold text-primary"
+              variant="ghost"
+              size="icon"
+              className="size-9 shrink-0 text-primary"
               onClick={onEdit}
+              aria-label={resolvedEditLabel}
             >
-              {resolvedEditLabel}
+              <Pencil className="size-5" />
             </Button>
           ) : null}
         </div>
