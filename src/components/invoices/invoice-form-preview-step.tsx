@@ -257,7 +257,7 @@ function InvoiceWizardCheckoutReview({
                 : ""}
             </p>
             {isPhoneWizard ? (
-              <div className="overflow-hidden rounded-xl border bg-card">
+              <div className="divide-y divide-border">
                 {lineItemRows.map((item) => {
                   const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
                   const label =
@@ -267,7 +267,7 @@ function InvoiceWizardCheckoutReview({
                   const unitPrice = Number(item.unitPrice) || 0;
                   const quantity = Number(item.quantity) || 0;
                   return (
-                    <article key={item.id} className="border-b px-4 py-4 last:border-b-0">
+                    <article key={item.id} className="py-4 first:pt-2 last:pb-0">
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
                         <div className="min-w-0">
                           <p className="line-clamp-2 text-base font-semibold leading-snug text-foreground">
@@ -372,7 +372,7 @@ function InvoiceWizardCheckoutReview({
               <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
             ) : (
               isPhoneWizard ? (
-                <div className="overflow-hidden rounded-xl border bg-card">
+                <div className="divide-y divide-border">
                   {lineItemRows.map((item) => {
                     const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
                     const label =
@@ -384,7 +384,7 @@ function InvoiceWizardCheckoutReview({
                     const quantity = Number(item.quantity) || 0;
 
                     return (
-                      <article key={item.id} className="border-b px-4 py-4 last:border-b-0">
+                      <article key={item.id} className="py-4 first:pt-0 last:pb-0">
                         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
                           <div className="min-w-0">
                             <p className="line-clamp-2 text-lg font-semibold leading-snug text-foreground">
