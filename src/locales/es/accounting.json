@@ -267,6 +267,7 @@
       "description": "Registre un asiento en el cierre diario seleccionado.",
       "saving": "Guardando transacción…",
       "saveTransaction": "Guardar transacción",
+      "stepCount": "{{current}} de {{total}}",
       "steps": {
         "selectType": "Seleccionar tipo",
         "enterDetails": "Ingresar detalles"

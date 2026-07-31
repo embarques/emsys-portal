@@ -54,7 +54,10 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
   const branchOptions = branches.map((branch) => ({ value: String(branch.id), label: `${branch.code} — ${branch.name}`, keywords: [branch.code, branch.name] }));
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="min-w-0 space-y-5">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="min-w-0 space-y-5 max-md:[&_button]:h-12 max-md:[&_button]:rounded-xl max-md:[&_input]:h-12 max-md:[&_input]:rounded-xl max-md:[&_input]:text-base max-md:[&_label]:text-base"
+    >
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="statement-branch">{t("accounting.dailyIncome.statement.fields.branch")}</Label>
