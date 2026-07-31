@@ -94,6 +94,12 @@ export function AddTransactionWizard(props: Props) {
   );
   const [formSessionKey, setFormSessionKey] = useState(0);
   const [focusSecondFieldSignal, setFocusSecondFieldSignal] = useState(0);
+  const stepLabel = step === 1
+    ? t("accounting.dailyIncome.wizard.steps.selectType")
+    : t("accounting.dailyIncome.wizard.steps.enterDetails");
+  const title = isEdit
+    ? t("accounting.dailyIncome.wizard.editTitle")
+    : t("accounting.dailyIncome.wizard.addTitle");
 
   useEffect(() => {
     if (!props.open) return;
@@ -149,20 +155,39 @@ export function AddTransactionWizard(props: Props) {
         isPhone && "h-full max-h-[100dvh] bg-background",
       )}
     >
-      {presentation === "dialog" ? (
+      {presentation === "dialog" && isPhone ? (
+        <DialogHeader className="shrink-0 space-y-4 border-b border-primary/20 bg-primary px-4 pb-4 pt-5 text-primary-foreground">
+          <div className="flex min-w-0 items-center justify-between gap-4">
+            <DialogTitle className="min-w-0 truncate text-2xl font-bold text-primary-foreground">
+              {step === 2 && selectedType ? t(`accounting.dailyIncome.transactionTypes.${selectedType === "INITIAL-PAYMENT" ? "initialPayment" : selectedType.toLowerCase()}.shortLabel`) : title}
+            </DialogTitle>
+            <div className="flex shrink-0 items-center gap-4 text-base font-semibold">
+              <span>{t("accounting.dailyIncome.wizard.stepCount", { current: step, total: 2 })}</span>
+              <button type="button" className="text-primary-foreground" onClick={props.onCancel}>
+                {t("common.actions.cancel")}
+              </button>
+            </div>
+          </div>
+          <DialogDescription className="sr-only">{t("accounting.dailyIncome.wizard.description")}</DialogDescription>
+          <div className="space-y-2">
+            <p className="text-sm font-semibold uppercase tracking-wide text-primary-foreground/85">{stepLabel}</p>
+            <div className="h-1.5 overflow-hidden rounded-full bg-primary-foreground/25">
+              <div
+                className="h-full rounded-full bg-primary-foreground transition-[width]"
+                style={{ width: step === 1 ? "50%" : "100%" }}
+              />
+            </div>
+          </div>
+        </DialogHeader>
+      ) : presentation === "dialog" ? (
         <DialogHeader
           className={cn(
             "shrink-0 space-y-4 border-b border-border px-6 py-4 pr-12",
-            isPhone && "space-y-3 px-4 pb-4 pt-5 pr-12",
           )}
         >
           <div>
-            <DialogTitle className={cn(isPhone && "text-2xl")}>
-              {isEdit
-                ? t("accounting.dailyIncome.wizard.editTitle")
-                : t("accounting.dailyIncome.wizard.addTitle")}
-            </DialogTitle>
-            <DialogDescription className={cn(isPhone && "text-base")}>{t("accounting.dailyIncome.wizard.description")}</DialogDescription>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{t("accounting.dailyIncome.wizard.description")}</DialogDescription>
           </div>
           <TransactionWizardStepper step={step} appearance={appearance} />
         </DialogHeader>
@@ -240,10 +265,15 @@ export function AddTransactionWizard(props: Props) {
               ) : (
                 <span className="flex-1" aria-hidden />
               )}
-              {props.error ? (
+              {props.error && !isPhone ? (
                 <p className="ml-3 min-w-0 truncate text-sm text-destructive">{props.error}</p>
               ) : null}
             </div>
+            {props.error && isPhone ? (
+              <p className="w-full rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {props.error}
+              </p>
+            ) : null}
             <div className={cn("flex shrink-0 items-center gap-2", isPhone && "grid grid-cols-2")}>
               <Button type="button" variant="outline" onClick={isPhone && !isEdit ? handleBack : props.onCancel} disabled={props.isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
                 {isPhone && !isEdit ? (

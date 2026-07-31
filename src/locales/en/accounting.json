@@ -267,6 +267,7 @@
       "description": "Record an entry in the selected daily closeout.",
       "saving": "Saving transaction…",
       "saveTransaction": "Save transaction",
+      "stepCount": "{{current}} of {{total}}",
       "steps": {
         "selectType": "Select type",
         "enterDetails": "Enter details"
