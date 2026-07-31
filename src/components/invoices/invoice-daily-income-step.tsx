@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Lock, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -51,6 +51,15 @@ function todayDateValue() {
   return `${year}-${month}-${day}`;
 }
 
+function parseSingleOpenIncomeStatement(message: string) {
+  const matches = Array.from(message.matchAll(/\b(\d+)\s+(\d{4}-\d{2}-\d{2})\b/g));
+  if (matches.length !== 1) return null;
+  const [, id, date] = matches[0];
+  const statementId = Number(id);
+  if (!Number.isFinite(statementId)) return null;
+  return { id: statementId, date };
+}
+
 function MobileCreateDailyIncomePage({
   date,
   onCreated,
@@ -60,9 +69,11 @@ function MobileCreateDailyIncomePage({
 }) {
   const { t } = useTranslation();
   const [statementError, setStatementError] = useState<string | null>(null);
+  const [singleOpenStatement, setSingleOpenStatement] = useState<{ id: number; date: string } | null>(null);
   const currentUserQuery = useCurrentUser();
   const branchesQuery = useBranchPicker(200);
   const createStatement = useCreateIncomeStatement();
+  const closeStatement = useSetIncomeStatementStatus();
   const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
   const statementSchema = useMemo(
     () =>
@@ -119,10 +130,42 @@ function MobileCreateDailyIncomePage({
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
       setStatementError(null);
+      setSingleOpenStatement(null);
       const created = await createStatement.mutateAsync(values);
       await onCreated(created);
     } catch (error) {
-      setStatementError(normalizeApiError(error).message);
+      const message = normalizeApiError(error).message;
+      setStatementError(message);
+      setSingleOpenStatement(parseSingleOpenIncomeStatement(message));
+    }
+  }
+
+  async function closeSingleOpenStatement() {
+    if (!singleOpenStatement) return;
+    try {
+      setStatementError(null);
+      await closeStatement.mutateAsync({
+        statement: {
+          id: singleOpenStatement.id,
+          date: singleOpenStatement.date,
+          status: "OPEN",
+          branch: selectedStatementBranch
+            ? {
+                id: selectedStatementBranch.id,
+                code: selectedStatementBranch.code,
+                name: selectedStatementBranch.name,
+              }
+            : undefined,
+          currency: statementCurrency,
+          rate: form.getValues("rate") || 1,
+        },
+        open: false,
+      });
+      setSingleOpenStatement(null);
+    } catch (error) {
+      const message = normalizeApiError(error).message;
+      setStatementError(message);
+      setSingleOpenStatement(parseSingleOpenIncomeStatement(message));
     }
   }
 
@@ -200,8 +243,27 @@ function MobileCreateDailyIncomePage({
         ) : null}
 
         {statementError ? (
-          <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            {statementError}
+          <div className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            <p>{statementError}</p>
+            {singleOpenStatement ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 rounded-xl border-destructive/30 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={closeSingleOpenStatement}
+                disabled={closeStatement.isPending}
+              >
+                {closeStatement.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Lock className="size-4" />
+                )}
+                {t("invoices.wizard.dailyIncome.dialog.closeOpenStatement", {
+                  id: singleOpenStatement.id,
+                })}
+              </Button>
+            ) : null}
           </div>
         ) : null}
 

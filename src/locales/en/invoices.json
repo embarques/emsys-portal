@@ -256,6 +256,7 @@
         "exchangeRate": "Exchange rate",
         "backToStatus": "Back to status",
         "creating": "Creating…",
+        "closeOpenStatement": "Close #{{id}}",
         "closedPaymentDisabled": "Today's Daily Income is closed. Payment entry remains disabled until it is reopened.",
         "statementMustBeOpen": "Today's Daily Income must be open before registering this invoice.",
         "employeeUnavailable": "Current employee information is not available.",
