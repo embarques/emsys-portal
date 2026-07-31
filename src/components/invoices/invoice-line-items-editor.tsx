@@ -337,9 +337,7 @@ function LineItemEntryFields({
 function WizardLineItemsMobileCards({
   items,
   editingId,
-  quantityColumn,
   labelsColumn,
-  unitPriceColumn,
   emptyMessage,
   editLabel,
   deleteLabel,
@@ -360,87 +358,82 @@ function WizardLineItemsMobileCards({
   }
 
   return (
-    <div className="space-y-3 md:hidden">
-      {visibleItems.map((item, index) => (
-        <article key={item.id} className="rounded-xl border bg-background p-4 shadow-xs">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="line-clamp-2 text-base font-semibold text-foreground">
-                {item.itemName.trim() || "—"}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {formatInvoiceMoney(resolveLineTotal(item))}
-              </p>
+    <div className="overflow-hidden rounded-xl border bg-background shadow-xs md:hidden">
+      {visibleItems.map((item, index) => {
+        const unitPrice = item.unitPrice.trim() ? Number(item.unitPrice) : 0;
+        const quantity = Number(item.quantity) || 0;
+        const labels = resolveLineLabelCount(item);
+
+        return (
+          <article key={item.id} className="border-b px-4 py-4 last:border-b-0">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+              <div className="min-w-0">
+                <p className="line-clamp-2 text-lg font-semibold leading-snug text-foreground">
+                  {item.itemName.trim() || "—"}
+                </p>
+                <p className="mt-3 text-base tabular-nums text-muted-foreground">
+                  {formatInvoiceMoney(unitPrice)} x {quantity || "—"}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {labelsColumn}: {labels}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-3">
+                <p className="text-lg font-semibold tabular-nums text-foreground">
+                  {formatInvoiceMoney(resolveLineTotal(item))}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 text-foreground hover:bg-muted"
+                    aria-label={editLabel}
+                    onClick={() => onEdit(item.id)}
+                  >
+                    <Pencil className="size-5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    aria-label={deleteLabel}
+                    onClick={() => onRemove(item.id)}
+                  >
+                    <Trash2 className="size-5" />
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div className="flex shrink-0 items-center gap-1">
+
+            <div className="mt-4 flex items-center justify-end gap-2 border-t pt-3">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="size-8"
-                aria-label={editLabel}
-                onClick={() => onEdit(item.id)}
+                className="size-9 rounded-lg text-muted-foreground"
+                disabled={index === 0}
+                aria-label={moveUpLabel}
+                onClick={() => onMove(item.id, "up")}
               >
-                <Pencil className="size-4" />
+                <ArrowUp className="size-5" />
               </Button>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="size-8 text-destructive hover:text-destructive"
-                aria-label={deleteLabel}
-                onClick={() => onRemove(item.id)}
+                className="size-9 rounded-lg text-muted-foreground"
+                disabled={index === visibleItems.length - 1}
+                aria-label={moveDownLabel}
+                onClick={() => onMove(item.id, "down")}
               >
-                <Trash2 className="size-4" />
+                <ArrowDown className="size-5" />
               </Button>
             </div>
-          </div>
-
-          <dl className="mt-4 grid grid-cols-3 gap-3 text-sm">
-            <div className="min-w-0 rounded-lg bg-muted/40 px-3 py-2">
-              <dt className="truncate text-xs text-muted-foreground">{quantityColumn}</dt>
-              <dd className="mt-1 font-semibold tabular-nums text-foreground">
-                {item.quantity || "—"}
-              </dd>
-            </div>
-            <div className="min-w-0 rounded-lg bg-muted/40 px-3 py-2">
-              <dt className="truncate text-xs text-muted-foreground">{labelsColumn}</dt>
-              <dd className="mt-1 font-semibold tabular-nums text-foreground">
-                {resolveLineLabelCount(item)}
-              </dd>
-            </div>
-            <div className="min-w-0 rounded-lg bg-muted/40 px-3 py-2">
-              <dt className="truncate text-xs text-muted-foreground">{unitPriceColumn}</dt>
-              <dd className="mt-1 font-semibold tabular-nums text-foreground">
-                {item.unitPrice.trim() ? formatInvoiceMoney(Number(item.unitPrice)) : "—"}
-              </dd>
-            </div>
-          </dl>
-
-          <div className="mt-3 flex items-center justify-end gap-2 border-t pt-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={index === 0}
-              aria-label={moveUpLabel}
-              onClick={() => onMove(item.id, "up")}
-            >
-              <ArrowUp className="size-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={index === visibleItems.length - 1}
-              aria-label={moveDownLabel}
-              onClick={() => onMove(item.id, "down")}
-            >
-              <ArrowDown className="size-4" />
-            </Button>
-          </div>
-        </article>
-      ))}
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -821,6 +814,7 @@ function useLineItemLabels() {
       editingTitle: t("invoices.form.lineItems.editingTitle"),
       cancelEdit: t("invoices.form.lineItems.cancelEdit"),
       addItem: t("invoices.form.lineItems.addItem"),
+      saveChanges: t("common.actions.saveChanges"),
       itemsSubtotal: t("invoices.form.lineItems.itemsSubtotal"),
       emptyTable: t("invoices.form.lineItems.emptyTable"),
       descriptionPlaceholder: t("invoices.form.lineItems.descriptionPlaceholder"),
@@ -995,6 +989,17 @@ function InvoiceLineItemsWizardEditor({
           onCommitFromTotal={commitDraft}
           {...draftHandlers}
         />
+        {isPhoneWizard ? (
+          <Button
+            type="button"
+            className="mt-4 h-12 w-full rounded-xl text-base font-semibold"
+            onClick={commitDraft}
+            disabled={!isDraftReadyToCommit(draft)}
+          >
+            <Plus className="size-5" />
+            {editingId ? labels.saveChanges : labels.addItem}
+          </Button>
+        ) : null}
       </section>
 
       <section className="space-y-3">

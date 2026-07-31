@@ -166,7 +166,7 @@ function InvoiceWizardCheckoutReview({
   return (
     <div
       id="invoice-wizard-print-area"
-      className={isPhoneWizard ? "space-y-4" : "divide-y divide-border px-5 py-2 sm:px-8"}
+      className={isPhoneWizard ? "space-y-4 pb-2" : "divide-y divide-border px-5 py-2 sm:px-8"}
     >
       {errorMessage ? (
         <div className="py-3 print:hidden">
@@ -177,6 +177,7 @@ function InvoiceWizardCheckoutReview({
         number={1}
         title={t("invoices.wizard.review.invoiceDetails")}
         onEdit={onEditStep ? () => onEditStep(1) : undefined}
+        variant={isPhoneWizard ? "phonePanel" : "default"}
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <InvoiceWizardReviewTextBlock
@@ -214,6 +215,7 @@ function InvoiceWizardCheckoutReview({
         number={2}
         title={t("invoices.wizard.review.senderReceiver")}
         onEdit={onEditStep ? () => onEditStep(2) : undefined}
+        variant={isPhoneWizard ? "phonePanel" : "default"}
       >
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
@@ -239,6 +241,7 @@ function InvoiceWizardCheckoutReview({
         number={3}
         title={t("invoices.wizard.review.lineItems")}
         onEdit={onEditStep ? () => onEditStep(3) : undefined}
+        variant={isPhoneWizard ? "phonePanel" : "default"}
       >
         {lineItemRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
@@ -253,18 +256,52 @@ function InvoiceWizardCheckoutReview({
                 ? t("invoices.wizard.review.discountSuffix", { discount: formatInvoiceMoney(discount) })
                 : ""}
             </p>
-            <ul className="list-inside list-disc space-y-1">
-              {lineItemRows.map((item) => {
-                const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
-                const label = item.itemName.trim() || catalogItem?.description || t("invoices.wizard.summary.lineItem");
-                return (
-                  <li key={item.id}>
-                    {label} · {t("invoices.wizard.review.qty")} {item.quantity || "1"} ·{" "}
-                    {formatInvoiceMoney(resolveLineTotal(item))}
-                  </li>
-                );
-              })}
-            </ul>
+            {isPhoneWizard ? (
+              <div className="divide-y divide-border">
+                {lineItemRows.map((item) => {
+                  const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
+                  const label =
+                    item.itemName.trim() ||
+                    catalogItem?.description ||
+                    t("invoices.wizard.summary.lineItem");
+                  const unitPrice = Number(item.unitPrice) || 0;
+                  const quantity = Number(item.quantity) || 0;
+                  return (
+                    <article key={item.id} className="py-4 first:pt-2 last:pb-0">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+                        <div className="min-w-0">
+                          <p className="line-clamp-2 text-base font-semibold leading-snug text-foreground">
+                            {label}
+                          </p>
+                          <p className="mt-2 text-sm tabular-nums text-muted-foreground">
+                            {formatInvoiceMoney(unitPrice)} x {quantity || t("common.empty.dash")}
+                          </p>
+                        </div>
+                        <p className="shrink-0 text-base font-semibold tabular-nums text-foreground">
+                          {formatInvoiceMoney(resolveLineTotal(item))}
+                        </p>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <ul className="list-inside list-disc space-y-1">
+                {lineItemRows.map((item) => {
+                  const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
+                  const label =
+                    item.itemName.trim() ||
+                    catalogItem?.description ||
+                    t("invoices.wizard.summary.lineItem");
+                  return (
+                    <li key={item.id}>
+                      {label} · {t("invoices.wizard.review.qty")} {item.quantity || "1"} ·{" "}
+                      {formatInvoiceMoney(resolveLineTotal(item))}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         )}
       </InvoiceWizardReviewSection>
@@ -274,6 +311,7 @@ function InvoiceWizardCheckoutReview({
           number={4}
           title={t("invoices.wizard.review.dailyIncomePayment")}
           onEdit={onEditPayment}
+          variant={isPhoneWizard ? "phonePanel" : "default"}
         >
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <div>
@@ -321,6 +359,7 @@ function InvoiceWizardCheckoutReview({
       <InvoiceWizardReviewSection
         number={showPaymentSection ? 5 : 4}
         title={t("invoices.wizard.stepTitles.reviewAndSave")}
+        variant={isPhoneWizard ? "phonePanel" : "default"}
       >
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.reviewIntro")}</p>
@@ -333,49 +372,31 @@ function InvoiceWizardCheckoutReview({
               <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noLineItems")}</p>
             ) : (
               isPhoneWizard ? (
-                <div className="space-y-3">
+                <div className="divide-y divide-border">
                   {lineItemRows.map((item) => {
                     const catalogItem = catalogItems.find((entry) => entry.itemId === item.itemId);
                     const label =
                       item.itemName.trim() ||
                       catalogItem?.description ||
                       t("invoices.wizard.summary.lineItem");
-                    const labelCount = Number(item.labelCount) || 0;
+                    const unitPrice = Number(item.unitPrice) || 0;
+                    const quantity = Number(item.quantity) || 0;
 
                     return (
-                      <article key={item.id} className="rounded-xl border bg-card p-4">
-                        <div className="flex items-start justify-between gap-3">
+                      <article key={item.id} className="py-4 first:pt-0 last:pb-0">
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
                           <div className="min-w-0">
-                            <p className="line-clamp-2 text-sm font-semibold text-foreground">{label}</p>
-                            {item.labelCount ? (
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {t(
-                                  labelCount === 1
-                                    ? "invoices.wizard.review.labels"
-                                    : "invoices.wizard.review.labels_plural",
-                                  { count: labelCount },
-                                )}
-                              </p>
-                            ) : null}
+                            <p className="line-clamp-2 text-lg font-semibold leading-snug text-foreground">
+                              {label}
+                            </p>
+                            <p className="mt-3 text-base tabular-nums text-muted-foreground">
+                              {formatInvoiceMoney(unitPrice)} x {quantity || t("common.empty.dash")}
+                            </p>
                           </div>
-                          <p className="shrink-0 text-sm font-semibold">
+                          <p className="shrink-0 text-lg font-semibold tabular-nums text-foreground">
                             {formatInvoiceMoney(resolveLineTotal(item))}
                           </p>
                         </div>
-                        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                          <div className="rounded-lg bg-muted/40 px-3 py-2">
-                            <dt>{t("invoices.wizard.review.table.qty")}</dt>
-                            <dd className="mt-1 font-semibold text-foreground">
-                              {item.quantity || t("common.empty.dash")}
-                            </dd>
-                          </div>
-                          <div className="rounded-lg bg-muted/40 px-3 py-2">
-                            <dt>{t("invoices.wizard.review.table.unitPrice")}</dt>
-                            <dd className="mt-1 font-semibold text-foreground">
-                              {formatInvoiceMoney(Number(item.unitPrice) || 0)}
-                            </dd>
-                          </div>
-                        </dl>
                       </article>
                     );
                   })}

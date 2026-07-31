@@ -4,6 +4,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  Check,
   CircleAlert,
   DollarSign,
   FileText,
@@ -215,31 +216,70 @@ function getInvoiceMobileAvatarClass(invoice: Invoice): string {
 function MobileInvoiceRow({
   invoice,
   onOpen,
+  selected,
+  selectionMode,
+  onToggleSelected,
 }: {
   invoice: Invoice;
   onOpen: (invoice: Invoice) => void;
+  selected: boolean;
+  selectionMode: boolean;
+  onToggleSelected: (invoiceId: string, checked: boolean) => void;
 }) {
   const { t } = useTranslation();
   const status = resolveInvoicePaidStatus(invoice);
   const balance = getInvoiceBalance(invoice);
   const emptyLabel = t("common.empty.dash");
   const isClosed = status === "closed";
+  const invoiceId = invoice.invoiceId;
 
   return (
-    <button
-      type="button"
-      className="grid w-full grid-cols-[3.75rem_minmax(0,1fr)_auto] items-start gap-3 border-b border-border/70 px-1 py-4 text-left transition-colors active:bg-muted/50 last:border-b-0"
-      onClick={() => onOpen(invoice)}
+    <div
+      className={cn(
+        "grid w-full items-start gap-3 border-b border-border/70 px-1 py-4 text-left transition-colors active:bg-muted/50 last:border-b-0",
+        "grid-cols-[2.25rem_3.75rem_minmax(0,1fr)_auto]",
+        selected && "bg-primary/5",
+      )}
     >
-      <span
+      <button
+        type="button"
         className={cn(
+          "mt-1 flex size-7 items-center justify-center rounded-full border text-primary",
+          selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background",
+        )}
+        onClick={() => onToggleSelected(invoiceId, !selected)}
+        aria-label={selected ? "Deselect invoice" : "Select invoice"}
+      >
+        {selected ? <Check className="size-4" /> : null}
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "text-left",
           "flex size-12 items-center justify-center rounded-full text-sm font-semibold shadow-xs",
           getInvoiceMobileAvatarClass(invoice),
         )}
+        onClick={() => {
+          if (selectionMode) {
+            onToggleSelected(invoiceId, !selected);
+            return;
+          }
+          onOpen(invoice);
+        }}
       >
         {getInvoiceMobileInitials(invoice)}
-      </span>
-      <span className="min-w-0">
+      </button>
+      <button
+        type="button"
+        className="min-w-0 text-left"
+        onClick={() => {
+          if (selectionMode) {
+            onToggleSelected(invoiceId, !selected);
+            return;
+          }
+          onOpen(invoice);
+        }}
+      >
         <span className="block truncate text-lg font-bold leading-tight text-foreground">
           {invoice.invoiceNumber || emptyLabel}
         </span>
@@ -255,8 +295,18 @@ function MobileInvoiceRow({
         <span className="mt-1 line-clamp-2 text-sm leading-snug text-muted-foreground">
           {getInvoiceMobileAddress(invoice, emptyLabel)}
         </span>
-      </span>
-      <span className="flex flex-col items-end gap-2 pt-1">
+      </button>
+      <button
+        type="button"
+        className="flex flex-col items-end gap-2 pt-1 text-right"
+        onClick={() => {
+          if (selectionMode) {
+            onToggleSelected(invoiceId, !selected);
+            return;
+          }
+          onOpen(invoice);
+        }}
+      >
         <span
           className={cn(
             "text-lg font-bold leading-none",
@@ -273,8 +323,8 @@ function MobileInvoiceRow({
         >
           {getInvoicePaidStatusLabel(status)}
         </span>
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
 
@@ -419,6 +469,7 @@ export function InvoicesWorkspace() {
     () => invoices.filter((invoice) => selectedIds.includes(invoice.invoiceId)),
     [invoices, selectedIds],
   );
+  const selectedCount = selectedInvoices.length;
   const mobileInvoiceGroups = useMemo(() => groupInvoicesByMonth(invoices), [invoices]);
 
   const routes = useMemo(
@@ -868,6 +919,37 @@ export function InvoicesWorkspace() {
           </div>
         ) : null}
 
+        {!isLoading && !isError && invoices.length > 0 && selectedCount > 0 ? (
+          <div className="rounded-xl border bg-card px-3 py-3 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-foreground">
+                {selectedCount} selected
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 rounded-lg"
+                  onClick={() => setSelectedIds([])}
+                >
+                  Clear
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-9 rounded-lg"
+                  onClick={printSelectedInvoices}
+                  disabled={isPrinting}
+                >
+                  <Printer className="size-4" />
+                  {isPrinting ? "Preparing..." : "Print"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <div className="rounded-xl bg-background">
           {isError ? (
             <div className="px-4 py-8 text-sm text-destructive">
@@ -918,6 +1000,9 @@ export function InvoicesWorkspace() {
                         key={invoice.invoiceId}
                         invoice={invoice}
                         onOpen={openView}
+                        selected={selectedIds.includes(invoice.invoiceId)}
+                        selectionMode={selectedCount > 0}
+                        onToggleSelected={toggleSelect}
                       />
                     ))}
                   </div>

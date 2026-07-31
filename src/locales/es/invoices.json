@@ -256,6 +256,7 @@
         "exchangeRate": "Tasa de cambio",
         "backToStatus": "Volver al estado",
         "creating": "Creando…",
+        "closeOpenStatement": "Cerrar #{{id}}",
         "closedPaymentDisabled": "Los Ingresos diarios de hoy están cerrados. La entrada de pagos permanece deshabilitada hasta que se reabra.",
         "statementMustBeOpen": "Los Ingresos diarios de hoy deben estar abiertos antes de registrar esta factura.",
         "employeeUnavailable": "La información del empleado actual no está disponible.",

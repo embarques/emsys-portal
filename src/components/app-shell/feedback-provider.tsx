@@ -112,8 +112,13 @@ function ToastCard({
     return () => window.clearTimeout(timer);
   }, [onDismiss]);
 
+  function stopToastInteraction(event: React.SyntheticEvent) {
+    event.stopPropagation();
+  }
+
   return (
     <div
+      data-feedback-toast
       className={cn(
         "pointer-events-auto flex items-start gap-3 rounded-xl border p-4 shadow-xl backdrop-blur-sm",
         "animate-in slide-in-from-bottom-4 fade-in duration-300",
@@ -124,6 +129,10 @@ function ToastCard({
       )}
       role={tone === "error" ? "alert" : "status"}
       aria-live={tone === "error" ? "assertive" : "polite"}
+      onPointerDownCapture={stopToastInteraction}
+      onMouseDownCapture={stopToastInteraction}
+      onTouchStartCapture={stopToastInteraction}
+      onClickCapture={stopToastInteraction}
     >
       {tone === "error" ? (
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive dark:text-red-300" />
@@ -133,7 +142,10 @@ function ToastCard({
       <p className="min-w-0 flex-1 break-words text-sm font-medium leading-snug">{message}</p>
       <button
         type="button"
-        onClick={onDismiss}
+        onClick={(event) => {
+          event.stopPropagation();
+          onDismiss();
+        }}
         className={cn(
           "rounded-md p-1 transition-colors",
           tone === "success" &&
