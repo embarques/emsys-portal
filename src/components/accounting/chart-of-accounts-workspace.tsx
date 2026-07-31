@@ -136,15 +136,12 @@ function MobileChartAccountRow({
         <div className="min-w-0">
           <h2 className="truncate text-xl font-bold leading-tight text-foreground">
             {account.displayName}
-            <span className="font-semibold text-muted-foreground">
-              {" "}
-              ({branchLabel})
-            </span>
           </h2>
-          <p className="mt-2 text-base text-muted-foreground">#{account.id}</p>
-          <p className="mt-2 line-clamp-2 text-base leading-relaxed text-muted-foreground">
-            {metaParts.length > 0 ? metaParts.join(" - ") : dash}
-          </p>
+          {metaParts.length > 0 ? (
+            <p className="mt-2 line-clamp-2 text-base leading-relaxed text-muted-foreground">
+              {metaParts.join(" ")}
+            </p>
+          ) : null}
         </div>
         <div className="shrink-0 text-right">
           <Badge
@@ -155,6 +152,7 @@ function MobileChartAccountRow({
           >
             {t(`accounting.chartOfAccounts.types.${account.type}`)}
           </Badge>
+          <p className="mt-2 text-sm font-medium text-muted-foreground">{branchLabel}</p>
           {account.systemAccount ? (
             <p className="mt-2 text-xs font-semibold text-muted-foreground">
               {t("accounting.chartOfAccounts.values.systemAccount")}
