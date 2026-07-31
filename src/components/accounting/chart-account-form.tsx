@@ -108,7 +108,7 @@ export function ChartAccountForm({
   const parentAccountId = watch("parentAccountId");
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-full min-w-0 space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-full min-w-0 space-y-5 max-md:[&_label]:text-base">
       <div className="min-w-0 space-y-2">
         <Label htmlFor="account-name">
           {t("accounting.chartOfAccounts.form.fields.displayName")}
@@ -199,24 +199,28 @@ export function ChartAccountForm({
         <textarea
           id="account-description"
           rows={4}
-          className={`${textareaClassName} h-auto min-w-0 text-base sm:text-sm`}
+          className={`${textareaClassName} h-auto min-w-0 rounded-xl text-base sm:rounded-md sm:text-sm`}
           {...register("description")}
         />
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
 
-      <div className="grid gap-2 border-t pt-4 sm:flex sm:justify-end">
+      <div className="sticky bottom-0 -mx-4 grid grid-cols-2 gap-2 border-t bg-background px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 sm:static sm:mx-0 sm:flex sm:justify-end sm:bg-transparent sm:px-0 sm:pb-0">
         <Button
           type="button"
           variant="outline"
-          className="h-11 sm:h-10"
+          className="h-12 rounded-xl text-base sm:h-10 sm:rounded-md sm:text-sm"
           onClick={onCancel}
           disabled={isSubmitting}
         >
           {t("common.actions.cancel")}
         </Button>
-        <Button type="submit" className="h-11 sm:h-10" disabled={isSubmitting}>
+        <Button type="submit" className="h-12 rounded-xl text-base sm:h-10 sm:rounded-md sm:text-sm" disabled={isSubmitting}>
           {isSubmitting
             ? t("common.actions.saving")
             : isEditing

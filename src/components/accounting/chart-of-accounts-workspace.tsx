@@ -446,6 +446,7 @@ export function ChartOfAccountsWorkspace() {
           </Button>
         </div>
 
+        <div className="rounded-3xl border bg-card p-4 shadow-sm">
         <div className="grid gap-3">
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/80" />
@@ -478,6 +479,7 @@ export function ChartOfAccountsWorkspace() {
               className="min-h-12 rounded-xl border-border bg-card text-base"
             />
           </div>
+        </div>
         </div>
 
         {!accountsQuery.isLoading && !accountsQuery.isError ? (
@@ -688,20 +690,25 @@ export function ChartOfAccountsWorkspace() {
           }
         }}
       >
-        <DialogContent className="inset-x-0 top-0 flex h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:p-6">
-          <DialogHeader className="shrink-0 border-b px-5 py-5 pr-14 sm:border-b-0 sm:p-0 sm:pr-0">
-            <DialogTitle>
-              {editing
-                ? t("accounting.chartOfAccounts.form.editTitle")
-                : t("accounting.chartOfAccounts.form.createTitle")}
-            </DialogTitle>
-            <DialogDescription>
+        <DialogContent className="inset-x-0 top-0 flex h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 max-md:[&>button.absolute]:hidden sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:p-6">
+          <DialogHeader className="shrink-0 border-b border-primary/20 bg-primary px-4 pb-4 pt-5 text-primary-foreground sm:border-b-0 sm:bg-transparent sm:p-0 sm:text-foreground">
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle className="text-2xl font-bold text-primary-foreground sm:text-lg sm:text-foreground">
+                {editing
+                  ? t("accounting.chartOfAccounts.form.editTitle")
+                  : t("accounting.chartOfAccounts.form.createTitle")}
+              </DialogTitle>
+              <button type="button" className="font-semibold text-primary-foreground sm:hidden" onClick={() => setDialogOpen(false)}>
+                {t("common.actions.cancel")}
+              </button>
+            </div>
+            <DialogDescription className="text-primary-foreground/85 sm:text-muted-foreground">
               {editing
                 ? t("accounting.chartOfAccounts.form.editDescription")
                 : t("accounting.chartOfAccounts.form.createDescription")}
             </DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 w-full max-w-full flex-1 overflow-x-hidden overflow-y-auto px-5 py-5 sm:overflow-visible sm:p-0">
+          <div className="min-h-0 w-full max-w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 sm:overflow-visible sm:p-0">
             <ChartAccountForm
               key={editing?.id ?? "new"}
               initialValues={editing ? accountValues(editing) : EMPTY_ACCOUNT}
