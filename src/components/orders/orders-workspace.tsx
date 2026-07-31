@@ -8,7 +8,9 @@ import {
   ChevronRight,
   Clock,
   DollarSign,
+  Edit,
   FileText,
+  Filter,
   Map as MapIcon,
   PackageOpen,
   Plus,
@@ -44,6 +46,7 @@ import {
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -145,6 +148,93 @@ function PickupCommentsCell({ order }: { order: Order }) {
         {summary}
       </p>
     </div>
+  );
+}
+
+function getCustomerPrimaryPhone(customer: Customer | null | undefined, fallback: string) {
+  const phone = customer?.phones?.[0];
+  return phone?.displayNumber || phone?.number || fallback;
+}
+
+function MobileOrderRow({
+  order,
+  routeLabel,
+  onView,
+  onEdit,
+  onDelete,
+}: {
+  order: Order;
+  routeLabel: string;
+  onView: (order: Order) => void;
+  onEdit: (order: Order) => void;
+  onDelete: (order: Order) => void;
+}) {
+  const { t } = useTranslation();
+  const dash = t("common.empty.dash");
+  const senderAddress = getPrimaryAddress(order.sender);
+  const senderAddressLine = senderAddress ? formatAddressLine(senderAddress, "full") : dash;
+  const senderPhone = getCustomerPrimaryPhone(order.sender, dash);
+  const comments = formatOrderCommentsSummary(order);
+
+  return (
+    <article className="border-b border-border/80 py-5 last:border-b-0">
+      <button
+        type="button"
+        className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-4 text-left"
+        onClick={() => onView(order)}
+      >
+        <span className="min-w-0">
+          <span className="block truncate text-xl font-bold leading-tight text-foreground">
+            {formatOrderId(order)}
+          </span>
+          <span className="mt-2 block truncate text-lg leading-tight text-foreground/85">
+            {order.sender.name || dash}
+          </span>
+          <span className="mt-2 block text-base text-muted-foreground">
+            {formatOrderDate(order.date)} · {order.branch.code || dash}
+          </span>
+          <span className="mt-2 block break-words text-base leading-relaxed text-muted-foreground">
+            {senderPhone}
+          </span>
+          <span className="mt-1 block line-clamp-2 break-words text-base leading-relaxed text-muted-foreground">
+            {senderAddressLine}
+          </span>
+          <span className="mt-2 block line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+            {comments || dash}
+          </span>
+        </span>
+        <span className="shrink-0 text-right">
+          <Badge
+            className={cn(
+              "rounded-full px-3 py-1 text-xs font-semibold",
+              order.completed
+                ? "border-transparent bg-emerald-100 text-emerald-700"
+                : "border-transparent bg-amber-100 text-amber-700",
+            )}
+          >
+            {getOrderCompletedLabel(order.completed, t)}
+          </Badge>
+          <span className="mt-2 block max-w-28 truncate text-sm font-medium text-muted-foreground">
+            {routeLabel}
+          </span>
+        </span>
+      </button>
+      <div className="mt-5 flex justify-end gap-2">
+        <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => onEdit(order)}>
+          <Edit className="size-4" />
+          {t("common.actions.edit")}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 rounded-xl text-destructive"
+          onClick={() => onDelete(order)}
+        >
+          <Trash2 className="size-4" />
+          {t("common.actions.delete")}
+        </Button>
+      </div>
+    </article>
   );
 }
 
@@ -655,8 +745,167 @@ export function OrdersWorkspace() {
   );
 
   return (
-    <div>
-      <PageHeader
+    <div className="overflow-x-hidden">
+      <section className="space-y-5 md:hidden">
+        <div className="space-y-4">
+          <div>
+            <h1 className="text-4xl font-bold tracking-normal">{t("orders.title")}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{listSummary}</p>
+          </div>
+          <Button className="h-12 w-full rounded-xl text-base" onClick={openAddForm} disabled={isSaving}>
+            <Plus className="size-5" />
+            {t("orders.actions.add")}
+          </Button>
+        </div>
+
+        <div className="rounded-3xl border bg-card p-4 shadow-sm">
+          <div className="flex gap-3">
+            <TableSearchInput
+              value={filters.query}
+              onChange={(query) => {
+                setFilters((current) => ({ ...current, query }));
+                setPage(1);
+              }}
+              placeholder={t("orders.search.placeholder")}
+              className="min-w-0 flex-1"
+              inputClassName="h-12 rounded-2xl border-0 bg-blue-50 text-base shadow-none"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className={cn(
+                "size-12 rounded-full bg-background",
+                filtersOpen || activeFilterCount > 0 ? "bg-primary/10 text-primary" : "text-primary",
+              )}
+              onClick={() => setFiltersOpen((open) => !open)}
+              aria-label={t("common.table.filters")}
+            >
+              <Filter className="size-5" />
+            </Button>
+          </div>
+
+          {filtersOpen ? (
+            <div className="mt-4">
+              <TableFilterPanel
+                resultSummary={listSummary}
+                presets={{
+                  storageKey: "orders-mobile",
+                  rows: filters.rows,
+                  fields: orderFilterFields,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              >
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={orderFilterFields}
+                  dynamicOptions={{
+                    users: usersLoading ? [] : userFilterOptions,
+                    pickupRoutes: assignRoutesLoading ? [] : assignRouteOptions,
+                    branches: branchesLoading ? [] : branchFilterOptionsById,
+                    branchCodes: branchesLoading ? [] : branchFilterOptionsByCode,
+                  }}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  }}
+                />
+              </TableFilterPanel>
+            </div>
+          ) : null}
+        </div>
+
+        {!isLoading && !listErrorMessage ? (
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+            <Button
+              variant="outline"
+              className="h-11 rounded-xl"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <ChevronLeft className="size-4" />
+              {t("common.actions.previous")}
+            </Button>
+            <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
+            </span>
+            <Button
+              variant="outline"
+              className="h-11 rounded-xl"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              {t("common.actions.next")}
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        ) : null}
+
+        {missingCompanyContext ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {t("orders.errors.missingCompanyContext")}
+          </div>
+        ) : null}
+
+        {listErrorMessage ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {listErrorMessage}
+          </div>
+        ) : null}
+
+        <div className="rounded-3xl bg-card px-4 shadow-sm">
+          {isLoading ? (
+            <div className="space-y-4 py-5">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="border-b border-border/80 py-3 last:border-b-0">
+                  <div className="flex justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="h-5 w-28 rounded bg-muted" />
+                      <div className="h-4 w-44 rounded bg-muted" />
+                      <div className="h-4 w-36 rounded bg-muted" />
+                    </div>
+                    <div className="h-7 w-20 rounded-full bg-muted" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-sm text-muted-foreground">{t("orders.empty.noMatch")}</p>
+              <Button className="mt-4 h-11 rounded-xl" onClick={openAddForm}>
+                <Plus className="size-4" />
+                {t("orders.actions.add")}
+              </Button>
+            </div>
+          ) : (
+            orders.map((order) => (
+              <MobileOrderRow
+                key={getOrderRecordId(order)}
+                order={order}
+                routeLabel={formatOrderRouteName(order, pickupRouteLookup.getByKey(order.routeId), t)}
+                onView={openViewOrder}
+                onEdit={openEditForm}
+                onDelete={setDeleteTarget}
+              />
+            ))
+          )}
+        </div>
+      </section>
+
+      <div className="hidden md:block">
+        <PageHeader
         title={t("orders.title")}
         description={t("orders.pages.description")}
         actions={
@@ -667,14 +916,14 @@ export function OrdersWorkspace() {
         }
       />
 
-      <StatCards
+        <StatCards
         items={statCards.map((stat) => ({
           ...stat,
           value: stats.isLoading ? "…" : stat.value,
         }))}
-      />
+        />
 
-      <Card className="mt-6 gap-0">
+        <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -903,7 +1152,8 @@ export function OrdersWorkspace() {
           </div>
         </div>
         ) : null}
-      </Card>
+        </Card>
+      </div>
 
       <OrderViewSheet
         order={viewOrder}
@@ -927,11 +1177,26 @@ export function OrdersWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>
-              {formMode === "edit" ? t("orders.form.editTitle") : t("orders.form.addTitle")}
-            </DialogTitle>
+        <DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-xl">
+          <DialogHeader className="shrink-0 border-b border-primary/20 bg-primary px-4 pb-4 pt-5 text-primary-foreground sm:border-border sm:bg-background sm:px-6 sm:py-4 sm:text-foreground">
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle className="text-2xl font-bold text-primary-foreground sm:text-lg sm:text-foreground">
+                {formMode === "edit" ? t("orders.form.editTitle") : t("orders.form.addTitle")}
+              </DialogTitle>
+              <button
+                type="button"
+                className="font-semibold text-primary-foreground sm:hidden"
+                onClick={() => {
+                  setFormMode(null);
+                  setFormError(null);
+                }}
+              >
+                {t("common.actions.cancel")}
+              </button>
+            </div>
+            <DialogDescription className="text-primary-foreground/85 sm:hidden">
+              {formMode === "edit" ? t("orders.actions.edit") : t("orders.form.addDescription")}
+            </DialogDescription>
           </DialogHeader>
           <OrderForm
             key={editingOrder ? getOrderRecordId(editingOrder) : "new"}
