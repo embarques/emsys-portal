@@ -136,10 +136,11 @@ function MobileChartAccountRow({
         <div className="min-w-0">
           <h2 className="truncate text-xl font-bold leading-tight text-foreground">
             {account.displayName}
+            <span className="font-semibold text-muted-foreground">
+              {" "}
+              ({branchLabel})
+            </span>
           </h2>
-          <p className="mt-2 text-lg uppercase leading-tight text-foreground/85">
-            {t(`accounting.chartOfAccounts.types.${account.type}`)}
-          </p>
           <p className="mt-2 text-base text-muted-foreground">#{account.id}</p>
           <p className="mt-2 line-clamp-2 text-base leading-relaxed text-muted-foreground">
             {metaParts.length > 0 ? metaParts.join(" - ") : dash}
@@ -152,7 +153,7 @@ function MobileChartAccountRow({
               chartAccountTypeBadgeClassName(account.type),
             )}
           >
-            {branchLabel}
+            {t(`accounting.chartOfAccounts.types.${account.type}`)}
           </Badge>
           {account.systemAccount ? (
             <p className="mt-2 text-xs font-semibold text-muted-foreground">
