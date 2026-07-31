@@ -125,73 +125,48 @@ function MobileChartAccountRow({
   const parentLabel =
     account.parentAccount?.displayName ?? account.parentAccount?.name ?? dash;
   const canDelete = !account.systemAccount;
+  const metaParts = [
+    parentLabel !== dash ? parentLabel : null,
+    account.description || null,
+  ].filter((value): value is string => Boolean(value));
 
   return (
-    <article className="border-b border-border/80 py-4 last:border-b-0">
-      <div className="min-w-0">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-bold leading-tight text-foreground">
-              {account.displayName}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">#{account.id}</p>
-          </div>
+    <article className="border-b border-border/80 py-5 last:border-b-0">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
+        <div className="min-w-0">
+          <h2 className="truncate text-xl font-bold leading-tight text-foreground">
+            {account.displayName}
+          </h2>
+          <p className="mt-2 text-lg uppercase leading-tight text-foreground/85">
+            {t(`accounting.chartOfAccounts.types.${account.type}`)}
+          </p>
+          <p className="mt-2 text-base text-muted-foreground">#{account.id}</p>
+          <p className="mt-2 line-clamp-2 text-base leading-relaxed text-muted-foreground">
+            {metaParts.length > 0 ? metaParts.join(" - ") : dash}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
           <Badge
             className={cn(
-              "shrink-0 rounded-full px-3 py-1 text-xs font-semibold",
+              "rounded-full px-3 py-1 text-xs font-semibold",
               chartAccountTypeBadgeClassName(account.type),
             )}
-          >
-            {t(`accounting.chartOfAccounts.types.${account.type}`)}
-          </Badge>
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Badge
-            variant="outline"
-            className="rounded-full px-3 py-1 text-xs font-medium"
           >
             {branchLabel}
           </Badge>
           {account.systemAccount ? (
-            <Badge
-              variant="outline"
-              className="rounded-full px-3 py-1 text-xs font-medium"
-            >
+            <p className="mt-2 text-xs font-semibold text-muted-foreground">
               {t("accounting.chartOfAccounts.values.systemAccount")}
-            </Badge>
-          ) : null}
-          {account.default ? (
-            <Badge
-              variant="outline"
-              className="rounded-full px-3 py-1 text-xs font-medium"
-            >
+            </p>
+          ) : account.default ? (
+            <p className="mt-2 text-xs font-semibold text-muted-foreground">
               {t("accounting.chartOfAccounts.values.defaultAccount")}
-            </Badge>
+            </p>
           ) : null}
         </div>
-
-        <dl className="mt-3 grid gap-2 text-sm">
-          <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-2">
-            <dt className="text-muted-foreground">
-              {t("accounting.chartOfAccounts.columns.parent")}
-            </dt>
-            <dd className="min-w-0 truncate font-medium text-foreground/80">
-              {parentLabel}
-            </dd>
-          </div>
-          <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-2">
-            <dt className="text-muted-foreground">
-              {t("accounting.chartOfAccounts.columns.description")}
-            </dt>
-            <dd className="line-clamp-2 min-w-0 text-foreground/80">
-              {account.description || dash}
-            </dd>
-          </div>
-        </dl>
       </div>
 
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
+      <div className="mt-5 flex justify-end gap-2">
         <Button
           type="button"
           variant="outline"
