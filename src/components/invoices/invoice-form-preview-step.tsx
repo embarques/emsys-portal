@@ -379,7 +379,6 @@ function InvoiceWizardCheckoutReview({
                       item.itemName.trim() ||
                       catalogItem?.description ||
                       t("invoices.wizard.summary.lineItem");
-                    const labelCount = Number(item.labelCount) || 0;
                     const unitPrice = Number(item.unitPrice) || 0;
                     const quantity = Number(item.quantity) || 0;
 
@@ -393,16 +392,6 @@ function InvoiceWizardCheckoutReview({
                             <p className="mt-3 text-base tabular-nums text-muted-foreground">
                               {formatInvoiceMoney(unitPrice)} x {quantity || t("common.empty.dash")}
                             </p>
-                            {item.labelCount ? (
-                              <p className="mt-1 text-sm text-muted-foreground">
-                                {t(
-                                  labelCount === 1
-                                    ? "invoices.wizard.review.labels"
-                                    : "invoices.wizard.review.labels_plural",
-                                  { count: labelCount },
-                                )}
-                              </p>
-                            ) : null}
                           </div>
                           <p className="shrink-0 text-lg font-semibold tabular-nums text-foreground">
                             {formatInvoiceMoney(resolveLineTotal(item))}
