@@ -895,31 +895,126 @@ export function OrdersWorkspace() {
 
         {!isLoading && !listErrorMessage && orders.length > 0 && selectedCount > 0 ? (
           <div className="rounded-xl border bg-card px-3 py-3 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-semibold text-foreground">
                 {selectedCount} selected
               </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-9 rounded-lg"
-                  onClick={() => setSelectedIds([])}
-                >
-                  Clear
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-9 rounded-lg"
-                  onClick={printSelectedOrders}
-                  disabled={isPrinting}
-                >
-                  <Printer className="size-4" />
-                  {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 rounded-lg"
+                onClick={() => setSelectedIds([])}
+              >
+                Clear
+              </Button>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                disabled={selectedCount !== 1}
+                onClick={() => {
+                  const order = selectedOrders[0];
+                  if (order) openViewOrder(order);
+                }}
+              >
+                <FileText className="size-4" />
+                {t("common.actions.view")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                disabled={selectedCount !== 1 || isSaving}
+                onClick={() => {
+                  const order = selectedOrders[0];
+                  if (order) openEditForm(order);
+                }}
+              >
+                <Edit className="size-4" />
+                {t("common.actions.edit")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                onClick={openMapView}
+              >
+                <MapIcon className="size-4" />
+                {t("orders.actions.map")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                onClick={printSelectedOrders}
+                disabled={isPrinting}
+              >
+                <Printer className="size-4" />
+                {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg bg-emerald-500/5 px-2 text-xs leading-tight text-emerald-700 whitespace-normal hover:bg-emerald-500/10 hover:text-emerald-700"
+                disabled={isSaving}
+                onClick={() => openCompletionConfirm(true)}
+              >
+                <CheckCircle2 className="size-4" />
+                {t("orders.actions.markComplete")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg bg-amber-500/5 px-2 text-xs leading-tight text-amber-700 whitespace-normal hover:bg-amber-500/10 hover:text-amber-700"
+                disabled={isSaving}
+                onClick={() => openCompletionConfirm(false)}
+              >
+                <XCircle className="size-4" />
+                {t("orders.actions.markIncomplete")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                disabled={isSaving}
+                onClick={openAssignRoute}
+              >
+                <RouteIcon className="size-4" />
+                {t("orders.actions.assignRoute")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg bg-amber-500/5 px-2 text-xs leading-tight text-amber-700 whitespace-normal hover:bg-amber-500/10 hover:text-amber-700"
+                disabled={isSaving || selectedOrdersWithRoute.length === 0}
+                onClick={openClearRoute}
+              >
+                <RouteOff className="size-4" />
+                {clearRouteMutation.isPending
+                  ? t("orders.actions.clearingRoute")
+                  : t("orders.actions.clearRoute")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="col-span-2 min-h-10 rounded-lg px-2 text-xs leading-tight text-destructive whitespace-normal hover:text-destructive"
+                disabled={isSaving}
+                onClick={() => setDeleteTarget(selectedOrders)}
+              >
+                <Trash2 className="size-4" />
+                {t("common.actions.delete")}
+              </Button>
             </div>
           </div>
         ) : null}
@@ -1301,7 +1396,7 @@ export function OrdersWorkspace() {
         }}
       >
         <DialogContent
-          className="z-[60]"
+          className="z-[60] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-b-none max-md:rounded-t-2xl max-md:p-4"
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <DialogHeader>
@@ -1327,9 +1422,10 @@ export function OrdersWorkspace() {
                   : t("orders.dialogs.noRoutesFound")
               }
               options={assignRouteOptions}
+              mobileSheet
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="max-md:grid max-md:grid-cols-2">
             <Button
               variant="outline"
               onClick={() => {
