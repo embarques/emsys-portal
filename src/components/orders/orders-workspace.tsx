@@ -3,6 +3,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownToLine,
+  Check,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -162,28 +163,52 @@ function MobileOrderRow({
   onView,
   onEdit,
   onDelete,
+  selected,
+  selectionMode,
+  onToggleSelected,
 }: {
   order: Order;
   routeLabel: string;
   onView: (order: Order) => void;
   onEdit: (order: Order) => void;
   onDelete: (order: Order) => void;
+  selected: boolean;
+  selectionMode: boolean;
+  onToggleSelected: (orderId: string, checked: boolean) => void;
 }) {
   const { t } = useTranslation();
   const dash = t("common.empty.dash");
+  const orderId = getOrderRecordId(order);
   const senderAddress = getPrimaryAddress(order.sender);
   const senderAddressLine = senderAddress ? formatAddressLine(senderAddress, "full") : dash;
   const senderPhone = getCustomerPrimaryPhone(order.sender, dash);
   const comments = formatOrderCommentsSummary(order);
 
   return (
-    <article className="min-w-0 border-b border-border/80 py-5 last:border-b-0">
-      <button
-        type="button"
-        className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(5rem,auto)] gap-4 text-left"
-        onClick={() => onView(order)}
-      >
-        <span className="min-w-0">
+    <article className={cn("min-w-0 border-b border-border/80 py-5 last:border-b-0", selected && "bg-primary/5")}>
+      <div className="grid w-full min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_minmax(5rem,auto)] gap-3">
+        <button
+          type="button"
+          className={cn(
+            "mt-1 flex size-7 items-center justify-center rounded-full border text-primary",
+            selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background",
+          )}
+          onClick={() => onToggleSelected(orderId, !selected)}
+          aria-label={selected ? "Deselect order" : "Select order"}
+        >
+          {selected ? <Check className="size-4" /> : null}
+        </button>
+        <button
+          type="button"
+          className="min-w-0 text-left"
+          onClick={() => {
+            if (selectionMode) {
+              onToggleSelected(orderId, !selected);
+              return;
+            }
+            onView(order);
+          }}
+        >
           <span className="block truncate text-xl font-bold leading-tight text-foreground">
             {formatOrderId(order)}
           </span>
@@ -202,8 +227,18 @@ function MobileOrderRow({
           <span className="mt-2 block line-clamp-2 text-sm leading-relaxed text-muted-foreground">
             {comments || dash}
           </span>
-        </span>
-        <span className="min-w-0 shrink-0 text-right">
+        </button>
+        <button
+          type="button"
+          className="min-w-0 shrink-0 text-right"
+          onClick={() => {
+            if (selectionMode) {
+              onToggleSelected(orderId, !selected);
+              return;
+            }
+            onView(order);
+          }}
+        >
           <Badge
             className={cn(
               "rounded-full px-3 py-1 text-xs font-semibold",
@@ -217,9 +252,9 @@ function MobileOrderRow({
           <span className="mt-2 block max-w-24 truncate text-sm font-medium text-muted-foreground">
             {routeLabel}
           </span>
-        </span>
-      </button>
-      <div className="mt-5 flex justify-end gap-2">
+        </button>
+      </div>
+      <div className={cn("mt-5 flex justify-end gap-2", selectionMode && "hidden")}>
         <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => onEdit(order)}>
           <Edit className="size-4" />
           {t("common.actions.edit")}
@@ -336,6 +371,7 @@ export function OrdersWorkspace() {
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
     [orders, selectedIds],
   );
+  const selectedCount = selectedOrders.length;
   const selectedOrdersWithRoute = useMemo(
     () => selectedOrders.filter((order) => Boolean(order.routeId?.trim())),
     [selectedOrders],
@@ -383,7 +419,11 @@ export function OrdersWorkspace() {
   }
 
   function toggleSelect(orderId: string, checked: boolean) {
-    setSelectedIds((current) => (checked ? [...current, orderId] : current.filter((entry) => entry !== orderId)));
+    setSelectedIds((current) =>
+      checked
+        ? Array.from(new Set([...current, orderId]))
+        : current.filter((entry) => entry !== orderId),
+    );
   }
 
   const { openFormTab, openTab, isDesktopTabs } = useWorkspaceTabs();
@@ -853,6 +893,37 @@ export function OrdersWorkspace() {
           </div>
         ) : null}
 
+        {!isLoading && !listErrorMessage && orders.length > 0 && selectedCount > 0 ? (
+          <div className="rounded-xl border bg-card px-3 py-3 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-foreground">
+                {selectedCount} selected
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 rounded-lg"
+                  onClick={() => setSelectedIds([])}
+                >
+                  Clear
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-9 rounded-lg"
+                  onClick={printSelectedOrders}
+                  disabled={isPrinting}
+                >
+                  <Printer className="size-4" />
+                  {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {missingCompanyContext ? (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {t("orders.errors.missingCompanyContext")}
@@ -898,6 +969,9 @@ export function OrdersWorkspace() {
                 onView={openViewOrder}
                 onEdit={openEditForm}
                 onDelete={setDeleteTarget}
+                selected={selectedIds.includes(getOrderRecordId(order))}
+                selectionMode={selectedCount > 0}
+                onToggleSelected={toggleSelect}
               />
             ))
           )}
