@@ -1,12 +1,20 @@
 "use client";
 
-import { ChevronDown, ChevronRight, ChevronUp, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Loader2, Search } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import {
   useCustomer,
@@ -109,6 +117,7 @@ export function CustomerPartySelect({
   const queryClient = useQueryClient();
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobileViewport();
   const ensureCustomerDetail = useEnsureCustomerDetail();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -268,19 +277,257 @@ export function CustomerPartySelect({
     }
   }
 
+  function resetPickerState() {
+    setQuery("");
+    setExpandedIds(new Set());
+    setDetailCustomerId(null);
+  }
+
+  function handleOpenChange(next: boolean) {
+    if (disabled) return;
+    setOpen(next);
+    if (!next) resetPickerState();
+  }
+
+  function renderCustomerResults(isMobileSheet = false) {
+    return (
+      <>
+        {loading ? (
+          <p className="px-4 py-3 text-sm text-muted-foreground">
+            {t("customers.addresses.loading")}
+          </p>
+        ) : null}
+
+        {!loading && results.length === 0 ? (
+          <p className="px-4 py-3 text-sm text-muted-foreground">
+            {t("customers.addresses.emptyResults")}
+          </p>
+        ) : null}
+
+        {results.map((result, index) => {
+          const displayCustomer = resolveDisplayCustomer(result.customer);
+          const { matchedAddressId } = result;
+          const previewResult: CustomerSearchResult = { ...result, customer: displayCustomer };
+          const phone = getPrimaryPhoneDisplayNumber(displayCustomer.phones);
+          const addressCount = resolveCustomerAddressCount(displayCustomer);
+          const isExpanded = expandedIds.has(displayCustomer.id);
+          const isHighlighted = index === highlightedIndex;
+          const preview = buildCollapsedPreview(previewResult);
+          const isLoadingDetail =
+            isExpanded &&
+            detailCustomerId === displayCustomer.id &&
+            detailQuery.isFetching;
+
+          return (
+            <div key={displayCustomer.id} className="border-b border-border/60 last:border-b-0">
+              <div
+                role="option"
+                aria-selected={value === displayCustomer.id}
+                className={cn(
+                  "cursor-pointer px-3 py-2.5 transition-colors hover:bg-muted/60",
+                  isMobileSheet && "px-4 py-4",
+                  isHighlighted && "bg-muted/60",
+                )}
+                onMouseEnter={() => setHighlightedIndex(index)}
+                onClick={() => activateCustomerRow(displayCustomer, addressCount)}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="truncate font-medium text-foreground">{displayCustomer.name}</p>
+                      <div className="flex shrink-0 items-center gap-1">
+                        {addressCount > 0 ? (
+                          <button
+                            type="button"
+                            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label={
+                              isExpanded
+                                ? t("customers.addresses.collapseAddresses")
+                                : t("customers.addresses.expandAddresses")
+                            }
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void toggleExpanded(displayCustomer.id);
+                            }}
+                          >
+                            <Badge
+                              variant="outline"
+                              className="h-5 cursor-pointer whitespace-nowrap border-sky-500/30 bg-sky-500/10 px-1.5 text-[10px] font-medium text-sky-800 hover:bg-sky-500/20 dark:text-sky-200"
+                            >
+                              {formatAddressCountBadgeLabel(addressCount, t)}
+                            </Badge>
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          aria-label={
+                            isExpanded
+                              ? t("customers.addresses.collapseAddresses")
+                              : t("customers.addresses.expandAddresses")
+                          }
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void toggleExpanded(displayCustomer.id);
+                          }}
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="size-4" />
+                          ) : (
+                            <ChevronRight className="size-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {phone ? (
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">{phone}</p>
+                    ) : null}
+
+                    <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                      <p className="flex flex-wrap items-center gap-1.5">
+                        {preview.showMatchedBadge ? (
+                          <Badge
+                            variant="outline"
+                            className="h-5 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] text-amber-800 dark:text-amber-200"
+                          >
+                            {t("customers.addresses.matchedBadge")}
+                          </Badge>
+                        ) : null}
+                        <span className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "text-foreground/90")}>
+                          {preview.visibleLine}
+                        </span>
+                      </p>
+                      {preview.primaryLine ? (
+                        <p className={ADDRESS_TEXT_WRAP_CLASSNAME}>
+                          {t("customers.addresses.primaryPrefix")} {preview.primaryLine}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {isExpanded ? (
+                <div className="space-y-1 border-t border-border/60 bg-muted/20 px-3 py-2">
+                  {isLoadingDetail ? (
+                    <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
+                      <Loader2 className="size-3.5 animate-spin" />
+                      {t("customers.addresses.loadingAddresses")}
+                    </div>
+                  ) : null}
+
+                  {!isLoadingDetail
+                    ? orderAddressesForDisplay(displayCustomer, matchedAddressId).map(
+                        (address, addressIndex) => (
+                          <button
+                            key={address.id ?? `${displayCustomer.id}-${addressIndex}`}
+                            type="button"
+                            className="flex w-full items-start gap-2 rounded-md px-2 py-2 text-left text-xs hover:bg-muted/70"
+                            onClick={() => void selectCustomer(displayCustomer, address.id)}
+                          >
+                            {showAddressLabels ? (
+                              <Badge variant="secondary" className="mt-0.5 shrink-0">
+                                {t(getAddressLabelKey(address, addressIndex))}
+                              </Badge>
+                            ) : null}
+                            <span className="min-w-0 flex-1">
+                              <span className={cn("block", ADDRESS_TEXT_WRAP_CLASSNAME, "text-foreground")}>
+                                {formatAddress(address, "full")}
+                              </span>
+                              {address.phone?.trim() ? (
+                                <span className="mt-0.5 block text-muted-foreground">
+                                  {address.phone.trim()}
+                                </span>
+                              ) : null}
+                            </span>
+                          </button>
+                        ),
+                      )
+                    : null}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div className={cn("relative", className)}>
+        <Sheet open={open} onOpenChange={handleOpenChange}>
+          <button
+            type="button"
+            id={id}
+            disabled={disabled}
+            role="combobox"
+            aria-expanded={open}
+            onClick={() => handleOpenChange(true)}
+            className={cn(
+              "relative flex h-9 w-full min-w-0 items-center rounded-md border border-input bg-background px-3 pr-9 text-left text-sm shadow-xs",
+              disabled && "cursor-not-allowed opacity-50",
+              triggerClassName,
+            )}
+          >
+            <span className={cn("min-w-0 flex-1 truncate", !hasSelection && "text-muted-foreground")}>
+              {hasSelection ? displayLabel : placeholder}
+            </span>
+            <ChevronDown className="absolute right-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          </button>
+
+          <SheetContent
+            side="bottom"
+            className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)]"
+          >
+            <SheetHeader className="shrink-0 border-b px-4 py-4 pr-14">
+              <SheetTitle>{placeholder ?? t("customers.addresses.openOptions")}</SheetTitle>
+            </SheetHeader>
+            <div className="shrink-0 border-b px-4 py-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  ref={inputRef}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={placeholder}
+                  disabled={disabled}
+                  className="h-11 rounded-xl pl-9 text-base"
+                />
+              </div>
+            </div>
+            <div
+              id={listboxId}
+              role="listbox"
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1"
+            >
+              {renderCustomerResults(true)}
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {required ? (
+          <input
+            aria-hidden
+            tabIndex={-1}
+            required
+            value={value}
+            onChange={() => {}}
+            className="pointer-events-none absolute inset-0 size-full opacity-0"
+          />
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className={cn("relative", className)}>
       <Popover
         open={open}
-        onOpenChange={(next) => {
-          if (disabled) return;
-          setOpen(next);
-          if (!next) {
-            setQuery("");
-            setExpandedIds(new Set());
-            setDetailCustomerId(null);
-          }
-        }}
+        onOpenChange={handleOpenChange}
         modal
       >
         <PopoverAnchor asChild>
@@ -350,165 +597,7 @@ export function CustomerPartySelect({
             role="listbox"
             className="max-h-[min(360px,50vh)] overflow-y-auto overscroll-contain py-1"
           >
-            {loading ? (
-              <p className="px-4 py-3 text-sm text-muted-foreground">
-                {t("customers.addresses.loading")}
-              </p>
-            ) : null}
-
-            {!loading && results.length === 0 ? (
-              <p className="px-4 py-3 text-sm text-muted-foreground">
-                {t("customers.addresses.emptyResults")}
-              </p>
-            ) : null}
-
-            {results.map((result, index) => {
-              const displayCustomer = resolveDisplayCustomer(result.customer);
-              const { matchedAddressId } = result;
-              const previewResult: CustomerSearchResult = { ...result, customer: displayCustomer };
-              const phone = getPrimaryPhoneDisplayNumber(displayCustomer.phones);
-              const addressCount = resolveCustomerAddressCount(displayCustomer);
-              const isExpanded = expandedIds.has(displayCustomer.id);
-              const isHighlighted = index === highlightedIndex;
-              const preview = buildCollapsedPreview(previewResult);
-              const isLoadingDetail =
-                isExpanded &&
-                detailCustomerId === displayCustomer.id &&
-                detailQuery.isFetching;
-
-              return (
-                <div key={displayCustomer.id} className="border-b border-border/60 last:border-b-0">
-                  <div
-                    role="option"
-                    aria-selected={value === displayCustomer.id}
-                    className={cn(
-                      "cursor-pointer px-3 py-2.5 transition-colors hover:bg-muted/60",
-                      isHighlighted && "bg-muted/60",
-                    )}
-                    onMouseEnter={() => setHighlightedIndex(index)}
-                    onClick={() => activateCustomerRow(displayCustomer, addressCount)}
-                  >
-                    <div className="flex items-start gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="truncate font-medium text-foreground">{displayCustomer.name}</p>
-                          <div className="flex shrink-0 items-center gap-1">
-                            {addressCount > 0 ? (
-                              <button
-                                type="button"
-                                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                aria-label={
-                                  isExpanded
-                                    ? t("customers.addresses.collapseAddresses")
-                                    : t("customers.addresses.expandAddresses")
-                                }
-                                onMouseDown={(event) => event.preventDefault()}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  void toggleExpanded(displayCustomer.id);
-                                }}
-                              >
-                                <Badge
-                                  variant="outline"
-                                  className="h-5 cursor-pointer whitespace-nowrap border-sky-500/30 bg-sky-500/10 px-1.5 text-[10px] font-medium text-sky-800 hover:bg-sky-500/20 dark:text-sky-200"
-                                >
-                                  {formatAddressCountBadgeLabel(addressCount, t)}
-                                </Badge>
-                              </button>
-                            ) : null}
-                            <button
-                              type="button"
-                              className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              aria-label={
-                                isExpanded
-                                  ? t("customers.addresses.collapseAddresses")
-                                  : t("customers.addresses.expandAddresses")
-                              }
-                              onMouseDown={(event) => event.preventDefault()}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                void toggleExpanded(displayCustomer.id);
-                              }}
-                            >
-                              {isExpanded ? (
-                                <ChevronDown className="size-4" />
-                              ) : (
-                                <ChevronRight className="size-4" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-
-                        {phone ? (
-                          <p className="mt-0.5 truncate text-xs text-muted-foreground">{phone}</p>
-                        ) : null}
-
-                        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                          <p className="flex flex-wrap items-center gap-1.5">
-                            {preview.showMatchedBadge ? (
-                              <Badge
-                                variant="outline"
-                                className="h-5 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] text-amber-800 dark:text-amber-200"
-                              >
-                                {t("customers.addresses.matchedBadge")}
-                              </Badge>
-                            ) : null}
-                            <span className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "text-foreground/90")}>
-                              {preview.visibleLine}
-                            </span>
-                          </p>
-                          {preview.primaryLine ? (
-                            <p className={ADDRESS_TEXT_WRAP_CLASSNAME}>
-                              {t("customers.addresses.primaryPrefix")} {preview.primaryLine}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {isExpanded ? (
-                    <div className="space-y-1 border-t border-border/60 bg-muted/20 px-3 py-2">
-                      {isLoadingDetail ? (
-                        <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
-                          <Loader2 className="size-3.5 animate-spin" />
-                          {t("customers.addresses.loadingAddresses")}
-                        </div>
-                      ) : null}
-
-                      {!isLoadingDetail
-                        ? orderAddressesForDisplay(displayCustomer, matchedAddressId).map(
-                            (address, addressIndex) => (
-                              <button
-                                key={address.id ?? `${displayCustomer.id}-${addressIndex}`}
-                                type="button"
-                                className="flex w-full items-start gap-2 rounded-md px-2 py-2 text-left text-xs hover:bg-muted/70"
-                                onClick={() => void selectCustomer(displayCustomer, address.id)}
-                              >
-                                {showAddressLabels ? (
-                                  <Badge variant="secondary" className="mt-0.5 shrink-0">
-                                    {t(getAddressLabelKey(address, addressIndex))}
-                                  </Badge>
-                                ) : null}
-                                <span className="min-w-0 flex-1">
-                                  <span className={cn("block", ADDRESS_TEXT_WRAP_CLASSNAME, "text-foreground")}>
-                                    {formatAddress(address, "full")}
-                                  </span>
-                                  {address.phone?.trim() ? (
-                                    <span className="mt-0.5 block text-muted-foreground">
-                                      {address.phone.trim()}
-                                    </span>
-                                  ) : null}
-                                </span>
-                              </button>
-                            ),
-                          )
-                        : null}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
+            {renderCustomerResults()}
           </div>
         </PopoverContent>
       </Popover>
