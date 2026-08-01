@@ -177,10 +177,10 @@ function MobileOrderRow({
   const comments = formatOrderCommentsSummary(order);
 
   return (
-    <article className="border-b border-border/80 py-5 last:border-b-0">
+    <article className="min-w-0 border-b border-border/80 py-5 last:border-b-0">
       <button
         type="button"
-        className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-4 text-left"
+        className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(5rem,auto)] gap-4 text-left"
         onClick={() => onView(order)}
       >
         <span className="min-w-0">
@@ -203,7 +203,7 @@ function MobileOrderRow({
             {comments || dash}
           </span>
         </span>
-        <span className="shrink-0 text-right">
+        <span className="min-w-0 shrink-0 text-right">
           <Badge
             className={cn(
               "rounded-full px-3 py-1 text-xs font-semibold",
@@ -214,7 +214,7 @@ function MobileOrderRow({
           >
             {getOrderCompletedLabel(order.completed, t)}
           </Badge>
-          <span className="mt-2 block max-w-28 truncate text-sm font-medium text-muted-foreground">
+          <span className="mt-2 block max-w-24 truncate text-sm font-medium text-muted-foreground">
             {routeLabel}
           </span>
         </span>
@@ -746,7 +746,7 @@ export function OrdersWorkspace() {
 
   return (
     <div className="overflow-x-hidden">
-      <section className="space-y-5 md:hidden">
+      <section className="max-w-full space-y-5 overflow-x-hidden md:hidden">
         <div className="space-y-4">
           <div>
             <h1 className="text-4xl font-bold tracking-normal">{t("orders.title")}</h1>

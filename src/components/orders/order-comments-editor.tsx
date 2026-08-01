@@ -112,7 +112,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
       purpose,
       itemType: "",
       customItem: "",
-      quantity: "",
+      quantity: "1",
       description: "",
     });
   }
@@ -162,7 +162,113 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
           {t("orders.empty.noComments")}
         </p>
       ) : (
-        <div className="overflow-hidden rounded-xl border">
+        <>
+        <div className="space-y-3 md:hidden">
+          {comments.map((comment, index) => {
+            const requiresItem = orderCommentPurposeRequiresItem(comment.purpose);
+            const isOtherItem = comment.itemType === "other";
+            const noteField: "customItem" | "description" | null = requiresItem
+              ? isOtherItem
+                ? "customItem"
+                : null
+              : comment.purpose
+                ? "description"
+                : null;
+
+            return (
+              <div key={`mobile-comment-${index}`} className="space-y-3 rounded-xl border bg-background p-3 shadow-xs">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">
+                    {t("orders.comments.title")} {index + 1}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 shrink-0 text-destructive hover:text-destructive"
+                    aria-label={t("orders.comments.removeAria", { index: index + 1 })}
+                    onClick={() => removeComment(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("orders.comments.columns.purpose")}
+                  </p>
+                  <SearchableSelect
+                    id={`mobile-comment-purpose-${index}`}
+                    value={comment.purpose}
+                    onValueChange={(value) => changePurpose(index, value)}
+                    placeholder={t("orders.comments.placeholders.purpose")}
+                    options={purposeOptionsForRow(index)}
+                    mobileSheet
+                  />
+                </div>
+
+                {requiresItem ? (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {t("orders.comments.columns.item")}
+                    </p>
+                    <SearchableSelect
+                      id={`mobile-comment-item-${index}`}
+                      value={comment.itemType}
+                      onValueChange={(value) =>
+                        updateComment(index, {
+                          itemType: value as OrderCommentItemType,
+                          customItem: value === "other" ? comment.customItem : "",
+                          quantity: comment.quantity || "1",
+                        })
+                      }
+                      placeholder={t("orders.comments.placeholders.item")}
+                      options={itemOptionsForRow(index)}
+                      mobileSheet
+                    />
+                  </div>
+                ) : null}
+
+                {requiresItem && comment.itemType && comment.itemType !== "other" ? (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {t("orders.comments.columns.qty")}
+                    </p>
+                    <Input
+                      id={`mobile-comment-quantity-${index}`}
+                      type="number"
+                      min="1"
+                      className="h-11 rounded-xl text-base"
+                      value={comment.quantity || "1"}
+                      onChange={(event) => updateComment(index, { quantity: event.target.value || "1" })}
+                    />
+                  </div>
+                ) : null}
+
+                {noteField ? (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {t("orders.comments.columns.comment")}
+                    </p>
+                    <Input
+                      id={`mobile-comment-note-${index}`}
+                      className="h-11 rounded-xl text-base"
+                      value={comment[noteField]}
+                      placeholder={
+                        noteField === "customItem"
+                          ? t("orders.comments.placeholders.customItem")
+                          : t("orders.comments.placeholders.note")
+                      }
+                      onChange={(event) => updateComment(index, { [noteField]: event.target.value })}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="hidden overflow-hidden rounded-xl border md:block">
           <div className="flex items-center gap-2 border-b bg-muted/40 px-2 py-1.5 text-xs font-medium text-muted-foreground">
             <span className="w-32 shrink-0">{t("orders.comments.columns.purpose")}</span>
             <span className="w-28 shrink-0">{t("orders.comments.columns.item")}</span>
@@ -230,6 +336,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                             updateComment(index, {
                               itemType: value as OrderCommentItemType,
                               customItem: value === "other" ? comment.customItem : "",
+                              quantity: comment.quantity || "1",
                             });
                             // Custom items need a description first; known items jump to quantity.
                             setEditing({ index, field: value === "other" ? "note" : "quantity" });
@@ -353,6 +460,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
             })}
           </div>
         </div>
+        </>
       )}
     </section>
   );
