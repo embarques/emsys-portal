@@ -11,7 +11,7 @@ const DateInput = React.forwardRef<HTMLInputElement, React.ComponentProps<"input
     React.useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement);
 
     return (
-      <div className="relative w-full min-w-0 max-w-full overflow-hidden">
+      <div className="relative w-full min-w-0 max-w-full">
         <button
           type="button"
           aria-label="Open date picker"
@@ -25,8 +25,10 @@ const DateInput = React.forwardRef<HTMLInputElement, React.ComponentProps<"input
           ref={inputRef}
           type="date"
           className={cn(
-            "block w-full min-w-0 max-w-full overflow-hidden pl-9",
+            "block w-full min-w-0 max-w-full appearance-none pl-9 leading-normal",
             "[inline-size:100%] [max-inline-size:100%] [min-inline-size:0]",
+            "[&::-webkit-date-and-time-value]:m-0 [&::-webkit-date-and-time-value]:min-h-0",
+            "[&::-webkit-date-and-time-value]:text-left",
             "[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden",
             className
           )}
