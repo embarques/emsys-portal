@@ -125,7 +125,9 @@ export function CustomerPartySelect({
   const [detailCustomerId, setDetailCustomerId] = useState<string | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
+  const trimmedQuery = query.trim();
   const debouncedQuery = useDebouncedValue(query, 300).trim();
+  const isSearchPending = trimmedQuery.length > 0 && trimmedQuery !== debouncedQuery;
   const isSearching = debouncedQuery.length > 0;
 
   const pickerQuery = useCustomerPicker(200);
@@ -150,11 +152,14 @@ export function CustomerPartySelect({
   }, [partyType, pickerQuery.data?.items]);
 
   const results = useMemo(() => {
+    if (isSearchPending) {
+      return [];
+    }
     if (isSearching) {
       return autocompleteQuery.data ?? [];
     }
     return toSearchResults(pickerCustomers);
-  }, [autocompleteQuery.data, isSearching, pickerCustomers]);
+  }, [autocompleteQuery.data, isSearchPending, isSearching, pickerCustomers]);
 
   const visibleCustomerIds = useMemo(
     () => results.slice(0, 20).map((result) => result.customer.id),
@@ -163,7 +168,7 @@ export function CustomerPartySelect({
 
   useCustomerDetailsBatch(visibleCustomerIds, open);
 
-  const loading = isSearching ? autocompleteQuery.isFetching : pickerQuery.isFetching;
+  const loading = isSearchPending || (isSearching ? autocompleteQuery.isFetching : pickerQuery.isFetching);
   const displayLabel = selectedCustomer?.name ?? "";
   const hasSelection = Boolean(value && selectedCustomer);
 
@@ -293,7 +298,8 @@ export function CustomerPartySelect({
     return (
       <>
         {loading ? (
-          <p className="px-4 py-3 text-sm text-muted-foreground">
+          <p className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
             {t("customers.addresses.loading")}
           </p>
         ) : null}
@@ -481,7 +487,7 @@ export function CustomerPartySelect({
 
           <SheetContent
             side="bottom"
-            className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)]"
+            className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)] max-md:bottom-[env(safe-area-inset-bottom)] max-md:top-[calc(env(safe-area-inset-top)+0.75rem)] max-md:max-h-none max-md:rounded-2xl max-md:border"
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <SheetHeader className="shrink-0 border-b px-4 py-4 pr-14">
