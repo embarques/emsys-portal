@@ -46,6 +46,8 @@ export type CustomerPartySelectProps = {
   selectedCustomer?: Customer | null;
   onValueChange: (customerId: string, customer: Customer, addressId?: string) => void;
   placeholder?: string;
+  pickerTitle?: string;
+  searchPlaceholder?: string;
   required?: boolean;
   disabled?: boolean;
   className?: string;
@@ -173,6 +175,8 @@ export function CustomerPartySelect({
   selectedCustomer,
   onValueChange,
   placeholder,
+  pickerTitle,
+  searchPlaceholder,
   required = false,
   disabled = false,
   className,
@@ -554,7 +558,7 @@ export function CustomerPartySelect({
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <SheetHeader className="shrink-0 border-b px-4 py-4 pr-14">
-              <SheetTitle>{placeholder ?? t("customers.addresses.openOptions")}</SheetTitle>
+              <SheetTitle>{pickerTitle ?? placeholder ?? t("customers.addresses.openOptions")}</SheetTitle>
             </SheetHeader>
             <div className="shrink-0 border-b px-4 py-3">
               <div className="relative">
@@ -563,7 +567,7 @@ export function CustomerPartySelect({
                   ref={inputRef}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder={placeholder}
+                  placeholder={searchPlaceholder ?? pickerTitle ?? placeholder}
                   disabled={disabled}
                   className="h-11 rounded-xl pl-9 text-base"
                 />

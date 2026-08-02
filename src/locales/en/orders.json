@@ -121,6 +121,7 @@
       "searchBranches": "Search branches…",
       "searchEmployees": "Search employees…",
       "selectSender": "Select sender",
+      "selectReceiver": "Select receiver",
       "noReceiver": "No receiver",
       "searchParty": "Search by name, phone, or address…",
       "selectAddress": "Select address",

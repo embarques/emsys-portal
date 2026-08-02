@@ -505,6 +505,8 @@ export function OrderForm({
               selectedCustomer={values.receiver}
               onValueChange={updateReceiver}
               placeholder={t("orders.form.placeholders.noReceiver")}
+              pickerTitle={t("orders.form.placeholders.selectReceiver")}
+              searchPlaceholder={t("orders.form.placeholders.selectReceiver")}
               showAddressLabels={false}
             />
             {values.receiver && isOrderPartyAddressChosen(values.receiver, values.receiverAddressIndex) ? (
