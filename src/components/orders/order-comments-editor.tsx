@@ -332,16 +332,6 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                       </div>
                     ) : null}
 
-                    {isMobileCommentComplete(comment) ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-10 w-full rounded-xl"
-                        onClick={() => setMobileEditingIndex(null)}
-                      >
-                        {t("common.table.done")}
-                      </Button>
-                    ) : null}
                   </>
                 )}
               </div>
