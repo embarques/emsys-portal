@@ -77,6 +77,8 @@ export function useFormEnterNavigation(options: FormEnterNavigationOptions = {})
       const target = event.target as HTMLElement | null;
       if (!target) return;
 
+      if (target.closest('[data-enter-navigation="ignore"]')) return;
+
       const tagName = target.tagName;
 
       // Let textareas and rich-text fields insert newlines.

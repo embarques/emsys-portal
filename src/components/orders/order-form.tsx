@@ -409,6 +409,7 @@ export function OrderForm({
                   onValueChange={(next) => updateField("branchId", Number(next))}
                   searchPlaceholder={t("orders.form.placeholders.searchBranches")}
                   required
+                  mobileSheet
                   options={branches.map((branch) => ({
                     value: String(branch.id),
                     label: `${branch.name} · ${branch.code}`,
@@ -424,6 +425,7 @@ export function OrderForm({
                   onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
                   placeholder={t("orders.form.fields.noEmployee")}
                   searchPlaceholder={t("orders.form.placeholders.searchEmployees")}
+                  mobileSheet
                   options={[
                     { value: "", label: t("orders.form.fields.noEmployee") },
                     ...employees.map((employee) => ({
@@ -434,7 +436,7 @@ export function OrderForm({
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="hidden space-y-1 md:block">
                 <Label htmlFor="sectorId">{t("orders.form.fields.sector")}</Label>
                 <Input
                   id="sectorId"
@@ -505,6 +507,8 @@ export function OrderForm({
               selectedCustomer={values.receiver}
               onValueChange={updateReceiver}
               placeholder={t("orders.form.placeholders.noReceiver")}
+              pickerTitle={t("orders.form.placeholders.selectReceiver")}
+              searchPlaceholder={t("orders.form.placeholders.selectReceiver")}
               showAddressLabels={false}
             />
             {values.receiver && isOrderPartyAddressChosen(values.receiver, values.receiverAddressIndex) ? (

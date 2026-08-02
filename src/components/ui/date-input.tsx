@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const DateInput = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, ...props }, forwardedRef) => {
+  ({ className, style, ...props }, forwardedRef) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
 
     React.useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement);
 
     return (
-      <div className="relative min-w-0 w-full max-w-full">
+      <div className="relative w-full min-w-0 max-w-full">
         <button
           type="button"
           aria-label="Open date picker"
@@ -25,9 +25,19 @@ const DateInput = React.forwardRef<HTMLInputElement, React.ComponentProps<"input
           ref={inputRef}
           type="date"
           className={cn(
-            "min-w-0 w-full max-w-full pl-9 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden",
+            "block w-full min-w-0 max-w-full appearance-none pl-9 leading-normal",
+            "[inline-size:100%] [max-inline-size:100%] [min-inline-size:0]",
+            "[&::-webkit-date-and-time-value]:m-0 [&::-webkit-date-and-time-value]:min-h-0",
+            "[&::-webkit-date-and-time-value]:text-left",
+            "[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden",
             className
           )}
+          style={{
+            minInlineSize: 0,
+            maxInlineSize: "100%",
+            inlineSize: "100%",
+            ...style,
+          }}
           {...props}
         />
       </div>

@@ -40,6 +40,7 @@
       "selectContainer": "Select a container",
       "searchContainers": "Search containers…",
       "selectSender": "Select sender",
+      "selectReceiver": "Select receiver",
       "noReceiver": "No receiver",
       "noPickupReference": "No pickup reference",
       "searchPickupReferences": "Search pickup references…",

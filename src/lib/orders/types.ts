@@ -267,7 +267,7 @@ export function createEmptyOrderComment(): OrderCommentFormValues {
     purpose: "",
     itemType: "",
     customItem: "",
-    quantity: "",
+    quantity: "1",
     description: "",
   };
 }

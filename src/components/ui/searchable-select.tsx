@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Command as CommandPrimitive, defaultFilter } from "cmdk";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp, LoaderCircle, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { focusNextFormField } from "@/hooks/use-form-enter-navigation";
@@ -107,7 +107,7 @@ function hasSearchableSelectSelection(
 }
 
 const triggerClassName =
-  "relative flex min-h-10 w-full items-center rounded-lg border-2 border-foreground/60 bg-card py-2 pl-3 pr-9 text-sm outline-none transition-[border-color,box-shadow] focus-within:border-foreground data-[state=open]:border-foreground";
+  "relative flex min-h-10 w-full min-w-0 max-w-full items-center rounded-lg border-2 border-foreground/60 bg-card py-2 pl-3 pr-9 text-sm outline-none transition-[border-color,box-shadow] focus-within:border-foreground data-[state=open]:border-foreground max-md:min-h-12 max-md:rounded-xl max-md:border-input max-md:text-base max-md:shadow-xs max-md:focus-within:border-ring max-md:focus-within:ring-[3px] max-md:focus-within:ring-ring/50 max-md:data-[state=open]:border-ring max-md:data-[state=open]:ring-[3px] max-md:data-[state=open]:ring-ring/50";
 
 const chevronButtonClassName =
   "absolute inset-y-0 right-0 flex w-9 shrink-0 items-center justify-center text-foreground/70 disabled:cursor-not-allowed";
@@ -122,6 +122,53 @@ const listItemClassName =
   "cursor-pointer rounded-none px-4 py-3 text-sm data-[selected=true]:bg-muted/60 data-[selected=true]:text-foreground";
 
 const MOBILE_SHEET_SEARCH_THRESHOLD = 8;
+
+function MobileSelectLoading({ message }: { message: string }) {
+  return (
+    <div
+      className="relative overflow-hidden border-b bg-gradient-to-b from-primary/[0.06] via-background to-background px-4 py-6 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+      <div className="flex flex-col items-center">
+        <div className="relative mb-3 grid size-14 place-items-center">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl" />
+          <div className="absolute inset-0 rounded-full border border-primary/15" />
+          <LoaderCircle
+            className="absolute inset-0 size-14 animate-spin text-primary drop-shadow-sm"
+            strokeWidth={2.25}
+            aria-hidden="true"
+          />
+          <div className="relative grid size-10 place-items-center rounded-full border border-primary/25 bg-card shadow-lg shadow-primary/10">
+            <Search className="size-5 text-primary" aria-hidden="true" />
+          </div>
+        </div>
+        <p className="text-sm font-semibold text-foreground">{message}</p>
+        <div className="mt-3 flex items-center gap-1.5" aria-hidden="true">
+          {[0, 1, 2].map((dot) => (
+            <span
+              key={dot}
+              className="size-1.5 animate-bounce rounded-full bg-primary"
+              style={{ animationDelay: `${dot * 140}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="mt-5 overflow-hidden rounded-xl border bg-card/80 shadow-sm" aria-hidden="true">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="border-b px-4 py-3 last:border-b-0">
+            <div className="space-y-2">
+              <div className="h-3.5 w-40 animate-pulse rounded-full bg-muted" />
+              <div className="h-3 w-28 animate-pulse rounded-full bg-muted" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <span className="sr-only">{message}</span>
+    </div>
+  );
+}
 
 /**
  * Keep wheel/touch scrolling working when the list is portaled out of a Radix modal (Dialog).
@@ -172,6 +219,11 @@ export function SearchableSelect({
   const suppressNextFocusSearchRef = React.useRef(false);
   const scrollIsolationRef = useScrollIsolation();
   const isMobile = useIsMobileViewport();
+  const [viewportResolved, setViewportResolved] = React.useState(false);
+
+  React.useEffect(() => {
+    setViewportResolved(true);
+  }, []);
 
   function handleOpenChange(next: boolean) {
     if (disabled) return;
@@ -261,7 +313,7 @@ export function SearchableSelect({
     window.setTimeout(() => inputRef.current?.focus(), 0);
   }
 
-  function renderOptionItems(selectOptions: SearchableSelectOption[]) {
+  function renderOptionItems(selectOptions: SearchableSelectOption[], isMobileSheet = false) {
     return selectOptions.map((option, index) => {
       const detailLines = [option.description, ...(option.descriptionLines ?? [])].filter(
         (line): line is string => Boolean(line && line.trim()),
@@ -275,7 +327,12 @@ export function SearchableSelect({
           disabled={option.disabled}
           onMouseDown={(event) => event.preventDefault()}
           onSelect={() => handleSelect(option.value)}
-          className={cn(listItemClassName, detailLines.length > 0 && "items-start")}
+          className={cn(
+            listItemClassName,
+            detailLines.length > 0 && "items-start",
+            isMobileSheet &&
+              "min-h-14 rounded-none border-b border-border/60 px-4 py-4 text-base last:border-b-0 data-[selected=true]:bg-primary/5",
+          )}
         >
           <span className="flex min-w-0 flex-col">
             <span className="truncate">{option.label}</span>
@@ -293,7 +350,7 @@ export function SearchableSelect({
   const selectableOptions = options.filter((option) => !isPseudoPlaceholderOption(option));
   const optionItems = renderOptionItems(selectableOptions);
 
-  if (mobileSheet && isMobile) {
+  if (mobileSheet && (isMobile || !viewportResolved)) {
     const sheetTitle = ariaLabel ?? placeholder;
     const mobileOptions = selectableOptions;
     const showMobileSearch = searchable && mobileOptions.length > MOBILE_SHEET_SEARCH_THRESHOLD;
@@ -330,7 +387,8 @@ export function SearchableSelect({
 
           <SheetContent
             side="bottom"
-            className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)]"
+            className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)] max-md:bottom-[env(safe-area-inset-bottom)] max-md:top-[calc(env(safe-area-inset-top)+0.75rem)] max-md:max-h-none max-md:rounded-2xl max-md:border"
+            onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <SheetHeader className="shrink-0 border-b px-4 py-4 pr-14">
               <SheetTitle>{sheetTitle}</SheetTitle>
@@ -342,21 +400,30 @@ export function SearchableSelect({
             >
               {showMobileSearch ? (
                 <div className="shrink-0 border-b px-4 py-3">
-                  <CommandPrimitive.Input
-                    ref={inputRef}
-                    disabled={disabled}
-                    value={query}
-                    onValueChange={changeQuery}
-                    placeholder={searchPlaceholder ?? placeholder}
-                    className="h-11 w-full rounded-lg border bg-background px-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  />
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <CommandPrimitive.Input
+                      ref={inputRef}
+                      disabled={disabled}
+                      value={query}
+                      onValueChange={changeQuery}
+                      placeholder={searchPlaceholder ?? placeholder}
+                      className="h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                    />
+                  </div>
                 </div>
               ) : null}
               <CommandList ref={scrollIsolationRef} className="max-h-none flex-1 overflow-y-auto p-0">
-                <CommandEmpty className="px-4 py-4 text-sm">
-                  {loading ? loadingMessage : emptyMessage}
-                </CommandEmpty>
-                {renderOptionItems(mobileOptions)}
+                {loading ? (
+                  <MobileSelectLoading message={loadingMessage} />
+                ) : (
+                  <>
+                    <CommandEmpty className="px-4 py-4 text-sm">
+                      {emptyMessage}
+                    </CommandEmpty>
+                    {renderOptionItems(mobileOptions, true)}
+                  </>
+                )}
               </CommandList>
             </Command>
           </SheetContent>

@@ -121,6 +121,7 @@
       "searchBranches": "Buscar sucursales…",
       "searchEmployees": "Buscar empleados…",
       "selectSender": "Seleccionar remitente",
+      "selectReceiver": "Seleccionar destinatario",
       "noReceiver": "Sin destinatario",
       "searchParty": "Buscar por nombre, teléfono o dirección…",
       "selectAddress": "Seleccionar dirección",

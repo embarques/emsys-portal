@@ -40,6 +40,7 @@
       "selectContainer": "Seleccionar contenedor",
       "searchContainers": "Buscar contenedores…",
       "selectSender": "Seleccionar remitente",
+      "selectReceiver": "Seleccionar destinatario",
       "noReceiver": "Sin destinatario",
       "noPickupReference": "Sin referencia de recogida",
       "searchPickupReferences": "Buscar referencias de recogida…",

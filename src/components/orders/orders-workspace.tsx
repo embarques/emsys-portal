@@ -3,12 +3,15 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownToLine,
+  Check,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
   DollarSign,
+  Edit,
   FileText,
+  Filter,
   Map as MapIcon,
   PackageOpen,
   Plus,
@@ -44,6 +47,7 @@ import {
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -148,6 +152,111 @@ function PickupCommentsCell({ order }: { order: Order }) {
   );
 }
 
+function getCustomerPrimaryPhone(customer: Customer | null | undefined, fallback: string) {
+  const phone = customer?.phones?.[0];
+  return phone?.displayNumber || phone?.number || fallback;
+}
+
+function MobileOrderRow({
+  order,
+  routeLabel,
+  onView,
+  onEdit,
+  onDelete,
+  selected,
+  selectionMode,
+  onToggleSelected,
+}: {
+  order: Order;
+  routeLabel: string;
+  onView: (order: Order) => void;
+  onEdit: (order: Order) => void;
+  onDelete: (order: Order) => void;
+  selected: boolean;
+  selectionMode: boolean;
+  onToggleSelected: (orderId: string, checked: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const dash = t("common.empty.dash");
+  const orderId = getOrderRecordId(order);
+  const senderAddress = getPrimaryAddress(order.sender);
+  const senderAddressLine = senderAddress ? formatAddressLine(senderAddress, "full") : dash;
+  const senderPhone = getCustomerPrimaryPhone(order.sender, dash);
+  const comments = formatOrderCommentsSummary(order);
+
+  return (
+    <article className={cn("min-w-0 border-b border-border/80 py-5 last:border-b-0", selected && "bg-primary/5")}>
+      <div className="grid w-full min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] gap-3">
+        <button
+          type="button"
+          className={cn(
+            "mt-1 flex size-7 items-center justify-center rounded-full border text-primary",
+            selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background",
+          )}
+          onClick={() => onToggleSelected(orderId, !selected)}
+          aria-label={selected ? "Deselect order" : "Select order"}
+        >
+          {selected ? <Check className="size-4" /> : null}
+        </button>
+        <button
+          type="button"
+          className="min-w-0 text-left"
+          onClick={() => {
+            if (selectionMode) {
+              onToggleSelected(orderId, !selected);
+              return;
+            }
+            onView(order);
+          }}
+        >
+          <span className="block truncate text-xl font-bold leading-tight text-foreground">
+            {order.sender.name || dash}
+          </span>
+          <span className="mt-1 flex min-w-0 items-center justify-between gap-3">
+            <span className="min-w-0 truncate text-base leading-tight text-muted-foreground">
+              #{formatOrderId(order)} | {formatOrderDate(order.date)}
+            </span>
+            <Badge
+              className={cn(
+                "shrink-0 rounded-full px-3 py-1 text-xs font-semibold",
+                order.completed
+                  ? "border-transparent bg-emerald-100 text-emerald-700"
+                  : "border-transparent bg-amber-100 text-amber-700",
+              )}
+            >
+              {getOrderCompletedLabel(order.completed, t)}
+            </Badge>
+          </span>
+          <span className="mt-2 block break-words text-sm leading-relaxed text-muted-foreground">
+            <span className="font-semibold text-foreground/80">Phone:</span> {senderPhone}
+          </span>
+          <span className="mt-1 block line-clamp-3 break-words text-sm leading-relaxed text-muted-foreground">
+            {senderAddressLine}
+          </span>
+          <span className="mt-2 block line-clamp-2 text-sm leading-relaxed text-foreground/80">
+            {comments || dash}
+          </span>
+        </button>
+      </div>
+      <div className={cn("mt-5 flex justify-end gap-2", selectionMode && "hidden")}>
+        <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => onEdit(order)}>
+          <Edit className="size-4" />
+          {t("common.actions.edit")}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 rounded-xl text-destructive"
+          onClick={() => onDelete(order)}
+        >
+          <Trash2 className="size-4" />
+          {t("common.actions.delete")}
+        </Button>
+      </div>
+    </article>
+  );
+}
+
 const defaultFilters: OrderFilterState = {
   query: "",
   rows: [],
@@ -246,6 +355,7 @@ export function OrdersWorkspace() {
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
     [orders, selectedIds],
   );
+  const selectedCount = selectedOrders.length;
   const selectedOrdersWithRoute = useMemo(
     () => selectedOrders.filter((order) => Boolean(order.routeId?.trim())),
     [selectedOrders],
@@ -293,7 +403,11 @@ export function OrdersWorkspace() {
   }
 
   function toggleSelect(orderId: string, checked: boolean) {
-    setSelectedIds((current) => (checked ? [...current, orderId] : current.filter((entry) => entry !== orderId)));
+    setSelectedIds((current) =>
+      checked
+        ? Array.from(new Set([...current, orderId]))
+        : current.filter((entry) => entry !== orderId),
+    );
   }
 
   const { openFormTab, openTab, isDesktopTabs } = useWorkspaceTabs();
@@ -655,8 +769,304 @@ export function OrdersWorkspace() {
   );
 
   return (
-    <div>
-      <PageHeader
+    <div className="overflow-x-hidden">
+      <section className="max-w-full space-y-5 overflow-x-hidden md:hidden">
+        <div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+            <h1 className="text-4xl font-bold tracking-normal">{t("orders.title")}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{listSummary}</p>
+            </div>
+            <Button
+              type="button"
+              size="icon"
+              className="mt-1 size-12 shrink-0 rounded-full"
+              onClick={openAddForm}
+              disabled={isSaving}
+              aria-label={t("orders.actions.add")}
+            >
+              <Plus className="size-6" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border bg-card p-4 shadow-sm">
+          <div className="flex gap-3">
+            <TableSearchInput
+              value={filters.query}
+              onChange={(query) => {
+                setFilters((current) => ({ ...current, query }));
+                setPage(1);
+              }}
+              placeholder={t("orders.search.placeholder")}
+              className="min-w-0 flex-1"
+              inputClassName="h-12 rounded-2xl border-0 bg-blue-50 text-base shadow-none"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className={cn(
+                "size-12 rounded-full bg-background",
+                filtersOpen || activeFilterCount > 0 ? "bg-primary/10 text-primary" : "text-primary",
+              )}
+              onClick={() => setFiltersOpen((open) => !open)}
+              aria-label={t("common.table.filters")}
+            >
+              <Filter className="size-5" />
+            </Button>
+          </div>
+
+          {filtersOpen ? (
+            <div className="mt-4">
+              <TableFilterPanel
+                resultSummary={listSummary}
+                presets={{
+                  storageKey: "orders-mobile",
+                  rows: filters.rows,
+                  fields: orderFilterFields,
+                  onApply: (rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  },
+                }}
+                onClearAll={
+                  hasActiveFilters
+                    ? () => {
+                        setFilters(defaultFilters);
+                        setPage(1);
+                      }
+                    : undefined
+                }
+              >
+                <TableAdvancedFilterBuilder
+                  open={filtersOpen}
+                  rows={filters.rows}
+                  fields={orderFilterFields}
+                  dynamicOptions={{
+                    users: usersLoading ? [] : userFilterOptions,
+                    pickupRoutes: assignRoutesLoading ? [] : assignRouteOptions,
+                    branches: branchesLoading ? [] : branchFilterOptionsById,
+                    branchCodes: branchesLoading ? [] : branchFilterOptionsByCode,
+                  }}
+                  onChange={(rows) => {
+                    setFilters((current) => ({ ...current, rows }));
+                    setPage(1);
+                  }}
+                />
+              </TableFilterPanel>
+            </div>
+          ) : null}
+        </div>
+
+        {!isLoading && !listErrorMessage ? (
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+            <Button
+              variant="outline"
+              className="h-11 rounded-xl"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <ChevronLeft className="size-4" />
+              {t("common.actions.previous")}
+            </Button>
+            <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
+            </span>
+            <Button
+              variant="outline"
+              className="h-11 rounded-xl"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              {t("common.actions.next")}
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        ) : null}
+
+        {!isLoading && !listErrorMessage && orders.length > 0 && selectedCount > 0 ? (
+          <div className="rounded-xl border bg-card px-3 py-3 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-foreground">
+                {selectedCount} selected
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 rounded-lg"
+                onClick={() => setSelectedIds([])}
+              >
+                Clear
+              </Button>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                disabled={selectedCount !== 1}
+                onClick={() => {
+                  const order = selectedOrders[0];
+                  if (order) openViewOrder(order);
+                }}
+              >
+                <FileText className="size-4" />
+                {t("common.actions.view")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                disabled={selectedCount !== 1 || isSaving}
+                onClick={() => {
+                  const order = selectedOrders[0];
+                  if (order) openEditForm(order);
+                }}
+              >
+                <Edit className="size-4" />
+                {t("common.actions.edit")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                onClick={openMapView}
+              >
+                <MapIcon className="size-4" />
+                {t("orders.actions.map")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                onClick={printSelectedOrders}
+                disabled={isPrinting}
+              >
+                <Printer className="size-4" />
+                {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg bg-emerald-500/5 px-2 text-xs leading-tight text-emerald-700 whitespace-normal hover:bg-emerald-500/10 hover:text-emerald-700"
+                disabled={isSaving}
+                onClick={() => openCompletionConfirm(true)}
+              >
+                <CheckCircle2 className="size-4" />
+                {t("orders.actions.markComplete")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg bg-amber-500/5 px-2 text-xs leading-tight text-amber-700 whitespace-normal hover:bg-amber-500/10 hover:text-amber-700"
+                disabled={isSaving}
+                onClick={() => openCompletionConfirm(false)}
+              >
+                <XCircle className="size-4" />
+                {t("orders.actions.markIncomplete")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                disabled={isSaving}
+                onClick={openAssignRoute}
+              >
+                <RouteIcon className="size-4" />
+                {t("orders.actions.assignRoute")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 rounded-lg bg-amber-500/5 px-2 text-xs leading-tight text-amber-700 whitespace-normal hover:bg-amber-500/10 hover:text-amber-700"
+                disabled={isSaving || selectedOrdersWithRoute.length === 0}
+                onClick={openClearRoute}
+              >
+                <RouteOff className="size-4" />
+                {clearRouteMutation.isPending
+                  ? t("orders.actions.clearingRoute")
+                  : t("orders.actions.clearRoute")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="col-span-2 min-h-10 rounded-lg px-2 text-xs leading-tight text-destructive whitespace-normal hover:text-destructive"
+                disabled={isSaving}
+                onClick={() => setDeleteTarget(selectedOrders)}
+              >
+                <Trash2 className="size-4" />
+                {t("common.actions.delete")}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {missingCompanyContext ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {t("orders.errors.missingCompanyContext")}
+          </div>
+        ) : null}
+
+        {listErrorMessage ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {listErrorMessage}
+          </div>
+        ) : null}
+
+        <div className="rounded-3xl bg-card px-4 shadow-sm">
+          {isLoading ? (
+            <div className="space-y-4 py-5">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="border-b border-border/80 py-3 last:border-b-0">
+                  <div className="flex justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="h-5 w-28 rounded bg-muted" />
+                      <div className="h-4 w-44 rounded bg-muted" />
+                      <div className="h-4 w-36 rounded bg-muted" />
+                    </div>
+                    <div className="h-7 w-20 rounded-full bg-muted" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-sm text-muted-foreground">{t("orders.empty.noMatch")}</p>
+              <Button className="mt-4 h-11 rounded-xl" onClick={openAddForm}>
+                <Plus className="size-4" />
+                {t("orders.actions.add")}
+              </Button>
+            </div>
+          ) : (
+            orders.map((order) => (
+              <MobileOrderRow
+                key={getOrderRecordId(order)}
+                order={order}
+                routeLabel={formatOrderRouteName(order, pickupRouteLookup.getByKey(order.routeId), t)}
+                onView={openViewOrder}
+                onEdit={openEditForm}
+                onDelete={setDeleteTarget}
+                selected={selectedIds.includes(getOrderRecordId(order))}
+                selectionMode={selectedCount > 0}
+                onToggleSelected={toggleSelect}
+              />
+            ))
+          )}
+        </div>
+      </section>
+
+      <div className="hidden md:block">
+        <PageHeader
         title={t("orders.title")}
         description={t("orders.pages.description")}
         actions={
@@ -667,14 +1077,14 @@ export function OrdersWorkspace() {
         }
       />
 
-      <StatCards
+        <StatCards
         items={statCards.map((stat) => ({
           ...stat,
           value: stats.isLoading ? "…" : stat.value,
         }))}
-      />
+        />
 
-      <Card className="mt-6 gap-0">
+        <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -903,7 +1313,8 @@ export function OrdersWorkspace() {
           </div>
         </div>
         ) : null}
-      </Card>
+        </Card>
+      </div>
 
       <OrderViewSheet
         order={viewOrder}
@@ -927,11 +1338,26 @@ export function OrdersWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>
-              {formMode === "edit" ? t("orders.form.editTitle") : t("orders.form.addTitle")}
-            </DialogTitle>
+        <DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-xl">
+          <DialogHeader className="shrink-0 border-b border-primary/20 bg-primary px-4 pb-4 pt-5 text-primary-foreground sm:border-border sm:bg-background sm:px-6 sm:py-4 sm:text-foreground">
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle className="text-2xl font-bold text-primary-foreground sm:text-lg sm:text-foreground">
+                {formMode === "edit" ? t("orders.form.editTitle") : t("orders.form.addTitle")}
+              </DialogTitle>
+              <button
+                type="button"
+                className="font-semibold text-primary-foreground sm:hidden"
+                onClick={() => {
+                  setFormMode(null);
+                  setFormError(null);
+                }}
+              >
+                {t("common.actions.cancel")}
+              </button>
+            </div>
+            <DialogDescription className="text-primary-foreground/85 sm:hidden">
+              {formMode === "edit" ? t("orders.actions.edit") : t("orders.form.addDescription")}
+            </DialogDescription>
           </DialogHeader>
           <OrderForm
             key={editingOrder ? getOrderRecordId(editingOrder) : "new"}
@@ -962,7 +1388,7 @@ export function OrdersWorkspace() {
         }}
       >
         <DialogContent
-          className="z-[60]"
+          className="z-[60] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-b-none max-md:rounded-t-2xl max-md:p-4"
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <DialogHeader>
@@ -988,9 +1414,10 @@ export function OrdersWorkspace() {
                   : t("orders.dialogs.noRoutesFound")
               }
               options={assignRouteOptions}
+              mobileSheet
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="max-md:grid max-md:grid-cols-2">
             <Button
               variant="outline"
               onClick={() => {

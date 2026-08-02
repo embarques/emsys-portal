@@ -839,6 +839,8 @@ export function InvoiceForm({
           selectedCustomer={values.receiver}
           onValueChange={updateReceiver}
           placeholder={t("invoices.form.placeholders.noReceiver")}
+          pickerTitle={t("invoices.form.placeholders.selectReceiver")}
+          searchPlaceholder={t("invoices.form.placeholders.selectReceiver")}
           showAddressLabels={false}
           triggerClassName={isWizard ? wizardSelectClassNameFor(values.receiverId) : undefined}
         />
