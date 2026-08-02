@@ -541,7 +541,7 @@ export function CustomerPartySelect({
             aria-expanded={open}
             onClick={() => handleOpenChange(true)}
             className={cn(
-              "relative flex h-9 w-full min-w-0 items-center rounded-md border border-input bg-background px-3 pr-9 text-left text-sm shadow-xs",
+              "relative flex h-9 w-full min-w-0 max-w-full items-center rounded-md border border-input bg-background px-3 pr-9 text-left text-sm shadow-xs max-md:h-12 max-md:rounded-xl max-md:text-base",
               disabled && "cursor-not-allowed opacity-50",
               triggerClassName,
             )}
@@ -607,7 +607,7 @@ export function CustomerPartySelect({
         <PopoverAnchor asChild>
           <div
             className={cn(
-              "flex h-9 w-full items-center rounded-md border border-input bg-background px-3 pr-9 text-sm shadow-xs",
+              "flex h-9 w-full min-w-0 max-w-full items-center rounded-md border border-input bg-background px-3 pr-9 text-sm shadow-xs max-md:h-12 max-md:rounded-xl max-md:text-base",
               disabled && "cursor-not-allowed opacity-50",
               triggerClassName,
             )}

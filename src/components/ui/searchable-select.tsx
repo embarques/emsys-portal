@@ -107,7 +107,7 @@ function hasSearchableSelectSelection(
 }
 
 const triggerClassName =
-  "relative flex min-h-10 w-full items-center rounded-lg border-2 border-foreground/60 bg-card py-2 pl-3 pr-9 text-sm outline-none transition-[border-color,box-shadow] focus-within:border-foreground data-[state=open]:border-foreground";
+  "relative flex min-h-10 w-full min-w-0 max-w-full items-center rounded-lg border-2 border-foreground/60 bg-card py-2 pl-3 pr-9 text-sm outline-none transition-[border-color,box-shadow] focus-within:border-foreground data-[state=open]:border-foreground max-md:min-h-12 max-md:rounded-xl max-md:border-input max-md:text-base max-md:shadow-xs max-md:focus-within:border-ring max-md:focus-within:ring-[3px] max-md:focus-within:ring-ring/50 max-md:data-[state=open]:border-ring max-md:data-[state=open]:ring-[3px] max-md:data-[state=open]:ring-ring/50";
 
 const chevronButtonClassName =
   "absolute inset-y-0 right-0 flex w-9 shrink-0 items-center justify-center text-foreground/70 disabled:cursor-not-allowed";
