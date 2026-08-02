@@ -771,15 +771,23 @@ export function OrdersWorkspace() {
   return (
     <div className="overflow-x-hidden">
       <section className="max-w-full space-y-5 overflow-x-hidden md:hidden">
-        <div className="space-y-4">
-          <div>
+        <div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
             <h1 className="text-4xl font-bold tracking-normal">{t("orders.title")}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{listSummary}</p>
+            </div>
+            <Button
+              type="button"
+              size="icon"
+              className="mt-1 size-12 shrink-0 rounded-full"
+              onClick={openAddForm}
+              disabled={isSaving}
+              aria-label={t("orders.actions.add")}
+            >
+              <Plus className="size-6" />
+            </Button>
           </div>
-          <Button className="h-12 w-full rounded-xl text-base" onClick={openAddForm} disabled={isSaving}>
-            <Plus className="size-5" />
-            {t("orders.actions.add")}
-          </Button>
         </div>
 
         <div className="rounded-3xl border bg-card p-4 shadow-sm">
