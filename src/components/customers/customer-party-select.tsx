@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight, ChevronUp, Loader2, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Loader2, LoaderCircle, Search, UsersRound } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
@@ -100,24 +100,68 @@ function formatAddressCountBadgeLabel(
   return translate("customers.addresses.countBadge", { count });
 }
 
-function CustomerPickerLoadingRows({ compact = false }: { compact?: boolean }) {
+function CustomerPickerLoader({
+  compact = false,
+  title,
+}: {
+  compact?: boolean;
+  title: string;
+}) {
   return (
-    <div className="divide-y divide-border/60">
-      {Array.from({ length: compact ? 3 : 4 }).map((_, index) => (
-        <div key={index} className={cn("animate-pulse px-3 py-3", compact && "px-4 py-4")}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1 space-y-2">
-              <div className="h-4 w-36 rounded-full bg-muted" />
-              <div className="h-3 w-28 rounded-full bg-muted" />
-              <div className="space-y-1">
-                <div className="h-3 w-full max-w-56 rounded-full bg-muted" />
-                <div className="h-3 w-40 rounded-full bg-muted" />
-              </div>
-            </div>
-            <div className="h-5 w-16 shrink-0 rounded-full bg-muted" />
+    <div
+      className={cn(
+        "relative overflow-hidden border-b bg-gradient-to-b from-primary/[0.06] via-background to-background",
+        compact ? "px-4 py-6" : "px-4 py-5",
+      )}
+      role="status"
+      aria-live="polite"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+
+      <div className="flex flex-col items-center text-center">
+        <div className="relative mb-3 grid h-14 w-14 place-items-center">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl" />
+          <div className="absolute inset-0 rounded-full border border-primary/15" />
+          <LoaderCircle
+            className="absolute inset-0 size-14 animate-spin text-primary drop-shadow-sm"
+            strokeWidth={2.25}
+            aria-hidden="true"
+          />
+          <div className="relative grid size-10 place-items-center rounded-full border border-primary/25 bg-card shadow-lg shadow-primary/10">
+            <UsersRound className="size-5 text-primary" aria-hidden="true" />
           </div>
         </div>
-      ))}
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <div className="mt-3 flex items-center gap-1.5" aria-hidden="true">
+          {[0, 1, 2].map((dot) => (
+            <span
+              key={dot}
+              className="size-1.5 animate-bounce rounded-full bg-primary"
+              style={{ animationDelay: `${dot * 140}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 overflow-hidden rounded-xl border bg-card/80 shadow-sm" aria-hidden="true">
+        {Array.from({ length: compact ? 2 : 3 }).map((_, index) => (
+          <div key={index} className="border-b px-4 py-3 last:border-b-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-3.5 w-32 animate-pulse rounded-full bg-muted" />
+                <div className="h-3 w-24 animate-pulse rounded-full bg-muted" />
+                <div className="space-y-1">
+                  <div className="h-3 w-full max-w-56 animate-pulse rounded-full bg-muted" />
+                  <div className="h-3 w-36 animate-pulse rounded-full bg-muted" />
+                </div>
+              </div>
+              <div className="h-5 w-16 shrink-0 animate-pulse rounded-full bg-muted" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <span className="sr-only">{title}</span>
     </div>
   );
 }
@@ -320,7 +364,7 @@ export function CustomerPartySelect({
     return (
       <>
         {loading ? (
-          <CustomerPickerLoadingRows compact={isMobileSheet} />
+          <CustomerPickerLoader compact={isMobileSheet} title={t("customers.addresses.loading")} />
         ) : null}
 
         {!loading && results.length === 0 ? (
