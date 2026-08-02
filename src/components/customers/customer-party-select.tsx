@@ -100,6 +100,28 @@ function formatAddressCountBadgeLabel(
   return translate("customers.addresses.countBadge", { count });
 }
 
+function CustomerPickerLoadingRows({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className="divide-y divide-border/60">
+      {Array.from({ length: compact ? 3 : 4 }).map((_, index) => (
+        <div key={index} className={cn("animate-pulse px-3 py-3", compact && "px-4 py-4")}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="h-4 w-36 rounded-full bg-muted" />
+              <div className="h-3 w-28 rounded-full bg-muted" />
+              <div className="space-y-1">
+                <div className="h-3 w-full max-w-56 rounded-full bg-muted" />
+                <div className="h-3 w-40 rounded-full bg-muted" />
+              </div>
+            </div>
+            <div className="h-5 w-16 shrink-0 rounded-full bg-muted" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function CustomerPartySelect({
   id,
   partyType,
@@ -298,10 +320,7 @@ export function CustomerPartySelect({
     return (
       <>
         {loading ? (
-          <p className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            {t("customers.addresses.loading")}
-          </p>
+          <CustomerPickerLoadingRows compact={isMobileSheet} />
         ) : null}
 
         {!loading && results.length === 0 ? (
@@ -310,7 +329,7 @@ export function CustomerPartySelect({
           </p>
         ) : null}
 
-        {results.map((result, index) => {
+        {!loading ? results.map((result, index) => {
           const displayCustomer = resolveDisplayCustomer(result.customer);
           const { matchedAddressId } = result;
           const previewResult: CustomerSearchResult = { ...result, customer: displayCustomer };
@@ -457,7 +476,7 @@ export function CustomerPartySelect({
               ) : null}
             </div>
           );
-        })}
+        }) : null}
       </>
     );
   }
