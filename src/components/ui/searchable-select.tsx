@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Command as CommandPrimitive, defaultFilter } from "cmdk";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { focusNextFormField } from "@/hooks/use-form-enter-navigation";
@@ -266,7 +266,7 @@ export function SearchableSelect({
     window.setTimeout(() => inputRef.current?.focus(), 0);
   }
 
-  function renderOptionItems(selectOptions: SearchableSelectOption[]) {
+  function renderOptionItems(selectOptions: SearchableSelectOption[], isMobileSheet = false) {
     return selectOptions.map((option, index) => {
       const detailLines = [option.description, ...(option.descriptionLines ?? [])].filter(
         (line): line is string => Boolean(line && line.trim()),
@@ -280,7 +280,12 @@ export function SearchableSelect({
           disabled={option.disabled}
           onMouseDown={(event) => event.preventDefault()}
           onSelect={() => handleSelect(option.value)}
-          className={cn(listItemClassName, detailLines.length > 0 && "items-start")}
+          className={cn(
+            listItemClassName,
+            detailLines.length > 0 && "items-start",
+            isMobileSheet &&
+              "min-h-14 rounded-none border-b border-border/60 px-4 py-4 text-base last:border-b-0 data-[selected=true]:bg-primary/5",
+          )}
         >
           <span className="flex min-w-0 flex-col">
             <span className="truncate">{option.label}</span>
@@ -335,7 +340,7 @@ export function SearchableSelect({
 
           <SheetContent
             side="bottom"
-            className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)]"
+            className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)] max-md:bottom-[env(safe-area-inset-bottom)] max-md:top-[calc(env(safe-area-inset-top)+0.75rem)] max-md:max-h-none max-md:rounded-2xl max-md:border"
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <SheetHeader className="shrink-0 border-b px-4 py-4 pr-14">
@@ -348,21 +353,24 @@ export function SearchableSelect({
             >
               {showMobileSearch ? (
                 <div className="shrink-0 border-b px-4 py-3">
-                  <CommandPrimitive.Input
-                    ref={inputRef}
-                    disabled={disabled}
-                    value={query}
-                    onValueChange={changeQuery}
-                    placeholder={searchPlaceholder ?? placeholder}
-                    className="h-11 w-full rounded-lg border bg-background px-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  />
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <CommandPrimitive.Input
+                      ref={inputRef}
+                      disabled={disabled}
+                      value={query}
+                      onValueChange={changeQuery}
+                      placeholder={searchPlaceholder ?? placeholder}
+                      className="h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                    />
+                  </div>
                 </div>
               ) : null}
               <CommandList ref={scrollIsolationRef} className="max-h-none flex-1 overflow-y-auto p-0">
                 <CommandEmpty className="px-4 py-4 text-sm">
                   {loading ? loadingMessage : emptyMessage}
                 </CommandEmpty>
-                {renderOptionItems(mobileOptions)}
+                {renderOptionItems(mobileOptions, true)}
               </CommandList>
             </Command>
           </SheetContent>
