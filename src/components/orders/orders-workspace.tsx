@@ -210,21 +210,21 @@ function MobileOrderRow({
           }}
         >
           <span className="block truncate text-xl font-bold leading-tight text-foreground">
-            {formatOrderId(order)}
-          </span>
-          <span className="mt-2 block truncate text-lg leading-tight text-foreground/85">
             {order.sender.name || dash}
           </span>
-          <span className="mt-2 block text-base text-muted-foreground">
-            {formatOrderDate(order.date)} · {order.branch.code || dash}
+          <span className="mt-1 block truncate text-base leading-tight text-muted-foreground">
+            #{formatOrderId(order)} | {formatOrderDate(order.date)}
           </span>
-          <span className="mt-2 block break-words text-base leading-relaxed text-muted-foreground">
-            {senderPhone}
+          <span className="mt-3 block truncate text-sm font-medium uppercase tracking-normal text-foreground/75">
+            {order.branch.code || dash}
           </span>
-          <span className="mt-1 block line-clamp-2 break-words text-base leading-relaxed text-muted-foreground">
+          <span className="mt-2 block break-words text-sm leading-relaxed text-muted-foreground">
+            <span className="font-semibold text-foreground/80">Phone:</span> {senderPhone}
+          </span>
+          <span className="mt-1 block line-clamp-3 break-words text-sm leading-relaxed text-muted-foreground">
             {senderAddressLine}
           </span>
-          <span className="mt-2 block line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          <span className="mt-2 block line-clamp-2 text-sm leading-relaxed text-foreground/80">
             {comments || dash}
           </span>
         </button>
