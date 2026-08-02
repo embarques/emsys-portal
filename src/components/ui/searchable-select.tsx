@@ -172,6 +172,11 @@ export function SearchableSelect({
   const suppressNextFocusSearchRef = React.useRef(false);
   const scrollIsolationRef = useScrollIsolation();
   const isMobile = useIsMobileViewport();
+  const [viewportResolved, setViewportResolved] = React.useState(false);
+
+  React.useEffect(() => {
+    setViewportResolved(true);
+  }, []);
 
   function handleOpenChange(next: boolean) {
     if (disabled) return;
@@ -293,7 +298,7 @@ export function SearchableSelect({
   const selectableOptions = options.filter((option) => !isPseudoPlaceholderOption(option));
   const optionItems = renderOptionItems(selectableOptions);
 
-  if (mobileSheet && isMobile) {
+  if (mobileSheet && (isMobile || !viewportResolved)) {
     const sheetTitle = ariaLabel ?? placeholder;
     const mobileOptions = selectableOptions;
     const showMobileSearch = searchable && mobileOptions.length > MOBILE_SHEET_SEARCH_THRESHOLD;
@@ -331,6 +336,7 @@ export function SearchableSelect({
           <SheetContent
             side="bottom"
             className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)]"
+            onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <SheetHeader className="shrink-0 border-b px-4 py-4 pr-14">
               <SheetTitle>{sheetTitle}</SheetTitle>
