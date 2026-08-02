@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Command as CommandPrimitive, defaultFilter } from "cmdk";
-import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
+import { ChevronDown, ChevronUp, LoaderCircle, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { focusNextFormField } from "@/hooks/use-form-enter-navigation";
@@ -122,6 +122,53 @@ const listItemClassName =
   "cursor-pointer rounded-none px-4 py-3 text-sm data-[selected=true]:bg-muted/60 data-[selected=true]:text-foreground";
 
 const MOBILE_SHEET_SEARCH_THRESHOLD = 8;
+
+function MobileSelectLoading({ message }: { message: string }) {
+  return (
+    <div
+      className="relative overflow-hidden border-b bg-gradient-to-b from-primary/[0.06] via-background to-background px-4 py-6 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+      <div className="flex flex-col items-center">
+        <div className="relative mb-3 grid size-14 place-items-center">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl" />
+          <div className="absolute inset-0 rounded-full border border-primary/15" />
+          <LoaderCircle
+            className="absolute inset-0 size-14 animate-spin text-primary drop-shadow-sm"
+            strokeWidth={2.25}
+            aria-hidden="true"
+          />
+          <div className="relative grid size-10 place-items-center rounded-full border border-primary/25 bg-card shadow-lg shadow-primary/10">
+            <Search className="size-5 text-primary" aria-hidden="true" />
+          </div>
+        </div>
+        <p className="text-sm font-semibold text-foreground">{message}</p>
+        <div className="mt-3 flex items-center gap-1.5" aria-hidden="true">
+          {[0, 1, 2].map((dot) => (
+            <span
+              key={dot}
+              className="size-1.5 animate-bounce rounded-full bg-primary"
+              style={{ animationDelay: `${dot * 140}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="mt-5 overflow-hidden rounded-xl border bg-card/80 shadow-sm" aria-hidden="true">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="border-b px-4 py-3 last:border-b-0">
+            <div className="space-y-2">
+              <div className="h-3.5 w-40 animate-pulse rounded-full bg-muted" />
+              <div className="h-3 w-28 animate-pulse rounded-full bg-muted" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <span className="sr-only">{message}</span>
+    </div>
+  );
+}
 
 /**
  * Keep wheel/touch scrolling working when the list is portaled out of a Radix modal (Dialog).
@@ -367,10 +414,16 @@ export function SearchableSelect({
                 </div>
               ) : null}
               <CommandList ref={scrollIsolationRef} className="max-h-none flex-1 overflow-y-auto p-0">
-                <CommandEmpty className="px-4 py-4 text-sm">
-                  {loading ? loadingMessage : emptyMessage}
-                </CommandEmpty>
-                {renderOptionItems(mobileOptions, true)}
+                {loading ? (
+                  <MobileSelectLoading message={loadingMessage} />
+                ) : (
+                  <>
+                    <CommandEmpty className="px-4 py-4 text-sm">
+                      {emptyMessage}
+                    </CommandEmpty>
+                    {renderOptionItems(mobileOptions, true)}
+                  </>
+                )}
               </CommandList>
             </Command>
           </SheetContent>
