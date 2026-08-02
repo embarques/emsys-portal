@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MessageSquare, Plus, Trash2 } from "lucide-react";
+import { MessageSquare, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ type OrderCommentsEditorProps = {
 export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorProps) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState<EditingCell>(null);
+  const [mobileEditingIndex, setMobileEditingIndex] = useState<number | null>(null);
 
   const purposeLabel = (value: string) =>
     ORDER_COMMENT_PURPOSES.find((purpose) => purpose.value === value)
@@ -71,6 +72,24 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
     editing?.index === index && editing.field === field;
 
   const stopEditing = () => setEditing(null);
+
+  function isMobileCommentComplete(comment: OrderCommentFormValues): boolean {
+    if (!comment.purpose) return false;
+    if (!orderCommentPurposeRequiresItem(comment.purpose)) return true;
+    return Boolean(comment.itemType);
+  }
+
+  function mobileCommentDescription(comment: OrderCommentFormValues): string {
+    if (!comment.purpose) return t("common.empty.dash");
+    if (!orderCommentPurposeRequiresItem(comment.purpose)) {
+      return comment.description || t("common.empty.dash");
+    }
+    if (comment.itemType === "other") {
+      return comment.customItem || t("common.empty.dash");
+    }
+    const quantity = comment.quantity || "1";
+    return `${itemLabel(comment.itemType)} · ${t("orders.comments.columns.qty")} ${quantity}`;
+  }
 
   // ESTIMATE and PAYMENT are limited to one per order; disable them on other rows once used.
   function purposeOptionsForRow(index: number) {
@@ -139,6 +158,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
     onChange([...comments, createEmptyOrderComment()]);
     if (isMobileViewportNow()) {
       stopEditing();
+      setMobileEditingIndex(newIndex);
       return;
     }
     // Jump straight into the new comment's purpose so the user can keep entering.
@@ -148,6 +168,12 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
   function removeComment(index: number) {
     onChange(comments.filter((_, commentIndex) => commentIndex !== index));
     stopEditing();
+    setMobileEditingIndex((current) => {
+      if (current === null) return null;
+      if (current === index) return null;
+      if (current > index) return current - 1;
+      return current;
+    });
   }
 
   return (
@@ -182,6 +208,8 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
               : comment.purpose
                 ? "description"
                 : null;
+            const isMobileEditing =
+              mobileEditingIndex === index || !isMobileCommentComplete(comment);
 
             return (
               <div key={`mobile-comment-${index}`} className="space-y-3 rounded-xl border bg-background p-3 shadow-xs">
@@ -189,88 +217,133 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                   <p className="text-sm font-semibold text-foreground">
                     {t("orders.comments.title")} {index + 1}
                   </p>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-9 shrink-0 text-destructive hover:text-destructive"
-                    aria-label={t("orders.comments.removeAria", { index: index + 1 })}
-                    onClick={() => removeComment(index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    {!isMobileEditing ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-9 text-foreground hover:text-foreground"
+                        aria-label={t("common.actions.edit")}
+                        onClick={() => setMobileEditingIndex(index)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-9 text-destructive hover:text-destructive"
+                      aria-label={t("orders.comments.removeAria", { index: index + 1 })}
+                      onClick={() => removeComment(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {t("orders.comments.columns.purpose")}
-                  </p>
-                  <SearchableSelect
-                    id={`mobile-comment-purpose-${index}`}
-                    value={comment.purpose}
-                    onValueChange={(value) => changePurpose(index, value)}
-                    placeholder={t("orders.comments.placeholders.purpose")}
-                    options={purposeOptionsForRow(index)}
-                    mobileSheet
-                  />
-                </div>
-
-                {requiresItem ? (
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {t("orders.comments.columns.item")}
+                {!isMobileEditing ? (
+                  <div className="space-y-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-base font-semibold text-foreground">
+                        {purposeLabel(comment.purpose)}
+                      </p>
+                      {requiresItem && comment.itemType && comment.itemType !== "other" ? (
+                        <p className="shrink-0 text-sm font-semibold text-foreground">
+                          x {comment.quantity || "1"}
+                        </p>
+                      ) : null}
+                    </div>
+                    <p className="break-words text-sm text-muted-foreground">
+                      {mobileCommentDescription(comment)}
                     </p>
-                    <SearchableSelect
-                      id={`mobile-comment-item-${index}`}
-                      value={comment.itemType}
-                      onValueChange={(value) =>
-                        updateComment(index, {
-                          itemType: value as OrderCommentItemType,
-                          customItem: value === "other" ? comment.customItem : "",
-                          quantity: comment.quantity || "1",
-                        })
-                      }
-                      placeholder={t("orders.comments.placeholders.item")}
-                      options={itemOptionsForRow(index)}
-                      mobileSheet
-                    />
                   </div>
-                ) : null}
+                ) : (
+                  <>
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {t("orders.comments.columns.purpose")}
+                      </p>
+                      <SearchableSelect
+                        id={`mobile-comment-purpose-${index}`}
+                        value={comment.purpose}
+                        onValueChange={(value) => changePurpose(index, value)}
+                        placeholder={t("orders.comments.placeholders.purpose")}
+                        options={purposeOptionsForRow(index)}
+                        mobileSheet
+                      />
+                    </div>
 
-                {requiresItem && comment.itemType && comment.itemType !== "other" ? (
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {t("orders.comments.columns.qty")}
-                    </p>
-                    <Input
-                      id={`mobile-comment-quantity-${index}`}
-                      type="number"
-                      min="1"
-                      className="h-11 rounded-xl text-base"
-                      value={comment.quantity || "1"}
-                      onChange={(event) => updateComment(index, { quantity: event.target.value || "1" })}
-                    />
-                  </div>
-                ) : null}
+                    {requiresItem ? (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t("orders.comments.columns.item")}
+                        </p>
+                        <SearchableSelect
+                          id={`mobile-comment-item-${index}`}
+                          value={comment.itemType}
+                          onValueChange={(value) =>
+                            updateComment(index, {
+                              itemType: value as OrderCommentItemType,
+                              customItem: value === "other" ? comment.customItem : "",
+                              quantity: comment.quantity || "1",
+                            })
+                          }
+                          placeholder={t("orders.comments.placeholders.item")}
+                          options={itemOptionsForRow(index)}
+                          mobileSheet
+                        />
+                      </div>
+                    ) : null}
 
-                {noteField ? (
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {t("orders.comments.columns.comment")}
-                    </p>
-                    <Input
-                      id={`mobile-comment-note-${index}`}
-                      className="h-11 rounded-xl text-base"
-                      value={comment[noteField]}
-                      placeholder={
-                        noteField === "customItem"
-                          ? t("orders.comments.placeholders.customItem")
-                          : t("orders.comments.placeholders.note")
-                      }
-                      onChange={(event) => updateComment(index, { [noteField]: event.target.value })}
-                    />
-                  </div>
-                ) : null}
+                    {requiresItem && comment.itemType && comment.itemType !== "other" ? (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t("orders.comments.columns.qty")}
+                        </p>
+                        <Input
+                          id={`mobile-comment-quantity-${index}`}
+                          type="number"
+                          min="1"
+                          className="h-11 rounded-xl text-base"
+                          value={comment.quantity || "1"}
+                          onChange={(event) => updateComment(index, { quantity: event.target.value || "1" })}
+                        />
+                      </div>
+                    ) : null}
+
+                    {noteField ? (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t("orders.comments.columns.comment")}
+                        </p>
+                        <Input
+                          id={`mobile-comment-note-${index}`}
+                          className="h-11 rounded-xl text-base"
+                          value={comment[noteField]}
+                          placeholder={
+                            noteField === "customItem"
+                              ? t("orders.comments.placeholders.customItem")
+                              : t("orders.comments.placeholders.note")
+                          }
+                          onChange={(event) => updateComment(index, { [noteField]: event.target.value })}
+                        />
+                      </div>
+                    ) : null}
+
+                    {isMobileCommentComplete(comment) ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 w-full rounded-xl"
+                        onClick={() => setMobileEditingIndex(null)}
+                      >
+                        {t("common.table.done")}
+                      </Button>
+                    ) : null}
+                  </>
+                )}
               </div>
             );
           })}
