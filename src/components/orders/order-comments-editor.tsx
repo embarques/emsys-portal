@@ -171,7 +171,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
         </p>
       ) : (
         <>
-        <div className="space-y-3 md:hidden">
+        <div className="space-y-3 md:hidden" data-enter-navigation="ignore">
           {comments.map((comment, index) => {
             const requiresItem = orderCommentPurposeRequiresItem(comment.purpose);
             const isOtherItem = comment.itemType === "other";
@@ -274,6 +274,15 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
               </div>
             );
           })}
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full rounded-xl"
+            onClick={addComment}
+          >
+            <Plus className="h-4 w-4" />
+            {t("orders.comments.add")}
+          </Button>
         </div>
 
         <div className="hidden overflow-hidden rounded-xl border md:block">
