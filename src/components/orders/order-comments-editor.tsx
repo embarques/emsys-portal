@@ -26,6 +26,10 @@ type EditingCell = { index: number; field: CommentField } | null;
 const cellButtonClassName =
   "flex h-9 w-full items-center truncate rounded-md px-2 text-left text-sm hover:bg-muted/60";
 
+function isMobileViewportNow() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+}
+
 type OrderCommentsEditorProps = {
   comments: OrderCommentFormValues[];
   onChange: (comments: OrderCommentFormValues[]) => void;
@@ -133,6 +137,10 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
   function addComment() {
     const newIndex = comments.length;
     onChange([...comments, createEmptyOrderComment()]);
+    if (isMobileViewportNow()) {
+      stopEditing();
+      return;
+    }
     // Jump straight into the new comment's purpose so the user can keep entering.
     setEditing({ index: newIndex, field: "purpose" });
   }
