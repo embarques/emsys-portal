@@ -186,7 +186,7 @@ function MobileOrderRow({
 
   return (
     <article className={cn("min-w-0 border-b border-border/80 py-5 last:border-b-0", selected && "bg-primary/5")}>
-      <div className="grid w-full min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_minmax(5rem,auto)] gap-3">
+      <div className="grid w-full min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] gap-3">
         <button
           type="button"
           className={cn(
@@ -212,11 +212,20 @@ function MobileOrderRow({
           <span className="block truncate text-xl font-bold leading-tight text-foreground">
             {order.sender.name || dash}
           </span>
-          <span className="mt-1 block truncate text-base leading-tight text-muted-foreground">
-            #{formatOrderId(order)} | {formatOrderDate(order.date)}
-          </span>
-          <span className="mt-3 block truncate text-sm font-medium uppercase tracking-normal text-foreground/75">
-            {order.branch.code || dash}
+          <span className="mt-1 flex min-w-0 items-center justify-between gap-3">
+            <span className="min-w-0 truncate text-base leading-tight text-muted-foreground">
+              #{formatOrderId(order)} | {formatOrderDate(order.date)}
+            </span>
+            <Badge
+              className={cn(
+                "shrink-0 rounded-full px-3 py-1 text-xs font-semibold",
+                order.completed
+                  ? "border-transparent bg-emerald-100 text-emerald-700"
+                  : "border-transparent bg-amber-100 text-amber-700",
+              )}
+            >
+              {getOrderCompletedLabel(order.completed, t)}
+            </Badge>
           </span>
           <span className="mt-2 block break-words text-sm leading-relaxed text-muted-foreground">
             <span className="font-semibold text-foreground/80">Phone:</span> {senderPhone}
@@ -226,31 +235,6 @@ function MobileOrderRow({
           </span>
           <span className="mt-2 block line-clamp-2 text-sm leading-relaxed text-foreground/80">
             {comments || dash}
-          </span>
-        </button>
-        <button
-          type="button"
-          className="min-w-0 shrink-0 text-right"
-          onClick={() => {
-            if (selectionMode) {
-              onToggleSelected(orderId, !selected);
-              return;
-            }
-            onView(order);
-          }}
-        >
-          <Badge
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold",
-              order.completed
-                ? "border-transparent bg-emerald-100 text-emerald-700"
-                : "border-transparent bg-amber-100 text-amber-700",
-            )}
-          >
-            {getOrderCompletedLabel(order.completed, t)}
-          </Badge>
-          <span className="mt-2 block max-w-24 truncate text-sm font-medium text-muted-foreground">
-            {routeLabel}
           </span>
         </button>
       </div>
