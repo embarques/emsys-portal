@@ -409,6 +409,7 @@ export function OrderForm({
                   onValueChange={(next) => updateField("branchId", Number(next))}
                   searchPlaceholder={t("orders.form.placeholders.searchBranches")}
                   required
+                  mobileSheet
                   options={branches.map((branch) => ({
                     value: String(branch.id),
                     label: `${branch.name} · ${branch.code}`,
@@ -424,6 +425,7 @@ export function OrderForm({
                   onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
                   placeholder={t("orders.form.fields.noEmployee")}
                   searchPlaceholder={t("orders.form.placeholders.searchEmployees")}
+                  mobileSheet
                   options={[
                     { value: "", label: t("orders.form.fields.noEmployee") },
                     ...employees.map((employee) => ({
