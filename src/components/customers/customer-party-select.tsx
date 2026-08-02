@@ -482,6 +482,7 @@ export function CustomerPartySelect({
           <SheetContent
             side="bottom"
             className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)]"
+            onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <SheetHeader className="shrink-0 border-b px-4 py-4 pr-14">
               <SheetTitle>{placeholder ?? t("customers.addresses.openOptions")}</SheetTitle>
