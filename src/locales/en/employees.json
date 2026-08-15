@@ -9,7 +9,8 @@
   "actions": {
     "add": "Add employee",
     "edit": "Edit employee",
-    "editNamed": "Edit {{name}}"
+    "editNamed": "Edit {{name}}",
+    "addUser": "Add portal user"
   },
   "stats": {
     "total": {
@@ -159,6 +160,8 @@
     "edit": "Edit employee"
   },
   "dialogs": {
+    "createUserTitle": "Add portal user",
+    "createUserDescription": "Create a user and link it to this employee.",
     "deleteTitle": "Delete employee?",
     "deleteTitlePlural": "Delete employees?",
     "deleteOne": "This will permanently remove \"{{name}}\". {{cannotBeUndone}}",
