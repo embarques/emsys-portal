@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useTranslation } from "@/lib/i18n";
 import { useEmployeeLabels } from "@/lib/employees/hooks/use-employee-labels";
+import { useUsers } from "@/lib/users/hooks/use-users";
 import {
   EMPLOYEE_DEPARTMENTS,
   EMPLOYEE_PORTAL_BRANCHES,
@@ -44,6 +45,7 @@ export function EmployeeForm({
 }: EmployeeFormProps) {
   const { t } = useTranslation();
   const employeeLabels = useEmployeeLabels();
+  const usersQuery = useUsers({ page: 1, limit: 200, sort: "name:asc", active: true });
   const [values, setValues] = useState<EmployeeFormValues>(initialValues ?? createEmptyEmployeeForm());
   const handleEnterNavigation = useFormEnterNavigation();
 
@@ -83,6 +85,16 @@ export function EmployeeForm({
       })),
     [t],
   );
+  const userOptions = useMemo(
+    () => [
+      { value: "", label: t("employees.form.fields.noUser") },
+      ...(usersQuery.data?.items ?? []).map((user) => ({
+        value: String(user.id),
+        label: user.email ? `${user.name} · ${user.email}` : user.name,
+      })),
+    ],
+    [t, usersQuery.data?.items],
+  );
 
   const selectedPortalBranch = getEmployeePortalBranch({ branch: values.branch, address: values.address });
 
@@ -109,6 +121,11 @@ export function EmployeeForm({
         country: config.country,
       },
     }));
+  }
+
+  function updateUser(userId: string) {
+    const user = (usersQuery.data?.items ?? []).find((entry) => String(entry.id) === userId);
+    updateField("user", user ? { ...user } : null);
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -208,6 +225,19 @@ export function EmployeeForm({
                 step="0.01"
                 value={values.cost}
                 onChange={(event) => updateField("cost", Number(event.target.value) || 0)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="userId">{t("employees.form.fields.user")}</Label>
+              <SearchableSelect
+                id="userId"
+                value={values.user ? String(values.user.id) : ""}
+                onValueChange={updateUser}
+                placeholder={t("employees.form.fields.noUser")}
+                searchPlaceholder={t("employees.form.placeholders.userSearch")}
+                options={userOptions}
+                disabled={usersQuery.isLoading}
               />
             </div>
           </div>

@@ -125,6 +125,7 @@ import type { DataTableColumn } from "@/lib/table/types";
 import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
+const PICKUP_ACCESS_UNAVAILABLE_PREFIX = "Pickup access unavailable.";
 
 function PickupSenderAddressCell({ customer }: { customer: Customer }) {
   const { t } = useTranslation();
@@ -365,7 +366,10 @@ export function OrdersWorkspace() {
     [pickupRouteLookup.items, t],
   );
   const assignRoutesLoading = pickupRouteLookup.isLoading;
-  const listErrorMessage = isError ? normalizeApiError(error).message : null;
+  const rawListErrorMessage = isError ? normalizeApiError(error).message : null;
+  const listErrorMessage = rawListErrorMessage?.includes(PICKUP_ACCESS_UNAVAILABLE_PREFIX)
+    ? t("orders.errors.pickupAccessUnavailable")
+    : rawListErrorMessage;
   const missingCompanyContext = !authLoading && !companyId;
 
   const userFilterOptions = useMemo(

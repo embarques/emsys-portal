@@ -121,7 +121,9 @@
       "state": "State / province",
       "zipcode": "Zip / postal code",
       "country": "Country",
-      "email": "Email"
+      "email": "Email",
+      "user": "Portal user",
+      "noUser": "No linked user"
     },
     "placeholders": {
       "name": "MIGUEL",
@@ -137,7 +139,8 @@
       "state": "NY",
       "zipcode": "11201",
       "country": "US",
-      "email": "name@emsys.example"
+      "email": "name@emsys.example",
+      "userSearch": "Search users…"
     }
   },
   "view": {
