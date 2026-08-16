@@ -42,6 +42,9 @@ export type Order = {
   createdAt: string;
   updatedAt: string;
   completed: boolean;
+  legacySyncStatus?: string;
+  legacySyncError?: string;
+  legacySyncedAt?: string;
   createdBy: User | null;
   /** Optional updater actor from API `updatedBy`. */
   updatedBy: User | null;

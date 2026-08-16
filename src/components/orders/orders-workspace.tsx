@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine,
   Check,
@@ -16,6 +16,7 @@ import {
   PackageOpen,
   Plus,
   Printer,
+  RefreshCw,
   Route as RouteIcon,
   RouteOff,
   Trash2,
@@ -87,6 +88,7 @@ import {
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import {
   useAssignPickupsToRoute,
   useClearOrdersRouteAssignments,
@@ -94,7 +96,10 @@ import {
   useDeleteOrders,
   useOrderStats,
   useOrders,
+  usePreviewLegacyPickupSync,
+  useRetryOrderLegacySync,
   useSetOrdersCompleted,
+  useSyncLegacyPickups,
   useUpdateOrder,
 } from "@/lib/orders/hooks/use-orders";
 import {
@@ -126,6 +131,64 @@ import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
 const PICKUP_ACCESS_UNAVAILABLE_PREFIX = "Pickup access unavailable.";
+const LEGACY_SYNC_PERMISSION_ERROR_NAMES = [
+  "syncLegacyPickups",
+  "canSyncLegacyPickups",
+] as const;
+const LEGACY_SYNC_FALLBACK_TOTAL = 1;
+
+function LegacyPickupSyncLoader({
+  current,
+  total,
+  title,
+  description,
+}: {
+  current: number;
+  total: number;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div
+      className="relative overflow-hidden border-y bg-gradient-to-b from-primary/[0.06] via-background to-background px-6 py-8"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+
+      <div className="flex flex-col items-center text-center">
+        <div className="relative mb-4 grid h-16 w-16 place-items-center">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl" />
+          <div className="absolute inset-0 rounded-full border border-primary/15" />
+          <RefreshCw
+            className="absolute inset-0 h-16 w-16 animate-spin text-primary drop-shadow-sm"
+            strokeWidth={2.25}
+            aria-hidden="true"
+          />
+          <div className="relative grid h-12 w-12 place-items-center rounded-full border border-primary/25 bg-card shadow-lg shadow-primary/10">
+            <PackageOpen className="h-7 w-7 text-primary" aria-hidden="true" />
+          </div>
+        </div>
+
+        <p className="font-semibold text-foreground">{title}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        <div className="mt-5 h-2 w-full max-w-xs overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${Math.min(100, Math.max(0, (current / total) * 100))}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function isLegacySyncPermissionError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return LEGACY_SYNC_PERMISSION_ERROR_NAMES.some((name) =>
+    normalized.includes(name.toLowerCase()),
+  );
+}
 
 function PickupSenderAddressCell({ customer }: { customer: Customer }) {
   const { t } = useTranslation();
@@ -164,8 +227,10 @@ function MobileOrderRow({
   onView,
   onEdit,
   onDelete,
+  onRetryLegacySync,
   selected,
   selectionMode,
+  retryingLegacySync,
   onToggleSelected,
 }: {
   order: Order;
@@ -173,8 +238,10 @@ function MobileOrderRow({
   onView: (order: Order) => void;
   onEdit: (order: Order) => void;
   onDelete: (order: Order) => void;
+  onRetryLegacySync: (order: Order) => void;
   selected: boolean;
   selectionMode: boolean;
+  retryingLegacySync: boolean;
   onToggleSelected: (orderId: string, checked: boolean) => void;
 }) {
   const { t } = useTranslation();
@@ -244,6 +311,20 @@ function MobileOrderRow({
           <Edit className="size-4" />
           {t("common.actions.edit")}
         </Button>
+        {order.legacySyncStatus === "failed" ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 rounded-xl text-amber-700"
+            onClick={() => onRetryLegacySync(order)}
+            disabled={retryingLegacySync}
+            aria-label={t("orders.actions.retryLegacySync")}
+            title={order.legacySyncError || t("orders.actions.retryLegacySync")}
+          >
+            <RefreshCw className={cn("size-4", retryingLegacySync && "animate-spin")} />
+            {t("orders.actions.sync")}
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant="outline"
@@ -268,7 +349,11 @@ export function OrdersWorkspace() {
   const tabScope = useWorkspaceTabScope();
   const listActive = tabScope?.isActive ?? true;
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
-  const { loading: authLoading, companyId } = useAuth();
+  const { loading: authLoading, companyId, hasPermission } = useAuth();
+  const canSyncLegacyPickups = hasPermission(
+    PERMISSIONS.pickupsSyncLegacy.name,
+    PERMISSIONS.pickupsSyncLegacy.resourceType,
+  );
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
@@ -286,6 +371,9 @@ export function OrdersWorkspace() {
   const [completionExpanded, setCompletionExpanded] = useState(false);
   const [routesExpanded, setRoutesExpanded] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState("");
+  const [legacySyncStageIndex, setLegacySyncStageIndex] = useState<number | null>(null);
+  const [legacySyncTotal, setLegacySyncTotal] = useState<number | null>(null);
+  const legacySyncResetTimerRef = useRef<number | null>(null);
   const listParams = useMemo(
     () =>
       buildOrderListParams({
@@ -313,6 +401,9 @@ export function OrdersWorkspace() {
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
   const setOrdersCompletedMutation = useSetOrdersCompleted();
+  const previewLegacyPickupSyncMutation = usePreviewLegacyPickupSync();
+  const syncLegacyPickupsMutation = useSyncLegacyPickups();
+  const retryLegacySyncMutation = useRetryOrderLegacySync();
   const assignRouteMutation = useAssignPickupsToRoute();
   const clearRouteMutation = useClearOrdersRouteAssignments();
   const generatePickupReportMutation = useGeneratePickupReport();
@@ -324,11 +415,17 @@ export function OrdersWorkspace() {
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     orders.length > 0 && orders.every((order) => selectedIds.includes(getOrderRecordId(order)));
+  const isLegacySyncing =
+    previewLegacyPickupSyncMutation.isPending ||
+    syncLegacyPickupsMutation.isPending ||
+    legacySyncStageIndex !== null;
   const isSaving =
     createOrderMutation.isPending ||
     updateOrderMutation.isPending ||
     deleteOrdersMutation.isPending ||
     setOrdersCompletedMutation.isPending ||
+    isLegacySyncing ||
+    retryLegacySyncMutation.isPending ||
     assignRouteMutation.isPending ||
     clearRouteMutation.isPending;
   const isPrinting = generatePickupReportMutation.isPending;
@@ -351,6 +448,29 @@ export function OrdersWorkspace() {
       setFiltersOpen(true);
     }
   }, [listActive, tabScope?.tabId]);
+
+  useEffect(() => {
+    if (!syncLegacyPickupsMutation.isPending) return;
+
+    const timer = window.setInterval(() => {
+      setLegacySyncStageIndex((current) => {
+        const total = Math.max(LEGACY_SYNC_FALLBACK_TOTAL, legacySyncTotal ?? LEGACY_SYNC_FALLBACK_TOTAL);
+        const maxIndex = Math.max(0, total - 1);
+        const next = current == null ? 0 : current + 1;
+        return Math.min(next, maxIndex);
+      });
+    }, 450);
+
+    return () => window.clearInterval(timer);
+  }, [legacySyncTotal, syncLegacyPickupsMutation.isPending]);
+
+  useEffect(() => {
+    return () => {
+      if (legacySyncResetTimerRef.current != null) {
+        window.clearTimeout(legacySyncResetTimerRef.current);
+      }
+    };
+  }, []);
 
   const selectedOrders = useMemo(
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
@@ -627,6 +747,58 @@ export function OrdersWorkspace() {
     }
   }
 
+  async function handleSyncLegacyPickups() {
+    if (legacySyncResetTimerRef.current != null) {
+      window.clearTimeout(legacySyncResetTimerRef.current);
+      legacySyncResetTimerRef.current = null;
+    }
+
+    setLegacySyncStageIndex(0);
+    setLegacySyncTotal(null);
+    try {
+      try {
+        const preview = await previewLegacyPickupSyncMutation.mutateAsync();
+        setLegacySyncTotal(Math.max(0, preview.total));
+      } catch {
+        setLegacySyncTotal(LEGACY_SYNC_FALLBACK_TOTAL);
+      }
+
+      const result = await syncLegacyPickupsMutation.mutateAsync();
+      const total =
+        result.summary.total ||
+        result.summary.imported + result.summary.updated + result.summary.skipped;
+      setLegacySyncTotal(Math.max(0, total));
+      setLegacySyncStageIndex(Math.max(0, total - 1));
+      notifySuccess(result.message);
+      setPage(1);
+    } catch (mutationError) {
+      const message = normalizeApiError(mutationError).message;
+      notifyError(
+        isLegacySyncPermissionError(message)
+          ? t("orders.errors.legacySyncPermissionMissing")
+          : message,
+      );
+      setLegacySyncStageIndex(null);
+      setLegacySyncTotal(null);
+      return;
+    }
+
+    legacySyncResetTimerRef.current = window.setTimeout(() => {
+      setLegacySyncStageIndex(null);
+      setLegacySyncTotal(null);
+      legacySyncResetTimerRef.current = null;
+    }, 700);
+  }
+
+  async function handleRetryLegacySync(order: Order) {
+    try {
+      const syncedOrder = await retryLegacySyncMutation.mutateAsync(getOrderRecordId(order));
+      notifySuccess(t("orders.toasts.legacyRetrySynced", { id: formatOrderId(syncedOrder) }));
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
+  }
+
   const statCards = [
     {
       label: t("orders.stats.pendingOrders.label"),
@@ -771,6 +943,35 @@ export function OrdersWorkspace() {
     },
     t,
   );
+  const legacySyncDisplayTotal = Math.max(
+    LEGACY_SYNC_FALLBACK_TOTAL,
+    legacySyncTotal ?? LEGACY_SYNC_FALLBACK_TOTAL,
+  );
+  const legacySyncCurrentStep = Math.min(
+    legacySyncDisplayTotal,
+    legacySyncTotal === 0 ? 0 : (legacySyncStageIndex ?? 0) + 1,
+  );
+  const legacySyncDescriptions = [
+    t("orders.loading.legacySyncStages.prepare"),
+    t("orders.loading.legacySyncStages.fetch"),
+    t("orders.loading.legacySyncStages.apply"),
+    t("orders.loading.legacySyncStages.refresh"),
+  ];
+  const legacySyncLoader = (
+    <LegacyPickupSyncLoader
+      current={legacySyncCurrentStep}
+      total={legacySyncDisplayTotal}
+      title={t("orders.loading.legacySyncProgress", {
+        current: legacySyncCurrentStep,
+        total: legacySyncTotal ?? legacySyncDisplayTotal,
+      })}
+      description={
+        legacySyncDescriptions[
+          Math.min(legacySyncDescriptions.length - 1, Math.max(0, legacySyncCurrentStep - 1))
+        ] ?? legacySyncDescriptions[0]
+      }
+    />
+  );
 
   return (
     <div className="overflow-x-hidden">
@@ -781,16 +982,34 @@ export function OrdersWorkspace() {
             <h1 className="text-4xl font-bold tracking-normal">{t("orders.title")}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{listSummary}</p>
             </div>
-            <Button
-              type="button"
-              size="icon"
-              className="mt-1 size-12 shrink-0 rounded-full"
-              onClick={openAddForm}
-              disabled={isSaving}
-              aria-label={t("orders.actions.add")}
-            >
-              <Plus className="size-6" />
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              {canSyncLegacyPickups ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="mt-1 size-12 rounded-full"
+                  onClick={handleSyncLegacyPickups}
+                  disabled={isSaving}
+                  aria-label={t("orders.actions.syncLegacy")}
+                  title={t("orders.actions.syncLegacy")}
+                >
+                  <RefreshCw
+                    className={cn("size-5", isLegacySyncing && "animate-spin")}
+                  />
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                size="icon"
+                className="mt-1 size-12 rounded-full"
+                onClick={openAddForm}
+                disabled={isSaving}
+                aria-label={t("orders.actions.add")}
+              >
+                <Plus className="size-6" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -1028,7 +1247,9 @@ export function OrdersWorkspace() {
         ) : null}
 
         <div className="rounded-3xl bg-card px-4 shadow-sm">
-          {isLoading ? (
+          {isLegacySyncing ? (
+            legacySyncLoader
+          ) : isLoading ? (
             <div className="space-y-4 py-5">
               {Array.from({ length: 6 }).map((_, index) => (
                 <div key={index} className="border-b border-border/80 py-3 last:border-b-0">
@@ -1060,8 +1281,10 @@ export function OrdersWorkspace() {
                 onView={openViewOrder}
                 onEdit={openEditForm}
                 onDelete={setDeleteTarget}
+                onRetryLegacySync={handleRetryLegacySync}
                 selected={selectedIds.includes(getOrderRecordId(order))}
                 selectionMode={selectedCount > 0}
+                retryingLegacySync={retryLegacySyncMutation.isPending}
                 onToggleSelected={toggleSelect}
               />
             ))
@@ -1074,10 +1297,27 @@ export function OrdersWorkspace() {
         title={t("orders.title")}
         description={t("orders.pages.description")}
         actions={
-          <Button onClick={openAddForm} disabled={isSaving}>
-            <Plus className="h-4 w-4" />
-            {t("orders.actions.add")}
-          </Button>
+          <div className="flex items-center gap-2">
+            {canSyncLegacyPickups ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSyncLegacyPickups}
+                disabled={isSaving}
+              >
+                <RefreshCw
+                  className={cn("h-4 w-4", isLegacySyncing && "animate-spin")}
+                />
+                {isLegacySyncing
+                  ? t("orders.actions.syncingLegacy")
+                  : t("orders.actions.syncLegacy")}
+              </Button>
+            ) : null}
+            <Button onClick={openAddForm} disabled={isSaving}>
+              <Plus className="h-4 w-4" />
+              {t("orders.actions.add")}
+            </Button>
+          </div>
         }
       />
 
@@ -1250,7 +1490,9 @@ export function OrdersWorkspace() {
           }
         />
 
-        {isLoading ? (
+        {isLegacySyncing ? (
+          legacySyncLoader
+        ) : isLoading ? (
           <DirectoryTableLoader
             icon={PackageOpen}
             title={t("orders.loading.title")}
@@ -1274,6 +1516,24 @@ export function OrdersWorkspace() {
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
+            renderSelectCellActions={(order) =>
+              order.legacySyncStatus === "failed" ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+                  onClick={() => handleRetryLegacySync(order)}
+                  disabled={retryLegacySyncMutation.isPending}
+                  aria-label={t("orders.actions.retryLegacySync")}
+                  title={order.legacySyncError || t("orders.actions.retryLegacySync")}
+                >
+                  <RefreshCw
+                    className={cn("size-4", retryLegacySyncMutation.isPending && "animate-spin")}
+                  />
+                </Button>
+              ) : null
+            }
             onRowClick={openViewOrder}
             onRowDoubleClick={openEditForm}
             activeRowId={viewOrder ? getOrderRecordId(viewOrder) : undefined}

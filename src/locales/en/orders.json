@@ -21,6 +21,10 @@
     "selectAtLeastOne": "Select at least one order to print.",
     "print": "Print",
     "preparing": "Preparing…",
+    "sync": "Sync",
+    "syncLegacy": "Sync legacy",
+    "syncingLegacy": "Syncing…",
+    "retryLegacySync": "Retry legacy sync",
     "markComplete": "Mark complete",
     "markIncomplete": "Mark incomplete",
     "assignRoute": "Assign route",
@@ -90,7 +94,14 @@
     "description": "Coordinating customers, routes, packages, and delivery status…",
     "order": "Loading order…",
     "columns": "Order, Date, Sender, Receiver, Status",
-    "pickupHistory": "Loading pickup history…"
+    "pickupHistory": "Loading pickup history…",
+    "legacySyncProgress": "Syncing {{current}} out of {{total}}...",
+    "legacySyncStages": {
+      "prepare": "Preparing the legacy pickup sync.",
+      "fetch": "Reading open pickups from the legacy API.",
+      "apply": "Adding new pickups and updating existing ones.",
+      "refresh": "Refreshing the orders list."
+    }
   },
   "empty": {
     "noMatch": "No orders match your search or filters.",
@@ -228,11 +239,13 @@
     "routeCleared_plural": "Cleared route assignment from {{count}} orders.",
     "manifestReady": "Pickup manifest ready for {{count}} order.",
     "manifestReady_plural": "Pickup manifest ready for {{count}} orders.",
+    "legacyRetrySynced": "Pickup {{id}} synced to legacy.",
     "comingSoon": "{{label}} is coming soon."
   },
   "errors": {
     "missingCompanyContext": "Company context is missing for this account. EMSYS API requests require the x-company-id header. Add companyId to your Firebase user profile or JWT custom claim, then sign in again.",
-    "pickupAccessUnavailable": "Pickup access unavailable. Your user is not linked to a pickup employee, and you do not have permission to view all pickups."
+    "pickupAccessUnavailable": "Pickup access unavailable. Your user is not linked to a pickup employee, and you do not have permission to view all pickups.",
+    "legacySyncPermissionMissing": "Missing permission: Access legacy pickups. Ask an administrator to grant the required permission, then try again."
   },
   "map": {
     "title": "Pickup map",
