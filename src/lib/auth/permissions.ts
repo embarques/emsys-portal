@@ -9,7 +9,7 @@ export const PERMISSIONS = {
   clientsDelete: { name: "canDeleteCustomer", resourceType: "customer" },
   pickupsView: { name: "canViewPickup", resourceType: "pickup" },
   pickupsViewAll: { name: "canViewAllPickups", resourceType: "pickup" },
-  pickupsSyncLegacy: { name: "syncLegacyPickups", resourceType: "pickup" },
+  pickupsSyncLegacy: { name: "canSyncLegacyPickups", resourceType: "pickup" },
   /** Pickups submenu — API has no route/vehicle/dispatch seed; gate with pickup view. */
   routesView: { name: "canViewPickup", resourceType: "pickup" },
   vehiclesView: { name: "canViewPickup", resourceType: "pickup" },

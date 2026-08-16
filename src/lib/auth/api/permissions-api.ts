@@ -37,8 +37,6 @@ const CRUD_TO_PERMISSION_PREFIX: Record<CrudFlag, string> = {
   print: "canPrint",
 };
 
-const NAMED_PERMISSION_ALLOWLIST = new Set(["syncLegacyPickups"]);
-
 function normalizePortalResourceType(resourceType: string): string {
   const trimmed = resourceType.trim().toLowerCase();
   return RESOURCE_TYPE_ALIASES[trimmed] ?? trimmed;
@@ -96,7 +94,7 @@ function normalizeFlatPermission(raw: Record<string, unknown>): Permission | nul
   const trimmedName = name.trim();
   const normalizedResourceType = normalizePortalResourceType(resourceType);
 
-  if (!trimmedName.startsWith("can") && !NAMED_PERMISSION_ALLOWLIST.has(trimmedName)) {
+  if (!trimmedName.startsWith("can")) {
     return null;
   }
 

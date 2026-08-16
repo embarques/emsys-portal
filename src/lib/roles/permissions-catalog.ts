@@ -6,7 +6,7 @@ export type PermissionCatalogEntry = {
 };
 
 const PERMISSION_LABEL_OVERRIDES = new Map<string, string>([
-  ["pickup:syncLegacyPickups", "Access legacy pickups"],
+  ["pickup:canSyncLegacyPickups", "Access legacy pickups"],
 ]);
 
 function pluralize(value: string): string {
