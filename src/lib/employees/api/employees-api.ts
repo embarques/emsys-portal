@@ -142,7 +142,7 @@ type ApiEmployeeWritePayload = {
   loanBalanceUpdated?: string;
   totalLoanGiven?: number;
   totalPaymentReceived?: number;
-  user?: { id: number };
+  user?: { id: number; name?: string };
   id?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -303,7 +303,7 @@ function buildEmployeeWritePayload(
   }
 
   if (values.user?.id) {
-    payload.user = { id: values.user.id };
+    payload.user = { id: values.user.id, name: values.user.name };
   }
 
   if (options.id != null) {

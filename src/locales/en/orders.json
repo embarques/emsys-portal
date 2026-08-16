@@ -231,7 +231,8 @@
     "comingSoon": "{{label}} is coming soon."
   },
   "errors": {
-    "missingCompanyContext": "Company context is missing for this account. EMSYS API requests require the x-company-id header. Add companyId to your Firebase user profile or JWT custom claim, then sign in again."
+    "missingCompanyContext": "Company context is missing for this account. EMSYS API requests require the x-company-id header. Add companyId to your Firebase user profile or JWT custom claim, then sign in again.",
+    "pickupAccessUnavailable": "Pickup access unavailable. Your user is not linked to a pickup employee, and you do not have permission to view all pickups."
   },
   "map": {
     "title": "Pickup map",

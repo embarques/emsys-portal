@@ -8,6 +8,7 @@ export const PERMISSIONS = {
   clientsUpdate: { name: "canUpdateCustomer", resourceType: "customer" },
   clientsDelete: { name: "canDeleteCustomer", resourceType: "customer" },
   pickupsView: { name: "canViewPickup", resourceType: "pickup" },
+  pickupsViewAll: { name: "canViewAllPickups", resourceType: "pickup" },
   /** Pickups submenu — API has no route/vehicle/dispatch seed; gate with pickup view. */
   routesView: { name: "canViewPickup", resourceType: "pickup" },
   vehiclesView: { name: "canViewPickup", resourceType: "pickup" },

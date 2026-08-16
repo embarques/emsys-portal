@@ -9,7 +9,8 @@
   "actions": {
     "add": "Agregar empleado",
     "edit": "Editar empleado",
-    "editNamed": "Editar {{name}}"
+    "editNamed": "Editar {{name}}",
+    "addUser": "Agregar usuario del portal"
   },
   "stats": {
     "total": {
@@ -121,7 +122,9 @@
       "state": "Estado / provincia",
       "zipcode": "Código postal",
       "country": "País",
-      "email": "Correo electrónico"
+      "email": "Correo electrónico",
+      "user": "Usuario del portal",
+      "noUser": "Sin usuario vinculado"
     },
     "placeholders": {
       "name": "MIGUEL",
@@ -137,7 +140,8 @@
       "state": "NY",
       "zipcode": "11201",
       "country": "US",
-      "email": "nombre@emsys.example"
+      "email": "nombre@emsys.example",
+      "userSearch": "Buscar usuarios…"
     }
   },
   "view": {
@@ -156,6 +160,8 @@
     "edit": "Editar empleado"
   },
   "dialogs": {
+    "createUserTitle": "Agregar usuario del portal",
+    "createUserDescription": "Cree un usuario y vincúlelo a este empleado.",
     "deleteTitle": "¿Eliminar empleado?",
     "deleteTitlePlural": "¿Eliminar empleados?",
     "deleteOne": "Esto eliminará permanentemente \"{{name}}\". {{cannotBeUndone}}",
