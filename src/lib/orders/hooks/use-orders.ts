@@ -13,6 +13,7 @@ import {
   fetchOrders,
   fetchPickupsByRoute,
   fetchSenderOrderHistory,
+  previewLegacyPickupSync,
   retryOrderLegacySync,
   setOrdersCompleted,
   syncLegacyPickups,
@@ -252,6 +253,12 @@ export function useSyncLegacyPickups() {
   return useMutation({
     mutationFn: () => syncLegacyPickups(),
     onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+export function usePreviewLegacyPickupSync() {
+  return useMutation({
+    mutationFn: () => previewLegacyPickupSync(),
   });
 }
 

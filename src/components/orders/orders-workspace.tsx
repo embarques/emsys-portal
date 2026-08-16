@@ -96,6 +96,7 @@ import {
   useDeleteOrders,
   useOrderStats,
   useOrders,
+  usePreviewLegacyPickupSync,
   useRetryOrderLegacySync,
   useSetOrdersCompleted,
   useSyncLegacyPickups,
@@ -134,7 +135,7 @@ const LEGACY_SYNC_PERMISSION_ERROR_NAMES = [
   "syncLegacyPickups",
   "canSyncLegacyPickups",
 ] as const;
-const LEGACY_SYNC_STAGE_COUNT = 4;
+const LEGACY_SYNC_FALLBACK_TOTAL = 1;
 
 function LegacyPickupSyncLoader({
   current,
@@ -371,6 +372,7 @@ export function OrdersWorkspace() {
   const [routesExpanded, setRoutesExpanded] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState("");
   const [legacySyncStageIndex, setLegacySyncStageIndex] = useState<number | null>(null);
+  const [legacySyncTotal, setLegacySyncTotal] = useState<number | null>(null);
   const legacySyncResetTimerRef = useRef<number | null>(null);
   const listParams = useMemo(
     () =>
@@ -399,6 +401,7 @@ export function OrdersWorkspace() {
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
   const setOrdersCompletedMutation = useSetOrdersCompleted();
+  const previewLegacyPickupSyncMutation = usePreviewLegacyPickupSync();
   const syncLegacyPickupsMutation = useSyncLegacyPickups();
   const retryLegacySyncMutation = useRetryOrderLegacySync();
   const assignRouteMutation = useAssignPickupsToRoute();
@@ -413,7 +416,9 @@ export function OrdersWorkspace() {
   const allPageSelected =
     orders.length > 0 && orders.every((order) => selectedIds.includes(getOrderRecordId(order)));
   const isLegacySyncing =
-    syncLegacyPickupsMutation.isPending || legacySyncStageIndex !== null;
+    previewLegacyPickupSyncMutation.isPending ||
+    syncLegacyPickupsMutation.isPending ||
+    legacySyncStageIndex !== null;
   const isSaving =
     createOrderMutation.isPending ||
     updateOrderMutation.isPending ||
@@ -449,13 +454,15 @@ export function OrdersWorkspace() {
 
     const timer = window.setInterval(() => {
       setLegacySyncStageIndex((current) => {
+        const total = Math.max(LEGACY_SYNC_FALLBACK_TOTAL, legacySyncTotal ?? LEGACY_SYNC_FALLBACK_TOTAL);
+        const maxIndex = Math.max(0, total - 1);
         const next = current == null ? 0 : current + 1;
-        return Math.min(next, LEGACY_SYNC_STAGE_COUNT - 1);
+        return Math.min(next, maxIndex);
       });
-    }, 1200);
+    }, 450);
 
     return () => window.clearInterval(timer);
-  }, [syncLegacyPickupsMutation.isPending]);
+  }, [legacySyncTotal, syncLegacyPickupsMutation.isPending]);
 
   useEffect(() => {
     return () => {
@@ -747,9 +754,21 @@ export function OrdersWorkspace() {
     }
 
     setLegacySyncStageIndex(0);
+    setLegacySyncTotal(null);
     try {
+      try {
+        const preview = await previewLegacyPickupSyncMutation.mutateAsync();
+        setLegacySyncTotal(Math.max(0, preview.total));
+      } catch {
+        setLegacySyncTotal(LEGACY_SYNC_FALLBACK_TOTAL);
+      }
+
       const result = await syncLegacyPickupsMutation.mutateAsync();
-      setLegacySyncStageIndex(LEGACY_SYNC_STAGE_COUNT - 1);
+      const total =
+        result.summary.total ||
+        result.summary.imported + result.summary.updated + result.summary.skipped;
+      setLegacySyncTotal(Math.max(0, total));
+      setLegacySyncStageIndex(Math.max(0, total - 1));
       notifySuccess(result.message);
       setPage(1);
     } catch (mutationError) {
@@ -760,11 +779,13 @@ export function OrdersWorkspace() {
           : message,
       );
       setLegacySyncStageIndex(null);
+      setLegacySyncTotal(null);
       return;
     }
 
     legacySyncResetTimerRef.current = window.setTimeout(() => {
       setLegacySyncStageIndex(null);
+      setLegacySyncTotal(null);
       legacySyncResetTimerRef.current = null;
     }, 700);
   }
@@ -922,9 +943,13 @@ export function OrdersWorkspace() {
     },
     t,
   );
+  const legacySyncDisplayTotal = Math.max(
+    LEGACY_SYNC_FALLBACK_TOTAL,
+    legacySyncTotal ?? LEGACY_SYNC_FALLBACK_TOTAL,
+  );
   const legacySyncCurrentStep = Math.min(
-    LEGACY_SYNC_STAGE_COUNT,
-    (legacySyncStageIndex ?? 0) + 1,
+    legacySyncDisplayTotal,
+    legacySyncTotal === 0 ? 0 : (legacySyncStageIndex ?? 0) + 1,
   );
   const legacySyncDescriptions = [
     t("orders.loading.legacySyncStages.prepare"),
@@ -935,12 +960,16 @@ export function OrdersWorkspace() {
   const legacySyncLoader = (
     <LegacyPickupSyncLoader
       current={legacySyncCurrentStep}
-      total={LEGACY_SYNC_STAGE_COUNT}
+      total={legacySyncDisplayTotal}
       title={t("orders.loading.legacySyncProgress", {
         current: legacySyncCurrentStep,
-        total: LEGACY_SYNC_STAGE_COUNT,
+        total: legacySyncTotal ?? legacySyncDisplayTotal,
       })}
-      description={legacySyncDescriptions[legacySyncCurrentStep - 1] ?? legacySyncDescriptions[0]}
+      description={
+        legacySyncDescriptions[
+          Math.min(legacySyncDescriptions.length - 1, Math.max(0, legacySyncCurrentStep - 1))
+        ] ?? legacySyncDescriptions[0]
+      }
     />
   );
 

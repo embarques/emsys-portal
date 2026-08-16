@@ -143,11 +143,16 @@ export type LegacyPickupSyncSummary = {
   imported: number;
   updated: number;
   skipped: number;
+  total: number;
 };
 
 export type LegacyPickupSyncResult = {
   message: string;
   summary: LegacyPickupSyncSummary;
+};
+
+export type LegacyPickupSyncPreview = {
+  total: number;
 };
 
 
@@ -921,7 +926,7 @@ export async function setOrdersCompleted(orders: Order[], completed: boolean): P
 
 function normalizeLegacySyncSummary(raw: unknown): LegacyPickupSyncSummary {
   if (!raw || typeof raw !== "object") {
-    return { imported: 0, updated: 0, skipped: 0 };
+    return { imported: 0, updated: 0, skipped: 0, total: 0 };
   }
 
   const item = raw as Record<string, unknown>;
@@ -930,7 +935,27 @@ function normalizeLegacySyncSummary(raw: unknown): LegacyPickupSyncSummary {
     imported: Number(item.imported ?? 0),
     updated: Number(item.updated ?? 0),
     skipped: Number(item.skipped ?? 0),
+    total: Number(item.total ?? 0),
   };
+}
+
+function normalizeLegacySyncPreview(raw: unknown): LegacyPickupSyncPreview {
+  if (!raw || typeof raw !== "object") {
+    return { total: 0 };
+  }
+
+  const item = raw as Record<string, unknown>;
+  return { total: Number(item.total ?? 0) };
+}
+
+export async function previewLegacyPickupSync(): Promise<LegacyPickupSyncPreview> {
+  const response = await apiClient.get<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/legacy-sync/preview`,
+  );
+
+  assertMutationSuccess(response, "Unable to preview legacy pickup sync.");
+
+  return normalizeLegacySyncPreview(response.data);
 }
 
 export async function syncLegacyPickups(): Promise<LegacyPickupSyncResult> {
