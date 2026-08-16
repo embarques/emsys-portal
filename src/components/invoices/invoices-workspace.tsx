@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,6 +12,7 @@ import {
   Plus,
   Printer,
   Receipt,
+  RefreshCw,
   Search,
   Tags,
   Trash2,
@@ -75,6 +76,8 @@ import {
   useInvoice,
   useInvoiceStats,
   useInvoices,
+  usePreviewLegacyInvoiceSync,
+  useSyncLegacyInvoices,
 } from "@/lib/invoices/hooks/use-invoices";
 import { usePrintInvoices } from "@/lib/invoices/hooks/use-print-invoices";
 import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
@@ -108,13 +111,70 @@ import { useSyncWorkspaceTabTitle } from "@/lib/layout/hooks/use-sync-workspace-
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { getBranchBadgeClass } from "@/lib/vehicles/display";
 import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
+import { PERMISSIONS } from "@/lib/auth/permissions";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
 import type { OrderParty } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
+const LEGACY_SYNC_PERMISSION_ERROR_NAMES = ["canSyncLegacyInvoices"] as const;
+const LEGACY_SYNC_FALLBACK_TOTAL = 1;
 const invoiceWizardDialogClassName =
   "left-0 top-0 flex h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none border-0 p-0 max-sm:[&>button:last-child]:hidden sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border";
+
+function LegacyInvoiceSyncLoader({
+  current,
+  total,
+  title,
+  description,
+}: {
+  current: number;
+  total: number;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div
+      className="relative overflow-hidden border-y bg-gradient-to-b from-primary/[0.06] via-background to-background px-6 py-8"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+
+      <div className="flex flex-col items-center text-center">
+        <div className="relative mb-4 grid h-16 w-16 place-items-center">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl" />
+          <div className="absolute inset-0 rounded-full border border-primary/15" />
+          <RefreshCw
+            className="absolute inset-0 h-16 w-16 animate-spin text-primary drop-shadow-sm"
+            strokeWidth={2.25}
+            aria-hidden="true"
+          />
+          <div className="relative grid h-12 w-12 place-items-center rounded-full border border-primary/25 bg-card shadow-lg shadow-primary/10">
+            <Receipt className="h-7 w-7 text-primary" aria-hidden="true" />
+          </div>
+        </div>
+
+        <p className="font-semibold text-foreground">{title}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        <div className="mt-5 h-2 w-full max-w-xs overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${Math.min(100, Math.max(0, (current / total) * 100))}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function isLegacySyncPermissionError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return LEGACY_SYNC_PERMISSION_ERROR_NAMES.some((name) =>
+    normalized.includes(name.toLowerCase()),
+  );
+}
 
 function InvoicePartyAddressCell({ party }: { party: OrderParty | null | undefined }) {
   const { t } = useTranslation();
@@ -336,7 +396,12 @@ const defaultFilters: InvoiceFilterState = {
 
 export function InvoicesWorkspace() {
   const { t } = useTranslation();
-  const { notifyAdded, notifyDeleted, notifyError } = useFeedback();
+  const { notifyAdded, notifyDeleted, notifyError, notifySuccess } = useFeedback();
+  const { hasPermission } = useAuth();
+  const canSyncLegacyInvoices = hasPermission(
+    PERMISSIONS.invoicesSyncLegacy.name,
+    PERMISSIONS.invoicesSyncLegacy.resourceType,
+  );
   const [filters, setFilters] = useState<InvoiceFilterState>(defaultFilters);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -350,6 +415,9 @@ export function InvoicesWorkspace() {
   const [stagingOpen, setStagingOpen] = useState(false);
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
+  const [legacySyncStageIndex, setLegacySyncStageIndex] = useState<number | null>(null);
+  const [legacySyncTotal, setLegacySyncTotal] = useState<number | null>(null);
+  const legacySyncResetTimerRef = useRef<number | null>(null);
 
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
 
@@ -422,6 +490,8 @@ export function InvoicesWorkspace() {
     sort: "name:asc",
   });
   const deleteInvoicesMutation = useDeleteInvoices();
+  const previewLegacyInvoiceSyncMutation = usePreviewLegacyInvoiceSync();
+  const syncLegacyInvoicesMutation = useSyncLegacyInvoices();
   const { printInvoiceIds, isPrinting } = usePrintInvoices();
   const { data: routesData } = useRoutePicker(undefined, {
     enabled: desktopFiltersOpen || mobileFiltersOpen,
@@ -435,11 +505,39 @@ export function InvoicesWorkspace() {
   const allPageSelected =
     invoices.length > 0 && invoices.every((invoice) => selectedIds.includes(invoice.invoiceId));
   const isDeleting = deleteInvoicesMutation.isPending;
+  const isLegacySyncing =
+    previewLegacyInvoiceSyncMutation.isPending ||
+    syncLegacyInvoicesMutation.isPending ||
+    legacySyncStageIndex !== null;
+  const isSaving = isDeleting || isPrinting || isLegacySyncing;
 
   useTableSelectionReset(
     buildTableSelectionResetKey(deferredQuery, filters.rows, filters.paymentLocation),
     setSelectedIds,
   );
+
+  useEffect(() => {
+    if (!syncLegacyInvoicesMutation.isPending) return;
+
+    const timer = window.setInterval(() => {
+      setLegacySyncStageIndex((current) => {
+        const total = Math.max(LEGACY_SYNC_FALLBACK_TOTAL, legacySyncTotal ?? LEGACY_SYNC_FALLBACK_TOTAL);
+        const maxIndex = Math.max(0, total - 1);
+        const next = current == null ? 0 : current + 1;
+        return Math.min(next, maxIndex);
+      });
+    }, 450);
+
+    return () => window.clearInterval(timer);
+  }, [legacySyncTotal, syncLegacyInvoicesMutation.isPending]);
+
+  useEffect(() => {
+    return () => {
+      if (legacySyncResetTimerRef.current != null) {
+        window.clearTimeout(legacySyncResetTimerRef.current);
+      }
+    };
+  }, []);
 
   const viewInvoice = useMemo(() => {
     if (!viewInvoiceId) return null;
@@ -574,6 +672,49 @@ export function InvoicesWorkspace() {
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
     }
+  }
+
+  async function handleSyncLegacyInvoices() {
+    if (legacySyncResetTimerRef.current != null) {
+      window.clearTimeout(legacySyncResetTimerRef.current);
+      legacySyncResetTimerRef.current = null;
+    }
+
+    setLegacySyncStageIndex(0);
+    setLegacySyncTotal(null);
+    try {
+      try {
+        const preview = await previewLegacyInvoiceSyncMutation.mutateAsync();
+        setLegacySyncTotal(Math.max(0, preview.total));
+      } catch {
+        setLegacySyncTotal(LEGACY_SYNC_FALLBACK_TOTAL);
+      }
+
+      const result = await syncLegacyInvoicesMutation.mutateAsync();
+      const total =
+        result.summary.total ||
+        result.summary.imported + result.summary.updated + result.summary.skipped;
+      setLegacySyncTotal(Math.max(0, total));
+      setLegacySyncStageIndex(Math.max(0, total - 1));
+      notifySuccess(result.message);
+      setPage(1);
+    } catch (mutationError) {
+      const message = normalizeApiError(mutationError).message;
+      notifyError(
+        isLegacySyncPermissionError(message)
+          ? t("invoices.errors.legacySyncPermissionMissing")
+          : message,
+      );
+      setLegacySyncStageIndex(null);
+      setLegacySyncTotal(null);
+      return;
+    }
+
+    legacySyncResetTimerRef.current = window.setTimeout(() => {
+      setLegacySyncStageIndex(null);
+      setLegacySyncTotal(null);
+      legacySyncResetTimerRef.current = null;
+    }, 700);
   }
 
   const editingInvoice = useMemo(
@@ -802,6 +943,32 @@ export function InvoicesWorkspace() {
     noun: "invoices",
     isLoading: isFetching && invoices.length === 0,
   });
+  const legacySyncCurrentStep = Math.max(1, (legacySyncStageIndex ?? 0) + 1);
+  const legacySyncDisplayTotal = Math.max(
+    LEGACY_SYNC_FALLBACK_TOTAL,
+    legacySyncTotal ?? LEGACY_SYNC_FALLBACK_TOTAL,
+  );
+  const legacySyncDescriptions = [
+    t("invoices.loading.legacySyncStages.connecting"),
+    t("invoices.loading.legacySyncStages.dependencies"),
+    t("invoices.loading.legacySyncStages.invoices"),
+    t("invoices.loading.legacySyncStages.refreshing"),
+  ];
+  const legacySyncLoader = (
+    <LegacyInvoiceSyncLoader
+      current={legacySyncCurrentStep}
+      total={legacySyncDisplayTotal}
+      title={t("invoices.loading.legacySyncProgress", {
+        current: legacySyncCurrentStep,
+        total: legacySyncTotal ?? legacySyncDisplayTotal,
+      })}
+      description={
+        legacySyncDescriptions[
+          Math.min(legacySyncDescriptions.length - 1, Math.max(0, legacySyncCurrentStep - 1))
+        ] ?? legacySyncDescriptions[0]
+      }
+    />
+  );
 
   return (
     <div>
@@ -810,10 +977,27 @@ export function InvoicesWorkspace() {
           title={t("invoices.title")}
           description={t("invoices.pages.description")}
           actions={
-            <Button onClick={openAddForm}>
-              <Plus className="h-4 w-4" />
-              Add invoice
-            </Button>
+            <div className="flex items-center gap-2">
+              {canSyncLegacyInvoices ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSyncLegacyInvoices}
+                  disabled={isSaving}
+                >
+                  <RefreshCw
+                    className={cn("h-4 w-4", isLegacySyncing && "animate-spin")}
+                  />
+                  {isLegacySyncing
+                    ? t("invoices.actions.syncingLegacy")
+                    : t("invoices.actions.syncLegacy")}
+                </Button>
+              ) : null}
+              <Button onClick={openAddForm} disabled={isSaving}>
+                <Plus className="h-4 w-4" />
+                Add invoice
+              </Button>
+            </div>
           }
         />
       </div>
@@ -846,6 +1030,20 @@ export function InvoicesWorkspace() {
           >
             <Filter className="size-5" />
           </Button>
+          {canSyncLegacyInvoices ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-12 shrink-0 rounded-xl border-primary/30 text-primary shadow-xs"
+              onClick={handleSyncLegacyInvoices}
+              disabled={isSaving}
+              aria-label={t("invoices.actions.syncLegacy")}
+              title={t("invoices.actions.syncLegacy")}
+            >
+              <RefreshCw className={cn("size-5", isLegacySyncing && "animate-spin")} />
+            </Button>
+          ) : null}
         </div>
 
         {mobileFiltersOpen ? (
@@ -955,6 +1153,8 @@ export function InvoicesWorkspace() {
             <div className="px-4 py-8 text-sm text-destructive">
               {normalizeApiError(error).message}
             </div>
+          ) : isLegacySyncing ? (
+            legacySyncLoader
           ) : isLoading ? (
             <div className="space-y-4 px-1 py-4">
               {Array.from({ length: 5 }).map((_, index) => (
@@ -1113,6 +1313,8 @@ export function InvoicesWorkspace() {
           <div className="px-6 py-8 text-sm text-destructive">
             {normalizeApiError(error).message}
           </div>
+        ) : isLegacySyncing ? (
+          legacySyncLoader
         ) : isLoading ? (
           <DirectoryTableLoader
             icon={Receipt}

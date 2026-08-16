@@ -46,6 +46,9 @@ import {
   type InvoiceLineItemBarcode,
   type InvoiceLineItemFormValues,
   type InvoiceListParams,
+  type LegacyInvoiceSyncPreview,
+  type LegacyInvoiceSyncResult,
+  type LegacyInvoiceSyncSummary,
 } from "@/lib/invoices/types";
 import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
@@ -988,4 +991,51 @@ export async function deleteInvoice(invoiceId: string): Promise<void> {
 
 export async function deleteInvoices(invoiceIds: string[]): Promise<void> {
   await Promise.all(invoiceIds.map((invoiceId) => deleteInvoice(invoiceId)));
+}
+
+function normalizeLegacyInvoiceSyncSummary(raw: unknown): LegacyInvoiceSyncSummary {
+  if (!raw || typeof raw !== "object") {
+    return { imported: 0, updated: 0, skipped: 0, total: 0 };
+  }
+
+  const item = raw as Record<string, unknown>;
+
+  return {
+    imported: Number(item.imported ?? 0),
+    updated: Number(item.updated ?? 0),
+    skipped: Number(item.skipped ?? 0),
+    total: Number(item.total ?? 0),
+  };
+}
+
+function normalizeLegacyInvoiceSyncPreview(raw: unknown): LegacyInvoiceSyncPreview {
+  if (!raw || typeof raw !== "object") {
+    return { total: 0 };
+  }
+
+  const item = raw as Record<string, unknown>;
+  return { total: Number(item.total ?? 0) };
+}
+
+export async function previewLegacyInvoiceSync(): Promise<LegacyInvoiceSyncPreview> {
+  const response = await apiClient.get<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.INVOICES}/legacy-sync/preview`,
+  );
+
+  assertMutationSuccess(response, "Unable to preview legacy invoice sync.");
+
+  return normalizeLegacyInvoiceSyncPreview(response.data);
+}
+
+export async function syncLegacyInvoices(): Promise<LegacyInvoiceSyncResult> {
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.INVOICES}/legacy-sync`,
+  );
+
+  assertMutationSuccess(response, "Unable to sync legacy invoices.");
+
+  return {
+    message: response.message?.trim() || "Legacy invoices synced.",
+    summary: normalizeLegacyInvoiceSyncSummary(response.data),
+  };
 }

@@ -13,6 +13,22 @@
     "receiverName": "Receiver",
     "receiverAddress": "Receiver address"
   },
+  "actions": {
+    "syncLegacy": "Sync legacy",
+    "syncingLegacy": "Syncing..."
+  },
+  "loading": {
+    "legacySyncProgress": "Syncing {{current}} out of {{total}}...",
+    "legacySyncStages": {
+      "connecting": "Connecting to the legacy invoice API.",
+      "dependencies": "Syncing customers and containers.",
+      "invoices": "Importing invoice headers.",
+      "refreshing": "Refreshing the invoice list."
+    }
+  },
+  "errors": {
+    "legacySyncPermissionMissing": "Missing permission: Access legacy invoices. Ask an administrator to grant the required permission, then try again."
+  },
   "workspace": {
     "actionsColumn": "Actions",
     "viewInvoice": "View invoice",

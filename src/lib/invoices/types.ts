@@ -221,6 +221,22 @@ export type InvoiceListParams = {
   paymentLocation?: InvoicePaymentLocation | "all";
 };
 
+export type LegacyInvoiceSyncPreview = {
+  total: number;
+};
+
+export type LegacyInvoiceSyncSummary = {
+  imported: number;
+  updated: number;
+  skipped: number;
+  total: number;
+};
+
+export type LegacyInvoiceSyncResult = {
+  message: string;
+  summary: LegacyInvoiceSyncSummary;
+};
+
 /** GET /invoices?page=1&limit=50&offset=0&sort=number:desc */
 export const DEFAULT_INVOICE_LIST_PARAMS = {
   page: 1,
