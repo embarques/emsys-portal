@@ -244,7 +244,8 @@
   },
   "errors": {
     "missingCompanyContext": "Falta el contexto de empresa para esta cuenta. Las solicitudes a la API de EMSYS requieren el encabezado x-company-id. Agregue companyId a su perfil de Firebase o al claim personalizado del JWT y vuelva a iniciar sesión.",
-    "pickupAccessUnavailable": "Acceso a recogidas no disponible. Su usuario no está vinculado a un empleado de recogidas y no tiene permiso para ver todas las recogidas."
+    "pickupAccessUnavailable": "Acceso a recogidas no disponible. Su usuario no está vinculado a un empleado de recogidas y no tiene permiso para ver todas las recogidas.",
+    "legacySyncPermissionMissing": "Falta el permiso: Access legacy pickups. Pida a un administrador que otorgue el permiso requerido e intente nuevamente."
   },
   "map": {
     "title": "Mapa de recogidas",

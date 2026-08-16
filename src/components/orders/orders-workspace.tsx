@@ -130,6 +130,10 @@ import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
 const PICKUP_ACCESS_UNAVAILABLE_PREFIX = "Pickup access unavailable.";
+const LEGACY_SYNC_PERMISSION_ERROR_NAMES = [
+  "syncLegacyPickups",
+  "canSyncLegacyPickups",
+] as const;
 const LEGACY_SYNC_STAGE_COUNT = 4;
 
 function LegacyPickupSyncLoader({
@@ -175,6 +179,13 @@ function LegacyPickupSyncLoader({
         </div>
       </div>
     </div>
+  );
+}
+
+function isLegacySyncPermissionError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return LEGACY_SYNC_PERMISSION_ERROR_NAMES.some((name) =>
+    normalized.includes(name.toLowerCase()),
   );
 }
 
@@ -742,7 +753,12 @@ export function OrdersWorkspace() {
       notifySuccess(result.message);
       setPage(1);
     } catch (mutationError) {
-      notifyError(normalizeApiError(mutationError).message);
+      const message = normalizeApiError(mutationError).message;
+      notifyError(
+        isLegacySyncPermissionError(message)
+          ? t("orders.errors.legacySyncPermissionMissing")
+          : message,
+      );
       setLegacySyncStageIndex(null);
       return;
     }
