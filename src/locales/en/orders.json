@@ -94,7 +94,14 @@
     "description": "Coordinating customers, routes, packages, and delivery status…",
     "order": "Loading order…",
     "columns": "Order, Date, Sender, Receiver, Status",
-    "pickupHistory": "Loading pickup history…"
+    "pickupHistory": "Loading pickup history…",
+    "legacySyncProgress": "Syncing {{current}} out of {{total}}...",
+    "legacySyncStages": {
+      "prepare": "Preparing the legacy pickup sync.",
+      "fetch": "Reading open pickups from the legacy API.",
+      "apply": "Adding new pickups and updating existing ones.",
+      "refresh": "Refreshing the orders list."
+    }
   },
   "empty": {
     "noMatch": "No orders match your search or filters.",

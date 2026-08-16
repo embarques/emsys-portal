@@ -94,7 +94,14 @@
     "description": "Coordinando clientes, rutas, paquetes y estado de entrega…",
     "order": "Cargando orden…",
     "columns": "Orden, Fecha, Remitente, Destinatario, Estado",
-    "pickupHistory": "Cargando historial de recogidas…"
+    "pickupHistory": "Cargando historial de recogidas…",
+    "legacySyncProgress": "Sincronizando {{current}} de {{total}}...",
+    "legacySyncStages": {
+      "prepare": "Preparando la sincronización legacy de recogidas.",
+      "fetch": "Leyendo recogidas abiertas desde el API legacy.",
+      "apply": "Agregando recogidas nuevas y actualizando las existentes.",
+      "refresh": "Actualizando la lista de órdenes."
+    }
   },
   "empty": {
     "noMatch": "Ninguna orden coincide con su búsqueda o filtros.",

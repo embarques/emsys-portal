@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine,
   Check,
@@ -130,6 +130,53 @@ import { useTranslation } from "@/lib/i18n";
 
 const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
 const PICKUP_ACCESS_UNAVAILABLE_PREFIX = "Pickup access unavailable.";
+const LEGACY_SYNC_STAGE_COUNT = 4;
+
+function LegacyPickupSyncLoader({
+  current,
+  total,
+  title,
+  description,
+}: {
+  current: number;
+  total: number;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div
+      className="relative overflow-hidden border-y bg-gradient-to-b from-primary/[0.06] via-background to-background px-6 py-8"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+
+      <div className="flex flex-col items-center text-center">
+        <div className="relative mb-4 grid h-16 w-16 place-items-center">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl" />
+          <div className="absolute inset-0 rounded-full border border-primary/15" />
+          <RefreshCw
+            className="absolute inset-0 h-16 w-16 animate-spin text-primary drop-shadow-sm"
+            strokeWidth={2.25}
+            aria-hidden="true"
+          />
+          <div className="relative grid h-12 w-12 place-items-center rounded-full border border-primary/25 bg-card shadow-lg shadow-primary/10">
+            <PackageOpen className="h-7 w-7 text-primary" aria-hidden="true" />
+          </div>
+        </div>
+
+        <p className="font-semibold text-foreground">{title}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        <div className="mt-5 h-2 w-full max-w-xs overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${Math.min(100, Math.max(0, (current / total) * 100))}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function PickupSenderAddressCell({ customer }: { customer: Customer }) {
   const { t } = useTranslation();
@@ -312,6 +359,8 @@ export function OrdersWorkspace() {
   const [completionExpanded, setCompletionExpanded] = useState(false);
   const [routesExpanded, setRoutesExpanded] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState("");
+  const [legacySyncStageIndex, setLegacySyncStageIndex] = useState<number | null>(null);
+  const legacySyncResetTimerRef = useRef<number | null>(null);
   const listParams = useMemo(
     () =>
       buildOrderListParams({
@@ -352,12 +401,14 @@ export function OrdersWorkspace() {
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     orders.length > 0 && orders.every((order) => selectedIds.includes(getOrderRecordId(order)));
+  const isLegacySyncing =
+    syncLegacyPickupsMutation.isPending || legacySyncStageIndex !== null;
   const isSaving =
     createOrderMutation.isPending ||
     updateOrderMutation.isPending ||
     deleteOrdersMutation.isPending ||
     setOrdersCompletedMutation.isPending ||
-    syncLegacyPickupsMutation.isPending ||
+    isLegacySyncing ||
     retryLegacySyncMutation.isPending ||
     assignRouteMutation.isPending ||
     clearRouteMutation.isPending;
@@ -381,6 +432,27 @@ export function OrdersWorkspace() {
       setFiltersOpen(true);
     }
   }, [listActive, tabScope?.tabId]);
+
+  useEffect(() => {
+    if (!syncLegacyPickupsMutation.isPending) return;
+
+    const timer = window.setInterval(() => {
+      setLegacySyncStageIndex((current) => {
+        const next = current == null ? 0 : current + 1;
+        return Math.min(next, LEGACY_SYNC_STAGE_COUNT - 1);
+      });
+    }, 1200);
+
+    return () => window.clearInterval(timer);
+  }, [syncLegacyPickupsMutation.isPending]);
+
+  useEffect(() => {
+    return () => {
+      if (legacySyncResetTimerRef.current != null) {
+        window.clearTimeout(legacySyncResetTimerRef.current);
+      }
+    };
+  }, []);
 
   const selectedOrders = useMemo(
     () => orders.filter((order) => selectedIds.includes(getOrderRecordId(order))),
@@ -658,13 +730,27 @@ export function OrdersWorkspace() {
   }
 
   async function handleSyncLegacyPickups() {
+    if (legacySyncResetTimerRef.current != null) {
+      window.clearTimeout(legacySyncResetTimerRef.current);
+      legacySyncResetTimerRef.current = null;
+    }
+
+    setLegacySyncStageIndex(0);
     try {
       const result = await syncLegacyPickupsMutation.mutateAsync();
+      setLegacySyncStageIndex(LEGACY_SYNC_STAGE_COUNT - 1);
       notifySuccess(result.message);
       setPage(1);
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
+      setLegacySyncStageIndex(null);
+      return;
     }
+
+    legacySyncResetTimerRef.current = window.setTimeout(() => {
+      setLegacySyncStageIndex(null);
+      legacySyncResetTimerRef.current = null;
+    }, 700);
   }
 
   async function handleRetryLegacySync(order: Order) {
@@ -820,6 +906,27 @@ export function OrdersWorkspace() {
     },
     t,
   );
+  const legacySyncCurrentStep = Math.min(
+    LEGACY_SYNC_STAGE_COUNT,
+    (legacySyncStageIndex ?? 0) + 1,
+  );
+  const legacySyncDescriptions = [
+    t("orders.loading.legacySyncStages.prepare"),
+    t("orders.loading.legacySyncStages.fetch"),
+    t("orders.loading.legacySyncStages.apply"),
+    t("orders.loading.legacySyncStages.refresh"),
+  ];
+  const legacySyncLoader = (
+    <LegacyPickupSyncLoader
+      current={legacySyncCurrentStep}
+      total={LEGACY_SYNC_STAGE_COUNT}
+      title={t("orders.loading.legacySyncProgress", {
+        current: legacySyncCurrentStep,
+        total: LEGACY_SYNC_STAGE_COUNT,
+      })}
+      description={legacySyncDescriptions[legacySyncCurrentStep - 1] ?? legacySyncDescriptions[0]}
+    />
+  );
 
   return (
     <div className="overflow-x-hidden">
@@ -843,7 +950,7 @@ export function OrdersWorkspace() {
                   title={t("orders.actions.syncLegacy")}
                 >
                   <RefreshCw
-                    className={cn("size-5", syncLegacyPickupsMutation.isPending && "animate-spin")}
+                    className={cn("size-5", isLegacySyncing && "animate-spin")}
                   />
                 </Button>
               ) : null}
@@ -1095,7 +1202,9 @@ export function OrdersWorkspace() {
         ) : null}
 
         <div className="rounded-3xl bg-card px-4 shadow-sm">
-          {isLoading ? (
+          {isLegacySyncing ? (
+            legacySyncLoader
+          ) : isLoading ? (
             <div className="space-y-4 py-5">
               {Array.from({ length: 6 }).map((_, index) => (
                 <div key={index} className="border-b border-border/80 py-3 last:border-b-0">
@@ -1152,9 +1261,9 @@ export function OrdersWorkspace() {
                 disabled={isSaving}
               >
                 <RefreshCw
-                  className={cn("h-4 w-4", syncLegacyPickupsMutation.isPending && "animate-spin")}
+                  className={cn("h-4 w-4", isLegacySyncing && "animate-spin")}
                 />
-                {syncLegacyPickupsMutation.isPending
+                {isLegacySyncing
                   ? t("orders.actions.syncingLegacy")
                   : t("orders.actions.syncLegacy")}
               </Button>
@@ -1336,7 +1445,9 @@ export function OrdersWorkspace() {
           }
         />
 
-        {isLoading ? (
+        {isLegacySyncing ? (
+          legacySyncLoader
+        ) : isLoading ? (
           <DirectoryTableLoader
             icon={PackageOpen}
             title={t("orders.loading.title")}
