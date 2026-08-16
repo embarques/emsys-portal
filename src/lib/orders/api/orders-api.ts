@@ -79,6 +79,9 @@ type ApiPickup = {
   createdAt?: string;
   updatedAt?: string;
   completed?: boolean;
+  legacySyncStatus?: string;
+  legacySyncError?: string;
+  legacySyncedAt?: string;
   createdBy?: Record<string, unknown>;
   updatedBy?: Record<string, unknown>;
   branch?: ApiBranchRef;
@@ -134,6 +137,17 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   success?: boolean;
   message?: string;
   error?: string;
+};
+
+export type LegacyPickupSyncSummary = {
+  imported: number;
+  updated: number;
+  skipped: number;
+};
+
+export type LegacyPickupSyncResult = {
+  message: string;
+  summary: LegacyPickupSyncSummary;
 };
 
 
@@ -323,6 +337,9 @@ function normalizeOrder(raw: unknown): Order | null {
     createdAt: normalizeIsoDate(item.createdAt),
     updatedAt: normalizeIsoDate(item.updatedAt),
     completed: item.completed === true,
+    legacySyncStatus: String(item.legacySyncStatus ?? "").trim() || undefined,
+    legacySyncError: String(item.legacySyncError ?? "").trim() || undefined,
+    legacySyncedAt: normalizeIsoDate(item.legacySyncedAt),
     createdBy: normalizePickupUser(item.createdBy),
     updatedBy: normalizePickupUser(item.updatedBy),
     branch: normalizePickupBranch(item.branch),
@@ -900,4 +917,46 @@ export async function setOrderCompleted(order: Order, completed: boolean): Promi
 
 export async function setOrdersCompleted(orders: Order[], completed: boolean): Promise<void> {
   await Promise.all(orders.map((order) => setOrderCompleted(order, completed)));
+}
+
+function normalizeLegacySyncSummary(raw: unknown): LegacyPickupSyncSummary {
+  if (!raw || typeof raw !== "object") {
+    return { imported: 0, updated: 0, skipped: 0 };
+  }
+
+  const item = raw as Record<string, unknown>;
+
+  return {
+    imported: Number(item.imported ?? 0),
+    updated: Number(item.updated ?? 0),
+    skipped: Number(item.skipped ?? 0),
+  };
+}
+
+export async function syncLegacyPickups(): Promise<LegacyPickupSyncResult> {
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/legacy-sync`,
+  );
+
+  assertMutationSuccess(response, "Unable to sync legacy pickups.");
+
+  return {
+    message: response.message?.trim() || "Legacy pickups synced.",
+    summary: normalizeLegacySyncSummary(response.data),
+  };
+}
+
+export async function retryOrderLegacySync(orderId: string): Promise<Order> {
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/${orderId}/legacy-sync/retry`,
+  );
+
+  assertMutationSuccess(response, "Unable to retry legacy pickup sync.");
+
+  const order = extractOrderFromMutationResponse(response.data);
+  if (order) {
+    return order;
+  }
+
+  return fetchOrderById(orderId);
 }

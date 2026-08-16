@@ -16,6 +16,7 @@ import {
   PackageOpen,
   Plus,
   Printer,
+  RefreshCw,
   Route as RouteIcon,
   RouteOff,
   Trash2,
@@ -87,6 +88,7 @@ import {
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import {
   useAssignPickupsToRoute,
   useClearOrdersRouteAssignments,
@@ -94,7 +96,9 @@ import {
   useDeleteOrders,
   useOrderStats,
   useOrders,
+  useRetryOrderLegacySync,
   useSetOrdersCompleted,
+  useSyncLegacyPickups,
   useUpdateOrder,
 } from "@/lib/orders/hooks/use-orders";
 import {
@@ -164,8 +168,10 @@ function MobileOrderRow({
   onView,
   onEdit,
   onDelete,
+  onRetryLegacySync,
   selected,
   selectionMode,
+  retryingLegacySync,
   onToggleSelected,
 }: {
   order: Order;
@@ -173,8 +179,10 @@ function MobileOrderRow({
   onView: (order: Order) => void;
   onEdit: (order: Order) => void;
   onDelete: (order: Order) => void;
+  onRetryLegacySync: (order: Order) => void;
   selected: boolean;
   selectionMode: boolean;
+  retryingLegacySync: boolean;
   onToggleSelected: (orderId: string, checked: boolean) => void;
 }) {
   const { t } = useTranslation();
@@ -244,6 +252,20 @@ function MobileOrderRow({
           <Edit className="size-4" />
           {t("common.actions.edit")}
         </Button>
+        {order.legacySyncStatus === "failed" ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 rounded-xl text-amber-700"
+            onClick={() => onRetryLegacySync(order)}
+            disabled={retryingLegacySync}
+            aria-label={t("orders.actions.retryLegacySync")}
+            title={order.legacySyncError || t("orders.actions.retryLegacySync")}
+          >
+            <RefreshCw className={cn("size-4", retryingLegacySync && "animate-spin")} />
+            {t("orders.actions.sync")}
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant="outline"
@@ -268,7 +290,11 @@ export function OrdersWorkspace() {
   const tabScope = useWorkspaceTabScope();
   const listActive = tabScope?.isActive ?? true;
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
-  const { loading: authLoading, companyId } = useAuth();
+  const { loading: authLoading, companyId, hasPermission } = useAuth();
+  const canSyncLegacyPickups = hasPermission(
+    PERMISSIONS.pickupsSyncLegacy.name,
+    PERMISSIONS.pickupsSyncLegacy.resourceType,
+  );
   const [filters, setFilters] = useState<OrderFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
@@ -313,6 +339,8 @@ export function OrdersWorkspace() {
   const updateOrderMutation = useUpdateOrder();
   const deleteOrdersMutation = useDeleteOrders();
   const setOrdersCompletedMutation = useSetOrdersCompleted();
+  const syncLegacyPickupsMutation = useSyncLegacyPickups();
+  const retryLegacySyncMutation = useRetryOrderLegacySync();
   const assignRouteMutation = useAssignPickupsToRoute();
   const clearRouteMutation = useClearOrdersRouteAssignments();
   const generatePickupReportMutation = useGeneratePickupReport();
@@ -329,6 +357,8 @@ export function OrdersWorkspace() {
     updateOrderMutation.isPending ||
     deleteOrdersMutation.isPending ||
     setOrdersCompletedMutation.isPending ||
+    syncLegacyPickupsMutation.isPending ||
+    retryLegacySyncMutation.isPending ||
     assignRouteMutation.isPending ||
     clearRouteMutation.isPending;
   const isPrinting = generatePickupReportMutation.isPending;
@@ -627,6 +657,25 @@ export function OrdersWorkspace() {
     }
   }
 
+  async function handleSyncLegacyPickups() {
+    try {
+      const result = await syncLegacyPickupsMutation.mutateAsync();
+      notifySuccess(result.message);
+      setPage(1);
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
+  }
+
+  async function handleRetryLegacySync(order: Order) {
+    try {
+      const syncedOrder = await retryLegacySyncMutation.mutateAsync(getOrderRecordId(order));
+      notifySuccess(t("orders.toasts.legacyRetrySynced", { id: formatOrderId(syncedOrder) }));
+    } catch (mutationError) {
+      notifyError(normalizeApiError(mutationError).message);
+    }
+  }
+
   const statCards = [
     {
       label: t("orders.stats.pendingOrders.label"),
@@ -781,16 +830,34 @@ export function OrdersWorkspace() {
             <h1 className="text-4xl font-bold tracking-normal">{t("orders.title")}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{listSummary}</p>
             </div>
-            <Button
-              type="button"
-              size="icon"
-              className="mt-1 size-12 shrink-0 rounded-full"
-              onClick={openAddForm}
-              disabled={isSaving}
-              aria-label={t("orders.actions.add")}
-            >
-              <Plus className="size-6" />
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              {canSyncLegacyPickups ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="mt-1 size-12 rounded-full"
+                  onClick={handleSyncLegacyPickups}
+                  disabled={isSaving}
+                  aria-label={t("orders.actions.syncLegacy")}
+                  title={t("orders.actions.syncLegacy")}
+                >
+                  <RefreshCw
+                    className={cn("size-5", syncLegacyPickupsMutation.isPending && "animate-spin")}
+                  />
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                size="icon"
+                className="mt-1 size-12 rounded-full"
+                onClick={openAddForm}
+                disabled={isSaving}
+                aria-label={t("orders.actions.add")}
+              >
+                <Plus className="size-6" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -1060,8 +1127,10 @@ export function OrdersWorkspace() {
                 onView={openViewOrder}
                 onEdit={openEditForm}
                 onDelete={setDeleteTarget}
+                onRetryLegacySync={handleRetryLegacySync}
                 selected={selectedIds.includes(getOrderRecordId(order))}
                 selectionMode={selectedCount > 0}
+                retryingLegacySync={retryLegacySyncMutation.isPending}
                 onToggleSelected={toggleSelect}
               />
             ))
@@ -1074,10 +1143,27 @@ export function OrdersWorkspace() {
         title={t("orders.title")}
         description={t("orders.pages.description")}
         actions={
-          <Button onClick={openAddForm} disabled={isSaving}>
-            <Plus className="h-4 w-4" />
-            {t("orders.actions.add")}
-          </Button>
+          <div className="flex items-center gap-2">
+            {canSyncLegacyPickups ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSyncLegacyPickups}
+                disabled={isSaving}
+              >
+                <RefreshCw
+                  className={cn("h-4 w-4", syncLegacyPickupsMutation.isPending && "animate-spin")}
+                />
+                {syncLegacyPickupsMutation.isPending
+                  ? t("orders.actions.syncingLegacy")
+                  : t("orders.actions.syncLegacy")}
+              </Button>
+            ) : null}
+            <Button onClick={openAddForm} disabled={isSaving}>
+              <Plus className="h-4 w-4" />
+              {t("orders.actions.add")}
+            </Button>
+          </div>
         }
       />
 
@@ -1274,6 +1360,24 @@ export function OrdersWorkspace() {
             allPageSelected={allPageSelected}
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={toggleSelect}
+            renderSelectCellActions={(order) =>
+              order.legacySyncStatus === "failed" ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+                  onClick={() => handleRetryLegacySync(order)}
+                  disabled={retryLegacySyncMutation.isPending}
+                  aria-label={t("orders.actions.retryLegacySync")}
+                  title={order.legacySyncError || t("orders.actions.retryLegacySync")}
+                >
+                  <RefreshCw
+                    className={cn("size-4", retryLegacySyncMutation.isPending && "animate-spin")}
+                  />
+                </Button>
+              ) : null
+            }
             onRowClick={openViewOrder}
             onRowDoubleClick={openEditForm}
             activeRowId={viewOrder ? getOrderRecordId(viewOrder) : undefined}

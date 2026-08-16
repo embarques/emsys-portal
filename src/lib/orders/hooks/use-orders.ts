@@ -13,7 +13,9 @@ import {
   fetchOrders,
   fetchPickupsByRoute,
   fetchSenderOrderHistory,
+  retryOrderLegacySync,
   setOrdersCompleted,
+  syncLegacyPickups,
   unassignAllPickupsFromRoute,
   unassignOrdersFromRoutes,
   unassignPickupsFromRoute,
@@ -241,6 +243,29 @@ export function useSetOrdersCompleted() {
     mutationFn: ({ orders, completed }: { orders: Order[]; completed: boolean }) =>
       setOrdersCompleted(orders, completed),
     onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+export function useSyncLegacyPickups() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => syncLegacyPickups(),
+    onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+export function useRetryOrderLegacySync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: string) => retryOrderLegacySync(orderId),
+    onSuccess: (order) => {
+      invalidateOrders(queryClient);
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orders.detail(String(order.id)),
+      });
+    },
   });
 }
 
