@@ -5,6 +5,10 @@ export type PermissionCatalogEntry = {
   group: string;
 };
 
+const PERMISSION_LABEL_OVERRIDES = new Map<string, string>([
+  ["pickup:syncLegacyPickups", "Access legacy pickups"],
+]);
+
 function pluralize(value: string): string {
   const normalized = value.trim();
   if (!normalized || normalized.toLowerCase().endsWith("s")) return normalized;
@@ -27,6 +31,9 @@ export function formatPermissionGroup(resourceType: string): string {
 }
 
 export function formatPermissionLabel(name: string, resourceType: string): string {
+  const override = PERMISSION_LABEL_OVERRIDES.get(`${resourceType.trim()}:${name.trim()}`);
+  if (override) return override;
+
   const group = formatPermissionGroup(resourceType).toLowerCase();
   const actionMatch = name.trim().replace(/^can/, "").match(/^[A-Z][a-z]*/);
   const action = actionMatch?.[0] ?? "Access";
