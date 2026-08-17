@@ -417,6 +417,7 @@ export function InvoicesWorkspace() {
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
   const [legacySyncStageIndex, setLegacySyncStageIndex] = useState<number | null>(null);
+  const [legacySyncStageStart, setLegacySyncStageStart] = useState<number | null>(null);
   const [legacySyncStageTarget, setLegacySyncStageTarget] = useState<number | null>(null);
   const [legacySyncTotal, setLegacySyncTotal] = useState<number | null>(null);
   const legacySyncResetTimerRef = useRef<number | null>(null);
@@ -685,6 +686,7 @@ export function InvoicesWorkspace() {
     }
 
     setLegacySyncStageIndex(0);
+    setLegacySyncStageStart(null);
     setLegacySyncStageTarget(null);
     setLegacySyncTotal(null);
     try {
@@ -704,7 +706,13 @@ export function InvoicesWorkspace() {
       let message = t("invoices.actions.syncingLegacy");
 
       do {
-        setLegacySyncStageTarget(Math.min(total || start + LEGACY_INVOICE_SYNC_BATCH_SIZE, start + LEGACY_INVOICE_SYNC_BATCH_SIZE));
+        setLegacySyncStageStart(start + 1);
+        setLegacySyncStageTarget(
+          Math.min(
+            total || start + LEGACY_INVOICE_SYNC_BATCH_SIZE,
+            start + LEGACY_INVOICE_SYNC_BATCH_SIZE,
+          ),
+        );
         const result = await syncLegacyInvoicesMutation.mutateAsync({
           start,
           limit: LEGACY_INVOICE_SYNC_BATCH_SIZE,
@@ -736,6 +744,7 @@ export function InvoicesWorkspace() {
           : message,
       );
       setLegacySyncStageIndex(null);
+      setLegacySyncStageStart(null);
       setLegacySyncStageTarget(null);
       setLegacySyncTotal(null);
       return;
@@ -743,6 +752,7 @@ export function InvoicesWorkspace() {
 
     legacySyncResetTimerRef.current = window.setTimeout(() => {
       setLegacySyncStageIndex(null);
+      setLegacySyncStageStart(null);
       setLegacySyncStageTarget(null);
       setLegacySyncTotal(null);
       legacySyncResetTimerRef.current = null;
@@ -980,6 +990,17 @@ export function InvoicesWorkspace() {
     LEGACY_SYNC_FALLBACK_TOTAL,
     legacySyncTotal ?? LEGACY_SYNC_FALLBACK_TOTAL,
   );
+  const legacySyncTitle =
+    legacySyncStageStart != null && legacySyncStageTarget != null
+      ? t("invoices.loading.legacySyncBatchProgress", {
+          start: legacySyncStageStart,
+          end: legacySyncStageTarget,
+          total: legacySyncTotal ?? legacySyncDisplayTotal,
+        })
+      : t("invoices.loading.legacySyncProgress", {
+          current: legacySyncCurrentStep,
+          total: legacySyncTotal ?? legacySyncDisplayTotal,
+        });
   const legacySyncDescriptions = [
     t("invoices.loading.legacySyncStages.connecting"),
     t("invoices.loading.legacySyncStages.dependencies"),
@@ -990,10 +1011,7 @@ export function InvoicesWorkspace() {
     <LegacyInvoiceSyncLoader
       current={legacySyncCurrentStep}
       total={legacySyncDisplayTotal}
-      title={t("invoices.loading.legacySyncProgress", {
-        current: legacySyncCurrentStep,
-        total: legacySyncTotal ?? legacySyncDisplayTotal,
-      })}
+      title={legacySyncTitle}
       description={
         legacySyncDescriptions[
           Math.min(legacySyncDescriptions.length - 1, Math.max(0, legacySyncCurrentStep - 1))
