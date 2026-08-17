@@ -767,9 +767,23 @@ export function OrdersWorkspace() {
       const total =
         result.summary.total ||
         result.summary.imported + result.summary.updated + result.summary.skipped;
+      const syncedCount = result.summary.imported + result.summary.updated;
       setLegacySyncTotal(Math.max(0, total));
       setLegacySyncStageIndex(Math.max(0, total - 1));
-      notifySuccess(result.message);
+      notifySuccess(
+        syncedCount > 0
+          ? t(
+              syncedCount === 1
+                ? "orders.toasts.legacySyncSynced"
+                : "orders.toasts.legacySyncSynced_plural",
+              {
+                count: syncedCount,
+                imported: result.summary.imported,
+                updated: result.summary.updated,
+              },
+            )
+          : result.message,
+      );
       setPage(1);
     } catch (mutationError) {
       const message = normalizeApiError(mutationError).message;

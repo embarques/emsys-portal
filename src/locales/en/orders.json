@@ -239,6 +239,8 @@
     "routeCleared_plural": "Cleared route assignment from {{count}} orders.",
     "manifestReady": "Pickup manifest ready for {{count}} order.",
     "manifestReady_plural": "Pickup manifest ready for {{count}} orders.",
+    "legacySyncSynced": "{{count}} pickup synced ({{imported}} imported, {{updated}} updated).",
+    "legacySyncSynced_plural": "{{count}} pickups synced ({{imported}} imported, {{updated}} updated).",
     "legacyRetrySynced": "Pickup {{id}} synced to legacy.",
     "comingSoon": "{{label}} is coming soon."
   },
