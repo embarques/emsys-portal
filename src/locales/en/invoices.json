@@ -19,7 +19,6 @@
   },
   "loading": {
     "legacySyncProgress": "Syncing {{current}} out of {{total}}...",
-    "legacySyncBatchProgress": "Syncing {{start}}-{{end}} out of {{total}}...",
     "legacySyncStages": {
       "connecting": "Connecting to the legacy invoice API.",
       "dependencies": "Syncing customers and containers.",
