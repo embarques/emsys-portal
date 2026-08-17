@@ -230,11 +230,20 @@ export type LegacyInvoiceSyncSummary = {
   updated: number;
   skipped: number;
   total: number;
+  processed: number;
+  start: number;
+  nextStart: number;
+  limit: number;
 };
 
 export type LegacyInvoiceSyncResult = {
   message: string;
   summary: LegacyInvoiceSyncSummary;
+};
+
+export type LegacyInvoiceSyncRequest = {
+  start?: number;
+  limit?: number;
 };
 
 /** GET /invoices?page=1&limit=50&offset=0&sort=number:desc */

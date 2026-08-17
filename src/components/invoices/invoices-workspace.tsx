@@ -120,6 +120,7 @@ import { useTranslation } from "@/lib/i18n";
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
 const LEGACY_SYNC_PERMISSION_ERROR_NAMES = ["canSyncLegacyInvoices"] as const;
 const LEGACY_SYNC_FALLBACK_TOTAL = 1;
+const LEGACY_INVOICE_SYNC_BATCH_SIZE = 100;
 const invoiceWizardDialogClassName =
   "left-0 top-0 flex h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none border-0 p-0 max-sm:[&>button:last-child]:hidden sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border";
 
@@ -683,20 +684,44 @@ export function InvoicesWorkspace() {
     setLegacySyncStageIndex(0);
     setLegacySyncTotal(null);
     try {
+      let total = LEGACY_SYNC_FALLBACK_TOTAL;
       try {
         const preview = await previewLegacyInvoiceSyncMutation.mutateAsync();
-        setLegacySyncTotal(Math.max(0, preview.total));
+        total = Math.max(0, preview.total);
+        setLegacySyncTotal(total);
       } catch {
         setLegacySyncTotal(LEGACY_SYNC_FALLBACK_TOTAL);
       }
 
-      const result = await syncLegacyInvoicesMutation.mutateAsync();
-      const total =
-        result.summary.total ||
-        result.summary.imported + result.summary.updated + result.summary.skipped;
-      setLegacySyncTotal(Math.max(0, total));
-      setLegacySyncStageIndex(Math.max(0, total - 1));
-      notifySuccess(result.message);
+      let start = 0;
+      let imported = 0;
+      let updated = 0;
+      let skipped = 0;
+      let message = t("invoices.actions.syncingLegacy");
+
+      do {
+        const result = await syncLegacyInvoicesMutation.mutateAsync({
+          start,
+          limit: LEGACY_INVOICE_SYNC_BATCH_SIZE,
+        });
+        const summary = result.summary;
+        imported += summary.imported;
+        updated += summary.updated;
+        skipped += summary.skipped;
+        total = Math.max(total, summary.total);
+        message = result.message;
+        start = summary.nextStart > start ? summary.nextStart : start + summary.processed;
+
+        setLegacySyncTotal(total);
+        setLegacySyncStageIndex(Math.max(0, Math.min(start, total || start) - 1));
+        if (summary.processed === 0) break;
+      } while (start < total);
+
+      notifySuccess(
+        total === 0 || imported + updated === 0
+          ? message
+          : `${message}: ${imported} imported, ${updated} updated, ${skipped} skipped.`,
+      );
       setPage(1);
     } catch (mutationError) {
       const message = normalizeApiError(mutationError).message;

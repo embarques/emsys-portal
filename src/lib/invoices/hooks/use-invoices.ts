@@ -24,6 +24,7 @@ import {
   type InvoiceFormValues,
   type InvoiceListParams,
   type InvoiceSearchFilter,
+  type LegacyInvoiceSyncRequest,
 } from "@/lib/invoices/types";
 import { queryKeys } from "@/lib/query/query-keys";
 
@@ -147,7 +148,7 @@ export function useSyncLegacyInvoices() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => syncLegacyInvoices(),
+    mutationFn: (request: LegacyInvoiceSyncRequest = {}) => syncLegacyInvoices(request),
     onSuccess: () => invalidateInvoices(queryClient),
   });
 }

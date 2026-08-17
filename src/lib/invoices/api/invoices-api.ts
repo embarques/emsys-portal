@@ -47,6 +47,7 @@ import {
   type InvoiceLineItemFormValues,
   type InvoiceListParams,
   type LegacyInvoiceSyncPreview,
+  type LegacyInvoiceSyncRequest,
   type LegacyInvoiceSyncResult,
   type LegacyInvoiceSyncSummary,
 } from "@/lib/invoices/types";
@@ -995,7 +996,7 @@ export async function deleteInvoices(invoiceIds: string[]): Promise<void> {
 
 function normalizeLegacyInvoiceSyncSummary(raw: unknown): LegacyInvoiceSyncSummary {
   if (!raw || typeof raw !== "object") {
-    return { imported: 0, updated: 0, skipped: 0, total: 0 };
+    return { imported: 0, updated: 0, skipped: 0, total: 0, processed: 0, start: 0, nextStart: 0, limit: 0 };
   }
 
   const item = raw as Record<string, unknown>;
@@ -1005,6 +1006,10 @@ function normalizeLegacyInvoiceSyncSummary(raw: unknown): LegacyInvoiceSyncSumma
     updated: Number(item.updated ?? 0),
     skipped: Number(item.skipped ?? 0),
     total: Number(item.total ?? 0),
+    processed: Number(item.processed ?? 0),
+    start: Number(item.start ?? 0),
+    nextStart: Number(item.nextStart ?? 0),
+    limit: Number(item.limit ?? 0),
   };
 }
 
@@ -1027,9 +1032,15 @@ export async function previewLegacyInvoiceSync(): Promise<LegacyInvoiceSyncPrevi
   return normalizeLegacyInvoiceSyncPreview(response.data);
 }
 
-export async function syncLegacyInvoices(): Promise<LegacyInvoiceSyncResult> {
+export async function syncLegacyInvoices(
+  request: LegacyInvoiceSyncRequest = {},
+): Promise<LegacyInvoiceSyncResult> {
+  const params = new URLSearchParams();
+  if (request.start != null) params.set("start", String(request.start));
+  if (request.limit != null) params.set("limit", String(request.limit));
+  const query = params.toString();
   const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.INVOICES}/legacy-sync`,
+    `${API_ENDPOINTS.INVOICES}/legacy-sync${query ? `?${query}` : ""}`,
   );
 
   assertMutationSuccess(response, "Unable to sync legacy invoices.");
