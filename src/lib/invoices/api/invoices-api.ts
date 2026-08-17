@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { axiosInstance } from "@/lib/api/axios";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { buildApiListQuery, resolveApiListSort } from "@/lib/api/list-query";
 import {
@@ -1023,13 +1024,14 @@ function normalizeLegacyInvoiceSyncPreview(raw: unknown): LegacyInvoiceSyncPrevi
 }
 
 export async function previewLegacyInvoiceSync(): Promise<LegacyInvoiceSyncPreview> {
-  const response = await apiClient.get<ApiMutationEnvelope<unknown>>(
+  const response = await axiosInstance.get<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.INVOICES}/legacy-sync/preview`,
+    { useDirectApi: true },
   );
 
-  assertMutationSuccess(response, "Unable to preview legacy invoice sync.");
+  assertMutationSuccess(response.data, "Unable to preview legacy invoice sync.");
 
-  return normalizeLegacyInvoiceSyncPreview(response.data);
+  return normalizeLegacyInvoiceSyncPreview(response.data.data);
 }
 
 export async function syncLegacyInvoices(
@@ -1039,14 +1041,16 @@ export async function syncLegacyInvoices(
   if (request.start != null) params.set("start", String(request.start));
   if (request.limit != null) params.set("limit", String(request.limit));
   const query = params.toString();
-  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+  const response = await axiosInstance.post<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.INVOICES}/legacy-sync${query ? `?${query}` : ""}`,
+    undefined,
+    { useDirectApi: true },
   );
 
-  assertMutationSuccess(response, "Unable to sync legacy invoices.");
+  assertMutationSuccess(response.data, "Unable to sync legacy invoices.");
 
   return {
-    message: response.message?.trim() || "Legacy invoices synced.",
-    summary: normalizeLegacyInvoiceSyncSummary(response.data),
+    message: response.data.message?.trim() || "Legacy invoices synced.",
+    summary: normalizeLegacyInvoiceSyncSummary(response.data.data),
   };
 }
