@@ -15,6 +15,7 @@ export const PERMISSIONS = {
   vehiclesView: { name: "canViewPickup", resourceType: "pickup" },
   dispatchView: { name: "canViewPickup", resourceType: "pickup" },
   invoicesView: { name: "canViewInvoice", resourceType: "invoice" },
+  invoicesSyncLegacy: { name: "canSyncLegacyInvoices", resourceType: "invoice" },
   /** Invoice items — no separate seed; gate with invoice view. */
   invoiceItemsView: { name: "canViewInvoice", resourceType: "invoice" },
   containersView: { name: "canViewContainer", resourceType: "container" },

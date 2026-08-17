@@ -10,6 +10,8 @@ import {
   fetchInvoiceBalanceTotal,
   fetchInvoiceById,
   fetchInvoices,
+  previewLegacyInvoiceSync,
+  syncLegacyInvoices,
   updateInvoice,
   type InvoiceWriteContext,
 } from "@/lib/invoices/api/invoices-api";
@@ -22,6 +24,7 @@ import {
   type InvoiceFormValues,
   type InvoiceListParams,
   type InvoiceSearchFilter,
+  type LegacyInvoiceSyncRequest,
 } from "@/lib/invoices/types";
 import { queryKeys } from "@/lib/query/query-keys";
 
@@ -131,6 +134,21 @@ export function useDeleteInvoices() {
 
   return useMutation({
     mutationFn: (invoiceIds: string[]) => deleteInvoices(invoiceIds),
+    onSuccess: () => invalidateInvoices(queryClient),
+  });
+}
+
+export function usePreviewLegacyInvoiceSync() {
+  return useMutation({
+    mutationFn: () => previewLegacyInvoiceSync(),
+  });
+}
+
+export function useSyncLegacyInvoices() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: LegacyInvoiceSyncRequest = {}) => syncLegacyInvoices(request),
     onSuccess: () => invalidateInvoices(queryClient),
   });
 }

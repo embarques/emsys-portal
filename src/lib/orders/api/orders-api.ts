@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { axiosInstance } from "@/lib/api/axios";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import {
@@ -949,25 +950,28 @@ function normalizeLegacySyncPreview(raw: unknown): LegacyPickupSyncPreview {
 }
 
 export async function previewLegacyPickupSync(): Promise<LegacyPickupSyncPreview> {
-  const response = await apiClient.get<ApiMutationEnvelope<unknown>>(
+  const response = await axiosInstance.get<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.PICKUPS}/legacy-sync/preview`,
+    { useDirectApi: true },
   );
 
-  assertMutationSuccess(response, "Unable to preview legacy pickup sync.");
+  assertMutationSuccess(response.data, "Unable to preview legacy pickup sync.");
 
-  return normalizeLegacySyncPreview(response.data);
+  return normalizeLegacySyncPreview(response.data.data);
 }
 
 export async function syncLegacyPickups(): Promise<LegacyPickupSyncResult> {
-  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+  const response = await axiosInstance.post<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.PICKUPS}/legacy-sync`,
+    undefined,
+    { useDirectApi: true },
   );
 
-  assertMutationSuccess(response, "Unable to sync legacy pickups.");
+  assertMutationSuccess(response.data, "Unable to sync legacy pickups.");
 
   return {
-    message: response.message?.trim() || "Legacy pickups synced.",
-    summary: normalizeLegacySyncSummary(response.data),
+    message: response.data.message?.trim() || "Legacy pickups synced.",
+    summary: normalizeLegacySyncSummary(response.data.data),
   };
 }
 

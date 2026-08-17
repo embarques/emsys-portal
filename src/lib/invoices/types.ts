@@ -221,11 +221,36 @@ export type InvoiceListParams = {
   paymentLocation?: InvoicePaymentLocation | "all";
 };
 
-/** GET /invoices?page=1&limit=50&offset=0&sort=number:desc */
+export type LegacyInvoiceSyncPreview = {
+  total: number;
+};
+
+export type LegacyInvoiceSyncSummary = {
+  imported: number;
+  updated: number;
+  skipped: number;
+  total: number;
+  processed: number;
+  start: number;
+  nextStart: number;
+  limit: number;
+};
+
+export type LegacyInvoiceSyncResult = {
+  message: string;
+  summary: LegacyInvoiceSyncSummary;
+};
+
+export type LegacyInvoiceSyncRequest = {
+  start?: number;
+  limit?: number;
+};
+
+/** GET /invoices?page=1&limit=50&offset=0&sort=date:desc,number:desc */
 export const DEFAULT_INVOICE_LIST_PARAMS = {
   page: 1,
   limit: 50,
-  sort: "number:desc",
+  sort: "date:desc,number:desc",
 } as const satisfies Pick<InvoiceListParams, "page" | "limit" | "sort">;
 
 export function getInvoiceRecordId(invoice: Pick<Invoice, "invoiceId">): string {

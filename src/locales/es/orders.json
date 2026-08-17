@@ -239,6 +239,8 @@
     "routeCleared_plural": "Se quitó la asignación de ruta de {{count}} órdenes.",
     "manifestReady": "Manifiesto de recogida listo para {{count}} orden.",
     "manifestReady_plural": "Manifiesto de recogida listo para {{count}} órdenes.",
+    "legacySyncSynced": "{{count}} recogida sincronizada ({{imported}} importadas, {{updated}} actualizadas).",
+    "legacySyncSynced_plural": "{{count}} recogidas sincronizadas ({{imported}} importadas, {{updated}} actualizadas).",
     "legacyRetrySynced": "Recogida {{id}} sincronizada con legacy.",
     "comingSoon": "{{label}} estará disponible pronto."
   },

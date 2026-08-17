@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { axiosInstance } from "@/lib/api/axios";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { buildApiListQuery, resolveApiListSort } from "@/lib/api/list-query";
 import {
@@ -46,6 +47,10 @@ import {
   type InvoiceLineItemBarcode,
   type InvoiceLineItemFormValues,
   type InvoiceListParams,
+  type LegacyInvoiceSyncPreview,
+  type LegacyInvoiceSyncRequest,
+  type LegacyInvoiceSyncResult,
+  type LegacyInvoiceSyncSummary,
 } from "@/lib/invoices/types";
 import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
@@ -988,4 +993,64 @@ export async function deleteInvoice(invoiceId: string): Promise<void> {
 
 export async function deleteInvoices(invoiceIds: string[]): Promise<void> {
   await Promise.all(invoiceIds.map((invoiceId) => deleteInvoice(invoiceId)));
+}
+
+function normalizeLegacyInvoiceSyncSummary(raw: unknown): LegacyInvoiceSyncSummary {
+  if (!raw || typeof raw !== "object") {
+    return { imported: 0, updated: 0, skipped: 0, total: 0, processed: 0, start: 0, nextStart: 0, limit: 0 };
+  }
+
+  const item = raw as Record<string, unknown>;
+
+  return {
+    imported: Number(item.imported ?? 0),
+    updated: Number(item.updated ?? 0),
+    skipped: Number(item.skipped ?? 0),
+    total: Number(item.total ?? 0),
+    processed: Number(item.processed ?? 0),
+    start: Number(item.start ?? 0),
+    nextStart: Number(item.nextStart ?? 0),
+    limit: Number(item.limit ?? 0),
+  };
+}
+
+function normalizeLegacyInvoiceSyncPreview(raw: unknown): LegacyInvoiceSyncPreview {
+  if (!raw || typeof raw !== "object") {
+    return { total: 0 };
+  }
+
+  const item = raw as Record<string, unknown>;
+  return { total: Number(item.total ?? 0) };
+}
+
+export async function previewLegacyInvoiceSync(): Promise<LegacyInvoiceSyncPreview> {
+  const response = await axiosInstance.get<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.INVOICES}/legacy-sync/preview`,
+    { useDirectApi: true },
+  );
+
+  assertMutationSuccess(response.data, "Unable to preview legacy invoice sync.");
+
+  return normalizeLegacyInvoiceSyncPreview(response.data.data);
+}
+
+export async function syncLegacyInvoices(
+  request: LegacyInvoiceSyncRequest = {},
+): Promise<LegacyInvoiceSyncResult> {
+  const params = new URLSearchParams();
+  if (request.start != null) params.set("start", String(request.start));
+  if (request.limit != null) params.set("limit", String(request.limit));
+  const query = params.toString();
+  const response = await axiosInstance.post<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.INVOICES}/legacy-sync${query ? `?${query}` : ""}`,
+    undefined,
+    { useDirectApi: true },
+  );
+
+  assertMutationSuccess(response.data, "Unable to sync legacy invoices.");
+
+  return {
+    message: response.data.message?.trim() || "Legacy invoices synced.",
+    summary: normalizeLegacyInvoiceSyncSummary(response.data.data),
+  };
 }

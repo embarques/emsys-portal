@@ -2,7 +2,7 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 import { logApiErrorDev, normalizeApiError, type ApiError } from "@/lib/api/api-error";
 import { resolveIdToken } from "@/lib/api/auth-transport";
-import { getApiBaseUrl } from "@/lib/api/base-url";
+import { getApiBaseUrl, getConfiguredApiBaseUrl } from "@/lib/api/base-url";
 import { store } from "@/lib/store/store";
 import { setAuthTransport } from "@/lib/store/auth/auth-slice";
 
@@ -14,6 +14,11 @@ declare module "axios" {
      * tenant-scoped on the server.
      */
     skipCompanyId?: boolean;
+    /**
+     * Bypass the development Next.js proxy and call the configured API URL
+     * directly. Useful for long-running requests that can outlive proxy limits.
+     */
+    useDirectApi?: boolean;
   }
 }
 
@@ -28,7 +33,7 @@ type RetriedAxiosRequestConfig = InternalAxiosRequestConfig & {
 };
 
 axiosInstance.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
-  config.baseURL = getApiBaseUrl();
+  config.baseURL = config.useDirectApi ? getConfiguredApiBaseUrl() : getApiBaseUrl();
 
   const idToken = await resolveIdToken(false);
   const { companyId } = store.getState().auth;
