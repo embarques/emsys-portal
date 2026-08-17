@@ -417,7 +417,6 @@ export function InvoicesWorkspace() {
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
   const [legacySyncStageIndex, setLegacySyncStageIndex] = useState<number | null>(null);
-  const [legacySyncStageTarget, setLegacySyncStageTarget] = useState<number | null>(null);
   const [legacySyncTotal, setLegacySyncTotal] = useState<number | null>(null);
   const legacySyncResetTimerRef = useRef<number | null>(null);
 
@@ -524,16 +523,14 @@ export function InvoicesWorkspace() {
     const timer = window.setInterval(() => {
       setLegacySyncStageIndex((current) => {
         const total = Math.max(LEGACY_SYNC_FALLBACK_TOTAL, legacySyncTotal ?? LEGACY_SYNC_FALLBACK_TOTAL);
-        const target = Math.min(total, legacySyncStageTarget ?? total);
-        const maxIndex = Math.max(0, target >= total ? target - 1 : target - 2);
-        const step = Math.max(1, Math.ceil(LEGACY_INVOICE_SYNC_BATCH_SIZE / 120));
-        const next = current == null ? 0 : current + step;
+        const maxIndex = Math.max(0, total - 1);
+        const next = current == null ? 0 : current + 1;
         return Math.min(next, maxIndex);
       });
-    }, 450);
+    }, 900);
 
     return () => window.clearInterval(timer);
-  }, [legacySyncStageTarget, legacySyncTotal, syncLegacyInvoicesMutation.isPending]);
+  }, [legacySyncTotal, syncLegacyInvoicesMutation.isPending]);
 
   useEffect(() => {
     return () => {
@@ -685,7 +682,6 @@ export function InvoicesWorkspace() {
     }
 
     setLegacySyncStageIndex(0);
-    setLegacySyncStageTarget(null);
     setLegacySyncTotal(null);
     try {
       let total = LEGACY_SYNC_FALLBACK_TOTAL;
@@ -705,12 +701,6 @@ export function InvoicesWorkspace() {
 
       do {
         setLegacySyncStageIndex(start);
-        setLegacySyncStageTarget(
-          Math.min(
-            total || start + LEGACY_INVOICE_SYNC_BATCH_SIZE,
-            start + LEGACY_INVOICE_SYNC_BATCH_SIZE,
-          ),
-        );
         const result = await syncLegacyInvoicesMutation.mutateAsync({
           start,
           limit: LEGACY_INVOICE_SYNC_BATCH_SIZE,
@@ -742,14 +732,12 @@ export function InvoicesWorkspace() {
           : message,
       );
       setLegacySyncStageIndex(null);
-      setLegacySyncStageTarget(null);
       setLegacySyncTotal(null);
       return;
     }
 
     legacySyncResetTimerRef.current = window.setTimeout(() => {
       setLegacySyncStageIndex(null);
-      setLegacySyncStageTarget(null);
       setLegacySyncTotal(null);
       legacySyncResetTimerRef.current = null;
     }, 700);
