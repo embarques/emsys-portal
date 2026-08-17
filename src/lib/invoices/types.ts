@@ -246,11 +246,11 @@ export type LegacyInvoiceSyncRequest = {
   limit?: number;
 };
 
-/** GET /invoices?page=1&limit=50&offset=0&sort=number:desc */
+/** GET /invoices?page=1&limit=50&offset=0&sort=date:desc,number:desc */
 export const DEFAULT_INVOICE_LIST_PARAMS = {
   page: 1,
   limit: 50,
-  sort: "number:desc",
+  sort: "date:desc,number:desc",
 } as const satisfies Pick<InvoiceListParams, "page" | "limit" | "sort">;
 
 export function getInvoiceRecordId(invoice: Pick<Invoice, "invoiceId">): string {
