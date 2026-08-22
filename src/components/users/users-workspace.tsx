@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { UserForm } from "@/components/users/user-form";
+import { UserMobileList } from "@/components/users/user-mobile-list";
 import { UserViewSheet } from "@/components/users/user-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
@@ -411,23 +412,84 @@ export function UsersWorkspace() {
   );
 
   const deactivateMany = Array.isArray(deactivateTarget) && deactivateTarget.length > 1;
+  const filtersPanel = (
+    <TableFilterPanel
+      resultSummary={listSummary}
+      presets={{
+        storageKey: "users",
+        rows: filters.rows,
+        fields: userFilterFields,
+        onApply: (rows) => {
+          setFilters((current) => ({ ...current, rows }));
+          setPage(1);
+        },
+      }}
+      onClearAll={
+        hasActiveFilters
+          ? () => {
+              setFilters(defaultFilters);
+              setPage(1);
+            }
+          : undefined
+      }
+    >
+      <TableAdvancedFilterBuilder
+        open={filtersOpen}
+        rows={filters.rows}
+        fields={userFilterFields}
+        dynamicOptions={{
+          branches: branchesLoading ? [] : branchFilterOptions,
+        }}
+        onChange={(rows) => {
+          setFilters((current) => ({ ...current, rows }));
+          setPage(1);
+        }}
+      />
+    </TableFilterPanel>
+  );
 
   return (
-    <div>
-      <PageHeader
-        title={t("users.title")}
-        description={t("users.pages.description")}
-        actions={
-          <Button onClick={openAddForm} disabled={isSaving}>
-            <Plus className="h-4 w-4" />
-            {t("users.actions.add")}
-          </Button>
-        }
+    <div className="max-w-full overflow-x-hidden">
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("users.title")}
+          description={t("users.pages.description")}
+          actions={
+            <Button onClick={openAddForm} disabled={isSaving}>
+              <Plus className="h-4 w-4" />
+              {t("users.actions.add")}
+            </Button>
+          }
+        />
+
+        <StatCards items={statCards} />
+      </div>
+
+      <UserMobileList
+        query={filters.query}
+        users={pageUsers}
+        selectedIds={selectedIds}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        isSaving={isSaving}
+        listErrorMessage={listErrorMessage}
+        emptyMessage={hasActiveFilters ? t("users.empty.noMatch") : t("users.empty.noneYet")}
+        page={currentPage}
+        totalPages={totalPages}
+        activeFilterCount={activeFilterCount}
+        filtersOpen={filtersOpen}
+        filterPanel={filtersPanel}
+        onFiltersOpenChange={setFiltersOpen}
+        onQueryChange={(query) => setFilters((current) => ({ ...current, query }))}
+        onPageChange={setPage}
+        onOpen={setViewUser}
+        onEdit={openEditForm}
+        onDeactivate={setDeactivateTarget}
+        onSelectedIdsChange={setSelectedIds}
+        onAddUser={openAddForm}
       />
 
-      <StatCards items={statCards} />
-
-      <Card className="mt-6 gap-0">
+      <Card className="mt-6 hidden gap-0 md:block">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -445,41 +507,7 @@ export function UsersWorkspace() {
                 placeholder={t("users.search.placeholder")}
               />
             }
-            filterPanel={
-              <TableFilterPanel
-                resultSummary={listSummary}
-                presets={{
-                  storageKey: "users",
-                  rows: filters.rows,
-                  fields: userFilterFields,
-                  onApply: (rows) => {
-                    setFilters((current) => ({ ...current, rows }));
-                    setPage(1);
-                  },
-                }}
-                onClearAll={
-                  hasActiveFilters
-                    ? () => {
-                        setFilters(defaultFilters);
-                        setPage(1);
-                      }
-                    : undefined
-                }
-              >
-                <TableAdvancedFilterBuilder
-                  open={filtersOpen}
-                  rows={filters.rows}
-                  fields={userFilterFields}
-                  dynamicOptions={{
-                    branches: branchesLoading ? [] : branchFilterOptions,
-                  }}
-                  onChange={(rows) => {
-                    setFilters((current) => ({ ...current, rows }));
-                    setPage(1);
-                  }}
-                />
-              </TableFilterPanel>
-            }
+            filterPanel={filtersPanel}
           />
         </CardHeader>
 
@@ -588,8 +616,8 @@ export function UsersWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
+          <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
             <DialogTitle>
               {formMode === "edit" ? t("users.form.editTitle") : t("users.form.addTitle")}
             </DialogTitle>
