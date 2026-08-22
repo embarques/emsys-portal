@@ -36,7 +36,7 @@ export function SampleTable() {
         </CardContent>
       </Card>
 
-      <Card className="hidden overflow-hidden py-0 md:block">
+      <Card className="hidden overflow-hidden py-0 md:flex">
         <CardContent className="overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead>
