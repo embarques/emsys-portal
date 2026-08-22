@@ -208,6 +208,7 @@ export function EmployeeForm({
                   onValueChange={(next) => updateField("active", next === "true")}
                   required
                   options={activeOptions}
+                  mobileSheet
                 />
               </div>
 
@@ -236,6 +237,7 @@ export function EmployeeForm({
                   searchPlaceholder={t("employees.form.placeholders.departmentSearch")}
                   required
                   options={departmentOptions}
+                  mobileSheet
                 />
               </div>
 
@@ -250,6 +252,7 @@ export function EmployeeForm({
                   searchPlaceholder={t("employees.form.placeholders.titleSearch")}
                   required
                   options={titleOptions}
+                  mobileSheet
                 />
               </div>
             </div>
@@ -300,6 +303,7 @@ export function EmployeeForm({
                     options={userOptions}
                     disabled={usersQuery.isLoading}
                     className="flex-1"
+                    mobileSheet
                   />
                   <Button
                     type="button"
@@ -329,6 +333,7 @@ export function EmployeeForm({
                 searchPlaceholder={t("employees.form.placeholders.branchSearch")}
                 required
                 options={branchOptions}
+                mobileSheet
               />
             </div>
           </FormSection>
