@@ -4,8 +4,15 @@ import { useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  Eye,
+  Filter,
+  MapPin,
+  Pencil,
+  Phone,
   Plus,
   Search,
+  Trash2,
+  X,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -40,7 +47,12 @@ import {
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
 import { useCustomerFilterFields } from "@/lib/customers/hooks/use-customer-filter-fields";
-import { ADDRESS_TEXT_WRAP_CLASSNAME } from "@/lib/customers/utils/address-utils";
+import {
+  ADDRESS_TEXT_WRAP_CLASSNAME,
+  formatAddressLine,
+  getPrimaryAddress,
+} from "@/lib/customers/utils/address-utils";
+import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import {
   buildTableSelectionResetKey,
@@ -101,6 +113,28 @@ const defaultFilters: CustomerFilterState = {
 type CustomerDeleteTarget =
   | { mode: "single"; customer: Customer }
   | { mode: "bulk"; ids: string[] };
+
+function getCustomerInitials(name: string): string {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+}
+
+function getMobileCustomerTypeLabel(customer: Customer, t: ReturnType<typeof useTranslation>["t"]) {
+  return isCustomerReceiverType(customer.customerType)
+    ? t("customers.types.receiver")
+    : t("customers.types.sender");
+}
+
+function getMobileCustomerAddress(customer: Customer, fallback: string): string {
+  const address = getPrimaryAddress(customer);
+  return address ? formatAddressLine(address, "full") : fallback;
+}
 
 export function CustomersWorkspace() {
   const { t } = useTranslation();
@@ -507,30 +541,306 @@ export function CustomersWorkspace() {
   const listErrorMessage = isError ? toErrorMessage(error) : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
+  const selectedCustomers = customers.filter((customer) => selectedIds.includes(customer.id));
 
   return (
     <div>
-      <PageHeader
-        title={t("customers.title")}
-        description={t("customers.pages.description")}
-        actions={
-          canCreateCustomers ? (
-            <Button onClick={openAddForm} disabled={isSaving}>
-              <Plus className="h-4 w-4" />
-              {t("customers.actions.add")}
-            </Button>
-          ) : null
-        }
-      />
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("customers.title")}
+          description={t("customers.pages.description")}
+          actions={
+            canCreateCustomers ? (
+              <Button onClick={openAddForm} disabled={isSaving}>
+                <Plus className="h-4 w-4" />
+                {t("customers.actions.add")}
+              </Button>
+            ) : null
+          }
+        />
+      </div>
 
       <StatCards
+        className="hidden md:block"
         items={statCards.map((stat) => ({
           ...stat,
           value: stats.isLoading ? "…" : stat.value.toLocaleString(),
         }))}
       />
 
-      <Card className="mt-6 gap-0">
+      <section className="mt-6 space-y-5 md:hidden">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-4xl font-bold tracking-normal text-foreground">
+              {t("customers.title")}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">{listSummary}</p>
+          </div>
+          {canCreateCustomers ? (
+            <Button
+              size="icon"
+              className="size-12 shrink-0 rounded-2xl shadow-sm"
+              onClick={openAddForm}
+              disabled={isSaving}
+              aria-label={t("customers.actions.add")}
+            >
+              <Plus className="size-6" />
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <TableSearchInput
+              value={filters.query}
+              onChange={(query) => {
+                setFilters((current) => ({ ...current, query }));
+                setPage(1);
+              }}
+              placeholder={t("customers.search.placeholder")}
+            />
+          </div>
+          <Button
+            type="button"
+            variant={filtersOpen || activeFilterCount > 0 ? "default" : "outline"}
+            size="icon"
+            className="size-12 shrink-0 rounded-2xl"
+            onClick={() => setFiltersOpen((open) => !open)}
+            aria-label={t("common.table.filter")}
+          >
+            <Filter className="size-5" />
+          </Button>
+        </div>
+
+        {filtersOpen ? (
+          <TableFilterPanel
+            resultSummary={listSummary}
+            presets={{
+              storageKey: "customers",
+              rows: filters.rows,
+              fields: customerFilterFields,
+              onApply: (rows) => {
+                setFilters((current) => ({ ...current, rows }));
+                setPage(1);
+              },
+            }}
+            onClearAll={
+              hasActiveFilters
+                ? () => {
+                    setFilters(defaultFilters);
+                    setPage(1);
+                  }
+                : undefined
+            }
+          >
+            <TableAdvancedFilterBuilder
+              open={filtersOpen}
+              rows={filters.rows}
+              fields={customerFilterFields}
+              dynamicOptions={{
+                branches: branchesLoading ? [] : branchFilterOptions,
+                customerTypes: customerTypeFilterOptions,
+              }}
+              onChange={(rows) => {
+                setFilters((current) => ({ ...current, rows }));
+                setPage(1);
+              }}
+            />
+          </TableFilterPanel>
+        ) : null}
+
+        {selectedIds.length > 0 ? (
+          <div className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3 shadow-sm">
+            <p className="min-w-0 text-lg font-bold">
+              {selectedIds.length.toLocaleString()} selected
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
+                <X className="size-4" />
+                {t("common.table.clearAll")}
+              </Button>
+              {selectedIds.length === 1 && selectedCustomers[0] ? (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-10"
+                  onClick={() => openViewCustomer(selectedCustomers[0]!)}
+                  aria-label={t("common.actions.view")}
+                >
+                  <Eye className="size-4" />
+                </Button>
+              ) : null}
+              {canUpdateCustomers && selectedIds.length === 1 && selectedCustomers[0] ? (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-10"
+                  onClick={() => openEditForm(selectedCustomers[0]!)}
+                  aria-label={t("common.actions.edit")}
+                >
+                  <Pencil className="size-4" />
+                </Button>
+              ) : null}
+              {canDeleteCustomers ? (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-10 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => openDeleteTarget({ mode: "bulk", ids: [...selectedIds] })}
+                  disabled={isSaving}
+                  aria-label={t("common.actions.delete")}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {!showInitialTableLoading ? (
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-12 rounded-2xl px-4"
+              disabled={currentPage <= 1 || isLoading}
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <ChevronLeft className="size-4" />
+              {t("common.actions.previous")}
+            </Button>
+            <span className="text-sm font-medium text-muted-foreground">
+              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-12 rounded-2xl px-4"
+              disabled={currentPage >= totalPages || isLoading}
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+            >
+              {t("common.actions.next")}
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        ) : null}
+
+        {listErrorMessage ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {listErrorMessage}
+          </div>
+        ) : null}
+
+        {showInitialTableLoading ? (
+          <DirectoryTableLoader
+            icon={Users}
+            title={t("customers.loading.title")}
+            description={t("customers.loading.description")}
+            columns={t("customers.loading.columns").split(", ")}
+          />
+        ) : customers.length === 0 ? (
+          <div className="rounded-2xl border border-dashed bg-card p-6 text-center">
+            <p className="text-muted-foreground">{t("customers.empty.noMatch")}</p>
+            {canCreateCustomers ? (
+              <Button className="mt-4 rounded-2xl" onClick={openAddForm}>
+                <Plus className="size-4" />
+                {t("customers.actions.add")}
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+            {customers.map((customer) => {
+              const selected = selectedIds.includes(customer.id);
+              const clientType = getCustomerClientType(customer) ?? "sender";
+              const phone = getPrimaryPhoneDisplayNumber(customer.phones) || t("common.empty.dash");
+              const address = getMobileCustomerAddress(customer, t("common.empty.dash"));
+
+              return (
+                <article
+                  key={customer.id}
+                  role="button"
+                  tabIndex={0}
+                  className={cn(
+                    "border-b p-4 text-left outline-none transition-colors last:border-b-0",
+                    selected && "bg-primary/5",
+                  )}
+                  onClick={() => {
+                    if (selectedIds.length > 0) {
+                      toggleSelect(customer.id, !selected);
+                      return;
+                    }
+                    openViewCustomer(customer);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    if (selectedIds.length > 0) {
+                      toggleSelect(customer.id, !selected);
+                      return;
+                    }
+                    openViewCustomer(customer);
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <button
+                      type="button"
+                      className={cn(
+                        "grid size-14 shrink-0 place-items-center rounded-2xl border text-sm font-bold transition-colors",
+                        selected
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-muted/40 text-muted-foreground",
+                      )}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleSelect(customer.id, !selected);
+                      }}
+                      aria-pressed={selected}
+                      aria-label={customer.name}
+                    >
+                      {selected ? "✓" : getCustomerInitials(customer.name)}
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-lg font-bold leading-tight text-foreground">
+                            {customer.name}
+                          </h3>
+                          <p className="mt-1 truncate text-sm text-muted-foreground">
+                            {customer.IDNumber || t("common.empty.dash")}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-base font-bold text-foreground">
+                            {formatAccountBalance(customer.accountBalance)}
+                          </p>
+                          <TableTagText
+                            className={cn("mt-1 inline-flex", getClientTypeBadgeClass(clientType))}
+                          >
+                            {getMobileCustomerTypeLabel(customer, t)}
+                          </TableTagText>
+                        </div>
+                      </div>
+                      <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                        <p className="flex min-w-0 items-center gap-2">
+                          <Phone className="size-4 shrink-0 text-primary" />
+                          <span className="min-w-0 truncate">{phone}</span>
+                        </p>
+                        <p className="flex min-w-0 items-start gap-2">
+                          <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
+                          <span className={ADDRESS_TEXT_WRAP_CLASSNAME}>{address}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -706,13 +1016,13 @@ export function CustomersWorkspace() {
         }}
       >
         <DialogContent
-          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl max-md:inset-0 max-md:h-[100dvh] max-md:max-h-none max-md:w-screen max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:border-0"
           onOpenAutoFocus={
             formMode === "edit" ? (event) => event.preventDefault() : undefined
           }
         >
-          <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
-            <DialogTitle>
+          <DialogHeader className="shrink-0 border-b border-border px-5 py-3 max-md:border-primary/70 max-md:bg-primary max-md:px-6 max-md:py-6">
+            <DialogTitle className="max-md:text-3xl max-md:font-bold max-md:text-primary-foreground">
               {formMode === "edit" ? t("customers.form.editTitle") : t("customers.form.addTitle")}
             </DialogTitle>
           </DialogHeader>

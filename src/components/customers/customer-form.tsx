@@ -264,6 +264,7 @@ function AddressFieldGrid({
               }}
               options={cityOptions}
               placeholder={t("customers.form.placeholders.cityProvince")}
+              mobileSheet
             />
           </div>
           <div className="space-y-1">
@@ -680,6 +681,7 @@ export function CustomerForm({
                 }))}
                 disabled={lockCustomerType}
                 required
+                mobileSheet
               />
             </div>
 
