@@ -84,6 +84,7 @@ export function InventoryItemForm({
                   onValueChange={(next) => updateField("category", next as InventoryFormValues["category"])}
                   searchPlaceholder={t("inventory.filters.allCategories")}
                   options={getInventoryCategoryOptions(t)}
+                  mobileSheet
                 />
               </div>
               <div className="space-y-1">
@@ -94,6 +95,7 @@ export function InventoryItemForm({
                   onValueChange={(next) => updateField("location", next as InventoryFormValues["location"])}
                   searchPlaceholder={t("inventory.filters.allLocations")}
                   options={getInventoryLocationOptions(t)}
+                  mobileSheet
                 />
               </div>
             </div>
