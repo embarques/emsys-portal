@@ -120,7 +120,7 @@ import { useTranslation } from "@/lib/i18n";
 const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
 const LEGACY_SYNC_PERMISSION_ERROR_NAMES = ["canSyncLegacyInvoices"] as const;
 const LEGACY_SYNC_FALLBACK_TOTAL = 1;
-const LEGACY_INVOICE_SYNC_BATCH_SIZE = 500;
+const LEGACY_INVOICE_SYNC_BATCH_SIZE = 100;
 const invoiceWizardDialogClassName =
   "left-0 top-0 flex h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none border-0 p-0 max-sm:[&>button:last-child]:hidden sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border";
 
