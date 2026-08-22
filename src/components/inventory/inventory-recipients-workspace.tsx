@@ -183,7 +183,7 @@ export function InventoryRecipientsWorkspace() {
         onAddRecipient={openAddForm}
       />
 
-      <Card className="mt-6 hidden gap-0 md:block">
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={false}
