@@ -228,6 +228,7 @@ const navigationGroups: NavigationGroup[] = [
     titleKey: "navigation.groups.accounting",
     items: [
       { labelKey: "navigation.items.dailyIncome", href: "/accounting/daily-income", icon: Wallet, permission: PERMISSIONS.incomeView },
+      { labelKey: "navigation.items.loans", href: "/accounting/loans", icon: Banknote, permission: PERMISSIONS.incomeView },
       { labelKey: "navigation.items.checks", href: "/accounting/checks", icon: Banknote, permission: PERMISSIONS.incomeView },
       { labelKey: "navigation.items.chartOfAccounts", href: "/accounting/accounts", icon: BookOpenText, permission: PERMISSIONS.accountsView },
     ],

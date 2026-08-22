@@ -28,8 +28,10 @@ async function postReport(endpoint: string, request: ReportRequest): Promise<Rep
   const response = await apiClient.post<ApiMutationEnvelope<ReportData>>(endpoint, {
     type: request.type,
     collection: request.collection,
-    values: request.values,
+    values: request.values ?? [],
     lookup_field: request.lookupField ?? "id",
+    filters: request.filters,
+    operator: request.operator,
     expiresInHours: request.expiresInHours ?? 24,
   });
 
@@ -68,6 +70,11 @@ export function generateInvoiceReport(request: ReportRequest): Promise<ReportRes
 /** Generate a journal report (`POST /reports/journals`). */
 export function generateJournalReport(request: ReportRequest): Promise<ReportResult> {
   return postReport(API_ENDPOINTS.REPORTS_JOURNALS, request);
+}
+
+/** Generate an employee loan report (`POST /reports/loans`). */
+export function generateLoanReport(request: ReportRequest): Promise<ReportResult> {
+  return postReport(API_ENDPOINTS.REPORTS_LOANS, request);
 }
 
 /** Generate invoice/barcode labels (`POST /reports/labels`). */
