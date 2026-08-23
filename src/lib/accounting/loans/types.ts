@@ -84,8 +84,10 @@ export type LoanCreateValues = {
   employeeName?: string;
   loanAccountId: number;
   loanAccountName?: string;
+  loanAccountType?: string;
   sourceAccountId: number;
   sourceAccountName?: string;
+  sourceAccountType?: string;
   principalAmount: number;
   transactionDate: string;
   referenceNumber: string;
@@ -101,6 +103,7 @@ export type LoanPaymentValues = {
   loanId?: string;
   receivedAccountId: number;
   receivedAccountName?: string;
+  receivedAccountType?: string;
   amount: number;
   transactionDate: string;
   referenceNumber: string;

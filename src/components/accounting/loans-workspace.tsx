@@ -171,8 +171,8 @@ function CreateLoanDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employees: Array<{ id: number; name: string }>;
-  loanAccounts: Array<{ id: number; name: string; displayName: string }>;
-  assetAccounts: Array<{ id: number; name: string; displayName: string }>;
+  loanAccounts: Array<{ id: number; name: string; displayName: string; type?: string }>;
+  assetAccounts: Array<{ id: number; name: string; displayName: string; type?: string }>;
   onSubmit: (values: LoanCreateValues) => Promise<void>;
   pending: boolean;
 }) {
@@ -258,6 +258,7 @@ function CreateLoanDialog({
                   const account = loanAccounts.find((item) => item.id === Number(next));
                   setValue("loanAccountId", account?.id ?? 0, { shouldValidate: true });
                   setValue("loanAccountName", account ? accountLabel(account) : "");
+                  setValue("loanAccountType", account?.type);
                 }}
                 options={loanAccounts.map((account) => ({
                   value: String(account.id),
@@ -279,6 +280,7 @@ function CreateLoanDialog({
                   const account = assetAccounts.find((item) => item.id === Number(next));
                   setValue("sourceAccountId", account?.id ?? 0, { shouldValidate: true });
                   setValue("sourceAccountName", account ? accountLabel(account) : "");
+                  setValue("sourceAccountType", account?.type);
                 }}
                 options={assetAccounts.map((account) => ({
                   value: String(account.id),
@@ -364,7 +366,7 @@ function RecordPaymentDialog({
   onOpenChange: (open: boolean) => void;
   employees: Array<{ id: number; name: string }>;
   loans: Loan[];
-  assetAccounts: Array<{ id: number; name: string; displayName: string }>;
+  assetAccounts: Array<{ id: number; name: string; displayName: string; type?: string }>;
   onSubmit: (values: LoanPaymentValues) => Promise<void>;
   pending: boolean;
   initialLoan: Loan | null;
@@ -531,6 +533,7 @@ function RecordPaymentDialog({
                   const account = assetAccounts.find((item) => item.id === Number(next));
                   setValue("receivedAccountId", account?.id ?? 0, { shouldValidate: true });
                   setValue("receivedAccountName", account ? accountLabel(account) : "");
+                  setValue("receivedAccountType", account?.type);
                 }}
                 options={assetAccounts.map((account) => ({
                   value: String(account.id),

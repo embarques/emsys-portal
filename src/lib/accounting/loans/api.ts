@@ -182,9 +182,9 @@ function normalizeSummary(value: unknown, items: Loan[]): LoanSummary {
     };
   }
   return {
-    outstandingBalance: numberValue(raw.outstandingBalance),
-    loanedInRange: numberValue(raw.loanedInRange),
-    paidInRange: numberValue(raw.paidInRange),
+    outstandingBalance: numberValue(firstDefined(raw.outstandingBalance, raw.balance)),
+    loanedInRange: numberValue(firstDefined(raw.loanedInRange, raw.principalAmount)),
+    paidInRange: numberValue(firstDefined(raw.paidInRange, raw.paidAmount)),
     activeLoans: numberValue(raw.activeLoans),
   };
 }
@@ -264,15 +264,20 @@ export async function fetchLoanTransactions(id: string): Promise<LoanTransaction
 export async function createLoan(values: LoanCreateValues): Promise<Loan | null> {
   const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_LOAN, {
     employee: values.employeeId ? { id: values.employeeId, name: values.employeeName ?? "" } : undefined,
-    loanAccount: values.loanAccountId ? { id: values.loanAccountId, name: values.loanAccountName ?? "" } : undefined,
-    sourceAccount: values.sourceAccountId ? { id: values.sourceAccountId, name: values.sourceAccountName ?? "" } : undefined,
+    loanAccount: values.loanAccountId
+      ? { id: values.loanAccountId, name: values.loanAccountName ?? "", type: values.loanAccountType }
+      : undefined,
+    sourceAccount: values.sourceAccountId
+      ? { id: values.sourceAccountId, name: values.sourceAccountName ?? "", type: values.sourceAccountType }
+      : undefined,
     principalAmount: values.principalAmount,
     transactionDate: values.transactionDate,
     referenceNumber: values.referenceNumber,
     description: values.description,
   });
   assertMutation(payload, "Unable to create loan.");
-  return normalizeLoan(unwrapArray(payload)[0] ?? unwrap(payload));
+  const data = objectValue(unwrap(payload));
+  return normalizeLoan(firstDefined(data.loan, unwrapArray(payload)[0], data));
 }
 
 export async function recordLoanPayment(values: LoanPaymentValues): Promise<Loan | null> {
@@ -285,7 +290,7 @@ export async function recordLoanPayment(values: LoanPaymentValues): Promise<Loan
     allocationMode: values.allocationMode,
     loanId: values.loanId,
     receivedAccount: values.receivedAccountId
-      ? { id: values.receivedAccountId, name: values.receivedAccountName ?? "" }
+      ? { id: values.receivedAccountId, name: values.receivedAccountName ?? "", type: values.receivedAccountType }
       : undefined,
     amount: values.amount,
     transactionDate: values.transactionDate,
@@ -293,7 +298,9 @@ export async function recordLoanPayment(values: LoanPaymentValues): Promise<Loan
     description: values.description,
   });
   assertMutation(payload, "Unable to record loan payment.");
-  return normalizeLoan(unwrapArray(payload)[0] ?? unwrap(payload));
+  const data = objectValue(unwrap(payload));
+  const loans = Array.isArray(data.loans) ? data.loans : unwrapArray(payload);
+  return normalizeLoan(loans[0] ?? data.loan ?? data);
 }
 
 export { EMPTY_LOAN_SUMMARY };
