@@ -772,7 +772,7 @@ export function LoansWorkspace() {
         renderCell: (loan) => <span className="font-medium">{loan.employee.name}</span>,
       },
       {
-        id: "loanAccount.displayName",
+        id: "loanAccount.name",
         label: "Loan account",
         renderCell: (loan) => loan.loanAccount?.displayName ?? loan.loanAccount?.name ?? "-",
       },

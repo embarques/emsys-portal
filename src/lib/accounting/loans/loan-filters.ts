@@ -9,8 +9,6 @@ const NUMERIC_FIELDS: ReadonlySet<string> = new Set([
   "employee.id",
   "loanAccount.id",
   "principalAmount",
-  "paidAmount",
-  "balance",
 ]);
 
 function parseRangeValue(raw: string): { start: string; end: string } | null {
@@ -52,8 +50,6 @@ function expandDateRangeFilter(
 
 function expandLoanLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | null {
   switch (filter.field) {
-    case "transactionDateRange":
-      return expandDateRangeFilter("transactionDate", filter.value);
     case "openedAtRange":
       return expandDateRangeFilter("openedAt", filter.value);
     case "lastActivityAtRange":

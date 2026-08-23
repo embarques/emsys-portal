@@ -41,7 +41,6 @@ const LOAN_SEARCH_FIELDS = [
   "description",
   "referenceNumber",
   "loanAccount.name",
-  "loanAccount.displayName",
 ];
 
 function objectValue(value: unknown): Record<string, unknown> {
