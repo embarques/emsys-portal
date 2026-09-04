@@ -12,6 +12,7 @@ import type { RouteListParams, RouteSearchFilter } from "@/lib/route-manager/typ
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { MemoPadListParams, MemoPadSearchFilter } from "@/lib/memo-pads/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
+import type { LoanListParams } from "@/lib/accounting/loans/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
 import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
@@ -130,6 +131,10 @@ export const queryKeys = {
     summaryTotals: (incomeStatementId: number) =>
       [...queryKeys.accounting.all, "income-statement-summary-total", incomeStatementId] as const,
     journals: (params: unknown) => [...queryKeys.accounting.all, "journals", params] as const,
+    loans: (params: LoanListParams) => [...queryKeys.accounting.all, "loans", params] as const,
+    loan: (id: string) => [...queryKeys.accounting.all, "loan", id] as const,
+    loanTransactions: (id: string) =>
+      [...queryKeys.accounting.all, "loan-transactions", id] as const,
     invoiceRegistration: (invoiceNumber: string) =>
       [...queryKeys.accounting.all, "invoice-registration", invoiceNumber] as const,
     journalById: (id: string) => [...queryKeys.accounting.all, "journal", id] as const,

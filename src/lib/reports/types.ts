@@ -1,11 +1,14 @@
 /** Document types supported by the `/reports/*` endpoints. */
-export type ReportType = "income" | "invoice" | "journal" | "label" | "pickup" | "delivery";
+import type { ApiSearchFilterNode } from "@/lib/api/search-query";
+
+export type ReportType = "income" | "invoice" | "journal" | "loan" | "label" | "pickup" | "delivery";
 
 /** Collections the `values` identifiers can be resolved against. */
 export type ReportCollection =
   | "income"
   | "invoices"
   | "journals"
+  | "loans"
   | "barcodes"
   | "pickups"
   | "deliveries";
@@ -31,9 +34,13 @@ export type ReportRequest = {
   /** Collection the `values` identifiers belong to. */
   collection: ReportCollection;
   /** Identifiers to resolve and render. */
-  values: string[];
+  values?: string[];
   /** Field the API uses to resolve `values` (defaults to `id`). */
   lookupField?: string;
+  /** Advanced filters used by list-level reports such as employee loans. */
+  filters?: ApiSearchFilterNode[];
+  /** Root filter operator for `filters` (defaults to `and`). */
+  operator?: "and" | "or";
   /** How long the returned public URL stays valid (defaults to 24). */
   expiresInHours?: number;
 };

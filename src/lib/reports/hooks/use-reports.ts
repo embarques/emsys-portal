@@ -6,6 +6,7 @@ import {
   generateIncomeReport,
   generateInvoiceReport,
   generateJournalReport,
+  generateLoanReport,
   generateLabelReport,
   generateDeliveryReport,
   generatePickupReport,
@@ -27,6 +28,12 @@ export function useGenerateInvoiceReport() {
 export function useGenerateJournalReport() {
   return useMutation({
     mutationFn: (request: ReportRequest) => generateJournalReport(request),
+  });
+}
+
+export function useGenerateLoanReport() {
+  return useMutation({
+    mutationFn: (request: ReportRequest) => generateLoanReport(request),
   });
 }
 
