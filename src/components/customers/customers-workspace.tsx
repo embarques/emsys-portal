@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { CustomerForm } from "@/components/customers/customer-form";
+import { CustomerMobileList } from "@/components/customers/customer-mobile-list";
 import { CustomerTableAddressCell } from "@/components/customers/customer-addresses-sheet";
 import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
 import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
@@ -510,27 +511,75 @@ export function CustomersWorkspace() {
 
   return (
     <div>
-      <PageHeader
-        title={t("customers.title")}
-        description={t("customers.pages.description")}
-        actions={
-          canCreateCustomers ? (
-            <Button onClick={openAddForm} disabled={isSaving}>
-              <Plus className="h-4 w-4" />
-              {t("customers.actions.add")}
-            </Button>
-          ) : null
-        }
-      />
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("customers.title")}
+          description={t("customers.pages.description")}
+          actions={
+            canCreateCustomers ? (
+              <Button onClick={openAddForm} disabled={isSaving}>
+                <Plus className="h-4 w-4" />
+                {t("customers.actions.add")}
+              </Button>
+            ) : null
+          }
+        />
+      </div>
 
       <StatCards
+        className="hidden md:block"
         items={statCards.map((stat) => ({
           ...stat,
           value: stats.isLoading ? "…" : stat.value.toLocaleString(),
         }))}
       />
 
-      <Card className="mt-6 gap-0">
+      <CustomerMobileList
+        customers={customers}
+        title={t("customers.title")}
+        listSummary={listSummary}
+        totalCount={totalCustomers}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        isLoading={isLoading}
+        isSaving={isSaving}
+        showInitialLoading={showInitialTableLoading}
+        listErrorMessage={listErrorMessage}
+        filters={filters}
+        filtersOpen={filtersOpen}
+        activeFilterCount={activeFilterCount}
+        hasActiveFilters={hasActiveFilters}
+        customerFilterFields={customerFilterFields}
+        branchFilterOptions={branchFilterOptions}
+        customerTypeFilterOptions={customerTypeFilterOptions}
+        branchesLoading={branchesLoading}
+        selectedIds={selectedIds}
+        canCreate={canCreateCustomers}
+        canUpdate={canUpdateCustomers}
+        canDelete={canDeleteCustomers}
+        onAdd={openAddForm}
+        onSearchChange={(query) => {
+          setFilters((current) => ({ ...current, query }));
+          setPage(1);
+        }}
+        onFiltersOpenChange={setFiltersOpen}
+        onFilterRowsChange={(rows) => {
+          setFilters((current) => ({ ...current, rows }));
+          setPage(1);
+        }}
+        onClearFilters={() => {
+          setFilters(defaultFilters);
+          setPage(1);
+        }}
+        onPageChange={setPage}
+        onToggleSelect={toggleSelect}
+        onClearSelection={() => setSelectedIds([])}
+        onView={openViewCustomer}
+        onEdit={openEditForm}
+        onDeleteSelected={() => openDeleteTarget({ mode: "bulk", ids: [...selectedIds] })}
+      />
+
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -706,13 +755,13 @@ export function CustomersWorkspace() {
         }}
       >
         <DialogContent
-          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl max-md:inset-0 max-md:h-[100dvh] max-md:max-h-none max-md:w-screen max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:border-0"
           onOpenAutoFocus={
             formMode === "edit" ? (event) => event.preventDefault() : undefined
           }
         >
-          <DialogHeader className="shrink-0 border-b border-border px-5 py-3">
-            <DialogTitle>
+          <DialogHeader className="shrink-0 border-b border-border px-5 py-3 max-md:border-primary/70 max-md:bg-primary max-md:px-6 max-md:py-6">
+            <DialogTitle className="max-md:text-3xl max-md:font-bold max-md:text-primary-foreground">
               {formMode === "edit" ? t("customers.form.editTitle") : t("customers.form.addTitle")}
             </DialogTitle>
           </DialogHeader>
