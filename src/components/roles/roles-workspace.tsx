@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { RoleForm } from "@/components/roles/role-form";
+import { RoleMobileList } from "@/components/roles/role-mobile-list";
 import { RoleViewSheet } from "@/components/roles/role-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
@@ -398,26 +399,85 @@ export function RolesWorkspace() {
       : formMode === null
         ? formError
         : null;
+  const addDisabled = rolesQuery.isLoading || permissionCatalog.length === 0;
+  const filtersPanel = (
+    <TableFilterPanel
+      resultSummary={listSummary}
+      presets={{
+        storageKey: "roles",
+        rows: filters.rows,
+        fields: roleFilterFields,
+        onApply: (rows) => {
+          setFilters((current) => ({ ...current, rows }));
+          setPage(1);
+        },
+      }}
+      onClearAll={
+        hasActiveFilters
+          ? () => {
+              setFilters(defaultFilters);
+              setPage(1);
+            }
+          : undefined
+      }
+    >
+      <TableAdvancedFilterBuilder
+        open={filtersOpen}
+        rows={filters.rows}
+        fields={roleFilterFields}
+        onChange={(rows) => {
+          setFilters((current) => ({ ...current, rows }));
+          setPage(1);
+        }}
+      />
+    </TableFilterPanel>
+  );
 
   return (
-    <div>
-      <PageHeader
-        title={t("roles.title")}
-        description={t("roles.pages.description")}
-        actions={
-          <Button
-            onClick={openAddForm}
-            disabled={rolesQuery.isLoading || permissionCatalog.length === 0}
-          >
-            <Plus className="h-4 w-4" />
-            {t("roles.actions.add")}
-          </Button>
-        }
+    <div className="max-w-full overflow-x-hidden">
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("roles.title")}
+          description={t("roles.pages.description")}
+          actions={
+            <Button onClick={openAddForm} disabled={addDisabled}>
+              <Plus className="h-4 w-4" />
+              {t("roles.actions.add")}
+            </Button>
+          }
+        />
+
+        <StatCards items={statCards} />
+      </div>
+
+      <RoleMobileList
+        query={filters.query}
+        roles={pageRoles}
+        selectedIds={selectedIds}
+        isLoading={rolesQuery.isLoading}
+        isFetching={rolesQuery.isFetching}
+        addDisabled={addDisabled}
+        pageError={pageError}
+        emptyMessage={hasActiveFilters ? t("roles.empty.noMatch") : t("roles.empty.noneYet")}
+        page={currentPage}
+        totalPages={totalPages}
+        activeFilterCount={activeFilterCount}
+        filtersOpen={filtersOpen}
+        filterPanel={filtersPanel}
+        onFiltersOpenChange={setFiltersOpen}
+        onQueryChange={(query) => setFilters((current) => ({ ...current, query }))}
+        onPageChange={setPage}
+        onOpen={setViewRole}
+        onEdit={openEditForm}
+        onDelete={(roleOrRoles) => {
+          setFormError(null);
+          setDeleteTarget(roleOrRoles);
+        }}
+        onSelectedIdsChange={setSelectedIds}
+        onAddRole={openAddForm}
       />
 
-      <StatCards items={statCards} />
-
-      <Card className="mt-6 gap-0">
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -435,38 +495,7 @@ export function RolesWorkspace() {
                 placeholder={t("roles.search.placeholder")}
               />
             }
-            filterPanel={
-              <TableFilterPanel
-                resultSummary={listSummary}
-                presets={{
-                  storageKey: "roles",
-                  rows: filters.rows,
-                  fields: roleFilterFields,
-                  onApply: (rows) => {
-                    setFilters((current) => ({ ...current, rows }));
-                    setPage(1);
-                  },
-                }}
-                onClearAll={
-                  hasActiveFilters
-                    ? () => {
-                        setFilters(defaultFilters);
-                        setPage(1);
-                      }
-                    : undefined
-                }
-              >
-                <TableAdvancedFilterBuilder
-                  open={filtersOpen}
-                  rows={filters.rows}
-                  fields={roleFilterFields}
-                  onChange={(rows) => {
-                    setFilters((current) => ({ ...current, rows }));
-                    setPage(1);
-                  }}
-                />
-              </TableFilterPanel>
-            }
+            filterPanel={filtersPanel}
           />
         </CardHeader>
 
@@ -587,7 +616,7 @@ export function RolesWorkspace() {
         }}
       >
         <SheetContent className="flex w-full max-w-full flex-col p-0 sm:w-[560px] sm:max-w-[90vw]">
-          <SheetHeader className="shrink-0 border-b px-6 py-5 pr-16">
+          <SheetHeader className="shrink-0 border-b bg-primary px-6 py-5 pr-16 text-primary-foreground sm:bg-background sm:text-foreground">
             <SheetTitle>
               {formMode === "edit" ? t("roles.form.editTitle") : t("roles.form.addTitle")}
             </SheetTitle>
