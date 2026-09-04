@@ -140,6 +140,7 @@ export function InventoryDispatchForm({
                 placeholder={t("inventory.form.fields.recipient")}
                 searchPlaceholder={t("inventory.search.recipients")}
                 options={recipientOptions}
+                mobileSheet
               />
             </div>
             <div className="space-y-1 sm:col-span-2">
@@ -177,6 +178,7 @@ export function InventoryDispatchForm({
                       placeholder={t("inventory.form.fields.item")}
                       searchPlaceholder={t("inventory.search.items")}
                       options={itemOptions}
+                      mobileSheet
                     />
                   </div>
                   <div className="space-y-1">
@@ -192,13 +194,20 @@ export function InventoryDispatchForm({
                     <Label>{t("inventory.form.fields.availableStock")}</Label>
                     <Input readOnly value={line.itemId ? `${available} ${item?.unit ?? ""}` : "—"} />
                   </div>
-                  <Button type="button" variant="outline" size="icon" onClick={() => removeLine(index)} aria-label={t("inventory.form.removeLine")}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-12 rounded-xl sm:size-9"
+                    onClick={() => removeLine(index)}
+                    aria-label={t("inventory.form.removeLine")}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               );
             })}
-            <Button type="button" variant="outline" size="sm" onClick={addLine}>
+            <Button type="button" variant="outline" className="h-12 rounded-xl sm:h-9" onClick={addLine}>
               <Plus className="h-4 w-4" />
               {t("inventory.form.addLine")}
             </Button>
@@ -206,15 +215,26 @@ export function InventoryDispatchForm({
         </FormSection>
       </FormBody>
 
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border px-6 py-4">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+      <div className="flex shrink-0 flex-col gap-2 border-t border-border px-6 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+        <Button type="button" variant="outline" className="h-12 rounded-xl sm:h-9" onClick={onCancel} disabled={isSubmitting}>
           {t("common.actions.cancel")}
         </Button>
-        <Button type="button" variant="outline" disabled={isSubmitting} onClick={(event) => handleSubmit(event, false)}>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 rounded-xl sm:h-9"
+          disabled={isSubmitting}
+          onClick={(event) => handleSubmit(event, false)}
+        >
           {isSubmitting ? t("common.actions.saving") : submitLabel}
         </Button>
         {secondarySubmitLabel ? (
-          <Button type="button" disabled={isSubmitting} onClick={(event) => handleSubmit(event, true)}>
+          <Button
+            type="button"
+            className="h-12 rounded-xl sm:h-9"
+            disabled={isSubmitting}
+            onClick={(event) => handleSubmit(event, true)}
+          >
             {isSubmitting ? t("common.actions.saving") : secondarySubmitLabel}
           </Button>
         ) : null}

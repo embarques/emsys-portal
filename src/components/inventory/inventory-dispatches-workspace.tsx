@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Truck } from "lucide-react";
 
 import { InventoryDispatchForm } from "@/components/inventory/inventory-dispatch-form";
+import { InventoryDispatchMobileList } from "@/components/inventory/inventory-dispatch-mobile-list";
 import { InventoryDispatchViewSheet } from "@/components/inventory/inventory-dispatch-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -115,19 +116,35 @@ export function InventoryDispatchesWorkspace() {
   });
 
   return (
-    <div>
-      <PageHeader
-        title={t("inventory.submenus.dispatches")}
-        description={t("inventory.pages.dispatches")}
-        actions={
-          <Button onClick={() => setFormOpen(true)}>
-            <Plus className="h-4 w-4" />
-            {t("inventory.actions.newDispatch")}
-          </Button>
-        }
+    <div className="max-w-full overflow-x-hidden">
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("inventory.submenus.dispatches")}
+          description={t("inventory.pages.dispatches")}
+          actions={
+            <Button onClick={() => setFormOpen(true)}>
+              <Plus className="h-4 w-4" />
+              {t("inventory.actions.newDispatch")}
+            </Button>
+          }
+        />
+      </div>
+
+      <InventoryDispatchMobileList
+        query={query}
+        pageRows={pageRows}
+        recipients={recipients}
+        snapshot={snapshot}
+        isLoading={isLoading}
+        page={currentPage}
+        totalPages={totalPages}
+        onQueryChange={setQuery}
+        onPageChange={setPage}
+        onOpen={setViewDispatch}
+        onAddDispatch={() => setFormOpen(true)}
       />
 
-      <Card className="mt-6 gap-0">
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={false}
@@ -217,8 +234,8 @@ export function InventoryDispatchesWorkspace() {
       />
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
+          <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
             <DialogTitle>{t("inventory.form.newDispatchTitle")}</DialogTitle>
           </DialogHeader>
           <InventoryDispatchForm
