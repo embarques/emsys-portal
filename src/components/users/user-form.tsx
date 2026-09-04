@@ -213,6 +213,7 @@ export function UserForm({
                     value={String(field.value)}
                     onValueChange={(value) => field.onChange(value === "true")}
                     options={activeOptions}
+                    mobileSheet
                   />
                 </Field>
               )}
@@ -241,6 +242,7 @@ export function UserForm({
                       });
                     }}
                     options={branches.map((branch) => ({ value: String(branch.id), label: branch.name }))}
+                    mobileSheet
                   />
                 </Field>
               )}
@@ -265,6 +267,7 @@ export function UserForm({
                       field.onChange({ id: Number(role?.roleId ?? 0), name: role?.name ?? "" });
                     }}
                     options={roles.map((role) => ({ value: String(role.roleId), label: role.name }))}
+                    mobileSheet
                   />
                 </Field>
               )}
