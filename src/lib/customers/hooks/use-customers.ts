@@ -28,6 +28,10 @@ import {
   type CustomerSearchFilter,
 } from "@/lib/customers/types";
 import { isCustomerTypeFilterActive } from "@/lib/customers/customer-type";
+import {
+  getNewCustomerPeriodStartIso,
+  type NewCustomerStatPeriod,
+} from "@/lib/customers/new-customer-stats";
 import { queryKeys } from "@/lib/query/query-keys";
 
 function hasCustomerChipFilters(params: CustomerListParams): boolean {
@@ -118,6 +122,34 @@ export function useCustomerStats() {
     receivers: receiversQuery.data?.total ?? 0,
     isLoading: totalQuery.isLoading || sendersQuery.isLoading || receiversQuery.isLoading,
     isError: totalQuery.isError || sendersQuery.isError || receiversQuery.isError,
+  };
+}
+
+/** Count of customers created within a rolling timeframe (`createdAt >= period start`). */
+export function useNewCustomerStats(period: NewCustomerStatPeriod) {
+  const query = useWorkspaceQuery({
+    queryKey: queryKeys.customers.stats("new", period),
+    queryFn: () =>
+      fetchCustomers({
+        ...DEFAULT_CUSTOMER_LIST_PARAMS,
+        limit: 1,
+        filterRows: [
+          {
+            id: "new-customers-created-at",
+            join: "and",
+            field: "createdAt",
+            operator: "gte",
+            value: getNewCustomerPeriodStartIso(period),
+          },
+        ],
+      }),
+  });
+
+  return {
+    total: query.data?.total ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
   };
 }
 
