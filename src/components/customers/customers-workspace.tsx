@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   Plus,
-  Search,
+  Send,
   UserCheck,
   Users,
 } from "lucide-react";
@@ -339,7 +339,7 @@ export function CustomersWorkspace() {
       label: t("customers.stats.senders.label"),
       value: stats.senders,
       description: t("customers.stats.senders.description"),
-      icon: Search,
+      icon: Send,
     },
     {
       label: t("customers.stats.receivers.label"),

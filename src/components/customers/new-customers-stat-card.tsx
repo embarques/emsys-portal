@@ -25,13 +25,24 @@ export function NewCustomersStatCard() {
   }));
 
   return (
-    <Card className="h-[158px]">
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 gap-2 pb-2">
-        <CardTitle className="min-w-0 text-sm font-medium text-muted-foreground">
-          {t("customers.stats.new.label")}
-        </CardTitle>
+    <div style={{ height: 158 }}>
+      <Card className="relative h-full">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="min-w-0 truncate text-sm font-medium text-muted-foreground">
+            {t("customers.stats.new.label")}
+          </CardTitle>
+          <UserPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </CardHeader>
+        <CardContent className="pr-28">
+          <div className="text-2xl font-bold">
+            {stats.isLoading ? "…" : stats.total.toLocaleString()}
+          </div>
+          <CardDescription className="mt-1">
+            {t(`customers.stats.new.descriptions.${period}`)}
+          </CardDescription>
+        </CardContent>
         <div
-          className="flex shrink-0 items-center gap-2"
+          className="absolute bottom-4 right-4"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
@@ -47,17 +58,8 @@ export function NewCustomersStatCard() {
               if (isNewCustomerStatPeriod(value)) setPeriod(value);
             }}
           />
-          <UserPlus className="hidden h-4 w-4 text-muted-foreground sm:block" />
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">
-          {stats.isLoading ? "…" : stats.total.toLocaleString()}
-        </div>
-        <CardDescription className="mt-1">
-          {t(`customers.stats.new.descriptions.${period}`)}
-        </CardDescription>
-      </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }
