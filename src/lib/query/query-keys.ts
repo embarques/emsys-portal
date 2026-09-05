@@ -23,6 +23,12 @@ export const queryKeys = {
   api: {
     health: () => ["api", "health"] as const,
   },
+  dashboard: {
+    all: ["dashboard"] as const,
+    appointments: () => [...queryKeys.dashboard.all, "appointments"] as const,
+    clients: () => [...queryKeys.dashboard.all, "clients"] as const,
+    invoices: () => [...queryKeys.dashboard.all, "invoices"] as const,
+  },
   permissions: {
     all: ["permissions"] as const,
     user: () => [...queryKeys.permissions.all, "user"] as const,

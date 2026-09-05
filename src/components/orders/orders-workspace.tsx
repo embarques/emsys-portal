@@ -85,6 +85,7 @@ import {
   formatOrderDate,
   formatOrderId,
   formatOrderRouteName,
+  formatUserSummary,
   buildOrderCreatedByFilterOptions,
   getOrderCompletedLabel,
 } from "@/lib/orders/display";
@@ -920,24 +921,29 @@ export function OrdersWorkspace() {
       renderCell: (order) => order.branch.code.trim() || t("common.empty.dash"),
     },
     {
+      id: "createdBy",
+      label: t("orders.columns.createdBy"),
+      cellClassName: "text-muted-foreground",
+      renderCell: (order) => formatUserSummary(order.createdBy),
+    },
+    {
+      id: "createdAt",
+      label: t("orders.columns.createdAt"),
+      cellClassName: "text-muted-foreground",
+      renderCell: (order) => formatAuditDateTime(order.createdAt),
+    },
+    {
       id: "updatedAt",
       label: t("orders.columns.updatedAt"),
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDateTime(order.updatedAt),
     },
-    {
-      id: "createdAt",
-      label: t("orders.columns.createdAt"),
-      defaultVisible: false,
-      cellClassName: "text-muted-foreground",
-      renderCell: (order) => formatAuditDateTime(order.createdAt),
-    },
   ],
     [pickupRouteLookup, t],
   );
 
-  const columnVisibility = useColumnVisibility("orders-v6", tableColumns);
+  const columnVisibility = useColumnVisibility("orders-v7", tableColumns);
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== deferredQuery.trim();

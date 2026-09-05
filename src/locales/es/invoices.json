@@ -33,7 +33,9 @@
     "total": "Total de la factura",
     "discount": "Descuento",
     "amountPaid": "Pagado",
-    "balance": "Saldo"
+    "balance": "Saldo",
+    "createdBy": "Creado por",
+    "createdAt": "Creado el"
   },
   "search": {
     "placeholder": "Buscar facturas"

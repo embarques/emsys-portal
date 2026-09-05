@@ -59,6 +59,17 @@ Customers are associated with both appointments and invoices so the company has 
 
 Appointments are created when a client contacts us and schedules a visit for a specific purpose (pickup, taking supplies for future packaging, collecting payment, or giving them an estimate).
 
+Each appointment stores structured comments (`purpose`, `unit`, `quantity`, `description`). The printed pickup manifest (`POST /reports/pickups`) is rendered by the backend from those fields.
+
+TODO (backend): make pickup-manifest comment lines readable for drivers. Today the PDF dumps raw field values in ALL CAPS, e.g. `OTHER PICKUP RECOGER 1 CAJA; OTHER TAKE LLEVAR 2 CAJAS`.
+
+- Do not prefix a comment with the raw `OTHER` keyword when the item type is custom/other
+- Use human purpose labels (Pickup, Take, Payment, Estimate, Other), not API enums
+- Sentence-case the line; do not uppercase the whole dump
+- Format from structured fields: purpose + quantity + unit (e.g. `Pickup 1 box`), and keep the user’s custom note as the readable text
+- Put each comment on its own line (or separate with ` · `), not a semicolon-joined blob
+- Do not concatenate `unit` + `purpose` + `description` when that repeats the same information
+
 ### Invoices
 
 Invoices represent the merchandise that we receive from or pick up from our clients.

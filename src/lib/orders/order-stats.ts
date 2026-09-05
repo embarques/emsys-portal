@@ -7,7 +7,10 @@ import {
 import { DEFAULT_ORDER_LIST_PARAMS, type OrderListParams } from "@/lib/orders/types";
 import { getPreviousRollingPeriodBounds } from "@/lib/stats/rolling-period";
 
-/** Count-only pickup list/search requests for dashboard stat cards. */
+/**
+ * Count-only pickup search requests for KPI cards.
+ * The backend returns `total`; “new appointments” is filtered on `createdAt`.
+ */
 export const ORDER_STATS_COUNT_LIMIT = 1;
 
 export function buildOrderStatsCountParams(filterRows: TableFilterRowState[]): OrderListParams {

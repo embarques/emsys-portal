@@ -3,6 +3,7 @@ import type { LanguagePreference } from "@/lib/configuration/types";
 import enCommon from "@/locales/en/common.json";
 import enContainers from "@/locales/en/containers.json";
 import enCustomers from "@/locales/en/customers.json";
+import enDashboard from "@/locales/en/dashboard.json";
 import enEmployees from "@/locales/en/employees.json";
 import enInsights from "@/locales/en/insights.json";
 import enItems from "@/locales/en/items.json";
@@ -24,6 +25,7 @@ import enUsers from "@/locales/en/users.json";
 import esCommon from "@/locales/es/common.json";
 import esContainers from "@/locales/es/containers.json";
 import esCustomers from "@/locales/es/customers.json";
+import esDashboard from "@/locales/es/dashboard.json";
 import esEmployees from "@/locales/es/employees.json";
 import esInsights from "@/locales/es/insights.json";
 import esItems from "@/locales/es/items.json";
@@ -54,6 +56,7 @@ const catalogs: Record<Locale, MessageTree> = {
     common: enCommon,
     containers: enContainers,
     customers: enCustomers,
+    dashboard: enDashboard,
     employees: enEmployees,
     insights: enInsights,
     inventory: enInventory,
@@ -77,6 +80,7 @@ const catalogs: Record<Locale, MessageTree> = {
     common: esCommon,
     containers: esContainers,
     customers: esCustomers,
+    dashboard: esDashboard,
     employees: esEmployees,
     insights: esInsights,
     inventory: esInventory,

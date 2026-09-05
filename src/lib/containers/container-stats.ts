@@ -6,7 +6,10 @@ import {
 } from "@/lib/containers/departed-container-stats";
 import { DEFAULT_CONTAINER_LIST_PARAMS, type ContainerListParams } from "@/lib/containers/types";
 
-/** Count-only container list/search requests for dashboard stat cards. */
+/**
+ * Count-only container search requests for KPI cards.
+ * The backend returns `total`; “departed containers” is filtered on `departureDate`.
+ */
 export const CONTAINER_STATS_COUNT_LIMIT = 1;
 
 export function buildContainerStatsCountParams(

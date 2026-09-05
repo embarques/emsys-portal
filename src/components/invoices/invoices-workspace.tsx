@@ -50,6 +50,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { normalizeApiError } from "@/lib/api/axios";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   computeInvoiceKpis,
   formatInvoiceDate,
@@ -981,11 +982,24 @@ export function InvoicesWorkspace() {
         return <span className={getInvoiceBalanceMoneyClass(amount)}>{formatInvoiceMoney(amount)}</span>;
       },
     },
+    {
+      id: "createdBy",
+      label: t("invoices.columns.createdBy"),
+      cellClassName: "text-muted-foreground",
+      renderCell: (invoice) => invoice.createdBy.trim() || t("common.empty.dash"),
+    },
+    {
+      id: "createdAt",
+      label: t("invoices.columns.createdAt"),
+      cellClassName: "text-muted-foreground",
+      renderCell: (invoice) =>
+        invoice.createdAt ? formatAuditDateTime(invoice.createdAt) : t("common.empty.dash"),
+    },
   ],
     [t],
   );
 
-  const columnVisibility = useColumnVisibility("invoices-v5", tableColumns);
+  const columnVisibility = useColumnVisibility("invoices-v6", tableColumns);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount;
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;

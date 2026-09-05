@@ -33,7 +33,7 @@ export function shiftRollingPeriod(from: Date, period: RollingStatPeriod): Date 
   return start;
 }
 
-/** Start of the current rolling window (`createdAt >= start`). */
+/** Rolling window start for the current KPI period (`dateField >= start`). */
 export function getRollingPeriodStartIso(
   period: RollingStatPeriod,
   now: Date = new Date(),
@@ -43,7 +43,7 @@ export function getRollingPeriodStartIso(
 
 /**
  * Previous window of the same length, ending just before the current window starts.
- * Use with `createdAt >= start` and `createdAt <= end`.
+ * Use with `dateField >= start` and `dateField <= end`.
  */
 export function getPreviousRollingPeriodBounds(
   period: RollingStatPeriod,

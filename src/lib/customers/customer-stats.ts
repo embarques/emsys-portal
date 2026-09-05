@@ -7,7 +7,10 @@ import {
 import { DEFAULT_CUSTOMER_LIST_PARAMS, type CustomerListParams } from "@/lib/customers/types";
 import { getPreviousRollingPeriodBounds } from "@/lib/stats/rolling-period";
 
-/** Count-only customer list/search requests for dashboard stat cards. */
+/**
+ * Count-only customer search requests for KPI cards.
+ * The backend returns `total`; “new customers” is filtered on `createdAt`.
+ */
 export const CUSTOMER_STATS_COUNT_LIMIT = 1;
 
 export function buildCustomerStatsCountParams(

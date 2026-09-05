@@ -517,6 +517,25 @@ Portal currently passes **vehicle-route ObjectIDs** (e.g. `6a4c498a5b044b685c830
 
 Pickup manifest uses pickup **order** ids (`collection: "pickups"`), not vehicle-route ids — verified pattern differs.
 
+### Pickup manifest comment lines (backend PDF)
+
+The portal does not render the pickup manifest. `POST /reports/pickups` returns a PDF URL; comment text on each stop is assembled by the report template.
+
+Live example (2026-09-05): `OTHER PICKUP RECOGER 1 CAJA; OTHER TAKE LLEVAR 2 CAJAS`
+
+Each appointment comment is stored as `{ purpose, unit, quantity, description }` (`purpose` lowercase on the wire: `pickup`, `take`, `payment`, `estimate`, `comment`). The portal already writes a compiled English sentence into `description` (e.g. `Pickup RECOGER 1 CAJA.`).
+
+TODO (backend): format manifest comments for drivers instead of dumping raw fields.
+
+| # | Change | Why |
+| - | ------ | --- |
+| 1 | Drop the raw `OTHER` prefix when `unit` is custom / not a catalog item | Drivers read `OTHER PICKUP …` as noise, not “custom item” |
+| 2 | Print human purpose labels (`Pickup`, `Take`, …), not API enums | Matches the appointment form |
+| 3 | Sentence-case; do not uppercase the whole line | ALL CAPS + mixed Spanish is hard to scan on a route sheet |
+| 4 | Format from `purpose` + `quantity` + `unit`, then the user’s note | `Pickup 1 box` / `Pickup: Recoger 1 caja` — not `unit purpose description` concatenated |
+| 5 | One comment per line (or ` · `), not `; ` on a single blob | Two instructions should not look like one run-on string |
+| 6 | Do not repeat purpose/unit already shown (ignore compiled `description` if you format from fields) | Avoid `PICKUP Pickup RECOGER 1 CAJA` duplication |
+
 ### Questions
 
 | Question                                                                         | Why the portal needs it         |

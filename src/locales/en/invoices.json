@@ -33,7 +33,9 @@
     "total": "Invoice total",
     "discount": "Discount",
     "amountPaid": "Paid",
-    "balance": "Balance"
+    "balance": "Balance",
+    "createdBy": "Created by",
+    "createdAt": "Created at"
   },
   "search": {
     "placeholder": "Search invoices"

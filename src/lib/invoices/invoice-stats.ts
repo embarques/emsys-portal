@@ -7,7 +7,10 @@ import {
 import { DEFAULT_INVOICE_LIST_PARAMS, type InvoiceListParams } from "@/lib/invoices/types";
 import { getPreviousRollingPeriodBounds } from "@/lib/stats/rolling-period";
 
-/** Count-only invoice list/search requests for dashboard stat cards. */
+/**
+ * Count-only invoice search requests for KPI cards.
+ * The backend returns `total`; the portal only supplies `createdAt` window filters.
+ */
 export const INVOICE_STATS_COUNT_LIMIT = 1;
 
 export function buildInvoiceStatsCountParams(filterRows: TableFilterRowState[]): InvoiceListParams {
