@@ -12,6 +12,11 @@ import {
   updateContainer,
 } from "@/lib/containers/api/containers-api";
 import { hasListTextSearch } from "@/lib/api/search-query";
+import {
+  buildContainerStatsCountParams,
+  buildDepartedContainerStatsFilterRows,
+} from "@/lib/containers/container-stats";
+import type { DepartedContainerStatPeriod } from "@/lib/containers/departed-container-stats";
 import { CONTAINER_TABLE_FILTER_FIELDS } from "@/lib/containers/filter-fields";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import {
@@ -70,6 +75,24 @@ export function useContainerStats() {
     total: totalQuery.data?.total ?? 0,
     isLoading: totalQuery.isLoading,
     isError: totalQuery.isError,
+  };
+}
+
+/** Count of containers that departed within a rolling timeframe. */
+export function useDepartedContainerStats(period: DepartedContainerStatPeriod) {
+  const query = useWorkspaceQuery({
+    queryKey: queryKeys.containers.stats("departed", period),
+    queryFn: () =>
+      fetchContainers(
+        buildContainerStatsCountParams(buildDepartedContainerStatsFilterRows(period)),
+      ),
+  });
+
+  return {
+    total: query.data?.total ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
   };
 }
 

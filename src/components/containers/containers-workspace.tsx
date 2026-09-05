@@ -1,18 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  CalendarClock,
-  CalendarDays,
-  CalendarRange,
-  Container,
-  Plus,
-  Ship,
-  Trash2,
-} from "lucide-react";
+import { Container, Plus, Trash2 } from "lucide-react";
 
 import { ContainerForm } from "@/components/containers/container-form";
 import { ContainerViewSheet } from "@/components/containers/container-view-sheet";
+import { DepartedContainersStatCard } from "@/components/containers/departed-containers-stat-card";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -20,7 +13,8 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
+import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
@@ -51,15 +45,11 @@ import {
 import { useUserError } from "@/lib/errors";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
-  DEPARTED_PERIOD_DAYS,
-  computeContainerKpis,
   formatContainerDate,
   formatContainerId,
-  formatDepartedAnnualPace,
   formatOptionalContainerCost,
 } from "@/lib/containers/display";
 import {
-  useContainerKpis,
   useContainerStats,
   useContainers,
   useCreateContainer,
@@ -90,7 +80,7 @@ const defaultFilters: ContainerFilterState = {
 };
 
 export function ContainersWorkspace() {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const containerFilterFields = useContainerFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
@@ -121,7 +111,6 @@ export function ContainersWorkspace() {
 
   const { data, isLoading, isError, error, isFetching } = useContainers(listParams);
   const stats = useContainerStats();
-  const kpiQuery = useContainerKpis();
   const createContainerMutation = useCreateContainer();
   const updateContainerMutation = useUpdateContainer();
   const deleteContainersMutation = useDeleteContainers();
@@ -147,8 +136,6 @@ export function ContainersWorkspace() {
     () => suggestNextContainerName(containers),
     [containers],
   );
-
-  const kpis = useMemo(() => computeContainerKpis(kpiQuery.items), [kpiQuery.items]);
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -242,58 +229,6 @@ export function ContainersWorkspace() {
       setDeleteTarget(null);
     }
   }
-
-  function departedPaceDescription(count: number, periodDays: number) {
-    if (kpiQuery.isLoading) return "…";
-    return t("containers.stats.annualPace", {
-      pace: formatDepartedAnnualPace(count, periodDays, locale),
-    });
-  }
-
-  const statCards = [
-    {
-      label: t("containers.stats.total.label"),
-      value: stats.isLoading ? "…" : stats.total.toString(),
-      description: t("containers.stats.total.description"),
-      icon: Container,
-    },
-    {
-      label: t("containers.stats.departedPast30Days"),
-      value: kpiQuery.isLoading ? "…" : kpis.departedPast30Days.toString(),
-      description: departedPaceDescription(
-        kpis.departedPast30Days,
-        DEPARTED_PERIOD_DAYS.past30Days,
-      ),
-      icon: Ship,
-    },
-    {
-      label: t("containers.stats.departedPast90Days"),
-      value: kpiQuery.isLoading ? "…" : kpis.departedPast90Days.toString(),
-      description: departedPaceDescription(
-        kpis.departedPast90Days,
-        DEPARTED_PERIOD_DAYS.past90Days,
-      ),
-      icon: CalendarClock,
-    },
-    {
-      label: t("containers.stats.departedPast180Days"),
-      value: kpiQuery.isLoading ? "…" : kpis.departedPast180Days.toString(),
-      description: departedPaceDescription(
-        kpis.departedPast180Days,
-        DEPARTED_PERIOD_DAYS.past180Days,
-      ),
-      icon: CalendarDays,
-    },
-    {
-      label: t("containers.stats.departedPast360Days"),
-      value: kpiQuery.isLoading ? "…" : kpis.departedPast360Days.toString(),
-      description: departedPaceDescription(
-        kpis.departedPast360Days,
-        DEPARTED_PERIOD_DAYS.past360Days,
-      ),
-      icon: CalendarRange,
-    },
-  ];
 
   const tableColumns: DataTableColumn<ContainerRecord>[] = [
     {
@@ -406,7 +341,15 @@ export function ContainersWorkspace() {
         }
       />
 
-      <StatCards items={statCards} />
+      <StatCardsCarousel>
+        <FlippableStatCard
+          label={t("containers.stats.total.label")}
+          value={stats.isLoading ? "…" : stats.total.toLocaleString()}
+          description={t("containers.stats.total.description")}
+          icon={Container}
+        />
+        <DepartedContainersStatCard />
+      </StatCardsCarousel>
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">

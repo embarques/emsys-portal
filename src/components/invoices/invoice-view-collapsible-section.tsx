@@ -55,7 +55,7 @@ export function InvoiceViewCollapsibleSection({
       </button>
 
       {open ? (
-        <div id={`${sectionId}-panel`} className="border-t px-4 pb-4">
+        <div id={`${sectionId}-panel`} className="border-t px-4 py-4">
           {children}
         </div>
       ) : null}
