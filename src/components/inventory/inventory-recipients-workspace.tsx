@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus, Users } from "lucide-react";
 
 import { InventoryRecipientForm } from "@/components/inventory/inventory-recipient-form";
+import { InventoryRecipientMobileList } from "@/components/inventory/inventory-recipient-mobile-list";
 import { InventoryRecipientViewSheet } from "@/components/inventory/inventory-recipient-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
@@ -109,6 +110,17 @@ export function InventoryRecipientsWorkspace() {
     };
   }
 
+  function openAddForm() {
+    setEditingRecipient(null);
+    setFormMode("add");
+  }
+
+  function openEditForm(recipient: InventoryRecipient) {
+    setEditingRecipient(recipient);
+    setFormMode("edit");
+    setViewRecipient(null);
+  }
+
   async function saveRecipient(values: RecipientFormValues) {
     try {
       if (formMode === "edit" && editingRecipient) {
@@ -142,24 +154,38 @@ export function InventoryRecipientsWorkspace() {
   }
 
   return (
-    <div>
-      <PageHeader
-        title={t("inventory.submenus.recipients")}
-        description={t("inventory.pages.recipients")}
-        actions={
-          <Button
-            onClick={() => {
-              setEditingRecipient(null);
-              setFormMode("add");
-            }}
-          >
-            <Plus className="h-4 w-4" />
-            {t("inventory.actions.addRecipient")}
-          </Button>
-        }
+    <div className="max-w-full overflow-x-hidden">
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("inventory.submenus.recipients")}
+          description={t("inventory.pages.recipients")}
+          actions={
+            <Button onClick={openAddForm}>
+              <Plus className="h-4 w-4" />
+              {t("inventory.actions.addRecipient")}
+            </Button>
+          }
+        />
+      </div>
+
+      <InventoryRecipientMobileList
+        query={query}
+        recipients={recipients}
+        pageRows={pageRows}
+        selectedIds={selectedIds}
+        isLoading={isLoading}
+        page={currentPage}
+        totalPages={totalPages}
+        onQueryChange={setQuery}
+        onPageChange={setPage}
+        onOpen={setViewRecipient}
+        onEdit={openEditForm}
+        onDelete={setDeleteTarget}
+        onSelectedIdsChange={setSelectedIds}
+        onAddRecipient={openAddForm}
       />
 
-      <Card className="mt-6 gap-0">
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={false}
@@ -187,10 +213,7 @@ export function InventoryRecipientsWorkspace() {
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
             const recipient = pageRows.find((row) => row.id === selectedIds[0]);
-            if (recipient) {
-              setEditingRecipient(recipient);
-              setFormMode("edit");
-            }
+            if (recipient) openEditForm(recipient);
           }}
           onDelete={() => setDeleteTarget(recipients.filter((row) => selectedIds.includes(row.id)))}
         />
@@ -227,8 +250,7 @@ export function InventoryRecipientsWorkspace() {
             }}
             onRowClick={setViewRecipient}
             onRowDoubleClick={(recipient) => {
-              setEditingRecipient(recipient);
-              setFormMode("edit");
+              openEditForm(recipient);
             }}
             activeRowId={viewRecipient?.id}
             emptyState={<p className="text-muted-foreground">{t("inventory.empty.recipients")}</p>}
@@ -256,17 +278,13 @@ export function InventoryRecipientsWorkspace() {
         snapshot={snapshot}
         open={Boolean(viewRecipient)}
         onOpenChange={(open) => !open && setViewRecipient(null)}
-        onEdit={(recipient) => {
-          setEditingRecipient(recipient);
-          setFormMode("edit");
-          setViewRecipient(null);
-        }}
+        onEdit={openEditForm}
         onDelete={(recipient) => setDeleteTarget(recipient)}
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
+          <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
             <DialogTitle>
               {formMode === "edit" ? t("inventory.form.editRecipientTitle") : t("inventory.form.addRecipientTitle")}
             </DialogTitle>

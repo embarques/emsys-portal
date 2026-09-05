@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { PackageCheck, Plus } from "lucide-react";
 
 import { InventoryReceiptForm } from "@/components/inventory/inventory-receipt-form";
+import { InventoryReceiptMobileList } from "@/components/inventory/inventory-receipt-mobile-list";
 import { InventoryReceiptViewSheet } from "@/components/inventory/inventory-receipt-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
@@ -79,19 +80,34 @@ export function InventoryReceiptsWorkspace() {
   });
 
   return (
-    <div>
-      <PageHeader
-        title={t("inventory.submenus.receipts")}
-        description={t("inventory.pages.receipts")}
-        actions={
-          <Button onClick={() => setFormOpen(true)}>
-            <Plus className="h-4 w-4" />
-            {t("inventory.actions.newReceipt")}
-          </Button>
-        }
+    <div className="max-w-full overflow-x-hidden">
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("inventory.submenus.receipts")}
+          description={t("inventory.pages.receipts")}
+          actions={
+            <Button onClick={() => setFormOpen(true)}>
+              <Plus className="h-4 w-4" />
+              {t("inventory.actions.newReceipt")}
+            </Button>
+          }
+        />
+      </div>
+
+      <InventoryReceiptMobileList
+        query={query}
+        pageRows={pageRows}
+        snapshot={snapshot}
+        isLoading={isLoading}
+        page={currentPage}
+        totalPages={totalPages}
+        onQueryChange={setQuery}
+        onPageChange={setPage}
+        onOpen={setViewReceipt}
+        onAddReceipt={() => setFormOpen(true)}
       />
 
-      <Card className="mt-6 gap-0">
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={false}
@@ -160,8 +176,8 @@ export function InventoryReceiptsWorkspace() {
       />
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
+          <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
             <DialogTitle>{t("inventory.form.newReceiptTitle")}</DialogTitle>
           </DialogHeader>
           <InventoryReceiptForm

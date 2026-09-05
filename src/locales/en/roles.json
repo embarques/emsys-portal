@@ -37,7 +37,8 @@
   },
   "table": {
     "permissionsCount": "{{count}} permissions",
-    "actionsFor": "Actions for {{name}}"
+    "actionsFor": "Actions for {{name}}",
+    "systemRole": "System"
   },
   "search": {
     "placeholder": "Search roles..."

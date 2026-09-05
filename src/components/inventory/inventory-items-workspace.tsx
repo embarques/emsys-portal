@@ -14,6 +14,7 @@ import {
 import { InventoryAdjustmentForm } from "@/components/inventory/inventory-adjustment-form";
 import { InventoryDispatchForm } from "@/components/inventory/inventory-dispatch-form";
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
+import { InventoryItemMobileList } from "@/components/inventory/inventory-item-mobile-list";
 import { InventoryReceiptForm } from "@/components/inventory/inventory-receipt-form";
 import { InventoryViewSheet } from "@/components/inventory/inventory-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
@@ -335,35 +336,62 @@ export function InventoryItemsWorkspace() {
   });
 
   return (
-    <div>
-      <PageHeader
-        title={t("inventory.submenus.items")}
-        description={t("inventory.pages.items")}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setDocumentDialog("receipt")}>
-              <PackageCheck className="h-4 w-4" />
-              {t("inventory.actions.newReceipt")}
-            </Button>
-            <Button variant="outline" onClick={() => setDocumentDialog("dispatch")}>
-              <Truck className="h-4 w-4" />
-              {t("inventory.actions.newDispatch")}
-            </Button>
-            <Button variant="outline" onClick={() => setDocumentDialog("adjustment")}>
-              <SlidersHorizontal className="h-4 w-4" />
-              {t("inventory.actions.adjustStock")}
-            </Button>
-            <Button onClick={openAddForm}>
-              <Plus className="h-4 w-4" />
-              {t("inventory.actions.addItem")}
-            </Button>
-          </div>
-        }
+    <div className="max-w-full overflow-x-hidden">
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("inventory.submenus.items")}
+          description={t("inventory.pages.items")}
+          actions={
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setDocumentDialog("receipt")}>
+                <PackageCheck className="h-4 w-4" />
+                {t("inventory.actions.newReceipt")}
+              </Button>
+              <Button variant="outline" onClick={() => setDocumentDialog("dispatch")}>
+                <Truck className="h-4 w-4" />
+                {t("inventory.actions.newDispatch")}
+              </Button>
+              <Button variant="outline" onClick={() => setDocumentDialog("adjustment")}>
+                <SlidersHorizontal className="h-4 w-4" />
+                {t("inventory.actions.adjustStock")}
+              </Button>
+              <Button onClick={openAddForm}>
+                <Plus className="h-4 w-4" />
+                {t("inventory.actions.addItem")}
+              </Button>
+            </div>
+          }
+        />
+
+        <StatCards items={stats} />
+      </div>
+
+      <InventoryItemMobileList
+        filters={filters}
+        filtersOpen={filtersOpen}
+        hasActiveFilters={hasActiveFilters}
+        activeFilterCount={activeFilterCount}
+        items={items}
+        pageItems={pageItems}
+        selectedIds={selectedIds}
+        isLoading={isLoading}
+        page={currentPage}
+        totalPages={totalPages}
+        onFiltersOpenChange={setFiltersOpen}
+        onFiltersChange={setFilters}
+        onResetFilters={resetFilters}
+        onPageChange={setPage}
+        onOpen={setViewItem}
+        onEdit={openEditForm}
+        onDelete={setDeleteTarget}
+        onSelectedIdsChange={setSelectedIds}
+        onNewReceipt={() => setDocumentDialog("receipt")}
+        onNewDispatch={() => setDocumentDialog("dispatch")}
+        onAdjustStock={() => setDocumentDialog("adjustment")}
+        onAddItem={openAddForm}
       />
 
-      <StatCards items={stats} />
-
-      <Card className="mt-6 gap-0">
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -527,8 +555,8 @@ export function InventoryItemsWorkspace() {
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
+          <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
             <DialogTitle>
               {formMode === "edit" ? t("inventory.form.editItemTitle") : t("inventory.form.addItemTitle")}
             </DialogTitle>

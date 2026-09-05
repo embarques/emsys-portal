@@ -145,6 +145,7 @@ export function InventoryReceiptForm({
                     placeholder={t("inventory.form.fields.item")}
                     searchPlaceholder={t("inventory.search.items")}
                     options={itemOptions}
+                    mobileSheet
                   />
                 </div>
                 <div className="space-y-1">
@@ -156,12 +157,19 @@ export function InventoryReceiptForm({
                     onChange={(event) => updateLine(index, { quantity: Number(event.target.value) })}
                   />
                 </div>
-                <Button type="button" variant="outline" size="icon" onClick={() => removeLine(index)} aria-label={t("inventory.form.removeLine")}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-12 rounded-xl sm:size-9"
+                  onClick={() => removeLine(index)}
+                  aria-label={t("inventory.form.removeLine")}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             ))}
-            <Button type="button" variant="outline" size="sm" onClick={addLine}>
+            <Button type="button" variant="outline" className="h-12 rounded-xl sm:h-9" onClick={addLine}>
               <Plus className="h-4 w-4" />
               {t("inventory.form.addLine")}
             </Button>

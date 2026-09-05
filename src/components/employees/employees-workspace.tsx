@@ -4,11 +4,11 @@ import { useMemo, useState } from "react";
 import {
   Building2,
   Plus,
-  Trash2,
   Users,
 } from "lucide-react";
 
 import { EmployeeForm } from "@/components/employees/employee-form";
+import { EmployeeMobileList } from "@/components/employees/employee-mobile-list";
 import { EmployeeViewSheet } from "@/components/employees/employee-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
@@ -461,20 +461,65 @@ export function EmployeesWorkspace() {
 
   return (
     <div>
-      <PageHeader
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("employees.title")}
+          description={t("employees.pages.description")}
+          actions={
+            <Button onClick={openAddForm} disabled={isSaving}>
+              <Plus className="h-4 w-4" />
+              {t("employees.actions.add")}
+            </Button>
+          }
+        />
+      </div>
+
+      <StatCards className="hidden md:block" items={statCards} />
+
+      <EmployeeMobileList
+        employees={employees}
         title={t("employees.title")}
-        description={t("employees.pages.description")}
-        actions={
-          <Button onClick={openAddForm} disabled={isSaving}>
-            <Plus className="h-4 w-4" />
-            {t("employees.actions.add")}
-          </Button>
+        listSummary={listSummary}
+        totalCount={totalEmployees}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        isLoading={isLoading}
+        isSaving={isSaving}
+        showInitialLoading={isLoading && employees.length === 0}
+        listErrorMessage={listErrorMessage}
+        filters={filters}
+        filtersOpen={filtersOpen}
+        activeFilterCount={activeFilterCount}
+        hasActiveFilters={hasActiveFilters}
+        employeeFilterFields={employeeFilterFields}
+        branchFilterOptions={branchFilterOptions}
+        branchesLoading={branchesLoading}
+        selectedIds={selectedIds}
+        onAdd={openAddForm}
+        onSearchChange={(query) => {
+          setFilters((current) => ({ ...current, query }));
+          setPage(1);
+        }}
+        onFiltersOpenChange={setFiltersOpen}
+        onFilterRowsChange={(rows) => {
+          setFilters((current) => ({ ...current, rows }));
+          setPage(1);
+        }}
+        onClearFilters={() => {
+          setFilters(defaultFilters);
+          setPage(1);
+        }}
+        onPageChange={setPage}
+        onToggleSelect={toggleSelect}
+        onClearSelection={() => setSelectedIds([])}
+        onView={setViewEmployee}
+        onEdit={openEditForm}
+        onDeleteSelected={() =>
+          setDeleteTarget(employees.filter((employee) => selectedIds.includes(String(employee.id))))
         }
       />
 
-      <StatCards items={statCards} />
-
-      <Card className="mt-6 gap-0">
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -622,9 +667,9 @@ export function EmployeesWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl max-md:inset-0 max-md:h-[100dvh] max-md:max-h-none max-md:w-screen max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:border-0">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4 max-md:border-primary/70 max-md:bg-primary max-md:py-6">
+            <DialogTitle className="max-md:text-3xl max-md:font-bold max-md:text-primary-foreground">
               {formMode === "edit" ? t("employees.form.editTitle") : t("employees.form.addTitle")}
             </DialogTitle>
           </DialogHeader>

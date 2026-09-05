@@ -65,6 +65,7 @@ export function InventoryRecipientForm({
                   setValues((current) => ({ ...current, type: next as RecipientFormValues["type"] }))
                 }
                 options={getRecipientTypeOptions(t)}
+                mobileSheet
               />
             </div>
             <div className="space-y-1">

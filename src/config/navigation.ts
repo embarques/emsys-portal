@@ -1,4 +1,5 @@
 import {
+  Banknote,
   BarChart3,
   Barcode,
   BookOpenText,
@@ -277,6 +278,12 @@ export const navigationSections: NavigationSection[] = [
             labelKey: "navigation.items.dailyIncome",
             href: "/accounting/daily-income",
             icon: HandCoins,
+            permission: PERMISSIONS.incomeView,
+          },
+          {
+            labelKey: "navigation.items.loans",
+            href: "/accounting/loans",
+            icon: Banknote,
             permission: PERMISSIONS.incomeView,
           },
           {
