@@ -13,6 +13,7 @@ import {
   type NewOrderStatPeriod,
 } from "@/lib/orders/new-order-stats";
 import { useTranslation } from "@/lib/i18n";
+import { formatPeriodChangeDescription } from "@/lib/stats/rolling-period";
 
 export function NewAppointmentsStatCard() {
   const { t } = useTranslation();
@@ -23,6 +24,14 @@ export function NewAppointmentsStatCard() {
     value,
     label: t(`orders.stats.new.periods.${value}`),
   }));
+
+  const periodLabel = t(`orders.stats.new.periods.${period}`);
+  const changeDescription = formatPeriodChangeDescription(
+    stats.total,
+    stats.previousTotal,
+    periodLabel,
+    t,
+  );
 
   return (
     <div style={{ height: 158 }}>
@@ -38,7 +47,7 @@ export function NewAppointmentsStatCard() {
             {stats.isLoading ? "…" : stats.total.toLocaleString()}
           </div>
           <CardDescription className="mt-1">
-            {t(`orders.stats.new.descriptions.${period}`)}
+            {stats.isLoading ? "…" : changeDescription}
           </CardDescription>
         </CardContent>
         <div

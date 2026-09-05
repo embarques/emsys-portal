@@ -8,14 +8,16 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   DEFAULT_DEPARTED_CONTAINER_STAT_PERIOD,
   DEPARTED_CONTAINER_STAT_PERIODS,
+  DEPARTED_CONTAINER_STAT_PERIOD_DAYS,
   isDepartedContainerStatPeriod,
   type DepartedContainerStatPeriod,
 } from "@/lib/containers/departed-container-stats";
+import { formatDepartedAnnualPace } from "@/lib/containers/display";
 import { useDepartedContainerStats } from "@/lib/containers/hooks/use-containers";
 import { useTranslation } from "@/lib/i18n";
 
 export function DepartedContainersStatCard() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [period, setPeriod] = useState<DepartedContainerStatPeriod>(
     DEFAULT_DEPARTED_CONTAINER_STAT_PERIOD,
   );
@@ -25,6 +27,12 @@ export function DepartedContainersStatCard() {
     value,
     label: t(`containers.stats.departed.periods.${value}`),
   }));
+
+  const annualPace = formatDepartedAnnualPace(
+    stats.total,
+    DEPARTED_CONTAINER_STAT_PERIOD_DAYS[period],
+    locale,
+  );
 
   return (
     <div style={{ height: 158 }}>
@@ -37,10 +45,12 @@ export function DepartedContainersStatCard() {
         </CardHeader>
         <CardContent className="pr-28">
           <div className="text-2xl font-bold">
-            {stats.isLoading ? "…" : stats.total.toLocaleString()}
+            {stats.isLoading ? "…" : stats.total.toLocaleString(locale)}
           </div>
           <CardDescription className="mt-1">
-            {t(`containers.stats.departed.descriptions.${period}`)}
+            {stats.isLoading
+              ? "…"
+              : t("containers.stats.departed.annualPace", { pace: annualPace })}
           </CardDescription>
         </CardContent>
         <div

@@ -91,21 +91,34 @@ function accentInsensitiveFilter(value: string, search: string, keywords?: strin
   );
 }
 
-/** Empty-value options like "Select invoice" are list placeholders, not real selections. */
-function isPseudoPlaceholderOption(option: SearchableSelectOption): boolean {
+function labelsMatch(left: string, right: string): boolean {
+  return left.localeCompare(right, undefined, { sensitivity: "accent" }) === 0;
+}
+
+/**
+ * Empty-value options that duplicate the closed-state placeholder, or look like
+ * "Select…" / "Seleccionar…" prompts, belong on the trigger, not in the open list.
+ */
+function isPseudoPlaceholderOption(
+  option: SearchableSelectOption,
+  placeholder?: string,
+): boolean {
   if (option.value !== "") return false;
   const label = option.label.trim();
-  if (!label) return true;
-  return /^select\b/i.test(label);
+  if (!label || option.disabled) return true;
+  const placeholderLabel = placeholder?.trim();
+  if (placeholderLabel && labelsMatch(label, placeholderLabel)) return true;
+  return /^(select|seleccionar|seleccione)\b/i.test(label);
 }
 
 function hasSearchableSelectSelection(
   value: string,
   selectedOption: SearchableSelectOption | undefined,
+  placeholder?: string,
 ): boolean {
   if (!selectedOption) return false;
   if (selectedOption.value !== "") return true;
-  return !isPseudoPlaceholderOption(selectedOption);
+  return !isPseudoPlaceholderOption(selectedOption, placeholder);
 }
 
 function optionMatchesQuery(option: SearchableSelectOption, query: string): boolean {
@@ -119,9 +132,10 @@ function getNavigableOptions(
   options: SearchableSelectOption[],
   query: string,
   shouldClientFilter: boolean,
+  placeholder?: string,
 ): SearchableSelectOption[] {
   return options.filter((option) => {
-    if (isPseudoPlaceholderOption(option) || option.disabled) return false;
+    if (isPseudoPlaceholderOption(option, placeholder) || option.disabled) return false;
     if (!shouldClientFilter) return true;
     return optionMatchesQuery(option, query);
   });
@@ -271,7 +285,7 @@ export function SearchableSelect({
   }
 
   const selectedOption = options.find((option) => option.value === value);
-  const hasSelection = hasSearchableSelectSelection(value, selectedOption);
+  const hasSelection = hasSearchableSelectSelection(value, selectedOption, placeholder);
   const fitToOptionsLabel = React.useMemo(() => {
     if (!fitToOptions) return "";
     return [placeholder, ...options.map((option) => option.label)].reduce(
@@ -333,8 +347,8 @@ export function SearchableSelect({
 
   const shouldClientFilter = searchable && !manualFiltering;
   const navigableOptions = React.useMemo(
-    () => getNavigableOptions(options, query, shouldClientFilter),
-    [options, query, shouldClientFilter],
+    () => getNavigableOptions(options, query, shouldClientFilter, placeholder),
+    [options, query, shouldClientFilter, placeholder],
   );
   const [highlight, setHighlight] = React.useState("");
   const wasOpenRef = React.useRef(false);
@@ -457,7 +471,9 @@ export function SearchableSelect({
     });
   }
 
-  const selectableOptions = options.filter((option) => !isPseudoPlaceholderOption(option));
+  const selectableOptions = options.filter(
+    (option) => !isPseudoPlaceholderOption(option, placeholder),
+  );
   const optionItems = renderOptionItems(selectableOptions);
 
   if (mobileSheet && (isMobile || !viewportResolved)) {
@@ -521,7 +537,7 @@ export function SearchableSelect({
                       value={query}
                       onValueChange={changeQuery}
                       onKeyDown={handleComboboxKeyDown}
-                      placeholder={searchPlaceholder ?? placeholder}
+                      placeholder={searchPlaceholder}
                       className="h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                     />
                   </div>
@@ -671,7 +687,7 @@ export function SearchableSelect({
                 aria-labelledby={ariaLabelledBy}
                 placeholder={
                   open
-                    ? (searchPlaceholder ?? placeholder)
+                    ? searchPlaceholder
                     : hasSelection
                       ? undefined
                       : placeholder

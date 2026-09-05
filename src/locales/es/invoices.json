@@ -13,13 +13,6 @@
         "3m": "3 meses",
         "6m": "6 meses",
         "1y": "1 año"
-      },
-      "descriptions": {
-        "7d": "Creadas en los últimos 7 días",
-        "30d": "Creadas en los últimos 30 días",
-        "3m": "Creadas en los últimos 3 meses",
-        "6m": "Creadas en los últimos 6 meses",
-        "1y": "Creadas en el último año"
       }
     }
   },

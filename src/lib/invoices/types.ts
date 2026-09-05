@@ -53,7 +53,11 @@ export type InvoiceLineItemBarcode = {
   containerName?: string;
   deliveryId?: string;
   deliveryName?: string;
+  routeId?: string;
+  routeName?: string;
   scanDate?: string;
+  createdAt?: string;
+  createdBy?: string;
 };
 
 export type InvoiceLineItem = {

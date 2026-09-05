@@ -19,19 +19,13 @@
     "departed": {
       "label": "Departed containers",
       "periodLabel": "Timeframe",
+      "annualPace": "On pace to ship {{pace}} per year",
       "periods": {
         "7d": "7 days",
         "30d": "30 days",
         "3m": "3 months",
         "6m": "6 months",
         "1y": "1 year"
-      },
-      "descriptions": {
-        "7d": "Departed in the last 7 days",
-        "30d": "Departed in the last 30 days",
-        "3m": "Departed in the last 3 months",
-        "6m": "Departed in the last 6 months",
-        "1y": "Departed in the last year"
       }
     }
   },

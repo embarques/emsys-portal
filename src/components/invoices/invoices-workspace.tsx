@@ -76,6 +76,7 @@ import {
 import {
   useDeleteInvoices,
   useInvoice,
+  useInvoiceJournals,
   useInvoiceStats,
   useInvoices,
   usePreviewLegacyInvoiceSync,
@@ -96,6 +97,7 @@ import {
 } from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { encodeStagingInvoiceIds } from "@/lib/invoices/staging";
+import { mapInvoiceJournalsToPayments } from "@/lib/invoices/invoice-journals";
 import {
   buildInvoiceListParams,
   createInvoiceComment,
@@ -503,8 +505,15 @@ export function InvoicesWorkspace() {
     enabled: desktopFiltersOpen || mobileFiltersOpen,
   });
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
-
   const invoices = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
+  const viewedInvoiceNumber =
+    detailInvoice?.invoiceNumber ??
+    invoices.find((invoice) => invoice.invoiceId === viewInvoiceId)?.invoiceNumber;
+  const { data: invoiceJournals } = useInvoiceJournals(
+    viewInvoiceId,
+    viewedInvoiceNumber,
+    Boolean(viewInvoiceId),
+  );
   const legacyTimestamps = useMemo(
     () => invoices.map((invoice) => invoice.legacySyncedAt),
     [invoices],
@@ -559,17 +568,20 @@ export function InvoicesWorkspace() {
     const base =
       detailInvoice ?? invoices.find((invoice) => invoice.invoiceId === viewInvoiceId) ?? null;
     if (!base) return null;
-    if (!viewOverlay) return base;
+
+    const journalPayments = mapInvoiceJournalsToPayments(invoiceJournals ?? [], base.invoiceId);
+
+    if (!viewOverlay && journalPayments.length === 0) return base;
 
     return {
       ...base,
-      comments: [...base.comments, ...(viewOverlay.comments ?? [])],
-      activity: [...base.activity, ...(viewOverlay.activity ?? [])],
-      payments: [...base.payments, ...(viewOverlay.payments ?? [])],
-      amountPaid: viewOverlay.amountPaid ?? base.amountPaid,
-      updatedAt: viewOverlay.updatedAt ?? base.updatedAt,
+      comments: [...base.comments, ...(viewOverlay?.comments ?? [])],
+      activity: [...base.activity, ...(viewOverlay?.activity ?? [])],
+      payments: [...(journalPayments.length > 0 ? journalPayments : base.payments), ...(viewOverlay?.payments ?? [])],
+      amountPaid: viewOverlay?.amountPaid ?? base.amountPaid,
+      updatedAt: viewOverlay?.updatedAt ?? base.updatedAt,
     };
-  }, [detailInvoice, invoices, viewInvoiceId, viewOverlay]);
+  }, [detailInvoice, invoices, invoiceJournals, viewInvoiceId, viewOverlay]);
 
   useSyncWorkspaceTabTitle(
     viewInvoice ? `Invoice #${viewInvoice.invoiceNumber}` : null,

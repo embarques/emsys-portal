@@ -5,6 +5,7 @@ import {
   type NewOrderStatPeriod,
 } from "@/lib/orders/new-order-stats";
 import { DEFAULT_ORDER_LIST_PARAMS, type OrderListParams } from "@/lib/orders/types";
+import { getPreviousRollingPeriodBounds } from "@/lib/stats/rolling-period";
 
 /** Count-only pickup list/search requests for dashboard stat cards. */
 export const ORDER_STATS_COUNT_LIMIT = 1;
@@ -44,14 +45,42 @@ export function buildPendingPurposeStatsFilterRows(purposeContains: string): Tab
   ];
 }
 
-export function buildNewOrderStatsFilterRows(period: NewOrderStatPeriod): TableFilterRowState[] {
+export function buildNewOrderStatsFilterRows(
+  period: NewOrderStatPeriod,
+  now: Date = new Date(),
+): TableFilterRowState[] {
   return [
     {
       id: "new-orders-created-at",
       join: "and",
       field: "createdAt",
       operator: "gte",
-      value: getNewOrderPeriodStartIso(period),
+      value: getNewOrderPeriodStartIso(period, now),
+    },
+  ];
+}
+
+/** Prior window of the same length, for period-over-period % change. */
+export function buildPreviousNewOrderStatsFilterRows(
+  period: NewOrderStatPeriod,
+  now: Date = new Date(),
+): TableFilterRowState[] {
+  const { startIso, endIso } = getPreviousRollingPeriodBounds(period, now);
+
+  return [
+    {
+      id: "new-orders-created-at-prev-gte",
+      join: "and",
+      field: "createdAt",
+      operator: "gte",
+      value: startIso,
+    },
+    {
+      id: "new-orders-created-at-prev-lte",
+      join: "and",
+      field: "createdAt",
+      operator: "lte",
+      value: endIso,
     },
   ];
 }

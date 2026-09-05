@@ -19,6 +19,12 @@
   "form": {
     "noChanges": "No hay cambios para guardar."
   },
+  "stats": {
+    "changeMore": "{{percent}}% más que los últimos {{period}}",
+    "changeLess": "{{percent}}% menos que los últimos {{period}}",
+    "changeSame": "Igual que los últimos {{period}}",
+    "changeFromZero": "Subió desde cero vs {{period}}"
+  },
   "empty": {
     "dash": "—",
     "noCarrier": "Sin transportista"

@@ -86,6 +86,16 @@ export function RecordViewSheetContent({ children, className }: RecordViewSheetC
         "flex w-full max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-w-lg",
         className,
       )}
+      onOpenAutoFocus={(event) => {
+        // The close button is rendered after children, so default focus would
+        // land on the first action control (e.g. phone "Copy") and open its
+        // Tooltip. Keep focus on the sheet container instead.
+        event.preventDefault();
+        const target = event.currentTarget;
+        if (target instanceof HTMLElement) {
+          target.focus();
+        }
+      }}
     >
       {children}
     </SheetContent>

@@ -27,6 +27,7 @@ import {
   buildOrderStatsCountParams,
   buildPendingOrderStatsFilterRows,
   buildPendingPurposeStatsFilterRows,
+  buildPreviousNewOrderStatsFilterRows,
 } from "@/lib/orders/order-stats";
 import type { NewOrderStatPeriod } from "@/lib/orders/new-order-stats";
 import {
@@ -184,7 +185,7 @@ export function useOrderStats(options: OrderStatsOptions = {}) {
   };
 }
 
-/** Count of appointments created within a rolling timeframe (`createdAt >= period start`). */
+/** Count of appointments created within a rolling timeframe, plus prior-period count for % change. */
 export function useNewOrderStats(period: NewOrderStatPeriod) {
   const queryEnabled = useOrdersQueryEnabled();
 
@@ -194,11 +195,19 @@ export function useNewOrderStats(period: NewOrderStatPeriod) {
     enabled: queryEnabled,
   });
 
+  const previousQuery = useWorkspaceQuery({
+    queryKey: queryKeys.orders.stats("new-previous", period),
+    queryFn: () =>
+      fetchOrders(buildOrderStatsCountParams(buildPreviousNewOrderStatsFilterRows(period))),
+    enabled: queryEnabled,
+  });
+
   return {
     total: query.data?.total ?? 0,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    isError: query.isError,
+    previousTotal: previousQuery.data?.total ?? 0,
+    isLoading: query.isLoading || previousQuery.isLoading,
+    isFetching: query.isFetching || previousQuery.isFetching,
+    isError: query.isError || previousQuery.isError,
   };
 }
 

@@ -29,9 +29,11 @@ import {
 } from "@/lib/customers/types";
 import { isCustomerTypeFilterActive } from "@/lib/customers/customer-type";
 import {
-  getNewCustomerPeriodStartIso,
-  type NewCustomerStatPeriod,
-} from "@/lib/customers/new-customer-stats";
+  buildCustomerStatsCountParams,
+  buildNewCustomerStatsFilterRows,
+  buildPreviousNewCustomerStatsFilterRows,
+} from "@/lib/customers/customer-stats";
+import type { NewCustomerStatPeriod } from "@/lib/customers/new-customer-stats";
 import { queryKeys } from "@/lib/query/query-keys";
 
 function hasCustomerChipFilters(params: CustomerListParams): boolean {
@@ -125,31 +127,28 @@ export function useCustomerStats() {
   };
 }
 
-/** Count of customers created within a rolling timeframe (`createdAt >= period start`). */
+/** Count of customers created within a rolling timeframe, plus prior-period count for % change. */
 export function useNewCustomerStats(period: NewCustomerStatPeriod) {
   const query = useWorkspaceQuery({
     queryKey: queryKeys.customers.stats("new", period),
     queryFn: () =>
-      fetchCustomers({
-        ...DEFAULT_CUSTOMER_LIST_PARAMS,
-        limit: 1,
-        filterRows: [
-          {
-            id: "new-customers-created-at",
-            join: "and",
-            field: "createdAt",
-            operator: "gte",
-            value: getNewCustomerPeriodStartIso(period),
-          },
-        ],
-      }),
+      fetchCustomers(buildCustomerStatsCountParams(buildNewCustomerStatsFilterRows(period))),
+  });
+
+  const previousQuery = useWorkspaceQuery({
+    queryKey: queryKeys.customers.stats("new-previous", period),
+    queryFn: () =>
+      fetchCustomers(
+        buildCustomerStatsCountParams(buildPreviousNewCustomerStatsFilterRows(period)),
+      ),
   });
 
   return {
     total: query.data?.total ?? 0,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    isError: query.isError,
+    previousTotal: previousQuery.data?.total ?? 0,
+    isLoading: query.isLoading || previousQuery.isLoading,
+    isFetching: query.isFetching || previousQuery.isFetching,
+    isError: query.isError || previousQuery.isError,
   };
 }
 

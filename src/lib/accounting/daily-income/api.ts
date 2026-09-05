@@ -423,6 +423,41 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
   };
 }
 
+const INVOICE_PAYMENT_TRANSACTION_TYPES = new Set(["INITIAL-PAYMENT", "PAYMENT"]);
+
+/** Journals posted against an invoice (`PAYMENT` / `INITIAL-PAYMENT`). */
+export async function fetchJournalsForInvoice(params: {
+  invoiceId?: string;
+  invoiceNumber?: string;
+}): Promise<DailyIncomeJournal[]> {
+  const invoiceId = params.invoiceId?.trim();
+  const invoiceNumber = params.invoiceNumber?.trim();
+  if (!invoiceId && !invoiceNumber) return [];
+
+  const identityFilters = invoiceNumber
+    ? [{ field: "invoice.number", operator: "eq" as const, value: invoiceNumber }]
+    : invoiceId
+      ? [{ field: "invoice.id", operator: "eq" as const, value: invoiceId }]
+      : [];
+
+  if (identityFilters.length === 0) return [];
+
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search`,
+    buildAdvancedSearchBody({
+      page: 1,
+      limit: 100,
+      sort: { field: "createdAt", direction: "desc" },
+      filterGroups: [{ operator: "and", filters: identityFilters }],
+    }),
+  );
+
+  return parseJournalSearchRows(payload)
+    .map(normalizeJournal)
+    .filter((item): item is DailyIncomeJournal => item != null)
+    .filter((item) => INVOICE_PAYMENT_TRANSACTION_TYPES.has(item.transactionType));
+}
+
 /** Find the initial Daily Income registration that authorizes a new invoice. */
 export async function fetchDailyIncomeInvoiceRegistration(
   invoiceNumber: string,

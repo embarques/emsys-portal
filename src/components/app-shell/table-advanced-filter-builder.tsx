@@ -101,7 +101,6 @@ export function TableAdvancedFilterBuilder({
               className="min-w-[8.5rem] max-w-[10rem]"
               value={row.field}
               placeholder={t("common.table.field")}
-              placeholderDisabled={false}
               mutedWhenEmpty
               options={fields.map((field) => ({ value: field.field, label: field.label }))}
               onChange={(value) => updateRow(row.id, { field: value })}

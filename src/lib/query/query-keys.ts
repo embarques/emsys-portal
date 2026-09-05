@@ -156,13 +156,15 @@ export const queryKeys = {
     search: (search: InvoiceSearchFilter | undefined, limit: number) =>
       [...queryKeys.invoices.all, "search", search, limit] as const,
     stats: (
-      scope: "outstanding" | "outstanding-balance" | "new",
+      scope: "outstanding" | "outstanding-balance" | "new" | "new-previous",
       period?: string,
     ) =>
       period
         ? ([...queryKeys.invoices.all, "stats", scope, period] as const)
         : ([...queryKeys.invoices.all, "stats", scope] as const),
     detail: (invoiceId: string) => [...queryKeys.invoices.all, "detail", invoiceId] as const,
+    journals: (invoiceId: string, invoiceNumber?: string) =>
+      [...queryKeys.invoices.all, "journals", invoiceId, invoiceNumber ?? ""] as const,
   },
   accounting: {
     all: ["accounting"] as const,
@@ -209,7 +211,8 @@ export const queryKeys = {
         | "pending-takes"
         | "pending-estimates"
         | "pending-payments"
-        | "new",
+        | "new"
+        | "new-previous",
       period?: string,
     ) =>
       period
@@ -236,7 +239,7 @@ export const queryKeys = {
       scope: { customerType?: number | "all"; orFields?: readonly string[] } = {},
     ) => [...queryKeys.customers.all, "search", search, limit, scope] as const,
     stats: (
-      scope: "all" | "active" | "inactive" | "senders" | "receivers" | "new",
+      scope: "all" | "active" | "inactive" | "senders" | "receivers" | "new" | "new-previous",
       period?: string,
     ) =>
       period

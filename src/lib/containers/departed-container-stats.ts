@@ -4,6 +4,15 @@ export type DepartedContainerStatPeriod = (typeof DEPARTED_CONTAINER_STAT_PERIOD
 
 export const DEFAULT_DEPARTED_CONTAINER_STAT_PERIOD: DepartedContainerStatPeriod = "30d";
 
+/** Approximate day length of each period — used for annual-pace extrapolation. */
+export const DEPARTED_CONTAINER_STAT_PERIOD_DAYS: Record<DepartedContainerStatPeriod, number> = {
+  "7d": 7,
+  "30d": 30,
+  "3m": 90,
+  "6m": 180,
+  "1y": 365,
+};
+
 /** Rolling window start for "departed containers" KPI filters (`departureDate >= start`). */
 export function getDepartedContainerPeriodStartIso(
   period: DepartedContainerStatPeriod,

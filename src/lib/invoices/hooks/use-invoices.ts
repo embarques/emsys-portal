@@ -15,10 +15,12 @@ import {
   updateInvoice,
   type InvoiceWriteContext,
 } from "@/lib/invoices/api/invoices-api";
+import { fetchJournalsForInvoice } from "@/lib/accounting/daily-income/api";
 import {
   buildInvoiceStatsCountParams,
   buildNewInvoiceStatsFilterRows,
   buildOutstandingInvoiceStatsFilterRows,
+  buildPreviousNewInvoiceStatsFilterRows,
 } from "@/lib/invoices/invoice-stats";
 import type { NewInvoiceStatPeriod } from "@/lib/invoices/new-invoice-stats";
 import {
@@ -60,7 +62,7 @@ export function useInvoiceStats(options: InvoiceStatsOptions = {}) {
   };
 }
 
-/** Count of invoices created within a rolling timeframe (`createdAt >= period start`). */
+/** Count of invoices created within a rolling timeframe, plus prior-period count for % change. */
 export function useNewInvoiceStats(period: NewInvoiceStatPeriod) {
   const query = useWorkspaceQuery({
     queryKey: queryKeys.invoices.stats("new", period),
@@ -68,11 +70,18 @@ export function useNewInvoiceStats(period: NewInvoiceStatPeriod) {
       fetchInvoices(buildInvoiceStatsCountParams(buildNewInvoiceStatsFilterRows(period))),
   });
 
+  const previousQuery = useWorkspaceQuery({
+    queryKey: queryKeys.invoices.stats("new-previous", period),
+    queryFn: () =>
+      fetchInvoices(buildInvoiceStatsCountParams(buildPreviousNewInvoiceStatsFilterRows(period))),
+  });
+
   return {
     total: query.data?.total ?? 0,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    isError: query.isError,
+    previousTotal: previousQuery.data?.total ?? 0,
+    isLoading: query.isLoading || previousQuery.isLoading,
+    isFetching: query.isFetching || previousQuery.isFetching,
+    isError: query.isError || previousQuery.isError,
   };
 }
 
@@ -107,6 +116,21 @@ export function useInvoice(invoiceId: string | null, enabled = true) {
     queryKey: queryKeys.invoices.detail(invoiceId ?? ""),
     queryFn: () => fetchInvoiceById(invoiceId!),
     enabled: enabled && Boolean(invoiceId?.trim()),
+  });
+}
+
+export function useInvoiceJournals(
+  invoiceId: string | null,
+  invoiceNumber?: string,
+  enabled = true,
+) {
+  const id = invoiceId?.trim() ?? "";
+  const number = invoiceNumber?.trim() ?? "";
+
+  return useWorkspaceQuery({
+    queryKey: queryKeys.invoices.journals(id, number),
+    queryFn: () => fetchJournalsForInvoice({ invoiceId: id || undefined, invoiceNumber: number || undefined }),
+    enabled: enabled && Boolean(number),
   });
 }
 

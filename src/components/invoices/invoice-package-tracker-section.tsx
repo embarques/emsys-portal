@@ -6,7 +6,7 @@ import { PackageSearch } from "lucide-react";
 import { InvoiceViewCollapsibleSection } from "@/components/invoices/invoice-view-collapsible-section";
 import { InvoiceViewField, InvoiceViewListItem } from "@/components/invoices/invoice-view-field";
 import { buildInvoiceLabelActivityTimeline, formatLabelTimestamp } from "@/lib/labels/display";
-import { getMockInvoicePackageTrackerEntries } from "@/lib/invoices/package-tracker";
+import { buildInvoicePackageTrackerEntries } from "@/lib/invoices/package-tracker";
 import { useLabelsStore } from "@/lib/labels/use-labels-store";
 import type { Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
@@ -23,7 +23,7 @@ export function InvoicePackageTrackerSection({ invoice }: InvoicePackageTrackerS
   const timeline = useMemo(() => {
     const fromStore = buildInvoiceLabelActivityTimeline(invoice, activityLog, labels);
     if (fromStore.length > 0) return fromStore;
-    return getMockInvoicePackageTrackerEntries(invoice);
+    return buildInvoicePackageTrackerEntries(invoice);
   }, [activityLog, invoice, labels]);
 
   const sortedTimeline = [...timeline].reverse();

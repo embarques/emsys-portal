@@ -19,6 +19,12 @@
   "form": {
     "noChanges": "No changes to save."
   },
+  "stats": {
+    "changeMore": "{{percent}}% more than last {{period}}",
+    "changeLess": "{{percent}}% less than last {{period}}",
+    "changeSame": "Same as last {{period}}",
+    "changeFromZero": "Up from zero last {{period}}"
+  },
   "empty": {
     "dash": "—",
     "noCarrier": "No carrier"

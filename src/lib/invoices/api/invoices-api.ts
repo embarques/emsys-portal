@@ -82,6 +82,8 @@ type ApiInvoiceParty = {
   phones?: ApiInvoicePhone[];
   address?: ApiAddress;
   addresses?: ApiAddress[];
+  email?: string;
+  IDNumber?: string;
 };
 
 type ApiInvoiceUser = {
@@ -123,6 +125,11 @@ type ApiInvoiceBarcodeDelivery = {
   name?: string;
 };
 
+type ApiInvoiceBarcodeRoute = {
+  id?: number | string;
+  name?: string;
+};
+
 type ApiInvoiceBarcode = {
   id?: number | string;
   barcodeId?: number | string;
@@ -130,7 +137,10 @@ type ApiInvoiceBarcode = {
   status?: ApiInvoiceBarcodeStatus;
   container?: ApiInvoiceBarcodeContainer;
   delivery?: ApiInvoiceBarcodeDelivery;
+  route?: ApiInvoiceBarcodeRoute;
   scanDate?: string;
+  createdAt?: string;
+  createdBy?: ApiInvoiceUser;
 };
 
 type ApiInvoiceDetail = {
@@ -162,7 +172,13 @@ type ApiInvoice = {
   branch?: InvoiceBranch;
   user?: ApiInvoiceUser;
   employee?: ApiInvoiceUser;
+  createdBy?: ApiInvoiceUser;
+  updatedBy?: ApiInvoiceUser;
   container?: ApiInvoiceContainer;
+  officeBranch?: InvoiceBranch;
+  pickupEmployee?: ApiInvoiceUser;
+  pickupSource?: string;
+  route?: ApiInvoiceBarcodeRoute;
   pickup?: ApiInvoicePickup;
   comments?: ApiInvoiceComment[];
   sender?: ApiInvoiceParty;
@@ -262,10 +278,15 @@ function normalizeApiInvoiceParty(raw: unknown): OrderParty {
         .filter((phone): phone is NonNullable<typeof phone> => phone != null)
     : [];
 
+  const documentId = String(party.IDNumber ?? "").trim();
+  const email = String(party.email ?? "").trim();
+
   return {
     id,
     clientId: id,
     name: String(party.name ?? "").trim() || "—",
+    documentId: documentId || undefined,
+    email: email || undefined,
     phones,
     addresses,
     orderAddressId: addresses.find((address) => address.isPrimary)?.id ?? addresses[0]?.id ?? id,
@@ -281,9 +302,9 @@ function normalizeApiInvoiceReceiver(item: ApiInvoice): OrderParty | null {
 }
 
 function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
-  if (!Array.isArray(raw)) return [];
+  const entries = Array.isArray(raw) ? raw : raw && typeof raw === "object" ? [raw] : [];
 
-  return raw
+  return entries
     .map((entry): InvoiceLineItemBarcode | null => {
       const barcode = entry as ApiInvoiceBarcode;
       const number = String(barcode.number ?? "").trim();
@@ -292,7 +313,10 @@ function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
       const statusName = String(barcode.status?.name ?? "").trim();
       const containerName = String(barcode.container?.name ?? "").trim();
       const deliveryName = String(barcode.delivery?.name ?? "").trim();
+      const routeName = String(barcode.route?.name ?? "").trim();
       const scanDate = String(barcode.scanDate ?? "").trim();
+      const createdAt = String(barcode.createdAt ?? "").trim();
+      const createdBy = readInvoiceCreatedBy(barcode.createdBy);
 
       const canonicalBarcodeId =
         barcode.barcodeId != null
@@ -311,7 +335,11 @@ function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
         containerName: containerName || undefined,
         deliveryId: barcode.delivery?.id != null ? String(barcode.delivery.id) : undefined,
         deliveryName: deliveryName || undefined,
+        routeId: barcode.route?.id != null ? String(barcode.route.id) : undefined,
+        routeName: routeName || undefined,
         scanDate: scanDate || undefined,
+        createdAt: createdAt || undefined,
+        createdBy: createdBy !== DEFAULT_CREATED_BY ? createdBy : undefined,
       };
     })
     .filter((barcode): barcode is InvoiceLineItemBarcode => barcode != null);
@@ -349,7 +377,11 @@ function normalizeInvoiceLineItems(raw: unknown): InvoiceLineItem[] {
       labelCount: Number(detail.labels ?? 0),
       unitPrice,
       lineTotal,
-      barcodes: normalizeInvoiceBarcodes(detail.barcodes),
+      barcodes: normalizeInvoiceBarcodes(
+        Array.isArray(detail.barcodes) && detail.barcodes.length > 0
+          ? detail.barcodes
+          : detail.barcode,
+      ),
     };
   });
 }
@@ -384,6 +416,18 @@ function normalizeInvoiceComments(raw: unknown): InvoiceComment[] {
     .filter((comment): comment is InvoiceComment => comment != null);
 }
 
+function mapInvoicePickupSource(
+  source: string | undefined,
+  officeBranch?: InvoiceBranch,
+): Invoice["pickupSource"] {
+  const normalized = String(source ?? "").trim().toLowerCase();
+  if (normalized === "warehouse") return "warehouse";
+  if (normalized === "office") return "office";
+  if (normalized === "route") return "route";
+  if (officeBranch?.id) return "office";
+  return undefined;
+}
+
 function normalizeInvoice(raw: unknown): Invoice | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -394,6 +438,11 @@ function normalizeInvoice(raw: unknown): Invoice | null {
   const paidRegion = String(item.paidRegion ?? "").trim();
   const lineItems = normalizeInvoiceLineItems(item.invoiceDetails);
   const { cost, discount, amountPaid, balance } = normalizeApiInvoiceMoney(item);
+  const pickupEmployeeName = readInvoiceCreatedBy(item.pickupEmployee);
+  const officeBranchId = item.officeBranch?.id != null ? String(item.officeBranch.id) : undefined;
+  const officeBranchName = String(item.officeBranch?.name ?? "").trim();
+  const routeId = item.route?.id != null ? String(item.route.id) : undefined;
+  const routeName = String(item.route?.name ?? "").trim();
 
   return {
     invoiceId,
@@ -407,6 +456,13 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     cost: cost || undefined,
     branch: item.branch,
     pickupId: item.pickup?.id != null ? String(item.pickup.id) : undefined,
+    pickupSource: mapInvoicePickupSource(item.pickupSource, item.officeBranch),
+    officeBranchId,
+    officeBranchName: officeBranchName || undefined,
+    pickupEmployeeId: item.pickupEmployee?.id != null ? String(item.pickupEmployee.id) : undefined,
+    pickupEmployeeName: pickupEmployeeName !== DEFAULT_CREATED_BY ? pickupEmployeeName : undefined,
+    routeId,
+    routeName: routeName || undefined,
     sender: normalizeApiInvoiceParty(item.sender),
     receiver: normalizeApiInvoiceReceiver(item),
     lineItems,
@@ -417,7 +473,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     amountPaid,
     balance,
     createdAt: String(item.createdAt ?? "").trim(),
-    createdBy: readInvoiceCreatedBy(item.employee ?? item.user),
+    createdBy: readInvoiceCreatedBy(item.createdBy ?? item.employee ?? item.user),
     updatedAt: String(item.updatedAt ?? "").trim(),
     legacySyncedAt: parseLastSyncedAt(item),
   };
