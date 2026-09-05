@@ -18,7 +18,6 @@
   },
   "addresses": {
     "sheetTitle": "Direcciones del cliente",
-    "addAddressTodo": "Agregar dirección (próximamente)",
     "addAddress": "Agregar nueva dirección",
     "matchedBadge": "Coincidencia",
     "primaryPrefix": "Principal:",

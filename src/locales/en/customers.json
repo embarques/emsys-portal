@@ -18,7 +18,6 @@
   },
   "addresses": {
     "sheetTitle": "Customer addresses",
-    "addAddressTodo": "Add address (coming soon)",
     "addAddress": "Add new address",
     "matchedBadge": "Matched",
     "primaryPrefix": "Primary:",
