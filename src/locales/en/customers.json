@@ -25,7 +25,7 @@
     "countBadgeOne": "1 address",
     "moreOne": "+1 more address",
     "moreMany": "+{{count}} more addresses",
-    "searchPlaceholder": "Search by name, phone, or address…",
+    "searchPlaceholder": "Search customers",
     "emptyResults": "No customers found.",
     "loading": "Searching customers…",
     "viewAll": "View addresses",
@@ -103,7 +103,7 @@
     "updatedAt": "Updated at"
   },
   "search": {
-    "placeholder": "Search by name, any phone, or any address…"
+    "placeholder": "Search customers"
   },
   "loading": {
     "title": "Loading customers",
@@ -141,7 +141,7 @@
       "apartment": "Apt #",
       "crossStreet": "Additional address information",
       "cityProvince": "Select a city",
-      "cityProvinceSearch": "Search by city or province…",
+      "cityProvinceSearch": "Search cities or provinces",
       "notes": "Add any relevant context…"
     },
     "addressFields": {
@@ -236,14 +236,20 @@
       },
       "address": {
         "address1": { "label": "Address 1", "placeholder": "Enter address 1…" },
-        "address2": { "label": "Address line 2", "placeholder": "Enter address line 2…" },
+        "address2": {
+          "label": "Address line 2",
+          "placeholder": "Enter address line 2…"
+        },
         "city": { "label": "City", "placeholder": "Enter city…" },
         "state": { "label": "State", "placeholder": "Enter state…" },
         "zipcode": { "label": "Zip code", "placeholder": "Enter zip code…" },
         "country": { "label": "Country", "placeholder": "Select country…" }
       },
       "phone": { "label": "Phone", "placeholder": "Enter phone…" },
-      "customerType": { "label": "Customer type", "placeholder": "Select type…" },
+      "customerType": {
+        "label": "Customer type",
+        "placeholder": "Select type…"
+      },
       "branch": {
         "id": { "label": "Branch", "placeholder": "Select branch…" }
       }

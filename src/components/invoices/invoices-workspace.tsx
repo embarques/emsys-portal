@@ -19,14 +19,16 @@ import {
 import { InvoiceStagingDialog } from "@/components/invoices/invoice-staging-dialog";
 import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
+import { NewInvoicesStatCard } from "@/components/invoices/new-invoices-stat-card";
 import { DataTable } from "@/components/app-shell/data-table";
+import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { LegacyLastSynced } from "@/components/app-shell/legacy-last-synced";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
 
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
@@ -1246,7 +1248,12 @@ export function InvoicesWorkspace() {
       </section>
 
       <div className="hidden md:block">
-      <StatCards items={stats} mobileLayout="stack" />
+      <StatCardsCarousel mobileLayout="stack">
+        {stats.map((stat) => (
+          <FlippableStatCard key={stat.label} {...stat} />
+        ))}
+        <NewInvoicesStatCard />
+      </StatCardsCarousel>
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">

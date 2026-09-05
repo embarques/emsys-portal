@@ -1,5 +1,9 @@
 import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
+import {
+  getNewInvoicePeriodStartIso,
+  type NewInvoiceStatPeriod,
+} from "@/lib/invoices/new-invoice-stats";
 import { DEFAULT_INVOICE_LIST_PARAMS, type InvoiceListParams } from "@/lib/invoices/types";
 
 /** Count-only invoice list/search requests for dashboard stat cards. */
@@ -23,6 +27,20 @@ export function buildOutstandingInvoiceStatsFilterRows(): TableFilterRowState[] 
       field: "paidStatus",
       operator: "neq",
       value: "CLOSED",
+    },
+  ];
+}
+
+export function buildNewInvoiceStatsFilterRows(
+  period: NewInvoiceStatPeriod,
+): TableFilterRowState[] {
+  return [
+    {
+      id: "new-invoices-created-at",
+      join: "and",
+      field: "createdAt",
+      operator: "gte",
+      value: getNewInvoicePeriodStartIso(period),
     },
   ];
 }

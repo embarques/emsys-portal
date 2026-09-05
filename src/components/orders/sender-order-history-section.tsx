@@ -8,8 +8,8 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useSenderOrderHistory } from "@/lib/orders/hooks/use-orders";
 import {
+  formatOrderCommentsSummary,
   formatOrderDate,
-  formatPickupCommentSummary,
   formatUserSummary,
   getCustomerAddressLine,
   getCustomerPhone,
@@ -127,9 +127,7 @@ export function SenderOrderHistorySection({
                   <td className="px-3 py-2 text-xs">{getCustomerAddressLine(order.sender)}</td>
                   <td className="px-3 py-2 text-xs">{getCustomerPhone(order.sender)}</td>
                   <td className="px-3 py-2 text-xs">
-                    {order.comments.length > 0
-                      ? order.comments.map(formatPickupCommentSummary).join(" · ")
-                      : dash}
+                    {order.comments.length > 0 ? formatOrderCommentsSummary(order) : dash}
                   </td>
                   <td className="px-3 py-2 text-xs">{getReceiverSummary(order)}</td>
                   <td className="px-3 py-2 text-xs">{getReceiverAddressLine(order)}</td>

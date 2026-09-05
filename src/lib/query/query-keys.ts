@@ -152,8 +152,13 @@ export const queryKeys = {
     list: (params: InvoiceListParams) => [...queryKeys.invoices.lists(), params] as const,
     search: (search: InvoiceSearchFilter | undefined, limit: number) =>
       [...queryKeys.invoices.all, "search", search, limit] as const,
-    stats: (scope: "outstanding" | "outstanding-balance") =>
-      [...queryKeys.invoices.all, "stats", scope] as const,
+    stats: (
+      scope: "outstanding" | "outstanding-balance" | "new",
+      period?: string,
+    ) =>
+      period
+        ? ([...queryKeys.invoices.all, "stats", scope, period] as const)
+        : ([...queryKeys.invoices.all, "stats", scope] as const),
     detail: (invoiceId: string) => [...queryKeys.invoices.all, "detail", invoiceId] as const,
   },
   accounting: {
@@ -200,10 +205,13 @@ export const queryKeys = {
         | "pending-pickups"
         | "pending-takes"
         | "pending-estimates"
-        | "pending-payments",
-      branchId?: number,
+        | "pending-payments"
+        | "new",
+      period?: string,
     ) =>
-      [...queryKeys.orders.all, "stats", scope, branchId] as const,
+      period
+        ? ([...queryKeys.orders.all, "stats", scope, period] as const)
+        : ([...queryKeys.orders.all, "stats", scope] as const),
     detail: (orderId: string) => [...queryKeys.orders.all, "detail", orderId] as const,
   },
   items: {

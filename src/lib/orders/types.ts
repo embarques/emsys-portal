@@ -317,6 +317,74 @@ export function deriveOrderPurpose(comments: OrderCommentFormValues[]): string {
   return keywords.join(", ");
 }
 
+function orderCommentPurposeLabel(purpose: string): string {
+  const normalized = normalizeOrderCommentPurpose(purpose);
+  if (!normalized) return "";
+  return ORDER_COMMENT_PURPOSES.find((entry) => entry.value === normalized)?.label ?? "";
+}
+
+function orderCommentItemLabel(itemType: string): string {
+  const value = itemType.trim().toLowerCase();
+  if (!value) return "";
+  return ORDER_COMMENT_ITEM_TYPES.find((entry) => entry.value === value)?.label ?? itemType.trim();
+}
+
+function stripTrailingPeriods(value: string): string {
+  return value.replace(/\.+$/, "").trim();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Format one comment row as "Purpose Qty Item." or "Purpose comment."
+ * Uses canonical English labels so the stored paragraph is locale-stable.
+ */
+export function formatOrderCommentSentence(comment: OrderCommentFormValues): string {
+  const purpose = orderCommentPurposeLabel(comment.purpose);
+  if (!purpose) return "";
+
+  if (orderCommentPurposeRequiresItem(comment.purpose)) {
+    if (comment.itemType === "other" || !comment.itemType) {
+      const note = stripTrailingPeriods(comment.customItem || comment.description);
+      return note ? `${purpose} ${note}.` : `${purpose}.`;
+    }
+
+    const item = orderCommentItemLabel(comment.itemType);
+    const qty = comment.quantity.trim();
+    if (qty && item) return `${purpose} ${qty} ${item}.`;
+    if (item) return `${purpose} ${item}.`;
+    return `${purpose}.`;
+  }
+
+  const note = stripTrailingPeriods(comment.description);
+  return note ? `${purpose} ${note}.` : `${purpose}.`;
+}
+
+/** Join comment rows into a period-separated paragraph for the API and summaries. */
+export function compileOrderCommentsParagraph(comments: OrderCommentFormValues[]): string {
+  return comments
+    .filter((comment) => comment.purpose.trim())
+    .map(formatOrderCommentSentence)
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** Strip a compiled "Purpose rest." prefix so free-text comments round-trip. */
+function unwrapCompiledCommentDescription(purpose: string, description: string): string {
+  const trimmed = stripTrailingPeriods(description);
+  if (!trimmed) return "";
+
+  const label = orderCommentPurposeLabel(purpose);
+  if (!label) return trimmed;
+
+  const match = trimmed.match(new RegExp(`^${escapeRegExp(label)}(?:\\s+([\\s\\S]+))?$`, "i"));
+  if (!match) return trimmed;
+
+  return (match[1] ?? "").trim();
+}
+
 export function getCustomerContentAddresses(
   customer: Pick<Customer, "addresses">,
 ): CustomerCoreAddress[] {
@@ -533,7 +601,12 @@ export function orderCommentToFormValues(comment: PickupComment): OrderCommentFo
     itemType,
     customItem,
     quantity: comment.quantity > 0 ? String(comment.quantity) : "",
-    description: comment.description,
+    // Item rows store the compiled sentence in `description` for search; the
+    // editor reads unit/qty instead. Unwrap free-text so "Estimate dasdsa."
+    // round-trips to the original note.
+    description: requiresItem
+      ? ""
+      : unwrapCompiledCommentDescription(comment.purpose, comment.description),
   };
 }
 

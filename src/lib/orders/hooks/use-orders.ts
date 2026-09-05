@@ -23,10 +23,12 @@ import {
   updateOrder,
 } from "@/lib/orders/api/orders-api";
 import {
+  buildNewOrderStatsFilterRows,
   buildOrderStatsCountParams,
   buildPendingOrderStatsFilterRows,
   buildPendingPurposeStatsFilterRows,
 } from "@/lib/orders/order-stats";
+import type { NewOrderStatPeriod } from "@/lib/orders/new-order-stats";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
   type Order,
@@ -179,6 +181,24 @@ export function useOrderStats(options: OrderStatsOptions = {}) {
       pendingTakesQuery.isError ||
       pendingEstimatesQuery.isError ||
       pendingPaymentsQuery.isError,
+  };
+}
+
+/** Count of appointments created within a rolling timeframe (`createdAt >= period start`). */
+export function useNewOrderStats(period: NewOrderStatPeriod) {
+  const queryEnabled = useOrdersQueryEnabled();
+
+  const query = useWorkspaceQuery({
+    queryKey: queryKeys.orders.stats("new", period),
+    queryFn: () => fetchOrders(buildOrderStatsCountParams(buildNewOrderStatsFilterRows(period))),
+    enabled: queryEnabled,
+  });
+
+  return {
+    total: query.data?.total ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
   };
 }
 

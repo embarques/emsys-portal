@@ -17,8 +17,10 @@ import {
 } from "@/lib/invoices/api/invoices-api";
 import {
   buildInvoiceStatsCountParams,
+  buildNewInvoiceStatsFilterRows,
   buildOutstandingInvoiceStatsFilterRows,
 } from "@/lib/invoices/invoice-stats";
+import type { NewInvoiceStatPeriod } from "@/lib/invoices/new-invoice-stats";
 import {
   DEFAULT_INVOICE_LIST_PARAMS,
   type InvoiceFormValues,
@@ -55,6 +57,22 @@ export function useInvoiceStats(options: InvoiceStatsOptions = {}) {
     isLoading: outstandingQuery.isLoading,
     isBalanceLoading: outstandingBalanceQuery.isLoading,
     isError: outstandingQuery.isError || outstandingBalanceQuery.isError,
+  };
+}
+
+/** Count of invoices created within a rolling timeframe (`createdAt >= period start`). */
+export function useNewInvoiceStats(period: NewInvoiceStatPeriod) {
+  const query = useWorkspaceQuery({
+    queryKey: queryKeys.invoices.stats("new", period),
+    queryFn: () =>
+      fetchInvoices(buildInvoiceStatsCountParams(buildNewInvoiceStatsFilterRows(period))),
+  });
+
+  return {
+    total: query.data?.total ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
   };
 }
 

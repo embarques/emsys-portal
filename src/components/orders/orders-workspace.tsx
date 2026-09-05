@@ -40,7 +40,9 @@ import {
   readOrdersListContext,
 } from "@/lib/orders/store/orders-list-context";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
+import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
+import { NewAppointmentsStatCard } from "@/components/orders/new-appointments-stat-card";
 
 import {
   TableSelectionActionDivider,
@@ -1332,13 +1334,17 @@ export function OrdersWorkspace() {
         }
       />
 
-        <StatCards
-        items={statCards.map((stat) => ({
-          ...stat,
-          value: stats.isLoading ? "…" : stat.value,
-        }))}
-        />
-
+        <StatCardsCarousel>
+          {statCards.map((stat) => (
+            <FlippableStatCard
+              key={stat.label}
+              label={stat.label}
+              value={stats.isLoading ? "…" : stat.value}
+              icon={stat.icon}
+            />
+          ))}
+          <NewAppointmentsStatCard />
+        </StatCardsCarousel>
         <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar

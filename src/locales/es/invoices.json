@@ -3,6 +3,26 @@
   "pages": {
     "description": "Digitalice y rastree la mercancía del cliente que recogemos o recibimos como parte de un envío."
   },
+  "stats": {
+    "new": {
+      "label": "Facturas nuevas",
+      "periodLabel": "Periodo",
+      "periods": {
+        "7d": "7 días",
+        "30d": "30 días",
+        "3m": "3 meses",
+        "6m": "6 meses",
+        "1y": "1 año"
+      },
+      "descriptions": {
+        "7d": "Creadas en los últimos 7 días",
+        "30d": "Creadas en los últimos 30 días",
+        "3m": "Creadas en los últimos 3 meses",
+        "6m": "Creadas en los últimos 6 meses",
+        "1y": "Creadas en el último año"
+      }
+    }
+  },
   "staging": {
     "tableAction": "Administrar artículos de factura",
     "title": "Seleccionar artículos de factura para procesamiento"
@@ -23,7 +43,7 @@
     "balance": "Saldo"
   },
   "search": {
-    "placeholder": "Buscar por número de factura, remitente, destinatario o contenedor…"
+    "placeholder": "Buscar facturas"
   },
   "actions": {
     "syncLegacy": "Sync legacy",
@@ -388,30 +408,72 @@
   },
   "filters": {
     "fields": {
-      "number": { "label": "Número de factura", "placeholder": "Ingrese el número de factura…" },
-      "numberRange": { "label": "Rango de números de factura", "placeholder": "488800 a 488900" },
+      "number": {
+        "label": "Número de factura",
+        "placeholder": "Ingrese el número de factura…"
+      },
+      "numberRange": {
+        "label": "Rango de números de factura",
+        "placeholder": "488800 a 488900"
+      },
       "date": { "label": "Fecha de la factura", "placeholder": "AAAA-MM-DD" },
-      "dateRange": { "label": "Rango de fechas de factura", "placeholder": "2026-01-01 a 2026-06-30" },
+      "dateRange": {
+        "label": "Rango de fechas de factura",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      },
       "paidRegion": { "label": "Pagado en" },
       "paidStatus": { "label": "Estado de pago" },
-      "cost": { "label": "Total de la factura", "placeholder": "Ingrese el monto…" },
+      "cost": {
+        "label": "Total de la factura",
+        "placeholder": "Ingrese el monto…"
+      },
       "discount": { "label": "Descuento", "placeholder": "Ingrese el monto…" },
-      "payment": { "label": "Monto pagado", "placeholder": "Ingrese el monto…" },
+      "payment": {
+        "label": "Monto pagado",
+        "placeholder": "Ingrese el monto…"
+      },
       "balance": { "label": "Saldo", "placeholder": "Ingrese el monto…" },
       "container": {
-        "name": { "label": "Contenedor", "placeholder": "Ingrese el contenedor…" }
+        "name": {
+          "label": "Contenedor",
+          "placeholder": "Ingrese el contenedor…"
+        }
       },
       "sender": {
-        "name": { "label": "Nombre del remitente", "placeholder": "Ingrese el nombre del remitente…" },
-        "id": { "label": "ID del remitente", "placeholder": "Ingrese el ID del remitente…" },
-        "phone": { "label": "Teléfono del remitente", "placeholder": "Ingrese el teléfono…" },
-        "address": { "label": "Dirección del remitente", "placeholder": "Ingrese dirección, ciudad, estado o código postal…" }
+        "name": {
+          "label": "Nombre del remitente",
+          "placeholder": "Ingrese el nombre del remitente…"
+        },
+        "id": {
+          "label": "ID del remitente",
+          "placeholder": "Ingrese el ID del remitente…"
+        },
+        "phone": {
+          "label": "Teléfono del remitente",
+          "placeholder": "Ingrese el teléfono…"
+        },
+        "address": {
+          "label": "Dirección del remitente",
+          "placeholder": "Ingrese dirección, ciudad, estado o código postal…"
+        }
       },
       "receiver": {
-        "name": { "label": "Nombre del destinatario", "placeholder": "Ingrese el nombre del destinatario…" },
-        "id": { "label": "ID del destinatario", "placeholder": "Ingrese el ID del destinatario…" },
-        "phone": { "label": "Teléfono del destinatario", "placeholder": "Ingrese el teléfono…" },
-        "address": { "label": "Dirección del destinatario", "placeholder": "Ingrese dirección, ciudad, estado o código postal…" }
+        "name": {
+          "label": "Nombre del destinatario",
+          "placeholder": "Ingrese el nombre del destinatario…"
+        },
+        "id": {
+          "label": "ID del destinatario",
+          "placeholder": "Ingrese el ID del destinatario…"
+        },
+        "phone": {
+          "label": "Teléfono del destinatario",
+          "placeholder": "Ingrese el teléfono…"
+        },
+        "address": {
+          "label": "Dirección del destinatario",
+          "placeholder": "Ingrese dirección, ciudad, estado o código postal…"
+        }
       },
       "createdBy": {
         "name": { "label": "Creada por" }
@@ -420,15 +482,33 @@
         "_id": { "label": "Ruta" }
       },
       "employee": {
-        "id": { "label": "ID de empleado", "placeholder": "Ingrese el ID de empleado…" },
-        "name": { "label": "Nombre del empleado", "placeholder": "Ingrese el nombre del empleado…" }
+        "id": {
+          "label": "ID de empleado",
+          "placeholder": "Ingrese el ID de empleado…"
+        },
+        "name": {
+          "label": "Nombre del empleado",
+          "placeholder": "Ingrese el nombre del empleado…"
+        }
       },
       "isArchive": { "label": "Archivada" },
       "isVoid": { "label": "Anulada" },
-      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" },
-      "createdAtRange": { "label": "Rango de fechas de creación", "placeholder": "2026-01-01 a 2026-06-30" },
-      "updatedAt": { "label": "Fecha de modificación", "placeholder": "AAAA-MM-DD" },
-      "updatedAtRange": { "label": "Rango de fechas de modificación", "placeholder": "2026-01-01 a 2026-06-30" }
+      "createdAt": {
+        "label": "Fecha de creación",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "createdAtRange": {
+        "label": "Rango de fechas de creación",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "updatedAt": {
+        "label": "Fecha de modificación",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAtRange": {
+        "label": "Rango de fechas de modificación",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      }
     },
     "options": {
       "paidRegion": {

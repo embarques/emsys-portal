@@ -1,5 +1,9 @@
 import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
+import {
+  getNewOrderPeriodStartIso,
+  type NewOrderStatPeriod,
+} from "@/lib/orders/new-order-stats";
 import { DEFAULT_ORDER_LIST_PARAMS, type OrderListParams } from "@/lib/orders/types";
 
 /** Count-only pickup list/search requests for dashboard stat cards. */
@@ -36,6 +40,18 @@ export function buildPendingPurposeStatsFilterRows(purposeContains: string): Tab
       field: "completed",
       operator: "eq",
       value: "false",
+    },
+  ];
+}
+
+export function buildNewOrderStatsFilterRows(period: NewOrderStatPeriod): TableFilterRowState[] {
+  return [
+    {
+      id: "new-orders-created-at",
+      join: "and",
+      field: "createdAt",
+      operator: "gte",
+      value: getNewOrderPeriodStartIso(period),
     },
   ];
 }

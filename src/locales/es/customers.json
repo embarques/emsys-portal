@@ -25,7 +25,7 @@
     "countBadgeOne": "1 dirección",
     "moreOne": "+1 dirección más",
     "moreMany": "+{{count}} direcciones más",
-    "searchPlaceholder": "Buscar por nombre, teléfono o dirección…",
+    "searchPlaceholder": "Buscar clientes",
     "emptyResults": "No se encontraron clientes.",
     "loading": "Buscando clientes…",
     "viewAll": "Ver direcciones",
@@ -103,7 +103,7 @@
     "updatedAt": "Actualizado el"
   },
   "search": {
-    "placeholder": "Buscar por nombre, cualquier teléfono o cualquier dirección…"
+    "placeholder": "Buscar clientes"
   },
   "loading": {
     "title": "Cargando clientes",
@@ -141,7 +141,7 @@
       "apartment": "Apto #",
       "crossStreet": "Información adicional de dirección",
       "cityProvince": "Seleccione una ciudad",
-      "cityProvinceSearch": "Buscar por ciudad o provincia…",
+      "cityProvinceSearch": "Buscar ciudades o provincias",
       "notes": "Agregue contexto relevante…"
     },
     "addressFields": {
@@ -222,28 +222,55 @@
     "fields": {
       "name": { "label": "Nombre", "placeholder": "Ingrese nombre…" },
       "email": { "label": "Correo", "placeholder": "Ingrese correo…" },
-      "IDNumber": { "label": "Número de ID", "placeholder": "Ingrese número de ID…" },
-      "id": { "label": "ID de cliente", "placeholder": "Ingrese ID de cliente…" },
+      "IDNumber": {
+        "label": "Número de ID",
+        "placeholder": "Ingrese número de ID…"
+      },
+      "id": {
+        "label": "ID de cliente",
+        "placeholder": "Ingrese ID de cliente…"
+      },
       "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
       "updatedAt": { "label": "Actualizado el", "placeholder": "AAAA-MM-DD" },
       "createdBy": {
         "name": { "label": "Creado por", "placeholder": "Ingrese creador…" },
-        "id": { "label": "ID del creador", "placeholder": "Ingrese ID del creador…" }
+        "id": {
+          "label": "ID del creador",
+          "placeholder": "Ingrese ID del creador…"
+        }
       },
       "updatedBy": {
-        "name": { "label": "Actualizado por", "placeholder": "Ingrese editor…" },
-        "id": { "label": "ID del editor", "placeholder": "Ingrese ID del editor…" }
+        "name": {
+          "label": "Actualizado por",
+          "placeholder": "Ingrese editor…"
+        },
+        "id": {
+          "label": "ID del editor",
+          "placeholder": "Ingrese ID del editor…"
+        }
       },
       "address": {
-        "address1": { "label": "Dirección 1", "placeholder": "Ingrese dirección 1…" },
-        "address2": { "label": "Línea de dirección 2", "placeholder": "Ingrese línea de dirección 2…" },
+        "address1": {
+          "label": "Dirección 1",
+          "placeholder": "Ingrese dirección 1…"
+        },
+        "address2": {
+          "label": "Línea de dirección 2",
+          "placeholder": "Ingrese línea de dirección 2…"
+        },
         "city": { "label": "Ciudad", "placeholder": "Ingrese ciudad…" },
         "state": { "label": "Estado", "placeholder": "Ingrese estado…" },
-        "zipcode": { "label": "Código postal", "placeholder": "Ingrese código postal…" },
+        "zipcode": {
+          "label": "Código postal",
+          "placeholder": "Ingrese código postal…"
+        },
         "country": { "label": "País", "placeholder": "Seleccione país…" }
       },
       "phone": { "label": "Teléfono", "placeholder": "Ingrese teléfono…" },
-      "customerType": { "label": "Tipo de cliente", "placeholder": "Seleccione tipo…" },
+      "customerType": {
+        "label": "Tipo de cliente",
+        "placeholder": "Seleccione tipo…"
+      },
       "branch": {
         "id": { "label": "Sucursal", "placeholder": "Seleccione sucursal…" }
       }

@@ -3,7 +3,7 @@
   "entityPlural": "appointments",
   "title": "Appointments",
   "pages": {
-    "description": "Schedule client visits for pickup, supplies, payment collection, or estimates."
+    "description": "Schedule client visits for pickup, supply deliveries, payment collection, or estimates."
   },
   "noun": "appointments",
   "workspace": {
@@ -53,6 +53,24 @@
     },
     "pendingPayments": {
       "label": "Pending payments"
+    },
+    "new": {
+      "label": "New appointments",
+      "periodLabel": "Timeframe",
+      "periods": {
+        "7d": "7 days",
+        "30d": "30 days",
+        "3m": "3 months",
+        "6m": "6 months",
+        "1y": "1 year"
+      },
+      "descriptions": {
+        "7d": "Created in the last 7 days",
+        "30d": "Created in the last 30 days",
+        "3m": "Created in the last 3 months",
+        "6m": "Created in the last 6 months",
+        "1y": "Created in the last year"
+      }
     }
   },
   "status": {
@@ -88,7 +106,7 @@
     "receiverAddress": "Receiver address"
   },
   "search": {
-    "placeholder": "Search by sender/receiver name, phone, address, or comments…"
+    "placeholder": "Search for appointments"
   },
   "loading": {
     "title": "Loading appointments",
@@ -135,7 +153,7 @@
       "selectSender": "Select sender",
       "selectReceiver": "Select receiver",
       "noReceiver": "No receiver",
-      "searchParty": "Search by name, phone, or address…",
+      "searchParty": "Search appointments",
       "selectAddress": "Select address",
       "searchAddress": "Search addresses…"
     },

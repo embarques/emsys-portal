@@ -3,6 +3,26 @@
   "pages": {
     "description": "Digitize and track customer merchandise we pick up or receive as part of a shipment."
   },
+  "stats": {
+    "new": {
+      "label": "New invoices",
+      "periodLabel": "Timeframe",
+      "periods": {
+        "7d": "7 days",
+        "30d": "30 days",
+        "3m": "3 months",
+        "6m": "6 months",
+        "1y": "1 year"
+      },
+      "descriptions": {
+        "7d": "Created in the last 7 days",
+        "30d": "Created in the last 30 days",
+        "3m": "Created in the last 3 months",
+        "6m": "Created in the last 6 months",
+        "1y": "Created in the last year"
+      }
+    }
+  },
   "staging": {
     "tableAction": "Manage invoice items",
     "title": "Select invoice items for processing"
@@ -23,7 +43,7 @@
     "balance": "Balance"
   },
   "search": {
-    "placeholder": "Search by invoice number, sender, receiver, or container…"
+    "placeholder": "Search invoices"
   },
   "actions": {
     "syncLegacy": "Sync legacy",
@@ -388,10 +408,19 @@
   },
   "filters": {
     "fields": {
-      "number": { "label": "Invoice number", "placeholder": "Enter invoice number…" },
-      "numberRange": { "label": "Invoice number range", "placeholder": "488800 to 488900" },
+      "number": {
+        "label": "Invoice number",
+        "placeholder": "Enter invoice number…"
+      },
+      "numberRange": {
+        "label": "Invoice number range",
+        "placeholder": "488800 to 488900"
+      },
       "date": { "label": "Invoice date", "placeholder": "YYYY-MM-DD" },
-      "dateRange": { "label": "Invoice date range", "placeholder": "2026-01-01 to 2026-06-30" },
+      "dateRange": {
+        "label": "Invoice date range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
       "paidRegion": { "label": "Paid at" },
       "paidStatus": { "label": "Paid status" },
       "cost": { "label": "Invoice total", "placeholder": "Enter amount…" },
@@ -405,13 +434,22 @@
         "name": { "label": "Sender name", "placeholder": "Enter sender name…" },
         "id": { "label": "Sender ID", "placeholder": "Enter sender ID…" },
         "phone": { "label": "Sender phone", "placeholder": "Enter phone…" },
-        "address": { "label": "Sender address", "placeholder": "Enter address, city, state, or zip…" }
+        "address": {
+          "label": "Sender address",
+          "placeholder": "Enter address, city, state, or zip…"
+        }
       },
       "receiver": {
-        "name": { "label": "Receiver name", "placeholder": "Enter receiver name…" },
+        "name": {
+          "label": "Receiver name",
+          "placeholder": "Enter receiver name…"
+        },
         "id": { "label": "Receiver ID", "placeholder": "Enter receiver ID…" },
         "phone": { "label": "Receiver phone", "placeholder": "Enter phone…" },
-        "address": { "label": "Receiver address", "placeholder": "Enter address, city, state, or zip…" }
+        "address": {
+          "label": "Receiver address",
+          "placeholder": "Enter address, city, state, or zip…"
+        }
       },
       "createdBy": {
         "name": { "label": "Created by" }
@@ -421,14 +459,23 @@
       },
       "employee": {
         "id": { "label": "Employee ID", "placeholder": "Enter employee ID…" },
-        "name": { "label": "Employee name", "placeholder": "Enter employee name…" }
+        "name": {
+          "label": "Employee name",
+          "placeholder": "Enter employee name…"
+        }
       },
       "isArchive": { "label": "Archived" },
       "isVoid": { "label": "Void" },
       "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" },
-      "createdAtRange": { "label": "Date created range", "placeholder": "2026-01-01 to 2026-06-30" },
+      "createdAtRange": {
+        "label": "Date created range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
       "updatedAt": { "label": "Date modified", "placeholder": "YYYY-MM-DD" },
-      "updatedAtRange": { "label": "Date modified range", "placeholder": "2026-01-01 to 2026-06-30" }
+      "updatedAtRange": {
+        "label": "Date modified range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      }
     },
     "options": {
       "paidRegion": {

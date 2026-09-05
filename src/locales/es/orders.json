@@ -3,7 +3,7 @@
   "entityPlural": "citas",
   "title": "Citas",
   "pages": {
-    "description": "Programe visitas a clientes para recogida, entrega de insumos, cobro o presupuestos."
+    "description": "Programe visitas a clientes para recogida, entrega de suministros, cobro o presupuestos."
   },
   "noun": "citas",
   "workspace": {
@@ -53,6 +53,24 @@
     },
     "pendingPayments": {
       "label": "Pagos pendientes"
+    },
+    "new": {
+      "label": "Citas nuevas",
+      "periodLabel": "Periodo",
+      "periods": {
+        "7d": "7 días",
+        "30d": "30 días",
+        "3m": "3 meses",
+        "6m": "6 meses",
+        "1y": "1 año"
+      },
+      "descriptions": {
+        "7d": "Creadas en los últimos 7 días",
+        "30d": "Creadas en los últimos 30 días",
+        "3m": "Creadas en los últimos 3 meses",
+        "6m": "Creadas en los últimos 6 meses",
+        "1y": "Creadas en el último año"
+      }
     }
   },
   "status": {
@@ -88,7 +106,7 @@
     "receiverAddress": "Dirección del destinatario"
   },
   "search": {
-    "placeholder": "Buscar por nombre, teléfono, dirección o comentarios del remitente/destinatario…"
+    "placeholder": "Buscar citas"
   },
   "loading": {
     "title": "Cargando citas",
@@ -135,7 +153,7 @@
       "selectSender": "Seleccionar remitente",
       "selectReceiver": "Seleccionar destinatario",
       "noReceiver": "Sin destinatario",
-      "searchParty": "Buscar por nombre, teléfono o dirección…",
+      "searchParty": "Buscar citas",
       "selectAddress": "Seleccionar dirección",
       "searchAddress": "Buscar direcciones…"
     },

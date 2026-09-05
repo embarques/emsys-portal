@@ -43,6 +43,7 @@ import type { User } from "@/lib/users/types";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
   deriveOrderPurpose,
+  formatOrderCommentSentence,
   getOrderPartyAddressAtIndex,
   orderCommentPurposeRequiresItem,
   orderToFormValues,
@@ -757,7 +758,7 @@ function buildApiCommentsFromFormValues(values: OrderFormValues): ApiComment[] {
       purpose: toApiCommentPurpose(comment.purpose),
       unit: resolveOrderCommentUnit(comment),
       quantity: requiresItem && Number.isFinite(quantity) ? quantity : 0,
-      description: requiresItem ? "" : comment.description.trim(),
+      description: formatOrderCommentSentence(comment),
     };
   });
 }
