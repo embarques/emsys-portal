@@ -66,6 +66,24 @@
     "receivers": {
       "label": "Destinatarios",
       "description": "Clientes que reciben embarques"
+    },
+    "new": {
+      "label": "Clientes nuevos",
+      "periodLabel": "Periodo",
+      "periods": {
+        "7d": "7 días",
+        "30d": "30 días",
+        "3m": "3 meses",
+        "6m": "6 meses",
+        "1y": "1 año"
+      },
+      "descriptions": {
+        "7d": "Creados en los últimos 7 días",
+        "30d": "Creados en los últimos 30 días",
+        "3m": "Creados en los últimos 3 meses",
+        "6m": "Creados en los últimos 6 meses",
+        "1y": "Creados en el último año"
+      }
     }
   },
   "columns": {

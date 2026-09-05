@@ -20,7 +20,9 @@ import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
+import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
+import { NewCustomersStatCard } from "@/components/customers/new-customers-stat-card";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
@@ -526,13 +528,18 @@ export function CustomersWorkspace() {
         />
       </div>
 
-      <StatCards
-        className="hidden md:block"
-        items={statCards.map((stat) => ({
-          ...stat,
-          value: stats.isLoading ? "…" : stat.value.toLocaleString(),
-        }))}
-      />
+      <StatCardsCarousel className="hidden md:block">
+        {statCards.map((stat) => (
+          <FlippableStatCard
+            key={stat.label}
+            label={stat.label}
+            value={stats.isLoading ? "…" : stat.value.toLocaleString()}
+            description={stat.description}
+            icon={stat.icon}
+          />
+        ))}
+        <NewCustomersStatCard />
+      </StatCardsCarousel>
 
       <CustomerMobileList
         customers={customers}

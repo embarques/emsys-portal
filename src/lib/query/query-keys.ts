@@ -224,8 +224,13 @@ export const queryKeys = {
       limit: number,
       scope: { customerType?: number | "all"; orFields?: readonly string[] } = {},
     ) => [...queryKeys.customers.all, "search", search, limit, scope] as const,
-    stats: (scope: "all" | "active" | "inactive" | "senders" | "receivers") =>
-      [...queryKeys.customers.all, "stats", scope] as const,
+    stats: (
+      scope: "all" | "active" | "inactive" | "senders" | "receivers" | "new",
+      period?: string,
+    ) =>
+      period
+        ? ([...queryKeys.customers.all, "stats", scope, period] as const)
+        : ([...queryKeys.customers.all, "stats", scope] as const),
     detail: (customerId: string) => [...queryKeys.customers.all, "detail", customerId] as const,
     autocomplete: (query: string, customerType: "sender" | "receiver", limit: number) =>
       [...queryKeys.customers.all, "autocomplete", query, customerType, limit] as const,
