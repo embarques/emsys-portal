@@ -77,6 +77,32 @@ export const queryKeys = {
       [...queryKeys.pickupRouteSchedules.all, "detail", date] as const,
     byId: (recordId: string) =>
       [...queryKeys.pickupRouteSchedules.all, "by-id", recordId] as const,
+    byCrewAndDate: (routeRecordId: string, date: string, vehicleId?: string) =>
+      [
+        ...queryKeys.pickupRouteSchedules.all,
+        "by-crew-date",
+        routeRecordId,
+        date,
+        vehicleId?.trim() || "none",
+      ] as const,
+    byGroupAndDate: (routeRecordId: string, date: string, vehicleId?: string) =>
+      [
+        ...queryKeys.pickupRouteSchedules.all,
+        "by-crew-date",
+        routeRecordId,
+        date,
+        vehicleId?.trim() || "none",
+      ] as const,
+  },
+  dailyRouteSchedules: {
+    all: ["daily-routes"] as const,
+    lists: () => [...queryKeys.dailyRouteSchedules.all, "list"] as const,
+    list: (params: ActiveRouteListParams) =>
+      [...queryKeys.dailyRouteSchedules.lists(), params] as const,
+    detail: (date: string) =>
+      [...queryKeys.dailyRouteSchedules.all, "detail", date] as const,
+    byId: (recordId: string) =>
+      [...queryKeys.dailyRouteSchedules.all, "by-id", recordId] as const,
   },
   deliveryRouteSchedules: {
     all: ["delivery-routes"] as const,
@@ -92,6 +118,14 @@ export const queryKeys = {
       ] as const,
     byId: (recordId: string) =>
       [...queryKeys.deliveryRouteSchedules.all, "by-id", recordId] as const,
+    byCrewAndDate: (routeRecordId: string, date: string, containerId?: number) =>
+      [
+        ...queryKeys.deliveryRouteSchedules.all,
+        "by-crew-date",
+        routeRecordId,
+        date,
+        containerId ?? "none",
+      ] as const,
   },
   barcodes: {
     all: ["barcodes"] as const,
@@ -238,8 +272,8 @@ export const queryKeys = {
   },
 } as const;
 
-export function getScheduledRouteQueryKeys(routeType: RouteType) {
-  return routeType === "delivery"
-    ? queryKeys.deliveryRouteSchedules
-    : queryKeys.pickupRouteSchedules;
+export function getScheduledRouteQueryKeys(routeType?: RouteType) {
+  if (routeType === "delivery") return queryKeys.deliveryRouteSchedules;
+  if (routeType === "pickup") return queryKeys.pickupRouteSchedules;
+  return queryKeys.dailyRouteSchedules;
 }

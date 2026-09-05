@@ -1,16 +1,29 @@
 import type { RouteType } from "@/lib/pickup-delivery-routes/types";
 
+export const DELIVERY_BRANCH_CODE = "RD";
+
 export type ActiveRoutesDirectoryVariant = {
-  id: "pickup" | "delivery";
-  routeType: RouteType;
+  id: "pickup" | "delivery" | "daily";
+  /** When omitted, the directory lists pickup and delivery daily routes together. */
+  routeType?: RouteType;
   showRouteTypeField: boolean;
   showContainerField: boolean;
   formFeature: string;
   baseHref: string;
   columnVisibilityKey: string;
-  copyPrefix: "pickupRoutes" | "deliveryRoutes";
+  copyPrefix: "pickupRoutes" | "deliveryRoutes" | "dailyRoutes";
   /** When set, the schedule form locks the branch (and route list) to this code. */
   fixedBranchCode?: string;
+};
+
+export const DAILY_ROUTES_DIRECTORY_VARIANT: ActiveRoutesDirectoryVariant = {
+  id: "daily",
+  showRouteTypeField: false,
+  showContainerField: true,
+  formFeature: "daily-routes",
+  baseHref: "/daily-routes",
+  columnVisibilityKey: "daily-routes-v1",
+  copyPrefix: "dailyRoutes",
 };
 
 export const PICKUP_ROUTES_DIRECTORY_VARIANT: ActiveRoutesDirectoryVariant = {
@@ -18,9 +31,9 @@ export const PICKUP_ROUTES_DIRECTORY_VARIANT: ActiveRoutesDirectoryVariant = {
   routeType: "pickup",
   showRouteTypeField: false,
   showContainerField: false,
-  formFeature: "pickup-routes",
-  baseHref: "/pickup-routes",
-  columnVisibilityKey: "pickup-routes-v1",
+  formFeature: "daily-routes",
+  baseHref: "/daily-routes",
+  columnVisibilityKey: "pickup-routes-v2",
   copyPrefix: "pickupRoutes",
 };
 
@@ -29,10 +42,9 @@ export const DELIVERY_ROUTES_DIRECTORY_VARIANT: ActiveRoutesDirectoryVariant = {
   routeType: "delivery",
   showRouteTypeField: false,
   showContainerField: true,
-  formFeature: "delivery-routes",
-  baseHref: "/delivery-routes",
+  formFeature: "daily-routes",
+  baseHref: "/daily-routes",
   columnVisibilityKey: "delivery-routes-v1",
   copyPrefix: "deliveryRoutes",
-  // Deliveries only run out of the RD branch.
-  fixedBranchCode: "RD",
+  fixedBranchCode: DELIVERY_BRANCH_CODE,
 };

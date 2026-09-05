@@ -4,8 +4,6 @@ import { useDeferredValue, useMemo, useState } from "react";
 import {
   Banknote,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Plus,
   XCircle,
 } from "lucide-react";
@@ -13,6 +11,7 @@ import {
 import { CheckForm } from "@/components/accounting/check-form";
 import { CheckViewSheet } from "@/components/accounting/check-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import {
@@ -47,9 +46,9 @@ import {
 } from "@/lib/accounting/checks/types";
 import { useTranslation } from "@/lib/i18n";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { resolveClientTablePageLimit } from "@/lib/table/page-size";
 import type { DataTableColumn } from "@/lib/table/types";
-
-const PAGE_SIZE = 40;
 
 function matchesQuery(check: Check, query: string): boolean {
   const normalized = query.trim().toLowerCase();
@@ -73,7 +72,7 @@ export function ChecksWorkspace() {
   const { t } = useTranslation();
   const feedback = useFeedback();
   const [checks, setChecks] = useState<Check[]>(() => cloneChecks());
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, changePageSize } = useTablePageSize();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const hasActiveSearch = Boolean(query.trim());
@@ -93,10 +92,11 @@ export function ChecksWorkspace() {
   );
 
   const total = filteredChecks.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pageLimit = resolveClientTablePageLimit(pageSize, total);
+  const totalPages = Math.max(1, Math.ceil(total / pageLimit));
   const currentPage = Math.min(page, totalPages);
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const rows = filteredChecks.slice(pageStart, pageStart + PAGE_SIZE);
+  const pageStart = (currentPage - 1) * pageLimit;
+  const rows = filteredChecks.slice(pageStart, pageStart + pageLimit);
   const pageRowIds = rows.map((check) => check.id);
 
   const selectedChecks = useMemo(
@@ -391,29 +391,13 @@ export function ChecksWorkspace() {
               noun: t("accounting.checks.noun"),
             })}
           </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+          />
         </div>
       </Card>
 

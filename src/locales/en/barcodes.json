@@ -3,7 +3,7 @@
   "entityPlural": "barcodes",
   "title": "Barcodes",
   "pages": {
-    "description": "Browse and manage shipment barcodes across invoices, containers, and routes."
+    "description": "Identify and track individual pieces of merchandise on invoices throughout shipping."
   },
   "noun": "barcodes",
   "actions": {
@@ -104,10 +104,14 @@
       "scanDate": { "label": "Scan date", "placeholder": "YYYY-MM-DD" },
       "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
       "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" },
-      "createdBy.name": { "label": "Created by", "placeholder": "Enter creator…" },
-      "updatedBy.name": { "label": "Updated by", "placeholder": "Enter editor…" },
-      "createdBy.id": { "label": "Creator ID", "placeholder": "Enter creator ID…" },
-      "updatedBy.id": { "label": "Editor ID", "placeholder": "Enter editor ID…" }
+      "createdBy": {
+        "name": { "label": "Created by", "placeholder": "Enter creator…" },
+        "id": { "label": "Creator ID", "placeholder": "Enter creator ID…" }
+      },
+      "updatedBy": {
+        "name": { "label": "Updated by", "placeholder": "Enter editor…" },
+        "id": { "label": "Editor ID", "placeholder": "Enter editor ID…" }
+      }
     }
   }
 }

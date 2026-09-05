@@ -3,7 +3,7 @@
   "entityPlural": "contenedores",
   "title": "Contenedores",
   "pages": {
-    "description": "Controle contenedores de envío, capacidad, programación de salidas y costos de operaciones de carga saliente."
+    "description": "Agrupe facturas y mercancía del cliente en contenedores de envío para su transporte."
   },
   "noun": "contenedores",
   "actions": {

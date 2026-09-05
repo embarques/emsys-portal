@@ -53,6 +53,7 @@ type ApiRef = {
   id?: string | number;
   name?: string;
   routeId?: string;
+  branch?: string;
 };
 
 type ApiContainerRef = {
@@ -83,6 +84,7 @@ type ApiVehicleRoute = {
   date?: string;
   dayOfWeek?: string | string[] | null;
   branch?: ApiBranchRef | null;
+  vehicle?: ApiRef | null;
   container?: ApiContainerRef | null;
   route?: ApiRef | null;
   driver?: ApiEmployeeRef | null;
@@ -205,6 +207,16 @@ function normalizeBranchRef(raw?: ApiBranchRef | null): ActiveRoute["branch"] {
   return { id, code, ...(name ? { name } : {}) };
 }
 
+function normalizeVehicleRef(raw?: ApiRef | null): ActiveRoute["vehicle"] {
+  const ref = raw ?? {};
+  const branch = String(ref.branch ?? "").trim();
+  return {
+    id: String(ref.id ?? "").trim(),
+    name: String(ref.name ?? "").trim(),
+    ...(branch ? { branch } : {}),
+  };
+}
+
 function normalizeRouteRef(raw?: ApiRef | null): ActiveRoute["route"] | null {
   if (!raw || typeof raw !== "object") return null;
   const id = String(raw.id ?? "").trim();
@@ -264,6 +276,7 @@ export function normalizeApiVehicleRoute(raw: unknown): ActiveRoute | null {
     date: dateRaw.includes("T") ? dateRaw.slice(0, 10) : dateRaw,
     dayOfWeek: normalizeDaysOfWeek(item.dayOfWeek),
     branch: normalizeBranchRef(item.branch),
+    vehicle: normalizeVehicleRef(item.vehicle),
     active: item.active !== false,
     route,
     employees: normalizeVehicleRouteCrew(item),
@@ -306,7 +319,7 @@ function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRo
 
   const payload: VehicleRouteWritePayload = {
     routeType: values.routeType,
-    active: values.active,
+    active: true,
     branch: buildApiBranchDto({
       id: values.branch.id,
       code: values.branch.code.trim(),
@@ -372,10 +385,19 @@ function normalizePaginatedVehicleRoutes(
   };
 }
 
-function buildVehicleRouteSearchBody(params: ActiveRouteListParams, routeType: RouteType) {
-  const tableFilterFields = getActiveRouteTableFilterFields(routeType);
+function buildVehicleRouteSearchBody(params: ActiveRouteListParams) {
+  const tableFilterFields = getActiveRouteTableFilterFields(params.routeType);
+  const branchCode = params.branchCode?.trim();
   const filterGroups: ApiSearchFilterGroup[] = [
-    routeTypeFilterGroup(routeType),
+    ...(params.routeType ? [routeTypeFilterGroup(params.routeType)] : []),
+    ...(branchCode
+      ? [
+          {
+            operator: "and" as const,
+            filters: [{ field: "branch.code", operator: "eq" as const, value: branchCode }],
+          },
+        ]
+      : []),
     ...buildResourceSearchFilterGroups({
       search: params.search,
       barOrSearchFields: VEHICLE_ROUTE_BAR_OR_SEARCH_FIELDS,
@@ -394,12 +416,10 @@ function buildVehicleRouteSearchBody(params: ActiveRouteListParams, routeType: R
 export async function fetchActiveRoutes(
   params: ActiveRouteListParams = {},
 ): Promise<PaginatedResult<ActiveRoute>> {
-  const routeType = params.routeType ?? "pickup";
-
   const page = params.page ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.page;
   const limit = params.limit ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.limit;
 
-  // routeType is always filtered on the shared endpoint, so use POST /search.
+  // Shared endpoint always uses POST /search so we can optionally scope by routeType.
   const isFiltered = true;
 
   return fetchPaginatedResourceList({
@@ -415,7 +435,7 @@ export async function fetchActiveRoutes(
         offset: params.offset,
         sort: params.sort ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.sort,
       }),
-    buildSearchBody: () => buildVehicleRouteSearchBody(params, routeType),
+    buildSearchBody: () => buildVehicleRouteSearchBody(params),
     normalize: normalizePaginatedVehicleRoutes,
   });
 }
@@ -481,6 +501,76 @@ async function searchActiveRouteByLookup(
     }
   }
   return null;
+}
+
+export async function fetchVehicleRouteByCrewAndDate(input: {
+  routeRecordId: string;
+  date: string;
+  routeType: RouteType;
+  containerId?: number;
+  vehicleId?: string;
+}): Promise<ActiveRoute | null> {
+  const id = input.routeRecordId.trim();
+  const isoDate = input.date.trim().slice(0, 10);
+  const vehicleId = input.vehicleId?.trim() ?? "";
+  if (!id || !isoDate) return null;
+  if (input.routeType === "delivery" && !(input.containerId && input.containerId > 0)) {
+    return null;
+  }
+
+  const filters = [
+    ...buildDayRangeFilters(isoDate),
+    { field: "routeType", operator: "eq" as const, value: input.routeType },
+    { field: "route.id", operator: "eq" as const, value: id },
+  ];
+  if (input.routeType === "delivery" && input.containerId) {
+    filters.push({
+      field: "container.id",
+      operator: "eq",
+      value: String(input.containerId),
+    });
+  }
+  if (input.routeType === "pickup" && vehicleId) {
+    filters.push({
+      field: "vehicle.id",
+      operator: "eq",
+      value: vehicleId,
+    });
+  }
+
+  const searchBody = buildStripeStyleSearchBody({
+    sort: { field: "date", direction: "desc" },
+    filterGroups: [{ operator: "and", filters }],
+  });
+
+  const paginationQuery = buildApiSearchPaginationQuery({ page: 1, limit: 5, offset: 0 });
+  const payload = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+    `${API_ENDPOINTS.VEHICLE_ROUTES}/search?${paginationQuery}`,
+    searchBody,
+  );
+
+  const items = Array.isArray(payload.data) ? payload.data : [];
+  for (const row of items) {
+    const record = normalizeApiVehicleRoute(row);
+    if (!record || record.routeType !== input.routeType || record.route.id !== id) continue;
+    if (!(record.date === isoDate || record.date.startsWith(isoDate))) continue;
+    if (input.routeType === "delivery" && record.container?.id !== input.containerId) continue;
+    if (input.routeType === "pickup" && vehicleId && record.vehicle.id !== vehicleId) continue;
+    return record;
+  }
+
+  return null;
+}
+
+export async function fetchPickupRouteByGroupAndDate(
+  routeRecordId: string,
+  date: string,
+): Promise<ActiveRoute | null> {
+  return fetchVehicleRouteByCrewAndDate({
+    routeRecordId,
+    date,
+    routeType: "pickup",
+  });
 }
 
 export async function fetchActiveRoute(

@@ -53,7 +53,8 @@ type CarouselHeightStyle = CSSProperties & {
 };
 
 const CARD_GAP_PX = 16;
-const DESKTOP_ARROW_GUTTER_PX = 40;
+const DESKTOP_ARROW_SIZE_PX = 32;
+const DESKTOP_ARROW_GUTTER_PX = DESKTOP_ARROW_SIZE_PX + CARD_GAP_PX;
 
 function clampVisibleItems(value: number, minimum: number, itemCount: number) {
   const safeMinimum = Math.min(Math.max(minimum, 1), itemCount);
@@ -138,7 +139,7 @@ function DesktopStatCardsCarousel({
     <div ref={containerRef}>
       <Carousel
         aria-label="Summary cards"
-        className="px-10"
+        className="px-12"
         opts={{ align: "start", containScroll: "trimSnaps", slidesToScroll: 1 }}
       >
         <CarouselContent>
@@ -153,8 +154,8 @@ function DesktopStatCardsCarousel({
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-1 translate-x-0 shadow-sm" />
-        <CarouselNext className="right-1 translate-x-0 shadow-sm" />
+        <CarouselPrevious className="left-0 translate-x-0 shadow-sm" />
+        <CarouselNext className="right-0 translate-x-0 shadow-sm" />
       </Carousel>
     </div>
   );

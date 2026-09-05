@@ -16,6 +16,8 @@
   "add": "Add phone",
   "countBadge": "{{count}} phones",
   "countBadgeOne": "1 phone",
+  "sheetTitle": "Customer phones",
+  "loading": "Loading phones…",
   "aria": {
     "type": "Phone {{index}} type",
     "number": "Phone {{index}} number"

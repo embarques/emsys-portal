@@ -30,9 +30,8 @@ export function resolvePickupSearchField(field: string): string {
   if (trimmed === "sector") return "sector.name";
   if (trimmed === "receiver") return "receivers.name";
 
-  if (trimmed.startsWith("receiver.address.")) return "receivers.address";
-  if (trimmed.startsWith("sender.address.")) return "sender.address";
-
+  // Keep address subfields (city / state / zipcode / address1) so advanced
+  // filters can target them. Only rewrite the singular `receiver.*` alias.
   if (trimmed.startsWith("receiver.")) {
     return trimmed.replace(/^receiver\./, "receivers.");
   }

@@ -98,7 +98,7 @@ export function PickupRoutesSelectionActions({
       },
       openFilters: true,
     });
-    openTab("/orders", t("navigation.items.orderManager"));
+    openTab("/appointments", t("navigation.items.orders"));
   }
 
   async function confirmClearRoute() {

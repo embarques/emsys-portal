@@ -17,6 +17,7 @@ import {
 } from "@/lib/api/search-query";
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
 import { expandOrderFilterNode } from "@/lib/orders/order-filters";
+import { parseLastSyncedAt } from "@/lib/legacy-sync/last-synced";
 import {
   createPickupBarSearchFilterGroup,
   createPickupTextSearchFilter,
@@ -145,6 +146,7 @@ export type LegacyPickupSyncSummary = {
   updated: number;
   skipped: number;
   total: number;
+  lastSyncedAt?: string;
 };
 
 export type LegacyPickupSyncResult = {
@@ -154,6 +156,7 @@ export type LegacyPickupSyncResult = {
 
 export type LegacyPickupSyncPreview = {
   total: number;
+  lastSyncedAt?: string;
 };
 
 
@@ -937,6 +940,7 @@ function normalizeLegacySyncSummary(raw: unknown): LegacyPickupSyncSummary {
     updated: Number(item.updated ?? 0),
     skipped: Number(item.skipped ?? 0),
     total: Number(item.total ?? 0),
+    lastSyncedAt: parseLastSyncedAt(raw),
   };
 }
 
@@ -946,7 +950,7 @@ function normalizeLegacySyncPreview(raw: unknown): LegacyPickupSyncPreview {
   }
 
   const item = raw as Record<string, unknown>;
-  return { total: Number(item.total ?? 0) };
+  return { total: Number(item.total ?? 0), lastSyncedAt: parseLastSyncedAt(raw) };
 }
 
 export async function previewLegacyPickupSync(): Promise<LegacyPickupSyncPreview> {

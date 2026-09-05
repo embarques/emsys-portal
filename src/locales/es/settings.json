@@ -1,7 +1,7 @@
 {
   "title": "Configuración",
   "pages": {
-    "description": "Configure apariencia, idioma, pestañas de trabajo y preferencias de contraseña de su cuenta."
+    "description": "Configure ajustes del sistema, apariencia, idioma y preferencias de la cuenta."
   },
   "loading": "Cargando configuración…",
   "toast": {

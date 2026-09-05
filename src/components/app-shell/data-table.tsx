@@ -10,6 +10,7 @@ import { getPrimarySortSpec, type SortDirection } from "@/lib/api/list-query";
 import { formatTableColumnLabel } from "@/lib/table/column-labels";
 import { resolveCopyableText } from "@/lib/table/copyable-cell";
 import { measureTableColumnContentWidth } from "@/lib/table/measure-column-width";
+import { stretchColumnWidthsToFill } from "@/lib/table/stretch-column-widths";
 import {
   createRowPointerState,
   shouldIgnoreRowClick,
@@ -18,12 +19,19 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 
+const SELECT_COLUMN_WIDTH_PX = 40;
+const SELECT_ACTIONS_COLUMN_WIDTH_PX = 72;
+
 type DataTableProps<T> = {
   columns: DataTableColumn<T>[];
   rows: T[];
   rowKey: (row: T) => string;
   columnLayout: TableColumnLayout;
   emptyState: React.ReactNode;
+  /**
+   * Fallback fill width before the card is measured, and the empty-table floor
+   * when the viewport width is not yet known.
+   */
   minWidth?: number;
   selectable?: boolean;
   selectedIds?: string[];
@@ -100,7 +108,7 @@ function DataTableContent<T>({
   const pendingRowClickRef = useRef<number | null>(null);
   const rowPointerRef = useRef<RowPointerState | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
-  const [emptyViewportWidth, setEmptyViewportWidth] = useState<number | null>(null);
+  const [viewportWidth, setViewportWidth] = useState<number | null>(null);
   const lastAutoFitSignatureRef = useRef<string | null>(null);
   const autoFitPassRef = useRef(0);
   const autoFitContextRef = useRef({ pageKey: -1, visibleColumnKey: "" });
@@ -211,23 +219,20 @@ function DataTableContent<T>({
     };
   }, [autoFitColumns, page, rows, isPageDataPending, selectable, visibleColumnKey]);
 
-  // When the table is empty the body cell spans the full (very wide) table,
-  // pushing the centered empty-state message off-screen. Measure the scroll
-  // container so the message can be pinned to the visible viewport instead.
+  // Measure the scroll container so short tables can stretch to the card width
+  // and empty-state copy stays pinned to the visible viewport.
   useLayoutEffect(() => {
-    if (rows.length > 0) return;
-
     // table -> minWidth wrapper -> CardContent (the horizontal scroll container).
     const scrollContainer = tableRef.current?.parentElement?.parentElement;
     if (!scrollContainer) return;
 
-    const update = () => setEmptyViewportWidth(scrollContainer.clientWidth);
+    const update = () => setViewportWidth(scrollContainer.clientWidth);
     update();
 
     const observer = new ResizeObserver(update);
     observer.observe(scrollContainer);
     return () => observer.disconnect();
-  }, [rows.length]);
+  }, []);
 
   function startColumnResize(columnId: string, startX: number) {
     const startWidth = getColumnWidth(columnId);
@@ -259,21 +264,51 @@ function DataTableContent<T>({
     setDragOverHeaderId(null);
   }
 
-  const tableMinWidth = Math.max(
-    minWidth,
-    visibleColumns.reduce((total, column) => total + getColumnWidth(column.id), 0) +
-      (selectable ? (renderSelectCellActions ? 96 : 56) : 0)
+  const hasSelectCellActions = Boolean(
+    renderSelectCellActions && rows.some((row) => renderSelectCellActions(row)),
   );
+  const selectColumnWidth = selectable
+    ? hasSelectCellActions
+      ? SELECT_ACTIONS_COLUMN_WIDTH_PX
+      : SELECT_COLUMN_WIDTH_PX
+    : 0;
+  const baseColumnWidths = Object.fromEntries(
+    visibleColumns.map((column) => [column.id, getColumnWidth(column.id)]),
+  );
+  const columnsWidth = visibleColumns.reduce(
+    (total, column) => total + (baseColumnWidths[column.id] ?? 0),
+    0,
+  );
+  const contentWidth = columnsWidth + selectColumnWidth;
+  const fillWidth = viewportWidth && viewportWidth > 0 ? viewportWidth : minWidth;
+  const targetTableWidth = Math.max(contentWidth, fillWidth);
+  const stretchedColumnWidths = stretchColumnWidthsToFill(
+    baseColumnWidths,
+    visibleColumns.map((column) => column.id),
+    Math.max(0, targetTableWidth - selectColumnWidth),
+  );
+  const tableWidth =
+    selectColumnWidth +
+    visibleColumns.reduce((total, column) => total + (stretchedColumnWidths[column.id] ?? 0), 0);
+
+  function getDisplayColumnWidth(columnId: string) {
+    return stretchedColumnWidths[columnId] ?? getColumnWidth(columnId);
+  }
 
   return (
-    <ScrollableTable minWidth={tableMinWidth}>
-      <table ref={tableRef} className="w-full table-fixed text-sm">
+    <ScrollableTable minWidth={tableWidth}>
+      <table
+        ref={tableRef}
+        className="w-full table-fixed text-sm"
+        style={{ width: tableWidth, minWidth: tableWidth }}
+      >
         <thead>
           <tr className="border-b bg-muted/30 text-left">
             {selectable ? (
               <th
-                className={cn("px-4 py-3", renderSelectCellActions ? "w-24" : "w-14")}
-                aria-label={renderSelectCellActions ? "Select and actions" : undefined}
+                style={{ width: selectColumnWidth }}
+                className="py-3 pl-4 pr-2"
+                aria-label={hasSelectCellActions ? "Select and actions" : undefined}
               >
                 <input
                   type="checkbox"
@@ -285,12 +320,13 @@ function DataTableContent<T>({
               </th>
             ) : null}
             {visibleColumns.map((column, columnIndex) => {
-              const width = getColumnWidth(column.id);
+              const width = getDisplayColumnWidth(column.id);
               const headerLabel = formatTableColumnLabel(column.label);
               const tableColumnIndex = columnIndex + (selectable ? 1 : 0);
               const sortField = column.sortable === false ? undefined : column.sortField ?? column.id;
               const canSort = (Boolean(onSortChange) || sortUnavailable) && Boolean(sortField);
               const isActiveSort = canSort && !sortUnavailable && activeSort?.field === sortField;
+              const isLeadingColumn = !selectable && columnIndex === 0;
 
               return (
                 <th
@@ -300,6 +336,7 @@ function DataTableContent<T>({
                   className={cn(
                     "group relative cursor-grab select-none px-2 py-3 text-left active:cursor-grabbing",
                     column.headerClassName,
+                    isLeadingColumn && "pl-4",
                     draggingHeaderId === column.id && "cursor-grabbing opacity-60",
                     dragOverHeaderId === column.id && draggingHeaderId !== column.id && "bg-primary/10",
                     resizingColumnId === column.id && "bg-primary/5"
@@ -426,7 +463,8 @@ function DataTableContent<T>({
                 >
                   {selectable ? (
                     <td
-                      className={cn("px-4 py-3 align-top", renderSelectCellActions ? "w-24" : "w-14")}
+                      style={{ width: selectColumnWidth }}
+                      className="py-3 pl-4 pr-2 align-top"
                       onClick={(event) => event.stopPropagation()}
                     >
                       <div className="flex items-center gap-1">
@@ -441,7 +479,7 @@ function DataTableContent<T>({
                       </div>
                     </td>
                   ) : null}
-                  {visibleColumns.map((column) => {
+                  {visibleColumns.map((column, columnIndex) => {
                     const cellContent = column.renderCell(row);
                     const cellText =
                       typeof cellContent === "string" || typeof cellContent === "number"
@@ -450,15 +488,17 @@ function DataTableContent<T>({
                     const copyText = resolveCopyableText(column, row, cellContent);
 
                     const shouldTruncate = column.truncateCell === true;
+                    const isLeadingColumn = !selectable && columnIndex === 0;
 
                     return (
                     <td
                       key={column.id}
-                      style={{ width: getColumnWidth(column.id) }}
+                      style={{ width: getDisplayColumnWidth(column.id) }}
                       className={cn(
                         "px-2 py-3 align-top",
                         shouldTruncate ? "overflow-hidden" : "whitespace-normal break-words",
                         column.cellClassName,
+                        isLeadingColumn && "pl-4",
                       )}
                       onClick={column.stopRowClick ? (event) => event.stopPropagation() : undefined}
                       title={!copyText && shouldTruncate && cellText ? cellText : undefined}
@@ -488,7 +528,7 @@ function DataTableContent<T>({
               <td colSpan={colSpan} className="p-0">
                 <div
                   className="sticky left-0 flex flex-col items-center justify-center px-6 py-12 text-center"
-                  style={emptyViewportWidth ? { width: emptyViewportWidth } : undefined}
+                  style={viewportWidth ? { width: viewportWidth } : undefined}
                 >
                   {emptyState}
                 </div>

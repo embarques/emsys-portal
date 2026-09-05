@@ -219,7 +219,7 @@ if (hasPermission("canViewWarehouse", "warehouse")) {
 |-------|-----------------|---------------|
 | `/` | `canViewSettings` | `settings` |
 | `/customers` | `canViewCustomer` | `customer` |
-| `/orders` | `canViewPickup` | `pickup` |
+| `/appointments` | `canViewPickup` | `pickup` |
 | `/invoices` | `canViewInvoice` | `invoice` |
 | `/labels`, `/label-updater` | `canViewLabels` | `labels` |
 | `/inventory` | `canViewDelivery` | `delivery` |

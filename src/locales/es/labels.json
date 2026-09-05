@@ -1,8 +1,8 @@
 {
   "title": "Escáner de códigos de barras",
   "pages": {
-    "barcodesDescription": "Consulte y administre códigos de barras de envío en facturas, contenedores y rutas.",
-    "description": "Actualice el estado de códigos de barras, transfiera contenedores, asigne rutas y procese escaneos para etiquetas de envío."
+    "barcodesDescription": "Identifique y rastree cada pieza de mercancía en las facturas a lo largo del envío.",
+    "description": "Escanee el código de barras de un artículo para actualizar su estado en las operaciones."
   },
   "statuses": {
     "pending": "Pendiente",
@@ -147,11 +147,15 @@
     },
     "routeDialog": {
       "title": "Asignar ruta",
-      "description": "Asigne {{count}} etiqueta(s) seleccionada(s) a una ruta. Solo se asignan etiquetas con contenedor.",
-      "route": "Ruta",
-      "selectRoute": "Seleccionar una ruta",
-      "loadingRoutes": "Cargando rutas…",
-      "noRoutes": "No se encontraron rutas.",
+      "description": "Elija una cuadrilla de ruta, el contenedor, la fecha de asignación y los roles de la cuadrilla para {{count}} etiqueta seleccionada. Solo se asignan etiquetas con contenedor.",
+      "description_plural": "Elija una cuadrilla de ruta, el contenedor, la fecha de asignación y los roles de la cuadrilla para {{count}} etiquetas seleccionadas. Solo se asignan etiquetas con contenedor.",
+      "route": "Cuadrilla de ruta",
+      "selectRoute": "Seleccionar una cuadrilla de ruta",
+      "selectContainer": "Seleccionar un contenedor",
+      "loadingRoutes": "Cargando cuadrillas de ruta…",
+      "loadingContainers": "Cargando contenedores…",
+      "noRoutes": "No se encontraron cuadrillas de ruta.",
+      "noContainers": "No se encontraron contenedores.",
       "assigning": "Asignando…",
       "assign": "Asignar ruta"
     },

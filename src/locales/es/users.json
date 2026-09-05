@@ -3,7 +3,7 @@
   "entityPlural": "usuarios",
   "title": "Usuarios",
   "pages": {
-    "description": "Administre cuentas de usuario del portal, acceso por empresa, roles y estado de activación."
+    "description": "Administre cuentas de usuario del portal, acceso por empresa, roles y permisos."
   },
   "noun": "usuarios",
   "actions": {

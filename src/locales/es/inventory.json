@@ -25,11 +25,11 @@
     "reports": "Reportes"
   },
   "pages": {
-    "items": "Consulte cantidades en mano, estado de stock y ubicaciones de almacén por SKU. Registre ingresos, despachos y ajustes para actualizar los saldos.",
-    "receipts": "Registre entradas de stock de proveedores y devoluciones. Cada ingreso guardado aumenta las cantidades en mano en el libro de movimientos.",
-    "dispatches": "Gestione envíos salientes a clientes, proveedores y sucursales. Controle el estado pendiente, enviado y confirmado.",
-    "recipients": "Administre destinos para stock saliente: clientes, proveedores, sucursales y ubicaciones internas usadas en despachos.",
-    "reports": "Analice stock en mano, actividad de despachos por destinatario y alertas de stock bajo según el rango de fechas y filtros seleccionados."
+    "items": "Controle los insumos y materiales internos de la empresa, aparte de la mercancía del cliente.",
+    "receipts": "Registre entradas de insumos y materiales de la empresa para actualizar existencias.",
+    "dispatches": "Registre salidas de insumos internos, incluidas transferencias y reposición.",
+    "recipients": "Mantenga los destinos usados al enviar insumos internos fuera de inventario.",
+    "reports": "Revise niveles de insumos, movimientos y artículos que necesitan reposición."
   },
   "stats": {
     "totalSkus": {

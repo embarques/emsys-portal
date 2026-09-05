@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   Boxes,
-  ChevronLeft,
-  ChevronRight,
   PackageCheck,
   Plus,
   SlidersHorizontal,
@@ -19,6 +17,7 @@ import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventoryReceiptForm } from "@/components/inventory/inventory-receipt-form";
 import { InventoryViewSheet } from "@/components/inventory/inventory-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
@@ -79,8 +78,8 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
-
-const PAGE_SIZE = 50;
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { resolveClientTablePageLimit } from "@/lib/table/page-size";
 
 const defaultFilters: InventoryFilterState = {
   query: "",
@@ -122,7 +121,7 @@ export function InventoryItemsWorkspace() {
 
   const [filters, setFilters] = useState<InventoryFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, changePageSize } = useTablePageSize();
   const [viewItem, setViewItem] = useState<InventoryItem | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -142,9 +141,10 @@ export function InventoryItemsWorkspace() {
   }, [filters, items, t]);
 
   const kpis = useMemo(() => computeInventoryKpis(items), [items]);
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const pageLimit = resolveClientTablePageLimit(pageSize, filteredItems.length);
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageLimit));
   const currentPage = Math.min(page, totalPages);
-  const pageItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageItems = filteredItems.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
   const allPageSelected = pageItems.length > 0 && pageItems.every((item) => selectedIds.includes(item.id));
   const activeFilterCount = [filters.status, filters.location, filters.category].filter((value) => value !== "all").length;
 
@@ -504,29 +504,13 @@ export function InventoryItemsWorkspace() {
                 noun: t("inventory.noun"),
               })}
             </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage <= 1}
-                onClick={() => setPage((value) => Math.max(1, value - 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                {t("common.actions.previous")}
-              </Button>
-              <span className="px-2 text-sm text-muted-foreground">
-                {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages}
-                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-              >
-                {t("common.actions.next")}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+            <TablePaginationControls
+              page={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={changePageSize}
+            />
           </div>
         ) : null}
       </Card>

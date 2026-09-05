@@ -17,8 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
+import {
+  AssignAppointmentRouteDialog,
+  sharedAppointmentDate,
+} from "@/components/orders/assign-appointment-route-dialog";
 import {
   getGoogleMapsCoreApi,
   importGoogleMapsLibrary,
@@ -93,12 +95,8 @@ export type OrdersMapViewProps = {
   sort: OrderListParams["sort"];
   /** Fixed set of orders mapped from the orders/pickups table selection. */
   baseSelectedIds: string[];
-  assignRouteOptions: SearchableSelectOption[];
-  assignRoutesLoading: boolean;
   getRouteByKey: (routeId: string | undefined) => ActiveRoute | undefined;
-  onAssignRoute: (routeId: string, pickupIds: number[]) => Promise<void>;
   onUnassignRoute: (orders: Order[]) => Promise<void>;
-  isAssigning: boolean;
   isUnassigning: boolean;
 };
 
@@ -141,12 +139,8 @@ export function OrdersMapView({
   filters,
   sort,
   baseSelectedIds,
-  assignRouteOptions,
-  assignRoutesLoading,
   getRouteByKey,
-  onAssignRoute,
   onUnassignRoute,
-  isAssigning,
   isUnassigning,
 }: OrdersMapViewProps) {
   const { t } = useTranslation();
@@ -160,7 +154,6 @@ export function OrdersMapView({
   const [mapError, setMapError] = useState<string | null>(null);
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
   const [unassignOpen, setUnassignOpen] = useState(false);
-  const [selectedRouteId, setSelectedRouteId] = useState("");
   /** Map-local selection, independent from the table selection that seeded the map. */
   const [mapSelectedIds, setMapSelectedIds] = useState<string[]>([]);
 
@@ -354,22 +347,7 @@ export function OrdersMapView({
 
   function openAssignRouteDialog() {
     if (selectedStops.length === 0) return;
-    setSelectedRouteId("");
     setAssignRouteOpen(true);
-  }
-
-  async function confirmAssignRoute() {
-    if (selectedStops.length === 0 || !selectedRouteId) return;
-
-    const pickupIds = selectedStops.map((stop) => stop.orderId);
-
-    try {
-      await onAssignRoute(selectedRouteId, pickupIds);
-      setAssignRouteOpen(false);
-      setSelectedRouteId("");
-    } catch (mutationError) {
-      notifyError(normalizeApiError(mutationError).message);
-    }
   }
 
   function openUnassignDialog() {
@@ -394,7 +372,7 @@ export function OrdersMapView({
     }
   }
 
-  const isMutating = isAssigning || isUnassigning;
+  const isMutating = isUnassigning;
 
   return (
     <>
@@ -593,58 +571,14 @@ export function OrdersMapView({
         </div>
       </div>
 
-      <Dialog
+      <AssignAppointmentRouteDialog
         open={assignRouteOpen}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) {
-            setAssignRouteOpen(false);
-            setSelectedRouteId("");
-          }
-        }}
-      >
-        <DialogContent className="z-[70]" onOpenAutoFocus={(event) => event.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle>{t("orders.dialogs.assignRouteTitle")}</DialogTitle>
-            <DialogDescription>
-              {selectedStops.length === 1
-                ? t("orders.dialogs.assignRouteDescription", { count: selectedStops.length })
-                : t("orders.dialogs.assignRouteDescription_plural", { count: selectedStops.length })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1">
-            <Label htmlFor="map-assign-route">{t("orders.columns.route")}</Label>
-            <SearchableSelect
-              id="map-assign-route"
-              value={selectedRouteId}
-              onValueChange={setSelectedRouteId}
-              placeholder={t("orders.dialogs.selectRoute")}
-              searchPlaceholder={t("orders.dialogs.searchRoutes")}
-              loading={assignRoutesLoading}
-              emptyMessage={
-                assignRoutesLoading
-                  ? t("orders.dialogs.loadingRoutes")
-                  : t("orders.dialogs.noRoutesFound")
-              }
-              options={assignRouteOptions}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setAssignRouteOpen(false);
-                setSelectedRouteId("");
-              }}
-            >
-              {t("common.actions.cancel")}
-            </Button>
-            <Button onClick={() => void confirmAssignRoute()} disabled={!selectedRouteId || isAssigning}>
-              <RouteIcon className="h-4 w-4" />
-              {t("orders.actions.assignRoute")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setAssignRouteOpen}
+        pickupIds={selectedStops.map((stop) => stop.orderId)}
+        defaultDate={sharedAppointmentDate(
+          selectedStops.map((stop) => orderByRecordId.get(stop.orderRecordId)?.date),
+        )}
+      />
 
       <Dialog
         open={unassignOpen}

@@ -1,7 +1,10 @@
 {
+  "pages": {
+    "description": "Maintain a centralized financial history of payments, transactions, income, and expenses."
+  },
   "chartOfAccounts": {
     "title": "Chart of Accounts",
-    "description": "Manage the accounts used by daily income transactions.",
+    "description": "Define income, expense, bank, and other categories used to classify financial transactions.",
     "noun": "accounts",
     "entity": "Account",
     "searchPlaceholder": "Search by account…",
@@ -83,7 +86,7 @@
   },
   "checks": {
     "title": "Checks",
-    "description": "Track outstanding and cleared checks linked to invoices and receipts.",
+    "description": "Track checks received or issued, including amount, date, status, and linked transactions.",
     "noun": "checks",
     "searchPlaceholder": "Search checks…",
     "empty": "No checks match your search.",
@@ -166,7 +169,7 @@
   },
   "dailyIncome": {
     "title": "Daily Income",
-    "description": "Create and reconcile the daily accounting closeout.",
+    "description": "Record and track the company's daily incoming transactions and revenue.",
     "noun": "transactions",
     "transactionNoun": "transaction",
     "actions": {

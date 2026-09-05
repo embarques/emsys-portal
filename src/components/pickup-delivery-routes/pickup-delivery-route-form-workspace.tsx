@@ -16,10 +16,7 @@ import {
 } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
-import {
-  DELIVERY_ROUTES_DIRECTORY_VARIANT,
-  PICKUP_ROUTES_DIRECTORY_VARIANT,
-} from "@/lib/pickup-delivery-routes/directory-variant";
+import { DAILY_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
 
 type ActiveRouteFormWorkspaceProps = WorkspaceFormHostProps & {
   variant: ActiveRoutesDirectoryVariant;
@@ -89,10 +86,6 @@ export function ActiveRouteFormWorkspace({ tabId, mode, entityId, variant }: Act
   );
 }
 
-export function PickupRouteFormWorkspace(props: WorkspaceFormHostProps) {
-  return <ActiveRouteFormWorkspace {...props} variant={PICKUP_ROUTES_DIRECTORY_VARIANT} />;
-}
-
-export function DeliveryRouteFormWorkspace(props: WorkspaceFormHostProps) {
-  return <ActiveRouteFormWorkspace {...props} variant={DELIVERY_ROUTES_DIRECTORY_VARIANT} />;
+export function DailyRouteFormWorkspace(props: WorkspaceFormHostProps) {
+  return <ActiveRouteFormWorkspace {...props} variant={DAILY_ROUTES_DIRECTORY_VARIANT} />;
 }

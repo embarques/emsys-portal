@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import {
-  navigation,
+  navigationSections,
   topbarNavigationItems,
   topNavigationItems,
   type NavigationItem,
@@ -22,6 +22,11 @@ export type TranslatedNavigationGroup = {
   title: string;
   icon?: NavigationItem["icon"];
   items: TranslatedNavigationItem[];
+};
+
+export type TranslatedNavigationSection = {
+  id: string;
+  groups: TranslatedNavigationGroup[];
 };
 
 function canShowNavItem(
@@ -81,6 +86,18 @@ function sortTranslatedNavItems(
     }));
 }
 
+function sortTranslatedNavGroups(
+  groups: TranslatedNavigationGroup[],
+  locale: string,
+): TranslatedNavigationGroup[] {
+  return [...groups]
+    .sort((a, b) => a.title.localeCompare(b.title, locale, { sensitivity: "base" }))
+    .map((group) => ({
+      ...group,
+      items: sortTranslatedNavItems(group.items, locale),
+    }));
+}
+
 function translateAndSortNavItems(
   items: NavigationItem[],
   t: (key: string) => string,
@@ -110,22 +127,36 @@ export function useTopbarNavigation(): TranslatedNavigationItem[] {
   );
 }
 
-export function useNavigation(): TranslatedNavigationGroup[] {
+/** Sidebar sections keep usage-band order; items within each section are alphabetical. */
+export function useNavigationSections(): TranslatedNavigationSection[] {
   const { locale, t } = useTranslation();
   const { hasPermission } = useAuth();
 
   return useMemo(
     () =>
-      navigation
-        .map((group) => ({
-          ...group,
-          title: t(group.titleKey),
-          items: translateAndSortNavItems(group.items, t, hasPermission, locale),
+      navigationSections
+        .map((section) => ({
+          id: section.id,
+          groups: sortTranslatedNavGroups(
+            section.groups
+              .map((group) => ({
+                ...group,
+                title: t(group.titleKey),
+                items: translateNavItems(group.items, t, hasPermission),
+              }))
+              .filter((group) => group.items.length > 0),
+            locale,
+          ),
         }))
-        .filter((group) => group.items.length > 0)
-        .sort((a, b) => a.title.localeCompare(b.title, locale, { sensitivity: "base" })),
+        .filter((section) => section.groups.length > 0),
     [hasPermission, locale, t],
   );
+}
+
+/** Flat groups in sidebar order — used by search / flatten helpers. */
+export function useNavigation(): TranslatedNavigationGroup[] {
+  const sections = useNavigationSections();
+  return useMemo(() => sections.flatMap((section) => section.groups), [sections]);
 }
 
 export function useFlatNavigation(): TranslatedNavigationItem[] {

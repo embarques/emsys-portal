@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 import {
   employeeHasRole,
-  resolveCrewRole,
   type RouteCrewRole,
   type RouteEmployeeRef,
 } from "@/lib/route-manager/types";
@@ -27,25 +26,25 @@ type CrewRolePickerProps = {
 
 const ROLE_META: Record<
   RouteCrewRole,
-  { icon: LucideIcon; labelKey: string; activeClass: string; roundedClass: string }
+  { icon: LucideIcon; labelKey: string; forKey: string; accentClass: string }
 > = {
   driver: {
     icon: Car,
     labelKey: "routes.activeRoute.driver",
-    activeClass: "bg-emerald-600 text-white",
-    roundedClass: "rounded-l-lg",
+    forKey: "routes.activeRoute.driverFor",
+    accentClass: "border-emerald-600/40 bg-emerald-600/10 text-emerald-800 dark:text-emerald-300",
   },
   appraiser: {
     icon: ClipboardList,
     labelKey: "routes.activeRoute.appraiser",
-    activeClass: "bg-blue-600 text-white",
-    roundedClass: "rounded-none",
+    forKey: "routes.activeRoute.appraiserFor",
+    accentClass: "border-blue-600/40 bg-blue-600/10 text-blue-800 dark:text-blue-300",
   },
   helper: {
     icon: Hand,
     labelKey: "routes.activeRoute.helper",
-    activeClass: "bg-amber-600 text-white",
-    roundedClass: "rounded-r-lg",
+    forKey: "routes.activeRoute.helperFor",
+    accentClass: "border-amber-600/40 bg-amber-600/10 text-amber-800 dark:text-amber-300",
   },
 };
 
@@ -81,14 +80,15 @@ export function CrewRolePicker({
         {employees.map((employee) => {
           const isDriver = employeeHasRole(employee, "driver");
           const isAppraiser = employeeHasRole(employee, "appraiser");
-          const isHelper = toggleLeadRoles ? !isDriver && !isAppraiser : resolveCrewRole(employee.role) === "helper";
-          const activeRole = toggleLeadRoles
-            ? isHelper
-              ? "helper"
-              : isDriver
-                ? "driver"
-                : "appraiser"
-            : resolveCrewRole(employee.role);
+          const isHelper = toggleLeadRoles
+            ? !isDriver && !isAppraiser
+            : employeeHasRole(employee, "helper") && !isDriver && !isAppraiser;
+          const selectedByRole: Record<RouteCrewRole, boolean> = {
+            driver: isDriver,
+            appraiser: isAppraiser,
+            helper: isHelper,
+          };
+
           return (
             <li
               key={employee.id}
@@ -96,39 +96,40 @@ export function CrewRolePicker({
             >
               <span className="min-w-0 truncate font-medium">{employee.name}</span>
               <div
-                className="inline-flex shrink-0 items-center"
+                className="flex flex-wrap items-center gap-1.5"
                 role="group"
                 aria-label={t("routes.activeRoute.crewRoles")}
               >
-                {visibleRoles.map((role, index) => {
+                {visibleRoles.map((role) => {
                   const meta = ROLE_META[role];
                   const Icon = meta.icon;
-                  const selected = toggleLeadRoles
-                    ? role === "driver"
-                      ? isDriver
-                      : role === "appraiser"
-                        ? isAppraiser
-                        : isHelper
-                    : activeRole === role;
-                  const rounded = cn(
-                    index === 0 && "rounded-l-lg",
-                    index === visibleRoles.length - 1 && "rounded-r-lg",
-                  );
+                  const selected = selectedByRole[role];
+                  const checkboxId = `crew-role-${employee.id}-${role}`;
                   return (
-                    <button
+                    <label
                       key={role}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => onRoleChange(employee.id, role)}
+                      htmlFor={checkboxId}
                       className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                        rounded,
-                        selected ? meta.activeClass : "text-muted-foreground hover:text-foreground",
+                        "inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1 text-sm font-medium transition-colors",
+                        selected
+                          ? meta.accentClass
+                          : "border-input text-muted-foreground hover:text-foreground",
                       )}
                     >
-                      <Icon className="size-4" />
+                      <input
+                        id={checkboxId}
+                        type="checkbox"
+                        className="size-3.5 accent-current"
+                        checked={selected}
+                        aria-label={t(meta.forKey, { name: employee.name })}
+                        onChange={() => {
+                          if (role === "helper" && selected) return;
+                          onRoleChange(employee.id, role);
+                        }}
+                      />
+                      <Icon className="size-3.5" />
                       {t(meta.labelKey)}
-                    </button>
+                    </label>
                   );
                 })}
                 {onRemove ? (
@@ -136,7 +137,7 @@ export function CrewRolePicker({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="ml-1 size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    className="ml-0.5 size-8 shrink-0 text-muted-foreground hover:text-destructive"
                     onClick={() => onRemove(employee.id)}
                     aria-label={t("routes.form.removeCrewMember", { name: employee.name })}
                   >

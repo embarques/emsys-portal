@@ -16,6 +16,8 @@
   "add": "Agregar teléfono",
   "countBadge": "{{count}} teléfonos",
   "countBadgeOne": "1 teléfono",
+  "sheetTitle": "Teléfonos del cliente",
+  "loading": "Cargando teléfonos…",
   "aria": {
     "type": "Tipo del teléfono {{index}}",
     "number": "Número del teléfono {{index}}"

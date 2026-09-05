@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Truck } from "lucide-react";
+import { Plus, Truck } from "lucide-react";
 
 import { InventoryDispatchForm } from "@/components/inventory/inventory-dispatch-form";
 import { InventoryDispatchViewSheet } from "@/components/inventory/inventory-dispatch-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -31,8 +32,8 @@ import { getDispatchStatusLabel } from "@/lib/inventory/display";
 import type { InventoryDispatch } from "@/lib/inventory/types/documents";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
-
-const PAGE_SIZE = 50;
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { resolveClientTablePageLimit } from "@/lib/table/page-size";
 
 function getDispatchStatusClass(status: InventoryDispatch["status"]): string {
   switch (status) {
@@ -59,7 +60,7 @@ export function InventoryDispatchesWorkspace() {
   const updateStatus = useUpdateDispatchStatus();
 
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, changePageSize } = useTablePageSize();
   const [formOpen, setFormOpen] = useState(false);
   const [viewDispatch, setViewDispatch] = useState<InventoryDispatch | null>(null);
 
@@ -75,9 +76,10 @@ export function InventoryDispatchesWorkspace() {
     });
   }, [dispatches, query, recipients]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageLimit = resolveClientTablePageLimit(pageSize, filtered.length);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageLimit));
   const currentPage = Math.min(page, totalPages);
-  const pageRows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
 
   const columns: DataTableColumn<InventoryDispatch>[] = [
     { id: "date", label: t("inventory.columns.date"), renderCell: (row) => formatAuditDateTime(row.dispatchDate) },
@@ -176,19 +178,13 @@ export function InventoryDispatchesWorkspace() {
             <p className="text-sm text-muted-foreground">
               {t("common.pagination.showingOf", { count: pageRows.length, total: filtered.length, noun: t("inventory.submenus.dispatches").toLowerCase() })}
             </p>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage((value) => value - 1)}>
-                <ChevronLeft className="h-4 w-4" />
-                {t("common.actions.previous")}
-              </Button>
-              <span className="px-2 text-sm text-muted-foreground">
-                {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-              </span>
-              <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage((value) => value + 1)}>
-                {t("common.actions.next")}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+            <TablePaginationControls
+              page={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={changePageSize}
+            />
           </div>
         ) : null}
       </Card>

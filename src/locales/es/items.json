@@ -3,7 +3,7 @@
   "entityPlural": "artículos",
   "title": "Artículos",
   "pages": {
-    "description": "Mantenga el catálogo de productos y servicios con precios, descripciones y detalles usados en facturas y órdenes."
+    "description": "Atajos opcionales de mercancía que los trabajadores pueden seleccionar al crear facturas."
   },
   "noun": "artículos",
   "actions": {

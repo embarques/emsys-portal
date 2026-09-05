@@ -972,7 +972,7 @@ Tailwind CSS
 
 When modifying the project:
 
-1. Follow this architecture.
+1. Follow this architecture. Read `APP_CONTEXT.md` for the business meaning of each sidebar section before changing copy, models, or flows.
 2. Do not introduce new state management libraries.
 3. Do not use RTK Query.
 4. Do not use SWR.

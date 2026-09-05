@@ -25,11 +25,11 @@
     "reports": "Reports"
   },
   "pages": {
-    "items": "View on-hand quantities, stock status, and warehouse locations for every SKU. Record receipts, dispatches, and adjustments to update balances.",
-    "receipts": "Record inbound stock from suppliers and returns. Each saved receipt increases on-hand quantities through the movement ledger.",
-    "dispatches": "Manage outbound shipments to customers, vendors, and branches. Track pending, sent, and confirmed fulfillment status.",
-    "recipients": "Maintain destinations for outbound stock — customers, vendors, branches, and internal locations used on dispatches.",
-    "reports": "Analyze stock on hand, dispatch activity by recipient, and low-stock alerts for the selected date range and filters."
+    "items": "Track the company's internal supplies and materials, separate from customer merchandise.",
+    "receipts": "Record incoming company supplies and materials to update stock levels.",
+    "dispatches": "Record outgoing company supplies, including transfers and replenishment.",
+    "recipients": "Maintain destinations used when sending company supplies out of stock.",
+    "reports": "Review supply levels, movements, and items that need replenishment."
   },
   "stats": {
     "totalSkus": {

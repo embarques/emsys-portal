@@ -5,8 +5,6 @@ import {
   ArrowDownToLine,
   Check,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   DollarSign,
   Edit,
@@ -25,9 +23,15 @@ import {
 
 import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
+import {
+  AssignAppointmentRouteDialog,
+  sharedAppointmentDate,
+} from "@/components/orders/assign-appointment-route-dialog";
 import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
+import { LegacyLastSynced } from "@/components/app-shell/legacy-last-synced";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
@@ -90,7 +94,6 @@ import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pic
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import {
-  useAssignPickupsToRoute,
   useClearOrdersRouteAssignments,
   useCreateOrder,
   useDeleteOrders,
@@ -116,8 +119,8 @@ import {
 import { isOrderMappable } from "@/lib/orders/utils/pickup-map";
 import { useUsers } from "@/lib/users/hooks/use-users";
 import { useGeneratePickupReport } from "@/lib/reports/hooks/use-reports";
-import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Label } from "@/components/ui/label";
+import { useLegacyLastSynced } from "@/lib/legacy-sync/use-legacy-last-synced";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import {
   ADDRESS_TEXT_WRAP_CLASSNAME,
@@ -129,7 +132,6 @@ import { cn } from "@/lib/utils";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTranslation } from "@/lib/i18n";
 
-const PAGE_SIZE = DEFAULT_ORDER_LIST_PARAMS.limit;
 const PICKUP_ACCESS_UNAVAILABLE_PREFIX = "Pickup access unavailable.";
 const LEGACY_SYNC_PERMISSION_ERROR_NAMES = [
   "syncLegacyPickups",
@@ -190,18 +192,24 @@ function isLegacySyncPermissionError(message: string): boolean {
   );
 }
 
-function PickupSenderAddressCell({ customer }: { customer: Customer }) {
-  const { t } = useTranslation();
+function formatStreetAndApt(customer: Customer, dash: string) {
   const primary = getPrimaryAddress(customer);
-  const primaryLine = primary ? formatAddressLine(primary, "full") : t("common.empty.dash");
+  if (!primary) return dash;
 
-  return (
-    <div className={cn("w-full", ADDRESS_TEXT_WRAP_CLASSNAME)}>
-      <p className={cn(ADDRESS_TEXT_WRAP_CLASSNAME, "leading-snug")} title={primaryLine}>
-        {primaryLine}
-      </p>
-    </div>
-  );
+  const line = [primary.address1, primary.apartment]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ");
+  return line || dash;
+}
+
+function formatAddressPart(
+  customer: Customer,
+  part: "city" | "state" | "zipcode",
+  dash: string,
+) {
+  const value = getPrimaryAddress(customer)?.[part]?.trim() ?? "";
+  return value || dash;
 }
 
 function PickupCommentsCell({ order }: { order: Order }) {
@@ -358,7 +366,7 @@ export function OrdersWorkspace() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_ORDER_LIST_PARAMS.sort, () => setPage(1));
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
@@ -370,7 +378,6 @@ export function OrdersWorkspace() {
   const [completionConfirm, setCompletionConfirm] = useState<boolean | null>(null);
   const [completionExpanded, setCompletionExpanded] = useState(false);
   const [routesExpanded, setRoutesExpanded] = useState(false);
-  const [selectedRouteId, setSelectedRouteId] = useState("");
   const [legacySyncStageIndex, setLegacySyncStageIndex] = useState<number | null>(null);
   const [legacySyncTotal, setLegacySyncTotal] = useState<number | null>(null);
   const legacySyncResetTimerRef = useRef<number | null>(null);
@@ -378,12 +385,12 @@ export function OrdersWorkspace() {
     () =>
       buildOrderListParams({
         page,
-        limit: PAGE_SIZE,
+        limit: pageLimit,
         query: deferredQuery,
         rows: filters.rows,
         sort,
       }),
-    [deferredQuery, filters.rows, page, sort],
+    [deferredQuery, filters.rows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useOrders(listParams);
@@ -404,14 +411,22 @@ export function OrdersWorkspace() {
   const previewLegacyPickupSyncMutation = usePreviewLegacyPickupSync();
   const syncLegacyPickupsMutation = useSyncLegacyPickups();
   const retryLegacySyncMutation = useRetryOrderLegacySync();
-  const assignRouteMutation = useAssignPickupsToRoute();
   const clearRouteMutation = useClearOrdersRouteAssignments();
   const generatePickupReportMutation = useGeneratePickupReport();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
   const orderFilterFields = useOrderFilterFields();
   const orders = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
+  const legacyTimestamps = useMemo(
+    () => orders.map((order) => order.legacySyncedAt),
+    [orders],
+  );
+  const { lastSyncedAt, markSynced } = useLegacyLastSynced("pickups", {
+    enabled: canSyncLegacyPickups,
+    timestamps: legacyTimestamps,
+  });
   const totalOrders = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
+  rememberTotal(totalOrders);
+  const totalPages = Math.max(1, Math.ceil(totalOrders / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     orders.length > 0 && orders.every((order) => selectedIds.includes(getOrderRecordId(order)));
@@ -426,7 +441,6 @@ export function OrdersWorkspace() {
     setOrdersCompletedMutation.isPending ||
     isLegacySyncing ||
     retryLegacySyncMutation.isPending ||
-    assignRouteMutation.isPending ||
     clearRouteMutation.isPending;
   const isPrinting = generatePickupReportMutation.isPending;
 
@@ -479,6 +493,10 @@ export function OrdersWorkspace() {
   const selectedCount = selectedOrders.length;
   const selectedOrdersWithRoute = useMemo(
     () => selectedOrders.filter((order) => Boolean(order.routeId?.trim())),
+    [selectedOrders],
+  );
+  const assignDefaultDate = useMemo(
+    () => sharedAppointmentDate(selectedOrders.map((order) => order.date)),
     [selectedOrders],
   );
   const assignRouteOptions = useMemo(
@@ -538,7 +556,7 @@ export function OrdersWorkspace() {
 
   function openAddForm() {
     if (isDesktopTabs) {
-      openFormTab({ feature: "orders", baseHref: "/orders", mode: "add", label: t("orders.actions.add") });
+      openFormTab({ feature: "orders", baseHref: "/appointments", mode: "add", label: t("orders.actions.add") });
       return;
     }
     setEditingOrder(null);
@@ -551,7 +569,7 @@ export function OrdersWorkspace() {
       setViewOrder(null);
       openFormTab({
         feature: "orders",
-        baseHref: "/orders",
+        baseHref: "/appointments",
         mode: "edit",
         entityId: getOrderRecordId(order),
         label: t("orders.actions.editNamed", { name: formatOrderId(order) }),
@@ -652,34 +670,7 @@ export function OrdersWorkspace() {
 
   function openAssignRoute() {
     if (selectedOrders.length === 0) return;
-    setSelectedRouteId("");
     setAssignRouteOpen(true);
-  }
-
-  async function confirmAssignRoute() {
-    if (selectedOrders.length === 0 || !selectedRouteId) return;
-
-    const pickupIds = selectedOrders.map((order) => order.id);
-
-    try {
-      await assignRouteMutation.mutateAsync({ routeId: selectedRouteId, pickupIds });
-      notifyAssignRouteSuccess(pickupIds, selectedRouteId);
-      setAssignRouteOpen(false);
-      setSelectedRouteId("");
-    } catch (mutationError) {
-      notifyError(normalizeApiError(mutationError).message);
-    }
-  }
-
-  function notifyAssignRouteSuccess(pickupIds: number[], routeId: string) {
-    const selectedRoute = pickupRouteLookup.getByKey(routeId);
-    const routeName = selectedRoute ? formatOrderRouteName({ routeId }, selectedRoute, t) : "";
-    const routeSuffix = routeName ? t("orders.toasts.assignedToRouteNamed", { routeName }) : "";
-    notifySuccess(
-      pickupIds.length === 1
-        ? t("orders.toasts.assignedToRoute", { count: pickupIds.length, routeSuffix })
-        : t("orders.toasts.assignedToRoute_plural", { count: pickupIds.length, routeSuffix }),
-    );
   }
 
   function openMapView() {
@@ -694,7 +685,7 @@ export function OrdersWorkspace() {
       sort,
       selectedIds,
     });
-    openTab("/orders/map", t("orders.map.title"));
+    openTab("/appointments/map", t("orders.map.title"));
   }
 
   function openClearRoute() {
@@ -770,6 +761,7 @@ export function OrdersWorkspace() {
       const syncedCount = result.summary.imported + result.summary.updated;
       setLegacySyncTotal(Math.max(0, total));
       setLegacySyncStageIndex(Math.max(0, total - 1));
+      markSynced(result.summary.lastSyncedAt);
       notifySuccess(
         syncedCount > 0
           ? t(
@@ -866,20 +858,6 @@ export function OrdersWorkspace() {
       renderCell: (order) => formatOrderDate(order.date),
     },
     {
-      id: "branch.code",
-      label: t("orders.columns.branchName"),
-      sortField: "branch.code",
-      cellClassName: "text-muted-foreground",
-      renderCell: (order) => order.branch.code.trim() || t("common.empty.dash"),
-    },
-    {
-      id: "createdAt",
-      label: t("orders.columns.createdAt"),
-      defaultVisible: false,
-      cellClassName: "text-muted-foreground",
-      renderCell: (order) => formatAuditDateTime(order.createdAt),
-    },
-    {
       id: "sender.name",
       label: t("orders.columns.senderName"),
       cellClassName: "align-top font-medium",
@@ -897,10 +875,31 @@ export function OrdersWorkspace() {
       id: "sender.address",
       label: t("orders.columns.senderAddress"),
       sortField: "sender.address.address1",
-      defaultWidth: 280,
+      defaultWidth: 180,
       truncateCell: false,
       cellClassName: cn(ADDRESS_TEXT_WRAP_CLASSNAME, "align-top"),
-      renderCell: (order) => <PickupSenderAddressCell customer={order.sender} />,
+      renderCell: (order) => formatStreetAndApt(order.sender, t("common.empty.dash")),
+    },
+    {
+      id: "sender.city",
+      label: t("orders.columns.senderCity"),
+      sortField: "sender.address.city",
+      defaultWidth: 96,
+      renderCell: (order) => formatAddressPart(order.sender, "city", t("common.empty.dash")),
+    },
+    {
+      id: "sender.state",
+      label: t("orders.columns.senderState"),
+      sortField: "sender.address.state",
+      defaultWidth: 64,
+      renderCell: (order) => formatAddressPart(order.sender, "state", t("common.empty.dash")),
+    },
+    {
+      id: "sender.zip",
+      label: t("orders.columns.senderZip"),
+      sortField: "sender.address.zipcode",
+      defaultWidth: 72,
+      renderCell: (order) => formatAddressPart(order.sender, "zipcode", t("common.empty.dash")),
     },
     {
       id: "comments",
@@ -919,17 +918,31 @@ export function OrdersWorkspace() {
         formatOrderRouteName(order, pickupRouteLookup.getByKey(order.routeId), t),
     },
     {
+      id: "branch.code",
+      label: t("orders.columns.branchName"),
+      sortField: "branch.code",
+      cellClassName: "text-muted-foreground",
+      renderCell: (order) => order.branch.code.trim() || t("common.empty.dash"),
+    },
+    {
       id: "updatedAt",
       label: t("orders.columns.updatedAt"),
       defaultVisible: false,
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatAuditDateTime(order.updatedAt),
     },
+    {
+      id: "createdAt",
+      label: t("orders.columns.createdAt"),
+      defaultVisible: false,
+      cellClassName: "text-muted-foreground",
+      renderCell: (order) => formatAuditDateTime(order.createdAt),
+    },
   ],
     [pickupRouteLookup, t],
   );
 
-  const columnVisibility = useColumnVisibility("orders-v4", tableColumns);
+  const columnVisibility = useColumnVisibility("orders-v6", tableColumns);
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== deferredQuery.trim();
@@ -949,7 +962,7 @@ export function OrdersWorkspace() {
     {
       itemCountOnPage: orders.length,
       page: currentPage,
-      pageSize: PAGE_SIZE,
+      pageSize: pageLimit,
       total: totalOrders,
       noun: t("orders.noun"),
       isFiltered: isListFiltered,
@@ -1097,29 +1110,15 @@ export function OrdersWorkspace() {
         </div>
 
         {!isLoading && !listErrorMessage ? (
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-            <Button
-              variant="outline"
-              className="h-11 rounded-xl"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="size-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              className="h-11 rounded-xl"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            layout="mobile"
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={isLoading}
+          />
         ) : null}
 
         {!isLoading && !listErrorMessage && orders.length > 0 && selectedCount > 0 ? (
@@ -1304,6 +1303,11 @@ export function OrdersWorkspace() {
             ))
           )}
         </div>
+        {canSyncLegacyPickups ? (
+          <div className="px-1">
+            <LegacyLastSynced at={lastSyncedAt} />
+          </div>
+        ) : null}
       </section>
 
       <div className="hidden md:block">
@@ -1565,30 +1569,18 @@ export function OrdersWorkspace() {
 
         {!isLoading ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">{listSummary}</p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1 || isLoading}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages || isLoading}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">{listSummary}</p>
+            {canSyncLegacyPickups ? <LegacyLastSynced at={lastSyncedAt} /> : null}
           </div>
+          <TablePaginationControls
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={isLoading}
+          />
         </div>
         ) : null}
         </Card>
@@ -1656,62 +1648,12 @@ export function OrdersWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <AssignAppointmentRouteDialog
         open={assignRouteOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setAssignRouteOpen(false);
-            setSelectedRouteId("");
-          }
-        }}
-      >
-        <DialogContent
-          className="z-[60] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-b-none max-md:rounded-t-2xl max-md:p-4"
-          onOpenAutoFocus={(event) => event.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>{t("orders.dialogs.assignRouteTitle")}</DialogTitle>
-            <DialogDescription>
-              {selectedOrders.length === 1
-                ? t("orders.dialogs.assignRouteDescription", { count: selectedOrders.length })
-                : t("orders.dialogs.assignRouteDescription_plural", { count: selectedOrders.length })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1">
-            <Label htmlFor="assign-route">{t("orders.columns.route")}</Label>
-            <SearchableSelect
-              id="assign-route"
-              value={selectedRouteId}
-              onValueChange={setSelectedRouteId}
-              placeholder={t("orders.dialogs.selectRoute")}
-              searchPlaceholder={t("orders.dialogs.searchRoutes")}
-              loading={assignRoutesLoading}
-              emptyMessage={
-                assignRoutesLoading
-                  ? t("orders.dialogs.loadingRoutes")
-                  : t("orders.dialogs.noRoutesFound")
-              }
-              options={assignRouteOptions}
-              mobileSheet
-            />
-          </div>
-          <DialogFooter className="max-md:grid max-md:grid-cols-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setAssignRouteOpen(false);
-                setSelectedRouteId("");
-              }}
-            >
-              {t("common.actions.cancel")}
-            </Button>
-            <Button onClick={confirmAssignRoute} disabled={!selectedRouteId || isSaving}>
-              <RouteIcon className="h-4 w-4" />
-              {t("orders.actions.assignRoute")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setAssignRouteOpen}
+        pickupIds={selectedOrders.map((order) => order.id)}
+        defaultDate={assignDefaultDate}
+      />
 
       <Dialog
         open={completionConfirm !== null}

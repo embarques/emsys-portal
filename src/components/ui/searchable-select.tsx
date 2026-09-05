@@ -59,6 +59,8 @@ type SearchableSelectProps = {
   contentClassName?: string;
   /** When false, the closed trigger grows to show the full selected label instead of truncating. */
   truncateSelection?: boolean;
+  /** Size the trigger to the longest option label so every choice fits without truncating. */
+  fitToOptions?: boolean;
   align?: "start" | "center" | "end";
   autoFocus?: boolean;
   defaultOpen?: boolean;
@@ -104,6 +106,38 @@ function hasSearchableSelectSelection(
   if (!selectedOption) return false;
   if (selectedOption.value !== "") return true;
   return !isPseudoPlaceholderOption(selectedOption);
+}
+
+function optionMatchesQuery(option: SearchableSelectOption, query: string): boolean {
+  if (!query.trim()) return true;
+  return (
+    accentInsensitiveFilter(option.value, query, [option.label, ...(option.keywords ?? [])]) > 0
+  );
+}
+
+function getNavigableOptions(
+  options: SearchableSelectOption[],
+  query: string,
+  shouldClientFilter: boolean,
+): SearchableSelectOption[] {
+  return options.filter((option) => {
+    if (isPseudoPlaceholderOption(option) || option.disabled) return false;
+    if (!shouldClientFilter) return true;
+    return optionMatchesQuery(option, query);
+  });
+}
+
+function moveHighlight(
+  options: SearchableSelectOption[],
+  current: string,
+  direction: 1 | -1,
+): string {
+  if (options.length === 0) return current;
+  const index = options.findIndex((option) => option.value === current);
+  if (index === -1) {
+    return options[direction === 1 ? 0 : options.length - 1]!.value;
+  }
+  return options[(index + direction + options.length) % options.length]!.value;
 }
 
 const triggerClassName =
@@ -203,6 +237,7 @@ export function SearchableSelect({
   className,
   contentClassName,
   truncateSelection = true,
+  fitToOptions = false,
   align = "start",
   autoFocus = false,
   defaultOpen = false,
@@ -216,6 +251,7 @@ export function SearchableSelect({
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const anchorRef = React.useRef<HTMLDivElement>(null);
   const suppressNextFocusSearchRef = React.useRef(false);
   const scrollIsolationRef = useScrollIsolation();
   const isMobile = useIsMobileViewport();
@@ -236,6 +272,13 @@ export function SearchableSelect({
 
   const selectedOption = options.find((option) => option.value === value);
   const hasSelection = hasSearchableSelectSelection(value, selectedOption);
+  const fitToOptionsLabel = React.useMemo(() => {
+    if (!fitToOptions) return "";
+    return [placeholder, ...options.map((option) => option.label)].reduce(
+      (longest, label) => (label.length > longest.length ? label : longest),
+      "",
+    );
+  }, [fitToOptions, options, placeholder]);
 
   function focusSearchInput(shouldSelectAll = false) {
     if (disabled) return;
@@ -288,6 +331,70 @@ export function SearchableSelect({
     }, 0);
   }
 
+  const shouldClientFilter = searchable && !manualFiltering;
+  const navigableOptions = React.useMemo(
+    () => getNavigableOptions(options, query, shouldClientFilter),
+    [options, query, shouldClientFilter],
+  );
+  const [highlight, setHighlight] = React.useState("");
+  const wasOpenRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!open) {
+      wasOpenRef.current = false;
+      return;
+    }
+    const justOpened = !wasOpenRef.current;
+    wasOpenRef.current = true;
+    setHighlight((current) => {
+      if (!justOpened && current && navigableOptions.some((option) => option.value === current)) {
+        return current;
+      }
+      const selected = navigableOptions.find((option) => option.value === value);
+      return selected?.value ?? navigableOptions[0]?.value ?? "";
+    });
+  }, [open, navigableOptions, value]);
+
+  React.useEffect(() => {
+    if (!open || !searchable) return;
+    const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, searchable]);
+
+  function handleComboboxKeyDown(event: React.KeyboardEvent<HTMLElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setOpen(false);
+      changeQuery("");
+      if (searchable) {
+        inputRef.current?.blur();
+      } else {
+        triggerRef.current?.focus();
+      }
+      return;
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      setHighlight((current) => moveHighlight(navigableOptions, current, direction));
+      return;
+    }
+
+    if (event.key !== "Enter" || event.shiftKey) return;
+    if (!open) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const selected =
+      navigableOptions.find((option) => option.value === highlight) ?? navigableOptions[0];
+    if (selected) handleSelect(selected.value);
+  }
+
   function toggleOpen() {
     if (disabled) return;
     handleOpenChange(!open);
@@ -326,6 +433,9 @@ export function SearchableSelect({
           keywords={[option.label, ...(option.keywords ?? [])]}
           disabled={option.disabled}
           onMouseDown={(event) => event.preventDefault()}
+          onMouseMove={() => {
+            if (!option.disabled) setHighlight(option.value);
+          }}
           onSelect={() => handleSelect(option.value)}
           className={cn(
             listItemClassName,
@@ -335,7 +445,7 @@ export function SearchableSelect({
           )}
         >
           <span className="flex min-w-0 flex-col">
-            <span className="truncate">{option.label}</span>
+            <span className={fitToOptions ? "whitespace-nowrap" : "truncate"}>{option.label}</span>
             {detailLines.map((line, lineIndex) => (
               <span key={lineIndex} className="truncate text-xs text-muted-foreground">
                 {line}
@@ -397,6 +507,9 @@ export function SearchableSelect({
               className="flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent"
               shouldFilter={searchable && !manualFiltering}
               filter={accentInsensitiveFilter}
+              value={highlight}
+              onValueChange={setHighlight}
+              loop
             >
               {showMobileSearch ? (
                 <div className="shrink-0 border-b px-4 py-3">
@@ -407,6 +520,7 @@ export function SearchableSelect({
                       disabled={disabled}
                       value={query}
                       onValueChange={changeQuery}
+                      onKeyDown={handleComboboxKeyDown}
                       placeholder={searchPlaceholder ?? placeholder}
                       className="h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                     />
@@ -450,6 +564,7 @@ export function SearchableSelect({
               autoFocus={autoFocus}
               disabled={disabled}
               data-state={open ? "open" : "closed"}
+              onKeyDown={handleComboboxKeyDown}
               className={cn(
                 triggerClassName,
                 "disabled:cursor-not-allowed disabled:opacity-50",
@@ -468,9 +583,14 @@ export function SearchableSelect({
           <PopoverContent
             align={align}
             sideOffset={4}
+            onKeyDown={handleComboboxKeyDown}
             className={cn(popoverContentClassName, contentClassName)}
           >
-            <Command>
+            <Command
+              value={highlight}
+              onValueChange={setHighlight}
+              loop
+            >
               <CommandList ref={scrollIsolationRef} className="max-h-60 p-0">
                 <CommandEmpty className="px-4 py-3 text-sm">{emptyMessage}</CommandEmpty>
                 {optionItems}
@@ -485,11 +605,22 @@ export function SearchableSelect({
 
   // Searchable: the trigger itself is a text field; options filter as you type.
   return (
-    <div className="relative">
+    <div className={cn("relative", fitToOptions && "inline-flex max-w-full shrink-0")}>
+      {fitToOptions ? (
+        <span
+          aria-hidden
+          className="invisible inline-flex h-10 items-center whitespace-nowrap pl-3 pr-16 text-sm max-md:min-h-12 max-md:text-base"
+        >
+          {fitToOptionsLabel}
+        </span>
+      ) : null}
       <Command
-        className="overflow-visible bg-transparent"
+        className={cn("overflow-visible bg-transparent", fitToOptions && "absolute inset-0")}
         shouldFilter={!manualFiltering}
         filter={accentInsensitiveFilter}
+        value={highlight}
+        onValueChange={setHighlight}
+        loop
       >
         <Popover
           open={open}
@@ -505,6 +636,7 @@ export function SearchableSelect({
         >
           <PopoverAnchor asChild>
             <div
+              ref={anchorRef}
               data-state={open ? "open" : "closed"}
               onClick={() => {
                 if (disabled) return;
@@ -532,13 +664,7 @@ export function SearchableSelect({
                   if (!open) setOpen(true);
                 }}
                 onFocus={() => focusSearchInput(selectAllOnFocus)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    setOpen(false);
-                    changeQuery("");
-                    inputRef.current?.blur();
-                  }
-                }}
+                onKeyDown={handleComboboxKeyDown}
                 role="combobox"
                 aria-expanded={open}
                 aria-label={ariaLabel}
@@ -604,6 +730,17 @@ export function SearchableSelect({
             sideOffset={4}
             onOpenAutoFocus={(event) => event.preventDefault()}
             onCloseAutoFocus={(event) => event.preventDefault()}
+            onPointerDownOutside={(event) => {
+              if (anchorRef.current?.contains(event.target as Node)) {
+                event.preventDefault();
+              }
+            }}
+            onFocusOutside={(event) => {
+              if (anchorRef.current?.contains(event.target as Node)) {
+                event.preventDefault();
+              }
+            }}
+            onKeyDown={handleComboboxKeyDown}
             className={cn(popoverContentClassName, contentClassName)}
           >
             <CommandList ref={scrollIsolationRef} className="max-h-60 p-0">

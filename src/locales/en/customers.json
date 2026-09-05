@@ -3,7 +3,7 @@
   "entityPlural": "customers",
   "title": "Customers",
   "pages": {
-    "description": "Manage customer profiles, contact details, addresses, and account balances for senders and receivers."
+    "description": "Manage clients and their history of appointments, shipments, invoices, and merchandise."
   },
   "noun": "customers",
   "actions": {
@@ -19,6 +19,7 @@
   "addresses": {
     "sheetTitle": "Customer addresses",
     "addAddressTodo": "Add address (coming soon)",
+    "addAddress": "Add new address",
     "matchedBadge": "Matched",
     "primaryPrefix": "Primary:",
     "countBadge": "{{count}} addresses",

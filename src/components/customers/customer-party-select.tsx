@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight, ChevronUp, Loader2, LoaderCircle, Search, UsersRound } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Loader2, LoaderCircle, Plus, Search, UsersRound } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
@@ -45,6 +45,8 @@ export type CustomerPartySelectProps = {
   value: string;
   selectedCustomer?: Customer | null;
   onValueChange: (customerId: string, customer: Customer, addressId?: string) => void;
+  /** Opens the customer editor so a new address can be added to this party. */
+  onAddAddress?: (customer: Customer) => void;
   placeholder?: string;
   pickerTitle?: string;
   searchPlaceholder?: string;
@@ -174,6 +176,7 @@ export function CustomerPartySelect({
   value,
   selectedCustomer,
   onValueChange,
+  onAddAddress,
   placeholder,
   pickerTitle,
   searchPlaceholder,
@@ -267,6 +270,13 @@ export function CustomerPartySelect({
     setQuery("");
     setExpandedIds(new Set());
     setDetailCustomerId(null);
+  }
+
+  function handleAddAddress(customer: Customer) {
+    if (!onAddAddress) return;
+    setOpen(false);
+    resetPickerState();
+    onAddAddress(customer);
   }
 
   function expandCustomer(customerId: string) {
@@ -520,6 +530,21 @@ export function CustomerPartySelect({
                         ),
                       )
                     : null}
+
+                  {!isLoadingDetail && onAddAddress ? (
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs font-medium text-primary hover:bg-muted/70"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleAddAddress(displayCustomer);
+                      }}
+                    >
+                      <Plus className="size-3.5 shrink-0" />
+                      <span>{t("customers.addresses.addAddress")}</span>
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </div>

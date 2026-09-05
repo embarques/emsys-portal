@@ -187,7 +187,7 @@ export function AccountingWorkspace() {
 
   return (
     <div>
-      <PageHeader title="Accounting" />
+      <PageHeader title="Accounting" description={t("accounting.pages.description")} />
 
       <StatCardsGrid>
         {stats.map((stat) => {

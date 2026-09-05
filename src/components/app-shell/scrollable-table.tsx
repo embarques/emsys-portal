@@ -12,7 +12,9 @@ export function ScrollableTable({
 }) {
   return (
     <CardContent className={cn("overflow-x-auto p-0", className)}>
-      <div style={{ minWidth }}>{children}</div>
+      <div className="w-full" style={{ minWidth }}>
+        {children}
+      </div>
     </CardContent>
   );
 }

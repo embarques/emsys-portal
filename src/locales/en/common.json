@@ -35,7 +35,15 @@
   },
   "pagination": {
     "pageOf": "Page {{current}} of {{total}}",
-    "showingOf": "Showing {{count}} of {{total}} {{noun}}"
+    "showingOf": "Showing {{count}} of {{total}} {{noun}}",
+    "view": "View",
+    "pageSize": "Rows per page",
+    "pageSizeEmpty": "No page sizes",
+    "all": "All"
+  },
+  "legacySync": {
+    "lastSynced": "Last synced {{at}}",
+    "neverSynced": "Never synced"
   },
   "listSummary": {
     "searching": "Searching {{noun}}…",

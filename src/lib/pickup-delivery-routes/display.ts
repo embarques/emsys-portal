@@ -55,6 +55,25 @@ export function formatActiveRouteContainerLabel(
   return record?.container?.name?.trim() || emptyValue;
 }
 
+export function formatActiveRouteVehicleLabel(
+  record: ActiveRoute | null | undefined,
+  emptyValue = "—",
+): string {
+  const name = record?.vehicle?.name?.trim();
+  if (name) return name;
+  return record?.vehicle?.id?.trim() || emptyValue;
+}
+
+export function formatPreviousDailyRouteLabel(
+  record: ActiveRoute,
+  emptyValue = "—",
+): string {
+  const date = record.date ? formatRouteDate(record.date) : emptyValue;
+  const branch = record.branch?.code?.trim() || emptyValue;
+  const crew = record.route.name.trim() || emptyValue;
+  return `${date} · ${branch} · ${crew}`;
+}
+
 /** Linked route manager assignment name for the Route table column. */
 export function formatActiveRouteRouteName(
   record: ActiveRoute,

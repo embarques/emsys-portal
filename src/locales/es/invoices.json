@@ -1,17 +1,29 @@
 {
   "title": "Facturas",
   "pages": {
-    "description": "Cree y administre facturas de envío, líneas, cargos y documentación de facturación vinculada a órdenes y clientes."
+    "description": "Digitalice y rastree la mercancía del cliente que recogemos o recibimos como parte de un envío."
   },
   "staging": {
     "tableAction": "Administrar artículos de factura",
     "title": "Seleccionar artículos de factura para procesamiento"
   },
   "columns": {
+    "invoiceNumber": "Número de factura",
+    "date": "Fecha",
+    "container": "Contenedor",
+    "paidStatus": "Estado",
+    "paymentLocation": "Pagado en",
     "senderName": "Remitente",
     "senderAddress": "Dirección del remitente",
     "receiverName": "Destinatario",
-    "receiverAddress": "Dirección del destinatario"
+    "receiverAddress": "Dirección del destinatario",
+    "total": "Total de la factura",
+    "discount": "Descuento",
+    "amountPaid": "Pagado",
+    "balance": "Saldo"
+  },
+  "search": {
+    "placeholder": "Buscar por número de factura, remitente, destinatario o contenedor…"
   },
   "actions": {
     "syncLegacy": "Sync legacy",
@@ -47,7 +59,7 @@
       "pickupSourceRoute": "Ruta",
       "pickupSourceWarehouse": "Almacén",
       "pickupSourceOffice": "Oficina",
-      "pickupRoute": "Ruta de órdenes",
+      "pickupRoute": "Ruta de citas",
       "warehouseEmployee": "Empleado de almacén",
       "officeEmployee": "Empleado de oficina"
     },
@@ -60,9 +72,9 @@
       "noReceiver": "Sin destinatario",
       "noPickupReference": "Sin referencia de recogida",
       "searchPickupReferences": "Buscar referencias de recogida…",
-      "selectPickupRoute": "Seleccionar ruta de órdenes",
-      "noPickupRoute": "Sin ruta de órdenes",
-      "searchPickupRoutes": "Buscar rutas de órdenes…",
+      "selectPickupRoute": "Seleccionar ruta de citas",
+      "noPickupRoute": "Sin ruta de citas",
+      "searchPickupRoutes": "Buscar rutas de citas…",
       "selectWarehouseEmployee": "Seleccionar empleado de almacén",
       "selectOfficeEmployee": "Seleccionar empleado de oficina",
       "searchEmployees": "Buscar empleados…"
@@ -143,7 +155,7 @@
       "invoiceNumberRequired": "El número de factura es obligatorio.",
       "containerRequired": "El contenedor es obligatorio.",
       "paymentLocationRequired": "La ubicación de pago pendiente es obligatoria.",
-      "pickupRouteRequired": "La ruta de órdenes es obligatoria.",
+      "pickupRouteRequired": "La ruta de citas es obligatoria.",
       "warehouseEmployeeRequired": "El empleado de almacén es obligatorio.",
       "officeEmployeeRequired": "El empleado de oficina es obligatorio.",
       "senderRequired": "El remitente es obligatorio.",
@@ -157,7 +169,7 @@
       "newInvoice": "Nueva factura",
       "senderNotSelected": "Remitente no seleccionado",
       "pending": "Pendiente",
-      "orderDetails": "Detalles del pedido",
+      "orderDetails": "Detalles de la cita",
       "lineItems": "Artículos",
       "lineItem": "Artículo",
       "paid": "Pagado",
@@ -371,6 +383,65 @@
         "dateTime": "Fecha y hora",
         "createdBy": "Creado por",
         "description": "Descripción"
+      }
+    }
+  },
+  "filters": {
+    "fields": {
+      "number": { "label": "Número de factura", "placeholder": "Ingrese el número de factura…" },
+      "numberRange": { "label": "Rango de números de factura", "placeholder": "488800 a 488900" },
+      "date": { "label": "Fecha de la factura", "placeholder": "AAAA-MM-DD" },
+      "dateRange": { "label": "Rango de fechas de factura", "placeholder": "2026-01-01 a 2026-06-30" },
+      "paidRegion": { "label": "Pagado en" },
+      "paidStatus": { "label": "Estado de pago" },
+      "cost": { "label": "Total de la factura", "placeholder": "Ingrese el monto…" },
+      "discount": { "label": "Descuento", "placeholder": "Ingrese el monto…" },
+      "payment": { "label": "Monto pagado", "placeholder": "Ingrese el monto…" },
+      "balance": { "label": "Saldo", "placeholder": "Ingrese el monto…" },
+      "container": {
+        "name": { "label": "Contenedor", "placeholder": "Ingrese el contenedor…" }
+      },
+      "sender": {
+        "name": { "label": "Nombre del remitente", "placeholder": "Ingrese el nombre del remitente…" },
+        "id": { "label": "ID del remitente", "placeholder": "Ingrese el ID del remitente…" },
+        "phone": { "label": "Teléfono del remitente", "placeholder": "Ingrese el teléfono…" },
+        "address": { "label": "Dirección del remitente", "placeholder": "Ingrese dirección, ciudad, estado o código postal…" }
+      },
+      "receiver": {
+        "name": { "label": "Nombre del destinatario", "placeholder": "Ingrese el nombre del destinatario…" },
+        "id": { "label": "ID del destinatario", "placeholder": "Ingrese el ID del destinatario…" },
+        "phone": { "label": "Teléfono del destinatario", "placeholder": "Ingrese el teléfono…" },
+        "address": { "label": "Dirección del destinatario", "placeholder": "Ingrese dirección, ciudad, estado o código postal…" }
+      },
+      "createdBy": {
+        "name": { "label": "Creada por" }
+      },
+      "route": {
+        "_id": { "label": "Ruta" }
+      },
+      "employee": {
+        "id": { "label": "ID de empleado", "placeholder": "Ingrese el ID de empleado…" },
+        "name": { "label": "Nombre del empleado", "placeholder": "Ingrese el nombre del empleado…" }
+      },
+      "isArchive": { "label": "Archivada" },
+      "isVoid": { "label": "Anulada" },
+      "createdAt": { "label": "Fecha de creación", "placeholder": "AAAA-MM-DD" },
+      "createdAtRange": { "label": "Rango de fechas de creación", "placeholder": "2026-01-01 a 2026-06-30" },
+      "updatedAt": { "label": "Fecha de modificación", "placeholder": "AAAA-MM-DD" },
+      "updatedAtRange": { "label": "Rango de fechas de modificación", "placeholder": "2026-01-01 a 2026-06-30" }
+    },
+    "options": {
+      "paidRegion": {
+        "NY": "USA",
+        "RD": "RD"
+      },
+      "paidStatus": {
+        "OPEN": "Abierta",
+        "CLOSED": "Cerrada"
+      },
+      "boolean": {
+        "true": "Sí",
+        "false": "No"
       }
     }
   }

@@ -1,59 +1,95 @@
 {
   "title": "Routes",
-  "noun": "routes",
+  "noun": "route crews",
   "pages": {
-    "routeManager": "Define reusable route templates with vehicles and crew assignments for pickup and delivery operations.",
-    "pickupRoutes": "Plan daily order routes, assign orders to drivers, and track route completion for a selected date.",
-    "deliveryRoutes": "Plan daily delivery routes by container, assign crew roles, and coordinate last-mile delivery."
+    "routeManager": "Define reusable route crews with a status, branch, and crew members for appointments and deliveries.",
+    "pickupRoutes": "Set the working appointment route for a date: branch, vehicle, route crew, and crew roles.",
+    "deliveryRoutes": "Set the working delivery route: container, exchange rate, route crew, crew roles, and date.",
+    "dailyRoutes": "Set a working route for a date: branch, route crew, and crew roles. RD branches also need a container and exchange rate."
   },
   "routeManager": {
-    "title": "Route Manager"
+    "title": "Route crews"
   },
-  "pickupRoutes": {
-    "title": "Order routes",
-    "editTitle": "Edit order route",
-    "addTabLabel": "Add order route",
+  "dailyRoutes": {
+    "title": "Daily routes",
+    "editTitle": "Edit daily route",
+    "addTabLabel": "Add daily route",
     "editTabLabel": "Edit {{name}}",
-    "loading": "Loading order route…",
-    "notFound": "This order route could not be found.",
-    "description": "Set the working order route for this date. Pick an existing route or create one.",
-    "searchPlaceholder": "Search order routes…",
-    "searchNoun": "order routes",
-    "empty": "No order routes yet.",
-    "emptyFiltered": "No order routes match your search or filters.",
-    "setActiveRoute": "Add order route",
-    "pagination": "Showing {{shown}} of {{total}} order routes",
+    "loading": "Loading daily route…",
+    "notFound": "This daily route could not be found.",
+    "description": "Set the working route for this date. Choose the branch, route crew, and crew roles. RD branches also need a container and exchange rate.",
+    "searchPlaceholder": "Search daily routes…",
+    "searchNoun": "daily routes",
+    "empty": "No daily routes yet.",
+    "emptyFiltered": "No daily routes match your search or filters.",
+    "setActiveRoute": "Add daily route",
+    "pagination": "Showing {{shown}} of {{total}} daily routes",
     "entities": {
-      "activeRoute": "order route",
-      "activeRoutes": "order routes"
+      "activeRoute": "daily route",
+      "activeRoutes": "daily routes"
     },
     "form": {
-      "save": "Save order route",
-      "saved": "Order route saved.",
-      "editHint": "Update the order route assignment and crew roles, then save."
+      "save": "Save daily route",
+      "saved": "Daily route saved.",
+      "editHint": "Update the date, branch, route crew, and crew roles, then save.",
+      "loadPrevious": "Load previous daily route",
+      "loadPreviousPlaceholder": "Copy a previous configuration…",
+      "loadPreviousSearch": "Search previous daily routes…",
+      "loadPreviousEmpty": "No previous daily routes to copy."
     },
     "view": {
-      "editLabel": "Edit order route",
+      "editLabel": "Edit daily route",
       "sections": {
         "assignment": "Assignment",
-        "orders": "Assigned orders"
+        "orders": "Assigned appointments"
+      }
+    }
+  },
+  "pickupRoutes": {
+    "title": "Appointment routes",
+    "editTitle": "Edit appointment route",
+    "addTabLabel": "Add appointment route",
+    "editTabLabel": "Edit {{name}}",
+    "loading": "Loading appointment route…",
+    "notFound": "This appointment route could not be found.",
+    "description": "Set the working appointment route for this date. Choose the branch, vehicle, route crew, and crew roles.",
+    "searchPlaceholder": "Search appointment routes…",
+    "searchNoun": "appointment routes",
+    "empty": "No appointment routes yet.",
+    "emptyFiltered": "No appointment routes match your search or filters.",
+    "setActiveRoute": "Add appointment route",
+    "pagination": "Showing {{shown}} of {{total}} appointment routes",
+    "entities": {
+      "activeRoute": "appointment route",
+      "activeRoutes": "appointment routes"
+    },
+    "form": {
+      "save": "Save appointment route",
+      "saved": "Appointment route saved.",
+      "editHint": "Update the date, branch, vehicle, route crew, and crew roles, then save."
+    },
+    "view": {
+      "editLabel": "Edit appointment route",
+      "sections": {
+        "assignment": "Assignment",
+        "orders": "Assigned appointments"
       },
       "orders": {
-        "title": "Assigned orders ({{count}})",
+        "title": "Assigned appointments ({{count}})",
         "description": "Pickups assigned to this route.",
-        "editDescription": "Select orders to remove them from this route.",
-        "loading": "Loading assigned orders…",
-        "empty": "No orders are assigned to this route yet.",
+        "editDescription": "Select appointments to remove them from this route.",
+        "loading": "Loading assigned appointments…",
+        "empty": "No appointments are assigned to this route yet.",
         "removeFromRoute": "Remove from route",
-        "selectAtLeastOne": "Select at least one order to remove from this route.",
-        "selectAllOrders": "Select all assigned orders",
-        "selectOrder": "Select order {{orderId}}",
-        "unassigned": "Removed {{count}} order from this route.",
-        "unassigned_plural": "Removed {{count}} orders from this route."
+        "selectAtLeastOne": "Select at least one appointment to remove from this route.",
+        "selectAllOrders": "Select all assigned appointments",
+        "selectOrder": "Select appointment {{orderId}}",
+        "unassigned": "Removed {{count}} appointment from this route.",
+        "unassigned_plural": "Removed {{count}} appointments from this route."
       }
     },
     "actions": {
-      "selectAtLeastOne": "Select at least one order route.",
+      "selectAtLeastOne": "Select at least one appointment route.",
       "noPickupsOnRoute": "No pickups are assigned to the selected route.",
       "print": "Print route",
       "preparing": "Preparing…",
@@ -64,14 +100,14 @@
     },
     "dialogs": {
       "clearRouteTitle": "Clear route?",
-      "clearRouteDescription": "This will unassign all orders from this route. {{cannotBeUndone}}"
+      "clearRouteDescription": "This will unassign all appointments from this route. {{cannotBeUndone}}"
     },
     "toasts": {
       "comingSoon": "{{label}} is coming soon.",
       "manifestReady": "Pickup manifest ready for {{count}} pickup.",
       "manifestReady_plural": "Pickup manifest ready for {{count}} pickups.",
-      "routeCleared": "Cleared {{count}} order from this route.",
-      "routeCleared_plural": "Cleared {{count}} orders from this route."
+      "routeCleared": "Cleared {{count}} appointment from this route.",
+      "routeCleared_plural": "Cleared {{count}} appointments from this route."
     }
   },
   "deliveryRoutes": {
@@ -81,7 +117,7 @@
     "editTabLabel": "Edit {{name}}",
     "loading": "Loading delivery route…",
     "notFound": "This delivery route could not be found.",
-    "description": "Set the working delivery route for this date and container. Pick an existing route or create one.",
+    "description": "Set the working delivery route. Choose the container, exchange rate, route crew, crew roles, and date.",
     "searchPlaceholder": "Search delivery routes…",
     "searchNoun": "delivery routes",
     "empty": "No delivery routes yet.",
@@ -95,7 +131,7 @@
     "form": {
       "save": "Save delivery route",
       "saved": "Delivery route saved.",
-      "editHint": "Update the delivery assignment and crew roles, then save."
+      "editHint": "Update the container, exchange rate, route crew, crew roles, and date, then save."
     },
     "view": {
       "editLabel": "Edit delivery route",
@@ -128,12 +164,12 @@
   "entities": {
     "activeRoute": "active route",
     "activeRoutes": "active routes",
-    "route": "route",
-    "routes": "routes"
+    "route": "route crew",
+    "routes": "route crews"
   },
   "columns": {
     "name": "Name",
-    "employees": "Employees",
+    "employees": "Crew members",
     "vehicle": "Vehicle",
     "branch": "Branch",
     "createdAt": "Created at",
@@ -143,7 +179,7 @@
     "date": "Date",
     "routeType": "Type",
     "container": "Container",
-    "route": "Route",
+    "route": "Route crew",
     "driver": "Driver",
     "appraiser": "Appraiser",
     "helper": "Helper",
@@ -156,8 +192,8 @@
       "name": { "label": "Name", "placeholder": "Enter name…" },
       "date": { "label": "Date", "placeholder": "YYYY-MM-DD" },
       "route": {
-        "name": { "label": "Route assignment", "placeholder": "Enter route name…" },
-        "id": { "label": "Route ID", "placeholder": "Enter route id…" }
+        "name": { "label": "Route crew", "placeholder": "Enter route crew name…" },
+        "id": { "label": "Route crew ID", "placeholder": "Enter route crew id…" }
       },
       "employees": {
         "name": { "label": "Crew member", "placeholder": "Enter crew name…" },
@@ -168,6 +204,10 @@
         "code": { "label": "Branch code", "placeholder": "Enter branch code…" },
         "id": { "label": "Branch ID", "placeholder": "Enter branch id…" },
         "name": { "label": "Branch name", "placeholder": "Enter branch name…" }
+      },
+      "vehicle": {
+        "name": { "label": "Vehicle", "placeholder": "Enter vehicle name…" },
+        "id": { "label": "Vehicle ID", "placeholder": "Enter vehicle id…" }
       },
       "container": {
         "number": { "label": "Container number", "placeholder": "Enter container number…" },
@@ -191,28 +231,28 @@
     }
   },
   "table": {
-    "searchPlaceholder": "Search routes…",
-    "empty": "No routes yet.",
-    "emptyFiltered": "No routes match your search.",
-    "pagination": "Showing {{shown}} of {{total}} routes",
+    "searchPlaceholder": "Search route crews…",
+    "empty": "No route crews yet.",
+    "emptyFiltered": "No route crews match your search.",
+    "pagination": "Showing {{shown}} of {{total}} route crews",
     "allBranches": "All branches",
     "branchFilter": "Branch",
     "branchFilterPlaceholder": "All branches",
     "branchFilterSearch": "Search branches…"
   },
   "actions": {
-    "addRoute": "Add route"
+    "addRoute": "Add route crew"
   },
   "viewSheet": {
     "sections": {
-      "route": "Route",
+      "route": "Route crew",
       "vehicle": "Vehicle",
-      "employees": "Employees",
+      "employees": "Crew members",
       "audit": "Audit"
     },
     "recordId": "Record ID",
     "vehicleId": "Vehicle ID",
-    "editLabel": "Edit route"
+    "editLabel": "Edit route crew"
   },
   "activeRouteForm": {
     "sections": {
@@ -256,33 +296,39 @@
     "inactive": "Inactive",
     "container": "Container",
     "containerRequired": "Container",
-    "containerPlaceholder": "No container",
+    "containerPlaceholder": "Select a container…",
     "containerSearch": "Search containers…",
     "rate": "Exchange rate",
     "ratePlaceholder": "58.50",
     "rateHint": "How many Dominican pesos one US dollar is worth for this trip.",
     "branch": "Branch",
-    "branchPlaceholder": "All branches",
+    "branchPlaceholder": "Select a branch",
     "branchSearch": "Search branches…",
     "allBranches": "All branches",
     "date": "Date",
-    "route": "Route",
-    "routePlaceholder": "Select a route…",
-    "routeSearch": "Search routes…",
-    "routeEmpty": "No routes for this branch.",
+    "vehicle": "Vehicle",
+    "vehiclePlaceholder": "Select a vehicle",
+    "vehicleSearch": "Search vehicles…",
+    "vehicleEmpty": "No vehicles for this branch.",
+    "selectBranchFirst": "Select a branch to load route crews.",
+    "route": "Route crew",
+    "routePlaceholder": "Select a route crew…",
+    "routeSearch": "Search route crews…",
+    "routeEmpty": "No route crews for this branch.",
     "driver": "Driver",
     "appraiser": "Appraiser",
     "helper": "Helper",
     "crewRoles": "Assign roles",
-    "crewRolesEmpty": "This route has no crew members.",
+    "crewRolesEmpty": "This route crew has no crew members.",
     "driverFor": "Driver — {{name}}",
     "appraiserFor": "Appraiser — {{name}}",
-    "createRoute": "New route",
+    "helperFor": "Helper — {{name}}",
+    "createRoute": "New route crew",
     "save": "Save active route",
     "saving": "Saving…",
     "saved": "Active route saved.",
-    "routeCreated": "Route created.",
-    "loadingRoute": "Loading route…",
+    "routeCreated": "Route crew created.",
+    "loadingRoute": "Loading route crew…",
     "createdAt": "Created at",
     "createdBy": "Created by",
     "updatedAt": "Updated at",
@@ -293,37 +339,38 @@
       "date": "Date is required.",
       "dayOfWeek": "Select at least one day.",
       "branch": "Branch is required.",
-      "route": "Route is required.",
-      "pickupContainer": "Order routes cannot include a container."
+      "vehicle": "Vehicle is required.",
+      "route": "Route crew is required.",
+      "pickupContainer": "Appointment routes cannot include a container."
     }
   },
   "routeDetails": {
-    "title": "Route",
-    "description": "Vehicle and crew for the selected route.",
+    "title": "Route crew",
+    "description": "Crew members for the selected route crew.",
     "name": "Name",
     "routeId": "Route ID",
     "vehicle": "Vehicle",
     "employees": "Employees",
-    "empty": "Select a route to see vehicle and crew details.",
+    "empty": "Select a route crew to see crew members.",
     "createdAt": "Created at",
     "createdBy": "Created by",
     "updatedAt": "Updated at",
     "updatedBy": "Updated by"
   },
   "createDialog": {
-    "title": "Create route",
-    "description": "Add a route for {{date}}. It will be selected as the active route when saved."
+    "title": "Create route crew",
+    "description": "Add a route crew. It will be selected when saved."
   },
   "form": {
-    "addTitle": "Add route",
-    "addTabLabel": "Add route",
-    "editTitle": "Edit route",
-    "addDescription": "Assign a vehicle and crew members.",
-    "editDescription": "Update the vehicle and crew for this route.",
+    "addTitle": "Add route crew",
+    "addTabLabel": "Add route crew",
+    "editTitle": "Edit route crew",
+    "addDescription": "Set the status, branch, and crew members.",
+    "editDescription": "Update the status, branch, and crew members for this route crew.",
     "editTabLabel": "Edit {{name}}",
-    "entityLabel": "Route",
-    "loading": "Loading route…",
-    "notFound": "This route could not be found.",
+    "entityLabel": "Route crew",
+    "loading": "Loading route crew…",
+    "notFound": "This route crew could not be found.",
     "sections": {
       "details": "Route details",
       "branch": "Branch",
@@ -332,7 +379,7 @@
     },
     "branchPlaceholder": "Select a branch",
     "branchSearch": "Search branches…",
-    "selectBranchFirst": "Select a branch to load vehicles and crew.",
+    "selectBranchFirst": "Select a branch to load crew members.",
     "vehiclePlaceholder": "Select a vehicle",
     "vehicleSearch": "Search vehicles…",
     "vehicleEmpty": "No vehicles for this branch.",
@@ -342,7 +389,7 @@
     "searchCrewMembers": "Search crew members…",
     "loadingCrewMembers": "Loading crew members…",
     "noCrewMembersFound": "No active crew members found.",
-    "selectAtLeastOneCrewMember": "Select at least one crew member for this route.",
+    "selectAtLeastOneCrewMember": "Select at least one crew member for this route crew.",
     "crewMemberRequired": "Select at least one crew member.",
     "validation": {
       "branchRequired": "Branch is required.",

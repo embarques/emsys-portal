@@ -3,7 +3,7 @@
   "entityPlural": "users",
   "title": "Users",
   "pages": {
-    "description": "Administer portal user accounts, company access, roles, and account activation status."
+    "description": "Administer portal user accounts, company access, roles, and permissions."
   },
   "noun": "users",
   "actions": {

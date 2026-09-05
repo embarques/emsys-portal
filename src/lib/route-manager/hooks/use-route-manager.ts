@@ -25,12 +25,13 @@ import {
 } from "@/lib/route-manager/types";
 import { queryKeys } from "@/lib/query/query-keys";
 
-export function useRoutes(params: RouteListParams) {
+export function useRoutes(params: RouteListParams, options: { enabled?: boolean } = {}) {
   const isFiltered = isRouteListFiltered(params);
 
   return useWorkspaceQuery({
     queryKey: queryKeys.routes.list(params),
     queryFn: () => fetchRoutes(params),
+    enabled: options.enabled ?? true,
     placeholderData: keepPreviousData,
     staleTime: isFiltered ? 0 : 60_000,
   });

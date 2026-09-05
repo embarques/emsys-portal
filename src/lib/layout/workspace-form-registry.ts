@@ -10,7 +10,7 @@ import { InvoiceItemStagingFormWorkspace } from "@/components/invoices/invoice-i
 import { ItemFormWorkspace } from "@/components/items/item-form-workspace";
 import { OrderFormWorkspace } from "@/components/orders/order-form-workspace";
 import { RoleFormWorkspace } from "@/components/roles/role-form-workspace";
-import { DeliveryRouteFormWorkspace, PickupRouteFormWorkspace } from "@/components/pickup-delivery-routes/pickup-delivery-route-form-workspace";
+import { DailyRouteFormWorkspace } from "@/components/pickup-delivery-routes/pickup-delivery-route-form-workspace";
 import { RouteFormWorkspace } from "@/components/route-manager/route-form-workspace";
 import { UserFormWorkspace } from "@/components/users/user-form-workspace";
 import { VehicleFormWorkspace } from "@/components/vehicles/vehicle-form-workspace";
@@ -38,8 +38,9 @@ export const workspaceFormRegistry: Record<string, ComponentType<WorkspaceFormHo
   items: ItemFormWorkspace,
   containers: ContainerFormWorkspace,
   "routes": RouteFormWorkspace,
-  "pickup-routes": PickupRouteFormWorkspace,
-  "delivery-routes": DeliveryRouteFormWorkspace,
+  "daily-routes": DailyRouteFormWorkspace,
+  "pickup-routes": DailyRouteFormWorkspace,
+  "delivery-routes": DailyRouteFormWorkspace,
   roles: RoleFormWorkspace,
   vehicles: VehicleFormWorkspace,
   users: UserFormWorkspace,
