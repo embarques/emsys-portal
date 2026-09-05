@@ -15,7 +15,7 @@ import {
 
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
-import { AssignRouteCrewDialog } from "@/components/pickup-delivery-routes/assign-route-crew-dialog";
+import { AssignBarcodeRouteDialog } from "@/components/invoices/assign-barcode-route-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatContainerLabel, formatContainerRouteNumber } from "@/lib/containers/display";
+import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { truncateBarcode, getBarcodeStatusLabel } from "@/lib/labels/display";
 import {
@@ -37,7 +37,6 @@ import {
   useUpdateBarcodes,
 } from "@/lib/labels/hooks/use-barcodes";
 import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
-import type { ActiveRouteContainerRef } from "@/lib/pickup-delivery-routes/types";
 import { useGenerateLabelReport } from "@/lib/reports/hooks/use-reports";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import {
@@ -88,30 +87,6 @@ type HeaderSelectCheckboxProps = {
   onDeselectAll: () => void;
   label: string;
 };
-
-function sharedContainerFromLabels(
-  labels: GeneratedLabel[],
-  containers: Array<{ id: number; name: string; containerNumber: string }>,
-): ActiveRouteContainerRef | null {
-  const ids = [
-    ...new Set(
-      labels
-        .map((label) => label.containerId)
-        .filter((id): id is number => typeof id === "number" && id > 0),
-    ),
-  ];
-  if (ids.length !== 1) return null;
-
-  const id = ids[0];
-  const picked = containers.find((container) => container.id === id);
-  if (picked) {
-    return { id: picked.id, name: formatContainerRouteNumber(picked) };
-  }
-
-  const label = labels.find((entry) => entry.containerId === id);
-  const name = label?.containerName.trim();
-  return { id, name: name && name !== "—" ? name : String(id) };
-}
 
 /** Header checkbox that toggles select-all / deselect-all with an indeterminate state. */
 function HeaderSelectCheckbox({
@@ -316,10 +291,6 @@ export function InvoiceStagingWorkflow({
   const assignBarcodeIds = useMemo(
     () => [...new Set(selectedLabels.map((label) => label.barcodeId).filter((id) => id > 0))],
     [selectedLabels],
-  );
-  const assignContainer = useMemo(
-    () => sharedContainerFromLabels(selectedLabels, containers),
-    [selectedLabels, containers],
   );
 
   function toggleItem(key: string, checked: boolean) {
@@ -889,12 +860,10 @@ export function InvoiceStagingWorkflow({
         </DialogContent>
       </Dialog>
 
-      <AssignRouteCrewDialog
+      <AssignBarcodeRouteDialog
         open={routeDialogOpen}
         onOpenChange={setRouteDialogOpen}
-        routeType="delivery"
         barcodeIds={assignBarcodeIds}
-        defaultContainer={assignContainer}
       />
     </>
   );

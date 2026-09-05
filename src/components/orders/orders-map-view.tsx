@@ -17,10 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AssignAppointmentRouteDialog,
-  sharedAppointmentDate,
-} from "@/components/orders/assign-appointment-route-dialog";
+import { AssignAppointmentRouteDialog } from "@/components/orders/assign-appointment-route-dialog";
 import {
   getGoogleMapsCoreApi,
   importGoogleMapsLibrary,
@@ -575,9 +572,6 @@ export function OrdersMapView({
         open={assignRouteOpen}
         onOpenChange={setAssignRouteOpen}
         pickupIds={selectedStops.map((stop) => stop.orderId)}
-        defaultDate={sharedAppointmentDate(
-          selectedStops.map((stop) => orderByRecordId.get(stop.orderRecordId)?.date),
-        )}
       />
 
       <Dialog

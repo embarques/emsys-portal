@@ -125,10 +125,7 @@ export function CustomerTableAddressCell({ customer, className }: CustomerTableA
     setSheetOpen(true);
   }
 
-  const addressCountLabel =
-    total === 1
-      ? t("customers.addresses.countBadgeOne")
-      : t("customers.addresses.countBadge", { count: total });
+  const addressCountLabel = t("customers.addresses.countBadge", { count: total });
 
   return (
     <>
@@ -147,7 +144,7 @@ export function CustomerTableAddressCell({ customer, className }: CustomerTableA
         {detailQuery.isFetching && total <= 1 ? (
           <p className="mt-0.5 text-xs text-muted-foreground">{t("customers.addresses.loadingAddresses")}</p>
         ) : null}
-        {!detailQuery.isFetching && total > 0 ? (
+        {!detailQuery.isFetching && total > 1 ? (
           <button
             type="button"
             className="mt-0.5 text-left text-xs font-medium text-primary hover:underline"

@@ -23,10 +23,7 @@ import {
 
 import { OrderForm } from "@/components/orders/order-form";
 import { OrderViewSheet } from "@/components/orders/order-view-sheet";
-import {
-  AssignAppointmentRouteDialog,
-  sharedAppointmentDate,
-} from "@/components/orders/assign-appointment-route-dialog";
+import { AssignAppointmentRouteDialog } from "@/components/orders/assign-appointment-route-dialog";
 import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
@@ -493,10 +490,6 @@ export function OrdersWorkspace() {
   const selectedCount = selectedOrders.length;
   const selectedOrdersWithRoute = useMemo(
     () => selectedOrders.filter((order) => Boolean(order.routeId?.trim())),
-    [selectedOrders],
-  );
-  const assignDefaultDate = useMemo(
-    () => sharedAppointmentDate(selectedOrders.map((order) => order.date)),
     [selectedOrders],
   );
   const assignRouteOptions = useMemo(
@@ -1652,7 +1645,6 @@ export function OrdersWorkspace() {
         open={assignRouteOpen}
         onOpenChange={setAssignRouteOpen}
         pickupIds={selectedOrders.map((order) => order.id)}
-        defaultDate={assignDefaultDate}
       />
 
       <Dialog

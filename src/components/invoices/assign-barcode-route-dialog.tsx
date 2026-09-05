@@ -17,36 +17,26 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
+import { useAssignBarcodesToRoute } from "@/lib/labels/hooks/use-barcodes";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
-import { formatOrderRouteName } from "@/lib/orders/display";
-import { useAssignPickupsToRoute } from "@/lib/orders/hooks/use-orders";
 import { DAILY_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
-import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
+import {
+  buildActiveRouteAssignmentOptions,
+  formatActiveRouteReferenceLabel,
+} from "@/lib/pickup-delivery-routes/display";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
-import { todayDateInputValue } from "@/lib/route-manager/types";
 
-type AssignAppointmentRouteDialogProps = {
+type AssignBarcodeRouteDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  pickupIds: number[];
+  barcodeIds: number[];
 };
 
-export function sharedAppointmentDate(dates: Array<string | undefined | null>): string {
-  const unique = [
-    ...new Set(
-      dates
-        .map((value) => value?.trim().slice(0, 10) ?? "")
-        .filter(Boolean),
-    ),
-  ];
-  return unique.length === 1 ? unique[0] : todayDateInputValue();
-}
-
-export function AssignAppointmentRouteDialog({
+export function AssignBarcodeRouteDialog({
   open,
   onOpenChange,
-  pickupIds,
-}: AssignAppointmentRouteDialogProps) {
+  barcodeIds,
+}: AssignBarcodeRouteDialogProps) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const { openFormTab } = useWorkspaceTabs();
@@ -54,7 +44,7 @@ export function AssignAppointmentRouteDialog({
   const [formError, setFormError] = useState<string | null>(null);
 
   const dailyRoutesQuery = useDailyRoutePicker(200, { enabled: open });
-  const assignPickupsMutation = useAssignPickupsToRoute();
+  const assignBarcodesMutation = useAssignBarcodesToRoute();
 
   const dailyRoutes = dailyRoutesQuery.data?.items ?? [];
   const routeOptions = useMemo(
@@ -70,8 +60,8 @@ export function AssignAppointmentRouteDialog({
     }
   }, [open]);
 
-  const isSaving = assignPickupsMutation.isPending;
-  const canSubmit = pickupIds.length > 0 && Boolean(routeId) && !isSaving;
+  const isSaving = assignBarcodesMutation.isPending;
+  const canSubmit = barcodeIds.length > 0 && Boolean(routeId) && !isSaving;
 
   function handleOpenChange(nextOpen: boolean) {
     if (isSaving) return;
@@ -93,18 +83,17 @@ export function AssignAppointmentRouteDialog({
     if (!canSubmit) return;
 
     try {
-      await assignPickupsMutation.mutateAsync({ routeId, pickupIds });
-      const routeName = formatOrderRouteName({ routeId }, selectedRoute, t);
-      const routeSuffix = routeName
-        ? t("orders.toasts.assignedToRouteNamed", { routeName })
-        : "";
+      const result = await assignBarcodesMutation.mutateAsync({ routeId, barcodeIds });
+      const routeName =
+        result.routeName ||
+        (selectedRoute ? formatActiveRouteReferenceLabel(selectedRoute, t) : "") ||
+        routeId;
       notifySuccess(
-        pickupIds.length === 1
-          ? t("orders.toasts.assignedToRoute", { count: pickupIds.length, routeSuffix })
-          : t("orders.toasts.assignedToRoute_plural", {
-              count: pickupIds.length,
-              routeSuffix,
-            }),
+        t("labels.staging.success.assignedToRoute", {
+          count: result.assignedCount,
+          route: routeName,
+          trip: result.tripNumber,
+        }),
       );
       onOpenChange(false);
     } catch (error) {
@@ -115,9 +104,9 @@ export function AssignAppointmentRouteDialog({
   }
 
   const description =
-    pickupIds.length === 1
-      ? t("orders.dialogs.assignRouteDescription", { count: pickupIds.length })
-      : t("orders.dialogs.assignRouteDescription_plural", { count: pickupIds.length });
+    barcodeIds.length === 1
+      ? t("labels.staging.routeDialog.description", { count: barcodeIds.length })
+      : t("labels.staging.routeDialog.description_plural", { count: barcodeIds.length });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -126,14 +115,16 @@ export function AssignAppointmentRouteDialog({
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{t("orders.dialogs.assignRouteTitle")}</DialogTitle>
+          <DialogTitle>{t("labels.staging.routeDialog.title")}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="assign-daily-route">{t("orders.dialogs.dailyRoute")}</Label>
+              <Label htmlFor="assign-barcode-daily-route">
+                {t("labels.staging.routeDialog.dailyRoute")}
+              </Label>
               <Button
                 type="button"
                 variant="outline"
@@ -142,24 +133,24 @@ export function AssignAppointmentRouteDialog({
                 disabled={isSaving}
               >
                 <Plus className="h-4 w-4" />
-                {t("orders.dialogs.createDailyRoute")}
+                {t("labels.staging.routeDialog.createDailyRoute")}
               </Button>
             </div>
             <SearchableSelect
-              id="assign-daily-route"
+              id="assign-barcode-daily-route"
               value={routeId}
               onValueChange={(value) => {
                 setRouteId(value);
                 setFormError(null);
               }}
-              placeholder={t("orders.dialogs.selectRoute")}
-              searchPlaceholder={t("orders.dialogs.searchRoutes")}
+              placeholder={t("labels.staging.routeDialog.selectRoute")}
+              searchPlaceholder={t("labels.staging.routeDialog.searchRoutes")}
               loading={dailyRoutesQuery.isLoading}
-              loadingMessage={t("orders.dialogs.loadingRoutes")}
+              loadingMessage={t("labels.staging.routeDialog.loadingRoutes")}
               emptyMessage={
                 dailyRoutesQuery.isLoading
-                  ? t("orders.dialogs.loadingRoutes")
-                  : t("orders.dialogs.noRoutesFound")
+                  ? t("labels.staging.routeDialog.loadingRoutes")
+                  : t("labels.staging.routeDialog.noRoutes")
               }
               options={routeOptions}
               contentClassName="z-[80]"
@@ -176,7 +167,7 @@ export function AssignAppointmentRouteDialog({
           </Button>
           <Button onClick={() => void confirmAssign()} disabled={!canSubmit}>
             <RouteIcon className="h-4 w-4" />
-            {t("orders.actions.assignRoute")}
+            {t("labels.staging.routeDialog.assign")}
           </Button>
         </DialogFooter>
       </DialogContent>

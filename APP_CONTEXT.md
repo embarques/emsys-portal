@@ -120,7 +120,7 @@ TODO (backend): reject creating a second daily route for the same date and branc
 
 The same employee can be driver and appraiser, or driver, or appraiser, or helper.
 
-Daily routes can be created from the Daily routes workspace, or automatically when assigning appointments or invoice barcodes: choose a route crew and assignment date (and a container for RD deliveries), then check driver / appraiser / helper for each crew member.
+Daily routes can be created from the Daily routes workspace, or when assigning appointments or invoice barcodes (choose an existing daily route, or open the add daily route form).
 
 The system allows us to:
 
