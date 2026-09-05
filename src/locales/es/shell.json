@@ -6,7 +6,7 @@
   },
   "dashboard": {
     "title": "Panel de operaciones",
-    "description": "Resumen de métricas operativas clave, actividad reciente y acceso rápido a flujos de trabajo diarios.",
+    "description": "Resumen de operaciones, desde citas y mercancía hasta rutas, contabilidad e indicadores.",
     "loadingWorkspace": "Cargando espacio de trabajo…"
   },
   "topbar": {
@@ -18,7 +18,7 @@
   "search": {
     "openMenu": "Abrir menú de búsqueda",
     "placeholder": "Buscar registros...",
-    "inputPlaceholder": "Buscar clientes, pedidos, reportes...",
+    "inputPlaceholder": "Buscar clientes, citas, reportes...",
     "quickActions": "Acciones rápidas",
     "noResults": "No se encontraron resultados.",
     "findCustomer": {

@@ -23,8 +23,7 @@ import { OrdersWorkspace } from "@/components/orders/orders-workspace";
 import { OrdersMapWorkspace } from "@/components/orders/orders-map-workspace";
 import { RolesWorkspace } from "@/components/roles/roles-workspace";
 import { RouteManagerWorkspace } from "@/components/route-manager/route-manager-workspace";
-import { PickupRoutesWorkspace } from "@/components/pickup-delivery-routes/pickup-routes-workspace";
-import { DeliveryRoutesWorkspace } from "@/components/pickup-delivery-routes/delivery-routes-workspace";
+import { DailyRoutesWorkspace } from "@/components/pickup-delivery-routes/daily-routes-workspace";
 import { UsersWorkspace } from "@/components/users/users-workspace";
 import { VehiclesWorkspace } from "@/components/vehicles/vehicles-workspace";
 import { navigation, topNavigationItems } from "@/config/navigation";
@@ -36,8 +35,8 @@ import { translate, type Locale } from "@/lib/i18n/catalog";
 export const workspaceRegistry: Record<string, ComponentType> = {
   "/": DashboardWorkspace,
   "/customers": CustomersWorkspace,
-  "/orders": OrdersWorkspace,
-  "/orders/map": OrdersMapWorkspace,
+  "/appointments": OrdersWorkspace,
+  "/appointments/map": OrdersMapWorkspace,
   "/invoices": InvoicesWorkspace,
   "/barcodes": BarcodesWorkspace,
   "/label-updater": LabelUpdaterWorkspace,
@@ -49,8 +48,10 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/items": ItemsWorkspace,
   "/containers": ContainersWorkspace,
   "/routes": RouteManagerWorkspace,
-  "/pickup-routes": PickupRoutesWorkspace,
-  "/delivery-routes": DeliveryRoutesWorkspace,
+  "/daily-routes": DailyRoutesWorkspace,
+  "/pickup-routes": DailyRoutesWorkspace,
+  "/appointment-routes": DailyRoutesWorkspace,
+  "/delivery-routes": DailyRoutesWorkspace,
   "/vehicles": VehiclesWorkspace,
   "/accounting/daily-income": DailyIncomeWorkspace,
   "/accounting/checks": ChecksWorkspace,

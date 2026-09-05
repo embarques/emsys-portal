@@ -47,6 +47,7 @@ export type VehicleRouteWritePayload = {
   date?: string;
   dayOfWeek?: string[];
   container?: VehicleRouteContainerWriteRef;
+  vehicle?: { id: string; name: string; branch?: string };
   rate?: number;
 };
 

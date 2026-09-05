@@ -1,8 +1,8 @@
 {
   "title": "Barcode Scanner",
   "pages": {
-    "barcodesDescription": "Browse and manage shipment barcodes across invoices, containers, and routes.",
-    "description": "Update barcode status, transfer containers, assign routes, and process barcode scans for shipment labels."
+    "barcodesDescription": "Identify and track individual pieces of merchandise on invoices throughout shipping.",
+    "description": "Scan a merchandise barcode to update its status as it moves through operations."
   },
   "statuses": {
     "pending": "Pending",
@@ -147,11 +147,15 @@
     },
     "routeDialog": {
       "title": "Assign route",
-      "description": "Assign {{count}} selected label(s) to a route. Only labels with a container are assigned.",
-      "route": "Route",
-      "selectRoute": "Select a route",
-      "loadingRoutes": "Loading routes…",
-      "noRoutes": "No routes found.",
+      "description": "Choose a route crew, container, assignment date, and crew roles for {{count}} selected label. Only labels with a container are assigned.",
+      "description_plural": "Choose a route crew, container, assignment date, and crew roles for {{count}} selected labels. Only labels with a container are assigned.",
+      "route": "Route crew",
+      "selectRoute": "Select a route crew",
+      "selectContainer": "Select a container",
+      "loadingRoutes": "Loading route crews…",
+      "loadingContainers": "Loading containers…",
+      "noRoutes": "No route crews found.",
+      "noContainers": "No containers found.",
       "assigning": "Assigning…",
       "assign": "Assign route"
     },

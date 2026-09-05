@@ -1,11 +1,12 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, ChevronUp, Edit, Lock, LockOpen, Plus, ScrollText, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronUp, Edit, Lock, LockOpen, Plus, ScrollText, Trash2 } from "lucide-react";
 
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomeStatementForm } from "@/components/accounting/daily-income-statement-form";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -57,10 +58,9 @@ import {
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
-
-const PAGE_SIZE = 20;
 
 const toolbarFieldControlClassName =
   "h-10 w-auto rounded-lg border-2 border-foreground/60 bg-card shadow-none focus-visible:border-foreground focus-visible:ring-0";
@@ -279,7 +279,7 @@ export function DailyIncomeWorkspace() {
   const [branchCode, setBranchCode] = useState("");
   const [requestedBranchId, setRequestedBranchId] = useState<number | null>(null);
   const [date, setDate] = useState(today());
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [statementDialog, setStatementDialog] = useState(false);
@@ -308,7 +308,7 @@ export function DailyIncomeWorkspace() {
   const statementQuery = useIncomeStatement(selectedBranch?.id ?? 0, date);
   const statement = statementQuery.data ?? null;
   const summaryTotalsQuery = useIncomeStatementSummaryTotals(statement?.id ?? 0);
-  const journalsQuery = useDailyIncomeJournals({ incomeStatementId: statement?.id ?? 0, page, limit: PAGE_SIZE, query: deferredQuery });
+  const journalsQuery = useDailyIncomeJournals({ incomeStatementId: statement?.id ?? 0, page, limit: pageLimit, query: deferredQuery });
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc" });
   const employees = useMemo(
     () => (employeesQuery.data?.items ?? []).filter((employee) => employee.active),
@@ -326,7 +326,8 @@ export function DailyIncomeWorkspace() {
   const deleteMutation = useDeleteDailyIncomeJournal();
   const rows = journalsQuery.data?.items ?? [];
   const total = journalsQuery.data?.total ?? rows.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  rememberTotal(total);
+  const totalPages = Math.max(1, Math.ceil(total / pageLimit));
   const displayCurrency = summaryTotalsQuery.data?.currency ?? statement?.currency ?? "USD";
 
   useTableSelectionReset(
@@ -600,7 +601,7 @@ export function DailyIncomeWorkspace() {
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-2xl font-bold tracking-normal">{t("accounting.dailyIncome.transactions.title")}</h2>
-              <span className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: PAGE_SIZE, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</span>
+              <span className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</span>
             </div>
             <TableSearchInput
               value={query}
@@ -614,17 +615,15 @@ export function DailyIncomeWorkspace() {
             />
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <Button variant="outline" className="h-11 rounded-xl" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
-              <ChevronLeft className="size-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="text-sm font-medium text-muted-foreground">{t("common.pagination.pageOf", { current: page, total: totalPages })}</span>
-            <Button variant="outline" className="h-11 rounded-xl" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
-              {t("common.actions.next")}
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            layout="mobile"
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={journalsQuery.isLoading}
+          />
 
           <div className="rounded-3xl bg-card px-4 shadow-sm">
             {journalsQuery.isError ? (
@@ -745,7 +744,7 @@ export function DailyIncomeWorkspace() {
         />
         <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionTypeLabel(row.transactionType, t)} columnLayout={columnLayout} minWidth={1100} selectable selectedIds={selectedIds} allPageSelected={allPageSelected} onToggleSelectAll={toggleSelectAll} onToggleSelect={toggleSelect} emptyState={<p className="text-muted-foreground">{t("accounting.dailyIncome.transactions.empty")}</p>} />
       </>}
-      {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: PAGE_SIZE, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-4 w-4" /> {t("common.actions.previous")}</Button><span className="px-2 text-sm text-muted-foreground">{t("common.pagination.pageOf", { current: page, total: totalPages })}</span><Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>{t("common.actions.next")} <ChevronRight className="h-4 w-4" /></Button></div></div> : null}
+      {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</p><TablePaginationControls page={page} totalPages={totalPages} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={changePageSize} disabled={journalsQuery.isFetching} /></div> : null}
     </Card>
     </> : null}
     </div>

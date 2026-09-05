@@ -10,13 +10,19 @@ export function useOrderFilterFields(): TableFilterFieldDefinition[] {
   return useMemo(
     () =>
       ORDER_TABLE_FILTER_FIELDS.map((field) => {
+        const labelKey = `orders.filters.fields.${field.field}.label`;
+        const placeholderKey = `orders.filters.fields.${field.field}.placeholder`;
+        const label = t(labelKey);
+        const placeholder = field.placeholder ? t(placeholderKey) : undefined;
+
         const localized: TableFilterFieldDefinition = {
           ...field,
-          label: t(`orders.filters.fields.${field.field}.label`),
+          label: label !== labelKey ? label : field.label,
         };
 
         if (field.placeholder) {
-          localized.placeholder = t(`orders.filters.fields.${field.field}.placeholder`);
+          localized.placeholder =
+            placeholder && placeholder !== placeholderKey ? placeholder : field.placeholder;
         }
 
         if (field.field === "completed" && field.options) {

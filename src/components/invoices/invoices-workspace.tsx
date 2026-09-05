@@ -2,8 +2,6 @@
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
   Check,
   CircleAlert,
   DollarSign,
@@ -22,7 +20,9 @@ import { InvoiceStagingDialog } from "@/components/invoices/invoice-staging-dial
 import { InvoiceCreateWizard, InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
 import { InvoiceViewSheet } from "@/components/invoices/invoice-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
+import { LegacyLastSynced } from "@/components/app-shell/legacy-last-synced";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -83,6 +83,7 @@ import { usePrintInvoices } from "@/lib/invoices/hooks/use-print-invoices";
 import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
 import { formatRouteCopyLabel } from "@/lib/route-manager/display";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
+import { useInvoiceFilterFields } from "@/lib/invoices/hooks/use-invoice-filter-fields";
 import { buildOrderCreatedByFilterOptions } from "@/lib/orders/display";
 import { useUsers } from "@/lib/users/hooks/use-users";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
@@ -105,6 +106,8 @@ import {
   type InvoiceFilterState,
   type InvoicePaymentInput,
 } from "@/lib/invoices/types";
+import { useLegacyLastSynced } from "@/lib/legacy-sync/use-legacy-last-synced";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useSyncWorkspaceTabTitle } from "@/lib/layout/hooks/use-sync-workspace-tab-title";
@@ -117,7 +120,6 @@ import type { OrderParty } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 
-const PAGE_SIZE = DEFAULT_INVOICE_LIST_PARAMS.limit;
 const LEGACY_SYNC_PERMISSION_ERROR_NAMES = ["canSyncLegacyInvoices"] as const;
 const LEGACY_SYNC_FALLBACK_TOTAL = 1;
 const LEGACY_INVOICE_SYNC_BATCH_SIZE = 100;
@@ -397,6 +399,7 @@ const defaultFilters: InvoiceFilterState = {
 
 export function InvoicesWorkspace() {
   const { t } = useTranslation();
+  const invoiceFilterFields = useInvoiceFilterFields();
   const { notifyAdded, notifyDeleted, notifyError, notifySuccess } = useFeedback();
   const { hasPermission } = useAuth();
   const canSyncLegacyInvoices = hasPermission(
@@ -408,7 +411,7 @@ export function InvoicesWorkspace() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const deferredQuery = useDeferredValue(filters.query);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_INVOICE_LIST_PARAMS.sort, () => setPage(1));
   const [viewInvoiceId, setViewInvoiceId] = useState<string | null>(null);
   const [viewOverlay, setViewOverlay] = useState<Partial<Invoice> | null>(null);
@@ -474,13 +477,13 @@ export function InvoicesWorkspace() {
     () =>
       buildInvoiceListParams({
         page,
-        limit: PAGE_SIZE,
+        limit: pageLimit,
         query: deferredQuery,
         rows: filters.rows,
         paymentLocation: filters.paymentLocation,
         sort,
       }),
-    [deferredQuery, filters.paymentLocation, filters.rows, page, sort],
+    [deferredQuery, filters.paymentLocation, filters.rows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useInvoices(listParams);
@@ -500,8 +503,17 @@ export function InvoicesWorkspace() {
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
 
   const invoices = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
+  const legacyTimestamps = useMemo(
+    () => invoices.map((invoice) => invoice.legacySyncedAt),
+    [invoices],
+  );
+  const { lastSyncedAt, markSynced } = useLegacyLastSynced("invoices", {
+    enabled: canSyncLegacyInvoices,
+    timestamps: legacyTimestamps,
+  });
   const totalInvoices = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalInvoices / PAGE_SIZE));
+  rememberTotal(totalInvoices);
+  const totalPages = Math.max(1, Math.ceil(totalInvoices / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     invoices.length > 0 && invoices.every((invoice) => selectedIds.includes(invoice.invoiceId));
@@ -698,6 +710,7 @@ export function InvoicesWorkspace() {
       let updated = 0;
       let skipped = 0;
       let message = t("invoices.actions.syncingLegacy");
+      let syncedAt: string | undefined;
 
       do {
         setLegacySyncStageIndex(start);
@@ -711,6 +724,7 @@ export function InvoicesWorkspace() {
         skipped += summary.skipped;
         total = Math.max(total, summary.total);
         message = result.message;
+        syncedAt = summary.lastSyncedAt ?? syncedAt;
         start = summary.nextStart > start ? summary.nextStart : start + summary.processed;
 
         setLegacySyncTotal(total);
@@ -718,6 +732,7 @@ export function InvoicesWorkspace() {
         if (summary.processed === 0) break;
       } while (start < total);
 
+      markSynced(syncedAt);
       notifySuccess(
         total === 0 || imported + updated === 0
           ? message
@@ -757,7 +772,7 @@ export function InvoicesWorkspace() {
       details: [
         { label: "Current page", value: isLoading ? "…" : invoices.length.toString() },
         { label: "Page", value: isLoading ? "…" : `${currentPage} of ${totalPages}` },
-        { label: "Page size", value: PAGE_SIZE.toString() },
+        { label: "Page size", value: pageLimit.toString() },
       ],
     },
     {
@@ -835,25 +850,25 @@ export function InvoicesWorkspace() {
     () => [
     {
       id: "invoiceNumber",
-      label: "Invoice number",
+      label: t("invoices.columns.invoiceNumber"),
       sortField: "number",
       cellClassName: "font-medium",
       renderCell: (invoice) => invoice.invoiceNumber,
     },
     {
       id: "date",
-      label: "Date",
+      label: t("invoices.columns.date"),
       renderCell: (invoice) => formatInvoiceDate(invoice.date),
     },
     {
       id: "container",
-      label: "Container",
+      label: t("invoices.columns.container"),
       sortField: "container.name",
       renderCell: (invoice) => getContainerLabelForInvoice(invoice),
     },
     {
       id: "paidStatus",
-      label: "Status",
+      label: t("invoices.columns.paidStatus"),
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (invoice) => {
@@ -867,7 +882,7 @@ export function InvoicesWorkspace() {
     },
     {
       id: "paymentLocation",
-      label: "Paid at",
+      label: t("invoices.columns.paymentLocation"),
       sortField: "paidRegion",
       truncateCell: false,
       cellClassName: "overflow-visible",
@@ -914,7 +929,7 @@ export function InvoicesWorkspace() {
     },
     {
       id: "total",
-      label: "Invoice total",
+      label: t("invoices.columns.total"),
       sortField: "cost",
       truncateCell: false,
       renderCell: (invoice) => {
@@ -924,7 +939,7 @@ export function InvoicesWorkspace() {
     },
     {
       id: "discount",
-      label: "Discount",
+      label: t("invoices.columns.discount"),
       truncateCell: false,
       renderCell: (invoice) => (
         <span className={getInvoiceDiscountMoneyClass(invoice.discount)}>
@@ -934,7 +949,7 @@ export function InvoicesWorkspace() {
     },
     {
       id: "amountPaid",
-      label: "Paid",
+      label: t("invoices.columns.amountPaid"),
       sortField: "payment",
       truncateCell: false,
       renderCell: (invoice) => (
@@ -945,7 +960,7 @@ export function InvoicesWorkspace() {
     },
     {
       id: "balance",
-      label: "Balance",
+      label: t("invoices.columns.balance"),
       truncateCell: false,
       renderCell: (invoice) => {
         const amount = getInvoiceBalance(invoice);
@@ -1039,7 +1054,7 @@ export function InvoicesWorkspace() {
                 setPage(1);
               }}
               className="h-12 w-full rounded-xl border border-border/70 bg-card pl-12 pr-4 text-base shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
-              placeholder="Search invoice"
+              placeholder={t("invoices.search.placeholder")}
               aria-label="Search invoice"
             />
           </div>
@@ -1079,7 +1094,7 @@ export function InvoicesWorkspace() {
             presets={{
               storageKey: "invoices",
               rows: filters.rows,
-              fields: INVOICE_TABLE_FILTER_FIELDS,
+              fields: invoiceFilterFields,
               onApply: (rows) => {
                 setFilters((current) => ({ ...current, rows }));
                 setPage(1);
@@ -1097,7 +1112,7 @@ export function InvoicesWorkspace() {
             <TableAdvancedFilterBuilder
               open={mobileFiltersOpen}
               rows={filters.rows}
-              fields={INVOICE_TABLE_FILTER_FIELDS}
+              fields={invoiceFilterFields}
               dynamicOptions={{
                 users: usersLoading ? [] : userFilterOptions,
                 routes: routeOptions,
@@ -1118,29 +1133,15 @@ export function InvoicesWorkspace() {
         </div>
 
         {!isLoading && !isError ? (
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-            <Button
-              variant="outline"
-              className="h-11 rounded-xl"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              className="h-11 rounded-xl"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            layout="mobile"
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={isLoading}
+          />
         ) : null}
 
         {!isLoading && !isError && invoices.length > 0 && selectedCount > 0 ? (
@@ -1237,6 +1238,11 @@ export function InvoicesWorkspace() {
             </div>
           )}
         </div>
+        {canSyncLegacyInvoices ? (
+          <div className="px-1">
+            <LegacyLastSynced at={lastSyncedAt} />
+          </div>
+        ) : null}
       </section>
 
       <div className="hidden md:block">
@@ -1257,7 +1263,7 @@ export function InvoicesWorkspace() {
                   setFilters((current) => ({ ...current, query }));
                   setPage(1);
                 }}
-                placeholder="Search by invoice number, sender, receiver, or container…"
+                placeholder={t("invoices.search.placeholder")}
               />
             }
             filterPanel={
@@ -1266,7 +1272,7 @@ export function InvoicesWorkspace() {
                 presets={{
                   storageKey: "invoices",
                   rows: filters.rows,
-                  fields: INVOICE_TABLE_FILTER_FIELDS,
+                  fields: invoiceFilterFields,
                   onApply: (rows) => {
                     setFilters((current) => ({ ...current, rows }));
                     setPage(1);
@@ -1284,7 +1290,7 @@ export function InvoicesWorkspace() {
                 <TableAdvancedFilterBuilder
                   open={desktopFiltersOpen}
                   rows={filters.rows}
-                  fields={INVOICE_TABLE_FILTER_FIELDS}
+                  fields={invoiceFilterFields}
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
                     routes: routeOptions,
@@ -1376,34 +1382,22 @@ export function InvoicesWorkspace() {
 
         {!isLoading && !isError ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              {isFetching
-                ? "Refreshing invoices…"
-                : `Showing ${invoices.length} of ${totalInvoices} invoices`}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage <= 1}
-                onClick={() => setPage((value) => Math.max(1, value - 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <span className="px-2 text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages}
-                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {isFetching
+                  ? "Refreshing invoices…"
+                  : `Showing ${invoices.length} of ${totalInvoices} invoices`}
+              </p>
+              {canSyncLegacyInvoices ? <LegacyLastSynced at={lastSyncedAt} /> : null}
             </div>
+            <TablePaginationControls
+              page={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={changePageSize}
+              disabled={isLoading}
+            />
           </div>
         ) : null}
       </Card>

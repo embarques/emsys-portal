@@ -2,8 +2,6 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
   Edit,
   Plus,
   Search,
@@ -12,6 +10,7 @@ import {
 
 import { ChartAccountForm } from "@/components/accounting/chart-account-form";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
@@ -61,10 +60,10 @@ import {
   buildToolbarSearchSummary,
   formatPaginatedListSummary,
 } from "@/lib/table/list-summary";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 40;
 const EMPTY_ACCOUNT: ChartAccountValues = {
   displayName: "",
   type: "ASSET",
@@ -194,7 +193,7 @@ export function ChartOfAccountsWorkspace() {
   const { t } = useTranslation();
   const feedback = useFeedback();
   const isMobileViewport = useIsMobileViewport();
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [query, setQuery] = useState("");
   const [mobileTypeFilter, setMobileTypeFilter] = useState<
     ChartAccountType | ""
@@ -211,7 +210,7 @@ export function ChartOfAccountsWorkspace() {
   const hasActiveFilters = hasActiveSearch || Boolean(activeTypeFilter);
   const accountsQuery = useChartAccounts({
     page,
-    limit: PAGE_SIZE,
+    limit: pageLimit,
     query: deferredQuery,
     type: activeTypeFilter || undefined,
   });
@@ -225,7 +224,8 @@ export function ChartOfAccountsWorkspace() {
   const deleteMutation = useDeleteChartAccount();
   const rows = accountsQuery.data?.items ?? [];
   const total = accountsQuery.data?.total ?? rows.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  rememberTotal(total);
+  const totalPages = Math.max(1, Math.ceil(total / pageLimit));
   const noun = t("accounting.chartOfAccounts.noun");
   const dash = t("common.empty.dash");
   const typeFilterOptions = useMemo(
@@ -355,7 +355,7 @@ export function ChartOfAccountsWorkspace() {
     {
       itemCountOnPage: rows.length,
       page,
-      pageSize: PAGE_SIZE,
+      pageSize: pageLimit,
       total,
       noun,
       isFiltered: hasActiveFilters,
@@ -457,34 +457,15 @@ export function ChartOfAccountsWorkspace() {
         </div>
 
         {!accountsQuery.isLoading && !accountsQuery.isError ? (
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-            <Button
-              variant="outline"
-              className="h-11 rounded-xl"
-              disabled={page <= 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="size-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">
-              {t("common.pagination.pageOf", {
-                current: page,
-                total: totalPages,
-              })}
-            </span>
-            <Button
-              variant="outline"
-              className="h-11 rounded-xl"
-              disabled={page >= totalPages}
-              onClick={() =>
-                setPage((value) => Math.min(totalPages, value + 1))
-              }
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            layout="mobile"
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={accountsQuery.isLoading}
+          />
         ) : null}
 
         <div className="rounded-3xl bg-card px-4 shadow-sm">
@@ -621,34 +602,14 @@ export function ChartOfAccountsWorkspace() {
           {!accountsQuery.isLoading && !accountsQuery.isError ? (
             <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">{listSummary}</p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((value) => Math.max(1, value - 1))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  {t("common.actions.previous")}
-                </Button>
-                <span className="px-2 text-sm text-muted-foreground">
-                  {t("common.pagination.pageOf", {
-                    current: page,
-                    total: totalPages,
-                  })}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= totalPages}
-                  onClick={() =>
-                    setPage((value) => Math.min(totalPages, value + 1))
-                  }
-                >
-                  {t("common.actions.next")}
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+              <TablePaginationControls
+                page={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={changePageSize}
+                disabled={accountsQuery.isLoading}
+              />
             </div>
           ) : null}
         </Card>

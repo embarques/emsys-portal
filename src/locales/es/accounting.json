@@ -1,7 +1,10 @@
 {
+  "pages": {
+    "description": "Mantenga un historial financiero centralizado de pagos, transacciones, ingresos y gastos."
+  },
   "chartOfAccounts": {
     "title": "Catálogo de cuentas",
-    "description": "Administre las cuentas utilizadas por las transacciones de ingresos diarios.",
+    "description": "Defina las categorías de ingresos, gastos, bancos y otras usadas para clasificar transacciones.",
     "noun": "cuentas",
     "entity": "Cuenta",
     "searchPlaceholder": "Buscar por cuenta…",
@@ -83,7 +86,7 @@
   },
   "checks": {
     "title": "Cheques",
-    "description": "Controle cheques pendientes y cobrados vinculados a facturas y recibos.",
+    "description": "Controle cheques recibidos o emitidos, incluido monto, fecha, estado y transacción asociada.",
     "noun": "cheques",
     "searchPlaceholder": "Buscar cheques…",
     "empty": "Ningún cheque coincide con su búsqueda.",
@@ -166,7 +169,7 @@
   },
   "dailyIncome": {
     "title": "Ingresos diarios",
-    "description": "Cree y concilie el cierre contable diario.",
+    "description": "Registre y controle las transacciones de ingreso diarias y los ingresos de la empresa.",
     "noun": "transacciones",
     "transactionNoun": "transacción",
     "actions": {

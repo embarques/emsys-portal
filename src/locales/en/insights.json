@@ -1,8 +1,8 @@
 {
   "pages": {
-    "reports": "View operational and business reports across customers, orders, revenue, and fulfillment.",
-    "analytics": "Explore trends, performance metrics, and analytical views of portal activity.",
-    "security": "Review security settings, access controls, and audit information for the portal."
+    "reports": "Turn operational and financial data into reports that help management make decisions.",
+    "analytics": "Review trends in operations, routes, income, expenses, and shipping volume.",
+    "security": "Review security settings, access controls, and audit information."
   },
   "placeholder": {
     "description": "Sample {{title}} page inside the same responsive dashboard shell.",

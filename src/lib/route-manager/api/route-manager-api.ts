@@ -15,12 +15,11 @@ import { buildApiBranchDto, type ApiBranchDtoPayload } from "@/lib/api/payloads"
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
 import {
-  DEFAULT_ROUTE_CREW_ROLE,
   DEFAULT_ROUTE_LIST_PARAMS,
   ROUTE_BAR_OR_SEARCH_FIELDS,
-  resolveCrewRole,
   toRouteDateIso,
   type Route,
+  type RouteBranchRef,
   type RouteCrewRole,
   type RouteFormValues,
   type RouteListParams,
@@ -52,6 +51,12 @@ type ApiEmployeeGroupRef = ApiRef & {
   employees?: ApiEmployeeRef[];
 };
 
+type ApiBranchRef = {
+  id?: number;
+  code?: string;
+  name?: string;
+};
+
 type ApiRoute = {
   id?: string | number;
   routeId?: string;
@@ -59,6 +64,7 @@ type ApiRoute = {
   name?: string;
   date?: string;
   tripNumber?: number;
+  branch?: ApiBranchRef | null;
   vehicle?: ApiRef | null;
   employees?: ApiEmployeeRef[];
   employeeGroup?: ApiEmployeeGroupRef | null;
@@ -69,13 +75,12 @@ type ApiRoute = {
   updatedBy?: ApiUser | string | null;
 };
 
-/** POST/PUT /routes — see API_PAYLOADS.md. `name` and `routeId` are server-generated on create. */
+/** POST/PUT /routes — `name` and `routeId` are server-generated on create. */
 type ApiRouteWritePayload = {
   routeId?: string;
   name?: string;
   branch?: ApiBranchDtoPayload;
-  vehicle: { id: string; name: string; branch?: string };
-  employees: { id: number; name: string; role: RouteCrewRole }[];
+  employees: { id: number; name: string }[];
   active: boolean;
 };
 
@@ -108,7 +113,20 @@ function normalizeVehicleRef(raw?: ApiRef | null): Route["vehicle"] {
 function normalizeCrewRole(raw: unknown): RouteCrewRole {
   const value = String(raw ?? "").trim().toLowerCase();
   if (value === "driver" || value === "appraiser" || value === "helper") return value;
-  return DEFAULT_ROUTE_CREW_ROLE;
+  return "helper";
+}
+
+function normalizeBranchRef(raw?: ApiBranchRef | null): RouteBranchRef | null {
+  if (!raw || typeof raw !== "object") return null;
+  const id = Number(raw.id);
+  const code = String(raw.code ?? "").trim();
+  const name = String(raw.name ?? "").trim();
+  if (!code && !(Number.isInteger(id) && id > 0)) return null;
+  return {
+    id: Number.isInteger(id) && id > 0 ? id : 0,
+    code,
+    ...(name ? { name } : {}),
+  };
 }
 
 function normalizeEmployeeRef(raw: unknown): Route["employees"][number] | null {
@@ -117,7 +135,8 @@ function normalizeEmployeeRef(raw: unknown): Route["employees"][number] | null {
   const id = Number(entry.id);
   const name = String(entry.name ?? "").trim();
   if (!Number.isInteger(id) || id <= 0 || !name) return null;
-  return { id, name, role: normalizeCrewRole(entry.role) };
+  const role = String(entry.role ?? "").trim();
+  return role ? { id, name, role: normalizeCrewRole(role) } : { id, name };
 }
 
 function normalizeRouteEmployees(item: ApiRoute): Route["employees"] {
@@ -144,13 +163,19 @@ export function normalizeApiRoute(raw: unknown): Route | null {
   const id = String(item.id ?? "").trim();
   if (!id) return null;
 
+  const vehicle = normalizeVehicleRef(item.vehicle);
+  const branch =
+    normalizeBranchRef(item.branch) ??
+    (vehicle.branch ? { id: 0, code: vehicle.branch } : null);
+
   return {
     id,
     routeId: String(item.routeId ?? item.routeAssignmentId ?? "").trim(),
     name: String(item.name ?? "").trim(),
     date: String(item.date ?? "").trim(),
     tripNumber: Number(item.tripNumber ?? 0),
-    vehicle: normalizeVehicleRef(item.vehicle),
+    branch,
+    vehicle,
     employees: normalizeRouteEmployees(item),
     active: item.active !== false,
     createdAt: String(item.createdAt ?? "").trim(),
@@ -187,7 +212,7 @@ function buildRouteSearchBody(params: RouteListParams) {
   if (branchCode) {
     filterGroups.push({
       operator: "and",
-      filters: [{ field: "vehicle.branch", operator: "eq", value: branchCode }],
+      filters: [{ field: "branch.code", operator: "eq", value: branchCode }],
     });
   }
 
@@ -309,28 +334,9 @@ function buildRouteWritePayload(
   values: RouteFormValues,
   mode: "create" | "update",
 ): ApiRouteWritePayload {
-  if (!values.vehicle.id.trim()) {
-    throw new Error("A vehicle is required.");
-  }
-
   if (values.employees.length === 0) {
     throw new Error("Select at least one employee.");
   }
-
-  const vehicleBranch = values.vehicle.branch?.trim();
-  const payload: ApiRouteWritePayload = {
-    vehicle: {
-      id: values.vehicle.id.trim(),
-      name: values.vehicle.name.trim(),
-      ...(vehicleBranch ? { branch: vehicleBranch } : {}),
-    },
-    employees: values.employees.map((employee) => ({
-      id: employee.id,
-      name: employee.name.trim(),
-      role: resolveCrewRole(employee.role),
-    })),
-    active: values.active,
-  };
 
   const branchCode = values.branch?.code.trim() ?? "";
   const branchName = values.branch?.name?.trim() ?? "";
@@ -341,11 +347,18 @@ function buildRouteWritePayload(
     throw new Error("Branch name is required.");
   }
 
-  payload.branch = buildApiBranchDto({
-    id: values.branch.id,
-    code: branchCode,
-    name: branchName,
-  });
+  const payload: ApiRouteWritePayload = {
+    branch: buildApiBranchDto({
+      id: values.branch.id,
+      code: branchCode,
+      name: branchName,
+    }),
+    employees: values.employees.map((employee) => ({
+      id: employee.id,
+      name: employee.name.trim(),
+    })),
+    active: values.active,
+  };
 
   if (mode === "update") {
     if (values.name.trim()) {

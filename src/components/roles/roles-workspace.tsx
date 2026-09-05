@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
   KeyRound,
   Plus,
   Shield,
@@ -14,6 +12,7 @@ import { RoleForm } from "@/components/roles/role-form";
 import { RoleMobileList } from "@/components/roles/role-mobile-list";
 import { RoleViewSheet } from "@/components/roles/role-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
@@ -58,6 +57,7 @@ import {
 } from "@/components/ui/sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import {
@@ -86,7 +86,6 @@ import {
   areRoleFormValuesEquivalent,
 } from "@/lib/roles/types";
 
-const PAGE_SIZE = DEFAULT_ROLE_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: RoleFilterState = {
@@ -103,7 +102,7 @@ export function RolesWorkspace() {
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_ROLE_LIST_PARAMS.sort, () => setPage(1));
   const [viewRole, setViewRole] = useState<Role | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
@@ -115,12 +114,12 @@ export function RolesWorkspace() {
     () =>
       buildRoleListParams({
         page,
-        limit: PAGE_SIZE,
+        limit: pageLimit,
         query: debouncedQuery,
         rows: filters.rows,
         sort,
       }),
-    [debouncedQuery, filters.rows, page, sort],
+    [debouncedQuery, filters.rows, page, pageLimit, sort],
   );
 
   const rolesQuery = useRoles(listParams);
@@ -137,6 +136,7 @@ export function RolesWorkspace() {
     rolesQuery.isFetching,
   );
   const totalRoles = rolesQuery.data?.total ?? 0;
+  rememberTotal(totalRoles);
   const assignedPermissionCatalog = useMemo(
     () => {
       const entries = kpiQuery.items.flatMap((role) =>
@@ -180,7 +180,7 @@ export function RolesWorkspace() {
     deleteRolesMutation.isPending;
 
   const kpis = useMemo(() => computeRoleKpis(kpiQuery.items), [kpiQuery.items]);
-  const totalPages = Math.max(1, Math.ceil(totalRoles / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalRoles / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const pageRoles = roles;
   const allPageSelected =
@@ -382,7 +382,7 @@ export function RolesWorkspace() {
     {
       itemCountOnPage: pageRoles.length,
       page: currentPage,
-      pageSize: PAGE_SIZE,
+      pageSize: pageLimit,
       total: totalRoles,
       noun: t("roles.noun"),
       isFiltered: hasActiveFilters,
@@ -565,29 +565,14 @@ export function RolesWorkspace() {
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">{listSummary}</p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={rolesQuery.isLoading}
+          />
         </div>
       </Card>
 

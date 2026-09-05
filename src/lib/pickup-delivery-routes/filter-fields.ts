@@ -157,12 +157,15 @@ const DELIVERY_ONLY_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition
 ];
 
 export function getActiveRouteTableFilterFields(
-  routeType: RouteType,
+  routeType?: RouteType,
 ): TableFilterFieldDefinition[] {
-  if (routeType === "delivery") {
-    return [...SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS, ...DELIVERY_ONLY_ACTIVE_ROUTE_TABLE_FILTER_FIELDS];
+  const shared = SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS.filter(
+    (field) => field.field !== "active" && field.field !== "dayOfWeek",
+  );
+  if (routeType === "pickup") {
+    return shared;
   }
-  return SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS;
+  return [...shared, ...DELIVERY_ONLY_ACTIVE_ROUTE_TABLE_FILTER_FIELDS];
 }
 
 /** @deprecated Use getActiveRouteTableFilterFields(routeType) */

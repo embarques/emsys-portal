@@ -1,17 +1,29 @@
 {
   "title": "Invoices",
   "pages": {
-    "description": "Create and manage shipping invoices, line items, charges, and billing documentation linked to orders and customers."
+    "description": "Digitize and track customer merchandise we pick up or receive as part of a shipment."
   },
   "staging": {
     "tableAction": "Manage invoice items",
     "title": "Select invoice items for processing"
   },
   "columns": {
+    "invoiceNumber": "Invoice number",
+    "date": "Date",
+    "container": "Container",
+    "paidStatus": "Status",
+    "paymentLocation": "Paid at",
     "senderName": "Sender",
     "senderAddress": "Sender address",
     "receiverName": "Receiver",
-    "receiverAddress": "Receiver address"
+    "receiverAddress": "Receiver address",
+    "total": "Invoice total",
+    "discount": "Discount",
+    "amountPaid": "Paid",
+    "balance": "Balance"
+  },
+  "search": {
+    "placeholder": "Search by invoice number, sender, receiver, or container…"
   },
   "actions": {
     "syncLegacy": "Sync legacy",
@@ -47,7 +59,7 @@
       "pickupSourceRoute": "Route",
       "pickupSourceWarehouse": "Warehouse",
       "pickupSourceOffice": "Office",
-      "pickupRoute": "Order route",
+      "pickupRoute": "Appointment route",
       "warehouseEmployee": "Warehouse employee",
       "officeEmployee": "Office employee"
     },
@@ -60,9 +72,9 @@
       "noReceiver": "No receiver",
       "noPickupReference": "No pickup reference",
       "searchPickupReferences": "Search pickup references…",
-      "selectPickupRoute": "Select order route",
-      "noPickupRoute": "No order route",
-      "searchPickupRoutes": "Search order routes…",
+      "selectPickupRoute": "Select appointment route",
+      "noPickupRoute": "No appointment route",
+      "searchPickupRoutes": "Search appointment routes…",
       "selectWarehouseEmployee": "Select warehouse employee",
       "selectOfficeEmployee": "Select office employee",
       "searchEmployees": "Search employees…"
@@ -143,7 +155,7 @@
       "invoiceNumberRequired": "Invoice number is required.",
       "containerRequired": "Container is required.",
       "paymentLocationRequired": "Pending payment location is required.",
-      "pickupRouteRequired": "Order route is required.",
+      "pickupRouteRequired": "Appointment route is required.",
       "warehouseEmployeeRequired": "Warehouse employee is required.",
       "officeEmployeeRequired": "Office employee is required.",
       "senderRequired": "Sender is required.",
@@ -157,7 +169,7 @@
       "newInvoice": "New invoice",
       "senderNotSelected": "Sender not selected",
       "pending": "Pending",
-      "orderDetails": "Order details",
+      "orderDetails": "Appointment details",
       "lineItems": "Line items",
       "lineItem": "Line item",
       "paid": "Paid",
@@ -371,6 +383,65 @@
         "dateTime": "Date & time",
         "createdBy": "Created by",
         "description": "Description"
+      }
+    }
+  },
+  "filters": {
+    "fields": {
+      "number": { "label": "Invoice number", "placeholder": "Enter invoice number…" },
+      "numberRange": { "label": "Invoice number range", "placeholder": "488800 to 488900" },
+      "date": { "label": "Invoice date", "placeholder": "YYYY-MM-DD" },
+      "dateRange": { "label": "Invoice date range", "placeholder": "2026-01-01 to 2026-06-30" },
+      "paidRegion": { "label": "Paid at" },
+      "paidStatus": { "label": "Paid status" },
+      "cost": { "label": "Invoice total", "placeholder": "Enter amount…" },
+      "discount": { "label": "Discount", "placeholder": "Enter amount…" },
+      "payment": { "label": "Amount paid", "placeholder": "Enter amount…" },
+      "balance": { "label": "Balance", "placeholder": "Enter amount…" },
+      "container": {
+        "name": { "label": "Container", "placeholder": "Enter container…" }
+      },
+      "sender": {
+        "name": { "label": "Sender name", "placeholder": "Enter sender name…" },
+        "id": { "label": "Sender ID", "placeholder": "Enter sender ID…" },
+        "phone": { "label": "Sender phone", "placeholder": "Enter phone…" },
+        "address": { "label": "Sender address", "placeholder": "Enter address, city, state, or zip…" }
+      },
+      "receiver": {
+        "name": { "label": "Receiver name", "placeholder": "Enter receiver name…" },
+        "id": { "label": "Receiver ID", "placeholder": "Enter receiver ID…" },
+        "phone": { "label": "Receiver phone", "placeholder": "Enter phone…" },
+        "address": { "label": "Receiver address", "placeholder": "Enter address, city, state, or zip…" }
+      },
+      "createdBy": {
+        "name": { "label": "Created by" }
+      },
+      "route": {
+        "_id": { "label": "Route" }
+      },
+      "employee": {
+        "id": { "label": "Employee ID", "placeholder": "Enter employee ID…" },
+        "name": { "label": "Employee name", "placeholder": "Enter employee name…" }
+      },
+      "isArchive": { "label": "Archived" },
+      "isVoid": { "label": "Void" },
+      "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" },
+      "createdAtRange": { "label": "Date created range", "placeholder": "2026-01-01 to 2026-06-30" },
+      "updatedAt": { "label": "Date modified", "placeholder": "YYYY-MM-DD" },
+      "updatedAtRange": { "label": "Date modified range", "placeholder": "2026-01-01 to 2026-06-30" }
+    },
+    "options": {
+      "paidRegion": {
+        "NY": "USA",
+        "RD": "DR"
+      },
+      "paidStatus": {
+        "OPEN": "Open",
+        "CLOSED": "Closed"
+      },
+      "boolean": {
+        "true": "Yes",
+        "false": "No"
       }
     }
   }

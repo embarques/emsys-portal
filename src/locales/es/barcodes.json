@@ -3,7 +3,7 @@
   "entityPlural": "códigos de barras",
   "title": "Códigos de barras",
   "pages": {
-    "description": "Consulte y administre códigos de barras de envío en facturas, contenedores y rutas."
+    "description": "Identifique y rastree cada pieza de mercancía en las facturas a lo largo del envío."
   },
   "noun": "códigos de barras",
   "actions": {
@@ -104,10 +104,14 @@
       "scanDate": { "label": "Fecha de escaneo", "placeholder": "AAAA-MM-DD" },
       "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
       "updatedAt": { "label": "Actualizado el", "placeholder": "AAAA-MM-DD" },
-      "createdBy.name": { "label": "Creado por", "placeholder": "Ingrese el creador…" },
-      "updatedBy.name": { "label": "Actualizado por", "placeholder": "Ingrese el editor…" },
-      "createdBy.id": { "label": "ID del creador", "placeholder": "Ingrese el ID del creador…" },
-      "updatedBy.id": { "label": "ID del editor", "placeholder": "Ingrese el ID del editor…" }
+      "createdBy": {
+        "name": { "label": "Creado por", "placeholder": "Ingrese el creador…" },
+        "id": { "label": "ID del creador", "placeholder": "Ingrese el ID del creador…" }
+      },
+      "updatedBy": {
+        "name": { "label": "Actualizado por", "placeholder": "Ingrese el editor…" },
+        "id": { "label": "ID del editor", "placeholder": "Ingrese el ID del editor…" }
+      }
     }
   }
 }

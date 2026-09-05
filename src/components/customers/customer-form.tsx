@@ -81,9 +81,42 @@ type CustomerFormProps = {
   externalError?: string | null;
   /** Lock the customer type (e.g. when adding a sender/receiver from the order form). */
   lockCustomerType?: boolean;
+  /** Reveal addresses and append an empty row so the user can add a new one. */
+  startWithNewAddress?: boolean;
   onSubmit: (values: CustomerFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
+
+function withTrailingEmptyAddress(values: CustomerFormValues): CustomerFormValues {
+  const last = values.addresses[values.addresses.length - 1];
+  if (last && !coreAddressRequiresVerification(last)) {
+    return values;
+  }
+
+  const country =
+    values.addresses.find((entry) => entry.isPrimary)?.country ??
+    values.addresses[0]?.country ??
+    "US";
+
+  return {
+    ...values,
+    addresses: [...values.addresses, createEmptyCustomerCoreAddress(country, false)],
+  };
+}
+
+function initializeCustomerFormState(
+  initialValues: CustomerFormValues | undefined,
+  startWithNewAddress: boolean,
+) {
+  const base = normalizeCustomerFormValues(initialValues ?? createEmptyCustomerForm());
+  const values = startWithNewAddress ? withTrailingEmptyAddress(base) : base;
+
+  return {
+    values,
+    showAddresses: startWithNewAddress || values.addresses.some(coreAddressRequiresVerification),
+    pendingAddressFocusIndex: startWithNewAddress ? values.addresses.length - 1 : null,
+  };
+}
 
 type AddressFieldGridProps = {
   idPrefix: string;
@@ -324,30 +357,30 @@ export function CustomerForm({
   isSubmitting = false,
   externalError = null,
   lockCustomerType = false,
+  startWithNewAddress = false,
   onSubmit,
   onCancel,
 }: CustomerFormProps) {
   const { t } = useTranslation();
-  const [values, setValues] = useState<CustomerFormValues>(() =>
-    normalizeCustomerFormValues(initialValues ?? createEmptyCustomerForm()),
-  );
+  const initialState = initializeCustomerFormState(initialValues, startWithNewAddress);
+  const [values, setValues] = useState<CustomerFormValues>(() => initialState.values);
   const [formError, setFormError] = useState<string | null>(null);
   // The address section stays collapsed until the user adds one (or when editing
   // a customer that already has address content).
-  const [showAddresses, setShowAddresses] = useState(() =>
-    (initialValues?.addresses ?? []).some(coreAddressRequiresVerification),
+  const [showAddresses, setShowAddresses] = useState(() => initialState.showAddresses);
+  const [pendingAddressFocusIndex, setPendingAddressFocusIndex] = useState<number | null>(
+    () => initialState.pendingAddressFocusIndex,
   );
-  const [pendingAddressFocusIndex, setPendingAddressFocusIndex] = useState<number | null>(null);
   const errorMessage = formError ?? externalError;
   const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
-    setValues(
-      normalizeCustomerFormValues(initialValues ?? createEmptyCustomerForm()),
-    );
-    setShowAddresses((initialValues?.addresses ?? []).some(coreAddressRequiresVerification));
+    const next = initializeCustomerFormState(initialValues, startWithNewAddress);
+    setValues(next.values);
+    setShowAddresses(next.showAddresses);
+    setPendingAddressFocusIndex(next.pendingAddressFocusIndex);
     setFormError(null);
-  }, [initialValues?.id, initialValues?.updatedAt]);
+  }, [initialValues?.id, initialValues?.updatedAt, startWithNewAddress]);
 
   useEffect(() => {
     if (pendingAddressFocusIndex == null || !showAddresses) return;

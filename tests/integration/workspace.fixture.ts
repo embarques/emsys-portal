@@ -5,12 +5,12 @@ import { ensureAuthenticated, getTestCredentials, injectDevSessionInitScript, si
 const WORKSPACE_TABS_STORAGE_KEY = "emsys-workspace-tabs";
 const WORKSPACE_TAB_PARAM = "tab";
 
-/** Sidebar labels for common workspace routes (icon rail uses title=label). */
+/** Sidebar labels for common workspace routes (icon rail uses aria-label=label). */
 const WORKSPACE_SIDEBAR_LABELS: Record<string, string> = {
   "/accounting/daily-income": "Daily Income",
   "/accounting/accounts": "Chart of Accounts",
   "/customers": "Customers",
-  "/orders": "Orders",
+  "/appointments": "Appointments",
   "/invoices": "Invoices",
 };
 
@@ -72,7 +72,7 @@ export async function openWorkspaceFromSidebar(page: Page, pathname: string) {
   }
 
   const link = page.getByRole("link", { name: label });
-  const iconLink = page.locator(`a[title="${label}"]`);
+  const iconLink = page.locator(`a[aria-label="${label}"]`);
 
   if (await link.isVisible()) {
     await link.click();

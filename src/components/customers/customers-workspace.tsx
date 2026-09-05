@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
   Plus,
   Search,
   UserCheck,
@@ -16,6 +14,7 @@ import { CustomerTableAddressCell } from "@/components/customers/customer-addres
 import { CustomerTablePhoneCell } from "@/components/customers/customer-table-phone-cell";
 import { CustomerViewSheet } from "@/components/customers/customer-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -86,11 +85,11 @@ import { useTranslation } from "@/lib/i18n";
 import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
 import { useUserError } from "@/lib/errors";
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { cn } from "@/lib/utils";
 import type { DataTableColumn } from "@/lib/table/types";
 
-const PAGE_SIZE = DEFAULT_CUSTOMER_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 const CUSTOMERS_TABLE_COLUMN_STORAGE_KEY = "customers-v7";
 
@@ -127,7 +126,7 @@ export function CustomersWorkspace() {
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_CUSTOMER_LIST_PARAMS.sort, () => setPage(1));
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
@@ -150,12 +149,12 @@ export function CustomersWorkspace() {
     () =>
       buildCustomerListParams({
         page,
-        limit: PAGE_SIZE,
+        limit: pageLimit,
         query: debouncedQuery,
         rows: filters.rows,
         sort,
       }),
-    [debouncedQuery, filters.rows, page, sort],
+    [debouncedQuery, filters.rows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching, isPending } = useCustomers(listParams);
@@ -169,8 +168,9 @@ export function CustomersWorkspace() {
 
   const customers = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalCustomers = data?.total ?? 0;
+  rememberTotal(totalCustomers);
   const showInitialTableLoading = isPending && customers.length === 0;
-  const totalPages = Math.max(1, Math.ceil(totalCustomers / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalCustomers / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     customers.length > 0 && customers.every((customer) => selectedIds.includes(customer.id));
@@ -493,7 +493,7 @@ export function CustomersWorkspace() {
     {
       itemCountOnPage: customers.length,
       page: currentPage,
-      pageSize: PAGE_SIZE,
+      pageSize: pageLimit,
       total: totalCustomers,
       noun: t("customers.noun"),
       isFiltered: isListFiltered,
@@ -703,29 +703,14 @@ export function CustomersWorkspace() {
         {!showInitialTableLoading ? (
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">{listSummary}</p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1 || isLoading}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages || isLoading}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={isLoading}
+          />
         </div>
         ) : null}
       </Card>

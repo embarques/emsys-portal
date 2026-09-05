@@ -1,5 +1,5 @@
-import { PickupRoutesWorkspace } from "@/components/pickup-delivery-routes/pickup-routes-workspace";
+import { redirect } from "next/navigation";
 
 export default function PickupRoutesPage() {
-  return <PickupRoutesWorkspace />;
+  redirect("/daily-routes");
 }

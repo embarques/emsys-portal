@@ -3,7 +3,7 @@
   "entityPlural": "employees",
   "title": "Employees",
   "pages": {
-    "description": "Maintain employee records, branch assignments, titles, and contact information for operational staff."
+    "description": "Maintain employee records used for operations, routes, and assignments."
   },
   "noun": "employees",
   "actions": {

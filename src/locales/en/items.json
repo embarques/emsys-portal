@@ -3,7 +3,7 @@
   "entityPlural": "items",
   "title": "Items",
   "pages": {
-    "description": "Maintain the product and service catalog with pricing, descriptions, and details used on invoices and orders."
+    "description": "Optional merchandise shortcuts workers can select when creating invoices."
   },
   "noun": "items",
   "actions": {
@@ -91,9 +91,15 @@
       "name": { "label": "Description", "placeholder": "Enter description…" },
       "price": { "label": "Price", "placeholder": "Enter amount…" },
       "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
-      "createdAtRange": { "label": "Date created range", "placeholder": "2026-01-01 to 2026-06-30" },
+      "createdAtRange": {
+        "label": "Date created range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
       "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" },
-      "updatedAtRange": { "label": "Date modified range", "placeholder": "2026-01-01 to 2026-06-30" }
+      "updatedAtRange": {
+        "label": "Date modified range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      }
     }
   }
 }

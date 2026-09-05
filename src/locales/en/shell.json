@@ -6,7 +6,7 @@
   },
   "dashboard": {
     "title": "Operations Dashboard",
-    "description": "Overview of key operations metrics, recent activity, and quick access to daily workflows.",
+    "description": "Overview of operations, from appointments and merchandise to routes, accounting, and insights.",
     "loadingWorkspace": "Loading workspace…"
   },
   "topbar": {
@@ -18,7 +18,7 @@
   "search": {
     "openMenu": "Open search menu",
     "placeholder": "Search records...",
-    "inputPlaceholder": "Search customers, orders, reports...",
+    "inputPlaceholder": "Search customers, appointments, reports...",
     "quickActions": "Quick actions",
     "noResults": "No matching entries found.",
     "findCustomer": {

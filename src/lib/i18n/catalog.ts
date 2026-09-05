@@ -100,15 +100,34 @@ export function getCatalog(locale: Locale): MessageTree {
   return catalogs[locale] ?? catalogs.en;
 }
 
-function readNestedValue(tree: MessageTree, key: string): string | undefined {
-  const value = key.split(".").reduce<unknown>((current, segment) => {
-    if (current && typeof current === "object" && segment in (current as MessageTree)) {
-      return (current as MessageTree)[segment];
-    }
-    return undefined;
-  }, tree);
+function readPath(node: unknown, segments: string[]): string | undefined {
+  if (segments.length === 0) {
+    return typeof node === "string" ? node : undefined;
+  }
 
-  return typeof value === "string" ? value : undefined;
+  if (!node || typeof node !== "object" || Array.isArray(node)) {
+    return undefined;
+  }
+
+  const record = node as MessageTree;
+  for (let take = 1; take <= segments.length; take += 1) {
+    const literal = segments.slice(0, take).join(".");
+    if (!(literal in record)) continue;
+
+    const found = readPath(record[literal], segments.slice(take));
+    if (found !== undefined) return found;
+  }
+
+  return undefined;
+}
+
+/** Resolve a dotted catalog key, including JSON keys that themselves contain dots. */
+export function lookupCatalogValue(tree: MessageTree, key: string): string | undefined {
+  return readPath(tree, key.split("."));
+}
+
+function readNestedValue(tree: MessageTree, key: string): string | undefined {
+  return lookupCatalogValue(tree, key);
 }
 
 export function translate(

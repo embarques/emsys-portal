@@ -5,8 +5,6 @@ import {
   CalendarClock,
   CalendarDays,
   CalendarRange,
-  ChevronLeft,
-  ChevronRight,
   Container,
   Plus,
   Ship,
@@ -16,6 +14,7 @@ import {
 import { ContainerForm } from "@/components/containers/container-form";
 import { ContainerViewSheet } from "@/components/containers/container-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
@@ -79,10 +78,10 @@ import {
   areContainerFormValuesEquivalent,
 } from "@/lib/containers/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
-const PAGE_SIZE = DEFAULT_CONTAINER_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: ContainerFilterState = {
@@ -100,7 +99,7 @@ export function ContainersWorkspace() {
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_CONTAINER_LIST_PARAMS.sort, () => setPage(1));
   const [viewContainer, setViewContainer] = useState<ContainerRecord | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
@@ -112,12 +111,12 @@ export function ContainersWorkspace() {
     () =>
       buildContainerListParams({
         page,
-        limit: PAGE_SIZE,
+        limit: pageLimit,
         query: debouncedQuery,
         rows: filters.rows,
         sort,
       }),
-    [debouncedQuery, filters.rows, page, sort],
+    [debouncedQuery, filters.rows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useContainers(listParams);
@@ -129,7 +128,8 @@ export function ContainersWorkspace() {
 
   const containers = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalContainers = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalContainers / PAGE_SIZE));
+  rememberTotal(totalContainers);
+  const totalPages = Math.max(1, Math.ceil(totalContainers / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     containers.length > 0 && containers.every((container) => selectedIds.includes(container.id));
@@ -539,29 +539,14 @@ export function ContainersWorkspace() {
               noun,
             })}
           </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1 || isLoading}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages || isLoading}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={isLoading}
+          />
         </div>
         ) : null}
       </Card>

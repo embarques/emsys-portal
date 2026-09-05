@@ -21,6 +21,36 @@ const nextConfig = {
     '127.0.0.1:3100',
   ],
 
+  async redirects() {
+    return [
+      {
+        source: '/orders',
+        destination: '/appointments',
+        permanent: true,
+      },
+      {
+        source: '/orders/map',
+        destination: '/appointments/map',
+        permanent: true,
+      },
+      {
+        source: '/pickup-routes',
+        destination: '/daily-routes',
+        permanent: true,
+      },
+      {
+        source: '/appointment-routes',
+        destination: '/daily-routes',
+        permanent: true,
+      },
+      {
+        source: '/delivery-routes',
+        destination: '/daily-routes',
+        permanent: true,
+      },
+    ];
+  },
+
   async rewrites() {
     const apiBase =
       normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL) ||

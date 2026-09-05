@@ -1,3 +1,5 @@
 Always follow @CURSOR_RULES.md before making changes.
 
+Read @APP_CONTEXT.md for the business meaning of each workspace section.
+
 Preserve the existing architecture and folder structure.

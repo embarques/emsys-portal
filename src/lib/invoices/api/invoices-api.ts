@@ -25,6 +25,7 @@ import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { expandInvoiceFilterNode } from "@/lib/invoices/invoice-filters";
 import { createInvoiceBarSearchFilterGroup } from "@/lib/invoices/search-fields";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
+import { parseLastSyncedAt } from "@/lib/legacy-sync/last-synced";
 import { formatPickupCommentSummary } from "@/lib/orders/display";
 import {
   createEmptyOrderParty,
@@ -151,6 +152,7 @@ type ApiInvoice = {
   date?: string;
   createdAt?: string;
   updatedAt?: string;
+  legacySyncedAt?: string;
   paidRegion?: string;
   paidStatus?: string;
   cost?: number;
@@ -417,6 +419,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     createdAt: String(item.createdAt ?? "").trim(),
     createdBy: readInvoiceCreatedBy(item.employee ?? item.user),
     updatedAt: String(item.updatedAt ?? "").trim(),
+    legacySyncedAt: parseLastSyncedAt(item),
   };
 }
 
@@ -1011,6 +1014,7 @@ function normalizeLegacyInvoiceSyncSummary(raw: unknown): LegacyInvoiceSyncSumma
     start: Number(item.start ?? 0),
     nextStart: Number(item.nextStart ?? 0),
     limit: Number(item.limit ?? 0),
+    lastSyncedAt: parseLastSyncedAt(raw),
   };
 }
 
@@ -1020,7 +1024,7 @@ function normalizeLegacyInvoiceSyncPreview(raw: unknown): LegacyInvoiceSyncPrevi
   }
 
   const item = raw as Record<string, unknown>;
-  return { total: Number(item.total ?? 0) };
+  return { total: Number(item.total ?? 0), lastSyncedAt: parseLastSyncedAt(raw) };
 }
 
 export async function previewLegacyInvoiceSync(): Promise<LegacyInvoiceSyncPreview> {

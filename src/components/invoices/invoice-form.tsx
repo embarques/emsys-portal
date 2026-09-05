@@ -34,7 +34,9 @@ import {
 } from "@/components/invoices/invoice-wizard-styles";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
+import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
 import { useTranslation } from "@/lib/i18n";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import {
@@ -102,6 +104,7 @@ type PartySide = "sender" | "receiver";
 type CustomerDialogState = {
   side: PartySide;
   mode: "add" | "edit";
+  startWithNewAddress?: boolean;
 };
 
 /** Sender name, phone, and street let users find a pickup without knowing the order id. */
@@ -225,6 +228,7 @@ export function InvoiceForm({
   const { data: containersData } = useContainerPicker();
   const ordersQuery = useOrders(DEFAULT_ORDER_LIST_PARAMS);
   const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
+  const { isDesktopTabs, openFormTab } = useWorkspaceTabs();
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
   const ensureCustomerDetail = useEnsureCustomerDetail();
@@ -316,6 +320,20 @@ export function InvoiceForm({
     },
     [],
   );
+  const markPendingPartyEdit = useApplyCustomerOnTabReturn((side, customer) => {
+    if (side === "sender") {
+      commitValues((current) => {
+        if (current.sender?.id !== customer.id && current.senderId !== customer.id) return current;
+        return { ...current, senderId: customer.id, sender: customer };
+      });
+    } else {
+      commitValues((current) => {
+        if (current.receiver?.id !== customer.id && current.receiverId !== customer.id) return current;
+        return { ...current, receiverId: customer.id, receiver: customer };
+      });
+    }
+    setFormError(null);
+  });
 
   useEffect(() => {
     if (isWizard) return;
@@ -449,6 +467,22 @@ export function InvoiceForm({
     const current = side === "sender" ? values.sender : values.receiver;
     if (!current?.id) return;
 
+    if (isDesktopTabs) {
+      markPendingPartyEdit(side, current.id);
+      openFormTab({
+        feature: "customers",
+        baseHref: "/customers",
+        mode: "edit",
+        entityId: current.id,
+        customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+        label:
+          side === "receiver"
+            ? t("invoices.form.partyActions.editReceiver")
+            : t("invoices.form.partyActions.editSender"),
+      });
+      return;
+    }
+
     setCustomerFormError(null);
     setIsLoadingEditCustomer(true);
 
@@ -459,6 +493,24 @@ export function InvoiceForm({
       applyCustomerToSide(side, fullCustomer);
       setEditCustomer(fullCustomer);
       setCustomerDialog({ side, mode: "edit" });
+    } catch {
+      setEditCustomer(null);
+      setCustomerFormError(t("common.errors.fallback"));
+    } finally {
+      setIsLoadingEditCustomer(false);
+    }
+  }
+
+  async function openAddAddress(side: PartySide, customer: Customer) {
+    if (!customer.id) return;
+
+    setCustomerFormError(null);
+    setIsLoadingEditCustomer(true);
+
+    try {
+      const fullCustomer = await ensureCustomerDetail(customer.id);
+      setEditCustomer(fullCustomer);
+      setCustomerDialog({ side, mode: "edit", startWithNewAddress: true });
     } catch {
       setEditCustomer(null);
       setCustomerFormError(t("common.errors.fallback"));
@@ -488,16 +540,17 @@ export function InvoiceForm({
 
     try {
       let customer: Customer;
+      const customerBeingEdited = editCustomer ?? dialogCustomer;
 
-      if (customerDialog.mode === "edit" && dialogCustomer) {
-        if (areCustomerFormValuesEquivalent(formValues, customerToFormValues(dialogCustomer))) {
+      if (customerDialog.mode === "edit" && customerBeingEdited) {
+        if (areCustomerFormValuesEquivalent(formValues, customerToFormValues(customerBeingEdited))) {
           notifySuccess(t("common.form.noChanges"));
           closeCustomerDialog();
           return;
         }
 
         customer = await updateCustomerMutation.mutateAsync({
-          customerId: (editCustomer ?? dialogCustomer).id,
+          customerId: customerBeingEdited.id,
           values: formValues,
         });
         notifyUpdated(t("customers.entity"), customer.name);
@@ -796,6 +849,7 @@ export function InvoiceForm({
           value={values.senderId}
           selectedCustomer={values.sender}
           onValueChange={updateSender}
+          onAddAddress={(customer) => void openAddAddress("sender", customer)}
           placeholder={t("invoices.form.placeholders.selectSender")}
           required
           showAddressLabels={false}
@@ -838,6 +892,7 @@ export function InvoiceForm({
           value={values.receiverId}
           selectedCustomer={values.receiver}
           onValueChange={updateReceiver}
+          onAddAddress={(customer) => void openAddAddress("receiver", customer)}
           placeholder={t("invoices.form.placeholders.noReceiver")}
           pickerTitle={t("invoices.form.placeholders.selectReceiver")}
           searchPlaceholder={t("invoices.form.placeholders.selectReceiver")}
@@ -990,7 +1045,7 @@ export function InvoiceForm({
           </DialogHeader>
           {customerDialog ? (
             <CustomerForm
-              key={`${customerDialog.side}-${customerDialog.mode}-${editCustomer?.id ?? dialogCustomer?.id ?? "new"}-${editCustomer?.addresses.length ?? 0}`}
+              key={`${customerDialog.side}-${customerDialog.mode}-${editCustomer?.id ?? dialogCustomer?.id ?? "new"}-${editCustomer?.addresses.length ?? 0}-${customerDialog.startWithNewAddress ? "new-address" : "edit"}`}
               initialValues={
                 customerDialog.mode === "edit" && editCustomer
                   ? customerToFormValues(editCustomer)
@@ -1011,6 +1066,7 @@ export function InvoiceForm({
               isSubmitting={isSavingCustomer}
               externalError={customerFormError}
               lockCustomerType
+              startWithNewAddress={customerDialog.startWithNewAddress}
               onSubmit={handleCustomerSubmit}
               onCancel={closeCustomerDialog}
             />

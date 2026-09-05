@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { CalendarRange, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { CalendarRange, Plus } from "lucide-react";
 
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import { ActiveRouteViewSheet } from "@/components/pickup-delivery-routes/pickup-delivery-route-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -27,6 +28,7 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useUserError } from "@/lib/errors/use-user-error";
 import {
@@ -39,20 +41,21 @@ import {
   formatActiveRouteTypeLabel,
 } from "@/lib/pickup-delivery-routes/display";
 import {
-  DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
   buildActiveRouteListParams,
   type ActiveRoute,
   type ActiveRouteFilterState,
 } from "@/lib/pickup-delivery-routes/types";
 import { useActiveRouteFilterFields } from "@/lib/pickup-delivery-routes/hooks/use-active-route-filter-fields";
 import { useActiveRoutes, useDeleteActiveRoutes } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import { useDirectoryBranchFilter } from "@/lib/branches/hooks/use-directory-branch-filter";
 import { useRouteLookup } from "@/lib/route-manager/hooks/use-route-manager";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatRouteDate } from "@/lib/route-manager/display";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
 import type { DataTableColumn } from "@/lib/table/types";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
-import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import {
   buildTableSelectionResetKey,
   useResolvedPaginatedItems,
@@ -61,7 +64,6 @@ import {
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
 
-const ACTIVE_ROUTE_PAGE_SIZE = DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultActiveRouteFilters: ActiveRouteFilterState = {
@@ -92,12 +94,25 @@ export function ActiveRoutesDirectoryWorkspace({
   const { notifyDeleted } = useFeedback();
   const [activeRouteFilters, setActiveRouteFilters] =
     useState<ActiveRouteFilterState>(defaultActiveRouteFilters);
+  const {
+    branchCode,
+    selectValue,
+    setBranchCode,
+    isReady: isBranchFilterReady,
+    branchOptions,
+    branchesLoading,
+  } = useDirectoryBranchFilter();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedActiveRouteQuery = useDebouncedValue(activeRouteFilters.query, SEARCH_DEBOUNCE_MS);
-  const isActiveRouteSearchPending =
-    activeRouteFilters.query.trim() !== debouncedActiveRouteQuery.trim();
   const [selectedActiveRouteIds, setSelectedActiveRouteIds] = useState<string[]>([]);
-  const [activeRoutePage, setActiveRoutePage] = useState(1);
+  const {
+    page: activeRoutePage,
+    setPage: setActiveRoutePage,
+    pageSize,
+    pageLimit,
+    changePageSize,
+    rememberTotal,
+  } = useTablePageSize();
   const [activeRouteDialogOpen, setActiveRouteDialogOpen] = useState(false);
   const [editingActiveRoute, setEditingActiveRoute] = useState<ActiveRoute | null>(null);
   const [deleteActiveRouteTarget, setDeleteActiveRouteTarget] = useState<
@@ -109,28 +124,38 @@ export function ActiveRoutesDirectoryWorkspace({
     () =>
       buildActiveRouteListParams({
         page: activeRoutePage,
-        limit: ACTIVE_ROUTE_PAGE_SIZE,
+        limit: pageLimit,
         query: debouncedActiveRouteQuery,
         rows: activeRouteFilters.rows,
         routeType: variant.routeType,
+        branchCode,
       }),
-    [activeRoutePage, activeRouteFilters.rows, debouncedActiveRouteQuery, variant.routeType],
+    [
+      activeRoutePage,
+      activeRouteFilters.rows,
+      branchCode,
+      debouncedActiveRouteQuery,
+      pageLimit,
+      variant.routeType,
+    ],
   );
 
-  const activeRoutesQuery = useActiveRoutes(activeRouteListParams);
+  const activeRoutesQuery = useActiveRoutes(activeRouteListParams, {
+    enabled: isBranchFilterReady,
+  });
   const deleteActiveRoutesMutation = useDeleteActiveRoutes(variant.routeType);
   const routeLookup = useRouteLookup(200, {
-    branchCode: variant.fixedBranchCode,
-    enabled: variant.id === "delivery",
+    enabled: true,
   });
 
   const activeRoutes = useResolvedPaginatedItems(
     activeRoutesQuery.data?.items,
     activeRoutesQuery.data?.total,
-    activeRoutesQuery.isFetching,
+    activeRoutesQuery.isFetching || !isBranchFilterReady,
   );
   const totalActiveRoutes = activeRoutesQuery.data?.total ?? 0;
-  const totalActiveRoutePages = Math.max(1, Math.ceil(totalActiveRoutes / ACTIVE_ROUTE_PAGE_SIZE));
+  rememberTotal(totalActiveRoutes);
+  const totalActiveRoutePages = Math.max(1, Math.ceil(totalActiveRoutes / pageLimit));
   const currentActiveRoutePage = Math.min(activeRoutePage, totalActiveRoutePages);
 
   const allActiveRoutePageSelected =
@@ -141,7 +166,8 @@ export function ActiveRoutesDirectoryWorkspace({
   useTableSelectionReset(
     buildTableSelectionResetKey(
       debouncedActiveRouteQuery,
-      variant.routeType,
+      variant.routeType ?? "daily",
+      branchCode,
       activeRouteFilters.rows,
     ),
     setSelectedActiveRouteIds,
@@ -245,6 +271,11 @@ export function ActiveRoutesDirectoryWorkspace({
         renderCell: (record) => formatActiveRouteRowLabel(record, dash, t),
       },
       {
+        id: "branch.code",
+        label: t("routes.columns.branch"),
+        renderCell: (record) => record.branch?.code || dash,
+      },
+      {
         id: "id",
         label: t("routes.columns.recordId"),
         cellClassName: "font-mono text-xs text-muted-foreground tabular-nums",
@@ -264,9 +295,7 @@ export function ActiveRoutesDirectoryWorkspace({
         id: "route.name",
         label: t("routes.columns.route"),
         renderCell: (record) =>
-          variant.id === "delivery"
-            ? formatActiveRouteRouteName(record, routeLookup.getByKey, dash)
-            : record.route.name || dash,
+          formatActiveRouteRouteName(record, routeLookup.getByKey, dash),
       },
       {
         id: "driver.name",
@@ -322,26 +351,16 @@ export function ActiveRoutesDirectoryWorkspace({
   );
   const hasActiveRouteFilters =
     Boolean(activeRouteFilters.query.trim()) || advancedFilterCount > 0;
-  const activeRouteSearchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveRouteFilters,
-      query: activeRouteFilters.query,
-      isSearchPending: isActiveRouteSearchPending,
-      matched: totalActiveRoutes,
-      noun: t(`routes.${copyPrefix}.searchNoun`),
-      isLoading: activeRoutesQuery.isFetching && activeRoutes.length === 0,
-    },
-    t,
-  );
+  const hasBranchScope = Boolean(branchCode.trim());
   const activeRouteListSummary = formatPaginatedListSummary(
     {
       itemCountOnPage: activeRoutes.length,
       page: currentActiveRoutePage,
-      pageSize: ACTIVE_ROUTE_PAGE_SIZE,
+      pageSize: pageLimit,
       total: totalActiveRoutes,
       noun: t(`routes.${copyPrefix}.searchNoun`),
-      isFiltered: hasActiveRouteFilters,
-      isLoading: activeRoutesQuery.isFetching,
+      isFiltered: hasActiveRouteFilters || hasBranchScope,
+      isLoading: !isBranchFilterReady || activeRoutesQuery.isFetching,
     },
     t,
   );
@@ -366,16 +385,36 @@ export function ActiveRoutesDirectoryWorkspace({
             onFiltersOpenChange={setFiltersOpen}
             activeFilterCount={advancedFilterCount}
             columnLayout={activeRouteColumnVisibility}
-            searchSummary={activeRouteSearchSummary}
             search={
-              <TableSearchInput
-                value={activeRouteFilters.query}
-                onChange={(query) => {
-                  setActiveRouteFilters((current) => ({ ...current, query }));
-                  setActiveRoutePage(1);
-                }}
-                placeholder={t(`routes.${copyPrefix}.searchPlaceholder`)}
-              />
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <TableSearchInput
+                    value={activeRouteFilters.query}
+                    onChange={(query) => {
+                      setActiveRouteFilters((current) => ({ ...current, query }));
+                      setActiveRoutePage(1);
+                    }}
+                    placeholder={t(`routes.${copyPrefix}.searchPlaceholder`)}
+                  />
+                </div>
+                <SearchableSelect
+                  id="daily-routes-branch-filter"
+                  aria-label={t("routes.table.branchFilter")}
+                  value={selectValue}
+                  onValueChange={(nextBranchCode) => {
+                    setBranchCode(nextBranchCode);
+                    setActiveRoutePage(1);
+                  }}
+                  options={branchOptions}
+                  loading={branchesLoading}
+                  loadingMessage={t("common.loading")}
+                  placeholder={t("routes.table.branchFilter")}
+                  searchPlaceholder={t("routes.table.branchFilterSearch")}
+                  truncateSelection={false}
+                  fitToOptions
+                  className="max-w-full shrink-0"
+                />
+              </div>
             }
             filterPanel={
               <TableFilterPanel
@@ -441,7 +480,7 @@ export function ActiveRoutesDirectoryWorkspace({
             columns={activeRouteColumnVisibility.columns}
             rows={activeRoutes}
             page={currentActiveRoutePage}
-            isPageDataPending={activeRoutesQuery.isFetching}
+            isPageDataPending={activeRoutesQuery.isFetching || !isBranchFilterReady}
             rowKey={(record) => record.id}
             rowLabel={(record) => formatActiveRouteRowLabel(record, dash, t)}
             columnLayout={activeRouteColumnVisibility}
@@ -458,7 +497,7 @@ export function ActiveRoutesDirectoryWorkspace({
             emptyState={
               <>
                 <p className="text-muted-foreground">
-                  {hasActiveRouteFilters
+                  {hasActiveRouteFilters || hasBranchScope
                     ? t(`routes.${copyPrefix}.emptyFiltered`)
                     : t(`routes.${copyPrefix}.empty`)}
                 </p>
@@ -478,36 +517,14 @@ export function ActiveRoutesDirectoryWorkspace({
               total: totalActiveRoutes,
             })}
           </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentActiveRoutePage <= 1 || activeRoutesQuery.isLoading}
-              onClick={() => setActiveRoutePage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", {
-                current: currentActiveRoutePage,
-                total: totalActiveRoutePages,
-              })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={
-                currentActiveRoutePage >= totalActiveRoutePages || activeRoutesQuery.isLoading
-              }
-              onClick={() =>
-                setActiveRoutePage((value) => Math.min(totalActiveRoutePages, value + 1))
-              }
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            page={currentActiveRoutePage}
+            totalPages={totalActiveRoutePages}
+            pageSize={pageSize}
+            onPageChange={setActiveRoutePage}
+            onPageSizeChange={changePageSize}
+            disabled={activeRoutesQuery.isLoading || !isBranchFilterReady}
+          />
         </div>
       </Card>
 

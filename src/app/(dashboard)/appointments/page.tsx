@@ -1,5 +1,5 @@
 import { OrdersWorkspace } from "@/components/orders/orders-workspace";
 
-export default function OrdersPage() {
+export default function AppointmentsPage() {
   return <OrdersWorkspace />;
 }

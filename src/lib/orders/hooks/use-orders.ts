@@ -97,18 +97,19 @@ export function usePickupsByRoute(
   });
 }
 
-/** Load a sender's pickup history via GET /pickups filtered by their customer id. */
+/** Load a sender's appointment history via GET /pickups filtered by their customer id. */
 export function useSenderOrderHistory(
   senderId: string | null | undefined,
-  limit = SENDER_HISTORY_LIMIT,
+  options: { enabled?: boolean; limit?: number } = {},
 ) {
+  const { enabled = true, limit = SENDER_HISTORY_LIMIT } = options;
   const queryEnabled = useOrdersQueryEnabled();
   const id = senderId?.trim() ?? "";
 
   return useWorkspaceQuery({
     queryKey: queryKeys.orders.history(id, limit),
     queryFn: () => fetchSenderOrderHistory(id, { limit }),
-    enabled: queryEnabled && id.length > 0,
+    enabled: queryEnabled && enabled && id.length > 0,
   });
 }
 

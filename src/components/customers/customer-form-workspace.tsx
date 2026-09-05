@@ -50,8 +50,8 @@ export function CustomerFormWorkspace({
 
   const editingCustomer = isEditing ? (customerQuery.data ?? null) : null;
   const isSaving = createCustomerMutation.isPending || updateCustomerMutation.isPending;
-  // When opened from the order form's "New sender/receiver", the party type is preset and locked.
-  const hasPresetCustomerType = !isEditing && customerType != null;
+  // When opened from an appointment/invoice New or Edit party action, lock the party type.
+  const hasPresetCustomerType = customerType != null;
 
   useEffect(() => {
     if (isEditing && editingCustomer?.name) {

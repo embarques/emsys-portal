@@ -1,16 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { OrdersMapView } from "@/components/orders/orders-map-view";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
-import { formatOrderRouteName } from "@/lib/orders/display";
-import {
-  useAssignPickupsToRoute,
-  useUnassignPickupsFromRoute,
-} from "@/lib/orders/hooks/use-orders";
-import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
+import { useUnassignPickupsFromRoute } from "@/lib/orders/hooks/use-orders";
 import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useWorkspaceTabScope } from "@/lib/layout/workspace-tab-scope";
 import {
@@ -39,25 +34,8 @@ export function OrdersMapWorkspace() {
     setSelectedIds(context.selectedIds);
   }, [mapActive, tabScope?.tabId]);
 
-  const assignRouteMutation = useAssignPickupsToRoute();
   const unassignRouteMutation = useUnassignPickupsFromRoute();
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
-  const assignRouteOptions = useMemo(
-    () => buildActiveRouteAssignmentOptions(pickupRouteLookup.items, t),
-    [pickupRouteLookup.items, t],
-  );
-
-  async function handleAssignRoute(routeId: string, pickupIds: number[]) {
-    await assignRouteMutation.mutateAsync({ routeId, pickupIds });
-    const selectedRoute = pickupRouteLookup.getByKey(routeId);
-    const routeName = selectedRoute ? formatOrderRouteName({ routeId }, selectedRoute, t) : "";
-    const routeSuffix = routeName ? t("orders.toasts.assignedToRouteNamed", { routeName }) : "";
-    notifySuccess(
-      pickupIds.length === 1
-        ? t("orders.toasts.assignedToRoute", { count: pickupIds.length, routeSuffix })
-        : t("orders.toasts.assignedToRoute_plural", { count: pickupIds.length, routeSuffix }),
-    );
-  }
 
   async function handleUnassignRoute(ordersToClear: Order[]) {
     const cleared = await unassignRouteMutation.mutateAsync(ordersToClear);
@@ -76,12 +54,8 @@ export function OrdersMapWorkspace() {
         filters={filters}
         sort={sort}
         baseSelectedIds={selectedIds}
-        assignRouteOptions={assignRouteOptions}
-        assignRoutesLoading={pickupRouteLookup.isLoading}
         getRouteByKey={pickupRouteLookup.getByKey}
-        onAssignRoute={handleAssignRoute}
         onUnassignRoute={handleUnassignRoute}
-        isAssigning={assignRouteMutation.isPending}
         isUnassigning={unassignRouteMutation.isPending}
       />
     </div>

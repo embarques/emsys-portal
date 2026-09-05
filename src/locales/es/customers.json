@@ -3,7 +3,7 @@
   "entityPlural": "clientes",
   "title": "Clientes",
   "pages": {
-    "description": "Administre perfiles de clientes, datos de contacto, direcciones y saldos de cuenta para remitentes y destinatarios."
+    "description": "Administre clientes y su historial de citas, envíos, facturas y mercancía."
   },
   "noun": "clientes",
   "actions": {
@@ -19,6 +19,7 @@
   "addresses": {
     "sheetTitle": "Direcciones del cliente",
     "addAddressTodo": "Agregar dirección (próximamente)",
+    "addAddress": "Agregar nueva dirección",
     "matchedBadge": "Coincidencia",
     "primaryPrefix": "Principal:",
     "countBadge": "{{count}} direcciones",

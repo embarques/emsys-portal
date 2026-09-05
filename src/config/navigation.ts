@@ -1,25 +1,35 @@
 import {
-  BarChart3,
   Banknote,
+  BarChart3,
+  Barcode,
   BookOpenText,
-  Building2,
   Boxes,
+  Briefcase,
+  Building2,
+  Calculator,
+  CalendarClock,
   Car,
+  ChartColumn,
   Container,
-  FileText,
+  FileChartColumn,
+  HandCoins,
   Home,
+  IdCard,
   KeyRound,
-  Package,
-  PackageCheck,
+  Layers,
+  MapPinned,
+  PackageMinus,
+  PackageOpen,
+  PackagePlus,
+  Route,
   ScanBarcode,
+  ScrollText,
   Settings,
   ShieldCheck,
-  Tag,
-  Truck,
+  UserCheck,
   UserCog,
-  UserRound,
   Users,
-  Wallet,
+  Warehouse,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,6 +50,12 @@ export type NavigationGroup = {
   items: NavigationItem[];
 };
 
+/** Sidebar frequency bands — order is intentional (not alphabetical). */
+export type NavigationSection = {
+  id: string;
+  groups: NavigationGroup[];
+};
+
 export const topNavigationItems: NavigationItem[] = [
   { labelKey: "navigation.items.dashboard", href: "/", icon: Home, permission: PERMISSIONS.dashboardView },
 ];
@@ -48,32 +64,32 @@ export const topNavigationItems: NavigationItem[] = [
 export const topbarNavigationItems: NavigationItem[] = [
   {
     labelKey: "navigation.items.orders",
-    href: "/orders",
-    icon: Package,
+    href: "/appointments",
+    icon: CalendarClock,
     permission: PERMISSIONS.pickupsView,
   },
   {
     labelKey: "navigation.items.invoices",
     href: "/invoices",
-    icon: FileText,
+    icon: PackageOpen,
     permission: PERMISSIONS.invoicesView,
   },
   {
     labelKey: "navigation.items.barcodes",
     href: "/barcodes",
-    icon: ScanBarcode,
+    icon: Barcode,
     permission: PERMISSIONS.packagesView,
   },
   {
     labelKey: "navigation.items.dailyIncome",
     href: "/accounting/daily-income",
-    icon: Wallet,
+    icon: HandCoins,
     permission: PERMISSIONS.incomeView,
   },
   {
     labelKey: "navigation.items.reports",
     href: "/reports",
-    icon: FileText,
+    icon: FileChartColumn,
     permission: PERMISSIONS.reportsView,
   },
   {
@@ -115,147 +131,238 @@ function navigationItemToGroup(item: NavigationItem): NavigationGroup {
   };
 }
 
-const primaryNavigationItems: NavigationItem[] = [
+const appointmentsItem: NavigationItem = {
+  labelKey: "navigation.items.orders",
+  href: "/appointments",
+  icon: CalendarClock,
+  permission: PERMISSIONS.pickupsView,
+};
+
+const invoicesItem: NavigationItem = {
+  labelKey: "navigation.items.invoices",
+  href: "/invoices",
+  icon: PackageOpen,
+  permission: PERMISSIONS.invoicesView,
+};
+
+const itemsItem: NavigationItem = {
+  labelKey: "navigation.items.items",
+  href: "/items",
+  icon: Layers,
+  permission: PERMISSIONS.invoiceItemsView,
+};
+
+const containersItem: NavigationItem = {
+  labelKey: "navigation.items.containers",
+  href: "/containers",
+  icon: Container,
+  permission: PERMISSIONS.containersView,
+};
+
+const barcodesItem: NavigationItem = {
+  labelKey: "navigation.submenus.barcodeManager",
+  icon: Barcode,
+  children: [
+    {
+      labelKey: "navigation.items.barcodes",
+      href: "/barcodes",
+      icon: Barcode,
+      permission: PERMISSIONS.packagesView,
+    },
+    {
+      labelKey: "navigation.items.labelManager",
+      href: "/label-updater",
+      icon: ScanBarcode,
+      permission: PERMISSIONS.packagesView,
+    },
+  ],
+};
+
+const inventoryItem: NavigationItem = {
+  labelKey: "navigation.submenus.inventory",
+  icon: Warehouse,
+  children: [
+    {
+      labelKey: "navigation.items.inventoryStock",
+      href: "/inventory/items",
+      icon: Boxes,
+      permission: PERMISSIONS.inventoryView,
+    },
+    {
+      labelKey: "navigation.items.inventoryReceipts",
+      href: "/inventory/receipts",
+      icon: PackagePlus,
+      permission: PERMISSIONS.inventoryView,
+    },
+    {
+      labelKey: "navigation.items.inventoryDispatches",
+      href: "/inventory/dispatches",
+      icon: PackageMinus,
+      permission: PERMISSIONS.inventoryView,
+    },
+    {
+      labelKey: "navigation.items.inventoryRecipients",
+      href: "/inventory/recipients",
+      icon: UserCheck,
+      permission: PERMISSIONS.inventoryView,
+    },
+    {
+      labelKey: "navigation.items.inventoryReports",
+      href: "/inventory/reports",
+      icon: ChartColumn,
+      permission: PERMISSIONS.inventoryView,
+    },
+  ],
+};
+
+const routesItem: NavigationItem = {
+  labelKey: "navigation.submenus.routes",
+  icon: Route,
+  children: [
+    {
+      labelKey: "navigation.items.routeCrews",
+      href: "/routes",
+      icon: Users,
+      permission: PERMISSIONS.dispatchView,
+    },
+    {
+      labelKey: "navigation.items.dailyRoutes",
+      href: "/daily-routes",
+      icon: MapPinned,
+      permission: PERMISSIONS.dispatchView,
+    },
+  ],
+};
+
+const customersItem: NavigationItem = {
+  labelKey: "navigation.items.customers",
+  href: "/customers",
+  icon: Users,
+  permission: PERMISSIONS.clientsView,
+};
+
+const vehiclesItem: NavigationItem = {
+  labelKey: "navigation.items.vehicles",
+  href: "/vehicles",
+  icon: Car,
+  permission: PERMISSIONS.vehiclesView,
+};
+
+/**
+ * Sidebar sections in usage order.
+ * Dashboard stays in `topNavigationItems` above these bands.
+ */
+export const navigationSections: NavigationSection[] = [
   {
-    labelKey: "navigation.submenus.inventory",
-    icon: Boxes,
-    children: [
+    id: "daily",
+    groups: [appointmentsItem, invoicesItem].map(navigationItemToGroup),
+  },
+  {
+    id: "operations",
+    groups: [barcodesItem, inventoryItem, containersItem, routesItem].map(
+      navigationItemToGroup,
+    ),
+  },
+  {
+    id: "reference",
+    groups: [customersItem, itemsItem, vehiclesItem].map(navigationItemToGroup),
+  },
+  {
+    id: "admin",
+    groups: [
       {
-        labelKey: "navigation.items.inventoryStock",
-        href: "/inventory/items",
-        icon: Boxes,
-        permission: PERMISSIONS.inventoryView,
+        titleKey: "navigation.groups.accounting",
+        icon: Calculator,
+        items: [
+          {
+            labelKey: "navigation.items.dailyIncome",
+            href: "/accounting/daily-income",
+            icon: HandCoins,
+            permission: PERMISSIONS.incomeView,
+          },
+          {
+            labelKey: "navigation.items.loans",
+            href: "/accounting/loans",
+            icon: Banknote,
+            permission: PERMISSIONS.incomeView,
+          },
+          {
+            labelKey: "navigation.items.checks",
+            href: "/accounting/checks",
+            icon: ScrollText,
+            permission: PERMISSIONS.incomeView,
+          },
+          {
+            labelKey: "navigation.items.chartOfAccounts",
+            href: "/accounting/accounts",
+            icon: BookOpenText,
+            permission: PERMISSIONS.accountsView,
+          },
+        ],
       },
       {
-        labelKey: "navigation.items.inventoryReceipts",
-        href: "/inventory/receipts",
-        icon: PackageCheck,
-        permission: PERMISSIONS.inventoryView,
+        titleKey: "navigation.groups.admin",
+        icon: Briefcase,
+        items: [
+          {
+            labelKey: "navigation.items.users",
+            href: "/users",
+            icon: UserCog,
+            permission: PERMISSIONS.usersView,
+          },
+          {
+            labelKey: "navigation.items.roles",
+            href: "/roles",
+            icon: KeyRound,
+            permission: PERMISSIONS.rolesView,
+          },
+          {
+            labelKey: "navigation.items.employees",
+            href: "/employees",
+            icon: IdCard,
+            permission: PERMISSIONS.employeesView,
+          },
+          {
+            labelKey: "navigation.items.security",
+            href: "/security",
+            icon: ShieldCheck,
+            permission: PERMISSIONS.usersView,
+          },
+          {
+            labelKey: "navigation.items.branches",
+            href: "/branches",
+            icon: Building2,
+            permission: PERMISSIONS.branchesView,
+          },
+          {
+            labelKey: "navigation.items.settings",
+            href: "/settings",
+            icon: Settings,
+            permission: PERMISSIONS.accountSettingsView,
+          },
+        ],
       },
       {
-        labelKey: "navigation.items.inventoryDispatches",
-        href: "/inventory/dispatches",
-        icon: Truck,
-        permission: PERMISSIONS.inventoryView,
-      },
-      {
-        labelKey: "navigation.items.inventoryRecipients",
-        href: "/inventory/recipients",
-        icon: Users,
-        permission: PERMISSIONS.inventoryView,
-      },
-      {
-        labelKey: "navigation.items.inventoryReports",
-        href: "/inventory/reports",
-        icon: FileText,
-        permission: PERMISSIONS.inventoryView,
+        titleKey: "navigation.groups.insights",
+        icon: BarChart3,
+        items: [
+          {
+            labelKey: "navigation.items.reports",
+            href: "/reports",
+            icon: FileChartColumn,
+            permission: PERMISSIONS.reportsView,
+          },
+          {
+            labelKey: "navigation.items.analytics",
+            href: "/analytics",
+            icon: BarChart3,
+            permission: PERMISSIONS.reportsView,
+          },
+        ],
       },
     ],
   },
-  { labelKey: "navigation.items.customers", href: "/customers", icon: Users, permission: PERMISSIONS.clientsView },
-  {
-    labelKey: "navigation.items.orderManager",
-    icon: Package,
-    children: [
-      {
-        labelKey: "navigation.items.orders",
-        href: "/orders",
-        icon: Package,
-        permission: PERMISSIONS.pickupsView,
-      },
-      {
-        labelKey: "navigation.items.orderRoutes",
-        href: "/pickup-routes",
-        icon: Truck,
-        permission: PERMISSIONS.dispatchView,
-      },
-    ],
-  },
-  {
-    labelKey: "navigation.submenus.invoices",
-    icon: FileText,
-    children: [
-      {
-        labelKey: "navigation.items.invoices",
-        href: "/invoices",
-        icon: FileText,
-        permission: PERMISSIONS.invoicesView,
-      },
-      {
-        labelKey: "navigation.items.items",
-        href: "/items",
-        icon: Tag,
-        permission: PERMISSIONS.invoiceItemsView,
-      },
-      {
-        labelKey: "navigation.items.containers",
-        href: "/containers",
-        icon: Container,
-        permission: PERMISSIONS.containersView,
-      },
-      {
-        labelKey: "navigation.items.deliveryRoutes",
-        href: "/delivery-routes",
-        icon: Truck,
-        permission: PERMISSIONS.dispatchView,
-      },
-    ],
-  },
-  {
-    labelKey: "navigation.submenus.barcodeManager",
-    icon: ScanBarcode,
-    children: [
-      {
-        labelKey: "navigation.items.barcodes",
-        href: "/barcodes",
-        icon: ScanBarcode,
-        permission: PERMISSIONS.packagesView,
-      },
-      {
-        labelKey: "navigation.items.labelManager",
-        href: "/label-updater",
-        icon: ScanBarcode,
-        permission: PERMISSIONS.packagesView,
-      },
-    ],
-  },
-  { labelKey: "navigation.items.vehicles", href: "/vehicles", icon: Car, permission: PERMISSIONS.vehiclesView },
 ];
 
-const navigationGroups: NavigationGroup[] = [
-  ...primaryNavigationItems.map(navigationItemToGroup),
-  {
-    titleKey: "navigation.groups.accounting",
-    items: [
-      { labelKey: "navigation.items.dailyIncome", href: "/accounting/daily-income", icon: Wallet, permission: PERMISSIONS.incomeView },
-      { labelKey: "navigation.items.loans", href: "/accounting/loans", icon: Banknote, permission: PERMISSIONS.incomeView },
-      { labelKey: "navigation.items.checks", href: "/accounting/checks", icon: Banknote, permission: PERMISSIONS.incomeView },
-      { labelKey: "navigation.items.chartOfAccounts", href: "/accounting/accounts", icon: BookOpenText, permission: PERMISSIONS.accountsView },
-    ],
-  },
-  {
-    titleKey: "navigation.groups.insights",
-    items: [
-      { labelKey: "navigation.items.reports", href: "/reports", icon: FileText, permission: PERMISSIONS.reportsView },
-      { labelKey: "navigation.items.analytics", href: "/analytics", icon: BarChart3, permission: PERMISSIONS.reportsView },
-    ],
-  },
-  {
-    titleKey: "navigation.groups.admin",
-    items: [
-      { labelKey: "navigation.items.users", href: "/users", icon: UserCog, permission: PERMISSIONS.usersView },
-      { labelKey: "navigation.items.roles", href: "/roles", icon: KeyRound, permission: PERMISSIONS.rolesView },
-      { labelKey: "navigation.items.employees", href: "/employees", icon: UserRound, permission: PERMISSIONS.employeesView },
-      { labelKey: "navigation.items.security", href: "/security", icon: ShieldCheck, permission: PERMISSIONS.usersView },
-      { labelKey: "navigation.items.branches", href: "/branches", icon: Building2, permission: PERMISSIONS.branchesView },
-      {
-        labelKey: "navigation.items.settings",
-        href: "/settings",
-        icon: Settings,
-        permission: PERMISSIONS.accountSettingsView,
-      },
-    ],
-  },
-];
-
-export const navigation: NavigationGroup[] = navigationGroups;
+/** Flat group list in sidebar order (for registries / tab colors). */
+export const navigation: NavigationGroup[] = navigationSections.flatMap((section) => section.groups);

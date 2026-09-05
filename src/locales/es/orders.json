@@ -1,11 +1,11 @@
 {
-  "entity": "Orden",
-  "entityPlural": "órdenes",
-  "title": "Órdenes",
+  "entity": "Cita",
+  "entityPlural": "citas",
+  "title": "Citas",
   "pages": {
-    "description": "Coordine órdenes de recogida, asigne rutas, controle verificación y finalización, y gestione las operaciones diarias de recogida."
+    "description": "Programe visitas a clientes para recogida, entrega de insumos, cobro o presupuestos."
   },
-  "noun": "órdenes",
+  "noun": "citas",
   "workspace": {
     "actionsColumn": "Acciones",
     "viewOrder": "Ver recogida",
@@ -14,11 +14,11 @@
   "pickup": "Recogida",
   "pickupNamed": "Recogida {{id}}",
   "actions": {
-    "add": "Agregar orden",
-    "edit": "Editar orden",
+    "add": "Agregar cita",
+    "edit": "Editar cita",
     "editNamed": "Editar {{name}}",
-    "editPickup": "Editar recogida",
-    "selectAtLeastOne": "Seleccione al menos una orden para imprimir.",
+    "editPickup": "Editar cita",
+    "selectAtLeastOne": "Seleccione al menos una cita para imprimir.",
     "print": "Imprimir",
     "preparing": "Preparando…",
     "sync": "Sync",
@@ -31,7 +31,7 @@
     "unassignRoute": "Desasignar ruta",
     "clearRoute": "Limpiar ruta",
     "clearingRoute": "Limpiando…",
-    "noAssignedRoute": "Ninguna de las órdenes seleccionadas está asignada a una ruta.",
+    "noAssignedRoute": "Ninguna de las citas seleccionadas está asignada a una ruta.",
     "map": "Mapa",
     "manageCompletion": "Gestionar completado",
     "manageRoutes": "Gestionar rutas",
@@ -40,7 +40,7 @@
   },
   "stats": {
     "pendingOrders": {
-      "label": "Órdenes pendientes"
+      "label": "Citas pendientes"
     },
     "pendingPickups": {
       "label": "Recogidas pendientes"
@@ -67,6 +67,7 @@
     "senderName": "Nombre",
     "senderAddress": "Dirección",
     "senderCity": "Ciudad",
+    "senderState": "Estado",
     "senderZip": "Código postal",
     "senderPhone": "Teléfono",
     "comments": "Comentarios",
@@ -77,7 +78,7 @@
     "sectorName": "Nombre del sector",
     "employee": "Empleado",
     "createdBy": "Creada por",
-    "orderId": "ID de orden",
+    "orderId": "ID de cita",
     "branchId": "ID de sucursal",
     "branchCode": "Código de sucursal",
     "sender": "Remitente",
@@ -90,32 +91,32 @@
     "placeholder": "Buscar por nombre, teléfono, dirección o comentarios del remitente/destinatario…"
   },
   "loading": {
-    "title": "Cargando órdenes",
+    "title": "Cargando citas",
     "description": "Coordinando clientes, rutas, paquetes y estado de entrega…",
-    "order": "Cargando orden…",
-    "columns": "Orden, Fecha, Remitente, Destinatario, Estado",
-    "pickupHistory": "Cargando historial de recogidas…",
+    "order": "Cargando cita…",
+    "columns": "Cita, Fecha, Remitente, Destinatario, Estado",
+    "pickupHistory": "Cargando historial de citas…",
     "legacySyncProgress": "Sincronizando {{current}} de {{total}}...",
     "legacySyncStages": {
       "prepare": "Preparando la sincronización legacy de recogidas.",
       "fetch": "Leyendo recogidas abiertas desde el API legacy.",
       "apply": "Agregando recogidas nuevas y actualizando las existentes.",
-      "refresh": "Actualizando la lista de órdenes."
+      "refresh": "Actualizando la lista de citas."
     }
   },
   "empty": {
-    "noMatch": "Ninguna orden coincide con su búsqueda o filtros.",
+    "noMatch": "Ninguna cita coincide con su búsqueda o filtros.",
     "noReceiver": "No hay destinatario en esta recogida.",
     "noComments": "Aún no hay comentarios.",
-    "noPickupHistory": "Aún no hay historial de recogidas."
+    "noPickupHistory": "Aún no hay historial de citas."
   },
   "form": {
-    "addTitle": "Agregar orden",
-    "editTitle": "Editar orden",
-    "addDescription": "Crear una nueva orden.",
-    "notFound": "No se encontró esta orden.",
+    "addTitle": "Agregar cita",
+    "editTitle": "Editar cita",
+    "addDescription": "Crear una nueva cita.",
+    "notFound": "No se encontró esta cita.",
     "sections": {
-      "pickupDate": "Fecha de recogida",
+      "pickupDate": "Fecha de la cita",
       "senderReceiver": "Remitente y destinatario"
     },
     "fields": {
@@ -147,7 +148,7 @@
       "editReceiver": "Editar destinatario"
     },
     "validation": {
-      "pickupDateRequired": "Seleccione una fecha de recogida válida.",
+      "pickupDateRequired": "Seleccione una fecha de cita válida.",
       "senderRequired": "Seleccione un remitente.",
       "senderAddressRequired": "Seleccione la dirección del remitente.",
       "receiverAddressRequired": "Seleccione la dirección del destinatario.",
@@ -168,6 +169,8 @@
     "placeholders": {
       "purpose": "Propósito",
       "item": "Artículo",
+      "searchPurpose": "Propósito",
+      "searchItem": "Artículo",
       "customItem": "Describa el artículo y la cantidad",
       "note": "Agregue un comentario; presione Enter para agregar otro",
       "addComment": "Agregar un comentario"
@@ -200,45 +203,57 @@
     "idNumber": "Número de ID"
   },
   "history": {
-    "title": "Historial de recogidas de {{name}} ({{count}})",
-    "pendingSavedSender": "El historial aparece una vez que el remitente esté guardado.",
+    "title": "Historial de citas de {{name}} ({{count}})",
+    "titleCollapsed": "Historial de citas de {{name}}",
+    "pendingSavedSender": "El historial de citas aparece una vez que el remitente esté guardado.",
+    "expand": "Mostrar historial de citas",
+    "collapse": "Ocultar historial de citas",
     "current": "Actual",
     "defaultSenderName": "Remitente"
   },
   "dialogs": {
     "assignRouteTitle": "Asignar ruta",
-    "assignRouteDescription": "Asignar {{count}} orden seleccionada a una ruta.",
-    "assignRouteDescription_plural": "Asignar {{count}} órdenes seleccionadas a una ruta.",
+    "assignRouteDescription": "Elija una cuadrilla de ruta, la fecha de asignación y los roles de la cuadrilla para {{count}} cita seleccionada.",
+    "assignRouteDescription_plural": "Elija una cuadrilla de ruta, la fecha de asignación y los roles de la cuadrilla para {{count}} citas seleccionadas.",
     "clearRouteTitle": "¿Limpiar ruta?",
-    "clearRouteDescription": "Esto quitará la asignación de ruta de {{count}} orden seleccionada. {{cannotBeUndone}}",
-    "clearRouteDescription_plural": "Esto quitará la asignación de ruta de {{count}} órdenes seleccionadas. {{cannotBeUndone}}",
+    "clearRouteDescription": "Esto quitará la asignación de ruta de {{count}} cita seleccionada. {{cannotBeUndone}}",
+    "clearRouteDescription_plural": "Esto quitará la asignación de ruta de {{count}} citas seleccionadas. {{cannotBeUndone}}",
     "markCompleteTitle": "¿Marcar como completada?",
-    "markCompleteDescription": "¿Marcar {{count}} orden seleccionada como completada?",
-    "markCompleteDescription_plural": "¿Marcar {{count}} órdenes seleccionadas como completadas?",
+    "markCompleteDescription": "¿Marcar {{count}} cita seleccionada como completada?",
+    "markCompleteDescription_plural": "¿Marcar {{count}} citas seleccionadas como completadas?",
     "markIncompleteTitle": "¿Marcar como incompleta?",
-    "markIncompleteDescription": "¿Marcar {{count}} orden seleccionada como incompleta?",
-    "markIncompleteDescription_plural": "¿Marcar {{count}} órdenes seleccionadas como incompletas?",
+    "markIncompleteDescription": "¿Marcar {{count}} cita seleccionada como incompleta?",
+    "markIncompleteDescription_plural": "¿Marcar {{count}} citas seleccionadas como incompletas?",
     "selectRoute": "Seleccionar una ruta",
     "searchRoutes": "Buscar rutas…",
     "loadingRoutes": "Cargando rutas…",
     "noRoutesFound": "No se encontraron rutas.",
-    "deleteTitle": "¿Eliminar orden?",
-    "deleteTitlePlural": "¿Eliminar órdenes?",
-    "deleteOne": "Esto eliminará permanentemente esta orden. {{cannotBeUndone}}",
-    "deleteMany": "Esto eliminará permanentemente {{count}} órdenes seleccionadas. {{cannotBeUndone}}"
+    "selectRouteGroup": "Seleccionar una cuadrilla de ruta",
+    "searchRouteGroups": "Buscar cuadrillas de ruta…",
+    "loadingRouteGroups": "Cargando cuadrillas de ruta…",
+    "noRouteGroupsFound": "No se encontraron cuadrillas de ruta.",
+    "assignmentDate": "Fecha de asignación",
+    "selectCrewRoles": "Asignar roles de cuadrilla",
+    "selectRouteGroupFirst": "Seleccione una cuadrilla de ruta para asignar conductor, tasador y ayudantes.",
+    "branchRequired": "Esta cuadrilla de ruta necesita una sucursal antes de poder asignarse.",
+    "crewRequired": "Esta cuadrilla de ruta no tiene miembros de cuadrilla.",
+    "deleteTitle": "¿Eliminar cita?",
+    "deleteTitlePlural": "¿Eliminar citas?",
+    "deleteOne": "Esto eliminará permanentemente esta cita. {{cannotBeUndone}}",
+    "deleteMany": "Esto eliminará permanentemente {{count}} citas seleccionadas. {{cannotBeUndone}}"
   },
   "toasts": {
-    "markedComplete": "{{count}} orden marcada como completada.",
-    "markedComplete_plural": "{{count}} órdenes marcadas como completadas.",
-    "markedIncomplete": "{{count}} orden marcada como incompleta.",
-    "markedIncomplete_plural": "{{count}} órdenes marcadas como incompletas.",
-    "assignedToRoute": "{{count}} orden asignada{{routeSuffix}}.",
-    "assignedToRoute_plural": "{{count}} órdenes asignadas{{routeSuffix}}.",
+    "markedComplete": "{{count}} cita marcada como completada.",
+    "markedComplete_plural": "{{count}} citas marcadas como completadas.",
+    "markedIncomplete": "{{count}} cita marcada como incompleta.",
+    "markedIncomplete_plural": "{{count}} citas marcadas como incompletas.",
+    "assignedToRoute": "{{count}} cita asignada{{routeSuffix}}.",
+    "assignedToRoute_plural": "{{count}} citas asignadas{{routeSuffix}}.",
     "assignedToRouteNamed": " a {{routeName}}",
-    "routeCleared": "Se quitó la asignación de ruta de {{count}} orden.",
-    "routeCleared_plural": "Se quitó la asignación de ruta de {{count}} órdenes.",
-    "manifestReady": "Manifiesto de recogida listo para {{count}} orden.",
-    "manifestReady_plural": "Manifiesto de recogida listo para {{count}} órdenes.",
+    "routeCleared": "Se quitó la asignación de ruta de {{count}} cita.",
+    "routeCleared_plural": "Se quitó la asignación de ruta de {{count}} citas.",
+    "manifestReady": "Manifiesto de recogida listo para {{count}} cita.",
+    "manifestReady_plural": "Manifiesto de recogida listo para {{count}} citas.",
     "legacySyncSynced": "{{count}} recogida sincronizada ({{imported}} importadas, {{updated}} actualizadas).",
     "legacySyncSynced_plural": "{{count}} recogidas sincronizadas ({{imported}} importadas, {{updated}} actualizadas).",
     "legacyRetrySynced": "Recogida {{id}} sincronizada con legacy.",
@@ -256,7 +271,7 @@
     "empty": "No hay paradas de recogida verificadas que coincidan con los filtros actuales.",
     "stopsShown": "{{count}} en el mapa",
     "selected": "{{count}} seleccionadas",
-    "noMappableStops": "Ninguna de las recogidas seleccionadas tiene una dirección verificada con coordenadas, por lo que no hay nada que trazar en el mapa.",
+    "noMappableStops": "Ninguna de las recogidas seleccionadas tiene una dirección verificada con cocitaadas, por lo que no hay nada que trazar en el mapa.",
     "selectToMap": "Seleccione varias recogidas en la lista o haga clic en Seleccionar todo para trazar {{count}} paradas verificadas.",
     "clickToSelect": "Seleccione paradas para asignar o desasignar rutas",
     "clearSelection": "Limpiar selección",
@@ -277,45 +292,98 @@
   "filters": {
     "fields": {
       "sender": {
-        "name": { "label": "Nombre del remitente", "placeholder": "Ingrese el nombre del remitente…" },
-        "phone": { "label": "Teléfono del remitente", "placeholder": "Ingrese el teléfono…" },
+        "name": { "label": "Nombre", "placeholder": "Ingrese el nombre…" },
+        "phone": { "label": "Teléfono", "placeholder": "Ingrese el teléfono…" },
         "address": {
-          "address1": { "label": "Dirección 1 del remitente", "placeholder": "Ingrese la línea 1 de la dirección…" },
-          "address2": { "label": "Dirección 2 del remitente", "placeholder": "Ingrese la línea 2 de la dirección…" },
-          "city": { "label": "Ciudad del remitente", "placeholder": "Ingrese la ciudad…" },
-          "state": { "label": "Estado del remitente", "placeholder": "Ingrese el estado…" },
-          "zipcode": { "label": "Código postal del remitente", "placeholder": "Ingrese el código postal…" }
+          "label": "Dirección",
+          "placeholder": "Ingrese dirección, ciudad, estado o código postal…",
+          "address1": {
+            "label": "Dirección 1",
+            "placeholder": "Ingrese la línea 1 de la dirección…"
+          },
+          "address2": {
+            "label": "Dirección 2",
+            "placeholder": "Ingrese la línea 2 de la dirección…"
+          },
+          "city": { "label": "Ciudad", "placeholder": "Ingrese la ciudad…" },
+          "state": { "label": "Estado", "placeholder": "Ingrese el estado…" },
+          "zipcode": {
+            "label": "Código postal",
+            "placeholder": "Ingrese el código postal…"
+          }
         },
-        "zipRange": { "label": "Rango postal del remitente", "placeholder": "10001-10282 o 10001 a 10282" }
+        "zipRange": {
+          "label": "Rango postal",
+          "placeholder": "10001-10282 o 10001 a 10282"
+        }
       },
-      "purpose": { "label": "Propósito", "placeholder": "Ingrese el propósito…" },
+      "purpose": {
+        "label": "Propósito",
+        "placeholder": "Ingrese el propósito…"
+      },
+      "comments": {
+        "label": "Comentarios",
+        "placeholder": "Ingrese el texto del comentario…"
+      },
       "route": {
-        "id": { "label": "Ruta de órdenes" }
+        "id": { "label": "Ruta de citas" }
       },
       "branch": {
         "id": { "label": "Sucursal" },
         "code": { "label": "Código de sucursal" },
-        "name": { "label": "Nombre de sucursal", "placeholder": "Ingrese el nombre de la sucursal…" }
+        "name": {
+          "label": "Nombre de sucursal",
+          "placeholder": "Ingrese el nombre de la sucursal…"
+        }
       },
-      "receiver": {
-        "name": { "label": "Nombre del destinatario", "placeholder": "Ingrese el nombre del destinatario…" },
-        "phone": { "label": "Teléfono del destinatario", "placeholder": "Ingrese el teléfono…" },
+      "receivers": {
+        "name": {
+          "label": "Nombre del destinatario",
+          "placeholder": "Ingrese el nombre del destinatario…"
+        },
+        "phone": {
+          "label": "Teléfono del destinatario",
+          "placeholder": "Ingrese el teléfono…"
+        },
         "address": {
-          "address1": { "label": "Dirección 1 del destinatario", "placeholder": "Ingrese la línea 1 de la dirección…" },
-          "address2": { "label": "Dirección 2 del destinatario", "placeholder": "Ingrese la línea 2 de la dirección…" },
-          "city": { "label": "Ciudad del destinatario", "placeholder": "Ingrese la ciudad…" },
-          "state": { "label": "Estado del destinatario", "placeholder": "Ingrese el estado…" },
-          "zipcode": { "label": "Código postal del destinatario", "placeholder": "Ingrese el código postal…" }
+          "label": "Dirección del destinatario",
+          "placeholder": "Ingrese dirección, ciudad, estado o código postal…",
+          "address1": {
+            "label": "Dirección 1 del destinatario",
+            "placeholder": "Ingrese la línea 1 de la dirección…"
+          },
+          "address2": {
+            "label": "Dirección 2 del destinatario",
+            "placeholder": "Ingrese la línea 2 de la dirección…"
+          },
+          "city": {
+            "label": "Ciudad del destinatario",
+            "placeholder": "Ingrese la ciudad…"
+          },
+          "state": {
+            "label": "Estado del destinatario",
+            "placeholder": "Ingrese el estado…"
+          },
+          "zipcode": {
+            "label": "Código postal del destinatario",
+            "placeholder": "Ingrese el código postal…"
+          }
         }
       },
       "createdBy": {
         "name": { "label": "Creada por" }
       },
       "completed": { "label": "Estado de completado" },
-      "date": { "label": "Fecha de la orden", "placeholder": "AAAA-MM-DD" },
-      "dateRange": { "label": "Rango de fechas de la orden", "placeholder": "2026-01-01 a 2026-06-30" },
+      "date": { "label": "Fecha de la cita", "placeholder": "AAAA-MM-DD" },
+      "dateRange": {
+        "label": "Rango de fechas de la cita",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      },
       "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
-      "createdAtRange": { "label": "Rango de fechas de creación", "placeholder": "2026-01-01 a 2026-06-30" }
+      "createdAtRange": {
+        "label": "Rango de fechas de creación",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      }
     }
   }
 }

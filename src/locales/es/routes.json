@@ -1,59 +1,95 @@
 {
   "title": "Rutas",
-  "noun": "rutas",
+  "noun": "cuadrillas de ruta",
   "pages": {
-    "routeManager": "Defina plantillas de rutas reutilizables con vehículos y asignaciones de equipo para operaciones de recogida y entrega.",
-    "pickupRoutes": "Planifique rutas diarias de órdenes, asigne órdenes a conductores y controle la finalización de rutas para la fecha seleccionada.",
-    "deliveryRoutes": "Planifique rutas diarias de entrega por contenedor, asigne roles de equipo y coordine la entrega de última milla."
+    "routeManager": "Defina cuadrillas de ruta reutilizables con estado, sucursal y miembros de cuadrilla para citas y entregas.",
+    "pickupRoutes": "Defina la ruta de citas de trabajo para una fecha: sucursal, vehículo, cuadrilla de ruta y roles de la cuadrilla.",
+    "deliveryRoutes": "Defina la ruta de entrega de trabajo: contenedor, tasa de cambio, cuadrilla de ruta, roles de la cuadrilla y fecha.",
+    "dailyRoutes": "Defina una ruta de trabajo para una fecha: sucursal, cuadrilla de ruta y roles. Las sucursales RD también requieren contenedor y tasa de cambio."
   },
   "routeManager": {
-    "title": "Manejador de rutas"
+    "title": "Cuadrillas de ruta"
   },
-  "pickupRoutes": {
-    "title": "Rutas de órdenes",
-    "editTitle": "Editar ruta de órdenes",
-    "addTabLabel": "Agregar ruta de órdenes",
+  "dailyRoutes": {
+    "title": "Rutas diarias",
+    "editTitle": "Editar ruta diaria",
+    "addTabLabel": "Agregar ruta diaria",
     "editTabLabel": "Editar {{name}}",
-    "loading": "Cargando ruta de órdenes…",
-    "notFound": "No se encontró esta ruta de órdenes.",
-    "description": "Defina la ruta de órdenes de trabajo para esta fecha. Elija una ruta existente o cree una nueva.",
-    "searchPlaceholder": "Buscar rutas de órdenes…",
-    "searchNoun": "rutas de órdenes",
-    "empty": "Aún no hay rutas de órdenes.",
-    "emptyFiltered": "Ninguna ruta de órdenes coincide con su búsqueda o filtros.",
-    "setActiveRoute": "Agregar ruta de órdenes",
-    "pagination": "Mostrando {{shown}} de {{total}} rutas de órdenes",
+    "loading": "Cargando ruta diaria…",
+    "notFound": "No se encontró esta ruta diaria.",
+    "description": "Defina la ruta de trabajo para esta fecha. Elija la sucursal, la cuadrilla de ruta y los roles. Las sucursales RD también requieren contenedor y tasa de cambio.",
+    "searchPlaceholder": "Buscar rutas diarias…",
+    "searchNoun": "rutas diarias",
+    "empty": "Aún no hay rutas diarias.",
+    "emptyFiltered": "Ninguna ruta diaria coincide con su búsqueda o filtros.",
+    "setActiveRoute": "Agregar ruta diaria",
+    "pagination": "Mostrando {{shown}} de {{total}} rutas diarias",
     "entities": {
-      "activeRoute": "ruta de órdenes",
-      "activeRoutes": "rutas de órdenes"
+      "activeRoute": "ruta diaria",
+      "activeRoutes": "rutas diarias"
     },
     "form": {
-      "save": "Guardar ruta de órdenes",
-      "saved": "Ruta de órdenes guardada.",
-      "editHint": "Actualice la asignación de la ruta de órdenes y los roles de la cuadrilla, luego guarde."
+      "save": "Guardar ruta diaria",
+      "saved": "Ruta diaria guardada.",
+      "editHint": "Actualice la fecha, la sucursal, la cuadrilla de ruta y los roles, luego guarde.",
+      "loadPrevious": "Cargar ruta diaria anterior",
+      "loadPreviousPlaceholder": "Copiar una configuración anterior…",
+      "loadPreviousSearch": "Buscar rutas diarias anteriores…",
+      "loadPreviousEmpty": "No hay rutas diarias anteriores para copiar."
     },
     "view": {
-      "editLabel": "Editar ruta de órdenes",
+      "editLabel": "Editar ruta diaria",
       "sections": {
         "assignment": "Asignación",
-        "orders": "Órdenes asignadas"
+        "orders": "Citas asignadas"
+      }
+    }
+  },
+  "pickupRoutes": {
+    "title": "Rutas de citas",
+    "editTitle": "Editar ruta de citas",
+    "addTabLabel": "Agregar ruta de citas",
+    "editTabLabel": "Editar {{name}}",
+    "loading": "Cargando ruta de citas…",
+    "notFound": "No se encontró esta ruta de citas.",
+    "description": "Defina la ruta de citas de trabajo para esta fecha. Elija la sucursal, el vehículo, la cuadrilla de ruta y los roles de la cuadrilla.",
+    "searchPlaceholder": "Buscar rutas de citas…",
+    "searchNoun": "rutas de citas",
+    "empty": "Aún no hay rutas de citas.",
+    "emptyFiltered": "Ninguna ruta de citas coincide con su búsqueda o filtros.",
+    "setActiveRoute": "Agregar ruta de citas",
+    "pagination": "Mostrando {{shown}} de {{total}} rutas de citas",
+    "entities": {
+      "activeRoute": "ruta de citas",
+      "activeRoutes": "rutas de citas"
+    },
+    "form": {
+      "save": "Guardar ruta de citas",
+      "saved": "Ruta de citas guardada.",
+      "editHint": "Actualice la fecha, la sucursal, el vehículo, la cuadrilla de ruta y los roles de la cuadrilla, luego guarde."
+    },
+    "view": {
+      "editLabel": "Editar ruta de citas",
+      "sections": {
+        "assignment": "Asignación",
+        "orders": "Citas asignadas"
       },
       "orders": {
-        "title": "Órdenes asignadas ({{count}})",
+        "title": "Citas asignadas ({{count}})",
         "description": "Recogidas asignadas a esta ruta.",
-        "editDescription": "Seleccione órdenes para quitarlas de esta ruta.",
-        "loading": "Cargando órdenes asignadas…",
-        "empty": "Aún no hay órdenes asignadas a esta ruta.",
+        "editDescription": "Seleccione citas para quitarlas de esta ruta.",
+        "loading": "Cargando citas asignadas…",
+        "empty": "Aún no hay citas asignadas a esta ruta.",
         "removeFromRoute": "Quitar de la ruta",
-        "selectAtLeastOne": "Seleccione al menos una orden para quitarla de esta ruta.",
-        "selectAllOrders": "Seleccionar todas las órdenes asignadas",
-        "selectOrder": "Seleccionar orden {{orderId}}",
-        "unassigned": "Se quitó {{count}} orden de esta ruta.",
-        "unassigned_plural": "Se quitaron {{count}} órdenes de esta ruta."
+        "selectAtLeastOne": "Seleccione al menos una cita para quitarla de esta ruta.",
+        "selectAllOrders": "Seleccionar todas las citas asignadas",
+        "selectOrder": "Seleccionar cita {{orderId}}",
+        "unassigned": "Se quitó {{count}} cita de esta ruta.",
+        "unassigned_plural": "Se quitaron {{count}} citas de esta ruta."
       }
     },
     "actions": {
-      "selectAtLeastOne": "Seleccione al menos una ruta de órdenes.",
+      "selectAtLeastOne": "Seleccione al menos una ruta de citas.",
       "noPickupsOnRoute": "No hay recogidas asignadas a la ruta seleccionada.",
       "print": "Imprimir ruta",
       "preparing": "Preparando…",
@@ -64,14 +100,14 @@
     },
     "dialogs": {
       "clearRouteTitle": "¿Limpiar ruta?",
-      "clearRouteDescription": "Esto quitará todas las órdenes asignadas a esta ruta. {{cannotBeUndone}}"
+      "clearRouteDescription": "Esto quitará todas las citas asignadas a esta ruta. {{cannotBeUndone}}"
     },
     "toasts": {
       "comingSoon": "{{label}} estará disponible pronto.",
       "manifestReady": "Manifiesto de recogida listo para {{count}} recogida.",
       "manifestReady_plural": "Manifiesto de recogida listo para {{count}} recogidas.",
-      "routeCleared": "Se quitó {{count}} orden de esta ruta.",
-      "routeCleared_plural": "Se quitaron {{count}} órdenes de esta ruta."
+      "routeCleared": "Se quitó {{count}} cita de esta ruta.",
+      "routeCleared_plural": "Se quitaron {{count}} citas de esta ruta."
     }
   },
   "deliveryRoutes": {
@@ -81,7 +117,7 @@
     "editTabLabel": "Editar {{name}}",
     "loading": "Cargando ruta de entrega…",
     "notFound": "No se encontró esta ruta de entrega.",
-    "description": "Defina la ruta de entrega de trabajo para esta fecha y contenedor. Elija una ruta existente o cree una nueva.",
+    "description": "Defina la ruta de entrega de trabajo. Elija el contenedor, la tasa de cambio, la cuadrilla de ruta, los roles de la cuadrilla y la fecha.",
     "searchPlaceholder": "Buscar rutas de entrega…",
     "searchNoun": "rutas de entrega",
     "empty": "Aún no hay rutas de entrega.",
@@ -95,7 +131,7 @@
     "form": {
       "save": "Guardar ruta de entrega",
       "saved": "Ruta de entrega guardada.",
-      "editHint": "Actualice la asignación de entrega y los roles de la cuadrilla, luego guarde."
+      "editHint": "Actualice el contenedor, la tasa de cambio, la cuadrilla de ruta, los roles de la cuadrilla y la fecha, luego guarde."
     },
     "view": {
       "editLabel": "Editar ruta de entrega",
@@ -128,12 +164,12 @@
   "entities": {
     "activeRoute": "ruta activa",
     "activeRoutes": "rutas activas",
-    "route": "ruta",
-    "routes": "rutas"
+    "route": "cuadrilla de ruta",
+    "routes": "cuadrillas de ruta"
   },
   "columns": {
     "name": "Nombre",
-    "employees": "Empleados",
+    "employees": "Miembros de cuadrilla",
     "vehicle": "Vehículo",
     "branch": "Sucursal",
     "createdAt": "Creado el",
@@ -143,7 +179,7 @@
     "date": "Fecha",
     "routeType": "Tipo",
     "container": "Contenedor",
-    "route": "Ruta",
+    "route": "Cuadrilla de ruta",
     "driver": "Conductor",
     "appraiser": "Tasador",
     "helper": "Ayudante",
@@ -156,8 +192,8 @@
       "name": { "label": "Nombre", "placeholder": "Ingrese el nombre…" },
       "date": { "label": "Fecha", "placeholder": "AAAA-MM-DD" },
       "route": {
-        "name": { "label": "Asignación de ruta", "placeholder": "Ingrese el nombre de la ruta…" },
-        "id": { "label": "ID de ruta", "placeholder": "Ingrese el id de la ruta…" }
+        "name": { "label": "Cuadrilla de ruta", "placeholder": "Ingrese el nombre dla cuadrilla de ruta…" },
+        "id": { "label": "ID de cuadrilla de ruta", "placeholder": "Ingrese el id dla cuadrilla de ruta…" }
       },
       "employees": {
         "name": { "label": "Miembro de cuadrilla", "placeholder": "Ingrese el nombre del miembro…" },
@@ -168,6 +204,10 @@
         "code": { "label": "Código de sucursal", "placeholder": "Ingrese el código de sucursal…" },
         "id": { "label": "ID de sucursal", "placeholder": "Ingrese el id de sucursal…" },
         "name": { "label": "Nombre de sucursal", "placeholder": "Ingrese el nombre de sucursal…" }
+      },
+      "vehicle": {
+        "name": { "label": "Vehículo", "placeholder": "Ingrese el nombre del vehículo…" },
+        "id": { "label": "ID de vehículo", "placeholder": "Ingrese el id del vehículo…" }
       },
       "container": {
         "number": { "label": "Número de contenedor", "placeholder": "Ingrese el número de contenedor…" },
@@ -191,28 +231,28 @@
     }
   },
   "table": {
-    "searchPlaceholder": "Buscar rutas…",
-    "empty": "Aún no hay rutas.",
-    "emptyFiltered": "Ninguna ruta coincide con su búsqueda.",
-    "pagination": "Mostrando {{shown}} de {{total}} rutas",
+    "searchPlaceholder": "Buscar cuadrillas de ruta…",
+    "empty": "Aún no hay cuadrillas de ruta.",
+    "emptyFiltered": "Ningún cuadrilla de ruta coincide con su búsqueda.",
+    "pagination": "Mostrando {{shown}} de {{total}} cuadrillas de ruta",
     "allBranches": "Todas las sucursales",
     "branchFilter": "Sucursal",
     "branchFilterPlaceholder": "Todas las sucursales",
     "branchFilterSearch": "Buscar sucursales…"
   },
   "actions": {
-    "addRoute": "Agregar ruta"
+    "addRoute": "Agregar cuadrilla de ruta"
   },
   "viewSheet": {
     "sections": {
-      "route": "Ruta",
+      "route": "Cuadrilla de ruta",
       "vehicle": "Vehículo",
-      "employees": "Empleados",
+      "employees": "Miembros de cuadrilla",
       "audit": "Auditoría"
     },
     "recordId": "ID de registro",
     "vehicleId": "ID del vehículo",
-    "editLabel": "Editar ruta"
+    "editLabel": "Editar cuadrilla de ruta"
   },
   "activeRouteForm": {
     "sections": {
@@ -256,33 +296,39 @@
     "inactive": "Inactiva",
     "container": "Contenedor",
     "containerRequired": "Contenedor",
-    "containerPlaceholder": "Sin contenedor",
+    "containerPlaceholder": "Seleccionar contenedor…",
     "containerSearch": "Buscar contenedores…",
     "rate": "Tasa de cambio",
     "ratePlaceholder": "58.50",
     "rateHint": "Cuántos pesos dominicanos vale un dólar estadounidense para este viaje.",
     "branch": "Sucursal",
-    "branchPlaceholder": "Todas las sucursales",
+    "branchPlaceholder": "Seleccionar sucursal",
     "branchSearch": "Buscar sucursales…",
     "allBranches": "Todas las sucursales",
     "date": "Fecha",
-    "route": "Ruta",
-    "routePlaceholder": "Seleccionar ruta…",
-    "routeSearch": "Buscar rutas…",
-    "routeEmpty": "No hay rutas para esta sucursal.",
+    "vehicle": "Vehículo",
+    "vehiclePlaceholder": "Seleccionar vehículo",
+    "vehicleSearch": "Buscar vehículos…",
+    "vehicleEmpty": "No hay vehículos para esta sucursal.",
+    "selectBranchFirst": "Seleccione una sucursal para cargar cuadrillas de ruta.",
+    "route": "Cuadrilla de ruta",
+    "routePlaceholder": "Seleccionar cuadrilla de ruta…",
+    "routeSearch": "Buscar cuadrillas de ruta…",
+    "routeEmpty": "No hay cuadrillas de ruta para esta sucursal.",
     "driver": "Conductor",
     "appraiser": "Tasador",
     "helper": "Ayudante",
     "crewRoles": "Asignar roles",
-    "crewRolesEmpty": "Esta ruta no tiene miembros de la cuadrilla.",
+    "crewRolesEmpty": "Esta cuadrilla de ruta no tiene miembros de la cuadrilla.",
     "driverFor": "Conductor — {{name}}",
     "appraiserFor": "Tasador — {{name}}",
-    "createRoute": "Nueva ruta",
+    "helperFor": "Ayudante — {{name}}",
+    "createRoute": "Nuevo cuadrilla de ruta",
     "save": "Guardar ruta activa",
     "saving": "Guardando…",
     "saved": "Ruta activa guardada.",
-    "routeCreated": "Ruta creada.",
-    "loadingRoute": "Cargando ruta…",
+    "routeCreated": "Cuadrilla de ruta creado.",
+    "loadingRoute": "Cargando cuadrilla de ruta…",
     "createdAt": "Creado el",
     "createdBy": "Creado por",
     "updatedAt": "Actualizado el",
@@ -293,37 +339,38 @@
       "date": "La fecha es obligatoria.",
       "dayOfWeek": "Selecciona al menos un día.",
       "branch": "La sucursal es obligatoria.",
-      "route": "La ruta es obligatoria.",
-      "pickupContainer": "Las rutas de órdenes no pueden incluir un contenedor."
+      "vehicle": "El vehículo es obligatorio.",
+      "route": "La cuadrilla de ruta es obligatorio.",
+      "pickupContainer": "Las rutas de citas no pueden incluir un contenedor."
     }
   },
   "routeDetails": {
-    "title": "Ruta",
-    "description": "Vehículo y personal de la ruta seleccionada.",
+    "title": "Cuadrilla de ruta",
+    "description": "Miembros de la cuadrilla de ruta seleccionada.",
     "name": "Nombre",
     "routeId": "ID de ruta",
     "vehicle": "Vehículo",
-    "employees": "Empleados",
-    "empty": "Seleccione una ruta para ver el vehículo y el personal.",
+    "employees": "Miembros de cuadrilla",
+    "empty": "Seleccione una cuadrilla de ruta para ver los miembros.",
     "createdAt": "Creado el",
     "createdBy": "Creado por",
     "updatedAt": "Actualizado el",
     "updatedBy": "Actualizado por"
   },
   "createDialog": {
-    "title": "Crear ruta",
-    "description": "Agregue una ruta para {{date}}. Se seleccionará como ruta activa al guardar."
+    "title": "Crear cuadrilla de ruta",
+    "description": "Agregue una cuadrilla de ruta. Se seleccionará al guardar."
   },
   "form": {
-    "addTitle": "Agregar ruta",
-    "addTabLabel": "Agregar ruta",
-    "editTitle": "Editar ruta",
-    "addDescription": "Asigne un vehículo y miembros de la cuadrilla.",
-    "editDescription": "Actualice el vehículo y la cuadrilla de esta ruta.",
+    "addTitle": "Agregar cuadrilla de ruta",
+    "addTabLabel": "Agregar cuadrilla de ruta",
+    "editTitle": "Editar cuadrilla de ruta",
+    "addDescription": "Defina el estado, la sucursal y los miembros de la cuadrilla.",
+    "editDescription": "Actualice el estado, la sucursal y los miembros de esta cuadrilla de ruta.",
     "editTabLabel": "Editar {{name}}",
-    "entityLabel": "Ruta",
-    "loading": "Cargando ruta…",
-    "notFound": "No se encontró esta ruta.",
+    "entityLabel": "Cuadrilla de ruta",
+    "loading": "Cargando cuadrilla de ruta…",
+    "notFound": "No se encontró esta cuadrilla de ruta.",
     "sections": {
       "details": "Detalles de la ruta",
       "branch": "Sucursal",
@@ -332,7 +379,7 @@
     },
     "branchPlaceholder": "Seleccionar sucursal",
     "branchSearch": "Buscar sucursales…",
-    "selectBranchFirst": "Seleccione una sucursal para cargar vehículos y cuadrilla.",
+    "selectBranchFirst": "Seleccione una sucursal para cargar los miembros de la cuadrilla.",
     "vehiclePlaceholder": "Seleccionar vehículo",
     "vehicleSearch": "Buscar vehículos…",
     "vehicleEmpty": "No hay vehículos para esta sucursal.",
@@ -342,7 +389,7 @@
     "searchCrewMembers": "Buscar miembros de la cuadrilla…",
     "loadingCrewMembers": "Cargando miembros de la cuadrilla…",
     "noCrewMembersFound": "No se encontraron miembros activos de la cuadrilla.",
-    "selectAtLeastOneCrewMember": "Seleccione al menos un miembro de la cuadrilla para esta ruta.",
+    "selectAtLeastOneCrewMember": "Seleccione al menos un miembro de la cuadrilla para esta cuadrilla de ruta.",
     "crewMemberRequired": "Seleccione al menos un miembro de la cuadrilla.",
     "validation": {
       "branchRequired": "La sucursal es obligatoria.",

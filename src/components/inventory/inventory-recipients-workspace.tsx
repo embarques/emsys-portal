@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 
 import { InventoryRecipientForm } from "@/components/inventory/inventory-recipient-form";
 import { InventoryRecipientMobileList } from "@/components/inventory/inventory-recipient-mobile-list";
 import { InventoryRecipientViewSheet } from "@/components/inventory/inventory-recipient-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -44,8 +45,8 @@ import {
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
-
-const PAGE_SIZE = 50;
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { resolveClientTablePageLimit } from "@/lib/table/page-size";
 
 export function InventoryRecipientsWorkspace() {
   const { t } = useTranslation();
@@ -58,7 +59,7 @@ export function InventoryRecipientsWorkspace() {
   const deleteRecipients = useDeleteRecipients();
 
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, changePageSize } = useTablePageSize();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingRecipient, setEditingRecipient] = useState<InventoryRecipient | null>(null);
@@ -78,9 +79,10 @@ export function InventoryRecipientsWorkspace() {
     );
   }, [query, recipients, t]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageLimit = resolveClientTablePageLimit(pageSize, filtered.length);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageLimit));
   const currentPage = Math.min(page, totalPages);
-  const pageRows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
   const allPageSelected = pageRows.length > 0 && pageRows.every((row) => selectedIds.includes(row.id));
 
   const columns: DataTableColumn<InventoryRecipient>[] = [
@@ -260,19 +262,13 @@ export function InventoryRecipientsWorkspace() {
             <p className="text-sm text-muted-foreground">
               {t("common.pagination.showingOf", { count: pageRows.length, total: filtered.length, noun: t("inventory.submenus.recipients").toLowerCase() })}
             </p>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage((value) => value - 1)}>
-                <ChevronLeft className="h-4 w-4" />
-                {t("common.actions.previous")}
-              </Button>
-              <span className="px-2 text-sm text-muted-foreground">
-                {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-              </span>
-              <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage((value) => value + 1)}>
-                {t("common.actions.next")}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+            <TablePaginationControls
+              page={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={changePageSize}
+            />
           </div>
         ) : null}
       </Card>

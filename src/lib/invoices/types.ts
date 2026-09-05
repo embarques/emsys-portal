@@ -158,6 +158,7 @@ export type Invoice = {
   createdAt: string;
   createdBy: string;
   updatedAt: string;
+  legacySyncedAt?: string;
 };
 
 export type InvoiceBranch = {
@@ -223,6 +224,7 @@ export type InvoiceListParams = {
 
 export type LegacyInvoiceSyncPreview = {
   total: number;
+  lastSyncedAt?: string;
 };
 
 export type LegacyInvoiceSyncSummary = {
@@ -234,6 +236,7 @@ export type LegacyInvoiceSyncSummary = {
   start: number;
   nextStart: number;
   limit: number;
+  lastSyncedAt?: string;
 };
 
 export type LegacyInvoiceSyncResult = {

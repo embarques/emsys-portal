@@ -14,6 +14,7 @@ import {
 
 import { ChangePasswordDialog } from "@/components/configuration/change-password-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
@@ -158,40 +159,55 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
     router.replace("/login");
   }
 
+  const profileTrigger = (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-haspopup="menu"
+      aria-label={t("shell.profileMenu.open")}
+      onClick={() => setOpen((current) => !current)}
+      className={cn(
+        "text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
+        compact
+          ? "flex h-12 w-12 items-center justify-center rounded-xl hover:bg-accent/60"
+          : cn(
+              "flex w-full items-center gap-2.5 rounded-lg border border-border/60 bg-background/60 px-2.5 py-2 hover:bg-accent/50",
+              open && "border-border bg-accent/40",
+            ),
+      )}
+    >
+      <ProfileAvatar size={compact ? "compact" : "default"} />
+      {!compact ? (
+        <>
+          <div className="min-w-0 flex-1">
+            <ProfileMeta variant="summary" />
+          </div>
+          <ChevronUp
+            className={cn(
+              "h-4 w-4 shrink-0 text-muted-foreground/70 transition-transform",
+              open && "rotate-180 text-muted-foreground",
+            )}
+            aria-hidden
+          />
+        </>
+      ) : null}
+    </button>
+  );
+
   return (
     <div ref={menuRef} className="relative">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label={t("shell.profileMenu.open")}
-        onClick={() => setOpen((current) => !current)}
-        className={cn(
-          "text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
-          compact
-            ? "flex h-12 w-12 items-center justify-center rounded-xl hover:bg-accent/60"
-            : cn(
-                "flex w-full items-center gap-2.5 rounded-lg border border-border/60 bg-background/60 px-2.5 py-2 hover:bg-accent/50",
-                open && "border-border bg-accent/40",
-              ),
-        )}
-      >
-        <ProfileAvatar size={compact ? "compact" : "default"} />
-        {!compact ? (
-          <>
-            <div className="min-w-0 flex-1">
-              <ProfileMeta variant="summary" />
-            </div>
-            <ChevronUp
-              className={cn(
-                "h-4 w-4 shrink-0 text-muted-foreground/70 transition-transform",
-                open && "rotate-180 text-muted-foreground",
-              )}
-              aria-hidden
-            />
-          </>
-        ) : null}
-      </button>
+      {compact ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {profileTrigger}
+          </TooltipTrigger>
+          <TooltipContent hidden={open} side="right" sideOffset={8}>
+            {profileName}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        profileTrigger
+      )}
 
       {open ? (
         <div

@@ -119,6 +119,15 @@ export type OrderCommentFormValues = {
   description: string;
 };
 
+/** A comment is only registered once its required fields are filled. */
+export function isOrderCommentComplete(comment: OrderCommentFormValues): boolean {
+  if (!comment.purpose.trim()) return false;
+  if (!orderCommentPurposeRequiresItem(comment.purpose)) return true;
+  if (!comment.itemType) return false;
+  if (comment.itemType === "other") return Boolean(comment.customItem.trim());
+  return true;
+}
+
 export type OrderFormValues = {
   id: number;
   date: string;

@@ -15,6 +15,7 @@ import {
 
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { AssignRouteCrewDialog } from "@/components/pickup-delivery-routes/assign-route-crew-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,17 +29,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatContainerLabel } from "@/lib/containers/display";
+import { formatContainerLabel, formatContainerRouteNumber } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { truncateBarcode, getBarcodeStatusLabel } from "@/lib/labels/display";
 import {
-  useAssignBarcodesToRoute,
   useGenerateLabels,
   useUpdateBarcodes,
 } from "@/lib/labels/hooks/use-barcodes";
 import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
-import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
-import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import type { ActiveRouteContainerRef } from "@/lib/pickup-delivery-routes/types";
 import { useGenerateLabelReport } from "@/lib/reports/hooks/use-reports";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import {
@@ -89,6 +88,30 @@ type HeaderSelectCheckboxProps = {
   onDeselectAll: () => void;
   label: string;
 };
+
+function sharedContainerFromLabels(
+  labels: GeneratedLabel[],
+  containers: Array<{ id: number; name: string; containerNumber: string }>,
+): ActiveRouteContainerRef | null {
+  const ids = [
+    ...new Set(
+      labels
+        .map((label) => label.containerId)
+        .filter((id): id is number => typeof id === "number" && id > 0),
+    ),
+  ];
+  if (ids.length !== 1) return null;
+
+  const id = ids[0];
+  const picked = containers.find((container) => container.id === id);
+  if (picked) {
+    return { id: picked.id, name: formatContainerRouteNumber(picked) };
+  }
+
+  const label = labels.find((entry) => entry.containerId === id);
+  const name = label?.containerName.trim();
+  return { id, name: name && name !== "—" ? name : String(id) };
+}
 
 /** Header checkbox that toggles select-all / deselect-all with an indeterminate state. */
 function HeaderSelectCheckbox({
@@ -206,7 +229,6 @@ export function InvoiceStagingWorkflow({
   const containers = containersData?.items ?? [];
   const generateLabelsMutation = useGenerateLabels();
   const updateBarcodesMutation = useUpdateBarcodes();
-  const assignRouteMutation = useAssignBarcodesToRoute();
   const generateLabelReportMutation = useGenerateLabelReport();
 
   const [step, setStep] = useState<StagingStep>("line-items");
@@ -224,20 +246,9 @@ export function InvoiceStagingWorkflow({
   const [routeDialogOpen, setRouteDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<string>(BARCODE_STATUS_OPTIONS[1].name);
   const [newContainerId, setNewContainerId] = useState("");
-  const [newRouteId, setNewRouteId] = useState("");
-
-  const { data: routesData, isLoading: routesLoading } = useActiveRoutePicker("delivery", 200, {
-    enabled: routeDialogOpen,
-  });
-  const routes = routesData?.items ?? [];
-  const routeOptions = useMemo(
-    () => buildActiveRouteAssignmentOptions(routes, t),
-    [routes, t],
-  );
 
   const isGenerating = generateLabelsMutation.isPending;
   const isUpdating = updateBarcodesMutation.isPending;
-  const isAssigningRoute = assignRouteMutation.isPending;
   const isPrinting = generateLabelReportMutation.isPending;
 
   // Keep the latest invoices without making them a reset trigger: generating
@@ -267,6 +278,7 @@ export function InvoiceStagingWorkflow({
     setSelectedLabelKeys([]);
     setLabelQuery("");
     setStatusFilter("all");
+    setRouteDialogOpen(false);
   }, [invoiceKey, isActive]);
 
   const itemKeys = useMemo(() => lineItems.map((item) => item.key), [lineItems]);
@@ -296,6 +308,19 @@ export function InvoiceStagingWorkflow({
   }, [generatedLabels, labelQuery, statusFilter]);
 
   const filteredLabelKeys = useMemo(() => filteredLabels.map((label) => label.key), [filteredLabels]);
+
+  const selectedLabels = useMemo(
+    () => generatedLabels.filter((label) => selectedLabelKeys.includes(label.key)),
+    [generatedLabels, selectedLabelKeys],
+  );
+  const assignBarcodeIds = useMemo(
+    () => [...new Set(selectedLabels.map((label) => label.barcodeId).filter((id) => id > 0))],
+    [selectedLabels],
+  );
+  const assignContainer = useMemo(
+    () => sharedContainerFromLabels(selectedLabels, containers),
+    [selectedLabels, containers],
+  );
 
   function toggleItem(key: string, checked: boolean) {
     setSelectedItemKeys((current) =>
@@ -416,14 +441,6 @@ export function InvoiceStagingWorkflow({
 
   function openRouteDialog() {
     if (selectedLabelKeys.length === 0) return;
-    setNewRouteId("");
-    setRouteDialogOpen(true);
-  }
-
-  async function applyRouteAssignment() {
-    const route = routes.find((entry) => entry.id === newRouteId);
-    if (!route) return;
-
     const barcodeIds = Array.from(
       new Set(
         generatedLabels
@@ -432,30 +449,11 @@ export function InvoiceStagingWorkflow({
           .filter((id) => id > 0),
       ),
     );
-
     if (barcodeIds.length === 0) {
       notifyError(t("labels.staging.errors.missingBarcodesForRoute"));
       return;
     }
-
-    try {
-      const result = await assignRouteMutation.mutateAsync({
-        routeId: newRouteId,
-        barcodeIds,
-      });
-      const routeName = result.routeName || route.name || t("labels.staging.routeDialog.route").toLowerCase();
-      notifySuccess(
-        t("labels.staging.success.assignedToRoute", {
-          count: result.assignedCount,
-          route: routeName,
-          trip: result.tripNumber,
-        }),
-      );
-      setRouteDialogOpen(false);
-      setNewRouteId("");
-    } catch (error) {
-      notifyError(normalizeApiError(error).message);
-    }
+    setRouteDialogOpen(true);
   }
 
   async function applyContainerChange() {
@@ -709,7 +707,7 @@ export function InvoiceStagingWorkflow({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={selectedLabelKeys.length === 0 || isAssigningRoute}
+                disabled={selectedLabelKeys.length === 0}
                 onClick={openRouteDialog}
               >
                 <RouteIcon className="h-4 w-4" />
@@ -891,52 +889,13 @@ export function InvoiceStagingWorkflow({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={routeDialogOpen} onOpenChange={setRouteDialogOpen}>
-        <DialogContent
-          className="z-[70]"
-          onOpenAutoFocus={(event) => event.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>{t("labels.staging.routeDialog.title")}</DialogTitle>
-            <DialogDescription>
-              {t("labels.staging.routeDialog.description", { count: selectedLabelKeys.length })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="staging-new-route">{t("labels.staging.routeDialog.route")}</Label>
-            <SearchableSelect
-              id="staging-new-route"
-              value={newRouteId}
-              onValueChange={setNewRouteId}
-              placeholder={t("labels.staging.routeDialog.selectRoute")}
-              searchPlaceholder={t("labels.updater.search.routes")}
-              contentClassName="z-[80]"
-              loading={routesLoading}
-              emptyMessage={
-                routesLoading
-                  ? t("labels.staging.routeDialog.loadingRoutes")
-                  : t("labels.staging.routeDialog.noRoutes")
-              }
-              options={routeOptions}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRouteDialogOpen(false)}
-              disabled={isAssigningRoute}
-            >
-              {t("common.actions.cancel")}
-            </Button>
-            <Button onClick={applyRouteAssignment} disabled={!newRouteId || isAssigningRoute}>
-              <RouteIcon className="h-4 w-4" />
-              {isAssigningRoute
-                ? t("labels.staging.routeDialog.assigning")
-                : t("labels.staging.routeDialog.assign")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AssignRouteCrewDialog
+        open={routeDialogOpen}
+        onOpenChange={setRouteDialogOpen}
+        routeType="delivery"
+        barcodeIds={assignBarcodeIds}
+        defaultContainer={assignContainer}
+      />
     </>
   );
 

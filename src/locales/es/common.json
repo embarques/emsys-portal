@@ -35,7 +35,15 @@
   },
   "pagination": {
     "pageOf": "Página {{current}} de {{total}}",
-    "showingOf": "Mostrando {{count}} de {{total}} {{noun}}"
+    "showingOf": "Mostrando {{count}} de {{total}} {{noun}}",
+    "view": "Ver",
+    "pageSize": "Filas por página",
+    "pageSizeEmpty": "Sin tamaños de página",
+    "all": "Todos"
+  },
+  "legacySync": {
+    "lastSynced": "Última sincronización {{at}}",
+    "neverSynced": "Nunca sincronizado"
   },
   "listSummary": {
     "searching": "Buscando {{noun}}…",
