@@ -152,6 +152,7 @@ type ApiInvoiceDetail = {
   price?: number;
   cost?: number;
   total?: number;
+  barcode?: ApiInvoiceBarcode;
   barcodes?: ApiInvoiceBarcode[];
 };
 

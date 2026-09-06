@@ -9,7 +9,7 @@ export type InvoiceDailyIncomeContext = {
    * Set from the recorded journal / today's open statement.
    */
   incomeStatementId: number | null;
-  /** True when the recorded payment amount is $0 (unpaid registration). */
+  /** True when no payment was collected, either by explicit skip or a $0 registration. */
   paymentSkipped: boolean;
 };
 
@@ -37,7 +37,7 @@ export function toInvoiceFormSubmitContext(
   };
 }
 
-/** Ready to leave the payment step only after Record payment (including $0). */
+/** Ready to leave the payment step after either recording or explicitly skipping payment. */
 export function canContinueInvoiceDailyIncomeStep(context: InvoiceDailyIncomeContext): boolean {
-  return context.registration != null;
+  return context.paymentSkipped || context.registration != null;
 }

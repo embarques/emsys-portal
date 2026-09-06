@@ -289,6 +289,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
   const [statusError, setStatusError] = useState<string | null>(null);
   const [localRegistration, setLocalRegistration] = useState<DailyIncomeJournal | null>(null);
   const [localStatement, setLocalStatement] = useState<DailyIncomeStatement | null>(null);
+  const [skipPayment, setSkipPayment] = useState(true);
   const currentUserQuery = useCurrentUser();
   const branchId = currentUserQuery.data?.branch.id ?? 0;
   const currentDate = todayDateValue();
@@ -348,7 +349,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     onContextChange({
       registration: null,
       incomeStatementId: associatedStatementId,
-      paymentSkipped: false,
+      paymentSkipped: skipPayment,
     });
   }, [
     associatedStatementId,
@@ -356,6 +357,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     onContextChange,
     registration,
     registrationQuery.isSuccess,
+    skipPayment,
   ]);
 
   const applyRegistration = useCallback(
@@ -382,6 +384,15 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
 
   async function handleRegistered(journal: DailyIncomeJournal) {
     await applyRegistration(journal);
+  }
+
+  function handleSkipPaymentChange(checked: boolean) {
+    setSkipPayment(checked);
+    onContextChange({
+      registration: null,
+      incomeStatementId: associatedStatementId,
+      paymentSkipped: checked,
+    });
   }
 
   async function handleStatementCreated(created?: DailyIncomeStatement) {
@@ -470,9 +481,31 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
       );
     }
 
+    const mobileSkipPaymentCard = (
+      <div className="rounded-xl border bg-card p-4">
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            className="mt-1 size-4 rounded border-border accent-primary"
+            checked={skipPayment}
+            onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
+          />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold text-foreground">
+              {t("invoices.wizard.dailyIncome.skipPayment")}
+            </span>
+            <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
+              {t("invoices.wizard.dailyIncome.skipPaymentHint")}
+            </span>
+          </span>
+        </label>
+      </div>
+    );
+
     if (!statement) {
       return (
         <div className="space-y-5">
+          {mobileSkipPaymentCard}
           <MobileCreateDailyIncomePage date={currentDate} onCreated={handleStatementCreated} />
         </div>
       );
@@ -481,6 +514,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     if (!statementOpen) {
       return (
         <div className="space-y-5">
+          {mobileSkipPaymentCard}
           <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
             <div className="space-y-2">
               <p className="font-semibold text-amber-950 dark:text-amber-100">
@@ -545,14 +579,20 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
         </div>
 
         <p className="text-base leading-relaxed text-muted-foreground">
-          {t("invoices.wizard.dailyIncome.recordBeforeContinueHint")}
+          {skipPayment
+            ? t("invoices.wizard.dailyIncome.skipWithCuadreHint", { id: statement.id })
+            : t("invoices.wizard.dailyIncome.recordBeforeContinueHint")}
         </p>
 
-        <InvoicePaymentTransactionForm
-          statement={statement}
-          invoice={values}
-          onRegistered={handleRegistered}
-        />
+        {mobileSkipPaymentCard}
+
+        {!skipPayment ? (
+          <InvoicePaymentTransactionForm
+            statement={statement}
+            invoice={values}
+            onRegistered={handleRegistered}
+          />
+        ) : null}
       </div>
     );
   }
@@ -695,16 +735,56 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
           {statementOpen && statement ? (
             <>
               <p className="text-sm text-muted-foreground">
-                {t("invoices.wizard.dailyIncome.recordBeforeContinueHint")}
+                {skipPayment
+                  ? t("invoices.wizard.dailyIncome.skipWithCuadreHint", { id: statement.id })
+                  : t("invoices.wizard.dailyIncome.recordBeforeContinueHint")}
               </p>
-              <InvoicePaymentTransactionForm
-                statement={statement}
-                invoice={values}
-                onRegistered={handleRegistered}
-              />
+              <div className="rounded-lg border bg-card p-4">
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-4 rounded border-border accent-primary"
+                    checked={skipPayment}
+                    onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-foreground">
+                      {t("invoices.wizard.dailyIncome.skipPayment")}
+                    </span>
+                    <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                      {t("invoices.wizard.dailyIncome.skipPaymentHint")}
+                    </span>
+                  </span>
+                </label>
+              </div>
+              {!skipPayment ? (
+                <InvoicePaymentTransactionForm
+                  statement={statement}
+                  invoice={values}
+                  onRegistered={handleRegistered}
+                />
+              ) : null}
             </>
           ) : (
             <div className="rounded-lg border border-amber-300 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+              <div className="mb-4 rounded-lg border bg-card p-4">
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-4 rounded border-border accent-primary"
+                    checked={skipPayment}
+                    onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-foreground">
+                      {t("invoices.wizard.dailyIncome.skipPayment")}
+                    </span>
+                    <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                      {t("invoices.wizard.dailyIncome.skipPaymentHint")}
+                    </span>
+                  </span>
+                </label>
+              </div>
               <p className="text-sm font-medium text-amber-950 dark:text-amber-100">
                 {t("invoices.wizard.dailyIncome.openCuadreBeforePayment")}
               </p>
