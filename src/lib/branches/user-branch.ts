@@ -29,7 +29,7 @@ export function findBranchByCodeOrId(
 
   const name = ref.name?.trim().toLowerCase() ?? "";
   if (!name) return undefined;
-  return branches.find((branch) => branch.name.trim().toLowerCase() === name);
+  return branches.find((branch) => branch.name?.trim().toLowerCase() === name);
 }
 
 export function resolveUserBranchCode(

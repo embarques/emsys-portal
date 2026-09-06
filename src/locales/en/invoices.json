@@ -176,8 +176,8 @@
       "senderRequired": "Sender is required.",
       "unverifiedSenderAddress": "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.",
       "lineItemRequired": "Add at least one line item.",
-      "dailyIncomeContinueRequired": "Record a payment (amount may be $0) before continuing.",
-      "dailyIncomeSaveRequired": "Record a payment (amount may be $0) before saving."
+      "dailyIncomeContinueRequired": "Open a Cuadre, then record a payment or check Skip payment before continuing.",
+      "dailyIncomeSaveRequired": "Open a Cuadre, then record a payment or check Skip payment before saving."
     },
     "summary": {
       "title": "Invoice summary",
@@ -265,10 +265,10 @@
       "createOrOpenCuadre": "Create Cuadre",
       "reopenCuadre": "Reopen Cuadre",
       "skipPayment": "Skip payment",
-      "skipPaymentHint": "Leave checked to register this invoice in the open Cuadre with $0 payment (full balance due). Uncheck to enter a payment amount.",
-      "skipWithCuadreHint": "Invoice cost and balance will be registered in Daily Income #{{id}} with $0 payment when you continue.",
+      "skipPaymentHint": "Leave checked to let the backend register this invoice in the open Cuadre with $0 payment. Uncheck to enter payment details.",
+      "skipWithCuadreHint": "Invoice will be linked to Daily Income #{{id}} and registered in the journal with $0 payment.",
       "paymentSkipped": "Payment skipped — no open Cuadre to register against. Create a Cuadre to record cost with $0 payment, or continue without linking.",
-      "openCuadreBeforePayment": "Open or create a Cuadre, then record a payment before continuing.",
+      "openCuadreBeforePayment": "Open or create a Cuadre before recording or skipping payment.",
       "unpaidContinueHint": "Enter a payment below, or continue to register invoice cost and balance in Daily Income #{{id}} with $0 payment.",
       "recordBeforeContinueHint": "Press Record payment to continue. Amount may be $0.00 for an unpaid invoice.",
       "zeroPaymentDescription": "Initial invoice registration (unpaid)",
