@@ -488,6 +488,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
             type="checkbox"
             className="mt-1 size-4 rounded border-border accent-primary"
             checked={skipPayment}
+            disabled={!associatedStatementId}
             onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
           />
           <span className="min-w-0 flex-1">
@@ -505,7 +506,6 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     if (!statement) {
       return (
         <div className="space-y-5">
-          {mobileSkipPaymentCard}
           <MobileCreateDailyIncomePage date={currentDate} onCreated={handleStatementCreated} />
         </div>
       );
@@ -514,7 +514,6 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
     if (!statementOpen) {
       return (
         <div className="space-y-5">
-          {mobileSkipPaymentCard}
           <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
             <div className="space-y-2">
               <p className="font-semibold text-amber-950 dark:text-amber-100">
@@ -745,6 +744,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
                     type="checkbox"
                     className="mt-0.5 size-4 rounded border-border accent-primary"
                     checked={skipPayment}
+                    disabled={!associatedStatementId}
                     onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
                   />
                   <span className="min-w-0 flex-1">
@@ -773,6 +773,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
                     type="checkbox"
                     className="mt-0.5 size-4 rounded border-border accent-primary"
                     checked={skipPayment}
+                    disabled={!associatedStatementId}
                     onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
                   />
                   <span className="min-w-0 flex-1">

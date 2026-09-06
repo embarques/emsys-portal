@@ -176,8 +176,8 @@
       "senderRequired": "El remitente es obligatorio.",
       "unverifiedSenderAddress": "Verifique la dirección del remitente antes de guardar. Abra el remitente y actualícela con una dirección sugerida por Google.",
       "lineItemRequired": "Agregue al menos un artículo.",
-      "dailyIncomeContinueRequired": "Registre un pago o marque Omitir pago antes de continuar.",
-      "dailyIncomeSaveRequired": "Registre un pago o marque Omitir pago antes de guardar."
+      "dailyIncomeContinueRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de continuar.",
+      "dailyIncomeSaveRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de guardar."
     },
     "summary": {
       "title": "Resumen de factura",
@@ -265,10 +265,10 @@
       "createOrOpenCuadre": "Crear Cuadre",
       "reopenCuadre": "Reabrir Cuadre",
       "skipPayment": "Omitir pago",
-      "skipPaymentHint": "Déjelo marcado para continuar sin registrar un pago. Desmárquelo para ingresar detalles de pago como transacción del Cuadre.",
-      "skipWithCuadreHint": "La factura seguirá vinculada a Ingresos diarios #{{id}} sin registrar un pago.",
+      "skipPaymentHint": "Déjelo marcado para que el backend registre esta factura en el Cuadre abierto con pago de $0. Desmárquelo para ingresar detalles de pago.",
+      "skipWithCuadreHint": "La factura se vinculará a Ingresos diarios #{{id}} y se registrará en el diario con pago de $0.",
       "paymentSkipped": "Pago omitido — no hay Cuadre abierto para registrar. Cree un Cuadre para registrar el costo con pago de $0, o continúe sin vincular.",
-      "openCuadreBeforePayment": "Abra o cree un Cuadre para registrar un pago, o deje Omitir pago marcado para continuar sin uno.",
+      "openCuadreBeforePayment": "Abra o cree un Cuadre antes de registrar u omitir el pago.",
       "unpaidContinueHint": "Ingrese un pago abajo, o continúe para registrar el costo y el saldo de la factura en Ingresos diarios #{{id}} con pago de $0.",
       "recordBeforeContinueHint": "Presione Registrar pago para continuar. El monto puede ser $0.00 para una factura sin pagar.",
       "zeroPaymentDescription": "Registro inicial de factura (sin pagar)",

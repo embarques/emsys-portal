@@ -37,7 +37,7 @@ export function toInvoiceFormSubmitContext(
   };
 }
 
-/** Ready to leave the payment step after either recording or explicitly skipping payment. */
+/** Ready to leave the payment step after either recording or skipping against an open Cuadre. */
 export function canContinueInvoiceDailyIncomeStep(context: InvoiceDailyIncomeContext): boolean {
-  return context.paymentSkipped || context.registration != null;
+  return context.registration != null || (context.paymentSkipped && Number(context.incomeStatementId) > 0);
 }
