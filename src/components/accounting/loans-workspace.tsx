@@ -813,7 +813,11 @@ export function LoansWorkspace() {
     [filters.rows, page, search, sort],
   );
   const loansQuery = useLoans(listParams);
-  const loanTransactionsQuery = useLoanTransactions(paymentHistoryLoan?.id ?? null, Boolean(paymentHistoryLoan));
+  const transactionHistoryLoan = paymentHistoryLoan ?? selectedLoan;
+  const loanTransactionsQuery = useLoanTransactions(
+    transactionHistoryLoan?.id ?? null,
+    Boolean(transactionHistoryLoan),
+  );
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc", active: true });
   const accountsQuery = useChartAccounts({ page: 1, limit: 500, sort: "displayName:asc" });
   const createLoanMutation = useCreateLoan();
@@ -1162,6 +1166,56 @@ export function LoansWorkspace() {
                     <ReceiptText className="h-4 w-4" />
                     Record payment
                   </Button>
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">Payments</p>
+                        <p className="text-xs text-muted-foreground">{formatLoanMoney(selectedLoan.paidAmount)} paid</p>
+                      </div>
+                      {selectedLoan.paidAmount > 0 ? (
+                        <Badge variant="outline">{paymentTransactions.length}</Badge>
+                      ) : null}
+                    </div>
+
+                    {selectedLoan.paidAmount <= 0 ? (
+                      <p className="mt-3 text-sm text-muted-foreground">No payments recorded.</p>
+                    ) : loanTransactionsQuery.isPending ? (
+                      <p className="mt-3 text-sm text-muted-foreground">Loading payments...</p>
+                    ) : loanTransactionsQuery.isError ? (
+                      <p className="mt-3 text-sm text-destructive">
+                        {loanTransactionsQuery.error instanceof Error
+                          ? loanTransactionsQuery.error.message
+                          : "Unable to load loan payments."}
+                      </p>
+                    ) : paymentTransactions.length === 0 ? (
+                      <p className="mt-3 text-sm text-muted-foreground">No payments found for this loan.</p>
+                    ) : (
+                      <div className="mt-3 space-y-3">
+                        {paymentTransactions.map((payment) => (
+                          <div key={payment.id} className="rounded-lg border bg-muted/20 p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium">{formatLoanDate(payment.transactionDate) || "-"}</p>
+                                <p className="mt-1 truncate text-xs text-muted-foreground">
+                                  {payment.assetAccount?.displayName ?? payment.assetAccount?.name ?? "Payment"}
+                                </p>
+                              </div>
+                              <p className="shrink-0 text-sm font-semibold">{formatLoanMoney(payment.amount)}</p>
+                            </div>
+                            {payment.referenceNumber ? (
+                              <p className="mt-2 text-xs">
+                                <span className="text-muted-foreground">Ref </span>
+                                <span className="font-medium">{payment.referenceNumber}</span>
+                              </p>
+                            ) : null}
+                            {payment.description ? (
+                              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{payment.description}</p>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">Select a loan to view balance details.</p>
