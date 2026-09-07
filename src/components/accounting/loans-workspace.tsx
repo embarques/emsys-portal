@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  ArrowLeft,
   Banknote,
   ChevronLeft,
   ChevronRight,
@@ -44,7 +45,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useCreateLoan, useLoans, useRecordLoanPayment } from "@/lib/accounting/loans/hooks";
+import { useCreateLoan, useLoans, useLoanTransactions, useRecordLoanPayment } from "@/lib/accounting/loans/hooks";
 import { buildLoanReportFilters } from "@/lib/accounting/loans/api";
 import {
   formatLoanDate,
@@ -59,6 +60,7 @@ import {
   type Loan,
   type LoanCreateValues,
   type LoanPaymentValues,
+  type LoanTransaction,
 } from "@/lib/accounting/loans/types";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
 import { createApiListTextSearch } from "@/lib/api/search-query";
@@ -631,58 +633,159 @@ function LoanMobileCard({
   selected,
   onSelect,
   onRecordPayment,
+  onViewPayments,
 }: {
   loan: Loan;
   selected: boolean;
   onSelect: (loan: Loan) => void;
   onRecordPayment: (loan: Loan) => void;
+  onViewPayments: (loan: Loan) => void;
 }) {
+  const hasPayments = loan.paidAmount > 0;
+
   return (
-    <button
-      type="button"
+    <div
       className={cn(
         "w-full rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors",
         selected && "border-primary bg-primary/5",
       )}
-      onClick={() => onSelect(loan)}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-base font-semibold">{loan.employee.name}</p>
-          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{loan.description || "Loan"}</p>
+      <button type="button" className="w-full text-left" onClick={() => onSelect(loan)}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-base font-semibold">{loan.employee.name}</p>
+            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{loan.description || "Loan"}</p>
+          </div>
+          <Badge className={loanStatusClassName(loan.status)}>{loanStatusLabel(loan.status)}</Badge>
         </div>
-        <Badge className={loanStatusClassName(loan.status)}>{loanStatusLabel(loan.status)}</Badge>
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <p className="text-xs text-muted-foreground">Balance</p>
-          <p className="font-semibold">{formatLoanMoney(loan.balance)}</p>
+        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="text-xs text-muted-foreground">Balance</p>
+            <p className="font-semibold">{formatLoanMoney(loan.balance)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Principal</p>
+            <p className="font-semibold">{formatLoanMoney(loan.principalAmount)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Loan account</p>
+            <p className="truncate font-medium">{loan.loanAccount?.displayName ?? loan.loanAccount?.name ?? "-"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Last activity</p>
+            <p className="font-medium">{formatLoanDate(loan.lastActivityAt) || "-"}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Principal</p>
-          <p className="font-semibold">{formatLoanMoney(loan.principalAmount)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Loan account</p>
-          <p className="truncate font-medium">{loan.loanAccount?.displayName ?? loan.loanAccount?.name ?? "-"}</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Last activity</p>
-          <p className="font-medium">{formatLoanDate(loan.lastActivityAt) || "-"}</p>
-        </div>
-      </div>
-      <div className="mt-4 flex justify-end">
-        <span
-          className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground"
-          onClick={(event) => {
-            event.stopPropagation();
-            onRecordPayment(loan);
-          }}
+      </button>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        {hasPayments ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 rounded-lg"
+            aria-label={`View payments for ${loan.employee.name}`}
+            onClick={() => onViewPayments(loan)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        ) : (
+          <span aria-hidden="true" />
+        )}
+        <Button
+          type="button"
+          className="h-9 rounded-lg px-3 text-sm"
+          onClick={() => onRecordPayment(loan)}
         >
           Record payment
-        </span>
+        </Button>
       </div>
-    </button>
+    </div>
+  );
+}
+
+function LoanPaymentsMobileView({
+  loan,
+  payments,
+  loading,
+  error,
+  onBack,
+  onRecordPayment,
+}: {
+  loan: Loan;
+  payments: LoanTransaction[];
+  loading: boolean;
+  error: string | null;
+  onBack: () => void;
+  onRecordPayment: (loan: Loan) => void;
+}) {
+  return (
+    <div className="space-y-4 px-4 pb-8">
+      <div className="flex items-center gap-3">
+        <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0">
+          <h2 className="truncate text-xl font-bold tracking-normal">{loan.employee.name}</h2>
+          <p className="text-sm text-muted-foreground">Payments</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Paid</p>
+          <p className="mt-1 text-lg font-bold">{formatLoanMoney(loan.paidAmount)}</p>
+        </div>
+        <div className="rounded-2xl border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Balance</p>
+          <p className="mt-1 text-lg font-bold">{formatLoanMoney(loan.balance)}</p>
+        </div>
+      </div>
+
+      <Button type="button" className="w-full rounded-xl" onClick={() => onRecordPayment(loan)} disabled={loan.status !== "ACTIVE"}>
+        <ReceiptText className="h-4 w-4" />
+        Record payment
+      </Button>
+
+      {error ? (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
+
+      {loading ? (
+        <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">Loading payments...</div>
+      ) : payments.length === 0 ? (
+        <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">No payments found for this loan.</div>
+      ) : (
+        <div className="space-y-3">
+          {payments.map((payment) => (
+            <div key={payment.id} className="rounded-2xl border bg-card p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold">{formatLoanDate(payment.transactionDate) || "-"}</p>
+                  <p className="mt-1 truncate text-sm text-muted-foreground">
+                    {payment.assetAccount?.displayName ?? payment.assetAccount?.name ?? "Payment"}
+                  </p>
+                </div>
+                <p className="shrink-0 font-bold">{formatLoanMoney(payment.amount)}</p>
+              </div>
+              {payment.referenceNumber || payment.description ? (
+                <div className="mt-3 space-y-1 text-sm">
+                  {payment.referenceNumber ? (
+                    <p>
+                      <span className="text-muted-foreground">Ref </span>
+                      <span className="font-medium">{payment.referenceNumber}</span>
+                    </p>
+                  ) : null}
+                  {payment.description ? <p className="text-muted-foreground">{payment.description}</p> : null}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -695,6 +798,7 @@ export function LoansWorkspace() {
   const [createOpen, setCreateOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentInitialLoan, setPaymentInitialLoan] = useState<Loan | null>(null);
+  const [paymentHistoryLoan, setPaymentHistoryLoan] = useState<Loan | null>(null);
   const debouncedQuery = useDebouncedValue(filters.query, 250);
   const { sort, onSortChange } = useTableSort(DEFAULT_LOAN_LIST_PARAMS.sort, () => setPage(1));
   const search = createApiListTextSearch(debouncedQuery);
@@ -709,6 +813,11 @@ export function LoansWorkspace() {
     [filters.rows, page, search, sort],
   );
   const loansQuery = useLoans(listParams);
+  const transactionHistoryLoan = paymentHistoryLoan ?? selectedLoan;
+  const loanTransactionsQuery = useLoanTransactions(
+    transactionHistoryLoan?.id ?? null,
+    Boolean(transactionHistoryLoan),
+  );
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc", active: true });
   const accountsQuery = useChartAccounts({ page: 1, limit: 500, sort: "displayName:asc" });
   const createLoanMutation = useCreateLoan();
@@ -718,6 +827,13 @@ export function LoansWorkspace() {
   const summary = loansQuery.data?.summary ?? EMPTY_LOAN_SUMMARY;
   const totalLoans = loansQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalLoans / PAGE_SIZE));
+  const paymentTransactions = useMemo(
+    () =>
+      (loanTransactionsQuery.data ?? [])
+        .filter((transaction) => transaction.type === "PAYMENT")
+        .sort((left, right) => right.transactionDate.localeCompare(left.transactionDate)),
+    [loanTransactionsQuery.data],
+  );
   const activeFilterCount = countCompleteFilterRows(filters.rows, LOAN_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const employees = employeesQuery.data?.items ?? [];
@@ -842,6 +958,7 @@ export function LoansWorkspace() {
     try {
       const loan = await createLoanMutation.mutateAsync(values);
       notifySuccess(`Loan created${loan?.employee.name ? ` for ${loan.employee.name}` : ""}.`);
+      setPage(1);
       setCreateOpen(false);
     } catch (error) {
       notifyError(error instanceof Error ? error.message : "Unable to create loan.");
@@ -1049,6 +1166,56 @@ export function LoansWorkspace() {
                     <ReceiptText className="h-4 w-4" />
                     Record payment
                   </Button>
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">Payments</p>
+                        <p className="text-xs text-muted-foreground">{formatLoanMoney(selectedLoan.paidAmount)} paid</p>
+                      </div>
+                      {selectedLoan.paidAmount > 0 ? (
+                        <Badge variant="outline">{paymentTransactions.length}</Badge>
+                      ) : null}
+                    </div>
+
+                    {selectedLoan.paidAmount <= 0 ? (
+                      <p className="mt-3 text-sm text-muted-foreground">No payments recorded.</p>
+                    ) : loanTransactionsQuery.isPending ? (
+                      <p className="mt-3 text-sm text-muted-foreground">Loading payments...</p>
+                    ) : loanTransactionsQuery.isError ? (
+                      <p className="mt-3 text-sm text-destructive">
+                        {loanTransactionsQuery.error instanceof Error
+                          ? loanTransactionsQuery.error.message
+                          : "Unable to load loan payments."}
+                      </p>
+                    ) : paymentTransactions.length === 0 ? (
+                      <p className="mt-3 text-sm text-muted-foreground">No payments found for this loan.</p>
+                    ) : (
+                      <div className="mt-3 space-y-3">
+                        {paymentTransactions.map((payment) => (
+                          <div key={payment.id} className="rounded-lg border bg-muted/20 p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium">{formatLoanDate(payment.transactionDate) || "-"}</p>
+                                <p className="mt-1 truncate text-xs text-muted-foreground">
+                                  {payment.assetAccount?.displayName ?? payment.assetAccount?.name ?? "Payment"}
+                                </p>
+                              </div>
+                              <p className="shrink-0 text-sm font-semibold">{formatLoanMoney(payment.amount)}</p>
+                            </div>
+                            {payment.referenceNumber ? (
+                              <p className="mt-2 text-xs">
+                                <span className="text-muted-foreground">Ref </span>
+                                <span className="font-medium">{payment.referenceNumber}</span>
+                              </p>
+                            ) : null}
+                            {payment.description ? (
+                              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{payment.description}</p>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">Select a loan to view balance details.</p>
@@ -1076,80 +1243,100 @@ export function LoansWorkspace() {
           </div>
         </div>
 
-        <div className="px-4">
-          <TableSearchInput
-            value={filters.query}
-            onChange={(query) => {
-              setFilters((current) => ({ ...current, query }));
-              setPage(1);
-            }}
-            placeholder="Search employee, loan, reference"
-            inputClassName="h-12 rounded-2xl border-0 bg-blue-50 text-base shadow-none"
+        {paymentHistoryLoan ? (
+          <LoanPaymentsMobileView
+            loan={paymentHistoryLoan}
+            payments={paymentTransactions}
+            loading={loanTransactionsQuery.isPending}
+            error={
+              loanTransactionsQuery.isError
+                ? loanTransactionsQuery.error instanceof Error
+                  ? loanTransactionsQuery.error.message
+                  : "Unable to load loan payments."
+                : null
+            }
+            onBack={() => setPaymentHistoryLoan(null)}
+            onRecordPayment={openPaymentForLoan}
           />
-          <div className="mt-3">
-            <TableDirectoryToolbar
-              search={<div />}
-              filtersOpen={filtersOpen}
-              onFiltersOpenChange={setFiltersOpen}
-              activeFilterCount={activeFilterCount}
-              filterPanel={
-                <TableFilterPanel resultSummary={listSummary} onClearAll={hasActiveFilters ? resetFilters : undefined}>
-                  <TableAdvancedFilterBuilder
-                    open={filtersOpen}
-                    rows={filters.rows}
-                    fields={LOAN_TABLE_FILTER_FIELDS}
-                    dynamicOptions={{ loanAccounts: loanAccountFilterOptions }}
-                    onChange={(rows) => {
-                      setFilters((current) => ({ ...current, rows }));
-                      setPage(1);
-                    }}
-                  />
-                </TableFilterPanel>
-              }
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 px-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-2xl border bg-card p-4 shadow-sm">
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-              <p className="mt-1 text-lg font-bold">{stat.value}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between gap-3 px-4">
-          <Button variant="outline" className="h-11 rounded-xl" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
-            <ChevronLeft className="h-4 w-4" />
-            Previous
-          </Button>
-          <span className="text-sm font-medium text-muted-foreground">
-            Page {page} of {totalPages}
-          </span>
-          <Button variant="outline" className="h-11 rounded-xl" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="space-y-3 px-4 pb-8">
-          {loansQuery.isPending && loans.length === 0 ? (
-            <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">Loading loans...</div>
-          ) : loans.length === 0 ? (
-            <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">No loans match the current filters.</div>
-          ) : (
-            loans.map((loan) => (
-              <LoanMobileCard
-                key={loan.id}
-                loan={loan}
-                selected={selectedLoan?.id === loan.id}
-                onSelect={setSelectedLoan}
-                onRecordPayment={openPaymentForLoan}
+        ) : (
+          <>
+            <div className="px-4">
+              <TableSearchInput
+                value={filters.query}
+                onChange={(query) => {
+                  setFilters((current) => ({ ...current, query }));
+                  setPage(1);
+                }}
+                placeholder="Search employee, loan, reference"
+                inputClassName="h-12 rounded-2xl border-0 bg-blue-50 text-base shadow-none"
               />
-            ))
-          )}
-        </div>
+              <div className="mt-3">
+                <TableDirectoryToolbar
+                  search={<div />}
+                  filtersOpen={filtersOpen}
+                  onFiltersOpenChange={setFiltersOpen}
+                  activeFilterCount={activeFilterCount}
+                  filterPanel={
+                    <TableFilterPanel resultSummary={listSummary} onClearAll={hasActiveFilters ? resetFilters : undefined}>
+                      <TableAdvancedFilterBuilder
+                        open={filtersOpen}
+                        rows={filters.rows}
+                        fields={LOAN_TABLE_FILTER_FIELDS}
+                        dynamicOptions={{ loanAccounts: loanAccountFilterOptions }}
+                        onChange={(rows) => {
+                          setFilters((current) => ({ ...current, rows }));
+                          setPage(1);
+                        }}
+                      />
+                    </TableFilterPanel>
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 px-4">
+              {stats.map((stat) => (
+                <div key={stat.label} className="rounded-2xl border bg-card p-4 shadow-sm">
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  <p className="mt-1 text-lg font-bold">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 px-4">
+              <Button variant="outline" className="h-11 rounded-xl" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <span className="text-sm font-medium text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              <Button variant="outline" className="h-11 rounded-xl" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-3 px-4 pb-8">
+              {loansQuery.isPending && loans.length === 0 ? (
+                <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">Loading loans...</div>
+              ) : loans.length === 0 ? (
+                <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">No loans match the current filters.</div>
+              ) : (
+                loans.map((loan) => (
+                  <LoanMobileCard
+                    key={loan.id}
+                    loan={loan}
+                    selected={selectedLoan?.id === loan.id}
+                    onSelect={setSelectedLoan}
+                    onRecordPayment={openPaymentForLoan}
+                    onViewPayments={setPaymentHistoryLoan}
+                  />
+                ))
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <CreateLoanDialog
