@@ -3,8 +3,11 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import {
   buildAdvancedSearchBody,
   createOrTextSearchFilterGroup,
+  hasListTextSearch,
   type ApiSearchFilterNode,
 } from "@/lib/api/search-query";
+import { buildApiListQuery } from "@/lib/api/list-query";
+import { resolvePaginatedListTotal } from "@/lib/api/types";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import { LOAN_TABLE_FILTER_FIELDS } from "@/lib/accounting/loans/filter-fields";
 import { expandLoanFilterNode } from "@/lib/accounting/loans/loan-filters";
@@ -31,6 +34,7 @@ type ApiEnvelope = {
   resultsPerPage?: number;
   results_per_page?: number;
   total?: number;
+  subtotal?: number;
   success?: boolean;
   message?: string;
   error?: string;
@@ -210,6 +214,13 @@ function buildLoanFilterGroups(params: LoanListParams) {
   return filterGroups;
 }
 
+function hasLoanListFilters(params: LoanListParams) {
+  return (
+    hasListTextSearch(params.search) ||
+    (params.filterRows ?? []).some((row) => isCompleteFilterRow(row, LOAN_TABLE_FILTER_FIELDS))
+  );
+}
+
 export function buildLoanReportFilters(params: LoanListParams): ApiSearchFilterNode[] {
   const body = buildAdvancedSearchBody({
     page: params.page,
@@ -223,24 +234,36 @@ export function buildLoanReportFilters(params: LoanListParams): ApiSearchFilterN
 export async function fetchLoans(params: LoanListParams): Promise<LoanListResult> {
   const page = params.page ?? 1;
   const limit = params.limit ?? 20;
-  const payload = await apiClient.post<ApiEnvelope>(
-    `${API_ENDPOINTS.ACCOUNTING_LOANS}/search`,
-    buildAdvancedSearchBody({
-      page,
-      limit,
-      sort: params.sort,
-      filterGroups: buildLoanFilterGroups(params),
-    }),
-  );
+  const isFiltered = hasLoanListFilters(params);
+  const payload = isFiltered
+    ? await apiClient.post<ApiEnvelope>(
+        `${API_ENDPOINTS.ACCOUNTING_LOANS}/search`,
+        buildAdvancedSearchBody({
+          page,
+          limit,
+          sort: params.sort,
+          filterGroups: buildLoanFilterGroups(params),
+        }),
+      )
+    : await apiClient.get<ApiEnvelope>(
+        `${API_ENDPOINTS.ACCOUNTING_LOANS}?${buildApiListQuery({
+          page,
+          limit,
+          sort: params.sort,
+        })}`,
+      );
   const envelope = objectValue(payload);
   const unwrapped = objectValue(unwrap(payload));
   const items = unwrapArray(payload).map(normalizeLoan).filter((loan): loan is Loan => loan != null);
   return {
     items,
     summary: normalizeSummary(firstDefined(unwrapped.summary, envelope.summary), items),
-    page: numberValue(envelope.page, page),
-    resultsPerPage: numberValue(firstDefined(envelope.resultsPerPage, envelope.results_per_page), limit),
-    total: numberValue(envelope.total, items.length),
+    page: numberValue(firstDefined(envelope.page, unwrapped.page), page),
+    resultsPerPage: numberValue(
+      firstDefined(envelope.resultsPerPage, envelope.results_per_page, unwrapped.resultsPerPage, unwrapped.results_per_page),
+      limit,
+    ),
+    total: resolvePaginatedListTotal(payload, items.length, { isFiltered }),
   };
 }
 

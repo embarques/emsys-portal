@@ -842,6 +842,7 @@ export function LoansWorkspace() {
     try {
       const loan = await createLoanMutation.mutateAsync(values);
       notifySuccess(`Loan created${loan?.employee.name ? ` for ${loan.employee.name}` : ""}.`);
+      setPage(1);
       setCreateOpen(false);
     } catch (error) {
       notifyError(error instanceof Error ? error.message : "Unable to create loan.");
