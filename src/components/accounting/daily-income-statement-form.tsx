@@ -59,7 +59,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
       className="min-w-0 space-y-5 max-md:[&_button]:h-12 max-md:[&_button]:rounded-xl max-md:[&_input]:h-12 max-md:[&_input]:rounded-xl max-md:[&_input]:text-base max-md:[&_label]:text-base"
     >
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
+        <div className="relative z-20 space-y-2">
           <Label htmlFor="statement-branch">{t("accounting.dailyIncome.statement.fields.branch")}</Label>
           <SearchableSelect
             id="statement-branch"
@@ -73,6 +73,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
             options={branchOptions}
             placeholder={t("accounting.dailyIncome.statement.placeholders.selectBranch")}
             searchPlaceholder={t("accounting.dailyIncome.statement.placeholders.searchBranches")}
+            contentClassName="z-[90]"
             mobileSheet
           />
           {errors.branchId ? <p className="text-sm text-destructive">{errors.branchId.message}</p> : null}
@@ -82,7 +83,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
           <DateInput id="statement-date" {...register("date")} />
           {errors.date ? <p className="text-sm text-destructive">{errors.date.message}</p> : null}
         </div>
-        <div className="space-y-2">
+        <div className="relative z-10 space-y-2">
           <Label htmlFor="statement-currency">{t("accounting.dailyIncome.statement.fields.currency")}</Label>
           <SearchableSelect
             id="statement-currency"
