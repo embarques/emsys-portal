@@ -185,6 +185,7 @@
     "print": {
       "title": "Print daily income report",
       "description": "Print all transactions for this closeout, or filter by employee.",
+      "date": "Date",
       "employee": "Employee",
       "allEmployees": "All",
       "selectEmployee": "Select employee",

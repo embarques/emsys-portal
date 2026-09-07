@@ -4,7 +4,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChevronUp, Edit, Lock, LockOpen, Plus, Printer, ScrollText, Trash2 } from "lucide-react";
 
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
-import { DailyIncomePrintDialog } from "@/components/accounting/daily-income-print-dialog";
+import { DailyIncomePrintDialog, type DailyIncomePrintSelection } from "@/components/accounting/daily-income-print-dialog";
 import { DailyIncomeStatementForm } from "@/components/accounting/daily-income-statement-form";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
@@ -40,6 +40,7 @@ import {
 import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income/assignee";
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, transactionCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import { buildIncomeReportRequest, openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
+import { fetchIncomeStatement } from "@/lib/accounting/daily-income/api";
 import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
@@ -505,14 +506,34 @@ export function DailyIncomeWorkspace() {
     statusMutation.mutateAsync({ statement, open }).then(() => feedback.notifySuccess(open ? t("accounting.dailyIncome.toasts.statementOpened") : t("accounting.dailyIncome.toasts.statementClosed"))).catch((error) => feedback.notifyError(normalizeApiError(error).message));
   }
 
-  async function handlePrintReport(employeeId: number | null = null) {
-    if (!statement) {
+  async function handlePrintReport(selection: DailyIncomePrintSelection) {
+    const printDate = selection.date.slice(0, 10);
+    if (!printDate) {
       feedback.notifyError(t("accounting.dailyIncome.errors.noCloseoutLoaded"));
       return;
     }
+
+    const branchId = selectedBranch?.id ?? 0;
+    if (!branchId) {
+      feedback.notifyError(t("accounting.dailyIncome.errors.noCloseoutLoaded"));
+      return;
+    }
+
     try {
+      const printStatement =
+        statement && statement.date.slice(0, 10) === printDate
+          ? statement
+          : await fetchIncomeStatement(branchId, printDate);
+
+      if (!printStatement) {
+        feedback.notifyError(t("accounting.dailyIncome.errors.closeoutNotFound"));
+        return;
+      }
+
       const report = await generateIncomeReportMutation.mutateAsync(
-        buildIncomeReportRequest(statement.id, { employeeId }),
+        buildIncomeReportRequest(printStatement.id, {
+          employeeId: selection.employeeId,
+        }),
       );
       openIncomeReportUrl(report.url);
       setPrintDialog(false);
@@ -853,6 +874,7 @@ export function DailyIncomeWorkspace() {
     <DailyIncomePrintDialog
       open={printDialog}
       onOpenChange={setPrintDialog}
+      date={date}
       employees={employees}
       isPending={generateIncomeReportMutation.isPending}
       onConfirm={handlePrintReport}

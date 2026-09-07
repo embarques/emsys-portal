@@ -34,9 +34,13 @@ const TRANSACTION_TYPE_I18N_KEYS: Record<JournalTransactionType, string> = {
   LOAN: "loan",
 };
 
-const TRANSACTION_TYPE_META: Array<
-  Pick<TransactionTypeOption, "value" | "icon" | "iconClassName" | "iconBackgroundClassName">
-> = [
+type TransactionTypeMeta = Pick<
+  TransactionTypeOption,
+  "value" | "icon" | "iconClassName" | "iconBackgroundClassName"
+>;
+
+/** Types offered when adding a new daily-income transaction. Loans are managed on the Loans page. */
+const SELECTABLE_TRANSACTION_TYPE_META: TransactionTypeMeta[] = [
   {
     value: "INITIAL-PAYMENT",
     icon: FileText,
@@ -79,6 +83,10 @@ const TRANSACTION_TYPE_META: Array<
     iconClassName: "text-blue-600",
     iconBackgroundClassName: "bg-blue-50",
   },
+];
+
+/** Lookup meta for existing journal types that are no longer offered in Add transaction. */
+const LEGACY_TRANSACTION_TYPE_META: TransactionTypeMeta[] = [
   {
     value: "LOAN",
     icon: Landmark,
@@ -91,21 +99,26 @@ function transactionTypeKey(type: JournalTransactionType) {
   return TRANSACTION_TYPE_I18N_KEYS[type];
 }
 
+function toTransactionTypeOption(meta: TransactionTypeMeta, t: TranslateFn): TransactionTypeOption {
+  const key = transactionTypeKey(meta.value);
+  return {
+    ...meta,
+    label: t(`accounting.dailyIncome.transactionTypes.${key}.label`),
+    description: t(`accounting.dailyIncome.transactionTypes.${key}.description`),
+    sectionTitle: t(`accounting.dailyIncome.transactionTypes.${key}.sectionTitle`),
+  };
+}
+
 export function buildTransactionTypeOptions(t: TranslateFn): TransactionTypeOption[] {
-  return TRANSACTION_TYPE_META.map((meta) => {
-    const key = transactionTypeKey(meta.value);
-    return {
-      ...meta,
-      label: t(`accounting.dailyIncome.transactionTypes.${key}.label`),
-      description: t(`accounting.dailyIncome.transactionTypes.${key}.description`),
-      sectionTitle: t(`accounting.dailyIncome.transactionTypes.${key}.sectionTitle`),
-    };
-  });
+  return SELECTABLE_TRANSACTION_TYPE_META.map((meta) => toTransactionTypeOption(meta, t));
 }
 
 export function getTransactionTypeOption(type: JournalTransactionType, t: TranslateFn): TransactionTypeOption {
-  const options = buildTransactionTypeOptions(t);
-  return options.find((option) => option.value === type) ?? options[0];
+  const meta =
+    SELECTABLE_TRANSACTION_TYPE_META.find((option) => option.value === type) ??
+    LEGACY_TRANSACTION_TYPE_META.find((option) => option.value === type) ??
+    SELECTABLE_TRANSACTION_TYPE_META[0];
+  return toTransactionTypeOption(meta, t);
 }
 
 /** First editable field after shared defaults when continuing entry for the same type. */

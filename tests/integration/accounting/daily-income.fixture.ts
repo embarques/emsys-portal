@@ -717,13 +717,6 @@ export const DAILY_INCOME_TRANSACTION_SPECS: DailyIncomeTransactionSpec[] = [
     needsAccount: true,
     needsSourceAccount: true,
   },
-  {
-    slug: "register-loan",
-    label: "Register loan",
-    sectionTitle: "Loan information",
-    needsAccount: true,
-    needsSourceAccount: true,
-  },
 ];
 
 export async function prepareDailyIncomeCloseout(page: Page, main: Locator) {

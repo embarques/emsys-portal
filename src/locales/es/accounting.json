@@ -185,6 +185,7 @@
     "print": {
       "title": "Imprimir reporte de ingresos diarios",
       "description": "Imprima todas las transacciones de este cierre, o filtre por empleado.",
+      "date": "Fecha",
       "employee": "Empleado",
       "allEmployees": "Todos",
       "selectEmployee": "Seleccionar empleado",
