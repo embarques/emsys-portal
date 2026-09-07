@@ -108,7 +108,17 @@ export function getTransactionTypeOption(type: JournalTransactionType, t: Transl
   return options.find((option) => option.value === type) ?? options[0];
 }
 
-/** First editable field after employee when continuing entry for the same transaction type. */
-export function getTransactionFormSecondFieldId(_type: JournalTransactionType): string {
-  return "journal-payment";
+/** First editable field after shared defaults when continuing entry for the same type. */
+export function getTransactionFormSecondFieldId(type: JournalTransactionType): string {
+  switch (type) {
+    case "INITIAL-PAYMENT":
+      return "journal-invoice-number";
+    case "PAYMENT":
+      return "journal-employee";
+    case "DISCOUNT":
+    case "SURCHARGE":
+      return "journal-invoice";
+    default:
+      return "journal-payment";
+  }
 }

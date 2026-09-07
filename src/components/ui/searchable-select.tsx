@@ -161,9 +161,11 @@ const chevronButtonClassName =
   "absolute inset-y-0 right-0 flex w-9 shrink-0 items-center justify-center text-foreground/70 disabled:cursor-not-allowed";
 
 const popoverContentClassName =
-  // pointer-events-auto keeps the list interactive when opened inside a Radix modal (Dialog),
+  // pointer-events-auto keeps the list interactive when opened inside a Radix Dialog,
   // which disables pointer events on the body and would otherwise block hover/scroll/click.
-  // z-[80] stacks above DialogContent (often z-[60]/z-[70]) so options are not hidden behind the modal.
+  // z-[80] stacks above DialogContent (often z-[50]/z-[70]) so options are not hidden behind the modal.
+  // Do not use Popover `modal` here: a modal popover nested in a Dialog applies its own
+  // pointer-events lock on the dialog surface and freezes fields/buttons underneath.
   "pointer-events-auto z-[80] w-[var(--radix-popover-trigger-width)] min-w-[12rem] overflow-hidden rounded-lg border border-border bg-popover p-0 shadow-md";
 
 const listItemClassName =
@@ -567,7 +569,7 @@ export function SearchableSelect({
   if (!searchable) {
     return (
       <div className="relative">
-        <Popover open={open} onOpenChange={handleOpenChange} modal>
+        <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
           <PopoverTrigger asChild>
             <button
               ref={triggerRef}
@@ -648,7 +650,7 @@ export function SearchableSelect({
               onClose?.();
             }
           }}
-          modal
+          modal={false}
         >
           <PopoverAnchor asChild>
             <div

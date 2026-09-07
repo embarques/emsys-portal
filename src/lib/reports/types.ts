@@ -5,7 +5,7 @@ export type ReportType = "income" | "invoice" | "journal" | "loan" | "label" | "
 
 /** Collections the `values` identifiers can be resolved against. */
 export type ReportCollection =
-  | "income"
+  | "income_statements"
   | "invoices"
   | "journals"
   | "loans"
@@ -27,6 +27,8 @@ export type ReportCollection =
  *   `{ type: "pickup", collection: "pickups", values: ["42"], lookupField: "id" }`
  * - Delivery report (`/reports/deliveries`):
  *   `{ type: "delivery", collection: "deliveries", values: ["1001"], lookupField: "id" }`
+ * - Income statement report (`/reports/income`):
+ *   `{ type: "income", collection: "income_statements", values: ["42"], lookupField: "id" }`
  */
 export type ReportRequest = {
   /** Document type to render. */

@@ -17,13 +17,23 @@ import { useTranslation } from "@/lib/i18n";
 type Props = {
   branches: Branch[];
   initialValues: DailyIncomeStatementValues;
+  /** When true, branch comes from the existing statement and is shown read-only. */
+  lockBranch?: boolean;
   isSubmitting: boolean;
   error?: string | null;
   onSubmit: (values: DailyIncomeStatementValues) => void;
   onCancel: () => void;
 };
 
-export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting, error, onSubmit, onCancel }: Props) {
+export function DailyIncomeStatementForm({
+  branches,
+  initialValues,
+  lockBranch = false,
+  isSubmitting,
+  error,
+  onSubmit,
+  onCancel,
+}: Props) {
   const { t } = useTranslation();
   const schema = useMemo(
     () =>
@@ -49,9 +59,18 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
 
   useEffect(() => reset(initialValues), [initialValues, reset]);
   const branchId = watch("branchId");
+  const branchCode = watch("branchCode");
+  const branchName = watch("branchName");
   const currency = watch("currency");
   const showExchangeRate = currency?.trim().toUpperCase() === "DOP";
-  const branchOptions = branches.map((branch) => ({ value: String(branch.id), label: `${branch.code} — ${branch.name}`, keywords: [branch.code, branch.name] }));
+  const branchOptions = branches.map((branch) => ({
+    value: String(branch.id),
+    label: `${branch.code} — ${branch.name}`,
+    keywords: [branch.code, branch.name],
+  }));
+  const lockedBranchLabel =
+    [branchCode, branchName].map((part) => part?.trim()).filter(Boolean).join(" — ") ||
+    t("common.empty.dash");
 
   return (
     <form
@@ -61,20 +80,24 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="statement-branch">{t("accounting.dailyIncome.statement.fields.branch")}</Label>
-          <SearchableSelect
-            id="statement-branch"
-            value={branchId ? String(branchId) : ""}
-            onValueChange={(next) => {
-              const branch = branches.find((item) => item.id === Number(next));
-              setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
-              setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
-              setValue("branchName", branch?.name ?? "", { shouldValidate: true });
-            }}
-            options={branchOptions}
-            placeholder={t("accounting.dailyIncome.statement.placeholders.selectBranch")}
-            searchPlaceholder={t("accounting.dailyIncome.statement.placeholders.searchBranches")}
-            mobileSheet
-          />
+          {lockBranch ? (
+            <Input id="statement-branch" value={lockedBranchLabel} readOnly disabled />
+          ) : (
+            <SearchableSelect
+              id="statement-branch"
+              value={branchId ? String(branchId) : ""}
+              onValueChange={(next) => {
+                const branch = branches.find((item) => item.id === Number(next));
+                setValue("branchId", branch?.id ?? 0, { shouldValidate: true });
+                setValue("branchCode", branch?.code ?? "", { shouldValidate: true });
+                setValue("branchName", branch?.name ?? "", { shouldValidate: true });
+              }}
+              options={branchOptions}
+              placeholder={t("accounting.dailyIncome.statement.placeholders.selectBranch")}
+              searchPlaceholder={t("accounting.dailyIncome.statement.placeholders.searchBranches")}
+              mobileSheet
+            />
+          )}
           {errors.branchId ? <p className="text-sm text-destructive">{errors.branchId.message}</p> : null}
         </div>
         <div className="space-y-2">
@@ -95,6 +118,7 @@ export function DailyIncomeStatementForm({ branches, initialValues, isSubmitting
             }}
             options={currencyOptions}
             placeholder={t("accounting.dailyIncome.currency.select")}
+            searchable={false}
             mobileSheet
           />
         </div>

@@ -175,11 +175,21 @@
     "actions": {
       "createCloseout": "Crear cierre",
       "editCloseout": "Editar cierre",
+      "printReport": "Imprimir reporte",
       "closeDay": "Cerrar día",
       "reopenDay": "Reabrir día",
       "addTransaction": "Agregar transacción",
       "editTransaction": "Editar transacción",
       "deleteTransaction": "Eliminar transacción"
+    },
+    "print": {
+      "title": "Imprimir reporte de ingresos diarios",
+      "description": "Imprima todas las transacciones de este cierre, o filtre por empleado.",
+      "employee": "Empleado",
+      "allEmployees": "Todos",
+      "selectEmployee": "Seleccionar empleado",
+      "searchEmployees": "Buscar empleados…",
+      "confirm": "Imprimir reporte"
     },
     "filters": {
       "branch": "Sucursal",
@@ -196,7 +206,8 @@
     },
     "summary": {
       "loadingTotals": "Cargando totales del resumen…",
-      "currencyRate": "{{code}} · tasa {{rate}}"
+      "currencyRate": "{{code}} · tasa {{rate}}",
+      "totalDeposited": "Total Depositado"
     },
     "currency": {
       "usd": "Dólar",
@@ -224,6 +235,7 @@
       "createTitle": "Crear ingresos diarios",
       "editTitle": "Editar ingresos diarios",
       "description": "Configure la sucursal, fecha, moneda y tasa de cambio para este cierre.",
+      "editDescription": "Actualice la fecha, moneda y tasa de cambio para este cierre.",
       "save": "Guardar ingresos diarios",
       "fields": {
         "branch": "Sucursal",
@@ -249,7 +261,8 @@
       "transactionCreatedWithType": "Transacción creada: {{type}}.",
       "transactionCreatedWithTarget": "Transacción creada: {{type}} - {{target}}.",
       "transactionUpdated": "Transacción actualizada.",
-      "invoiceRegistered": "Nueva factura #{{invoiceNumber}} creada y pago registrado."
+      "invoiceRegistered": "Nueva factura #{{invoiceNumber}} creada y pago registrado.",
+      "reportReady": "Reporte de ingresos diarios listo."
     },
     "errors": {
       "noCloseoutLoaded": "No hay cierre cargado.",

@@ -10,7 +10,7 @@ import { FormBody, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { useFormEnterNavigation, submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
 import { isCheckPaymentMethod, isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
@@ -125,8 +125,13 @@ export function DailyIncomeTransactionForm({
     if (!focusSecondFieldSignal) return;
     const fieldId = getTransactionFormSecondFieldId(transactionType);
     const timer = window.setTimeout(() => {
-      document.getElementById(fieldId)?.focus();
-    }, 0);
+      const field = document.getElementById(fieldId);
+      if (!field) return;
+      field.focus();
+      if (field instanceof HTMLInputElement) {
+        field.select();
+      }
+    }, 50);
     return () => window.clearTimeout(timer);
   }, [focusSecondFieldSignal, transactionType]);
 
@@ -296,6 +301,17 @@ export function DailyIncomeTransactionForm({
             />
           ) : (
           <div className="grid gap-4 sm:grid-cols-2">
+            {type === "PAYMENT" ? (
+              <div className="sm:col-span-2">
+                <TransactionAssigneeSelect
+                  employees={employees}
+                  employeeId={employeeId}
+                  error={errors.employeeId?.message}
+                  setValue={setValue}
+                />
+              </div>
+            ) : null}
+
             {needsExistingInvoice ? (
               <div className="space-y-2 sm:col-span-2">
                 <RequiredLabel htmlFor="journal-invoice">{t("accounting.dailyIncome.form.fields.invoice")}</RequiredLabel>
@@ -343,14 +359,16 @@ export function DailyIncomeTransactionForm({
               </div>
             ) : null}
 
-            <div className="sm:col-span-2">
-              <TransactionAssigneeSelect
-                employees={employees}
-                employeeId={employeeId}
-                error={errors.employeeId?.message}
-                setValue={setValue}
-              />
-            </div>
+            {type !== "PAYMENT" ? (
+              <div className="sm:col-span-2">
+                <TransactionAssigneeSelect
+                  employees={employees}
+                  employeeId={employeeId}
+                  error={errors.employeeId?.message}
+                  setValue={setValue}
+                />
+              </div>
+            ) : null}
 
             <div className="space-y-2 sm:col-span-2">
               {needsPaymentMethod ? (
@@ -515,6 +533,7 @@ export function DailyIncomeTransactionForm({
                 id="journal-reference"
                 placeholder={t("accounting.dailyIncome.form.placeholders.enterReferenceNumber")}
                 {...register("refNumber")}
+                onKeyDown={submitFormOnEnterKeyDown}
               />
             </div>
 

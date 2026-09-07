@@ -1,9 +1,10 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronUp, Edit, Lock, LockOpen, Plus, ScrollText, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronUp, Edit, Lock, LockOpen, Plus, Printer, ScrollText, Trash2 } from "lucide-react";
 
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
+import { DailyIncomePrintDialog } from "@/components/accounting/daily-income-print-dialog";
 import { DailyIncomeStatementForm } from "@/components/accounting/daily-income-statement-form";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
@@ -36,9 +37,9 @@ import {
   useUpdateDailyIncomeJournal,
   useUpdateIncomeStatement,
 } from "@/lib/accounting/daily-income/hooks";
-import { isPaymentReceiptEligible, printPaymentReceipt } from "@/lib/accounting/daily-income/receipt";
 import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income/assignee";
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, transactionCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { buildIncomeReportRequest, openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
 import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
@@ -53,6 +54,7 @@ import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { useTranslation } from "@/lib/i18n";
+import { useGenerateIncomeReport } from "@/lib/reports/hooks/use-reports";
 import {
   buildTableSelectionResetKey,
   useTableSelectionReset,
@@ -92,6 +94,11 @@ function isTotalCashSummaryLabel(label: string) {
   return normalized.includes("total") && (normalized.includes("efectivo") || normalized.includes("cash"));
 }
 
+function isDepositSummaryLabel(label: string) {
+  const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return normalized.includes("deposit");
+}
+
 function isExpenseSummaryLabel(label: string) {
   const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
   return normalized.includes("gasto") || normalized.includes("expense");
@@ -108,6 +115,67 @@ function prioritizeTotalCashStat(stats: StatCardItem[]) {
   const nextStats = [...stats];
   const [totalCashStat] = nextStats.splice(totalCashIndex, 1);
   if (totalCashStat) nextStats.unshift(totalCashStat);
+  return nextStats;
+}
+
+/** Ensure Total Depositado is its own card, placed immediately after Total Efectivo. */
+function ensureDepositStatAfterTotalCash(
+  stats: StatCardItem[],
+  options: { label: string; zeroValue: string },
+): StatCardItem[] {
+  const template = stats[0];
+  let depositValue: string | undefined;
+  let depositDescription = template?.description;
+  let depositIcon = template?.icon;
+
+  const hasDepositCard = stats.some((stat) => isDepositSummaryLabel(stat.label));
+
+  const cleanedStats = stats.map((stat) => {
+    if (isDepositSummaryLabel(stat.label)) {
+      depositValue = stat.value;
+      depositDescription = stat.description;
+      depositIcon = stat.icon;
+      return null;
+    }
+
+    if (!stat.details?.length) return stat;
+
+    const remainingDetails = stat.details.filter((detail) => {
+      if (!isDepositSummaryLabel(detail.label)) return true;
+      depositValue = detail.value;
+      depositDescription = stat.description;
+      depositIcon = stat.icon;
+      return false;
+    });
+
+    return {
+      ...stat,
+      details: remainingDetails.length > 0 ? remainingDetails : undefined,
+    };
+  }).filter((stat): stat is StatCardItem => stat != null);
+
+  if (!hasDepositCard && depositValue == null && !template) {
+    return stats;
+  }
+
+  const depositStat: StatCardItem = {
+    label: options.label,
+    value: depositValue ?? options.zeroValue,
+    description: depositDescription,
+    icon: depositIcon,
+  };
+
+  const withDeposit = [...cleanedStats, depositStat];
+  const cashFirst = prioritizeTotalCashStat(withDeposit);
+  const depositIndex = cashFirst.findIndex((stat) => isDepositSummaryLabel(stat.label));
+  if (depositIndex < 0) return cashFirst;
+
+  const nextStats = [...cashFirst];
+  const [deposit] = nextStats.splice(depositIndex, 1);
+  if (!deposit) return cashFirst;
+
+  const insertAt = nextStats.findIndex((stat) => isTotalCashSummaryLabel(stat.label)) === 0 ? 1 : 0;
+  nextStats.splice(insertAt, 0, deposit);
   return nextStats;
 }
 
@@ -266,6 +334,7 @@ export function DailyIncomeWorkspace() {
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [statementDialog, setStatementDialog] = useState(false);
+  const [printDialog, setPrintDialog] = useState(false);
   const [transactionDialog, setTransactionDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<DailyIncomeJournal | null>(null);
   const [deleteJournal, setDeleteJournal] = useState<DailyIncomeJournal | null>(null);
@@ -307,6 +376,7 @@ export function DailyIncomeWorkspace() {
   const createJournal = useCreateDailyIncomeJournal();
   const updateJournal = useUpdateDailyIncomeJournal();
   const deleteMutation = useDeleteDailyIncomeJournal();
+  const generateIncomeReportMutation = useGenerateIncomeReport();
   const rows = journalsQuery.data?.items ?? [];
   const total = journalsQuery.data?.total ?? rows.length;
   rememberTotal(total);
@@ -357,7 +427,10 @@ export function DailyIncomeWorkspace() {
       })),
     })));
 
-    return prioritizeTotalCashStat(nextStats);
+    return ensureDepositStatAfterTotalCash(nextStats, {
+      label: t("accounting.dailyIncome.summary.totalDeposited"),
+      zeroValue: formatAmount(0),
+    });
   }, [summaryTotalsQuery.data, summaryTotalsQuery.isFetching, summaryTotalsQuery.isLoading, t]);
 
   const columns: DataTableColumn<DailyIncomeJournal>[] = useMemo(() => [
@@ -370,7 +443,14 @@ export function DailyIncomeWorkspace() {
     { id: "amount", label: t("accounting.dailyIncome.columns.amount"), cellClassName: "font-medium tabular-nums", renderCell: (row) => formatDailyIncomeMoney(row.amount, displayCurrency) },
   ], [displayCurrency, t]);
   const columnLayout = useColumnVisibility("daily-income-v1", columns);
-  const statementValues: DailyIncomeStatementValues = { date, branchId: selectedBranch?.id ?? 0, branchCode, branchName: selectedBranch?.name ?? "", currency: statement?.currency ?? "USD", rate: statement?.rate ?? 1 };
+  const statementValues: DailyIncomeStatementValues = {
+    date: statement?.date ?? date,
+    branchId: statement?.branch?.id ?? selectedBranch?.id ?? 0,
+    branchCode: statement?.branch?.code ?? branchCode,
+    branchName: statement?.branch?.name ?? selectedBranch?.name ?? "",
+    currency: statement?.currency ?? "USD",
+    rate: statement?.rate ?? 1,
+  };
   const mutationPending = createStatement.isPending || updateStatement.isPending;
 
   function saveStatement(values: DailyIncomeStatementValues) {
@@ -423,6 +503,23 @@ export function DailyIncomeWorkspace() {
   function changeStatus(open: boolean) {
     if (!statement) return;
     statusMutation.mutateAsync({ statement, open }).then(() => feedback.notifySuccess(open ? t("accounting.dailyIncome.toasts.statementOpened") : t("accounting.dailyIncome.toasts.statementClosed"))).catch((error) => feedback.notifyError(normalizeApiError(error).message));
+  }
+
+  async function handlePrintReport(employeeId: number | null = null) {
+    if (!statement) {
+      feedback.notifyError(t("accounting.dailyIncome.errors.noCloseoutLoaded"));
+      return;
+    }
+    try {
+      const report = await generateIncomeReportMutation.mutateAsync(
+        buildIncomeReportRequest(statement.id, { employeeId }),
+      );
+      openIncomeReportUrl(report.url);
+      setPrintDialog(false);
+      feedback.notifySuccess(t("accounting.dailyIncome.toasts.reportReady"));
+    } catch (error) {
+      feedback.notifyError(normalizeApiError(error).message);
+    }
   }
 
   function openAddTransactionForm() {
@@ -489,6 +586,18 @@ export function DailyIncomeWorkspace() {
             </Badge>
             {statement ? (
               <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-9 rounded-full bg-card"
+                  onClick={() => setPrintDialog(true)}
+                  disabled={generateIncomeReportMutation.isPending}
+                  aria-label={t("accounting.dailyIncome.actions.printReport")}
+                  title={t("accounting.dailyIncome.actions.printReport")}
+                >
+                  <Printer className="size-4" />
+                </Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -633,6 +742,16 @@ export function DailyIncomeWorkspace() {
 
     <div className="hidden md:block">
     <PageHeader title={t("accounting.dailyIncome.title")} description={t("accounting.dailyIncome.description")} actions={<>
+      {statement ? (
+        <Button
+          variant="outline"
+          onClick={() => setPrintDialog(true)}
+          disabled={generateIncomeReportMutation.isPending}
+        >
+          <Printer className="h-4 w-4" />
+          {t("accounting.dailyIncome.actions.printReport")}
+        </Button>
+      ) : null}
       {statement ? <Button variant="outline" onClick={() => setStatementDialog(true)}><Edit className="h-4 w-4" /> {t("accounting.dailyIncome.actions.editCloseout")}</Button> : <Button onClick={() => setStatementDialog(true)} disabled={!branchCode}><Plus className="h-4 w-4" /> {t("accounting.dailyIncome.actions.createCloseout")}</Button>}
       {statement ? <Button variant={statement.status === "OPEN" ? "destructive" : "default"} onClick={() => changeStatus(statement.status !== "OPEN")} disabled={statusMutation.isPending}>{statement.status === "OPEN" ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}{statement.status === "OPEN" ? t("accounting.dailyIncome.actions.closeDay") : t("accounting.dailyIncome.actions.reopenDay")}</Button> : null}
     </>} />
@@ -730,7 +849,14 @@ export function DailyIncomeWorkspace() {
     </> : null}
     </div>
 
-    <Dialog open={statementDialog} onOpenChange={(open) => { setStatementDialog(open); if (!open) setFormError(null); }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90dvh] sm:w-[calc(100vw-2rem)] sm:max-w-xl sm:rounded-xl sm:p-6"><DialogHeader className="shrink-0 border-b border-primary/20 bg-primary px-4 pb-4 pt-5 text-primary-foreground sm:border-0 sm:bg-transparent sm:p-0 sm:text-foreground"><div className="flex items-center justify-between gap-4"><DialogTitle className="text-2xl font-bold text-primary-foreground sm:text-lg sm:text-foreground">{statement ? t("accounting.dailyIncome.statement.editTitle") : t("accounting.dailyIncome.statement.createTitle")}</DialogTitle><button type="button" className="font-semibold text-primary-foreground sm:hidden" onClick={() => setStatementDialog(false)}>{t("common.actions.cancel")}</button></div><DialogDescription className="break-words text-primary-foreground/85 sm:text-muted-foreground">{t("accounting.dailyIncome.statement.description")}</DialogDescription></DialogHeader><div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:overflow-visible sm:p-0"><DailyIncomeStatementForm branches={branches} initialValues={statementValues} isSubmitting={mutationPending} error={formError} onSubmit={saveStatement} onCancel={() => setStatementDialog(false)} /></div></DialogContent></Dialog>
+    <Dialog open={statementDialog} onOpenChange={(open) => { setStatementDialog(open); if (!open) setFormError(null); }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90dvh] sm:w-[calc(100vw-2rem)] sm:max-w-xl sm:overflow-visible sm:rounded-xl sm:p-6"><DialogHeader className="shrink-0 border-b border-primary/20 bg-primary px-4 pb-4 pt-5 text-primary-foreground sm:border-0 sm:bg-transparent sm:p-0 sm:text-foreground"><div className="flex items-center justify-between gap-4"><DialogTitle className="text-2xl font-bold text-primary-foreground sm:text-lg sm:text-foreground">{statement ? t("accounting.dailyIncome.statement.editTitle") : t("accounting.dailyIncome.statement.createTitle")}</DialogTitle><button type="button" className="font-semibold text-primary-foreground sm:hidden" onClick={() => setStatementDialog(false)}>{t("common.actions.cancel")}</button></div><DialogDescription className="break-words text-primary-foreground/85 sm:text-muted-foreground">{statement ? t("accounting.dailyIncome.statement.editDescription") : t("accounting.dailyIncome.statement.description")}</DialogDescription></DialogHeader><div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:overflow-visible sm:p-0"><DailyIncomeStatementForm branches={branches} initialValues={statementValues} lockBranch={Boolean(statement)} isSubmitting={mutationPending} error={formError} onSubmit={saveStatement} onCancel={() => setStatementDialog(false)} /></div></DialogContent></Dialog>
+    <DailyIncomePrintDialog
+      open={printDialog}
+      onOpenChange={setPrintDialog}
+      employees={employees}
+      isPending={generateIncomeReportMutation.isPending}
+      onConfirm={handlePrintReport}
+    />
     <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={journalToFormValues(editingJournal)} employees={employees} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
     <Dialog open={Boolean(deleteJournal)} onOpenChange={(open) => !open && setDeleteJournal(null)}><DialogContent><DialogHeader><DialogTitle>{t("accounting.dailyIncome.delete.title")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.delete.description")}</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setDeleteJournal(null)}>{t("common.actions.cancel")}</Button><Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (!deleteJournal) return; deleteMutation.mutateAsync(deleteJournal.id).then(() => { setDeleteJournal(null); feedback.notifyDeleted(t("accounting.dailyIncome.transactionNoun"), 1); }).catch((error) => feedback.notifyError(normalizeApiError(error).message)); }}>{t("common.actions.delete")}</Button></DialogFooter></DialogContent></Dialog>
   </div>;

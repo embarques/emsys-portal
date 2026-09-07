@@ -50,6 +50,18 @@ export function focusNextFormField(current: HTMLElement | null): boolean {
   return true;
 }
 
+/** Submit the parent form when Enter is pressed on a field (e.g. amount / reference). */
+export function submitFormOnEnterKeyDown(
+  event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+) {
+  if (event.key !== "Enter") return;
+  if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.nativeEvent.isComposing) return;
+  event.preventDefault();
+  event.stopPropagation();
+  event.currentTarget.form?.requestSubmit();
+}
+
 export type FormEnterNavigationOptions = {
   /**
    * Submit the form when Enter is pressed on the last field. When the form has
