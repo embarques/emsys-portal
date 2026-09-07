@@ -92,11 +92,6 @@ function isTotalCashSummaryLabel(label: string) {
   return normalized.includes("total") && (normalized.includes("efectivo") || normalized.includes("cash"));
 }
 
-function isNetIncomeSummaryLabel(label: string) {
-  const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-  return normalized.includes("ingresos neto") || normalized.includes("net income");
-}
-
 function isExpenseSummaryLabel(label: string) {
   const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
   return normalized.includes("gasto") || normalized.includes("expense");
@@ -114,18 +109,6 @@ function prioritizeTotalCashStat(stats: StatCardItem[]) {
   const [totalCashStat] = nextStats.splice(totalCashIndex, 1);
   if (totalCashStat) nextStats.unshift(totalCashStat);
   return nextStats;
-}
-
-function totalCashFormulaDetails(stats: StatCardItem[], totalCash: StatCardItem) {
-  const netIncome = stats.find((stat) => isNetIncomeSummaryLabel(stat.label));
-  const expenses = stats.find((stat) => isExpenseSummaryLabel(stat.label));
-  if (!netIncome || !expenses) return undefined;
-
-  return [
-    { label: netIncome.label, value: netIncome.value },
-    { label: expenses.label, value: `- ${expenses.value}` },
-    { label: totalCash.label, value: totalCash.value },
-  ];
 }
 
 function promoteExpenseAndDiscountDetails(stats: StatCardItem[]) {
@@ -374,9 +357,7 @@ export function DailyIncomeWorkspace() {
       })),
     })));
 
-    return prioritizeTotalCashStat(nextStats.map((stat) =>
-      isTotalCashSummaryLabel(stat.label) ? { ...stat, details: totalCashFormulaDetails(nextStats, stat) ?? stat.details } : stat,
-    ));
+    return prioritizeTotalCashStat(nextStats);
   }, [summaryTotalsQuery.data, summaryTotalsQuery.isFetching, summaryTotalsQuery.isLoading, t]);
 
   const columns: DataTableColumn<DailyIncomeJournal>[] = useMemo(() => [
