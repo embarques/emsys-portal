@@ -163,11 +163,11 @@ export function useCustomer(customerId: string | null, enabled = true) {
 export function useEnsureCustomerDetail() {
   const queryClient = useQueryClient();
 
-  return async (customerId: string) => {
+  return async (customerId: string, options?: { staleTime?: number }) => {
     return queryClient.fetchQuery({
       queryKey: queryKeys.customers.detail(customerId),
       queryFn: () => fetchCustomerById(customerId),
-      staleTime: 60_000,
+      staleTime: options?.staleTime ?? 60_000,
     });
   };
 }

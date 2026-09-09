@@ -173,6 +173,14 @@ const listItemClassName =
 
 const MOBILE_SHEET_SEARCH_THRESHOLD = 8;
 
+/**
+ * After choosing an option we move focus to the next field. That focus must not
+ * reopen a combobox: a new Popper while the parent form is still applying the
+ * selection (sections appearing, option lists changing) can loop in Radix
+ * PopperContent ("Maximum update depth exceeded").
+ */
+let skipOpenOnFocus = false;
+
 function MobileSelectLoading({ message }: { message: string }) {
   return (
     <div
@@ -297,7 +305,7 @@ export function SearchableSelect({
   }, [fitToOptions, options, placeholder]);
 
   function focusSearchInput(shouldSelectAll = false) {
-    if (disabled) return;
+    if (disabled || skipOpenOnFocus) return;
     if (suppressNextFocusSearchRef.current) {
       suppressNextFocusSearchRef.current = false;
       return;
@@ -340,9 +348,14 @@ export function SearchableSelect({
     setOpen(false);
 
     const focusTarget = searchable ? inputRef.current : triggerRef.current;
+    skipOpenOnFocus = true;
     window.setTimeout(() => {
-      if (!focusNextFormField(focusTarget)) {
-        focusTarget?.focus();
+      try {
+        if (!focusNextFormField(focusTarget)) {
+          focusTarget?.focus();
+        }
+      } finally {
+        skipOpenOnFocus = false;
       }
     }, 0);
   }
@@ -526,7 +539,9 @@ export function SearchableSelect({
               shouldFilter={searchable && !manualFiltering}
               filter={accentInsensitiveFilter}
               value={highlight}
-              onValueChange={setHighlight}
+              onValueChange={(next) => {
+                setHighlight((current) => (current === next ? current : next));
+              }}
               loop
             >
               {showMobileSearch ? (
@@ -606,7 +621,9 @@ export function SearchableSelect({
           >
             <Command
               value={highlight}
-              onValueChange={setHighlight}
+              onValueChange={(next) => {
+                setHighlight((current) => (current === next ? current : next));
+              }}
               loop
             >
               <CommandList ref={scrollIsolationRef} className="max-h-60 p-0">
@@ -637,7 +654,9 @@ export function SearchableSelect({
         shouldFilter={!manualFiltering}
         filter={accentInsensitiveFilter}
         value={highlight}
-        onValueChange={setHighlight}
+        onValueChange={(next) => {
+          setHighlight((current) => (current === next ? current : next));
+        }}
         loop
       >
         <Popover

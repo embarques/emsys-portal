@@ -34,6 +34,7 @@
     "discount": "Discount",
     "amountPaid": "Paid",
     "balance": "Balance",
+    "pickupAssignment": "Received by",
     "createdBy": "Created by",
     "createdAt": "Created at"
   },
@@ -67,10 +68,13 @@
       "invoiceNumber": "Invoice number",
       "container": "Container",
       "pending": "Pending",
+      "paymentLocation": "Payment location",
+      "createdAt": "Created at",
+      "createdBy": "Created by",
       "sender": "Sender",
       "receiver": "Receiver",
       "pickupReference": "Pickup Reference",
-      "pickupSource": "Pickup Source",
+      "pickupSource": "Received via",
       "pickupSourceRoute": "Route",
       "pickupSourceWarehouse": "Warehouse",
       "pickupSourceOffice": "Office",
@@ -120,7 +124,7 @@
       "cancelEdit": "Cancel edit",
       "addItem": "Add item",
       "itemsSubtotal": "Items subtotal",
-      "emptyTable": "No line items added yet. Fill in the fields above and press Enter on Total to add a line.",
+      "emptyTable": "No line items added yet. Use Add item to start the first line.",
       "descriptionPlaceholder": "Type or search catalog items…",
       "moveUp": "Move up",
       "moveDown": "Move down",
@@ -145,6 +149,7 @@
   },
   "wizard": {
     "navAriaLabel": "Invoice steps",
+    "goToStep": "Go to {{label}}",
     "stepEyebrow": "Step {{step}} of {{total}} · {{label}}",
     "steps": {
       "details": "Details",
@@ -169,7 +174,7 @@
       "dateRequired": "Date is required.",
       "invoiceNumberRequired": "Invoice number is required.",
       "containerRequired": "Container is required.",
-      "paymentLocationRequired": "Pending payment location is required.",
+      "paymentLocationRequired": "Payment location is required.",
       "pickupRouteRequired": "Appointment route is required.",
       "warehouseEmployeeRequired": "Warehouse employee is required.",
       "officeEmployeeRequired": "Office employee is required.",
@@ -177,7 +182,8 @@
       "unverifiedSenderAddress": "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.",
       "lineItemRequired": "Add at least one line item.",
       "dailyIncomeContinueRequired": "Open a Cuadre, then record a payment or check Skip payment before continuing.",
-      "dailyIncomeSaveRequired": "Open a Cuadre, then record a payment or check Skip payment before saving."
+      "dailyIncomeSaveRequired": "Open a Cuadre, then record a payment or check Skip payment before saving.",
+      "negativeBalance": "Balance cannot be negative. Reduce the payment or discount so it does not exceed the invoice total."
     },
     "summary": {
       "title": "Invoice summary",
@@ -235,7 +241,10 @@
         "subtotal": "Subtotal"
       },
       "labels": "{{count}} label",
-      "labels_plural": "{{count}} labels"
+      "labels_plural": "{{count}} labels",
+      "noLabels": "No labels",
+      "noPhone": "No phone",
+      "noAddress": "No address"
     },
     "dailyIncome": {
       "checking": "Checking Daily Income registration…",
@@ -255,6 +264,8 @@
       "registerRequired": "This invoice cannot be created until it is registered in Daily Income.",
       "noStatement": "No Daily Income exists for today and the current branch. Create it before registering this invoice.",
       "openFullPage": "Open full Daily Income page",
+      "openForInvoiceDate": "Open daily income for this branch and date",
+      "openForInvoiceDateHint": "Opens in a new tab. Create or reopen the statement, then return here and save again.",
       "openAssociated": "Open Cuadre linked",
       "openAssociatedHint": "Today's Daily Income #{{id}} is open. This invoice will be associated with it automatically.",
       "recordPaymentNow": "Record payment",
@@ -268,7 +279,6 @@
       "skipPaymentHint": "Leave checked to let the backend register this invoice in the open Cuadre with $0 payment. Uncheck to enter payment details.",
       "skipWithCuadreHint": "Invoice will be linked to Daily Income #{{id}} and registered in the journal with $0 payment.",
       "paymentSkipped": "Payment skipped — no open Cuadre to register against. Create a Cuadre to record cost with $0 payment, or continue without linking.",
-      "openCuadreBeforePayment": "Open or create a Cuadre before recording or skipping payment.",
       "unpaidContinueHint": "Enter a payment below, or continue to register invoice cost and balance in Daily Income #{{id}} with $0 payment.",
       "recordBeforeContinueHint": "Press Record payment to continue. Amount may be $0.00 for an unpaid invoice.",
       "zeroPaymentDescription": "Initial invoice registration (unpaid)",
@@ -330,6 +340,7 @@
     }
   },
   "view": {
+    "pickupAssignment": "Received by",
     "comments": {
       "title": "Comments ({{count}})",
       "description": "Notes about reaching out, delivery preferences, and other follow-ups. Comments cannot be deleted.",
@@ -449,6 +460,7 @@
       "createdBy": {
         "name": { "label": "Created by" }
       },
+      "pickupSource": { "label": "Received via" },
       "route": {
         "_id": { "label": "Route" }
       },

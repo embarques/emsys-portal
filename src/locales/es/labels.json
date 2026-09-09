@@ -125,6 +125,18 @@
     "print": "Imprimir",
     "remove": "Quitar",
     "removeFromView": "Quitar etiqueta de la vista",
+    "removeDialog": {
+      "lineItemsTitle": "¿Quitar el artículo seleccionado?",
+      "lineItemsTitle_plural": "¿Quitar los artículos seleccionados?",
+      "lineItemsDescription": "¿Quitar {{count}} artículo de esta lista? No se incluirá al generar etiquetas.",
+      "lineItemsDescription_plural": "¿Quitar {{count}} artículos de esta lista? No se incluirán al generar etiquetas.",
+      "labelsTitle": "¿Quitar la etiqueta seleccionada?",
+      "labelsTitle_plural": "¿Quitar las etiquetas seleccionadas?",
+      "labelsDescription": "¿Quitar {{count}} etiqueta de esta lista? Esto no elimina el código de barras del sistema.",
+      "labelsDescription_plural": "¿Quitar {{count}} etiquetas de esta lista? Esto no elimina los códigos de barras del sistema.",
+      "oneLabelTitle": "¿Quitar esta etiqueta?",
+      "oneLabelDescription": "¿Quitar esta etiqueta de la lista? Esto no elimina el código de barras del sistema."
+    },
     "selectAllLineItems": "Seleccionar todos los artículos",
     "selectAllLabels": "Seleccionar todas las etiquetas",
     "selectLineItem": "Seleccionar {{invoice}} · {{description}}",

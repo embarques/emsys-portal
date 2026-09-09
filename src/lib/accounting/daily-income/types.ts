@@ -127,6 +127,29 @@ export type DailyIncomeStatementValues = {
   rate: number;
 };
 
+function normalizePaymentMethodName(name?: string | null): string {
+  return name?.trim().replaceAll("_", "-").toUpperCase() ?? "";
+}
+
+/** Cash is the default method for new invoice and daily-income payments. */
+export function isCashPaymentMethod(name?: string | null): boolean {
+  return normalizePaymentMethodName(name) === "CASH";
+}
+
+export function findCashPaymentMethod(methods: AccountingLookup[]): AccountingLookup | undefined {
+  return methods.find((method) => isCashPaymentMethod(method.name));
+}
+
+export function withDefaultCashPaymentMethod<T extends { paymentMethodId?: number; paymentMethodName?: string }>(
+  values: T,
+  paymentMethods: AccountingLookup[],
+): T {
+  if (values.paymentMethodId) return values;
+  const cash = findCashPaymentMethod(paymentMethods);
+  if (!cash) return values;
+  return { ...values, paymentMethodId: cash.id, paymentMethodName: cash.name };
+}
+
 /** Zelle requires extra reconciliation fields to prevent duplicate payment posting. */
 export function isZellePaymentMethod(name?: string | null): boolean {
   return name?.trim().toLowerCase() === "zelle";

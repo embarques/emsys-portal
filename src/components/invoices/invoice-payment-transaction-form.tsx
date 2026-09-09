@@ -15,10 +15,11 @@ import {
   useCreateDailyIncomeJournal,
 } from "@/lib/accounting/daily-income/hooks";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
-import type {
-  DailyIncomeJournal,
-  DailyIncomeJournalValues,
-  DailyIncomeStatement,
+import {
+  withDefaultCashPaymentMethod,
+  type DailyIncomeJournal,
+  type DailyIncomeJournalValues,
+  type DailyIncomeStatement,
 } from "@/lib/accounting/daily-income/types";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
@@ -131,7 +132,10 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   const invoiceRef = useRef(invoice);
   invoiceRef.current = invoice;
 
-  const initialValues = useMemo(() => buildInitialValues(invoice), [invoice]);
+  const initialValues = useMemo(
+    () => withDefaultCashPaymentMethod(buildInitialValues(invoice), paymentMethodsQuery.data ?? []),
+    [invoice, paymentMethodsQuery.data],
+  );
 
   const {
     formState: { errors },
@@ -147,8 +151,11 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   });
 
   useEffect(() => {
-    reset(buildInitialValues(invoiceRef.current));
-  }, [statement.id, reset]);
+    reset({
+      ...withDefaultCashPaymentMethod(buildInitialValues(invoiceRef.current), paymentMethodsQuery.data ?? []),
+      description: t("invoices.wizard.dailyIncome.dialog.initialRegistrationDescription"),
+    });
+  }, [statement.id, reset, t]);
 
   useEffect(() => {
     setValue("invoiceCost", invoiceLineItemsTotal, { shouldValidate: true });

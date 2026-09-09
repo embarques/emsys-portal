@@ -15,7 +15,7 @@ import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/cu
 import type { Customer } from "@/lib/customers/types";
 import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
-import { isCheckPaymentMethod, isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCheckPaymentMethod, isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
@@ -103,6 +103,14 @@ export function RegisterInvoiceTransactionFields({
   const includeReceiver = watch("includeReceiver");
   const senderId = watch("senderId");
   const receiverId = watch("receiverId");
+
+  useEffect(() => {
+    if (paymentMethodId || paymentMethods.length === 0) return;
+    const cash = findCashPaymentMethod(paymentMethods);
+    if (!cash) return;
+    setValue("paymentMethodId", cash.id, { shouldValidate: true });
+    setValue("paymentMethodName", cash.name, { shouldValidate: true });
+  }, [paymentMethodId, paymentMethods, setValue]);
 
   useEffect(() => {
     if (!paymentDetailsRequired || !needsBankAccount || bankAccounts.some((account) => account.id === paymentAccountId) || !bankAccounts[0]) {

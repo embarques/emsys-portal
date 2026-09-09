@@ -69,7 +69,36 @@ export type FormEnterNavigationOptions = {
    * instead of submitting. Defaults to `true`.
    */
   submitOnLast?: boolean;
+  /**
+   * Called instead of native form submit when Enter completes the form
+   * (last field, or `shouldComplete`).
+   */
+  onComplete?: () => void;
+  /**
+   * When this returns true, Enter completes immediately instead of moving to
+   * the next field.
+   */
+  shouldComplete?: () => boolean;
 };
+
+function completeForm(
+  form: HTMLFormElement,
+  submitOnLast: boolean,
+  onComplete?: () => void,
+) {
+  if (onComplete) {
+    onComplete();
+    return;
+  }
+
+  if (!submitOnLast) return;
+
+  if (typeof form.requestSubmit === "function") {
+    form.requestSubmit();
+  } else {
+    form.submit();
+  }
+}
 
 /**
  * Returns a form `onKeyDown` handler that turns Enter into "advance to next
@@ -78,7 +107,7 @@ export type FormEnterNavigationOptions = {
  * their own Enter-to-select behavior.
  */
 export function useFormEnterNavigation(options: FormEnterNavigationOptions = {}) {
-  const { submitOnLast = true } = options;
+  const { submitOnLast = true, onComplete, shouldComplete } = options;
 
   return React.useCallback(
     (event: React.KeyboardEvent<HTMLFormElement>) => {
@@ -110,6 +139,12 @@ export function useFormEnterNavigation(options: FormEnterNavigationOptions = {})
       const currentIndex = fields.indexOf(target);
       if (currentIndex === -1) return;
 
+      if (shouldComplete?.()) {
+        event.preventDefault();
+        completeForm(form, submitOnLast, onComplete);
+        return;
+      }
+
       const nextField = fields[currentIndex + 1];
 
       if (nextField) {
@@ -118,15 +153,11 @@ export function useFormEnterNavigation(options: FormEnterNavigationOptions = {})
         return;
       }
 
-      if (submitOnLast) {
+      if (onComplete || submitOnLast) {
         event.preventDefault();
-        if (typeof form.requestSubmit === "function") {
-          form.requestSubmit();
-        } else {
-          form.submit();
-        }
+        completeForm(form, submitOnLast, onComplete);
       }
     },
-    [submitOnLast],
+    [onComplete, shouldComplete, submitOnLast],
   );
 }

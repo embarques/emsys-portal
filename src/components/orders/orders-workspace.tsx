@@ -84,6 +84,7 @@ import {
   formatOrderCommentsSummary,
   formatOrderDate,
   formatOrderId,
+  getOrderFeedbackName,
   formatOrderRouteName,
   formatUserSummary,
   buildOrderCreatedByFilterOptions,
@@ -356,7 +357,7 @@ export function OrdersWorkspace() {
   const { t } = useTranslation();
   const tabScope = useWorkspaceTabScope();
   const listActive = tabScope?.isActive ?? true;
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
+  const { notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const { loading: authLoading, companyId, hasPermission } = useAuth();
   const canSyncLegacyPickups = hasPermission(
     PERMISSIONS.pickupsSyncLegacy.name,
@@ -601,7 +602,7 @@ export function OrdersWorkspace() {
         notifyUpdated(t("orders.entity"), formatOrderId(nextOrder));
       } else {
         const nextOrder = await createOrderMutation.mutateAsync(values);
-        notifyAdded(t("orders.entity"), formatOrderId(nextOrder));
+        notifySuccess(t("orders.toasts.addedFor", { name: getOrderFeedbackName(nextOrder) }));
       }
 
       setFormMode(null);
@@ -923,6 +924,7 @@ export function OrdersWorkspace() {
     {
       id: "createdBy",
       label: t("orders.columns.createdBy"),
+      sortField: "createdBy.name",
       cellClassName: "text-muted-foreground",
       renderCell: (order) => formatUserSummary(order.createdBy),
     },

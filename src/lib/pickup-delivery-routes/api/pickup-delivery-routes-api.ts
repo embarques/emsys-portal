@@ -357,6 +357,17 @@ function buildVehicleRouteWritePayload(values: ActiveRouteFormValues): VehicleRo
     }
   }
 
+  const vehicleId = values.vehicle.id.trim();
+  if (vehicleId) {
+    const vehicleName = values.vehicle.name.trim();
+    const vehicleBranch = values.vehicle.branch?.trim();
+    payload.vehicle = {
+      id: vehicleId,
+      name: vehicleName || vehicleId,
+      ...(vehicleBranch ? { branch: vehicleBranch } : {}),
+    };
+  }
+
   return payload;
 }
 

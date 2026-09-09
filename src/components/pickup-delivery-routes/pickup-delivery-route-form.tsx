@@ -3,6 +3,7 @@
 import {
   Building2,
   CalendarRange,
+  Car,
   Container,
   DollarSign,
   History,
@@ -13,7 +14,6 @@ import {
 } from "lucide-react";
 
 import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
-import { RouteEmployeeSelect } from "@/components/route-manager/route-employee-select";
 import { PickupRouteOrdersSection } from "@/components/pickup-delivery-routes/pickup-route-orders-section";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -22,7 +22,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { SearchableSelectOption } from "@/components/ui/searchable-select";
-import type { RouteCrewRole, RouteEmployeeRef } from "@/lib/route-manager/types";
+import type { RouteCrewRole } from "@/lib/route-manager/types";
 import type { ActiveRouteFormValues } from "@/lib/pickup-delivery-routes/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -38,10 +38,12 @@ type ActiveRouteFormProps = {
   routeOptions: SearchableSelectOption[];
   containerOptions: SearchableSelectOption[];
   branchOptions: SearchableSelectOption[];
+  vehicleOptions: SearchableSelectOption[];
   previousRouteOptions?: SearchableSelectOption[];
   previousRouteId?: string;
   branchCode: string;
   branchesLoading?: boolean;
+  vehiclesLoading?: boolean;
   routesLoading?: boolean;
   previousRoutesLoading?: boolean;
   selectedRouteLoading?: boolean;
@@ -49,12 +51,11 @@ type ActiveRouteFormProps = {
   onPreviousRouteChange?: (routeId: string) => void;
   onBranchChange: (branchCode: string) => void;
   onDateChange: (date: string) => void;
+  onVehicleChange: (vehicleId: string) => void;
   onContainerChange: (containerId: string) => void;
   onRateChange: (rate: string) => void;
   onRouteRecordChange: (routeRecordId: string) => void;
   onRoleChange: (employeeId: number, role: RouteCrewRole) => void;
-  onEmployeesChange: (employees: RouteEmployeeRef[]) => void;
-  onRemoveEmployee: (employeeId: number) => void;
   onCreateRouteClick: () => void;
   onSubmit: () => void;
   onCancel?: () => void;
@@ -73,10 +74,12 @@ export function ActiveRouteForm({
   routeOptions,
   containerOptions,
   branchOptions,
+  vehicleOptions,
   previousRouteOptions = [],
   previousRouteId = "",
   branchCode,
   branchesLoading = false,
+  vehiclesLoading = false,
   routesLoading = false,
   previousRoutesLoading = false,
   selectedRouteLoading = false,
@@ -84,12 +87,11 @@ export function ActiveRouteForm({
   onPreviousRouteChange,
   onBranchChange,
   onDateChange,
+  onVehicleChange,
   onContainerChange,
   onRateChange,
   onRouteRecordChange,
   onRoleChange,
-  onEmployeesChange,
-  onRemoveEmployee,
   onCreateRouteClick,
   onSubmit,
   onCancel,
@@ -129,16 +131,6 @@ export function ActiveRouteForm({
           </FormSection>
         ) : null}
 
-        <FormSection icon={CalendarRange} title={t("routes.activeRoute.date")} required>
-          <DateInput
-            id="active-route-date"
-            aria-label={t("routes.activeRoute.date")}
-            value={values.date}
-            onChange={(event) => onDateChange(event.target.value)}
-            required
-          />
-        </FormSection>
-
         <FormSection icon={Building2} title={t("routes.activeRoute.branch")} required>
           <SearchableSelect
             id="active-route-branch"
@@ -150,6 +142,40 @@ export function ActiveRouteForm({
             loading={branchesLoading}
             loadingMessage={t("common.loading")}
             options={branchOptions}
+          />
+        </FormSection>
+
+        <FormSection icon={CalendarRange} title={t("routes.activeRoute.date")} required>
+          <DateInput
+            id="active-route-date"
+            aria-label={t("routes.activeRoute.date")}
+            value={values.date}
+            onChange={(event) => onDateChange(event.target.value)}
+            required
+          />
+        </FormSection>
+
+        <FormSection icon={Car} title={t("routes.activeRoute.vehicle")} required>
+          <SearchableSelect
+            id="active-route-vehicle"
+            aria-label={t("routes.activeRoute.vehicle")}
+            value={values.vehicle.id}
+            onValueChange={onVehicleChange}
+            placeholder={
+              hasBranch
+                ? t("routes.activeRoute.vehiclePlaceholder")
+                : t("routes.activeRoute.selectBranchFirstVehicle")
+            }
+            searchPlaceholder={t("routes.activeRoute.vehicleSearch")}
+            loading={vehiclesLoading}
+            loadingMessage={t("common.loading")}
+            emptyMessage={
+              hasBranch
+                ? t("routes.activeRoute.vehicleEmpty")
+                : t("routes.activeRoute.selectBranchFirstVehicle")
+            }
+            options={vehicleOptions}
+            required
           />
         </FormSection>
 
@@ -189,22 +215,13 @@ export function ActiveRouteForm({
 
         {values.routeRecordId ? (
           <FormSection icon={Users} title={t("routes.activeRoute.crewRoles")}>
-            <div className="space-y-3">
-              <RouteEmployeeSelect
-                value={values.employees}
-                onChange={onEmployeesChange}
-                branchCode={branchCode}
-                showSelectedList={false}
-              />
-              <CrewRolePicker
-                employees={values.employees}
-                onRoleChange={onRoleChange}
-                onRemove={onRemoveEmployee}
-                roles={crewRoles}
-                toggleLeadRoles
-                loading={selectedRouteLoading}
-              />
-            </div>
+            <CrewRolePicker
+              employees={values.employees}
+              onRoleChange={onRoleChange}
+              roles={crewRoles}
+              toggleLeadRoles
+              loading={selectedRouteLoading}
+            />
           </FormSection>
         ) : null}
 

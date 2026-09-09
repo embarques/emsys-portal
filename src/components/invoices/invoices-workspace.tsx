@@ -68,6 +68,7 @@ import {
   getInvoiceSubtotal,
   getInvoiceTotalMoneyClass,
   getPaymentLocationLabel,
+  formatInvoicePickupAssignmentLabel,
   resolveInvoicePaidStatus,
 } from "@/lib/invoices/display";
 import {
@@ -983,8 +984,16 @@ export function InvoicesWorkspace() {
       },
     },
     {
+      id: "pickupAssignment",
+      label: t("invoices.columns.pickupAssignment"),
+      sortField: "pickupSource",
+      renderCell: (invoice) =>
+        formatInvoicePickupAssignmentLabel(invoice, t, t("common.empty.dash")),
+    },
+    {
       id: "createdBy",
       label: t("invoices.columns.createdBy"),
+      sortField: "createdBy.name",
       cellClassName: "text-muted-foreground",
       renderCell: (invoice) => invoice.createdBy.trim() || t("common.empty.dash"),
     },
@@ -999,7 +1008,7 @@ export function InvoicesWorkspace() {
     [t],
   );
 
-  const columnVisibility = useColumnVisibility("invoices-v6", tableColumns);
+  const columnVisibility = useColumnVisibility("invoices-v7", tableColumns);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount;
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;

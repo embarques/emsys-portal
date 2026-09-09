@@ -85,6 +85,24 @@ Our workers digitize the information from our physical invoices into the system 
 
 An invoice represents the merchandise collected as part of a client's shipment.
 
+**Received by** (`receivedBy`) is who took in the merchandise. It replaces legacy `employee` (`core.User`). The value is either:
+
+- the selected **warehouse/office employee**, or
+- the selected **daily route** (vehicle-route). Display the nested route-crew name when the daily route has one.
+
+It is not the system user who digitized the invoice (`createdBy`).
+
+TODO (backend) — invoice received-by (portal now follows this; align API + legacy data):
+
+Replace invoice **`employee`** (`core.User`) with **`receivedBy`**. Discriminate with **`pickupSource`** (`route` | `warehouse` | `office`):
+
+- **Route:** `receivedBy` is the selected daily vehicle-route (`id` + `name`) with nested crew ref `route` (`id` + `name`).
+- **Warehouse / office:** `receivedBy` is the selected employee (`id` + `name`; keep `fullName` / `userName` when present). Also persist **`officeBranch`** (`id` + `code` + `name`).
+
+Keep **`createdBy`** as the user who digitized the invoice. Do not keep using `employee` as Received by. On update, `receivedBy` must replace the previous value (do not leave a leftover User on route invoices or a leftover daily route on employee invoices).
+
+Backfill legacy invoices: when `employee` is a `core.User` and there is no daily route, copy it onto `receivedBy` and set `pickupSource` to `warehouse` or `office`. When the invoice was received on a route, set `receivedBy` to the daily vehicle-route (resolve from `route` / `vehicleRoute` if needed, including nested `route` crew) and set `pickupSource: route`. After backfill, stop treating `employee` as Received by.
+
 ### Barcodes
 
 Barcodes are used to identify and track individual items within invoices.
@@ -123,13 +141,17 @@ Routes organize day-to-day appointment stops and delivery stops.
 
 **Route crews** are reusable people templates: **status**, **branch**, and **crew members**. They have no date, vehicle, or driver/appraiser/helper roles.
 
-**Daily routes** are the dated working route for a visit or delivery day: **date**, **branch**, **route crew**, and **crew roles** (driver, appraiser, helper(s)). If the branch is RD, the form also includes **container** and **exchange rate**. They have no status/active flag.
+**Daily routes** are the dated working route for a visit or delivery day: **branch**, **date**, **vehicle**, **route crew**, and **crew roles** for each employee on that crew (driver, appraiser, helper(s)). If the branch is RD, the form also includes **container** and **exchange rate**. They have no status/active flag. Daily-route employees come from the selected route crew; roles are assigned on the daily route, not on the crew template.
 
-A new daily route can start from a previous day’s configuration; change the date (and any other field) before saving.
-
-TODO (backend): reject creating a second daily route for the same date and branch so the portal does not store duplicates when reusing a previous configuration.
+A new daily route can start from a previous day’s configuration. Copying to another date is allowed; the same route crew cannot be used twice on the same date at the same branch.
 
 The same employee can be driver and appraiser, or driver, or appraiser, or helper.
+
+TODO (backend) — route modeling (portal now follows this; align API + legacy data):
+
+**Route crews** (`/v1/routes`): reusable people templates. Persist only **active**, **branch** (`id` + `code` + `name`), and **employees** (`id` + `name`). Do not persist date, vehicle, trip number, or driver/appraiser/helper roles on the crew. Strip those fields from existing crew records. Reject create/update when another crew in the same company already has the same **branch** and the same **employee id set** (order-independent; compare ids, not names).
+
+**Daily routes** (`/v1/vehicle-routes`): dated working route. Persist **branch**, **date**, **vehicle** (`id` + `name`, optional `branch`), **route** (crew ref `id` + `name`), and **employees with roles** (`driver` | `appraiser` | `helper`; one person may be both driver and appraiser). RD/DR/DO branches also require **container** and may include **rate**. Daily-route `employees` must be the selected crew’s members (no extras). `vehicle` is required. Do not use `active` as a user-facing status. Reject a second daily route for the same **date + branch + route crew**. Multiple daily routes on the same date and branch are allowed when the route crews differ. Copying a previous day’s configuration onto a new date is allowed. Backfill legacy daily routes that stored vehicle only on the crew, or that have extra/missing employees vs the linked crew.
 
 Daily routes can be created from the Daily routes workspace, or when assigning appointments or invoice barcodes (choose an existing daily route, or open the add daily route form).
 

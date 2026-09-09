@@ -489,6 +489,12 @@ function findLineItem(lineItems: InvoiceLineItem[], lineItemId: string): Invoice
   return lineItems.find((item) => item.id === lineItemId || item.apiId === lineItemId);
 }
 
+function throwIfAborted(signal?: AbortSignal) {
+  if (!signal?.aborted) return;
+  if (signal.reason instanceof Error) throw signal.reason;
+  throw new DOMException("The operation was aborted.", "AbortError");
+}
+
 /**
  * Generate labels for the selected invoice line items.
  *
@@ -496,16 +502,22 @@ function findLineItem(lineItems: InvoiceLineItem[], lineItemId: string): Invoice
  * already exist for that line item we retrieve them; otherwise we create one
  * barcode per label via `POST /barcodes`.
  */
-export async function generateLabels(targets: GenerateLabelTarget[]): Promise<GeneratedLabel[]> {
+export async function generateLabels(
+  targets: GenerateLabelTarget[],
+  signal?: AbortSignal,
+): Promise<GeneratedLabel[]> {
   if (targets.length === 0) return [];
 
+  throwIfAborted(signal);
   const invoiceIds = Array.from(new Set(targets.map((target) => target.invoiceId)));
   const invoices = await Promise.all(invoiceIds.map((id) => fetchInvoiceById(id)));
+  throwIfAborted(signal);
   const invoicesById = new Map(invoices.map((invoice) => [invoice.invoiceId, invoice]));
 
   const labels: GeneratedLabel[] = [];
 
   for (const target of targets) {
+    throwIfAborted(signal);
     const invoice = invoicesById.get(target.invoiceId);
     if (!invoice) continue;
 
@@ -551,6 +563,7 @@ export async function generateLabels(targets: GenerateLabelTarget[]): Promise<Ge
     });
   }
 
+  throwIfAborted(signal);
   return labels;
 }
 

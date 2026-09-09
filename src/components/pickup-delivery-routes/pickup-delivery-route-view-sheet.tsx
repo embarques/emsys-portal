@@ -20,6 +20,7 @@ import {
   formatActiveRouteRateLabel,
   formatActiveRouteRowLabel,
   formatActiveRouteTypeLabel,
+  formatActiveRouteVehicleLabel,
 } from "@/lib/pickup-delivery-routes/display";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
 import { isDeliveryBranchCode, type ActiveRoute } from "@/lib/pickup-delivery-routes/types";
@@ -111,6 +112,10 @@ export function ActiveRouteViewSheet({
             <RecordViewSheetDetailRow
               label={t("routes.columns.branch")}
               value={record.branch?.code || dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("routes.columns.vehicle")}
+              value={formatActiveRouteVehicleLabel(record, dash)}
             />
             <RecordViewSheetDetailRow
               label={t("routes.columns.route")}

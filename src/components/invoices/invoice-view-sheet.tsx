@@ -25,6 +25,7 @@ import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatInvoiceDate,
   formatInvoiceMoney,
+  formatInvoicePickupAssignmentLabel,
   getContainerLabelForInvoice,
   getInvoiceBalance,
   getInvoicePaidStatusBadgeClass,
@@ -278,7 +279,11 @@ export function InvoiceViewSheet({
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title="Invoice">
-            <RecordViewSheetDetailRow label="User created" value={invoice.createdBy} />
+            <RecordViewSheetDetailRow
+              label={t("invoices.view.pickupAssignment")}
+              value={formatInvoicePickupAssignmentLabel(invoice, t, t("common.empty.dash"))}
+            />
+            <RecordViewSheetDetailRow label={t("invoices.columns.createdBy")} value={invoice.createdBy} />
             <RecordViewSheetDetailRow label={t("common.audit.createdAt")} value={formatAuditDateTime(invoice.createdAt)} />
             <RecordViewSheetDetailRow label={t("common.audit.updatedAt")} value={formatAuditDateTime(invoice.updatedAt)} />
             <div className="border-t border-border bg-muted/20 px-4 py-3.5">

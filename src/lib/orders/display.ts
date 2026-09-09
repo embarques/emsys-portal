@@ -77,6 +77,11 @@ export function formatOrderId(order: Pick<Order, "id">): string {
   return String(order.id);
 }
 
+/** Sender full name for appointment toasts; falls back to the appointment id. */
+export function getOrderFeedbackName(order: Pick<Order, "id" | "sender">): string {
+  return order.sender?.name.trim() || formatOrderId(order);
+}
+
 export function formatCustomerPartySummary(customer: Customer): string {
   const addressLine = getCustomerAddressLine(customer);
   return `${customer.name} · ${addressLine}`;

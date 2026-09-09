@@ -200,6 +200,8 @@ export function buildActiveRouteAssignmentOptions(
       record.route?.routeId,
       record.date,
       record.container?.name,
+      record.vehicle?.name,
+      record.vehicle?.id,
       ...record.employees.map((employee) => employee.name),
     ].filter((value): value is string => Boolean(value?.trim())),
   }));
@@ -249,6 +251,10 @@ export function activeRouteMatchesSearch(
       case "container.name":
       case "container.number":
         return record.container?.name ?? "";
+      case "vehicle.name":
+        return record.vehicle?.name ?? "";
+      case "vehicle.id":
+        return record.vehicle?.id ?? "";
       case "createdBy":
         return record.createdBy;
       default:
@@ -272,6 +278,8 @@ export function activeRouteMatchesQuery(record: ActiveRoute, query: string): boo
     record.route?.routeId ?? "",
     record.employees.map((employee) => employee.name).join(" "),
     record.container?.name ?? "",
+    record.vehicle?.name ?? "",
+    record.vehicle?.id ?? "",
     record.createdBy,
     record.routeType,
   ]

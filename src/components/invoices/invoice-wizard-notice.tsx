@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { AlertCircle, AlertTriangle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -8,9 +9,10 @@ type InvoiceWizardNoticeProps = {
   tone: "error" | "warning";
   message: string;
   className?: string;
+  action?: ReactNode;
 };
 
-export function InvoiceWizardNotice({ tone, message, className }: InvoiceWizardNoticeProps) {
+export function InvoiceWizardNotice({ tone, message, className, action }: InvoiceWizardNoticeProps) {
   const Icon = tone === "error" ? AlertCircle : AlertTriangle;
 
   return (
@@ -25,7 +27,10 @@ export function InvoiceWizardNotice({ tone, message, className }: InvoiceWizardN
       )}
     >
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
-      <p className="min-w-0 flex-1 break-words leading-snug">{message}</p>
+      <div className="min-w-0 flex-1 space-y-2.5">
+        <p className="break-words leading-snug">{message}</p>
+        {action ? <div className="print:hidden">{action}</div> : null}
+      </div>
     </div>
   );
 }

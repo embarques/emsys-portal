@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Loader2, Printer, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Loader2, Printer, Save } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { InvoiceForm } from "@/components/invoices/invoice-form";
@@ -26,9 +26,12 @@ import {
 } from "@/components/invoices/invoice-wizard-typography";
 import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
+import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/workspace-href";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { customerHasUnverifiedPrimaryAddress } from "@/lib/customers/types";
+import { isMissingOpenIncomeStatementError } from "@/lib/invoices/missing-open-income-statement";
 import { useTranslation } from "@/lib/i18n";
+import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 import {
   canContinueInvoiceDailyIncomeStep,
@@ -39,6 +42,7 @@ import {
 } from "@/lib/invoices/invoice-daily-income-context";
 import {
   createEmptyInvoiceForm,
+  getInvoiceFormBalance,
   isInvoiceEmployeePickupSource,
   resetInvoiceFormForNextEntry,
   hasInvoiceLineItemContent,
@@ -48,7 +52,6 @@ import {
 
 type Props = {
   initialValues?: InvoiceFormValues;
-  suggestedInvoiceNumber?: string;
   submitLabel: string;
   externalError?: string | null;
   /** Print is only available when editing a saved invoice in the database. */
@@ -73,7 +76,6 @@ type Props = {
 
 export function InvoiceFormWizard({
   initialValues,
-  suggestedInvoiceNumber,
   submitLabel,
   externalError = null,
   allowPrint = false,
@@ -88,6 +90,7 @@ export function InvoiceFormWizard({
 }: Props) {
   const { t } = useTranslation();
   const isMobileLayout = useIsMobileViewport();
+  const currentUserQuery = useCurrentUser();
   const [step, setStep] = useState<InvoiceWizardStep>(1);
   const [values, setValues] = useState<InvoiceFormValues>(
     initialValues ?? createEmptyInvoiceForm(),
@@ -106,6 +109,8 @@ export function InvoiceFormWizard({
   useEffect(() => {
     valuesRef.current = values;
   }, [values]);
+
+  const previousReceiverIdRef = useRef(values.receiverId);
 
   const validateStep1 = useCallback(
     (formValues: InvoiceFormValues): string | null => {
@@ -138,6 +143,20 @@ export function InvoiceFormWizard({
     [t],
   );
 
+  useEffect(() => {
+    const previousReceiverId = previousReceiverIdRef.current.trim();
+    const nextReceiverId = values.receiverId.trim();
+    previousReceiverIdRef.current = nextReceiverId;
+
+    if (step !== 2) return;
+    if (!nextReceiverId || !values.receiver || nextReceiverId === previousReceiverId) return;
+    if (validateStep2(values)) return;
+
+    setStepError(null);
+    setSubmitError(null);
+    setStep(3);
+  }, [step, values, validateStep2]);
+
   const validateStep3 = useCallback(
     (formValues: InvoiceFormValues): string | null => {
       const hasContent = formValues.lineItems.some(hasInvoiceLineItemContent);
@@ -149,9 +168,17 @@ export function InvoiceFormWizard({
 
   const validateForSave = useCallback(
     (formValues: InvoiceFormValues): string | null => {
-      return validateStep1(formValues) ?? validateStep2(formValues) ?? validateStep3(formValues);
+      const stepError = validateStep1(formValues) ?? validateStep2(formValues) ?? validateStep3(formValues);
+      if (stepError) return stepError;
+
+      const amountPaid = Number(dailyIncomeContext.registration?.amount ?? formValues.amountPaid ?? 0) || 0;
+      if (getInvoiceFormBalance(formValues, amountPaid) < 0) {
+        return t("invoices.wizard.validation.negativeBalance");
+      }
+
+      return null;
     },
-    [validateStep1, validateStep2, validateStep3],
+    [dailyIncomeContext.registration?.amount, t, validateStep1, validateStep2, validateStep3],
   );
 
   const handleValuesChange = useCallback((next: InvoiceFormValues) => {
@@ -220,9 +247,14 @@ export function InvoiceFormWizard({
     setStep((current) => (current - 1) as InvoiceWizardStep);
   }
 
-  function goToStep(target: InvoiceWizardFormStep) {
+  function goToStep(target: InvoiceWizardStep) {
     clearErrors();
     setStep(target);
+  }
+
+  function handleSelectCompletedStep(target: InvoiceWizardStep) {
+    if (target >= step) return;
+    goToStep(target);
   }
 
   async function handlePrint() {
@@ -277,10 +309,7 @@ export function InvoiceFormWizard({
     if (!resetAfterSave) return;
 
     setStep(1);
-    const nextValues = resetInvoiceFormForNextEntry(
-      values,
-      result.nextInvoiceNumber ?? suggestedInvoiceNumber ?? "",
-    );
+    const nextValues = resetInvoiceFormForNextEntry(values);
     setValues(nextValues);
     valuesRef.current = nextValues;
     setFormSessionKey((key) => key + 1);
@@ -288,8 +317,50 @@ export function InvoiceFormWizard({
     setDailyIncomeContext(emptyInvoiceDailyIncomeContext());
   }
 
+  const saveAmountPaid = Number(dailyIncomeContext.registration?.amount ?? values.amountPaid ?? 0) || 0;
+  const hasNegativeBalance = getInvoiceFormBalance(values, saveAmountPaid) < 0;
+  const negativeBalanceError = hasNegativeBalance ? t("invoices.wizard.validation.negativeBalance") : null;
+  const saveDisabled = isSubmitting || hasNegativeBalance;
   const bannerError =
-    step === previewStep ? submitError ?? externalError : stepError ?? externalError;
+    step === previewStep ? submitError ?? negativeBalanceError ?? externalError : stepError ?? externalError;
+  const invoiceDate = values.date.trim().slice(0, 10);
+  const invoiceBranchId = currentUserQuery.data?.branch?.id ?? 0;
+  const showOpenDailyIncomeAction =
+    Boolean(bannerError) &&
+    isMissingOpenIncomeStatementError(bannerError) &&
+    Boolean(invoiceDate) &&
+    invoiceBranchId > 0;
+
+  function openDailyIncomeForInvoiceDate() {
+    if (!invoiceDate || invoiceBranchId <= 0) return;
+    window.open(
+      buildDailyIncomeWorkspaceHref({
+        date: invoiceDate,
+        branchId: invoiceBranchId,
+        create: true,
+      }),
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
+
+  const bannerErrorAction = showOpenDailyIncomeAction ? (
+    <div className="space-y-1.5">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="border-destructive/40 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
+        onClick={openDailyIncomeForInvoiceDate}
+      >
+        <ExternalLink className="size-4" />
+        {t("invoices.wizard.dailyIncome.openForInvoiceDate")}
+      </Button>
+      <p className="text-xs leading-snug text-destructive/80">
+        {t("invoices.wizard.dailyIncome.openForInvoiceDateHint")}
+      </p>
+    </div>
+  ) : undefined;
   const showPrint = allowPrint && Boolean(onPrint);
   const summaryDiscountChange =
     requireDailyIncomeRegistration && dailyIncomeContext.registration
@@ -313,10 +384,10 @@ export function InvoiceFormWizard({
       wizardTotalSteps={previewStep}
       showFooter={false}
       initialValues={values}
-      suggestedInvoiceNumber={suggestedInvoiceNumber}
       submitLabel={submitLabel}
       onSubmit={() => ({ error: null })}
       onValuesChange={handleValuesChange}
+      onContinue={handleNext}
       onCancel={onCancel}
     />
   );
@@ -375,7 +446,7 @@ export function InvoiceFormWizard({
             {isPrinting ? t("invoices.wizard.actions.preparing") : t("invoices.wizard.actions.print")}
           </Button>
         ) : null}
-        <Button type="button" className="max-sm:px-3" onClick={handleSave} disabled={isSubmitting}>
+        <Button type="button" className="max-sm:px-3" onClick={handleSave} disabled={saveDisabled}>
           {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           {isSubmitting ? t("common.actions.saving") : submitLabel}
         </Button>
@@ -416,13 +487,13 @@ export function InvoiceFormWizard({
           >
             {isPrinting ? <Loader2 className="size-4 animate-spin" /> : <Printer className="size-4" />}
           </Button>
-          <Button type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={isSubmitting}>
+          <Button type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={saveDisabled}>
             {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             {isSubmitting ? t("common.actions.saving") : submitLabel}
           </Button>
         </div>
       ) : (
-        <Button type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={isSubmitting}>
+        <Button type="button" className="h-12 rounded-xl px-4 text-base" onClick={handleSave} disabled={saveDisabled}>
           {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           {isSubmitting ? t("common.actions.saving") : submitLabel}
         </Button>
@@ -470,7 +541,9 @@ export function InvoiceFormWizard({
         </div>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          {bannerError ? <InvoiceWizardNotice tone="error" message={bannerError} /> : null}
+          {bannerError ? (
+            <InvoiceWizardNotice tone="error" message={bannerError} action={bannerErrorAction} />
+          ) : null}
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             {step <= 3 ? (
@@ -513,7 +586,11 @@ export function InvoiceFormWizard({
       className={cn("flex min-h-0 flex-1 flex-col", invoiceWizardTypographyRoot)}
     >
       <div data-print-hide>
-        <InvoiceWizardStepper step={step} includePaymentStep={requireDailyIncomeRegistration} />
+        <InvoiceWizardStepper
+          step={step}
+          includePaymentStep={requireDailyIncomeRegistration}
+          onSelectStep={handleSelectCompletedStep}
+        />
       </div>
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -532,7 +609,9 @@ export function InvoiceFormWizard({
             <h2 className={invoiceStepTitleClassName}>{t(stepTitleKey)}</h2>
           </div>
 
-          {bannerError ? <InvoiceWizardNotice tone="error" message={bannerError} /> : null}
+          {bannerError ? (
+            <InvoiceWizardNotice tone="error" message={bannerError} action={bannerErrorAction} />
+          ) : null}
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <div

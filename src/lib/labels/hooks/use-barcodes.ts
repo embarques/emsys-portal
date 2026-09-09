@@ -15,7 +15,13 @@ export function useGenerateLabels() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (targets: GenerateLabelTarget[]) => generateLabels(targets),
+    mutationFn: ({
+      targets,
+      signal,
+    }: {
+      targets: GenerateLabelTarget[];
+      signal?: AbortSignal;
+    }) => generateLabels(targets, signal),
     onSuccess: () => {
       // New barcodes change invoice line-item barcode state, so refresh invoices.
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });

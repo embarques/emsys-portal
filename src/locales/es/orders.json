@@ -256,6 +256,7 @@
     "deleteMany": "Esto eliminará permanentemente {{count}} citas seleccionadas. {{cannotBeUndone}}"
   },
   "toasts": {
+    "addedFor": "Se agregó una cita para \"{{name}}\".",
     "markedComplete": "{{count}} cita marcada como completada.",
     "markedComplete_plural": "{{count}} citas marcadas como completadas.",
     "markedIncomplete": "{{count}} cita marcada como incompleta.",

@@ -245,7 +245,7 @@ function InvoiceSummaryCard({
                 <p className="text-muted-foreground">{t("invoices.wizard.summary.senderNotSelected")}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                {t("invoices.wizard.summary.pending")} · {getPaymentLocationLabel(values.paymentLocation)}
+                {t("invoices.form.fields.paymentLocation")} · {getPaymentLocationLabel(values.paymentLocation)}
               </p>
             </div>
 

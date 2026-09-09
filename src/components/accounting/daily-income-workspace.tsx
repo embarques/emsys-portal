@@ -341,6 +341,7 @@ export function DailyIncomeWorkspace() {
   const [deleteJournal, setDeleteJournal] = useState<DailyIncomeJournal | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [openCreateOnLoad, setOpenCreateOnLoad] = useState(false);
 
   const branchesQuery = useBranchPicker(200);
   const branches = branchesQuery.data?.items ?? [];
@@ -350,6 +351,7 @@ export function DailyIncomeWorkspace() {
     const branchId = Number(params.get("branchId"));
     if (requestedDate) setDate(requestedDate);
     if (Number.isInteger(branchId) && branchId > 0) setRequestedBranchId(branchId);
+    if (params.get("create") === "1") setOpenCreateOnLoad(true);
   }, []);
   useEffect(() => {
     if (branchCode) return;
@@ -360,6 +362,13 @@ export function DailyIncomeWorkspace() {
   const selectedBranch = branches.find((branch) => branch.code === branchCode);
   const statementQuery = useIncomeStatement(selectedBranch?.id ?? 0, date);
   const statement = statementQuery.data ?? null;
+  useEffect(() => {
+    if (!openCreateOnLoad) return;
+    if (statementQuery.isLoading) return;
+    if (!branchCode) return;
+    if (!statement) setStatementDialog(true);
+    setOpenCreateOnLoad(false);
+  }, [branchCode, openCreateOnLoad, statement, statementQuery.isLoading]);
   const summaryTotalsQuery = useIncomeStatementSummaryTotals(statement?.id ?? 0);
   const journalsQuery = useDailyIncomeJournals({ incomeStatementId: statement?.id ?? 0, page, limit: pageLimit, query: deferredQuery });
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc" });

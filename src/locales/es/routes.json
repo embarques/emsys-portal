@@ -5,7 +5,7 @@
     "routeManager": "Defina cuadrillas de ruta reutilizables con estado, sucursal y miembros de cuadrilla para citas y entregas.",
     "pickupRoutes": "Defina la ruta de citas de trabajo para una fecha: sucursal, vehículo, cuadrilla de ruta y roles de la cuadrilla.",
     "deliveryRoutes": "Defina la ruta de entrega de trabajo: contenedor, tasa de cambio, cuadrilla de ruta, roles de la cuadrilla y fecha.",
-    "dailyRoutes": "Defina una ruta de trabajo para una fecha: sucursal, cuadrilla de ruta y roles. Las sucursales RD también requieren contenedor y tasa de cambio."
+    "dailyRoutes": "Defina una ruta de trabajo para una fecha: sucursal, vehículo, cuadrilla de ruta y un rol para cada miembro. Las sucursales RD también requieren contenedor y tasa de cambio."
   },
   "routeManager": {
     "title": "Cuadrillas de ruta"
@@ -17,7 +17,7 @@
     "editTabLabel": "Editar {{name}}",
     "loading": "Cargando ruta diaria…",
     "notFound": "No se encontró esta ruta diaria.",
-    "description": "Defina la ruta de trabajo para esta fecha. Elija la sucursal, la cuadrilla de ruta y los roles. Las sucursales RD también requieren contenedor y tasa de cambio.",
+    "description": "Defina la ruta de trabajo para esta fecha. Elija la sucursal, el vehículo y la cuadrilla de ruta, luego asigne un rol a cada miembro. Las sucursales RD también requieren contenedor y tasa de cambio.",
     "searchPlaceholder": "Buscar rutas diarias…",
     "searchNoun": "rutas diarias",
     "empty": "Aún no hay rutas diarias.",
@@ -31,7 +31,7 @@
     "form": {
       "save": "Guardar ruta diaria",
       "saved": "Ruta diaria guardada.",
-      "editHint": "Actualice la fecha, la sucursal, la cuadrilla de ruta y los roles, luego guarde.",
+      "editHint": "Actualice la fecha, la sucursal, el vehículo, la cuadrilla de ruta y los roles, luego guarde.",
       "loadPrevious": "Cargar ruta diaria anterior",
       "loadPreviousPlaceholder": "Copiar una configuración anterior…",
       "loadPreviousSearch": "Buscar rutas diarias anteriores…",
@@ -311,6 +311,7 @@
     "vehicleSearch": "Buscar vehículos…",
     "vehicleEmpty": "No hay vehículos para esta sucursal.",
     "selectBranchFirst": "Seleccione una sucursal para cargar cuadrillas de ruta.",
+    "selectBranchFirstVehicle": "Seleccione una sucursal para cargar los vehículos.",
     "route": "Cuadrilla de ruta",
     "routePlaceholder": "Seleccionar cuadrilla de ruta…",
     "routeSearch": "Buscar cuadrillas de ruta…",

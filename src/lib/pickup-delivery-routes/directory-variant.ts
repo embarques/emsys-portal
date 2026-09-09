@@ -22,7 +22,7 @@ export const DAILY_ROUTES_DIRECTORY_VARIANT: ActiveRoutesDirectoryVariant = {
   showContainerField: true,
   formFeature: "daily-routes",
   baseHref: "/daily-routes",
-  columnVisibilityKey: "daily-routes-v1",
+  columnVisibilityKey: "daily-routes-v2",
   copyPrefix: "dailyRoutes",
 };
 

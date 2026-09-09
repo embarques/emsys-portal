@@ -21,6 +21,16 @@ function localizeInvoiceFilterOption(
     return { ...option, label: t(`invoices.filters.options.boolean.${option.value}`) };
   }
 
+  if (field === "pickupSource") {
+    const sourceKey =
+      option.value === "route"
+        ? "invoices.form.fields.pickupSourceRoute"
+        : option.value === "warehouse"
+          ? "invoices.form.fields.pickupSourceWarehouse"
+          : "invoices.form.fields.pickupSourceOffice";
+    return { ...option, label: t(sourceKey) };
+  }
+
   return option;
 }
 

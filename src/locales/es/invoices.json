@@ -34,6 +34,7 @@
     "discount": "Descuento",
     "amountPaid": "Pagado",
     "balance": "Saldo",
+    "pickupAssignment": "Recibido por",
     "createdBy": "Creado por",
     "createdAt": "Creado el"
   },
@@ -67,10 +68,13 @@
       "invoiceNumber": "Número de factura",
       "container": "Contenedor",
       "pending": "Pendiente",
+      "paymentLocation": "Ubicación de pago",
+      "createdAt": "Creado el",
+      "createdBy": "Creado por",
       "sender": "Remitente",
       "receiver": "Destinatario",
       "pickupReference": "Referencia de recogida",
-      "pickupSource": "Origen de recogida",
+      "pickupSource": "Recibido en",
       "pickupSourceRoute": "Ruta",
       "pickupSourceWarehouse": "Almacén",
       "pickupSourceOffice": "Oficina",
@@ -120,7 +124,7 @@
       "cancelEdit": "Cancelar edición",
       "addItem": "Agregar artículo",
       "itemsSubtotal": "Subtotal de artículos",
-      "emptyTable": "Aún no hay artículos. Complete los campos de arriba y presione Enter en Total para agregar una línea.",
+      "emptyTable": "Aún no hay artículos. Use Agregar artículo para comenzar la primera línea.",
       "descriptionPlaceholder": "Escriba o busque artículos del catálogo…",
       "moveUp": "Mover arriba",
       "moveDown": "Mover abajo",
@@ -145,6 +149,7 @@
   },
   "wizard": {
     "navAriaLabel": "Pasos de la factura",
+    "goToStep": "Ir a {{label}}",
     "stepEyebrow": "Paso {{step}} de {{total}} · {{label}}",
     "steps": {
       "details": "Detalles",
@@ -169,7 +174,7 @@
       "dateRequired": "La fecha es obligatoria.",
       "invoiceNumberRequired": "El número de factura es obligatorio.",
       "containerRequired": "El contenedor es obligatorio.",
-      "paymentLocationRequired": "La ubicación de pago pendiente es obligatoria.",
+      "paymentLocationRequired": "La ubicación de pago es obligatoria.",
       "pickupRouteRequired": "La ruta de citas es obligatoria.",
       "warehouseEmployeeRequired": "El empleado de almacén es obligatorio.",
       "officeEmployeeRequired": "El empleado de oficina es obligatorio.",
@@ -177,7 +182,8 @@
       "unverifiedSenderAddress": "Verifique la dirección del remitente antes de guardar. Abra el remitente y actualícela con una dirección sugerida por Google.",
       "lineItemRequired": "Agregue al menos un artículo.",
       "dailyIncomeContinueRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de continuar.",
-      "dailyIncomeSaveRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de guardar."
+      "dailyIncomeSaveRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de guardar.",
+      "negativeBalance": "El saldo no puede ser negativo. Reduzca el pago o el descuento para que no superen el total de la factura."
     },
     "summary": {
       "title": "Resumen de factura",
@@ -235,7 +241,10 @@
         "subtotal": "Subtotal"
       },
       "labels": "{{count}} etiqueta",
-      "labels_plural": "{{count}} etiquetas"
+      "labels_plural": "{{count}} etiquetas",
+      "noLabels": "Sin etiquetas",
+      "noPhone": "Sin teléfono",
+      "noAddress": "Sin dirección"
     },
     "dailyIncome": {
       "checking": "Verificando registro en Ingresos diarios…",
@@ -255,6 +264,8 @@
       "registerRequired": "Esta factura no se puede crear hasta que se registre en Ingresos diarios.",
       "noStatement": "No existe Ingresos diarios para hoy y la sucursal actual. Créelo antes de registrar esta factura.",
       "openFullPage": "Abrir página completa de Ingresos diarios",
+      "openForInvoiceDate": "Abrir ingresos diarios para esta sucursal y fecha",
+      "openForInvoiceDateHint": "Se abre en una pestaña nueva. Crea o reabre el cierre, luego vuelve aquí y guarda de nuevo.",
       "openAssociated": "Cuadre abierto vinculado",
       "openAssociatedHint": "Los Ingresos diarios #{{id}} de hoy están abiertos. Esta factura se asociará automáticamente.",
       "recordPaymentNow": "Registrar pago",
@@ -268,7 +279,6 @@
       "skipPaymentHint": "Déjelo marcado para que el backend registre esta factura en el Cuadre abierto con pago de $0. Desmárquelo para ingresar detalles de pago.",
       "skipWithCuadreHint": "La factura se vinculará a Ingresos diarios #{{id}} y se registrará en el diario con pago de $0.",
       "paymentSkipped": "Pago omitido — no hay Cuadre abierto para registrar. Cree un Cuadre para registrar el costo con pago de $0, o continúe sin vincular.",
-      "openCuadreBeforePayment": "Abra o cree un Cuadre antes de registrar u omitir el pago.",
       "unpaidContinueHint": "Ingrese un pago abajo, o continúe para registrar el costo y el saldo de la factura en Ingresos diarios #{{id}} con pago de $0.",
       "recordBeforeContinueHint": "Presione Registrar pago para continuar. El monto puede ser $0.00 para una factura sin pagar.",
       "zeroPaymentDescription": "Registro inicial de factura (sin pagar)",
@@ -330,6 +340,7 @@
     }
   },
   "view": {
+    "pickupAssignment": "Recibido por",
     "comments": {
       "title": "Comentarios ({{count}})",
       "description": "Notas sobre contacto, preferencias de entrega y otros seguimientos. Los comentarios no se pueden eliminar.",
@@ -473,6 +484,7 @@
       "createdBy": {
         "name": { "label": "Creada por" }
       },
+      "pickupSource": { "label": "Recibido en" },
       "route": {
         "_id": { "label": "Ruta" }
       },

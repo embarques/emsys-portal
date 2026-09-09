@@ -93,3 +93,17 @@ export function InvoiceWizardReviewTextBlock({ label, value, className }: Review
     </div>
   );
 }
+
+/** Yellow highlight for empty optional fields on Review & save. */
+export const invoiceReviewOptionalMissingClassName =
+  "rounded-md bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-800 dark:bg-amber-500/20 dark:text-amber-200";
+
+export function InvoiceWizardReviewOptionalMissing({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <span className={cn(invoiceReviewOptionalMissingClassName, className)}>{children}</span>;
+}

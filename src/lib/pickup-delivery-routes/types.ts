@@ -76,7 +76,6 @@ export type ActiveRoute = {
   /** Recurring weekdays (`monday`..`sunday`); empty when the route uses a date. */
   dayOfWeek: string[];
   branch: ActiveRouteBranchRef | null;
-  /** Optional truck leftover from older vehicle-route records. Daily routes do not collect this. */
   vehicle: RouteVehicleRef;
   active: boolean;
   route: ActiveRouteRouteRef;
@@ -240,7 +239,7 @@ export function buildScheduledRouteFormValues(input: {
     ...createEmptyActiveRouteForm(input.routeType),
     date: input.date.trim().slice(0, 10),
     branch: { ...input.branch },
-    vehicle: isDelivery ? createEmptyVehicleRef() : { ...createEmptyVehicleRef(), ...input.vehicle },
+    vehicle: { ...createEmptyVehicleRef(), ...input.vehicle },
     routeRecordId: input.routeRecordId.trim(),
     routeAssignmentName: input.routeAssignmentName.trim(),
     employees: input.employees.map((employee) => ({ ...employee })),
@@ -310,8 +309,7 @@ export function areActiveRouteFormValuesEquivalent(
 
 
 export function assertActiveRouteFormValues(values: ActiveRouteFormValues): void {
-  // TODO(backend): reject a second daily route for the same date + branch so the
-  // portal can reuse a previous configuration by changing only the date.
+  // TODO(backend): uniqueness + legacy alignment — see APP_CONTEXT.md Routes.
   if (values.scheduleType === "date" && !values.date.trim()) {
     throw new Error("Date is required.");
   }

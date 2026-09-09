@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { FormBody, FormSection } from "@/components/forms/form-shell";
 import {
+  InvoiceWizardReviewOptionalMissing,
   InvoiceWizardReviewSection,
   InvoiceWizardReviewTextBlock,
 } from "@/components/invoices/invoice-wizard-review-section";
@@ -14,7 +15,9 @@ import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { formatInvoiceDate, formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
 import {
   computeInvoiceBalance,
+  INVOICE_PICKUP_SOURCES,
   isInvoiceEmployeePickupSource,
+  resolveLineLabelCount,
   resolveLineTotal,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
@@ -101,6 +104,11 @@ function usePreviewLabels(values: InvoiceFormValues) {
     return t("invoices.form.fields.pickupRoute");
   }, [t, values.pickupSource]);
 
+  const pickupSourceLabel = useMemo(() => {
+    const option = INVOICE_PICKUP_SOURCES.find((entry) => entry.value === values.pickupSource);
+    return option ? t(option.labelKey) : t("invoices.form.fields.pickupSource");
+  }, [t, values.pickupSource]);
+
   const subtotal = useMemo(
     () => values.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0),
     [values.lineItems],
@@ -120,6 +128,7 @@ function usePreviewLabels(values: InvoiceFormValues) {
     pickupFieldLabel,
     pickupAssignmentLabel,
     pickupAssignmentFieldLabel,
+    pickupSourceLabel,
     subtotal,
     discount,
     amountPaid,
@@ -133,6 +142,95 @@ function PreviewField({ label, value }: { label: string; value: string }) {
     <div className="space-y-1">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="text-sm font-medium">{value || "—"}</p>
+    </div>
+  );
+}
+
+function ReviewLineItemLabels({ count }: { count: number }) {
+  const { t } = useTranslation();
+  if (count > 0) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        {t(count === 1 ? "invoices.wizard.review.labels" : "invoices.wizard.review.labels_plural", {
+          count,
+        })}
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-xs">
+      <InvoiceWizardReviewOptionalMissing>{t("invoices.wizard.review.noLabels")}</InvoiceWizardReviewOptionalMissing>
+    </p>
+  );
+}
+
+function ReviewWarningMoney({
+  amount,
+  warn,
+  error = false,
+}: {
+  amount: number;
+  warn: boolean;
+  error?: boolean;
+}) {
+  const formatted = formatInvoiceMoney(amount);
+  if (error) {
+    return (
+      <InvoiceWizardReviewOptionalMissing className="tabular-nums bg-destructive/15 text-destructive">
+        {formatted}
+      </InvoiceWizardReviewOptionalMissing>
+    );
+  }
+  if (!warn) return <span className="tabular-nums">{formatted}</span>;
+  return (
+    <InvoiceWizardReviewOptionalMissing className="tabular-nums">{formatted}</InvoiceWizardReviewOptionalMissing>
+  );
+}
+
+function ReviewPriceTotals({
+  subtotal,
+  discount,
+  amountPaid,
+  balance,
+  showPayment,
+}: {
+  subtotal: number;
+  discount: number;
+  amountPaid: number;
+  balance: number;
+  showPayment: boolean;
+}) {
+  const { t } = useTranslation();
+  const invoiceTotal = Math.round((subtotal - discount) * 100) / 100;
+  const isNegativeBalance = balance < 0;
+
+  return (
+    <div className="space-y-2 border-t border-border pt-3 text-sm">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-muted-foreground">{t("invoices.wizard.summary.subtotal")}</span>
+        <ReviewWarningMoney amount={subtotal} warn={subtotal === 0} />
+      </div>
+      {discount > 0 ? (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-muted-foreground">{t("invoices.wizard.summary.discount")}</span>
+          <span className="tabular-nums">−{formatInvoiceMoney(discount)}</span>
+        </div>
+      ) : null}
+      {showPayment ? (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-muted-foreground">{t("invoices.wizard.summary.payment")}</span>
+          <ReviewWarningMoney amount={amountPaid} warn={amountPaid === 0} />
+        </div>
+      ) : null}
+      <div className="flex items-center justify-between gap-3 text-base font-semibold">
+        <span>{showPayment ? t("invoices.wizard.summary.balanceDue") : t("invoices.wizard.summary.total")}</span>
+        <ReviewWarningMoney
+          amount={showPayment ? balance : invoiceTotal}
+          warn={invoiceTotal === 0 || balance > 0}
+          error={isNegativeBalance}
+        />
+      </div>
     </div>
   );
 }
@@ -158,10 +256,20 @@ function InvoiceWizardCheckoutReview({
     pickupFieldLabel,
     pickupAssignmentLabel,
     pickupAssignmentFieldLabel,
+    pickupSourceLabel,
     subtotal,
     discount,
+    amountPaid,
     lineItemRows,
   } = usePreviewLabels(values);
+  const missingContactLabels = {
+    missingPhoneLabel: t("invoices.wizard.review.noPhone"),
+    missingAddressLabel: t("invoices.wizard.review.noAddress"),
+  };
+  const recordedPaymentAmount = paymentSummary?.registration?.amount ?? amountPaid;
+  const paymentIsMissingOptional =
+    Boolean(showPaymentSection) &&
+    (!paymentSummary?.registration || paymentSummary.paymentSkipped || recordedPaymentAmount === 0);
 
   return (
     <div
@@ -197,13 +305,21 @@ function InvoiceWizardCheckoutReview({
                   {t("invoices.wizard.review.container")}: {containerLabel}
                 </p>
                 <p>
-                  {pickupFieldLabel}: {pickupLabel}
+                  {pickupFieldLabel}:{" "}
+                  {values.pickupId ? (
+                    pickupLabel
+                  ) : (
+                    <InvoiceWizardReviewOptionalMissing>{pickupLabel}</InvoiceWizardReviewOptionalMissing>
+                  )}
+                </p>
+                <p>
+                  {t("invoices.form.fields.pickupSource")}: {pickupSourceLabel}
                 </p>
                 <p>
                   {pickupAssignmentFieldLabel}: {pickupAssignmentLabel}
                 </p>
                 <p>
-                  {t("invoices.wizard.review.pending")}: {getPaymentLocationLabel(values.paymentLocation)}
+                  {t("invoices.form.fields.paymentLocation")}: {getPaymentLocationLabel(values.paymentLocation)}
                 </p>
               </>
             }
@@ -221,7 +337,7 @@ function InvoiceWizardCheckoutReview({
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">{t("invoices.wizard.review.sender")}</p>
             {values.sender ? (
-              <CustomerContactSummary customer={values.sender} />
+              <CustomerContactSummary customer={values.sender} {...missingContactLabels} />
             ) : (
               <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.notSelected")}</p>
             )}
@@ -229,9 +345,13 @@ function InvoiceWizardCheckoutReview({
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">{t("invoices.wizard.review.receiver")}</p>
             {values.receiver ? (
-              <CustomerContactSummary customer={values.receiver} />
+              <CustomerContactSummary customer={values.receiver} {...missingContactLabels} />
             ) : (
-              <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.noReceiver")}</p>
+              <p className="text-sm">
+                <InvoiceWizardReviewOptionalMissing>
+                  {t("invoices.wizard.review.noReceiver")}
+                </InvoiceWizardReviewOptionalMissing>
+              </p>
             )}
           </div>
         </div>
@@ -266,6 +386,7 @@ function InvoiceWizardCheckoutReview({
                     t("invoices.wizard.summary.lineItem");
                   const unitPrice = Number(item.unitPrice) || 0;
                   const quantity = Number(item.quantity) || 0;
+                  const lineTotal = resolveLineTotal(item);
                   return (
                     <article key={item.id} className="py-4 first:pt-2 last:pb-0">
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
@@ -274,11 +395,15 @@ function InvoiceWizardCheckoutReview({
                             {label}
                           </p>
                           <p className="mt-2 text-sm tabular-nums text-muted-foreground">
-                            {formatInvoiceMoney(unitPrice)} x {quantity || t("common.empty.dash")}
+                            <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} /> x{" "}
+                            {quantity || t("common.empty.dash")}
                           </p>
+                          <div className="mt-1">
+                            <ReviewLineItemLabels count={resolveLineLabelCount(item)} />
+                          </div>
                         </div>
                         <p className="shrink-0 text-base font-semibold tabular-nums text-foreground">
-                          {formatInvoiceMoney(resolveLineTotal(item))}
+                          <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
                         </p>
                       </div>
                     </article>
@@ -293,10 +418,19 @@ function InvoiceWizardCheckoutReview({
                     item.itemName.trim() ||
                     catalogItem?.description ||
                     t("invoices.wizard.summary.lineItem");
+                  const lineTotal = resolveLineTotal(item);
                   return (
                     <li key={item.id}>
                       {label} · {t("invoices.wizard.review.qty")} {item.quantity || "1"} ·{" "}
-                      {formatInvoiceMoney(resolveLineTotal(item))}
+                      <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
+                      {resolveLineLabelCount(item) > 0 ? null : (
+                        <>
+                          {" · "}
+                          <InvoiceWizardReviewOptionalMissing>
+                            {t("invoices.wizard.review.noLabels")}
+                          </InvoiceWizardReviewOptionalMissing>
+                        </>
+                      )}
                     </li>
                   );
                 })}
@@ -314,15 +448,33 @@ function InvoiceWizardCheckoutReview({
           variant={isPhoneWizard ? "phonePanel" : "default"}
         >
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-            <div>
+            <div
+              className={
+                paymentIsMissingOptional
+                  ? "rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2"
+                  : undefined
+              }
+            >
               {paymentSummary?.registration ? (
                 <>
-                  <p className="font-medium text-foreground">
+                  <p
+                    className={
+                      paymentIsMissingOptional
+                        ? "font-medium text-amber-800 dark:text-amber-200"
+                        : "font-medium text-foreground"
+                    }
+                  >
                     {paymentSummary.paymentSkipped && paymentSummary.registration.amount === 0
                       ? t("invoices.wizard.review.zeroPaymentRegistered")
                       : t("invoices.wizard.review.registrationConfirmed")}
                   </p>
-                  <p className="text-muted-foreground">
+                  <p
+                    className={
+                      paymentIsMissingOptional
+                        ? "text-amber-800/80 dark:text-amber-200/80"
+                        : "text-muted-foreground"
+                    }
+                  >
                     {paymentSummary.paymentSkipped && paymentSummary.registration.amount === 0
                       ? t("invoices.wizard.review.zeroPaymentRegisteredHint")
                       : t("invoices.wizard.review.initialPayment", {
@@ -332,10 +484,10 @@ function InvoiceWizardCheckoutReview({
                 </>
               ) : paymentSummary?.incomeStatementId ? (
                 <>
-                  <p className="font-medium text-foreground">
+                  <p className="font-medium text-amber-800 dark:text-amber-200">
                     {t("invoices.wizard.review.cuadreLinked")}
                   </p>
-                  <p className="text-muted-foreground">
+                  <p className="text-amber-800/80 dark:text-amber-200/80">
                     {t("invoices.wizard.review.cuadreLinkedHint", {
                       id: paymentSummary.incomeStatementId,
                     })}
@@ -343,10 +495,10 @@ function InvoiceWizardCheckoutReview({
                 </>
               ) : (
                 <>
-                  <p className="font-medium text-foreground">
+                  <p className="font-medium text-amber-800 dark:text-amber-200">
                     {t("invoices.wizard.review.paymentSkipped")}
                   </p>
-                  <p className="text-muted-foreground">
+                  <p className="text-amber-800/80 dark:text-amber-200/80">
                     {t("invoices.wizard.review.paymentSkippedHint")}
                   </p>
                 </>
@@ -381,6 +533,7 @@ function InvoiceWizardCheckoutReview({
                       t("invoices.wizard.summary.lineItem");
                     const unitPrice = Number(item.unitPrice) || 0;
                     const quantity = Number(item.quantity) || 0;
+                    const lineTotal = resolveLineTotal(item);
 
                     return (
                       <article key={item.id} className="py-4 first:pt-0 last:pb-0">
@@ -390,11 +543,15 @@ function InvoiceWizardCheckoutReview({
                               {label}
                             </p>
                             <p className="mt-3 text-base tabular-nums text-muted-foreground">
-                              {formatInvoiceMoney(unitPrice)} x {quantity || t("common.empty.dash")}
+                              <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} /> x{" "}
+                              {quantity || t("common.empty.dash")}
                             </p>
+                            <div className="mt-1">
+                              <ReviewLineItemLabels count={resolveLineLabelCount(item)} />
+                            </div>
                           </div>
                           <p className="shrink-0 text-lg font-semibold tabular-nums text-foreground">
-                            {formatInvoiceMoney(resolveLineTotal(item))}
+                            <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
                           </p>
                         </div>
                       </article>
@@ -421,30 +578,23 @@ function InvoiceWizardCheckoutReview({
                           item.itemName.trim() ||
                           catalogItem?.description ||
                           t("invoices.wizard.summary.lineItem");
-                        const labelCount = Number(item.labelCount) || 0;
+                        const labelCount = resolveLineLabelCount(item);
+                        const unitPrice = Number(item.unitPrice) || 0;
+                        const lineTotal = resolveLineTotal(item);
                         return (
                           <tr key={item.id} className="border-b last:border-b-0">
                             <td className="px-4 py-3">
                               <p className="font-medium text-foreground">{label}</p>
-                              {item.labelCount ? (
-                                <p className="text-xs text-muted-foreground">
-                                  {t(
-                                    labelCount === 1
-                                      ? "invoices.wizard.review.labels"
-                                      : "invoices.wizard.review.labels_plural",
-                                    { count: labelCount },
-                                  )}
-                                </p>
-                              ) : null}
+                              <ReviewLineItemLabels count={labelCount} />
                             </td>
                             <td className="px-4 py-3 text-muted-foreground">
                               {item.quantity || t("common.empty.dash")}
                             </td>
                             <td className="px-4 py-3 text-muted-foreground">
-                              {formatInvoiceMoney(Number(item.unitPrice) || 0)}
+                              <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} />
                             </td>
                             <td className="px-4 py-3 text-right font-medium">
-                              {formatInvoiceMoney(resolveLineTotal(item))}
+                              <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
                             </td>
                           </tr>
                         );
@@ -454,6 +604,13 @@ function InvoiceWizardCheckoutReview({
                 </div>
               )
             )}
+            <ReviewPriceTotals
+              subtotal={subtotal}
+              discount={discount}
+              amountPaid={recordedPaymentAmount}
+              balance={computeInvoiceBalance(subtotal, discount, recordedPaymentAmount)}
+              showPayment={Boolean(showPaymentSection)}
+            />
           </div>
         </div>
       </InvoiceWizardReviewSection>
@@ -470,9 +627,10 @@ export function InvoiceFormPreviewStep({
   onEditPayment,
   errorMessage = null,
 }: Props) {
+  const { t } = useTranslation();
   const isPhoneWizard = appearance === "phoneWizard";
   const isWizard = appearance === "wizard" || isPhoneWizard;
-  const { subtotal, discount, amountPaid, balance, lineItemRows, catalogItems, containerLabel, pickupLabel, pickupFieldLabel, pickupAssignmentLabel, pickupAssignmentFieldLabel } =
+  const { subtotal, discount, amountPaid, balance, lineItemRows, catalogItems, containerLabel, pickupLabel, pickupFieldLabel, pickupAssignmentLabel, pickupAssignmentFieldLabel, pickupSourceLabel } =
     usePreviewLabels(values);
 
   if (isWizard) {
@@ -506,7 +664,8 @@ export function InvoiceFormPreviewStep({
           <PreviewField label="Invoice number" value={values.invoiceNumber} />
           <PreviewField label={pickupFieldLabel} value={pickupLabel} />
           <PreviewField label="Container" value={containerLabel} />
-          <PreviewField label="Pending" value={getPaymentLocationLabel(values.paymentLocation)} />
+          <PreviewField label={t("invoices.form.fields.paymentLocation")} value={getPaymentLocationLabel(values.paymentLocation)} />
+          <PreviewField label={t("invoices.form.fields.pickupSource")} value={pickupSourceLabel} />
           <PreviewField label={pickupAssignmentFieldLabel} value={pickupAssignmentLabel} />
         </div>
       </FormSection>

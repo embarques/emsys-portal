@@ -11,8 +11,11 @@ import {
   Route as RouteIcon,
   Tag,
   Trash2,
+  X,
 } from "lucide-react";
 
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
+import { TableSelectionActionDivider } from "@/components/app-shell/table-selection-action-group";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { AssignBarcodeRouteDialog } from "@/components/invoices/assign-barcode-route-dialog";
@@ -49,6 +52,7 @@ import {
 import type { Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 export type InvoiceStagingWorkflowProps = {
@@ -69,6 +73,24 @@ type InvoiceStagingDialogProps = {
 };
 
 type StagingStep = "line-items" | "labels";
+
+function areSameKeySet(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  const rightKeys = new Set(right);
+  return left.every((key) => rightKeys.has(key));
+}
+
+type RemoveConfirmTarget = {
+  kind: "line-items" | "labels" | "label";
+  keys: string[];
+};
+
+function isAbortError(error: unknown): boolean {
+  if (error == null || typeof error !== "object") return false;
+  const name = "name" in error ? String(error.name) : "";
+  const code = "code" in error ? String(error.code) : "";
+  return name === "AbortError" || name === "CanceledError" || code === "ERR_CANCELED";
+}
 
 function getStatusBadgeClass(statusName: string): string {
   const normalized = statusName.trim().toUpperCase();
@@ -120,60 +142,80 @@ function HeaderSelectCheckbox({
 }
 
 type SelectionToolbarProps = {
-  selectedCount: number;
-  total: number;
-  allKeys: string[];
   selectedKeys: string[];
-  onSelectAllOthers: () => void;
+  allKeys: string[];
+  total?: number;
+  onSelectedKeysChange: (keys: string[]) => void;
   onRemoveAll: () => void;
   children?: ReactNode;
 };
 
+/**
+ * Nested-table selection bar aligned with `TableSelectionToolbar`:
+ * left island manages the selection, right side operates on selected rows
+ * with the destructive action last.
+ */
 function SelectionToolbar({
-  selectedCount,
-  total,
-  allKeys,
   selectedKeys,
-  onSelectAllOthers,
+  allKeys,
+  total,
+  onSelectedKeysChange,
   onRemoveAll,
   children,
 }: SelectionToolbarProps) {
   const { t } = useTranslation();
+  const selectedCount = selectedKeys.length;
+
+  if (selectedCount === 0) return null;
+
+  const totalCount = total ?? allKeys.length;
   const othersAvailable = canSelectAllOthers(allKeys, selectedKeys);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b bg-muted/20 px-3 py-2">
-      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
-        {t("common.table.selected", { count: selectedCount, total })}
-      </span>
-
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div
+      role="toolbar"
+      aria-label={`${selectedCount} selected`}
+      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border bg-primary/[0.06] px-3 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-primary/[0.05]"
+    >
+      <div className="flex items-center gap-2">
         <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+          aria-label={t("common.table.clearSelection")}
+          title={t("common.table.clearSelection")}
+          onClick={() => onSelectedKeysChange([])}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+        <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
+          {t("common.table.selected", { count: selectedCount, total: totalCount })}
+        </span>
+        <span className="mx-1 h-5 w-px bg-primary/20" aria-hidden />
+        <Button
+          variant="ghost"
           size="sm"
-          variant="outline"
-          className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+          className="gap-1.5 text-muted-foreground hover:text-foreground"
           disabled={!othersAvailable}
-          onClick={onSelectAllOthers}
+          onClick={() => onSelectedKeysChange(selectAllOthers(allKeys, selectedKeys))}
         >
           <ListChecks className="h-4 w-4" />
-          {t("common.table.selectAllOthers")}
+          <span className="whitespace-nowrap">{t("common.table.selectAllOthers")}</span>
         </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        {children}
+        {children ? <TableSelectionActionDivider /> : null}
         <Button
-          size="sm"
           variant="outline"
-          className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
-          disabled={selectedCount === 0}
+          size="sm"
+          className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
           onClick={onRemoveAll}
         >
           <Trash2 className="h-4 w-4" />
           {t("labels.staging.remove")}
         </Button>
-        {children ? (
-          <>
-            <span className="mx-0.5 hidden h-5 w-px bg-border sm:block" aria-hidden />
-            {children}
-          </>
-        ) : null}
       </div>
     </div>
   );
@@ -205,6 +247,8 @@ export function InvoiceStagingWorkflow({
   const generateLabelsMutation = useGenerateLabels();
   const updateBarcodesMutation = useUpdateBarcodes();
   const generateLabelReportMutation = useGenerateLabelReport();
+  const generateAbortRef = useRef<AbortController | null>(null);
+  const [generateCancelled, setGenerateCancelled] = useState(false);
 
   const [step, setStep] = useState<StagingStep>("line-items");
 
@@ -212,6 +256,7 @@ export function InvoiceStagingWorkflow({
   const [selectedItemKeys, setSelectedItemKeys] = useState<string[]>([]);
 
   const [generatedLabels, setGeneratedLabels] = useState<GeneratedLabel[]>([]);
+  const [generatedForItemKeys, setGeneratedForItemKeys] = useState<string[]>([]);
   const [selectedLabelKeys, setSelectedLabelKeys] = useState<string[]>([]);
   const [labelQuery, setLabelQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -219,10 +264,11 @@ export function InvoiceStagingWorkflow({
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [containerDialogOpen, setContainerDialogOpen] = useState(false);
   const [routeDialogOpen, setRouteDialogOpen] = useState(false);
+  const [removeConfirm, setRemoveConfirm] = useState<RemoveConfirmTarget | null>(null);
   const [newStatus, setNewStatus] = useState<string>(BARCODE_STATUS_OPTIONS[1].name);
   const [newContainerId, setNewContainerId] = useState("");
 
-  const isGenerating = generateLabelsMutation.isPending;
+  const isGenerating = generateLabelsMutation.isPending && !generateCancelled;
   const isUpdating = updateBarcodesMutation.isPending;
   const isPrinting = generateLabelReportMutation.isPending;
 
@@ -239,7 +285,11 @@ export function InvoiceStagingWorkflow({
 
   // Reset the whole flow when the dialog opens or the staged invoice set changes.
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      generateAbortRef.current?.abort();
+      generateAbortRef.current = null;
+      return;
+    }
     const current = invoicesRef.current;
     setStep("line-items");
     setLineItems(
@@ -249,11 +299,16 @@ export function InvoiceStagingWorkflow({
       ),
     );
     setSelectedItemKeys([]);
+    generateAbortRef.current?.abort();
+    generateAbortRef.current = null;
+    setGenerateCancelled(false);
     setGeneratedLabels([]);
+    setGeneratedForItemKeys([]);
     setSelectedLabelKeys([]);
     setLabelQuery("");
     setStatusFilter("all");
     setRouteDialogOpen(false);
+    setRemoveConfirm(null);
   }, [invoiceKey, isActive]);
 
   const itemKeys = useMemo(() => lineItems.map((item) => item.key), [lineItems]);
@@ -293,15 +348,28 @@ export function InvoiceStagingWorkflow({
     [selectedLabels],
   );
 
+  function cancelGenerateLabels() {
+    generateAbortRef.current?.abort();
+    generateAbortRef.current = null;
+    setGenerateCancelled(true);
+  }
+
+  function handleLineItemSelectionChange(keys: string[]) {
+    if (keys.length === 0) {
+      cancelGenerateLabels();
+    }
+    setSelectedItemKeys(keys);
+  }
+
   function toggleItem(key: string, checked: boolean) {
     setSelectedItemKeys((current) =>
       checked ? [...current, key] : current.filter((entry) => entry !== key),
     );
   }
 
-  function removeSelectedLineItems() {
-    setLineItems((current) => current.filter((item) => !selectedItemKeys.includes(item.key)));
-    setSelectedItemKeys([]);
+  function requestRemoveLineItems() {
+    if (selectedItemKeys.length === 0) return;
+    setRemoveConfirm({ kind: "line-items", keys: selectedItemKeys });
   }
 
   async function generateLabels() {
@@ -310,8 +378,26 @@ export function InvoiceStagingWorkflow({
       .map((item) => ({ invoiceId: item.invoiceId, lineItemId: item.lineItemId }));
     if (targets.length === 0) return;
 
+    if (
+      generatedForItemKeys.length > 0 &&
+      areSameKeySet(selectedItemKeys, generatedForItemKeys)
+    ) {
+      setStep("labels");
+      return;
+    }
+
+    cancelGenerateLabels();
+    const controller = new AbortController();
+    generateAbortRef.current = controller;
+    setGenerateCancelled(false);
+
     try {
-      const labels = await generateLabelsMutation.mutateAsync(targets);
+      const labels = await generateLabelsMutation.mutateAsync({
+        targets,
+        signal: controller.signal,
+      });
+
+      if (controller.signal.aborted) return;
 
       if (labels.length === 0) {
         notifyError(t("labels.staging.errors.noneGenerated"));
@@ -322,6 +408,7 @@ export function InvoiceStagingWorkflow({
       const existingCount = labels.length - createdCount;
 
       setGeneratedLabels(labels);
+      setGeneratedForItemKeys([...selectedItemKeys]);
       setSelectedLabelKeys([]);
       setStatusFilter("all");
       setLabelQuery("");
@@ -333,6 +420,7 @@ export function InvoiceStagingWorkflow({
       ].filter(Boolean);
       notifySuccess(t("labels.staging.success.ready", { details: parts.join(", ") }));
     } catch (error) {
+      if (controller.signal.aborted || isAbortError(error)) return;
       notifyError(normalizeApiError(error).message);
     }
   }
@@ -343,14 +431,64 @@ export function InvoiceStagingWorkflow({
     );
   }
 
-  function removeLabelFromView(key: string) {
-    setGeneratedLabels((current) => current.filter((label) => label.key !== key));
-    setSelectedLabelKeys((current) => current.filter((entry) => entry !== key));
+  function requestRemoveLabel(key: string) {
+    setRemoveConfirm({ kind: "label", keys: [key] });
   }
 
-  function removeSelectedLabelsFromView() {
-    setGeneratedLabels((current) => current.filter((label) => !selectedLabelKeys.includes(label.key)));
-    setSelectedLabelKeys([]);
+  function requestRemoveLabels() {
+    if (selectedLabelKeys.length === 0) return;
+    setRemoveConfirm({ kind: "labels", keys: selectedLabelKeys });
+  }
+
+  function confirmRemove() {
+    if (!removeConfirm) return;
+    const keys = new Set(removeConfirm.keys);
+    if (removeConfirm.kind === "line-items") {
+      setLineItems((current) => current.filter((item) => !keys.has(item.key)));
+      setSelectedItemKeys((current) => current.filter((key) => !keys.has(key)));
+    } else {
+      setGeneratedLabels((current) => current.filter((label) => !keys.has(label.key)));
+      setSelectedLabelKeys((current) => current.filter((key) => !keys.has(key)));
+    }
+    setRemoveConfirm(null);
+  }
+
+  function removeDialogCopy(target: RemoveConfirmTarget) {
+    const count = target.keys.length;
+    if (target.kind === "line-items") {
+      return {
+        title: t(
+          count === 1
+            ? "labels.staging.removeDialog.lineItemsTitle"
+            : "labels.staging.removeDialog.lineItemsTitle_plural",
+        ),
+        description: t(
+          count === 1
+            ? "labels.staging.removeDialog.lineItemsDescription"
+            : "labels.staging.removeDialog.lineItemsDescription_plural",
+          { count },
+        ),
+      };
+    }
+    if (target.kind === "label") {
+      return {
+        title: t("labels.staging.removeDialog.oneLabelTitle"),
+        description: t("labels.staging.removeDialog.oneLabelDescription"),
+      };
+    }
+    return {
+      title: t(
+        count === 1
+          ? "labels.staging.removeDialog.labelsTitle"
+          : "labels.staging.removeDialog.labelsTitle_plural",
+      ),
+      description: t(
+        count === 1
+          ? "labels.staging.removeDialog.labelsDescription"
+          : "labels.staging.removeDialog.labelsDescription_plural",
+        { count },
+      ),
+    };
   }
 
   function openStatusDialog() {
@@ -524,41 +662,39 @@ export function InvoiceStagingWorkflow({
       </>
     );
 
-  const footerActions =
-    step === "line-items" ? (
-      <>
-        <Button variant="outline" onClick={handleClose}>
-          {t("common.actions.cancel")}
-        </Button>
-        <Button onClick={generateLabels} disabled={selectedItemKeys.length === 0 || isGenerating}>
-          <Barcode className="h-4 w-4" />
-          {isGenerating
-            ? t("labels.staging.working")
-            : t("labels.staging.manageLabels", { count: selectedItemKeys.length })}
-        </Button>
-      </>
-    ) : (
-      <>
-        <Button variant="outline" onClick={() => setStep("line-items")}>
-          {t("labels.staging.backToLineItems")}
-        </Button>
-        <Button onClick={handleClose}>{t("labels.staging.done")}</Button>
-      </>
-    );
+  const manageLabelsButton = (
+    <Button
+      size="sm"
+      onClick={generateLabels}
+      disabled={selectedItemKeys.length === 0 || isGenerating}
+    >
+      <Barcode className="h-4 w-4" />
+      {isGenerating
+        ? t("labels.staging.working")
+        : t("labels.staging.manageLabels", { count: selectedItemKeys.length })}
+    </Button>
+  );
+
+  const backToLineItemsButton =
+    step === "labels" ? (
+      <Button variant="outline" onClick={() => setStep("line-items")}>
+        <ArrowLeft className="h-4 w-4" />
+        {t("labels.staging.backToLineItems")}
+      </Button>
+    ) : null;
 
   const workflowPanels =
     step === "line-items" ? (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
             <SelectionToolbar
-              selectedCount={selectedItemKeys.length}
-              total={lineItems.length}
               allKeys={itemKeys}
               selectedKeys={selectedItemKeys}
-              onSelectAllOthers={() =>
-                setSelectedItemKeys(selectAllOthers(itemKeys, selectedItemKeys))
-              }
-              onRemoveAll={removeSelectedLineItems}
-            />
+              total={lineItems.length}
+              onSelectedKeysChange={handleLineItemSelectionChange}
+              onRemoveAll={requestRemoveLineItems}
+            >
+              {manageLabelsButton}
+            </SelectionToolbar>
 
             <div className="min-h-0 flex-1 overflow-auto">
               <table className="w-full text-left text-sm">
@@ -569,7 +705,7 @@ export function InvoiceStagingWorkflow({
                         total={lineItems.length}
                         selectedCount={selectedItemKeys.length}
                         onSelectAll={() => setSelectedItemKeys(itemKeys)}
-                        onDeselectAll={() => setSelectedItemKeys([])}
+                        onDeselectAll={() => handleLineItemSelectionChange([])}
                         label={t("labels.staging.selectAllLineItems")}
                       />
                     </th>
@@ -624,19 +760,21 @@ export function InvoiceStagingWorkflow({
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
-            <div className="flex flex-wrap items-center gap-2 border-b bg-muted/10 px-3 py-2">
+            <div className="flex w-full items-center gap-2 border-b bg-muted/10 px-3 py-2">
               <Input
                 value={labelQuery}
                 onChange={(event) => setLabelQuery(event.target.value)}
                 placeholder={t("labels.staging.filterPlaceholder")}
-                className="h-8 max-w-xs"
+                className="h-8 min-w-0 flex-1"
               />
               <SearchableSelect
                 aria-label={t("labels.staging.filterByStatus")}
-                className="h-8 w-40"
+                className="h-8 max-w-full shrink-0"
                 value={statusFilter}
                 onValueChange={setStatusFilter}
                 searchPlaceholder={t("labels.updater.search.statuses")}
+                truncateSelection={false}
+                fitToOptions
                 options={statusOptions.map((option) => ({
                   value: option,
                   label:
@@ -648,14 +786,11 @@ export function InvoiceStagingWorkflow({
             </div>
 
             <SelectionToolbar
-              selectedCount={selectedLabelKeys.length}
-              total={filteredLabels.length}
               allKeys={filteredLabelKeys}
               selectedKeys={selectedLabelKeys}
-              onSelectAllOthers={() =>
-                setSelectedLabelKeys(selectAllOthers(filteredLabelKeys, selectedLabelKeys))
-              }
-              onRemoveAll={removeSelectedLabelsFromView}
+              total={filteredLabels.length}
+              onSelectedKeysChange={setSelectedLabelKeys}
+              onRemoveAll={requestRemoveLabels}
             >
               <Button
                 size="sm"
@@ -771,7 +906,7 @@ export function InvoiceStagingWorkflow({
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-destructive"
                               aria-label={t("labels.staging.removeFromView")}
-                              onClick={() => removeLabelFromView(label.key)}
+                              onClick={() => requestRemoveLabel(label.key)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -785,6 +920,8 @@ export function InvoiceStagingWorkflow({
             </div>
           </div>
         );
+
+  const removeCopy = removeConfirm ? removeDialogCopy(removeConfirm) : null;
 
   const auxiliaryDialogs = (
     <>
@@ -865,6 +1002,29 @@ export function InvoiceStagingWorkflow({
         onOpenChange={setRouteDialogOpen}
         barcodeIds={assignBarcodeIds}
       />
+
+      <Dialog
+        open={removeConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoveConfirm(null);
+        }}
+      >
+        <DialogContent className="z-[70]">
+          <DialogHeader>
+            <DialogTitle>{removeCopy?.title}</DialogTitle>
+            <DialogDescription>{removeCopy?.description}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveConfirm(null)}>
+              {t("common.actions.cancel")}
+            </Button>
+            <ConfirmDeleteButton
+              label={t("labels.staging.remove")}
+              onClick={confirmRemove}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 
@@ -882,17 +1042,16 @@ export function InvoiceStagingWorkflow({
               </h1>
               <p className="text-sm text-muted-foreground">{stagingDescription}</p>
             </div>
-            <Button variant="outline" onClick={handleClose}>
-              <ArrowLeft className="h-4 w-4" />
-              {t("labels.staging.backToInvoices")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {backToLineItemsButton}
+              <Button variant="outline" onClick={handleClose}>
+                <ArrowLeft className="h-4 w-4" />
+                {t("labels.staging.backToInvoices")}
+              </Button>
+            </div>
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col gap-4">{workflowPanels}</div>
-
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
-            {footerActions}
-          </div>
         </div>
         {auxiliaryDialogs}
       </>
@@ -904,13 +1063,16 @@ export function InvoiceStagingWorkflow({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="flex max-h-[88vh] w-full max-w-5xl flex-col gap-4 overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">{stagingHeaderTitle}</DialogTitle>
-            <DialogDescription>{stagingDescription}</DialogDescription>
+            <div className="flex items-start justify-between gap-4 pr-8">
+              <div className="space-y-2">
+                <DialogTitle className="flex items-center gap-2">{stagingHeaderTitle}</DialogTitle>
+                <DialogDescription>{stagingDescription}</DialogDescription>
+              </div>
+              {backToLineItemsButton}
+            </div>
           </DialogHeader>
 
           {workflowPanels}
-
-          <DialogFooter className="sm:justify-between">{footerActions}</DialogFooter>
         </DialogContent>
       </Dialog>
       {auxiliaryDialogs}

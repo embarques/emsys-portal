@@ -5,7 +5,7 @@
     "routeManager": "Define reusable route crews with a status, branch, and crew members for appointments and deliveries.",
     "pickupRoutes": "Set the working appointment route for a date: branch, vehicle, route crew, and crew roles.",
     "deliveryRoutes": "Set the working delivery route: container, exchange rate, route crew, crew roles, and date.",
-    "dailyRoutes": "Set a working route for a date: branch, route crew, and crew roles. RD branches also need a container and exchange rate."
+    "dailyRoutes": "Set a working route for a date: branch, vehicle, route crew, and a role for each crew member. RD branches also need a container and exchange rate."
   },
   "routeManager": {
     "title": "Route crews"
@@ -17,7 +17,7 @@
     "editTabLabel": "Edit {{name}}",
     "loading": "Loading daily route…",
     "notFound": "This daily route could not be found.",
-    "description": "Set the working route for this date. Choose the branch, route crew, and crew roles. RD branches also need a container and exchange rate.",
+    "description": "Set the working route for this date. Choose the branch, vehicle, and route crew, then assign a role to each crew member. RD branches also need a container and exchange rate.",
     "searchPlaceholder": "Search daily routes…",
     "searchNoun": "daily routes",
     "empty": "No daily routes yet.",
@@ -31,7 +31,7 @@
     "form": {
       "save": "Save daily route",
       "saved": "Daily route saved.",
-      "editHint": "Update the date, branch, route crew, and crew roles, then save.",
+      "editHint": "Update the date, branch, vehicle, route crew, and crew roles, then save.",
       "loadPrevious": "Load previous daily route",
       "loadPreviousPlaceholder": "Copy a previous configuration…",
       "loadPreviousSearch": "Search previous daily routes…",
@@ -311,6 +311,7 @@
     "vehicleSearch": "Search vehicles…",
     "vehicleEmpty": "No vehicles for this branch.",
     "selectBranchFirst": "Select a branch to load route crews.",
+    "selectBranchFirstVehicle": "Select a branch to load vehicles.",
     "route": "Route crew",
     "routePlaceholder": "Select a route crew…",
     "routeSearch": "Search route crews…",

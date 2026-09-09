@@ -35,6 +35,7 @@ import {
   computeInvoiceBalance,
   DEFAULT_INVOICE_LIST_PARAMS,
   getInvoiceBalanceAmount,
+  isInvoiceEmployeePickupSource,
   mapPaidRegionToPaymentLocation,
   mapPaymentLocationToPaidRegion,
   normalizeApiInvoiceMoney,
@@ -87,11 +88,19 @@ type ApiInvoiceParty = {
 };
 
 type ApiInvoiceUser = {
-  id?: number;
+  id?: number | string;
   name?: string;
   userName?: string;
   fullName?: string;
+  email?: string;
+  uid?: string;
 };
+
+type ApiInvoiceReceivedBy = ApiInvoiceUser &
+  ApiInvoiceRouteRef & {
+    date?: string;
+    routeType?: string;
+  };
 
 type ApiInvoiceContainer = {
   id?: number;
@@ -125,10 +134,14 @@ type ApiInvoiceBarcodeDelivery = {
   name?: string;
 };
 
-type ApiInvoiceBarcodeRoute = {
+type ApiInvoiceRouteRef = {
   id?: number | string;
   name?: string;
+  routeId?: string;
+  route?: ApiInvoiceRouteRef;
 };
+
+type ApiInvoiceBarcodeRoute = ApiInvoiceRouteRef;
 
 type ApiInvoiceBarcode = {
   id?: number | string;
@@ -173,13 +186,16 @@ type ApiInvoice = {
   branch?: InvoiceBranch;
   user?: ApiInvoiceUser;
   employee?: ApiInvoiceUser;
+  receivedBy?: ApiInvoiceReceivedBy;
   createdBy?: ApiInvoiceUser;
   updatedBy?: ApiInvoiceUser;
   container?: ApiInvoiceContainer;
   officeBranch?: InvoiceBranch;
   pickupEmployee?: ApiInvoiceUser;
   pickupSource?: string;
-  route?: ApiInvoiceBarcodeRoute;
+  route?: ApiInvoiceRouteRef;
+  routeCrew?: ApiInvoiceRouteRef;
+  vehicleRoute?: ApiInvoiceRouteRef;
   pickup?: ApiInvoicePickup;
   comments?: ApiInvoiceComment[];
   sender?: ApiInvoiceParty;
@@ -420,13 +436,98 @@ function normalizeInvoiceComments(raw: unknown): InvoiceComment[] {
 function mapInvoicePickupSource(
   source: string | undefined,
   officeBranch?: InvoiceBranch,
+  hasRoute?: boolean,
 ): Invoice["pickupSource"] {
   const normalized = String(source ?? "").trim().toLowerCase();
   if (normalized === "warehouse") return "warehouse";
   if (normalized === "office") return "office";
   if (normalized === "route") return "route";
   if (officeBranch?.id) return "office";
+  if (hasRoute) return "route";
   return undefined;
+}
+
+function readInvoiceRouteRef(
+  raw?: ApiInvoiceRouteRef | null,
+): { id?: string; name?: string } {
+  if (!raw || typeof raw !== "object") return {};
+  const id = raw.id != null ? String(raw.id).trim() : "";
+  const name = String(raw.name ?? "").trim();
+  return {
+    ...(id ? { id } : {}),
+    ...(name ? { name } : {}),
+  };
+}
+
+function firstInvoiceRouteRef(
+  ...candidates: Array<ApiInvoiceRouteRef | null | undefined>
+): { id?: string; name?: string } {
+  for (const candidate of candidates) {
+    const ref = readInvoiceRouteRef(candidate);
+    if (ref.id || ref.name) return ref;
+  }
+  return {};
+}
+
+function receivedByLooksLikeDailyRoute(raw?: ApiInvoiceReceivedBy | null): boolean {
+  if (!raw || typeof raw !== "object") return false;
+  if (raw.route && typeof raw.route === "object") return true;
+  if (String(raw.routeType ?? "").trim()) return true;
+  if (String(raw.date ?? "").trim()) return true;
+  const id = raw.id != null ? String(raw.id).trim() : "";
+  return /^[a-f\d]{24}$/i.test(id);
+}
+
+function resolveInvoiceReceivedBy(item: ApiInvoice): {
+  pickupSource?: Invoice["pickupSource"];
+  routeId?: string;
+  routeName?: string;
+  routeCrewId?: string;
+  routeCrewName?: string;
+  pickupEmployeeId?: string;
+  pickupEmployeeName?: string;
+} {
+  const receivedBy = item.receivedBy;
+  const explicitSource = mapInvoicePickupSource(item.pickupSource, item.officeBranch);
+  const receivedByIsRoute =
+    explicitSource === "route" || receivedByLooksLikeDailyRoute(receivedBy);
+  const receivedByIsEmployee = Boolean(receivedBy) && !receivedByIsRoute;
+
+  const dailyRoute = receivedByIsRoute
+    ? firstInvoiceRouteRef(receivedBy, item.vehicleRoute, item.route)
+    : firstInvoiceRouteRef(item.vehicleRoute, item.route);
+  const nestedCrew = firstInvoiceRouteRef(
+    receivedByIsRoute ? receivedBy?.route : undefined,
+    item.routeCrew,
+    item.route?.route,
+    item.vehicleRoute?.route,
+  );
+
+  const employeeRaw: ApiInvoiceUser | undefined = receivedByIsEmployee
+    ? receivedBy
+    : item.pickupEmployee ??
+      (explicitSource && isInvoiceEmployeePickupSource(explicitSource) ? item.employee : undefined) ??
+      (!receivedByIsRoute && !dailyRoute.id ? item.employee : undefined);
+
+  const employeeName = employeeRaw ? readInvoiceCreatedBy(employeeRaw) : undefined;
+  const hasEmployee = Boolean(
+    employeeRaw?.id != null || (employeeName && employeeName !== DEFAULT_CREATED_BY),
+  );
+  const hasDaily = Boolean(dailyRoute.id || nestedCrew.id || dailyRoute.name);
+  const pickupSource =
+    explicitSource ??
+    (hasDaily && !receivedByIsEmployee ? "route" : hasEmployee ? "office" : undefined);
+
+  return {
+    pickupSource,
+    routeId: dailyRoute.id,
+    routeName: dailyRoute.name,
+    routeCrewId: nestedCrew.id,
+    routeCrewName: nestedCrew.name || dailyRoute.name,
+    pickupEmployeeId: employeeRaw?.id != null ? String(employeeRaw.id) : undefined,
+    pickupEmployeeName:
+      employeeName && employeeName !== DEFAULT_CREATED_BY ? employeeName : undefined,
+  };
 }
 
 function normalizeInvoice(raw: unknown): Invoice | null {
@@ -439,11 +540,9 @@ function normalizeInvoice(raw: unknown): Invoice | null {
   const paidRegion = String(item.paidRegion ?? "").trim();
   const lineItems = normalizeInvoiceLineItems(item.invoiceDetails);
   const { cost, discount, amountPaid, balance } = normalizeApiInvoiceMoney(item);
-  const pickupEmployeeName = readInvoiceCreatedBy(item.pickupEmployee);
+  const receivedBy = resolveInvoiceReceivedBy(item);
   const officeBranchId = item.officeBranch?.id != null ? String(item.officeBranch.id) : undefined;
   const officeBranchName = String(item.officeBranch?.name ?? "").trim();
-  const routeId = item.route?.id != null ? String(item.route.id) : undefined;
-  const routeName = String(item.route?.name ?? "").trim();
 
   return {
     invoiceId,
@@ -457,13 +556,15 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     cost: cost || undefined,
     branch: item.branch,
     pickupId: item.pickup?.id != null ? String(item.pickup.id) : undefined,
-    pickupSource: mapInvoicePickupSource(item.pickupSource, item.officeBranch),
+    pickupSource: receivedBy.pickupSource,
     officeBranchId,
     officeBranchName: officeBranchName || undefined,
-    pickupEmployeeId: item.pickupEmployee?.id != null ? String(item.pickupEmployee.id) : undefined,
-    pickupEmployeeName: pickupEmployeeName !== DEFAULT_CREATED_BY ? pickupEmployeeName : undefined,
-    routeId,
-    routeName: routeName || undefined,
+    pickupEmployeeId: receivedBy.pickupEmployeeId,
+    pickupEmployeeName: receivedBy.pickupEmployeeName,
+    routeId: receivedBy.routeId,
+    routeName: receivedBy.routeName,
+    routeCrewId: receivedBy.routeCrewId,
+    routeCrewName: receivedBy.routeCrewName,
     sender: normalizeApiInvoiceParty(item.sender),
     receiver: normalizeApiInvoiceReceiver(item),
     lineItems,
@@ -474,7 +575,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     amountPaid,
     balance,
     createdAt: String(item.createdAt ?? "").trim(),
-    createdBy: readInvoiceCreatedBy(item.createdBy ?? item.employee ?? item.user),
+    createdBy: readInvoiceCreatedBy(item.createdBy ?? item.user),
     updatedAt: String(item.updatedAt ?? "").trim(),
     legacySyncedAt: parseLastSyncedAt(item),
   };
@@ -556,8 +657,48 @@ function shouldUseInvoiceSearch(params: InvoiceListParams): boolean {
   return hasInvoiceListFilters(params);
 }
 
+/**
+ * Table column ids like `createdBy` are not valid /invoices/search sort fields.
+ * The API only accepts nested paths (`createdBy.name`, `createdBy.id`).
+ */
+const INVOICE_SORT_FIELD_ALIASES: Record<string, string> = {
+  createdBy: "createdBy.name",
+  updatedBy: "updatedBy.name",
+};
+
+function aliasInvoiceSortField(field: string): string {
+  const trimmed = field.trim();
+  return INVOICE_SORT_FIELD_ALIASES[trimmed] ?? trimmed;
+}
+
+function aliasInvoiceSort(sort?: InvoiceListParams["sort"]): InvoiceListParams["sort"] {
+  if (!sort) return sort;
+
+  if (typeof sort === "string") {
+    const aliased = sort
+      .split(",")
+      .map((entry) => {
+        const trimmed = entry.trim();
+        if (!trimmed) return "";
+        const [field, direction] = trimmed.split(":");
+        const mapped = aliasInvoiceSortField(field ?? "");
+        if (!mapped) return "";
+        return direction === "asc" || direction === "desc" ? `${mapped}:${direction}` : mapped;
+      })
+      .filter(Boolean)
+      .join(",");
+    return aliased || undefined;
+  }
+
+  const entries = Array.isArray(sort) ? sort : [sort];
+  return entries.map((entry) => ({
+    ...entry,
+    field: aliasInvoiceSortField(entry.field),
+  }));
+}
+
 function resolveInvoicesSort(params: InvoiceListParams): string | undefined {
-  return resolveApiListSort(params.sort);
+  return resolveApiListSort(aliasInvoiceSort(params.sort) ?? params.sort);
 }
 
 function buildInvoicesQuery(params: InvoiceListParams): string {
@@ -573,7 +714,9 @@ function buildInvoicesQuery(params: InvoiceListParams): string {
 function buildInvoiceSearchBody(params: InvoiceListParams): StripeStyleSearchBody {
   const body: StripeStyleSearchBody = {};
 
-  const sortSpecs = resolveApiSearchSort(params.sort ?? DEFAULT_INVOICE_LIST_PARAMS.sort);
+  const sortSpecs = resolveApiSearchSort(
+    aliasInvoiceSort(params.sort ?? DEFAULT_INVOICE_LIST_PARAMS.sort),
+  );
   if (sortSpecs) {
     body.sort = sortSpecs;
   }
@@ -754,13 +897,20 @@ export async function patchInvoiceEmbeddedBarcodes(
   assertMutationSuccess(response, "Unable to update invoice barcodes.");
 }
 
+export type InvoiceWriteEmployeeRef = {
+  id: number;
+  name: string;
+  userName?: string;
+  fullName?: string;
+};
+
+export type InvoiceWriteRouteRef = {
+  id: string;
+  name: string;
+};
+
 export type InvoiceWriteContext = {
-  employee: {
-    id: number;
-    name: string;
-    userName?: string;
-    fullName?: string;
-  };
+  employee?: InvoiceWriteEmployeeRef;
   branch: InvoiceBranch;
   container: {
     id: number;
@@ -768,6 +918,13 @@ export type InvoiceWriteContext = {
   };
   incomeStatement?: {
     id: number;
+  };
+  pickupAssignment?: {
+    source: InvoiceFormValues["pickupSource"];
+    dailyRoute?: InvoiceWriteRouteRef;
+    routeCrew?: InvoiceWriteRouteRef;
+    pickupEmployee?: InvoiceWriteEmployeeRef;
+    officeBranch?: InvoiceBranch;
   };
 };
 
@@ -797,6 +954,16 @@ type ApiInvoiceDetailWriteRef = {
   total: number;
 };
 
+type ApiInvoiceRouteWriteRef = {
+  id: string;
+  name: string;
+  route?: { id: string; name: string };
+};
+
+type ApiInvoiceReceivedByWrite =
+  | InvoiceWriteEmployeeRef
+  | (InvoiceWriteRouteRef & { route?: InvoiceWriteRouteRef });
+
 type ApiInvoiceWritePayload = {
   number: string;
   date: string;
@@ -809,11 +976,17 @@ type ApiInvoiceWritePayload = {
   surcharge: number;
   paidRegion: string;
   paidStatus: string;
-  employee: InvoiceWriteContext["employee"];
+  employee?: InvoiceWriteEmployeeRef | null;
+  receivedBy?: ApiInvoiceReceivedByWrite | null;
   container: InvoiceWriteContext["container"];
   sender: ApiInvoiceCustomerWriteRef;
   receiver?: ApiInvoiceCustomerWriteRef;
   pickup?: { id: string | number };
+  pickupSource?: InvoiceFormValues["pickupSource"];
+  route?: ApiInvoiceRouteWriteRef | null;
+  routeCrew?: InvoiceWriteRouteRef | null;
+  pickupEmployee?: InvoiceWriteEmployeeRef | null;
+  officeBranch?: ReturnType<typeof buildApiBranchDto> | null;
   invoiceDetails: ApiInvoiceDetailWriteRef[];
   isVoid?: boolean;
 };
@@ -891,6 +1064,71 @@ function buildInvoiceDetailWriteRef(
   return detail;
 }
 
+function buildInvoiceEmployeeWriteRef(employee: InvoiceWriteEmployeeRef): InvoiceWriteEmployeeRef {
+  return {
+    id: employee.id,
+    name: employee.name.trim() || DEFAULT_CREATED_BY,
+    ...(employee.userName?.trim() ? { userName: employee.userName.trim() } : {}),
+    ...(employee.fullName?.trim() ? { fullName: employee.fullName.trim() } : {}),
+  };
+}
+
+function applyInvoicePickupAssignment(
+  payload: ApiInvoiceWritePayload,
+  assignment: InvoiceWriteContext["pickupAssignment"],
+  isUpdate: boolean,
+) {
+  if (!assignment) return;
+
+  payload.pickupSource = assignment.source;
+
+  if (assignment.source === "route") {
+    const dailyRoute = assignment.dailyRoute;
+    const routeCrew = assignment.routeCrew;
+    const dailyRouteRef = dailyRoute
+      ? {
+          id: dailyRoute.id,
+          name: dailyRoute.name.trim() || routeCrew?.name.trim() || dailyRoute.id,
+          ...(routeCrew
+            ? { route: { id: routeCrew.id, name: routeCrew.name.trim() || routeCrew.id } }
+            : {}),
+        }
+      : null;
+
+    payload.receivedBy = dailyRouteRef;
+    payload.route = dailyRouteRef;
+    payload.routeCrew = routeCrew
+      ? { id: routeCrew.id, name: routeCrew.name.trim() || routeCrew.id }
+      : isUpdate
+        ? null
+        : undefined;
+
+    if (isUpdate) {
+      payload.employee = null;
+      payload.pickupEmployee = null;
+      payload.officeBranch = null;
+    }
+    return;
+  }
+
+  const employee = assignment.pickupEmployee
+    ? buildInvoiceEmployeeWriteRef(assignment.pickupEmployee)
+    : null;
+  payload.receivedBy = employee;
+  payload.employee = employee;
+  payload.pickupEmployee = employee;
+  payload.officeBranch = assignment.officeBranch
+    ? buildApiBranchDto(assignment.officeBranch)
+    : isUpdate
+      ? null
+      : undefined;
+
+  if (isUpdate) {
+    payload.route = null;
+    payload.routeCrew = null;
+  }
+}
+
 function deriveInvoicePaidStatus(cost: number, discount: number, payment: number, balance: number): string {
   if (payment <= 0) return "UNPAID";
   if (balance <= 0 || payment >= Math.max(0, cost - discount)) return "PAID";
@@ -941,7 +1179,10 @@ function buildInvoiceWritePayload(
     throw new Error("Amount paid must be 0 or greater.");
   }
 
-  const balance = Math.max(0, computeInvoiceBalance(cost, discount, payment));
+  const balance = computeInvoiceBalance(cost, discount, payment);
+  if (balance < 0) {
+    throw new Error("Balance cannot be negative.");
+  }
 
   const payload: ApiInvoiceWritePayload = {
     number: invoiceNumber,
@@ -954,12 +1195,6 @@ function buildInvoiceWritePayload(
     surcharge: 0,
     paidRegion: mapPaymentLocationToPaidRegion(values.paymentLocation),
     paidStatus: deriveInvoicePaidStatus(cost, discount, payment, balance),
-    employee: {
-      id: context.employee.id,
-      name: context.employee.name.trim() || DEFAULT_CREATED_BY,
-      ...(context.employee.userName?.trim() ? { userName: context.employee.userName.trim() } : {}),
-      ...(context.employee.fullName?.trim() ? { fullName: context.employee.fullName.trim() } : {}),
-    },
     container: {
       id: context.container.id,
       name: context.container.name.trim() || String(context.container.id),
@@ -967,6 +1202,12 @@ function buildInvoiceWritePayload(
     sender: buildInvoiceCustomerWriteRef(values.sender, CUSTOMER_TYPE_SENDER),
     invoiceDetails,
   };
+
+  if (context.employee) {
+    payload.employee = buildInvoiceEmployeeWriteRef(context.employee);
+  }
+
+  applyInvoicePickupAssignment(payload, context.pickupAssignment, Boolean(options.isUpdate));
 
   if (incomeStatementId > 0) {
     payload.incomeStatement = { id: incomeStatementId };

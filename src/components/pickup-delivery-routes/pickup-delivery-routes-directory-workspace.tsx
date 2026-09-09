@@ -39,6 +39,7 @@ import {
   formatActiveRouteRowLabel,
   formatActiveRouteRouteName,
   formatActiveRouteTypeLabel,
+  formatActiveRouteVehicleLabel,
 } from "@/lib/pickup-delivery-routes/display";
 import {
   buildActiveRouteListParams,
@@ -274,6 +275,11 @@ export function ActiveRoutesDirectoryWorkspace({
         id: "branch.code",
         label: t("routes.columns.branch"),
         renderCell: (record) => record.branch?.code || dash,
+      },
+      {
+        id: "vehicle.name",
+        label: t("routes.columns.vehicle"),
+        renderCell: (record) => formatActiveRouteVehicleLabel(record, dash),
       },
       {
         id: "id",

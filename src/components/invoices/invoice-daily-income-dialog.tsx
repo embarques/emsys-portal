@@ -27,9 +27,11 @@ import {
 } from "@/lib/accounting/daily-income/hooks";
 import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import {
+  findCashPaymentMethod,
   isCheckPaymentMethod,
   isZellePaymentMethod,
   requiresBankAccount,
+  withDefaultCashPaymentMethod,
   type DailyIncomeJournal,
   type DailyIncomeStatement,
   type DailyIncomeStatementValues,
@@ -131,10 +133,15 @@ export function InvoiceDailyIncomeDialog({
 
   useEffect(() => {
     if (!open) return;
-    reset({
-      ...DEFAULT_VALUES,
-      description: t("invoices.wizard.dailyIncome.dialog.initialRegistrationDescription"),
-    });
+    reset(
+      withDefaultCashPaymentMethod(
+        {
+          ...DEFAULT_VALUES,
+          description: t("invoices.wizard.dailyIncome.dialog.initialRegistrationDescription"),
+        },
+        paymentMethodsQuery.data ?? [],
+      ),
+    );
     setSubmitError(null);
     setStatementError(null);
     setCardFlipped(false);
@@ -204,6 +211,14 @@ export function InvoiceDailyIncomeDialog({
     setValue("employeeId", employee.id, { shouldValidate: true });
     setValue("employeeName", employee.name, { shouldValidate: true });
   }, [currentUserQuery.data, employees, getValues, open, setValue]);
+
+  useEffect(() => {
+    if (!open || paymentMethodId || paymentMethods.length === 0) return;
+    const cash = findCashPaymentMethod(paymentMethods);
+    if (!cash) return;
+    setValue("paymentMethodId", cash.id, { shouldValidate: true });
+    setValue("paymentMethodName", cash.name, { shouldValidate: true });
+  }, [open, paymentMethodId, paymentMethods, setValue]);
 
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {

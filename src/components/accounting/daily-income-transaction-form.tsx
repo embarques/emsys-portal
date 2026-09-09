@@ -13,7 +13,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation, submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
-import { isCheckPaymentMethod, isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCheckPaymentMethod, isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { formatAccountingMoney } from "@/lib/accounting/display";
 import type { Employee } from "@/lib/employees/types";
@@ -225,6 +225,14 @@ export function DailyIncomeTransactionForm({
   const needsAccount = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(type);
   const needsPaymentMethod = needsExistingInvoice || isRegisterInvoice || type === "SALES";
   const needsSourceAccount = type === "TRANSFER" || type === "EXPENSE" || type === "LOAN";
+
+  useEffect(() => {
+    if (!needsPaymentMethod || paymentMethodId || paymentMethods.length === 0) return;
+    const cash = findCashPaymentMethod(paymentMethods);
+    if (!cash) return;
+    setValue("paymentMethodId", cash.id, { shouldValidate: true });
+    setValue("paymentMethodName", cash.name, { shouldValidate: true });
+  }, [needsPaymentMethod, paymentMethodId, paymentMethods, setValue]);
 
   useEffect(() => {
     if (!needsBankAccount || bankAccounts.some((account) => account.id === paymentAccountId) || !bankAccounts[0]) return;

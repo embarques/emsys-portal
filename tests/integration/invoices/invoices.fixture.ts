@@ -305,7 +305,7 @@ export async function expectInvoiceWizardReadyForNextEntry(wizard: Locator) {
   await expect(wizard.getByText("Step 1 of 5")).toBeVisible({
     timeout: 10_000,
   });
-  await expect(wizard.locator("#invoiceNumber")).not.toHaveValue("");
+  await expect(wizard.locator("#invoiceNumber")).toHaveValue("");
 }
 
 export async function completeInvoiceCreateWizard(

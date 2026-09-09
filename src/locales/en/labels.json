@@ -125,6 +125,18 @@
     "print": "Print",
     "remove": "Remove",
     "removeFromView": "Remove label from view",
+    "removeDialog": {
+      "lineItemsTitle": "Remove selected item?",
+      "lineItemsTitle_plural": "Remove selected items?",
+      "lineItemsDescription": "Remove {{count}} line item from this list? It will not be included when generating labels.",
+      "lineItemsDescription_plural": "Remove {{count}} line items from this list? They will not be included when generating labels.",
+      "labelsTitle": "Remove selected label?",
+      "labelsTitle_plural": "Remove selected labels?",
+      "labelsDescription": "Remove {{count}} label from this list? This does not delete the barcode from the system.",
+      "labelsDescription_plural": "Remove {{count}} labels from this list? This does not delete barcodes from the system.",
+      "oneLabelTitle": "Remove this label?",
+      "oneLabelDescription": "Remove this label from the list? This does not delete the barcode from the system."
+    },
     "selectAllLineItems": "Select all line items",
     "selectAllLabels": "Select all labels",
     "selectLineItem": "Select {{invoice}} · {{description}}",

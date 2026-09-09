@@ -18,7 +18,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -848,40 +848,42 @@ function InvoiceLineItemsWizardEditor({
   const { t } = useTranslation();
   const labels = useLineItemLabels();
   const wizardInputProps = (value: string) => wizardInputFieldProps(value);
-  const labelClass = "text-xs font-normal text-muted-foreground";
+  const labelClass = isPhoneWizard ? "text-xs font-medium text-muted-foreground" : undefined;
 
   const committedItems = useMemo(
     () => lineItems.filter(hasInvoiceLineItemContent),
     [lineItems],
   );
 
-  const [draft, setDraft] = useState(createEmptyInvoiceLineItem);
+  const [draft, setDraft] = useState<InvoiceLineItemFormValues | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [focusDescription, setFocusDescription] = useState(true);
   const clearFocusDescription = useCallback(() => setFocusDescription(false), []);
-
-  useEffect(() => {
-    if (committedItems.length > 0 || editingId) return;
-    setDraft(createEmptyInvoiceLineItem());
-    setFocusDescription(true);
-  }, [committedItems.length, editingId]);
+  const activeDraft = draft ?? createEmptyInvoiceLineItem();
+  const isDraftOpen = draft !== null || Boolean(editingId);
 
   function emitCommittedItems(items: InvoiceLineItemFormValues[]) {
     onChange(items.filter(hasInvoiceLineItemContent));
   }
 
-  function updateDraft(patch: Partial<InvoiceLineItemFormValues>) {
-    setDraft((current) => ({ ...current, ...patch }));
-  }
-
-  function resetDraft() {
+  function openDraftForAdd() {
     setDraft(createEmptyInvoiceLineItem());
     setEditingId(null);
     setFocusDescription(true);
   }
 
+  function updateDraft(patch: Partial<InvoiceLineItemFormValues>) {
+    setDraft((current) => ({ ...(current ?? createEmptyInvoiceLineItem()), ...patch }));
+  }
+
+  function resetDraft() {
+    setDraft(null);
+    setEditingId(null);
+    setFocusDescription(true);
+  }
+
   function commitDraft() {
-    if (!isDraftReadyToCommit(draft)) return;
+    if (!draft || !isDraftReadyToCommit(draft)) return;
 
     const finalized = finalizeLineItemDraft(draft);
 
@@ -898,7 +900,7 @@ function InvoiceLineItemsWizardEditor({
   }
 
   function cancelEdit() {
-    if (!editingId) return;
+    if (!editingId && draft === null) return;
     resetDraft();
   }
 
@@ -936,14 +938,14 @@ function InvoiceLineItemsWizardEditor({
         itemName: catalogItem.description,
         unitPrice,
       };
-      if (!draft.totalManual) {
-        patch.lineTotal = deriveTotalString({ ...draft, unitPrice });
+      if (!activeDraft.totalManual) {
+        patch.lineTotal = deriveTotalString({ ...activeDraft, unitPrice });
       }
       updateDraft(patch);
     },
-    onChangeQuantity: (quantity) => updateDraft(buildQuantityPatch(draft, quantity)),
-    onChangeUnitPrice: (unitPrice) => updateDraft(buildUnitPricePatch(draft, unitPrice)),
-    onChangeTotal: (total) => updateDraft(buildTotalPatch(draft, total)),
+    onChangeQuantity: (quantity) => updateDraft(buildQuantityPatch(activeDraft, quantity)),
+    onChangeUnitPrice: (unitPrice) => updateDraft(buildUnitPricePatch(activeDraft, unitPrice)),
+    onChangeTotal: (total) => updateDraft(buildTotalPatch(activeDraft, total)),
   };
 
   return (
@@ -953,54 +955,70 @@ function InvoiceLineItemsWizardEditor({
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {t("invoices.wizard.steps.lineItems")}
           </p>
-          <h2 className="mt-1 font-[family-name:var(--font-invoice-display)] text-2xl font-extrabold uppercase leading-tight text-foreground">
+          <h2 className="mt-1 text-2xl font-semibold leading-tight tracking-tight text-foreground">
             {labels.addTitle}
           </h2>
         </div>
       ) : null}
-      <section className={cn("space-y-4 border-b border-border pb-6", isPhoneWizard && "px-1")}>
-        <div className={cn("flex flex-wrap items-center justify-between gap-3", isPhoneWizard && !editingId && "sr-only")}>
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">
-              {editingId ? labels.editingTitle : labels.addTitle}
-            </h3>
-          </div>
-          {editingId ? (
+      {isDraftOpen ? (
+        <section
+          className={cn(
+            "space-y-4 rounded-xl border bg-muted/20 p-4",
+            isPhoneWizard && "mx-1 border-border/80 bg-background p-3",
+          )}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">
+                {editingId ? labels.editingTitle : labels.addTitle}
+              </h3>
+            </div>
             <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>
-              {labels.cancelEdit}
+              {editingId ? labels.cancelEdit : t("common.actions.cancel")}
             </Button>
-          ) : null}
-        </div>
+          </div>
 
-        <LineItemEntryFields
-          item={draft}
-          catalogItems={catalogItems}
-          inputClass={wizardInputProps}
-          labelClass={labelClass}
-          isPhoneWizard={isPhoneWizard}
-          descriptionPlaceholder={labels.descriptionPlaceholder}
-          descriptionLabel={labels.descriptionLabel}
-          quantityLabel={labels.quantityLabel}
-          labelsLabel={labels.labelsLabel}
-          unitPriceLabel={labels.unitPriceLabel}
-          totalLabel={labels.totalLabel}
-          autoFocusDescription={focusDescription}
-          onDescriptionFocused={clearFocusDescription}
-          onCommitFromTotal={commitDraft}
-          {...draftHandlers}
-        />
-        {isPhoneWizard ? (
-          <Button
-            type="button"
-            className="mt-4 h-12 w-full rounded-xl text-base font-semibold"
-            onClick={commitDraft}
-            disabled={!isDraftReadyToCommit(draft)}
-          >
-            <Plus className="size-5" />
-            {editingId ? labels.saveChanges : labels.addItem}
-          </Button>
-        ) : null}
-      </section>
+          <LineItemEntryFields
+            item={activeDraft}
+            catalogItems={catalogItems}
+            inputClass={wizardInputProps}
+            labelClass={labelClass}
+            isPhoneWizard={isPhoneWizard}
+            descriptionPlaceholder={labels.descriptionPlaceholder}
+            descriptionLabel={labels.descriptionLabel}
+            quantityLabel={labels.quantityLabel}
+            labelsLabel={labels.labelsLabel}
+            unitPriceLabel={labels.unitPriceLabel}
+            totalLabel={labels.totalLabel}
+            autoFocusDescription={focusDescription}
+            onDescriptionFocused={clearFocusDescription}
+            onCommitFromTotal={commitDraft}
+            {...draftHandlers}
+          />
+          {isPhoneWizard ? (
+            <Button
+              type="button"
+              className="h-12 w-full rounded-xl text-base font-semibold"
+              onClick={commitDraft}
+              disabled={!isDraftReadyToCommit(activeDraft)}
+            >
+              <Plus className="size-5" />
+              {editingId ? labels.saveChanges : labels.addItem}
+            </Button>
+          ) : (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={commitDraft}
+                disabled={!isDraftReadyToCommit(activeDraft)}
+              >
+                <Plus className="size-4" />
+                {editingId ? labels.saveChanges : labels.addItem}
+              </Button>
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <section className="space-y-3">
         <WizardLineItemsMobileCards
@@ -1039,6 +1057,20 @@ function InvoiceLineItemsWizardEditor({
           onRemove={removeCommittedItem}
           onMove={moveCommittedItem}
         />
+        {!isDraftOpen ? (
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(
+              "w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary",
+              isPhoneWizard ? "h-12 rounded-xl text-base font-semibold" : "h-10",
+            )}
+            onClick={openDraftForAdd}
+          >
+            <Plus className="size-4" />
+            {labels.addItem}
+          </Button>
+        ) : null}
       </section>
     </div>
   );

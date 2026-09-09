@@ -256,6 +256,7 @@
     "deleteMany": "This will permanently remove {{count}} selected appointments. {{cannotBeUndone}}"
   },
   "toasts": {
+    "addedFor": "Appointment for \"{{name}}\" was added.",
     "markedComplete": "{{count}} appointment marked complete.",
     "markedComplete_plural": "{{count}} appointments marked complete.",
     "markedIncomplete": "{{count}} appointment marked incomplete.",

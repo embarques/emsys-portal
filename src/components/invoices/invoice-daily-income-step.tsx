@@ -488,7 +488,6 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
             type="checkbox"
             className="mt-1 size-4 rounded border-border accent-primary"
             checked={skipPayment}
-            disabled={!associatedStatementId}
             onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
           />
           <span className="min-w-0 flex-1">
@@ -669,70 +668,41 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
 
       {!queryError && !registration ? (
         <div className="space-y-4">
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-1">
-                <p className="text-sm font-semibold">
-                  {statementOpen && statement
-                    ? t("invoices.wizard.dailyIncome.openAssociated")
-                    : t("invoices.wizard.dailyIncome.noOpenTitle")}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {statementOpen && statement
-                    ? t("invoices.wizard.dailyIncome.openAssociatedHint", { id: statement.id })
-                    : statement?.status === "CLOSED"
-                      ? t("invoices.wizard.dailyIncome.closedStatementOptional")
-                      : t("invoices.wizard.dailyIncome.noStatementOptional")}
-                </p>
-                {statementOpen && statement ? (
-                  <div className="pt-1 text-xs text-muted-foreground">
-                    {t("invoices.wizard.dailyIncome.incomeStatement", { id: statement.id })}
-                    {" · "}
-                    {statement.date}
-                    {" · "}
-                    {statement.branch?.name ||
-                      statement.branch?.code ||
-                      t("invoices.wizard.dailyIncome.dialog.currentBranch")}
-                    {pickupAssignmentLabel ? (
-                      <>
-                        {" · "}
-                        {pickupAssignmentLabel}
-                      </>
-                    ) : null}
-                  </div>
-                ) : null}
-                {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
-              </div>
-              <Button type="button" variant="ghost" size="sm" onClick={refreshStatus}>
-                <RefreshCw className="size-4" />
-                {t("invoices.wizard.dailyIncome.refresh")}
-              </Button>
-            </div>
-
-            {!statementOpen ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {statement?.status === "CLOSED" ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={reopenDailyIncome}
-                    disabled={reopenMutation.isPending}
-                  >
-                    {reopenMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                    {t("invoices.wizard.dailyIncome.reopenCuadre")}
-                  </Button>
-                ) : (
-                  <Button type="button" variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
-                    {t("invoices.wizard.dailyIncome.createOrOpenCuadre")}
-                  </Button>
-                )}
-              </div>
-            ) : null}
-          </div>
-
           {statementOpen && statement ? (
             <>
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <p className="text-sm font-semibold">
+                      {t("invoices.wizard.dailyIncome.openAssociated")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("invoices.wizard.dailyIncome.openAssociatedHint", { id: statement.id })}
+                    </p>
+                    <div className="pt-1 text-xs text-muted-foreground">
+                      {t("invoices.wizard.dailyIncome.incomeStatement", { id: statement.id })}
+                      {" · "}
+                      {statement.date}
+                      {" · "}
+                      {statement.branch?.name ||
+                        statement.branch?.code ||
+                        t("invoices.wizard.dailyIncome.dialog.currentBranch")}
+                      {pickupAssignmentLabel ? (
+                        <>
+                          {" · "}
+                          {pickupAssignmentLabel}
+                        </>
+                      ) : null}
+                    </div>
+                    {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
+                  </div>
+                  <Button type="button" variant="ghost" size="sm" onClick={refreshStatus}>
+                    <RefreshCw className="size-4" />
+                    {t("invoices.wizard.dailyIncome.refresh")}
+                  </Button>
+                </div>
+              </div>
+
               <p className="text-sm text-muted-foreground">
                 {skipPayment
                   ? t("invoices.wizard.dailyIncome.skipWithCuadreHint", { id: statement.id })
@@ -744,7 +714,6 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
                     type="checkbox"
                     className="mt-0.5 size-4 rounded border-border accent-primary"
                     checked={skipPayment}
-                    disabled={!associatedStatementId}
                     onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
                   />
                   <span className="min-w-0 flex-1">
@@ -767,29 +736,24 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
             </>
           ) : (
             <div className="rounded-lg border border-amber-300 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
-              <div className="mb-4 rounded-lg border bg-card p-4">
-                <label className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 size-4 rounded border-border accent-primary"
-                    checked={skipPayment}
-                    disabled={!associatedStatementId}
-                    onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-foreground">
-                      {t("invoices.wizard.dailyIncome.skipPayment")}
-                    </span>
-                    <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                      {t("invoices.wizard.dailyIncome.skipPaymentHint")}
-                    </span>
-                  </span>
-                </label>
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="text-sm font-semibold text-amber-950 dark:text-amber-100">
+                    {t("invoices.wizard.dailyIncome.noOpenTitle")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {statement?.status === "CLOSED"
+                      ? t("invoices.wizard.dailyIncome.closedStatementOptional")
+                      : t("invoices.wizard.dailyIncome.noStatementOptional")}
+                  </p>
+                  {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
+                </div>
+                <Button type="button" variant="ghost" size="sm" onClick={refreshStatus}>
+                  <RefreshCw className="size-4" />
+                  {t("invoices.wizard.dailyIncome.refresh")}
+                </Button>
               </div>
-              <p className="text-sm font-medium text-amber-950 dark:text-amber-100">
-                {t("invoices.wizard.dailyIncome.openCuadreBeforePayment")}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
                 {statement?.status === "CLOSED" ? (
                   <Button
                     type="button"

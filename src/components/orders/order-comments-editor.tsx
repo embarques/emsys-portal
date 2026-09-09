@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
 import { MessageSquare, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,12 @@ function isMobileViewportNow() {
   return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
 }
 
+/** Highlight quantity so typing replaces the default (usually 1). */
+function highlightQuantityField(event: FocusEvent<HTMLInputElement>) {
+  const target = event.currentTarget;
+  window.requestAnimationFrame(() => target.select());
+}
+
 type OrderCommentsEditorProps = {
   comments: OrderCommentFormValues[];
   onChange: (comments: OrderCommentFormValues[]) => void;
@@ -43,6 +49,22 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
   const [draft, setDraft] = useState<OrderCommentFormValues | null>(null);
   const advancingRef = useRef(false);
   const draftRef = useRef<OrderCommentFormValues | null>(null);
+
+  useEffect(() => {
+    if (editing?.field !== "quantity") return;
+
+    const index = editing.index;
+    const timer = window.setTimeout(() => {
+      const input =
+        (document.getElementById(`comment-quantity-${index}`) as HTMLInputElement | null) ??
+        (document.getElementById(`mobile-comment-quantity-${index}`) as HTMLInputElement | null);
+      if (!input) return;
+      input.focus();
+      input.select();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [editing]);
 
   function setDraftState(next: OrderCommentFormValues | null) {
     draftRef.current = next;
@@ -455,8 +477,10 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                           id={`mobile-comment-quantity-${index}`}
                           type="number"
                           min="1"
+                          autoFocus={isEditing(index, "quantity")}
                           className="h-11 rounded-xl text-base"
                           value={comment.quantity || "1"}
+                          onFocus={highlightQuantityField}
                           onChange={(event) => updateComment(index, { quantity: event.target.value || "1" })}
                         />
                       </div>
@@ -586,7 +610,8 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                           min="0"
                           autoFocus
                           className="h-9"
-                          value={comment.quantity}
+                          value={comment.quantity || "1"}
+                          onFocus={highlightQuantityField}
                           onChange={(event) => updateComment(index, { quantity: event.target.value })}
                           onBlur={() => setEditing(null)}
                           onKeyDown={(event) => {

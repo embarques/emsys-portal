@@ -8,7 +8,7 @@ import { TransactionTypeSelector } from "@/components/accounting/transaction-typ
 import { TransactionWizardStepper } from "@/components/accounting/transaction-wizard-stepper";
 import { Button } from "@/components/ui/button";
 import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { AccountingLookup, ChartAccount, DailyIncomeJournalValues, JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, withDefaultCashPaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
 import type { Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
@@ -41,22 +41,29 @@ type EditModeProps = SharedProps & {
 
 type Props = AddModeProps | EditModeProps;
 
-function emptyTransaction(type: JournalTransactionType): DailyIncomeJournalValues {
-  return {
-    transactionType: type,
-    refNumber: "",
-    description: "",
-    includeSender: false,
-    includeReceiver: false,
-  };
+function emptyTransaction(
+  type: JournalTransactionType,
+  paymentMethods: AccountingLookup[] = [],
+): DailyIncomeJournalValues {
+  return withDefaultCashPaymentMethod(
+    {
+      transactionType: type,
+      refNumber: "",
+      description: "",
+      includeSender: false,
+      includeReceiver: false,
+    },
+    paymentMethods,
+  );
 }
 
 function continueTransactionValues(
   type: JournalTransactionType,
   values: DailyIncomeJournalValues,
+  paymentMethods: AccountingLookup[] = [],
 ): DailyIncomeJournalValues {
   return {
-    ...emptyTransaction(type),
+    ...emptyTransaction(type, paymentMethods),
     employeeId: values.employeeId,
     employeeName: values.employeeName,
     employeeGroupId: values.employeeGroupId,
@@ -70,12 +77,13 @@ function continueTransactionValues(
 function clearTypeSpecificFields(
   values: DailyIncomeJournalValues,
   nextType: JournalTransactionType,
+  paymentMethods: AccountingLookup[] = [],
 ): DailyIncomeJournalValues {
   if (values.transactionType === nextType) {
-    return { ...values, transactionType: nextType };
+    return withDefaultCashPaymentMethod({ ...values, transactionType: nextType }, paymentMethods);
   }
 
-  return emptyTransaction(nextType);
+  return emptyTransaction(nextType, paymentMethods);
 }
 
 export function AddTransactionWizard(props: Props) {
@@ -90,7 +98,7 @@ export function AddTransactionWizard(props: Props) {
     isEdit ? props.initialValues.transactionType : null,
   );
   const [detailValues, setDetailValues] = useState<DailyIncomeJournalValues>(
-    isEdit ? props.initialValues : emptyTransaction("INITIAL-PAYMENT"),
+    isEdit ? props.initialValues : emptyTransaction("INITIAL-PAYMENT", props.paymentMethods),
   );
   const [formSessionKey, setFormSessionKey] = useState(0);
   const [focusSecondFieldSignal, setFocusSecondFieldSignal] = useState(0);
@@ -113,16 +121,23 @@ export function AddTransactionWizard(props: Props) {
 
     setStep(1);
     setSelectedType(null);
-    setDetailValues(emptyTransaction("INITIAL-PAYMENT"));
+    setDetailValues(emptyTransaction("INITIAL-PAYMENT", props.paymentMethods));
     setFormSessionKey(0);
     setFocusSecondFieldSignal(0);
   }, [props.open, isEdit, isEdit ? props.initialValues : null]);
+
+  useEffect(() => {
+    if (!props.open || isEdit) return;
+    const cash = findCashPaymentMethod(props.paymentMethods);
+    if (!cash) return;
+    setDetailValues((current) => withDefaultCashPaymentMethod(current, props.paymentMethods));
+  }, [isEdit, props.open, props.paymentMethods]);
 
   async function handleFormSubmit(values: DailyIncomeJournalValues) {
     try {
       await props.onSubmit(values);
       if (!isEdit && selectedType) {
-        setDetailValues(continueTransactionValues(selectedType, values));
+        setDetailValues(continueTransactionValues(selectedType, values, props.paymentMethods));
         setFormSessionKey((key) => key + 1);
         setFocusSecondFieldSignal((signal) => signal + 1);
       }
@@ -133,7 +148,7 @@ export function AddTransactionWizard(props: Props) {
 
   function handleTypeChange(type: JournalTransactionType) {
     setSelectedType(type);
-    setDetailValues((current) => clearTypeSpecificFields(current, type));
+    setDetailValues((current) => clearTypeSpecificFields(current, type, props.paymentMethods));
   }
 
   function handleBack() {
@@ -142,7 +157,7 @@ export function AddTransactionWizard(props: Props) {
 
   function handleNext() {
     if (!selectedType) return;
-    setDetailValues((current) => clearTypeSpecificFields(current, selectedType));
+    setDetailValues((current) => clearTypeSpecificFields(current, selectedType, props.paymentMethods));
     setStep(2);
   }
 

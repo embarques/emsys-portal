@@ -332,6 +332,24 @@ export async function fetchIncomeStatement(branchId: number, date: string) {
   return normalizeIncomeStatement(unwrapArray(payload)[0]);
 }
 
+/** Prefer an OPEN closeout for this branch/date; otherwise keep `fallbackId`. */
+export async function resolveOpenIncomeStatementId(
+  branchId: number,
+  date: string,
+  fallbackId = 0,
+): Promise<number> {
+  try {
+    const statement = await fetchIncomeStatement(branchId, date);
+    if (statement?.status === "OPEN" && statement.id > 0) {
+      return statement.id;
+    }
+  } catch {
+    // Keep the previously linked statement when lookup fails.
+  }
+
+  return fallbackId > 0 ? fallbackId : 0;
+}
+
 function incomeStatementPayload(values: DailyIncomeStatementValues) {
   return {
     date: `${values.date}T00:00:00Z`,

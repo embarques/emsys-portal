@@ -6,11 +6,68 @@ import { formatItemPrice } from "@/lib/items/display";
 import { getOrderPartyAddress, type OrderParty } from "@/lib/orders/types";
 import { getBranchLabel } from "@/lib/vehicles/display";
 
-import type { Invoice, InvoiceLineItem, InvoicePaymentLocation, InvoicePaymentMethod } from "./types";
-import { INVOICE_PAYMENT_METHODS, getInvoiceBalanceAmount, getInvoicePrimaryReceiver, getInvoiceTotal } from "./types";
+import type {
+  Invoice,
+  InvoiceLineItem,
+  InvoicePaymentLocation,
+  InvoicePaymentMethod,
+  InvoicePickupSource,
+} from "./types";
+import {
+  INVOICE_PAYMENT_METHODS,
+  getInvoiceBalanceAmount,
+  getInvoicePrimaryReceiver,
+  getInvoiceTotal,
+  isInvoiceEmployeePickupSource,
+} from "./types";
 
 export function getPaymentLocationLabel(location: InvoicePaymentLocation): string {
   return getBranchLabel(location);
+}
+
+const PICKUP_SOURCE_LABEL_KEYS = {
+  route: "invoices.form.fields.pickupSourceRoute",
+  warehouse: "invoices.form.fields.pickupSourceWarehouse",
+  office: "invoices.form.fields.pickupSourceOffice",
+} as const satisfies Record<InvoicePickupSource, string>;
+
+export function invoicePickupSourceLabelKey(
+  source: InvoicePickupSource | undefined,
+): string | null {
+  if (!source) return null;
+  return PICKUP_SOURCE_LABEL_KEYS[source];
+}
+
+/** Received by: daily-route crew name, or warehouse/office employee. Not the digitizer. */
+export function getInvoicePickupAssignmentValue(
+  invoice: Pick<
+    Invoice,
+    "pickupSource" | "routeCrewName" | "routeName" | "pickupEmployeeName"
+  >,
+): string {
+  const employee = invoice.pickupEmployeeName?.trim() ?? "";
+  const crew = invoice.routeCrewName?.trim() || invoice.routeName?.trim() || "";
+
+  if (invoice.pickupSource && isInvoiceEmployeePickupSource(invoice.pickupSource)) {
+    return employee;
+  }
+
+  if (invoice.pickupSource === "route") {
+    return crew;
+  }
+
+  return crew || employee;
+}
+
+export function formatInvoicePickupAssignmentLabel(
+  invoice: Pick<
+    Invoice,
+    "pickupSource" | "routeCrewName" | "routeName" | "pickupEmployeeName"
+  >,
+  _translate: (key: string) => string,
+  empty = "—",
+): string {
+  return getInvoicePickupAssignmentValue(invoice) || empty;
 }
 
 export function getPaymentMethodLabel(method: InvoicePaymentMethod): string {
@@ -189,6 +246,11 @@ export function invoiceMatchesQuery(invoice: Invoice, query: string): boolean {
     formatInvoiceMoney(getInvoiceSubtotal(invoice)),
     formatInvoiceMoney(getInvoiceBalance(invoice)),
     invoice.createdBy,
+    invoice.routeCrewName,
+    invoice.routeName,
+    invoice.pickupEmployeeName,
+    invoice.officeBranchName,
+    invoice.pickupSource,
   ]
     .join(" ")
     .toLowerCase()

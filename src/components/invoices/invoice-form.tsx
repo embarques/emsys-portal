@@ -85,7 +85,6 @@ type InvoiceFormProps = {
   initialValues?: InvoiceFormValues;
   isEditing?: boolean;
   updatedAt?: string;
-  suggestedInvoiceNumber?: string;
   submitLabel: string;
   externalError?: string | null;
   onSubmit: (values: InvoiceFormValues) => InvoiceFormSubmitResult;
@@ -97,6 +96,8 @@ type InvoiceFormProps = {
   appearance?: "default" | "wizard" | "phoneWizard";
   showFooter?: boolean;
   onValuesChange?: (values: InvoiceFormValues) => void;
+  /** Wizard Next: called when Enter is pressed on invoice number or the last field. */
+  onContinue?: () => void;
 };
 
 type PartySide = "sender" | "receiver";
@@ -211,7 +212,6 @@ function PartyFieldActions({
 export function InvoiceForm({
   initialValues,
   isEditing = false,
-  suggestedInvoiceNumber,
   submitLabel,
   externalError = null,
   onSubmit,
@@ -221,6 +221,7 @@ export function InvoiceForm({
   appearance = "default",
   showFooter = true,
   onValuesChange,
+  onContinue,
 }: InvoiceFormProps) {
   const { t } = useTranslation();
   const isPhoneWizard = appearance === "phoneWizard";
@@ -238,13 +239,9 @@ export function InvoiceForm({
   const defaultOrders = ordersQuery.data?.items ?? [];
   const catalogItems = itemsData?.items ?? [];
 
-  const [values, setValues] = useState<InvoiceFormValues>(() => {
-    const base = initialValues ?? createEmptyInvoiceForm();
-    if (!isEditing && suggestedInvoiceNumber && !base.invoiceNumber) {
-      return { ...base, invoiceNumber: suggestedInvoiceNumber };
-    }
-    return base;
-  });
+  const [values, setValues] = useState<InvoiceFormValues>(
+    () => initialValues ?? createEmptyInvoiceForm(),
+  );
   const [formError, setFormError] = useState<string | null>(null);
   const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
@@ -252,7 +249,32 @@ export function InvoiceForm({
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
   const [pickupEmployeeQuery, setPickupEmployeeQuery] = useState("");
-  const handleEnterNavigation = useFormEnterNavigation();
+  const navigateOnEnter = useFormEnterNavigation({
+    submitOnLast: !onContinue,
+    onComplete: onContinue,
+  });
+  const handleEnterNavigation = useCallback(
+    (event: React.KeyboardEvent<HTMLFormElement>) => {
+      if (
+        onContinue &&
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.defaultPrevented &&
+        !event.nativeEvent.isComposing &&
+        (event.target as HTMLElement | null)?.id === "invoiceNumber"
+      ) {
+        event.preventDefault();
+        onContinue();
+        return;
+      }
+
+      navigateOnEnter(event);
+    },
+    [navigateOnEnter, onContinue],
+  );
   const isSavingCustomer =
     createCustomerMutation.isPending ||
     updateCustomerMutation.isPending ||
@@ -320,6 +342,31 @@ export function InvoiceForm({
     },
     [],
   );
+
+  useEffect(() => {
+    if (values.pickupSource !== "route" || !values.routeId || values.routeCrewId) return;
+    const route = pickupRoutes.find((entry) => entry.id === values.routeId);
+    if (!route) return;
+    const crewName =
+      route.route.name.trim() ||
+      route.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ");
+    if (!route.route.id && !crewName) return;
+    commitValues((current) => {
+      if (
+        current.pickupSource !== "route" ||
+        current.routeId !== route.id ||
+        current.routeCrewId
+      ) {
+        return current;
+      }
+      return {
+        ...current,
+        routeCrewId: route.route.id,
+        routeCrewName: crewName,
+      };
+    });
+  }, [commitValues, pickupRoutes, values.pickupSource, values.routeCrewId, values.routeId]);
+
   const markPendingPartyEdit = useApplyCustomerOnTabReturn((side, customer) => {
     if (side === "sender") {
       commitValues((current) => {
@@ -338,14 +385,9 @@ export function InvoiceForm({
   useEffect(() => {
     if (isWizard) return;
 
-    const base = initialValues ?? createEmptyInvoiceForm();
-    setValues(
-      !isEditing && suggestedInvoiceNumber && !base.invoiceNumber
-        ? { ...base, invoiceNumber: suggestedInvoiceNumber }
-        : base,
-    );
+    setValues(initialValues ?? createEmptyInvoiceForm());
     setFormError(null);
-  }, [initialValues, isEditing, isWizard, suggestedInvoiceNumber]);
+  }, [initialValues, isWizard]);
 
   useEffect(() => {
     onValuesChange?.(values);
@@ -400,6 +442,8 @@ export function InvoiceForm({
       ...current,
       pickupSource: next,
       routeId: next === "route" ? current.routeId : "",
+      routeCrewId: next === "route" ? current.routeCrewId : "",
+      routeCrewName: next === "route" ? current.routeCrewName : "",
       officeBranchId: "",
       officeBranchName: "",
       pickupEmployeeId: "",
@@ -407,6 +451,21 @@ export function InvoiceForm({
     }));
     setFormError(null);
     setPickupEmployeeQuery("");
+  }
+
+  function updatePickupRoute(routeId: string) {
+    const route = pickupRoutes.find((entry) => entry.id === routeId);
+    const crewName =
+      route?.route.name.trim() ||
+      route?.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") ||
+      "";
+    commitValues((current) => ({
+      ...current,
+      routeId,
+      routeCrewId: route?.route.id ?? "",
+      routeCrewName: crewName,
+    }));
+    setFormError(null);
   }
 
   function updatePickupEmployee(employeeId: string) {
@@ -423,22 +482,38 @@ export function InvoiceForm({
     setFormError(null);
   }
 
-  function updatePickupReference(next: string) {
+  async function updatePickupReference(next: string) {
     const source = debouncedPickupQuery ? pickupSearchResults : defaultOrders;
     const selectedOrder =
       source.find((order) => String(order.id) === next) ??
       (selectedPickupQuery.data && String(selectedPickupQuery.data.id) === next
         ? selectedPickupQuery.data
         : undefined);
+    const snapshotSender = selectedOrder?.sender ?? null;
+    const senderId = snapshotSender?.id?.trim() ?? "";
 
     commitValues((current) => ({
       ...current,
       pickupId: next,
-      ...(selectedOrder?.sender
-        ? { senderId: selectedOrder.sender.id, sender: selectedOrder.sender }
+      ...(snapshotSender
+        ? { senderId: snapshotSender.id, sender: snapshotSender }
         : {}),
     }));
     setFormError(null);
+
+    if (!senderId) return;
+
+    try {
+      // Pickup parties are a create-time address snapshot and can omit a later
+      // Google verification. Load GET /customers/{id} — same as sender search.
+      const liveSender = await ensureCustomerDetail(senderId, { staleTime: 0 });
+      commitValues((current) => {
+        if (current.pickupId !== next) return current;
+        return { ...current, senderId: liveSender.id, sender: liveSender };
+      });
+    } catch {
+      // Keep the pickup snapshot if the live customer cannot be loaded.
+    }
   }
 
   function updateSender(_senderId: string, sender: Customer) {
@@ -587,6 +662,11 @@ export function InvoiceForm({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
+    if (onContinue) {
+      onContinue();
+      return;
+    }
+
     if (!values.sender) {
       const message = t("invoices.form.validation.senderRequired");
       setFormError(message);
@@ -598,9 +678,7 @@ export function InvoiceForm({
     setFormError(result.error);
     onFormErrorChange?.(result.error);
     if (!result.error && !isEditing) {
-      setValues(
-        resetInvoiceFormForNextEntry(values, result.nextInvoiceNumber ?? suggestedInvoiceNumber ?? ""),
-      );
+      setValues(resetInvoiceFormForNextEntry(values));
     }
   }
 
@@ -614,6 +692,7 @@ export function InvoiceForm({
     values.pickupSource === "warehouse"
       ? t("invoices.form.placeholders.selectWarehouseEmployee")
       : t("invoices.form.placeholders.selectOfficeEmployee");
+  const wizardFieldCol = isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined;
 
   function renderField(
     label: string,
@@ -686,21 +765,7 @@ export function InvoiceForm({
           {...(isWizard ? wizardInputFieldProps(values.date, "pl-9 md:pl-8") : {})}
           required
         />,
-        isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined,
-      )}
-      {renderField(
-        t("invoices.form.fields.invoiceNumber"),
-        "invoiceNumber",
-        true,
-        <Input
-          id="invoiceNumber"
-          value={values.invoiceNumber}
-          onChange={(event) => updateField("invoiceNumber", event.target.value)}
-          placeholder={t("invoices.form.placeholders.invoiceNumber")}
-          {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
-          required
-        />,
-        isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined,
+        wizardFieldCol,
       )}
       {renderField(
         t("invoices.form.fields.container"),
@@ -722,27 +787,7 @@ export function InvoiceForm({
             })),
           ]}
         />,
-        isPhoneWizard ? undefined : isWizard ? "sm:col-span-2" : undefined,
-      )}
-      {renderField(
-        t("invoices.form.fields.pending"),
-        "paymentLocation",
-        true,
-        <SearchableSelect
-          id="paymentLocation"
-          value={values.paymentLocation}
-          onValueChange={(next) =>
-            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
-          }
-          placeholder={t("invoices.form.fields.pending")}
-          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
-          required
-          options={INVOICE_PAYMENT_LOCATIONS.map((option) => ({
-            value: option.value,
-            label: option.label,
-          }))}
-        />,
-        isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined,
+        wizardFieldCol,
       )}
       {renderField(
         t("invoices.form.fields.pickupSource"),
@@ -760,7 +805,7 @@ export function InvoiceForm({
             label: t(option.labelKey),
           }))}
         />,
-        isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined,
+        wizardFieldCol,
       )}
       {values.pickupSource === "route"
         ? renderField(
@@ -770,7 +815,7 @@ export function InvoiceForm({
             <SearchableSelect
               id="routeId"
               value={values.routeId}
-              onValueChange={(next) => updateField("routeId", next)}
+              onValueChange={updatePickupRoute}
               placeholder={t("invoices.form.placeholders.selectPickupRoute")}
               searchPlaceholder={t("invoices.form.placeholders.searchPickupRoutes")}
               loading={pickupRoutesQuery.isFetching}
@@ -784,7 +829,7 @@ export function InvoiceForm({
                 })),
               ]}
             />,
-            isPhoneWizard ? undefined : isWizard ? "sm:col-span-2" : undefined,
+            wizardFieldCol,
           )
         : renderField(
             pickupEmployeeFieldLabel,
@@ -808,8 +853,42 @@ export function InvoiceForm({
                 ...pickupEmployeeOptions,
               ]}
             />,
-            isPhoneWizard ? undefined : isWizard ? "sm:col-span-2" : undefined,
+            wizardFieldCol,
           )}
+      {renderField(
+        t("invoices.form.fields.paymentLocation"),
+        "paymentLocation",
+        true,
+        <SearchableSelect
+          id="paymentLocation"
+          value={values.paymentLocation}
+          onValueChange={(next) =>
+            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
+          }
+          placeholder={t("invoices.form.fields.paymentLocation")}
+          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
+          required
+          options={INVOICE_PAYMENT_LOCATIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+        />,
+        wizardFieldCol,
+      )}
+      {renderField(
+        t("invoices.form.fields.invoiceNumber"),
+        "invoiceNumber",
+        true,
+        <Input
+          id="invoiceNumber"
+          value={values.invoiceNumber}
+          onChange={(event) => updateField("invoiceNumber", event.target.value)}
+          placeholder={t("invoices.form.placeholders.invoiceNumber")}
+          {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
+          required
+        />,
+        wizardFieldCol,
+      )}
     </div>
   );
 

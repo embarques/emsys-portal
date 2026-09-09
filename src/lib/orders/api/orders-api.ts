@@ -433,8 +433,31 @@ function hasOrderListFilters(params: OrderListParams): boolean {
   });
 }
 
+function aliasOrdersSortField(field: string): string {
+  return field.trim() === "createdBy" ? "createdBy.name" : field.trim();
+}
+
+function aliasOrdersSort(sort?: OrderListParams["sort"]): OrderListParams["sort"] {
+  if (typeof sort !== "string") return sort;
+
+  const aliased = sort
+    .split(",")
+    .map((entry) => {
+      const trimmed = entry.trim();
+      if (!trimmed) return "";
+      const [field, direction] = trimmed.split(":");
+      const mapped = aliasOrdersSortField(field ?? "");
+      if (!mapped) return "";
+      return direction === "asc" || direction === "desc" ? `${mapped}:${direction}` : mapped;
+    })
+    .filter(Boolean)
+    .join(",");
+
+  return aliased || undefined;
+}
+
 function resolveOrdersSort(params: OrderListParams): string | undefined {
-  return resolveApiListSort(params.sort);
+  return resolveApiListSort(aliasOrdersSort(params.sort) ?? params.sort);
 }
 
 function buildOrdersQuery(params: OrderListParams): string {
@@ -448,7 +471,7 @@ function buildOrdersQuery(params: OrderListParams): string {
 
 function buildPickupSearchBody(params: OrderListParams) {
   return buildStripeStyleSearchBody({
-    sort: params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort,
+    sort: aliasOrdersSort(params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort),
     filterGroups: buildOrderSearchFilterGroups(params),
   });
 }

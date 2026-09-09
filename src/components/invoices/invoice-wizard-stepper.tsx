@@ -37,6 +37,7 @@ export function getInvoiceWizardStepTitleKey(step: InvoiceWizardStep): string {
 type Props = {
   step: InvoiceWizardStep;
   includePaymentStep?: boolean;
+  onSelectStep?: (step: InvoiceWizardStep) => void;
 };
 
 function stepStatus(
@@ -59,7 +60,8 @@ function StepCircle({
     <span
       className={cn(
         "relative z-10 flex size-9 items-center justify-center rounded-full text-sm font-semibold",
-        status === "complete" && "bg-primary text-primary-foreground",
+        status === "complete" &&
+          "bg-primary text-primary-foreground transition-colors group-hover:bg-[color-mix(in_oklab,var(--primary),black_16%)]",
         status === "current" && "border-2 border-primary bg-card text-primary",
         status === "upcoming" && "bg-muted text-muted-foreground",
       )}
@@ -69,7 +71,11 @@ function StepCircle({
   );
 }
 
-export function InvoiceWizardStepper({ step, includePaymentStep = true }: Props) {
+export function InvoiceWizardStepper({
+  step,
+  includePaymentStep = true,
+  onSelectStep,
+}: Props) {
   const { t } = useTranslation();
 
   const steps = includePaymentStep
@@ -126,18 +132,36 @@ export function InvoiceWizardStepper({ step, includePaymentStep = true }: Props)
         <ol className={cn("relative grid gap-2", includePaymentStep ? "grid-cols-5" : "grid-cols-4")}>
           {steps.map((entry) => {
             const status = stepStatus(entry.id, step);
+            const label = t(entry.labelKey);
+            const labelClassName = cn(
+              "max-w-[5.5rem] text-sm font-medium leading-tight",
+              status === "upcoming" ? "text-muted-foreground" : "text-foreground",
+            );
+            const content = (
+              <>
+                <StepCircle stepNumber={entry.id} status={status} />
+                <span className={labelClassName}>{label}</span>
+              </>
+            );
 
             return (
-              <li key={entry.id} className="flex flex-col items-center gap-2 text-center">
-                <StepCircle stepNumber={entry.id} status={status} />
-                <span
-                  className={cn(
-                    "max-w-[5.5rem] text-sm font-medium leading-tight",
-                    status === "upcoming" ? "text-muted-foreground" : "text-foreground",
-                  )}
-                >
-                  {t(entry.labelKey)}
-                </span>
+              <li
+                key={entry.id}
+                className="flex flex-col items-center gap-2 text-center"
+                aria-current={status === "current" ? "step" : undefined}
+              >
+                {status === "complete" && onSelectStep ? (
+                  <button
+                    type="button"
+                    className="group flex cursor-pointer flex-col items-center gap-2 rounded-lg text-center outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    onClick={() => onSelectStep(entry.id)}
+                    aria-label={t("invoices.wizard.goToStep", { label })}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  content
+                )}
               </li>
             );
           })}
