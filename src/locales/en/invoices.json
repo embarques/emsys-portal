@@ -460,7 +460,6 @@
       "createdBy": {
         "name": { "label": "Created by" }
       },
-      "pickupSource": { "label": "Received via" },
       "route": {
         "_id": { "label": "Route" }
       },

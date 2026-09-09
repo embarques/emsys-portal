@@ -85,23 +85,17 @@ Our workers digitize the information from our physical invoices into the system 
 
 An invoice represents the merchandise collected as part of a client's shipment.
 
-**Received by** (`receivedBy`) is who took in the merchandise. It replaces legacy `employee` (`core.User`). The value is either:
+**Received by** (`receivedBy`) is who took in the merchandise. It replaces legacy `employee` (`core.User`). The value is either the selected **daily route** or a **single employee**. **Received via** (route / warehouse / office) is portal-only so the form can pick which of those to save; do not persist it.
 
-- the selected **warehouse/office employee**, or
-- the selected **daily route** (vehicle-route). Display the nested route-crew name when the daily route has one.
+TODO (backend) — invoice `receivedBy` (portal now follows this; align API + legacy data):
 
-It is not the system user who digitized the invoice (`createdBy`).
+Replace invoice **`employee`** (`core.User`) with **`receivedBy`**.
 
-TODO (backend) — invoice received-by (portal now follows this; align API + legacy data):
+**Route:** `receivedBy` is the selected daily vehicle-route (`id` + `name`) with nested crew ref `route` (`id` + `name`), or a single employee (like the current/legacy system).
 
-Replace invoice **`employee`** (`core.User`) with **`receivedBy`**. Discriminate with **`pickupSource`** (`route` | `warehouse` | `office`):
+Keep **`createdBy`** as the user who digitized the invoice. **`createdAt`** is the date/time the invoice was digitized. **`updatedAt` / `updatedBy`** are the last user who updated it.
 
-- **Route:** `receivedBy` is the selected daily vehicle-route (`id` + `name`) with nested crew ref `route` (`id` + `name`).
-- **Warehouse / office:** `receivedBy` is the selected employee (`id` + `name`; keep `fullName` / `userName` when present). Also persist **`officeBranch`** (`id` + `code` + `name`).
-
-Keep **`createdBy`** as the user who digitized the invoice. Do not keep using `employee` as Received by. On update, `receivedBy` must replace the previous value (do not leave a leftover User on route invoices or a leftover daily route on employee invoices).
-
-Backfill legacy invoices: when `employee` is a `core.User` and there is no daily route, copy it onto `receivedBy` and set `pickupSource` to `warehouse` or `office`. When the invoice was received on a route, set `receivedBy` to the daily vehicle-route (resolve from `route` / `vehicleRoute` if needed, including nested `route` crew) and set `pickupSource: route`. After backfill, stop treating `employee` as Received by.
+**Backfill legacy invoices:** if `employee` is a `core.User` and there is no daily route, copy it onto `receivedBy`. After backfill, stop treating `employee` as Received by. The portal already reads `receivedBy` first and falls back to legacy `employee` / `route` until this ships.
 
 ### Barcodes
 

@@ -35,7 +35,6 @@ import {
   computeInvoiceBalance,
   DEFAULT_INVOICE_LIST_PARAMS,
   getInvoiceBalanceAmount,
-  isInvoiceEmployeePickupSource,
   mapPaidRegionToPaymentLocation,
   mapPaymentLocationToPaidRegion,
   normalizeApiInvoiceMoney,
@@ -433,20 +432,6 @@ function normalizeInvoiceComments(raw: unknown): InvoiceComment[] {
     .filter((comment): comment is InvoiceComment => comment != null);
 }
 
-function mapInvoicePickupSource(
-  source: string | undefined,
-  officeBranch?: InvoiceBranch,
-  hasRoute?: boolean,
-): Invoice["pickupSource"] {
-  const normalized = String(source ?? "").trim().toLowerCase();
-  if (normalized === "warehouse") return "warehouse";
-  if (normalized === "office") return "office";
-  if (normalized === "route") return "route";
-  if (officeBranch?.id) return "office";
-  if (hasRoute) return "route";
-  return undefined;
-}
-
 function readInvoiceRouteRef(
   raw?: ApiInvoiceRouteRef | null,
 ): { id?: string; name?: string } {
@@ -478,6 +463,12 @@ function receivedByLooksLikeDailyRoute(raw?: ApiInvoiceReceivedBy | null): boole
   return /^[a-f\d]{24}$/i.test(id);
 }
 
+function inferEmployeePickupSource(officeBranch?: InvoiceBranch): Invoice["pickupSource"] {
+  const type = String(officeBranch?.type ?? "").trim().toLowerCase();
+  if (type === "warehouse") return "warehouse";
+  return "office";
+}
+
 function resolveInvoiceReceivedBy(item: ApiInvoice): {
   pickupSource?: Invoice["pickupSource"];
   routeId?: string;
@@ -488,9 +479,7 @@ function resolveInvoiceReceivedBy(item: ApiInvoice): {
   pickupEmployeeName?: string;
 } {
   const receivedBy = item.receivedBy;
-  const explicitSource = mapInvoicePickupSource(item.pickupSource, item.officeBranch);
-  const receivedByIsRoute =
-    explicitSource === "route" || receivedByLooksLikeDailyRoute(receivedBy);
+  const receivedByIsRoute = receivedByLooksLikeDailyRoute(receivedBy);
   const receivedByIsEmployee = Boolean(receivedBy) && !receivedByIsRoute;
 
   const dailyRoute = receivedByIsRoute
@@ -506,7 +495,6 @@ function resolveInvoiceReceivedBy(item: ApiInvoice): {
   const employeeRaw: ApiInvoiceUser | undefined = receivedByIsEmployee
     ? receivedBy
     : item.pickupEmployee ??
-      (explicitSource && isInvoiceEmployeePickupSource(explicitSource) ? item.employee : undefined) ??
       (!receivedByIsRoute && !dailyRoute.id ? item.employee : undefined);
 
   const employeeName = employeeRaw ? readInvoiceCreatedBy(employeeRaw) : undefined;
@@ -515,8 +503,11 @@ function resolveInvoiceReceivedBy(item: ApiInvoice): {
   );
   const hasDaily = Boolean(dailyRoute.id || nestedCrew.id || dailyRoute.name);
   const pickupSource =
-    explicitSource ??
-    (hasDaily && !receivedByIsEmployee ? "route" : hasEmployee ? "office" : undefined);
+    receivedByIsRoute || (hasDaily && !receivedByIsEmployee)
+      ? "route"
+      : hasEmployee
+        ? inferEmployeePickupSource(item.officeBranch)
+        : undefined;
 
   return {
     pickupSource,
@@ -982,7 +973,6 @@ type ApiInvoiceWritePayload = {
   sender: ApiInvoiceCustomerWriteRef;
   receiver?: ApiInvoiceCustomerWriteRef;
   pickup?: { id: string | number };
-  pickupSource?: InvoiceFormValues["pickupSource"];
   route?: ApiInvoiceRouteWriteRef | null;
   routeCrew?: InvoiceWriteRouteRef | null;
   pickupEmployee?: InvoiceWriteEmployeeRef | null;
@@ -1079,8 +1069,6 @@ function applyInvoicePickupAssignment(
   isUpdate: boolean,
 ) {
   if (!assignment) return;
-
-  payload.pickupSource = assignment.source;
 
   if (assignment.source === "route") {
     const dailyRoute = assignment.dailyRoute;

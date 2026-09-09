@@ -986,7 +986,6 @@ export function InvoicesWorkspace() {
     {
       id: "pickupAssignment",
       label: t("invoices.columns.pickupAssignment"),
-      sortField: "pickupSource",
       renderCell: (invoice) =>
         formatInvoicePickupAssignmentLabel(invoice, t, t("common.empty.dash")),
     },

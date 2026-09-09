@@ -169,17 +169,6 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     optionsSource: "users",
   },
   {
-    field: "pickupSource",
-    label: "Received via",
-    operators: ["eq", "neq"],
-    valueType: "select",
-    options: [
-      { value: "route", label: "Route" },
-      { value: "warehouse", label: "Warehouse" },
-      { value: "office", label: "Office" },
-    ],
-  },
-  {
     field: "route._id",
     label: "Route",
     operators: ["eq", "neq"],

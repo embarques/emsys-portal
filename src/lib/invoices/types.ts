@@ -148,6 +148,7 @@ export type Invoice = {
   /** Employee who received the merchandise when `receivedBy` is an employee. */
   pickupEmployeeId?: string;
   pickupEmployeeName?: string;
+  /** Frontend-only discriminator derived from `receivedBy` (employee vs daily route). */
   pickupSource?: InvoicePickupSource;
   paidRegion?: string;
   paidStatus?: string;
@@ -173,6 +174,7 @@ export type InvoiceBranch = {
   id: number;
   name: string;
   code: string;
+  type?: string;
 };
 
 export type InvoiceLineItemFormValues = {
