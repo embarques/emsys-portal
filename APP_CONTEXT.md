@@ -202,6 +202,16 @@ Daily Income is used to manage and record the company's daily incoming transacti
 
 It provides a way to record and track income received each day and maintain a historical record of daily revenue.
 
+A journal can be posted under an **employee** `{ id, name }` **or** a **daily vehicle-route** `{ id, name, route?: { id, name } }` (same shape as invoice `receivedBy`). The portal picker uses a local `assigneeSource` (`employee` | `route`) so the form can choose which of those to save; do **not** persist that discriminator.
+
+TODO (backend) — daily-income journal assignee (portal now follows this; align API + legacy data):
+
+Accept **either** `employee` **or** a daily vehicle-route on create/update. Discriminate by shape: numeric employee `id` vs Mongo daily-route `id` / nested crew `route`.
+
+On write, replace the previous assignee — do not leave leftover `employee` on route journals, or leftover `vehicleRoute` / `route` / route-shaped `employeeGroup` on employee journals.
+
+Accept and return `vehicleRoute` and/or `route` (the portal currently sends both). Until this ships, the portal still reads `employee` first when no daily-route id is present, and treats `employeeGroup` as a route when its id looks like a 24-character Mongo id.
+
 ### Checks
 
 Checks manages checks received or issued by the company.

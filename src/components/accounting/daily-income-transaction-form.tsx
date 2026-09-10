@@ -19,6 +19,7 @@ import { formatAccountingMoney } from "@/lib/accounting/display";
 import type { Employee } from "@/lib/employees/types";
 import { getInvoiceBalanceAmount, getInvoicePrimaryReceiver, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { cn } from "@/lib/utils";
 
 const selectClassName =
@@ -28,6 +29,8 @@ type Props = {
   transactionType: JournalTransactionType;
   initialValues: DailyIncomeJournalValues;
   employees: Employee[];
+  dailyRoutes?: ActiveRoute[];
+  statementDate?: string;
   accounts: ChartAccount[];
   bankAccounts: ChartAccount[];
   invoices: Invoice[];
@@ -61,6 +64,8 @@ export function DailyIncomeTransactionForm({
   transactionType,
   initialValues,
   employees,
+  dailyRoutes,
+  statementDate,
   accounts,
   bankAccounts,
   invoices,
@@ -137,6 +142,8 @@ export function DailyIncomeTransactionForm({
 
   const type = watch("transactionType");
   const employeeId = watch("employeeId");
+  const routeId = watch("routeId");
+  const assigneeSource = watch("assigneeSource");
   const invoiceId = watch("invoiceId");
   const accountId = watch("accountId");
   const paymentAccountId = watch("paymentAccountId");
@@ -300,6 +307,9 @@ export function DailyIncomeTransactionForm({
           {isRegisterInvoice ? (
             <RegisterInvoiceTransactionFields
               employees={employees}
+              dailyRoutes={dailyRoutes}
+              statementDate={statementDate}
+              allowDailyRoute
               bankAccounts={bankAccounts}
               paymentMethods={paymentMethods}
               errors={errors}
@@ -313,8 +323,12 @@ export function DailyIncomeTransactionForm({
               <div className="sm:col-span-2">
                 <TransactionAssigneeSelect
                   employees={employees}
+                  dailyRoutes={dailyRoutes}
+                  statementDate={statementDate}
                   employeeId={employeeId}
-                  error={errors.employeeId?.message}
+                  routeId={routeId}
+                  assigneeSource={assigneeSource}
+                  error={errors.employeeId?.message ?? errors.routeId?.message}
                   setValue={setValue}
                 />
               </div>
@@ -371,8 +385,12 @@ export function DailyIncomeTransactionForm({
               <div className="sm:col-span-2">
                 <TransactionAssigneeSelect
                   employees={employees}
+                  dailyRoutes={dailyRoutes}
+                  statementDate={statementDate}
                   employeeId={employeeId}
-                  error={errors.employeeId?.message}
+                  routeId={routeId}
+                  assigneeSource={assigneeSource}
+                  error={errors.employeeId?.message ?? errors.routeId?.message}
                   setValue={setValue}
                 />
               </div>

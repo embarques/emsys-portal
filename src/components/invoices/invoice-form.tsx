@@ -56,6 +56,7 @@ import {
   type CustomerFormValues,
 } from "@/lib/customers/types";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
+import { INVOICE_WIZARD_FIELDS } from "@/lib/invoices/invoice-wizard-validation";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { buildTransactionAssigneeOptions } from "@/lib/accounting/daily-income/assignee";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -98,6 +99,9 @@ type InvoiceFormProps = {
   onValuesChange?: (values: InvoiceFormValues) => void;
   /** Wizard Next: called when Enter is pressed on invoice number or the last field. */
   onContinue?: () => void;
+  /** Focus this field after a wizard validation error. */
+  focusFieldId?: string | null;
+  focusFieldKey?: number;
 };
 
 type PartySide = "sender" | "receiver";
@@ -222,6 +226,8 @@ export function InvoiceForm({
   showFooter = true,
   onValuesChange,
   onContinue,
+  focusFieldId = null,
+  focusFieldKey = 0,
 }: InvoiceFormProps) {
   const { t } = useTranslation();
   const isPhoneWizard = appearance === "phoneWizard";
@@ -249,6 +255,7 @@ export function InvoiceForm({
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
   const [pickupEmployeeQuery, setPickupEmployeeQuery] = useState("");
+  const [pickupAssignmentOpenKey, setPickupAssignmentOpenKey] = useState(0);
   const navigateOnEnter = useFormEnterNavigation({
     submitOnLast: !onContinue,
     onComplete: onContinue,
@@ -437,20 +444,24 @@ export function InvoiceForm({
   }
 
   function updatePickupSource(next: InvoicePickupSource) {
-    if (next === values.pickupSource) return;
-    commitValues((current) => ({
-      ...current,
-      pickupSource: next,
-      routeId: next === "route" ? current.routeId : "",
-      routeCrewId: next === "route" ? current.routeCrewId : "",
-      routeCrewName: next === "route" ? current.routeCrewName : "",
-      officeBranchId: "",
-      officeBranchName: "",
-      pickupEmployeeId: "",
-      pickupEmployeeName: "",
-    }));
+    if (next !== values.pickupSource) {
+      commitValues((current) => ({
+        ...current,
+        pickupSource: next,
+        routeId: next === "route" ? current.routeId : "",
+        routeCrewId: next === "route" ? current.routeCrewId : "",
+        routeCrewName: next === "route" ? current.routeCrewName : "",
+        officeBranchId: "",
+        officeBranchName: "",
+        pickupEmployeeId: "",
+        pickupEmployeeName: "",
+      }));
+      setPickupEmployeeQuery("");
+    }
     setFormError(null);
-    setPickupEmployeeQuery("");
+    if (isWizard) {
+      setPickupAssignmentOpenKey((key) => key + 1);
+    }
   }
 
   function updatePickupRoute(routeId: string) {
@@ -693,6 +704,7 @@ export function InvoiceForm({
       ? t("invoices.form.placeholders.selectWarehouseEmployee")
       : t("invoices.form.placeholders.selectOfficeEmployee");
   const wizardFieldCol = isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined;
+  const openPickupAssignment = isWizard && pickupAssignmentOpenKey > 0;
 
   function renderField(
     label: string,
@@ -813,6 +825,7 @@ export function InvoiceForm({
             "routeId",
             true,
             <SearchableSelect
+              key={isWizard ? `routeId-${pickupAssignmentOpenKey}` : "routeId"}
               id="routeId"
               value={values.routeId}
               onValueChange={updatePickupRoute}
@@ -820,6 +833,8 @@ export function InvoiceForm({
               searchPlaceholder={t("invoices.form.placeholders.searchPickupRoutes")}
               loading={pickupRoutesQuery.isFetching}
               required
+              autoFocus={openPickupAssignment}
+              defaultOpen={openPickupAssignment}
               {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
               options={[
                 { value: "", label: t("invoices.form.placeholders.selectPickupRoute") },
@@ -836,6 +851,7 @@ export function InvoiceForm({
             "pickupEmployeeId",
             true,
             <SearchableSelect
+              key={isWizard ? `pickupEmployeeId-${pickupAssignmentOpenKey}` : "pickupEmployeeId"}
               id="pickupEmployeeId"
               value={values.pickupEmployeeId}
               onValueChange={updatePickupEmployee}
@@ -845,6 +861,8 @@ export function InvoiceForm({
               loading={pickupEmployeeSearch.isFetching || employeesQuery.isFetching}
               onSearchChange={setPickupEmployeeQuery}
               required
+              autoFocus={openPickupAssignment}
+              defaultOpen={openPickupAssignment}
               {...(isWizard ? wizardSelectFieldProps(values.pickupEmployeeId) : {})}
               options={[
                 ...(debouncedPickupEmployeeQuery
@@ -1038,6 +1056,9 @@ export function InvoiceForm({
                 catalogItems={catalogItems}
                 appearance={isPhoneWizard ? "phoneWizard" : "wizard"}
                 onChange={(lineItems) => updateField("lineItems", lineItems)}
+                requestFocusKey={
+                  focusFieldId === INVOICE_WIZARD_FIELDS.lineItems ? focusFieldKey : 0
+                }
               />
             ) : (
               <FormSection icon={ClipboardList} title={t("invoices.form.sections.description")}>

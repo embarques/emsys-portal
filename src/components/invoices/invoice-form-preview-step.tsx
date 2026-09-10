@@ -270,6 +270,16 @@ function InvoiceWizardCheckoutReview({
   const paymentIsMissingOptional =
     Boolean(showPaymentSection) &&
     (!paymentSummary?.registration || paymentSummary.paymentSkipped || recordedPaymentAmount === 0);
+  const zeroLabelCount = lineItemRows.filter((item) => resolveLineLabelCount(item) === 0).length;
+  const zeroLabelsWarning =
+    zeroLabelCount === 0
+      ? null
+      : t(
+          zeroLabelCount === 1
+            ? "invoices.wizard.review.zeroLabelsWarning"
+            : "invoices.wizard.review.zeroLabelsWarning_plural",
+          { count: zeroLabelCount },
+        );
 
   return (
     <div
@@ -515,6 +525,14 @@ function InvoiceWizardCheckoutReview({
       >
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">{t("invoices.wizard.review.reviewIntro")}</p>
+          {zeroLabelsWarning ? (
+            <InvoiceWizardNotice
+              tone="warning"
+              variant="footer"
+              message={zeroLabelsWarning}
+              className="rounded-lg border print:hidden"
+            />
+          ) : null}
 
           <div>
             <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-foreground">
@@ -539,7 +557,7 @@ function InvoiceWizardCheckoutReview({
                       <article key={item.id} className="py-4 first:pt-0 last:pb-0">
                         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
                           <div className="min-w-0">
-                            <p className="line-clamp-2 text-lg font-semibold leading-snug text-foreground">
+                            <p className="whitespace-normal break-words text-lg font-semibold leading-snug text-foreground">
                               {label}
                             </p>
                             <p className="mt-3 text-base tabular-nums text-muted-foreground">
@@ -560,13 +578,14 @@ function InvoiceWizardCheckoutReview({
                 </div>
               ) : (
                 <div className="overflow-x-auto rounded-lg border">
-                  <table className="w-full min-w-[32rem] text-sm">
+                  <table className="w-full min-w-[36rem] table-fixed text-sm">
                     <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                       <tr>
-                        <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.item")}</th>
-                        <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.qty")}</th>
-                        <th className="px-4 py-3 font-medium">{t("invoices.wizard.review.table.unitPrice")}</th>
-                        <th className="px-4 py-3 font-medium text-right">
+                        <th className="w-[44%] px-4 py-3 font-medium">{t("invoices.wizard.review.table.item")}</th>
+                        <th className="w-[10%] px-4 py-3 font-medium">{t("invoices.wizard.review.table.qty")}</th>
+                        <th className="w-[14%] px-4 py-3 font-medium">{t("invoices.wizard.review.table.labels")}</th>
+                        <th className="w-[16%] px-4 py-3 font-medium">{t("invoices.wizard.review.table.unitPrice")}</th>
+                        <th className="w-[16%] px-4 py-3 font-medium text-right">
                           {t("invoices.wizard.review.table.subtotal")}
                         </th>
                       </tr>
@@ -583,17 +602,27 @@ function InvoiceWizardCheckoutReview({
                         const lineTotal = resolveLineTotal(item);
                         return (
                           <tr key={item.id} className="border-b last:border-b-0">
-                            <td className="px-4 py-3">
-                              <p className="font-medium text-foreground">{label}</p>
-                              <ReviewLineItemLabels count={labelCount} />
+                            <td className="px-4 py-3 align-top">
+                              <p className="whitespace-normal break-words font-medium leading-snug text-foreground">
+                                {label}
+                              </p>
                             </td>
-                            <td className="px-4 py-3 text-muted-foreground">
+                            <td className="whitespace-nowrap px-4 py-3 align-top text-muted-foreground">
                               {item.quantity || t("common.empty.dash")}
                             </td>
-                            <td className="px-4 py-3 text-muted-foreground">
+                            <td className="whitespace-nowrap px-4 py-3 align-top text-muted-foreground">
+                              {labelCount > 0 ? (
+                                <span className="tabular-nums">{labelCount}</span>
+                              ) : (
+                                <InvoiceWizardReviewOptionalMissing>
+                                  {t("invoices.wizard.review.noLabels")}
+                                </InvoiceWizardReviewOptionalMissing>
+                              )}
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3 align-top text-muted-foreground">
                               <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} />
                             </td>
-                            <td className="px-4 py-3 text-right font-medium">
+                            <td className="whitespace-nowrap px-4 py-3 align-top text-right font-medium">
                               <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
                             </td>
                           </tr>

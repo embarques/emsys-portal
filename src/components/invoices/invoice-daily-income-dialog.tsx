@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Lock, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -24,7 +24,9 @@ import {
   useAccountingPaymentMethods,
   useCreateDailyIncomeJournal,
   useCreateIncomeStatement,
+  useSetIncomeStatementStatus,
 } from "@/lib/accounting/daily-income/hooks";
+import { parseSingleOpenIncomeStatement, type OpenIncomeStatementRef } from "@/lib/accounting/daily-income/open-statement-error";
 import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import {
   findCashPaymentMethod,
@@ -76,6 +78,7 @@ export function InvoiceDailyIncomeDialog({
   const { t } = useTranslation();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [statementError, setStatementError] = useState<string | null>(null);
+  const [singleOpenStatement, setSingleOpenStatement] = useState<OpenIncomeStatementRef | null>(null);
   const [cardFlipped, setCardFlipped] = useState(false);
   const [activeStatement, setActiveStatement] = useState(statement);
   const currentUserQuery = useCurrentUser();
@@ -85,6 +88,7 @@ export function InvoiceDailyIncomeDialog({
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, open);
   const createJournal = useCreateDailyIncomeJournal();
   const createStatement = useCreateIncomeStatement();
+  const closeStatement = useSetIncomeStatementStatus();
   const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
   const invoiceSubtotal = useMemo(
     () => invoice.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0),
@@ -144,6 +148,7 @@ export function InvoiceDailyIncomeDialog({
     );
     setSubmitError(null);
     setStatementError(null);
+    setSingleOpenStatement(null);
     setCardFlipped(false);
     setActiveStatement(statement);
   }, [open, reset, statement, t]);
@@ -223,12 +228,44 @@ export function InvoiceDailyIncomeDialog({
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
       setStatementError(null);
+      setSingleOpenStatement(null);
       const created = await createStatement.mutateAsync(values);
       setActiveStatement(created);
       setCardFlipped(false);
       await onStatementCreated(created);
     } catch (error) {
-      setStatementError(normalizeApiError(error).message);
+      const message = normalizeApiError(error).message;
+      setStatementError(message);
+      setSingleOpenStatement(parseSingleOpenIncomeStatement(message));
+    }
+  }
+
+  async function closeSingleOpenStatement() {
+    if (!singleOpenStatement) return;
+    try {
+      await closeStatement.mutateAsync({
+        statement: {
+          id: singleOpenStatement.id,
+          date: singleOpenStatement.date,
+          status: "OPEN",
+          branch: selectedStatementBranch
+            ? {
+                id: selectedStatementBranch.id,
+                code: selectedStatementBranch.code,
+                name: selectedStatementBranch.name,
+              }
+            : undefined,
+          currency: statementCurrency,
+          rate: statementForm.getValues("rate") || 1,
+        },
+        open: false,
+      });
+      setStatementError(null);
+      setSingleOpenStatement(null);
+    } catch (error) {
+      const message = normalizeApiError(error).message;
+      setStatementError(message);
+      setSingleOpenStatement(parseSingleOpenIncomeStatement(message));
     }
   }
 
@@ -293,7 +330,7 @@ export function InvoiceDailyIncomeDialog({
         <form className="space-y-5" onSubmit={handleSubmit(submit)}>
           <div
             className="relative transition-[height] duration-300 [perspective:1200px]"
-            style={{ height: cardFlipped ? 286 : 190 }}
+            style={{ height: cardFlipped ? (statementError ? (singleOpenStatement ? 420 : 380) : 286) : 190 }}
           >
             <div
               className="absolute inset-0 transition-transform duration-500 [transform-style:preserve-3d]"
@@ -395,10 +432,10 @@ export function InvoiceDailyIncomeDialog({
               <section
                 aria-hidden={!cardFlipped}
                 inert={!cardFlipped ? true : undefined}
-                className="absolute inset-0 rounded-lg border border-blue-200 bg-blue-50/70 p-4 text-sm [backface-visibility:hidden] [transform:rotateY(180deg)] dark:border-blue-900 dark:bg-blue-950/30"
+                className="absolute inset-0 overflow-hidden rounded-lg border border-blue-200 bg-blue-50/70 p-4 text-sm [backface-visibility:hidden] [transform:rotateY(180deg)] dark:border-blue-900 dark:bg-blue-950/30"
                 style={{ pointerEvents: cardFlipped ? "auto" : "none" }}
               >
-                <div className="space-y-4">
+                <div className="flex h-full flex-col gap-3">
                   <div>
                     <p className="font-semibold">{t("invoices.wizard.dailyIncome.dialog.createDailyIncomeTitle")}</p>
                     <p className="text-xs text-muted-foreground">
@@ -465,8 +502,39 @@ export function InvoiceDailyIncomeDialog({
                       </div>
                     ) : null}
                   </div>
-                  {statementError ? <p className="text-xs text-destructive">{statementError}</p> : null}
-                  <div className="flex justify-between gap-2 border-t border-blue-200 pt-3 dark:border-blue-900">
+                  {statementError ? (
+                    <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                      <p className="leading-snug break-words">
+                        {singleOpenStatement
+                          ? t("invoices.wizard.dailyIncome.dialog.previousOpenStatement", {
+                              id: singleOpenStatement.id,
+                              date: singleOpenStatement.date,
+                            })
+                          : statementError}
+                      </p>
+                      {singleOpenStatement ? (
+                        <Button
+                          data-testid="invoice-daily-income-close-previous"
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 border-destructive/30 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={closeSingleOpenStatement}
+                          disabled={closeStatement.isPending}
+                        >
+                          {closeStatement.isPending ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Lock className="size-4" />
+                          )}
+                          {closeStatement.isPending
+                            ? t("invoices.wizard.dailyIncome.dialog.closing")
+                            : t("invoices.wizard.dailyIncome.dialog.closePreviousCuadre")}
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  <div className="mt-auto flex justify-between gap-2 border-t border-blue-200 pt-3 dark:border-blue-900">
                     <Button type="button" size="sm" variant="outline" onClick={() => setCardFlipped(false)}>
                       <RotateCcw className="size-4" />
                       {t("invoices.wizard.dailyIncome.dialog.backToStatus")}
@@ -477,6 +545,7 @@ export function InvoiceDailyIncomeDialog({
                       size="sm"
                       disabled={
                         createStatement.isPending ||
+                        closeStatement.isPending ||
                         !currentUserQuery.data ||
                         branchesQuery.isLoading ||
                         !statementBranchId

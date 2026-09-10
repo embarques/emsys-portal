@@ -19,6 +19,7 @@ import {
   useIncomeStatement,
   useSetIncomeStatementStatus,
 } from "@/lib/accounting/daily-income/hooks";
+import { parseSingleOpenIncomeStatement } from "@/lib/accounting/daily-income/open-statement-error";
 import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import type {
   DailyIncomeJournal,
@@ -49,15 +50,6 @@ function todayDateValue() {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function parseSingleOpenIncomeStatement(message: string) {
-  const matches = Array.from(message.matchAll(/\b(\d+)\s+(\d{4}-\d{2}-\d{2})\b/g));
-  if (matches.length !== 1) return null;
-  const [, id, date] = matches[0];
-  const statementId = Number(id);
-  if (!Number.isFinite(statementId)) return null;
-  return { id: statementId, date };
 }
 
 function MobileCreateDailyIncomePage({
@@ -181,7 +173,7 @@ function MobileCreateDailyIncomePage({
       </div>
 
       <form className="space-y-5" onSubmit={form.handleSubmit(createDailyIncome)}>
-        <div className="space-y-2">
+        <div className="space-y-2" data-invoice-wizard-focus="daily-income">
           <Label htmlFor="invoice-mobile-statement-branch">
             {t("invoices.wizard.dailyIncome.dialog.branch")}
           </Label>
@@ -488,6 +480,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
             type="checkbox"
             className="mt-1 size-4 rounded border-border accent-primary"
             checked={skipPayment}
+            data-invoice-wizard-focus="daily-income"
             onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
           />
           <span className="min-w-0 flex-1">
@@ -529,6 +522,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
                 className="h-11 flex-1 rounded-xl"
                 onClick={reopenDailyIncome}
                 disabled={reopenMutation.isPending}
+                data-invoice-wizard-focus="daily-income"
               >
                 {reopenMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                 {t("invoices.wizard.dailyIncome.reopenCuadre")}
@@ -714,6 +708,7 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
                     type="checkbox"
                     className="mt-0.5 size-4 rounded border-border accent-primary"
                     checked={skipPayment}
+                    data-invoice-wizard-focus="daily-income"
                     onChange={(event) => handleSkipPaymentChange(event.currentTarget.checked)}
                   />
                   <span className="min-w-0 flex-1">
@@ -760,12 +755,18 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
                     size="sm"
                     onClick={reopenDailyIncome}
                     disabled={reopenMutation.isPending}
+                    data-invoice-wizard-focus="daily-income"
                   >
                     {reopenMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                     {t("invoices.wizard.dailyIncome.reopenCuadre")}
                   </Button>
                 ) : (
-                  <Button type="button" size="sm" onClick={() => setDialogOpen(true)}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setDialogOpen(true)}
+                    data-invoice-wizard-focus="daily-income"
+                  >
                     {t("invoices.wizard.dailyIncome.createOrOpenCuadre")}
                   </Button>
                 )}

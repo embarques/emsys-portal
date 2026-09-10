@@ -226,6 +226,7 @@
       "date": "Fecha",
       "accountInvoice": "Cuenta / factura",
       "employee": "Empleado",
+      "assignedTo": "Asignado a",
       "type": "Transacción",
       "reference": "Referencia #",
       "paymentMethod": "Método de pago",
@@ -347,7 +348,9 @@
     },
     "form": {
       "fields": {
+        "assignedTo": "Asignado a",
         "employee": "Empleado",
+        "route": "Ruta diaria",
         "paymentMethod": "Método de pago",
         "bankAccount": "Cuenta bancaria",
         "zelleDate": "Fecha de transacción Zelle",
@@ -367,8 +370,11 @@
         "receiverClient": "Cliente destinatario"
       },
       "placeholders": {
+        "selectAssigneeSource": "Seleccionar empleado o ruta diaria",
         "selectEmployee": "Seleccionar empleado",
         "searchEmployees": "Buscar empleados…",
+        "selectRoute": "Seleccionar una ruta diaria",
+        "searchRoutes": "Buscar rutas diarias…",
         "selectPaymentMethod": "Seleccionar método de pago",
         "searchPaymentMethods": "Buscar métodos de pago…",
         "selectBankAccount": "Seleccionar cuenta bancaria",
@@ -420,7 +426,7 @@
         "zelleNameRequired": "El nombre de transacción Zelle es obligatorio.",
         "checkNumberRequired": "El número de cheque es obligatorio.",
         "bankAccountRequired": "Seleccione una cuenta bancaria para este método de pago.",
-        "employeeRequired": "El empleado es obligatorio.",
+        "employeeRequired": "Seleccione un empleado o una ruta diaria.",
         "invoiceRequired": "La factura es obligatoria.",
         "paymentMethodRequired": "El método de pago es obligatorio.",
         "amountExceedsCost": "El monto no puede exceder el costo.",

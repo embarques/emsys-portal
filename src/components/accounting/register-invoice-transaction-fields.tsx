@@ -20,6 +20,7 @@ import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
@@ -58,6 +59,8 @@ function customerOptions(customers: Customer[]) {
 
 type Props = {
   employees: Employee[];
+  dailyRoutes?: ActiveRoute[];
+  statementDate?: string;
   bankAccounts: ChartAccount[];
   paymentMethods: AccountingLookup[];
   errors: FieldErrors<DailyIncomeJournalValues>;
@@ -66,6 +69,8 @@ type Props = {
   watch: UseFormWatch<DailyIncomeJournalValues>;
   /** Hide employee assignee (still required in form values when hidden). */
   showEmployee?: boolean;
+  /** Let the assignee be an employee or a daily route. */
+  allowDailyRoute?: boolean;
   /** Hide invoice number (still required in form values when hidden). */
   showInvoiceNumber?: boolean;
   /** Hide sender / receiver party pickers. */
@@ -76,6 +81,8 @@ type Props = {
 
 export function RegisterInvoiceTransactionFields({
   employees,
+  dailyRoutes,
+  statementDate,
   bankAccounts,
   paymentMethods,
   errors,
@@ -83,12 +90,15 @@ export function RegisterInvoiceTransactionFields({
   setValue,
   watch,
   showEmployee = true,
+  allowDailyRoute = false,
   showInvoiceNumber = true,
   showParties = true,
   invoiceCostReadOnly = false,
 }: Props) {
   const { t } = useTranslation();
   const employeeId = watch("employeeId");
+  const routeId = watch("routeId");
+  const assigneeSource = watch("assigneeSource");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const isZelle = isZellePaymentMethod(paymentMethodName);
@@ -222,8 +232,13 @@ export function RegisterInvoiceTransactionFields({
         <div className="sm:col-span-2">
           <TransactionAssigneeSelect
             employees={employees}
+            dailyRoutes={dailyRoutes}
+            statementDate={statementDate}
             employeeId={employeeId}
-            error={errors.employeeId?.message}
+            routeId={routeId}
+            assigneeSource={assigneeSource}
+            allowDailyRoute={allowDailyRoute}
+            error={errors.employeeId?.message ?? errors.routeId?.message}
             setValue={setValue}
           />
         </div>

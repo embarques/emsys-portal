@@ -463,7 +463,7 @@ export function createEmptyInvoiceLineItem(): InvoiceLineItemFormValues {
     itemName: "",
     quantity: "1",
     labelCount: "1",
-    unitPrice: "",
+    unitPrice: "0",
     lineTotal: "",
     labelsManual: false,
     totalManual: false,
@@ -560,6 +560,12 @@ export function resolveLineTotal(values: InvoiceLineItemFormValues): number {
 /** Whether a line item row has enough data to count toward invoice validation. */
 export function hasInvoiceLineItemContent(values: InvoiceLineItemFormValues): boolean {
   return Boolean(values.itemName.trim() || values.itemId || resolveLineTotal(values) > 0);
+}
+
+/** Quantity must be greater than 0. Labels may be 0. */
+export function hasPositiveInvoiceLineItemQuantity(values: InvoiceLineItemFormValues): boolean {
+  const quantity = Number(values.quantity);
+  return values.quantity.trim() !== "" && Number.isFinite(quantity) && quantity > 0;
 }
 
 /** Labels default to the quantity but can be overridden directly. */

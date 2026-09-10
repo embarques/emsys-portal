@@ -132,6 +132,7 @@ function SummaryDiscountControl({
     return (
       <button
         type="button"
+        id="invoice-wizard-discount"
         className="text-left text-sm font-medium text-primary hover:underline"
         onClick={() => setEditing(true)}
       >
@@ -147,6 +148,7 @@ function SummaryDiscountControl({
           {t("invoices.wizard.summary.discountAmount")}
         </span>
         <Input
+          id="invoice-wizard-discount"
           type="number"
           min={0}
           step="0.01"
@@ -194,6 +196,7 @@ function SummaryDiscountControl({
       </span>
       <button
         type="button"
+        id="invoice-wizard-discount"
         aria-label={t("invoices.wizard.summary.editDiscount")}
         className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground"
         onClick={() => setEditing(true)}

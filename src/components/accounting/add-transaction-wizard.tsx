@@ -12,6 +12,7 @@ import { findCashPaymentMethod, withDefaultCashPaymentMethod, type AccountingLoo
 import type { Employee } from "@/lib/employees/types";
 import type { Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { cn } from "@/lib/utils";
 
 type SharedProps = {
@@ -19,6 +20,8 @@ type SharedProps = {
   presentation?: "dialog" | "tab";
   appearance?: "default" | "phone";
   employees: Employee[];
+  dailyRoutes?: ActiveRoute[];
+  statementDate?: string;
   accounts: ChartAccount[];
   bankAccounts: ChartAccount[];
   invoices: Invoice[];
@@ -68,6 +71,11 @@ function continueTransactionValues(
     employeeName: values.employeeName,
     employeeGroupId: values.employeeGroupId,
     employeeGroupName: values.employeeGroupName,
+    assigneeSource: values.assigneeSource,
+    routeId: values.routeId,
+    routeName: values.routeName,
+    routeCrewId: values.routeCrewId,
+    routeCrewName: values.routeCrewName,
     paymentMethodId: values.paymentMethodId,
     paymentMethodName: values.paymentMethodName,
     transactionType: type,
@@ -239,6 +247,8 @@ export function AddTransactionWizard(props: Props) {
               transactionType={selectedType}
               initialValues={detailValues}
               employees={props.employees}
+              dailyRoutes={props.dailyRoutes}
+              statementDate={props.statementDate}
               accounts={props.accounts}
               bankAccounts={props.bankAccounts}
               invoices={props.invoices}

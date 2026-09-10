@@ -226,6 +226,7 @@
       "date": "Date",
       "accountInvoice": "Account / invoice",
       "employee": "Employee",
+      "assignedTo": "Assigned to",
       "type": "Transaction",
       "reference": "Reference #",
       "paymentMethod": "Payment method",
@@ -347,7 +348,9 @@
     },
     "form": {
       "fields": {
+        "assignedTo": "Assigned to",
         "employee": "Employee",
+        "route": "Daily route",
         "paymentMethod": "Payment method",
         "bankAccount": "Bank account",
         "zelleDate": "Zelle transaction date",
@@ -367,8 +370,11 @@
         "receiverClient": "Receiver client"
       },
       "placeholders": {
+        "selectAssigneeSource": "Select employee or daily route",
         "selectEmployee": "Select employee",
         "searchEmployees": "Search employees…",
+        "selectRoute": "Select a daily route",
+        "searchRoutes": "Search daily routes…",
         "selectPaymentMethod": "Select payment method",
         "searchPaymentMethods": "Search payment methods…",
         "selectBankAccount": "Select bank account",
@@ -420,7 +426,7 @@
         "zelleNameRequired": "Zelle transaction name is required.",
         "checkNumberRequired": "Check number is required.",
         "bankAccountRequired": "Select a bank account for this payment method.",
-        "employeeRequired": "Employee is required.",
+        "employeeRequired": "Select an employee or a daily route.",
         "invoiceRequired": "Invoice is required.",
         "paymentMethodRequired": "Payment method is required.",
         "amountExceedsCost": "Amount cannot exceed cost.",

@@ -8,6 +8,8 @@ export type AccountingLookup = {
 export type DailyIncomePartyRef = {
   id: string | number;
   name: string;
+  /** Nested crew/template route when the journal is posted under a daily vehicle-route. */
+  route?: { id: string | number; name: string };
 };
 
 export type IncomeStatementStatus = "OPEN" | "CLOSED";
@@ -63,6 +65,8 @@ export type JournalTransactionType =
   | "TRANSFER"
   | "LOAN";
 
+export type DailyIncomeAssigneeSource = "employee" | "route";
+
 export type DailyIncomeJournal = {
   id: string;
   incomeStatementId: number;
@@ -75,6 +79,8 @@ export type DailyIncomeJournal = {
   rate: number;
   employee?: AccountingLookup;
   employeeGroup?: DailyIncomePartyRef;
+  /** Daily vehicle-route when the journal is posted under a route instead of an employee. */
+  route?: DailyIncomePartyRef;
   account?: AccountingLookup;
   paymentAccount?: AccountingLookup;
   sourceAccount?: AccountingLookup;
@@ -171,10 +177,16 @@ export type DailyIncomeJournalValues = {
   amount?: number;
   refNumber: string;
   description: string;
+  /** Portal-only: employee vs daily route. Do not persist. */
+  assigneeSource?: DailyIncomeAssigneeSource;
   employeeId?: number;
   employeeName?: string;
   employeeGroupId?: string;
   employeeGroupName?: string;
+  routeId?: string;
+  routeName?: string;
+  routeCrewId?: string;
+  routeCrewName?: string;
   accountId?: number;
   accountName?: string;
   accountType?: string;

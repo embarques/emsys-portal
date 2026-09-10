@@ -77,7 +77,21 @@ function normalizePartyRef(value: unknown): DailyIncomePartyRef | undefined {
   const id = firstDefined(raw.id, raw._id);
   const name = stringValue(firstDefined(raw.name, raw.displayName));
   if (id == null || id === "" || !name) return undefined;
-  return { id: typeof id === "number" ? id : String(id), name };
+  const nestedRoute = objectValue(raw.route);
+  const nestedId = firstDefined(nestedRoute.id, nestedRoute._id);
+  const nestedName = stringValue(firstDefined(nestedRoute.name, nestedRoute.displayName));
+  return {
+    id: typeof id === "number" ? id : String(id),
+    name,
+    ...(nestedId != null && nestedId !== "" && nestedName
+      ? {
+          route: {
+            id: typeof nestedId === "number" ? nestedId : String(nestedId),
+            name: nestedName,
+          },
+        }
+      : {}),
+  };
 }
 
 function normalizeLookup(value: unknown): AccountingLookup | undefined {
@@ -107,6 +121,21 @@ function normalizeIncomeStatement(value: unknown): DailyIncomeStatement | null {
     rate: numberValue(raw.rate),
     container: normalizeLookup(raw.container),
   };
+}
+
+function looksLikeDailyRouteId(id: unknown): boolean {
+  if (id == null || id === "") return false;
+  return /^[a-f\d]{24}$/i.test(String(id).trim());
+}
+
+function normalizeJournalRoute(raw: Record<string, unknown>): DailyIncomePartyRef | undefined {
+  return (
+    normalizePartyRef(firstDefined(raw.vehicleRoute, raw.route)) ??
+    (looksLikeDailyRouteId(objectValue(raw.employeeGroup).id as string | number) ||
+    looksLikeDailyRouteId(objectValue(raw.employeeGroup)._id as string | number)
+      ? normalizePartyRef(raw.employeeGroup)
+      : undefined)
+  );
 }
 
 function normalizeJournal(value: unknown): DailyIncomeJournal | null {
@@ -140,6 +169,7 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     rate: numberValue(raw.rate),
     employee: normalizeLookup(raw.employee),
     employeeGroup: normalizePartyRef(raw.employeeGroup),
+    route: normalizeJournalRoute(raw),
     account: normalizeLookup(raw.account) ?? (primaryLine ? normalizeLookup(primaryLine) : undefined),
     paymentAccount: normalizeLookup(raw.paymentAccount),
     sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
@@ -423,7 +453,7 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
   const search = params.query?.trim().toLowerCase();
   if (search) {
     items = items.filter((item) =>
-      [item.refNumber, item.description, item.transactionType, item.employee?.name, item.employeeGroup?.name, item.invoice?.number]
+      [item.refNumber, item.description, item.transactionType, item.employee?.name, item.route?.name, item.employeeGroup?.name, item.invoice?.number]
         .some((value) => value?.toLowerCase().includes(search)),
     );
   }
@@ -523,6 +553,22 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
         }
       : undefined;
 
+  const assignedToRoute = Boolean(values.routeId?.trim());
+  const dailyRouteRef = assignedToRoute
+    ? {
+        id: values.routeId,
+        name: values.routeName?.trim() || values.routeCrewName?.trim() || values.routeId,
+        ...(values.routeCrewId || values.routeCrewName
+          ? {
+              route: {
+                id: values.routeCrewId,
+                name: values.routeCrewName?.trim() || values.routeCrewId,
+              },
+            }
+          : {}),
+      }
+    : null;
+
   return {
     incomeStatementId: statement.id,
     incomeStatement: { id: statement.id },
@@ -533,9 +579,14 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     description: values.description,
     currency: statement.currency,
     rate: statement.rate,
-    employee: values.employeeId
-      ? { id: values.employeeId, name: values.employeeName ?? "" }
-      : undefined,
+    employee: assignedToRoute
+      ? null
+      : values.employeeId
+        ? { id: values.employeeId, name: values.employeeName ?? "" }
+        : undefined,
+    vehicleRoute: dailyRouteRef,
+    route: dailyRouteRef,
+    employeeGroup: assignedToRoute ? null : undefined,
     account: accountRelated && values.accountId
       ? { id: values.accountId, name: values.accountName, type: values.accountType }
       : undefined,

@@ -104,6 +104,9 @@ export function InvoiceLineItemDescriptionCombobox({
     onCatalogItemSelect(item);
     setOpen(false);
     setActiveIndex(-1);
+    window.requestAnimationFrame(() => {
+      onEnterCommit?.();
+    });
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {

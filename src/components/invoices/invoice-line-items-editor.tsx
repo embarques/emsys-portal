@@ -18,8 +18,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Plus, Trash2 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,9 +29,14 @@ import { InvoiceLineItemDescriptionCombobox } from "@/components/invoices/invoic
 import { wizardInputFieldProps } from "@/components/invoices/invoice-wizard-styles";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
+  commitInvoiceLineItemWithUniqueDescription,
+  findInvoiceLineItemWithDescription,
+} from "@/lib/invoices/merge-duplicate-line-item";
+import {
   computeLineTotal,
   createEmptyInvoiceLineItem,
   hasInvoiceLineItemContent,
+  hasPositiveInvoiceLineItemQuantity,
   resolveLineLabelCount,
   resolveLineTotal,
   type InvoiceLineItemFormValues,
@@ -44,6 +50,7 @@ type InvoiceLineItemsEditorProps = {
   catalogItems: Item[];
   appearance?: "default" | "wizard" | "phoneWizard";
   onChange: (lineItems: InvoiceLineItemFormValues[]) => void;
+  requestFocusKey?: number;
 };
 
 type LineItemFieldHandlers = {
@@ -64,6 +71,7 @@ type LineItemEntryFieldsProps = {
   descriptionPlaceholder: string;
   descriptionLabel: string;
   quantityLabel: string;
+  quantityRequiredMessage: string;
   labelsLabel: string;
   unitPriceLabel: string;
   totalLabel: string;
@@ -83,6 +91,7 @@ type SortableLineItemRowProps = {
   descriptionPlaceholder: string;
   descriptionLabel: string;
   quantityLabel: string;
+  quantityRequiredMessage: string;
   labelsLabel: string;
   unitPriceLabel: string;
   totalLabel: string;
@@ -130,30 +139,54 @@ function focusFieldById(fieldId: string) {
   const element = document.getElementById(fieldId) as HTMLInputElement | null;
   if (!element) return;
   element.focus();
-  element.select?.();
+  // Number inputs often ignore select() in the same turn as focus.
+  window.requestAnimationFrame(() => {
+    element.select?.();
+  });
+}
+
+/** Blank unit price is 0 so a free line can be committed without typing a price. */
+function resolveUnitPriceInput(unitPrice: string): string {
+  return unitPrice.trim() === "" ? "0" : unitPrice;
 }
 
 /** Default total tracks unit price × quantity until the user overrides it. */
 function deriveTotalString(item: InvoiceLineItemFormValues): string {
   const quantity = Number(item.quantity);
-  const unitPrice = Number(item.unitPrice);
+  const unitPrice = Number(resolveUnitPriceInput(item.unitPrice));
   if (!Number.isFinite(quantity) || !Number.isFinite(unitPrice)) return "";
   return computeLineTotal(quantity, unitPrice).toFixed(2);
 }
 
 function finalizeLineItemDraft(item: InvoiceLineItemFormValues): InvoiceLineItemFormValues {
+  const unitPrice = resolveUnitPriceInput(item.unitPrice);
+  const withPrice = { ...item, unitPrice };
   const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
-  const totalValue = item.totalManual ? item.lineTotal : deriveTotalString(item);
+  const totalValue = item.totalManual ? item.lineTotal : deriveTotalString(withPrice);
 
   return {
-    ...item,
+    ...withPrice,
     labelCount: labelsValue,
     lineTotal: totalValue,
   };
 }
 
 function isDraftReadyToCommit(item: InvoiceLineItemFormValues): boolean {
-  return Boolean(item.itemName.trim() && item.quantity.trim() && item.unitPrice.trim());
+  const unitPrice = Number(resolveUnitPriceInput(item.unitPrice));
+  return Boolean(
+    item.itemName.trim() &&
+      hasPositiveInvoiceLineItemQuantity(item) &&
+      Number.isFinite(unitPrice) &&
+      unitPrice >= 0,
+  );
+}
+
+function quantityFieldError(
+  item: InvoiceLineItemFormValues,
+  message: string,
+): string | null {
+  if (!item.quantity.trim() || hasPositiveInvoiceLineItemQuantity(item)) return null;
+  return message;
 }
 
 function buildQuantityPatch(
@@ -213,6 +246,7 @@ function LineItemEntryFields({
   descriptionPlaceholder,
   descriptionLabel,
   quantityLabel,
+  quantityRequiredMessage,
   labelsLabel,
   unitPriceLabel,
   totalLabel,
@@ -228,6 +262,7 @@ function LineItemEntryFields({
 }: LineItemEntryFieldsProps) {
   const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
   const totalValue = item.totalManual ? item.lineTotal : deriveTotalString(item);
+  const quantityError = quantityFieldError(item, quantityRequiredMessage);
 
   const advanceOnEnter =
     (nextFieldId: string) => (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -235,6 +270,15 @@ function LineItemEntryFields({
       event.preventDefault();
       focusFieldById(nextFieldId);
     };
+
+  const advanceFromUnitPrice = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    if (!item.unitPrice.trim()) {
+      onChangeUnitPrice("0");
+    }
+    focusFieldById(`${item.id}-total`);
+  };
 
   return (
     <div className="grid gap-4">
@@ -270,9 +314,11 @@ function LineItemEntryFields({
             value={item.quantity}
             onChange={(event) => onChangeQuantity(event.target.value)}
             onKeyDown={advanceOnEnter(`${item.id}-labels`)}
+            aria-invalid={Boolean(quantityError)}
             {...inputClass(item.quantity)}
             required
           />
+          {quantityError ? <p className="text-xs text-destructive">{quantityError}</p> : null}
         </div>
 
         <div className="min-w-0 space-y-2">
@@ -304,7 +350,7 @@ function LineItemEntryFields({
             step="0.01"
             value={item.unitPrice}
             onChange={(event) => onChangeUnitPrice(event.target.value)}
-            onKeyDown={advanceOnEnter(`${item.id}-total`)}
+            onKeyDown={advanceFromUnitPrice}
             {...inputClass(item.unitPrice)}
             required
           />
@@ -581,6 +627,7 @@ function SortableLineItemRow({
   descriptionPlaceholder,
   descriptionLabel,
   quantityLabel,
+  quantityRequiredMessage,
   labelsLabel,
   unitPriceLabel,
   totalLabel,
@@ -619,6 +666,7 @@ function SortableLineItemRow({
 
   const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
   const totalValue = item.totalManual ? item.lineTotal : getTotalString(item);
+  const quantityError = quantityFieldError(item, quantityRequiredMessage);
 
   const advanceOnEnter =
     (nextFieldId: string) => (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -626,6 +674,15 @@ function SortableLineItemRow({
       event.preventDefault();
       focusFieldById(nextFieldId);
     };
+
+  const advanceFromUnitPrice = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    if (!item.unitPrice.trim()) {
+      onChangeUnitPrice(index, "0");
+    }
+    focusFieldById(`${item.id}-total`);
+  };
 
   return (
     <div
@@ -740,9 +797,11 @@ function SortableLineItemRow({
               value={item.quantity}
               onChange={(event) => onChangeQuantity(index, event.target.value)}
               onKeyDown={advanceOnEnter(`${item.id}-labels`)}
+              aria-invalid={Boolean(quantityError)}
               {...(inputClass ? inputClass(item.quantity) : {})}
               required
             />
+            {quantityError ? <p className="text-xs text-destructive">{quantityError}</p> : null}
           </div>
 
           <div className="min-w-0 space-y-2">
@@ -774,7 +833,7 @@ function SortableLineItemRow({
               step="0.01"
               value={item.unitPrice}
               onChange={(event) => onChangeUnitPrice(index, event.target.value)}
-              onKeyDown={advanceOnEnter(`${item.id}-total`)}
+              onKeyDown={advanceFromUnitPrice}
               {...(inputClass ? inputClass(item.unitPrice) : {})}
               required
             />
@@ -817,9 +876,11 @@ function useLineItemLabels() {
       saveChanges: t("common.actions.saveChanges"),
       itemsSubtotal: t("invoices.form.lineItems.itemsSubtotal"),
       emptyTable: t("invoices.form.lineItems.emptyTable"),
+      duplicateHint: t("invoices.form.lineItems.duplicateHint"),
       descriptionPlaceholder: t("invoices.form.lineItems.descriptionPlaceholder"),
       descriptionLabel: t("invoices.form.lineItems.fields.description"),
       quantityLabel: t("invoices.form.lineItems.fields.quantity"),
+      quantityRequiredMessage: t("invoices.form.lineItems.quantityRequired"),
       labelsLabel: t("invoices.form.lineItems.fields.labels"),
       unitPriceLabel: t("invoices.form.lineItems.fields.unitPrice"),
       totalLabel: t("invoices.form.lineItems.fields.total"),
@@ -843,9 +904,11 @@ function InvoiceLineItemsWizardEditor({
   lineItems,
   catalogItems,
   isPhoneWizard = false,
+  requestFocusKey = 0,
   onChange,
 }: Omit<InvoiceLineItemsEditorProps, "appearance"> & { isPhoneWizard?: boolean }) {
   const { t } = useTranslation();
+  const { notifySuccess } = useFeedback();
   const labels = useLineItemLabels();
   const wizardInputProps = (value: string) => wizardInputFieldProps(value);
   const labelClass = isPhoneWizard ? "text-xs font-medium text-muted-foreground" : undefined;
@@ -861,6 +924,18 @@ function InvoiceLineItemsWizardEditor({
   const clearFocusDescription = useCallback(() => setFocusDescription(false), []);
   const activeDraft = draft ?? createEmptyInvoiceLineItem();
   const isDraftOpen = draft !== null || Boolean(editingId);
+
+  useEffect(() => {
+    if (!requestFocusKey) return;
+    setDraft((current) => current ?? createEmptyInvoiceLineItem());
+    setEditingId(null);
+    setFocusDescription(true);
+  }, [requestFocusKey]);
+  const duplicateCommittedItem = findInvoiceLineItemWithDescription(
+    committedItems,
+    activeDraft.itemName,
+    editingId ?? activeDraft.id,
+  );
 
   function emitCommittedItems(items: InvoiceLineItemFormValues[]) {
     onChange(items.filter(hasInvoiceLineItemContent));
@@ -886,16 +961,16 @@ function InvoiceLineItemsWizardEditor({
     if (!draft || !isDraftReadyToCommit(draft)) return;
 
     const finalized = finalizeLineItemDraft(draft);
+    const { items, mergedIntoId } = commitInvoiceLineItemWithUniqueDescription(
+      committedItems,
+      finalized,
+      editingId,
+    );
 
-    if (editingId) {
-      emitCommittedItems(
-        committedItems.map((item) => (item.id === editingId ? finalized : item)),
-      );
-      resetDraft();
-      return;
+    emitCommittedItems(items);
+    if (mergedIntoId) {
+      notifySuccess(t("invoices.form.lineItems.duplicateMerged"));
     }
-
-    emitCommittedItems([...committedItems, finalized]);
     resetDraft();
   }
 
@@ -987,6 +1062,7 @@ function InvoiceLineItemsWizardEditor({
             descriptionPlaceholder={labels.descriptionPlaceholder}
             descriptionLabel={labels.descriptionLabel}
             quantityLabel={labels.quantityLabel}
+            quantityRequiredMessage={labels.quantityRequiredMessage}
             labelsLabel={labels.labelsLabel}
             unitPriceLabel={labels.unitPriceLabel}
             totalLabel={labels.totalLabel}
@@ -995,6 +1071,9 @@ function InvoiceLineItemsWizardEditor({
             onCommitFromTotal={commitDraft}
             {...draftHandlers}
           />
+          {duplicateCommittedItem ? (
+            <p className="text-sm text-muted-foreground">{labels.duplicateHint}</p>
+          ) : null}
           {isPhoneWizard ? (
             <Button
               type="button"
@@ -1081,6 +1160,7 @@ export function InvoiceLineItemsEditor({
   catalogItems,
   appearance = "default",
   onChange,
+  requestFocusKey = 0,
 }: InvoiceLineItemsEditorProps) {
   const labels = useLineItemLabels();
   const isPhoneWizard = appearance === "phoneWizard";
@@ -1105,6 +1185,7 @@ export function InvoiceLineItemsEditor({
         lineItems={lineItems}
         catalogItems={catalogItems}
         isPhoneWizard={isPhoneWizard}
+        requestFocusKey={requestFocusKey}
         onChange={onChange}
       />
     );
@@ -1200,6 +1281,7 @@ export function InvoiceLineItemsEditor({
                 descriptionPlaceholder={labels.descriptionPlaceholder}
                 descriptionLabel={labels.descriptionLabel}
                 quantityLabel={labels.quantityLabel}
+                quantityRequiredMessage={labels.quantityRequiredMessage}
                 labelsLabel={labels.labelsLabel}
                 unitPriceLabel={labels.unitPriceLabel}
                 totalLabel={labels.totalLabel}

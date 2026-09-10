@@ -39,15 +39,26 @@ export function transactionCreatedToastMessage(values: DailyIncomeJournalValues,
 }
 
 export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournalValues {
+  const routeId = row.route?.id != null ? String(row.route.id) : undefined;
+  const assignedToRoute = Boolean(routeId);
   return {
     transactionType: row.transactionType,
     amount: row.amount,
     refNumber: row.refNumber,
     description: row.description,
-    employeeId: row.employee?.id,
-    employeeName: row.employee?.name,
-    employeeGroupId: row.employeeGroup?.id != null ? String(row.employeeGroup.id) : undefined,
-    employeeGroupName: row.employeeGroup?.name,
+    assigneeSource: assignedToRoute ? "route" : "employee",
+    employeeId: assignedToRoute ? undefined : row.employee?.id,
+    employeeName: assignedToRoute ? undefined : row.employee?.name,
+    employeeGroupId: assignedToRoute
+      ? undefined
+      : row.employeeGroup?.id != null
+        ? String(row.employeeGroup.id)
+        : undefined,
+    employeeGroupName: assignedToRoute ? undefined : row.employeeGroup?.name,
+    routeId,
+    routeName: row.route?.name,
+    routeCrewId: row.route?.route?.id != null ? String(row.route.route.id) : undefined,
+    routeCrewName: row.route?.route?.name,
     accountId: row.account?.id,
     accountName: row.account?.displayName ?? row.account?.name,
     accountType: row.accounts.find((account) => account.id === row.account?.id)?.type,

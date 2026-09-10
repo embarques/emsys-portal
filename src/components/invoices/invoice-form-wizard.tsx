@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { InvoiceDailyIncomeStep } from "@/components/invoices/invoice-daily-income-step";
 import { InvoiceFormPreviewStep } from "@/components/invoices/invoice-form-preview-step";
+import { focusInvoiceWizardField } from "@/components/invoices/invoice-wizard-focus";
 import { InvoiceWizardNotice } from "@/components/invoices/invoice-wizard-notice";
 import {
   InvoiceWizardSummaryMobileBar,
@@ -27,25 +28,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/workspace-href";
-import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
-import { customerHasUnverifiedPrimaryAddress } from "@/lib/customers/types";
 import { isMissingOpenIncomeStatementError } from "@/lib/invoices/missing-open-income-statement";
 import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 import {
-  canContinueInvoiceDailyIncomeStep,
   emptyInvoiceDailyIncomeContext,
   toInvoiceFormSubmitContext,
   type InvoiceDailyIncomeContext,
   type InvoiceFormSubmitContext,
 } from "@/lib/invoices/invoice-daily-income-context";
 import {
+  findInvoiceWizardPaymentIssue,
+  findInvoiceWizardSaveIssue,
+  findInvoiceWizardStep1Issue,
+  findInvoiceWizardStep2Issue,
+  findInvoiceWizardStep3Issue,
+  INVOICE_WIZARD_FIELDS,
+  type InvoiceWizardIssue,
+} from "@/lib/invoices/invoice-wizard-validation";
+import {
   createEmptyInvoiceForm,
   getInvoiceFormBalance,
-  isInvoiceEmployeePickupSource,
   resetInvoiceFormForNextEntry,
-  hasInvoiceLineItemContent,
   type InvoiceFormSubmitResult,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
@@ -100,11 +105,12 @@ export function InvoiceFormWizard({
   const [stepError, setStepError] = useState<string | null>(null);
   const valuesRef = useRef(values);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [focusFieldId, setFocusFieldId] = useState<string | null>(null);
+  const [focusFieldKey, setFocusFieldKey] = useState(0);
   const [dailyIncomeContext, setDailyIncomeContext] = useState<InvoiceDailyIncomeContext>(
     emptyInvoiceDailyIncomeContext(),
   );
   const previewStep: InvoiceWizardStep = requireDailyIncomeRegistration ? 5 : 4;
-  const canContinuePaymentStep = canContinueInvoiceDailyIncomeStep(dailyIncomeContext);
 
   useEffect(() => {
     valuesRef.current = values;
@@ -112,34 +118,16 @@ export function InvoiceFormWizard({
 
   const previousReceiverIdRef = useRef(values.receiverId);
 
-  const validateStep1 = useCallback(
-    (formValues: InvoiceFormValues): string | null => {
-      if (!formValues.date.trim()) return t("invoices.wizard.validation.dateRequired");
-      if (!formValues.invoiceNumber.trim()) return t("invoices.wizard.validation.invoiceNumberRequired");
-      if (!formValues.containerId) return t("invoices.wizard.validation.containerRequired");
-      if (!formValues.paymentLocation) return t("invoices.wizard.validation.paymentLocationRequired");
-      if (formValues.pickupSource === "route") {
-        if (!formValues.routeId) return t("invoices.wizard.validation.pickupRouteRequired");
-      } else if (isInvoiceEmployeePickupSource(formValues.pickupSource)) {
-        if (!formValues.pickupEmployeeId) {
-          return formValues.pickupSource === "warehouse"
-            ? t("invoices.wizard.validation.warehouseEmployeeRequired")
-            : t("invoices.wizard.validation.officeEmployeeRequired");
-        }
-      }
-      return null;
-    },
+  const findStep1Issue = useCallback(
+    (formValues: InvoiceFormValues) => findInvoiceWizardStep1Issue(formValues, t),
     [t],
   );
-
-  const validateStep2 = useCallback(
-    (formValues: InvoiceFormValues): string | null => {
-      if (!formValues.sender) return t("invoices.wizard.validation.senderRequired");
-      if (isGoogleMapsConfigured() && customerHasUnverifiedPrimaryAddress(formValues.sender)) {
-        return t("invoices.wizard.validation.unverifiedSenderAddress");
-      }
-      return null;
-    },
+  const findStep2Issue = useCallback(
+    (formValues: InvoiceFormValues) => findInvoiceWizardStep2Issue(formValues, t),
+    [t],
+  );
+  const findStep3Issue = useCallback(
+    (formValues: InvoiceFormValues) => findInvoiceWizardStep3Issue(formValues, t),
     [t],
   );
 
@@ -150,35 +138,23 @@ export function InvoiceFormWizard({
 
     if (step !== 2) return;
     if (!nextReceiverId || !values.receiver || nextReceiverId === previousReceiverId) return;
-    if (validateStep2(values)) return;
+    if (findStep2Issue(values)) return;
 
     setStepError(null);
     setSubmitError(null);
     setStep(3);
-  }, [step, values, validateStep2]);
+  }, [findStep2Issue, step, values]);
 
-  const validateStep3 = useCallback(
-    (formValues: InvoiceFormValues): string | null => {
-      const hasContent = formValues.lineItems.some(hasInvoiceLineItemContent);
-      if (!hasContent) return t("invoices.wizard.validation.lineItemRequired");
-      return null;
-    },
-    [t],
-  );
-
-  const validateForSave = useCallback(
-    (formValues: InvoiceFormValues): string | null => {
-      const stepError = validateStep1(formValues) ?? validateStep2(formValues) ?? validateStep3(formValues);
-      if (stepError) return stepError;
-
-      const amountPaid = Number(dailyIncomeContext.registration?.amount ?? formValues.amountPaid ?? 0) || 0;
-      if (getInvoiceFormBalance(formValues, amountPaid) < 0) {
-        return t("invoices.wizard.validation.negativeBalance");
-      }
-
-      return null;
-    },
-    [dailyIncomeContext.registration?.amount, t, validateStep1, validateStep2, validateStep3],
+  const findSaveIssue = useCallback(
+    (formValues: InvoiceFormValues) =>
+      findInvoiceWizardSaveIssue({
+        values: formValues,
+        dailyIncome: dailyIncomeContext,
+        requireDailyIncome: requireDailyIncomeRegistration,
+        previewStep: requireDailyIncomeRegistration ? 5 : 4,
+        t,
+      }),
+    [dailyIncomeContext, requireDailyIncomeRegistration, t],
   );
 
   const handleValuesChange = useCallback((next: InvoiceFormValues) => {
@@ -218,20 +194,36 @@ export function InvoiceFormWizard({
     setSubmitError(null);
   }
 
+  function revealIssue(issue: InvoiceWizardIssue) {
+    setStepError(issue.message);
+    setSubmitError(issue.step === previewStep ? issue.message : null);
+    setStep(issue.step);
+    setFocusFieldId(issue.fieldId);
+    setFocusFieldKey((key) => key + 1);
+  }
+
+  useEffect(() => {
+    if (!focusFieldKey || !focusFieldId || focusFieldId === INVOICE_WIZARD_FIELDS.lineItems) return;
+    const timeout = window.setTimeout(() => {
+      focusInvoiceWizardField(focusFieldId);
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [focusFieldId, focusFieldKey, step]);
+
   async function handleNext() {
     const currentValues = valuesRef.current;
-    const error =
+    const issue =
       step === 1
-        ? validateStep1(currentValues)
+        ? findStep1Issue(currentValues)
         : step === 2
-          ? validateStep2(currentValues)
+          ? findStep2Issue(currentValues)
           : step === 3
-            ? validateStep3(currentValues)
-            : requireDailyIncomeRegistration && step === 4 && !canContinuePaymentStep
-              ? t("invoices.wizard.validation.dailyIncomeContinueRequired")
+            ? findStep3Issue(currentValues)
+            : requireDailyIncomeRegistration && step === 4
+              ? findInvoiceWizardPaymentIssue(dailyIncomeContext, t, "continue")
               : null;
-    if (error) {
-      setStepError(error);
+    if (issue) {
+      revealIssue(issue);
       return;
     }
 
@@ -260,9 +252,9 @@ export function InvoiceFormWizard({
   async function handlePrint() {
     if (!onPrint) return;
 
-    const error = validateForSave(values);
-    if (error) {
-      setSubmitError(error);
+    const issue = findSaveIssue(values);
+    if (issue) {
+      revealIssue(issue);
       return;
     }
 
@@ -274,13 +266,9 @@ export function InvoiceFormWizard({
   }
 
   async function handleSave() {
-    const error =
-      validateForSave(values) ??
-      (requireDailyIncomeRegistration && !canContinuePaymentStep
-        ? t("invoices.wizard.validation.dailyIncomeSaveRequired")
-        : null);
-    if (error) {
-      setSubmitError(error);
+    const issue = findSaveIssue(values);
+    if (issue) {
+      revealIssue(issue);
       return;
     }
 
@@ -292,6 +280,14 @@ export function InvoiceFormWizard({
       toInvoiceFormSubmitContext(dailyIncomeContext),
     );
     if (result.error) {
+      if (isMissingOpenIncomeStatementError(result.error) && requireDailyIncomeRegistration) {
+        revealIssue({
+          step: 4,
+          fieldId: INVOICE_WIZARD_FIELDS.dailyIncome,
+          message: result.error,
+        });
+        return;
+      }
       setSubmitError(result.error);
       setStepError(null);
       return;
@@ -361,6 +357,14 @@ export function InvoiceFormWizard({
       </p>
     </div>
   ) : undefined;
+  const footerErrorNotice = bannerError ? (
+    <InvoiceWizardNotice
+      tone="error"
+      variant="footer"
+      message={bannerError}
+      action={bannerErrorAction}
+    />
+  ) : null;
   const showPrint = allowPrint && Boolean(onPrint);
   const summaryDiscountChange =
     requireDailyIncomeRegistration && dailyIncomeContext.registration
@@ -389,6 +393,8 @@ export function InvoiceFormWizard({
       onValuesChange={handleValuesChange}
       onContinue={handleNext}
       onCancel={onCancel}
+      focusFieldId={focusFieldId}
+      focusFieldKey={focusFieldKey}
     />
   );
 
@@ -541,23 +547,17 @@ export function InvoiceFormWizard({
         </div>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          {bannerError ? (
-            <InvoiceWizardNotice tone="error" message={bannerError} action={bannerErrorAction} />
-          ) : null}
-
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            {step <= 3 ? (
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{formStep}</div>
-            ) : requireDailyIncomeRegistration && step === 4 ? (
-              <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-                {paymentStep}
-              </div>
-            ) : (
-              <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-                {previewContent}
-              </div>
-            )}
-          </div>
+          {step <= 3 ? (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{formStep}</div>
+          ) : requireDailyIncomeRegistration && step === 4 ? (
+            <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+              {paymentStep}
+            </div>
+          ) : (
+            <div className="h-full min-w-0 overflow-x-hidden overflow-y-auto px-4 py-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+              {previewContent}
+            </div>
+          )}
         </div>
 
         {step >= 3 ? (
@@ -573,6 +573,7 @@ export function InvoiceFormWizard({
           data-print-hide
           className="grid shrink-0 grid-cols-2 gap-3 border-t border-border bg-background px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
         >
+          {footerErrorNotice ? <div className="col-span-2">{footerErrorNotice}</div> : null}
           {phoneBackControl}
           {phonePrimary}
         </div>
@@ -608,10 +609,6 @@ export function InvoiceFormWizard({
             </p>
             <h2 className={invoiceStepTitleClassName}>{t(stepTitleKey)}</h2>
           </div>
-
-          {bannerError ? (
-            <InvoiceWizardNotice tone="error" message={bannerError} action={bannerErrorAction} />
-          ) : null}
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             <div
@@ -654,7 +651,8 @@ export function InvoiceFormWizard({
       >
         <div className="flex items-center justify-between gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            {backButton ?? <span className="flex-1" aria-hidden />}
+            {backButton}
+            {footerErrorNotice ?? (backButton ? null : <span className="flex-1" aria-hidden />)}
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
