@@ -26,16 +26,24 @@ import {
 } from "@/lib/pickup-delivery-routes/display";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 
+export type AssignBarcodeRouteResult = {
+  success: boolean;
+  routeName: string;
+  message: string;
+};
+
 type AssignBarcodeRouteDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   barcodeIds: number[];
+  onResult?: (result: AssignBarcodeRouteResult) => void;
 };
 
 export function AssignBarcodeRouteDialog({
   open,
   onOpenChange,
   barcodeIds,
+  onResult,
 }: AssignBarcodeRouteDialogProps) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
@@ -88,6 +96,7 @@ export function AssignBarcodeRouteDialog({
         result.routeName ||
         (selectedRoute ? formatActiveRouteReferenceLabel(selectedRoute, t) : "") ||
         routeId;
+      const message = t("labels.staging.output.successRoute");
       notifySuccess(
         t("labels.staging.success.assignedToRoute", {
           count: result.assignedCount,
@@ -95,11 +104,17 @@ export function AssignBarcodeRouteDialog({
           trip: result.tripNumber,
         }),
       );
+      onResult?.({ success: true, routeName, message });
       onOpenChange(false);
     } catch (error) {
       const message = normalizeApiError(error).message;
       setFormError(message);
       notifyError(message);
+      onResult?.({
+        success: false,
+        routeName: selectedRoute ? formatActiveRouteReferenceLabel(selectedRoute, t) : routeId,
+        message,
+      });
     }
   }
 

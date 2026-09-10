@@ -67,9 +67,8 @@ export function VehicleForm({
     setValues(initialValues ?? createEmptyVehicleForm());
   }, [initialValues]);
 
-  // Default new vehicles to the logged-in user's branch. The current user branch
-  // is a `{ id, code }` ref; if the code is missing we resolve it from the branch
-  // list, falling back to the first accessible branch.
+  // Default new vehicles to the logged-in user's branch. Resolve `{ id, name }`
+  // against the branch directory to get the `{ id, code }` vehicle ref.
   useEffect(() => {
     if (isEditing) return;
     if (values.branch.id > 0) return;
@@ -78,7 +77,7 @@ export function VehicleForm({
     const resolved = (() => {
       if (userBranch && userBranch.id > 0) {
         const match = branches.find((entry) => entry.id === userBranch.id);
-        const code = userBranch.code || match?.code || "";
+        const code = match?.code || "";
         return { id: userBranch.id, code };
       }
       const defaultBranch = branches[0];

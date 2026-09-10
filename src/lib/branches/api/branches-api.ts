@@ -26,8 +26,12 @@ import {
   type BranchListParams,
   type BranchSettings,
 } from "@/lib/branches/types";
-import { REQUIRED_PHONE_DIGITS, isCompletePhoneNumber } from "@/lib/phones/phones";
-import { normalizeStoredPhone } from "@/lib/utils/phone";
+import {
+  buildApiPhonesPayload,
+  normalizeRecordPhonesFromApi,
+  validateRecordPhones,
+} from "@/lib/phones/phones";
+import type { RecordPhone, RecordPhoneWritePayload } from "@/lib/phones/types";
 
 function buildBranchChipFilters(params: BranchListParams): ApiSearchFilter[] {
   if (params.type && params.type !== "all") {
@@ -108,9 +112,11 @@ type ApiBranch = {
   type?: string;
   phone1?: string;
   phone2?: string;
+  phones?: RecordPhone[];
   logo?: string;
   disclaimer?: string;
   created?: string;
+  createdAt?: string;
   address?: ApiAddress;
   settings?: ApiBranchSettings;
 };
@@ -120,8 +126,7 @@ type ApiBranchWritePayload = {
   name: string;
   type: string;
   code: string;
-  phone1: string;
-  phone2?: string;
+  phones?: RecordPhoneWritePayload[];
   disclaimer?: string;
   logo?: string;
   address?: ApiAddressPayload;
@@ -188,11 +193,10 @@ function normalizeBranch(raw: unknown): Branch | null {
     name: String(item.name ?? "").trim(),
     code: String(item.code ?? "").trim(),
     type: String(item.type ?? "").trim(),
-    phone1: normalizeStoredPhone(String(item.phone1 ?? "")),
-    phone2: normalizeStoredPhone(String(item.phone2 ?? "")),
+    phones: normalizeRecordPhonesFromApi(item),
     logo: String(item.logo ?? "").trim(),
     disclaimer: String(item.disclaimer ?? "").trim(),
-    created: String(item.created ?? "").trim(),
+    createdAt: String(item.createdAt ?? item.created ?? "").trim(),
     address: normalizeAddress(item.address),
     settings: normalizeBranchSettings(item.settings),
   };
@@ -264,12 +268,8 @@ function buildBranchWritePayload(
   const name = values.name.trim();
   if (!name) throw new Error("Branch name is required.");
 
-  const phone1 = normalizeStoredPhone(values.phone1);
-  const phone2 = normalizeStoredPhone(values.phone2);
-
-  if ([phone1, phone2].some((phone) => phone && !isCompletePhoneNumber(phone))) {
-    throw new Error(`Each phone number must have ${REQUIRED_PHONE_DIGITS} digits.`);
-  }
+  validateRecordPhones(values.phones, { required: false });
+  const phones = buildApiPhonesPayload(values.phones).filter((phone) => phone.number.trim());
   const disclaimer = values.disclaimer.trim();
   const logo = values.logo.trim();
   const address = buildApiAddressPayload(values.address);
@@ -279,15 +279,14 @@ function buildBranchWritePayload(
     name,
     type: values.type.trim(),
     code: values.code.trim(),
-    phone1,
   };
 
   if (options.branchId != null) {
     payload.id = options.branchId;
   }
 
-  if (phone2) {
-    payload.phone2 = phone2;
+  if (phones.length > 0) {
+    payload.phones = phones;
   }
 
   if (disclaimer) {

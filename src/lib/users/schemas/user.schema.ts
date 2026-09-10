@@ -20,7 +20,6 @@ function createBaseUserFormSchema(messages: UserFormSchemaMessages) {
 
   const branchReferenceSchema = z.object({
     id: z.number().int().positive(messages.selectOption),
-    code: z.string().trim(),
     name: z.string().trim().min(1, messages.selectOption),
   });
 

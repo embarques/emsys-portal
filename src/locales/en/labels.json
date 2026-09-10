@@ -200,6 +200,21 @@
       "labelStatus": "Label status",
       "labelContainer": "Label container",
       "labelCount": "{{count}} label(s)"
+    },
+    "output": {
+      "title": "Changes / Output",
+      "columns": {
+        "barcode": "Barcode",
+        "invoice": "Invoice",
+        "previousValue": "Previous value",
+        "newValue": "New value",
+        "message": "Message",
+        "dateTime": "Date / time"
+      },
+      "successStatus": "Status updated successfully.",
+      "successContainer": "Container updated successfully.",
+      "successRoute": "Route assigned successfully.",
+      "missingNumber": "Barcode number is missing."
     }
   }
 }

@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
 import { resolveOpenIncomeStatementId } from "@/lib/accounting/daily-income/api";
 import type { InvoiceFormSubmitContext } from "@/lib/invoices/invoice-daily-income-context";
+import { fetchBranches } from "@/lib/branches/api/branches-api";
+import { resolveUserBranchRef } from "@/lib/branches/user-branch";
 import { fetchContainerById } from "@/lib/containers/api/containers-api";
 import { fetchEmployeeById } from "@/lib/employees/api/employees-api";
 import { fetchActiveRouteById } from "@/lib/pickup-delivery-routes/api/pickup-delivery-routes-api";
@@ -191,14 +193,16 @@ async function buildInvoiceWriteContext(values: InvoiceFormValues): Promise<Invo
 
   const pickupAssignment = await resolveInvoicePickupAssignment(values);
   const container = await fetchContainerById(containerId);
+  const branches = await fetchBranches({ page: 1, limit: 200 });
+  const resolvedBranch = resolveUserBranchRef(currentUser.branch, branches.items);
 
   return {
     employee: pickupAssignment?.pickupEmployee,
     pickupAssignment,
     branch: {
-      id: currentUser.branch.id,
-      code: currentUser.branch.code,
-      name: currentUser.branch.name,
+      id: resolvedBranch?.id || currentUser.branch.id,
+      code: resolvedBranch?.code || "",
+      name: resolvedBranch?.name || currentUser.branch.name,
     },
     container: {
       id: container.id,

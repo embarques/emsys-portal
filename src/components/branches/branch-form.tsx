@@ -6,9 +6,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
-import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { useTranslation } from "@/lib/i18n";
 import {
   type BranchAddress,
@@ -109,15 +109,14 @@ export function BranchForm({
               </div>
             </div>
 
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="phone1">{t("branches.form.fields.phone1")}</Label>
-                <PhoneInput id="phone1" value={values.phone1} onChange={(nextValue) => updateField("phone1", nextValue)} />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="phone2">{t("branches.form.fields.phone2")}</Label>
-                <PhoneInput id="phone2" value={values.phone2} onChange={(nextValue) => updateField("phone2", nextValue)} />
-              </div>
+            <div className="space-y-1">
+              <Label>{t("branches.form.fields.phones")}</Label>
+              <PhoneListEditor
+                idPrefix="branch-phone"
+                compact
+                phones={values.phones}
+                onChange={(phones) => updateField("phones", phones)}
+              />
             </div>
 
             <div className="space-y-1">

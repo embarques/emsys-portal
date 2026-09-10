@@ -45,8 +45,6 @@ import {
 } from "@/lib/table/directory-table-state";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
-import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
-import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   formatBranchAddress,
   formatBranchId,
@@ -263,19 +261,9 @@ export function BranchesWorkspace() {
           ),
       },
       {
-        id: "phone1",
-        label: t("branches.columns.phone1"),
-        renderCell: (branch) => formatPhoneDisplayOrDash(branch.phone1),
-      },
-      {
-        id: "phone2",
-        label: t("branches.columns.phone2"),
-        renderCell: (branch) => formatPhoneDisplayOrDash(branch.phone2),
-      },
-      {
         id: "phones",
         label: t("branches.columns.phones"),
-        sortField: "phone1",
+        sortField: "phones.number",
         renderCell: (branch) => formatBranchPhones(branch),
       },
       {
@@ -303,12 +291,6 @@ export function BranchesWorkspace() {
         id: "settings.labelPrefix",
         label: t("branches.columns.settings.labelPrefix"),
         renderCell: (branch) => branch.settings.labelPrefix || dash,
-      },
-      {
-        id: "created",
-        label: t("branches.columns.created"),
-        cellClassName: "text-muted-foreground",
-        renderCell: (branch) => (branch.created ? formatAuditDateTime(branch.created) : dash),
       },
     ],
     [dash, t],

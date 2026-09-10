@@ -41,7 +41,7 @@ type ApiUser = {
 };
 
 type ApiReference = { _id?: number; id?: number; name?: string };
-type ApiBranchReference = ApiReference & { code?: string };
+type ApiBranchReference = ApiReference;
 type ApiEnvelope<T> = PaginatedApiEnvelope<T> & { success?: boolean; message?: string; error?: string };
 
 function readId(value: number | string | undefined): number | undefined {
@@ -57,11 +57,10 @@ function normalizeReference(raw: ApiReference | undefined): UserReference {
   };
 }
 
-/** Branch ref for a user: `{ id, code }` (name kept for display fallback). */
+/** Branch ref for a user: `{ id, name }`. */
 function normalizeUserBranch(raw: ApiBranchReference | undefined): UserBranch {
   return {
     id: readId(raw?._id ?? raw?.id) ?? 0,
-    code: String(raw?.code ?? "").trim(),
     name: String(raw?.name ?? "").trim(),
   };
 }
@@ -151,7 +150,7 @@ function writePayload(values: UserFormValues, uid?: string): UserWritePayload {
     email: values.email.trim(),
     name: values.name.trim(),
     active: values.active,
-    branch: { id: values.branch.id, code: values.branch.code, name: values.branch.name },
+    branch: { id: values.branch.id, name: values.branch.name },
     role: { id: values.role.id, name: values.role.name },
   };
   if (uid) payload.uid = uid;

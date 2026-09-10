@@ -37,7 +37,7 @@ export function useDirectoryBranchFilter() {
   const userSettled =
     Boolean(currentUserQuery.data) || currentUserQuery.isFetched || currentUserQuery.isError;
   const waitingForBranchDirectory =
-    Boolean(userBranch && (userBranch.id > 0 || userBranch.code.trim() || userBranch.name.trim())) &&
+    Boolean(userBranch && (userBranch.id > 0 || userBranch.name.trim())) &&
     !resolvedUserBranchCode &&
     branches.length === 0 &&
     (branchesQuery.isPending || branchesQuery.isFetching);

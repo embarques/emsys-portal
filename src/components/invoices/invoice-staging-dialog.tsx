@@ -19,6 +19,10 @@ import { TableSelectionActionDivider } from "@/components/app-shell/table-select
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { AssignBarcodeRouteDialog } from "@/components/invoices/assign-barcode-route-dialog";
+import {
+  LabelChangeOutputTable,
+  type LabelChangeOutputRow,
+} from "@/components/invoices/label-change-output-table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -267,6 +271,7 @@ export function InvoiceStagingWorkflow({
   const [removeConfirm, setRemoveConfirm] = useState<RemoveConfirmTarget | null>(null);
   const [newStatus, setNewStatus] = useState<string>(BARCODE_STATUS_OPTIONS[1].name);
   const [newContainerId, setNewContainerId] = useState("");
+  const [changeResults, setChangeResults] = useState<LabelChangeOutputRow[]>([]);
 
   const isGenerating = generateLabelsMutation.isPending && !generateCancelled;
   const isUpdating = updateBarcodesMutation.isPending;
@@ -309,6 +314,7 @@ export function InvoiceStagingWorkflow({
     setStatusFilter("all");
     setRouteDialogOpen(false);
     setRemoveConfirm(null);
+    setChangeResults([]);
   }, [invoiceKey, isActive]);
 
   const itemKeys = useMemo(() => lineItems.map((item) => item.key), [lineItems]);
@@ -347,6 +353,19 @@ export function InvoiceStagingWorkflow({
     () => [...new Set(selectedLabels.map((label) => label.barcodeId).filter((id) => id > 0))],
     [selectedLabels],
   );
+
+  function recordChangeOutputs(rows: Omit<LabelChangeOutputRow, "id" | "occurredAt">[]) {
+    if (rows.length === 0) return;
+    const occurredAt = new Date().toISOString();
+    setChangeResults((current) => [
+      ...rows.map((row) => ({
+        ...row,
+        id: crypto.randomUUID(),
+        occurredAt,
+      })),
+      ...current,
+    ]);
+  }
 
   function cancelGenerateLabels() {
     generateAbortRef.current?.abort();
@@ -501,20 +520,33 @@ export function InvoiceStagingWorkflow({
     if (!option) return;
 
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
-    const updates: BarcodeUpdate[] = selected
-      .filter((label) => label.number.trim().length > 0)
-      .map((label) => ({
-        id: label.barcodeId,
-        invoiceId: label.invoiceId,
-        writeTarget: label.writeTarget,
-        payload: {
-          number: label.number,
-          status: { id: option.id, name: option.name },
-          ...(label.containerId != null
-            ? { container: { id: label.containerId, name: label.containerName } }
-            : {}),
-        },
-      }));
+    const newStatusLabel = getBarcodeStatusLabel(option.name, t);
+    const withNumbers = selected.filter((label) => label.number.trim().length > 0);
+    const withoutNumbers = selected.filter((label) => label.number.trim().length === 0);
+
+    recordChangeOutputs(
+      withoutNumbers.map((label) => ({
+        barcode: label.number.trim() || t("common.empty.dash"),
+        invoiceNumber: label.invoiceNumber,
+        previousValue: getBarcodeStatusLabel(label.statusName, t),
+        newValue: newStatusLabel,
+        message: t("labels.staging.output.missingNumber"),
+        success: false,
+      })),
+    );
+
+    const updates: BarcodeUpdate[] = withNumbers.map((label) => ({
+      id: label.barcodeId,
+      invoiceId: label.invoiceId,
+      writeTarget: label.writeTarget,
+      payload: {
+        number: label.number,
+        status: { id: option.id, name: option.name },
+        ...(label.containerId != null
+          ? { container: { id: label.containerId, name: label.containerName } }
+          : {}),
+      },
+    }));
 
     if (updates.length === 0) {
       notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
@@ -522,9 +554,7 @@ export function InvoiceStagingWorkflow({
     }
 
     try {
-      if (updates.length > 0) {
-        await updateBarcodesMutation.mutateAsync(updates);
-      }
+      await updateBarcodesMutation.mutateAsync(updates);
       setGeneratedLabels((current) =>
         current.map((label) =>
           selectedLabelKeys.includes(label.key)
@@ -532,13 +562,34 @@ export function InvoiceStagingWorkflow({
             : label,
         ),
       );
+      recordChangeOutputs(
+        withNumbers.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: getBarcodeStatusLabel(label.statusName, t),
+          newValue: newStatusLabel,
+          message: t("labels.staging.output.successStatus"),
+          success: true,
+        })),
+      );
       notifyUpdated(
         t("labels.staging.entities.labelStatus"),
         t("labels.staging.entities.labelCount", { count: selected.length }),
       );
       setStatusDialogOpen(false);
     } catch (error) {
-      notifyError(normalizeApiError(error).message);
+      const message = normalizeApiError(error).message;
+      recordChangeOutputs(
+        withNumbers.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: getBarcodeStatusLabel(label.statusName, t),
+          newValue: newStatusLabel,
+          message,
+          success: false,
+        })),
+      );
+      notifyError(message);
     }
   }
 
@@ -570,20 +621,31 @@ export function InvoiceStagingWorkflow({
     if (!container) return;
 
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
-    const updates: BarcodeUpdate[] = selected
-      .filter((label) => label.number.trim().length > 0)
-      .map((label) => ({
-        id: label.barcodeId,
-        invoiceId: label.invoiceId,
-        writeTarget: label.writeTarget,
-        payload: {
-          number: label.number,
-          status: resolveBarcodeStatusRef(label.statusId, label.statusName),
-          container: { id: container.id, name: container.name },
-        },
-      }));
-
     const containerLabel = formatContainerLabel(container);
+    const withNumbers = selected.filter((label) => label.number.trim().length > 0);
+    const withoutNumbers = selected.filter((label) => label.number.trim().length === 0);
+
+    recordChangeOutputs(
+      withoutNumbers.map((label) => ({
+        barcode: label.number.trim() || t("common.empty.dash"),
+        invoiceNumber: label.invoiceNumber,
+        previousValue: label.containerName,
+        newValue: containerLabel,
+        message: t("labels.staging.output.missingNumber"),
+        success: false,
+      })),
+    );
+
+    const updates: BarcodeUpdate[] = withNumbers.map((label) => ({
+      id: label.barcodeId,
+      invoiceId: label.invoiceId,
+      writeTarget: label.writeTarget,
+      payload: {
+        number: label.number,
+        status: resolveBarcodeStatusRef(label.statusId, label.statusName),
+        container: { id: container.id, name: container.name },
+      },
+    }));
 
     if (updates.length === 0) {
       notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
@@ -591,9 +653,7 @@ export function InvoiceStagingWorkflow({
     }
 
     try {
-      if (updates.length > 0) {
-        await updateBarcodesMutation.mutateAsync(updates);
-      }
+      await updateBarcodesMutation.mutateAsync(updates);
       setGeneratedLabels((current) =>
         current.map((label) =>
           selectedLabelKeys.includes(label.key)
@@ -601,14 +661,70 @@ export function InvoiceStagingWorkflow({
             : label,
         ),
       );
+      recordChangeOutputs(
+        withNumbers.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: label.containerName,
+          newValue: containerLabel,
+          message: t("labels.staging.output.successContainer"),
+          success: true,
+        })),
+      );
       notifyUpdated(
         t("labels.staging.entities.labelContainer"),
         t("labels.staging.entities.labelCount", { count: selected.length }),
       );
       setContainerDialogOpen(false);
     } catch (error) {
-      notifyError(normalizeApiError(error).message);
+      const message = normalizeApiError(error).message;
+      recordChangeOutputs(
+        withNumbers.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: label.containerName,
+          newValue: containerLabel,
+          message,
+          success: false,
+        })),
+      );
+      notifyError(message);
     }
+  }
+
+  function handleRouteAssignResult(result: { success: boolean; routeName: string; message: string }) {
+    const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
+    const assignable = selected.filter((label) => label.barcodeId > 0);
+    const skipped = selected.filter((label) => label.barcodeId <= 0);
+    const dash = t("common.empty.dash");
+
+    recordChangeOutputs([
+      ...skipped.map((label) => ({
+        barcode: label.number.trim() || dash,
+        invoiceNumber: label.invoiceNumber,
+        previousValue: label.routeName ?? "",
+        newValue: result.routeName,
+        message: t("labels.staging.output.missingNumber"),
+        success: false,
+      })),
+      ...assignable.map((label) => ({
+        barcode: label.number.trim() || dash,
+        invoiceNumber: label.invoiceNumber,
+        previousValue: label.routeName ?? "",
+        newValue: result.routeName,
+        message: result.message,
+        success: result.success,
+      })),
+    ]);
+
+    if (!result.success) return;
+
+    const assignedIds = new Set(assignable.map((label) => label.key));
+    setGeneratedLabels((current) =>
+      current.map((label) =>
+        assignedIds.has(label.key) ? { ...label, routeName: result.routeName } : label,
+      ),
+    );
   }
 
   async function printSelectedLabels() {
@@ -1001,6 +1117,7 @@ export function InvoiceStagingWorkflow({
         open={routeDialogOpen}
         onOpenChange={setRouteDialogOpen}
         barcodeIds={assignBarcodeIds}
+        onResult={handleRouteAssignResult}
       />
 
       <Dialog
@@ -1031,7 +1148,7 @@ export function InvoiceStagingWorkflow({
   if (!isDialog) {
     return (
       <>
-        <div className="flex min-h-[calc(100dvh-10rem)] flex-col gap-4">
+        <div className="flex h-[calc(100dvh-10rem)] flex-col gap-4">
           <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -1051,7 +1168,10 @@ export function InvoiceStagingWorkflow({
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4">{workflowPanels}</div>
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            {workflowPanels}
+            <LabelChangeOutputTable rows={changeResults} />
+          </div>
         </div>
         {auxiliaryDialogs}
       </>
@@ -1073,6 +1193,7 @@ export function InvoiceStagingWorkflow({
           </DialogHeader>
 
           {workflowPanels}
+          <LabelChangeOutputTable rows={changeResults} />
         </DialogContent>
       </Dialog>
       {auxiliaryDialogs}

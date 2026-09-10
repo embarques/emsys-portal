@@ -171,6 +171,8 @@ export type GeneratedLabel = {
   labelSequence: number;
   totalLabels: number;
   source: GeneratedLabelSource;
+  /** Last assigned daily-route label shown in the local change log. */
+  routeName?: string;
   /** API write path for status/container updates. */
   writeTarget?: "barcodes" | "invoice-embedded";
 };

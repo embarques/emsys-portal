@@ -62,6 +62,7 @@ export function UserForm({
   const {
     control,
     formState: { errors },
+    getValues,
     handleSubmit,
     register,
     reset,
@@ -97,6 +98,14 @@ export function UserForm({
     () => (rolesQuery.data?.items ?? []).filter((role) => role.active),
     [rolesQuery.data?.items],
   );
+
+  useEffect(() => {
+    const current = getValues("branch");
+    if (!current.id || current.name.trim()) return;
+    const match = branches.find((item) => item.id === current.id);
+    if (!match?.name.trim()) return;
+    setValue("branch", { id: match.id, name: match.name }, { shouldDirty: false, shouldValidate: true });
+  }, [branches, getValues, setValue]);
 
   useEffect(() => {
     if (isEditing || selectedRole.id > 0) return;
@@ -237,7 +246,6 @@ export function UserForm({
                       const branch = branches.find((item) => item.id === Number(value));
                       field.onChange({
                         id: branch?.id ?? 0,
-                        code: branch?.code ?? "",
                         name: branch?.name ?? "",
                       });
                     }}

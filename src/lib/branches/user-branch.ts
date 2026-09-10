@@ -6,13 +6,20 @@ export type BranchRef = {
   name?: string;
 };
 
+/** User branch refs from the API are `{ id, name }` and may omit `code`. */
+export type UserBranchRef = {
+  id: number;
+  code?: string;
+  name?: string;
+};
+
 export function sameBranchCode(left: string, right: string): boolean {
   return left.trim().toLowerCase() === right.trim().toLowerCase();
 }
 
 export function findBranchByCodeOrId(
   branches: BranchRef[],
-  ref?: Pick<BranchRef, "id" | "code" | "name"> | null,
+  ref?: UserBranchRef | null,
 ): BranchRef | undefined {
   if (!ref) return undefined;
 
@@ -33,27 +40,36 @@ export function findBranchByCodeOrId(
 }
 
 export function resolveUserBranchCode(
-  userBranch: BranchRef | undefined,
+  userBranch: UserBranchRef | undefined,
   branches: BranchRef[],
 ): string {
   return resolveUserBranchRef(userBranch, branches)?.code ?? "";
 }
 
 export function resolveUserBranchRef(
-  userBranch: BranchRef | undefined,
+  userBranch: UserBranchRef | undefined,
   branches: BranchRef[],
 ): { id: number; code: string; name: string } | null {
   if (!userBranch) return null;
 
   const match = findBranchByCodeOrId(branches, userBranch);
-  const code = match?.code.trim() || userBranch.code.trim();
-  if (!code) return null;
+  if (match) {
+    return {
+      id: match.id,
+      code: match.code.trim(),
+      name: match.name?.trim() || userBranch.name?.trim() || "",
+    };
+  }
 
-  return {
-    id: match?.id || userBranch.id,
-    code: match?.code.trim() || code,
-    name: match?.name?.trim() || userBranch.name?.trim() || "",
-  };
+  if (userBranch.id > 0) {
+    return {
+      id: userBranch.id,
+      code: userBranch.code?.trim() || "",
+      name: userBranch.name?.trim() || "",
+    };
+  }
+
+  return null;
 }
 
 export function buildFormBranchOptions(

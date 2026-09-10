@@ -10,7 +10,7 @@ export const MOCK_USERS: User[] = [
       id: 1,
       name: "Administrador",
     },
-    branch: { id: 1, code: "USA", name: "USA" },
+    branch: { id: 1, name: "USA" },
     startTime: "",
     endTime: "",
     email: "admin@emsys.example",

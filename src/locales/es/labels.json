@@ -200,6 +200,21 @@
       "labelStatus": "Estado de etiqueta",
       "labelContainer": "Contenedor de etiqueta",
       "labelCount": "{{count}} etiqueta(s)"
+    },
+    "output": {
+      "title": "Cambios / Resultado",
+      "columns": {
+        "barcode": "Código de barras",
+        "invoice": "Factura",
+        "previousValue": "Valor anterior",
+        "newValue": "Valor nuevo",
+        "message": "Mensaje",
+        "dateTime": "Fecha y hora"
+      },
+      "successStatus": "Estado actualizado correctamente.",
+      "successContainer": "Contenedor actualizado correctamente.",
+      "successRoute": "Ruta asignada correctamente.",
+      "missingNumber": "Falta el número de código de barras."
     }
   }
 }
