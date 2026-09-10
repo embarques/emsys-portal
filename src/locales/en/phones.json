@@ -14,6 +14,7 @@
   "remove": "Remove phone",
   "removeButton": "Remove",
   "add": "Add phone",
+  "addNew": "Add new phone",
   "countBadge": "{{count}} phones",
   "countBadgeOne": "1 phone",
   "sheetTitle": "Customer phones",

@@ -27,6 +27,11 @@
         "6m": "6 months",
         "1y": "1 year"
       }
+    },
+    "averageValue": {
+      "label": "Average value per container",
+      "periodLabel": "Timeframe",
+      "description": "{{count}} departed containers"
     }
   },
   "columns": {

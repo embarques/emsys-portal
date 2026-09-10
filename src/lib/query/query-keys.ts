@@ -149,7 +149,7 @@ export const queryKeys = {
     list: (params: ContainerListParams) => [...queryKeys.containers.lists(), params] as const,
     search: (search: ContainerSearchFilter | undefined, limit: number) =>
       [...queryKeys.containers.all, "search", search, limit] as const,
-    stats: (scope: "all" | "kpis" | "departed", period?: string) =>
+    stats: (scope: "all" | "kpis" | "departed" | "average-value", period?: string) =>
       period
         ? ([...queryKeys.containers.all, "stats", scope, period] as const)
         : ([...queryKeys.containers.all, "stats", scope] as const),

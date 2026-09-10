@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
+import { fetchAverageContainerValueStats } from "@/lib/containers/api/average-container-value-api";
 import {
   createContainer,
   deleteContainer,
@@ -90,6 +91,23 @@ export function useDepartedContainerStats(period: DepartedContainerStatPeriod) {
 
   return {
     total: query.data?.total ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+  };
+}
+
+/** Average invoice merchandise value per container that departed in the window. */
+export function useAverageContainerValueStats(period: DepartedContainerStatPeriod) {
+  const query = useWorkspaceQuery({
+    queryKey: queryKeys.containers.stats("average-value", period),
+    queryFn: () => fetchAverageContainerValueStats(period),
+    retry: 1,
+  });
+
+  return {
+    average: query.data?.average ?? 0,
+    containerCount: query.data?.containerCount ?? 0,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     isError: query.isError,

@@ -27,6 +27,11 @@
         "6m": "6 meses",
         "1y": "1 año"
       }
+    },
+    "averageValue": {
+      "label": "Valor promedio por contenedor",
+      "periodLabel": "Periodo",
+      "description": "{{count}} contenedores salidos"
     }
   },
   "columns": {

@@ -5,6 +5,7 @@ import {
   type DepartedContainerStatPeriod,
 } from "@/lib/containers/departed-container-stats";
 import { DEFAULT_CONTAINER_LIST_PARAMS, type ContainerListParams } from "@/lib/containers/types";
+import { getPreviousRollingPeriodBounds } from "@/lib/stats/rolling-period";
 
 /**
  * Count-only container search requests for KPI cards.
@@ -44,6 +45,31 @@ export function buildDepartedContainerStatsFilterRows(
       field: "departureDate",
       operator: "lte",
       value: now.toISOString(),
+    },
+  ];
+}
+
+/** Prior window of the same length, for period-over-period average value. */
+export function buildPreviousDepartedContainerStatsFilterRows(
+  period: DepartedContainerStatPeriod,
+  now: Date = new Date(),
+): TableFilterRowState[] {
+  const { startIso, endIso } = getPreviousRollingPeriodBounds(period, now);
+
+  return [
+    {
+      id: "departed-containers-previous-departure-gte",
+      join: "and",
+      field: "departureDate",
+      operator: "gte",
+      value: startIso,
+    },
+    {
+      id: "departed-containers-previous-departure-lte",
+      join: "and",
+      field: "departureDate",
+      operator: "lte",
+      value: endIso,
     },
   ];
 }

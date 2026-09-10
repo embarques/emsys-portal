@@ -38,7 +38,7 @@ export function invoicePickupSourceLabelKey(
   return PICKUP_SOURCE_LABEL_KEYS[source];
 }
 
-/** Received by: daily-route crew name, or warehouse/office employee. Not the digitizer. */
+/** Received by: daily-route crew name, or employee (including legacy `employee`). Not the digitizer. */
 export function getInvoicePickupAssignmentValue(
   invoice: Pick<
     Invoice,
@@ -56,7 +56,7 @@ export function getInvoicePickupAssignmentValue(
     return crew;
   }
 
-  return crew || employee;
+  return employee || crew;
 }
 
 export function formatInvoicePickupAssignmentLabel(

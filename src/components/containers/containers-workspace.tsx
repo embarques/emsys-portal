@@ -5,6 +5,7 @@ import { Container, Plus, Trash2 } from "lucide-react";
 
 import { ContainerForm } from "@/components/containers/container-form";
 import { ContainerViewSheet } from "@/components/containers/container-view-sheet";
+import { AverageContainerValueStatCard } from "@/components/containers/average-container-value-stat-card";
 import { DepartedContainersStatCard } from "@/components/containers/departed-containers-stat-card";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
@@ -349,6 +350,7 @@ export function ContainersWorkspace() {
           icon={Container}
         />
         <DepartedContainersStatCard />
+        <AverageContainerValueStatCard />
       </StatCardsCarousel>
 
       <Card className="mt-6 gap-0">

@@ -240,6 +240,21 @@ Containers manages the shipping containers used to transport customer merchandis
 
 Invoices and their associated merchandise can be organized into containers so the system can track which shipments are being transported together and where they are in the shipping process.
 
+The containers page KPI **Average value per container** is the mean **invoice merchandise total** (not container shipping `cost`) across containers that **departed** in the selected rolling window (`7d`, `30d`, `3m`, `6m`, `1y`). Containers with no invoices count as $0. The portal currently approximates this client-side because list `subtotal` is a match count, not money.
+
+TODO (backend) — average merchandise value per container (portal KPI):
+
+Expose an aggregation for rolling windows `7d | 30d | 3m | 6m | 1y`, plus the previous window of the same length.
+
+For each window:
+
+1. Take containers whose `departureDate` is in `[start, now]` (exclude future scheduled departures).
+2. Per container, sum invoice merchandise totals (`cost` / line totals) for **non-void** invoices assigned to that container (`container.id`). Do **not** filter those invoices by digitize/`createdAt` date — assignment to the container is enough.
+3. Average = (sum of those container values) / (count of departed containers in the window). Containers with no invoices count as `$0`.
+4. Return `average`, `previousAverage`, `containerCount`, and `totalValue`. Do **not** use list `subtotal` as money.
+
+A dedicated stats field or endpoint is required (e.g. `GET /containers/stats/average-value?period=30d` or a search aggregation) so the portal does not paginate containers and invoices.
+
 ### Admin
 
 Admin manages the company's system configuration and administrative information.

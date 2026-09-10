@@ -463,6 +463,22 @@ function receivedByLooksLikeDailyRoute(raw?: ApiInvoiceReceivedBy | null): boole
   return /^[a-f\d]{24}$/i.test(id);
 }
 
+function isInvoiceReceivedByEmpty(raw?: ApiInvoiceReceivedBy | null): boolean {
+  if (raw == null || typeof raw !== "object") return true;
+  const id = raw.id != null ? String(raw.id).trim() : "";
+  const name = String(raw.fullName ?? raw.userName ?? raw.name ?? "").trim();
+  const hasNestedRoute = Boolean(raw.route && typeof raw.route === "object");
+  const hasDate = Boolean(String(raw.date ?? "").trim());
+  const hasRouteType = Boolean(String(raw.routeType ?? "").trim());
+  return !id && !name && !hasNestedRoute && !hasDate && !hasRouteType;
+}
+
+function invoiceUserDisplayName(user?: ApiInvoiceUser | null): string | undefined {
+  if (!user || typeof user !== "object") return undefined;
+  const name = String(user.fullName ?? user.userName ?? user.name ?? "").trim();
+  return name || undefined;
+}
+
 function inferEmployeePickupSource(officeBranch?: InvoiceBranch): Invoice["pickupSource"] {
   const type = String(officeBranch?.type ?? "").trim().toLowerCase();
   if (type === "warehouse") return "warehouse";
@@ -479,8 +495,9 @@ function resolveInvoiceReceivedBy(item: ApiInvoice): {
   pickupEmployeeName?: string;
 } {
   const receivedBy = item.receivedBy;
-  const receivedByIsRoute = receivedByLooksLikeDailyRoute(receivedBy);
-  const receivedByIsEmployee = Boolean(receivedBy) && !receivedByIsRoute;
+  const receivedByEmpty = isInvoiceReceivedByEmpty(receivedBy);
+  const receivedByIsRoute = !receivedByEmpty && receivedByLooksLikeDailyRoute(receivedBy);
+  const receivedByIsEmployee = !receivedByEmpty && !receivedByIsRoute;
 
   const dailyRoute = receivedByIsRoute
     ? firstInvoiceRouteRef(receivedBy, item.vehicleRoute, item.route)
@@ -492,21 +509,24 @@ function resolveInvoiceReceivedBy(item: ApiInvoice): {
     item.vehicleRoute?.route,
   );
 
+  const legacyEmployee = item.pickupEmployee ?? item.employee;
   const employeeRaw: ApiInvoiceUser | undefined = receivedByIsEmployee
     ? receivedBy
-    : item.pickupEmployee ??
-      (!receivedByIsRoute && !dailyRoute.id ? item.employee : undefined);
+    : receivedByEmpty
+      ? legacyEmployee
+      : undefined;
 
-  const employeeName = employeeRaw ? readInvoiceCreatedBy(employeeRaw) : undefined;
-  const hasEmployee = Boolean(
-    employeeRaw?.id != null || (employeeName && employeeName !== DEFAULT_CREATED_BY),
-  );
+  const employeeName = invoiceUserDisplayName(employeeRaw);
+  const hasEmployee = Boolean(employeeRaw?.id != null || employeeName);
   const hasDaily = Boolean(dailyRoute.id || nestedCrew.id || dailyRoute.name);
-  const pickupSource =
-    receivedByIsRoute || (hasDaily && !receivedByIsEmployee)
-      ? "route"
-      : hasEmployee
-        ? inferEmployeePickupSource(item.officeBranch)
+
+  // Empty receivedBy → use legacy employee for Received by, even if a leftover route is present.
+  const pickupSource = receivedByIsRoute
+    ? "route"
+    : hasEmployee
+      ? inferEmployeePickupSource(item.officeBranch)
+      : hasDaily
+        ? "route"
         : undefined;
 
   return {
@@ -516,8 +536,7 @@ function resolveInvoiceReceivedBy(item: ApiInvoice): {
     routeCrewId: nestedCrew.id,
     routeCrewName: nestedCrew.name || dailyRoute.name,
     pickupEmployeeId: employeeRaw?.id != null ? String(employeeRaw.id) : undefined,
-    pickupEmployeeName:
-      employeeName && employeeName !== DEFAULT_CREATED_BY ? employeeName : undefined,
+    pickupEmployeeName: employeeName,
   };
 }
 

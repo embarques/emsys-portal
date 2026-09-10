@@ -14,6 +14,7 @@
   "remove": "Quitar teléfono",
   "removeButton": "Quitar",
   "add": "Agregar teléfono",
+  "addNew": "Agregar nuevo teléfono",
   "countBadge": "{{count}} teléfonos",
   "countBadgeOne": "1 teléfono",
   "sheetTitle": "Teléfonos del cliente",

@@ -15,7 +15,11 @@ import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
-import { REQUIRED_PHONE_DIGITS, isCompletePhoneNumber } from "@/lib/phones/phones";
+import {
+  REQUIRED_PHONE_DIGITS,
+  createEmptyRecordPhone,
+  isCompletePhoneNumber,
+} from "@/lib/phones/phones";
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import { AddressVerificationBadge } from "@/components/addresses/address-verification-badge";
 import { Button } from "@/components/ui/button";
@@ -83,6 +87,8 @@ type CustomerFormProps = {
   lockCustomerType?: boolean;
   /** Reveal addresses and append an empty row so the user can add a new one. */
   startWithNewAddress?: boolean;
+  /** Append an empty phone row so the user can add a new one. */
+  startWithNewPhone?: boolean;
   onSubmit: (values: CustomerFormValues) => void | Promise<void>;
   onCancel: () => void;
 };
@@ -104,17 +110,32 @@ function withTrailingEmptyAddress(values: CustomerFormValues): CustomerFormValue
   };
 }
 
+function withTrailingEmptyPhone(values: CustomerFormValues): CustomerFormValues {
+  const last = values.phones[values.phones.length - 1];
+  if (last && !last.number.trim()) {
+    return values;
+  }
+
+  return {
+    ...values,
+    phones: [...values.phones, createEmptyRecordPhone(false)],
+  };
+}
+
 function initializeCustomerFormState(
   initialValues: CustomerFormValues | undefined,
   startWithNewAddress: boolean,
+  startWithNewPhone = false,
 ) {
   const base = normalizeCustomerFormValues(initialValues ?? createEmptyCustomerForm());
-  const values = startWithNewAddress ? withTrailingEmptyAddress(base) : base;
+  let values = startWithNewAddress ? withTrailingEmptyAddress(base) : base;
+  values = startWithNewPhone ? withTrailingEmptyPhone(values) : values;
 
   return {
     values,
     showAddresses: startWithNewAddress || values.addresses.some(coreAddressRequiresVerification),
     pendingAddressFocusIndex: startWithNewAddress ? values.addresses.length - 1 : null,
+    pendingPhoneFocusIndex: startWithNewPhone ? values.phones.length - 1 : null,
   };
 }
 
@@ -358,11 +379,16 @@ export function CustomerForm({
   externalError = null,
   lockCustomerType = false,
   startWithNewAddress = false,
+  startWithNewPhone = false,
   onSubmit,
   onCancel,
 }: CustomerFormProps) {
   const { t } = useTranslation();
-  const initialState = initializeCustomerFormState(initialValues, startWithNewAddress);
+  const initialState = initializeCustomerFormState(
+    initialValues,
+    startWithNewAddress,
+    startWithNewPhone,
+  );
   const [values, setValues] = useState<CustomerFormValues>(() => initialState.values);
   const [formError, setFormError] = useState<string | null>(null);
   // The address section stays collapsed until the user adds one (or when editing
@@ -371,16 +397,24 @@ export function CustomerForm({
   const [pendingAddressFocusIndex, setPendingAddressFocusIndex] = useState<number | null>(
     () => initialState.pendingAddressFocusIndex,
   );
+  const [pendingPhoneFocusIndex, setPendingPhoneFocusIndex] = useState<number | null>(
+    () => initialState.pendingPhoneFocusIndex,
+  );
   const errorMessage = formError ?? externalError;
   const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
-    const next = initializeCustomerFormState(initialValues, startWithNewAddress);
+    const next = initializeCustomerFormState(
+      initialValues,
+      startWithNewAddress,
+      startWithNewPhone,
+    );
     setValues(next.values);
     setShowAddresses(next.showAddresses);
     setPendingAddressFocusIndex(next.pendingAddressFocusIndex);
+    setPendingPhoneFocusIndex(next.pendingPhoneFocusIndex);
     setFormError(null);
-  }, [initialValues?.id, initialValues?.updatedAt, startWithNewAddress]);
+  }, [initialValues?.id, initialValues?.updatedAt, startWithNewAddress, startWithNewPhone]);
 
   useEffect(() => {
     if (pendingAddressFocusIndex == null || !showAddresses) return;
@@ -389,6 +423,14 @@ export function CustomerForm({
     input.focus();
     setPendingAddressFocusIndex(null);
   }, [pendingAddressFocusIndex, showAddresses, values.addresses.length]);
+
+  useEffect(() => {
+    if (pendingPhoneFocusIndex == null) return;
+    const input = document.getElementById(`customer-phone-number-${pendingPhoneFocusIndex}`);
+    if (!input) return;
+    input.focus();
+    setPendingPhoneFocusIndex(null);
+  }, [pendingPhoneFocusIndex, values.phones.length]);
 
   function updateField<K extends keyof CustomerFormValues>(
     key: K,

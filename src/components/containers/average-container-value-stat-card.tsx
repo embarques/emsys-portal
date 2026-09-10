@@ -1,55 +1,49 @@
 "use client";
 
 import { useState } from "react";
-import { FilePlus2 } from "lucide-react";
+import { DollarSign } from "lucide-react";
 
-import { PeriodChangeDescription } from "@/components/app-shell/period-change-description";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { useNewInvoiceStats } from "@/lib/invoices/hooks/use-invoices";
 import {
-  DEFAULT_NEW_INVOICE_STAT_PERIOD,
-  NEW_INVOICE_STAT_PERIODS,
-  isNewInvoiceStatPeriod,
-  type NewInvoiceStatPeriod,
-} from "@/lib/invoices/new-invoice-stats";
+  DEFAULT_DEPARTED_CONTAINER_STAT_PERIOD,
+  DEPARTED_CONTAINER_STAT_PERIODS,
+  isDepartedContainerStatPeriod,
+  type DepartedContainerStatPeriod,
+} from "@/lib/containers/departed-container-stats";
+import { useAverageContainerValueStats } from "@/lib/containers/hooks/use-containers";
 import { useTranslation } from "@/lib/i18n";
+import { formatInvoiceMoney } from "@/lib/invoices/display";
 
-export function NewInvoicesStatCard() {
+export function AverageContainerValueStatCard() {
   const { t } = useTranslation();
-  const [period, setPeriod] = useState<NewInvoiceStatPeriod>(DEFAULT_NEW_INVOICE_STAT_PERIOD);
-  const stats = useNewInvoiceStats(period);
+  const [period, setPeriod] = useState<DepartedContainerStatPeriod>(
+    DEFAULT_DEPARTED_CONTAINER_STAT_PERIOD,
+  );
+  const stats = useAverageContainerValueStats(period);
 
-  const periodOptions = NEW_INVOICE_STAT_PERIODS.map((value) => ({
+  const periodOptions = DEPARTED_CONTAINER_STAT_PERIODS.map((value) => ({
     value,
-    label: t(`invoices.stats.new.periods.${value}`),
+    label: t(`containers.stats.departed.periods.${value}`),
   }));
-
-  const periodLabel = t(`invoices.stats.new.periods.${period}`);
 
   return (
     <div style={{ height: 158 }}>
       <Card className="relative h-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="min-w-0 truncate text-sm font-medium text-muted-foreground">
-            {t("invoices.stats.new.label")}
+            {t("containers.stats.averageValue.label")}
           </CardTitle>
-          <FilePlus2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <DollarSign className="h-4 w-4 shrink-0 text-muted-foreground" />
         </CardHeader>
         <CardContent className="pr-28">
           <div className="text-2xl font-bold">
-            {stats.isLoading ? "…" : stats.total.toLocaleString()}
+            {stats.isLoading ? "…" : formatInvoiceMoney(stats.average)}
           </div>
           <CardDescription className="mt-1">
-            {stats.isLoading ? (
-              "…"
-            ) : (
-              <PeriodChangeDescription
-                current={stats.total}
-                previous={stats.previousTotal}
-                periodLabel={periodLabel}
-              />
-            )}
+            {stats.isLoading
+              ? "…"
+              : t("containers.stats.averageValue.description", { count: stats.containerCount })}
           </CardDescription>
         </CardContent>
         <div
@@ -58,7 +52,7 @@ export function NewInvoicesStatCard() {
           onClick={(event) => event.stopPropagation()}
         >
           <SearchableSelect
-            aria-label={t("invoices.stats.new.periodLabel")}
+            aria-label={t("containers.stats.averageValue.periodLabel")}
             className="h-8 min-h-8 w-auto border py-0 pl-2 pr-7 text-xs max-md:min-h-8 max-md:rounded-md max-md:text-xs"
             contentClassName="min-w-[7rem]"
             fitToOptions
@@ -66,7 +60,7 @@ export function NewInvoicesStatCard() {
             searchable={false}
             value={period}
             onValueChange={(value) => {
-              if (isNewInvoiceStatPeriod(value)) setPeriod(value);
+              if (isDepartedContainerStatPeriod(value)) setPeriod(value);
             }}
           />
         </div>

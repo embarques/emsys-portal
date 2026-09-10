@@ -20,9 +20,9 @@
     "noChanges": "No hay cambios para guardar."
   },
   "stats": {
-    "changeMore": "{{percent}}% más que los últimos {{period}}",
-    "changeLess": "{{percent}}% menos que los últimos {{period}}",
-    "changeSame": "Igual que los últimos {{period}}",
+    "changeMore": "+{{percent}}% vs los últimos {{period}}",
+    "changeLess": "-{{percent}}% vs los últimos {{period}}",
+    "changeSame": "0% vs los últimos {{period}}",
     "changeFromZero": "Subió desde cero vs {{period}}"
   },
   "empty": {

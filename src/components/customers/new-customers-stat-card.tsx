@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { UserPlus } from "lucide-react";
 
+import { PeriodChangeDescription } from "@/components/app-shell/period-change-description";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useNewCustomerStats } from "@/lib/customers/hooks/use-customers";
@@ -13,7 +14,6 @@ import {
   type NewCustomerStatPeriod,
 } from "@/lib/customers/new-customer-stats";
 import { useTranslation } from "@/lib/i18n";
-import { formatPeriodChangeDescription } from "@/lib/stats/rolling-period";
 
 export function NewCustomersStatCard() {
   const { t } = useTranslation();
@@ -26,12 +26,6 @@ export function NewCustomersStatCard() {
   }));
 
   const periodLabel = t(`customers.stats.new.periods.${period}`);
-  const changeDescription = formatPeriodChangeDescription(
-    stats.total,
-    stats.previousTotal,
-    periodLabel,
-    t,
-  );
 
   return (
     <div style={{ height: 158 }}>
@@ -47,7 +41,15 @@ export function NewCustomersStatCard() {
             {stats.isLoading ? "…" : stats.total.toLocaleString()}
           </div>
           <CardDescription className="mt-1">
-            {stats.isLoading ? "…" : changeDescription}
+            {stats.isLoading ? (
+              "…"
+            ) : (
+              <PeriodChangeDescription
+                current={stats.total}
+                previous={stats.previousTotal}
+                periodLabel={periodLabel}
+              />
+            )}
           </CardDescription>
         </CardContent>
         <div

@@ -84,7 +84,7 @@ export function resolvePeriodChange(current: number, previous: number): PeriodCh
 
 type Translate = (key: string, values?: Record<string, string | number>) => string;
 
-/** Localized “X% more/less than last {period}” (or same / from-zero variants). */
+/** Localized “+/-X% vs last {period}” (or same / from-zero variants). */
 export function formatPeriodChangeDescription(
   current: number,
   previous: number,
