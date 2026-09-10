@@ -52,6 +52,35 @@ export function getPermissionsByGroup(
   return catalog.filter((entry) => entry.group === group);
 }
 
+export const PERMISSION_BULK_ACTIONS = ["create", "view", "delete", "print"] as const;
+
+export type PermissionBulkAction = (typeof PERMISSION_BULK_ACTIONS)[number];
+
+const PERMISSION_ACTION_PREFIX: Record<PermissionBulkAction, string> = {
+  create: "canCreate",
+  view: "canView",
+  delete: "canDelete",
+  print: "canPrint",
+};
+
+export function isPermissionAction(
+  entry: PermissionCatalogEntry,
+  action: PermissionBulkAction,
+): boolean {
+  const name = entry.value.trim();
+  const prefix = PERMISSION_ACTION_PREFIX[action];
+  if (!name.startsWith(prefix)) return false;
+  const remainder = name.slice(prefix.length);
+  return remainder.length === 0 || /^[A-Z]/.test(remainder);
+}
+
+export function getPermissionsByAction(
+  action: PermissionBulkAction,
+  catalog: PermissionCatalogEntry[],
+): PermissionCatalogEntry[] {
+  return catalog.filter((entry) => isPermissionAction(entry, action));
+}
+
 type PermissionCatalogSource = Pick<PermissionCatalogEntry, "id" | "value"> & {
   label?: string;
   group?: string;
