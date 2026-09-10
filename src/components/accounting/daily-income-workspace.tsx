@@ -6,6 +6,7 @@ import { CalendarDays, ChevronUp, Edit, Lock, LockOpen, Plus, Printer, ScrollTex
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomePrintDialog, type DailyIncomePrintSelection } from "@/components/accounting/daily-income-print-dialog";
 import { DailyIncomeStatementForm } from "@/components/accounting/daily-income-statement-form";
+import { DailyIncomeTransactionViewSheet } from "@/components/accounting/daily-income-transaction-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -29,6 +30,7 @@ import {
   useAccountingPaymentMethods,
   useCreateDailyIncomeJournal,
   useCreateIncomeStatement,
+  useDailyIncomeJournal,
   useDailyIncomeJournals,
   useDeleteDailyIncomeJournal,
   useIncomeStatement,
@@ -269,6 +271,7 @@ function DailyIncomeMobileTransactionRow({
   row,
   currency,
   canModify,
+  onView,
   onEdit,
   onDelete,
   t,
@@ -276,6 +279,7 @@ function DailyIncomeMobileTransactionRow({
   row: DailyIncomeJournal;
   currency: string;
   canModify: boolean;
+  onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
   t: ReturnType<typeof useTranslation>["t"];
@@ -292,9 +296,8 @@ function DailyIncomeMobileTransactionRow({
     <div className="border-b border-border/80 py-4 last:border-b-0">
       <button
         type="button"
-        onClick={canModify ? onEdit : undefined}
-        disabled={!canModify}
-        className="grid w-full grid-cols-[1fr_auto] gap-4 text-left disabled:cursor-default"
+        onClick={onView}
+        className="grid w-full grid-cols-[1fr_auto] gap-4 text-left"
       >
         <span className="min-w-0">
           <span className="block truncate text-lg font-bold leading-tight text-foreground">{title}</span>
@@ -343,6 +346,7 @@ export function DailyIncomeWorkspace() {
   const [printDialog, setPrintDialog] = useState(false);
   const [transactionDialog, setTransactionDialog] = useState(false);
   const [editingJournal, setEditingJournal] = useState<DailyIncomeJournal | null>(null);
+  const [viewJournal, setViewJournal] = useState<DailyIncomeJournal | null>(null);
   const [deleteJournal, setDeleteJournal] = useState<DailyIncomeJournal | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
@@ -387,6 +391,14 @@ export function DailyIncomeWorkspace() {
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, transactionDialog);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, transactionDialog);
   const paymentMethodsQuery = useAccountingPaymentMethods(transactionDialog);
+  const editingJournalQuery = useDailyIncomeJournal(
+    transactionDialog && editingJournal ? editingJournal.id : null,
+  );
+  const journalForForm = editingJournalQuery.data ?? editingJournal;
+  const editInitialValues = useMemo(
+    () => (journalForForm ? journalToFormValues(journalForForm) : undefined),
+    [journalForForm],
+  );
   const createStatement = useCreateIncomeStatement();
   const updateStatement = useUpdateIncomeStatement();
   const statusMutation = useSetIncomeStatementStatus();
@@ -484,8 +496,8 @@ export function DailyIncomeWorkspace() {
     if (!statement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
     setFormError(null);
     if (
-      editingJournal &&
-      areDailyIncomeJournalValuesEquivalent(values, journalToFormValues(editingJournal))
+      journalForForm &&
+      areDailyIncomeJournalValuesEquivalent(values, journalToFormValues(journalForForm))
     ) {
       feedback.notifySuccess(t("common.form.noChanges"));
       setTransactionDialog(false);
@@ -577,6 +589,7 @@ export function DailyIncomeWorkspace() {
   }
 
   function openEditTransactionForm(row: DailyIncomeJournal) {
+    setViewJournal(null);
     if (isDesktopTabs) {
       openFormTab({
         feature: "daily-income-transactions",
@@ -590,6 +603,11 @@ export function DailyIncomeWorkspace() {
     setEditingJournal(row);
     setFormError(null);
     setTransactionDialog(true);
+  }
+
+  function openDeleteTransaction(row: DailyIncomeJournal) {
+    setViewJournal(null);
+    setDeleteJournal(row);
   }
 
   return <div className="overflow-x-hidden">
@@ -766,8 +784,9 @@ export function DailyIncomeWorkspace() {
                   row={row}
                   currency={displayCurrency}
                   canModify={statementOpen}
+                  onView={() => setViewJournal(row)}
                   onEdit={() => openEditTransactionForm(row)}
-                  onDelete={() => setDeleteJournal(row)}
+                  onDelete={() => openDeleteTransaction(row)}
                   t={t}
                 />
               ))
@@ -873,13 +892,13 @@ export function DailyIncomeWorkspace() {
             if (selectedJournal) openEditTransactionForm(selectedJournal);
           }}
           onDelete={() => {
-            if (selectedJournal) setDeleteJournal(selectedJournal);
+            if (selectedJournal) openDeleteTransaction(selectedJournal);
           }}
           canEdit={statementOpen}
           canDelete={statementOpen}
           deleteDisabled={deleteMutation.isPending}
         />
-        <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionTypeLabel(row.transactionType, t)} columnLayout={columnLayout} minWidth={1100} selectable selectedIds={selectedIds} allPageSelected={allPageSelected} onToggleSelectAll={toggleSelectAll} onToggleSelect={toggleSelect} emptyState={<p className="text-muted-foreground">{t("accounting.dailyIncome.transactions.empty")}</p>} />
+        <DataTable columns={columnLayout.columns} rows={rows} page={page} isPageDataPending={journalsQuery.isFetching} rowKey={(row) => row.id} rowLabel={(row) => transactionTypeLabel(row.transactionType, t)} columnLayout={columnLayout} minWidth={1100} selectable selectedIds={selectedIds} allPageSelected={allPageSelected} onToggleSelectAll={toggleSelectAll} onToggleSelect={toggleSelect} onRowClick={setViewJournal} onRowDoubleClick={statementOpen ? openEditTransactionForm : undefined} activeRowId={viewJournal?.id} emptyState={<p className="text-muted-foreground">{t("accounting.dailyIncome.transactions.empty")}</p>} />
       </>}
       {!journalsQuery.isLoading && !journalsQuery.isError ? <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-muted-foreground">{formatPaginatedListSummary({ itemCountOnPage: rows.length, page, pageSize: pageLimit, total, noun: t("accounting.dailyIncome.noun"), isLoading: journalsQuery.isFetching }, t)}</p><TablePaginationControls page={page} totalPages={totalPages} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={changePageSize} disabled={journalsQuery.isFetching} /></div> : null}
     </Card>
@@ -895,7 +914,19 @@ export function DailyIncomeWorkspace() {
       isPending={generateIncomeReportMutation.isPending}
       onConfirm={handlePrintReport}
     />
-    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={journalToFormValues(editingJournal)} employees={employees} dailyRoutes={dailyRoutes} statementDate={statement?.date ?? date} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} dailyRoutes={dailyRoutes} statementDate={statement?.date ?? date} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
+    <Dialog open={transactionDialog} onOpenChange={(open) => { setTransactionDialog(open); if (!open) { setEditingJournal(null); setFormError(null); } }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:rounded-lg">{editingJournal && editInitialValues ? <AddTransactionWizard open={transactionDialog} mode="edit" appearance="phone" initialValues={editInitialValues} employees={employees} dailyRoutes={dailyRoutes} statementDate={statement?.date ?? date} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} /> : <AddTransactionWizard open={transactionDialog} mode="add" appearance="phone" employees={employees} dailyRoutes={dailyRoutes} statementDate={statement?.date ?? date} accounts={accountsQuery.data?.items ?? []} bankAccounts={bankAccountsQuery.data?.items ?? []} invoices={invoicesQuery.data?.items ?? []} paymentMethods={paymentMethodsQuery.data ?? []} isSubmitting={createJournal.isPending || updateJournal.isPending} error={formError} onSubmit={saveJournal} onCancel={() => setTransactionDialog(false)} />}</DialogContent></Dialog>
+    <DailyIncomeTransactionViewSheet
+      journal={viewJournal}
+      currency={displayCurrency}
+      open={Boolean(viewJournal)}
+      onOpenChange={(open) => {
+        if (!open) setViewJournal(null);
+      }}
+      onEdit={openEditTransactionForm}
+      onDelete={openDeleteTransaction}
+      canEdit={statementOpen}
+      canDelete={statementOpen}
+    />
     <Dialog open={Boolean(deleteJournal)} onOpenChange={(open) => !open && setDeleteJournal(null)}><DialogContent><DialogHeader><DialogTitle>{t("accounting.dailyIncome.delete.title")}</DialogTitle><DialogDescription>{t("accounting.dailyIncome.delete.description")}</DialogDescription></DialogHeader><DialogFooter><Button variant="outline" onClick={() => setDeleteJournal(null)}>{t("common.actions.cancel")}</Button><Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (!deleteJournal) return; deleteMutation.mutateAsync(deleteJournal.id).then(() => { setDeleteJournal(null); feedback.notifyDeleted(t("accounting.dailyIncome.transactionNoun"), 1); }).catch((error) => feedback.notifyError(normalizeApiError(error).message)); }}>{t("common.actions.delete")}</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }

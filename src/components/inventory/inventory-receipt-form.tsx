@@ -1,183 +1,162 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { PackagePlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { selectFormFieldTextOnFocus, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { useTranslation } from "@/lib/i18n";
-import { getItemStock } from "@/lib/inventory/mock-store";
-import {
-  createEmptyReceiptLine,
-  type ReceiptFormValues,
-} from "@/lib/inventory/types/documents";
+import { getInventoryItemLabel, toDateInputValue } from "@/lib/inventory/display";
+import { createEmptyReceiptForm, type ReceiptFormValues } from "@/lib/inventory/types/documents";
 import type { InventoryItem } from "@/lib/inventory/types/catalog";
+import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
 
 type InventoryReceiptFormProps = {
   items: InventoryItem[];
+  suppliers: InventorySupplier[];
   submitLabel: string;
   onSubmit: (values: ReceiptFormValues) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
 };
 
-function createEmptyReceiptForm(): ReceiptFormValues {
-  return {
-    receiptDate: new Date().toISOString().slice(0, 16),
-    source: "",
-    receivedBy: DEFAULT_CREATED_BY,
-    notes: "",
-    lines: [createEmptyReceiptLine()],
-  };
-}
-
 export function InventoryReceiptForm({
   items,
+  suppliers,
   submitLabel,
   onSubmit,
   onCancel,
   isSubmitting = false,
 }: InventoryReceiptFormProps) {
   const { t } = useTranslation();
-  const [values, setValues] = useState<ReceiptFormValues>(createEmptyReceiptForm);
+  const [values, setValues] = useState<ReceiptFormValues>(createEmptyReceiptForm(toDateInputValue()));
+  const [validationError, setValidationError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
 
   const itemOptions = useMemo(
     () =>
       items.map((item) => ({
         value: item.id,
-        label: `${item.sku} — ${item.name}`,
-        keywords: [item.sku, item.name],
+        label: getInventoryItemLabel(item),
+        keywords: [item.item],
       })),
     [items],
   );
 
+  const supplierOptions = useMemo(
+    () =>
+      suppliers.map((supplier) => ({
+        value: supplier.id,
+        label: supplier.companyName,
+        keywords: [...supplier.contactNames, ...supplier.emails],
+      })),
+    [suppliers],
+  );
+
   useEffect(() => {
-    setValues(createEmptyReceiptForm());
+    setValues(createEmptyReceiptForm(toDateInputValue()));
+    setValidationError(null);
   }, []);
 
-  function updateLine(index: number, patch: Partial<ReceiptFormValues["lines"][number]>) {
-    setValues((current) => ({
-      ...current,
-      lines: current.lines.map((line, lineIndex) => (lineIndex === index ? { ...line, ...patch } : line)),
-    }));
-  }
-
-  function addLine() {
-    setValues((current) => ({ ...current, lines: [...current.lines, createEmptyReceiptLine()] }));
-  }
-
-  function removeLine(index: number) {
-    setValues((current) => ({
-      ...current,
-      lines: current.lines.length > 1 ? current.lines.filter((_, lineIndex) => lineIndex !== index) : current.lines,
-    }));
+  function getValidationError(): string | null {
+    if (!values.itemId) return t("inventory.form.validation.itemRequired");
+    if (!values.quantity.trim() || Number(values.quantity) <= 0) {
+      return t("inventory.form.validation.quantityRequired");
+    }
+    if (!values.supplierId) return t("inventory.form.validation.supplierRequired");
+    if (!values.receivedAt.trim()) return t("inventory.form.validation.dateRequired");
+    return null;
   }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    const error = getValidationError();
+    if (error) {
+      setValidationError(error);
+      return;
+    }
     onSubmit({
       ...values,
-      receiptDate: new Date(values.receiptDate).toISOString(),
-      lines: values.lines.filter((line) => line.itemId && line.quantity > 0),
+      receivedAt: values.receivedAt.trim(),
     });
   }
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody isBusy={isSubmitting}>
-        <FormSection title={t("inventory.form.sections.header")}>
+        <FormSection icon={PackagePlus} title={t("inventory.form.sections.received")}>
           <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="space-y-1 sm:col-span-2">
+              <Label htmlFor="itemId">{t("inventory.form.fields.item")}</Label>
+              <SearchableSelect
+                id="itemId"
+                value={values.itemId}
+                onValueChange={(next) => setValues((current) => ({ ...current, itemId: next }))}
+                placeholder={t("inventory.form.placeholders.item")}
+                searchPlaceholder={t("inventory.search.items")}
+                options={itemOptions}
+                selectAllOnFocus
+                required
+                mobileSheet
+              />
+            </div>
             <div className="space-y-1">
-              <Label htmlFor="receiptDate">{t("inventory.form.fields.receiptDate")}</Label>
+              <Label htmlFor="quantity">{t("inventory.form.fields.quantityReceived")}</Label>
               <Input
-                id="receiptDate"
-                type="datetime-local"
-                value={values.receiptDate}
-                onChange={(event) => setValues((current) => ({ ...current, receiptDate: event.target.value }))}
+                id="quantity"
+                type="number"
+                min={0}
+                value={values.quantity}
+                onChange={(event) => setValues((current) => ({ ...current, quantity: event.target.value }))}
+                onFocus={selectFormFieldTextOnFocus}
                 required
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="receivedBy">{t("inventory.form.fields.receivedBy")}</Label>
+              <Label htmlFor="averageCost">{t("inventory.form.fields.averageCost")}</Label>
               <Input
-                id="receivedBy"
-                value={values.receivedBy}
-                onChange={(event) => setValues((current) => ({ ...current, receivedBy: event.target.value }))}
-                required
+                id="averageCost"
+                type="number"
+                min={0}
+                step="0.01"
+                value={values.averageCost}
+                onChange={(event) => setValues((current) => ({ ...current, averageCost: event.target.value }))}
+                onFocus={selectFormFieldTextOnFocus}
               />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="source">{t("inventory.form.fields.source")}</Label>
-              <Input
-                id="source"
-                value={values.source}
-                onChange={(event) => setValues((current) => ({ ...current, source: event.target.value }))}
-                placeholder={t("inventory.form.placeholders.source")}
+              <Label htmlFor="supplierId">{t("inventory.form.fields.supplier")}</Label>
+              <SearchableSelect
+                id="supplierId"
+                value={values.supplierId}
+                onValueChange={(next) => setValues((current) => ({ ...current, supplierId: next }))}
+                placeholder={t("inventory.form.placeholders.supplier")}
+                searchPlaceholder={t("inventory.search.suppliers")}
+                options={supplierOptions}
+                selectAllOnFocus
                 required
+                mobileSheet
               />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="notes">{t("inventory.form.fields.notes")}</Label>
+              <Label htmlFor="receivedAt">{t("inventory.form.fields.receivedAt")}</Label>
               <Input
-                id="notes"
-                value={values.notes}
-                onChange={(event) => setValues((current) => ({ ...current, notes: event.target.value }))}
+                id="receivedAt"
+                type="date"
+                value={values.receivedAt}
+                onChange={(event) => setValues((current) => ({ ...current, receivedAt: event.target.value }))}
+                onFocus={selectFormFieldTextOnFocus}
+                required
               />
             </div>
-          </div>
-        </FormSection>
-
-        <FormSection title={t("inventory.form.sections.lines")}>
-          <div className="space-y-3">
-            {values.lines.map((line, index) => (
-              <div key={index} className="grid gap-2 sm:grid-cols-[1fr_8rem_auto] sm:items-end">
-                <div className="space-y-1">
-                  <Label>{t("inventory.form.fields.item")}</Label>
-                  <SearchableSelect
-                    value={line.itemId}
-                    onValueChange={(next) => updateLine(index, { itemId: next })}
-                    placeholder={t("inventory.form.fields.item")}
-                    searchPlaceholder={t("inventory.search.items")}
-                    options={itemOptions}
-                    mobileSheet
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label>{t("inventory.form.fields.quantity")}</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={line.quantity}
-                    onChange={(event) => updateLine(index, { quantity: Number(event.target.value) })}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="size-12 rounded-xl sm:size-9"
-                  onClick={() => removeLine(index)}
-                  aria-label={t("inventory.form.removeLine")}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <Button type="button" variant="outline" className="h-12 rounded-xl sm:h-9" onClick={addLine}>
-              <Plus className="h-4 w-4" />
-              {t("inventory.form.addLine")}
-            </Button>
           </div>
         </FormSection>
       </FormBody>
 
-      <FormFooter submitLabel={submitLabel} onCancel={onCancel} isSubmitting={isSubmitting} />
+      <FormFooter error={validationError} submitLabel={submitLabel} onCancel={onCancel} isSubmitting={isSubmitting} />
     </form>
   );
 }

@@ -2,15 +2,7 @@
 
 import { Check, Edit, Trash2 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  getAvailableQuantity,
-  getCategoryLabel,
-  getLocationLabel,
-  getStatusBadgeClass,
-  getStatusLabel,
-} from "@/lib/inventory/display";
 import type { InventoryItem } from "@/lib/inventory/types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -35,8 +27,6 @@ export function InventoryItemMobileRow({
   onToggleSelected,
 }: InventoryItemMobileRowProps) {
   const { t } = useTranslation();
-  const available = getAvailableQuantity(item);
-  const isLowStock = available <= item.reorderLevel;
 
   function handleOpen() {
     if (selectionMode) {
@@ -62,30 +52,15 @@ export function InventoryItemMobileRow({
         </button>
 
         <button type="button" className="min-w-0 text-left" onClick={handleOpen}>
-          <span className="block truncate text-xl font-bold leading-tight text-foreground">{item.name}</span>
-          <span className="mt-1 block truncate text-base text-muted-foreground">
-            {item.sku} | {getCategoryLabel(item.category, t)}
-          </span>
-          <span className="mt-2 block text-sm text-muted-foreground">{getLocationLabel(item.location, t)}</span>
+          <span className="block truncate text-xl font-bold leading-tight text-foreground">{item.item}</span>
           <span className="mt-1 block text-sm text-muted-foreground">
-            {t("inventory.columns.onHand")}: {item.quantity} {item.unit}
-            {item.reserved > 0 ? ` | ${t("inventory.form.fields.reserved")}: ${item.reserved}` : ""}
+            {t("inventory.columns.reorderThreshold")}: {item.reorderThreshold}
           </span>
         </button>
 
         <button type="button" className="shrink-0 text-right" onClick={handleOpen}>
-          <span
-            className={cn(
-              "block text-xl font-bold tabular-nums",
-              isLowStock ? "text-amber-600" : "text-emerald-600",
-            )}
-          >
-            {available}
-          </span>
-          <span className="mt-1 block text-xs font-medium text-muted-foreground">{item.unit}</span>
-          <Badge className={cn("mt-3 rounded-full px-3 py-1 text-xs font-semibold", getStatusBadgeClass(item.status))}>
-            {getStatusLabel(item.status, t)}
-          </Badge>
+          <span className="block text-xl font-bold tabular-nums">{item.quantity}</span>
+          <span className="mt-1 block text-xs text-muted-foreground">{t("inventory.columns.quantityLeft")}</span>
         </button>
       </div>
 

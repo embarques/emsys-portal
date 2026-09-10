@@ -67,13 +67,15 @@ import { useCurrentUser } from "@/lib/users/hooks/use-users";
 type ActiveRouteSectionProps = {
   initialRecord?: ActiveRoute | null;
   variant?: ActiveRoutesDirectoryVariant;
-  onSaved?: () => void;
+  defaultDate?: string;
+  onSaved?: (record?: ActiveRoute) => void;
   onCancel?: () => void;
 };
 
 export function ActiveRouteSection({
   initialRecord = null,
   variant,
+  defaultDate,
   onSaved,
   onCancel,
 }: ActiveRouteSectionProps) {
@@ -97,7 +99,10 @@ export function ActiveRouteSection({
           scheduleType: "date",
           dayOfWeek: [],
         }
-      : createEmptyActiveRouteForm("pickup"),
+      : {
+          ...createEmptyActiveRouteForm("pickup"),
+          ...(defaultDate?.trim() ? { date: defaultDate.trim() } : {}),
+        },
   );
   const [previousRouteId, setPreviousRouteId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -409,16 +414,16 @@ export function ActiveRouteSection({
         })
       ) {
         notifySuccess(t("common.form.noChanges"));
-        onSaved?.();
+        onSaved?.(initialRecord ?? undefined);
         return;
       }
 
-      await upsertMutation.mutateAsync({
+      const saved = await upsertMutation.mutateAsync({
         values: payload,
         existingId: initialRecord?.id,
       });
       notifySuccess(t(`routes.${copyPrefix}.form.saved`));
-      onSaved?.();
+      onSaved?.(saved);
     } catch (error) {
       setFormError(toErrorMessage(error));
     }

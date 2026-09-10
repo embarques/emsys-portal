@@ -297,7 +297,7 @@ export const queryKeys = {
       [...queryKeys.inventory.all, "movements", itemId ?? "all"] as const,
     receipts: () => [...queryKeys.inventory.all, "receipts"] as const,
     dispatches: () => [...queryKeys.inventory.all, "dispatches"] as const,
-    recipients: () => [...queryKeys.inventory.all, "recipients"] as const,
+    suppliers: () => [...queryKeys.inventory.all, "suppliers"] as const,
     stock: (itemId: string) => [...queryKeys.inventory.all, "stock", itemId] as const,
   },
 } as const;

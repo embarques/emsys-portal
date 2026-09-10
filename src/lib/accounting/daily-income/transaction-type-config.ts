@@ -4,6 +4,7 @@ import {
   Banknote,
   FileText,
   Landmark,
+  Package,
   Percent,
   Tag,
   Wallet,
@@ -28,6 +29,7 @@ const TRANSACTION_TYPE_I18N_KEYS: Record<JournalTransactionType, string> = {
   PAYMENT: "payment",
   EXPENSE: "expense",
   SALES: "sales",
+  INVENTORY: "inventory",
   DISCOUNT: "discount",
   SURCHARGE: "surcharge",
   TRANSFER: "transfer",
@@ -64,6 +66,12 @@ const SELECTABLE_TRANSACTION_TYPE_META: TransactionTypeMeta[] = [
     icon: ArrowUpCircle,
     iconClassName: "text-emerald-600",
     iconBackgroundClassName: "bg-emerald-50",
+  },
+  {
+    value: "INVENTORY",
+    icon: Package,
+    iconClassName: "text-teal-700",
+    iconBackgroundClassName: "bg-teal-50",
   },
   {
     value: "DISCOUNT",
@@ -128,6 +136,8 @@ export function getTransactionFormSecondFieldId(type: JournalTransactionType): s
       return "journal-invoice-number";
     case "PAYMENT":
       return "journal-employee";
+    case "INVENTORY":
+      return "journal-inventory-direction";
     case "DISCOUNT":
     case "SURCHARGE":
       return "journal-invoice";

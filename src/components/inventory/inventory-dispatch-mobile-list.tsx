@@ -6,21 +6,14 @@ import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loa
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { InventoryDispatchMobileRow } from "@/components/inventory/inventory-dispatch-mobile-row";
 import { Button } from "@/components/ui/button";
+import type { InventoryItem } from "@/lib/inventory/types/catalog";
 import type { InventoryDispatch } from "@/lib/inventory/types/documents";
-import type { InventoryRecipient } from "@/lib/inventory/types/recipients";
 import { useTranslation } from "@/lib/i18n";
-
-type DispatchLineSnapshot = {
-  dispatchId: string;
-};
 
 type InventoryDispatchMobileListProps = {
   query: string;
   pageRows: InventoryDispatch[];
-  recipients: InventoryRecipient[];
-  snapshot: {
-    dispatchLines: DispatchLineSnapshot[];
-  };
+  items: InventoryItem[];
   isLoading: boolean;
   page: number;
   totalPages: number;
@@ -33,8 +26,7 @@ type InventoryDispatchMobileListProps = {
 export function InventoryDispatchMobileList({
   query,
   pageRows,
-  recipients,
-  snapshot,
+  items,
   isLoading,
   page,
   totalPages,
@@ -101,9 +93,9 @@ export function InventoryDispatchMobileList({
             title={t("inventory.loading.dispatches.title")}
             description={t("inventory.loading.dispatches.description")}
             columns={[
+              t("inventory.columns.item"),
+              t("inventory.form.fields.quantityDispatched"),
               t("inventory.columns.date"),
-              t("inventory.columns.recipient"),
-              t("inventory.columns.status"),
             ]}
           />
         ) : pageRows.length > 0 ? (
@@ -111,8 +103,7 @@ export function InventoryDispatchMobileList({
             <InventoryDispatchMobileRow
               key={dispatch.id}
               dispatch={dispatch}
-              recipient={recipients.find((recipient) => recipient.id === dispatch.recipientId)}
-              lineCount={snapshot.dispatchLines.filter((line) => line.dispatchId === dispatch.id).length}
+              item={items.find((entry) => entry.id === dispatch.itemId)}
               onOpen={onOpen}
             />
           ))

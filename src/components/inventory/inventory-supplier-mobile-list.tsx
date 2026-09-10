@@ -1,35 +1,35 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Plus, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Building2 } from "lucide-react";
 
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { InventoryRecipientMobileRow } from "@/components/inventory/inventory-recipient-mobile-row";
-import { InventoryRecipientMobileSelectionToolbar } from "@/components/inventory/inventory-recipient-mobile-selection-toolbar";
+import { InventorySupplierMobileRow } from "@/components/inventory/inventory-supplier-mobile-row";
+import { InventoryItemMobileSelectionToolbar } from "@/components/inventory/inventory-item-mobile-selection-toolbar";
 import { Button } from "@/components/ui/button";
-import type { InventoryRecipient } from "@/lib/inventory/types/recipients";
+import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
 import { useTranslation } from "@/lib/i18n";
 
-type InventoryRecipientMobileListProps = {
+type InventorySupplierMobileListProps = {
   query: string;
-  recipients: InventoryRecipient[];
-  pageRows: InventoryRecipient[];
+  suppliers: InventorySupplier[];
+  pageRows: InventorySupplier[];
   selectedIds: string[];
   isLoading: boolean;
   page: number;
   totalPages: number;
   onQueryChange: (query: string) => void;
   onPageChange: (page: number) => void;
-  onOpen: (recipient: InventoryRecipient) => void;
-  onEdit: (recipient: InventoryRecipient) => void;
-  onDelete: (recipient: InventoryRecipient | InventoryRecipient[]) => void;
+  onOpen: (supplier: InventorySupplier) => void;
+  onEdit: (supplier: InventorySupplier) => void;
+  onDelete: (supplier: InventorySupplier | InventorySupplier[]) => void;
   onSelectedIdsChange: (ids: string[]) => void;
-  onAddRecipient: () => void;
+  onAddSupplier: () => void;
 };
 
-export function InventoryRecipientMobileList({
+export function InventorySupplierMobileList({
   query,
-  recipients,
+  suppliers,
   pageRows,
   selectedIds,
   isLoading,
@@ -41,26 +41,26 @@ export function InventoryRecipientMobileList({
   onEdit,
   onDelete,
   onSelectedIdsChange,
-  onAddRecipient,
-}: InventoryRecipientMobileListProps) {
+  onAddSupplier,
+}: InventorySupplierMobileListProps) {
   const { t } = useTranslation();
-  const selectedRecipients = recipients.filter((recipient) => selectedIds.includes(recipient.id));
+  const selectedSuppliers = suppliers.filter((supplier) => selectedIds.includes(supplier.id));
   const selectionMode = selectedIds.length > 0;
 
-  function toggleSelected(recipientId: string, checked: boolean) {
-    onSelectedIdsChange(checked ? [...selectedIds, recipientId] : selectedIds.filter((id) => id !== recipientId));
+  function toggleSelected(supplierId: string, checked: boolean) {
+    onSelectedIdsChange(checked ? [...selectedIds, supplierId] : selectedIds.filter((id) => id !== supplierId));
   }
 
   return (
     <section className="space-y-5 overflow-x-hidden md:hidden">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-4xl font-bold tracking-normal text-foreground">{t("inventory.submenus.recipients")}</h1>
-          <p className="mt-1 text-base text-muted-foreground">{t("inventory.pages.recipients")}</p>
+          <h1 className="text-4xl font-bold tracking-normal text-foreground">{t("inventory.submenus.suppliers")}</h1>
+          <p className="mt-1 text-base text-muted-foreground">{t("inventory.pages.suppliers")}</p>
         </div>
-        <Button type="button" size="icon" className="size-12 shrink-0 rounded-2xl" onClick={onAddRecipient}>
+        <Button type="button" size="icon" className="size-12 shrink-0 rounded-2xl" onClick={onAddSupplier}>
           <Plus className="size-6" />
-          <span className="sr-only">{t("inventory.actions.addRecipient")}</span>
+          <span className="sr-only">{t("inventory.actions.addSupplier")}</span>
         </Button>
       </div>
 
@@ -70,19 +70,19 @@ export function InventoryRecipientMobileList({
           onQueryChange(value);
           onPageChange(1);
         }}
-        placeholder={t("inventory.search.recipients")}
+        placeholder={t("inventory.search.suppliers")}
         inputClassName="h-14 rounded-2xl text-base"
       />
 
-      <InventoryRecipientMobileSelectionToolbar
+      <InventoryItemMobileSelectionToolbar
         selectedCount={selectedIds.length}
         canEdit={selectedIds.length === 1}
         onClear={() => onSelectedIdsChange([])}
         onEdit={() => {
-          const recipient = selectedRecipients[0];
-          if (recipient) onEdit(recipient);
+          const supplier = selectedSuppliers[0];
+          if (supplier) onEdit(supplier);
         }}
-        onDelete={() => onDelete(selectedRecipients)}
+        onDelete={() => onDelete(selectedSuppliers)}
       />
 
       <div className="flex items-center justify-between gap-3">
@@ -114,21 +114,21 @@ export function InventoryRecipientMobileList({
       <div className="rounded-3xl border border-border bg-card px-4 shadow-sm">
         {isLoading ? (
           <DirectoryTableLoader
-            icon={Users}
-            title={t("inventory.loading.recipients.title")}
-            description={t("inventory.loading.recipients.description")}
+            icon={Building2}
+            title={t("inventory.loading.suppliers.title")}
+            description={t("inventory.loading.suppliers.description")}
             columns={[
-              t("inventory.form.fields.recipientName"),
-              t("inventory.columns.type"),
-              t("inventory.columns.contact"),
+              t("inventory.form.fields.companyName"),
+              t("inventory.form.fields.contactNames"),
+              t("inventory.form.fields.phones"),
             ]}
           />
         ) : pageRows.length > 0 ? (
-          pageRows.map((recipient) => (
-            <InventoryRecipientMobileRow
-              key={recipient.id}
-              recipient={recipient}
-              selected={selectedIds.includes(recipient.id)}
+          pageRows.map((supplier) => (
+            <InventorySupplierMobileRow
+              key={supplier.id}
+              supplier={supplier}
+              selected={selectedIds.includes(supplier.id)}
               selectionMode={selectionMode}
               onOpen={onOpen}
               onEdit={onEdit}
@@ -137,7 +137,7 @@ export function InventoryRecipientMobileList({
             />
           ))
         ) : (
-          <p className="py-8 text-center text-muted-foreground">{t("inventory.empty.recipients")}</p>
+          <p className="py-8 text-center text-muted-foreground">{t("inventory.empty.suppliers")}</p>
         )}
       </div>
     </section>

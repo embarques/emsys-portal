@@ -7,18 +7,15 @@ import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { InventoryReceiptMobileRow } from "@/components/inventory/inventory-receipt-mobile-row";
 import { Button } from "@/components/ui/button";
 import type { InventoryReceipt } from "@/lib/inventory/types/documents";
+import type { InventoryItem } from "@/lib/inventory/types/catalog";
+import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
 import { useTranslation } from "@/lib/i18n";
-
-type ReceiptLineSnapshot = {
-  receiptId: string;
-};
 
 type InventoryReceiptMobileListProps = {
   query: string;
   pageRows: InventoryReceipt[];
-  snapshot: {
-    receiptLines: ReceiptLineSnapshot[];
-  };
+  items: InventoryItem[];
+  suppliers: InventorySupplier[];
   isLoading: boolean;
   page: number;
   totalPages: number;
@@ -31,7 +28,8 @@ type InventoryReceiptMobileListProps = {
 export function InventoryReceiptMobileList({
   query,
   pageRows,
-  snapshot,
+  items,
+  suppliers,
   isLoading,
   page,
   totalPages,
@@ -98,9 +96,9 @@ export function InventoryReceiptMobileList({
             title={t("inventory.loading.receipts.title")}
             description={t("inventory.loading.receipts.description")}
             columns={[
-              t("inventory.columns.date"),
-              t("inventory.columns.source"),
-              t("inventory.columns.receivedBy"),
+              t("inventory.columns.item"),
+              t("inventory.form.fields.quantityReceived"),
+              t("inventory.columns.supplier"),
             ]}
           />
         ) : pageRows.length > 0 ? (
@@ -108,7 +106,8 @@ export function InventoryReceiptMobileList({
             <InventoryReceiptMobileRow
               key={receipt.id}
               receipt={receipt}
-              lineCount={snapshot.receiptLines.filter((line) => line.receiptId === receipt.id).length}
+              item={items.find((entry) => entry.id === receipt.itemId)}
+              supplier={suppliers.find((entry) => entry.id === receipt.supplierId)}
               onOpen={onOpen}
             />
           ))

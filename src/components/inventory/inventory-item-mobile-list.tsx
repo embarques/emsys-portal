@@ -1,44 +1,24 @@
 "use client";
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  PackageCheck,
-  Plus,
-  SlidersHorizontal,
-  Truck,
-  Warehouse,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, PackageCheck, Plus, SlidersHorizontal, Truck, Warehouse } from "lucide-react";
 
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { InventoryItemMobileRow } from "@/components/inventory/inventory-item-mobile-row";
 import { InventoryItemMobileSelectionToolbar } from "@/components/inventory/inventory-item-mobile-selection-toolbar";
 import { Button } from "@/components/ui/button";
-import { SearchableSelect } from "@/components/ui/searchable-select";
-import {
-  getInventoryCategoryOptions,
-  getInventoryLocationOptions,
-  getInventoryStatusOptions,
-} from "@/lib/inventory/display";
-import type { InventoryFilterState, InventoryItem } from "@/lib/inventory/types";
+import type { InventoryItem } from "@/lib/inventory/types";
 import { useTranslation } from "@/lib/i18n";
 
 type InventoryItemMobileListProps = {
-  filters: InventoryFilterState;
-  filtersOpen: boolean;
-  hasActiveFilters: boolean;
-  activeFilterCount: number;
+  query: string;
   items: InventoryItem[];
   pageItems: InventoryItem[];
   selectedIds: string[];
   isLoading: boolean;
   page: number;
   totalPages: number;
-  onFiltersOpenChange: (open: boolean) => void;
-  onFiltersChange: (filters: InventoryFilterState) => void;
-  onResetFilters: () => void;
+  onQueryChange: (query: string) => void;
   onPageChange: (page: number) => void;
   onOpen: (item: InventoryItem) => void;
   onEdit: (item: InventoryItem) => void;
@@ -51,19 +31,14 @@ type InventoryItemMobileListProps = {
 };
 
 export function InventoryItemMobileList({
-  filters,
-  filtersOpen,
-  hasActiveFilters,
-  activeFilterCount,
+  query,
   items,
   pageItems,
   selectedIds,
   isLoading,
   page,
   totalPages,
-  onFiltersOpenChange,
-  onFiltersChange,
-  onResetFilters,
+  onQueryChange,
   onPageChange,
   onOpen,
   onEdit,
@@ -77,11 +52,6 @@ export function InventoryItemMobileList({
   const { t } = useTranslation();
   const selectedItems = items.filter((item) => selectedIds.includes(item.id));
   const selectionMode = selectedIds.length > 0;
-
-  function updateFilters(nextFilters: InventoryFilterState) {
-    onFiltersChange(nextFilters);
-    onPageChange(1);
-  }
 
   function toggleSelected(itemId: string, checked: boolean) {
     onSelectedIdsChange(checked ? [...selectedIds, itemId] : selectedIds.filter((id) => id !== itemId));
@@ -115,68 +85,15 @@ export function InventoryItemMobileList({
         </Button>
       </div>
 
-      <div className="flex items-center gap-3">
-        <TableSearchInput
-          value={filters.query}
-          onChange={(query) => updateFilters({ ...filters, query })}
-          placeholder={t("inventory.search.items")}
-          className="flex-1"
-          inputClassName="h-14 rounded-2xl text-base"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="relative size-14 shrink-0 rounded-full"
-          onClick={() => onFiltersOpenChange(!filtersOpen)}
-        >
-          <Filter className="size-6 text-primary" />
-          {activeFilterCount > 0 ? (
-            <span className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
-              {activeFilterCount}
-            </span>
-          ) : null}
-          <span className="sr-only">{t("common.table.filter")}</span>
-        </Button>
-      </div>
-
-      {filtersOpen ? (
-        <div className="space-y-3 rounded-3xl border border-border bg-card p-4 shadow-sm">
-          <SearchableSelect
-            aria-label={t("inventory.filters.status")}
-            value={filters.status}
-            onValueChange={(status) => updateFilters({ ...filters, status: status as InventoryFilterState["status"] })}
-            searchPlaceholder={t("inventory.filters.allStatuses")}
-            options={[{ value: "all", label: t("inventory.filters.allStatuses") }, ...getInventoryStatusOptions(t)]}
-            mobileSheet
-          />
-          <SearchableSelect
-            aria-label={t("inventory.filters.location")}
-            value={filters.location}
-            onValueChange={(location) =>
-              updateFilters({ ...filters, location: location as InventoryFilterState["location"] })
-            }
-            searchPlaceholder={t("inventory.filters.allLocations")}
-            options={[{ value: "all", label: t("inventory.filters.allLocations") }, ...getInventoryLocationOptions(t)]}
-            mobileSheet
-          />
-          <SearchableSelect
-            aria-label={t("inventory.filters.category")}
-            value={filters.category}
-            onValueChange={(category) =>
-              updateFilters({ ...filters, category: category as InventoryFilterState["category"] })
-            }
-            searchPlaceholder={t("inventory.filters.allCategories")}
-            options={[{ value: "all", label: t("inventory.filters.allCategories") }, ...getInventoryCategoryOptions(t)]}
-            mobileSheet
-          />
-          {hasActiveFilters ? (
-            <Button type="button" variant="outline" className="h-12 w-full rounded-xl" onClick={onResetFilters}>
-              {t("common.table.clearAll")}
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
+      <TableSearchInput
+        value={query}
+        onChange={(value) => {
+          onQueryChange(value);
+          onPageChange(1);
+        }}
+        placeholder={t("inventory.search.items")}
+        inputClassName="h-14 rounded-2xl text-base"
+      />
 
       <InventoryItemMobileSelectionToolbar
         selectedCount={selectedIds.length}
@@ -222,10 +139,9 @@ export function InventoryItemMobileList({
             title={t("inventory.loading.items.title")}
             description={t("inventory.loading.items.description")}
             columns={[
-              t("inventory.columns.sku"),
               t("inventory.columns.item"),
-              t("inventory.columns.available"),
-              t("inventory.columns.location"),
+              t("inventory.columns.quantityLeft"),
+              t("inventory.columns.reorderThreshold"),
             ]}
           />
         ) : pageItems.length > 0 ? (

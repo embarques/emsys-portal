@@ -3,6 +3,7 @@ export type AccountingLookup = {
   name: string;
   code?: string;
   displayName?: string;
+  type?: string;
 };
 
 export type DailyIncomePartyRef = {
@@ -62,10 +63,13 @@ export type JournalTransactionType =
   | "SURCHARGE"
   | "EXPENSE"
   | "SALES"
+  | "INVENTORY"
   | "TRANSFER"
   | "LOAN";
 
 export type DailyIncomeAssigneeSource = "employee" | "route";
+
+export type InventoryChangeDirection = "received" | "dispatched";
 
 export type DailyIncomeJournal = {
   id: string;
@@ -88,6 +92,7 @@ export type DailyIncomeJournal = {
     id?: string | number;
     number?: string;
     cost?: number;
+    discount?: number;
     payment?: number;
     balance?: number;
     sender?: DailyIncomePartyRef;
@@ -144,6 +149,21 @@ export function isCashPaymentMethod(name?: string | null): boolean {
 
 export function findCashPaymentMethod(methods: AccountingLookup[]): AccountingLookup | undefined {
   return methods.find((method) => isCashPaymentMethod(method.name));
+}
+
+/** Resolve a saved payment method by id, then by name (API journals often omit or mismatch ids). */
+export function matchPaymentMethod(
+  methods: AccountingLookup[],
+  id?: number,
+  name?: string,
+): AccountingLookup | undefined {
+  if (id) {
+    const byId = methods.find((method) => method.id === id);
+    if (byId) return byId;
+  }
+  const normalized = name?.trim().toLowerCase();
+  if (!normalized) return undefined;
+  return methods.find((method) => method.name.trim().toLowerCase() === normalized);
 }
 
 export function withDefaultCashPaymentMethod<T extends { paymentMethodId?: number; paymentMethodName?: string }>(
@@ -212,6 +232,15 @@ export type DailyIncomeJournalValues = {
   zelleTransactionDate?: string;
   zelleTransactionName?: string;
   checkNumber?: string;
+  /** Portal-only inventory change fields. Mapped to SALES/EXPENSE on save. */
+  inventoryDirection?: InventoryChangeDirection;
+  inventoryItemId?: string;
+  inventoryItemName?: string;
+  inventoryQuantity?: number;
+  inventoryUnitPrice?: number;
+  inventoryTotal?: number;
+  inventorySupplierId?: string;
+  inventorySupplierName?: string;
 };
 
 export type {

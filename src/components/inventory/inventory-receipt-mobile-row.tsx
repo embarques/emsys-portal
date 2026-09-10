@@ -2,18 +2,20 @@
 
 import { PackageCheck } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { formatAuditDateTime } from "@/lib/audit/display";
+import { formatInventoryDate, formatInventoryMoney, getInventoryItemLabel } from "@/lib/inventory/display";
+import type { InventoryItem } from "@/lib/inventory/types/catalog";
 import type { InventoryReceipt } from "@/lib/inventory/types/documents";
+import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
 import { useTranslation } from "@/lib/i18n";
 
 type InventoryReceiptMobileRowProps = {
   receipt: InventoryReceipt;
-  lineCount: number;
+  item?: InventoryItem;
+  supplier?: InventorySupplier;
   onOpen: (receipt: InventoryReceipt) => void;
 };
 
-export function InventoryReceiptMobileRow({ receipt, lineCount, onOpen }: InventoryReceiptMobileRowProps) {
+export function InventoryReceiptMobileRow({ receipt, item, supplier, onOpen }: InventoryReceiptMobileRowProps) {
   const { t } = useTranslation();
   const dash = t("common.empty.dash");
 
@@ -24,21 +26,17 @@ export function InventoryReceiptMobileRow({ receipt, lineCount, onOpen }: Invent
           <PackageCheck className="size-6" />
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-xl font-bold leading-tight text-foreground">{receipt.source || dash}</span>
-          <span className="mt-1 block text-base text-muted-foreground">{formatAuditDateTime(receipt.receiptDate)}</span>
-          <span className="mt-2 block truncate text-sm text-muted-foreground">
-            {t("inventory.columns.receivedBy")}: {receipt.receivedBy || dash}
+          <span className="block truncate text-xl font-bold leading-tight text-foreground">
+            {item ? getInventoryItemLabel(item) : receipt.itemId}
           </span>
-          {receipt.notes ? (
-            <span className="mt-1 block line-clamp-2 break-words text-sm leading-relaxed text-muted-foreground">
-              {receipt.notes}
-            </span>
-          ) : null}
+          <span className="mt-1 block text-base text-muted-foreground">{formatInventoryDate(receipt.receivedAt)}</span>
+          <span className="mt-2 block truncate text-sm text-muted-foreground">
+            {t("inventory.columns.supplier")}: {supplier?.companyName ?? dash}
+          </span>
         </span>
         <span className="shrink-0 text-right">
-          <Badge className="rounded-full border-transparent bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-            {lineCount} {t("inventory.view.lines").toLowerCase()}
-          </Badge>
+          <span className="block text-xl font-bold tabular-nums">{receipt.quantity}</span>
+          <span className="mt-1 block text-xs text-muted-foreground">{formatInventoryMoney(receipt.averageCost)}</span>
         </span>
       </button>
     </article>

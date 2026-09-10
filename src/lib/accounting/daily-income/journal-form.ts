@@ -7,6 +7,7 @@ const TRANSACTION_TYPE_I18N_KEYS: Record<string, string> = {
   PAYMENT: "payment",
   EXPENSE: "expense",
   SALES: "sales",
+  INVENTORY: "inventory",
   DISCOUNT: "discount",
   SURCHARGE: "surcharge",
   TRANSFER: "transfer",
@@ -21,6 +22,7 @@ export function transactionTypeLabel(value: string, t: TranslateFn) {
 
 function transactionCreatedToastTarget(values: DailyIncomeJournalValues) {
   return (
+    values.inventoryItemName?.trim() ||
     values.accountName?.trim() ||
     values.invoiceNumber?.trim() ||
     values.sourceAccountName?.trim() ||
@@ -38,16 +40,45 @@ export function transactionCreatedToastMessage(values: DailyIncomeJournalValues,
     : t("accounting.dailyIncome.toasts.transactionCreatedWithType", { type });
 }
 
+function lookupId(id?: number): number | undefined {
+  return id ? id : undefined;
+}
+
+function accountTypeFromLines(
+  row: DailyIncomeJournal,
+  accountId?: number,
+  fallback?: string,
+): string | undefined {
+  if (fallback?.trim()) return fallback;
+  if (!accountId) return undefined;
+  return row.accounts.find((account) => account.id === accountId)?.type;
+}
+
+export function withPinnedSelectOption<T extends { value: string; label: string; keywords?: string[] }>(
+  options: T[],
+  value?: string | number | null,
+  label?: string,
+): T[] {
+  if (value == null || value === "") return options;
+  const key = String(value);
+  if (options.some((option) => option.value === key)) return options;
+  const text = label?.trim() || key;
+  return [{ value: key, label: text, keywords: [text] } as T, ...options];
+}
+
 export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournalValues {
-  const routeId = row.route?.id != null ? String(row.route.id) : undefined;
+  const routeId = row.route?.id != null && String(row.route.id).trim() ? String(row.route.id) : undefined;
   const assignedToRoute = Boolean(routeId);
+  const invoiceId = row.invoice?.id != null && String(row.invoice.id).trim() ? String(row.invoice.id) : undefined;
+  const senderId = row.invoice?.sender?.id != null ? String(row.invoice.sender.id) : undefined;
+  const receiverId = row.invoice?.receiver?.id != null ? String(row.invoice.receiver.id) : undefined;
   return {
     transactionType: row.transactionType,
     amount: row.amount,
-    refNumber: row.refNumber,
-    description: row.description,
+    refNumber: row.refNumber ?? "",
+    description: row.description ?? "",
     assigneeSource: assignedToRoute ? "route" : "employee",
-    employeeId: assignedToRoute ? undefined : row.employee?.id,
+    employeeId: assignedToRoute ? undefined : lookupId(row.employee?.id),
     employeeName: assignedToRoute ? undefined : row.employee?.name,
     employeeGroupId: assignedToRoute
       ? undefined
@@ -59,25 +90,27 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     routeName: row.route?.name,
     routeCrewId: row.route?.route?.id != null ? String(row.route.route.id) : undefined,
     routeCrewName: row.route?.route?.name,
-    accountId: row.account?.id,
+    accountId: lookupId(row.account?.id),
     accountName: row.account?.displayName ?? row.account?.name,
-    accountType: row.accounts.find((account) => account.id === row.account?.id)?.type,
-    paymentAccountId: row.paymentAccount?.id,
+    accountType: accountTypeFromLines(row, row.account?.id, row.account?.type),
+    paymentAccountId: lookupId(row.paymentAccount?.id),
     paymentAccountName: row.paymentAccount?.displayName ?? row.paymentAccount?.name,
-    paymentAccountType: row.paymentAccount ? "BANK" : undefined,
-    sourceAccountId: row.sourceAccount?.id,
+    paymentAccountType: row.paymentAccount?.type ?? (row.paymentAccount ? "BANK" : undefined),
+    sourceAccountId: lookupId(row.sourceAccount?.id),
     sourceAccountName: row.sourceAccount?.displayName ?? row.sourceAccount?.name,
-    sourceAccountType: row.accounts.find((account) => account.id === row.sourceAccount?.id)?.type,
-    invoiceId: row.invoice?.id != null ? String(row.invoice.id) : "",
+    sourceAccountType: accountTypeFromLines(row, row.sourceAccount?.id, row.sourceAccount?.type),
+    invoiceId,
     invoiceNumber: row.invoice?.number ?? "",
     invoiceCost: row.invoice?.cost,
-    includeSender: Boolean(row.invoice?.sender?.id),
-    includeReceiver: Boolean(row.invoice?.receiver?.id),
-    senderId: row.invoice?.sender?.id != null ? String(row.invoice.sender.id) : undefined,
+    invoiceDiscount: row.invoice?.discount,
+    invoiceBalance: row.invoice?.balance,
+    includeSender: Boolean(senderId),
+    includeReceiver: Boolean(receiverId),
+    senderId,
     senderName: row.invoice?.sender?.name,
-    receiverId: row.invoice?.receiver?.id != null ? String(row.invoice.receiver.id) : undefined,
+    receiverId,
     receiverName: row.invoice?.receiver?.name,
-    paymentMethodId: row.paymentMethod?.id,
+    paymentMethodId: lookupId(row.paymentMethod?.id),
     paymentMethodName: row.paymentMethod?.name,
     zelleTransactionDate: row.zelleTransactionDate,
     zelleTransactionName: row.zelleTransactionName,

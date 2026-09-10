@@ -95,15 +95,17 @@
       "status": "Status",
       "invoiceNumber": "Invoice #",
       "receiptNumber": "Check #",
+      "referenceNumber": "Reference #",
       "createdAt": "Created at",
-      "createdBy": "Created by",
-      "depositedAt": "Deposited at",
-      "depositedOn": "Deposited on",
-      "depositedBy": "Deposited by"
+      "createdBy": "Created by"
     },
     "status": {
       "outstanding": "Outstanding",
       "cleared": "Cleared"
+    },
+    "nav": {
+      "outstandingAlert": "{{count}} outstanding check",
+      "outstandingAlert_plural": "{{count}} outstanding checks"
     },
     "actions": {
       "edit": "Edit check",
@@ -124,6 +126,7 @@
       "fields": {
         "invoiceNumber": "Invoice number",
         "receiptNumber": "Check number",
+        "referenceNumber": "Reference number",
         "status": "Status",
         "createdBy": "Created by",
         "depositedAt": "Deposited at",
@@ -133,6 +136,7 @@
       "placeholders": {
         "invoiceNumber": "INV-2026-0001",
         "receiptNumber": "CHK-8842",
+        "referenceNumber": "REF-1001",
         "createdBy": "Enter name",
         "depositedOn": "Bank account",
         "depositedBy": "Enter name"
@@ -221,6 +225,11 @@
       "empty": "No transactions match this closeout.",
       "loadingTitle": "Loading transactions",
       "loadingDescription": "Syncing journal entries, payments, and closeout totals…"
+    },
+    "view": {
+      "sections": {
+        "audit": "Audit"
+      }
     },
     "columns": {
       "date": "Date",
@@ -321,6 +330,12 @@
         "description": "Record income",
         "sectionTitle": "Income information"
       },
+      "inventory": {
+        "label": "Register inventory change",
+        "shortLabel": "Inventory",
+        "description": "Record supplies received or dispatched",
+        "sectionTitle": "Inventory change"
+      },
       "discount": {
         "label": "Apply discount",
         "shortLabel": "Discount",
@@ -367,7 +382,22 @@
         "includeSender": "Include sender client",
         "senderClient": "Sender client",
         "includeReceiver": "Include receiver client",
-        "receiverClient": "Receiver client"
+        "receiverClient": "Receiver client",
+        "inventoryDirection": "Received or dispatched",
+        "unitPrice": "Unit price",
+        "total": "Total"
+      },
+      "partyActions": {
+        "new": "New",
+        "edit": "Edit"
+      },
+      "inventory": {
+        "received": "Received",
+        "dispatched": "Dispatched",
+        "priceHint": "Fill unit price or total; the other amount updates automatically.",
+        "receivedDescription": "Received {{item}} × {{quantity}} from {{supplier}}",
+        "receivedDescriptionNoSupplier": "Received {{item}} × {{quantity}}",
+        "dispatchedDescription": "Dispatched {{item}} × {{quantity}}"
       },
       "placeholders": {
         "selectAssigneeSource": "Select employee or daily route",
@@ -395,6 +425,7 @@
         "searchReceiver": "Search receiver by name, phone, or address…",
         "searchReceivers": "Search receivers…",
         "selectReceiver": "Select receiver",
+        "selectInventoryDirection": "Select received or dispatched",
         "amount": "0.00"
       },
       "hints": {
@@ -435,6 +466,11 @@
         "amountExceedsBalance": "Amount cannot exceed the invoice balance.",
         "accountRequired": "Account is required.",
         "sourceAccountRequired": "Source account is required.",
+        "inventoryRequired": "Select received or dispatched.",
+        "inventoryItemRequired": "Item is required.",
+        "inventoryQuantityRequired": "Quantity must be greater than zero.",
+        "inventoryPriceRequired": "Enter a unit price or total.",
+        "supplierRequired": "Supplier is required.",
         "balanceNegative": "Balance cannot be negative."
       }
     }

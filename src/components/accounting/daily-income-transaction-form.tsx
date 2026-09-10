@@ -1,21 +1,26 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { RegisterInvoiceTransactionFields } from "@/components/accounting/register-invoice-transaction-fields";
+import { RegisterInventoryChangeFields } from "@/components/accounting/register-inventory-change-fields";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { FormBody, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation, submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
-import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
-import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
-import { findCashPaymentMethod, isCheckPaymentMethod, isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
-import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
+import { finalizeInventoryChangeJournal } from "@/lib/accounting/daily-income/inventory-change";
 import { formatAccountingMoney } from "@/lib/accounting/display";
+import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
+import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
+import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
+import { findCashPaymentMethod, isCheckPaymentMethod, isZellePaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
+import { queryKeys } from "@/lib/query/query-keys";
 import type { Employee } from "@/lib/employees/types";
 import { getInvoiceBalanceAmount, getInvoicePrimaryReceiver, getInvoiceTotal, type Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
@@ -77,6 +82,7 @@ export function DailyIncomeTransactionForm({
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const isPhone = appearance === "phone";
   const typeOption = getTransactionTypeOption(transactionType, t);
   const TypeIcon = typeOption.icon;
@@ -105,6 +111,11 @@ export function DailyIncomeTransactionForm({
         amountExceedsBalance: t("accounting.dailyIncome.form.validation.amountExceedsBalance"),
         accountRequired: t("accounting.dailyIncome.form.validation.accountRequired"),
         sourceAccountRequired: t("accounting.dailyIncome.form.validation.sourceAccountRequired"),
+        inventoryRequired: t("accounting.dailyIncome.form.validation.inventoryRequired"),
+        inventoryItemRequired: t("accounting.dailyIncome.form.validation.inventoryItemRequired"),
+        inventoryQuantityRequired: t("accounting.dailyIncome.form.validation.inventoryQuantityRequired"),
+        inventoryPriceRequired: t("accounting.dailyIncome.form.validation.inventoryPriceRequired"),
+        supplierRequired: t("accounting.dailyIncome.form.validation.supplierRequired"),
       }),
     [t],
   );
@@ -142,12 +153,18 @@ export function DailyIncomeTransactionForm({
 
   const type = watch("transactionType");
   const employeeId = watch("employeeId");
+  const employeeName = watch("employeeName");
   const routeId = watch("routeId");
+  const routeName = watch("routeName");
   const assigneeSource = watch("assigneeSource");
   const invoiceId = watch("invoiceId");
+  const invoiceNumber = watch("invoiceNumber");
   const accountId = watch("accountId");
+  const accountName = watch("accountName");
   const paymentAccountId = watch("paymentAccountId");
+  const paymentAccountName = watch("paymentAccountName");
   const sourceAccountId = watch("sourceAccountId");
+  const sourceAccountName = watch("sourceAccountName");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
   const isZelle = isZellePaymentMethod(paymentMethodName);
@@ -161,88 +178,118 @@ export function DailyIncomeTransactionForm({
   const sourceAccountSelectAccounts = type === "EXPENSE" ? expenseSourceAccounts : accounts;
   const accountOptions = useMemo(
     () =>
-      accountSelectAccounts.map((account) => ({
-        value: String(account.id),
-        label: account.displayName,
-        keywords: [account.displayName],
-      })),
-    [accountSelectAccounts],
+      withPinnedSelectOption(
+        accountSelectAccounts.map((account) => ({
+          value: String(account.id),
+          label: account.displayName,
+          keywords: [account.displayName],
+        })),
+        accountId,
+        accountName,
+      ),
+    [accountId, accountName, accountSelectAccounts],
   );
   const sourceAccountOptions = useMemo(
     () =>
-      sourceAccountSelectAccounts.map((account) => ({
-        value: String(account.id),
-        label: account.displayName,
-        keywords: [account.displayName],
-      })),
-    [sourceAccountSelectAccounts],
+      withPinnedSelectOption(
+        sourceAccountSelectAccounts.map((account) => ({
+          value: String(account.id),
+          label: account.displayName,
+          keywords: [account.displayName],
+        })),
+        sourceAccountId,
+        sourceAccountName,
+      ),
+    [sourceAccountId, sourceAccountName, sourceAccountSelectAccounts],
   );
   const bankAccountOptions = useMemo(
-    () => [
-      { value: "", label: t("accounting.dailyIncome.form.placeholders.selectBankAccount") },
-      ...bankAccounts.map((account) => ({
-        value: String(account.id),
-        label: account.displayName,
-        keywords: [account.displayName],
-      })),
-    ],
-    [bankAccounts, t],
+    () =>
+      withPinnedSelectOption(
+        [
+          { value: "", label: t("accounting.dailyIncome.form.placeholders.selectBankAccount") },
+          ...bankAccounts.map((account) => ({
+            value: String(account.id),
+            label: account.displayName,
+            keywords: [account.displayName],
+          })),
+        ],
+        paymentAccountId,
+        paymentAccountName,
+      ),
+    [bankAccounts, paymentAccountId, paymentAccountName, t],
   );
   const paymentMethodOptions = useMemo(
     () =>
-      paymentMethods.map((method) => ({
-        value: String(method.id),
-        label: method.name,
-        keywords: [method.name],
-      })),
-    [paymentMethods],
+      withPinnedSelectOption(
+        paymentMethods.map((method) => ({
+          value: String(method.id),
+          label: method.name,
+          keywords: [method.name],
+        })),
+        paymentMethodId,
+        paymentMethodName,
+      ),
+    [paymentMethodId, paymentMethodName, paymentMethods],
   );
   const invoiceOptions = useMemo(
     () =>
-      invoices.map((invoice) => {
-        const primaryReceiver = getInvoicePrimaryReceiver(invoice);
-        const phones = [...(invoice.sender?.phones ?? []), ...(primaryReceiver?.phones ?? [])];
-        const phoneKeywords = phones.flatMap((phone) =>
-          [phone.number, phone.displayNumber].filter((value): value is string => Boolean(value)),
-        );
-        const descriptionLines = [
-          invoice.sender?.name
-            ? t("accounting.dailyIncome.form.invoiceSummary.sender", { name: invoice.sender.name })
-            : null,
-          primaryReceiver?.name
-            ? t("accounting.dailyIncome.form.invoiceSummary.receiver", { name: primaryReceiver.name })
-            : null,
-        ].filter((line): line is string => Boolean(line));
-        return {
-          value: invoice.invoiceId,
-          label: invoice.invoiceNumber,
-          descriptionLines,
-          keywords: [
-            invoice.invoiceNumber,
-            invoice.sender?.name ?? "",
-            primaryReceiver?.name ?? "",
-            ...phoneKeywords,
-          ].filter(Boolean),
-        };
-      }),
-    [invoices, t],
+      withPinnedSelectOption(
+        invoices.map((invoice) => {
+          const primaryReceiver = getInvoicePrimaryReceiver(invoice);
+          const phones = [...(invoice.sender?.phones ?? []), ...(primaryReceiver?.phones ?? [])];
+          const phoneKeywords = phones.flatMap((phone) =>
+            [phone.number, phone.displayNumber].filter((value): value is string => Boolean(value)),
+          );
+          const descriptionLines = [
+            invoice.sender?.name
+              ? t("accounting.dailyIncome.form.invoiceSummary.sender", { name: invoice.sender.name })
+              : null,
+            primaryReceiver?.name
+              ? t("accounting.dailyIncome.form.invoiceSummary.receiver", { name: primaryReceiver.name })
+              : null,
+          ].filter((line): line is string => Boolean(line));
+          return {
+            value: invoice.invoiceId,
+            label: invoice.invoiceNumber,
+            descriptionLines,
+            keywords: [
+              invoice.invoiceNumber,
+              invoice.sender?.name ?? "",
+              primaryReceiver?.name ?? "",
+              ...phoneKeywords,
+            ].filter(Boolean),
+          };
+        }),
+        invoiceId,
+        invoiceNumber,
+      ),
+    [invoiceId, invoiceNumber, invoices, t],
   );
   const needsExistingInvoice = ["PAYMENT", "DISCOUNT", "SURCHARGE"].includes(type);
   const isRegisterInvoice = type === "INITIAL-PAYMENT";
+  const isInventoryChange = type === "INVENTORY";
   const needsAccount = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(type);
   const needsPaymentMethod = needsExistingInvoice || isRegisterInvoice || type === "SALES";
   const needsSourceAccount = type === "TRANSFER" || type === "EXPENSE" || type === "LOAN";
 
   useEffect(() => {
-    if (!needsPaymentMethod || paymentMethodId || paymentMethods.length === 0) return;
+    if (!needsPaymentMethod || paymentMethods.length === 0) return;
+    const matched = matchPaymentMethod(paymentMethods, paymentMethodId, paymentMethodName);
+    if (matched) {
+      if (matched.id === paymentMethodId && matched.name === paymentMethodName) return;
+      setValue("paymentMethodId", matched.id, { shouldValidate: true });
+      setValue("paymentMethodName", matched.name, { shouldValidate: true });
+      return;
+    }
+    if (paymentMethodId || paymentMethodName?.trim()) return;
     const cash = findCashPaymentMethod(paymentMethods);
     if (!cash) return;
     setValue("paymentMethodId", cash.id, { shouldValidate: true });
     setValue("paymentMethodName", cash.name, { shouldValidate: true });
-  }, [needsPaymentMethod, paymentMethodId, paymentMethods, setValue]);
+  }, [needsPaymentMethod, paymentMethodId, paymentMethodName, paymentMethods, setValue]);
 
   useEffect(() => {
-    if (!needsBankAccount || bankAccounts.some((account) => account.id === paymentAccountId) || !bankAccounts[0]) return;
+    if (!needsBankAccount || paymentAccountId || !bankAccounts[0]) return;
     const account = bankAccounts[0];
     setValue("paymentAccountId", account.id, { shouldValidate: true });
     setValue("paymentAccountName", account.displayName);
@@ -250,17 +297,9 @@ export function DailyIncomeTransactionForm({
   }, [bankAccounts, needsBankAccount, paymentAccountId, setValue]);
 
   useEffect(() => {
-    if (type !== "EXPENSE" && type !== "SALES") return;
-    if (!accountId || accountSelectAccounts.some((account) => account.id === accountId)) return;
-    setValue("accountId", undefined, { shouldValidate: true });
-    setValue("accountName", "");
-    setValue("accountType", undefined);
-  }, [accountId, accountSelectAccounts, setValue, type]);
-
-  useEffect(() => {
     if (type !== "EXPENSE" || expenseSourceAccounts.length === 0) return;
     if (sourceAccountDefaultCleared) return;
-    if (sourceAccountId && expenseSourceAccounts.some((account) => account.id === sourceAccountId)) return;
+    if (sourceAccountId) return;
 
     const account = expenseSourceAccounts.find(isCashAccount) ?? expenseSourceAccounts[0];
     setValue("sourceAccountId", account.id, { shouldValidate: true });
@@ -271,7 +310,30 @@ export function DailyIncomeTransactionForm({
   return (
     <form
       id={formId}
-      onSubmit={handleSubmit((values) => onSubmit(values))}
+      onSubmit={handleSubmit(async (values) => {
+        if (values.transactionType === "INVENTORY") {
+          const item = values.inventoryItemName?.trim() || values.inventoryItemId || "";
+          const quantity = values.inventoryQuantity ?? 0;
+          const autoDescription =
+            values.inventoryDirection === "received"
+              ? values.inventorySupplierName?.trim()
+                ? t("accounting.dailyIncome.form.inventory.receivedDescription", {
+                    item,
+                    quantity,
+                    supplier: values.inventorySupplierName.trim(),
+                  })
+                : t("accounting.dailyIncome.form.inventory.receivedDescriptionNoSupplier", { item, quantity })
+              : t("accounting.dailyIncome.form.inventory.dispatchedDescription", { item, quantity });
+          const finalized = finalizeInventoryChangeJournal(
+            { ...values, description: values.description.trim() || autoDescription },
+            { accounts, paymentMethods },
+          );
+          await onSubmit(finalized);
+          await queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
+          return;
+        }
+        await onSubmit(values);
+      })}
       onKeyDown={handleEnterNavigation}
       className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden", isPhone && "bg-background")}
     >
@@ -317,6 +379,15 @@ export function DailyIncomeTransactionForm({
               setValue={setValue}
               watch={watch}
             />
+          ) : isInventoryChange ? (
+            <RegisterInventoryChangeFields
+              employees={employees}
+              dailyRoutes={dailyRoutes}
+              statementDate={statementDate}
+              errors={errors}
+              setValue={setValue}
+              watch={watch}
+            />
           ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {type === "PAYMENT" ? (
@@ -326,7 +397,9 @@ export function DailyIncomeTransactionForm({
                   dailyRoutes={dailyRoutes}
                   statementDate={statementDate}
                   employeeId={employeeId}
+                  employeeName={employeeName}
                   routeId={routeId}
+                  routeName={routeName}
                   assigneeSource={assigneeSource}
                   error={errors.employeeId?.message ?? errors.routeId?.message}
                   setValue={setValue}
@@ -388,7 +461,9 @@ export function DailyIncomeTransactionForm({
                   dailyRoutes={dailyRoutes}
                   statementDate={statementDate}
                   employeeId={employeeId}
+                  employeeName={employeeName}
                   routeId={routeId}
+                  routeName={routeName}
                   assigneeSource={assigneeSource}
                   error={errors.employeeId?.message ?? errors.routeId?.message}
                   setValue={setValue}

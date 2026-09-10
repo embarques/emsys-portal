@@ -9,6 +9,7 @@ import type {
 
 const RESOURCE_TYPE_ALIASES: Record<string, string> = {
   client: "customer",
+  checks: "check",
 };
 
 const RESOURCE_PERMISSION_SUFFIX: Record<string, string> = {
@@ -25,11 +26,18 @@ const RESOURCE_PERMISSION_SUFFIX: Record<string, string> = {
   settings: "Settings",
   income_statement: "IncomeStatement",
   chart_account: "ChartAccount",
+  check: "Check",
+  inventory_item: "InventoryItem",
+  inventory_stock: "InventoryStock",
+  inventory_receipt: "InventoryReceipt",
+  inventory_dispatch: "InventoryDispatch",
+  inventory_supplier: "InventorySupplier",
 };
 
-type CrudFlag = "view" | "create" | "update" | "delete" | "print";
+type CrudFlag = "list" | "view" | "create" | "update" | "delete" | "print";
 
 const CRUD_TO_PERMISSION_PREFIX: Record<CrudFlag, string> = {
+  list: "canList",
   view: "canView",
   create: "canCreate",
   update: "canUpdate",
@@ -56,7 +64,7 @@ function getResourcePermissionSuffix(resourceType: string): string {
 }
 
 function hasCrudFlags(item: Record<string, unknown>): boolean {
-  return (["view", "create", "update", "delete", "print"] as CrudFlag[]).some(
+  return (["list", "view", "create", "update", "delete", "print"] as CrudFlag[]).some(
     (flag) => typeof item[flag] === "boolean",
   );
 }

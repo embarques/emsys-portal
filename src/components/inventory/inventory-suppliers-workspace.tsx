@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Users } from "lucide-react";
+import { Building2, Plus } from "lucide-react";
 
-import { InventoryRecipientForm } from "@/components/inventory/inventory-recipient-form";
-import { InventoryRecipientMobileList } from "@/components/inventory/inventory-recipient-mobile-list";
-import { InventoryRecipientViewSheet } from "@/components/inventory/inventory-recipient-view-sheet";
+import { InventorySupplierForm } from "@/components/inventory/inventory-supplier-form";
+import { InventorySupplierMobileList } from "@/components/inventory/inventory-supplier-mobile-list";
+import { InventorySupplierViewSheet } from "@/components/inventory/inventory-supplier-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -29,55 +29,51 @@ import {
 import { useUserError } from "@/lib/errors";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { useTranslation } from "@/lib/i18n";
-import { getRecipientTypeLabel } from "@/lib/inventory/display";
+import { formatSupplierList, formatSupplierPhones, supplierMatchesQuery } from "@/lib/inventory/display";
 import {
-  useCreateRecipient,
-  useDeleteRecipients,
-  useInventoryRecipients,
+  useCreateSupplier,
+  useDeleteSuppliers,
   useInventorySnapshotData,
-  useUpdateRecipient,
+  useInventorySuppliers,
+  useUpdateSupplier,
 } from "@/lib/inventory/hooks/use-inventory";
 import {
-  createEmptyRecipientForm,
-  type InventoryRecipient,
-  type RecipientFormValues,
-} from "@/lib/inventory/types/recipients";
+  createEmptySupplierForm,
+  supplierToFormValues,
+  type InventorySupplier,
+  type SupplierFormValues,
+} from "@/lib/inventory/types/suppliers";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { resolveClientTablePageLimit } from "@/lib/table/page-size";
 
-export function InventoryRecipientsWorkspace() {
+export function InventorySuppliersWorkspace() {
   const { t } = useTranslation();
+  const dash = t("common.empty.dash");
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
-  const { data: recipients = [], isLoading } = useInventoryRecipients();
+  const { data: suppliers = [], isLoading } = useInventorySuppliers();
   const snapshot = useInventorySnapshotData();
-  const createRecipient = useCreateRecipient();
-  const updateRecipient = useUpdateRecipient();
-  const deleteRecipients = useDeleteRecipients();
+  const createSupplier = useCreateSupplier();
+  const updateSupplier = useUpdateSupplier();
+  const deleteSuppliers = useDeleteSuppliers();
 
   const [query, setQuery] = useState("");
   const { page, setPage, pageSize, changePageSize } = useTablePageSize();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
-  const [editingRecipient, setEditingRecipient] = useState<InventoryRecipient | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<InventoryRecipient | InventoryRecipient[] | null>(null);
-  const [viewRecipient, setViewRecipient] = useState<InventoryRecipient | null>(null);
+  const [editingSupplier, setEditingSupplier] = useState<InventorySupplier | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<InventorySupplier | InventorySupplier[] | null>(null);
+  const [viewSupplier, setViewSupplier] = useState<InventorySupplier | null>(null);
 
   useTableSelectionReset(buildTableSelectionResetKey(query), setSelectedIds);
 
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return recipients;
-    return recipients.filter((recipient) =>
-      [recipient.name, getRecipientTypeLabel(recipient.type, t), recipient.contactInfo ?? "", recipient.address ?? ""]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalized),
-    );
-  }, [query, recipients, t]);
+  const filtered = useMemo(
+    () => suppliers.filter((supplier) => supplierMatchesQuery(supplier, query)),
+    [query, suppliers],
+  );
 
   const pageLimit = resolveClientTablePageLimit(pageSize, filtered.length);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageLimit));
@@ -85,59 +81,72 @@ export function InventoryRecipientsWorkspace() {
   const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
   const allPageSelected = pageRows.length > 0 && pageRows.every((row) => selectedIds.includes(row.id));
 
-  const columns: DataTableColumn<InventoryRecipient>[] = [
-    { id: "name", label: t("inventory.form.fields.recipientName"), cellClassName: "font-medium", renderCell: (row) => row.name },
-    { id: "type", label: t("inventory.columns.type"), renderCell: (row) => getRecipientTypeLabel(row.type, t) },
-    { id: "contact", label: t("inventory.columns.contact"), renderCell: (row) => row.contactInfo ?? "—" },
-    { id: "address", label: t("inventory.columns.address"), renderCell: (row) => row.address ?? "—" },
+  const columns: DataTableColumn<InventorySupplier>[] = [
+    {
+      id: "companyName",
+      label: t("inventory.form.fields.companyName"),
+      cellClassName: "font-medium",
+      renderCell: (row) => row.companyName,
+    },
+    {
+      id: "contactNames",
+      label: t("inventory.form.fields.contactNames"),
+      renderCell: (row) => formatSupplierList(row.contactNames) || dash,
+    },
+    {
+      id: "addresses",
+      label: t("inventory.form.fields.addresses"),
+      renderCell: (row) => formatSupplierList(row.addresses) || dash,
+    },
+    {
+      id: "phones",
+      label: t("inventory.form.fields.phones"),
+      renderCell: (row) => formatSupplierPhones(row) || dash,
+    },
+    {
+      id: "emails",
+      label: t("inventory.form.fields.emails"),
+      renderCell: (row) => formatSupplierList(row.emails) || dash,
+    },
   ];
 
-  const columnVisibility = useColumnVisibility("inventory-recipients", columns);
+  const columnVisibility = useColumnVisibility("inventory-suppliers", columns);
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: Boolean(query.trim()),
     query,
     matched: filtered.length,
-    catalogTotal: recipients.length,
-    noun: t("inventory.submenus.recipients").toLowerCase(),
+    catalogTotal: suppliers.length,
+    noun: t("inventory.submenus.suppliers").toLowerCase(),
   });
 
-  function recipientToFormValues(recipient: InventoryRecipient): RecipientFormValues {
-    return {
-      name: recipient.name,
-      type: recipient.type,
-      contactInfo: recipient.contactInfo ?? "",
-      address: recipient.address ?? "",
-    };
-  }
-
   function openAddForm() {
-    setEditingRecipient(null);
+    setEditingSupplier(null);
     setFormMode("add");
   }
 
-  function openEditForm(recipient: InventoryRecipient) {
-    setEditingRecipient(recipient);
+  function openEditForm(supplier: InventorySupplier) {
+    setEditingSupplier(supplier);
     setFormMode("edit");
-    setViewRecipient(null);
+    setViewSupplier(null);
   }
 
-  async function saveRecipient(values: RecipientFormValues) {
+  async function saveSupplier(values: SupplierFormValues) {
     try {
-      if (formMode === "edit" && editingRecipient) {
-        if (areFormValuesEquivalent(values, recipientToFormValues(editingRecipient))) {
+      if (formMode === "edit" && editingSupplier) {
+        if (areFormValuesEquivalent(values, supplierToFormValues(editingSupplier))) {
           notifySuccess(t("common.form.noChanges"));
           setFormMode(null);
-          setEditingRecipient(null);
+          setEditingSupplier(null);
           return;
         }
-        const updated = await updateRecipient.mutateAsync({ id: editingRecipient.id, values });
-        notifyUpdated(t("inventory.submenus.recipients"), updated.name);
+        const updated = await updateSupplier.mutateAsync({ id: editingSupplier.id, values });
+        notifyUpdated(t("inventory.submenus.suppliers"), updated.companyName);
       } else {
-        const created = await createRecipient.mutateAsync(values);
-        notifyAdded(t("inventory.submenus.recipients"), created.name);
+        const created = await createSupplier.mutateAsync(values);
+        notifyAdded(t("inventory.submenus.suppliers"), created.companyName);
       }
       setFormMode(null);
-      setEditingRecipient(null);
+      setEditingSupplier(null);
     } catch (error) {
       window.alert(toErrorMessage(error));
     }
@@ -146,31 +155,31 @@ export function InventoryRecipientsWorkspace() {
   async function confirmDelete() {
     if (!deleteTarget) return;
     const ids = Array.isArray(deleteTarget) ? deleteTarget.map((row) => row.id) : [deleteTarget.id];
-    await deleteRecipients.mutateAsync(ids);
+    await deleteSuppliers.mutateAsync(ids);
     setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
     setDeleteTarget(null);
-    setViewRecipient(null);
-    notifyDeleted(t("inventory.submenus.recipients"), ids.length);
+    setViewSupplier(null);
+    notifyDeleted(t("inventory.submenus.suppliers"), ids.length);
   }
 
   return (
     <div className="max-w-full overflow-x-hidden">
       <div className="hidden md:block">
         <PageHeader
-          title={t("inventory.submenus.recipients")}
-          description={t("inventory.pages.recipients")}
+          title={t("inventory.submenus.suppliers")}
+          description={t("inventory.pages.suppliers")}
           actions={
             <Button onClick={openAddForm}>
               <Plus className="h-4 w-4" />
-              {t("inventory.actions.addRecipient")}
+              {t("inventory.actions.addSupplier")}
             </Button>
           }
         />
       </div>
 
-      <InventoryRecipientMobileList
+      <InventorySupplierMobileList
         query={query}
-        recipients={recipients}
+        suppliers={suppliers}
         pageRows={pageRows}
         selectedIds={selectedIds}
         isLoading={isLoading}
@@ -178,19 +187,17 @@ export function InventoryRecipientsWorkspace() {
         totalPages={totalPages}
         onQueryChange={setQuery}
         onPageChange={setPage}
-        onOpen={setViewRecipient}
+        onOpen={setViewSupplier}
         onEdit={openEditForm}
         onDelete={setDeleteTarget}
         onSelectedIdsChange={setSelectedIds}
-        onAddRecipient={openAddForm}
+        onAddSupplier={openAddForm}
       />
 
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
-            filtersOpen={false}
-            onFiltersOpenChange={() => undefined}
-            activeFilterCount={0}
+            showFilterToggle={false}
             columnLayout={columnVisibility}
             searchSummary={searchSummary}
             search={
@@ -200,7 +207,7 @@ export function InventoryRecipientsWorkspace() {
                   setQuery(value);
                   setPage(1);
                 }}
-                placeholder={t("inventory.search.recipients")}
+                placeholder={t("inventory.search.suppliers")}
               />
             }
           />
@@ -212,18 +219,22 @@ export function InventoryRecipientsWorkspace() {
           totalCount={filtered.length}
           onSelectedIdsChange={setSelectedIds}
           onEdit={() => {
-            const recipient = pageRows.find((row) => row.id === selectedIds[0]);
-            if (recipient) openEditForm(recipient);
+            const supplier = pageRows.find((row) => row.id === selectedIds[0]);
+            if (supplier) openEditForm(supplier);
           }}
-          onDelete={() => setDeleteTarget(recipients.filter((row) => selectedIds.includes(row.id)))}
+          onDelete={() => setDeleteTarget(suppliers.filter((row) => selectedIds.includes(row.id)))}
         />
 
         {isLoading ? (
           <DirectoryTableLoader
-            icon={Users}
-            title={t("inventory.loading.recipients.title")}
-            description={t("inventory.loading.recipients.description")}
-            columns={[t("inventory.form.fields.recipientName"), t("inventory.columns.type"), t("inventory.columns.contact")]}
+            icon={Building2}
+            title={t("inventory.loading.suppliers.title")}
+            description={t("inventory.loading.suppliers.description")}
+            columns={[
+              t("inventory.form.fields.companyName"),
+              t("inventory.form.fields.contactNames"),
+              t("inventory.form.fields.phones"),
+            ]}
           />
         ) : (
           <DataTable
@@ -231,10 +242,10 @@ export function InventoryRecipientsWorkspace() {
             rows={pageRows}
             page={currentPage}
             rowKey={(row) => row.id}
-            rowLabel={(row) => row.name}
+            rowLabel={(row) => row.companyName}
             columnLayout={columnVisibility}
             sortUnavailable
-            minWidth={800}
+            minWidth={900}
             selectable
             selectedIds={selectedIds}
             allPageSelected={allPageSelected}
@@ -248,19 +259,21 @@ export function InventoryRecipientsWorkspace() {
             onToggleSelect={(id, checked) => {
               setSelectedIds((current) => (checked ? [...current, id] : current.filter((entry) => entry !== id)));
             }}
-            onRowClick={setViewRecipient}
-            onRowDoubleClick={(recipient) => {
-              openEditForm(recipient);
-            }}
-            activeRowId={viewRecipient?.id}
-            emptyState={<p className="text-muted-foreground">{t("inventory.empty.recipients")}</p>}
+            onRowClick={setViewSupplier}
+            onRowDoubleClick={openEditForm}
+            activeRowId={viewSupplier?.id}
+            emptyState={<p className="text-muted-foreground">{t("inventory.empty.suppliers")}</p>}
           />
         )}
 
         {!isLoading ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              {t("common.pagination.showingOf", { count: pageRows.length, total: filtered.length, noun: t("inventory.submenus.recipients").toLowerCase() })}
+              {t("common.pagination.showingOf", {
+                count: pageRows.length,
+                total: filtered.length,
+                noun: t("inventory.submenus.suppliers").toLowerCase(),
+              })}
             </p>
             <TablePaginationControls
               page={currentPage}
@@ -273,28 +286,28 @@ export function InventoryRecipientsWorkspace() {
         ) : null}
       </Card>
 
-      <InventoryRecipientViewSheet
-        recipient={viewRecipient}
+      <InventorySupplierViewSheet
+        supplier={viewSupplier}
         snapshot={snapshot}
-        open={Boolean(viewRecipient)}
-        onOpenChange={(open) => !open && setViewRecipient(null)}
+        open={Boolean(viewSupplier)}
+        onOpenChange={(open) => !open && setViewSupplier(null)}
         onEdit={openEditForm}
-        onDelete={(recipient) => setDeleteTarget(recipient)}
+        onDelete={(supplier) => setDeleteTarget(supplier)}
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
         <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
           <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
             <DialogTitle>
-              {formMode === "edit" ? t("inventory.form.editRecipientTitle") : t("inventory.form.addRecipientTitle")}
+              {formMode === "edit" ? t("inventory.form.editSupplierTitle") : t("inventory.form.addSupplierTitle")}
             </DialogTitle>
           </DialogHeader>
-          <InventoryRecipientForm
-            key={editingRecipient?.id ?? "new"}
-            initialValues={editingRecipient ? recipientToFormValues(editingRecipient) : createEmptyRecipientForm()}
-            submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("inventory.actions.addRecipient")}
-            isSubmitting={createRecipient.isPending || updateRecipient.isPending}
-            onSubmit={saveRecipient}
+          <InventorySupplierForm
+            key={editingSupplier?.id ?? "new"}
+            initialValues={editingSupplier ? supplierToFormValues(editingSupplier) : createEmptySupplierForm()}
+            submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("inventory.actions.addSupplier")}
+            isSubmitting={createSupplier.isPending || updateSupplier.isPending}
+            onSubmit={saveSupplier}
             onCancel={() => setFormMode(null)}
           />
         </DialogContent>
@@ -303,18 +316,18 @@ export function InventoryRecipientsWorkspace() {
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("inventory.delete.recipientsTitle")}</DialogTitle>
+            <DialogTitle>{t("inventory.delete.suppliersTitle")}</DialogTitle>
             <DialogDescription>
               {Array.isArray(deleteTarget)
-                ? t("inventory.delete.recipientsDescription", { count: deleteTarget.length })
-                : t("inventory.delete.itemDescription", { name: deleteTarget?.name ?? "" })}
+                ? t("inventory.delete.suppliersDescription", { count: deleteTarget.length })
+                : t("inventory.delete.supplierDescription", { name: deleteTarget?.companyName ?? "" })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("common.actions.cancel")}
             </Button>
-            <ConfirmDeleteButton isPending={deleteRecipients.isPending} onClick={confirmDelete} />
+            <ConfirmDeleteButton isPending={deleteSuppliers.isPending} onClick={confirmDelete} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

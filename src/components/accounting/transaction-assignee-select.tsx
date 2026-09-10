@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { UseFormSetValue } from "react-hook-form";
 
+import { EntityFieldActions } from "@/components/accounting/entity-field-actions";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
@@ -11,6 +12,7 @@ import {
   getTransactionAssigneeSelectValue,
   resolveDailyIncomeAssigneeSource,
 } from "@/lib/accounting/daily-income/assignee";
+import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import type {
   DailyIncomeAssigneeSource,
   DailyIncomeJournalValues,
@@ -26,12 +28,18 @@ type Props = {
   dailyRoutes?: ActiveRoute[];
   statementDate?: string;
   employeeId?: number;
+  employeeName?: string;
   routeId?: string;
+  routeName?: string;
   assigneeSource?: DailyIncomeAssigneeSource;
   error?: string;
   setValue: UseFormSetValue<DailyIncomeJournalValues>;
   /** When false, only the employee picker is shown (invoice payment wizard). */
   allowDailyRoute?: boolean;
+  onAddEmployee?: () => void;
+  onEditEmployee?: () => void;
+  onAddRoute?: () => void;
+  onEditRoute?: () => void;
 };
 
 function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
@@ -63,28 +71,41 @@ export function TransactionAssigneeSelect({
   dailyRoutes = [],
   statementDate,
   employeeId,
+  employeeName,
   routeId,
+  routeName,
   assigneeSource,
   error,
   setValue,
   allowDailyRoute = true,
+  onAddEmployee,
+  onEditEmployee,
+  onAddRoute,
+  onEditRoute,
 }: Props) {
   const { t } = useTranslation();
   const source = allowDailyRoute
     ? resolveDailyIncomeAssigneeSource({ assigneeSource, employeeId, routeId })
     : "employee";
-  const employeeOptions = useMemo(() => buildTransactionAssigneeOptions(employees), [employees]);
+  const employeeOptions = useMemo(
+    () => withPinnedSelectOption(buildTransactionAssigneeOptions(employees), employeeId, employeeName),
+    [employeeId, employeeName, employees],
+  );
   const routeOptions = useMemo(() => {
     const scoped = dailyRoutesForStatement(dailyRoutes, statementDate);
     const selected = routeId ? dailyRoutes.find((item) => item.id === routeId) : undefined;
     const list =
       selected && !scoped.some((item) => item.id === selected.id) ? [selected, ...scoped] : scoped;
-    return buildActiveRouteAssignmentOptions(list, t).map((option) => ({
-      value: option.value,
-      label: option.label,
-      keywords: option.keywords,
-    }));
-  }, [dailyRoutes, routeId, statementDate, t]);
+    return withPinnedSelectOption(
+      buildActiveRouteAssignmentOptions(list, t).map((option) => ({
+        value: option.value,
+        label: option.label,
+        keywords: (option as { keywords?: string[] }).keywords,
+      })),
+      routeId,
+      routeName,
+    );
+  }, [dailyRoutes, routeId, routeName, statementDate, t]);
   const employeeValue = getTransactionAssigneeSelectValue(employeeId);
   const sourceOptions = [
     { value: "employee", label: t("accounting.dailyIncome.form.fields.employee") },
@@ -154,9 +175,18 @@ export function TransactionAssigneeSelect({
       ) : null}
       {source === "route" ? (
         <div className="space-y-2">
-          <RequiredLabel htmlFor="journal-route">
-            {t("accounting.dailyIncome.form.fields.route")}
-          </RequiredLabel>
+          <div className="flex items-center justify-between gap-2">
+            <RequiredLabel htmlFor="journal-route">
+              {t("accounting.dailyIncome.form.fields.route")}
+            </RequiredLabel>
+            {onAddRoute ? (
+              <EntityFieldActions
+                hasSelection={Boolean(routeId)}
+                onAdd={onAddRoute}
+                onEdit={() => onEditRoute?.()}
+              />
+            ) : null}
+          </div>
           <SearchableSelect
             id="journal-route"
             value={routeId ?? ""}
@@ -170,7 +200,16 @@ export function TransactionAssigneeSelect({
         </div>
       ) : (
         <div className="space-y-2">
-          <RequiredLabel htmlFor={id}>{t("accounting.dailyIncome.form.fields.employee")}</RequiredLabel>
+          <div className="flex items-center justify-between gap-2">
+            <RequiredLabel htmlFor={id}>{t("accounting.dailyIncome.form.fields.employee")}</RequiredLabel>
+            {onAddEmployee ? (
+              <EntityFieldActions
+                hasSelection={Boolean(employeeId)}
+                onAdd={onAddEmployee}
+                onEdit={() => onEditEmployee?.()}
+              />
+            ) : null}
+          </div>
           <SearchableSelect
             id={id}
             value={employeeValue}

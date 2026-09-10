@@ -1,20 +1,15 @@
 "use client";
 
 import { Banknote } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { useTranslation } from "@/lib/i18n";
-import {
-  createEmptyCheckForm,
-  type CheckFormValues,
-  type CheckStatus,
-} from "@/lib/accounting/checks/types";
+import { createEmptyCheckForm, type CheckFormValues } from "@/lib/accounting/checks/types";
 
 type CheckFormProps = {
   initialValues?: CheckFormValues;
@@ -37,15 +32,6 @@ export function CheckForm({
   const [values, setValues] = useState<CheckFormValues>(initialValues ?? createEmptyCheckForm());
   const [validationError, setValidationError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
-
-  const statusOptions = useMemo(
-    () =>
-      (["outstanding", "cleared"] as CheckStatus[]).map((status) => ({
-        value: status,
-        label: t(`accounting.checks.status.${status}`),
-      })),
-    [t],
-  );
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyCheckForm());
@@ -121,14 +107,12 @@ export function CheckForm({
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="status">{t("accounting.checks.form.fields.status")}</Label>
-              <SearchableSelect
-                value={values.status}
-                onValueChange={(value) => updateField("status", value as CheckStatus)}
-                options={statusOptions}
-                placeholder={t("accounting.checks.form.fields.status")}
-                searchPlaceholder={t("common.table.search")}
-                emptyMessage={t("accounting.checks.form.selectEmpty")}
+              <Label htmlFor="referenceNumber">{t("accounting.checks.form.fields.referenceNumber")}</Label>
+              <Input
+                id="referenceNumber"
+                value={values.referenceNumber}
+                placeholder={t("accounting.checks.form.placeholders.referenceNumber")}
+                onChange={(event) => updateField("referenceNumber", event.target.value)}
               />
             </div>
             <div className="space-y-1">

@@ -7,6 +7,7 @@ export type Check = {
   status: CheckStatus;
   invoiceNumber: string;
   receiptNumber: string;
+  referenceNumber: string;
   createdAt: string;
   createdBy: string;
   depositedAt: string | null;
@@ -17,6 +18,7 @@ export type Check = {
 export type CheckFormValues = {
   invoiceNumber: string;
   receiptNumber: string;
+  referenceNumber: string;
   status: CheckStatus;
   createdBy: string;
   depositedAt: string;
@@ -28,6 +30,7 @@ export function createEmptyCheckForm(): CheckFormValues {
   return {
     invoiceNumber: "",
     receiptNumber: "",
+    referenceNumber: "",
     status: "outstanding",
     createdBy: "",
     depositedAt: "",
@@ -47,6 +50,7 @@ export function checkToFormValues(check: Check): CheckFormValues {
   return {
     invoiceNumber: check.invoiceNumber,
     receiptNumber: check.receiptNumber,
+    referenceNumber: check.referenceNumber,
     status: check.status,
     createdBy: check.createdBy,
     depositedAt: toDateInputValue(check.depositedAt),
@@ -74,6 +78,7 @@ export function formValuesToCheck(id: string, values: CheckFormValues, createdAt
     status: values.status,
     invoiceNumber: values.invoiceNumber.trim(),
     receiptNumber: values.receiptNumber.trim(),
+    referenceNumber: values.referenceNumber.trim(),
     createdAt: createdAt ?? new Date().toISOString(),
     createdBy: values.createdBy.trim(),
     depositedAt,

@@ -17,14 +17,14 @@ import { useColumnVisibility } from "@/components/app-shell/use-column-visibilit
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { formatAuditDateTime } from "@/lib/audit/display";
+import { formatInventoryDate, formatInventoryMoney, getInventoryItemLabel } from "@/lib/inventory/display";
 import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCreateReceipt,
   useInventoryItems,
   useInventoryReceipts,
-  useInventorySnapshotData,
+  useInventorySuppliers,
 } from "@/lib/inventory/hooks/use-inventory";
 import type { InventoryReceipt } from "@/lib/inventory/types/documents";
 import type { DataTableColumn } from "@/lib/table/types";
@@ -38,7 +38,7 @@ export function InventoryReceiptsWorkspace() {
   const { notifyAdded } = useFeedback();
   const { data: receipts = [], isLoading } = useInventoryReceipts();
   const { data: items = [] } = useInventoryItems();
-  const snapshot = useInventorySnapshotData();
+  const { data: suppliers = [] } = useInventorySuppliers();
   const createReceipt = useCreateReceipt();
 
   const [query, setQuery] = useState("");
@@ -49,10 +49,15 @@ export function InventoryReceiptsWorkspace() {
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return receipts;
-    return receipts.filter((receipt) =>
-      [receipt.source, receipt.receivedBy, receipt.notes ?? ""].join(" ").toLowerCase().includes(normalized),
-    );
-  }, [query, receipts]);
+    return receipts.filter((receipt) => {
+      const item = items.find((entry) => entry.id === receipt.itemId);
+      const supplier = suppliers.find((entry) => entry.id === receipt.supplierId);
+      return [item?.item ?? "", supplier?.companyName ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalized);
+    });
+  }, [items, query, receipts, suppliers]);
 
   const pageLimit = resolveClientTablePageLimit(pageSize, filtered.length);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageLimit));
@@ -60,14 +65,22 @@ export function InventoryReceiptsWorkspace() {
   const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
 
   const columns: DataTableColumn<InventoryReceipt>[] = [
-    { id: "date", label: t("inventory.columns.date"), renderCell: (row) => formatAuditDateTime(row.receiptDate) },
-    { id: "source", label: t("inventory.columns.source"), renderCell: (row) => row.source },
-    { id: "receivedBy", label: t("inventory.columns.receivedBy"), renderCell: (row) => row.receivedBy },
     {
-      id: "lines",
-      label: t("inventory.view.lines"),
-      renderCell: (row) => snapshot.receiptLines.filter((line) => line.receiptId === row.id).length,
+      id: "item",
+      label: t("inventory.columns.item"),
+      renderCell: (row) => {
+        const item = items.find((entry) => entry.id === row.itemId);
+        return item ? getInventoryItemLabel(item) : row.itemId;
+      },
     },
+    { id: "quantity", label: t("inventory.form.fields.quantityReceived"), renderCell: (row) => row.quantity },
+    { id: "averageCost", label: t("inventory.columns.averageCost"), renderCell: (row) => formatInventoryMoney(row.averageCost) },
+    {
+      id: "supplier",
+      label: t("inventory.columns.supplier"),
+      renderCell: (row) => suppliers.find((entry) => entry.id === row.supplierId)?.companyName ?? row.supplierId,
+    },
+    { id: "date", label: t("inventory.columns.date"), renderCell: (row) => formatInventoryDate(row.receivedAt) },
   ];
 
   const columnVisibility = useColumnVisibility("inventory-receipts", columns);
@@ -97,7 +110,8 @@ export function InventoryReceiptsWorkspace() {
       <InventoryReceiptMobileList
         query={query}
         pageRows={pageRows}
-        snapshot={snapshot}
+        items={items}
+        suppliers={suppliers}
         isLoading={isLoading}
         page={currentPage}
         totalPages={totalPages}
@@ -133,7 +147,7 @@ export function InventoryReceiptsWorkspace() {
             icon={PackageCheck}
             title={t("inventory.loading.receipts.title")}
             description={t("inventory.loading.receipts.description")}
-            columns={[t("inventory.columns.date"), t("inventory.columns.source"), t("inventory.columns.receivedBy")]}
+            columns={[t("inventory.columns.item"), t("inventory.form.fields.quantityReceived"), t("inventory.columns.supplier")]}
           />
         ) : (
           <DataTable
@@ -141,7 +155,10 @@ export function InventoryReceiptsWorkspace() {
             rows={pageRows}
             page={currentPage}
             rowKey={(row) => row.id}
-            rowLabel={(row) => row.source}
+            rowLabel={(row) => {
+              const item = items.find((entry) => entry.id === row.itemId);
+              return item ? getInventoryItemLabel(item) : row.itemId;
+            }}
             columnLayout={columnVisibility}
             sortUnavailable
             minWidth={800}
@@ -169,8 +186,8 @@ export function InventoryReceiptsWorkspace() {
 
       <InventoryReceiptViewSheet
         receipt={viewReceipt}
-        snapshot={snapshot}
         items={items}
+        suppliers={suppliers}
         open={Boolean(viewReceipt)}
         onOpenChange={(open) => !open && setViewReceipt(null)}
       />
@@ -182,13 +199,15 @@ export function InventoryReceiptsWorkspace() {
           </DialogHeader>
           <InventoryReceiptForm
             items={items}
+            suppliers={suppliers}
             submitLabel={t("inventory.actions.saveReceipt")}
             isSubmitting={createReceipt.isPending}
             onCancel={() => setFormOpen(false)}
             onSubmit={async (values) => {
               try {
                 await createReceipt.mutateAsync(values);
-                notifyAdded(t("inventory.references.receipt"), values.source);
+                const item = items.find((entry) => entry.id === values.itemId);
+                notifyAdded(t("inventory.references.receipt"), item?.item ?? values.itemId);
                 setFormOpen(false);
               } catch (error) {
                 window.alert(toErrorMessage(error));

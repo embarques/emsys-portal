@@ -123,11 +123,21 @@ Inventory manages the company's internal supplies and materials.
 
 It is separate from customer merchandise and is used to:
 
-- Track supplies
-- Monitor stock levels
-- Record inventory movements
-- Identify items that need to be replenished
-- Maintain inventory history
+- Track stock items (item, quantity left, reorder threshold)
+- Maintain suppliers (company name, contacts, addresses, phones, emails)
+- Record receipts (item, quantity received, average cost, supplier, date)
+- Record dispatches (item, quantity dispatched, income gained, dispatched to employee or daily route, date)
+- Derive on-hand stock and average cost from those movements
+
+Every inventory record stores **createdAt / createdBy / updatedAt / updatedBy**. `createdAt` / `updatedAt` are datetimes. Receipt `receivedAt` and dispatch `dispatchedAt` are **dates only**. `createdBy` and `updatedBy` are user refs `{ id, name }`.
+
+TODO (backend) — inventory API (portal UI is mock; align API to this):
+
+Tables: `inventory_items`, `inventory_stock` (1:1 projection), `inventory_receipts`, `inventory_dispatches`, `inventory_suppliers`. See `INVENTORY_FEATURE_BACKEND.md`.
+
+Seed list + view + create + update + delete per resource: `inventory_item`, `inventory_stock`, `inventory_receipt`, `inventory_dispatch`, `inventory_supplier` (`canListInventoryItem`, `canViewInventoryItem`, …). Do not persist quantity on the item catalog; maintain stock from receipts − dispatches. Reject dispatches that exceed quantity left.
+
+**Dispatched to** (`dispatchedTo`) is who received the supplies: a **daily vehicle-route** `{ id, name, route?: { id, name } }` **or** a **single employee** `{ id, name }` (same shape as invoice `receivedBy`). The portal picker uses a local `assigneeSource` (`employee` | `route`); do **not** persist that discriminator. Discriminate by shape: numeric employee `id` vs Mongo daily-route `id` / nested crew `route`.
 
 ### Routes
 
@@ -201,6 +211,8 @@ The goal is to maintain a centralized financial history of the company's operati
 Daily Income is used to manage and record the company's daily incoming transactions.
 
 It provides a way to record and track income received each day and maintain a historical record of daily revenue.
+
+**Register inventory change** (after Register income) records company supplies on the closeout: **received** (choose a supplier) or **dispatched** (choose an employee or daily route). Users pick an inventory item, quantity, and either unit price or total (the other amount updates automatically). Supplier, employee, and daily route can be created from the dropdown the same way sender/receiver can on invoices and appointments. Received posts as an expense and a stock receipt; dispatched posts as income and a stock dispatch.
 
 A journal can be posted under an **employee** `{ id, name }` **or** a **daily vehicle-route** `{ id, name, route?: { id, name } }` (same shape as invoice `receivedBy`). The portal picker uses a local `assigneeSource` (`employee` | `route`) so the form can choose which of those to save; do **not** persist that discriminator.
 

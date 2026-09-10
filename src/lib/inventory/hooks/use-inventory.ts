@@ -6,18 +6,17 @@ import {
   createCatalogItem,
   createDispatch,
   createReceipt,
-  createRecipient,
+  createSupplier,
   deleteCatalogItems,
-  deleteRecipients,
+  deleteSuppliers,
   getInventoryStoreSnapshot,
   getItemStock,
   updateCatalogItem,
-  updateDispatchStatus,
-  updateRecipient,
+  updateSupplier,
 } from "../mock-store";
 import type { InventoryFormValues, InventoryItem } from "../types/catalog";
-import type { DispatchFormValues, DispatchStatus, InventoryDispatch, InventoryReceipt, ReceiptFormValues } from "../types/documents";
-import type { InventoryRecipient, RecipientFormValues } from "../types/recipients";
+import type { DispatchFormValues, InventoryDispatch, InventoryReceipt, ReceiptFormValues } from "../types/documents";
+import type { InventorySupplier, SupplierFormValues } from "../types/suppliers";
 import type { AdjustmentFormValues, InventoryAdjustment } from "../types/movements";
 
 function invalidateInventory(queryClient: ReturnType<typeof useQueryClient>) {
@@ -69,10 +68,10 @@ export function useInventoryDispatches() {
   });
 }
 
-export function useInventoryRecipients() {
+export function useInventorySuppliers() {
   return useQuery({
-    queryKey: queryKeys.inventory.recipients(),
-    queryFn: () => getInventoryStoreSnapshot().recipients,
+    queryKey: queryKeys.inventory.suppliers(),
+    queryFn: () => getInventoryStoreSnapshot().suppliers,
     staleTime: 0,
   });
 }
@@ -128,14 +127,6 @@ export function useCreateDispatch() {
   });
 }
 
-export function useUpdateDispatchStatus() {
-  const queryClient = useQueryClient();
-  return useMutation<InventoryDispatch, Error, { id: string; status: DispatchStatus }>({
-    mutationFn: async ({ id, status }) => updateDispatchStatus(id, status),
-    onSuccess: () => invalidateInventory(queryClient),
-  });
-}
-
 export function useCreateAdjustment() {
   const queryClient = useQueryClient();
   return useMutation<InventoryAdjustment, Error, AdjustmentFormValues>({
@@ -144,27 +135,27 @@ export function useCreateAdjustment() {
   });
 }
 
-export function useCreateRecipient() {
+export function useCreateSupplier() {
   const queryClient = useQueryClient();
-  return useMutation<InventoryRecipient, Error, RecipientFormValues>({
-    mutationFn: async (values) => createRecipient(values),
+  return useMutation<InventorySupplier, Error, SupplierFormValues>({
+    mutationFn: async (values) => createSupplier(values),
     onSuccess: () => invalidateInventory(queryClient),
   });
 }
 
-export function useUpdateRecipient() {
+export function useUpdateSupplier() {
   const queryClient = useQueryClient();
-  return useMutation<InventoryRecipient, Error, { id: string; values: RecipientFormValues }>({
-    mutationFn: async ({ id, values }) => updateRecipient(id, values),
+  return useMutation<InventorySupplier, Error, { id: string; values: SupplierFormValues }>({
+    mutationFn: async ({ id, values }) => updateSupplier(id, values),
     onSuccess: () => invalidateInventory(queryClient),
   });
 }
 
-export function useDeleteRecipients() {
+export function useDeleteSuppliers() {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string[]>({
     mutationFn: async (ids) => {
-      deleteRecipients(ids);
+      deleteSuppliers(ids);
     },
     onSuccess: () => invalidateInventory(queryClient),
   });

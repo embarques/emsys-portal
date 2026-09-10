@@ -24,6 +24,8 @@ type CheckViewSheetProps = {
   onOpenChange: (open: boolean) => void;
   onEdit: (check: Check) => void;
   onDelete: (check: Check) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
 export function CheckViewSheet({
@@ -32,6 +34,8 @@ export function CheckViewSheet({
   onOpenChange,
   onEdit,
   onDelete,
+  canEdit = true,
+  canDelete = true,
 }: CheckViewSheetProps) {
   const { t } = useTranslation();
 
@@ -60,6 +64,10 @@ export function CheckViewSheet({
             <RecordViewSheetDetailRow
               label={t("accounting.checks.form.fields.receiptNumber")}
               value={check.receiptNumber}
+            />
+            <RecordViewSheetDetailRow
+              label={t("accounting.checks.form.fields.referenceNumber")}
+              value={check.referenceNumber || dash}
             />
             <RecordViewSheetDetailRow
               label={t("accounting.checks.form.fields.createdBy")}
@@ -95,8 +103,8 @@ export function CheckViewSheet({
         <RecordViewSheetActions
           editLabel={t("accounting.checks.actions.edit")}
           deleteLabel={t("common.actions.delete")}
-          onEdit={() => onEdit(check)}
-          onDelete={() => onDelete(check)}
+          onEdit={canEdit ? () => onEdit(check) : undefined}
+          onDelete={canDelete ? () => onDelete(check) : undefined}
         />
       </RecordViewSheetContent>
     </RecordViewSheet>

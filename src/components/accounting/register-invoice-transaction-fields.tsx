@@ -15,7 +15,8 @@ import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/cu
 import type { Customer } from "@/lib/customers/types";
 import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
-import { findCashPaymentMethod, isCheckPaymentMethod, isZellePaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCheckPaymentMethod, isZellePaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import type { Employee } from "@/lib/employees/types";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
@@ -97,7 +98,9 @@ export function RegisterInvoiceTransactionFields({
 }: Props) {
   const { t } = useTranslation();
   const employeeId = watch("employeeId");
+  const employeeName = watch("employeeName");
   const routeId = watch("routeId");
+  const routeName = watch("routeName");
   const assigneeSource = watch("assigneeSource");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
@@ -105,6 +108,7 @@ export function RegisterInvoiceTransactionFields({
   const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
   const paymentAccountId = watch("paymentAccountId");
+  const paymentAccountName = watch("paymentAccountName");
   const invoiceCost = watch("invoiceCost");
   const amount = watch("amount");
   const paymentDetailsRequired = (Number(amount) || 0) > 0;
@@ -112,18 +116,28 @@ export function RegisterInvoiceTransactionFields({
   const includeSender = watch("includeSender");
   const includeReceiver = watch("includeReceiver");
   const senderId = watch("senderId");
+  const senderName = watch("senderName");
   const receiverId = watch("receiverId");
+  const receiverName = watch("receiverName");
 
   useEffect(() => {
-    if (paymentMethodId || paymentMethods.length === 0) return;
+    if (paymentMethods.length === 0) return;
+    const matched = matchPaymentMethod(paymentMethods, paymentMethodId, paymentMethodName);
+    if (matched) {
+      if (matched.id === paymentMethodId && matched.name === paymentMethodName) return;
+      setValue("paymentMethodId", matched.id, { shouldValidate: true });
+      setValue("paymentMethodName", matched.name, { shouldValidate: true });
+      return;
+    }
+    if (paymentMethodId || paymentMethodName?.trim()) return;
     const cash = findCashPaymentMethod(paymentMethods);
     if (!cash) return;
     setValue("paymentMethodId", cash.id, { shouldValidate: true });
     setValue("paymentMethodName", cash.name, { shouldValidate: true });
-  }, [paymentMethodId, paymentMethods, setValue]);
+  }, [paymentMethodId, paymentMethodName, paymentMethods, setValue]);
 
   useEffect(() => {
-    if (!paymentDetailsRequired || !needsBankAccount || bankAccounts.some((account) => account.id === paymentAccountId) || !bankAccounts[0]) {
+    if (!paymentDetailsRequired || !needsBankAccount || paymentAccountId || !bankAccounts[0]) {
       return;
     }
     const account = bankAccounts[0];
@@ -169,30 +183,40 @@ export function RegisterInvoiceTransactionFields({
       const pinned = customers.find((customer) => customer.id === senderId);
       if (pinned) options.unshift(...customerOptions([pinned]));
     }
-    return options;
-  }, [customers, debouncedSenderQuery, senderCustomers, senderId, senderSearch.data?.items]);
+    return withPinnedSelectOption(options, senderId, senderName);
+  }, [customers, debouncedSenderQuery, senderCustomers, senderId, senderName, senderSearch.data?.items]);
 
   const paymentMethodOptions = useMemo(
-    () => [
-      { value: "", label: t("accounting.dailyIncome.form.placeholders.selectPaymentMethod") },
-      ...paymentMethods.map((method) => ({
-        value: String(method.id),
-        label: method.name,
-        keywords: [method.name],
-      })),
-    ],
-    [paymentMethods, t],
+    () =>
+      withPinnedSelectOption(
+        [
+          { value: "", label: t("accounting.dailyIncome.form.placeholders.selectPaymentMethod") },
+          ...paymentMethods.map((method) => ({
+            value: String(method.id),
+            label: method.name,
+            keywords: [method.name],
+          })),
+        ],
+        paymentMethodId,
+        paymentMethodName,
+      ),
+    [paymentMethodId, paymentMethodName, paymentMethods, t],
   );
   const bankAccountOptions = useMemo(
-    () => [
-      { value: "", label: t("accounting.dailyIncome.form.placeholders.selectBankAccount") },
-      ...bankAccounts.map((account) => ({
-        value: String(account.id),
-        label: account.displayName,
-        keywords: [account.displayName],
-      })),
-    ],
-    [bankAccounts, t],
+    () =>
+      withPinnedSelectOption(
+        [
+          { value: "", label: t("accounting.dailyIncome.form.placeholders.selectBankAccount") },
+          ...bankAccounts.map((account) => ({
+            value: String(account.id),
+            label: account.displayName,
+            keywords: [account.displayName],
+          })),
+        ],
+        paymentAccountId,
+        paymentAccountName,
+      ),
+    [bankAccounts, paymentAccountId, paymentAccountName, t],
   );
   const receiverOptions = useMemo(() => {
     const source = debouncedReceiverQuery
@@ -205,8 +229,8 @@ export function RegisterInvoiceTransactionFields({
       const pinned = customers.find((customer) => customer.id === receiverId);
       if (pinned) options.unshift(...customerOptions([pinned]));
     }
-    return options;
-  }, [customers, debouncedReceiverQuery, receiverCustomers, receiverId, receiverSearch.data?.items]);
+    return withPinnedSelectOption(options, receiverId, receiverName);
+  }, [customers, debouncedReceiverQuery, receiverCustomers, receiverId, receiverName, receiverSearch.data?.items]);
 
   function updateSender(nextId: string) {
     const customer =
@@ -235,7 +259,9 @@ export function RegisterInvoiceTransactionFields({
             dailyRoutes={dailyRoutes}
             statementDate={statementDate}
             employeeId={employeeId}
+            employeeName={employeeName}
             routeId={routeId}
+            routeName={routeName}
             assigneeSource={assigneeSource}
             allowDailyRoute={allowDailyRoute}
             error={errors.employeeId?.message ?? errors.routeId?.message}

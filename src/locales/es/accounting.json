@@ -95,15 +95,17 @@
       "status": "Estado",
       "invoiceNumber": "Factura #",
       "receiptNumber": "Cheque #",
+      "referenceNumber": "Referencia #",
       "createdAt": "Creado el",
-      "createdBy": "Creado por",
-      "depositedAt": "Depositado el",
-      "depositedOn": "Depositado en",
-      "depositedBy": "Depositado por"
+      "createdBy": "Creado por"
     },
     "status": {
       "outstanding": "Pendiente",
       "cleared": "Cobrado"
+    },
+    "nav": {
+      "outstandingAlert": "{{count}} cheque pendiente",
+      "outstandingAlert_plural": "{{count}} cheques pendientes"
     },
     "actions": {
       "edit": "Editar cheque",
@@ -124,6 +126,7 @@
       "fields": {
         "invoiceNumber": "Número de factura",
         "receiptNumber": "Número de cheque",
+        "referenceNumber": "Número de referencia",
         "status": "Estado",
         "createdBy": "Creado por",
         "depositedAt": "Depositado el",
@@ -133,6 +136,7 @@
       "placeholders": {
         "invoiceNumber": "INV-2026-0001",
         "receiptNumber": "CHK-8842",
+        "referenceNumber": "REF-1001",
         "createdBy": "Ingrese el nombre",
         "depositedOn": "Cuenta bancaria",
         "depositedBy": "Ingrese el nombre"
@@ -221,6 +225,11 @@
       "empty": "Ninguna transacción coincide con este cierre.",
       "loadingTitle": "Cargando transacciones",
       "loadingDescription": "Sincronizando asientos, pagos y totales del cierre…"
+    },
+    "view": {
+      "sections": {
+        "audit": "Auditoría"
+      }
     },
     "columns": {
       "date": "Fecha",
@@ -321,6 +330,12 @@
         "description": "Registrar un ingreso",
         "sectionTitle": "Información del ingreso"
       },
+      "inventory": {
+        "label": "Registrar cambio de inventario",
+        "shortLabel": "Inventario",
+        "description": "Registrar insumos recibidos o despachados",
+        "sectionTitle": "Cambio de inventario"
+      },
       "discount": {
         "label": "Aplicar descuento",
         "shortLabel": "Descuento",
@@ -367,7 +382,22 @@
         "includeSender": "Incluir cliente remitente",
         "senderClient": "Cliente remitente",
         "includeReceiver": "Incluir cliente destinatario",
-        "receiverClient": "Cliente destinatario"
+        "receiverClient": "Cliente destinatario",
+        "inventoryDirection": "Recibido o despachado",
+        "unitPrice": "Precio unitario",
+        "total": "Total"
+      },
+      "partyActions": {
+        "new": "Nuevo",
+        "edit": "Editar"
+      },
+      "inventory": {
+        "received": "Recibido",
+        "dispatched": "Despachado",
+        "priceHint": "Complete el precio unitario o el total; el otro monto se actualiza automáticamente.",
+        "receivedDescription": "Recibido {{item}} × {{quantity}} de {{supplier}}",
+        "receivedDescriptionNoSupplier": "Recibido {{item}} × {{quantity}}",
+        "dispatchedDescription": "Despachado {{item}} × {{quantity}}"
       },
       "placeholders": {
         "selectAssigneeSource": "Seleccionar empleado o ruta diaria",
@@ -395,6 +425,7 @@
         "searchReceiver": "Buscar destinatario por nombre, teléfono o dirección…",
         "searchReceivers": "Buscar destinatarios…",
         "selectReceiver": "Seleccionar destinatario",
+        "selectInventoryDirection": "Seleccione recibido o despachado",
         "amount": "0.00"
       },
       "hints": {
@@ -435,6 +466,11 @@
         "amountExceedsBalance": "El monto no puede exceder el saldo de la factura.",
         "accountRequired": "La cuenta es obligatoria.",
         "sourceAccountRequired": "La cuenta origen es obligatoria.",
+        "inventoryRequired": "Seleccione recibido o despachado.",
+        "inventoryItemRequired": "El artículo es obligatorio.",
+        "inventoryQuantityRequired": "La cantidad debe ser mayor que cero.",
+        "inventoryPriceRequired": "Ingrese un precio unitario o un total.",
+        "supplierRequired": "El proveedor es obligatorio.",
         "balanceNegative": "El saldo no puede ser negativo."
       }
     }

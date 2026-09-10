@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import * as React from "react";
 
+import { NavAlertBadge } from "@/components/app-shell/nav-alert-badge";
 import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
 import {
   navigationGroupHasActiveRoute,
@@ -11,6 +12,12 @@ import {
   isFlatNavigationGroup,
   submenuHasActiveRoute,
 } from "@/lib/navigation/nav-utils";
+import {
+  useNavAlertCount,
+  useNavAlertLabel,
+  useNavItemsAlertCount,
+  useNavItemsAlertLabel,
+} from "@/lib/navigation/use-nav-alert-count";
 import {
   useNavigationSections,
   useTopNavigation,
@@ -50,6 +57,9 @@ function NavLeafLink({
   onNavigate?: () => void;
   className?: string;
 }) {
+  const alertCount = useNavAlertCount(item.href);
+  const alertLabel = useNavAlertLabel(item.href, alertCount);
+
   if (!item.href) return null;
 
   const active = navigationItemMatchesPath(item, pathname);
@@ -60,10 +70,12 @@ function NavLeafLink({
       href={item.href}
       label={item.label}
       onClick={onNavigate}
+      aria-label={alertLabel ? `${item.label}, ${alertLabel}` : item.label}
       className={cn(navRowClassName(active), className)}
     >
       <Icon className={navIconClassName} />
       <span className={navLabelClassName}>{item.label}</span>
+      <NavAlertBadge count={alertCount} label={alertLabel} />
     </WorkspaceNavLink>
   );
 }
@@ -74,22 +86,31 @@ function NavExpandRow({
   open,
   active,
   onToggle,
+  alertCount = 0,
+  alertLabel = "",
 }: {
   label: string;
   icon?: TranslatedNavigationItem["icon"];
   open: boolean;
   active: boolean;
   onToggle: () => void;
+  alertCount?: number;
+  alertLabel?: string;
 }) {
+  const showAlert = !open && alertCount > 0;
+  const visibleAlertLabel = showAlert ? alertLabel : "";
+
   return (
     <button
       type="button"
       aria-expanded={open}
+      aria-label={visibleAlertLabel ? `${label}, ${visibleAlertLabel}` : undefined}
       onClick={onToggle}
       className={navRowClassName(active)}
     >
       {Icon ? <Icon className={navIconClassName} /> : null}
       <span className={navLabelClassName}>{label}</span>
+      {showAlert ? <NavAlertBadge count={alertCount} label={visibleAlertLabel} /> : null}
       {open ? (
         <ChevronDown className={navChevronClassName} />
       ) : (
@@ -109,6 +130,8 @@ function NavSubmenu({
   onNavigate?: () => void;
 }) {
   const hasActiveChild = submenuHasActiveRoute(item, pathname);
+  const alertCount = useNavItemsAlertCount(item.children ?? []);
+  const alertLabel = useNavItemsAlertLabel(item.children ?? [], alertCount);
   const [open, setOpen] = React.useState(hasActiveChild);
 
   React.useEffect(() => {
@@ -140,6 +163,8 @@ function NavSubmenu({
         icon={item.icon}
         open={open}
         active={hasActiveChild && !open}
+        alertCount={alertCount}
+        alertLabel={alertLabel}
         onToggle={() => setOpen((current) => !current)}
       />
 
@@ -180,6 +205,9 @@ function NavGroup({
   onToggle: () => void;
   onNavigate?: () => void;
 }) {
+  const alertCount = useNavItemsAlertCount(group.items);
+  const alertLabel = useNavItemsAlertLabel(group.items, alertCount);
+
   if (isFlatNavigationGroup(group.items)) {
     const onlyItem = group.items[0];
     return (
@@ -208,6 +236,8 @@ function NavGroup({
         icon={GroupIcon}
         open={open}
         active={isParentSelected}
+        alertCount={alertCount}
+        alertLabel={alertLabel}
         onToggle={onToggle}
       />
 

@@ -2,9 +2,14 @@
 
 import { usePathname } from "next/navigation";
 
+import { NavAlertBadge } from "@/components/app-shell/nav-alert-badge";
 import { SidebarBrand } from "@/components/brand/sidebar-brand";
 import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  useNavAlertCount,
+  useNavAlertLabel,
+} from "@/lib/navigation/use-nav-alert-count";
 import {
   useFlatNavigation,
   type TranslatedNavigationItem,
@@ -43,27 +48,36 @@ function CollapsedSidebarIconLink({
   item: TranslatedNavigationItem;
   pathname: string;
 }) {
+  const alertCount = useNavAlertCount(item.href);
+  const alertLabel = useNavAlertLabel(item.href, alertCount);
+
   if (!item.href) return null;
 
   const active = navigationItemMatchesPath(item, pathname);
   const Icon = item.icon;
+  const linkLabel = alertLabel ? `${item.label}, ${alertLabel}` : item.label;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex">
+        <span className="relative inline-flex">
           <WorkspaceNavLink
             href={item.href}
             label={item.label}
-            aria-label={item.label}
+            aria-label={linkLabel}
             className={cn(iconNavLinkClassName, active && iconNavLinkActiveClassName)}
           >
             <Icon className="h-6 w-6" aria-hidden />
           </WorkspaceNavLink>
+          <NavAlertBadge
+            count={alertCount}
+            label={alertLabel}
+            className="pointer-events-none absolute -right-1 -top-1"
+          />
         </span>
       </TooltipTrigger>
       <TooltipContent side="right" sideOffset={8}>
-        {item.label}
+        {linkLabel}
       </TooltipContent>
     </Tooltip>
   );

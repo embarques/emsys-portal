@@ -34,6 +34,11 @@ export type DailyIncomeJournalSchemaMessages = {
   amountExceedsBalance: string;
   accountRequired: string;
   sourceAccountRequired: string;
+  inventoryRequired: string;
+  inventoryItemRequired: string;
+  inventoryQuantityRequired: string;
+  inventoryPriceRequired: string;
+  supplierRequired: string;
 };
 
 export function createDailyIncomeStatementSchema(messages: DailyIncomeStatementSchemaMessages) {
@@ -73,6 +78,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         "SURCHARGE",
         "EXPENSE",
         "SALES",
+        "INVENTORY",
         "TRANSFER",
         "LOAN",
       ]),
@@ -116,8 +122,58 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       zelleTransactionDate: z.string().optional(),
       zelleTransactionName: z.string().optional(),
       checkNumber: z.string().optional(),
+      inventoryDirection: z.enum(["received", "dispatched"]).optional(),
+      inventoryItemId: z.string().optional(),
+      inventoryItemName: z.string().optional(),
+      inventoryQuantity: z.number().optional(),
+      inventoryUnitPrice: z.number().optional(),
+      inventoryTotal: z.number().optional(),
+      inventorySupplierId: z.string().optional(),
+      inventorySupplierName: z.string().optional(),
     })
     .superRefine((values, context) => {
+      if (values.transactionType === "INVENTORY") {
+        if (!values.inventoryDirection) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventoryDirection"],
+            message: messages.inventoryRequired,
+          });
+        }
+        if (!values.inventoryItemId?.trim()) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventoryItemId"],
+            message: messages.inventoryItemRequired,
+          });
+        }
+        if (!values.inventoryQuantity || values.inventoryQuantity <= 0) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventoryQuantity"],
+            message: messages.inventoryQuantityRequired,
+          });
+        }
+        if (values.inventoryTotal == null || values.inventoryTotal <= 0) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventoryTotal"],
+            message: messages.inventoryPriceRequired,
+          });
+        }
+        if (values.inventoryDirection === "received" && !values.inventorySupplierId?.trim()) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventorySupplierId"],
+            message: messages.supplierRequired,
+          });
+        }
+        if (values.inventoryDirection === "dispatched" && !hasJournalAssignee(values)) {
+          addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
+        }
+        return;
+      }
+
       if (values.amount == null) {
         context.addIssue({
           code: "custom",
@@ -297,6 +353,11 @@ const defaultJournalMessages: DailyIncomeJournalSchemaMessages = {
   amountExceedsBalance: "Amount cannot exceed the invoice balance.",
   accountRequired: "Account is required.",
   sourceAccountRequired: "Source account is required.",
+  inventoryRequired: "Select received or dispatched.",
+  inventoryItemRequired: "Item is required.",
+  inventoryQuantityRequired: "Quantity must be greater than zero.",
+  inventoryPriceRequired: "Enter a unit price or total.",
+  supplierRequired: "Supplier is required.",
 };
 
 export const dailyIncomeStatementSchema = createDailyIncomeStatementSchema(defaultStatementMessages);

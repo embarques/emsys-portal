@@ -1,3 +1,4 @@
+import { persistInventoryChange } from "@/lib/accounting/daily-income/inventory-change";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { buildApiListQuery } from "@/lib/api/list-query";
@@ -45,6 +46,12 @@ function objectValue(value: unknown): Record<string, unknown> {
 function numberValue(value: unknown, fallback = 0): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function optionalNumberValue(value: unknown): number | undefined {
+  if (value == null || value === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function stringValue(value: unknown): string {
@@ -95,15 +102,21 @@ function normalizePartyRef(value: unknown): DailyIncomePartyRef | undefined {
 }
 
 function normalizeLookup(value: unknown): AccountingLookup | undefined {
+  if (typeof value === "string") {
+    const name = value.trim();
+    return name ? { id: 0, name } : undefined;
+  }
   const raw = objectValue(value);
   const id = numberValue(firstDefined(raw.id, raw._id));
   const name = stringValue(firstDefined(raw.name, raw.displayName, raw.code));
   if (!id && !name) return undefined;
+  const type = stringValue(raw.type) || undefined;
   return {
     id,
     name,
     code: stringValue(raw.code) || undefined,
     displayName: stringValue(raw.displayName) || undefined,
+    ...(type ? { type } : {}),
   };
 }
 
@@ -142,7 +155,24 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const raw = objectValue(value);
   const id = stringValue(firstDefined(raw.id, raw._id));
   if (!id) return null;
-  const invoice = objectValue(raw.invoice);
+  const invoiceRaw = objectValue(raw.invoice);
+  const invoiceId = firstDefined(invoiceRaw.id, invoiceRaw._id, raw.invoiceId);
+  const invoiceNumber = stringValue(
+    firstDefined(invoiceRaw.number, invoiceRaw.invoiceNumber, raw.invoiceNumber),
+  );
+  const sender = normalizePartyRef(invoiceRaw.sender) ?? normalizePartyRef(raw.sender);
+  const receiver = normalizePartyRef(invoiceRaw.receiver) ?? normalizePartyRef(raw.receiver);
+  const invoiceCost = optionalNumberValue(firstDefined(invoiceRaw.cost, invoiceRaw.total, invoiceRaw.invoiceCost));
+  const invoiceDiscount = optionalNumberValue(firstDefined(invoiceRaw.discount, invoiceRaw.invoiceDiscount));
+  const invoicePayment = optionalNumberValue(firstDefined(invoiceRaw.payment, invoiceRaw.amountPaid));
+  const invoiceBalance = optionalNumberValue(invoiceRaw.balance);
+  const hasInvoice =
+    invoiceId != null ||
+    Boolean(invoiceNumber) ||
+    sender != null ||
+    receiver != null ||
+    invoiceCost != null ||
+    invoiceDiscount != null;
   const accountLines = Array.isArray(raw.accounts)
     ? raw.accounts.map((value) => {
         const account = objectValue(value);
@@ -178,15 +208,16 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     zelleTransactionName: stringValue(raw.zelleTransactionName) || undefined,
     checkNumber: stringValue(firstDefined(raw.checkNumber, raw.check_number)) || undefined,
     accounts: accountLines,
-    invoice: Object.keys(invoice).length
+    invoice: hasInvoice
       ? {
-          id: firstDefined(invoice.id, invoice._id) as string | number | undefined,
-          number: stringValue(invoice.number),
-          cost: numberValue(invoice.cost),
-          payment: numberValue(invoice.payment),
-          balance: numberValue(invoice.balance),
-          sender: normalizePartyRef(invoice.sender),
-          receiver: normalizePartyRef(invoice.receiver),
+          id: invoiceId as string | number | undefined,
+          number: invoiceNumber,
+          cost: invoiceCost,
+          discount: invoiceDiscount,
+          payment: invoicePayment,
+          balance: invoiceBalance,
+          sender,
+          receiver,
         }
       : undefined,
     createdAt: stringValue(raw.createdAt) || undefined,
@@ -536,8 +567,14 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   }
 
   const invoiceRelated = ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(values.transactionType);
-  const accountRelated = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(values.transactionType);
-  const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType);
+  const apiTransactionType =
+    values.transactionType === "INVENTORY"
+      ? values.inventoryDirection === "received"
+        ? "EXPENSE"
+        : "SALES"
+      : values.transactionType;
+  const accountRelated = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(apiTransactionType);
+  const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(apiTransactionType);
   const bankAccountRequired = requiresBankAccount(values.paymentMethodName);
 
   if (bankAccountRequired && (!values.paymentAccountId || values.paymentAccountType !== "BANK")) {
@@ -573,7 +610,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     incomeStatementId: statement.id,
     incomeStatement: { id: statement.id },
     date: statement.date,
-    transactionType: values.transactionType,
+    transactionType: apiTransactionType,
     amount: values.amount,
     refNumber: values.refNumber,
     description: values.description,
@@ -623,6 +660,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
 }
 
 export async function createDailyIncomeJournal(statement: DailyIncomeStatement, values: DailyIncomeJournalValues) {
+  persistInventoryChange(values, statement.date);
   const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_JOURNAL, journalPayload(statement, values));
   assertMutation(payload, "Unable to create transaction.");
   return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));

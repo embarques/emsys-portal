@@ -1,192 +1,142 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { deriveInventoryStatus } from "./types/catalog";
+import { parseInventoryFormNumber } from "./types/catalog";
 import type { InventoryCatalogItem, InventoryFormValues, InventoryItem } from "./types/catalog";
 import type {
   AdjustmentFormValues,
   InventoryAdjustment,
   InventoryMovement,
 } from "./types/movements";
-import type {
-  DispatchFormValues,
-  InventoryDispatch,
-  InventoryDispatchLine,
-  InventoryReceipt,
-  InventoryReceiptLine,
-  ReceiptFormValues,
+import {
+  dispatchedToFromFormValues,
+  type DispatchFormValues,
+  type InventoryDispatch,
+  type InventoryReceipt,
+  type ReceiptFormValues,
 } from "./types/documents";
-import type { InventoryRecipient, RecipientFormValues } from "./types/recipients";
+import {
+  compactStringList,
+  type InventorySupplier,
+  type SupplierFormValues,
+} from "./types/suppliers";
 import { computeStockMap } from "./utils/stock";
 
 type InventoryStoreState = {
   catalogItems: InventoryCatalogItem[];
   movements: InventoryMovement[];
   receipts: InventoryReceipt[];
-  receiptLines: InventoryReceiptLine[];
   dispatches: InventoryDispatch[];
-  dispatchLines: InventoryDispatchLine[];
-  recipients: InventoryRecipient[];
+  suppliers: InventorySupplier[];
   adjustments: InventoryAdjustment[];
 };
 
 const SEED_CATALOG: InventoryCatalogItem[] = [
   {
     id: "inv-001",
-    sku: "PKG-BOX-M",
-    name: "Medium shipping boxes (18x12x10)",
-    category: "packaging",
-    location: "ny_warehouse",
-    reorderLevel: 100,
-    unit: "boxes",
-    reserved: 48,
-    notes: "Primary outbound carton for domestic routes.",
+    item: "Medium boxes",
+    reorderThreshold: 80,
     createdAt: "2026-06-04T14:22:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-04T14:22:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-002",
-    sku: "LBL-4X6-ROLL",
-    name: "Thermal label rolls 4x6",
-    category: "labels",
-    location: "ny_warehouse",
-    reorderLevel: 20,
-    unit: "rolls",
-    reserved: 6,
+    item: "Thermal labels",
+    reorderThreshold: 10,
     createdAt: "2026-06-04T11:05:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-04T11:05:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-003",
-    sku: "PKG-TAPE-CLR",
-    name: "Clear packing tape",
-    category: "supplies",
-    location: "rd_warehouse",
-    reorderLevel: 30,
-    unit: "rolls",
-    reserved: 12,
+    item: "Packing tape",
+    reorderThreshold: 24,
     createdAt: "2026-06-03T18:40:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-03T18:40:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-004",
-    sku: "EQP-SCAN-HH",
-    name: "Handheld barcode scanners",
-    category: "equipment",
-    location: "ny_warehouse",
-    reorderLevel: 2,
-    unit: "units",
-    reserved: 0,
-    notes: "Reorder approved — vendor lead time 5 days.",
+    item: "Barcode scanners",
+    reorderThreshold: 2,
     createdAt: "2026-06-02T09:15:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-02T09:15:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-005",
-    sku: "PKG-BUBBLE-L",
-    name: "Large bubble wrap rolls",
-    category: "packaging",
-    location: "in_transit",
-    reorderLevel: 15,
-    unit: "rolls",
-    reserved: 60,
+    item: "Bubble wrap",
+    reorderThreshold: 15,
     createdAt: "2026-06-04T08:00:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-04T08:00:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-006",
-    sku: "SUP-PALLET-WRAP",
-    name: "Stretch pallet wrap",
-    category: "supplies",
-    location: "dock",
-    reorderLevel: 12,
-    unit: "rolls",
-    reserved: 0,
-    notes: "Count mismatch after last unload — recount scheduled.",
+    item: "Pallet wrap",
+    reorderThreshold: 10,
     createdAt: "2026-06-04T16:30:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-04T16:30:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-007",
-    sku: "LBL-ZEB-203",
-    name: "Zebra 203 DPI label stock",
-    category: "labels",
-    location: "rd_warehouse",
-    reorderLevel: 50,
-    unit: "sheets",
-    reserved: 20,
+    item: "Zebra labels",
+    reorderThreshold: 50,
     createdAt: "2026-06-01T13:20:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-01T13:20:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-008",
-    sku: "PKG-BOX-L",
-    name: "Large shipping boxes (24x18x12)",
-    category: "packaging",
-    location: "ny_warehouse",
-    reorderLevel: 25,
-    unit: "boxes",
-    reserved: 2,
+    item: "Large boxes",
+    reorderThreshold: 20,
     createdAt: "2026-06-04T10:45:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-04T10:45:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-009",
-    sku: "SUP-MARK-BLK",
-    name: "Permanent markers (black)",
-    category: "supplies",
-    location: "rd_warehouse",
-    reorderLevel: 40,
-    unit: "units",
-    reserved: 0,
+    item: "Markers",
+    reorderThreshold: 24,
     createdAt: "2026-05-30T17:00:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-05-30T17:00:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-010",
-    sku: "EQP-SCALE-50",
-    name: "50 lb digital floor scale",
-    category: "equipment",
-    location: "dock",
-    reorderLevel: 1,
-    unit: "units",
-    reserved: 1,
+    item: "Floor scale",
+    reorderThreshold: 1,
     createdAt: "2026-05-28T12:00:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-05-28T12:00:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-011",
-    sku: "PKG-ENVELOPE",
-    name: "Padded mailers 10x13",
-    category: "packaging",
-    location: "ny_warehouse",
-    reorderLevel: 80,
-    unit: "units",
-    reserved: 0,
+    item: "Padded mailers",
+    reorderThreshold: 25,
     createdAt: "2026-06-03T07:30:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-03T07:30:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
     id: "inv-012",
-    sku: "LBL-CUSTOM-A",
-    name: "Custom client label template A",
-    category: "labels",
-    location: "in_transit",
-    reorderLevel: 100,
-    unit: "labels",
-    reserved: 120,
+    item: "Custom labels",
+    reorderThreshold: 100,
     createdAt: "2026-06-04T15:10:00Z",
     createdBy: "Hector Mejia",
     updatedAt: "2026-06-04T15:10:00Z",
+    updatedBy: "Hector Mejia",
   },
 ];
 
@@ -205,42 +155,46 @@ const OPENING_BALANCES: Record<string, number> = {
   "inv-012": 500,
 };
 
-const SEED_RECIPIENTS: InventoryRecipient[] = [
+const SEED_SUPPLIERS: InventorySupplier[] = [
   {
-    id: "rcp-001",
-    name: "Acme Logistics",
-    type: "customer",
-    contactInfo: "ops@acmelogistics.com",
-    address: "1200 Harbor Blvd, Newark, NJ",
-    createdAt: "2026-05-15T10:00:00Z",
-  },
-  {
-    id: "rcp-002",
-    name: "PackRight Supplies",
-    type: "vendor",
-    contactInfo: "sales@packright.com",
-    address: "88 Industrial Pkwy, Elizabeth, NJ",
+    id: "sup-001",
+    companyName: "PackRight Supplies",
+    contactNames: ["Maria Santos", "Luis Perez"],
+    addresses: ["88 Industrial Pkwy, Elizabeth, NJ"],
+    phones: [{ type: "business", number: "+19015550100", displayNumber: "(901) 555-0100", isPrimary: true }],
+    emails: ["sales@packright.com"],
     createdAt: "2026-05-20T14:30:00Z",
+    createdBy: "Hector Mejia",
+    updatedAt: "2026-05-20T14:30:00Z",
+    updatedBy: "Hector Mejia",
   },
   {
-    id: "rcp-003",
-    name: "RD Branch",
-    type: "branch",
-    contactInfo: "rd-warehouse@emsys.com",
-    address: "Santo Domingo, DR",
-    createdAt: "2026-05-22T09:00:00Z",
-  },
-  {
-    id: "rcp-004",
-    name: "Internal — Route Prep",
-    type: "internal",
-    contactInfo: "dispatch@emsys.com",
-    createdAt: "2026-06-01T08:00:00Z",
+    id: "sup-002",
+    companyName: "Harbor Packaging Co.",
+    contactNames: ["Ana Rodriguez"],
+    addresses: ["1200 Harbor Blvd, Newark, NJ"],
+    phones: [{ type: "mobile", number: "+19735550188", displayNumber: "(973) 555-0188", isPrimary: true }],
+    emails: ["orders@harborpack.com", "billing@harborpack.com"],
+    createdAt: "2026-05-15T10:00:00Z",
+    createdBy: "Hector Mejia",
+    updatedAt: "2026-05-15T10:00:00Z",
+    updatedBy: "Hector Mejia",
   },
 ];
 
 function createId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function averageCostForItem(itemId: string, receipts: InventoryReceipt[]): number {
+  let quantity = 0;
+  let cost = 0;
+  for (const receipt of receipts) {
+    if (receipt.itemId !== itemId) continue;
+    quantity += receipt.quantity;
+    cost += receipt.quantity * receipt.averageCost;
+  }
+  return quantity > 0 ? cost / quantity : 0;
 }
 
 function buildOpeningMovements(): InventoryMovement[] {
@@ -260,81 +214,101 @@ function buildOpeningMovements(): InventoryMovement[] {
     }));
 }
 
-function buildSeedReceipt(): {
-  receipt: InventoryReceipt;
-  lines: InventoryReceiptLine[];
-  movements: InventoryMovement[];
-} {
-  const receipt: InventoryReceipt = {
-    id: "rcpt-001",
-    receiptDate: "2026-06-03T10:00:00Z",
-    source: "PackRight Supplies",
-    receivedBy: "Hector Mejia",
-    notes: "Restock of label supplies",
-    createdAt: "2026-06-03T10:05:00Z",
-  };
-  const lines: InventoryReceiptLine[] = [
-    { id: "rcl-001", receiptId: receipt.id, itemId: "inv-002", quantity: 12 },
-    { id: "rcl-002", receiptId: receipt.id, itemId: "inv-003", quantity: 24 },
+function buildSeedReceipts(): { receipts: InventoryReceipt[]; movements: InventoryMovement[] } {
+  const receipts: InventoryReceipt[] = [
+    {
+      id: "rcpt-001",
+      itemId: "inv-002",
+      quantity: 12,
+      averageCost: 18.5,
+      supplierId: "sup-001",
+      receivedAt: "2026-06-03",
+      createdAt: "2026-06-03T10:05:00Z",
+      createdBy: DEFAULT_CREATED_BY,
+      updatedAt: "2026-06-03T10:05:00Z",
+      updatedBy: DEFAULT_CREATED_BY,
+    },
+    {
+      id: "rcpt-002",
+      itemId: "inv-003",
+      quantity: 24,
+      averageCost: 4.25,
+      supplierId: "sup-001",
+      receivedAt: "2026-06-03",
+      createdAt: "2026-06-03T10:05:00Z",
+      createdBy: DEFAULT_CREATED_BY,
+      updatedAt: "2026-06-03T10:05:00Z",
+      updatedBy: DEFAULT_CREATED_BY,
+    },
   ];
-  const movements: InventoryMovement[] = lines.map((line) => ({
-    id: `mov-${line.id}`,
-    itemId: line.itemId,
-    direction: "IN",
-    quantity: line.quantity,
-    movementDate: receipt.receiptDate,
-    referenceType: "receipt",
+  const movements: InventoryMovement[] = receipts.map((receipt) => ({
+    id: `mov-${receipt.id}`,
+    itemId: receipt.itemId,
+    direction: "IN" as const,
+    quantity: receipt.quantity,
+    movementDate: receipt.receivedAt,
+    referenceType: "receipt" as const,
     referenceId: receipt.id,
-    createdBy: receipt.receivedBy,
+    createdBy: DEFAULT_CREATED_BY,
   }));
-  return { receipt, lines, movements };
+  return { receipts, movements };
 }
 
-function buildSeedDispatch(): {
-  dispatch: InventoryDispatch;
-  lines: InventoryDispatchLine[];
-  movements: InventoryMovement[];
-} {
-  const dispatch: InventoryDispatch = {
-    id: "dsp-001",
-    dispatchDate: "2026-06-04T14:00:00Z",
-    recipientId: "rcp-001",
-    dispatchedBy: "Hector Mejia",
-    status: "sent",
-    invoiceNumber: "INV-2026-0412",
-    notes: "Weekly replenishment",
-    createdAt: "2026-06-04T14:05:00Z",
-  };
-  const lines: InventoryDispatchLine[] = [
-    { id: "dpl-001", dispatchId: dispatch.id, itemId: "inv-001", quantity: 48 },
-    { id: "dpl-002", dispatchId: dispatch.id, itemId: "inv-002", quantity: 6 },
+function buildSeedDispatches(): { dispatches: InventoryDispatch[]; movements: InventoryMovement[] } {
+  const dispatches: InventoryDispatch[] = [
+    {
+      id: "dsp-001",
+      itemId: "inv-001",
+      quantity: 48,
+      incomeGained: 96,
+      dispatchedAt: "2026-06-04",
+      dispatchedTo: { id: 12, name: "Hector Mejia" },
+      createdAt: "2026-06-04T14:05:00Z",
+      createdBy: DEFAULT_CREATED_BY,
+      updatedAt: "2026-06-04T14:05:00Z",
+      updatedBy: DEFAULT_CREATED_BY,
+    },
+    {
+      id: "dsp-002",
+      itemId: "inv-002",
+      quantity: 6,
+      incomeGained: 150,
+      dispatchedAt: "2026-06-04",
+      dispatchedTo: {
+        id: "674a1b2c3d4e5f6789012301",
+        name: "NY Pickup A",
+        route: { id: "674a1b2c3d4e5f6789012302", name: "Crew A" },
+      },
+      createdAt: "2026-06-04T14:05:00Z",
+      createdBy: DEFAULT_CREATED_BY,
+      updatedAt: "2026-06-04T14:05:00Z",
+      updatedBy: DEFAULT_CREATED_BY,
+    },
   ];
-  const movements: InventoryMovement[] = lines.map((line) => ({
-    id: `mov-${line.id}`,
-    itemId: line.itemId,
-    direction: "OUT",
-    quantity: line.quantity,
-    movementDate: dispatch.dispatchDate,
-    referenceType: "dispatch",
+  const movements: InventoryMovement[] = dispatches.map((dispatch) => ({
+    id: `mov-${dispatch.id}`,
+    itemId: dispatch.itemId,
+    direction: "OUT" as const,
+    quantity: dispatch.quantity,
+    movementDate: dispatch.dispatchedAt,
+    referenceType: "dispatch" as const,
     referenceId: dispatch.id,
-    createdBy: dispatch.dispatchedBy,
+    createdBy: DEFAULT_CREATED_BY,
   }));
-  return { dispatch, lines, movements };
+  return { dispatches, movements };
 }
 
 function createInitialStore(): InventoryStoreState {
   const openingMovements = buildOpeningMovements();
-  const seedReceipt = buildSeedReceipt();
-  const seedDispatch = buildSeedDispatch();
+  const seedReceipts = buildSeedReceipts();
+  const seedDispatches = buildSeedDispatches();
 
   return {
     catalogItems: SEED_CATALOG.map((item) => ({ ...item })),
-    movements: [...openingMovements, ...seedReceipt.movements, ...seedDispatch.movements],
-    receipts: [seedReceipt.receipt],
-    receiptLines: seedReceipt.lines,
-    dispatches: [seedDispatch.dispatch],
-    dispatchLines: seedDispatch.lines,
-    recipients: SEED_RECIPIENTS.map((recipient) => ({ ...recipient })),
+    movements: [...openingMovements, ...seedReceipts.movements, ...seedDispatches.movements],
+    receipts: seedReceipts.receipts,
+    dispatches: seedDispatches.dispatches,
+    suppliers: SEED_SUPPLIERS.map((supplier) => ({ ...supplier })),
     adjustments: openingMovements.map((movement) => ({
       id: movement.referenceId,
       itemId: movement.itemId,
@@ -358,7 +332,7 @@ function withComputedItems(catalogItems: InventoryCatalogItem[], movements: Inve
     return {
       ...item,
       quantity,
-      status: deriveInventoryStatus(quantity, item.reserved, item.reorderLevel),
+      averageCost: averageCostForItem(item.id, store.receipts),
     };
   });
 }
@@ -369,10 +343,8 @@ export function getInventoryStoreSnapshot() {
     catalogItems: [...store.catalogItems],
     movements: [...store.movements],
     receipts: [...store.receipts],
-    receiptLines: [...store.receiptLines],
     dispatches: [...store.dispatches],
-    dispatchLines: [...store.dispatchLines],
-    recipients: [...store.recipients],
+    suppliers: [...store.suppliers],
     adjustments: [...store.adjustments],
   };
 }
@@ -381,21 +353,22 @@ export function getItemStock(itemId: string): number {
   return computeStockMap(store.movements).get(itemId) ?? 0;
 }
 
+function catalogFieldsFromForm(values: InventoryFormValues) {
+  return {
+    item: values.item.trim(),
+    reorderThreshold: parseInventoryFormNumber(values.reorderThreshold),
+  };
+}
+
 export function createCatalogItem(values: InventoryFormValues): InventoryItem {
   const now = new Date().toISOString();
   const catalogItem: InventoryCatalogItem = {
     id: createId("inv"),
-    sku: values.sku,
-    name: values.name,
-    category: values.category,
-    location: values.location,
-    reorderLevel: values.reorderLevel,
-    unit: values.unit,
-    reserved: values.reserved,
-    notes: values.notes || undefined,
+    ...catalogFieldsFromForm(values),
     createdAt: now,
     createdBy: values.createdBy,
     updatedAt: now,
+    updatedBy: values.createdBy,
   };
   store.catalogItems = [catalogItem, ...store.catalogItems];
   return withComputedItems([catalogItem], store.movements)[0]!;
@@ -407,15 +380,9 @@ export function updateCatalogItem(id: string, values: InventoryFormValues): Inve
   const existing = store.catalogItems[index]!;
   const updated: InventoryCatalogItem = {
     ...existing,
-    sku: values.sku,
-    name: values.name,
-    category: values.category,
-    location: values.location,
-    reorderLevel: values.reorderLevel,
-    unit: values.unit,
-    reserved: values.reserved,
-    notes: values.notes || undefined,
+    ...catalogFieldsFromForm(values),
     updatedAt: new Date().toISOString(),
+    updatedBy: values.createdBy || existing.updatedBy,
   };
   store.catalogItems[index] = updated;
   return withComputedItems([updated], store.movements)[0]!;
@@ -427,116 +394,74 @@ export function deleteCatalogItems(ids: string[]): void {
 }
 
 export function createReceipt(values: ReceiptFormValues): InventoryReceipt {
+  const quantity = parseInventoryFormNumber(values.quantity);
   const receipt: InventoryReceipt = {
     id: createId("rcpt"),
-    receiptDate: values.receiptDate,
-    source: values.source,
-    receivedBy: values.receivedBy,
-    notes: values.notes || undefined,
+    itemId: values.itemId,
+    quantity,
+    averageCost: parseInventoryFormNumber(values.averageCost),
+    supplierId: values.supplierId,
+    receivedAt: values.receivedAt,
     createdAt: new Date().toISOString(),
+    createdBy: DEFAULT_CREATED_BY,
+    updatedAt: new Date().toISOString(),
+    updatedBy: DEFAULT_CREATED_BY,
   };
-  const lines: InventoryReceiptLine[] = values.lines.map((line) => ({
-    id: createId("rcl"),
-    receiptId: receipt.id,
-    itemId: line.itemId,
-    quantity: line.quantity,
-  }));
-  const movements: InventoryMovement[] = lines.map((line) => ({
+  const movement: InventoryMovement = {
     id: createId("mov"),
-    itemId: line.itemId,
+    itemId: receipt.itemId,
     direction: "IN",
-    quantity: line.quantity,
-    movementDate: receipt.receiptDate,
+    quantity: receipt.quantity,
+    movementDate: receipt.receivedAt,
     referenceType: "receipt",
     referenceId: receipt.id,
-    createdBy: values.receivedBy,
-    notes: values.notes || undefined,
-  }));
+    createdBy: DEFAULT_CREATED_BY,
+  };
 
   store.receipts = [receipt, ...store.receipts];
-  store.receiptLines = [...lines, ...store.receiptLines];
-  store.movements = [...movements, ...store.movements];
+  store.movements = [movement, ...store.movements];
   return receipt;
 }
 
 export function createDispatch(values: DispatchFormValues): InventoryDispatch {
-  for (const line of values.lines) {
-    const available = getItemStock(line.itemId);
-    if (values.markSent && line.quantity > available) {
-      const item = store.catalogItems.find((entry) => entry.id === line.itemId);
-      throw new Error(`Insufficient stock for ${item?.name ?? line.itemId}`);
-    }
+  const quantity = parseInventoryFormNumber(values.quantity);
+  const available = getItemStock(values.itemId);
+  if (quantity > available) {
+    const item = store.catalogItems.find((entry) => entry.id === values.itemId);
+    throw new Error(`Insufficient stock for ${item?.item ?? values.itemId}`);
+  }
+  const dispatchedTo = dispatchedToFromFormValues(values);
+  if (!dispatchedTo) {
+    throw new Error("Dispatched to is required");
   }
 
+  const now = new Date().toISOString();
   const dispatch: InventoryDispatch = {
     id: createId("dsp"),
-    dispatchDate: values.dispatchDate,
-    recipientId: values.recipientId,
-    dispatchedBy: values.dispatchedBy,
-    status: values.markSent ? "sent" : "pending",
-    invoiceNumber: values.invoiceNumber || undefined,
-    notes: values.notes || undefined,
-    createdAt: new Date().toISOString(),
+    itemId: values.itemId,
+    quantity,
+    incomeGained: parseInventoryFormNumber(values.incomeGained),
+    dispatchedAt: values.dispatchedAt,
+    dispatchedTo,
+    createdAt: now,
+    createdBy: DEFAULT_CREATED_BY,
+    updatedAt: now,
+    updatedBy: DEFAULT_CREATED_BY,
   };
-  const lines: InventoryDispatchLine[] = values.lines.map((line) => ({
-    id: createId("dpl"),
-    dispatchId: dispatch.id,
-    itemId: line.itemId,
-    quantity: line.quantity,
-  }));
+  const movement: InventoryMovement = {
+    id: createId("mov"),
+    itemId: dispatch.itemId,
+    direction: "OUT",
+    quantity: dispatch.quantity,
+    movementDate: dispatch.dispatchedAt,
+    referenceType: "dispatch",
+    referenceId: dispatch.id,
+    createdBy: DEFAULT_CREATED_BY,
+  };
 
   store.dispatches = [dispatch, ...store.dispatches];
-  store.dispatchLines = [...lines, ...store.dispatchLines];
-
-  if (values.markSent) {
-    const movements: InventoryMovement[] = lines.map((line) => ({
-      id: createId("mov"),
-      itemId: line.itemId,
-      direction: "OUT",
-      quantity: line.quantity,
-      movementDate: dispatch.dispatchDate,
-      referenceType: "dispatch",
-      referenceId: dispatch.id,
-      createdBy: values.dispatchedBy,
-      notes: values.notes || undefined,
-    }));
-    store.movements = [...movements, ...store.movements];
-  }
-
+  store.movements = [movement, ...store.movements];
   return dispatch;
-}
-
-export function updateDispatchStatus(dispatchId: string, status: InventoryDispatch["status"]): InventoryDispatch {
-  const index = store.dispatches.findIndex((entry) => entry.id === dispatchId);
-  if (index < 0) throw new Error("Dispatch not found");
-  const dispatch = store.dispatches[index]!;
-  if (dispatch.status === status) return dispatch;
-
-  if (status === "sent" && dispatch.status === "pending") {
-    const lines = store.dispatchLines.filter((line) => line.dispatchId === dispatchId);
-    for (const line of lines) {
-      const available = getItemStock(line.itemId);
-      if (line.quantity > available) {
-        const item = store.catalogItems.find((entry) => entry.id === line.itemId);
-        throw new Error(`Insufficient stock for ${item?.name ?? line.itemId}`);
-      }
-    }
-    const movements: InventoryMovement[] = lines.map((line) => ({
-      id: createId("mov"),
-      itemId: line.itemId,
-      direction: "OUT",
-      quantity: line.quantity,
-      movementDate: dispatch.dispatchDate,
-      referenceType: "dispatch",
-      referenceId: dispatch.id,
-      createdBy: dispatch.dispatchedBy,
-    }));
-    store.movements = [...movements, ...store.movements];
-  }
-
-  const updated = { ...dispatch, status };
-  store.dispatches[index] = updated;
-  return updated;
 }
 
 export function createAdjustment(values: AdjustmentFormValues): InventoryAdjustment {
@@ -569,35 +494,42 @@ export function createAdjustment(values: AdjustmentFormValues): InventoryAdjustm
   return adjustment;
 }
 
-export function createRecipient(values: RecipientFormValues): InventoryRecipient {
-  const recipient: InventoryRecipient = {
-    id: createId("rcp"),
-    name: values.name,
-    type: values.type,
-    contactInfo: values.contactInfo || undefined,
-    address: values.address || undefined,
+export function createSupplier(values: SupplierFormValues): InventorySupplier {
+  const supplier: InventorySupplier = {
+    id: createId("sup"),
+    companyName: values.companyName.trim(),
+    contactNames: compactStringList(values.contactNames),
+    addresses: compactStringList(values.addresses),
+    phones: values.phones.map((phone) => ({ ...phone })),
+    emails: compactStringList(values.emails),
     createdAt: new Date().toISOString(),
+    createdBy: DEFAULT_CREATED_BY,
+    updatedAt: new Date().toISOString(),
+    updatedBy: DEFAULT_CREATED_BY,
   };
-  store.recipients = [recipient, ...store.recipients];
-  return recipient;
+  store.suppliers = [supplier, ...store.suppliers];
+  return supplier;
 }
 
-export function updateRecipient(id: string, values: RecipientFormValues): InventoryRecipient {
-  const index = store.recipients.findIndex((entry) => entry.id === id);
-  if (index < 0) throw new Error("Recipient not found");
-  const updated: InventoryRecipient = {
-    ...store.recipients[index]!,
-    name: values.name,
-    type: values.type,
-    contactInfo: values.contactInfo || undefined,
-    address: values.address || undefined,
+export function updateSupplier(id: string, values: SupplierFormValues): InventorySupplier {
+  const index = store.suppliers.findIndex((entry) => entry.id === id);
+  if (index < 0) throw new Error("Supplier not found");
+  const updated: InventorySupplier = {
+    ...store.suppliers[index]!,
+    companyName: values.companyName.trim(),
+    contactNames: compactStringList(values.contactNames),
+    addresses: compactStringList(values.addresses),
+    phones: values.phones.map((phone) => ({ ...phone })),
+    emails: compactStringList(values.emails),
+    updatedAt: new Date().toISOString(),
+    updatedBy: DEFAULT_CREATED_BY,
   };
-  store.recipients[index] = updated;
+  store.suppliers[index] = updated;
   return updated;
 }
 
-export function deleteRecipients(ids: string[]): void {
-  store.recipients = store.recipients.filter((entry) => !ids.includes(entry.id));
+export function deleteSuppliers(ids: string[]): void {
+  store.suppliers = store.suppliers.filter((entry) => !ids.includes(entry.id));
 }
 
 /** Test helper — resets in-memory store to seed data. */

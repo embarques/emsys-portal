@@ -58,7 +58,10 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
 
   const statement = statementQuery.data ?? null;
   const editingJournal = journalQuery.data ?? null;
-  const initialValues = isEditing && editingJournal ? journalToFormValues(editingJournal) : undefined;
+  const initialValues = useMemo(
+    () => (isEditing && editingJournal ? journalToFormValues(editingJournal) : undefined),
+    [editingJournal, isEditing],
+  );
   const typeLabel = initialValues ? transactionTypeLabel(initialValues.transactionType, t) : null;
   const isSubmitting = createJournal.isPending || updateJournal.isPending;
 
