@@ -1,5 +1,4 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { createMockObjectId } from "@/lib/vehicles/types";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
@@ -305,38 +304,4 @@ export function areRouteFormValuesEquivalent(
   right: RouteFormValues,
 ): boolean {
   return areFormValuesEquivalent(left, right);
-}
-
-
-export function formValuesToRoute(
-  values: RouteFormValues,
-  createdAt?: string,
-  updatedAt?: string,
-  id?: string,
-  existing?: Pick<Route, "date" | "tripNumber" | "routeId" | "name">,
-): Route {
-  if (values.employees.length === 0) {
-    throw new Error("Select at least one employee.");
-  }
-
-  const now = new Date().toISOString();
-
-  return {
-    id: id ?? (values.id.trim() || createMockObjectId()),
-    routeId: existing?.routeId ?? values.routeId.trim(),
-    name: existing?.name ?? values.name.trim(),
-    date: existing?.date ?? "",
-    tripNumber: existing?.tripNumber ?? 0,
-    branch: values.branch.id > 0 ? { ...values.branch } : null,
-    vehicle: createEmptyVehicleRef(),
-    employees: values.employees.map((employee) => ({
-      id: employee.id,
-      name: employee.name.trim(),
-    })),
-    active: values.active,
-    createdAt: createdAt ?? (values.createdAt || now),
-    createdBy: values.createdBy.trim() || DEFAULT_CREATED_BY,
-    updatedAt: updatedAt ?? (values.updatedAt || now),
-    updatedBy: values.updatedBy?.trim() || DEFAULT_CREATED_BY,
-  };
 }

@@ -1,51 +1,3 @@
-import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { createRecordId } from "@/lib/customers/types";
-
-export type LabelStatus =
-  | "pending"
-  | "generated"
-  | "printed"
-  | "in_transit"
-  | "delivered"
-  | "cancelled";
-
-export type LabelActivityAction =
-  | "generate"
-  | "status_change"
-  | "container_change"
-  | "route_change"
-  | "print";
-
-export type ShipmentLabel = {
-  labelId: string;
-  invoiceId: string;
-  invoiceNumber: string;
-  invoiceLineItemId: string;
-  barcode: string;
-  status: LabelStatus;
-  containerId: string;
-  routeId?: string;
-  description: string;
-  labelSequence: number;
-  totalLabels: number;
-  quantity: number;
-  createdAt: string;
-  createdBy: string;
-  updatedAt: string;
-};
-
-export type LabelActivityEntry = {
-  id: string;
-  labelId: string;
-  barcode: string;
-  invoiceNumber: string;
-  action: LabelActivityAction;
-  message: string;
-  success: boolean;
-  timestamp: string;
-  performedBy: string;
-};
-
 export type StagedLineItem = {
   key: string;
   invoiceId: string;
@@ -79,20 +31,6 @@ export type LabelUpdateResult = {
   message: string;
 };
 
-export type LabelUpdaterOptions = {
-  changeStatus: boolean;
-  newStatus?: LabelStatus;
-  changeContainer: boolean;
-  newContainerId?: string;
-  changeRoute: boolean;
-  newRouteId?: string;
-  /**
-   * Resolves a route id to a human label using live API data.
-   * Falls back to the raw id when omitted.
-   */
-  resolveRouteLabel?: (routeId: string) => string;
-};
-
 /** Options for the live barcode scanner (`PUT /barcodes/{id}`). */
 export type BarcodeScannerOptions = {
   changeStatus: boolean;
@@ -106,11 +44,6 @@ export type BarcodeScannerOptions = {
   statusOptions?: readonly BarcodeStatusOption[];
   resolveRouteLabel?: (routeRecordId: string) => string;
   resolveContainerLabel?: (containerId: string) => string;
-};
-
-export type LabelFilterState = {
-  query: string;
-  status: LabelStatus | "all";
 };
 
 /** Status reference returned by / sent to the EMSYS barcode API. */
@@ -218,9 +151,6 @@ export const FALLBACK_BARCODE_STATUS_OPTIONS: BarcodeStatusOption[] = [
   { id: 6, name: "CANCELLED" },
 ];
 
-/** @deprecated Use `FALLBACK_BARCODE_STATUS_OPTIONS` or `useBarcodeStatusOptions()`. */
-export const BARCODE_STATUS_OPTIONS = FALLBACK_BARCODE_STATUS_OPTIONS;
-
 /** Resolve a write payload status ref from stored ids/names on a label snapshot. */
 export function resolveBarcodeStatusRef(
   statusId: number | undefined,
@@ -258,37 +188,8 @@ export function findBarcodeStatusOptionByName(
   return options.find((entry) => entry.name.toUpperCase() === normalized);
 }
 
-export const LABEL_STATUS_VALUES = [
-  "pending",
-  "generated",
-  "printed",
-  "in_transit",
-  "delivered",
-  "cancelled",
-] as const satisfies readonly LabelStatus[];
-
-/** @deprecated Use LABEL_STATUS_VALUES with getLabelStatusLabel(t) instead. */
-export const LABEL_STATUSES: { value: LabelStatus; label: string }[] = LABEL_STATUS_VALUES.map(
-  (value) => ({
-    value,
-    label: value,
-  }),
-);
-
-export function createLabelId(): string {
-  return createRecordId();
-}
-
 export function createStagedLineItemKey(invoiceId: string, lineItemId: string): string {
   return `${invoiceId}:${lineItemId}`;
-}
-
-export function generateBarcode(invoiceNumber: string, lineItemId: string, sequence: number): string {
-  const invoicePart = invoiceNumber.replace(/[^A-Z0-9]/gi, "").slice(-8).toUpperCase();
-  const linePart = lineItemId.replace(/[^A-Z0-9]/gi, "").slice(-4).toUpperCase();
-  const seqPart = String(sequence).padStart(3, "0");
-  const entropy = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `LBL-${invoicePart}-${linePart}-${seqPart}-${entropy}`;
 }
 
 export function buildStagedLineItems(
@@ -314,103 +215,3 @@ export function buildStagedLineItems(
   });
 }
 
-export function labelsExistForLineItem(
-  labels: ShipmentLabel[],
-  invoiceId: string,
-  lineItemId: string
-): boolean {
-  return labels.some(
-    (label) => label.invoiceId === invoiceId && label.invoiceLineItemId === lineItemId
-  );
-}
-
-export function createActivityEntry(
-  partial: Omit<LabelActivityEntry, "id" | "timestamp"> & { timestamp?: string }
-): LabelActivityEntry {
-  return {
-    id: createRecordId(),
-    timestamp: partial.timestamp ?? new Date().toISOString(),
-    ...partial,
-  };
-}
-
-export function generateLabelsForLineItem(
-  stagedItem: StagedLineItem,
-  existingLabels: ShipmentLabel[],
-  createdBy = DEFAULT_CREATED_BY
-): { labels: ShipmentLabel[]; activities: LabelActivityEntry[] } {
-  if (stagedItem.labelCount <= 0) {
-    return {
-      labels: [],
-      activities: [
-        createActivityEntry({
-          labelId: "",
-          barcode: "—",
-          invoiceNumber: stagedItem.invoiceNumber,
-          action: "generate",
-          success: false,
-          message: `Skipped "${stagedItem.description}": label count is 0.`,
-          performedBy: createdBy,
-        }),
-      ],
-    };
-  }
-
-  if (labelsExistForLineItem(existingLabels, stagedItem.invoiceId, stagedItem.lineItemId)) {
-    return {
-      labels: [],
-      activities: [
-        createActivityEntry({
-          labelId: "",
-          barcode: "—",
-          invoiceNumber: stagedItem.invoiceNumber,
-          action: "generate",
-          success: false,
-          message: `Labels already exist for ${stagedItem.invoiceNumber} · ${stagedItem.description}. Change status or container instead.`,
-          performedBy: createdBy,
-        }),
-      ],
-    };
-  }
-
-  const now = new Date().toISOString();
-  const routeLabel = stagedItem.routeLabel?.trim() || stagedItem.routeId?.trim();
-  const routeSuffix = routeLabel ? ` Assigned to ${routeLabel}.` : "";
-
-  const labels: ShipmentLabel[] = Array.from({ length: stagedItem.labelCount }, (_, index) => {
-    const sequence = index + 1;
-    return {
-      labelId: createLabelId(),
-      invoiceId: stagedItem.invoiceId,
-      invoiceNumber: stagedItem.invoiceNumber,
-      invoiceLineItemId: stagedItem.lineItemId,
-      barcode: generateBarcode(stagedItem.invoiceNumber, stagedItem.lineItemId, sequence),
-      status: "generated",
-      containerId: stagedItem.containerId,
-      routeId: stagedItem.routeId,
-      description: stagedItem.description,
-      labelSequence: sequence,
-      totalLabels: stagedItem.labelCount,
-      quantity: stagedItem.quantity,
-      createdAt: now,
-      createdBy,
-      updatedAt: now,
-    };
-  });
-
-  return {
-    labels,
-    activities: labels.map((label) =>
-      createActivityEntry({
-        labelId: label.labelId,
-        barcode: label.barcode,
-        invoiceNumber: stagedItem.invoiceNumber,
-        action: "generate",
-        success: true,
-        message: `Label ${label.labelSequence}/${label.totalLabels} created for ${stagedItem.description}.${routeSuffix}`,
-        performedBy: createdBy,
-        timestamp: now,
-      })
-    ),
-  };
-}

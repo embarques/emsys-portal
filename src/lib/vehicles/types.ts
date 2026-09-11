@@ -193,10 +193,6 @@ export function getVehiclePortalBranch(branch: string): VehiclePortalBranch {
   return "usa";
 }
 
-export function createMockObjectId(): string {
-  return Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
-}
-
 export function createEmptyVehicleForm(): VehicleFormValues {
   return {
     id: "",

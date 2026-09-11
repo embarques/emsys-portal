@@ -5,27 +5,8 @@ import { useTranslation } from "@/lib/i18n";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
-import {
-  getBarcodeStatusLabel,
-  getLabelStatusLabel,
-} from "../display";
-import {
-  FALLBACK_BARCODE_STATUS_OPTIONS,
-  LABEL_STATUS_VALUES,
-} from "../types";
-
-export function useLabelStatusOptions() {
-  const { t } = useTranslation();
-
-  return useMemo(
-    () =>
-      LABEL_STATUS_VALUES.map((value) => ({
-        value,
-        label: getLabelStatusLabel(value, t),
-      })),
-    [t],
-  );
-}
+import { getBarcodeStatusLabel } from "../display";
+import { FALLBACK_BARCODE_STATUS_OPTIONS } from "../types";
 
 /**
  * Tenant barcode status catalog from `GET /barcodes/status-options`
