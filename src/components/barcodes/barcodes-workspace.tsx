@@ -2,22 +2,20 @@
 
 import { useMemo, useState } from "react";
 import {
+  Container as ContainerIcon,
   PackageCheck,
-  Plus,
   Printer,
+  Route as RouteIcon,
   ScanBarcode,
-  Trash2,
+  Tag,
   Truck,
 } from "lucide-react";
 
-import { BarcodeForm } from "@/components/barcodes/barcode-form";
 import { BarcodeViewSheet } from "@/components/barcodes/barcode-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
-import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
-import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
@@ -27,15 +25,7 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
-import { useBarcodeFilterFields } from "@/lib/barcodes/hooks/use-barcode-filter-fields";
-import { countCompleteFilterRows } from "@/lib/table/filter-builder";
-import {
-  buildTableSelectionResetKey,
-  useResolvedPaginatedItems,
-  useTableSelectionReset,
-} from "@/lib/table/directory-table-state";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useTranslation } from "@/lib/i18n";
+import { AssignBarcodeRouteDialog } from "@/components/invoices/assign-barcode-route-dialog";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
@@ -48,40 +38,45 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useBarcodeFilterFields } from "@/lib/barcodes/hooks/use-barcode-filter-fields";
+import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useTranslation } from "@/lib/i18n";
 import { useUserError } from "@/lib/errors";
+import { normalizeApiError } from "@/lib/api/axios";
 import {
   computeBarcodeKpis,
   formatBarcodeContainer,
-  formatBarcodeDelivery,
   formatBarcodeDeliveryRoute,
-  formatBarcodeId,
-  formatBarcodeScanDate,
   formatBarcodeStatus,
-  formatBarcodeTripNumber,
   getBarcodeStatusBadgeClass,
 } from "@/lib/barcodes/display";
-import {
-  useBarcodeKpis,
-  useBarcodeStats,
-  useBarcodes,
-  useCreateBarcode,
-  useDeleteBarcodes,
-  useUpdateBarcode,
-} from "@/lib/barcodes/hooks/use-barcodes";
+import { useBarcodeKpis, useBarcodeStats, useBarcodes } from "@/lib/barcodes/hooks/use-barcodes";
 import {
   DEFAULT_BARCODE_LIST_PARAMS,
-  barcodeToFormValues,
   buildBarcodeListParams,
-  createEmptyBarcodeForm,
   type Barcode,
   type BarcodeFilterState,
-  type BarcodeFormValues,
-  areBarcodeFormValuesEquivalent,
 } from "@/lib/barcodes/types";
+import { formatContainerLabel } from "@/lib/containers/display";
+import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
+import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
+import { useUpdateBarcodes } from "@/lib/labels/hooks/use-barcodes";
+import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
+import { getBarcodeStatusLabel } from "@/lib/labels/display";
+import { FALLBACK_BARCODE_STATUS_OPTIONS } from "@/lib/labels/types";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -91,10 +86,15 @@ const defaultFilters: BarcodeFilterState = {
 };
 
 export function BarcodesWorkspace() {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const barcodeFilterFields = useBarcodeFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyUpdated, notifyError } = useFeedback();
+  const barcodeStatusOptions = useBarcodeStatusOptions();
+  const { data: containersData } = useContainerPicker(200);
+  const containers = containersData?.items ?? [];
+  const updateBarcodesMutation = useUpdateBarcodes();
+
   const [filters, setFilters] = useState<BarcodeFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -103,10 +103,15 @@ export function BarcodesWorkspace() {
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_BARCODE_LIST_PARAMS.sort, () => setPage(1));
   const [viewBarcode, setViewBarcode] = useState<Barcode | null>(null);
-  const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
-  const [editingBarcode, setEditingBarcode] = useState<Barcode | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Barcode | Barcode[] | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
+
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [containerDialogOpen, setContainerDialogOpen] = useState(false);
+  const [routeDialogOpen, setRouteDialogOpen] = useState(false);
+  const [newStatus, setNewStatus] = useState(
+    FALLBACK_BARCODE_STATUS_OPTIONS[0]?.name ?? "CREATED",
+  );
+  const [newContainerId, setNewContainerId] = useState("");
+  const [bulkError, setBulkError] = useState<string | null>(null);
 
   const listParams = useMemo(
     () =>
@@ -123,9 +128,6 @@ export function BarcodesWorkspace() {
   const { data, isLoading, isError, error, isFetching } = useBarcodes(listParams);
   const stats = useBarcodeStats();
   const kpiQuery = useBarcodeKpis();
-  const createBarcodeMutation = useCreateBarcode();
-  const updateBarcodeMutation = useUpdateBarcode();
-  const deleteBarcodesMutation = useDeleteBarcodes();
 
   const barcodes = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalBarcodes = data?.total ?? 0;
@@ -134,10 +136,8 @@ export function BarcodesWorkspace() {
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     barcodes.length > 0 && barcodes.every((barcode) => selectedIds.includes(barcode.id));
-  const isSaving =
-    createBarcodeMutation.isPending ||
-    updateBarcodeMutation.isPending ||
-    deleteBarcodesMutation.isPending;
+  const selectedBarcodes = barcodes.filter((barcode) => selectedIds.includes(barcode.id));
+  const isUpdating = updateBarcodesMutation.isPending;
 
   useTableSelectionReset<number>(
     buildTableSelectionResetKey(debouncedQuery, filters.rows),
@@ -146,12 +146,44 @@ export function BarcodesWorkspace() {
 
   const kpis = useMemo(() => computeBarcodeKpis(kpiQuery.items), [kpiQuery.items]);
 
+  const statusOptions = useMemo(
+    () =>
+      (barcodeStatusOptions.length > 0 ? barcodeStatusOptions : FALLBACK_BARCODE_STATUS_OPTIONS).map(
+        (entry) => ({
+          value: entry.name,
+          label: getBarcodeStatusLabel(entry.name, t),
+        }),
+      ),
+    [barcodeStatusOptions, t],
+  );
+
+  const containerOptions = useMemo(
+    () =>
+      containers.map((container) => ({
+        value: String(container.id),
+        label: formatContainerLabel(container),
+      })),
+    [containers],
+  );
+
+  const routeBarcodeIds = useMemo(
+    () =>
+      selectedBarcodes
+        .map((barcode) => barcode.barcodeId?.trim() || (barcode.id > 0 ? String(barcode.id) : ""))
+        .filter(Boolean),
+    [selectedBarcodes],
+  );
+
   function toggleSelectAll(checked: boolean) {
     if (checked) {
-      setSelectedIds((current) => Array.from(new Set([...current, ...barcodes.map((barcode) => barcode.id)])));
+      setSelectedIds((current) =>
+        Array.from(new Set([...current, ...barcodes.map((barcode) => barcode.id)])),
+      );
       return;
     }
-    setSelectedIds((current) => current.filter((id) => !barcodes.some((barcode) => barcode.id === id)));
+    setSelectedIds((current) =>
+      current.filter((id) => !barcodes.some((barcode) => barcode.id === id)),
+    );
   }
 
   function toggleSelect(barcodeId: number, checked: boolean) {
@@ -160,82 +192,72 @@ export function BarcodesWorkspace() {
     );
   }
 
-  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
+  async function applyStatusChange() {
+    const option = (barcodeStatusOptions.length > 0
+      ? barcodeStatusOptions
+      : FALLBACK_BARCODE_STATUS_OPTIONS
+    ).find((entry) => entry.name === newStatus);
+    if (!option || selectedBarcodes.length === 0) return;
 
-  function openAddForm() {
-    if (isDesktopTabs) {
-      openFormTab({ feature: "barcodes", baseHref: "/barcodes", mode: "add", label: t("barcodes.actions.add") });
-      return;
-    }
-    setEditingBarcode(null);
-    setFormMode("add");
-    setFormError(null);
-  }
+    const updates: BarcodeUpdate[] = selectedBarcodes.map((barcode) => ({
+      id: barcode.id,
+      barcodeId: barcode.barcodeId,
+      invoiceId: barcode.invoiceId,
+      writeTarget: barcode.id > 0 ? "barcodes" : "invoice-embedded",
+      payload: {
+        number: barcode.number,
+        status: { id: option.id, name: option.name },
+        ...(barcode.container?.id != null
+          ? { container: { id: barcode.container.id, name: barcode.container.name } }
+          : {}),
+      },
+    }));
 
-  function openEditForm(barcode: Barcode) {
-    if (isDesktopTabs) {
-      setViewBarcode(null);
-      openFormTab({
-        feature: "barcodes",
-        baseHref: "/barcodes",
-        mode: "edit",
-        entityId: String(barcode.id),
-        label: t("barcodes.actions.editNamed", { number: barcode.number }),
-      });
-      return;
-    }
-    setEditingBarcode(barcode);
-    setFormMode("edit");
-    setViewBarcode(null);
-    setFormError(null);
-  }
-
-  async function saveBarcode(values: BarcodeFormValues) {
-    setFormError(null);
-
+    setBulkError(null);
     try {
-      if (formMode === "edit" && editingBarcode) {
-        if (areBarcodeFormValuesEquivalent(values, barcodeToFormValues(editingBarcode))) {
-          notifySuccess(t("common.form.noChanges"));
-          setFormMode(null);
-          setEditingBarcode(null);
-          return;
-        }
-
-        const nextBarcode = await updateBarcodeMutation.mutateAsync({
-          barcodeId: editingBarcode.id,
-          values,
-        });
-        notifyUpdated(t("barcodes.entity"), nextBarcode.number);
-      } else {
-        const nextBarcode = await createBarcodeMutation.mutateAsync(values);
-        notifyAdded(t("barcodes.entity"), nextBarcode.number);
-      }
-
-      setFormMode(null);
-      setEditingBarcode(null);
-      setPage(1);
+      await updateBarcodesMutation.mutateAsync(updates);
+      notifyUpdated(t("barcodes.entity"), t("barcodes.bulk.updatedCount", { count: updates.length }));
+      setStatusDialogOpen(false);
+      setSelectedIds([]);
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
+      setBulkError(normalizeApiError(mutationError).message);
+      notifyError(toErrorMessage(mutationError));
     }
   }
 
-  async function confirmDelete() {
-    if (!deleteTarget) return;
+  async function applyContainerChange() {
+    const container = containers.find((entry) => String(entry.id) === newContainerId);
+    if (!container || selectedBarcodes.length === 0) return;
 
-    const ids = Array.isArray(deleteTarget)
-      ? deleteTarget.map((barcode) => barcode.id)
-      : [deleteTarget.id];
+    const updates: BarcodeUpdate[] = selectedBarcodes.map((barcode) => ({
+      id: barcode.id,
+      barcodeId: barcode.barcodeId,
+      invoiceId: barcode.invoiceId,
+      writeTarget: barcode.id > 0 ? "barcodes" : "invoice-embedded",
+      payload: {
+        number: barcode.number,
+        status:
+          barcode.status?.id != null && barcode.status.name?.trim()
+            ? { id: barcode.status.id, name: barcode.status.name.trim() }
+            : FALLBACK_BARCODE_STATUS_OPTIONS[0]
+              ? {
+                  id: FALLBACK_BARCODE_STATUS_OPTIONS[0].id,
+                  name: FALLBACK_BARCODE_STATUS_OPTIONS[0].name,
+                }
+              : { id: 1, name: "CREATED" },
+        container: { id: container.id, name: container.name },
+      },
+    }));
 
+    setBulkError(null);
     try {
-      await deleteBarcodesMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
-      setViewBarcode(null);
-      notifyDeleted(t("barcodes.entity"), ids.length);
+      await updateBarcodesMutation.mutateAsync(updates);
+      notifyUpdated(t("barcodes.entity"), t("barcodes.bulk.updatedCount", { count: updates.length }));
+      setContainerDialogOpen(false);
+      setSelectedIds([]);
     } catch (mutationError) {
-      setFormError(toErrorMessage(mutationError));
-      setDeleteTarget(null);
+      setBulkError(normalizeApiError(mutationError).message);
+      notifyError(toErrorMessage(mutationError));
     }
   }
 
@@ -250,7 +272,7 @@ export function BarcodesWorkspace() {
       label: t("barcodes.stats.created.label"),
       value: kpiQuery.isLoading ? "…" : kpis.created.toString(),
       description: t("barcodes.stats.created.description"),
-      icon: Plus,
+      icon: Tag,
     },
     {
       label: t("barcodes.stats.printed.label"),
@@ -274,17 +296,26 @@ export function BarcodesWorkspace() {
 
   const tableColumns: DataTableColumn<Barcode>[] = [
     {
-      id: "id",
-      label: t("barcodes.columns.id"),
-      cellClassName: "font-mono text-xs",
-      renderCell: (barcode) => formatBarcodeId(barcode.id),
-    },
-    {
       id: "number",
       label: t("barcodes.columns.number"),
       sortField: "number",
       cellClassName: "font-mono text-xs font-medium",
       renderCell: (barcode) => barcode.number,
+    },
+    {
+      id: "invoice",
+      label: t("barcodes.columns.invoice"),
+      renderCell: (barcode) => barcode.invoiceNumber?.trim() || t("common.empty.dash"),
+    },
+    {
+      id: "description",
+      label: t("barcodes.columns.description"),
+      renderCell: (barcode) => barcode.description?.trim() || t("common.empty.dash"),
+    },
+    {
+      id: "container",
+      label: t("barcodes.columns.container"),
+      renderCell: (barcode) => formatBarcodeContainer(barcode.container, t),
     },
     {
       id: "status",
@@ -300,41 +331,14 @@ export function BarcodesWorkspace() {
       },
     },
     {
-      id: "container",
-      label: t("barcodes.columns.container"),
-      renderCell: (barcode) => formatBarcodeContainer(barcode.container, t),
-    },
-    {
       id: "route.name",
-      label: t("barcodes.columns.deliveryRoute"),
+      label: t("barcodes.columns.route"),
       sortField: "route.name",
       renderCell: (barcode) => formatBarcodeDeliveryRoute(barcode.route, t),
     },
-    {
-      id: "tripNumber",
-      label: t("barcodes.columns.tripNumber"),
-      sortField: "tripNumber",
-      defaultVisible: false,
-      cellClassName: "font-mono text-xs",
-      renderCell: (barcode) => formatBarcodeTripNumber(barcode.tripNumber, t),
-    },
-    {
-      id: "delivery.name",
-      label: t("barcodes.columns.delivery"),
-      sortField: "delivery.name",
-      defaultVisible: false,
-      renderCell: (barcode) => formatBarcodeDelivery(barcode.delivery, t),
-    },
-    {
-      id: "scanDate",
-      label: t("barcodes.columns.scanDate"),
-      defaultVisible: false,
-      cellClassName: "text-muted-foreground",
-      renderCell: (barcode) => formatBarcodeScanDate(barcode.scanDate, locale),
-    },
   ];
 
-  const columnVisibility = useColumnVisibility("barcodes-v1", tableColumns);
+  const columnVisibility = useColumnVisibility("barcodes-v2", tableColumns);
   const activeFilterCount = countCompleteFilterRows(filters.rows, barcodeFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const noun = t("barcodes.noun");
@@ -352,22 +356,9 @@ export function BarcodesWorkspace() {
     t,
   );
 
-  const deleteCount = Array.isArray(deleteTarget) ? deleteTarget.length : 1;
-  const deleteDialogTitle =
-    deleteCount > 1 ? t("barcodes.dialogs.deleteTitlePlural") : t("barcodes.dialogs.deleteTitle");
-
   return (
     <div>
-      <PageHeader
-        title={t("barcodes.title")}
-        description={t("barcodes.pages.description")}
-        actions={
-          <Button onClick={openAddForm}>
-            <Plus className="h-4 w-4" />
-            {t("barcodes.actions.add")}
-          </Button>
-        }
-      />
+      <PageHeader title={t("barcodes.title")} description={t("barcodes.pages.description")} />
 
       <StatCards items={statCards} />
 
@@ -433,19 +424,64 @@ export function BarcodesWorkspace() {
           pageRowIds={barcodes.map((barcode) => String(barcode.id))}
           totalCount={totalBarcodes}
           onSelectedIdsChange={(ids) => setSelectedIds(ids.map(Number))}
-          onEdit={() => {
-            const barcode = barcodes.find((entry) => entry.id === selectedIds[0]);
-            if (barcode) openEditForm(barcode);
-          }}
-          onDelete={() =>
-            setDeleteTarget(barcodes.filter((barcode) => selectedIds.includes(barcode.id)))
+          canEdit={false}
+          canDelete={false}
+          actions={
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className={tableSelectionActionStyles.className}
+                style={tableSelectionActionStyles.style}
+                disabled={selectedIds.length === 0 || isUpdating}
+                onClick={() => {
+                  setBulkError(null);
+                  setNewStatus(
+                    barcodeStatusOptions[0]?.name ??
+                      FALLBACK_BARCODE_STATUS_OPTIONS[0]?.name ??
+                      "CREATED",
+                  );
+                  setStatusDialogOpen(true);
+                }}
+              >
+                <Tag className="h-4 w-4" />
+                {t("barcodes.bulk.changeStatus")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className={tableSelectionActionStyles.className}
+                style={tableSelectionActionStyles.style}
+                disabled={selectedIds.length === 0 || isUpdating}
+                onClick={() => {
+                  setBulkError(null);
+                  setNewContainerId(containers[0] ? String(containers[0].id) : "");
+                  setContainerDialogOpen(true);
+                }}
+              >
+                <ContainerIcon className="h-4 w-4" />
+                {t("barcodes.bulk.changeContainer")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className={tableSelectionActionStyles.className}
+                style={tableSelectionActionStyles.style}
+                disabled={routeBarcodeIds.length === 0 || isUpdating}
+                onClick={() => setRouteDialogOpen(true)}
+              >
+                <RouteIcon className="h-4 w-4" />
+                {t("barcodes.bulk.assignRoute")}
+              </Button>
+            </>
           }
         />
 
         {isError ? (
-          <div className="border-b px-6 py-3 text-sm text-destructive">
-            {toErrorMessage(error)}
-          </div>
+          <div className="border-b px-6 py-3 text-sm text-destructive">{toErrorMessage(error)}</div>
         ) : isLoading ? (
           <DirectoryTableLoader
             icon={ScanBarcode}
@@ -453,10 +489,11 @@ export function BarcodesWorkspace() {
             description={t("barcodes.loading.description")}
             columns={[
               t("barcodes.columns.number"),
-              t("barcodes.columns.status"),
+              t("barcodes.columns.invoice"),
+              t("barcodes.columns.description"),
               t("barcodes.columns.container"),
-              t("barcodes.columns.deliveryRoute"),
-              t("barcodes.columns.scanDate"),
+              t("barcodes.columns.status"),
+              t("barcodes.columns.route"),
             ]}
           />
         ) : (
@@ -477,18 +514,11 @@ export function BarcodesWorkspace() {
             onToggleSelectAll={toggleSelectAll}
             onToggleSelect={(id, checked) => toggleSelect(Number(id), checked)}
             onRowClick={setViewBarcode}
-            onRowDoubleClick={openEditForm}
             activeRowId={viewBarcode ? String(viewBarcode.id) : undefined}
             emptyState={
-              <>
-                <p className="text-muted-foreground">
-                  {hasActiveFilters ? t("barcodes.empty.noMatch") : t("barcodes.empty.none")}
-                </p>
-                <Button className="mt-4" onClick={openAddForm}>
-                  <Plus className="h-4 w-4" />
-                  {t("barcodes.actions.add")}
-                </Button>
-              </>
+              <p className="text-muted-foreground">
+                {hasActiveFilters ? t("barcodes.empty.noMatch") : t("barcodes.empty.none")}
+              </p>
             }
           />
         )}
@@ -520,79 +550,85 @@ export function BarcodesWorkspace() {
         onOpenChange={(open) => {
           if (!open) setViewBarcode(null);
         }}
-        onEdit={openEditForm}
-        onDelete={(barcode) => {
-          setViewBarcode(null);
-          setDeleteTarget(barcode);
-        }}
       />
 
-      <Dialog
-        open={formMode !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setFormMode(null);
-            setFormError(null);
-          }
-        }}
-      >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>
-              {formMode === "edit" ? t("barcodes.form.editTitle") : t("barcodes.form.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
-          <BarcodeForm
-            key={editingBarcode?.id ?? "new"}
-            initialValues={
-              formMode === "edit" && editingBarcode
-                ? barcodeToFormValues(editingBarcode)
-                : createEmptyBarcodeForm()
-            }
-            isEditing={formMode === "edit"}
-            submitLabel={
-              formMode === "edit" ? t("common.actions.saveChanges") : t("barcodes.actions.add")
-            }
-            externalError={formError}
-            isSubmitting={isSaving}
-            onSubmit={saveBarcode}
-            onCancel={() => {
-              setFormMode(null);
-              setFormError(null);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{deleteDialogTitle}</DialogTitle>
+            <DialogTitle>{t("barcodes.bulk.statusTitle")}</DialogTitle>
             <DialogDescription>
-              {deleteCount > 1
-                ? t("barcodes.dialogs.deleteMany", {
-                    count: deleteCount,
-                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
-                  })
-                : t("barcodes.dialogs.deleteOne", {
-                    number: !Array.isArray(deleteTarget) ? deleteTarget?.number ?? "" : "",
-                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
-                  })}
+              {t("barcodes.bulk.statusDescription", { count: selectedIds.length })}
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-2">
+            <Label>{t("barcodes.form.fields.status")}</Label>
+            <SearchableSelect
+              value={newStatus}
+              onValueChange={setNewStatus}
+              options={statusOptions}
+              placeholder={t("barcodes.form.placeholders.status")}
+              searchPlaceholder={t("barcodes.form.search.statuses")}
+            />
+            {bulkError ? <p className="text-sm text-destructive">{bulkError}</p> : null}
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+            <Button variant="outline" onClick={() => setStatusDialogOpen(false)} disabled={isUpdating}>
               {t("common.actions.cancel")}
             </Button>
-            <ConfirmDeleteButton isPending={isSaving} onClick={confirmDelete} />
+            <Button onClick={() => void applyStatusChange()} disabled={isUpdating || !newStatus}>
+              {t("barcodes.bulk.apply")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={containerDialogOpen} onOpenChange={setContainerDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("barcodes.bulk.containerTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("barcodes.bulk.containerDescription", { count: selectedIds.length })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>{t("barcodes.form.fields.container")}</Label>
+            <SearchableSelect
+              value={newContainerId}
+              onValueChange={setNewContainerId}
+              options={containerOptions}
+              placeholder={t("barcodes.form.placeholders.container")}
+              searchPlaceholder={t("barcodes.form.search.containers")}
+            />
+            {bulkError ? <p className="text-sm text-destructive">{bulkError}</p> : null}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setContainerDialogOpen(false)}
+              disabled={isUpdating}
+            >
+              {t("common.actions.cancel")}
+            </Button>
+            <Button
+              onClick={() => void applyContainerChange()}
+              disabled={isUpdating || !newContainerId}
+            >
+              {t("barcodes.bulk.apply")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AssignBarcodeRouteDialog
+        open={routeDialogOpen}
+        onOpenChange={setRouteDialogOpen}
+        barcodeIds={routeBarcodeIds}
+        onResult={(result) => {
+          if (result.success) {
+            setSelectedIds([]);
+          }
+        }}
+      />
     </div>
   );
 }

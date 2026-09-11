@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { InvoiceBarcodeDecreaseDialog } from "@/components/invoices/invoice-barcode-decrease-dialog";
 import { InvoiceFormWizard } from "@/components/invoices/invoice-form-wizard";
 import {
   invoicePageDescriptionClassName,
@@ -29,6 +30,16 @@ import {
 import { usePrintInvoices } from "@/lib/invoices/hooks/use-print-invoices";
 import type { InvoiceWriteContext, InvoiceWriteEmployeeRef } from "@/lib/invoices/api/invoices-api";
 import {
+  applyInvoiceBarcodeCreatesAndDescriptionSync,
+  applyInvoiceBarcodeDeletions,
+} from "@/lib/invoices/api/invoice-barcode-sync-api";
+import {
+  invoiceBarcodeSyncNeedsUserInput,
+  planInvoiceBarcodeSync,
+  type InvoiceBarcodeDeletionSelection,
+  type InvoiceBarcodeSyncPlan,
+} from "@/lib/invoices/barcode-sync";
+import {
   createEmptyInvoiceForm,
   getInvoiceRecordId,
   invoiceToFormValues,
@@ -45,6 +56,7 @@ import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registr
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { fetchCurrentUser } from "@/lib/users/api/users-api";
+
 
 type InvoiceWizardShellProps = {
   title: string;
@@ -282,10 +294,14 @@ export function InvoiceEditWizard({
   submitLabel = "Save changes",
 }: InvoiceEditWizardProps) {
   const { t } = useTranslation();
-  const { notifyUpdated, notifySuccess } = useFeedback();
+  const { notifyUpdated, notifySuccess, notifyError } = useFeedback();
   const { printInvoice, isPrinting } = usePrintInvoices();
   const updateMutation = useUpdateInvoice();
   const invoiceQuery = useInvoice(invoiceId);
+  const [pendingValues, setPendingValues] = useState<InvoiceFormValues | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<InvoiceBarcodeSyncPlan | null>(null);
+  const [decreaseOpen, setDecreaseOpen] = useState(false);
+  const [isSyncingBarcodes, setIsSyncingBarcodes] = useState(false);
 
   const initialValues = useMemo(
     () => (invoiceQuery.data ? invoiceToFormValues(invoiceQuery.data) : null),
@@ -302,6 +318,51 @@ export function InvoiceEditWizard({
     });
   }
 
+  async function saveInvoiceWithBarcodeSync(
+    values: InvoiceFormValues,
+    plan: InvoiceBarcodeSyncPlan,
+    deletions: InvoiceBarcodeDeletionSelection,
+  ): Promise<InvoiceFormSubmitResult> {
+    if (!invoiceQuery.data) {
+      return { error: "Unable to load this invoice." };
+    }
+
+    setIsSyncingBarcodes(true);
+    try {
+      await applyInvoiceBarcodeDeletions({
+        invoiceId: invoiceQuery.data.invoiceId,
+        plan,
+        deletions,
+      });
+
+      const context = await buildInvoiceWriteContext(values);
+      const updated = await updateMutation.mutateAsync({
+        invoiceId: getInvoiceRecordId({ invoiceId: values.invoiceId }),
+        values,
+        context,
+      });
+
+      await applyInvoiceBarcodeCreatesAndDescriptionSync({
+        invoice: updated,
+        plan,
+        container: context.container,
+      });
+
+      notifyUpdated("Invoice", updated.invoiceNumber || updated.invoiceId);
+      return {
+        error: null,
+        savedInvoiceId: updated.invoiceId,
+      };
+    } catch (error) {
+      return { error: normalizeApiError(error).message };
+    } finally {
+      setIsSyncingBarcodes(false);
+      setPendingValues(null);
+      setPendingPlan(null);
+      setDecreaseOpen(false);
+    }
+  }
+
   async function handleSubmit(values: InvoiceFormValues): Promise<InvoiceFormSubmitResult> {
     try {
       if (
@@ -312,17 +373,19 @@ export function InvoiceEditWizard({
         return { error: null, savedInvoiceId: invoiceQuery.data.invoiceId };
       }
 
-      const context = await buildInvoiceWriteContext(values);
-      const updated = await updateMutation.mutateAsync({
-        invoiceId: getInvoiceRecordId({ invoiceId: values.invoiceId }),
-        values,
-        context,
-      });
-      notifyUpdated("Invoice", updated.invoiceNumber || updated.invoiceId);
-      return {
-        error: null,
-        savedInvoiceId: updated.invoiceId,
-      };
+      if (!invoiceQuery.data) {
+        return { error: "Unable to load this invoice." };
+      }
+
+      const plan = planInvoiceBarcodeSync(invoiceQuery.data, values);
+      if (invoiceBarcodeSyncNeedsUserInput(plan)) {
+        setPendingValues(values);
+        setPendingPlan(plan);
+        setDecreaseOpen(true);
+        return { error: null, deferClose: true };
+      }
+
+      return await saveInvoiceWithBarcodeSync(values, plan, {});
     } catch (error) {
       return { error: normalizeApiError(error).message };
     }
@@ -349,20 +412,43 @@ export function InvoiceEditWizard({
   }
 
   return (
-    <InvoiceWizardShell
-      title={`Edit invoice ${formatInvoiceTabLabel(invoiceQuery.data)}`}
-      description="Update invoice details, parties, and line items in four steps. Use Next to move forward, Back to revise a step, and the summary panel to apply an optional discount before saving."
-      onCancel={onCancel}
-      initialValues={initialValues}
-      submitLabel={submitLabel}
-      allowPrint
-      resetAfterSave={false}
-      isSubmitting={updateMutation.isPending}
-      onSubmit={handleSubmit}
-      onSaved={onCancel}
-      onPrint={handlePrint}
-      isPrinting={isPrinting}
-    />
+    <>
+      <InvoiceWizardShell
+        title={`Edit invoice ${formatInvoiceTabLabel(invoiceQuery.data)}`}
+        description="Update invoice details, parties, and line items in four steps. Use Next to move forward, Back to revise a step, and the summary panel to apply an optional discount before saving."
+        onCancel={onCancel}
+        initialValues={initialValues}
+        submitLabel={submitLabel}
+        allowPrint
+        resetAfterSave={false}
+        isSubmitting={updateMutation.isPending || isSyncingBarcodes}
+        onSubmit={handleSubmit}
+        onSaved={onCancel}
+        onPrint={handlePrint}
+        isPrinting={isPrinting}
+      />
+      <InvoiceBarcodeDecreaseDialog
+        open={decreaseOpen}
+        decreases={pendingPlan?.decreases ?? []}
+        onOpenChange={(open) => {
+          if (!open && !isSyncingBarcodes) {
+            setDecreaseOpen(false);
+            setPendingValues(null);
+            setPendingPlan(null);
+          }
+        }}
+        onConfirm={(selections) => {
+          if (!pendingValues || !pendingPlan) return;
+          void saveInvoiceWithBarcodeSync(pendingValues, pendingPlan, selections).then((result) => {
+            if (result.error) {
+              notifyError(result.error);
+              return;
+            }
+            onCancel();
+          });
+        }}
+      />
+    </>
   );
 }
 

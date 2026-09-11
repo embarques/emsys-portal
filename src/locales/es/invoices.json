@@ -563,5 +563,11 @@
         "false": "No"
       }
     }
+  },
+  "barcodeSync": {
+    "decreaseTitle": "Seleccione códigos de barras a eliminar",
+    "decreaseDescription": "Redujo el número de etiquetas en uno o más artículos. Elija qué códigos de barras eliminar. Los restantes permanecen en la factura.",
+    "decreasePick": "Seleccione {{remove}} de {{from}} para eliminar (quedarán {{to}}).",
+    "confirmDelete": "Eliminar códigos seleccionados"
   }
 }

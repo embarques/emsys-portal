@@ -99,27 +99,54 @@ Keep **`createdBy`** as the user who digitized the invoice. **`createdAt`** is t
 
 ### Barcodes
 
-Barcodes are used to identify and track individual items within invoices.
+Barcodes identify and track **individual pieces of merchandise on an invoice**.
 
-The system manages the barcode/label assigned to each item, allowing us to track specific merchandise throughout the shipping process.
+**Creation source of truth:** barcodes are created when an **invoice is digitized** with line items and a **labels** count. Do not create, edit structure, or delete barcodes from the Barcodes table — manage those through the invoice.
 
-Barcode lifecycle statuses come from the tenant `barcode_statuses` collection via `GET /v1/barcodes/status-options` (labels:view). The catalog is seeded on tenant creation (including `prevStatus`) and drives barcode forms, the scanner, and invoice label staging.
+```txt
+Invoice (line items + labels count)
+  → Barcodes created on the invoice
+    → Label manager: status, container, print, route
+    → Barcode Scanner: scan number → update status / container / route
+    → Barcodes table: browse / filter / bulk status·container·route
+```
 
-On invoice-embedded barcodes, **`barcodeId`** is the unique ObjectID used for print selection and matching. Numeric **`id`** is the package sequence only (not unique across invoices). Selected-label printing uses `POST /reports/labels` with `collection=barcodes` and `lookup_field=id` so duplicate numbers or package sequences cannot broaden the PDF. Numeric id remains a legacy fallback when `barcodeId` is missing.
+**Barcodes table (Barcode Manager):**
+
+- View: barcode, invoice, description, container, status, route (when assigned)
+- Search / filter: invoice, description, container, status, route
+- Multi-select bulk: change status, transfer container, assign route
+- No direct create / edit / delete — those belong on the invoice
+
+**When editing an invoice (line items + labels):**
+
+| Change | Barcode behavior |
+| --- | --- |
+| Label count decreases | Prompt the user to pick which barcode(s) to delete; do not delete arbitrarily |
+| Description changes (count unchanged) | Update associated barcode descriptions to match the line item |
+| Label count increases | Keep existing barcodes; generate only the additional labels needed |
+| Label count unchanged | Keep existing barcode associations |
+| Line item deleted | Delete all barcodes on that line item |
+
+Barcode **status** is a manual location / lifecycle flag. Status options come from `GET /v1/barcodes/status-options` (labels:view).
+
+On invoice-embedded barcodes, **`barcodeId`** is the unique ObjectID used for print selection and matching. Numeric **`id`** is the package sequence only (not unique across invoices). Selected-label printing uses `POST /reports/labels` with `collection=barcodes` and `lookup_field=id`.
+
+TODO (backend): return `invoice` / `description` on `/barcodes` list+search, and allow filtering by `invoice.number`, `description`, `container.name`, `status.name`, and `route.name`. When creating barcodes with the invoice, upsert the same records into the `/barcodes` catalog so the directory and scanner stay aligned with Label manager.
 
 Barcodes can be used to:
 
 - Identify individual items
-- Track item status
+- Track item location status
 - Associate items with invoices
 - Track movement through our operations
 - Update item status through scanning
 
 ### Barcode Scanner
 
-The barcode scanner provides a quick way to scan an item's barcode and update its status.
+The barcode scanner provides a quick way to scan an item's barcode and update its location status.
 
-This allows workers to efficiently process merchandise as it moves through different stages of our operation without having to manually search for each item. Status pickers load from the same `status-options` endpoint.
+Scanned numbers are merchandise labels that originated on an invoice. Resolve by invoice embed first, then catalog. Status pickers load from the same `status-options` endpoint.
 
 ### Inventory
 

@@ -48,6 +48,15 @@ type ApiBarcode = {
   id?: number | string;
   barcodeId?: number | string;
   number?: string;
+  description?: string;
+  name?: string;
+  invoiceId?: number | string;
+  invoiceNumber?: string;
+  invoice?: {
+    id?: number | string;
+    number?: string;
+    name?: string;
+  };
   status?: ApiBarcodeStatus;
   container?: ApiBarcodeContainer;
   route?: ApiBarcodeRoute;
@@ -74,6 +83,8 @@ export type BarcodeWritePayload = {
   delivery?: { id: number; name: string };
   /** Delivery route (vehicle-route record id). */
   route?: { id: string; name: string };
+  /** Merchandise / line-item description when the API stores it on the barcode. */
+  description?: string;
 };
 
 /** One selected invoice line item to generate (or retrieve) labels for. */
@@ -200,11 +211,20 @@ export function normalizeBarcode(raw: unknown): Barcode | null {
   const tripNumber = readNumericId(item.tripNumber);
   const createdBy = readUserName(item.createdBy);
   const updatedBy = readUserName(item.updatedBy);
+  const invoiceId =
+    String(item.invoice?.id ?? item.invoiceId ?? "").trim() || undefined;
+  const invoiceNumber =
+    String(item.invoice?.number ?? item.invoiceNumber ?? "").trim() || undefined;
+  const description =
+    String(item.description ?? item.name ?? "").trim() || undefined;
 
   return {
     id,
     barcodeId: barcodeId || undefined,
     number,
+    invoiceId,
+    invoiceNumber,
+    description,
     status: statusName
       ? {
           id: item.status?.id,

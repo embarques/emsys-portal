@@ -3,13 +3,24 @@
   "entityPlural": "códigos de barras",
   "title": "Códigos de barras",
   "pages": {
-    "description": "Identifique y rastree cada pieza de mercancía en las facturas a lo largo del envío."
+    "description": "Consulte los códigos de barras de mercancía creados con las facturas. Cambie estado, contenedor o ruta en lote. Cree y elimine etiquetas editando la factura."
   },
   "noun": "códigos de barras",
   "actions": {
     "add": "Agregar código de barras",
     "edit": "Editar código de barras",
     "editNamed": "Editar {{number}}"
+  },
+  "bulk": {
+    "changeStatus": "Cambiar estado",
+    "changeContainer": "Transferir contenedor",
+    "assignRoute": "Asignar ruta",
+    "statusTitle": "Cambiar estado del código",
+    "statusDescription": "Actualizar el estado de {{count}} código(s) seleccionado(s).",
+    "containerTitle": "Transferir contenedor",
+    "containerDescription": "Mover {{count}} código(s) seleccionado(s) a otro contenedor.",
+    "apply": "Aplicar",
+    "updatedCount": "{{count}} código(s)"
   },
   "stats": {
     "total": {
@@ -36,29 +47,32 @@
   "columns": {
     "id": "#",
     "number": "Código de barras",
+    "invoice": "Factura",
+    "description": "Descripción",
     "status": "Estado",
     "container": "Contenedor",
+    "route": "Ruta",
     "deliveryRoute": "Ruta de entrega",
     "tripNumber": "Viaje #",
     "delivery": "Entrega",
     "scanDate": "Último escaneo"
   },
   "search": {
-    "placeholder": "Buscar códigos de barras..."
+    "placeholder": "Buscar por factura, código, descripción, contenedor, estado, ruta…"
   },
   "loading": {
     "title": "Cargando códigos de barras",
-    "description": "Obteniendo números, estados, contenedores y actividad de escaneo…",
-    "barcode": "Cargando código de barras…"
+    "description": "Obteniendo números, facturas, contenedores y rutas…",
+    "barcode": "Cargando código…"
   },
   "empty": {
-    "none": "Aún no hay códigos de barras.",
+    "none": "Aún no hay códigos de barras. Digite una factura con artículos y etiquetas para crearlos.",
     "noMatch": "Ningún código coincide con sus filtros."
   },
   "form": {
     "addTitle": "Agregar código de barras",
     "editTitle": "Editar código de barras",
-    "addDescription": "Cree un nuevo código de barras de envío.",
+    "addDescription": "Agregar manualmente es poco común: los códigos suelen crearse con los artículos y etiquetas de la factura.",
     "notFound": "No se encontró este código de barras.",
     "sections": {
       "barcode": "Código de barras",
@@ -89,7 +103,8 @@
       "audit": "Auditoría"
     },
     "barcodeId": "ID del código",
-    "previousStatus": "Estado anterior"
+    "previousStatus": "Estado anterior",
+    "manageViaInvoice": "Cree, edite o elimine códigos de barras editando la factura relacionada."
   },
   "dialogs": {
     "deleteTitle": "¿Eliminar código de barras?",
@@ -99,13 +114,41 @@
   },
   "filters": {
     "fields": {
-      "id": {
-        "label": "#",
-        "placeholder": "Ingrese el ID…"
-      },
       "number": {
         "label": "Código de barras",
         "placeholder": "Ingrese el número…"
+      },
+      "invoice": {
+        "number": {
+          "label": "Factura",
+          "placeholder": "Ingrese el número de factura…"
+        }
+      },
+      "description": {
+        "label": "Descripción",
+        "placeholder": "Ingrese la descripción…"
+      },
+      "container": {
+        "name": {
+          "label": "Contenedor",
+          "placeholder": "Ingrese el contenedor…"
+        }
+      },
+      "status": {
+        "name": {
+          "label": "Estado",
+          "placeholder": "Ingrese el estado…"
+        }
+      },
+      "route": {
+        "name": {
+          "label": "Ruta",
+          "placeholder": "Ingrese la ruta…"
+        }
+      },
+      "id": {
+        "label": "#",
+        "placeholder": "Ingrese el ID…"
       },
       "scanDate": {
         "label": "Último escaneo",
@@ -126,7 +169,7 @@
         },
         "id": {
           "label": "ID del creador",
-          "placeholder": "Ingrese el ID del creador…"
+          "placeholder": "Ingrese el ID…"
         }
       },
       "updatedBy": {
@@ -136,7 +179,7 @@
         },
         "id": {
           "label": "ID del editor",
-          "placeholder": "Ingrese el ID del editor…"
+          "placeholder": "Ingrese el ID…"
         }
       }
     }

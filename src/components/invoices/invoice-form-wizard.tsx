@@ -296,6 +296,10 @@ export function InvoiceFormWizard({
     setSubmitError(null);
     setStepError(null);
 
+    if (result.deferClose) {
+      return;
+    }
+
     if (result.savedInvoiceId) {
       setSavedInvoiceId(result.savedInvoiceId);
     }

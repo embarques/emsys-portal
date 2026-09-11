@@ -563,5 +563,11 @@
         "false": "No"
       }
     }
+  },
+  "barcodeSync": {
+    "decreaseTitle": "Select barcodes to remove",
+    "decreaseDescription": "You reduced the label count on one or more line items. Choose which specific barcodes to delete. Remaining barcodes stay on the invoice.",
+    "decreasePick": "Select {{remove}} of {{from}} to delete ({{to}} will remain).",
+    "confirmDelete": "Delete selected barcodes"
   }
 }

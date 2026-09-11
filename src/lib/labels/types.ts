@@ -81,6 +81,11 @@ export type Barcode = {
    */
   barcodeId?: string;
   number: string;
+  /** Invoice that originated this merchandise label (when the API returns it). */
+  invoiceId?: string;
+  invoiceNumber?: string;
+  /** Line-item / merchandise description associated with the label. */
+  description?: string;
   status: BarcodeStatusRef | null;
   container: BarcodeContainerRef | null;
   /** Assigned delivery route (vehicle-route), not the route-manager catalog row. */

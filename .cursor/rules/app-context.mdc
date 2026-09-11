@@ -15,7 +15,8 @@ Before changing a workspace, labels, data model, or user flow, read [`APP_CONTEX
 - **Items** = optional merchandise shortcuts when creating invoices, not inventory SKUs
 - **Inventory** = the company’s **internal supplies**, not customer merchandise
 - **Appointments** = scheduled client visits (pickup, supplies, payment, estimate)
-- **Barcodes** = labels on individual pieces of merchandise on an invoice
+- **Barcodes** = labels on individual pieces of merchandise on an invoice (created with the invoice from line items + labels; directory is view/bulk-update only — no standalone create/delete)
 - **Containers** = shipping containers for customer shipments, not inventory bins
 
 Appointments often still appear as `orders` in code (`src/lib/orders`, `/appointments`).
+Barcode Scanner lives at `/label-updater`. Label manager is invoice staging (`Manage invoice items`). Barcode Manager is `/barcodes` + scanner.

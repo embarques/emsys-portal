@@ -513,6 +513,8 @@ export function createEmptyInvoiceForm(createdBy = DEFAULT_CREATED_BY): InvoiceF
 export type InvoiceFormSubmitResult = {
   error: string | null;
   savedInvoiceId?: string;
+  /** Stay on the form (e.g. waiting for barcode deletion picker). */
+  deferClose?: boolean;
 };
 
 export function resetInvoiceFormForNextEntry(previous: InvoiceFormValues): InvoiceFormValues {

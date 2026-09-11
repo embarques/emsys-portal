@@ -36,6 +36,7 @@ export function useUpdateBarcodes() {
     mutationFn: (updates: BarcodeUpdate[]) => updateBarcodes(updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.barcodes.all });
     },
   });
 }
@@ -49,6 +50,7 @@ export function useAssignBarcodesToRoute() {
       assignInvoiceItemBarcodesToRoute(routeId, barcodeIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.barcodes.all });
     },
   });
 }

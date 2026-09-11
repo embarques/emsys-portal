@@ -924,6 +924,72 @@ export async function patchInvoiceEmbeddedBarcodes(
   assertMutationSuccess(response, "Unable to update invoice barcodes.");
 }
 
+/**
+ * Remove nested barcodes from an invoice by ObjectID / package-sequence id,
+ * then persist via `PUT /invoices/{id}`.
+ */
+export async function removeInvoiceEmbeddedBarcodes(
+  invoiceId: string,
+  barcodeIds: string[],
+): Promise<number> {
+  const targets = new Set(barcodeIds.map((id) => id.trim()).filter(Boolean));
+  if (targets.size === 0) return 0;
+
+  const invoice = await fetchInvoiceApiRecord(invoiceId);
+  let removed = 0;
+
+  for (const detail of invoice.invoiceDetails ?? []) {
+    const list = listInvoiceDetailBarcodes(detail);
+    if (list.length === 0) continue;
+
+    const kept: ApiInvoiceBarcode[] = [];
+    for (const barcode of list) {
+      const objectId =
+        barcode.barcodeId != null && String(barcode.barcodeId).trim()
+          ? String(barcode.barcodeId).trim()
+          : "";
+      const packageId = barcode.id != null ? String(barcode.id).trim() : "";
+      const hit =
+        (objectId && targets.has(objectId)) ||
+        (packageId && targets.has(packageId)) ||
+        (barcode.number != null && targets.has(String(barcode.number).trim()));
+
+      if (hit) {
+        removed += 1;
+        continue;
+      }
+      kept.push(barcode);
+    }
+
+    if (Array.isArray(detail.barcodes)) {
+      detail.barcodes = kept;
+    }
+    if (detail.barcode && !kept.includes(detail.barcode)) {
+      detail.barcode = kept[0];
+    }
+  }
+
+  if (removed === 0) return 0;
+
+  const id = parseInvoicePathId(invoiceId);
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.INVOICES}/${id}`,
+    invoice,
+  );
+  assertMutationSuccess(response, "Unable to remove invoice barcodes.");
+  return removed;
+}
+
+function listInvoiceDetailBarcodes(detail: ApiInvoiceDetail): ApiInvoiceBarcode[] {
+  if (Array.isArray(detail.barcodes) && detail.barcodes.length > 0) {
+    return detail.barcodes;
+  }
+  if (detail.barcode && typeof detail.barcode === "object") {
+    return [detail.barcode];
+  }
+  return [];
+}
+
 export type InvoiceWriteEmployeeRef = {
   id: number;
   name: string;
