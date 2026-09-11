@@ -1,21 +1,18 @@
-export type AverageContainerValueStats = {
-  average: number;
-  containerCount: number;
+import type { DepartedContainerStatPeriod } from "@/lib/containers/departed-container-stats";
+
+export type ContainerStatsWindow = {
+  start: string;
+  end: string;
 };
 
-export function roundContainerMoney(amount: number): number {
-  return Math.round(amount * 100) / 100;
-}
-
-/**
- * Average merchandise value per departed container.
- * Containers with no invoices count as $0 so the denominator is every
- * container that departed in the window.
- */
-export function computeAverageMerchandiseValuePerContainer(
-  containerCount: number,
-  totalMerchandiseValue: number,
-): number {
-  if (containerCount <= 0) return 0;
-  return roundContainerMoney(totalMerchandiseValue / containerCount);
-}
+/** `GET /containers/stats/average-value` payload. */
+export type AverageContainerValueStats = {
+  period: DepartedContainerStatPeriod;
+  timezone: string;
+  window: ContainerStatsWindow;
+  previousWindow: ContainerStatsWindow;
+  average: number;
+  previousAverage: number;
+  containerCount: number;
+  totalValue: number;
+};

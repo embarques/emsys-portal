@@ -67,6 +67,8 @@ const NAV_LABEL_TO_SECTION: Record<string, WorkspaceTabSection> = {
   "navigation.submenus.inventory": "inventory",
   "navigation.items.vehicles": "vehicles",
   "navigation.groups.accounting": "accounting",
+  "navigation.items.reports": "insights",
+  "navigation.items.analytics": "insights",
   "navigation.groups.insights": "insights",
   "navigation.groups.admin": "admin",
 };

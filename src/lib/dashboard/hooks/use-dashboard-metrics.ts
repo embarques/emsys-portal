@@ -1,49 +1,32 @@
 "use client";
 
 import {
-  fetchAppointmentDashboardMetrics,
-  fetchClientDashboardMetrics,
-  fetchInvoiceDashboardMetrics,
+  toAppointmentDashboardMetrics,
+  toClientDashboardMetrics,
+  toInvoiceDashboardMetrics,
 } from "@/lib/dashboard/api";
-import { queryKeys } from "@/lib/query/query-keys";
-import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
+import { useInsightsHistogram } from "@/lib/insights/hooks/use-insights-histogram";
 
-const DASHBOARD_METRICS_STALE_TIME_MS = 10 * 60 * 1000;
-const DASHBOARD_METRICS_GC_TIME_MS = 30 * 60 * 1000;
-
-const dashboardQueryOptions = {
-  staleTime: DASHBOARD_METRICS_STALE_TIME_MS,
-  gcTime: DASHBOARD_METRICS_GC_TIME_MS,
-  refetchOnWindowFocus: false,
-} as const;
-
-type DashboardMetricsQueryOptions = {
-  enabled?: boolean;
-};
-
-export function useAppointmentDashboardMetrics(options: DashboardMetricsQueryOptions = {}) {
-  return useWorkspaceQuery({
-    queryKey: queryKeys.dashboard.appointments(),
-    queryFn: fetchAppointmentDashboardMetrics,
-    enabled: options.enabled,
-    ...dashboardQueryOptions,
-  });
+export function useAppointmentDashboardMetrics() {
+  const query = useInsightsHistogram("appointments");
+  return {
+    ...query,
+    data: query.data ? toAppointmentDashboardMetrics(query.data) : undefined,
+  };
 }
 
-export function useClientDashboardMetrics(options: DashboardMetricsQueryOptions = {}) {
-  return useWorkspaceQuery({
-    queryKey: queryKeys.dashboard.clients(),
-    queryFn: fetchClientDashboardMetrics,
-    enabled: options.enabled,
-    ...dashboardQueryOptions,
-  });
+export function useClientDashboardMetrics() {
+  const query = useInsightsHistogram("clients");
+  return {
+    ...query,
+    data: query.data ? toClientDashboardMetrics(query.data) : undefined,
+  };
 }
 
-export function useInvoiceDashboardMetrics(options: DashboardMetricsQueryOptions = {}) {
-  return useWorkspaceQuery({
-    queryKey: queryKeys.dashboard.invoices(),
-    queryFn: fetchInvoiceDashboardMetrics,
-    enabled: options.enabled,
-    ...dashboardQueryOptions,
-  });
+export function useInvoiceDashboardMetrics() {
+  const query = useInsightsHistogram("invoices");
+  return {
+    ...query,
+    data: query.data ? toInvoiceDashboardMetrics(query.data) : undefined,
+  };
 }

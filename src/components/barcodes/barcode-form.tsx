@@ -11,8 +11,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { useTranslation } from "@/lib/i18n";
-import { getBarcodeStatusLabel } from "@/lib/labels/display";
-import { BARCODE_STATUS_OPTIONS } from "@/lib/labels/types";
+import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
 import { createEmptyBarcodeForm, type BarcodeFormValues } from "@/lib/barcodes/types";
 
 type BarcodeFormProps = {
@@ -37,18 +36,19 @@ export function BarcodeForm({
   const { t } = useTranslation();
   const containersQuery = useContainerPicker(200);
   const containers = containersQuery.data?.items ?? [];
+  const barcodeStatusOptions = useBarcodeStatusOptions();
   const [values, setValues] = useState<BarcodeFormValues>(initialValues ?? createEmptyBarcodeForm());
   const [validationError, setValidationError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
 
   const statusOptions = useMemo(
     () =>
-      BARCODE_STATUS_OPTIONS.map((option) => ({
+      barcodeStatusOptions.map((option) => ({
         value: String(option.id),
-        label: getBarcodeStatusLabel(option.name, t),
+        label: option.label,
         keywords: [option.name],
       })),
-    [t],
+    [barcodeStatusOptions],
   );
 
   const containerOptions = useMemo(

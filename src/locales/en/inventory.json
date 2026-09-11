@@ -261,7 +261,7 @@
     "addContact": "Add contact",
     "addAddress": "Add address",
     "addEmail": "Add email",
-    "readOnlyStockHint": "Stock is calculated from receipts, dispatches, and adjustments."
+    "readOnlyStockHint": "Stock is calculated from receipts and dispatches."
   },
   "view": {
     "stock": "Stock",
@@ -295,7 +295,8 @@
   },
   "errors": {
     "insufficientStock": "Insufficient stock for one or more line items.",
-    "saveFailed": "Could not save. Please try again."
+    "saveFailed": "Could not save. Please try again.",
+    "adjustmentsUnavailable": "Stock adjustments are not available yet. Record a receipt or dispatch instead."
   },
   "statuses": {
     "in_stock": "In stock",

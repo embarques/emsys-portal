@@ -12,9 +12,10 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatAuditDateTime } from "@/lib/audit/display";
+import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
+import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getCheckStatusBadgeClass } from "@/lib/accounting/checks/display";
-import type { Check } from "@/lib/accounting/checks/types";
+import { checkStatusI18nKey, type Check } from "@/lib/accounting/checks/types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -47,10 +48,10 @@ export function CheckViewSheet({
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={check.receiptNumber}
+          title={check.checkNumber || dash}
           meta={
             <Badge variant="outline" className={cn("font-medium", getCheckStatusBadgeClass(check.status))}>
-              {t(`accounting.checks.status.${check.status}`)}
+              {t(`accounting.checks.status.${checkStatusI18nKey(check.status)}`)}
             </Badge>
           }
         />
@@ -58,36 +59,32 @@ export function CheckViewSheet({
         <RecordViewSheetBody>
           <RecordViewSheetSection icon={Banknote} title={t("accounting.checks.form.sections.details")}>
             <RecordViewSheetDetailRow
-              label={t("accounting.checks.form.fields.invoiceNumber")}
-              value={check.invoiceNumber}
+              label={t("accounting.checks.form.fields.invoice")}
+              value={check.invoice.number || dash}
             />
             <RecordViewSheetDetailRow
-              label={t("accounting.checks.form.fields.receiptNumber")}
-              value={check.receiptNumber}
+              label={t("accounting.checks.form.fields.checkNumber")}
+              value={check.checkNumber || dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("accounting.checks.form.fields.paymentAmount")}
+              value={formatAccountingMoney(check.paymentAmount)}
+            />
+            <RecordViewSheetDetailRow
+              label={t("accounting.checks.form.fields.datePosted")}
+              value={check.datePosted ? formatAuditDate(check.datePosted) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("accounting.checks.form.fields.referenceNumber")}
-              value={check.referenceNumber || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("accounting.checks.form.fields.createdBy")}
-              value={check.createdBy}
+              value={check.refNumber || dash}
             />
           </RecordViewSheetSection>
 
-          {check.status === "cleared" ? (
-            <RecordViewSheetSection icon={Banknote} title={t("accounting.checks.form.sections.deposit")}>
+          {check.status === "CLEARED" ? (
+            <RecordViewSheetSection icon={Banknote} title={t("accounting.checks.form.sections.clearance")}>
               <RecordViewSheetDetailRow
-                label={t("accounting.checks.form.fields.depositedAt")}
-                value={check.depositedAt ? formatAuditDateTime(check.depositedAt) : dash}
-              />
-              <RecordViewSheetDetailRow
-                label={t("accounting.checks.form.fields.depositedOn")}
-                value={check.depositedOn ?? dash}
-              />
-              <RecordViewSheetDetailRow
-                label={t("accounting.checks.form.fields.depositedBy")}
-                value={check.depositedBy ?? dash}
+                label={t("accounting.checks.form.fields.clearedAt")}
+                value={check.clearedAt ? formatAuditDate(check.clearedAt) : dash}
               />
             </RecordViewSheetSection>
           ) : null}
@@ -95,8 +92,18 @@ export function CheckViewSheet({
           <RecordViewSheetSection title={t("accounting.checks.view.sections.audit")}>
             <RecordViewSheetDetailRow
               label={t("common.audit.dateCreated")}
-              value={formatAuditDateTime(check.createdAt)}
+              value={check.createdAt ? formatAuditDateTime(check.createdAt) : dash}
             />
+            <RecordViewSheetDetailRow
+              label={t("accounting.checks.form.fields.createdBy")}
+              value={check.createdBy || dash}
+            />
+            {check.updatedAt ? (
+              <RecordViewSheetDetailRow
+                label={t("common.audit.dateModified")}
+                value={formatAuditDateTime(check.updatedAt)}
+              />
+            ) : null}
           </RecordViewSheetSection>
         </RecordViewSheetBody>
 

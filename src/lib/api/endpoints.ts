@@ -14,8 +14,11 @@ export const API_ENDPOINTS = {
   PICKUPS: "/pickups",
   PICKUP_ROUTES: "/pickups/route",
   CONTAINERS: "/containers",
+  CONTAINERS_AVERAGE_VALUE: "/containers/stats/average-value",
   DELIVERIES: "/deliveries",
   BARCODES: "/barcodes",
+  /** Tenant barcode status catalog for pickers (labels:view). */
+  BARCODES_STATUS_OPTIONS: "/barcodes/status-options",
   VEHICLES: "/vehicles",
   ROUTES: "/routes",
   /** Scheduled pickup/delivery route (unified endpoint; `routeType` in payload). */
@@ -36,6 +39,7 @@ export const API_ENDPOINTS = {
   ACCOUNTING_JOURNAL: "/journals",
   ACCOUNTING_LOANS: "/loans",
   ACCOUNTING_LOAN: "/loans",
+  ACCOUNTING_CHECKS: "/checks",
   CHART_ACCOUNTS: "/chart-accounts",
   ACCOUNTING_PAYMENT_METHODS: "/accounting/paymentmethods",
   REPORTS_INCOME: "/reports/income",
@@ -49,4 +53,11 @@ export const API_ENDPOINTS = {
   REPORTS_PUBLIC: "/public/reports",
   FILTER_PRESETS: "/filter-presets",
   MEMO_PADS: "/memo-pads",
+  INSIGHTS_KPIS: "/insights/kpis",
+  INSIGHTS_HISTOGRAMS: "/insights/histograms",
+  INVENTORY_ITEMS: "/inventory/items",
+  INVENTORY_STOCK: "/inventory/stock",
+  INVENTORY_RECEIPTS: "/inventory/receipts",
+  INVENTORY_DISPATCHES: "/inventory/dispatches",
+  INVENTORY_SUPPLIERS: "/inventory/suppliers",
 } as const;

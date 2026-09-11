@@ -86,15 +86,18 @@
   },
   "checks": {
     "title": "Cheques",
-    "description": "Controle cheques recibidos o emitidos, incluido monto, fecha, estado y transacción asociada.",
+    "description": "Controle los pagos de facturas hechos con cheque. Los cheques pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
     "noun": "cheques",
     "searchPlaceholder": "Buscar cheques…",
     "empty": "Ningún cheque coincide con su búsqueda.",
+    "emptyNone": "Aún no hay cheques.",
     "addCheck": "Agregar cheque",
     "columns": {
       "status": "Estado",
       "invoiceNumber": "Factura #",
-      "receiptNumber": "Cheque #",
+      "checkNumber": "Cheque #",
+      "paymentAmount": "Monto",
+      "datePosted": "Fecha de registro",
       "referenceNumber": "Referencia #",
       "createdAt": "Creado el",
       "createdBy": "Creado por"
@@ -116,37 +119,37 @@
     },
     "form": {
       "createTitle": "Agregar cheque",
-      "createDescription": "Registre un nuevo pago con cheque.",
+      "createDescription": "Registre un cheque pendiente contra una factura. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",
       "editTitle": "Editar cheque",
-      "editDescription": "Actualice el cheque seleccionado.",
+      "editDescription": "Actualice el cheque seleccionado. Cambiar un cheque cobrado revierte y vuelve a aplicar el pago de la factura.",
       "sections": {
         "details": "Detalles del cheque",
-        "deposit": "Detalles del depósito"
+        "clearance": "Cobro"
       },
+      "clearanceHint": "Cobrar un cheque aplica el pago a la factura. Revertirlo o eliminarlo revierte ese pago.",
       "fields": {
-        "invoiceNumber": "Número de factura",
-        "receiptNumber": "Número de cheque",
+        "invoice": "Factura",
+        "checkNumber": "Número de cheque",
+        "paymentAmount": "Monto",
+        "datePosted": "Fecha de registro",
         "referenceNumber": "Número de referencia",
         "status": "Estado",
         "createdBy": "Creado por",
-        "depositedAt": "Depositado el",
-        "depositedOn": "Depositado en",
-        "depositedBy": "Depositado por"
+        "clearedAt": "Cobrado el"
       },
       "placeholders": {
-        "invoiceNumber": "INV-2026-0001",
-        "receiptNumber": "CHK-8842",
-        "referenceNumber": "REF-1001",
-        "createdBy": "Ingrese el nombre",
-        "depositedOn": "Cuenta bancaria",
-        "depositedBy": "Ingrese el nombre"
+        "invoice": "Seleccione una factura",
+        "searchInvoices": "Buscar facturas…",
+        "checkNumber": "4521",
+        "referenceNumber": "REF-1001"
       },
       "selectEmpty": "No hay opciones coincidentes.",
       "validation": {
-        "invoiceNumberRequired": "El número de factura es obligatorio.",
-        "receiptNumberRequired": "El número de cheque es obligatorio.",
-        "createdByRequired": "El campo creado por es obligatorio.",
-        "depositRequired": "Los datos de depósito son obligatorios para cheques cobrados."
+        "invoiceRequired": "La factura es obligatoria.",
+        "checkNumberRequired": "El número de cheque es obligatorio.",
+        "paymentAmountRequired": "El monto debe ser mayor que cero.",
+        "datePostedRequired": "La fecha de registro es obligatoria.",
+        "clearedAtRequired": "La fecha de cobro es obligatoria para cheques cobrados."
       }
     },
     "view": {
@@ -157,8 +160,8 @@
     "delete": {
       "title": "¿Eliminar cheque?",
       "title_plural": "¿Eliminar {{count}} cheques?",
-      "description": "Esto elimina el cheque {{receiptNumber}} de la lista.",
-      "description_plural": "Esto elimina {{count}} cheques de la lista."
+      "description": "Esto elimina el cheque {{checkNumber}}. Si estaba cobrado, se revierte el pago de la factura.",
+      "description_plural": "Esto elimina {{count}} cheques. Los pagos de facturas de cheques cobrados se revierten."
     },
     "toasts": {
       "created": "Cheque agregado.",
@@ -273,6 +276,7 @@
       "transactionCreatedWithTarget": "Transacción creada: {{type}} - {{target}}.",
       "transactionUpdated": "Transacción actualizada.",
       "invoiceRegistered": "Nueva factura #{{invoiceNumber}} creada y pago registrado.",
+      "checkPaymentHeld": "El cheque {{checkNumber}} quedó pendiente. La factura {{invoiceNumber}} no mostrará este pago hasta que el cheque se marque como cobrado.",
       "reportReady": "Reporte de ingresos diarios listo."
     },
     "errors": {
@@ -371,6 +375,7 @@
         "zelleDate": "Fecha de transacción Zelle",
         "zelleName": "Nombre de transacción Zelle (como aparece en la cuenta bancaria)",
         "checkNumber": "Número de cheque",
+        "checkNumberHint": "Crea un cheque pendiente. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",
         "invoice": "Factura",
         "referenceNumber": "Número de referencia",
         "account": "Cuenta",

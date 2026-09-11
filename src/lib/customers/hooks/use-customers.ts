@@ -28,11 +28,7 @@ import {
   type CustomerSearchFilter,
 } from "@/lib/customers/types";
 import { isCustomerTypeFilterActive } from "@/lib/customers/customer-type";
-import {
-  buildCustomerStatsCountParams,
-  buildNewCustomerStatsFilterRows,
-  buildPreviousNewCustomerStatsFilterRows,
-} from "@/lib/customers/customer-stats";
+import { useInsightsKpis } from "@/lib/insights/hooks/use-insights-kpis";
 import type { NewCustomerStatPeriod } from "@/lib/customers/new-customer-stats";
 import { queryKeys } from "@/lib/query/query-keys";
 
@@ -129,26 +125,14 @@ export function useCustomerStats() {
 
 /** Count of customers created within a rolling timeframe, plus prior-period count for % change. */
 export function useNewCustomerStats(period: NewCustomerStatPeriod) {
-  const query = useWorkspaceQuery({
-    queryKey: queryKeys.customers.stats("new", period),
-    queryFn: () =>
-      fetchCustomers(buildCustomerStatsCountParams(buildNewCustomerStatsFilterRows(period))),
-  });
-
-  const previousQuery = useWorkspaceQuery({
-    queryKey: queryKeys.customers.stats("new-previous", period),
-    queryFn: () =>
-      fetchCustomers(
-        buildCustomerStatsCountParams(buildPreviousNewCustomerStatsFilterRows(period)),
-      ),
-  });
+  const query = useInsightsKpis(period);
 
   return {
-    total: query.data?.total ?? 0,
-    previousTotal: previousQuery.data?.total ?? 0,
-    isLoading: query.isLoading || previousQuery.isLoading,
-    isFetching: query.isFetching || previousQuery.isFetching,
-    isError: query.isError || previousQuery.isError,
+    total: query.data?.newCustomers.count ?? 0,
+    previousTotal: query.data?.newCustomers.previousCount ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
   };
 }
 
@@ -193,7 +177,10 @@ export function useCustomerPicker(limit = 200) {
 }
 
 function invalidateCustomers(queryClient: ReturnType<typeof useQueryClient>) {
-  return queryClient.invalidateQueries({ queryKey: queryKeys.customers.all });
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.customers.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.insights.all }),
+  ]);
 }
 
 export function useCreateCustomer() {

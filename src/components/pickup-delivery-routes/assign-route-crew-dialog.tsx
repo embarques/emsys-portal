@@ -58,7 +58,7 @@ export type AssignRouteCrewDialogProps = {
   onOpenChange: (open: boolean) => void;
   routeType: RouteType;
   pickupIds?: number[];
-  barcodeIds?: number[];
+  barcodeIds?: string[];
   defaultDate?: string;
   defaultContainer?: ActiveRouteContainerRef | null;
 };
@@ -90,7 +90,9 @@ export function AssignRouteCrewDialog({
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const isDelivery = routeType === "delivery";
-  const itemIds = isDelivery ? barcodeIds : pickupIds;
+  const deliveryBarcodeIds = barcodeIds;
+  const pickupItemIds = pickupIds;
+  const itemCount = isDelivery ? deliveryBarcodeIds.length : pickupItemIds.length;
   const deliveryBranchCode = DELIVERY_BRANCH_CODE;
 
   const [date, setDate] = useState(todayDateInputValue());
@@ -232,7 +234,7 @@ export function AssignRouteCrewDialog({
   const crewLoading =
     Boolean(routeCrewId) && (selectedRouteQuery.isLoading || existingRouteQuery.isLoading);
   const canSubmit =
-    itemIds.length > 0 &&
+    itemCount > 0 &&
     Boolean(date.trim()) &&
     Boolean(routeCrewId) &&
     employees.length > 0 &&
@@ -301,7 +303,7 @@ export function AssignRouteCrewDialog({
       if (isDelivery) {
         const result = await assignBarcodesMutation.mutateAsync({
           routeId: saved.id,
-          barcodeIds: itemIds,
+          barcodeIds: deliveryBarcodeIds,
         });
         const routeName =
           result.routeName ||
@@ -315,16 +317,16 @@ export function AssignRouteCrewDialog({
           }),
         );
       } else {
-        await assignPickupsMutation.mutateAsync({ routeId: saved.id, pickupIds: itemIds });
+        await assignPickupsMutation.mutateAsync({ routeId: saved.id, pickupIds: pickupItemIds });
         const routeName = formatOrderRouteName({ routeId: saved.id }, saved, t);
         const routeSuffix = routeName
           ? t("orders.toasts.assignedToRouteNamed", { routeName })
           : "";
         notifySuccess(
-          itemIds.length === 1
-            ? t("orders.toasts.assignedToRoute", { count: itemIds.length, routeSuffix })
+          pickupItemIds.length === 1
+            ? t("orders.toasts.assignedToRoute", { count: pickupItemIds.length, routeSuffix })
             : t("orders.toasts.assignedToRoute_plural", {
-                count: itemIds.length,
+                count: pickupItemIds.length,
                 routeSuffix,
               }),
         );
@@ -339,13 +341,13 @@ export function AssignRouteCrewDialog({
   }
 
   const description =
-    itemIds.length === 1
+    itemCount === 1
       ? isDelivery
-        ? t("labels.staging.routeDialog.description", { count: itemIds.length })
-        : t("orders.dialogs.assignRouteDescription", { count: itemIds.length })
+        ? t("labels.staging.routeDialog.description", { count: itemCount })
+        : t("orders.dialogs.assignRouteDescription", { count: itemCount })
       : isDelivery
-        ? t("labels.staging.routeDialog.description_plural", { count: itemIds.length })
-        : t("orders.dialogs.assignRouteDescription_plural", { count: itemIds.length });
+        ? t("labels.staging.routeDialog.description_plural", { count: itemCount })
+        : t("orders.dialogs.assignRouteDescription_plural", { count: itemCount });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

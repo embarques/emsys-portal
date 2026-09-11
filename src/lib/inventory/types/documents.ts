@@ -1,3 +1,13 @@
+export type InventoryItemRef = {
+  id: string;
+  item: string;
+};
+
+export type InventorySupplierRef = {
+  id: string;
+  companyName: string;
+};
+
 export type ReceiptFormValues = {
   itemId: string;
   quantity: string;
@@ -9,9 +19,11 @@ export type ReceiptFormValues = {
 export type InventoryReceipt = {
   id: string;
   itemId: string;
+  item?: InventoryItemRef;
   quantity: number;
   averageCost: number;
   supplierId: string;
+  supplier?: InventorySupplierRef;
   receivedAt: string;
   createdAt: string;
   createdBy: string;
@@ -46,6 +58,7 @@ export type DispatchFormValues = {
 export type InventoryDispatch = {
   id: string;
   itemId: string;
+  item?: InventoryItemRef;
   quantity: number;
   incomeGained: number;
   dispatchedAt: string;

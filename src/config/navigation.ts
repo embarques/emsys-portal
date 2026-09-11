@@ -241,6 +241,20 @@ const vehiclesItem: NavigationItem = {
   permission: PERMISSIONS.vehiclesView,
 };
 
+const reportsItem: NavigationItem = {
+  labelKey: "navigation.items.reports",
+  href: "/reports",
+  icon: FileChartColumn,
+  permission: PERMISSIONS.reportsView,
+};
+
+const analyticsItem: NavigationItem = {
+  labelKey: "navigation.items.analytics",
+  href: "/analytics",
+  icon: BarChart3,
+  permission: PERMISSIONS.reportsView,
+};
+
 /**
  * Sidebar sections in usage order.
  * Dashboard stays in `topNavigationItems` above these bands.
@@ -335,24 +349,8 @@ export const navigationSections: NavigationSection[] = [
           },
         ],
       },
-      {
-        titleKey: "navigation.groups.insights",
-        icon: BarChart3,
-        items: [
-          {
-            labelKey: "navigation.items.reports",
-            href: "/reports",
-            icon: FileChartColumn,
-            permission: PERMISSIONS.reportsView,
-          },
-          {
-            labelKey: "navigation.items.analytics",
-            href: "/analytics",
-            icon: BarChart3,
-            permission: PERMISSIONS.reportsView,
-          },
-        ],
-      },
+      navigationItemToGroup(reportsItem),
+      navigationItemToGroup(analyticsItem),
     ],
   },
 ];

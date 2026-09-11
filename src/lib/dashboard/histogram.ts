@@ -64,48 +64,40 @@ export function emptyMonthCounts(): MonthCounts {
   };
 }
 
+type HistogramBucket = {
+  bucket?: number;
+  count?: number;
+};
+
 /**
- * Parse API dates for local weekday/month buckets.
- * Calendar dates (`YYYY-MM-DD`) stay on that civil day; timestamps use local time.
+ * Histogram weekday buckets are Monday-first.
+ * 0-6 is used as-is when a 0 bucket is present; otherwise 1-7 is ISO (Monday=1, Sunday=7).
  */
-export function parseLocalDate(value: string | null | undefined): Date | null {
-  const trimmed = value?.trim() ?? "";
-  if (!trimmed) return null;
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    const [year, month, day] = trimmed.split("-").map(Number);
-    const date = new Date(year, month - 1, day);
-    return Number.isNaN(date.getTime()) ? null : date;
-  }
-
-  const parsed = new Date(trimmed);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-/** JS `getDay()` is Sunday=0; dashboard charts are Monday=0. */
-export function weekdayIndex(date: Date): number {
-  return (date.getDay() + 6) % 7;
-}
-
-export function countByWeekday(values: readonly (string | null | undefined)[]): WeekdayCounts {
+export function weekdayCountsFromBuckets(buckets: readonly HistogramBucket[]): WeekdayCounts {
   const counts = emptyWeekdayCounts();
+  const items = buckets.filter(
+    (item): item is { bucket: number; count: number } =>
+      typeof item.bucket === "number" && typeof item.count === "number",
+  );
+  const usesZeroIndex = items.some((item) => item.bucket === 0);
 
-  for (const value of values) {
-    const date = parseLocalDate(value);
-    if (!date) continue;
-    counts[WEEKDAY_KEYS[weekdayIndex(date)]] += 1;
+  for (const item of items) {
+    const index = usesZeroIndex ? item.bucket : item.bucket - 1;
+    if (index < 0 || index > 6) continue;
+    counts[WEEKDAY_KEYS[index]] += item.count;
   }
 
   return counts;
 }
 
-export function countByMonth(values: readonly (string | null | undefined)[]): MonthCounts {
+/** Month buckets are 1 = January … 12 = December. */
+export function monthCountsFromBuckets(buckets: readonly HistogramBucket[]): MonthCounts {
   const counts = emptyMonthCounts();
 
-  for (const value of values) {
-    const date = parseLocalDate(value);
-    if (!date) continue;
-    counts[MONTH_KEYS[date.getMonth()]] += 1;
+  for (const item of buckets) {
+    if (typeof item.bucket !== "number" || typeof item.count !== "number") continue;
+    if (item.bucket < 1 || item.bucket > 12) continue;
+    counts[MONTH_KEYS[item.bucket - 1]] += item.count;
   }
 
   return counts;

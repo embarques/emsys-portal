@@ -261,7 +261,7 @@
     "addContact": "Agregar contacto",
     "addAddress": "Agregar dirección",
     "addEmail": "Agregar correo",
-    "readOnlyStockHint": "El stock se calcula a partir de ingresos, despachos y ajustes."
+    "readOnlyStockHint": "El stock se calcula a partir de ingresos y despachos."
   },
   "view": {
     "stock": "Stock",
@@ -295,7 +295,8 @@
   },
   "errors": {
     "insufficientStock": "Stock insuficiente para una o más líneas.",
-    "saveFailed": "No se pudo guardar. Inténtelo de nuevo."
+    "saveFailed": "No se pudo guardar. Inténtelo de nuevo.",
+    "adjustmentsUnavailable": "Los ajustes de inventario aún no están disponibles. Registre un ingreso o un despacho."
   },
   "statuses": {
     "in_stock": "En stock",

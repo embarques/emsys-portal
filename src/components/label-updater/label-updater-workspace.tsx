@@ -14,7 +14,7 @@ import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { useUserError } from "@/lib/errors";
 import { useApplyBarcodeScan, useApplyBarcodeScanBulk } from "@/lib/labels/hooks/use-label-updater";
 import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
-import { BARCODE_STATUS_OPTIONS, type LabelUpdateResult } from "@/lib/labels/types";
+import { FALLBACK_BARCODE_STATUS_OPTIONS, type LabelUpdateResult } from "@/lib/labels/types";
 import { useTranslation } from "@/lib/i18n";
 import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
@@ -25,7 +25,8 @@ function ResultCell({ value }: { value?: string | number }) {
   return <span>{value}</span>;
 }
 
-const DEFAULT_SCAN_STATUS_ID = BARCODE_STATUS_OPTIONS.find((entry) => entry.name === "IN TRANSIT")?.id ?? 3;
+const FALLBACK_SCAN_STATUS_ID =
+  FALLBACK_BARCODE_STATUS_OPTIONS.find((entry) => entry.name === "IN TRANSIT")?.id ?? 3;
 
 export function LabelUpdaterWorkspace() {
   const { t } = useTranslation();
@@ -42,7 +43,7 @@ export function LabelUpdaterWorkspace() {
   const [changeStatus, setChangeStatus] = useState(true);
   const [changeContainer, setChangeContainer] = useState(false);
   const [changeRoute, setChangeRoute] = useState(false);
-  const [newStatusId, setNewStatusId] = useState(String(DEFAULT_SCAN_STATUS_ID));
+  const [newStatusId, setNewStatusId] = useState(String(FALLBACK_SCAN_STATUS_ID));
   const [newContainerId, setNewContainerId] = useState("");
   const [newRouteRecordId, setNewRouteRecordId] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -80,6 +81,14 @@ export function LabelUpdaterWorkspace() {
     }
   }, [routes, newRouteRecordId]);
 
+  useEffect(() => {
+    if (barcodeStatusOptions.some((entry) => String(entry.id) === newStatusId)) return;
+    const inTransit = barcodeStatusOptions.find(
+      (entry) => entry.name.toUpperCase() === "IN TRANSIT",
+    );
+    setNewStatusId(String(inTransit?.id ?? barcodeStatusOptions[0]?.id ?? FALLBACK_SCAN_STATUS_ID));
+  }, [barcodeStatusOptions, newStatusId]);
+
   function focusBarcodeInput() {
     requestAnimationFrame(() => barcodeInputRef.current?.focus());
   }
@@ -102,6 +111,7 @@ export function LabelUpdaterWorkspace() {
       newContainerId: changeContainer ? newContainerId : undefined,
       changeRoute,
       newRouteRecordId: changeRoute ? newRouteRecordId : undefined,
+      statusOptions: barcodeStatusOptions,
       resolveRouteLabel,
       resolveContainerLabel,
     };

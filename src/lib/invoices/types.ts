@@ -43,9 +43,21 @@ export function isInvoiceDropoffSource(source: InvoicePickupSource): boolean {
 }
 
 export type InvoiceLineItemBarcode = {
+  /**
+   * Stable UI / map key. Prefers ObjectID `barcodeId`, then legacy numeric `id`
+   * (package sequence), then a generated local id.
+   */
   id: string;
-  /** Canonical `/barcodes` id when the API exposes it separately from the embedded record id. */
+  /**
+   * Unique ObjectID for the barcode document / report lookup
+   * (`POST /reports/labels` with `collection=barcodes`, `lookup_field=id`).
+   */
   barcodeId?: string;
+  /**
+   * Package sequence on the invoice line (`id` in the embedded API model).
+   * Not unique across invoices — do not use for print selection.
+   */
+  packageSequence?: number;
   number: string;
   statusId?: number;
   statusName?: string;

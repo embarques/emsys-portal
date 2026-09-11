@@ -9,12 +9,10 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import { formatInventoryDate, formatInventoryMoney, formatSupplierList, formatSupplierPhones, getInventoryItemLabel } from "@/lib/inventory/display";
+import { formatInventoryDate, formatInventoryMoney, formatSupplierList, formatSupplierPhones, getReceiptItemLabel } from "@/lib/inventory/display";
 import { useTranslation } from "@/lib/i18n";
-import type { getInventoryStoreSnapshot } from "@/lib/inventory/mock-store";
+import type { InventorySnapshot } from "@/lib/inventory/types/snapshot";
 import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
-
-type InventorySnapshot = ReturnType<typeof getInventoryStoreSnapshot>;
 
 type InventorySupplierViewSheetProps = {
   supplier: InventorySupplier | null;
@@ -69,16 +67,13 @@ export function InventorySupplierViewSheet({
             {receipts.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("inventory.empty.receipts")}</p>
             ) : (
-              receipts.map((receipt) => {
-                const item = snapshot.items.find((entry) => entry.id === receipt.itemId);
-                return (
+              receipts.map((receipt) => (
                   <RecordViewSheetDetailRow
                     key={receipt.id}
-                    label={item ? getInventoryItemLabel(item) : receipt.itemId}
+                    label={getReceiptItemLabel(receipt, snapshot.items)}
                     value={`${receipt.quantity} · ${formatInventoryMoney(receipt.averageCost)} · ${formatInventoryDate(receipt.receivedAt)}`}
                   />
-                );
-              })
+                ))
             )}
           </RecordViewSheetSection>
         </RecordViewSheetBody>

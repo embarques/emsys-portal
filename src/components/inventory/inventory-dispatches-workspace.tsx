@@ -17,7 +17,7 @@ import { useColumnVisibility } from "@/components/app-shell/use-column-visibilit
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { formatInventoryDate, formatInventoryMoney, getInventoryDispatchToLabel, getInventoryItemLabel, dispatchMatchesQuery } from "@/lib/inventory/display";
+import { formatInventoryDate, formatInventoryMoney, getInventoryDispatchToLabel, getDispatchItemLabel, dispatchMatchesQuery } from "@/lib/inventory/display";
 import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -35,7 +35,7 @@ export function InventoryDispatchesWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const { notifyAdded } = useFeedback();
-  const { data: dispatches = [], isLoading } = useInventoryDispatches();
+  const { data: dispatches = [], isLoading, isError, error } = useInventoryDispatches();
   const { data: items = [] } = useInventoryItems();
   const createDispatch = useCreateDispatch();
 
@@ -48,8 +48,7 @@ export function InventoryDispatchesWorkspace() {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return dispatches;
     return dispatches.filter((dispatch) => {
-      const item = items.find((entry) => entry.id === dispatch.itemId);
-      return dispatchMatchesQuery(dispatch, item?.item ?? "", normalized);
+      return dispatchMatchesQuery(dispatch, getDispatchItemLabel(dispatch, items), normalized);
     });
   }, [dispatches, items, query]);
 
@@ -57,15 +56,13 @@ export function InventoryDispatchesWorkspace() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
+  const listErrorMessage = isError ? toErrorMessage(error) : null;
 
   const columns: DataTableColumn<InventoryDispatch>[] = [
     {
       id: "item",
       label: t("inventory.columns.item"),
-      renderCell: (row) => {
-        const item = items.find((entry) => entry.id === row.itemId);
-        return item ? getInventoryItemLabel(item) : row.itemId;
-      },
+      renderCell: (row) => getDispatchItemLabel(row, items),
     },
     { id: "quantity", label: t("inventory.form.fields.quantityDispatched"), renderCell: (row) => row.quantity },
     {
@@ -114,6 +111,8 @@ export function InventoryDispatchesWorkspace() {
         onAddDispatch={() => setFormOpen(true)}
       />
 
+      {listErrorMessage ? <p className="mt-4 text-sm text-destructive md:hidden">{listErrorMessage}</p> : null}
+
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
@@ -133,7 +132,9 @@ export function InventoryDispatchesWorkspace() {
           />
         </CardHeader>
 
-        {isLoading ? (
+        {listErrorMessage ? (
+          <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
+        ) : isLoading ? (
           <DirectoryTableLoader
             icon={Truck}
             title={t("inventory.loading.dispatches.title")}
@@ -146,10 +147,7 @@ export function InventoryDispatchesWorkspace() {
             rows={pageRows}
             page={currentPage}
             rowKey={(row) => row.id}
-            rowLabel={(row) => {
-              const item = items.find((entry) => entry.id === row.itemId);
-              return item ? getInventoryItemLabel(item) : row.itemId;
-            }}
+            rowLabel={(row) => getDispatchItemLabel(row, items)}
             columnLayout={columnVisibility}
             sortUnavailable
             minWidth={800}
@@ -159,7 +157,7 @@ export function InventoryDispatchesWorkspace() {
           />
         )}
 
-        {!isLoading ? (
+        {!isLoading && !listErrorMessage ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               {t("common.pagination.showingOf", {

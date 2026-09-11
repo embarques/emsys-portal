@@ -45,9 +45,10 @@ import {
 } from "@/lib/labels/hooks/use-barcodes";
 import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
 import { useGenerateLabelReport } from "@/lib/reports/hooks/use-reports";
+import { buildSelectedLabelReportRequest } from "@/lib/labels/print-label-report";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import {
-  BARCODE_STATUS_OPTIONS,
+  FALLBACK_BARCODE_STATUS_OPTIONS,
   buildStagedLineItems,
   resolveBarcodeStatusRef,
   type GeneratedLabel,
@@ -269,13 +270,25 @@ export function InvoiceStagingWorkflow({
   const [containerDialogOpen, setContainerDialogOpen] = useState(false);
   const [routeDialogOpen, setRouteDialogOpen] = useState(false);
   const [removeConfirm, setRemoveConfirm] = useState<RemoveConfirmTarget | null>(null);
-  const [newStatus, setNewStatus] = useState<string>(BARCODE_STATUS_OPTIONS[1].name);
+  const [newStatus, setNewStatus] = useState<string>(
+    FALLBACK_BARCODE_STATUS_OPTIONS[1]?.name ?? "PRINTED",
+  );
   const [newContainerId, setNewContainerId] = useState("");
   const [changeResults, setChangeResults] = useState<LabelChangeOutputRow[]>([]);
 
   const isGenerating = generateLabelsMutation.isPending && !generateCancelled;
   const isUpdating = updateBarcodesMutation.isPending;
   const isPrinting = generateLabelReportMutation.isPending;
+
+  useEffect(() => {
+    if (barcodeStatusOptions.some((entry) => entry.name === newStatus)) return;
+    setNewStatus(
+      barcodeStatusOptions[1]?.name ??
+        barcodeStatusOptions[0]?.name ??
+        FALLBACK_BARCODE_STATUS_OPTIONS[1]?.name ??
+        "PRINTED",
+    );
+  }, [barcodeStatusOptions, newStatus]);
 
   // Keep the latest invoices without making them a reset trigger: generating
   // labels invalidates the invoices query, which would otherwise change the
@@ -350,7 +363,7 @@ export function InvoiceStagingWorkflow({
     [generatedLabels, selectedLabelKeys],
   );
   const assignBarcodeIds = useMemo(
-    () => [...new Set(selectedLabels.map((label) => label.barcodeId).filter((id) => id > 0))],
+    () => [...new Set(selectedLabels.map((label) => label.barcodeId.trim()).filter(Boolean))],
     [selectedLabels],
   );
 
@@ -516,7 +529,7 @@ export function InvoiceStagingWorkflow({
   }
 
   async function applyStatusChange() {
-    const option = BARCODE_STATUS_OPTIONS.find((entry) => entry.name === newStatus);
+    const option = barcodeStatusOptions.find((entry) => entry.name === newStatus);
     if (!option) return;
 
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
@@ -536,7 +549,8 @@ export function InvoiceStagingWorkflow({
     );
 
     const updates: BarcodeUpdate[] = withNumbers.map((label) => ({
-      id: label.barcodeId,
+      id: label.catalogId ?? 0,
+      barcodeId: label.barcodeId,
       invoiceId: label.invoiceId,
       writeTarget: label.writeTarget,
       payload: {
@@ -605,8 +619,8 @@ export function InvoiceStagingWorkflow({
       new Set(
         generatedLabels
           .filter((label) => selectedLabelKeys.includes(label.key))
-          .map((label) => label.barcodeId)
-          .filter((id) => id > 0),
+          .map((label) => label.barcodeId.trim())
+          .filter(Boolean),
       ),
     );
     if (barcodeIds.length === 0) {
@@ -637,12 +651,13 @@ export function InvoiceStagingWorkflow({
     );
 
     const updates: BarcodeUpdate[] = withNumbers.map((label) => ({
-      id: label.barcodeId,
+      id: label.catalogId ?? 0,
+      barcodeId: label.barcodeId,
       invoiceId: label.invoiceId,
       writeTarget: label.writeTarget,
       payload: {
         number: label.number,
-        status: resolveBarcodeStatusRef(label.statusId, label.statusName),
+        status: resolveBarcodeStatusRef(label.statusId, label.statusName, barcodeStatusOptions),
         container: { id: container.id, name: container.name },
       },
     }));
@@ -694,8 +709,8 @@ export function InvoiceStagingWorkflow({
 
   function handleRouteAssignResult(result: { success: boolean; routeName: string; message: string }) {
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
-    const assignable = selected.filter((label) => label.barcodeId > 0);
-    const skipped = selected.filter((label) => label.barcodeId <= 0);
+    const assignable = selected.filter((label) => label.barcodeId.trim().length > 0);
+    const skipped = selected.filter((label) => label.barcodeId.trim().length === 0);
     const dash = t("common.empty.dash");
 
     recordChangeOutputs([
@@ -731,29 +746,21 @@ export function InvoiceStagingWorkflow({
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
     if (selected.length === 0) return;
 
-    const barcodeNumbers = Array.from(
-      new Set(
-        selected
-          .map((label) => label.number.trim())
-          .filter((number) => number.length > 0),
-      ),
+    const barcodeIds = Array.from(
+      new Set(selected.map((label) => label.barcodeId.trim()).filter(Boolean)),
     );
 
-    if (barcodeNumbers.length === 0) {
+    if (barcodeIds.length === 0) {
       notifyError(t("labels.staging.errors.missingBarcodeNumbersPrint"));
       return;
     }
 
     try {
-      const { url } = await generateLabelReportMutation.mutateAsync({
-        type: "label",
-        collection: "barcodes",
-        values: barcodeNumbers,
-        lookupField: "number",
-        expiresInHours: 24,
-      });
+      const { url } = await generateLabelReportMutation.mutateAsync(
+        buildSelectedLabelReportRequest(barcodeIds),
+      );
       window.open(url, "_blank", "noopener,noreferrer");
-      notifySuccess(t("labels.staging.success.readyToPrint", { count: barcodeNumbers.length }));
+      notifySuccess(t("labels.staging.success.readyToPrint", { count: barcodeIds.length }));
     } catch (error) {
       notifyError(normalizeApiError(error).message);
     }

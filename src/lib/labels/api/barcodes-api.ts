@@ -46,6 +46,7 @@ type ApiBarcodeUser = {
 
 type ApiBarcode = {
   id?: number | string;
+  barcodeId?: number | string;
   number?: string;
   status?: ApiBarcodeStatus;
   container?: ApiBarcodeContainer;
@@ -97,22 +98,56 @@ type ApiBarcodeRouteData = {
 
 /** A single barcode update to apply via `PUT /barcodes/{id}` or invoice embed patch. */
 export type BarcodeUpdate = {
+  /**
+   * Catalog `/barcodes/{id}` numeric path id when `writeTarget` is `barcodes`.
+   * For embedded updates this may be 0 when only ObjectID `barcodeId` is known.
+   */
   id: number;
+  /**
+   * Unique ObjectID (or legacy numeric id as string) used for embedded matching
+   * and report selection.
+   */
+  barcodeId?: string;
   invoiceId?: string;
   payload: BarcodeWritePayload;
   /** When set, skips target resolution and uses the matching write path. */
   writeTarget?: "barcodes" | "invoice-embedded";
 };
 
-type BarcodeWriteTarget = {
-  kind: "barcodes" | "invoice-embedded";
-  id: number;
-};
+type BarcodeWriteTarget =
+  | { kind: "barcodes"; id: number }
+  | { kind: "invoice-embedded"; id: string };
 
 function readNumericId(value: unknown): number | undefined {
   if (value == null) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function readObjectId(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  const text = String(value).trim();
+  if (!text) return undefined;
+  // Pure integers are package-sequence / catalog numeric ids, not ObjectIDs.
+  if (/^\d+$/.test(text)) return undefined;
+  return text;
+}
+
+/** Prefer ObjectID `barcodeId`; fall back to numeric id string for legacy rows. */
+export function resolveBarcodeIdentity(input: {
+  barcodeId?: string | number | null;
+  id?: number | string | null;
+}): string {
+  const objectId = readObjectId(input.barcodeId) ?? readObjectId(input.id);
+  if (objectId) return objectId;
+
+  const fromBarcodeId = readNumericId(input.barcodeId);
+  if (fromBarcodeId != null && fromBarcodeId > 0) return String(fromBarcodeId);
+
+  const fromId = readNumericId(input.id);
+  if (fromId != null && fromId > 0) return String(fromId);
+
+  return "";
 }
 
 function readUserName(user: unknown): string {
@@ -156,7 +191,8 @@ export function normalizeBarcode(raw: unknown): Barcode | null {
   const item = raw as ApiBarcode;
   const number = String(item.number ?? "").trim();
   const id = readNumericId(item.id) ?? 0;
-  if (!number && id <= 0) return null;
+  const barcodeId = resolveBarcodeIdentity({ barcodeId: item.barcodeId, id: item.id });
+  if (!number && id <= 0 && !barcodeId) return null;
 
   const statusName = String(item.status?.name ?? "").trim();
   const prevStatus = String(item.status?.prevStatus ?? "").trim();
@@ -167,6 +203,7 @@ export function normalizeBarcode(raw: unknown): Barcode | null {
 
   return {
     id,
+    barcodeId: barcodeId || undefined,
     number,
     status: statusName
       ? {
@@ -245,8 +282,10 @@ export async function updateBarcode(id: number, payload: BarcodeWritePayload): P
 async function resolveBarcodeWriteTarget(
   candidateId: number,
   number: string,
+  barcodeObjectId?: string,
 ): Promise<BarcodeWriteTarget> {
   const trimmedNumber = number.trim();
+  const objectId = barcodeObjectId?.trim();
 
   if (trimmedNumber) {
     try {
@@ -259,8 +298,12 @@ async function resolveBarcodeWriteTarget(
     }
   }
 
+  if (objectId) {
+    return { kind: "invoice-embedded", id: objectId };
+  }
+
   if (candidateId > 0) {
-    return { kind: "invoice-embedded", id: candidateId };
+    return { kind: "invoice-embedded", id: String(candidateId) };
   }
 
   if (!trimmedNumber) {
@@ -279,11 +322,18 @@ type ResolvedBarcodeUpdate = {
 async function resolveBarcodeUpdates(updates: BarcodeUpdate[]): Promise<ResolvedBarcodeUpdate[]> {
   return Promise.all(
     updates.map(async (update): Promise<ResolvedBarcodeUpdate> => {
+      const embeddedId =
+        update.barcodeId?.trim() ||
+        (update.id > 0 ? String(update.id) : "");
+
       if (update.writeTarget === "invoice-embedded") {
+        if (!embeddedId) {
+          throw new Error("Barcode id is required to update embedded barcodes.");
+        }
         return {
           invoiceId: update.invoiceId,
           payload: update.payload,
-          target: { kind: "invoice-embedded", id: update.id },
+          target: { kind: "invoice-embedded", id: embeddedId },
         };
       }
 
@@ -301,13 +351,13 @@ async function resolveBarcodeUpdates(updates: BarcodeUpdate[]): Promise<Resolved
       return {
         invoiceId: update.invoiceId,
         payload: update.payload,
-        target: await resolveBarcodeWriteTarget(update.id, update.payload.number),
+        target: await resolveBarcodeWriteTarget(update.id, update.payload.number, update.barcodeId),
       };
     }),
   );
 }
 
-function toEmbeddedPatch(target: BarcodeWriteTarget, payload: BarcodeWritePayload) {
+function toEmbeddedPatch(target: Extract<BarcodeWriteTarget, { kind: "invoice-embedded" }>, payload: BarcodeWritePayload) {
   return {
     barcodeId: target.id,
     number: payload.number,
@@ -322,7 +372,12 @@ export async function updateBarcodes(updates: BarcodeUpdate[]): Promise<Barcode[
   const embeddedUpdates = resolvedUpdates.filter((update) => update.target.kind === "invoice-embedded");
 
   const catalogResults = await Promise.all(
-    catalogUpdates.map((update) => updateBarcode(update.target.id, update.payload)),
+    catalogUpdates.map((update) => {
+      if (update.target.kind !== "barcodes") {
+        throw new Error("Expected barcodes catalog write target.");
+      }
+      return updateBarcode(update.target.id, update.payload);
+    }),
   );
 
   const embeddedByInvoice = new Map<string, ReturnType<typeof toEmbeddedPatch>[]>();
@@ -330,6 +385,9 @@ export async function updateBarcodes(updates: BarcodeUpdate[]): Promise<Barcode[
     const invoiceId = update.invoiceId?.trim();
     if (!invoiceId) {
       throw new Error("Invoice id is required to update embedded barcodes.");
+    }
+    if (update.target.kind !== "invoice-embedded") {
+      throw new Error("Expected invoice-embedded write target.");
     }
 
     const patches = embeddedByInvoice.get(invoiceId) ?? [];
@@ -341,8 +399,10 @@ export async function updateBarcodes(updates: BarcodeUpdate[]): Promise<Barcode[
   for (const [invoiceId, patches] of embeddedByInvoice) {
     await patchInvoiceEmbeddedBarcodes(invoiceId, patches);
     for (const patch of patches) {
+      const legacyNumericId = readNumericId(patch.barcodeId);
       embeddedResults.push({
-        id: patch.barcodeId,
+        id: legacyNumericId ?? 0,
+        barcodeId: patch.barcodeId,
         number: patch.number,
         status: patch.status,
         container: patch.container ?? null,
@@ -415,23 +475,35 @@ export async function fetchBarcodeById(id: number): Promise<Barcode> {
 async function retrieveExistingBarcode(
   snapshot: InvoiceLineItemBarcode,
 ): Promise<{ barcode: Barcode; writeTarget: BarcodeWriteTarget["kind"] }> {
-  const candidateId =
-    readNumericId(snapshot.barcodeId) ?? readNumericId(snapshot.id);
+  const objectId = snapshot.barcodeId?.trim();
+  const packageSequence = snapshot.packageSequence ?? readNumericId(snapshot.id);
   const number = snapshot.number.trim();
 
   if (number) {
     try {
       const barcode = await fetchBarcodeByNumber(number);
-      return { barcode, writeTarget: "barcodes" };
+      return {
+        barcode: {
+          ...barcode,
+          barcodeId: objectId || barcode.barcodeId || resolveBarcodeIdentity(barcode),
+        },
+        writeTarget: "barcodes",
+      };
     } catch {
       // Embedded invoice barcodes are often invoice-detail records, not catalog rows.
     }
   }
 
-  if (candidateId != null && candidateId > 0) {
+  const identity = resolveBarcodeIdentity({
+    barcodeId: objectId,
+    id: packageSequence,
+  });
+
+  if (identity) {
     return {
       barcode: {
-        id: candidateId,
+        id: packageSequence ?? 0,
+        barcodeId: identity,
         number: snapshot.number,
         status: snapshot.statusName ? { id: snapshot.statusId, name: snapshot.statusName } : null,
         container: snapshot.containerName
@@ -467,9 +539,13 @@ function toGeneratedLabel(
   source: GeneratedLabelSource,
   writeTarget: BarcodeWriteTarget["kind"] = "barcodes",
 ): GeneratedLabel {
+  const barcodeId = resolveBarcodeIdentity(barcode);
   return {
-    key: `${context.invoiceId}:${barcode.number || barcode.id}:${sequence}`,
-    barcodeId: barcode.id,
+    key: `${context.invoiceId}:${barcodeId || barcode.number || sequence}:${sequence}`,
+    barcodeId,
+    catalogId: writeTarget === "barcodes" && barcode.id > 0 ? barcode.id : undefined,
+    packageSequence:
+      writeTarget === "invoice-embedded" && barcode.id > 0 ? barcode.id : undefined,
     number: barcode.number,
     statusId: barcode.status?.id,
     statusName: barcode.status?.name ?? "—",
@@ -577,20 +653,21 @@ export async function generateLabels(
  */
 export async function assignInvoiceItemBarcodesToRoute(
   routeId: string,
-  barcodeIds: number[],
+  barcodeIds: string[],
 ): Promise<InvoiceItemBarcodeRoute> {
   const id = routeId.trim();
   if (!id) {
     throw new Error("A valid route is required.");
   }
 
-  if (barcodeIds.length === 0) {
+  const ids = barcodeIds.map((entry) => entry.trim()).filter(Boolean);
+  if (ids.length === 0) {
     throw new Error("The selected invoices have no barcodes with a container to assign.");
   }
 
   const response = await apiClient.put<ApiMutationEnvelope<ApiBarcodeRouteData>>(
     `${API_ENDPOINTS.INVOICE_ITEM_BARCODE_ROUTE}/${id}`,
-    { barcodeIds },
+    { barcodeIds: ids },
   );
 
   assertMutationSuccess(response, "Unable to assign invoice item barcodes to route.");
@@ -600,6 +677,6 @@ export async function assignInvoiceItemBarcodesToRoute(
     routeId: String(data?.route?.id ?? id).trim(),
     routeName: String(data?.route?.name ?? "").trim(),
     tripNumber: Number(data?.tripNumber ?? 0),
-    assignedCount: Number(data?.assignedCount ?? barcodeIds.length),
+    assignedCount: Number(data?.assignedCount ?? ids.length),
   };
 }

@@ -35,7 +35,7 @@ export type AssignBarcodeRouteResult = {
 type AssignBarcodeRouteDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  barcodeIds: number[];
+  barcodeIds: string[];
   onResult?: (result: AssignBarcodeRouteResult) => void;
 };
 

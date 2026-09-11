@@ -1,23 +1,20 @@
 import type { MonthCounts, WeekdayCounts } from "@/lib/dashboard/histogram";
 
-export type DashboardScanMeta = {
-  scanned: number;
-  total: number;
-  truncated: boolean;
-};
-
-export type AppointmentDashboardMetrics = DashboardScanMeta & {
+export type AppointmentDashboardMetrics = {
+  timezone: string;
   createdByWeekday: WeekdayCounts;
   scheduledByWeekday: WeekdayCounts;
   scheduledByMonth: MonthCounts;
 };
 
-export type ClientDashboardMetrics = DashboardScanMeta & {
+export type ClientDashboardMetrics = {
+  timezone: string;
   createdByWeekday: WeekdayCounts;
   createdByMonth: MonthCounts;
 };
 
-export type InvoiceDashboardMetrics = DashboardScanMeta & {
+export type InvoiceDashboardMetrics = {
+  timezone: string;
   createdByWeekday: WeekdayCounts;
   createdByMonth: MonthCounts;
 };

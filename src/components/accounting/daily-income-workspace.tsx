@@ -40,7 +40,7 @@ import {
   useUpdateIncomeStatement,
 } from "@/lib/accounting/daily-income/hooks";
 import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income/assignee";
-import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, transactionCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import { buildIncomeReportRequest, openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
 import { fetchIncomeStatement } from "@/lib/accounting/daily-income/api";
 import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
@@ -516,13 +516,7 @@ export function DailyIncomeWorkspace() {
           return;
         }
 
-        if (values.transactionType === "INITIAL-PAYMENT") {
-          const invoiceNumber = values.invoiceNumber?.trim() || "invoice";
-          feedback.notifySuccess(t("accounting.dailyIncome.toasts.invoiceRegistered", { invoiceNumber }));
-          return;
-        }
-
-        feedback.notifySuccess(transactionCreatedToastMessage(values, t));
+        feedback.notifySuccess(journalCreatedToastMessage(values, t));
       })
       .catch((error) => {
         setFormError(normalizeApiError(error).message);

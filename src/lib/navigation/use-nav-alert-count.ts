@@ -1,6 +1,6 @@
 "use client";
 
-import { useOutstandingChecksCount } from "@/lib/accounting/checks/use-checks-store";
+import { useOutstandingChecksCount } from "@/lib/accounting/checks/hooks/use-checks";
 import { useTranslation } from "@/lib/i18n";
 
 const CHECKS_HREF = "/accounting/checks";

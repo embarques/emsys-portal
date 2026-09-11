@@ -21,7 +21,9 @@ export type ReportCollection =
  *   `{ type: "invoice", collection: "invoices", values: ["6a32..."], lookupField: "id" }`
  * - Labels by invoice number (`/reports/labels`):
  *   `{ type: "label", collection: "invoices", values: ["489391"], lookupField: "number" }`
- * - Labels by barcode number (`/reports/labels`):
+ * - Labels by exact barcode ObjectID (`/reports/labels`):
+ *   `{ type: "label", collection: "barcodes", values: ["507f1f77bcf86cd799439011"], lookupField: "id" }`
+ * - Labels by barcode number (`/reports/labels`, broader match — avoid for selected-row print):
  *   `{ type: "label", collection: "barcodes", values: ["ET045260333"], lookupField: "number" }`
  * - Pickup manifest (`/reports/pickups`):
  *   `{ type: "pickup", collection: "pickups", values: ["42"], lookupField: "id" }`

@@ -18,10 +18,9 @@ import {
 import { fetchJournalsForInvoice } from "@/lib/accounting/daily-income/api";
 import {
   buildInvoiceStatsCountParams,
-  buildNewInvoiceStatsFilterRows,
   buildOutstandingInvoiceStatsFilterRows,
-  buildPreviousNewInvoiceStatsFilterRows,
 } from "@/lib/invoices/invoice-stats";
+import { useInsightsKpis } from "@/lib/insights/hooks/use-insights-kpis";
 import type { NewInvoiceStatPeriod } from "@/lib/invoices/new-invoice-stats";
 import {
   DEFAULT_INVOICE_LIST_PARAMS,
@@ -64,24 +63,14 @@ export function useInvoiceStats(options: InvoiceStatsOptions = {}) {
 
 /** Count of invoices created within a rolling timeframe, plus prior-period count for % change. */
 export function useNewInvoiceStats(period: NewInvoiceStatPeriod) {
-  const query = useWorkspaceQuery({
-    queryKey: queryKeys.invoices.stats("new", period),
-    queryFn: () =>
-      fetchInvoices(buildInvoiceStatsCountParams(buildNewInvoiceStatsFilterRows(period))),
-  });
-
-  const previousQuery = useWorkspaceQuery({
-    queryKey: queryKeys.invoices.stats("new-previous", period),
-    queryFn: () =>
-      fetchInvoices(buildInvoiceStatsCountParams(buildPreviousNewInvoiceStatsFilterRows(period))),
-  });
+  const query = useInsightsKpis(period);
 
   return {
-    total: query.data?.total ?? 0,
-    previousTotal: previousQuery.data?.total ?? 0,
-    isLoading: query.isLoading || previousQuery.isLoading,
-    isFetching: query.isFetching || previousQuery.isFetching,
-    isError: query.isError || previousQuery.isError,
+    total: query.data?.newInvoices.count ?? 0,
+    previousTotal: query.data?.newInvoices.previousCount ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
   };
 }
 
@@ -135,7 +124,11 @@ export function useInvoiceJournals(
 }
 
 function invalidateInvoices(queryClient: ReturnType<typeof useQueryClient>) {
-  return queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.insights.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.containers.stats("average-value") }),
+  ]);
 }
 
 export function useCreateInvoice() {

@@ -2,7 +2,7 @@ import type { Permission } from "@/lib/auth/types/permission";
 
 /** Portal page gates — aligned with emsys-api permission seed where applicable. */
 export const PERMISSIONS = {
-  dashboardView: { name: "canViewSettings", resourceType: "settings" },
+  dashboardView: { name: "canViewDashboard", resourceType: "dashboard" },
   clientsView: { name: "canViewCustomer", resourceType: "customer" },
   clientsCreate: { name: "canCreateCustomer", resourceType: "customer" },
   clientsUpdate: { name: "canUpdateCustomer", resourceType: "customer" },
@@ -53,8 +53,11 @@ export const PERMISSIONS = {
   /** Parent inventory route — list stock until a dedicated inventory permission exists. */
   inventoryView: { name: "canListInventoryStock", resourceType: "inventory_stock" },
   incomeView: { name: "canViewIncomeStatement", resourceType: "income_statement" },
-  /** Checks CRUD + list. Income view still grants these until the API seeds check permissions. */
-  checksList: { name: "canListCheck", resourceType: "check" },
+  /**
+   * Checks workspace gate. API seeds view/create/update/delete only (no canListCheck),
+   * matching invoice/journal. Income view still aliases older grants.
+   */
+  checksList: { name: "canViewCheck", resourceType: "check" },
   checksView: { name: "canViewCheck", resourceType: "check" },
   checksCreate: { name: "canCreateCheck", resourceType: "check" },
   checksUpdate: { name: "canUpdateCheck", resourceType: "check" },
@@ -121,19 +124,17 @@ const INVENTORY_VIEW_NAME_ALIASES: Record<string, readonly string[]> = Object.fr
  */
 const PERMISSION_GRANT_ALIASES: Record<string, readonly string[]> = {
   ...INVENTORY_GRANT_ALIASES,
+  "dashboard:canviewdashboard": ["settings:canviewsettings", "settings:canviewdashboard"],
   "settings:canviewsettings": ["settings:canviewdashboard", "dashboard:canviewdashboard"],
   "customer:canviewcustomer": ["client:canviewclient"],
   "customer:cancreatecustomer": ["client:cancreateclient"],
   "customer:canupdatecustomer": ["client:canupdateclient"],
   "customer:candeletecustomer": ["client:candeleteclient"],
   "income_statement:canviewincomestatement": ["income:canviewincome"],
-  "check:canlistcheck": [
-    "income_statement:canviewincomestatement",
-    "income:canviewincome",
-  ],
   "check:canviewcheck": [
     "income_statement:canviewincomestatement",
     "income:canviewincome",
+    "check:canlistcheck",
   ],
   "check:cancreatecheck": [
     "income_statement:canviewincomestatement",
@@ -161,14 +162,20 @@ const PERMISSION_GRANT_ALIASES: Record<string, readonly string[]> = {
 
 /** Permission names that satisfy a required view when resource types differ in legacy data. */
 const VIEW_NAME_ALIASES: Record<string, readonly string[]> = {
+  canviewdashboard: ["canviewdashboard", "canviewsettings"],
   canviewsettings: ["canviewdashboard", "canviewsettings"],
   canviewcustomer: ["canviewclient", "canviewcustomer"],
   cancreatecustomer: ["cancreateclient", "cancreatecustomer"],
   canupdatecustomer: ["canupdateclient", "canupdatecustomer"],
   candeletecustomer: ["candeleteclient", "candeletecustomer"],
   canviewincomestatement: ["canviewincome", "canviewincomestatement"],
-  canlistcheck: ["canviewincomestatement", "canviewincome", "canlistchecks"],
-  canviewcheck: ["canviewincomestatement", "canviewincome", "canviewchecks"],
+  canviewcheck: [
+    "canviewincomestatement",
+    "canviewincome",
+    "canviewchecks",
+    "canlistcheck",
+    "canlistchecks",
+  ],
   cancreatecheck: ["canviewincomestatement", "canviewincome", "cancreatechecks"],
   canupdatecheck: ["canviewincomestatement", "canviewincome", "canupdatechecks"],
   candeletecheck: ["canviewincomestatement", "canviewincome", "candeletechecks"],

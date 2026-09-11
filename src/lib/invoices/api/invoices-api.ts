@@ -334,16 +334,22 @@ function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
       const createdAt = String(barcode.createdAt ?? "").trim();
       const createdBy = readInvoiceCreatedBy(barcode.createdBy);
 
-      const canonicalBarcodeId =
-        barcode.barcodeId != null
-          ? String(barcode.barcodeId)
-          : barcode.id != null
-            ? String(barcode.id)
+      const objectId =
+        barcode.barcodeId != null && String(barcode.barcodeId).trim()
+          ? String(barcode.barcodeId).trim()
+          : undefined;
+      const packageSequence =
+        typeof barcode.id === "number" && Number.isFinite(barcode.id)
+          ? barcode.id
+          : typeof barcode.id === "string" && /^\d+$/.test(barcode.id.trim())
+            ? Number(barcode.id.trim())
             : undefined;
 
       return {
-        id: canonicalBarcodeId ?? createRecordId(),
-        barcodeId: barcode.barcodeId != null ? String(barcode.barcodeId) : undefined,
+        id: objectId || (packageSequence != null ? String(packageSequence) : createRecordId()),
+        barcodeId: objectId,
+        packageSequence:
+          packageSequence != null && Number.isFinite(packageSequence) ? packageSequence : undefined,
         number,
         statusId: typeof barcode.status?.id === "number" ? barcode.status.id : undefined,
         statusName: statusName || undefined,
@@ -853,16 +859,27 @@ export async function fetchInvoiceApiRecord(invoiceId: string): Promise<ApiInvoi
 }
 
 export type InvoiceEmbeddedBarcodePatch = {
-  barcodeId: number;
+  /** ObjectID `barcodeId`, or legacy numeric package-sequence id as string. */
+  barcodeId: string;
   number: string;
   status: { id: number; name: string };
   container?: { id: number; name: string };
 };
 
-function readInvoiceBarcodeId(value: unknown): number | undefined {
-  if (value == null) return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
+function barcodeMatchesEmbeddedPatch(barcode: ApiInvoiceBarcode, patchId: string): boolean {
+  const target = patchId.trim();
+  if (!target) return false;
+
+  if (barcode.barcodeId != null && String(barcode.barcodeId).trim() === target) {
+    return true;
+  }
+
+  // Legacy fallback only: match package-sequence numeric `id` when ObjectID is absent.
+  if (barcode.barcodeId == null && barcode.id != null && String(barcode.id).trim() === target) {
+    return true;
+  }
+
+  return false;
 }
 
 /** Update barcodes nested under `invoiceDetails` via `PUT /invoices/{id}`. */
@@ -873,24 +890,24 @@ export async function patchInvoiceEmbeddedBarcodes(
   if (patches.length === 0) return;
 
   const invoice = await fetchInvoiceApiRecord(invoiceId);
-  const patchById = new Map(patches.map((patch) => [patch.barcodeId, patch]));
+  const patchById = new Map(patches.map((patch) => [patch.barcodeId.trim(), patch]));
   let matched = 0;
 
   for (const detail of invoice.invoiceDetails ?? []) {
     for (const barcode of detail.barcodes ?? []) {
-      const numericId = readInvoiceBarcodeId(barcode.id);
-      if (numericId == null) continue;
+      for (const [patchId, patch] of patchById) {
+        if (!barcodeMatchesEmbeddedPatch(barcode, patchId)) continue;
 
-      const patch = patchById.get(numericId);
-      if (!patch) continue;
+        barcode.number = patch.number;
+        barcode.status = patch.status;
+        if (patch.container) {
+          barcode.container = patch.container;
+        }
 
-      barcode.number = patch.number;
-      barcode.status = patch.status;
-      if (patch.container) {
-        barcode.container = patch.container;
+        matched += 1;
+        patchById.delete(patchId);
+        break;
       }
-
-      matched += 1;
     }
   }
 

@@ -13,6 +13,7 @@ Use this document when wiring the Next.js client to `emsys-api`.
 | Users                                                 | `src/lib/users/api/users-api.ts`                       |
 | Branches                                              | `src/lib/branches/api/branches-api.ts`                 |
 | Pickups (orders)                                      | `src/lib/orders/api/orders-api.ts`                     |
+| Checks                                                | `src/lib/accounting/checks/api/checks-api.ts`          |
 | API base URL                                          | `src/lib/api/base-url.ts` (`NEXT_PUBLIC_API_BASE_URL`) |
 
 The portal calls the API **directly** from the browser (no Next.js `/api` proxy). Ensure API CORS allows your portal origin.
@@ -64,7 +65,7 @@ Content-Type: application/json
 
 | Type                           | Resources                                                                                                      | Example                      |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| MongoDB ObjectID (24-char hex) | `customers`, `invoices`, `journals`, `vehicles`, `routes`, `vehicle-routes`, `pickups/route` | `"674a1b2c3d4e5f6789012345"` |
+| MongoDB ObjectID (24-char hex) | `customers`, `invoices`, `journals`, `checks`, `vehicles`, `routes`, `vehicle-routes`, `pickups/route` | `"674a1b2c3d4e5f6789012345"` |
 | `uint16`                       | `users`, `roles`, `permissions`, `branches`, `employees`                                                       | `1`                          |
 | `uint32`                       | `containers`, `deliveries`, `barcodes`, `pickups`, `income-statements`                                         | `42`                         |
 
@@ -395,6 +396,20 @@ Same shape. `{id}` = numeric.
 
 ## Barcodes (labels) — permission: `labels`
 
+### `GET /v1/barcodes/status-options`
+
+Tenant `barcode_statuses` catalog for pickers (sorted by `_id`). Requires labels view. Each row: `{ id, name, prevStatus? }`. Seeded on tenant creation / migration / `db seed --target barcode-statuses`.
+
+### Embedded invoice barcodes (`invoiceDetails[].barcodes[]`)
+
+| Field | Meaning |
+| ----- | ------- |
+| `barcodeId` | Unique ObjectID — use for print selection, route assign, and embedded patches |
+| `id` | Package sequence on the line item (not globally unique; legacy fallback only) |
+| `number` | Human-readable barcode number (may duplicate across rows) |
+
+Selected-label print: `POST /v1/reports/labels` with `{ type: "label", collection: "barcodes", values: [<barcodeId>…], lookup_field: "id" }`.
+
 ### `POST /v1/barcodes`
 
 ```json
@@ -598,7 +613,17 @@ Full `Invoice` model (not `CreateInvoiceRequest`). `{id}` = ObjectID hex.
 
 Uses `PostEntryRequest`. **Required:** `transactionType`.
 
-**Transaction types:** `PAYMENT`, `SALES`, `EXPENSE`, `DISCOUNT`, `SURCHARGE`, `TRANSFER`, `LOAN`, `LOAN-PAYMENT`, `REFUND`, `VOID`, `COMMISSION`, `OTHER`, `INITIAL-PAYMENT`.
+**Transaction types:** `PAYMENT`, `SALES`, `EXPENSE`, `DISCOUNT`, `SURCHARGE`, `TRANSFER`, `LOAN`, `LOAN-PAYMENT`, `REFUND`, `VOID`, `COMMISSION`, `OTHER`, `INITIAL-PAYMENT`, `INVENTORY`.
+
+**Assignee (employee or daily route):**
+
+- Send either `employee` **or** a route assignee. Do not persist portal-only `assigneeSource`.
+- Discriminate by id shape: numeric → employee; 24-char Mongo ObjectID → daily route.
+- Route assignees may be sent as `vehicleRoute`, `route`, and/or legacy `employeeGroup` (`{ id, name, route?: { id, name } }`).
+- On write the API keeps one family only:
+  - employee journals keep `employee` and clear route fields
+  - route journals keep `vehicleRoute` / `route` / compatibility `employeeGroup` and clear `employee`
+- Responses expose `employee`, `vehicleRoute`, `route`, and `employeeGroup` for reads and search.
 
 ### New invoice wizard Daily Income registration
 
@@ -636,6 +661,9 @@ When missing, the wizard may create the registration only in today's open Daily 
   "currency": "USD",
   "rate": 1,
   "employee": { "id": 5, "name": "Tasador" },
+  "vehicleRoute": null,
+  "route": null,
+  "employeeGroup": null,
   "invoice": {
     "number": "INV-1001",
     "cost": 120,
@@ -643,6 +671,32 @@ When missing, the wizard may create the registration only in today's open Daily 
   },
   "sender": { "id": "sender-id", "name": "Sender Co" },
   "receivers": [{ "id": "receiver-id", "name": "Receiver Co" }]
+}
+```
+
+**Example — route assignee (daily vehicle-route):**
+
+```json
+{
+  "incomeStatementId": 123,
+  "transactionType": "SALES",
+  "amount": 45.0,
+  "employee": null,
+  "vehicleRoute": {
+    "id": "64d5c0b0d1eab2aaf30b1819",
+    "name": "NY-1",
+    "route": { "id": "64d5c0b0d1eab2aaf30b1820", "name": "Bronely" }
+  },
+  "route": {
+    "id": "64d5c0b0d1eab2aaf30b1819",
+    "name": "NY-1",
+    "route": { "id": "64d5c0b0d1eab2aaf30b1820", "name": "Bronely" }
+  },
+  "employeeGroup": {
+    "id": "64d5c0b0d1eab2aaf30b1819",
+    "name": "NY-1",
+    "route": { "id": "64d5c0b0d1eab2aaf30b1820", "name": "Bronely" }
+  }
 }
 ```
 
@@ -688,6 +742,8 @@ When `paymentMethod.name` is `CHECK` (or `CHEQUE`), `checkNumber` is required:
 
 Same rule applies to `INITIAL-PAYMENT` and any other journal with `paymentMethod` CHECK: persist and return `checkNumber` on create/update/read.
 
+Invoice `PAYMENT` / `INITIAL-PAYMENT` with CHECK or CHEQUE also creates an **outstanding check** (`POST /v1/checks` is used internally). The invoice `payment` / `balance` does **not** change until that check is marked `CLEARED`. Clearing applies the payment; updating or deleting a cleared check reverses it.
+
 **Example — EXPENSE:**
 
 ```json
@@ -703,6 +759,48 @@ Same rule applies to `INITIAL-PAYMENT` and any other journal with `paymentMethod
 ### `PUT /v1/journals/{id}`
 
 Same `PostEntryRequest` shape. `{id}` = ObjectID hex.
+
+---
+
+## Checks — permission: `check`
+
+### `POST /v1/checks`
+
+ID is auto-assigned. **Required:** `invoice` with `id`. `checkNumber` and `paymentAmount` are required in the portal.
+
+```json
+{
+  "invoice": { "id": "674a1b2c3d4e5f6789012345", "number": "INV-1001" },
+  "checkNumber": "4521",
+  "paymentAmount": 50.0,
+  "datePosted": "2026-09-11T00:00:00Z",
+  "refNumber": "REF-1001",
+  "status": "OUTSTANDING"
+}
+```
+
+`status` is `OUTSTANDING` or `CLEARED` (API may return lowercase). `datePosted` / `clearedAt` are RFC3339 `time.Time` — date-only strings are rejected. Omit `clearedAt` until the check is cleared. Permission resource: `check` (`canViewCheck`, `canCreateCheck`, `canUpdateCheck`, `canDeleteCheck`; no separate list permission).
+
+### `PUT /v1/checks/{id}`
+
+Same `check.Check` shape. `{id}` = ObjectID hex. Marking `CLEARED` applies the linked invoice payment. Reverting to `OUTSTANDING` or deleting a cleared check reverses it.
+
+```json
+{
+  "invoice": { "id": "674a1b2c3d4e5f6789012345", "number": "INV-1001" },
+  "checkNumber": "4521",
+  "paymentAmount": 50.0,
+  "datePosted": "2026-09-11T00:00:00Z",
+  "status": "CLEARED",
+  "clearedAt": "2026-09-12T00:00:00Z"
+}
+```
+
+### `GET /v1/checks` / `POST /v1/checks/search` / `GET /v1/checks/{id}` / `DELETE /v1/checks/{id}`
+
+Standard list, search, retrieve, and delete. Search fields include `checkNumber`, `invoice.number`, `refNumber`, `status`, and `createdBy.name`.
+
+Portal implementation: `src/lib/accounting/checks/api/checks-api.ts`
 
 ---
 
@@ -901,7 +999,7 @@ Same write shape. `{id}` = ObjectID hex.
 | POST   | `/v1/income-statements/{id}/open`  | Reopen cuadre                     |
 | GET    | `/v1/pickups/search-by-route`      | Query: `routeId`, `page`, `limit` |
 
-**`<resource>` plural paths:** `permissions`, `roles`, `branches`, `users`, `customers`, `employees`, `vehicles`, `routes`, `vehicle-routes`, `containers`, `deliveries`, `barcodes`, `pickups`, `invoices`, `journals`, `income-statements`.
+**`<resource>` plural paths:** `permissions`, `roles`, `branches`, `users`, `customers`, `employees`, `vehicles`, `routes`, `vehicle-routes`, `containers`, `deliveries`, `barcodes`, `pickups`, `invoices`, `journals`, `checks`, `income-statements`.
 
 ---
 
@@ -919,6 +1017,7 @@ Same write shape. `{id}` = ObjectID hex.
 | `/pickups`                           | `pickup`                |
 | `/invoices`                          | `invoice`               |
 | `/journals`                          | `journal`               |
+| `/checks`                            | `check`                 |
 | `/income-statements`                 | `income_statement`      |
 | `/vehicles`                          | `vehicle`               |
 | `/routes`                            | `route`                 |

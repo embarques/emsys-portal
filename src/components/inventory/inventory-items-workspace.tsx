@@ -68,7 +68,7 @@ export function InventoryItemsWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
-  const { data: items = [], isLoading } = useInventoryItems();
+  const { data: items = [], isLoading, isError, error } = useInventoryItems();
   const { data: suppliers = [] } = useInventorySuppliers();
   const snapshot = useInventorySnapshotData();
 
@@ -95,6 +95,7 @@ export function InventoryItemsWorkspace() {
   );
 
   const kpis = useMemo(() => computeInventoryKpis(items), [items]);
+  const listErrorMessage = isError ? toErrorMessage(error) : null;
   const pageLimit = resolveClientTablePageLimit(pageSize, filteredItems.length);
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageLimit));
   const currentPage = Math.min(page, totalPages);
@@ -246,6 +247,8 @@ export function InventoryItemsWorkspace() {
         onAddItem={openAddForm}
       />
 
+      {listErrorMessage ? <p className="mt-4 text-sm text-destructive md:hidden">{listErrorMessage}</p> : null}
+
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
@@ -277,7 +280,9 @@ export function InventoryItemsWorkspace() {
           onDelete={() => setDeleteTarget(items.filter((item) => selectedIds.includes(item.id)))}
         />
 
-        {isLoading ? (
+        {listErrorMessage ? (
+          <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
+        ) : isLoading ? (
           <DirectoryTableLoader
             icon={Warehouse}
             title={t("inventory.loading.items.title")}
@@ -318,7 +323,7 @@ export function InventoryItemsWorkspace() {
           />
         )}
 
-        {!isLoading ? (
+        {!isLoading && !listErrorMessage ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               {t("common.pagination.showingOf", {

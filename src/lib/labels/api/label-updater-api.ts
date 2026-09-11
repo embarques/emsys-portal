@@ -1,6 +1,7 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { createRecordId } from "@/lib/customers/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
+import { fetchBarcodeStatusOptions } from "@/lib/barcodes/api/barcode-status-options-api";
 import { getBarcodeStatusLabel } from "@/lib/labels/display";
 import {
   fetchBarcodeByNumber,
@@ -8,9 +9,10 @@ import {
   type BarcodeWritePayload,
 } from "@/lib/labels/api/barcodes-api";
 import {
-  BARCODE_STATUS_OPTIONS,
+  FALLBACK_BARCODE_STATUS_OPTIONS,
   type Barcode,
   type BarcodeScannerOptions,
+  type BarcodeStatusOption,
   type LabelUpdateResult,
 } from "@/lib/labels/types";
 
@@ -50,12 +52,22 @@ function failureResult(
   };
 }
 
-function resolveStatusRef(statusId: number): { id: number; name: string } {
-  const option = BARCODE_STATUS_OPTIONS.find((entry) => entry.id === statusId);
+function resolveStatusRef(
+  statusId: number,
+  options: readonly BarcodeStatusOption[],
+): { id: number; name: string } {
+  const option = options.find((entry) => entry.id === statusId);
   if (!option) {
     throw new Error("Select a valid status.");
   }
-  return option;
+  return { id: option.id, name: option.name };
+}
+
+async function resolveStatusCatalog(
+  options: BarcodeScannerOptions,
+): Promise<readonly BarcodeStatusOption[]> {
+  if (options.statusOptions?.length) return options.statusOptions;
+  return fetchBarcodeStatusOptions();
 }
 
 function formatStatusLabel(
@@ -91,15 +103,18 @@ function formatRouteLabel(
 function buildBarcodeWritePayload(
   existing: Barcode,
   options: BarcodeScannerOptions,
+  statusCatalog: readonly BarcodeStatusOption[],
 ): { payload: BarcodeWritePayload; changed: boolean } {
+  const catalog = statusCatalog.length ? statusCatalog : FALLBACK_BARCODE_STATUS_OPTIONS;
   const payload: BarcodeWritePayload = {
     number: existing.number,
     status: resolveStatusRef(
       existing.status?.id && existing.status.id > 0
         ? existing.status.id
-        : BARCODE_STATUS_OPTIONS.find(
+        : catalog.find(
             (entry) => entry.name === existing.status?.name?.trim().toUpperCase(),
-          )?.id ?? BARCODE_STATUS_OPTIONS[0]!.id,
+          )?.id ?? catalog[0]!.id,
+      catalog,
     ),
   };
 
@@ -120,7 +135,7 @@ function buildBarcodeWritePayload(
   let changed = false;
 
   if (options.changeStatus && options.newStatusId != null) {
-    const nextStatus = resolveStatusRef(options.newStatusId);
+    const nextStatus = resolveStatusRef(options.newStatusId, catalog);
     if (payload.status.id !== nextStatus.id) {
       payload.status = nextStatus;
       changed = true;
@@ -217,7 +232,8 @@ export async function applyBarcodeScanUpdate(
   let changed = false;
 
   try {
-    const built = buildBarcodeWritePayload(existing, options);
+    const statusCatalog = await resolveStatusCatalog(options);
+    const built = buildBarcodeWritePayload(existing, options, statusCatalog);
     payload = built.payload;
     changed = built.changed;
   } catch (error) {

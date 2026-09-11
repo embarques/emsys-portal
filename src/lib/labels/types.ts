@@ -102,6 +102,8 @@ export type BarcodeScannerOptions = {
   changeRoute: boolean;
   /** Vehicle-route record id (`ActiveRoute.id`). */
   newRouteRecordId?: string;
+  /** Live tenant catalog; fetched from status-options when omitted. */
+  statusOptions?: readonly BarcodeStatusOption[];
   resolveRouteLabel?: (routeRecordId: string) => string;
   resolveContainerLabel?: (containerId: string) => string;
 };
@@ -140,6 +142,11 @@ export type BarcodeDeliveryRef = {
 /** Normalized barcode record from the EMSYS `/barcodes` API. */
 export type Barcode = {
   id: number;
+  /**
+   * ObjectID when present (catalog Mongo id or invoice-embedded `barcodeId`).
+   * Prefer this over numeric `id` for print selection and embedded matching.
+   */
+  barcodeId?: string;
   number: string;
   status: BarcodeStatusRef | null;
   container: BarcodeContainerRef | null;
@@ -159,7 +166,15 @@ export type GeneratedLabelSource = "created" | "existing";
 /** A barcode plus the invoice/line-item context shown in the generate-labels view. */
 export type GeneratedLabel = {
   key: string;
-  barcodeId: number;
+  /**
+   * Unique barcode identity for print / route assign / embedded patches.
+   * ObjectID `barcodeId` when available; otherwise legacy numeric id as string.
+   */
+  barcodeId: string;
+  /** Catalog `/barcodes/{id}` path id when the write target is the barcodes collection. */
+  catalogId?: number;
+  /** Package sequence from the embedded invoice barcode model (not unique). */
+  packageSequence?: number;
   number: string;
   statusId?: number;
   statusName: string;
@@ -183,14 +198,18 @@ export const NEW_BARCODE_STATUS: { id: number; name: string } = {
   name: "CREATED",
 };
 
+/** Barcode lifecycle status from tenant `barcode_statuses` / status-options. */
+export type BarcodeStatusOption = {
+  id: number;
+  name: string;
+  prevStatus?: string;
+};
+
 /**
- * Selectable barcode statuses for the "Change status" action.
- *
- * NOTE: `CREATED` (1) and `CONDUCE` (4) are confirmed from the API/payload docs;
- * the remaining IDs are best-guesses and should be reconciled with the backend's
- * real status catalog when that endpoint becomes available.
+ * Offline / bootstrap fallback when `GET /barcodes/status-options` is empty.
+ * Prefer live options from the API (seeded with prevStatus).
  */
-export const BARCODE_STATUS_OPTIONS: { id: number; name: string }[] = [
+export const FALLBACK_BARCODE_STATUS_OPTIONS: BarcodeStatusOption[] = [
   { id: 1, name: "CREATED" },
   { id: 2, name: "PRINTED" },
   { id: 3, name: "IN TRANSIT" },
@@ -199,23 +218,44 @@ export const BARCODE_STATUS_OPTIONS: { id: number; name: string }[] = [
   { id: 6, name: "CANCELLED" },
 ];
 
+/** @deprecated Use `FALLBACK_BARCODE_STATUS_OPTIONS` or `useBarcodeStatusOptions()`. */
+export const BARCODE_STATUS_OPTIONS = FALLBACK_BARCODE_STATUS_OPTIONS;
+
 /** Resolve a write payload status ref from stored ids/names on a label snapshot. */
 export function resolveBarcodeStatusRef(
   statusId: number | undefined,
   statusName: string,
+  options: readonly BarcodeStatusOption[] = FALLBACK_BARCODE_STATUS_OPTIONS,
 ): { id: number; name: string } {
   const trimmedName = statusName.trim();
   if (statusId != null && statusId > 0) {
-    return { id: statusId, name: trimmedName || "—" };
+    const byId = options.find((entry) => entry.id === statusId);
+    return { id: statusId, name: byId?.name ?? (trimmedName || "—") };
   }
 
   const normalizedName = trimmedName.toUpperCase();
-  const option = BARCODE_STATUS_OPTIONS.find(
-    (entry) => entry.name.toUpperCase() === normalizedName,
-  );
-  if (option) return option;
+  const option = options.find((entry) => entry.name.toUpperCase() === normalizedName);
+  if (option) return { id: option.id, name: option.name };
 
   return { id: statusId ?? 0, name: trimmedName || "—" };
+}
+
+export function findBarcodeStatusOption(
+  statusId: number | string | undefined,
+  options: readonly BarcodeStatusOption[],
+): BarcodeStatusOption | undefined {
+  const parsed = Number(statusId);
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return options.find((entry) => entry.id === parsed);
+}
+
+export function findBarcodeStatusOptionByName(
+  statusName: string | undefined,
+  options: readonly BarcodeStatusOption[],
+): BarcodeStatusOption | undefined {
+  const normalized = statusName?.trim().toUpperCase() ?? "";
+  if (!normalized) return undefined;
+  return options.find((entry) => entry.name.toUpperCase() === normalized);
 }
 
 export const LABEL_STATUS_VALUES = [

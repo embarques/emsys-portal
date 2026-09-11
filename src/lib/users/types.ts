@@ -8,7 +8,7 @@ export type UserReference = {
   name: string;
 };
 
-/** Branch reference for a user: `{ id, name }` (API `user.BranchRef`). */
+/** Branch reference for a user: `{ id, name }` (API `user.BranchRef`; empty when omitted). */
 export type UserBranch = {
   id: number;
   name: string;

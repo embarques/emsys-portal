@@ -1,4 +1,3 @@
-import { createDispatch, createReceipt } from "@/lib/inventory/mock-store";
 import { findCashPaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 
 function isCashAccount(account: ChartAccount) {
@@ -8,16 +7,6 @@ function isCashAccount(account: ChartAccount) {
 
 function isUserRevenueAccount(account: ChartAccount) {
   return account.type === "REVENUE" && !account.systemAccount;
-}
-
-function inventoryBusinessDate(statementDate?: string): string {
-  if (statementDate?.trim()) {
-    const day = statementDate.trim().slice(0, 10);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(day)) return day;
-  }
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 function roundMoney(value: number): number {
@@ -42,39 +31,6 @@ function inventoryDescription(values: DailyIncomeJournalValues): string {
     return supplier ? `Received ${item} × ${quantity} from ${supplier}` : `Received ${item} × ${quantity}`;
   }
   return `Dispatched ${item} × ${quantity}`;
-}
-
-export function persistInventoryChange(values: DailyIncomeJournalValues, statementDate?: string): void {
-  if (values.transactionType !== "INVENTORY") return;
-  const itemId = values.inventoryItemId?.trim();
-  const quantity = values.inventoryQuantity ?? 0;
-  if (!itemId || quantity <= 0) return;
-  const occurredAt = inventoryBusinessDate(statementDate);
-
-  if (values.inventoryDirection === "received") {
-    createReceipt({
-      itemId,
-      quantity: String(quantity),
-      averageCost: String(values.inventoryUnitPrice ?? 0),
-      supplierId: values.inventorySupplierId ?? "",
-      receivedAt: occurredAt,
-    });
-    return;
-  }
-
-  createDispatch({
-    itemId,
-    quantity: String(quantity),
-    incomeGained: String(values.inventoryTotal ?? 0),
-    dispatchedAt: occurredAt,
-    assigneeSource: values.assigneeSource === "route" ? "route" : "employee",
-    employeeId: values.employeeId != null ? String(values.employeeId) : "",
-    employeeName: values.employeeName ?? "",
-    routeId: values.routeId ?? "",
-    routeName: values.routeName ?? "",
-    routeCrewId: values.routeCrewId ?? "",
-    routeCrewName: values.routeCrewName ?? "",
-  });
 }
 
 type FinalizeContext = {

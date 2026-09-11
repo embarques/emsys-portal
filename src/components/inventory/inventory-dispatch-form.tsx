@@ -12,7 +12,6 @@ import { InventoryDispatchToSelect } from "@/components/inventory/inventory-disp
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useTranslation } from "@/lib/i18n";
 import { getInventoryItemLabel, toDateInputValue } from "@/lib/inventory/display";
-import { getItemStock } from "@/lib/inventory/mock-store";
 import { createEmptyDispatchForm, type DispatchFormValues } from "@/lib/inventory/types/documents";
 import type { InventoryItem } from "@/lib/inventory/types/catalog";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
@@ -59,7 +58,9 @@ export function InventoryDispatchForm({
     setValidationError(null);
   }, []);
 
-  const available = values.itemId ? getItemStock(values.itemId) : 0;
+  const available = values.itemId
+    ? (items.find((item) => item.id === values.itemId)?.quantity ?? 0)
+    : 0;
 
   function getValidationError(): string | null {
     if (!values.itemId) return t("inventory.form.validation.itemRequired");

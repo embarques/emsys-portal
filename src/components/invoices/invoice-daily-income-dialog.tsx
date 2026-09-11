@@ -724,7 +724,11 @@ export function InvoiceDailyIncomeDialog({
                   />
                   {errors.checkNumber ? (
                     <p className="text-xs text-destructive">{errors.checkNumber.message}</p>
-                  ) : null}
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {t("invoices.wizard.dailyIncome.dialog.checkNumberHint")}
+                    </p>
+                  )}
                 </div>
               ) : null}
             </div>

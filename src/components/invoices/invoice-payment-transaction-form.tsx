@@ -16,6 +16,7 @@ import {
 } from "@/lib/accounting/daily-income/hooks";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
 import {
+  isCheckPaymentMethod,
   withDefaultCashPaymentMethod,
   type DailyIncomeJournal,
   type DailyIncomeJournalValues,
@@ -120,6 +121,11 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
         amountExceedsBalance: t("accounting.dailyIncome.form.validation.amountExceedsBalance"),
         accountRequired: t("accounting.dailyIncome.form.validation.accountRequired"),
         sourceAccountRequired: t("accounting.dailyIncome.form.validation.sourceAccountRequired"),
+        inventoryRequired: t("accounting.dailyIncome.form.validation.inventoryRequired"),
+        inventoryItemRequired: t("accounting.dailyIncome.form.validation.inventoryItemRequired"),
+        inventoryQuantityRequired: t("accounting.dailyIncome.form.validation.inventoryQuantityRequired"),
+        inventoryPriceRequired: t("accounting.dailyIncome.form.validation.inventoryPriceRequired"),
+        supplierRequired: t("accounting.dailyIncome.form.validation.supplierRequired"),
       }),
     [t],
   );
@@ -232,10 +238,16 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
         throw new Error(t("invoices.wizard.dailyIncome.dialog.registrationMissing"));
       }
       notifySuccess(
-        t("invoices.wizard.dailyIncome.paymentRecordedToast", {
-          amount: formatInvoiceMoney(journal.amount),
-          invoiceNumber: invoice.invoiceNumber,
-        }),
+        isCheckPaymentMethod(values.paymentMethodName) && amount > 0
+          ? t("invoices.wizard.dailyIncome.checkPaymentRecordedToast", {
+              amount: formatInvoiceMoney(journal.amount),
+              invoiceNumber: invoice.invoiceNumber,
+              checkNumber: values.checkNumber?.trim() || "—",
+            })
+          : t("invoices.wizard.dailyIncome.paymentRecordedToast", {
+              amount: formatInvoiceMoney(journal.amount),
+              invoiceNumber: invoice.invoiceNumber,
+            }),
       );
       await onRegistered(journal);
     } catch (error) {

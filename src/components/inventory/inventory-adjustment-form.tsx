@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { useTranslation } from "@/lib/i18n";
-import { getItemStock } from "@/lib/inventory/mock-store";
 import { getAdjustmentReasonOptions, getInventoryItemLabel } from "@/lib/inventory/display";
 import {
   type AdjustmentFormValues,
@@ -62,7 +61,9 @@ export function InventoryAdjustmentForm({
     setValues(createEmptyAdjustmentForm());
   }, []);
 
-  const currentStock = values.itemId ? getItemStock(values.itemId) : 0;
+  const currentStock = values.itemId
+    ? (items.find((item) => item.id === values.itemId)?.quantity ?? 0)
+    : 0;
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();

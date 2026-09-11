@@ -103,6 +103,14 @@ export type DailyIncomeJournal = {
   zelleTransactionName?: string;
   /** Check number when payment method is CHECK. */
   checkNumber?: string;
+  inventoryDirection?: InventoryChangeDirection;
+  inventoryItemId?: string;
+  inventoryItemName?: string;
+  inventoryQuantity?: number;
+  inventoryUnitPrice?: number;
+  inventoryTotal?: number;
+  inventorySupplierId?: string;
+  inventorySupplierName?: string;
   accounts: Array<{
     id: number;
     name: string;
@@ -232,7 +240,7 @@ export type DailyIncomeJournalValues = {
   zelleTransactionDate?: string;
   zelleTransactionName?: string;
   checkNumber?: string;
-  /** Portal-only inventory change fields. Mapped to SALES/EXPENSE on save. */
+  /** Inventory change recorded with this journal. Posted with the closeout, not as a separate stock write. */
   inventoryDirection?: InventoryChangeDirection;
   inventoryItemId?: string;
   inventoryItemName?: string;

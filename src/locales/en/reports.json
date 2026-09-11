@@ -1,0 +1,107 @@
+{
+  "page": {
+    "title": "Reports",
+    "description": "Generate and download PDFs from appointments, invoices, labels, daily income, journals, loans, and delivery routes."
+  },
+  "types": {
+    "pickup": {
+      "title": "Pickup manifest",
+      "description": "Print the appointment pickup list for a visit or daily route."
+    },
+    "delivery": {
+      "title": "Delivery manifest",
+      "description": "Print the delivery list for a daily route."
+    },
+    "invoice": {
+      "title": "Invoice",
+      "description": "Print a digitized invoice."
+    },
+    "label": {
+      "title": "Labels",
+      "description": "Print barcode labels for an invoice or a barcode number."
+    },
+    "income": {
+      "title": "Daily income",
+      "description": "Print the closeout for a branch and date."
+    },
+    "journal": {
+      "title": "Journal",
+      "description": "Print a single daily-income journal by reference."
+    },
+    "loan": {
+      "title": "Loans",
+      "description": "Print employee loan balances for the selected filters."
+    }
+  },
+  "fields": {
+    "reportType": "Report type",
+    "source": "Source",
+    "appointment": "Appointment",
+    "dailyRoute": "Daily route",
+    "invoice": "Invoice",
+    "barcode": "Barcode",
+    "branch": "Branch",
+    "date": "Date",
+    "employee": "Employee",
+    "allEmployees": "All employees",
+    "journal": "Journal",
+    "dateFrom": "From",
+    "dateTo": "To",
+    "status": "Status",
+    "allStatuses": "All statuses"
+  },
+  "placeholders": {
+    "selectAppointment": "Select an appointment",
+    "searchAppointments": "Search appointments…",
+    "selectRoute": "Select a daily route",
+    "searchRoutes": "Search daily routes…",
+    "selectInvoice": "Select an invoice",
+    "searchInvoices": "Search invoices…",
+    "selectBarcode": "Select a barcode",
+    "searchBarcodes": "Search barcodes…",
+    "selectBranch": "Select a branch",
+    "searchBranches": "Search branches…",
+    "selectEmployee": "Select an employee",
+    "searchEmployees": "Search employees…",
+    "selectJournal": "Select a journal",
+    "searchJournals": "Search journals…",
+    "emptyAppointments": "No appointments match your search.",
+    "emptyRoutes": "No daily routes match your search.",
+    "emptyInvoices": "No invoices match your search.",
+    "emptyBarcodes": "No barcodes match your search.",
+    "emptyJournals": "No journals for this closeout."
+  },
+  "loanStatuses": {
+    "ACTIVE": "Active",
+    "PAID": "Paid",
+    "VOID": "Void"
+  },
+  "actions": {
+    "generate": "Generate",
+    "generating": "Generating…",
+    "download": "Download",
+    "downloading": "Downloading…",
+    "open": "Open PDF"
+  },
+  "result": {
+    "title": "Report ready",
+    "expires": "Link expires {{at}}",
+    "fileName": "{{name}}"
+  },
+  "errors": {
+    "selectAppointment": "Select an appointment to generate this report.",
+    "selectRoute": "Select a daily route to generate this report.",
+    "noPickupsOnRoute": "That daily route has no appointments to print.",
+    "selectInvoice": "Select an invoice to generate this report.",
+    "selectBarcode": "Select a barcode to generate this report.",
+    "selectBranch": "Select a branch to generate this report.",
+    "selectDate": "Select a date to generate this report.",
+    "closeoutNotFound": "No daily income closeout exists for that branch and date.",
+    "selectJournal": "Select a journal to generate this report.",
+    "generateFailed": "Unable to generate the report."
+  },
+  "toasts": {
+    "ready": "Report ready.",
+    "downloaded": "Report downloaded."
+  }
+}

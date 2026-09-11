@@ -2,7 +2,7 @@
 
 import { Truck } from "lucide-react";
 
-import { formatInventoryDate, formatInventoryMoney, getInventoryDispatchToLabel, getInventoryItemLabel } from "@/lib/inventory/display";
+import { formatInventoryDate, formatInventoryMoney, getInventoryDispatchToLabel, getDispatchItemLabel } from "@/lib/inventory/display";
 import type { InventoryItem } from "@/lib/inventory/types/catalog";
 import type { InventoryDispatch } from "@/lib/inventory/types/documents";
 import { useTranslation } from "@/lib/i18n";
@@ -24,7 +24,7 @@ export function InventoryDispatchMobileRow({ dispatch, item, onOpen }: Inventory
         </span>
         <span className="min-w-0">
           <span className="block truncate text-xl font-bold leading-tight text-foreground">
-            {item ? getInventoryItemLabel(item) : dispatch.itemId}
+            {getDispatchItemLabel(dispatch, item ? [item] : [])}
           </span>
           <span className="mt-1 block truncate text-base text-muted-foreground">
             {[getInventoryDispatchToLabel(dispatch.dispatchedTo), formatInventoryDate(dispatch.dispatchedAt)]

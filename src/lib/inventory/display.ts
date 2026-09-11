@@ -65,6 +65,23 @@ export function getInventoryItemLabel(item: Pick<InventoryItem, "item">): string
   return item.item;
 }
 
+export function getReceiptItemLabel(receipt: InventoryReceipt, items: InventoryItem[]): string {
+  if (receipt.item?.item) return receipt.item.item;
+  const item = items.find((entry) => entry.id === receipt.itemId);
+  return item ? getInventoryItemLabel(item) : receipt.itemId;
+}
+
+export function getReceiptSupplierLabel(receipt: InventoryReceipt, suppliers: InventorySupplier[]): string {
+  if (receipt.supplier?.companyName) return receipt.supplier.companyName;
+  return suppliers.find((entry) => entry.id === receipt.supplierId)?.companyName ?? receipt.supplierId;
+}
+
+export function getDispatchItemLabel(dispatch: InventoryDispatch, items: InventoryItem[]): string {
+  if (dispatch.item?.item) return dispatch.item.item;
+  const item = items.find((entry) => entry.id === dispatch.itemId);
+  return item ? getInventoryItemLabel(item) : dispatch.itemId;
+}
+
 export { getInventoryDispatchToLabel };
 
 export function dispatchMatchesQuery(

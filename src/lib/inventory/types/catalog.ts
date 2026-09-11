@@ -21,6 +21,7 @@ export type InventoryItem = InventoryCatalogItem & {
 export type InventoryStock = {
   id: string;
   itemId: string;
+  item?: { id: string; item: string };
   quantity: number;
   averageCost: number;
   reorderThreshold: number;

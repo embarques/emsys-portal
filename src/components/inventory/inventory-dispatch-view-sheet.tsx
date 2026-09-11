@@ -10,7 +10,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
-import { formatInventoryDate, formatInventoryMoney, getInventoryDispatchToLabel, getInventoryItemLabel } from "@/lib/inventory/display";
+import { formatInventoryDate, formatInventoryMoney, getInventoryDispatchToLabel, getDispatchItemLabel } from "@/lib/inventory/display";
 import type { InventoryItem } from "@/lib/inventory/types";
 import type { InventoryDispatch } from "@/lib/inventory/types/documents";
 
@@ -30,13 +30,13 @@ export function InventoryDispatchViewSheet({
   const { t } = useTranslation();
   if (!dispatch) return null;
 
-  const item = items.find((entry) => entry.id === dispatch.itemId);
+  const itemLabel = getDispatchItemLabel(dispatch, items);
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={item ? getInventoryItemLabel(item) : dispatch.itemId}
+          title={itemLabel}
           description={t("inventory.references.dispatch")}
         />
         <RecordViewSheetBody>

@@ -23,12 +23,11 @@ import {
   updateOrder,
 } from "@/lib/orders/api/orders-api";
 import {
-  buildNewOrderStatsFilterRows,
   buildOrderStatsCountParams,
   buildPendingOrderStatsFilterRows,
   buildPendingPurposeStatsFilterRows,
-  buildPreviousNewOrderStatsFilterRows,
 } from "@/lib/orders/order-stats";
+import { useInsightsKpis } from "@/lib/insights/hooks/use-insights-kpis";
 import type { NewOrderStatPeriod } from "@/lib/orders/new-order-stats";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
@@ -187,27 +186,14 @@ export function useOrderStats(options: OrderStatsOptions = {}) {
 
 /** Count of appointments created within a rolling timeframe, plus prior-period count for % change. */
 export function useNewOrderStats(period: NewOrderStatPeriod) {
-  const queryEnabled = useOrdersQueryEnabled();
-
-  const query = useWorkspaceQuery({
-    queryKey: queryKeys.orders.stats("new", period),
-    queryFn: () => fetchOrders(buildOrderStatsCountParams(buildNewOrderStatsFilterRows(period))),
-    enabled: queryEnabled,
-  });
-
-  const previousQuery = useWorkspaceQuery({
-    queryKey: queryKeys.orders.stats("new-previous", period),
-    queryFn: () =>
-      fetchOrders(buildOrderStatsCountParams(buildPreviousNewOrderStatsFilterRows(period))),
-    enabled: queryEnabled,
-  });
+  const query = useInsightsKpis(period, { enabled: useOrdersQueryEnabled() });
 
   return {
-    total: query.data?.total ?? 0,
-    previousTotal: previousQuery.data?.total ?? 0,
-    isLoading: query.isLoading || previousQuery.isLoading,
-    isFetching: query.isFetching || previousQuery.isFetching,
-    isError: query.isError || previousQuery.isError,
+    total: query.data?.newAppointments.count ?? 0,
+    previousTotal: query.data?.newAppointments.previousCount ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
   };
 }
 
@@ -222,7 +208,10 @@ export function useOrder(orderId: string | null, enabled = true) {
 }
 
 function invalidateOrders(queryClient: ReturnType<typeof useQueryClient>) {
-  return queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.orders.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.insights.all }),
+  ]);
 }
 
 export function useCreateOrder() {

@@ -21,10 +21,8 @@ import {
   getMovementDirectionLabel,
   getReferenceTypeLabel,
 } from "@/lib/inventory/display";
-import type { getInventoryStoreSnapshot } from "@/lib/inventory/mock-store";
 import type { InventoryItem } from "@/lib/inventory/types";
-
-type InventorySnapshot = ReturnType<typeof getInventoryStoreSnapshot>;
+import type { InventorySnapshot } from "@/lib/inventory/types/snapshot";
 
 type InventoryViewSheetProps = {
   item: InventoryItem | null;
@@ -130,10 +128,12 @@ export function InventoryViewSheet({
               ) : (
                 <div className="space-y-3">
                   {itemReceipts.map((receipt) => {
-                    const supplier = snapshot.suppliers.find((entry) => entry.id === receipt.supplierId);
+                    const supplier = receipt.supplier?.companyName
+                      ?? snapshot.suppliers.find((entry) => entry.id === receipt.supplierId)?.companyName
+                      ?? receipt.supplierId;
                     return (
                       <div key={receipt.id} className="rounded-md border border-border px-3 py-2 text-sm">
-                        <div className="font-medium">{supplier?.companyName ?? receipt.supplierId}</div>
+                        <div className="font-medium">{supplier}</div>
                         <div className="text-xs text-muted-foreground">
                           {formatInventoryDate(receipt.receivedAt)} · {receipt.quantity} · {formatInventoryMoney(receipt.averageCost)}
                         </div>

@@ -2,7 +2,7 @@
 
 import { PackageCheck } from "lucide-react";
 
-import { formatInventoryDate, formatInventoryMoney, getInventoryItemLabel } from "@/lib/inventory/display";
+import { formatInventoryDate, formatInventoryMoney, getReceiptItemLabel, getReceiptSupplierLabel } from "@/lib/inventory/display";
 import type { InventoryItem } from "@/lib/inventory/types/catalog";
 import type { InventoryReceipt } from "@/lib/inventory/types/documents";
 import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
@@ -27,11 +27,11 @@ export function InventoryReceiptMobileRow({ receipt, item, supplier, onOpen }: I
         </span>
         <span className="min-w-0">
           <span className="block truncate text-xl font-bold leading-tight text-foreground">
-            {item ? getInventoryItemLabel(item) : receipt.itemId}
+            {getReceiptItemLabel(receipt, item ? [item] : [])}
           </span>
           <span className="mt-1 block text-base text-muted-foreground">{formatInventoryDate(receipt.receivedAt)}</span>
           <span className="mt-2 block truncate text-sm text-muted-foreground">
-            {t("inventory.columns.supplier")}: {supplier?.companyName ?? dash}
+            {t("inventory.columns.supplier")}: {getReceiptSupplierLabel(receipt, supplier ? [supplier] : []) || dash}
           </span>
         </span>
         <span className="shrink-0 text-right">

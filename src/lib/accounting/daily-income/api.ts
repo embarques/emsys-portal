@@ -1,4 +1,3 @@
-import { persistInventoryChange } from "@/lib/accounting/daily-income/inventory-change";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { buildApiListQuery } from "@/lib/api/list-query";
@@ -24,6 +23,7 @@ import {
   type IncomeStatementSummaryDetail,
   type IncomeStatementSummaryTotal,
   type IncomeStatementSummaryTotals,
+  type InventoryChangeDirection,
   type JournalTransactionType,
 } from "@/lib/accounting/daily-income/types";
 
@@ -141,14 +141,28 @@ function looksLikeDailyRouteId(id: unknown): boolean {
   return /^[a-f\d]{24}$/i.test(String(id).trim());
 }
 
+function normalizeInventoryDirection(value: unknown): InventoryChangeDirection | undefined {
+  const direction = stringValue(value).toLowerCase();
+  if (direction === "received" || direction === "dispatched") return direction;
+  return undefined;
+}
+
+/**
+ * Resolve the daily-route assignee from API fields.
+ * Prefers `vehicleRoute`, then `route`, then legacy `employeeGroup` when its id
+ * is a 24-char Mongo ObjectID (numeric ids stay employee-side).
+ */
 function normalizeJournalRoute(raw: Record<string, unknown>): DailyIncomePartyRef | undefined {
-  return (
-    normalizePartyRef(firstDefined(raw.vehicleRoute, raw.route)) ??
-    (looksLikeDailyRouteId(objectValue(raw.employeeGroup).id as string | number) ||
-    looksLikeDailyRouteId(objectValue(raw.employeeGroup)._id as string | number)
-      ? normalizePartyRef(raw.employeeGroup)
-      : undefined)
-  );
+  const vehicleRoute = normalizePartyRef(raw.vehicleRoute);
+  if (vehicleRoute && looksLikeDailyRouteId(vehicleRoute.id)) return vehicleRoute;
+
+  const route = normalizePartyRef(raw.route);
+  if (route && looksLikeDailyRouteId(route.id)) return route;
+
+  const employeeGroup = normalizePartyRef(raw.employeeGroup);
+  if (employeeGroup && looksLikeDailyRouteId(employeeGroup.id)) return employeeGroup;
+
+  return undefined;
 }
 
 function normalizeJournal(value: unknown): DailyIncomeJournal | null {
@@ -187,6 +201,15 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     : [];
   const primaryLine = accountLines.find((account) => !["CASH ON HAND", "ACCOUNTS RECEIVABLE"].includes(account.name));
   const sourceLine = accountLines.find((account) => account.credit > 0 && account.id !== primaryLine?.id);
+  const route = normalizeJournalRoute(raw);
+  const employee = route ? undefined : normalizeLookup(raw.employee);
+  const employeeGroupRaw = normalizePartyRef(raw.employeeGroup);
+  const employeeGroup =
+    route && employeeGroupRaw && looksLikeDailyRouteId(employeeGroupRaw.id)
+      ? employeeGroupRaw
+      : !route
+        ? employeeGroupRaw
+        : undefined;
   return {
     id,
     incomeStatementId: numberValue(firstDefined(raw.incomeStatementId, objectValue(raw.incomeStatement).id)),
@@ -197,9 +220,9 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     description: stringValue(raw.description),
     currency: stringValue(raw.currency),
     rate: numberValue(raw.rate),
-    employee: normalizeLookup(raw.employee),
-    employeeGroup: normalizePartyRef(raw.employeeGroup),
-    route: normalizeJournalRoute(raw),
+    employee,
+    employeeGroup,
+    route,
     account: normalizeLookup(raw.account) ?? (primaryLine ? normalizeLookup(primaryLine) : undefined),
     paymentAccount: normalizeLookup(raw.paymentAccount),
     sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
@@ -207,6 +230,42 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     zelleTransactionDate: stringValue(raw.zelleTransactionDate).slice(0, 10) || undefined,
     zelleTransactionName: stringValue(raw.zelleTransactionName) || undefined,
     checkNumber: stringValue(firstDefined(raw.checkNumber, raw.check_number)) || undefined,
+    inventoryDirection: normalizeInventoryDirection(
+      firstDefined(raw.inventoryDirection, objectValue(raw.inventory).direction),
+    ),
+    inventoryItemId: stringValue(
+      firstDefined(
+        raw.inventoryItemId,
+        objectValue(raw.inventoryItem).id,
+        objectValue(raw.item).id,
+        raw.itemId,
+      ),
+    ) || undefined,
+    inventoryItemName: stringValue(
+      firstDefined(
+        raw.inventoryItemName,
+        objectValue(raw.inventoryItem).item,
+        objectValue(raw.inventoryItem).name,
+        objectValue(raw.item).item,
+        objectValue(raw.item).name,
+      ),
+    ) || undefined,
+    inventoryQuantity: optionalNumberValue(firstDefined(raw.inventoryQuantity, raw.quantity, objectValue(raw.inventory).quantity)),
+    inventoryUnitPrice: optionalNumberValue(
+      firstDefined(raw.inventoryUnitPrice, raw.averageCost, objectValue(raw.inventory).unitPrice),
+    ),
+    inventoryTotal: optionalNumberValue(firstDefined(raw.inventoryTotal, raw.incomeGained, objectValue(raw.inventory).total)),
+    inventorySupplierId: stringValue(
+      firstDefined(raw.inventorySupplierId, objectValue(raw.inventorySupplier).id, raw.supplierId, objectValue(raw.supplier).id),
+    ) || undefined,
+    inventorySupplierName: stringValue(
+      firstDefined(
+        raw.inventorySupplierName,
+        objectValue(raw.inventorySupplier).companyName,
+        objectValue(raw.inventorySupplier).name,
+        objectValue(raw.supplier).companyName,
+      ),
+    ) || undefined,
     accounts: accountLines,
     invoice: hasInvoice
       ? {
@@ -252,7 +311,10 @@ function computeJournalSummary(items: DailyIncomeJournal[]): DailyIncomeSummary 
     const expenseLines = item.accounts.filter((account) => account.type === "EXPENSE");
     if (expenseLines.length > 0) {
       summary.expense += expenseLines.reduce((total, account) => total + account.debit, 0);
-    } else if (item.transactionType === "EXPENSE") {
+    } else if (
+      item.transactionType === "EXPENSE" ||
+      (item.transactionType === "INVENTORY" && item.inventoryDirection === "received")
+    ) {
       summary.expense += item.amount;
     }
 
@@ -262,7 +324,10 @@ function computeJournalSummary(items: DailyIncomeJournal[]): DailyIncomeSummary 
       }
     }
 
-    if (!["INITIAL-PAYMENT", "PAYMENT", "SALES"].includes(item.transactionType)) {
+    const countsAsIncome =
+      ["INITIAL-PAYMENT", "PAYMENT", "SALES"].includes(item.transactionType) ||
+      (item.transactionType === "INVENTORY" && item.inventoryDirection === "dispatched");
+    if (!countsAsIncome) {
       continue;
     }
 
@@ -567,14 +632,13 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   }
 
   const invoiceRelated = ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(values.transactionType);
-  const apiTransactionType =
-    values.transactionType === "INVENTORY"
-      ? values.inventoryDirection === "received"
-        ? "EXPENSE"
-        : "SALES"
-      : values.transactionType;
-  const accountRelated = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(apiTransactionType);
-  const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(apiTransactionType);
+  const isInventory = values.transactionType === "INVENTORY";
+  const inventoryReceived = isInventory && values.inventoryDirection === "received";
+  const inventoryDispatched = isInventory && values.inventoryDirection === "dispatched";
+  const accountRelated =
+    ["EXPENSE", "SALES", "TRANSFER", "LOAN", "INVENTORY"].includes(values.transactionType);
+  const sourceAccountRelated =
+    ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType) || inventoryReceived;
   const bankAccountRequired = requiresBankAccount(values.paymentMethodName);
 
   if (bankAccountRequired && (!values.paymentAccountId || values.paymentAccountType !== "BANK")) {
@@ -605,25 +669,27 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
           : {}),
       }
     : null;
+  const employeeRef =
+    !assignedToRoute && values.employeeId
+      ? { id: values.employeeId, name: values.employeeName ?? "" }
+      : null;
 
   return {
     incomeStatementId: statement.id,
     incomeStatement: { id: statement.id },
     date: statement.date,
-    transactionType: apiTransactionType,
+    transactionType: values.transactionType,
     amount: values.amount,
     refNumber: values.refNumber,
     description: values.description,
     currency: statement.currency,
     rate: statement.rate,
-    employee: assignedToRoute
-      ? null
-      : values.employeeId
-        ? { id: values.employeeId, name: values.employeeName ?? "" }
-        : undefined,
+    // One assignee family only — do not leave leftover fields from the other.
+    employee: employeeRef,
     vehicleRoute: dailyRouteRef,
     route: dailyRouteRef,
-    employeeGroup: assignedToRoute ? null : undefined,
+    // Legacy compatibility field for route journals; cleared on employee journals.
+    employeeGroup: dailyRouteRef,
     account: accountRelated && values.accountId
       ? { id: values.accountId, name: values.accountName, type: values.accountType }
       : undefined,
@@ -656,11 +722,46 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     ...(isCheckPaymentMethod(values.paymentMethodName)
       ? { checkNumber: values.checkNumber?.trim() || undefined }
       : {}),
+    ...(isInventory
+      ? {
+          inventoryDirection: values.inventoryDirection,
+          inventoryItemId: values.inventoryItemId,
+          inventoryItem: values.inventoryItemId
+            ? { id: values.inventoryItemId, item: values.inventoryItemName ?? "" }
+            : undefined,
+          inventoryQuantity: values.inventoryQuantity,
+          inventoryUnitPrice: values.inventoryUnitPrice,
+          inventoryTotal: values.inventoryTotal,
+          itemId: values.inventoryItemId,
+          quantity: values.inventoryQuantity,
+          ...(inventoryReceived
+            ? {
+                inventorySupplierId: values.inventorySupplierId,
+                inventorySupplier: values.inventorySupplierId
+                  ? { id: values.inventorySupplierId, companyName: values.inventorySupplierName ?? "" }
+                  : undefined,
+                averageCost: values.inventoryUnitPrice,
+                supplierId: values.inventorySupplierId,
+                receivedAt: statement.date,
+              }
+            : {}),
+          ...(inventoryDispatched
+            ? {
+                incomeGained: values.inventoryTotal,
+                dispatchedAt: statement.date,
+                dispatchedTo: assignedToRoute
+                  ? dailyRouteRef
+                  : values.employeeId
+                    ? { id: values.employeeId, name: values.employeeName ?? "" }
+                    : undefined,
+              }
+            : {}),
+        }
+      : {}),
   };
 }
 
 export async function createDailyIncomeJournal(statement: DailyIncomeStatement, values: DailyIncomeJournalValues) {
-  persistInventoryChange(values, statement.date);
   const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_JOURNAL, journalPayload(statement, values));
   assertMutation(payload, "Unable to create transaction.");
   return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));

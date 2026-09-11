@@ -24,6 +24,7 @@ const RESOURCE_PERMISSION_SUFFIX: Record<string, string> = {
   branch: "Branch",
   report: "Report",
   settings: "Settings",
+  dashboard: "Dashboard",
   income_statement: "IncomeStatement",
   chart_account: "ChartAccount",
   check: "Check",

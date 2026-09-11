@@ -26,7 +26,8 @@ import {
   updateBarcode,
   type BarcodeWritePayload,
 } from "@/lib/labels/api/barcodes-api";
-import { BARCODE_STATUS_OPTIONS } from "@/lib/labels/types";
+import { fetchBarcodeStatusOptions } from "@/lib/barcodes/api/barcode-status-options-api";
+import type { BarcodeStatusOption } from "@/lib/labels/types";
 import { formatContainerLabel } from "@/lib/containers/display";
 import type { Container } from "@/lib/containers/types";
 
@@ -87,13 +88,16 @@ function parseBarcodePathId(barcodeId: string | number): number {
   return parsed;
 }
 
-function resolveStatusRef(statusId: string): { id: number; name: string } {
+function resolveStatusRef(
+  statusId: string,
+  options: readonly BarcodeStatusOption[],
+): { id: number; name: string } {
   const parsedId = Number(statusId);
-  const option = BARCODE_STATUS_OPTIONS.find((entry) => entry.id === parsedId);
+  const option = options.find((entry) => entry.id === parsedId);
   if (!option) {
     throw new Error("Select a valid status.");
   }
-  return option;
+  return { id: option.id, name: option.name };
 }
 
 function resolveContainerRef(
@@ -115,15 +119,18 @@ function resolveContainerRef(
   };
 }
 
-function buildBarcodeWritePayload(
+async function buildBarcodeWritePayload(
   values: BarcodeFormValues,
   containers: Container[],
-): BarcodeWritePayload {
+  statusOptions?: readonly BarcodeStatusOption[],
+): Promise<BarcodeWritePayload> {
   validateBarcodeFormValues(values);
+
+  const options = statusOptions?.length ? statusOptions : await fetchBarcodeStatusOptions();
 
   const payload: BarcodeWritePayload = {
     number: values.number.trim(),
-    status: resolveStatusRef(values.statusId),
+    status: resolveStatusRef(values.statusId, options),
   };
 
   const container = resolveContainerRef(values.containerId, containers);
@@ -150,17 +157,22 @@ export async function fetchBarcodes(params: BarcodeListParams = {}): Promise<Pag
 export async function createBarcodeRecord(
   values: BarcodeFormValues,
   containers: Container[],
+  statusOptions?: readonly BarcodeStatusOption[],
 ): Promise<Barcode> {
-  return createBarcode(buildBarcodeWritePayload(values, containers));
+  return createBarcode(await buildBarcodeWritePayload(values, containers, statusOptions));
 }
 
 export async function updateBarcodeRecord(
   barcodeId: string | number,
   values: BarcodeFormValues,
   containers: Container[],
+  statusOptions?: readonly BarcodeStatusOption[],
 ): Promise<Barcode> {
   const numericId = parseBarcodePathId(barcodeId);
-  return updateBarcode(numericId, buildBarcodeWritePayload(values, containers));
+  return updateBarcode(
+    numericId,
+    await buildBarcodeWritePayload(values, containers, statusOptions),
+  );
 }
 
 export async function fetchBarcodeRecord(barcodeId: string | number): Promise<Barcode> {

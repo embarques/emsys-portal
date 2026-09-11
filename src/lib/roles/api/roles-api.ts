@@ -231,6 +231,7 @@ export async function fetchRoleById(roleId: string | number): Promise<Role> {
     `${API_ENDPOINTS.ROLES}/${id}`,
   );
 
+  // GET /roles/{id} hydrates permissions like list/search.
   const raw =
     response && typeof response === "object" && "data" in response
       ? (response as PaginatedApiEnvelope<ApiRole>).data

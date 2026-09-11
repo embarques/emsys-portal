@@ -78,16 +78,6 @@ function PlaceholderWorkspace({ title, descriptionKey }: PlaceholderWorkspacePro
   );
 }
 
-export function ReportsWorkspace() {
-  const { t } = useTranslation();
-  return (
-    <PlaceholderWorkspace
-      title={t("navigation.items.reports")}
-      descriptionKey="insights.pages.reports"
-    />
-  );
-}
-
 export function AnalyticsWorkspace() {
   const { t } = useTranslation();
   return (

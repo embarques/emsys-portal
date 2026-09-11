@@ -2,7 +2,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { getConfiguredApiBaseUrl } from "@/lib/api/base-url";
 import type { PaginatedApiEnvelope } from "@/lib/api/types";
-import type { ReportRequest, ReportResult } from "@/lib/reports/types";
+import type { ReportRequest, ReportResult, ReportType } from "@/lib/reports/types";
 
 type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   success?: boolean;
@@ -90,6 +90,21 @@ export function generatePickupReport(request: ReportRequest): Promise<ReportResu
 /** Generate a delivery route report (`POST /reports/deliveries`). */
 export function generateDeliveryReport(request: ReportRequest): Promise<ReportResult> {
   return postReport(API_ENDPOINTS.REPORTS_DELIVERIES, request);
+}
+
+const REPORT_GENERATORS: Record<ReportType, (request: ReportRequest) => Promise<ReportResult>> = {
+  income: generateIncomeReport,
+  invoice: generateInvoiceReport,
+  journal: generateJournalReport,
+  loan: generateLoanReport,
+  label: generateLabelReport,
+  pickup: generatePickupReport,
+  delivery: generateDeliveryReport,
+};
+
+/** Dispatch a generate request to the matching `POST /reports/{type}` endpoint. */
+export function generateReport(request: ReportRequest): Promise<ReportResult> {
+  return REPORT_GENERATORS[request.type](request);
 }
 
 /**

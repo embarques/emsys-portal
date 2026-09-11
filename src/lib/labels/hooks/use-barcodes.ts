@@ -45,7 +45,7 @@ export function useAssignBarcodesToRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ routeId, barcodeIds }: { routeId: string; barcodeIds: number[] }) =>
+    mutationFn: ({ routeId, barcodeIds }: { routeId: string; barcodeIds: string[] }) =>
       assignInvoiceItemBarcodesToRoute(routeId, barcodeIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });

@@ -1,6 +1,6 @@
 import {
+  createOrTextSearchFilterGroup,
   createTextSearchFilter,
-  type ApiSearchFilter,
   type ApiSearchFilterGroup,
   type ApiSearchFilterNode,
   type ApiSearchOperator,
@@ -55,19 +55,12 @@ export function resolvePickupSearchField(field: string): string {
 
 /**
  * POST /pickups/search global bar OR group.
+ * Phone leaves keep digits only (`9f3a` → `93`) and are omitted when stripping
+ * leaves no digits so name/address/comments can still match.
  * API adds completed=false by default (incomplete pickups only).
  */
 export function createPickupBarSearchFilterGroup(value: string): ApiSearchFilterGroup | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  const filters: ApiSearchFilter[] = PICKUP_BAR_OR_FIELDS.map((field) => ({
-    field,
-    operator: "contains",
-    value: trimmed,
-  }));
-
-  return { operator: "or", filters };
+  return createOrTextSearchFilterGroup(value, [...PICKUP_BAR_OR_FIELDS], "contains");
 }
 
 export function createPickupTextSearchFilter(

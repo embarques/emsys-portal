@@ -562,7 +562,11 @@ export function DailyIncomeTransactionForm({
                 />
                 {errors.checkNumber ? (
                   <p className="text-sm text-destructive">{errors.checkNumber.message}</p>
-                ) : null}
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {t("accounting.dailyIncome.form.fields.checkNumberHint")}
+                  </p>
+                )}
               </div>
             ) : null}
 

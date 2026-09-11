@@ -113,6 +113,12 @@
     "deleteOne": "This will permanently remove this role. {{cannotBeUndone}}",
     "deleteMany": "This will permanently remove {{count}} selected roles. {{cannotBeUndone}}"
   },
+  "enums": {
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    }
+  },
   "filters": {
     "fields": {
       "id": {
@@ -122,6 +128,10 @@
       "name": {
         "label": "Role name",
         "placeholder": "Enter role name…"
+      },
+      "active": {
+        "label": "Active",
+        "placeholder": "Select status…"
       },
       "createdBy": {
         "name": {

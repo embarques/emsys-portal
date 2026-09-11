@@ -103,6 +103,10 @@ Barcodes are used to identify and track individual items within invoices.
 
 The system manages the barcode/label assigned to each item, allowing us to track specific merchandise throughout the shipping process.
 
+Barcode lifecycle statuses come from the tenant `barcode_statuses` collection via `GET /v1/barcodes/status-options` (labels:view). The catalog is seeded on tenant creation (including `prevStatus`) and drives barcode forms, the scanner, and invoice label staging.
+
+On invoice-embedded barcodes, **`barcodeId`** is the unique ObjectID used for print selection and matching. Numeric **`id`** is the package sequence only (not unique across invoices). Selected-label printing uses `POST /reports/labels` with `collection=barcodes` and `lookup_field=id` so duplicate numbers or package sequences cannot broaden the PDF. Numeric id remains a legacy fallback when `barcodeId` is missing.
+
 Barcodes can be used to:
 
 - Identify individual items
@@ -115,7 +119,7 @@ Barcodes can be used to:
 
 The barcode scanner provides a quick way to scan an item's barcode and update its status.
 
-This allows workers to efficiently process merchandise as it moves through different stages of our operation without having to manually search for each item.
+This allows workers to efficiently process merchandise as it moves through different stages of our operation without having to manually search for each item. Status pickers load from the same `status-options` endpoint.
 
 ### Inventory
 
@@ -131,11 +135,7 @@ It is separate from customer merchandise and is used to:
 
 Every inventory record stores **createdAt / createdBy / updatedAt / updatedBy**. `createdAt` / `updatedAt` are datetimes. Receipt `receivedAt` and dispatch `dispatchedAt` are **dates only**. `createdBy` and `updatedBy` are user refs `{ id, name }`.
 
-TODO (backend) — inventory API (portal UI is mock; align API to this):
-
-Tables: `inventory_items`, `inventory_stock` (1:1 projection), `inventory_receipts`, `inventory_dispatches`, `inventory_suppliers`. See `INVENTORY_FEATURE_BACKEND.md`.
-
-Seed list + view + create + update + delete per resource: `inventory_item`, `inventory_stock`, `inventory_receipt`, `inventory_dispatch`, `inventory_supplier` (`canListInventoryItem`, `canViewInventoryItem`, …). Do not persist quantity on the item catalog; maintain stock from receipts − dispatches. Reject dispatches that exceed quantity left.
+Company-scoped inventory API (`/v1/inventory/...`): items, stock (read-only), receipts, dispatches, and suppliers. Catalog stores only `item` and `reorderThreshold`; `quantity` and `averageCost` are read-only from stock. Stock is receipts minus dispatches, with weighted average cost from receipts. Dispatch is rejected when quantity exceeds available stock. Item delete is rejected if referenced by receipts or dispatches. Supplier delete is rejected if referenced by receipts.
 
 **Dispatched to** (`dispatchedTo`) is who received the supplies: a **daily vehicle-route** `{ id, name, route?: { id, name } }` **or** a **single employee** `{ id, name }` (same shape as invoice `receivedBy`). The portal picker uses a local `assigneeSource` (`employee` | `route`); do **not** persist that discriminator. Discriminate by shape: numeric employee `id` vs Mongo daily-route `id` / nested crew `route`.
 
@@ -212,30 +212,35 @@ Daily Income is used to manage and record the company's daily incoming transacti
 
 It provides a way to record and track income received each day and maintain a historical record of daily revenue.
 
-**Register inventory change** (after Register income) records company supplies on the closeout: **received** (choose a supplier) or **dispatched** (choose an employee or daily route). Users pick an inventory item, quantity, and either unit price or total (the other amount updates automatically). Supplier, employee, and daily route can be created from the dropdown the same way sender/receiver can on invoices and appointments. Received posts as an expense and a stock receipt; dispatched posts as income and a stock dispatch.
+**Register inventory change** (after Register income) records company supplies on the closeout: **received** (choose a supplier) or **dispatched** (choose an employee or daily route). Users pick an inventory item, quantity, and either unit price or total (the other amount updates automatically). Supplier, employee, and daily route can be created from the dropdown the same way sender/receiver can on invoices and appointments. The journal is posted as `transactionType: "INVENTORY"` with `inventoryDirection`. Received creates a receipt and posts an expense; dispatched creates a dispatch and posts sales. Journal and stock movement happen in one API transaction. Do not persist portal-only `assigneeSource`.
 
 A journal can be posted under an **employee** `{ id, name }` **or** a **daily vehicle-route** `{ id, name, route?: { id, name } }` (same shape as invoice `receivedBy`). The portal picker uses a local `assigneeSource` (`employee` | `route`) so the form can choose which of those to save; do **not** persist that discriminator.
 
-TODO (backend) — daily-income journal assignee (portal now follows this; align API + legacy data):
+API assignee rules (`POST` / `PUT` `/v1/journals`):
 
-Accept **either** `employee` **or** a daily vehicle-route on create/update. Discriminate by shape: numeric employee `id` vs Mongo daily-route `id` / nested crew `route`.
-
-On write, replace the previous assignee — do not leave leftover `employee` on route journals, or leftover `vehicleRoute` / `route` / route-shaped `employeeGroup` on employee journals.
-
-Accept and return `vehicleRoute` and/or `route` (the portal currently sends both). Until this ships, the portal still reads `employee` first when no daily-route id is present, and treats `employeeGroup` as a route when its id looks like a 24-character Mongo id.
+- Accept **either** `employee` **or** a daily vehicle-route (`vehicleRoute`, `route`, and legacy `employeeGroup`).
+- Discriminate by id shape: numeric id → employee; 24-char Mongo ObjectID → daily route.
+- Normalize writes to one assignee family:
+  - employee journals keep `employee` and clear `vehicleRoute` / `route` / `employeeGroup`
+  - route journals keep `vehicleRoute`, `route`, and compatibility `employeeGroup`, with `employee` cleared
+- Responses and searchable fields include the route assignee fields.
 
 ### Checks
 
-Checks manages checks received or issued by the company.
+Checks manages invoice payments made by check.
 
-The system tracks:
+CHECK or CHEQUE invoice payments (`INITIAL-PAYMENT` and `PAYMENT`) create an **outstanding check** and do **not** update the invoice `payment` / `balance`. The invoice payment is applied only when the check is marked **cleared**. Updating or deleting a cleared check reverses those invoice effects.
 
-- Check information
+The Checks workspace lists those records so staff can search, edit, clear, or delete them. Each check stores:
+
+- Check number
 - Amount
-- Date
-- Associated transaction
-- Status
-- Historical records
+- Date posted
+- Linked invoice
+- Optional journal
+- Status (outstanding or cleared)
+- Cleared date
+- Historical audit fields
 
 ### Chart of Accounts
 
@@ -262,20 +267,15 @@ Containers manages the shipping containers used to transport customer merchandis
 
 Invoices and their associated merchandise can be organized into containers so the system can track which shipments are being transported together and where they are in the shipping process.
 
-The containers page KPI **Average value per container** is the mean **invoice merchandise total** (not container shipping `cost`) across containers that **departed** in the selected rolling window (`7d`, `30d`, `3m`, `6m`, `1y`). Containers with no invoices count as $0. The portal currently approximates this client-side because list `subtotal` is a match count, not money.
+The containers page KPI **Average value per container** is the mean **invoice merchandise total** (not container shipping `cost`) across containers that **departed** in the selected rolling window (`7d`, `30d`, `3m`, `6m`, `1y`). The portal reads `GET /v1/containers/stats/average-value?period=…`.
 
-TODO (backend) — average merchandise value per container (portal KPI):
+That aggregation:
 
-Expose an aggregation for rolling windows `7d | 30d | 3m | 6m | 1y`, plus the previous window of the same length.
-
-For each window:
-
-1. Take containers whose `departureDate` is in `[start, now]` (exclude future scheduled departures).
-2. Per container, sum invoice merchandise totals (`cost` / line totals) for **non-void** invoices assigned to that container (`container.id`). Do **not** filter those invoices by digitize/`createdAt` date — assignment to the container is enough.
-3. Average = (sum of those container values) / (count of departed containers in the window). Containers with no invoices count as `$0`.
-4. Return `average`, `previousAverage`, `containerCount`, and `totalValue`. Do **not** use list `subtotal` as money.
-
-A dedicated stats field or endpoint is required (e.g. `GET /containers/stats/average-value?period=30d` or a search aggregation) so the portal does not paginate containers and invoices.
+1. Takes containers whose `departureDate` is in the rolling window (exclude future scheduled departures).
+2. Assigns **non-void** invoices by `invoice.container._id`. Invoice digitize/`createdAt` date is **not** filtered.
+3. Sums invoice detail merchandise totals, falling back to invoice `cost` when there are no details.
+4. Averages across every departed container in the window. Containers with no invoices count as `$0`.
+5. Returns `average`, `previousAverage`, `containerCount`, `totalValue`, plus `period` / `timezone` / window metadata.
 
 ### Admin
 
@@ -290,9 +290,21 @@ This includes:
 - Company configuration
 - Other administrative controls
 
+### Reports
+
+Reports generates printable PDFs from operational records (pickup manifests, invoices, labels, income statements, journals, loans, and delivery manifests). The Reports workspace is the generate-and-download hub; print actions also live on those source workspaces.
+
+The API only exposes generate endpoints (`POST /reports/{type}`) plus a public download (`GET /public/reports/{token}`). There is no list or CRUD collection of saved reports.
+
 ### Insights
 
 Insights provides analytics and business intelligence that can help management improve operations and make better decisions.
+
+Dashboard KPI cards and all-time weekday/month charts use `dashboard:view`:
+
+- `GET /v1/insights/kpis?period=7d|30d|3m|6m|1y` — rolling current + previous windows in one aggregation per KPI (`newAppointments`, `newInvoices`, `newCustomers`, `departedContainers`, `averageValuePerContainer`)
+- Containers **Average value per container** uses the dedicated `GET /v1/containers/stats/average-value` endpoint instead of the insights field
+- `GET /v1/insights/histograms/{appointments|clients|invoices}` — weekday/month histograms in the company/app timezone
 
 Examples include:
 

@@ -12,9 +12,11 @@ import type { RouteListParams, RouteSearchFilter } from "@/lib/route-manager/typ
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { MemoPadListParams, MemoPadSearchFilter } from "@/lib/memo-pads/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
+import type { CheckListParams } from "@/lib/accounting/checks/types";
 import type { LoanListParams } from "@/lib/accounting/loans/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
 import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
+import type { InventoryListParams } from "@/lib/inventory/types/list";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
 
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
@@ -25,9 +27,12 @@ export const queryKeys = {
   },
   dashboard: {
     all: ["dashboard"] as const,
-    appointments: () => [...queryKeys.dashboard.all, "appointments"] as const,
-    clients: () => [...queryKeys.dashboard.all, "clients"] as const,
-    invoices: () => [...queryKeys.dashboard.all, "invoices"] as const,
+  },
+  insights: {
+    all: ["insights"] as const,
+    kpis: (period: string) => [...queryKeys.insights.all, "kpis", period] as const,
+    histogram: (resource: "appointments" | "clients" | "invoices") =>
+      [...queryKeys.insights.all, "histogram", resource] as const,
   },
   permissions: {
     all: ["permissions"] as const,
@@ -142,6 +147,7 @@ export const queryKeys = {
       [...queryKeys.barcodes.all, "search", search, limit] as const,
     stats: (scope: "all" | "kpis") => [...queryKeys.barcodes.all, "stats", scope] as const,
     detail: (barcodeId: number) => [...queryKeys.barcodes.all, "detail", barcodeId] as const,
+    statusOptions: () => [...queryKeys.barcodes.all, "status-options"] as const,
   },
   containers: {
     all: ["containers"] as const,
@@ -183,6 +189,9 @@ export const queryKeys = {
     journals: (params: unknown) => [...queryKeys.accounting.all, "journals", params] as const,
     loans: (params: LoanListParams) => [...queryKeys.accounting.all, "loans", params] as const,
     loan: (id: string) => [...queryKeys.accounting.all, "loan", id] as const,
+    checks: (params: CheckListParams) => [...queryKeys.accounting.all, "checks", params] as const,
+    check: (id: string) => [...queryKeys.accounting.all, "check", id] as const,
+    checksOutstanding: () => [...queryKeys.accounting.all, "checks-outstanding"] as const,
     loanTransactions: (id: string) =>
       [...queryKeys.accounting.all, "loan-transactions", id] as const,
     invoiceRegistration: (invoiceNumber: string) =>
@@ -292,12 +301,16 @@ export const queryKeys = {
   inventory: {
     all: ["inventory"] as const,
     snapshot: () => [...queryKeys.inventory.all, "snapshot"] as const,
-    items: () => [...queryKeys.inventory.all, "items"] as const,
+    items: (params?: InventoryListParams) => [...queryKeys.inventory.all, "items", params ?? {}] as const,
+    item: (itemId: string) => [...queryKeys.inventory.all, "item", itemId] as const,
     movements: (itemId?: string) =>
       [...queryKeys.inventory.all, "movements", itemId ?? "all"] as const,
-    receipts: () => [...queryKeys.inventory.all, "receipts"] as const,
-    dispatches: () => [...queryKeys.inventory.all, "dispatches"] as const,
-    suppliers: () => [...queryKeys.inventory.all, "suppliers"] as const,
+    receipts: (params?: InventoryListParams) =>
+      [...queryKeys.inventory.all, "receipts", params ?? {}] as const,
+    dispatches: (params?: InventoryListParams) =>
+      [...queryKeys.inventory.all, "dispatches", params ?? {}] as const,
+    suppliers: (params?: InventoryListParams) =>
+      [...queryKeys.inventory.all, "suppliers", params ?? {}] as const,
     stock: (itemId: string) => [...queryKeys.inventory.all, "stock", itemId] as const,
   },
 } as const;

@@ -10,7 +10,7 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
-import { formatInventoryDate, formatInventoryMoney, getInventoryItemLabel } from "@/lib/inventory/display";
+import { formatInventoryDate, formatInventoryMoney, getReceiptItemLabel, getReceiptSupplierLabel } from "@/lib/inventory/display";
 import type { InventoryItem } from "@/lib/inventory/types";
 import type { InventoryReceipt } from "@/lib/inventory/types/documents";
 import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
@@ -33,21 +33,21 @@ export function InventoryReceiptViewSheet({
   const { t } = useTranslation();
   if (!receipt) return null;
 
-  const item = items.find((entry) => entry.id === receipt.itemId);
-  const supplier = suppliers.find((entry) => entry.id === receipt.supplierId);
+  const itemLabel = getReceiptItemLabel(receipt, items);
+  const supplierLabel = getReceiptSupplierLabel(receipt, suppliers);
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent>
         <RecordViewSheetHeader
-          title={item ? getInventoryItemLabel(item) : receipt.itemId}
+          title={itemLabel}
           description={t("inventory.references.receipt")}
         />
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("inventory.form.sections.received")}>
             <RecordViewSheetDetailRow label={t("inventory.form.fields.quantityReceived")} value={String(receipt.quantity)} />
             <RecordViewSheetDetailRow label={t("inventory.columns.averageCost")} value={formatInventoryMoney(receipt.averageCost)} />
-            <RecordViewSheetDetailRow label={t("inventory.columns.supplier")} value={supplier?.companyName ?? receipt.supplierId} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.supplier")} value={supplierLabel} />
             <RecordViewSheetDetailRow label={t("inventory.columns.date")} value={formatInventoryDate(receipt.receivedAt)} />
           </RecordViewSheetSection>
           <RecordViewSheetSection title={t("inventory.view.audit")}>

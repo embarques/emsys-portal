@@ -113,6 +113,12 @@
     "deleteOne": "Esto eliminará permanentemente este rol. {{cannotBeUndone}}",
     "deleteMany": "Esto eliminará permanentemente {{count}} roles seleccionados. {{cannotBeUndone}}"
   },
+  "enums": {
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    }
+  },
   "filters": {
     "fields": {
       "id": {
@@ -122,6 +128,10 @@
       "name": {
         "label": "Nombre del rol",
         "placeholder": "Ingrese el nombre del rol…"
+      },
+      "active": {
+        "label": "Activo",
+        "placeholder": "Seleccionar estado…"
       },
       "createdBy": {
         "name": {

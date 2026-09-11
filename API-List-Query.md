@@ -53,6 +53,7 @@ buildApiListQuery({
 | Users | `src/lib/users/api/users-api.ts` |
 | Branches | `src/lib/branches/api/branches-api.ts` |
 | Orders (pickups) | `src/lib/orders/api/orders-api.ts` |
+| Checks | `src/lib/accounting/checks/api/checks-api.ts` |
 
 `ListParams` types use `sort?: ApiListSortInput` only.
 

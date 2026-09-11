@@ -1,4 +1,8 @@
-import type { DailyIncomeJournal, DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import {
+  isCheckPaymentMethod,
+  type DailyIncomeJournal,
+  type DailyIncomeJournalValues,
+} from "@/lib/accounting/daily-income/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
@@ -33,11 +37,40 @@ function transactionCreatedToastTarget(values: DailyIncomeJournalValues) {
 }
 
 export function transactionCreatedToastMessage(values: DailyIncomeJournalValues, t: TranslateFn) {
+  if (isHeldCheckInvoicePayment(values)) {
+    return t("accounting.dailyIncome.toasts.checkPaymentHeld", {
+      checkNumber: values.checkNumber?.trim() || "—",
+      invoiceNumber: values.invoiceNumber?.trim() || "—",
+    });
+  }
   const type = transactionTypeLabel(values.transactionType, t);
   const target = transactionCreatedToastTarget(values);
   return target
     ? t("accounting.dailyIncome.toasts.transactionCreatedWithTarget", { type, target })
     : t("accounting.dailyIncome.toasts.transactionCreatedWithType", { type });
+}
+
+export function journalCreatedToastMessage(values: DailyIncomeJournalValues, t: TranslateFn) {
+  if (isHeldCheckInvoicePayment(values)) {
+    return t("accounting.dailyIncome.toasts.checkPaymentHeld", {
+      checkNumber: values.checkNumber?.trim() || "—",
+      invoiceNumber: values.invoiceNumber?.trim() || "—",
+    });
+  }
+  if (values.transactionType === "INITIAL-PAYMENT") {
+    return t("accounting.dailyIncome.toasts.invoiceRegistered", {
+      invoiceNumber: values.invoiceNumber?.trim() || "invoice",
+    });
+  }
+  return transactionCreatedToastMessage(values, t);
+}
+
+function isHeldCheckInvoicePayment(values: DailyIncomeJournalValues) {
+  return (
+    isCheckPaymentMethod(values.paymentMethodName) &&
+    (values.transactionType === "PAYMENT" || values.transactionType === "INITIAL-PAYMENT") &&
+    (Number(values.amount) || 0) > 0
+  );
 }
 
 function lookupId(id?: number): number | undefined {
@@ -115,6 +148,14 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     zelleTransactionDate: row.zelleTransactionDate,
     zelleTransactionName: row.zelleTransactionName,
     checkNumber: row.checkNumber,
+    inventoryDirection: row.inventoryDirection,
+    inventoryItemId: row.inventoryItemId,
+    inventoryItemName: row.inventoryItemName,
+    inventoryQuantity: row.inventoryQuantity,
+    inventoryUnitPrice: row.inventoryUnitPrice,
+    inventoryTotal: row.inventoryTotal,
+    inventorySupplierId: row.inventorySupplierId,
+    inventorySupplierName: row.inventorySupplierName,
   };
 }
 

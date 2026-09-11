@@ -54,7 +54,7 @@ export function InventorySuppliersWorkspace() {
   const dash = t("common.empty.dash");
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
-  const { data: suppliers = [], isLoading } = useInventorySuppliers();
+  const { data: suppliers = [], isLoading, isError, error } = useInventorySuppliers();
   const snapshot = useInventorySnapshotData();
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
@@ -80,6 +80,7 @@ export function InventorySuppliersWorkspace() {
   const currentPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
   const allPageSelected = pageRows.length > 0 && pageRows.every((row) => selectedIds.includes(row.id));
+  const listErrorMessage = isError ? toErrorMessage(error) : null;
 
   const columns: DataTableColumn<InventorySupplier>[] = [
     {
@@ -194,6 +195,8 @@ export function InventorySuppliersWorkspace() {
         onAddSupplier={openAddForm}
       />
 
+      {listErrorMessage ? <p className="mt-4 text-sm text-destructive md:hidden">{listErrorMessage}</p> : null}
+
       <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
@@ -225,7 +228,9 @@ export function InventorySuppliersWorkspace() {
           onDelete={() => setDeleteTarget(suppliers.filter((row) => selectedIds.includes(row.id)))}
         />
 
-        {isLoading ? (
+        {listErrorMessage ? (
+          <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
+        ) : isLoading ? (
           <DirectoryTableLoader
             icon={Building2}
             title={t("inventory.loading.suppliers.title")}
@@ -266,7 +271,7 @@ export function InventorySuppliersWorkspace() {
           />
         )}
 
-        {!isLoading ? (
+        {!isLoading && !listErrorMessage ? (
           <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               {t("common.pagination.showingOf", {

@@ -20,6 +20,7 @@ import enBarcodes from "@/locales/en/barcodes.json";
 import enAccounting from "@/locales/en/accounting.json";
 import enBranches from "@/locales/en/branches.json";
 import enVehicles from "@/locales/en/vehicles.json";
+import enReports from "@/locales/en/reports.json";
 import enRoles from "@/locales/en/roles.json";
 import enUsers from "@/locales/en/users.json";
 import esCommon from "@/locales/es/common.json";
@@ -43,6 +44,7 @@ import esAccounting from "@/locales/es/accounting.json";
 import esBranches from "@/locales/es/branches.json";
 import esUsers from "@/locales/es/users.json";
 import esVehicles from "@/locales/es/vehicles.json";
+import esReports from "@/locales/es/reports.json";
 import esRoles from "@/locales/es/roles.json";
 
 export type Locale = LanguagePreference;
@@ -66,6 +68,7 @@ const catalogs: Record<Locale, MessageTree> = {
     navigation: enNavigation,
     orders: enOrders,
     phones: enPhones,
+    reports: enReports,
     routes: enRoutes,
     settings: enSettings,
     shell: enShell,
@@ -90,6 +93,7 @@ const catalogs: Record<Locale, MessageTree> = {
     navigation: esNavigation,
     orders: esOrders,
     phones: esPhones,
+    reports: esReports,
     routes: esRoutes,
     settings: esSettings,
     shell: esShell,
