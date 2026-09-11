@@ -6,6 +6,7 @@ import { buildApiListQuery, resolveApiListSort } from "@/lib/api/list-query";
 import {
   buildApiFilterNodeFromTableRows,
   buildApiSearchPaginationQuery,
+  buildStripeStyleSearchBody,
   createTextSearchFilter,
   hasListTextSearch,
   isApiSearchFilter,
@@ -33,6 +34,7 @@ import {
 } from "@/lib/orders/types";
 import {
   computeInvoiceBalance,
+  createInvoiceSearchFilter,
   DEFAULT_INVOICE_LIST_PARAMS,
   getInvoiceBalanceAmount,
   mapPaidRegionToPaymentLocation,
@@ -337,7 +339,10 @@ function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
       const objectId =
         barcode.barcodeId != null && String(barcode.barcodeId).trim()
           ? String(barcode.barcodeId).trim()
-          : undefined;
+          : typeof barcode.id === "string" &&
+              /^[a-f\d]{24}$/i.test(barcode.id.trim())
+            ? barcode.id.trim()
+            : undefined;
       const packageSequence =
         typeof barcode.id === "number" && Number.isFinite(barcode.id)
           ? barcode.id
@@ -387,14 +392,23 @@ function normalizeInvoiceLineItems(raw: unknown): InvoiceLineItem[] {
           ? Math.round((lineTotal / quantity) * 100) / 100
           : 0;
     const apiId = readStringId(detail.id);
-    const description = String(detail.description ?? "").trim();
-    const itemName = String(detail.name ?? "").trim() || description || "Line item";
+    // Write path stores catalog FK in `description` and human text in `name`.
+    // Never treat a numeric catalog id as display copy.
+    const rawDescription = String(detail.description ?? "").trim();
+    const catalogItemId = /^\d+$/.test(rawDescription) ? rawDescription : undefined;
+    const freeTextDescription = catalogItemId ? undefined : rawDescription || undefined;
+    const itemName =
+      String(detail.name ?? "").trim() || freeTextDescription || "Line item";
 
     return {
       id: apiId ?? createRecordId(),
       apiId,
+      itemId: catalogItemId,
       itemName,
-      description: description || undefined,
+      description:
+        freeTextDescription && freeTextDescription !== itemName
+          ? freeTextDescription
+          : undefined,
       quantity,
       labelCount: Number(detail.labels ?? 0),
       unitPrice,
@@ -848,6 +862,153 @@ export async function fetchInvoiceById(invoiceId: string): Promise<Invoice> {
   return invoice;
 }
 
+export type InvoiceBarcodeLookup = {
+  invoiceId: string;
+  invoiceNumber: string;
+  barcode: InvoiceLineItemBarcode;
+};
+
+function findBarcodeOnInvoice(
+  invoice: Invoice,
+  barcodeNumber: string,
+): InvoiceBarcodeLookup | null {
+  const needle = barcodeNumber.trim().toUpperCase();
+  if (!needle) {
+    return null;
+  }
+
+  for (const lineItem of invoice.lineItems) {
+    for (const barcode of lineItem.barcodes ?? []) {
+      if (barcode.number.trim().toUpperCase() === needle) {
+        return {
+          invoiceId: invoice.invoiceId,
+          invoiceNumber: invoice.invoiceNumber,
+          barcode,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+async function loadInvoiceWithBarcodes(invoice: Invoice): Promise<Invoice> {
+  // List payloads often omit nested barcodes even when they exist on the detail.
+  try {
+    return await fetchInvoiceById(invoice.invoiceId);
+  } catch {
+    return invoice;
+  }
+}
+
+/**
+ * Locate an invoice-embedded barcode by its printed number.
+ *
+ * Labels created/managed on invoices often live only under `invoiceDetails`
+ * (not `/barcodes`). Nested barcode-number filters are not reliably supported,
+ * so Label manager can show a barcode while the scanner catalog lookup misses.
+ * Fallback order:
+ * 1. Nested search fields (fast path when the API allows them)
+ * 2. Invoice text search for the barcode number
+ * 3. Walk recent invoices and inspect line-item barcodes (same source as Label manager)
+ */
+export async function findInvoiceBarcodeByNumber(
+  barcodeNumber: string,
+): Promise<InvoiceBarcodeLookup | null> {
+  const trimmed = barcodeNumber.trim();
+  if (!trimmed) return null;
+
+  const candidateFields = [
+    "invoiceDetails.barcodes.number",
+    "barcodes.number",
+    "invoiceDetails.barcode.number",
+  ] as const;
+
+  const paginationQuery = buildApiSearchPaginationQuery({
+    page: 1,
+    limit: 5,
+    offset: 0,
+  });
+
+  for (const field of candidateFields) {
+    try {
+      const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+        `${API_ENDPOINTS.INVOICES}/search?${paginationQuery}`,
+        buildStripeStyleSearchBody({
+          filterGroups: [
+            {
+              operator: "and",
+              filters: [{ field, operator: "eq", value: trimmed }],
+            },
+          ],
+        }),
+      );
+
+      const items = Array.isArray(response.data) ? response.data : [];
+      for (const entry of items) {
+        const summary = normalizeInvoice(entry);
+        if (!summary) continue;
+
+        const invoice = await loadInvoiceWithBarcodes(summary);
+        const match = findBarcodeOnInvoice(invoice, trimmed);
+        if (match) {
+          return match;
+        }
+      }
+    } catch {
+      // Field not allowed or search failed — try the next candidate.
+    }
+  }
+
+  try {
+    const textSearch = await fetchInvoices({
+      page: 1,
+      limit: 25,
+      search: createInvoiceSearchFilter(trimmed),
+    });
+    for (const summary of textSearch.items) {
+      const invoice = await loadInvoiceWithBarcodes(summary);
+      const match = findBarcodeOnInvoice(invoice, trimmed);
+      if (match) {
+        return match;
+      }
+    }
+  } catch {
+    // Fall through to recent-invoice walk.
+  }
+
+  const pageLimit = 20;
+  const maxPages = 10;
+  for (let page = 1; page <= maxPages; page += 1) {
+    let list: Awaited<ReturnType<typeof fetchInvoices>>;
+    try {
+      list = await fetchInvoices({
+        page,
+        limit: pageLimit,
+        sort: DEFAULT_INVOICE_LIST_PARAMS.sort,
+      });
+    } catch {
+      break;
+    }
+
+    const detailedInvoices = await Promise.all(
+      list.items.map((invoice) => loadInvoiceWithBarcodes(invoice)),
+    );
+    for (const invoice of detailedInvoices) {
+      const match = findBarcodeOnInvoice(invoice, trimmed);
+      if (match) {
+        return match;
+      }
+    }
+
+    if (list.items.length < pageLimit || page * pageLimit >= list.total) {
+      break;
+    }
+  }
+
+  return null;
+}
+
 /** Raw invoice record from `GET /invoices/{id}` — suitable for round-trip `PUT`. */
 export async function fetchInvoiceApiRecord(invoiceId: string): Promise<ApiInvoice> {
   const id = parseInvoicePathId(invoiceId);
@@ -864,18 +1025,37 @@ export type InvoiceEmbeddedBarcodePatch = {
   number: string;
   status: { id: number; name: string };
   container?: { id: number; name: string };
+  route?: { id: string; name: string };
 };
 
-function barcodeMatchesEmbeddedPatch(barcode: ApiInvoiceBarcode, patchId: string): boolean {
-  const target = patchId.trim();
-  if (!target) return false;
+function listInvoiceDetailBarcodes(detail: ApiInvoiceDetail): ApiInvoiceBarcode[] {
+  if (Array.isArray(detail.barcodes) && detail.barcodes.length > 0) {
+    return detail.barcodes;
+  }
+  if (detail.barcode && typeof detail.barcode === "object") {
+    return [detail.barcode];
+  }
+  return [];
+}
 
-  if (barcode.barcodeId != null && String(barcode.barcodeId).trim() === target) {
-    return true;
+function barcodeMatchesEmbeddedPatch(
+  barcode: ApiInvoiceBarcode,
+  patch: Pick<InvoiceEmbeddedBarcodePatch, "barcodeId" | "number">,
+): boolean {
+  const target = patch.barcodeId.trim();
+  const patchNumber = patch.number.trim();
+
+  if (target) {
+    if (barcode.barcodeId != null && String(barcode.barcodeId).trim() === target) {
+      return true;
+    }
+    if (barcode.id != null && String(barcode.id).trim() === target) {
+      return true;
+    }
   }
 
-  // Legacy fallback only: match package-sequence numeric `id` when ObjectID is absent.
-  if (barcode.barcodeId == null && barcode.id != null && String(barcode.id).trim() === target) {
+  // Last resort: human-readable number (print/report identity when ObjectIDs diverge).
+  if (patchNumber && String(barcode.number ?? "").trim() === patchNumber) {
     return true;
   }
 
@@ -890,24 +1070,26 @@ export async function patchInvoiceEmbeddedBarcodes(
   if (patches.length === 0) return;
 
   const invoice = await fetchInvoiceApiRecord(invoiceId);
-  const patchById = new Map(patches.map((patch) => [patch.barcodeId.trim(), patch]));
+  const remaining = [...patches];
   let matched = 0;
 
   for (const detail of invoice.invoiceDetails ?? []) {
-    for (const barcode of detail.barcodes ?? []) {
-      for (const [patchId, patch] of patchById) {
-        if (!barcodeMatchesEmbeddedPatch(barcode, patchId)) continue;
+    for (const barcode of listInvoiceDetailBarcodes(detail)) {
+      const patchIndex = remaining.findIndex((patch) => barcodeMatchesEmbeddedPatch(barcode, patch));
+      if (patchIndex < 0) continue;
 
-        barcode.number = patch.number;
-        barcode.status = patch.status;
-        if (patch.container) {
-          barcode.container = patch.container;
-        }
-
-        matched += 1;
-        patchById.delete(patchId);
-        break;
+      const patch = remaining[patchIndex]!;
+      barcode.number = patch.number;
+      barcode.status = patch.status;
+      if (patch.container) {
+        barcode.container = patch.container;
       }
+      if (patch.route) {
+        barcode.route = patch.route;
+      }
+
+      matched += 1;
+      remaining.splice(patchIndex, 1);
     }
   }
 

@@ -3,9 +3,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
+  assignBarcodesToDailyRoute,
   assignInvoiceItemBarcodesToRoute,
   generateLabels,
   updateBarcodes,
+  type AssignBarcodeToRouteTarget,
   type BarcodeUpdate,
   type GenerateLabelTarget,
 } from "@/lib/labels/api/barcodes-api";
@@ -41,13 +43,28 @@ export function useUpdateBarcodes() {
   });
 }
 
-/** Assign a specific set of barcodes (by id) to a route in one request. */
+/** Assign barcodes to a daily route (catalog and/or invoice-embedded). */
 export function useAssignBarcodesToRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ routeId, barcodeIds }: { routeId: string; barcodeIds: string[] }) =>
-      assignInvoiceItemBarcodesToRoute(routeId, barcodeIds),
+    mutationFn: ({
+      routeId,
+      routeName,
+      barcodes,
+      barcodeIds,
+    }: {
+      routeId: string;
+      routeName?: string;
+      barcodes?: AssignBarcodeToRouteTarget[];
+      /** @deprecated Prefer `barcodes` — numeric/uint32 ids for the invoice-embedded endpoint. */
+      barcodeIds?: Array<string | number>;
+    }) => {
+      if (barcodes && barcodes.length > 0) {
+        return assignBarcodesToDailyRoute(routeId, routeName ?? routeId, barcodes);
+      }
+      return assignInvoiceItemBarcodesToRoute(routeId, barcodeIds ?? []);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.barcodes.all });

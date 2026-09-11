@@ -27,7 +27,7 @@ export function buildInvoiceBarcodeStatusRows(invoice: Invoice): InvoiceBarcodeS
         container: barcode.containerName?.trim() || invoice.containerName?.trim() || "—",
         deliveryRoute:
           barcode.deliveryName?.trim() || barcode.routeName?.trim() || invoice.routeName?.trim() || "—",
-        description: item.description?.trim() || item.itemName,
+        description: item.itemName.trim() || item.description?.trim() || "—",
       });
     }
   }

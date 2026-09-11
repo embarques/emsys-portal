@@ -18,8 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
-import { buildTransactionAssigneeOptions } from "@/lib/accounting/daily-income/assignee";
 import {
   useAccountingPaymentMethods,
   useCreateDailyIncomeJournal,
@@ -35,6 +35,7 @@ import {
   requiresBankAccount,
   withDefaultCashPaymentMethod,
   type DailyIncomeJournal,
+  type DailyIncomeJournalValues,
   type DailyIncomeStatement,
   type DailyIncomeStatementValues,
 } from "@/lib/accounting/daily-income/types";
@@ -43,12 +44,15 @@ import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
+  buildInvoiceDailyIncomeAssigneeDefaults,
   createInvoiceDailyIncomeRegistrationSchema,
   type InvoiceDailyIncomeRegistrationValues,
 } from "@/lib/invoices/schemas/invoice-daily-income.schema";
 import { resolveLineTotal, type InvoiceFormValues } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
+import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
+import type { UseFormSetValue } from "react-hook-form";
 
 type Props = {
   open: boolean;
@@ -62,6 +66,7 @@ type Props = {
 
 const DEFAULT_VALUES: InvoiceDailyIncomeRegistrationValues = {
   amount: 0,
+  assigneeSource: "employee",
   refNumber: "",
   description: "",
 };
@@ -84,6 +89,7 @@ export function InvoiceDailyIncomeDialog({
   const currentUserQuery = useCurrentUser();
   const branchesQuery = useBranchPicker(200, { enabled: open });
   const employeesQuery = useEmployees({ page: 1, limit: 200, sort: "name:asc", active: true });
+  const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, { enabled: open });
   const paymentMethodsQuery = useAccountingPaymentMethods(open);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, open);
   const createJournal = useCreateDailyIncomeJournal();
@@ -96,8 +102,11 @@ export function InvoiceDailyIncomeDialog({
   );
   const invoiceTotal = Math.max(0, invoiceSubtotal - (Number(invoice.discount) || 0));
   const registrationSchema = useMemo(
-    () => createInvoiceDailyIncomeRegistrationSchema(invoiceTotal),
-    [invoiceTotal],
+    () =>
+      createInvoiceDailyIncomeRegistrationSchema(invoiceTotal, {
+        assigneeRequired: t("accounting.dailyIncome.form.validation.employeeRequired"),
+      }),
+    [invoiceTotal, t],
   );
   const statementSchema = useMemo(
     () =>
@@ -137,10 +146,14 @@ export function InvoiceDailyIncomeDialog({
 
   useEffect(() => {
     if (!open) return;
+    const routeNameById = new Map(
+      (pickupRoutesQuery.data?.items ?? []).map((route) => [route.id, route.name] as const),
+    );
     reset(
       withDefaultCashPaymentMethod(
         {
           ...DEFAULT_VALUES,
+          ...buildInvoiceDailyIncomeAssigneeDefaults(invoice, routeNameById),
           description: t("invoices.wizard.dailyIncome.dialog.initialRegistrationDescription"),
         },
         paymentMethodsQuery.data ?? [],
@@ -151,7 +164,20 @@ export function InvoiceDailyIncomeDialog({
     setSingleOpenStatement(null);
     setCardFlipped(false);
     setActiveStatement(statement);
-  }, [open, reset, statement, t]);
+    // Only re-seed when the dialog opens or the invoice assignee inputs change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- payment/route catalogs enrich via later effects
+  }, [
+    invoice.pickupEmployeeId,
+    invoice.pickupEmployeeName,
+    invoice.pickupSource,
+    invoice.routeCrewId,
+    invoice.routeCrewName,
+    invoice.routeId,
+    open,
+    reset,
+    statement,
+    t,
+  ]);
 
   useEffect(() => {
     const userBranch = currentUserQuery.data?.branch;
@@ -175,6 +201,10 @@ export function InvoiceDailyIncomeDialog({
   const paymentMethodName = watch("paymentMethodName");
   const paymentAccountId = watch("paymentAccountId");
   const employeeId = watch("employeeId");
+  const employeeName = watch("employeeName");
+  const routeId = watch("routeId");
+  const routeName = watch("routeName");
+  const assigneeSource = watch("assigneeSource");
   const paymentRequired = amount > 0;
   const needsBankAccount = paymentRequired && requiresBankAccount(paymentMethodName);
   const isZelle = paymentRequired && isZellePaymentMethod(paymentMethodName);
@@ -185,7 +215,7 @@ export function InvoiceDailyIncomeDialog({
     () => (employeesQuery.data?.items ?? []).filter((employee) => employee.active),
     [employeesQuery.data?.items],
   );
-  const employeeOptions = useMemo(() => buildTransactionAssigneeOptions(employees), [employees]);
+  const dailyRoutes = pickupRoutesQuery.data?.items ?? [];
   const statementOpen = activeStatement?.status === "OPEN";
   const statementCurrency = statementForm.watch("currency");
   const statementBranchId = statementForm.watch("branchId");
@@ -197,6 +227,18 @@ export function InvoiceDailyIncomeDialog({
     label: `${branch.code} — ${branch.name}`,
     keywords: [branch.code, branch.name],
   }));
+  const assigneeError = errors.routeId?.message || errors.employeeId?.message;
+
+  // Enrich route label once daily routes finish loading after open.
+  useEffect(() => {
+    if (!open) return;
+    const selectedRouteId = getValues("routeId")?.trim();
+    if (!selectedRouteId) return;
+    const route = dailyRoutes.find((item) => item.id === selectedRouteId);
+    const nextName = route?.name.trim();
+    if (!nextName || getValues("routeName")?.trim() === nextName) return;
+    setValue("routeName", nextName, { shouldValidate: false });
+  }, [dailyRoutes, getValues, open, setValue]);
 
   useEffect(() => {
     if (!showExchangeRate) {
@@ -205,25 +247,29 @@ export function InvoiceDailyIncomeDialog({
   }, [showExchangeRate, statementForm]);
 
   useEffect(() => {
-    const user = currentUserQuery.data;
-    if (!open || !user || employees.length === 0 || getValues("employeeId")) return;
-    const normalizedEmail = user.email.trim().toLowerCase();
-    const employee =
-      employees.find((item) => item.user?.id === user.id) ??
-      employees.find((item) => item.email.trim().toLowerCase() === normalizedEmail) ??
-      employees.find((item) => item.name.trim().toLowerCase() === user.name.trim().toLowerCase());
-    if (!employee) return;
-    setValue("employeeId", employee.id, { shouldValidate: true });
-    setValue("employeeName", employee.name, { shouldValidate: true });
-  }, [currentUserQuery.data, employees, getValues, open, setValue]);
-
-  useEffect(() => {
     if (!open || paymentMethodId || paymentMethods.length === 0) return;
     const cash = findCashPaymentMethod(paymentMethods);
     if (!cash) return;
     setValue("paymentMethodId", cash.id, { shouldValidate: true });
     setValue("paymentMethodName", cash.name, { shouldValidate: true });
   }, [open, paymentMethodId, paymentMethods, setValue]);
+
+  // Fallback: if step 1 had no route/employee, try matching the signed-in user to an employee.
+  useEffect(() => {
+    const user = currentUserQuery.data;
+    if (!open || !user || employees.length === 0) return;
+    if (getValues("employeeId") || getValues("routeId")?.trim()) return;
+    if (getValues("assigneeSource") === "route") return;
+    const normalizedEmail = user.email.trim().toLowerCase();
+    const employee =
+      employees.find((item) => item.user?.id === user.id) ??
+      employees.find((item) => item.email.trim().toLowerCase() === normalizedEmail) ??
+      employees.find((item) => item.name.trim().toLowerCase() === user.name.trim().toLowerCase());
+    if (!employee) return;
+    setValue("assigneeSource", "employee", { shouldValidate: true });
+    setValue("employeeId", employee.id, { shouldValidate: true });
+    setValue("employeeName", employee.name, { shouldValidate: true });
+  }, [currentUserQuery.data, employees, getValues, open, setValue]);
 
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
@@ -270,13 +316,14 @@ export function InvoiceDailyIncomeDialog({
   }
 
   async function submit(values: InvoiceDailyIncomeRegistrationValues) {
-    const currentUser = currentUserQuery.data;
     if (!activeStatement || activeStatement.status !== "OPEN") {
       setSubmitError(t("invoices.wizard.dailyIncome.dialog.statementMustBeOpen"));
       return;
     }
-    if (!currentUser) {
-      setSubmitError(t("invoices.wizard.dailyIncome.dialog.employeeUnavailable"));
+
+    const assignedToRoute = Boolean(values.routeId?.trim());
+    if (!assignedToRoute && !values.employeeId) {
+      setSubmitError(t("accounting.dailyIncome.form.validation.employeeRequired"));
       return;
     }
 
@@ -289,8 +336,13 @@ export function InvoiceDailyIncomeDialog({
           amount: values.amount,
           refNumber: values.refNumber,
           description: values.description,
-          employeeId: values.employeeId,
-          employeeName: values.employeeName,
+          assigneeSource: assignedToRoute ? "route" : "employee",
+          employeeId: assignedToRoute ? undefined : values.employeeId,
+          employeeName: assignedToRoute ? undefined : values.employeeName,
+          routeId: assignedToRoute ? values.routeId : undefined,
+          routeName: assignedToRoute ? values.routeName : undefined,
+          routeCrewId: assignedToRoute ? values.routeCrewId : undefined,
+          routeCrewName: assignedToRoute ? values.routeCrewName : undefined,
           invoiceNumber: invoice.invoiceNumber,
           invoiceCost: invoiceSubtotal,
           invoiceDiscount: Number(invoice.discount) || 0,
@@ -343,7 +395,7 @@ export function InvoiceDailyIncomeDialog({
                 style={{ pointerEvents: cardFlipped ? "none" : "auto" }}
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 space-y-2">
+                  <div className="min-w-0 flex-1 space-y-2">
                     <p className="font-semibold">{t("invoices.wizard.dailyIncome.dialog.todaysDailyIncome")}</p>
                     {activeStatement ? (
                       <>
@@ -390,30 +442,8 @@ export function InvoiceDailyIncomeDialog({
                       </>
                     )}
                   </div>
-                  <div className={activeStatement ? "w-[46%] space-y-1.5" : "text-right"}>
-                    {activeStatement ? (
-                      <>
-                        <Label htmlFor="invoice-payment-employee">
-                          {t("invoices.wizard.dailyIncome.dialog.employee")} <span className="text-destructive">*</span>
-                        </Label>
-                        <SearchableSelect
-                          id="invoice-payment-employee"
-                          value={employeeId ? String(employeeId) : ""}
-                          onValueChange={(next) => {
-                            const employee = employees.find((item) => item.id === Number(next));
-                            setValue("employeeId", employee?.id, { shouldValidate: true });
-                            setValue("employeeName", employee?.name ?? "", { shouldValidate: true });
-                          }}
-                          options={employeeOptions}
-                          loading={employeesQuery.isLoading}
-                          placeholder={t("invoices.wizard.dailyIncome.dialog.selectEmployee")}
-                          searchPlaceholder={t("invoices.wizard.dailyIncome.dialog.searchEmployees")}
-                        />
-                        {errors.employeeId ? (
-                          <p className="text-xs text-destructive">{errors.employeeId.message}</p>
-                        ) : null}
-                      </>
-                    ) : (
+                  {!activeStatement ? (
+                    <div className="text-right">
                       <Button
                         data-testid="invoice-daily-income-flip-create"
                         type="button"
@@ -424,8 +454,8 @@ export function InvoiceDailyIncomeDialog({
                         <RotateCcw className="size-4" />
                         {t("invoices.wizard.dailyIncome.dialog.createDailyIncome")}
                       </Button>
-                    )}
-                  </div>
+                    </div>
+                  ) : null}
                 </div>
               </section>
 
@@ -562,6 +592,23 @@ export function InvoiceDailyIncomeDialog({
               </section>
             </div>
           </div>
+
+          {statementOpen ? (
+            <TransactionAssigneeSelect
+              id="invoice-payment-assignee"
+              employees={employees}
+              dailyRoutes={dailyRoutes}
+              statementDate={activeStatement?.date || date}
+              employeeId={employeeId}
+              employeeName={employeeName}
+              routeId={routeId}
+              routeName={routeName}
+              assigneeSource={assigneeSource}
+              error={assigneeError}
+              allowDailyRoute
+              setValue={setValue as UseFormSetValue<DailyIncomeJournalValues>}
+            />
+          ) : null}
 
           {activeStatement ? (
             <>

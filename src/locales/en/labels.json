@@ -1,8 +1,8 @@
 {
   "title": "Barcode Scanner",
-  "pages": {
-    "barcodesDescription": "Identify and track individual pieces of merchandise on invoices throughout shipping.",
-    "description": "Scan a merchandise barcode to update its status as it moves through operations."
+    "pages": {
+    "barcodesDescription": "Browse merchandise barcodes created with invoices (line items + labels).",
+    "description": "Scan a merchandise barcode (from an invoice label) to update its status, container, or route."
   },
   "statuses": {
     "pending": "Pending",
@@ -13,12 +13,14 @@
     "cancelled": "Cancelled"
   },
   "barcodeStatuses": {
-    "CREATED": "Created",
-    "PRINTED": "Printed",
-    "IN TRANSIT": "In transit",
-    "CONDUCE": "Conduce",
-    "DELIVERED": "Delivered",
-    "CANCELLED": "Cancelled"
+    "ALM-NY": "ALM-NY",
+    "DEV-NY": "DEV-NY",
+    "EN TRANSITO": "EN TRANSITO",
+    "ALM-RD": "ALM-RD",
+    "DEV-RD": "DEV-RD",
+    "CONDUCE": "CONDUCE",
+    "ENTREGADO": "ENTREGADO",
+    "SUBASTADO": "SUBASTADO"
   },
   "activity": {
     "actions": {
@@ -67,8 +69,8 @@
       "routes": "Search routes…"
     },
     "results": {
-      "title": "Update results",
-      "description": "Green rows succeeded; red rows failed. Only changed fields are shown per row.",
+      "title": "Barcode Changes",
+      "description": "Green messages succeeded; red messages failed. Only changed fields are filled per row.",
       "empty": "Scan a barcode to see results here."
     },
     "columns": {
@@ -81,9 +83,8 @@
       "newContainer": "New container",
       "prevRoute": "Prev route",
       "newRoute": "New route",
-      "labels": "Labels",
       "dateCreated": "Created at",
-      "userCreated": "User created",
+      "userCreated": "User",
       "dateModified": "Updated at",
       "message": "Message"
     },
@@ -94,7 +95,7 @@
       "selectNewContainer": "Select a new container.",
       "selectNewRoute": "Select a new route.",
       "notFound": "No barcode found for \"{{barcode}}\".",
-      "noChanges": "No changes applied — selected values match the current label."
+      "noChanges": "Already up to date — selected values match the current label."
     },
     "success": {
       "labelUpdated": "Label updated successfully.",
@@ -109,7 +110,7 @@
   "staging": {
     "title": "Label manager",
     "lineItemsDescription": "Review line items from the selected invoices, choose which to label, then generate labels.",
-    "labelsDescription": "Barcodes were created where missing and retrieved where they already existed. Manage status, container, and printing below.",
+    "labelsDescription": "Barcodes come from the invoice (line items + labels). Retrieved where they already exist; gap-filled only when missing. Manage status, container, and printing below.",
     "backToInvoices": "Back to invoices",
     "backToLineItems": "Back to line items",
     "done": "Done",
@@ -202,14 +203,21 @@
       "labelCount": "{{count}} label(s)"
     },
     "output": {
-      "title": "Changes / Output",
+      "title": "Barcode Changes",
+      "description": "Green messages succeeded; red messages failed. Only changed fields are filled per row.",
       "columns": {
         "barcode": "Barcode",
         "invoice": "Invoice",
-        "previousValue": "Previous value",
-        "newValue": "New value",
-        "message": "Message",
-        "dateTime": "Date / time"
+        "container": "Container",
+        "prevStatus": "Prev status",
+        "newStatus": "New status",
+        "prevContainer": "Prev container",
+        "newContainer": "New container",
+        "prevRoute": "Prev route",
+        "newRoute": "New route",
+        "dateTime": "Timestamp",
+        "userCreated": "User",
+        "message": "Message"
       },
       "successStatus": "Status updated successfully.",
       "successContainer": "Container updated successfully.",
