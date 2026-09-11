@@ -214,6 +214,88 @@ function invalidateOrders(queryClient: ReturnType<typeof useQueryClient>) {
   ]);
 }
 
+function isOrderListResult(value: unknown): value is { items: Order[]; total?: number } {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      Array.isArray((value as { items?: unknown }).items),
+  );
+}
+
+/** Remove appointments from cached list/search results after they leave a route filter. */
+function removeOrdersFromListCaches(
+  queryClient: ReturnType<typeof useQueryClient>,
+  orderIds: number[],
+) {
+  const idSet = new Set(orderIds.filter((id) => id > 0));
+  if (idSet.size === 0) return;
+
+  queryClient.setQueriesData({ queryKey: queryKeys.orders.all }, (current) => {
+    if (!isOrderListResult(current)) return current;
+
+    const remaining = current.items.filter((order) => !idSet.has(order.id));
+    if (remaining.length === current.items.length) return current;
+
+    const removed = current.items.length - remaining.length;
+    const total =
+      typeof current.total === "number" ? Math.max(0, current.total - removed) : remaining.length;
+
+    return {
+      ...current,
+      items: remaining,
+      total,
+    };
+  });
+}
+
+/** Drop route fields from cached appointment detail/list rows (unfiltered views). */
+function clearRouteFieldsInOrderCaches(
+  queryClient: ReturnType<typeof useQueryClient>,
+  orderIds: number[],
+) {
+  const idSet = new Set(orderIds.filter((id) => id > 0));
+  if (idSet.size === 0) return;
+
+  const stripRoute = (order: Order): Order =>
+    idSet.has(order.id) ? { ...order, routeId: undefined, routeName: undefined } : order;
+
+  queryClient.setQueriesData({ queryKey: queryKeys.orders.all }, (current) => {
+    if (!current) return current;
+
+    if (isOrderListResult(current)) {
+      return {
+        ...current,
+        items: current.items.map(stripRoute),
+      };
+    }
+
+    if (
+      typeof current === "object" &&
+      "id" in current &&
+      typeof (current as Order).id === "number" &&
+      idSet.has((current as Order).id)
+    ) {
+      return stripRoute(current as Order);
+    }
+
+    return current;
+  });
+}
+
+async function invalidateOrdersAndClearCachedRoutes(
+  queryClient: ReturnType<typeof useQueryClient>,
+  orders: Order[],
+) {
+  const orderIds = orders.map((order) => order.id);
+  // Route-filtered lists should drop these rows immediately.
+  removeOrdersFromListCaches(queryClient, orderIds);
+  clearRouteFieldsInOrderCaches(queryClient, orderIds);
+  await invalidateOrders(queryClient);
+  // Unfiltered lists refill from the network with full party data. Only strip a
+  // stale route label if a refetch still includes the row.
+  clearRouteFieldsInOrderCaches(queryClient, orderIds);
+}
+
 export function useCreateOrder() {
   const queryClient = useQueryClient();
 
@@ -312,7 +394,9 @@ export function useUnassignPickupsFromRoute() {
 
   return useMutation({
     mutationFn: (orders: Order[]) => unassignPickupsFromRoute(orders),
-    onSuccess: () => invalidateOrders(queryClient),
+    onSuccess: async (_data, orders) => {
+      await invalidateOrdersAndClearCachedRoutes(queryClient, orders);
+    },
   });
 }
 
@@ -322,7 +406,9 @@ export function useClearOrdersRouteAssignments() {
 
   return useMutation({
     mutationFn: (orders: Order[]) => unassignOrdersFromRoutes(orders),
-    onSuccess: () => invalidateOrders(queryClient),
+    onSuccess: async (_data, orders) => {
+      await invalidateOrdersAndClearCachedRoutes(queryClient, orders);
+    },
   });
 }
 
@@ -332,6 +418,8 @@ export function useClearPickupRoute() {
 
   return useMutation({
     mutationFn: (routeId: string) => unassignAllPickupsFromRoute(routeId),
-    onSuccess: () => invalidateOrders(queryClient),
+    onSuccess: async () => {
+      await invalidateOrders(queryClient);
+    },
   });
 }

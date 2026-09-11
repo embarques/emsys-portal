@@ -46,7 +46,6 @@ import {
   formatOrderCommentSentence,
   getOrderPartyAddressAtIndex,
   orderCommentPurposeRequiresItem,
-  orderToFormValues,
   resolveOrderCommentUnit,
   toApiCommentPurpose,
   type Order,
@@ -339,6 +338,9 @@ function normalizeOrder(raw: unknown): Order | null {
 
   const receiverRaw = item.receiver ?? (Array.isArray(item.receivers) ? item.receivers[0] : null);
   const comments = Array.isArray(item.comments) ? item.comments.map(normalizePickupComment) : [];
+  // Live pickups expose the scheduled vehicle-route as `route: { id }` only.
+  // Do not fall back to legacy `routeAssignmentId` — that field is for `/routes`
+  // templates and can keep showing a route after `route: null` clears the assignment.
   const routeRef = normalizePickupRouteRef(item.route);
 
   return {
@@ -360,7 +362,7 @@ function normalizeOrder(raw: unknown): Order | null {
     comments,
     sector: normalizePickupSector(item.sector),
     /** Vehicle-route record id (`GET /vehicle-routes`, `routeType: pickup`), not `/routes`. */
-    routeId: routeRef?.id || String(item.routeAssignmentId ?? "").trim() || undefined,
+    routeId: routeRef?.id || undefined,
     routeName: routeRef?.name || undefined,
   };
 }
@@ -660,26 +662,166 @@ export async function fetchPickupApiRecord(orderId: string): Promise<ApiPickup> 
 }
 
 /**
+ * Keep party snapshot fields from the live GET body so a round-trip PUT does not
+ * replace sender/receiver with empty defaults (UI shows Name "Sender", blank date).
+ */
+function buildPickupCustomerRefFromApiRecord(raw: unknown): ApiPickupCustomerRef | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const item = raw as Record<string, unknown>;
+  const name = String(item.name ?? "").trim();
+  if (!name) return null;
+
+  const ref: ApiPickupCustomerRef = {
+    name,
+    customerType: coerceCustomerTypeFromApi(
+      item.customerType as number | string | null | undefined,
+    ),
+  };
+
+  const id = String(item.id ?? "").trim();
+  if (id) ref.id = id;
+
+  const email = String(item.email ?? "").trim();
+  if (email) ref.email = email;
+
+  const idNumber = String(item.IDNumber ?? "").trim();
+  if (idNumber) ref.IDNumber = idNumber;
+
+  if (typeof item.oldID === "number" && Number.isFinite(item.oldID)) {
+    ref.oldID = item.oldID;
+  }
+
+  if (Array.isArray(item.phones) || item.phone1 != null || item.phone != null) {
+    const phones = buildApiPhonesPayload(normalizeRecordPhonesFromApi(item)).filter((phone) =>
+      phone.number.trim(),
+    );
+    if (phones.length > 0) {
+      ref.phones = phones;
+    }
+  }
+
+  if (item.address && typeof item.address === "object") {
+    // Preserve snapshot metadata (id / location / verification) from the live record.
+    ref.address = item.address as ApiAddressPayload;
+  }
+
+  return ref;
+}
+
+function buildPickupEmployeeRefFromApiRecord(raw: unknown): ApiPickupEmployeeRef | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+
+  const item = raw as Record<string, unknown>;
+  const id = readNumericId(item.id as number | string | undefined);
+  if (id == null || id <= 0) return undefined;
+
+  const ref: ApiPickupEmployeeRef = { id };
+  const name = String(item.name ?? "").trim();
+  if (name) ref.name = name;
+  const phone1 = String(item.phone1 ?? "").trim();
+  if (phone1) ref.phone1 = phone1;
+  if (typeof item.active === "boolean") ref.active = item.active;
+  return ref;
+}
+
+/** CreatePickupRequest body from a live GET /pickups/{id} record (not a thin list row). */
+function buildPickupWritePayloadFromApiRecord(record: ApiPickup): ApiPickupWritePayload {
+  const sender = buildPickupCustomerRefFromApiRecord(record.sender);
+  if (!sender) {
+    throw new Error("Pickup sender is required.");
+  }
+
+  const branch = normalizePickupBranch(record.branch);
+  const payload: ApiPickupWritePayload = {
+    date: String(record.date ?? "").trim() || new Date().toISOString().slice(0, 10),
+    branch: buildApiBranchDto({
+      id: branch.id,
+      code: branch.code,
+      name: branch.name,
+    }),
+    sender,
+  };
+
+  const receiverRaw = record.receiver ?? (Array.isArray(record.receivers) ? record.receivers[0] : null);
+  const receiver = buildPickupCustomerRefFromApiRecord(receiverRaw);
+  if (receiver) {
+    payload.receiver = receiver;
+  }
+
+  const purpose = String(record.purpose ?? "").trim();
+  if (purpose) {
+    payload.purpose = purpose;
+  }
+
+  if (Array.isArray(record.comments) && record.comments.length > 0) {
+    payload.comments = record.comments.map((comment) => ({
+      purpose: String(comment.purpose ?? "").trim(),
+      unit: String(comment.unit ?? "").trim(),
+      quantity: Number(comment.quantity ?? 0),
+      description: String(comment.description ?? "").trim(),
+    }));
+  }
+
+  const sectorId = readNumericId(record.sector?.id);
+  if (sectorId != null && sectorId > 0) {
+    const sectorName = String(record.sector?.name ?? "").trim();
+    payload.sector = sectorName ? { id: sectorId, name: sectorName } : { id: sectorId };
+  }
+
+  const employee = buildPickupEmployeeRefFromApiRecord(record.employee);
+  if (employee) {
+    payload.employee = employee;
+  }
+
+  if (record.completed === true) {
+    payload.completed = true;
+  }
+
+  return payload;
+}
+
+/**
+ * PUT /pickups/{id} with a full CreatePickupRequest built from the live record, then apply
+ * `patch`. Partial bodies alone (e.g. `{ route: null }`) do not reliably clear the assignment
+ * and are treated as full replaces that wipe sender/address — always rebuild from GET first.
+ */
+async function putPickupWithLiveRecordPatch(
+  orderId: string,
+  patch: Partial<ApiPickupWritePayload> & { route?: ApiRouteRef | null },
+): Promise<void> {
+  const pickupId = orderId.trim();
+  const record = await fetchPickupApiRecord(pickupId);
+  const payload: ApiPickupWritePayload & { route?: ApiRouteRef | null } = {
+    ...buildPickupWritePayloadFromApiRecord(record),
+    ...patch,
+  };
+
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/${pickupId}`,
+    payload,
+  );
+  assertMutationSuccess(response, "Unable to update pickup.");
+}
+
+/**
  * Unassign a pickup from its scheduled route via `PUT /pickups/{id}` with `route: null`.
  *
- * Builds the same `CreatePickupRequest` write payload used by update/mark-complete so the
- * server receives a valid body. PUTting the raw read-shaped GET record does not reliably
- * clear the route assignment.
+ * Rebuilds CreatePickupRequest from a fresh GET so party fields stay intact. A partial
+ * `{ route: null }` body does not clear the assignment (and can wipe sender/address).
  */
 export async function clearPickupRouteAssignment(order: Order): Promise<void> {
   if (order.id <= 0) {
     throw new Error("A valid pickup is required.");
   }
 
-  const payload = buildPickupWritePayload(orderToFormValues(order));
-  payload.route = null;
+  const pickupId = String(order.id);
+  await putPickupWithLiveRecordPatch(pickupId, { route: null });
 
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.PICKUPS}/${order.id}`,
-    payload,
-  );
-
-  assertMutationSuccess(response, "Unable to clear pickup route.");
+  const after = await fetchOrderById(pickupId);
+  if (after.routeId?.trim()) {
+    throw new Error("Unable to clear pickup route.");
+  }
 }
 
 /** Remove route assignments from the given pickups. */
@@ -933,19 +1075,22 @@ export async function deleteOrders(orderIds: string[]): Promise<void> {
   await Promise.all(orderIds.map((orderId) => deleteOrder(orderId)));
 }
 
-/** Build a full pickup write payload from an existing order with an explicit completed flag. */
-function buildPickupCompletedPayload(order: Order, completed: boolean): ApiPickupWritePayload {
-  const payload = buildPickupWritePayload(orderToFormValues(order));
-  payload.completed = completed;
-  return payload;
-}
-
+/** Mark a pickup complete/incomplete via full live-record PUT + `completed` patch. */
 export async function setOrderCompleted(order: Order, completed: boolean): Promise<void> {
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.PICKUPS}/${order.id}`,
-    buildPickupCompletedPayload(order, completed),
-  );
-  assertMutationSuccess(response, "Unable to update pickup.");
+  if (order.id <= 0) {
+    throw new Error("A valid pickup is required.");
+  }
+
+  const pickupId = String(order.id);
+  // Same as clear-route: partial `{ completed }` alone wipes party fields on PUT.
+  await putPickupWithLiveRecordPatch(pickupId, { completed });
+
+  const after = await fetchOrderById(pickupId);
+  if (after.completed !== completed) {
+    throw new Error(
+      completed ? "Unable to mark pickup complete." : "Unable to mark pickup incomplete.",
+    );
+  }
 }
 
 export async function setOrdersCompleted(orders: Order[], completed: boolean): Promise<void> {

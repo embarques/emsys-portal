@@ -97,7 +97,7 @@ export const CUSTOMER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "customerType",
-    label: "Customer type",
+    label: "Type",
     operators: ["eq", "neq"],
     valueType: "select",
     optionsSource: "customerTypes",

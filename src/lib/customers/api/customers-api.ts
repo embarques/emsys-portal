@@ -809,11 +809,8 @@ export async function updateCustomer(
 
   assertMutationSuccess(response, "Unable to update customer.");
 
-  const updatedCustomer = extractCustomerFromMutationResponse(response.data);
-  if (updatedCustomer) {
-    return updatedCustomer;
-  }
-
+  // Always reload the full customer. Mutation envelopes often omit addresses[],
+  // which would wipe the party address summary on appointment/invoice forms.
   return fetchCustomerById(customerId);
 }
 

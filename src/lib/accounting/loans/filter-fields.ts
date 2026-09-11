@@ -7,28 +7,28 @@ const NUMERIC_OPERATORS = ["eq", "neq", "gte", "lte", "gt", "lt"] as const;
 export const LOAN_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
     field: "openedAt",
-    label: "Opened date",
+    label: "Opened",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "openedAtRange",
-    label: "Opened date range",
+    label: "Opened range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-06-13 to 2026-08-14",
   },
   {
     field: "lastActivityAt",
-    label: "Last activity date",
+    label: "Last activity",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "lastActivityAtRange",
-    label: "Last activity date range",
+    label: "Last activity range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-06-13 to 2026-08-14",

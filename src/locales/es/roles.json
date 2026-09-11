@@ -150,7 +150,7 @@
         "placeholder": "AAAA-MM-DD"
       },
       "createdAtRange": {
-        "label": "Rango de fecha de creación",
+        "label": "Rango de creación",
         "placeholder": "2026-01-01 a 2026-06-30"
       },
       "updatedAt": {
@@ -158,7 +158,7 @@
         "placeholder": "AAAA-MM-DD"
       },
       "updatedAtRange": {
-        "label": "Rango de fecha de modificación",
+        "label": "Rango de actualización",
         "placeholder": "2026-01-01 a 2026-06-30"
       }
     }

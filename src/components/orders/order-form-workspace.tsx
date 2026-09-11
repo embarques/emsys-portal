@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { OrderForm } from "@/components/orders/order-form";
@@ -40,6 +40,14 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
 
   const editing = isEditing ? (detailQuery.data ?? null) : null;
   const editingLabel = editing ? formatOrderId(editing) : undefined;
+  // Stable reference so parent re-renders (e.g. after party customer save) do not
+  // remount/reset the in-progress appointment form via OrderForm's initialValues effect.
+  const emptyInitialValues = useMemo(() => createEmptyOrderForm(), []);
+  const editingInitialValues = useMemo(
+    () => (editing ? orderToFormValues(editing) : null),
+    [editing],
+  );
+  const initialValues = editingInitialValues ?? emptyInitialValues;
 
   useEffect(() => {
     if (isEditing && editingLabel) {
@@ -111,7 +119,7 @@ export function OrderFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostP
     >
       <OrderForm
         key={isEditing ? (editing ? getOrderRecordId(editing) : "edit") : "new"}
-        initialValues={isEditing && editing ? orderToFormValues(editing) : createEmptyOrderForm()}
+        initialValues={initialValues}
         isEditing={isEditing}
         updatedAt={editing?.updatedAt}
         submitLabel={isEditing ? t("common.actions.saveChanges") : t("orders.actions.add")}

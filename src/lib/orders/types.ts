@@ -119,6 +119,32 @@ export type OrderCommentFormValues = {
   description: string;
 };
 
+/**
+ * Take/Pickup item lines are unique per (purpose, itemType):
+ * one Take+box, one Take+barrel, one Take+other, one Pickup+other, etc.
+ * Different items may be combined (Take 1 box + Take 2 barrels + Take other).
+ */
+export function orderCommentItemKey(
+  comment: Pick<OrderCommentFormValues, "purpose" | "itemType">,
+): string | null {
+  const purpose = comment.purpose.trim().toUpperCase();
+  const itemType = comment.itemType.trim().toLowerCase();
+  if (!purpose || !itemType || !orderCommentPurposeRequiresItem(purpose)) return null;
+  return `${purpose}:${itemType}`;
+}
+
+/** True when two Take/Pickup rows share the same item type (e.g. two Take+other). */
+export function hasDuplicateOrderCommentItems(comments: OrderCommentFormValues[]): boolean {
+  const seen = new Set<string>();
+  for (const comment of comments) {
+    const key = orderCommentItemKey(comment);
+    if (!key) continue;
+    if (seen.has(key)) return true;
+    seen.add(key);
+  }
+  return false;
+}
+
 /** A comment is only registered once its required fields are filled. */
 export function isOrderCommentComplete(comment: OrderCommentFormValues): boolean {
   if (!comment.purpose.trim()) return false;

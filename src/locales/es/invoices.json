@@ -434,23 +434,36 @@
         "label": "Rango de números de factura",
         "placeholder": "488800 a 488900"
       },
-      "date": { "label": "Fecha de la factura", "placeholder": "AAAA-MM-DD" },
+      "date": {
+        "label": "Fecha",
+        "placeholder": "AAAA-MM-DD"
+      },
       "dateRange": {
-        "label": "Rango de fechas de factura",
+        "label": "Rango de fecha",
         "placeholder": "2026-01-01 a 2026-06-30"
       },
-      "paidRegion": { "label": "Pagado en" },
-      "paidStatus": { "label": "Estado de pago" },
+      "paidRegion": {
+        "label": "Pagado en"
+      },
+      "paidStatus": {
+        "label": "Estado"
+      },
       "cost": {
         "label": "Total de la factura",
         "placeholder": "Ingrese el monto…"
       },
-      "discount": { "label": "Descuento", "placeholder": "Ingrese el monto…" },
-      "payment": {
-        "label": "Monto pagado",
+      "discount": {
+        "label": "Descuento",
         "placeholder": "Ingrese el monto…"
       },
-      "balance": { "label": "Saldo", "placeholder": "Ingrese el monto…" },
+      "payment": {
+        "label": "Pagado",
+        "placeholder": "Ingrese el monto…"
+      },
+      "balance": {
+        "label": "Saldo",
+        "placeholder": "Ingrese el monto…"
+      },
       "container": {
         "name": {
           "label": "Contenedor",
@@ -459,7 +472,7 @@
       },
       "sender": {
         "name": {
-          "label": "Nombre del remitente",
+          "label": "Remitente",
           "placeholder": "Ingrese el nombre del remitente…"
         },
         "id": {
@@ -477,7 +490,7 @@
       },
       "receiver": {
         "name": {
-          "label": "Nombre del destinatario",
+          "label": "Destinatario",
           "placeholder": "Ingrese el nombre del destinatario…"
         },
         "id": {
@@ -494,10 +507,14 @@
         }
       },
       "createdBy": {
-        "name": { "label": "Creada por" }
+        "name": {
+          "label": "Creada por"
+        }
       },
       "route": {
-        "_id": { "label": "Ruta" }
+        "_id": {
+          "label": "Ruta"
+        }
       },
       "employee": {
         "id": {
@@ -509,22 +526,26 @@
           "placeholder": "Ingrese el nombre del empleado…"
         }
       },
-      "isArchive": { "label": "Archivada" },
-      "isVoid": { "label": "Anulada" },
+      "isArchive": {
+        "label": "Archivada"
+      },
+      "isVoid": {
+        "label": "Anulada"
+      },
       "createdAt": {
-        "label": "Fecha de creación",
+        "label": "Creado el",
         "placeholder": "AAAA-MM-DD"
       },
       "createdAtRange": {
-        "label": "Rango de fechas de creación",
+        "label": "Rango de creación",
         "placeholder": "2026-01-01 a 2026-06-30"
       },
       "updatedAt": {
-        "label": "Fecha de modificación",
+        "label": "Actualizado el",
         "placeholder": "AAAA-MM-DD"
       },
       "updatedAtRange": {
-        "label": "Rango de fechas de modificación",
+        "label": "Rango de actualización",
         "placeholder": "2026-01-01 a 2026-06-30"
       }
     },

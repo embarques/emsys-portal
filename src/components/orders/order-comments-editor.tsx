@@ -49,6 +49,8 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
   const [draft, setDraft] = useState<OrderCommentFormValues | null>(null);
   const advancingRef = useRef(false);
   const draftRef = useRef<OrderCommentFormValues | null>(null);
+  const commentsRef = useRef(comments);
+  commentsRef.current = comments;
 
   useEffect(() => {
     if (editing?.field !== "quantity") return;
@@ -144,7 +146,9 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
     }));
   }
 
-  // Each item (including "Other") may only be used once per purpose within an order.
+  // Each item type is its own line and may only be used once per Take/Pickup
+  // (one Take+other, one Take+box, one Pickup+barrel, …). Different items may
+  // be combined on the same appointment.
   function itemOptionsForRow(index: number) {
     const { purpose } = commentAt(index);
     const takenItems = new Set(
@@ -165,16 +169,43 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
 
   function updateComment(index: number, patch: Partial<OrderCommentFormValues>) {
     if (isDraftIndex(index)) {
-      setDraftState(draft ? { ...draft, ...patch } : null);
+      const next = draft ? { ...draft, ...patch } : null;
+      if (!next) {
+        setDraftState(null);
+        return;
+      }
+      // Promote a complete draft into form state immediately so Save sees Take/Pickup
+      // "Other" text (and other draft rows) instead of reporting "no changes".
+      if (isOrderCommentComplete(next)) {
+        const committedIndex = commentsRef.current.length;
+        const committed = [...commentsRef.current, next];
+        commentsRef.current = committed;
+        setDraftState(null);
+        onChange(committed);
+        if (editing?.index === index) {
+          setEditing({ index: committedIndex, field: editing.field });
+        }
+        if (mobileEditingIndex === index) {
+          setMobileEditingIndex(committedIndex);
+        }
+        return;
+      }
+      setDraftState(next);
       return;
     }
-    onChange(comments.map((comment, commentIndex) => (commentIndex === index ? { ...comment, ...patch } : comment)));
+    const updated = commentsRef.current.map((comment, commentIndex) =>
+      commentIndex === index ? { ...comment, ...patch } : comment,
+    );
+    commentsRef.current = updated;
+    onChange(updated);
   }
 
   function commitDraft(next: OrderCommentFormValues, nextField: CommentField | null) {
-    const newIndex = comments.length;
+    const newIndex = commentsRef.current.length;
+    const committed = [...commentsRef.current, next];
+    commentsRef.current = committed;
     setDraftState(null);
-    onChange([...comments, next]);
+    onChange(committed);
     if (isMobileViewportNow()) {
       setEditing(null);
       setMobileEditingIndex(nextField ? newIndex : null);
@@ -200,7 +231,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
     advancingRef.current = false;
 
     const currentDraft = draftRef.current;
-    const isDraftRow = Boolean(currentDraft) && index === comments.length;
+    const isDraftRow = Boolean(currentDraft) && index === commentsRef.current.length;
 
     if (isDraftRow && currentDraft) {
       // An empty purpose row is never a saved comment, even if a leftover
@@ -231,12 +262,14 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
   }
 
   function finishAndAddAnother(index: number) {
-    if (index === comments.length && draftRef.current) {
+    if (index === commentsRef.current.length && draftRef.current) {
       const current = draftRef.current;
       if (!isOrderCommentComplete(current)) return;
       setDraftState(createEmptyOrderComment());
-      onChange([...comments, current]);
-      const nextIndex = comments.length + 1;
+      const committed = [...commentsRef.current, current];
+      commentsRef.current = committed;
+      onChange(committed);
+      const nextIndex = committed.length;
       if (isMobileViewportNow()) {
         setEditing(null);
         setMobileEditingIndex(nextIndex);
@@ -613,7 +646,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                           value={comment.quantity || "1"}
                           onFocus={highlightQuantityField}
                           onChange={(event) => updateComment(index, { quantity: event.target.value })}
-                          onBlur={() => setEditing(null)}
+                          onBlur={() => handleEditorClose(index, "quantity")}
                           onKeyDown={(event) => {
                             if (event.key !== "Enter" || event.shiftKey) return;
                             event.preventDefault();
@@ -653,7 +686,7 @@ export function OrderCommentsEditor({ comments, onChange }: OrderCommentsEditorP
                               : t("orders.comments.placeholders.note")
                           }
                           onChange={(event) => updateComment(index, { [noteField]: event.target.value })}
-                          onBlur={() => setEditing(null)}
+                          onBlur={() => handleEditorClose(index, "note")}
                           onKeyDown={(event) => {
                             if (event.key !== "Enter" || event.shiftKey) return;
                             event.preventDefault();

@@ -372,6 +372,11 @@ export function OrdersWorkspace() {
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const emptyOrderFormValues = useMemo(() => createEmptyOrderForm(), []);
+  const editingOrderFormValues = useMemo(
+    () => (editingOrder ? orderToFormValues(editingOrder) : null),
+    [editingOrder],
+  );
   const [deleteTarget, setDeleteTarget] = useState<Order | Order[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [assignRouteOpen, setAssignRouteOpen] = useState(false);
@@ -1639,7 +1644,9 @@ export function OrdersWorkspace() {
           <OrderForm
             key={editingOrder ? getOrderRecordId(editingOrder) : "new"}
             initialValues={
-              formMode === "edit" && editingOrder ? orderToFormValues(editingOrder) : createEmptyOrderForm()
+              formMode === "edit" && editingOrderFormValues
+                ? editingOrderFormValues
+                : emptyOrderFormValues
             }
             isEditing={formMode === "edit"}
             updatedAt={editingOrder?.updatedAt}

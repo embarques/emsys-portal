@@ -112,7 +112,7 @@ export const EMPLOYEE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "createdAt",
-    label: "Date created",
+    label: "Created at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",

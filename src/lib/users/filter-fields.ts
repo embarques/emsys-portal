@@ -19,7 +19,7 @@ export const USER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   { field: "name", label: "Name", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter name…" },
   { field: "email", label: "Email", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter email…" },
   { field: "uid", label: "UID", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter UID…" },
-  { field: "role.name", label: "Role name", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter role name…" },
+  { field: "role.name", label: "Role", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter role name…" },
   { field: "branch.name", label: "Branch name", operators: [...TEXT_OPERATORS], valueType: "text", placeholder: "Enter branch name…" },
   {
     field: "active",
@@ -40,14 +40,14 @@ export const USER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "role.id",
-    label: "Role",
+    label: "Role ID",
     operators: ["eq", "neq"],
     valueType: "text",
     placeholder: "Enter role ID…",
   },
   {
     field: "createdAt",
-    label: "Date created",
+    label: "Created at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",

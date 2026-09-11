@@ -120,7 +120,9 @@ export function RecordViewSheetHeader({ title, description, meta }: RecordViewSh
 
 export function RecordViewSheetBody({ children, className }: RecordViewSheetBodyProps) {
   return (
-    <div className={cn("flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", className)}>{children}</div>
+    <div className={cn("min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/35 px-5 py-4", className)}>
+      {children}
+    </div>
   );
 }
 

@@ -15,6 +15,7 @@ import {
   useCustomer,
   useUpdateCustomer,
 } from "@/lib/customers/hooks/use-customers";
+import { stashPartyReturnCustomerId } from "@/lib/customers/party-customer-return";
 import {
   areCustomerFormValuesEquivalent,
   createEmptyCustomerForm,
@@ -81,7 +82,13 @@ export function CustomerFormWorkspace({
 
       const nextCustomer = await createCustomerMutation.mutateAsync(values);
       notifyAdded(t("customers.entity"), nextCustomer.name);
-      // Keep the tab open and reset to a blank template for the next entry.
+      // Opened from appointment/invoice "New" party action: hand the customer
+      // back to the parent form and close. Directory adds stay open for batch entry.
+      if (hasPresetCustomerType) {
+        stashPartyReturnCustomerId(nextCustomer.id);
+        closeFormTabAndReturn(tabId);
+        return;
+      }
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       const { status, category } = formatError(mutationError);
