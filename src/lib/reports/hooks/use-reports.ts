@@ -1,8 +1,10 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
+  fetchReportDefinitions,
   generateIncomeReport,
   generateInvoiceReport,
   generateJournalReport,
@@ -10,8 +12,23 @@ import {
   generateLabelReport,
   generateDeliveryReport,
   generatePickupReport,
+  requestReportGeneration,
 } from "@/lib/reports/api/reports-api";
-import type { ReportRequest } from "@/lib/reports/types";
+import { queryKeys } from "@/lib/query/query-keys";
+import type { NormalizedReportRequest, ReportRequest } from "@/lib/reports/types";
+
+export function useReportDefinitions() {
+  return useWorkspaceQuery({
+    queryKey: queryKeys.reports.definitions(),
+    queryFn: fetchReportDefinitions,
+  });
+}
+
+export function useRequestReportGeneration() {
+  return useMutation({
+    mutationFn: (request: NormalizedReportRequest) => requestReportGeneration(request),
+  });
+}
 
 export function useGenerateIncomeReport() {
   return useMutation({

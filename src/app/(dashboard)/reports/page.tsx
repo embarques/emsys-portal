@@ -1,4 +1,4 @@
-import { ReportsWorkspace } from "@/components/insights/insights-workspaces";
+import { ReportsWorkspace } from "@/components/reports/reports-workspace";
 
 export default function ReportsPage() {
   return <ReportsWorkspace />;

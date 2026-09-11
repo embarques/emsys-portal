@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 
-import { AnalyticsWorkspace, ReportsWorkspace, SecurityWorkspace } from "@/components/insights/insights-workspaces";
+import { AnalyticsWorkspace, SecurityWorkspace } from "@/components/insights/insights-workspaces";
+import { ReportsWorkspace } from "@/components/reports/reports-workspace";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { DailyIncomeWorkspace } from "@/components/accounting/daily-income-workspace";
 import { ChartOfAccountsWorkspace } from "@/components/accounting/chart-of-accounts-workspace";

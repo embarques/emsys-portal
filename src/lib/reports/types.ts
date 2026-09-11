@@ -58,3 +58,44 @@ export type ReportResult = {
   /** ISO timestamp marking when the public URL stops working, when provided. */
   expiresAt: string;
 };
+
+export type ReportDefinition = {
+  id: string;
+  key: string;
+  type: string;
+  name: string;
+  description: string;
+  icon?: string;
+  enabled: boolean;
+  sortOrder: number;
+  filters: ReportFilterKey[];
+};
+
+export type ReportFilterKey =
+  | "date-range"
+  | "single-date"
+  | "customer"
+  | "container"
+  | "invoice"
+  | "invoice-status"
+  | "payment-status"
+  | "payment-method"
+  | "employee"
+  | "loan-status"
+  | "driver"
+  | "location"
+  | "port-destination"
+  | "status"
+  | (string & {});
+
+export type ReportFilterValues = Record<string, string>;
+
+export type NormalizedReportRequest = {
+  reportKey: string;
+  filters: ReportFilterValues;
+};
+
+export type ReportGenerationBoundaryResult = {
+  status: "not-implemented";
+  request: NormalizedReportRequest;
+};

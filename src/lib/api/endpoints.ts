@@ -38,6 +38,7 @@ export const API_ENDPOINTS = {
   ACCOUNTING_LOAN: "/loans",
   CHART_ACCOUNTS: "/chart-accounts",
   ACCOUNTING_PAYMENT_METHODS: "/accounting/paymentmethods",
+  REPORTS: "/reports",
   REPORTS_INCOME: "/reports/income",
   REPORTS_INVOICES: "/reports/invoices",
   REPORTS_JOURNALS: "/reports/journals",
