@@ -21,9 +21,7 @@ export type ReportCollection =
  *   `{ type: "invoice", collection: "invoices", values: ["6a32..."], lookupField: "id" }`
  * - Labels by invoice number (`/reports/labels`):
  *   `{ type: "label", collection: "invoices", values: ["489391"], lookupField: "number" }`
- * - Labels by exact barcode ObjectID (`/reports/labels`):
- *   `{ type: "label", collection: "barcodes", values: ["507f1f77bcf86cd799439011"], lookupField: "id" }`
- * - Labels by barcode number (`/reports/labels`, broader match — avoid for selected-row print):
+ * - Labels by barcode number (`/reports/labels`):
  *   `{ type: "label", collection: "barcodes", values: ["ET045260333"], lookupField: "number" }`
  * - Pickup manifest (`/reports/pickups`):
  *   `{ type: "pickup", collection: "pickups", values: ["42"], lookupField: "id" }`
@@ -59,4 +57,45 @@ export type ReportResult = {
   fileName: string;
   /** ISO timestamp marking when the public URL stops working, when provided. */
   expiresAt: string;
+};
+
+export type ReportDefinition = {
+  id: string;
+  key: string;
+  type: string;
+  name: string;
+  description: string;
+  icon?: string;
+  enabled: boolean;
+  sortOrder: number;
+  filters: ReportFilterKey[];
+};
+
+export type ReportFilterKey =
+  | "date-range"
+  | "single-date"
+  | "customer"
+  | "container"
+  | "invoice"
+  | "invoice-status"
+  | "payment-status"
+  | "payment-method"
+  | "employee"
+  | "loan-status"
+  | "driver"
+  | "location"
+  | "port-destination"
+  | "status"
+  | (string & {});
+
+export type ReportFilterValues = Record<string, string>;
+
+export type NormalizedReportRequest = {
+  reportKey: string;
+  filters: ReportFilterValues;
+};
+
+export type ReportGenerationBoundaryResult = {
+  status: "not-implemented";
+  request: NormalizedReportRequest;
 };

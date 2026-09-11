@@ -35,6 +35,10 @@ export const queryKeys = {
     histogram: (resource: "appointments" | "clients" | "invoices") =>
       [...queryKeys.insights.all, "histogram", resource] as const,
   },
+  reports: {
+    all: ["reports"] as const,
+    definitions: () => [...queryKeys.reports.all, "definitions"] as const,
+  },
   permissions: {
     all: ["permissions"] as const,
     user: () => [...queryKeys.permissions.all, "user"] as const,
