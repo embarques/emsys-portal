@@ -35,6 +35,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
@@ -99,11 +100,24 @@ function isAbortError(error: unknown): boolean {
 
 function getStatusBadgeClass(statusName: string): string {
   const normalized = statusName.trim().toUpperCase();
-  if (normalized.includes("CANCEL")) return "border-transparent bg-destructive/15 text-destructive";
-  if (normalized.includes("DELIVER")) return "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
-  if (normalized.includes("TRANSIT")) return "border-transparent bg-blue-500/15 text-blue-700 dark:text-blue-300";
-  if (normalized.includes("PRINT")) return "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300";
-  if (normalized.includes("CREAT")) return "border-transparent bg-primary/15 text-primary";
+  if (normalized.includes("SUBAST") || normalized.includes("CANCEL")) {
+    return "border-transparent bg-destructive/15 text-destructive";
+  }
+  if (normalized.includes("ENTREG") || normalized.includes("DELIVER")) {
+    return "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+  }
+  if (normalized.includes("TRANSITO") || normalized.includes("TRANSIT")) {
+    return "border-transparent bg-blue-500/15 text-blue-700 dark:text-blue-300";
+  }
+  if (normalized.startsWith("DEV-") || normalized.includes("PRINT")) {
+    return "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300";
+  }
+  if (normalized.startsWith("ALM-") || normalized.includes("CREAT")) {
+    return "border-transparent bg-primary/15 text-primary";
+  }
+  if (normalized.includes("CONDUCE")) {
+    return "border-transparent bg-violet-500/15 text-violet-700 dark:text-violet-300";
+  }
   return "border-transparent bg-muted text-muted-foreground";
 }
 
@@ -235,6 +249,8 @@ export function InvoiceStagingWorkflow({
   onClose,
 }: InvoiceStagingWorkflowProps) {
   const { t } = useTranslation();
+  const { email, displayName } = useAuth();
+  const performedBy = displayName?.trim() || email?.trim() || undefined;
   const { notifyError, notifySuccess, notifyUpdated } = useFeedback();
   const barcodeStatusOptions = useBarcodeStatusOptions();
   const isDialog = presentation === "dialog";
@@ -271,7 +287,7 @@ export function InvoiceStagingWorkflow({
   const [routeDialogOpen, setRouteDialogOpen] = useState(false);
   const [removeConfirm, setRemoveConfirm] = useState<RemoveConfirmTarget | null>(null);
   const [newStatus, setNewStatus] = useState<string>(
-    FALLBACK_BARCODE_STATUS_OPTIONS[1]?.name ?? "PRINTED",
+    FALLBACK_BARCODE_STATUS_OPTIONS[0]?.name ?? "ALM-NY",
   );
   const [newContainerId, setNewContainerId] = useState("");
   const [changeResults, setChangeResults] = useState<LabelChangeOutputRow[]>([]);
@@ -283,10 +299,9 @@ export function InvoiceStagingWorkflow({
   useEffect(() => {
     if (barcodeStatusOptions.some((entry) => entry.name === newStatus)) return;
     setNewStatus(
-      barcodeStatusOptions[1]?.name ??
-        barcodeStatusOptions[0]?.name ??
-        FALLBACK_BARCODE_STATUS_OPTIONS[1]?.name ??
-        "PRINTED",
+      barcodeStatusOptions[0]?.name ??
+        FALLBACK_BARCODE_STATUS_OPTIONS[0]?.name ??
+        "ALM-NY",
     );
   }, [barcodeStatusOptions, newStatus]);
 
@@ -362,12 +377,24 @@ export function InvoiceStagingWorkflow({
     () => generatedLabels.filter((label) => selectedLabelKeys.includes(label.key)),
     [generatedLabels, selectedLabelKeys],
   );
-  const assignBarcodeIds = useMemo(
-    () => [...new Set(selectedLabels.map((label) => label.barcodeId.trim()).filter(Boolean))],
+  const assignBarcodes = useMemo(
+    () =>
+      selectedLabels
+        .filter((label) => label.number.trim().length > 0)
+        .map((label) => ({
+          number: label.number,
+          barcodeId: label.barcodeId,
+          catalogId: label.catalogId,
+          packageSequence: label.packageSequence,
+          invoiceId: label.invoiceId,
+          currentRouteName: label.routeName,
+        })),
     [selectedLabels],
   );
 
-  function recordChangeOutputs(rows: Omit<LabelChangeOutputRow, "id" | "occurredAt">[]) {
+  function recordChangeOutputs(
+    rows: Omit<LabelChangeOutputRow, "id" | "occurredAt" | "createdBy">[],
+  ) {
     if (rows.length === 0) return;
     const occurredAt = new Date().toISOString();
     setChangeResults((current) => [
@@ -375,6 +402,7 @@ export function InvoiceStagingWorkflow({
         ...row,
         id: crypto.randomUUID(),
         occurredAt,
+        createdBy: performedBy,
       })),
       ...current,
     ]);
@@ -548,7 +576,40 @@ export function InvoiceStagingWorkflow({
       })),
     );
 
-    const updates: BarcodeUpdate[] = withNumbers.map((label) => ({
+    const alreadyCurrent = withNumbers.filter(
+      (label) => label.statusId === option.id || label.statusName.trim() === option.name,
+    );
+    const needsUpdate = withNumbers.filter(
+      (label) => label.statusId !== option.id && label.statusName.trim() !== option.name,
+    );
+
+    if (alreadyCurrent.length > 0) {
+      recordChangeOutputs(
+        alreadyCurrent.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: getBarcodeStatusLabel(label.statusName, t),
+          newValue: newStatusLabel,
+          message: t("labels.staging.output.successStatus"),
+          success: true,
+        })),
+      );
+    }
+
+    if (needsUpdate.length === 0) {
+      if (withNumbers.length > 0) {
+        notifyUpdated(
+          t("labels.staging.entities.labelStatus"),
+          t("labels.staging.entities.labelCount", { count: withNumbers.length }),
+        );
+        setStatusDialogOpen(false);
+      } else {
+        notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
+      }
+      return;
+    }
+
+    const updates: BarcodeUpdate[] = needsUpdate.map((label) => ({
       id: label.catalogId ?? 0,
       barcodeId: label.barcodeId,
       invoiceId: label.invoiceId,
@@ -562,22 +623,22 @@ export function InvoiceStagingWorkflow({
       },
     }));
 
-    if (updates.length === 0) {
-      notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
-      return;
-    }
-
     try {
       await updateBarcodesMutation.mutateAsync(updates);
+      const succeededKeys = new Set(needsUpdate.map((label) => label.key));
       setGeneratedLabels((current) =>
         current.map((label) =>
-          selectedLabelKeys.includes(label.key)
+          succeededKeys.has(label.key)
             ? { ...label, statusId: option.id, statusName: option.name }
             : label,
         ),
       );
+      // Keep updated rows visible if a status filter would hide them.
+      if (statusFilter !== "all" && statusFilter !== option.name) {
+        setStatusFilter("all");
+      }
       recordChangeOutputs(
-        withNumbers.map((label) => ({
+        needsUpdate.map((label) => ({
           barcode: label.number,
           invoiceNumber: label.invoiceNumber,
           previousValue: getBarcodeStatusLabel(label.statusName, t),
@@ -588,13 +649,13 @@ export function InvoiceStagingWorkflow({
       );
       notifyUpdated(
         t("labels.staging.entities.labelStatus"),
-        t("labels.staging.entities.labelCount", { count: selected.length }),
+        t("labels.staging.entities.labelCount", { count: withNumbers.length }),
       );
       setStatusDialogOpen(false);
     } catch (error) {
       const message = normalizeApiError(error).message;
       recordChangeOutputs(
-        withNumbers.map((label) => ({
+        needsUpdate.map((label) => ({
           barcode: label.number,
           invoiceNumber: label.invoiceNumber,
           previousValue: getBarcodeStatusLabel(label.statusName, t),
@@ -615,15 +676,7 @@ export function InvoiceStagingWorkflow({
 
   function openRouteDialog() {
     if (selectedLabelKeys.length === 0) return;
-    const barcodeIds = Array.from(
-      new Set(
-        generatedLabels
-          .filter((label) => selectedLabelKeys.includes(label.key))
-          .map((label) => label.barcodeId.trim())
-          .filter(Boolean),
-      ),
-    );
-    if (barcodeIds.length === 0) {
+    if (assignBarcodes.length === 0) {
       notifyError(t("labels.staging.errors.missingBarcodesForRoute"));
       return;
     }
@@ -636,6 +689,7 @@ export function InvoiceStagingWorkflow({
 
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
     const containerLabel = formatContainerLabel(container);
+    const nextContainerName = container.name.trim() || containerLabel;
     const withNumbers = selected.filter((label) => label.number.trim().length > 0);
     const withoutNumbers = selected.filter((label) => label.number.trim().length === 0);
 
@@ -644,13 +698,52 @@ export function InvoiceStagingWorkflow({
         barcode: label.number.trim() || t("common.empty.dash"),
         invoiceNumber: label.invoiceNumber,
         previousValue: label.containerName,
-        newValue: containerLabel,
+        newValue: nextContainerName,
         message: t("labels.staging.output.missingNumber"),
         success: false,
       })),
     );
 
-    const updates: BarcodeUpdate[] = withNumbers.map((label) => ({
+    const alreadyCurrent = withNumbers.filter(
+      (label) =>
+        label.containerId === container.id ||
+        label.containerName.trim() === nextContainerName ||
+        label.containerName.trim() === container.name.trim(),
+    );
+    const needsUpdate = withNumbers.filter(
+      (label) =>
+        label.containerId !== container.id &&
+        label.containerName.trim() !== nextContainerName &&
+        label.containerName.trim() !== container.name.trim(),
+    );
+
+    if (alreadyCurrent.length > 0) {
+      recordChangeOutputs(
+        alreadyCurrent.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: label.containerName,
+          newValue: nextContainerName,
+          message: t("labels.staging.output.successContainer"),
+          success: true,
+        })),
+      );
+    }
+
+    if (needsUpdate.length === 0) {
+      if (withNumbers.length > 0) {
+        notifyUpdated(
+          t("labels.staging.entities.labelContainer"),
+          t("labels.staging.entities.labelCount", { count: withNumbers.length }),
+        );
+        setContainerDialogOpen(false);
+      } else {
+        notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
+      }
+      return;
+    }
+
+    const updates: BarcodeUpdate[] = needsUpdate.map((label) => ({
       id: label.catalogId ?? 0,
       barcodeId: label.barcodeId,
       invoiceId: label.invoiceId,
@@ -662,43 +755,43 @@ export function InvoiceStagingWorkflow({
       },
     }));
 
-    if (updates.length === 0) {
-      notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
-      return;
-    }
-
     try {
       await updateBarcodesMutation.mutateAsync(updates);
+      const succeededKeys = new Set(needsUpdate.map((label) => label.key));
       setGeneratedLabels((current) =>
         current.map((label) =>
-          selectedLabelKeys.includes(label.key)
-            ? { ...label, containerId: container.id, containerName: containerLabel }
+          succeededKeys.has(label.key)
+            ? {
+                ...label,
+                containerId: container.id,
+                containerName: nextContainerName,
+              }
             : label,
         ),
       );
       recordChangeOutputs(
-        withNumbers.map((label) => ({
+        needsUpdate.map((label) => ({
           barcode: label.number,
           invoiceNumber: label.invoiceNumber,
           previousValue: label.containerName,
-          newValue: containerLabel,
+          newValue: nextContainerName,
           message: t("labels.staging.output.successContainer"),
           success: true,
         })),
       );
       notifyUpdated(
         t("labels.staging.entities.labelContainer"),
-        t("labels.staging.entities.labelCount", { count: selected.length }),
+        t("labels.staging.entities.labelCount", { count: withNumbers.length }),
       );
       setContainerDialogOpen(false);
     } catch (error) {
       const message = normalizeApiError(error).message;
       recordChangeOutputs(
-        withNumbers.map((label) => ({
+        needsUpdate.map((label) => ({
           barcode: label.number,
           invoiceNumber: label.invoiceNumber,
           previousValue: label.containerName,
-          newValue: containerLabel,
+          newValue: nextContainerName,
           message,
           success: false,
         })),
@@ -709,9 +802,18 @@ export function InvoiceStagingWorkflow({
 
   function handleRouteAssignResult(result: { success: boolean; routeName: string; message: string }) {
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
-    const assignable = selected.filter((label) => label.barcodeId.trim().length > 0);
-    const skipped = selected.filter((label) => label.barcodeId.trim().length === 0);
+    const assignable = selected.filter((label) => label.number.trim().length > 0);
+    const skipped = selected.filter((label) => label.number.trim().length === 0);
     const dash = t("common.empty.dash");
+    const successMessage = t("labels.staging.output.successRoute");
+
+    // Same route as before still counts as success for the barcode changes log.
+    const alreadyCurrent = assignable.filter(
+      (label) => (label.routeName ?? "").trim() === result.routeName.trim(),
+    );
+    const changed = assignable.filter(
+      (label) => (label.routeName ?? "").trim() !== result.routeName.trim(),
+    );
 
     recordChangeOutputs([
       ...skipped.map((label) => ({
@@ -722,12 +824,20 @@ export function InvoiceStagingWorkflow({
         message: t("labels.staging.output.missingNumber"),
         success: false,
       })),
-      ...assignable.map((label) => ({
+      ...alreadyCurrent.map((label) => ({
         barcode: label.number.trim() || dash,
         invoiceNumber: label.invoiceNumber,
         previousValue: label.routeName ?? "",
         newValue: result.routeName,
-        message: result.message,
+        message: successMessage,
+        success: true,
+      })),
+      ...changed.map((label) => ({
+        barcode: label.number.trim() || dash,
+        invoiceNumber: label.invoiceNumber,
+        previousValue: label.routeName ?? "",
+        newValue: result.routeName,
+        message: result.success ? successMessage : result.message,
         success: result.success,
       })),
     ]);
@@ -1123,7 +1233,7 @@ export function InvoiceStagingWorkflow({
       <AssignBarcodeRouteDialog
         open={routeDialogOpen}
         onOpenChange={setRouteDialogOpen}
-        barcodeIds={assignBarcodeIds}
+        barcodes={assignBarcodes}
         onResult={handleRouteAssignResult}
       />
 

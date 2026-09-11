@@ -27,6 +27,7 @@ import { CustomerContactSummary } from "@/components/orders/customer-contact-sum
 import { UnverifiedAddressNotice } from "@/components/addresses/unverified-address-notice";
 import { InvoiceLineItemsEditor } from "@/components/invoices/invoice-line-items-editor";
 import { WizardField } from "@/components/invoices/invoice-wizard-field";
+import { focusInvoiceWizardField } from "@/components/invoices/invoice-wizard-focus";
 import {
   wizardInputFieldProps,
   wizardSelectClassNameFor,
@@ -518,6 +519,11 @@ export function InvoiceForm({
     }));
     setFormError(null);
 
+    // Pickup auto-fills sender — skip sender and open receiver for the next choice.
+    window.setTimeout(() => {
+      focusInvoiceWizardField(senderId ? "receiverId" : "senderId");
+    }, 0);
+
     if (!senderId) return;
 
     try {
@@ -751,6 +757,7 @@ export function InvoiceForm({
       manualFiltering
       loading={pickupSearch.isFetching}
       onSearchChange={setPickupQuery}
+      advanceFocusOnSelect={false}
       {...(isWizard ? wizardSelectFieldProps(values.pickupId) : {})}
       options={[
         ...(debouncedPickupQuery

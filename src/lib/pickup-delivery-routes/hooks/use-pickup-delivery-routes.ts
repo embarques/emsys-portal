@@ -45,10 +45,15 @@ export function useActiveRoutePicker(
   });
 }
 
-export function useDailyRoutePicker(limit = 200, options: { enabled?: boolean } = {}) {
+export function useDailyRoutePicker(
+  limit = 200,
+  options: { enabled?: boolean; branchCode?: string } = {},
+) {
+  const branchCode = options.branchCode?.trim() || undefined;
   const listParams = {
     ...DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
     limit,
+    ...(branchCode ? { branchCode } : {}),
   };
 
   return useWorkspaceQuery({

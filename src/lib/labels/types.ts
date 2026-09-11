@@ -125,13 +125,17 @@ export type GeneratedLabel = {
   writeTarget?: "barcodes" | "invoice-embedded";
 };
 
-/** Default status applied to a freshly created barcode (per EMSYS API payload docs). */
+/**
+ * Default status for a freshly created barcode.
+ * Backend should apply this when status is omitted; portal sends it on
+ * `POST /barcodes` / label generation so new labels are never empty.
+ */
 export const NEW_BARCODE_STATUS: { id: number; name: string } = {
   id: 1,
-  name: "CREATED",
+  name: "ALM-NY",
 };
 
-/** Barcode lifecycle status from tenant `barcode_statuses` / status-options. */
+/** Barcode location status from tenant `barcode_statuses` / status-options. */
 export type BarcodeStatusOption = {
   id: number;
   name: string;
@@ -140,15 +144,17 @@ export type BarcodeStatusOption = {
 
 /**
  * Offline / bootstrap fallback when `GET /barcodes/status-options` is empty.
- * Prefer live options from the API (seeded with prevStatus).
+ * Prefer live options from the API. Names are location codes, not workflow stages.
  */
 export const FALLBACK_BARCODE_STATUS_OPTIONS: BarcodeStatusOption[] = [
-  { id: 1, name: "CREATED" },
-  { id: 2, name: "PRINTED" },
-  { id: 3, name: "IN TRANSIT" },
-  { id: 4, name: "CONDUCE" },
-  { id: 5, name: "DELIVERED" },
-  { id: 6, name: "CANCELLED" },
+  { id: 1, name: "ALM-NY" },
+  { id: 2, name: "DEV-NY" },
+  { id: 3, name: "EN TRANSITO" },
+  { id: 4, name: "ALM-RD" },
+  { id: 5, name: "DEV-RD" },
+  { id: 6, name: "CONDUCE" },
+  { id: 7, name: "ENTREGADO" },
+  { id: 8, name: "SUBASTADO" },
 ];
 
 /** Resolve a write payload status ref from stored ids/names on a label snapshot. */

@@ -1,6 +1,8 @@
 import type { RouteType } from "@/lib/pickup-delivery-routes/types";
 
 export const DELIVERY_BRANCH_CODE = "RD";
+/** Default US / appointment pickup branch for route assignment pickers. */
+export const PICKUP_BRANCH_CODE = "NY";
 
 export type ActiveRoutesDirectoryVariant = {
   id: "pickup" | "delivery" | "daily";

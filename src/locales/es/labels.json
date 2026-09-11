@@ -1,8 +1,8 @@
 {
   "title": "Escáner de códigos de barras",
   "pages": {
-    "barcodesDescription": "Identifique y rastree cada pieza de mercancía en las facturas a lo largo del envío.",
-    "description": "Escanee el código de barras de un artículo para actualizar su estado en las operaciones."
+    "barcodesDescription": "Consulte los códigos de barras de mercancía creados con las facturas (artículos + etiquetas).",
+    "description": "Escanee un código de barras de mercancía (etiqueta de factura) para actualizar su estado, contenedor o ruta."
   },
   "statuses": {
     "pending": "Pendiente",
@@ -13,12 +13,14 @@
     "cancelled": "Cancelada"
   },
   "barcodeStatuses": {
-    "CREATED": "Creada",
-    "PRINTED": "Impresa",
-    "IN TRANSIT": "En tránsito",
-    "CONDUCE": "Conduce",
-    "DELIVERED": "Entregada",
-    "CANCELLED": "Cancelada"
+    "ALM-NY": "ALM-NY",
+    "DEV-NY": "DEV-NY",
+    "EN TRANSITO": "EN TRANSITO",
+    "ALM-RD": "ALM-RD",
+    "DEV-RD": "DEV-RD",
+    "CONDUCE": "CONDUCE",
+    "ENTREGADO": "ENTREGADO",
+    "SUBASTADO": "SUBASTADO"
   },
   "activity": {
     "actions": {
@@ -67,8 +69,8 @@
       "routes": "Buscar rutas…"
     },
     "results": {
-      "title": "Resultados de actualización",
-      "description": "Las filas verdes tuvieron éxito; las rojas fallaron. Solo se muestran los campos modificados por fila.",
+      "title": "Cambios de códigos de barras",
+      "description": "Los mensajes verdes tuvieron éxito; los rojos fallaron. Solo se completan los campos modificados por fila.",
       "empty": "Escanee un código de barras para ver los resultados aquí."
     },
     "columns": {
@@ -81,9 +83,8 @@
       "newContainer": "Nuevo contenedor",
       "prevRoute": "Ruta anterior",
       "newRoute": "Nueva ruta",
-      "labels": "Etiquetas",
       "dateCreated": "Creado el",
-      "userCreated": "Usuario creador",
+      "userCreated": "Usuario",
       "dateModified": "Actualizado el",
       "message": "Mensaje"
     },
@@ -94,7 +95,7 @@
       "selectNewContainer": "Seleccione un nuevo contenedor.",
       "selectNewRoute": "Seleccione una nueva ruta.",
       "notFound": "No se encontró código de barras para \"{{barcode}}\".",
-      "noChanges": "No se aplicaron cambios: los valores seleccionados coinciden con la etiqueta actual."
+      "noChanges": "Ya está actualizado: los valores seleccionados coinciden con la etiqueta actual."
     },
     "success": {
       "labelUpdated": "Etiqueta actualizada correctamente.",
@@ -109,7 +110,7 @@
   "staging": {
     "title": "Manejador de etiquetas",
     "lineItemsDescription": "Revise los artículos de las facturas seleccionadas, elija cuáles etiquetar y luego genere las etiquetas.",
-    "labelsDescription": "Se crearon códigos de barras donde faltaban y se recuperaron los existentes. Administre estado, contenedor e impresión a continuación.",
+    "labelsDescription": "Los códigos de barras vienen de la factura (artículos + etiquetas). Se recuperan si ya existen; solo se completan si faltan. Administre estado, contenedor e impresión a continuación.",
     "backToInvoices": "Volver a facturas",
     "backToLineItems": "Volver a artículos",
     "done": "Listo",
@@ -202,14 +203,21 @@
       "labelCount": "{{count}} etiqueta(s)"
     },
     "output": {
-      "title": "Cambios / Resultado",
+      "title": "Cambios de códigos de barras",
+      "description": "Los mensajes verdes tuvieron éxito; los rojos fallaron. Solo se completan los campos modificados por fila.",
       "columns": {
         "barcode": "Código de barras",
         "invoice": "Factura",
-        "previousValue": "Valor anterior",
-        "newValue": "Valor nuevo",
-        "message": "Mensaje",
-        "dateTime": "Fecha y hora"
+        "container": "Contenedor",
+        "prevStatus": "Estado anterior",
+        "newStatus": "Nuevo estado",
+        "prevContainer": "Contenedor anterior",
+        "newContainer": "Nuevo contenedor",
+        "prevRoute": "Ruta anterior",
+        "newRoute": "Nueva ruta",
+        "dateTime": "Marca de tiempo",
+        "userCreated": "Usuario",
+        "message": "Mensaje"
       },
       "successStatus": "Estado actualizado correctamente.",
       "successContainer": "Contenedor actualizado correctamente.",

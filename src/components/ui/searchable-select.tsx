@@ -67,6 +67,11 @@ type SearchableSelectProps = {
   onClose?: () => void;
   /** When true, focuses select all visible text so it can be replaced immediately. */
   selectAllOnFocus?: boolean;
+  /**
+   * After selecting an option, move focus to the next form field (default).
+   * Set false when the parent handles post-select focus (e.g. skip an auto-filled field).
+   */
+  advanceFocusOnSelect?: boolean;
   /** Opens options in a bottom sheet on phones. Desktop keeps the normal popover. */
   mobileSheet?: boolean;
   "aria-label"?: string;
@@ -267,6 +272,7 @@ export function SearchableSelect({
   defaultOpen = false,
   onClose,
   selectAllOnFocus = false,
+  advanceFocusOnSelect = true,
   mobileSheet = false,
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
@@ -346,6 +352,8 @@ export function SearchableSelect({
     onValueChange(nextValue);
     changeQuery("");
     setOpen(false);
+
+    if (!advanceFocusOnSelect) return;
 
     const focusTarget = searchable ? inputRef.current : triggerRef.current;
     skipOpenOnFocus = true;

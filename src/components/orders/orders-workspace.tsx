@@ -701,6 +701,16 @@ export function OrdersWorkspace() {
   async function confirmClearRoute() {
     if (selectedOrdersWithRoute.length === 0) return;
 
+    console.info("[clearPickupRoute] UI confirm", {
+      count: selectedOrdersWithRoute.length,
+      orders: selectedOrdersWithRoute.map((order) => ({
+        id: order.id,
+        routeId: order.routeId ?? null,
+        routeName: order.routeName ?? null,
+        senderName: order.sender?.name ?? null,
+      })),
+    });
+
     try {
       const cleared = await clearRouteMutation.mutateAsync(selectedOrdersWithRoute);
       setClearRouteOpen(false);
@@ -710,6 +720,7 @@ export function OrdersWorkspace() {
           : t("orders.toasts.routeCleared_plural", { count: cleared }),
       );
     } catch (mutationError) {
+      console.error("[clearPickupRoute] UI error", mutationError);
       notifyError(normalizeApiError(mutationError).message);
       setClearRouteOpen(false);
     }

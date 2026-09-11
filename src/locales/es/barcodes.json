@@ -3,7 +3,7 @@
   "entityPlural": "códigos de barras",
   "title": "Códigos de barras",
   "pages": {
-    "description": "Identifique y rastree cada pieza de mercancía en las facturas a lo largo del envío."
+    "description": "Consulte los códigos de barras de mercancía creados con las facturas (artículos + etiquetas). Edite estado, contenedor e imprima desde aquí."
   },
   "noun": "códigos de barras",
   "actions": {
@@ -52,13 +52,13 @@
     "barcode": "Cargando código de barras…"
   },
   "empty": {
-    "none": "Aún no hay códigos de barras.",
+    "none": "Aún no hay códigos de barras. Digite una factura con artículos y etiquetas para crearlos.",
     "noMatch": "Ningún código coincide con sus filtros."
   },
   "form": {
     "addTitle": "Agregar código de barras",
     "editTitle": "Editar código de barras",
-    "addDescription": "Cree un nuevo código de barras de envío.",
+    "addDescription": "Agregar manualmente es poco común: los códigos suelen crearse con los artículos y etiquetas de la factura. Úselo solo si falta el registro en el catálogo.",
     "notFound": "No se encontró este código de barras.",
     "sections": {
       "barcode": "Código de barras",

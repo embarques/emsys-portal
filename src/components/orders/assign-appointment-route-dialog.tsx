@@ -20,7 +20,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { formatOrderRouteName } from "@/lib/orders/display";
 import { useAssignPickupsToRoute } from "@/lib/orders/hooks/use-orders";
-import { DAILY_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
+import { DAILY_ROUTES_DIRECTORY_VARIANT, PICKUP_BRANCH_CODE } from "@/lib/pickup-delivery-routes/directory-variant";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { todayDateInputValue } from "@/lib/route-manager/types";
@@ -53,7 +53,10 @@ export function AssignAppointmentRouteDialog({
   const [routeId, setRouteId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const dailyRoutesQuery = useDailyRoutePicker(200, { enabled: open });
+  const dailyRoutesQuery = useDailyRoutePicker(200, {
+    enabled: open,
+    branchCode: PICKUP_BRANCH_CODE,
+  });
   const assignPickupsMutation = useAssignPickupsToRoute();
 
   const dailyRoutes = dailyRoutesQuery.data?.items ?? [];

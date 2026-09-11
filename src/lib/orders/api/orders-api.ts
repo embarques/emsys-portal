@@ -708,9 +708,11 @@ function buildPickupUpdatePayloadFromApiRecord(
   }
 
   if ("route" in patch) {
-    payload.route = patch.route;
     if (patch.route == null) {
+      payload.route = null;
       delete payload.routeNumber;
+    } else {
+      payload.route = patch.route;
     }
   }
 
@@ -721,6 +723,78 @@ function buildPickupUpdatePayloadFromApiRecord(
   return payload;
 }
 
+const CLEAR_ROUTE_DEBUG = "[clearPickupRoute]";
+
+function summarizePickupForClearDebug(record: Record<string, unknown>) {
+  return {
+    keys: Object.keys(record).sort(),
+    route: record.route ?? null,
+    routeNumber: record.routeNumber ?? null,
+    routeAssignmentId: record.routeAssignmentId ?? null,
+    senderName:
+      record.sender && typeof record.sender === "object"
+        ? (record.sender as { name?: unknown }).name
+        : undefined,
+    hasReceivers: Array.isArray(record.receivers),
+    hasReceiver: Boolean(record.receiver),
+    completed: record.completed,
+  };
+}
+
+type ClearRouteBodyStrategy =
+  | "route-null"
+  | "omit-route"
+  | "empty-route-id"
+  | "empty-route-object"
+  | "zero-object-id";
+
+function applyClearRouteBodyStrategy(
+  payload: Record<string, unknown>,
+  strategy: ClearRouteBodyStrategy,
+): void {
+  delete payload.routeNumber;
+  switch (strategy) {
+    case "route-null":
+      payload.route = null;
+      break;
+    case "omit-route":
+      delete payload.route;
+      break;
+    case "empty-route-id":
+      payload.route = { id: "" };
+      break;
+    case "empty-route-object":
+      payload.route = {};
+      break;
+    case "zero-object-id":
+      payload.route = { id: "000000000000000000000000" };
+      break;
+  }
+}
+
+async function putAssignPickupsToRouteRaw(
+  vehicleRouteId: string,
+  pickupIds: number[],
+): Promise<void> {
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUP_ROUTES}/${vehicleRouteId}`,
+    { pickupIds },
+  );
+  assertMutationSuccess(response, "Unable to update appointment route assignment.");
+}
+
+async function pickupStillHasRoute(pickupId: string): Promise<{ stillSet: boolean; routeId: string | null }> {
+  const after = await fetchOrderById(pickupId);
+  const routeId = after.routeId?.trim() || null;
+  console.info(`${CLEAR_ROUTE_DEBUG} verify`, {
+    id: after.id,
+    routeId,
+    routeName: after.routeName ?? null,
+    senderName: after.sender?.name ?? null,
+  });
+  return { stillSet: Boolean(routeId), routeId };
+}
+
 /**
  * PUT /pickups/{id} using the live Pickup record + patch.
  * Confirmed against https://api.embarqueros.com/swagger — update body is `pickup.Pickup`.
@@ -729,24 +803,152 @@ async function putPickupWithLiveRecordPatch(
   orderId: string,
   patch: { route?: ApiRouteRef | null; completed?: boolean },
   fallbackMessage = "Unable to update appointment.",
+  debugLabel?: string,
 ): Promise<void> {
   const pickupId = orderId.trim();
   const record = await fetchPickupApiRecord(pickupId);
   const payload = buildPickupUpdatePayloadFromApiRecord(record, patch);
 
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.PICKUPS}/${pickupId}`,
-    payload,
-  );
-  assertMutationSuccess(response, fallbackMessage);
+  if (debugLabel) {
+    console.info(`${debugLabel} live GET /pickups/${pickupId}`, summarizePickupForClearDebug(record as Record<string, unknown>));
+    console.info(`${debugLabel} PUT /pickups/${pickupId} payload summary`, {
+      patch,
+      payloadKeys: Object.keys(payload).sort(),
+      route: Object.prototype.hasOwnProperty.call(payload, "route") ? payload.route : "(omitted)",
+      senderName:
+        payload.sender && typeof payload.sender === "object"
+          ? (payload.sender as { name?: unknown }).name
+          : undefined,
+    });
+    console.info(`${debugLabel} PUT /pickups/${pickupId} full payload`, payload);
+  }
+
+  try {
+    const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+      `${API_ENDPOINTS.PICKUPS}/${pickupId}`,
+      payload,
+    );
+
+    if (debugLabel) {
+      const data =
+        response?.data && typeof response.data === "object"
+          ? (response.data as Record<string, unknown>)
+          : null;
+      console.info(`${debugLabel} PUT /pickups/${pickupId} response`, {
+        success: response?.success,
+        message: response?.message,
+        dataRoute: data?.route ?? null,
+        raw: response,
+      });
+    }
+
+    assertMutationSuccess(response, fallbackMessage);
+  } catch (error) {
+    if (debugLabel) {
+      console.error(`${debugLabel} PUT /pickups/${pickupId} failed`, error);
+    }
+    throw error;
+  }
+}
+
+async function tryClearRouteViaPickupPut(
+  pickupId: string,
+  strategy: ClearRouteBodyStrategy,
+): Promise<boolean> {
+  const record = await fetchPickupApiRecord(pickupId);
+  const payload = buildPickupUpdatePayloadFromApiRecord(record, {});
+  applyClearRouteBodyStrategy(payload, strategy);
+
+  console.info(`${CLEAR_ROUTE_DEBUG} try PUT strategy=${strategy}`, {
+    hasRouteKey: Object.prototype.hasOwnProperty.call(payload, "route"),
+    route: Object.prototype.hasOwnProperty.call(payload, "route") ? payload.route : "(omitted)",
+    payloadKeys: Object.keys(payload).sort(),
+  });
+
+  try {
+    const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+      `${API_ENDPOINTS.PICKUPS}/${pickupId}`,
+      payload,
+    );
+    const data =
+      response?.data && typeof response.data === "object"
+        ? (response.data as Record<string, unknown>)
+        : null;
+    console.info(`${CLEAR_ROUTE_DEBUG} PUT strategy=${strategy} response`, {
+      success: response?.success,
+      message: response?.message,
+      dataRoute: data?.route ?? null,
+    });
+    assertMutationSuccess(response, "Unable to clear appointment route.");
+  } catch (error) {
+    console.warn(`${CLEAR_ROUTE_DEBUG} PUT strategy=${strategy} rejected`, error);
+    return false;
+  }
+
+  const { stillSet } = await pickupStillHasRoute(pickupId);
+  console.info(`${CLEAR_ROUTE_DEBUG} PUT strategy=${strategy} result`, {
+    cleared: !stillSet,
+  });
+  return !stillSet;
 }
 
 /**
- * Unassign an appointment from its scheduled route via `PUT /pickups/{id}` with
- * `route: null` on the full Pickup model (Swagger update contract).
+ * Clear by rewriting the route membership through `PUT /pickups/route/{routeId}`.
+ * Live update ignores `route: null` / omitted `route` on `PUT /pickups/{id}`.
+ */
+async function tryClearRouteViaAssignRewrite(order: Order): Promise<boolean> {
+  const routeId = order.routeId?.trim();
+  if (!routeId) {
+    console.warn(`${CLEAR_ROUTE_DEBUG} assign-rewrite skipped — no routeId on order`);
+    return false;
+  }
+
+  const onRoute = await fetchAllPickupsByRoute(routeId);
+  const remainingIds = onRoute.filter((pickup) => pickup.id !== order.id).map((pickup) => pickup.id);
+
+  console.info(`${CLEAR_ROUTE_DEBUG} try assign-rewrite`, {
+    routeId,
+    onRouteCount: onRoute.length,
+    remainingIds,
+    clearingId: order.id,
+  });
+
+  // Prefer set-replace: put remaining membership (may be empty when clearing the last stop).
+  try {
+    await putAssignPickupsToRouteRaw(routeId, remainingIds);
+    const afterReplace = await pickupStillHasRoute(String(order.id));
+    if (!afterReplace.stillSet) {
+      console.info(`${CLEAR_ROUTE_DEBUG} assign-rewrite set-replace cleared`);
+      return true;
+    }
+    console.warn(`${CLEAR_ROUTE_DEBUG} assign-rewrite set-replace left route set`, afterReplace);
+  } catch (error) {
+    console.warn(`${CLEAR_ROUTE_DEBUG} assign-rewrite set-replace rejected`, error);
+  }
+
+  // Fallback: clear-all then re-add remaining (works if empty list unassigns everyone).
+  try {
+    await putAssignPickupsToRouteRaw(routeId, []);
+    if (remainingIds.length > 0) {
+      await putAssignPickupsToRouteRaw(routeId, remainingIds);
+    }
+    const afterReset = await pickupStillHasRoute(String(order.id));
+    console.info(`${CLEAR_ROUTE_DEBUG} assign-rewrite clear-all-then-readd result`, {
+      cleared: !afterReset.stillSet,
+    });
+    return !afterReset.stillSet;
+  } catch (error) {
+    console.warn(`${CLEAR_ROUTE_DEBUG} assign-rewrite clear-all-then-readd rejected`, error);
+    return false;
+  }
+}
+
+/**
+ * Unassign an appointment from its scheduled route.
  *
- * Assign remains `PUT /pickups/route/{routeId}` with `{ pickupIds }`. There is no
- * DELETE unassign endpoint on that path.
+ * Live API accepts `PUT /pickups/{id}` with `"route": null` (or omitted route) but
+ * does not clear the assignment. We try several body shapes, then fall back to
+ * rewriting membership via `PUT /pickups/route/{routeId}`.
  */
 export async function clearPickupRouteAssignment(order: Order): Promise<void> {
   if (order.id <= 0) {
@@ -754,11 +956,50 @@ export async function clearPickupRouteAssignment(order: Order): Promise<void> {
   }
 
   const pickupId = String(order.id);
-  await putPickupWithLiveRecordPatch(pickupId, { route: null }, "Unable to clear appointment route.");
+  console.info(`${CLEAR_ROUTE_DEBUG} start`, {
+    id: order.id,
+    routeId: order.routeId ?? null,
+    routeName: order.routeName ?? null,
+    senderName: order.sender?.name ?? null,
+  });
 
-  const after = await fetchOrderById(pickupId);
-  if (after.routeId?.trim()) {
+  try {
+    // Resolve live route id if the list row is stale.
+    let workingOrder = order;
+    if (!workingOrder.routeId?.trim()) {
+      workingOrder = await fetchOrderById(pickupId);
+    }
+
+    const putStrategies: ClearRouteBodyStrategy[] = [
+      "empty-route-id",
+      "empty-route-object",
+      "zero-object-id",
+      "route-null",
+      "omit-route",
+    ];
+
+    for (const strategy of putStrategies) {
+      const cleared = await tryClearRouteViaPickupPut(pickupId, strategy);
+      if (cleared) {
+        console.info(`${CLEAR_ROUTE_DEBUG} success`, { id: order.id, strategy });
+        return;
+      }
+    }
+
+    const clearedViaAssign = await tryClearRouteViaAssignRewrite(workingOrder);
+    if (clearedViaAssign) {
+      console.info(`${CLEAR_ROUTE_DEBUG} success`, { id: order.id, strategy: "assign-rewrite" });
+      return;
+    }
+
+    console.error(`${CLEAR_ROUTE_DEBUG} all strategies failed`, { id: order.id });
     throw new Error("Unable to clear appointment route.");
+  } catch (error) {
+    console.error(`${CLEAR_ROUTE_DEBUG} failed`, {
+      id: order.id,
+      error,
+    });
+    throw error;
   }
 }
 
@@ -769,7 +1010,10 @@ export async function clearPickupRouteAssignments(orders: Order[]): Promise<numb
     throw new Error("Select at least one appointment to remove from the route.");
   }
 
-  await Promise.all(eligibleOrders.map((order) => clearPickupRouteAssignment(order)));
+  // Sequential — assign-rewrite for the same route must not race.
+  for (const order of eligibleOrders) {
+    await clearPickupRouteAssignment(order);
+  }
   return eligibleOrders.length;
 }
 

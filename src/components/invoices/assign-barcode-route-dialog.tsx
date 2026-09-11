@@ -18,8 +18,9 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
 import { useAssignBarcodesToRoute } from "@/lib/labels/hooks/use-barcodes";
+import type { AssignBarcodeToRouteTarget } from "@/lib/labels/api/barcodes-api";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
-import { DAILY_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
+import { DAILY_ROUTES_DIRECTORY_VARIANT, DELIVERY_BRANCH_CODE } from "@/lib/pickup-delivery-routes/directory-variant";
 import {
   buildActiveRouteAssignmentOptions,
   formatActiveRouteReferenceLabel,
@@ -35,14 +36,14 @@ export type AssignBarcodeRouteResult = {
 type AssignBarcodeRouteDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  barcodeIds: string[];
+  barcodes: AssignBarcodeToRouteTarget[];
   onResult?: (result: AssignBarcodeRouteResult) => void;
 };
 
 export function AssignBarcodeRouteDialog({
   open,
   onOpenChange,
-  barcodeIds,
+  barcodes,
   onResult,
 }: AssignBarcodeRouteDialogProps) {
   const { t } = useTranslation();
@@ -51,7 +52,10 @@ export function AssignBarcodeRouteDialog({
   const [routeId, setRouteId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const dailyRoutesQuery = useDailyRoutePicker(200, { enabled: open });
+  const dailyRoutesQuery = useDailyRoutePicker(200, {
+    enabled: open,
+    branchCode: DELIVERY_BRANCH_CODE,
+  });
   const assignBarcodesMutation = useAssignBarcodesToRoute();
 
   const dailyRoutes = dailyRoutesQuery.data?.items ?? [];
@@ -69,7 +73,7 @@ export function AssignBarcodeRouteDialog({
   }, [open]);
 
   const isSaving = assignBarcodesMutation.isPending;
-  const canSubmit = barcodeIds.length > 0 && Boolean(routeId) && !isSaving;
+  const canSubmit = barcodes.length > 0 && Boolean(routeId) && !isSaving;
 
   function handleOpenChange(nextOpen: boolean) {
     if (isSaving) return;
@@ -90,21 +94,44 @@ export function AssignBarcodeRouteDialog({
   async function confirmAssign() {
     if (!canSubmit) return;
 
-    try {
-      const result = await assignBarcodesMutation.mutateAsync({ routeId, barcodeIds });
-      const routeName =
-        result.routeName ||
-        (selectedRoute ? formatActiveRouteReferenceLabel(selectedRoute, t) : "") ||
-        routeId;
+    const routeName = selectedRoute
+      ? formatActiveRouteReferenceLabel(selectedRoute, t)
+      : routeId;
+
+    const needsUpdate = barcodes.filter(
+      (barcode) => (barcode.currentRouteName ?? "").trim() !== routeName.trim(),
+    );
+
+    if (needsUpdate.length === 0) {
       const message = t("labels.staging.output.successRoute");
       notifySuccess(
         t("labels.staging.success.assignedToRoute", {
-          count: result.assignedCount,
+          count: barcodes.length,
           route: routeName,
-          trip: result.tripNumber,
+          trip: 0,
         }),
       );
       onResult?.({ success: true, routeName, message });
+      onOpenChange(false);
+      return;
+    }
+
+    try {
+      const result = await assignBarcodesMutation.mutateAsync({
+        routeId,
+        routeName,
+        barcodes: needsUpdate,
+      });
+      const assignedRouteName = result.routeName || routeName;
+      const message = t("labels.staging.output.successRoute");
+      notifySuccess(
+        t("labels.staging.success.assignedToRoute", {
+          count: barcodes.length,
+          route: assignedRouteName,
+          trip: result.tripNumber,
+        }),
+      );
+      onResult?.({ success: true, routeName: assignedRouteName, message });
       onOpenChange(false);
     } catch (error) {
       const message = normalizeApiError(error).message;
@@ -112,16 +139,16 @@ export function AssignBarcodeRouteDialog({
       notifyError(message);
       onResult?.({
         success: false,
-        routeName: selectedRoute ? formatActiveRouteReferenceLabel(selectedRoute, t) : routeId,
+        routeName,
         message,
       });
     }
   }
 
   const description =
-    barcodeIds.length === 1
-      ? t("labels.staging.routeDialog.description", { count: barcodeIds.length })
-      : t("labels.staging.routeDialog.description_plural", { count: barcodeIds.length });
+    barcodes.length === 1
+      ? t("labels.staging.routeDialog.description", { count: barcodes.length })
+      : t("labels.staging.routeDialog.description_plural", { count: barcodes.length });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

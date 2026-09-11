@@ -99,27 +99,49 @@ Keep **`createdBy`** as the user who digitized the invoice. **`createdAt`** is t
 
 ### Barcodes
 
-Barcodes are used to identify and track individual items within invoices.
+Barcodes identify and track **individual pieces of merchandise on an invoice**.
 
-The system manages the barcode/label assigned to each item, allowing us to track specific merchandise throughout the shipping process.
+**Creation source of truth:** barcodes are created when an **invoice is digitized** with line items and a **labels** count. The API creates those labels on the invoice (`invoiceDetails.barcodes`). Do not treat standalone `/barcodes` catalog creates as the normal path for merchandise labels.
 
-Barcode lifecycle statuses come from the tenant `barcode_statuses` collection via `GET /v1/barcodes/status-options` (labels:view). The catalog is seeded on tenant creation (including `prevStatus`) and drives barcode forms, the scanner, and invoice label staging.
+```txt
+Invoice (line items + labels count)
+  → Barcodes created on the invoice
+    → Label manager (Invoices → Manage invoice items): status, container, print, route
+    → Barcode Scanner: scan number → update status / container / route
+    → Barcodes table (Barcode Manager): browse / edit / print the same merchandise labels
+```
+
+**Surfaces (same labels, different jobs):**
+
+| Surface | Role |
+| --- | --- |
+| **Label manager** | Invoice-scoped: retrieve / manage labels for selected invoice line items |
+| **Barcode Scanner** | Operations: find a label by printed number and update location fields |
+| **Barcodes table** | Directory of merchandise labels (expect invoice-originated records, not orphan creates) |
+
+Lookups and updates should prefer **invoice-embedded** barcodes when the number lives on an invoice. The `/barcodes` catalog may mirror or denormalize the same labels for directory search and reports; keep both stores in sync when the portal updates status, container, or route.
+
+Barcode **status** is a manual location flag in the logistics process (where the piece is now), not an automatic workflow stage. Workers assign it via the scanner, label staging, or barcode forms. Status options come from the tenant `barcode_statuses` collection via `GET /v1/barcodes/status-options` (labels:view). Typical values include `ALM-NY`, `DEV-NY`, `EN TRANSITO`, `ALM-RD`, `DEV-RD`, `CONDUCE`, `ENTREGADO`, `SUBASTADO`.
+
+**Default on create:** every newly created barcode / invoice line-item label should start as **`ALM-NY`**. The API should set this when status is omitted (including barcodes created with the invoice). The portal also sends `ALM-NY` when it must gap-fill a missing label so creates are never empty. Later location changes stay manual.
 
 On invoice-embedded barcodes, **`barcodeId`** is the unique ObjectID used for print selection and matching. Numeric **`id`** is the package sequence only (not unique across invoices). Selected-label printing uses `POST /reports/labels` with `collection=barcodes` and `lookup_field=id` so duplicate numbers or package sequences cannot broaden the PDF. Numeric id remains a legacy fallback when `barcodeId` is missing.
+
+TODO (backend): when creating barcodes with the invoice (from line items + labels), also upsert the same records into the `/barcodes` catalog (or expose a barcode→invoice lookup) so Barcode Manager and the scanner never miss labels that Label manager already shows.
 
 Barcodes can be used to:
 
 - Identify individual items
-- Track item status
+- Track item location status
 - Associate items with invoices
 - Track movement through our operations
 - Update item status through scanning
 
 ### Barcode Scanner
 
-The barcode scanner provides a quick way to scan an item's barcode and update its status.
+The barcode scanner provides a quick way to scan an item's barcode and update its location status.
 
-This allows workers to efficiently process merchandise as it moves through different stages of our operation without having to manually search for each item. Status pickers load from the same `status-options` endpoint.
+Scanned numbers are merchandise labels that originated on an invoice. Resolve by invoice embed first, then catalog. This allows workers to mark where merchandise is without opening the invoice. Status pickers load from the same `status-options` endpoint.
 
 ### Inventory
 

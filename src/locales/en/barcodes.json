@@ -3,7 +3,7 @@
   "entityPlural": "barcodes",
   "title": "Barcodes",
   "pages": {
-    "description": "Identify and track individual pieces of merchandise on invoices throughout shipping."
+    "description": "Browse merchandise barcodes created with invoices (line items + labels). Edit status, container, and print from here."
   },
   "noun": "barcodes",
   "actions": {
@@ -52,13 +52,13 @@
     "barcode": "Loading barcode…"
   },
   "empty": {
-    "none": "No barcodes yet.",
+    "none": "No barcodes yet. Digitize an invoice with line items and labels to create them.",
     "noMatch": "No barcodes match your filters."
   },
   "form": {
     "addTitle": "Add barcode",
     "editTitle": "Edit barcode",
-    "addDescription": "Create a new shipment barcode.",
+    "addDescription": "Manual add is rare — barcodes normally come from invoice line items and labels. Use this only to register a missing catalog row.",
     "notFound": "This barcode could not be found.",
     "sections": {
       "barcode": "Barcode",
