@@ -496,7 +496,9 @@ Party address snapshots (`sender.address` / `receiver.address`) should round-tri
 
 ### `PUT /v1/pickups/{id}`
 
-Same `CreatePickupRequest` shape. `{id}` = numeric. Set `"route": null` to clear a scheduled vehicle-route assignment.
+Uses the full `pickup.Pickup` model (Swagger), not `CreatePickupRequest`. `{id}` = numeric.
+Include party/branch fields from a fresh GET when patching. Set `"route": null` to clear a
+scheduled vehicle-route (appointment route) assignment.
 
 ### Pickup routes — `POST /v1/pickups/route`
 
