@@ -29,6 +29,7 @@ import {
   UserCog,
   Users,
   Warehouse,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 
@@ -328,6 +329,12 @@ export const navigationSections: NavigationSection[] = [
             href: "/employees",
             icon: IdCard,
             permission: PERMISSIONS.employeesView,
+          },
+          {
+            labelKey: "navigation.items.userActivities",
+            href: "/user-activities",
+            icon: ClipboardList,
+            permission: PERMISSIONS.userActivitiesView,
           },
           {
             labelKey: "navigation.items.security",

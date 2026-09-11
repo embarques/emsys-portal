@@ -67,6 +67,11 @@ export const PERMISSIONS = {
   usersView: { name: "canViewUser", resourceType: "user" },
   /** Roles UI — no seed; gate with user view until API adds role permissions. */
   rolesView: { name: "canViewUser", resourceType: "user" },
+  /**
+   * User Activity (audit log). Prefer dedicated seed when API adds it;
+   * until then gate with user view (same as Security).
+   */
+  userActivitiesView: { name: "canViewUserActivity", resourceType: "user_activity" },
   employeesView: { name: "canViewEmployee", resourceType: "employee" },
   accountSettingsView: { name: "canViewSettings", resourceType: "settings" },
   branchesView: { name: "canViewBranch", resourceType: "branch" },
@@ -157,6 +162,7 @@ const PERMISSION_GRANT_ALIASES: Record<string, readonly string[]> = {
   "invoice:canviewinvoice": ["invoiceitem:canviewinvoiceitem"],
   "delivery:canviewdelivery": ["inventory:canviewinventory"],
   "user:canviewuser": ["role:canviewrole"],
+  "user_activity:canviewuseractivity": ["user:canviewuser"],
   "branch:canviewbranch": ["settings:canviewsettings"],
 };
 
@@ -185,6 +191,7 @@ const VIEW_NAME_ALIASES: Record<string, readonly string[]> = {
   ...INVENTORY_VIEW_NAME_ALIASES,
   canviewdelivery: ["canviewinventory"],
   canviewuser: ["canviewrole"],
+  canviewuseractivity: ["canviewuser", "canviewuseractivity"],
   canviewbranch: ["canviewsettings", "canviewbranch"],
 };
 

@@ -287,8 +287,65 @@ This includes:
 - Employees
 - Users
 - Roles and permissions
+- **User Activity** (audit log of who did what across the system)
 - Company configuration
 - Other administrative controls
+
+#### User Activity (Admin)
+
+Replaces the legacy screen at `tenares.embarqueros.com` → `#menu/useractivities`.
+
+Portal route: `/user-activities` (Admin sidebar). The portal is a **read-only consumer** of activities recorded by the API.
+
+**Probe (api.embarqueros.com Swagger, 2026-09-11):** there is **no** user-activity / audit-log API yet.
+
+- Swagger has **121** paths and tags for invoice, user, role, journal, income_statement, etc.
+- **Zero** paths or tags for `user-activities`, `activities`, `audits`, or `audit-logs`
+- Invoice models have **no** `activity` / `severity` fields
+- Portal invoice “activity” timelines are **frontend-synthetic** (built from invoice create/payment/comment data) — not a system-wide audit log
+
+Do not confuse:
+
+| Concept | Means |
+| --- | --- |
+| Admin → User Activity | Company-wide audit of user actions (`origin` + entity `id`) |
+| Invoice view → Activity | Per-invoice synthetic timeline in the portal only |
+
+##### Backend TODO (adjusted: build from scratch)
+
+Nothing to reuse for list/search of user activities. Implement the full surface:
+
+1. **Data model** (every activity):
+   - `timestamp` — when it occurred
+   - `user` — who performed it (`id` + display name at minimum)
+   - `description` — human-readable action text
+   - `origin` — module/entity type (`invoice`, `payment`, `income_statement`, …)
+   - `id` — **entity** record id (with `origin`, identifies the referenced record; **not** a separate `invoice` field)
+   - `quantity` — optional, only when relevant
+   - `severity` — `common` | `uncommon` | `rare` (API-owned; never computed on the frontend)
+   - Document primary key: expose as `_id` / `activityId` so it does not collide with entity `id`
+
+2. **Centralized severity mapping** (API decides from action type), e.g.:
+   - Common — normal create/update/view-style work
+   - Uncommon — posting payments, closing daily incomes
+   - Rare — deletes, reopening cuadres, destructive ops
+
+3. **Write path** — record activities in the **API** on relevant mutations so all clients (portal, legacy, scripts) are covered. Frontend must not be the sole writer.
+
+4. **Legacy alignment** — map historical user-activity rows into the new shape without dropping data:
+   - timestamp / user / details → `timestamp` / `user` / `description`
+   - legacy invoice (or similar) → `origin` + `id`
+   - keep `quantity` when present
+   - assign historical `severity` from action/type mapping
+   - fallback origin (e.g. `legacy`) when classification is unclear; preserve leftover fields in description or metadata rather than discarding
+
+5. **List API** (portal directory):
+   - `GET /v1/user-activities` — paginated list (default sort `timestamp:desc`)
+   - `POST /v1/user-activities/search` — Stripe-style search (user, description, origin, entity `id`, severity, date range)
+   - Permission seed (recommended): `user_activity` / `canViewUserActivity` (portal currently gates with user view until seeded)
+   - OpenAPI/Swagger docs for model + endpoints
+
+6. **Portal** consumes severity for display only: common = default, uncommon = yellow, rare = red.
 
 ### Reports
 

@@ -1,0 +1,25 @@
+{
+  "title": "User Activity",
+  "description": "Company-wide audit log of user actions across EMSYS.",
+  "noun": "activities",
+  "searchPlaceholder": "Search description, user, origin, or ID…",
+  "columns": {
+    "timestamp": "Timestamp",
+    "user": "User",
+    "description": "Description",
+    "origin": "Origin",
+    "id": "ID",
+    "quantity": "Quantity",
+    "severity": "Severity"
+  },
+  "severity": {
+    "common": "Common",
+    "uncommon": "Uncommon",
+    "rare": "Rare"
+  },
+  "empty": {
+    "loading": "Loading activities…",
+    "noResults": "No user activities yet.",
+    "noMatches": "No activities match your search."
+  }
+}

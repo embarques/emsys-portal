@@ -24,6 +24,7 @@ import { OrdersMapWorkspace } from "@/components/orders/orders-map-workspace";
 import { RolesWorkspace } from "@/components/roles/roles-workspace";
 import { RouteManagerWorkspace } from "@/components/route-manager/route-manager-workspace";
 import { DailyRoutesWorkspace } from "@/components/pickup-delivery-routes/daily-routes-workspace";
+import { UserActivitiesWorkspace } from "@/components/user-activities/user-activities-workspace";
 import { UsersWorkspace } from "@/components/users/users-workspace";
 import { VehiclesWorkspace } from "@/components/vehicles/vehicles-workspace";
 import { navigation, topNavigationItems } from "@/config/navigation";
@@ -60,6 +61,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/users": UsersWorkspace,
   "/roles": RolesWorkspace,
   "/employees": EmployeesWorkspace,
+  "/user-activities": UserActivitiesWorkspace,
   "/security": SecurityWorkspace,
   "/branches": BranchesWorkspace,
   "/settings": ConfigurationWorkspace,

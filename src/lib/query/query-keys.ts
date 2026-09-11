@@ -17,6 +17,7 @@ import type { LoanListParams } from "@/lib/accounting/loans/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
 import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
 import type { InventoryListParams } from "@/lib/inventory/types/list";
+import type { UserActivityListParams } from "@/lib/user-activities/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
 
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
@@ -283,6 +284,11 @@ export const queryKeys = {
       [...queryKeys.users.all, "stats", scope, roleId] as const,
     detail: (userId: string) => [...queryKeys.users.all, "detail", userId] as const,
     current: () => [...queryKeys.users.all, "current"] as const,
+  },
+  userActivities: {
+    all: ["user-activities"] as const,
+    lists: () => [...queryKeys.userActivities.all, "list"] as const,
+    list: (params: UserActivityListParams) => [...queryKeys.userActivities.lists(), params] as const,
   },
   filterPresets: {
     all: ["filter-presets"] as const,
