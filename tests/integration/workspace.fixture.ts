@@ -49,6 +49,9 @@ export async function waitForWorkspaceShell(page: Page) {
   await expect(page.getByTestId("workspace-empty-tabs")).toHaveCount(0, {
     timeout: 15_000,
   });
+  await expect(page.getByTestId("workspace-default-dashboard")).toHaveCount(0, {
+    timeout: 15_000,
+  });
   await expect(workspaceMain(page).locator("[data-tab-id]").first()).toBeVisible({
     timeout: 15_000,
   });
@@ -385,7 +388,8 @@ export async function gotoWorkspace(page: Page, pathname: string, options: GotoW
   });
 
   const emptyTabState = page.getByTestId("workspace-empty-tabs");
-  if (await emptyTabState.isVisible()) {
+  const defaultDashboard = page.getByTestId("workspace-default-dashboard");
+  if (pathname !== "/" && ((await emptyTabState.isVisible()) || (await defaultDashboard.isVisible()))) {
     await openWorkspaceFromSidebar(page, pathname);
   }
 

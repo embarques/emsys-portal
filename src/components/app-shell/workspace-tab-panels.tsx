@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 
+import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { useTranslation } from "@/lib/i18n";
 import { workspaceContentFrameClassName } from "@/lib/layout/workspace-content-layout";
 import { resolveWorkspaceComponent } from "@/lib/layout/workspace-registry";
@@ -44,18 +45,12 @@ const WorkspaceTabPanel = memo(function WorkspaceTabPanel({ tab, active }: Works
 });
 
 export function WorkspaceTabPanels() {
-  const { t } = useTranslation();
   const { tabs, activeTabId } = useWorkspaceTabs();
 
   if (tabs.length === 0) {
     return (
-      <div className={workspaceContentFrameClassName}>
-        <div
-          data-testid="workspace-empty-tabs"
-          className="rounded-xl border border-dashed bg-muted/20 p-10 text-center text-sm text-muted-foreground"
-        >
-          {t("shell.tabs.emptyState")}
-        </div>
+      <div className={workspaceContentFrameClassName} data-testid="workspace-default-dashboard">
+        <DashboardWorkspace />
       </div>
     );
   }
