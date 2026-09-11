@@ -49,6 +49,7 @@
     "users": "Users",
     "roles": "Roles",
     "employees": "Employees",
+    "userActivities": "User Activity",
     "security": "Security",
     "branches": "Branches",
     "settings": "Settings"

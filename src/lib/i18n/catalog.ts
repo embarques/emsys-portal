@@ -22,6 +22,7 @@ import enBranches from "@/locales/en/branches.json";
 import enVehicles from "@/locales/en/vehicles.json";
 import enReports from "@/locales/en/reports.json";
 import enRoles from "@/locales/en/roles.json";
+import enUserActivities from "@/locales/en/user-activities.json";
 import enUsers from "@/locales/en/users.json";
 import esCommon from "@/locales/es/common.json";
 import esContainers from "@/locales/es/containers.json";
@@ -42,6 +43,7 @@ import esShell from "@/locales/es/shell.json";
 import esBarcodes from "@/locales/es/barcodes.json";
 import esAccounting from "@/locales/es/accounting.json";
 import esBranches from "@/locales/es/branches.json";
+import esUserActivities from "@/locales/es/user-activities.json";
 import esUsers from "@/locales/es/users.json";
 import esVehicles from "@/locales/es/vehicles.json";
 import esReports from "@/locales/es/reports.json";
@@ -75,6 +77,7 @@ const catalogs: Record<Locale, MessageTree> = {
     branches: enBranches,
     vehicles: enVehicles,
     roles: enRoles,
+    userActivities: enUserActivities,
     users: enUsers,
   },
   es: {
@@ -100,6 +103,7 @@ const catalogs: Record<Locale, MessageTree> = {
     branches: esBranches,
     vehicles: esVehicles,
     roles: esRoles,
+    userActivities: esUserActivities,
     users: esUsers,
   },
 };
