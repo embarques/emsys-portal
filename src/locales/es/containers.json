@@ -115,10 +115,13 @@
   "filters": {
     "fields": {
       "id": {
-        "label": "ID de contenedor",
+        "label": "#",
         "placeholder": "Ingrese ID de contenedor…"
       },
-      "name": { "label": "Contenedor", "placeholder": "Ingrese contenedor…" },
+      "name": {
+        "label": "Contenedor",
+        "placeholder": "Ingrese contenedor…"
+      },
       "containerNumber": {
         "label": "Número de contenedor",
         "placeholder": "Ingrese número de contenedor…"
@@ -131,7 +134,10 @@
         "label": "Número de sello",
         "placeholder": "Ingrese número de sello…"
       },
-      "seal": { "label": "Sello", "placeholder": "Ingrese sello…" },
+      "seal": {
+        "label": "Sello",
+        "placeholder": "Ingrese sello…"
+      },
       "broker": {
         "label": "Agente aduanal",
         "placeholder": "Ingrese agente aduanal…"
@@ -140,21 +146,24 @@
         "label": "Empresa de transporte",
         "placeholder": "Ingrese empresa de transporte…"
       },
-      "cost": { "label": "Costo", "placeholder": "Ingrese monto…" },
+      "cost": {
+        "label": "Costo",
+        "placeholder": "Ingrese monto…"
+      },
       "departureDate": {
-        "label": "Fecha de salida",
+        "label": "Salida",
         "placeholder": "AAAA-MM-DD"
       },
       "departureDateRange": {
-        "label": "Rango de fecha de salida",
+        "label": "Rango de salida",
         "placeholder": "2026-01-01 a 2026-06-30"
       },
       "arrivalDate": {
-        "label": "Fecha de llegada",
+        "label": "Llegada",
         "placeholder": "AAAA-MM-DD"
       },
       "arrivalDateRange": {
-        "label": "Rango de fecha de llegada",
+        "label": "Rango de llegada",
         "placeholder": "2026-01-01 a 2026-06-30"
       }
     }

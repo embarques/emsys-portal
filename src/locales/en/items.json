@@ -87,17 +87,32 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "Item ID", "placeholder": "Enter item ID…" },
-      "name": { "label": "Description", "placeholder": "Enter description…" },
-      "price": { "label": "Price", "placeholder": "Enter amount…" },
-      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
+      "id": {
+        "label": "Item ID",
+        "placeholder": "Enter item ID…"
+      },
+      "name": {
+        "label": "Description",
+        "placeholder": "Enter description…"
+      },
+      "price": {
+        "label": "Price",
+        "placeholder": "Enter amount…"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
       "createdAtRange": {
-        "label": "Date created range",
+        "label": "Created at range",
         "placeholder": "2026-01-01 to 2026-06-30"
       },
-      "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
       "updatedAtRange": {
-        "label": "Date modified range",
+        "label": "Updated at range",
         "placeholder": "2026-01-01 to 2026-06-30"
       }
     }

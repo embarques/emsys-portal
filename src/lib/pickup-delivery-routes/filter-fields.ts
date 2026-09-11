@@ -55,7 +55,7 @@ const SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "route.name",
-    label: "Route assignment",
+    label: "Route crew",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter route name…",
@@ -69,7 +69,7 @@ const SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "employees.name",
-    label: "Crew member",
+    label: "Crew members",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter crew name…",
@@ -125,7 +125,7 @@ const SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "rate",
-    label: "Rate",
+    label: "Exchange rate",
     operators: [...NUMERIC_OPERATORS],
     valueType: "text",
     placeholder: "Enter rate…",
@@ -135,7 +135,7 @@ const SHARED_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
 const DELIVERY_ONLY_ACTIVE_ROUTE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
     field: "container.number",
-    label: "Container number",
+    label: "Container",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter container number…",

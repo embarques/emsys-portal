@@ -114,19 +114,58 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "Container ID", "placeholder": "Enter container ID…" },
-      "name": { "label": "Container", "placeholder": "Enter container…" },
-      "containerNumber": { "label": "Container number", "placeholder": "Enter container number…" },
-      "booking": { "label": "Booking number", "placeholder": "Enter booking number…" },
-      "sealNumber": { "label": "Seal number", "placeholder": "Enter seal number…" },
-      "seal": { "label": "Seal", "placeholder": "Enter seal…" },
-      "broker": { "label": "Broker", "placeholder": "Enter broker…" },
-      "company": { "label": "Transport company", "placeholder": "Enter transport company…" },
-      "cost": { "label": "Cost", "placeholder": "Enter amount…" },
-      "departureDate": { "label": "Departure date", "placeholder": "YYYY-MM-DD" },
-      "departureDateRange": { "label": "Departure date range", "placeholder": "2026-01-01 to 2026-06-30" },
-      "arrivalDate": { "label": "Arrival date", "placeholder": "YYYY-MM-DD" },
-      "arrivalDateRange": { "label": "Arrival date range", "placeholder": "2026-01-01 to 2026-06-30" }
+      "id": {
+        "label": "#",
+        "placeholder": "Enter container ID…"
+      },
+      "name": {
+        "label": "Container",
+        "placeholder": "Enter container…"
+      },
+      "containerNumber": {
+        "label": "Container number",
+        "placeholder": "Enter container number…"
+      },
+      "booking": {
+        "label": "Booking number",
+        "placeholder": "Enter booking number…"
+      },
+      "sealNumber": {
+        "label": "Seal number",
+        "placeholder": "Enter seal number…"
+      },
+      "seal": {
+        "label": "Seal",
+        "placeholder": "Enter seal…"
+      },
+      "broker": {
+        "label": "Broker",
+        "placeholder": "Enter broker…"
+      },
+      "company": {
+        "label": "Transport company",
+        "placeholder": "Enter transport company…"
+      },
+      "cost": {
+        "label": "Cost",
+        "placeholder": "Enter amount…"
+      },
+      "departureDate": {
+        "label": "Departure",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "departureDateRange": {
+        "label": "Departure range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "arrivalDate": {
+        "label": "Arrival",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "arrivalDateRange": {
+        "label": "Arrival range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      }
     }
   }
 }

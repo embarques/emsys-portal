@@ -22,14 +22,14 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "date",
-    label: "Invoice date",
+    label: "Date",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "dateRange",
-    label: "Invoice date range",
+    label: "Date range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",
@@ -46,7 +46,7 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "paidStatus",
-    label: "Paid status",
+    label: "Status",
     operators: ["eq", "neq"],
     valueType: "select",
     options: [
@@ -70,7 +70,7 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "payment",
-    label: "Amount paid",
+    label: "Paid",
     operators: [...NUMERIC_OPERATORS],
     valueType: "text",
     placeholder: "Enter amount…",
@@ -91,7 +91,7 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "sender.name",
-    label: "Sender name",
+    label: "Sender",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter sender name…",
@@ -127,7 +127,7 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "receiver.name",
-    label: "Receiver name",
+    label: "Receiver",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter receiver name…",
@@ -211,28 +211,28 @@ export const INVOICE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "createdAt",
-    label: "Date created",
+    label: "Created at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "createdAtRange",
-    label: "Date created range",
+    label: "Created at range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",
   },
   {
     field: "updatedAt",
-    label: "Date modified",
+    label: "Updated at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "updatedAtRange",
-    label: "Date modified range",
+    label: "Updated at range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",

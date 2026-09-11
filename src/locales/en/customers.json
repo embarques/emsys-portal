@@ -213,38 +213,89 @@
   },
   "filters": {
     "fields": {
-      "name": { "label": "Name", "placeholder": "Enter name…" },
-      "email": { "label": "Email", "placeholder": "Enter email…" },
-      "IDNumber": { "label": "ID number", "placeholder": "Enter id number…" },
-      "id": { "label": "Customer ID", "placeholder": "Enter customer id…" },
-      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
-      "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" },
+      "name": {
+        "label": "Customer",
+        "placeholder": "Enter name…"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Enter email…"
+      },
+      "IDNumber": {
+        "label": "ID number",
+        "placeholder": "Enter id number…"
+      },
+      "id": {
+        "label": "Customer ID",
+        "placeholder": "Enter customer id…"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
       "createdBy": {
-        "name": { "label": "Created by", "placeholder": "Enter creator…" },
-        "id": { "label": "Creator ID", "placeholder": "Enter creator ID…" }
+        "name": {
+          "label": "Created by",
+          "placeholder": "Enter creator…"
+        },
+        "id": {
+          "label": "Creator ID",
+          "placeholder": "Enter creator ID…"
+        }
       },
       "updatedBy": {
-        "name": { "label": "Updated by", "placeholder": "Enter editor…" },
-        "id": { "label": "Editor ID", "placeholder": "Enter editor ID…" }
+        "name": {
+          "label": "Updated by",
+          "placeholder": "Enter editor…"
+        },
+        "id": {
+          "label": "Editor ID",
+          "placeholder": "Enter editor ID…"
+        }
       },
       "address": {
-        "address1": { "label": "Address 1", "placeholder": "Enter address 1…" },
+        "address1": {
+          "label": "Address",
+          "placeholder": "Enter address 1…"
+        },
         "address2": {
           "label": "Address line 2",
           "placeholder": "Enter address line 2…"
         },
-        "city": { "label": "City", "placeholder": "Enter city…" },
-        "state": { "label": "State", "placeholder": "Enter state…" },
-        "zipcode": { "label": "Zip code", "placeholder": "Enter zip code…" },
-        "country": { "label": "Country", "placeholder": "Select country…" }
+        "city": {
+          "label": "City",
+          "placeholder": "Enter city…"
+        },
+        "state": {
+          "label": "State",
+          "placeholder": "Enter state…"
+        },
+        "zipcode": {
+          "label": "Zip code",
+          "placeholder": "Enter zip code…"
+        },
+        "country": {
+          "label": "Country",
+          "placeholder": "Select country…"
+        }
       },
-      "phone": { "label": "Phone", "placeholder": "Enter phone…" },
+      "phone": {
+        "label": "Phone",
+        "placeholder": "Enter phone…"
+      },
       "customerType": {
-        "label": "Customer type",
+        "label": "Type",
         "placeholder": "Select type…"
       },
       "branch": {
-        "id": { "label": "Branch", "placeholder": "Select branch…" }
+        "id": {
+          "label": "Branch",
+          "placeholder": "Select branch…"
+        }
       }
     }
   }

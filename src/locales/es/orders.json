@@ -164,7 +164,8 @@
       "senderAddressRequired": "Seleccione la dirección del remitente.",
       "receiverAddressRequired": "Seleccione la dirección del destinatario.",
       "unverifiedSenderAddress": "Verifique la dirección del remitente antes de guardar. Abra el remitente y actualícela con una sugerencia de Google.",
-      "commentRequired": "Agregue al menos un comentario."
+      "commentRequired": "Agregue al menos un comentario.",
+      "duplicateCommentItem": "Cada artículo de Llevar/Recoger solo se puede usar una vez (por ejemplo un Llevar Otro y un Recoger Otro)."
     }
   },
   "comments": {
@@ -306,8 +307,14 @@
   "filters": {
     "fields": {
       "sender": {
-        "name": { "label": "Nombre", "placeholder": "Ingrese el nombre…" },
-        "phone": { "label": "Teléfono", "placeholder": "Ingrese el teléfono…" },
+        "name": {
+          "label": "Nombre",
+          "placeholder": "Ingrese el nombre…"
+        },
+        "phone": {
+          "label": "Teléfono",
+          "placeholder": "Ingrese el teléfono…"
+        },
         "address": {
           "label": "Dirección",
           "placeholder": "Ingrese dirección, ciudad, estado o código postal…",
@@ -319,8 +326,14 @@
             "label": "Dirección 2",
             "placeholder": "Ingrese la línea 2 de la dirección…"
           },
-          "city": { "label": "Ciudad", "placeholder": "Ingrese la ciudad…" },
-          "state": { "label": "Estado", "placeholder": "Ingrese el estado…" },
+          "city": {
+            "label": "Ciudad",
+            "placeholder": "Ingrese la ciudad…"
+          },
+          "state": {
+            "label": "Estado",
+            "placeholder": "Ingrese el estado…"
+          },
           "zipcode": {
             "label": "Código postal",
             "placeholder": "Ingrese el código postal…"
@@ -340,11 +353,17 @@
         "placeholder": "Ingrese el texto del comentario…"
       },
       "route": {
-        "id": { "label": "Ruta de citas" }
+        "id": {
+          "label": "Ruta"
+        }
       },
       "branch": {
-        "id": { "label": "Sucursal" },
-        "code": { "label": "Código de sucursal" },
+        "id": {
+          "label": "Sucursal"
+        },
+        "code": {
+          "label": "Código de sucursal"
+        },
         "name": {
           "label": "Nombre de sucursal",
           "placeholder": "Ingrese el nombre de la sucursal…"
@@ -352,7 +371,7 @@
       },
       "receivers": {
         "name": {
-          "label": "Nombre del destinatario",
+          "label": "Destinatario",
           "placeholder": "Ingrese el nombre del destinatario…"
         },
         "phone": {
@@ -385,17 +404,27 @@
         }
       },
       "createdBy": {
-        "name": { "label": "Creada por" }
+        "name": {
+          "label": "Creada por"
+        }
       },
-      "completed": { "label": "Estado de completado" },
-      "date": { "label": "Fecha de la cita", "placeholder": "AAAA-MM-DD" },
+      "completed": {
+        "label": "Completada"
+      },
+      "date": {
+        "label": "Fecha",
+        "placeholder": "AAAA-MM-DD"
+      },
       "dateRange": {
-        "label": "Rango de fechas de la cita",
+        "label": "Rango de fecha",
         "placeholder": "2026-01-01 a 2026-06-30"
       },
-      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
+      "createdAt": {
+        "label": "Creado el",
+        "placeholder": "AAAA-MM-DD"
+      },
       "createdAtRange": {
-        "label": "Rango de fechas de creación",
+        "label": "Rango de creación",
         "placeholder": "2026-01-01 a 2026-06-30"
       }
     }

@@ -49,11 +49,11 @@ import {
   customerHasUnverifiedAddressAtIndex,
   getCustomerContentAddresses,
   getInitialOrderPartyAddressIndex,
+  hasDuplicateOrderCommentItems,
   isOrderCommentComplete,
   isOrderPartyAddressChosen,
   rematchOrderPartyAddressIndex,
   resetOrderFormForNextEntry,
-  resolveOrderPartyAddressIndex,
   resolveSelectedOrderPartyAddressIndex,
   type OrderFormSubmitResult,
   type OrderFormValues,
@@ -167,35 +167,52 @@ export function OrderForm({
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
   const [isLoadingEditCustomer, setIsLoadingEditCustomer] = useState(false);
   const handleEnterNavigation = useFormEnterNavigation();
-  const markPendingPartyEdit = useApplyCustomerOnTabReturn((side, customer) => {
-    setValues((current) => {
-      if (side === "sender") {
-        if (current.sender?.id !== customer.id && current.senderId !== customer.id) return current;
+  const { markPendingPartyEdit, markPendingPartyAdd } = useApplyCustomerOnTabReturn(
+    (side, customer, { mode }) => {
+      setValues((current) => {
+        if (side === "sender") {
+          const currentId = current.senderId?.trim() || current.sender?.id?.trim() || "";
+          // Only skip when a different customer is already selected. An empty
+          // sender (e.g. after a parent re-render reset) must still accept the
+          // customer we just finished editing.
+          if (mode === "edit" && currentId && currentId !== customer.id) {
+            return current;
+          }
+          return {
+            ...current,
+            senderId: customer.id,
+            sender: customer,
+            senderAddressIndex:
+              mode === "edit"
+                ? rematchOrderPartyAddressIndex(
+                    current.sender,
+                    current.senderAddressIndex,
+                    customer,
+                  )
+                : getInitialOrderPartyAddressIndex(customer),
+          };
+        }
+        const currentId = current.receiverId?.trim() || current.receiver?.id?.trim() || "";
+        if (mode === "edit" && currentId && currentId !== customer.id) {
+          return current;
+        }
         return {
           ...current,
-          senderId: customer.id,
-          sender: customer,
-          senderAddressIndex: rematchOrderPartyAddressIndex(
-            current.sender,
-            current.senderAddressIndex,
-            customer,
-          ),
+          receiverId: customer.id,
+          receiver: customer,
+          receiverAddressIndex:
+            mode === "edit"
+              ? rematchOrderPartyAddressIndex(
+                  current.receiver,
+                  current.receiverAddressIndex,
+                  customer,
+                )
+              : getInitialOrderPartyAddressIndex(customer),
         };
-      }
-      if (current.receiver?.id !== customer.id && current.receiverId !== customer.id) return current;
-      return {
-        ...current,
-        receiverId: customer.id,
-        receiver: customer,
-        receiverAddressIndex: rematchOrderPartyAddressIndex(
-          current.receiver,
-          current.receiverAddressIndex,
-          customer,
-        ),
-      };
-    });
-    setFormError(null);
-  });
+      });
+      setFormError(null);
+    },
+  );
   const isSavingCustomer =
     createCustomerMutation.isPending ||
     updateCustomerMutation.isPending ||
@@ -238,14 +255,16 @@ export function OrderForm({
 
   function openAddCustomer(side: PartySide) {
     const isReceiver = side === "receiver";
+    const partyCustomerType = isReceiver ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER;
     // On desktop, open the customer add form in its own workspace tab (party type locked);
     // mobile has no tab bar, so keep the inline dialog.
     if (isDesktopTabs) {
+      markPendingPartyAdd(side, partyCustomerType);
       openFormTab({
         feature: "customers",
         baseHref: "/customers",
         mode: "add",
-        customerType: isReceiver ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+        customerType: partyCustomerType,
         label: isReceiver
           ? t("orders.form.partyActions.addReceiver")
           : t("orders.form.partyActions.addSender"),
@@ -342,18 +361,7 @@ export function OrderForm({
   }
 
   // Newly added customers behave like a fresh selection (unset when multi-address);
-  // edits keep the previously chosen address when it is still valid.
-  function nextPartyAddressIndex(
-    customer: Customer,
-    mode: "add" | "edit",
-    currentIndex: number,
-  ): number {
-    if (mode === "edit" && currentIndex >= 0) {
-      return resolveOrderPartyAddressIndex(customer, currentIndex);
-    }
-    return getInitialOrderPartyAddressIndex(customer);
-  }
-
+  // edits rematch the previously chosen address when it is still present.
   function applyCustomerToSide(
     side: PartySide,
     customer: Customer,
@@ -366,7 +374,14 @@ export function OrderForm({
         senderId: customer.id,
         sender: customer,
         senderAddressIndex:
-          addressIndex ?? nextPartyAddressIndex(customer, mode, current.senderAddressIndex),
+          addressIndex ??
+          (mode === "edit"
+            ? rematchOrderPartyAddressIndex(
+                current.sender,
+                current.senderAddressIndex,
+                customer,
+              )
+            : getInitialOrderPartyAddressIndex(customer)),
       }));
     } else {
       setValues((current) => ({
@@ -374,7 +389,14 @@ export function OrderForm({
         receiverId: customer.id,
         receiver: customer,
         receiverAddressIndex:
-          addressIndex ?? nextPartyAddressIndex(customer, mode, current.receiverAddressIndex),
+          addressIndex ??
+          (mode === "edit"
+            ? rematchOrderPartyAddressIndex(
+                current.receiver,
+                current.receiverAddressIndex,
+                customer,
+              )
+            : getInitialOrderPartyAddressIndex(customer)),
       }));
     }
     setFormError(null);
@@ -450,6 +472,9 @@ export function OrderForm({
     }
     if (!values.comments.some(isOrderCommentComplete)) {
       return t("orders.form.validation.commentRequired");
+    }
+    if (hasDuplicateOrderCommentItems(values.comments)) {
+      return t("orders.form.validation.duplicateCommentItem");
     }
     return null;
   })();

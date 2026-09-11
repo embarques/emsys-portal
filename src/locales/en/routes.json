@@ -188,35 +188,92 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "Record ID", "placeholder": "Enter record id…" },
-      "name": { "label": "Name", "placeholder": "Enter name…" },
-      "date": { "label": "Date", "placeholder": "YYYY-MM-DD" },
+      "id": {
+        "label": "Record ID",
+        "placeholder": "Enter record id…"
+      },
+      "name": {
+        "label": "Name",
+        "placeholder": "Enter name…"
+      },
+      "date": {
+        "label": "Date",
+        "placeholder": "YYYY-MM-DD"
+      },
       "route": {
-        "name": { "label": "Route crew", "placeholder": "Enter route crew name…" },
-        "id": { "label": "Route crew ID", "placeholder": "Enter route crew id…" }
+        "name": {
+          "label": "Route crew",
+          "placeholder": "Enter route crew name…"
+        },
+        "id": {
+          "label": "Route crew ID",
+          "placeholder": "Enter route crew id…"
+        }
       },
       "employees": {
-        "name": { "label": "Crew member", "placeholder": "Enter crew name…" },
-        "id": { "label": "Crew member ID", "placeholder": "Enter employee id…" },
-        "role": { "label": "Crew role", "placeholder": "Select crew role…" }
+        "name": {
+          "label": "Crew members",
+          "placeholder": "Enter crew name…"
+        },
+        "id": {
+          "label": "Crew member ID",
+          "placeholder": "Enter employee id…"
+        },
+        "role": {
+          "label": "Crew role",
+          "placeholder": "Select crew role…"
+        }
       },
       "branch": {
-        "code": { "label": "Branch code", "placeholder": "Enter branch code…" },
-        "id": { "label": "Branch ID", "placeholder": "Enter branch id…" },
-        "name": { "label": "Branch name", "placeholder": "Enter branch name…" }
+        "code": {
+          "label": "Branch code",
+          "placeholder": "Enter branch code…"
+        },
+        "id": {
+          "label": "Branch ID",
+          "placeholder": "Enter branch id…"
+        },
+        "name": {
+          "label": "Branch name",
+          "placeholder": "Enter branch name…"
+        }
       },
       "vehicle": {
-        "name": { "label": "Vehicle", "placeholder": "Enter vehicle name…" },
-        "id": { "label": "Vehicle ID", "placeholder": "Enter vehicle id…" }
+        "name": {
+          "label": "Vehicle",
+          "placeholder": "Enter vehicle name…"
+        },
+        "id": {
+          "label": "Vehicle ID",
+          "placeholder": "Enter vehicle id…"
+        }
       },
       "container": {
-        "number": { "label": "Container number", "placeholder": "Enter container number…" },
-        "id": { "label": "Container ID", "placeholder": "Enter container id…" }
+        "number": {
+          "label": "Container",
+          "placeholder": "Enter container number…"
+        },
+        "id": {
+          "label": "Container ID",
+          "placeholder": "Enter container id…"
+        }
       },
-      "active": { "label": "Status", "placeholder": "Select status…" },
-      "dayOfWeek": { "label": "Day of week", "placeholder": "Select day…" },
-      "tripNumber": { "label": "Trip number", "placeholder": "Enter trip number…" },
-      "rate": { "label": "Rate", "placeholder": "Enter rate…" }
+      "active": {
+        "label": "Status",
+        "placeholder": "Select status…"
+      },
+      "dayOfWeek": {
+        "label": "Day of week",
+        "placeholder": "Select day…"
+      },
+      "tripNumber": {
+        "label": "Trip number",
+        "placeholder": "Enter trip number…"
+      },
+      "rate": {
+        "label": "Exchange rate",
+        "placeholder": "Enter rate…"
+      }
     },
     "enums": {
       "crewRole": {

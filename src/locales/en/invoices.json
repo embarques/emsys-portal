@@ -434,24 +434,55 @@
         "label": "Invoice number range",
         "placeholder": "488800 to 488900"
       },
-      "date": { "label": "Invoice date", "placeholder": "YYYY-MM-DD" },
+      "date": {
+        "label": "Date",
+        "placeholder": "YYYY-MM-DD"
+      },
       "dateRange": {
-        "label": "Invoice date range",
+        "label": "Date range",
         "placeholder": "2026-01-01 to 2026-06-30"
       },
-      "paidRegion": { "label": "Paid at" },
-      "paidStatus": { "label": "Paid status" },
-      "cost": { "label": "Invoice total", "placeholder": "Enter amount…" },
-      "discount": { "label": "Discount", "placeholder": "Enter amount…" },
-      "payment": { "label": "Amount paid", "placeholder": "Enter amount…" },
-      "balance": { "label": "Balance", "placeholder": "Enter amount…" },
+      "paidRegion": {
+        "label": "Paid at"
+      },
+      "paidStatus": {
+        "label": "Status"
+      },
+      "cost": {
+        "label": "Invoice total",
+        "placeholder": "Enter amount…"
+      },
+      "discount": {
+        "label": "Discount",
+        "placeholder": "Enter amount…"
+      },
+      "payment": {
+        "label": "Paid",
+        "placeholder": "Enter amount…"
+      },
+      "balance": {
+        "label": "Balance",
+        "placeholder": "Enter amount…"
+      },
       "container": {
-        "name": { "label": "Container", "placeholder": "Enter container…" }
+        "name": {
+          "label": "Container",
+          "placeholder": "Enter container…"
+        }
       },
       "sender": {
-        "name": { "label": "Sender name", "placeholder": "Enter sender name…" },
-        "id": { "label": "Sender ID", "placeholder": "Enter sender ID…" },
-        "phone": { "label": "Sender phone", "placeholder": "Enter phone…" },
+        "name": {
+          "label": "Sender",
+          "placeholder": "Enter sender name…"
+        },
+        "id": {
+          "label": "Sender ID",
+          "placeholder": "Enter sender ID…"
+        },
+        "phone": {
+          "label": "Sender phone",
+          "placeholder": "Enter phone…"
+        },
         "address": {
           "label": "Sender address",
           "placeholder": "Enter address, city, state, or zip…"
@@ -459,39 +490,62 @@
       },
       "receiver": {
         "name": {
-          "label": "Receiver name",
+          "label": "Receiver",
           "placeholder": "Enter receiver name…"
         },
-        "id": { "label": "Receiver ID", "placeholder": "Enter receiver ID…" },
-        "phone": { "label": "Receiver phone", "placeholder": "Enter phone…" },
+        "id": {
+          "label": "Receiver ID",
+          "placeholder": "Enter receiver ID…"
+        },
+        "phone": {
+          "label": "Receiver phone",
+          "placeholder": "Enter phone…"
+        },
         "address": {
           "label": "Receiver address",
           "placeholder": "Enter address, city, state, or zip…"
         }
       },
       "createdBy": {
-        "name": { "label": "Created by" }
+        "name": {
+          "label": "Created by"
+        }
       },
       "route": {
-        "_id": { "label": "Route" }
+        "_id": {
+          "label": "Route"
+        }
       },
       "employee": {
-        "id": { "label": "Employee ID", "placeholder": "Enter employee ID…" },
+        "id": {
+          "label": "Employee ID",
+          "placeholder": "Enter employee ID…"
+        },
         "name": {
           "label": "Employee name",
           "placeholder": "Enter employee name…"
         }
       },
-      "isArchive": { "label": "Archived" },
-      "isVoid": { "label": "Void" },
-      "createdAt": { "label": "Date created", "placeholder": "YYYY-MM-DD" },
+      "isArchive": {
+        "label": "Archived"
+      },
+      "isVoid": {
+        "label": "Void"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
       "createdAtRange": {
-        "label": "Date created range",
+        "label": "Created at range",
         "placeholder": "2026-01-01 to 2026-06-30"
       },
-      "updatedAt": { "label": "Date modified", "placeholder": "YYYY-MM-DD" },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
       "updatedAtRange": {
-        "label": "Date modified range",
+        "label": "Updated at range",
         "placeholder": "2026-01-01 to 2026-06-30"
       }
     },

@@ -15,7 +15,7 @@ const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 export const CONTAINER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
     field: "id",
-    label: "Container ID",
+    label: "#",
     operators: ["eq", "neq", "gte", "lte"],
     valueType: "text",
     placeholder: "Enter container ID…",
@@ -78,28 +78,28 @@ export const CONTAINER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "departureDate",
-    label: "Departure date",
+    label: "Departure",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "departureDateRange",
-    label: "Departure date range",
+    label: "Departure range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",
   },
   {
     field: "arrivalDate",
-    label: "Arrival date",
+    label: "Arrival",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "arrivalDateRange",
-    label: "Arrival date range",
+    label: "Arrival range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",

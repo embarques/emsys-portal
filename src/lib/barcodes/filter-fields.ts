@@ -14,7 +14,7 @@ const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 export const BARCODE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
     field: "id",
-    label: "Barcode ID",
+    label: "#",
     operators: ["eq", "neq", "gte", "lte", "contains", "startsWith"],
     valueType: "text",
     placeholder: "Enter barcode ID…",
@@ -28,21 +28,21 @@ export const BARCODE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "scanDate",
-    label: "Scan date",
+    label: "Last scan",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "createdAt",
-    label: "Date created",
+    label: "Created at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "updatedAt",
-    label: "Date modified",
+    label: "Updated at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",

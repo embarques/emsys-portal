@@ -374,15 +374,21 @@ export function InvoiceForm({
     });
   }, [commitValues, pickupRoutes, values.pickupSource, values.routeCrewId, values.routeId]);
 
-  const markPendingPartyEdit = useApplyCustomerOnTabReturn((side, customer) => {
+  const { markPendingPartyEdit } = useApplyCustomerOnTabReturn((side, customer, { mode }) => {
     if (side === "sender") {
       commitValues((current) => {
-        if (current.sender?.id !== customer.id && current.senderId !== customer.id) return current;
+        const currentId = current.senderId?.trim() || current.sender?.id?.trim() || "";
+        if (mode === "edit" && currentId && currentId !== customer.id) {
+          return current;
+        }
         return { ...current, senderId: customer.id, sender: customer };
       });
     } else {
       commitValues((current) => {
-        if (current.receiver?.id !== customer.id && current.receiverId !== customer.id) return current;
+        const currentId = current.receiverId?.trim() || current.receiver?.id?.trim() || "";
+        if (mode === "edit" && currentId && currentId !== customer.id) {
+          return current;
+        }
         return { ...current, receiverId: customer.id, receiver: customer };
       });
     }

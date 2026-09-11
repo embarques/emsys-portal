@@ -150,7 +150,7 @@
         "placeholder": "YYYY-MM-DD"
       },
       "createdAtRange": {
-        "label": "Created date range",
+        "label": "Created at range",
         "placeholder": "2026-01-01 to 2026-06-30"
       },
       "updatedAt": {
@@ -158,7 +158,7 @@
         "placeholder": "YYYY-MM-DD"
       },
       "updatedAtRange": {
-        "label": "Modified date range",
+        "label": "Updated at range",
         "placeholder": "2026-01-01 to 2026-06-30"
       }
     }

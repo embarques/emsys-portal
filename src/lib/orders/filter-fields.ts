@@ -88,7 +88,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "route.id",
-    label: "Appointment route",
+    label: "Route",
     operators: ["eq", "neq"],
     valueType: "select",
     optionsSource: "pickupRoutes",
@@ -116,7 +116,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "receivers.name",
-    label: "Receiver name",
+    label: "Receiver",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter receiver name…",
@@ -167,7 +167,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "completed",
-    label: "Completed status",
+    label: "Completed",
     operators: ["eq", "neq"],
     valueType: "select",
     options: [
@@ -177,28 +177,28 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "date",
-    label: "Appointment date",
+    label: "Date",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "dateRange",
-    label: "Appointment date range",
+    label: "Date range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",
   },
   {
     field: "createdAt",
-    label: "Date created",
+    label: "Created at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "createdAtRange",
-    label: "Date created range",
+    label: "Created at range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",

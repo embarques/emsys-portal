@@ -6,21 +6,41 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useWorkspaceTabPortalContainer } from "@/lib/layout/workspace-tab-scope";
 
-const Dialog = DialogPrimitive.Root;
+function Dialog({
+  modal,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  const portalContainer = useWorkspaceTabPortalContainer();
+  const tabScoped = portalContainer != null;
+
+  return (
+    <DialogPrimitive.Root
+      // Tab-scoped dialogs must not lock the document — users need the tab bar,
+      // sidebar, and other tabs while a mutation runs in the background tab.
+      modal={modal ?? !tabScoped}
+      {...props}
+    />
+  );
+}
+
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogPortal = DialogPrimitive.Portal;
 const DialogClose = DialogPrimitive.Close;
 
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay> & {
+    tabScoped?: boolean;
+  }
+>(({ className, tabScoped = false, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] data-[state=open]:animate-in data-[state=closed]:animate-out",
-      className
+      "z-50 bg-black/50 backdrop-blur-[1px] data-[state=open]:animate-in data-[state=closed]:animate-out",
+      tabScoped ? "absolute inset-0" : "fixed inset-0",
+      className,
     )}
     {...props}
   />
@@ -30,12 +50,22 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, onPointerDownOutside, ...props }, ref) => {
+>(({ className, children, onPointerDownOutside, onInteractOutside, ...props }, ref) => {
+  const portalContainer = useWorkspaceTabPortalContainer();
+  const tabScoped = portalContainer != null;
+
+  function isShellChromeInteraction(target: EventTarget | null) {
+    if (!(target instanceof Element) || !portalContainer) return false;
+    // Clicks on toast feedback or outside this tab's portal host (tab bar,
+    // sidebar, other chrome) should not dismiss the dialog.
+    if (target.closest("[data-feedback-toast]")) return true;
+    return !portalContainer.contains(target);
+  }
+
   function handlePointerDownOutside(
     event: Parameters<NonNullable<typeof onPointerDownOutside>>[0],
   ) {
-    const target = event.detail.originalEvent.target;
-    if (target instanceof Element && target.closest("[data-feedback-toast]")) {
+    if (isShellChromeInteraction(event.detail.originalEvent.target)) {
       event.preventDefault();
       return;
     }
@@ -43,16 +73,31 @@ const DialogContent = React.forwardRef<
     onPointerDownOutside?.(event);
   }
 
+  function handleInteractOutside(
+    event: Parameters<NonNullable<typeof onInteractOutside>>[0],
+  ) {
+    if (isShellChromeInteraction(event.target)) {
+      event.preventDefault();
+      return;
+    }
+
+    onInteractOutside?.(event);
+  }
+
   return (
-    <DialogPortal>
-      <DialogOverlay />
+    <DialogPortal container={portalContainer ?? undefined}>
+      <DialogOverlay tabScoped={tabScoped} />
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
+          // Always viewport-fixed so confirm/action dialogs stay on screen even
+          // when the tab content is taller than the viewport. Overlay stays
+          // absolute when tab-scoped so dimming remains inside the workspace tab.
           "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border bg-background p-6 shadow-xl outline-none",
-          className
+          className,
         )}
         onPointerDownOutside={handlePointerDownOutside}
+        onInteractOutside={handleInteractOutside}
         {...props}
       >
         {children}

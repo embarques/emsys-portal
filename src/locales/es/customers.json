@@ -213,8 +213,14 @@
   },
   "filters": {
     "fields": {
-      "name": { "label": "Nombre", "placeholder": "Ingrese nombre…" },
-      "email": { "label": "Correo", "placeholder": "Ingrese correo…" },
+      "name": {
+        "label": "Cliente",
+        "placeholder": "Ingrese nombre…"
+      },
+      "email": {
+        "label": "Correo",
+        "placeholder": "Ingrese correo…"
+      },
       "IDNumber": {
         "label": "Número de ID",
         "placeholder": "Ingrese número de ID…"
@@ -223,10 +229,19 @@
         "label": "ID de cliente",
         "placeholder": "Ingrese ID de cliente…"
       },
-      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
-      "updatedAt": { "label": "Actualizado el", "placeholder": "AAAA-MM-DD" },
+      "createdAt": {
+        "label": "Creado el",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Actualizado el",
+        "placeholder": "AAAA-MM-DD"
+      },
       "createdBy": {
-        "name": { "label": "Creado por", "placeholder": "Ingrese creador…" },
+        "name": {
+          "label": "Creado por",
+          "placeholder": "Ingrese creador…"
+        },
         "id": {
           "label": "ID del creador",
           "placeholder": "Ingrese ID del creador…"
@@ -244,28 +259,43 @@
       },
       "address": {
         "address1": {
-          "label": "Dirección 1",
+          "label": "Dirección",
           "placeholder": "Ingrese dirección 1…"
         },
         "address2": {
           "label": "Línea de dirección 2",
           "placeholder": "Ingrese línea de dirección 2…"
         },
-        "city": { "label": "Ciudad", "placeholder": "Ingrese ciudad…" },
-        "state": { "label": "Estado", "placeholder": "Ingrese estado…" },
+        "city": {
+          "label": "Ciudad",
+          "placeholder": "Ingrese ciudad…"
+        },
+        "state": {
+          "label": "Estado",
+          "placeholder": "Ingrese estado…"
+        },
         "zipcode": {
           "label": "Código postal",
           "placeholder": "Ingrese código postal…"
         },
-        "country": { "label": "País", "placeholder": "Seleccione país…" }
+        "country": {
+          "label": "País",
+          "placeholder": "Seleccione país…"
+        }
       },
-      "phone": { "label": "Teléfono", "placeholder": "Ingrese teléfono…" },
+      "phone": {
+        "label": "Teléfono",
+        "placeholder": "Ingrese teléfono…"
+      },
       "customerType": {
-        "label": "Tipo de cliente",
+        "label": "Tipo",
         "placeholder": "Seleccione tipo…"
       },
       "branch": {
-        "id": { "label": "Sucursal", "placeholder": "Seleccione sucursal…" }
+        "id": {
+          "label": "Sucursal",
+          "placeholder": "Seleccione sucursal…"
+        }
       }
     }
   }
