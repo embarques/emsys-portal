@@ -1162,16 +1162,6 @@ export async function removeInvoiceEmbeddedBarcodes(
   return removed;
 }
 
-function listInvoiceDetailBarcodes(detail: ApiInvoiceDetail): ApiInvoiceBarcode[] {
-  if (Array.isArray(detail.barcodes) && detail.barcodes.length > 0) {
-    return detail.barcodes;
-  }
-  if (detail.barcode && typeof detail.barcode === "object") {
-    return [detail.barcode];
-  }
-  return [];
-}
-
 export type InvoiceWriteEmployeeRef = {
   id: number;
   name: string;

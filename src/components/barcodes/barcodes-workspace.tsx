@@ -166,11 +166,19 @@ export function BarcodesWorkspace() {
     [containers],
   );
 
-  const routeBarcodeIds = useMemo(
+  const assignRouteBarcodes = useMemo(
     () =>
       selectedBarcodes
-        .map((barcode) => barcode.barcodeId?.trim() || (barcode.id > 0 ? String(barcode.id) : ""))
-        .filter(Boolean),
+        .filter((barcode) => barcode.number.trim().length > 0)
+        .map((barcode) => ({
+          number: barcode.number,
+          barcodeId:
+            barcode.barcodeId?.trim() ||
+            (barcode.id > 0 ? String(barcode.id) : undefined),
+          catalogId: barcode.id > 0 ? barcode.id : undefined,
+          invoiceId: barcode.invoiceId,
+          currentRouteName: barcode.route?.name,
+        })),
     [selectedBarcodes],
   );
 
@@ -470,7 +478,7 @@ export function BarcodesWorkspace() {
                 variant="outline"
                 className={tableSelectionActionStyles.className}
                 style={tableSelectionActionStyles.style}
-                disabled={routeBarcodeIds.length === 0 || isUpdating}
+                disabled={assignRouteBarcodes.length === 0 || isUpdating}
                 onClick={() => setRouteDialogOpen(true)}
               >
                 <RouteIcon className="h-4 w-4" />
@@ -622,7 +630,7 @@ export function BarcodesWorkspace() {
       <AssignBarcodeRouteDialog
         open={routeDialogOpen}
         onOpenChange={setRouteDialogOpen}
-        barcodeIds={routeBarcodeIds}
+        barcodes={assignRouteBarcodes}
         onResult={(result) => {
           if (result.success) {
             setSelectedIds([]);

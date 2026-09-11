@@ -43,7 +43,7 @@ type AssignBarcodeRouteDialogProps = {
 export function AssignBarcodeRouteDialog({
   open,
   onOpenChange,
-  barcodes,
+  barcodes = [],
   onResult,
 }: AssignBarcodeRouteDialogProps) {
   const { t } = useTranslation();
