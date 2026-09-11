@@ -48,16 +48,15 @@ function emptyTransaction(
   type: JournalTransactionType,
   paymentMethods: AccountingLookup[] = [],
 ): DailyIncomeJournalValues {
-  return withDefaultCashPaymentMethod(
-    {
-      transactionType: type,
-      refNumber: "",
-      description: "",
-      includeSender: false,
-      includeReceiver: false,
-    },
-    paymentMethods,
-  );
+  const values: DailyIncomeJournalValues = {
+    transactionType: type,
+    refNumber: "",
+    description: "",
+    includeSender: false,
+    includeReceiver: false,
+  };
+
+  return withDefaultCashPaymentMethod(values, paymentMethods);
 }
 
 function continueTransactionValues(

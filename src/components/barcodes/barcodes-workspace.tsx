@@ -440,8 +440,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={tableSelectionActionStyles.className}
-                style={tableSelectionActionStyles.style}
+                className={tableSelectionActionStyles.edit}
                 disabled={selectedIds.length === 0 || isUpdating}
                 onClick={() => {
                   setBulkError(null);
@@ -460,8 +459,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={tableSelectionActionStyles.className}
-                style={tableSelectionActionStyles.style}
+                className={tableSelectionActionStyles.edit}
                 disabled={selectedIds.length === 0 || isUpdating}
                 onClick={() => {
                   setBulkError(null);
@@ -476,8 +474,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={tableSelectionActionStyles.className}
-                style={tableSelectionActionStyles.style}
+                className={tableSelectionActionStyles.edit}
                 disabled={assignRouteBarcodes.length === 0 || isUpdating}
                 onClick={() => setRouteDialogOpen(true)}
               >

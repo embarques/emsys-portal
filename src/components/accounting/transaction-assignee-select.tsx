@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import type { UseFormSetValue } from "react-hook-form";
 
 import { EntityFieldActions } from "@/components/accounting/entity-field-actions";
 import { Label } from "@/components/ui/label";
@@ -15,7 +14,6 @@ import {
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import type {
   DailyIncomeAssigneeSource,
-  DailyIncomeJournalValues,
 } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
 import { useTranslation } from "@/lib/i18n";
@@ -33,7 +31,7 @@ type Props = {
   routeName?: string;
   assigneeSource?: DailyIncomeAssigneeSource;
   error?: string;
-  setValue: UseFormSetValue<DailyIncomeJournalValues>;
+  setValue: TransactionAssigneeSetValue;
   /** When false, only the employee picker is shown (invoice payment wizard). */
   allowDailyRoute?: boolean;
   onAddEmployee?: () => void;
@@ -41,6 +39,24 @@ type Props = {
   onAddRoute?: () => void;
   onEditRoute?: () => void;
 };
+
+type TransactionAssigneeFormValues = {
+  assigneeSource?: DailyIncomeAssigneeSource;
+  employeeId?: number;
+  employeeName?: string;
+  employeeGroupId?: string;
+  employeeGroupName?: string;
+  routeId?: string;
+  routeName?: string;
+  routeCrewId?: string;
+  routeCrewName?: string;
+};
+
+type TransactionAssigneeSetValue = (
+  name: keyof TransactionAssigneeFormValues,
+  value: string | number | undefined,
+  options?: { shouldValidate?: boolean },
+) => void;
 
 function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
   return (
@@ -51,14 +67,14 @@ function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React
   );
 }
 
-function clearEmployee(setValue: UseFormSetValue<DailyIncomeJournalValues>) {
+function clearEmployee(setValue: TransactionAssigneeSetValue) {
   setValue("employeeId", undefined, { shouldValidate: true });
   setValue("employeeName", "");
   setValue("employeeGroupId", undefined, { shouldValidate: true });
   setValue("employeeGroupName", "");
 }
 
-function clearRoute(setValue: UseFormSetValue<DailyIncomeJournalValues>) {
+function clearRoute(setValue: TransactionAssigneeSetValue) {
   setValue("routeId", undefined, { shouldValidate: true });
   setValue("routeName", "");
   setValue("routeCrewId", undefined, { shouldValidate: true });

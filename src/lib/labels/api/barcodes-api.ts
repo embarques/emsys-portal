@@ -592,10 +592,19 @@ async function retrieveExistingBarcode(
     // reports can list them — updates still target the invoice embed.
     if (number) {
       try {
+        const status =
+          embeddedBarcode.status?.id != null
+            ? { id: embeddedBarcode.status.id, name: embeddedBarcode.status.name }
+            : NEW_BARCODE_STATUS;
+        const container =
+          embeddedBarcode.container?.id != null
+            ? { id: embeddedBarcode.container.id, name: embeddedBarcode.container.name }
+            : undefined;
+
         await createBarcode({
           number,
-          status: embeddedBarcode.status ?? NEW_BARCODE_STATUS,
-          container: embeddedBarcode.container ?? undefined,
+          status,
+          container,
         });
       } catch {
         // Catalog mirror is best-effort; invoice embed remains authoritative.

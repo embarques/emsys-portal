@@ -15,6 +15,8 @@ const invoiceDailyIncomeRegistrationBaseSchema = z.object({
   assigneeSource: z.enum(["employee", "route"]).optional(),
   employeeId: z.number().optional(),
   employeeName: z.string().optional(),
+  employeeGroupId: z.string().optional(),
+  employeeGroupName: z.string().optional(),
   routeId: z.string().optional(),
   routeName: z.string().optional(),
   routeCrewId: z.string().optional(),
@@ -132,6 +134,8 @@ export function buildInvoiceDailyIncomeAssigneeDefaults(
   | "assigneeSource"
   | "employeeId"
   | "employeeName"
+  | "employeeGroupId"
+  | "employeeGroupName"
   | "routeId"
   | "routeName"
   | "routeCrewId"

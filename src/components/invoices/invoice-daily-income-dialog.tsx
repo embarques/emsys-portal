@@ -52,7 +52,6 @@ import { resolveLineTotal, type InvoiceFormValues } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
-import type { UseFormSetValue } from "react-hook-form";
 
 type Props = {
   open: boolean;
@@ -606,7 +605,7 @@ export function InvoiceDailyIncomeDialog({
               assigneeSource={assigneeSource}
               error={assigneeError}
               allowDailyRoute
-              setValue={setValue as UseFormSetValue<DailyIncomeJournalValues>}
+              setValue={setValue}
             />
           ) : null}
 
