@@ -171,8 +171,8 @@ export function InventoryViewSheet({
 
         <RecordViewSheetActions
           editLabel={t("inventory.actions.editItem")}
-          onEdit={() => onEdit(item)}
-          onDelete={() => onDelete(item)}
+          onEdit={onEdit ? () => onEdit(item) : undefined}
+          onDelete={onDelete ? () => onDelete(item) : undefined}
         />
       </RecordViewSheetContent>
     </RecordViewSheet>

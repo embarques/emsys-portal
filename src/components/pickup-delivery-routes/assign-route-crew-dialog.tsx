@@ -67,7 +67,7 @@ export type AssignRouteCrewDialogProps = {
 
 function resolveBranchFromRouteCrew(
   routeCrew: Route,
-  branches: Array<{ id: number; code: string; name: string }>,
+  branches: BranchRef[],
   fallbackCode?: string,
 ): ActiveRouteBranchRef | null {
   const code = getRouteBranchCode(routeCrew) || fallbackCode?.trim() || "";
@@ -77,7 +77,7 @@ function resolveBranchFromRouteCrew(
     code,
   });
   if (!match || !(match.id > 0)) return null;
-  return { id: match.id, code: match.code, name: match.name };
+  return { id: match.id, code: match.code, name: match.name?.trim() || match.code };
 }
 
 export function AssignRouteCrewDialog({
