@@ -1,15 +1,15 @@
 "use client";
 
-import { Building2, MapPin, Phone, Plus, User as UserIcon } from "lucide-react";
+import { Building2, MapPin, Phone, User as UserIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { UserForm } from "@/components/users/user-form";
+import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,9 +18,9 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { createSecondaryFirebaseUser } from "@/lib/auth/firebase/firebase-user-admin";
 import { useTranslation } from "@/lib/i18n";
 import { useEmployeeLabels } from "@/lib/employees/hooks/use-employee-labels";
-import { useCreateUser, useUsers } from "@/lib/users/hooks/use-users";
+import { useCreateUser, useUpdateUser, useUsers } from "@/lib/users/hooks/use-users";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
-import { createEmptyUserForm, type User, type UserFormValues } from "@/lib/users/types";
+import { createEmptyUserForm, type User, type UserFormValues, userToFormValues } from "@/lib/users/types";
 import {
   EMPLOYEE_DEPARTMENTS,
   EMPLOYEE_PORTAL_BRANCHES,
@@ -57,9 +57,11 @@ export function EmployeeForm({
   const employeeLabels = useEmployeeLabels();
   const usersQuery = useUsers({ page: 1, limit: 200, sort: "name:asc", active: true });
   const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
   const [values, setValues] = useState<EmployeeFormValues>(initialValues ?? createEmptyEmployeeForm());
   const [manualAddressEntry, setManualAddressEntry] = useState(false);
   const [createUserOpen, setCreateUserOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [createUserError, setCreateUserError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
 
@@ -200,10 +202,40 @@ export function EmployeeForm({
     }
   }
 
+  async function saveUser(values: UserFormValues) {
+    if (!editingUser) return;
+
+    setCreateUserError(null);
+    try {
+      const next = await updateUserMutation.mutateAsync({ userId: editingUser.id, values });
+      selectCreatedUser(next);
+      setCreateUserOpen(false);
+      setEditingUser(null);
+    } catch (error) {
+      setCreateUserError(normalizeApiError(error).message);
+    }
+  }
+
+  function openCreateUser() {
+    setEditingUser(null);
+    setCreateUserError(null);
+    setCreateUserOpen(true);
+  }
+
+  function openEditUser() {
+    if (!values.user) return;
+    setEditingUser(values.user);
+    setCreateUserError(null);
+    setCreateUserOpen(true);
+  }
+
   function updateCreateUserOpen(open: boolean) {
-    if (!open && createUserMutation.isPending) return;
+    if (!open && (createUserMutation.isPending || updateUserMutation.isPending)) return;
     setCreateUserOpen(open);
-    if (!open) setCreateUserError(null);
+    if (!open) {
+      setCreateUserError(null);
+      setEditingUser(null);
+    }
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -311,32 +343,27 @@ export function EmployeeForm({
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="userId">{t("employees.form.fields.user")}</Label>
-                <div className="flex w-full items-start gap-2">
-                  <div className="min-w-0 flex-1">
-                    <SearchableSelect
-                      id="userId"
-                      value={values.user ? String(values.user.id) : ""}
-                      onValueChange={updateUser}
-                      placeholder={t("employees.form.fields.noUser")}
-                      searchPlaceholder={t("employees.form.placeholders.userSearch")}
-                      options={userOptions}
-                      disabled={usersQuery.isLoading}
-                      className="w-full"
-                      mobileSheet
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-lg"
-                    className="mt-0 shrink-0"
-                    onClick={() => updateCreateUserOpen(true)}
-                    aria-label={t("employees.actions.addUser")}
-                    title={t("employees.actions.addUser")}
-                  >
-                    <Plus className="size-4" aria-hidden />
-                  </Button>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="userId">{t("employees.form.fields.user")}</Label>
+                  <FieldEntityActions
+                    hasSelection={Boolean(values.user)}
+                    onAdd={openCreateUser}
+                    onEdit={openEditUser}
+                    disabled={usersQuery.isLoading}
+                  />
+                </div>
+                <div className="min-w-0 w-full">
+                  <SearchableSelect
+                    id="userId"
+                    value={values.user ? String(values.user.id) : ""}
+                    onValueChange={updateUser}
+                    placeholder={t("employees.form.fields.noUser")}
+                    searchPlaceholder={t("employees.form.placeholders.userSearch")}
+                    options={userOptions}
+                    disabled={usersQuery.isLoading}
+                    className="w-full"
+                    mobileSheet
+                  />
                 </div>
               </div>
             </div>
@@ -505,16 +532,21 @@ export function EmployeeForm({
       <Dialog open={createUserOpen} onOpenChange={updateCreateUserOpen}>
         <DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-3xl sm:rounded-xl">
           <DialogHeader className="shrink-0 border-b border-border px-5 py-4">
-            <DialogTitle>{t("employees.dialogs.createUserTitle")}</DialogTitle>
-            <DialogDescription>{t("employees.dialogs.createUserDescription")}</DialogDescription>
+            <DialogTitle>
+              {editingUser ? t("users.form.editTitle") : t("employees.dialogs.createUserTitle")}
+            </DialogTitle>
+            {!editingUser ? (
+              <DialogDescription>{t("employees.dialogs.createUserDescription")}</DialogDescription>
+            ) : null}
           </DialogHeader>
           <UserForm
-            key={createUserOpen ? "create-employee-user-open" : "create-employee-user-closed"}
-            initialValues={createUserInitialValues}
-            submitLabel={t("users.actions.add")}
-            isSubmitting={createUserMutation.isPending}
+            key={`${createUserOpen ? "open" : "closed"}-${editingUser?.id ?? "new"}`}
+            initialValues={editingUser ? userToFormValues(editingUser) : createUserInitialValues}
+            isEditing={Boolean(editingUser)}
+            submitLabel={editingUser ? t("common.actions.saveChanges") : t("users.actions.add")}
+            isSubmitting={createUserMutation.isPending || updateUserMutation.isPending}
             externalError={createUserError}
-            onSubmit={createUser}
+            onSubmit={editingUser ? saveUser : createUser}
             onCancel={() => updateCreateUserOpen(false)}
           />
         </DialogContent>
