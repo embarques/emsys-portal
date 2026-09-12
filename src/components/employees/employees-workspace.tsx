@@ -49,6 +49,7 @@ import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatPrimaryPhonesDisplayOrDash } from "@/lib/phones/phones";
 import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
@@ -93,7 +94,7 @@ export function EmployeesWorkspace() {
   const { t } = useTranslation();
   const employeeLabels = useEmployeeLabels();
   const employeeFilterFields = useEmployeeFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<EmployeeFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -231,11 +232,23 @@ export function EmployeesWorkspace() {
       : [String(deleteTarget.id)];
 
     try {
-      await deleteEmployeesMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
-      setViewEmployee(null);
-      notifyDeleted(t("employees.entity"), ids.length);
+      const result = await deleteEmployeesMutation.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("employees.entity"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          setFormError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          setDeleteTarget(null);
+          setViewEmployee(null);
+        },
+      });
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);

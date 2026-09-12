@@ -1,6 +1,10 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import {
+  runSettledIdsWithConcurrency,
+  type BulkSettledResult,
+} from "@/lib/api/run-settled-with-concurrency";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
@@ -319,6 +323,7 @@ export async function deleteCheck(checkId: string): Promise<void> {
   assertMutationSuccess(response, "Unable to delete check.");
 }
 
-export async function deleteChecks(checkIds: string[]): Promise<void> {
-  await Promise.all(checkIds.map((checkId) => deleteCheck(checkId)));
+export async function deleteChecks(checkIds: string[]): Promise<BulkSettledResult<string>> {
+  const uniqueIds = [...new Set(checkIds.map((id) => id.trim()).filter(Boolean))];
+  return runSettledIdsWithConcurrency(uniqueIds, deleteCheck);
 }

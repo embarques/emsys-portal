@@ -77,14 +77,18 @@ export function formatRouteAssignmentName(assignment: Route): string {
   return assignment.routeId.trim() || assignment.id || "—";
 }
 
-/** Secondary lines for route-crew pickers (branch, crew). */
-export function formatRouteAssignmentDescriptionLines(assignment: Route): string[] {
-  const lines: string[] = [];
-  const branch = getRouteBranchCode(assignment);
-  if (branch) lines.push(branch);
+/**
+ * Single-line label for route-crew pickers: employee names · branch.
+ * Prefers spaced crew names over the raw route name to avoid duplicate lines.
+ */
+export function formatRouteAssignmentOptionLabel(assignment: Route): string {
   const crew = getRouteEmployeesLabel(assignment.employees);
-  if (crew && crew !== "—") lines.push(crew);
-  return lines;
+  const primary =
+    crew && crew !== "—"
+      ? crew
+      : formatRouteAssignmentName(assignment);
+  const branch = getRouteBranchCode(assignment);
+  return branch ? `${primary} · ${branch}` : primary;
 }
 
 /** Sort routes chronologically (earliest first), then by name. */

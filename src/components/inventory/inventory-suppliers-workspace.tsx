@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useTranslation } from "@/lib/i18n";
 import { formatSupplierList, formatSupplierPhones, supplierMatchesQuery } from "@/lib/inventory/display";
 import {
@@ -53,7 +54,7 @@ export function InventorySuppliersWorkspace() {
   const { t } = useTranslation();
   const dash = t("common.empty.dash");
   const { toErrorMessage } = useUserError();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const { data: suppliers = [], isLoading, isError, error } = useInventorySuppliers();
   const snapshot = useInventorySnapshotData();
   const createSupplier = useCreateSupplier();
@@ -156,11 +157,27 @@ export function InventorySuppliersWorkspace() {
   async function confirmDelete() {
     if (!deleteTarget) return;
     const ids = Array.isArray(deleteTarget) ? deleteTarget.map((row) => row.id) : [deleteTarget.id];
-    await deleteSuppliers.mutateAsync(ids);
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewSupplier(null);
-    notifyDeleted(t("inventory.submenus.suppliers"), ids.length);
+    try {
+      const result = await deleteSuppliers.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("inventory.submenus.suppliers"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          notifyError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          setDeleteTarget(null);
+          setViewSupplier(null);
+        },
+      });
+    } catch (mutationError) {
+      notifyError(toErrorMessage(mutationError));
+    }
   }
 
   return (

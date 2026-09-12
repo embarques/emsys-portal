@@ -7,6 +7,7 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useUserError } from "@/lib/errors/use-user-error";
 import { useTranslation } from "@/lib/i18n";
@@ -89,16 +90,31 @@ export function PickupRouteOrdersSection({
     setActionError(null);
 
     try {
-      const clearedCount = await unassignMutation.mutateAsync(effectiveSelectedOrders);
-      setSelectedIds([]);
-      await refetch();
-      notifySuccess(
-        clearedCount === 1
-          ? t("routes.pickupRoutes.view.orders.unassigned", { count: clearedCount })
-          : t("routes.pickupRoutes.view.orders.unassigned_plural", {
-              count: clearedCount,
-            }),
-      );
+      const result = await unassignMutation.mutateAsync(effectiveSelectedOrders);
+
+      reportBulkSettled({
+        result,
+        t,
+        notifyError: (message) => setActionError(message),
+        onSucceeded: (count) => {
+          notifySuccess(
+            count === 1
+              ? t("routes.pickupRoutes.view.orders.unassigned", { count })
+              : t("routes.pickupRoutes.view.orders.unassigned_plural", {
+                  count,
+                }),
+          );
+        },
+        onAllFailed: (message) => {
+          setActionError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) =>
+            current.filter((id) => !result.succeededIds.includes(String(id))),
+          );
+          void refetch();
+        },
+      });
     } catch (unassignError) {
       setActionError(toErrorMessage(unassignError));
     }

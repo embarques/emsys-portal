@@ -223,8 +223,19 @@ export function BarcodesWorkspace() {
 
     setBulkError(null);
     try {
-      await updateBarcodesMutation.mutateAsync(updates);
-      notifyUpdated(t("barcodes.entity"), t("barcodes.bulk.updatedCount", { count: updates.length }));
+      const updated = await updateBarcodesMutation.mutateAsync(updates);
+      const succeeded = updated.length;
+      const failed = updates.length - succeeded;
+      notifyUpdated(t("barcodes.entity"), t("barcodes.bulk.updatedCount", { count: succeeded }));
+      if (failed > 0) {
+        notifyError(
+          t("common.toasts.bulkPartialFailure", {
+            failed,
+            total: updates.length,
+            message: t("common.errors.fallback"),
+          }),
+        );
+      }
       setStatusDialogOpen(false);
       setSelectedIds([]);
     } catch (mutationError) {
@@ -259,8 +270,19 @@ export function BarcodesWorkspace() {
 
     setBulkError(null);
     try {
-      await updateBarcodesMutation.mutateAsync(updates);
-      notifyUpdated(t("barcodes.entity"), t("barcodes.bulk.updatedCount", { count: updates.length }));
+      const updated = await updateBarcodesMutation.mutateAsync(updates);
+      const succeeded = updated.length;
+      const failed = updates.length - succeeded;
+      notifyUpdated(t("barcodes.entity"), t("barcodes.bulk.updatedCount", { count: succeeded }));
+      if (failed > 0) {
+        notifyError(
+          t("common.toasts.bulkPartialFailure", {
+            failed,
+            total: updates.length,
+            message: t("common.errors.fallback"),
+          }),
+        );
+      }
       setContainerDialogOpen(false);
       setSelectedIds([]);
     } catch (mutationError) {

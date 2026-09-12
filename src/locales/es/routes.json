@@ -381,10 +381,12 @@
     "driverFor": "Conductor — {{name}}",
     "appraiserFor": "Tasador — {{name}}",
     "helperFor": "Ayudante — {{name}}",
+    "createVehicle": "Nuevo vehículo",
     "createRoute": "Nuevo cuadrilla de ruta",
     "save": "Guardar ruta activa",
     "saving": "Guardando…",
     "saved": "Ruta activa guardada.",
+    "vehicleCreated": "Vehículo creado.",
     "routeCreated": "Cuadrilla de ruta creado.",
     "loadingRoute": "Cargando cuadrilla de ruta…",
     "createdAt": "Creado el",
@@ -418,6 +420,10 @@
   "createDialog": {
     "title": "Crear cuadrilla de ruta",
     "description": "Agregue una cuadrilla de ruta. Se seleccionará al guardar."
+  },
+  "createVehicleDialog": {
+    "title": "Crear vehículo",
+    "description": "Agregue un vehículo. Se seleccionará al guardar."
   },
   "form": {
     "addTitle": "Agregar cuadrilla de ruta",

@@ -4,6 +4,11 @@ import { axiosInstance } from "@/lib/api/axios";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import {
+  runSettledIdsWithConcurrency,
+  runSettledWithConcurrency,
+  type BulkSettledResult,
+} from "@/lib/api/run-settled-with-concurrency";
+import {
   buildApiListQuery,
   resolveApiListSort,
 } from "@/lib/api/list-query";
@@ -755,34 +760,47 @@ export async function clearPickupRouteAssignment(order: Order): Promise<void> {
 }
 
 /** Remove route assignments from the given appointments. */
-export async function clearPickupRouteAssignments(orders: Order[]): Promise<number> {
+export async function clearPickupRouteAssignments(
+  orders: Order[],
+): Promise<BulkSettledResult<string>> {
   const eligibleOrders = orders.filter((order) => order.id > 0);
   if (eligibleOrders.length === 0) {
     throw new Error("Select at least one appointment to remove from the route.");
   }
 
-  await Promise.all(eligibleOrders.map((order) => clearPickupRouteAssignment(order)));
-  return eligibleOrders.length;
+  return runSettledWithConcurrency(eligibleOrders, {
+    getId: (order) => String(order.id),
+    run: (order) => clearPickupRouteAssignment(order),
+  });
 }
 
 /** Remove route assignments from the given appointments. */
-export async function unassignOrdersFromRoutes(orders: Order[]): Promise<number> {
+export async function unassignOrdersFromRoutes(
+  orders: Order[],
+): Promise<BulkSettledResult<string>> {
   return clearPickupRouteAssignments(orders);
 }
 
 /** Remove route assignments from the selected appointments on a route. */
-export async function unassignPickupsFromRoute(orders: Order[]): Promise<number> {
+export async function unassignPickupsFromRoute(
+  orders: Order[],
+): Promise<BulkSettledResult<string>> {
   return clearPickupRouteAssignments(orders);
 }
 
 /** Remove every appointment from a scheduled appointment route. */
-export async function unassignAllPickupsFromRoute(routeId: string): Promise<number> {
+export async function unassignAllPickupsFromRoute(
+  routeId: string,
+): Promise<BulkSettledResult<string>> {
   const trimmedRouteId = routeId.trim();
   if (!trimmedRouteId) {
     throw new Error("A valid appointment route is required.");
   }
 
   const pickups = await fetchAllPickupsByRoute(trimmedRouteId);
+  if (pickups.length === 0) {
+    return { succeededIds: [], failedIds: [] };
+  }
   return clearPickupRouteAssignments(pickups);
 }
 
@@ -1001,8 +1019,9 @@ export async function deleteOrder(orderId: string): Promise<void> {
   assertMutationSuccess(response, "Unable to delete pickup.");
 }
 
-export async function deleteOrders(orderIds: string[]): Promise<void> {
-  await Promise.all(orderIds.map((orderId) => deleteOrder(orderId)));
+export async function deleteOrders(orderIds: string[]): Promise<BulkSettledResult<string>> {
+  const uniqueIds = [...new Set(orderIds.map((id) => id.trim()).filter(Boolean))];
+  return runSettledIdsWithConcurrency(uniqueIds, deleteOrder);
 }
 
 /** Mark an appointment complete/incomplete via full live Pickup PUT + `completed` patch. */
@@ -1026,8 +1045,14 @@ export async function setOrderCompleted(order: Order, completed: boolean): Promi
   }
 }
 
-export async function setOrdersCompleted(orders: Order[], completed: boolean): Promise<void> {
-  await Promise.all(orders.map((order) => setOrderCompleted(order, completed)));
+export async function setOrdersCompleted(
+  orders: Order[],
+  completed: boolean,
+): Promise<BulkSettledResult<string>> {
+  return runSettledWithConcurrency(orders, {
+    getId: (order) => String(order.id),
+    run: (order) => setOrderCompleted(order, completed),
+  });
 }
 
 function normalizeLegacySyncSummary(raw: unknown): LegacyPickupSyncSummary {

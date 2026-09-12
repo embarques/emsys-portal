@@ -64,6 +64,7 @@ import {
 } from "@/lib/table/directory-table-state";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -92,7 +93,7 @@ export function ActiveRoutesDirectoryWorkspace({
   const { toErrorMessage } = useUserError();
   const copyPrefix = variant.copyPrefix;
   const activeRouteFilterFields = useActiveRouteFilterFields(variant.routeType);
-  const { notifyDeleted } = useFeedback();
+  const { notifyDeleted, notifyError } = useFeedback();
   const [activeRouteFilters, setActiveRouteFilters] =
     useState<ActiveRouteFilterState>(defaultActiveRouteFilters);
   const {
@@ -236,11 +237,25 @@ export function ActiveRoutesDirectoryWorkspace({
       : [deleteActiveRouteTarget.id];
 
     try {
-      await deleteActiveRoutesMutation.mutateAsync(ids);
-      setSelectedActiveRouteIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteActiveRouteTarget(null);
-      setViewActiveRoute(null);
-      notifyDeleted(t(`routes.${copyPrefix}.entities.activeRoute`), ids.length);
+      const result = await deleteActiveRoutesMutation.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t(`routes.${copyPrefix}.entities.activeRoute`),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          notifyError(message);
+        },
+        onDone: () => {
+          setSelectedActiveRouteIds((current) =>
+            current.filter((id) => !result.succeededIds.includes(id)),
+          );
+          setDeleteActiveRouteTarget(null);
+          setViewActiveRoute(null);
+        },
+      });
     } catch {
       setDeleteActiveRouteTarget(null);
     }

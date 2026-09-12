@@ -6,6 +6,7 @@ import { OrdersMapView } from "@/components/orders/orders-map-view";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useUnassignPickupsFromRoute } from "@/lib/orders/hooks/use-orders";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useActiveRouteLookup } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useWorkspaceTabScope } from "@/lib/layout/workspace-tab-scope";
 import {
@@ -17,7 +18,7 @@ import { useTranslation } from "@/lib/i18n";
 
 export function OrdersMapWorkspace() {
   const { t } = useTranslation();
-  const { notifySuccess } = useFeedback();
+  const { notifySuccess, notifyError } = useFeedback();
   const tabScope = useWorkspaceTabScope();
   const mapActive = tabScope?.isActive ?? true;
 
@@ -38,12 +39,24 @@ export function OrdersMapWorkspace() {
   const pickupRouteLookup = useActiveRouteLookup("pickup", 500);
 
   async function handleUnassignRoute(ordersToClear: Order[]) {
-    const cleared = await unassignRouteMutation.mutateAsync(ordersToClear);
-    notifySuccess(
-      cleared === 1
-        ? t("orders.toasts.routeCleared", { count: cleared })
-        : t("orders.toasts.routeCleared_plural", { count: cleared }),
-    );
+    const result = await unassignRouteMutation.mutateAsync(ordersToClear);
+
+    reportBulkSettled({
+      result,
+      t,
+      notifyError,
+      onSucceeded: (count) => {
+        notifySuccess(
+          count === 1
+            ? t("orders.toasts.routeCleared", { count })
+            : t("orders.toasts.routeCleared_plural", { count }),
+        );
+      },
+      onAllFailed: (message) => {
+        notifyError(message);
+      },
+      onDone: () => {},
+    });
   }
 
   return (

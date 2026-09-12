@@ -172,7 +172,11 @@
       "recipient": "Destinatario",
       "received": "Recibido",
       "dispatched": "Despachado",
-      "supplier": "Proveedor"
+      "supplier": "Proveedor",
+      "contacts": "Contactos",
+      "addresses": "Direcciones",
+      "phones": "Teléfonos",
+      "emails": "Correos"
     },
     "fields": {
       "sku": "SKU",
@@ -261,6 +265,9 @@
     "addContact": "Agregar contacto",
     "addAddress": "Agregar dirección",
     "addEmail": "Agregar correo",
+    "removeContact": "Quitar contacto",
+    "removeAddress": "Quitar dirección",
+    "removeEmail": "Quitar correo",
     "readOnlyStockHint": "El stock se calcula a partir de ingresos y despachos."
   },
   "view": {

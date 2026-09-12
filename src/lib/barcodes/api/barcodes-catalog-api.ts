@@ -1,6 +1,10 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import {
+  runSettledIdsWithConcurrency,
+  type BulkSettledResult,
+} from "@/lib/api/run-settled-with-concurrency";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
@@ -188,6 +192,9 @@ export async function deleteBarcode(barcodeId: string | number): Promise<void> {
   assertMutationSuccess(response, "Unable to delete barcode.");
 }
 
-export async function deleteBarcodes(barcodeIds: Array<string | number>): Promise<void> {
-  await Promise.all(barcodeIds.map((barcodeId) => deleteBarcode(barcodeId)));
+export async function deleteBarcodes(
+  barcodeIds: Array<string | number>,
+): Promise<BulkSettledResult<string>> {
+  const uniqueIds = [...new Set(barcodeIds.map((id) => String(id).trim()).filter(Boolean))];
+  return runSettledIdsWithConcurrency(uniqueIds, deleteBarcode);
 }

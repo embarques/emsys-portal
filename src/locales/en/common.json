@@ -137,6 +137,7 @@
     "updated": "{{entity}} was updated successfully.",
     "deletedOne": "{{entity}} was deleted.",
     "deletedMany": "{{count}} {{entity}} were deleted.",
+    "bulkPartialFailure": "{{failed}} of {{total}} failed. {{message}}",
     "errorFallback": "Something went wrong."
   },
   "errors": {

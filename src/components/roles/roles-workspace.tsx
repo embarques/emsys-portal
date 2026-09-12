@@ -48,6 +48,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { normalizeApiError } from "@/lib/api/axios";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import {
   Sheet,
   SheetContent,
@@ -96,7 +97,7 @@ const defaultFilters: RoleFilterState = {
 export function RolesWorkspace() {
   const { t } = useTranslation();
   const roleFilterFields = useRoleFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<RoleFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -278,11 +279,23 @@ export function RolesWorkspace() {
       : [deleteTarget.roleId];
 
     try {
-      await deleteRolesMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
-      setViewRole(null);
-      notifyDeleted(t("roles.entity"), ids.length);
+      const result = await deleteRolesMutation.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("roles.entity"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          setFormError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          setDeleteTarget(null);
+          setViewRole(null);
+        },
+      });
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);

@@ -1,5 +1,9 @@
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import {
+  runSettledIdsWithConcurrency,
+  type BulkSettledResult,
+} from "@/lib/api/run-settled-with-concurrency";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
@@ -303,6 +307,7 @@ export async function deleteRole(roleId: string): Promise<void> {
   assertMutationSuccess(response, "Unable to delete role.");
 }
 
-export async function deleteRoles(roleIds: string[]): Promise<void> {
-  await Promise.all(roleIds.map(deleteRole));
+export async function deleteRoles(roleIds: string[]): Promise<BulkSettledResult<string>> {
+  const uniqueIds = [...new Set(roleIds.map((id) => id.trim()).filter(Boolean))];
+  return runSettledIdsWithConcurrency(uniqueIds, deleteRole);
 }

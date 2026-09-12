@@ -1,6 +1,10 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import {
+  runSettledIdsWithConcurrency,
+  type BulkSettledResult,
+} from "@/lib/api/run-settled-with-concurrency";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
@@ -384,6 +388,9 @@ export async function deleteContainer(containerId: string | number): Promise<voi
   assertMutationSuccess(response, "Unable to delete container.");
 }
 
-export async function deleteContainers(containerIds: Array<string | number>): Promise<void> {
-  await Promise.all(containerIds.map((containerId) => deleteContainer(containerId)));
+export async function deleteContainers(
+  containerIds: Array<string | number>,
+): Promise<BulkSettledResult<string>> {
+  const uniqueIds = [...new Set(containerIds.map((id) => String(id).trim()).filter(Boolean))];
+  return runSettledIdsWithConcurrency(uniqueIds, deleteContainer);
 }

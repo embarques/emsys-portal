@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Plus, Trash2 } from "lucide-react";
+import { Building2, Mail, MapPin, Phone, Plus, Trash2, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { selectFormFieldTextOnFocus, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -27,6 +27,7 @@ function RepeatableTextList({
   id,
   label,
   addLabel,
+  removeLabel,
   values,
   placeholder,
   type = "text",
@@ -35,6 +36,7 @@ function RepeatableTextList({
   id: string;
   label: string;
   addLabel: string;
+  removeLabel: string;
   values: string[];
   placeholder: string;
   type?: "text" | "email";
@@ -44,33 +46,46 @@ function RepeatableTextList({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={`${id}-0`}>{label}</Label>
-      {entries.map((value, index) => (
-        <div key={`${id}-${index}`} className="flex gap-2">
-          <Input
-            id={`${id}-${index}`}
-            type={type}
-            value={value}
-            placeholder={placeholder}
-            onChange={(event) =>
-              onChange(entries.map((entry, entryIndex) => (entryIndex === index ? event.target.value : entry)))
-            }
-            onFocus={selectFormFieldTextOnFocus}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-9 shrink-0"
-            onClick={() => onChange(entries.length > 1 ? entries.filter((_, entryIndex) => entryIndex !== index) : [""])}
-            aria-label={label}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
-      <Button type="button" variant="outline" className="h-9" onClick={() => onChange([...entries, ""])}>
-        <Plus className="h-4 w-4" />
+      {entries.map((value, index) => {
+        const isOnly = entries.length <= 1;
+
+        return (
+          <div key={`${id}-${index}`} className="flex items-center gap-2">
+            <Input
+              id={`${id}-${index}`}
+              type={type}
+              value={value}
+              placeholder={placeholder}
+              aria-label={entries.length > 1 ? `${label} ${index + 1}` : label}
+              onChange={(event) =>
+                onChange(entries.map((entry, entryIndex) => (entryIndex === index ? event.target.value : entry)))
+              }
+              onFocus={selectFormFieldTextOnFocus}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              title={removeLabel}
+              disabled={isOnly}
+              className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              onClick={() =>
+                onChange(entries.length > 1 ? entries.filter((_, entryIndex) => entryIndex !== index) : [""])
+              }
+              aria-label={removeLabel}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        );
+      })}
+      <Button
+        type="button"
+        variant="outline"
+        className="h-9 w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary"
+        onClick={() => onChange([...entries, ""])}
+      >
+        <Plus className="size-4" />
         {addLabel}
       </Button>
     </div>
@@ -108,56 +123,64 @@ export function InventorySupplierForm({
     <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody isBusy={isSubmitting}>
         <FormSection icon={Building2} title={t("inventory.form.sections.supplier")}>
-          <div className="space-y-2.5">
-            <div className="space-y-1">
-              <Label htmlFor="companyName">{t("inventory.form.fields.companyName")}</Label>
-              <Input
-                id="companyName"
-                value={values.companyName}
-                onChange={(event) => setValues((current) => ({ ...current, companyName: event.target.value }))}
-                onFocus={selectFormFieldTextOnFocus}
-                required
-              />
-            </div>
-
-            <RepeatableTextList
-              id="contactName"
-              label={t("inventory.form.fields.contactNames")}
-              addLabel={t("inventory.form.addContact")}
-              values={values.contactNames}
-              placeholder={t("inventory.form.placeholders.contactName")}
-              onChange={(contactNames) => setValues((current) => ({ ...current, contactNames }))}
-            />
-
-            <RepeatableTextList
-              id="address"
-              label={t("inventory.form.fields.addresses")}
-              addLabel={t("inventory.form.addAddress")}
-              values={values.addresses}
-              placeholder={t("inventory.form.placeholders.address")}
-              onChange={(addresses) => setValues((current) => ({ ...current, addresses }))}
-            />
-
-            <div className="space-y-1">
-              <Label>{t("inventory.form.fields.phones")}</Label>
-              <PhoneListEditor
-                idPrefix="supplier-phone"
-                phones={values.phones}
-                compact
-                onChange={(phones) => setValues((current) => ({ ...current, phones }))}
-              />
-            </div>
-
-            <RepeatableTextList
-              id="email"
-              label={t("inventory.form.fields.emails")}
-              addLabel={t("inventory.form.addEmail")}
-              values={values.emails}
-              placeholder={t("inventory.form.placeholders.email")}
-              type="email"
-              onChange={(emails) => setValues((current) => ({ ...current, emails }))}
+          <div className="space-y-1">
+            <Label htmlFor="companyName">
+              {t("inventory.form.fields.companyName")} <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="companyName"
+              value={values.companyName}
+              onChange={(event) => setValues((current) => ({ ...current, companyName: event.target.value }))}
+              onFocus={selectFormFieldTextOnFocus}
+              required
             />
           </div>
+        </FormSection>
+
+        <FormSection icon={User} title={t("inventory.form.sections.contacts")}>
+          <RepeatableTextList
+            id="contactName"
+            label={t("inventory.form.fields.contactNames")}
+            addLabel={t("inventory.form.addContact")}
+            removeLabel={t("inventory.form.removeContact")}
+            values={values.contactNames}
+            placeholder={t("inventory.form.placeholders.contactName")}
+            onChange={(contactNames) => setValues((current) => ({ ...current, contactNames }))}
+          />
+        </FormSection>
+
+        <FormSection icon={MapPin} title={t("inventory.form.sections.addresses")}>
+          <RepeatableTextList
+            id="address"
+            label={t("inventory.form.fields.addresses")}
+            addLabel={t("inventory.form.addAddress")}
+            removeLabel={t("inventory.form.removeAddress")}
+            values={values.addresses}
+            placeholder={t("inventory.form.placeholders.address")}
+            onChange={(addresses) => setValues((current) => ({ ...current, addresses }))}
+          />
+        </FormSection>
+
+        <FormSection icon={Phone} title={t("inventory.form.sections.phones")}>
+          <PhoneListEditor
+            idPrefix="supplier-phone"
+            phones={values.phones}
+            compact
+            onChange={(phones) => setValues((current) => ({ ...current, phones }))}
+          />
+        </FormSection>
+
+        <FormSection icon={Mail} title={t("inventory.form.sections.emails")}>
+          <RepeatableTextList
+            id="email"
+            label={t("inventory.form.fields.emails")}
+            addLabel={t("inventory.form.addEmail")}
+            removeLabel={t("inventory.form.removeEmail")}
+            values={values.emails}
+            placeholder={t("inventory.form.placeholders.email")}
+            type="email"
+            onChange={(emails) => setValues((current) => ({ ...current, emails }))}
+          />
         </FormSection>
       </FormBody>
 

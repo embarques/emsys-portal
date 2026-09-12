@@ -56,6 +56,7 @@ type ActiveRouteFormProps = {
   onRateChange: (rate: string) => void;
   onRouteRecordChange: (routeRecordId: string) => void;
   onRoleChange: (employeeId: number, role: RouteCrewRole) => void;
+  onCreateVehicleClick: () => void;
   onCreateRouteClick: () => void;
   onSubmit: () => void;
   onCancel?: () => void;
@@ -92,6 +93,7 @@ export function ActiveRouteForm({
   onRateChange,
   onRouteRecordChange,
   onRoleChange,
+  onCreateVehicleClick,
   onCreateRouteClick,
   onSubmit,
   onCancel,
@@ -155,7 +157,17 @@ export function ActiveRouteForm({
           />
         </FormSection>
 
-        <FormSection icon={Car} title={t("routes.activeRoute.vehicle")} required>
+        <FormSection
+          icon={Car}
+          title={t("routes.activeRoute.vehicle")}
+          required
+          action={
+            <Button type="button" variant="outline" size="sm" onClick={onCreateVehicleClick}>
+              <Plus className="size-4" />
+              {t("routes.activeRoute.createVehicle")}
+            </Button>
+          }
+        >
           <SearchableSelect
             id="active-route-vehicle"
             aria-label={t("routes.activeRoute.vehicle")}

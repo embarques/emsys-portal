@@ -32,6 +32,7 @@ import {
 } from "@/lib/table/directory-table-state";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -84,7 +85,7 @@ export function ContainersWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const containerFilterFields = useContainerFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<ContainerFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -220,11 +221,25 @@ export function ContainersWorkspace() {
       : [deleteTarget.id];
 
     try {
-      await deleteContainersMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
-      setViewContainer(null);
-      notifyDeleted(t("containers.entity"), ids.length);
+      const result = await deleteContainersMutation.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("containers.entity"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          setFormError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) =>
+            current.filter((id) => !result.succeededIds.includes(String(id))),
+          );
+          setDeleteTarget(null);
+          setViewContainer(null);
+        },
+      });
     } catch (mutationError) {
       setFormError(toErrorMessage(mutationError));
       setDeleteTarget(null);

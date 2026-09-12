@@ -137,6 +137,7 @@
     "updated": "{{entity}} se actualizó correctamente.",
     "deletedOne": "Se eliminó {{entity}}.",
     "deletedMany": "Se eliminaron {{count}} {{entity}}.",
+    "bulkPartialFailure": "{{failed}} de {{total}} fallaron. {{message}}",
     "errorFallback": "Algo salió mal."
   },
   "errors": {

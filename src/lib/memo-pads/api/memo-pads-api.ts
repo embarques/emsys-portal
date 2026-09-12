@@ -1,6 +1,10 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import {
+  runSettledIdsWithConcurrency,
+  type BulkSettledResult,
+} from "@/lib/api/run-settled-with-concurrency";
 import { buildApiListQuery } from "@/lib/api/list-query";
 import {
   buildAdvancedSearchBody,
@@ -289,8 +293,9 @@ export async function deleteMemoPad(memoPadId: string): Promise<void> {
   assertMutationSuccess(response, "Unable to delete memo pad.");
 }
 
-export async function deleteMemoPads(memoPadIds: string[]): Promise<void> {
-  await Promise.all(memoPadIds.map((memoPadId) => deleteMemoPad(memoPadId)));
+export async function deleteMemoPads(memoPadIds: string[]): Promise<BulkSettledResult<string>> {
+  const uniqueIds = [...new Set(memoPadIds.map((id) => id.trim()).filter(Boolean))];
+  return runSettledIdsWithConcurrency(uniqueIds, deleteMemoPad);
 }
 
 export async function fetchMemoPadById(memoPadId: string): Promise<MemoPad> {

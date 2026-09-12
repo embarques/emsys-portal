@@ -49,6 +49,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { normalizeApiError } from "@/lib/api/axios";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
   computeInvoiceKpis,
@@ -692,11 +693,23 @@ export function InvoicesWorkspace() {
       : [deleteTarget.invoiceId];
 
     try {
-      await deleteInvoicesMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
-      closeView();
-      notifyDeleted("Invoice", ids.length);
+      const result = await deleteInvoicesMutation.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: "Invoice",
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          notifyError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          setDeleteTarget(null);
+          closeView();
+        },
+      });
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
     }

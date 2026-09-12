@@ -77,6 +77,7 @@ import {
 } from "@/lib/table/directory-table-state";
 import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { normalizeApiError } from "@/lib/api/axios";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -629,11 +630,23 @@ export function OrdersWorkspace() {
       : [getOrderRecordId(deleteTarget)];
 
     try {
-      await deleteOrdersMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
-      setViewOrder(null);
-      notifyDeleted(t("orders.entity"), ids.length);
+      const result = await deleteOrdersMutation.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("orders.entity"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          setFormError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          setDeleteTarget(null);
+          setViewOrder(null);
+        },
+      });
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);
@@ -643,22 +656,44 @@ export function OrdersWorkspace() {
   async function handleSetCompleted(completed: boolean) {
     if (selectedOrders.length === 0) return;
 
-    const affectedIds = selectedOrders.map((order) => getOrderRecordId(order));
     const affectedCount = selectedOrders.length;
 
     try {
-      await setOrdersCompletedMutation.mutateAsync({ orders: selectedOrders, completed });
-      setSelectedIds((current) => current.filter((id) => !affectedIds.includes(id)));
-      setCompletionConfirm(null);
-      notifySuccess(
-        affectedCount === 1
-          ? t(completed ? "orders.toasts.markedComplete" : "orders.toasts.markedIncomplete", {
-              count: affectedCount,
-            })
-          : t(completed ? "orders.toasts.markedComplete_plural" : "orders.toasts.markedIncomplete_plural", {
-              count: affectedCount,
-            }),
-      );
+      const result = await setOrdersCompletedMutation.mutateAsync({
+        orders: selectedOrders,
+        completed,
+      });
+
+      reportBulkSettled({
+        result,
+        total: affectedCount,
+        t,
+        notifyError,
+        onSucceeded: (count) => {
+          notifySuccess(
+            count === 1
+              ? t(completed ? "orders.toasts.markedComplete" : "orders.toasts.markedIncomplete", {
+                  count,
+                })
+              : t(
+                  completed
+                    ? "orders.toasts.markedComplete_plural"
+                    : "orders.toasts.markedIncomplete_plural",
+                  { count },
+                ),
+          );
+        },
+        onAllFailed: (message) => {
+          notifyError(message);
+          setCompletionConfirm(null);
+        },
+        onDone: () => {
+          setSelectedIds((current) =>
+            current.filter((id) => !result.succeededIds.includes(id)),
+          );
+          setCompletionConfirm(null);
+        },
+      });
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
       setCompletionConfirm(null);
@@ -712,13 +747,29 @@ export function OrdersWorkspace() {
     });
 
     try {
-      const cleared = await clearRouteMutation.mutateAsync(selectedOrdersWithRoute);
-      setClearRouteOpen(false);
-      notifySuccess(
-        cleared === 1
-          ? t("orders.toasts.routeCleared", { count: cleared })
-          : t("orders.toasts.routeCleared_plural", { count: cleared }),
-      );
+      const result = await clearRouteMutation.mutateAsync(selectedOrdersWithRoute);
+
+      reportBulkSettled({
+        result,
+        t,
+        notifyError,
+        onSucceeded: (count) => {
+          notifySuccess(
+            count === 1
+              ? t("orders.toasts.routeCleared", { count })
+              : t("orders.toasts.routeCleared_plural", { count }),
+          );
+        },
+        onAllFailed: (message) => {
+          notifyError(message);
+        },
+        onDone: () => {
+          setClearRouteOpen(false);
+          setSelectedIds((current) =>
+            current.filter((id) => !result.succeededIds.includes(id)),
+          );
+        },
+      });
     } catch (mutationError) {
       console.error("[clearPickupRoute] UI error", mutationError);
       notifyError(normalizeApiError(mutationError).message);

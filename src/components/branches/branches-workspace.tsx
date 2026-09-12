@@ -37,6 +37,7 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { useBranchFilterFields } from "@/lib/branches/hooks/use-branch-filter-fields";
 import { useTranslation } from "@/lib/i18n";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import {
   buildTableSelectionResetKey,
@@ -83,7 +84,7 @@ const defaultFilters: BranchFilterState = {
 export function BranchesWorkspace() {
   const { t } = useTranslation();
   const branchFilterFields = useBranchFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<BranchFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -214,11 +215,25 @@ export function BranchesWorkspace() {
       : [deleteTarget.id];
 
     try {
-      await deleteBranchesMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
-      setViewBranch(null);
-      notifyDeleted(t("branches.entity"), ids.length);
+      const result = await deleteBranchesMutation.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("branches.entity"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          setFormError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) =>
+            current.filter((id) => !result.succeededIds.includes(String(id))),
+          );
+          setDeleteTarget(null);
+          setViewBranch(null);
+        },
+      });
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);

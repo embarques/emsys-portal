@@ -2,6 +2,10 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { axiosInstance } from "@/lib/api/axios";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import {
+  runSettledIdsWithConcurrency,
+  type BulkSettledResult,
+} from "@/lib/api/run-settled-with-concurrency";
 import { buildApiListQuery, resolveApiListSort } from "@/lib/api/list-query";
 import {
   buildApiFilterNodeFromTableRows,
@@ -1583,8 +1587,9 @@ export async function deleteInvoice(invoiceId: string): Promise<void> {
   assertMutationSuccess(response, "Unable to delete invoice.");
 }
 
-export async function deleteInvoices(invoiceIds: string[]): Promise<void> {
-  await Promise.all(invoiceIds.map((invoiceId) => deleteInvoice(invoiceId)));
+export async function deleteInvoices(invoiceIds: string[]): Promise<BulkSettledResult<string>> {
+  const uniqueIds = [...new Set(invoiceIds.map((id) => id.trim()).filter(Boolean))];
+  return runSettledIdsWithConcurrency(uniqueIds, deleteInvoice);
 }
 
 function normalizeLegacyInvoiceSyncSummary(raw: unknown): LegacyInvoiceSyncSummary {

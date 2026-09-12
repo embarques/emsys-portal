@@ -38,8 +38,8 @@ import {
   type RouteType,
 } from "@/lib/pickup-delivery-routes/types";
 import {
-  formatRouteAssignmentDescriptionLines,
   formatRouteAssignmentName,
+  formatRouteAssignmentOptionLabel,
 } from "@/lib/route-manager/display";
 import { useRoute, useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
 import {
@@ -189,12 +189,13 @@ export function AssignRouteCrewDialog({
     () =>
       [...routeCrews]
         .sort((left, right) =>
-          formatRouteAssignmentName(left).localeCompare(formatRouteAssignmentName(right)),
+          formatRouteAssignmentOptionLabel(left).localeCompare(
+            formatRouteAssignmentOptionLabel(right),
+          ),
         )
         .map((route) => ({
           value: route.id,
-          label: formatRouteAssignmentName(route),
-          descriptionLines: formatRouteAssignmentDescriptionLines(route),
+          label: formatRouteAssignmentOptionLabel(route),
           keywords: [
             route.name,
             route.routeId,

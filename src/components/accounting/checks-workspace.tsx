@@ -56,6 +56,7 @@ import {
   type CheckStatus,
 } from "@/lib/accounting/checks/types";
 import { normalizeApiError } from "@/lib/api/axios";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useTranslation } from "@/lib/i18n";
@@ -311,16 +312,27 @@ export function ChecksWorkspace() {
     const ids = targets.map((check) => check.id);
 
     try {
-      await deleteChecksMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
+      const result = await deleteChecksMutation.mutateAsync(ids);
 
-      const count = targets.length;
-      feedback.notifySuccess(
-        count === 1
-          ? t("accounting.checks.toasts.deleted")
-          : t("accounting.checks.toasts.deleted_plural", { count }),
-      );
+      reportBulkSettled({
+        result,
+        t,
+        notifyError: feedback.notifyError,
+        onSucceeded: (count) => {
+          feedback.notifySuccess(
+            count === 1
+              ? t("accounting.checks.toasts.deleted")
+              : t("accounting.checks.toasts.deleted_plural", { count }),
+          );
+        },
+        onAllFailed: (message) => {
+          feedback.notifyError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          setDeleteTarget(null);
+        },
+      });
     } catch (deleteError) {
       feedback.notifyError(normalizeApiError(deleteError).message);
     }

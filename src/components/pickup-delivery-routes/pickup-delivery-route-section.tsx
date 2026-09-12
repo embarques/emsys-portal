@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ActiveRouteForm } from "@/components/pickup-delivery-routes/pickup-delivery-route-form";
 import { RouteForm } from "@/components/route-manager/route-form";
+import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import {
   Dialog,
@@ -28,7 +29,11 @@ import {
 import { formatContainerLabel, formatContainerRouteNumber } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
-import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
+import { useVehiclePicker, useCreateVehicle } from "@/lib/vehicles/hooks/use-vehicles";
+import {
+  createEmptyVehicleForm,
+  type VehicleFormValues,
+} from "@/lib/vehicles/types";
 import type { SearchableSelectOption } from "@/components/ui/searchable-select";
 import {
   buildFormBranchOptions,
@@ -41,8 +46,8 @@ import {
   formatPreviousDailyRouteLabel,
 } from "@/lib/pickup-delivery-routes/display";
 import {
-  formatRouteAssignmentDescriptionLines,
   formatRouteAssignmentName,
+  formatRouteAssignmentOptionLabel,
   getVehicleRefLabel,
 } from "@/lib/route-manager/display";
 import {
@@ -108,6 +113,8 @@ export function ActiveRouteSection({
   const [formError, setFormError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFormError, setCreateFormError] = useState<string | null>(null);
+  const [createVehicleDialogOpen, setCreateVehicleDialogOpen] = useState(false);
+  const [createVehicleFormError, setCreateVehicleFormError] = useState<string | null>(null);
   const syncedRouteRecordIdRef = useRef("");
   const branchCode = values.branch.code;
   const isDeliveryBranch = isDeliveryBranchCode(branchCode);
@@ -165,6 +172,7 @@ export function ActiveRouteSection({
 
   const upsertMutation = useUpsertActiveRoute();
   const createRouteMutation = useCreateRoute();
+  const createVehicleMutation = useCreateVehicle();
   const selectedRouteQuery = useRoute(values.routeRecordId || null, Boolean(values.routeRecordId));
 
   useEffect(() => {
@@ -183,12 +191,13 @@ export function ActiveRouteSection({
     const items = routesQuery.data?.items ?? [];
     return [...items]
       .sort((left, right) =>
-        formatRouteAssignmentName(left).localeCompare(formatRouteAssignmentName(right)),
+        formatRouteAssignmentOptionLabel(left).localeCompare(
+          formatRouteAssignmentOptionLabel(right),
+        ),
       )
       .map((route) => ({
         value: route.id,
-        label: formatRouteAssignmentName(route),
-        descriptionLines: formatRouteAssignmentDescriptionLines(route),
+        label: formatRouteAssignmentOptionLabel(route),
         keywords: [
           route.name,
           route.routeId,
@@ -441,6 +450,17 @@ export function ActiveRouteSection({
     return form;
   }
 
+  function buildCreateVehicleInitialValues(): VehicleFormValues {
+    const form = createEmptyVehicleForm();
+    if (values.branch.id > 0 || values.branch.code.trim()) {
+      form.branch = {
+        id: values.branch.id,
+        code: values.branch.code,
+      };
+    }
+    return form;
+  }
+
   async function handleCreateRoute(routeValues: RouteFormValues) {
     setCreateFormError(null);
     try {
@@ -456,6 +476,25 @@ export function ActiveRouteSection({
       notifySuccess(t("routes.activeRoute.routeCreated"));
     } catch (error) {
       setCreateFormError(toErrorMessage(error));
+    }
+  }
+
+  async function handleCreateVehicle(vehicleValues: VehicleFormValues) {
+    setCreateVehicleFormError(null);
+    try {
+      const created = await createVehicleMutation.mutateAsync(vehicleValues);
+      setValues((current) => ({
+        ...current,
+        vehicle: {
+          id: created.id,
+          name: created.name.trim(),
+          ...(created.branch.code.trim() ? { branch: created.branch.code } : {}),
+        },
+      }));
+      setCreateVehicleDialogOpen(false);
+      notifySuccess(t("routes.activeRoute.vehicleCreated"));
+    } catch (error) {
+      setCreateVehicleFormError(toErrorMessage(error));
     }
   }
 
@@ -522,6 +561,19 @@ export function ActiveRouteSection({
           setFormError(null);
         }}
         onRoleChange={handleRoleChange}
+        onCreateVehicleClick={() => {
+          if (isDesktopTabs) {
+            openFormTab({
+              feature: "vehicles",
+              baseHref: "/vehicles",
+              mode: "add",
+              label: t("vehicles.actions.add"),
+            });
+            return;
+          }
+          setCreateVehicleFormError(null);
+          setCreateVehicleDialogOpen(true);
+        }}
         onCreateRouteClick={() => {
           if (isDesktopTabs) {
             openFormTab({
@@ -539,6 +591,28 @@ export function ActiveRouteSection({
         onCancel={onCancel}
         vehicleRouteId={isEditing && !isDeliveryBranch ? initialRecord?.id : undefined}
       />
+
+      <Dialog open={createVehicleDialogOpen} onOpenChange={setCreateVehicleDialogOpen}>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+            <DialogTitle>{t("routes.createVehicleDialog.title")}</DialogTitle>
+            <DialogDescription>
+              {t("routes.createVehicleDialog.description")}
+            </DialogDescription>
+          </DialogHeader>
+          {createVehicleDialogOpen ? (
+            <VehicleForm
+              key="create-vehicle-from-active"
+              initialValues={buildCreateVehicleInitialValues()}
+              submitLabel={t("routes.activeRoute.createVehicle")}
+              isSubmitting={createVehicleMutation.isPending}
+              externalError={createVehicleFormError}
+              onSubmit={handleCreateVehicle}
+              onCancel={() => setCreateVehicleDialogOpen(false)}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">

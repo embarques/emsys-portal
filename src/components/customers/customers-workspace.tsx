@@ -84,6 +84,7 @@ import {
 } from "@/lib/customers/types";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
 import { useUserError } from "@/lib/errors";
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
@@ -268,36 +269,32 @@ export function CustomersWorkspace() {
     if (!deleteTarget) return;
 
     const ids = deleteTarget.mode === "bulk" ? deleteTarget.ids : [deleteTarget.customer.id];
+    const deleteMode = deleteTarget.mode;
+    const singleName = deleteTarget.mode === "single" ? deleteTarget.customer.name : undefined;
 
     try {
       const result = await deleteCustomersMutation.mutateAsync(ids);
-      const removedIds = result.deletedIds;
 
-      if (removedIds.length > 0) {
-        setSelectedIds((current) => current.filter((id) => !removedIds.includes(id)));
-      }
-
-      if (result.failedMessage) {
-        if (removedIds.length === 0) {
-          setDeleteError(result.failedMessage);
-          return;
-        }
-
-        closeDeleteDialog();
-        setViewCustomer(null);
-        notifyDeleted(t("customers.entity"), removedIds.length);
-        notifyError(result.failedMessage);
-        return;
-      }
-
-      closeDeleteDialog();
-      setViewCustomer(null);
-
-      if (deleteTarget.mode === "single") {
-        notifySuccess(t("customers.dialogs.deletedOne", { name: deleteTarget.customer.name }));
-      } else {
-        notifyDeleted(t("customers.entity"), removedIds.length);
-      }
+      reportBulkSettled({
+        result,
+        t,
+        notifyError,
+        onSucceeded: (count) => {
+          if (deleteMode === "single" && singleName) {
+            notifySuccess(t("customers.dialogs.deletedOne", { name: singleName }));
+          } else {
+            notifyDeleted(t("customers.entity"), count);
+          }
+        },
+        onAllFailed: (message) => {
+          setDeleteError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          closeDeleteDialog();
+          setViewCustomer(null);
+        },
+      });
     } catch (mutationError) {
       const { status, category } = formatError(mutationError);
       setDeleteError(

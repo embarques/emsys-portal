@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import { runSettledWithConcurrency } from "@/lib/api/run-settled-with-concurrency";
 import {
   buildApiSearchPaginationQuery,
   buildStripeStyleSearchBody,
@@ -410,14 +411,25 @@ export async function updateBarcodes(updates: BarcodeUpdate[]): Promise<Barcode[
   const catalogUpdates = resolvedUpdates.filter((update) => update.target.kind === "barcodes");
   const embeddedUpdates = resolvedUpdates.filter((update) => update.target.kind === "invoice-embedded");
 
-  const catalogResults = await Promise.all(
-    catalogUpdates.map((update) => {
+  const catalogById = new Map<number, Barcode>();
+  const catalogSettled = await runSettledWithConcurrency(catalogUpdates, {
+    getId: (update) => (update.target.kind === "barcodes" ? update.target.id : 0),
+    run: async (update) => {
       if (update.target.kind !== "barcodes") {
         throw new Error("Expected barcodes catalog write target.");
       }
-      return updateBarcode(update.target.id, update.payload);
-    }),
-  );
+      const barcode = await updateBarcode(update.target.id, update.payload);
+      catalogById.set(update.target.id, barcode);
+    },
+  });
+
+  if (catalogSettled.failedIds.length > 0 && catalogSettled.succeededIds.length === 0) {
+    throw new Error(catalogSettled.firstErrorMessage ?? "Unable to update barcodes.");
+  }
+
+  const catalogResults = catalogSettled.succeededIds
+    .map((id) => catalogById.get(id))
+    .filter((barcode): barcode is Barcode => Boolean(barcode));
 
   const embeddedByInvoice = new Map<string, ReturnType<typeof toEmbeddedPatch>[]>();
   for (const update of embeddedUpdates) {

@@ -2,6 +2,10 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { logApiErrorDev, normalizeApiError } from "@/lib/api/api-error";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
+import {
+  runSettledIdsWithConcurrency,
+  type BulkSettledResult,
+} from "@/lib/api/run-settled-with-concurrency";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery, type ApiListFieldFilter } from "@/lib/api/list-query";
 import {
@@ -827,30 +831,25 @@ function isCustomerAlreadyDeletedError(error: unknown): boolean {
   return status === 404 || /customer not found/i.test(message);
 }
 
-export type DeleteCustomersResult = {
+/** @deprecated Prefer BulkSettledResult — kept for call-site migration. */
+export type DeleteCustomersResult = BulkSettledResult<string> & {
+  /** @deprecated Use succeededIds */
   deletedIds: string[];
+  /** @deprecated Use firstErrorMessage */
   failedMessage?: string;
 };
 
 export async function deleteCustomers(customerIds: string[]): Promise<DeleteCustomersResult> {
   const uniqueIds = [...new Set(customerIds.map((id) => id.trim()).filter(Boolean))];
-  const deletedIds: string[] = [];
-  let failedMessage: string | undefined;
+  const result = await runSettledIdsWithConcurrency(uniqueIds, deleteCustomer, {
+    treatAsSuccess: (error) => isCustomerAlreadyDeletedError(error),
+  });
 
-  for (const customerId of uniqueIds) {
-    try {
-      await deleteCustomer(customerId);
-      deletedIds.push(customerId);
-    } catch (error) {
-      if (isCustomerAlreadyDeletedError(error)) {
-        deletedIds.push(customerId);
-        continue;
-      }
-      failedMessage = normalizeApiError(error).message;
-    }
-  }
-
-  return { deletedIds, failedMessage };
+  return {
+    ...result,
+    deletedIds: result.succeededIds,
+    failedMessage: result.firstErrorMessage,
+  };
 }
 
 /**

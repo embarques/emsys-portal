@@ -381,10 +381,12 @@
     "driverFor": "Driver — {{name}}",
     "appraiserFor": "Appraiser — {{name}}",
     "helperFor": "Helper — {{name}}",
+    "createVehicle": "New vehicle",
     "createRoute": "New route crew",
     "save": "Save active route",
     "saving": "Saving…",
     "saved": "Active route saved.",
+    "vehicleCreated": "Vehicle created.",
     "routeCreated": "Route crew created.",
     "loadingRoute": "Loading route crew…",
     "createdAt": "Created at",
@@ -418,6 +420,10 @@
   "createDialog": {
     "title": "Create route crew",
     "description": "Add a route crew. It will be selected when saved."
+  },
+  "createVehicleDialog": {
+    "title": "Create vehicle",
+    "description": "Add a vehicle. It will be selected when saved."
   },
   "form": {
     "addTitle": "Add route crew",

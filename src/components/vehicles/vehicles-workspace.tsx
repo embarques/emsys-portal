@@ -46,6 +46,7 @@ import {
 } from "@/lib/table/directory-table-state";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import {
@@ -90,7 +91,7 @@ export function VehiclesWorkspace() {
   const vehicleFilterFields = useVehicleFilterFields();
   const branchesQuery = useBranchPicker(200);
   const branches = branchesQuery.data?.items ?? [];
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<VehicleFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -237,11 +238,23 @@ export function VehiclesWorkspace() {
     const ids = Array.isArray(deleteTarget) ? deleteTarget.map((vehicle) => vehicle.id) : [deleteTarget.id];
 
     try {
-      await deleteVehiclesMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
-      setViewVehicle(null);
-      notifyDeleted(t("vehicles.entity"), ids.length);
+      const result = await deleteVehiclesMutation.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("vehicles.entity"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          setFormError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          setDeleteTarget(null);
+          setViewVehicle(null);
+        },
+      });
     } catch (mutationError) {
       setFormError(normalizeApiError(mutationError).message);
       setDeleteTarget(null);

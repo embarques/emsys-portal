@@ -41,6 +41,7 @@ import {
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { computeItemKpis, formatItemPrice, truncateItemId } from "@/lib/items/display";
 import { useItemFilterFields } from "@/lib/items/hooks/use-item-filter-fields";
 import {
@@ -84,7 +85,7 @@ export function ItemsWorkspace() {
   const dash = t("common.empty.dash");
   const { toErrorMessage } = useUserError();
   const itemFilterFields = useItemFilterFields();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<ItemFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
@@ -203,11 +204,23 @@ export function ItemsWorkspace() {
     const ids = Array.isArray(deleteTarget) ? deleteTarget.map((item) => item.itemId) : [deleteTarget.itemId];
 
     try {
-      await deleteItemsMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
-      setViewItem(null);
-      notifyDeleted(t("items.entity"), ids.length);
+      const result = await deleteItemsMutation.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("items.entity"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          setFormError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          setDeleteTarget(null);
+          setViewItem(null);
+        },
+      });
     } catch (mutationError) {
       setFormError(toErrorMessage(mutationError));
       setDeleteTarget(null);

@@ -29,6 +29,7 @@ import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useUserError } from "@/lib/errors/use-user-error";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { formatBranchCodeOnly, getBranchCodeBadgeClass } from "@/lib/branches/display";
 import { useDirectoryBranchFilter } from "@/lib/branches/hooks/use-directory-branch-filter";
 import { createApiListTextSearch } from "@/lib/api/search-query";
@@ -66,7 +67,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 export function RouteManagerWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [query, setQuery] = useState("");
   const {
     branchCode,
@@ -215,11 +216,23 @@ export function RouteManagerWorkspace() {
       : [deleteTarget.id];
 
     try {
-      await deleteMutation.mutateAsync(ids);
-      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-      setDeleteTarget(null);
-      setViewAssignment(null);
-      notifyDeleted(t("routes.entities.route"), ids.length);
+      const result = await deleteMutation.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("routes.entities.route"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          setFormError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          setDeleteTarget(null);
+          setViewAssignment(null);
+        },
+      });
     } catch (mutationError) {
       setFormError(toErrorMessage(mutationError));
       setDeleteTarget(null);

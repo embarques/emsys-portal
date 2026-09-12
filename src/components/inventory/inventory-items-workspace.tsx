@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useTranslation } from "@/lib/i18n";
 import {
   computeInventoryKpis,
@@ -67,7 +68,7 @@ type DocumentDialog = "receipt" | "dispatch" | "adjustment" | null;
 export function InventoryItemsWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
-  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const { data: items = [], isLoading, isError, error } = useInventoryItems();
   const { data: suppliers = [] } = useInventorySuppliers();
   const snapshot = useInventorySnapshotData();
@@ -141,11 +142,27 @@ export function InventoryItemsWorkspace() {
   async function confirmDelete() {
     if (!deleteTarget) return;
     const ids = Array.isArray(deleteTarget) ? deleteTarget.map((item) => item.id) : [deleteTarget.id];
-    await deleteItems.mutateAsync(ids);
-    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    setDeleteTarget(null);
-    setViewItem(null);
-    notifyDeleted(t("inventory.entity"), ids.length);
+    try {
+      const result = await deleteItems.mutateAsync(ids);
+
+      reportBulkSettled({
+        result,
+        t,
+        entityLabel: t("inventory.entity"),
+        notifyDeleted,
+        notifyError,
+        onAllFailed: (message) => {
+          notifyError(message);
+        },
+        onDone: () => {
+          setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+          setDeleteTarget(null);
+          setViewItem(null);
+        },
+      });
+    } catch (mutationError) {
+      notifyError(toErrorMessage(mutationError));
+    }
   }
 
   const stats = [

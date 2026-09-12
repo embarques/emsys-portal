@@ -172,7 +172,11 @@
       "recipient": "Recipient",
       "received": "Received",
       "dispatched": "Dispatched",
-      "supplier": "Supplier"
+      "supplier": "Supplier",
+      "contacts": "Contacts",
+      "addresses": "Addresses",
+      "phones": "Phones",
+      "emails": "Emails"
     },
     "fields": {
       "sku": "SKU",
@@ -261,6 +265,9 @@
     "addContact": "Add contact",
     "addAddress": "Add address",
     "addEmail": "Add email",
+    "removeContact": "Remove contact",
+    "removeAddress": "Remove address",
+    "removeEmail": "Remove email",
     "readOnlyStockHint": "Stock is calculated from receipts and dispatches."
   },
   "view": {

@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { normalizeApiError } from "@/lib/api/axios";
+import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { fetchAllPickupsByRoutes } from "@/lib/orders/api/orders-api";
@@ -106,19 +107,32 @@ export function PickupRoutesSelectionActions({
     if (!singleSelectedRouteId) return;
 
     try {
-      const cleared = await clearPickupRouteMutation.mutateAsync(singleSelectedRouteId);
-      setClearRouteOpen(false);
+      const result = await clearPickupRouteMutation.mutateAsync(singleSelectedRouteId);
 
-      if (cleared === 0) {
+      if (result.succeededIds.length === 0 && result.failedIds.length === 0) {
+        setClearRouteOpen(false);
         notifyError(t("routes.pickupRoutes.actions.noPickupsOnRoute"));
         return;
       }
 
-      notifySuccess(
-        cleared === 1
-          ? t("routes.pickupRoutes.toasts.routeCleared", { count: cleared })
-          : t("routes.pickupRoutes.toasts.routeCleared_plural", { count: cleared }),
-      );
+      reportBulkSettled({
+        result,
+        t,
+        notifyError,
+        onSucceeded: (count) => {
+          notifySuccess(
+            count === 1
+              ? t("routes.pickupRoutes.toasts.routeCleared", { count })
+              : t("routes.pickupRoutes.toasts.routeCleared_plural", { count }),
+          );
+        },
+        onAllFailed: (message) => {
+          notifyError(message);
+        },
+        onDone: () => {
+          setClearRouteOpen(false);
+        },
+      });
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
     }
