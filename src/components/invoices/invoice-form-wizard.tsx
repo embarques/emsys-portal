@@ -51,6 +51,7 @@ import {
   createEmptyInvoiceForm,
   getInvoiceFormBalance,
   resetInvoiceFormForNextEntry,
+  resolveLineTotal,
   type InvoiceFormSubmitResult,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
@@ -320,9 +321,20 @@ export function InvoiceFormWizard({
   const saveAmountPaid = Number(dailyIncomeContext.registration?.amount ?? values.amountPaid ?? 0) || 0;
   const hasNegativeBalance = getInvoiceFormBalance(values, saveAmountPaid) < 0;
   const negativeBalanceError = hasNegativeBalance ? t("invoices.wizard.validation.negativeBalance") : null;
-  const saveDisabled = isSubmitting || hasNegativeBalance;
+  const registeredCost = dailyIncomeContext.registration?.invoice?.cost ?? null;
+  const lineSubtotal = values.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0);
+  const hasRegisteredCostMismatch =
+    registeredCost != null &&
+    Number.isFinite(registeredCost) &&
+    Math.round(Math.abs(lineSubtotal - registeredCost) * 100) / 100 >= 0.01;
+  const registeredCostMismatchError = hasRegisteredCostMismatch
+    ? t("invoices.wizard.validation.registeredCostMismatch")
+    : null;
+  const saveDisabled = isSubmitting || hasNegativeBalance || hasRegisteredCostMismatch;
   const bannerError =
-    step === previewStep ? submitError ?? negativeBalanceError ?? externalError : stepError ?? externalError;
+    step === previewStep
+      ? submitError ?? negativeBalanceError ?? registeredCostMismatchError ?? externalError
+      : stepError ?? externalError;
   const invoiceDate = values.date.trim().slice(0, 10);
   const invoiceBranchId = currentUserQuery.data?.branch?.id ?? 0;
   const showOpenDailyIncomeAction =
@@ -374,7 +386,6 @@ export function InvoiceFormWizard({
     requireDailyIncomeRegistration && dailyIncomeContext.registration
       ? undefined
       : handleDiscountChange;
-  const registeredCost = dailyIncomeContext.registration?.invoice?.cost ?? null;
 
   const stepLabelKey =
     !requireDailyIncomeRegistration && step === 4

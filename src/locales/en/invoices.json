@@ -192,7 +192,8 @@
       "lineItemQuantityRequired": "Each line item needs a quantity greater than 0.",
       "dailyIncomeContinueRequired": "Open a Cuadre, then record a payment or check Skip payment before continuing.",
       "dailyIncomeSaveRequired": "Open a Cuadre, then record a payment or check Skip payment before saving.",
-      "negativeBalance": "Balance cannot be negative. Reduce the payment or discount so it does not exceed the invoice total."
+      "negativeBalance": "Balance cannot be negative. Reduce the payment or discount so it does not exceed the invoice total.",
+      "registeredCostMismatch": "Line items total must match the registered Daily Income cost before saving."
     },
     "summary": {
       "title": "Invoice summary",
