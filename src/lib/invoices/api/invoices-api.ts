@@ -19,6 +19,7 @@ import {
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { buildApiAddressPayload, buildApiBranchDto, type ApiAddressPayload } from "@/lib/api/payloads";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import { normalizeTransactionPartyAddresses } from "@/lib/customers/api/customers-api";
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, createRecordId, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 import { getPhoneAtDisplayIndex, getPrimaryPhoneNumber } from "@/lib/phones/phones";
@@ -69,6 +70,16 @@ type ApiAddress = {
   country?: string;
   zipcode?: string;
   isPrimary?: boolean;
+  location?: {
+    type?: string;
+    coordinates?: unknown;
+  } | null;
+  verification?: {
+    is_verified?: boolean;
+    isVerified?: boolean;
+    verified_at?: string;
+    verifiedAt?: string;
+  } | null;
 };
 
 type ApiInvoicePhone = {
@@ -229,36 +240,26 @@ function readInvoiceCreatedBy(user: unknown): string {
 }
 
 function normalizeApiInvoicePartyAddresses(party: ApiInvoiceParty): OrderParty["addresses"] {
-  const snapshotAddress = party.address;
-  if (!snapshotAddress || typeof snapshotAddress !== "object") {
+  // Prefer the create-time `address` snapshot and keep Google verification/location
+  // when the API round-trips them (same helper pickups use).
+  const snapshotAddresses = normalizeTransactionPartyAddresses(party);
+  if (!snapshotAddresses?.length) {
     return [];
   }
 
-  const addressId = readStringId(snapshotAddress.id) ?? createRecordId();
-  const streetAddress = String(snapshotAddress.address1 ?? "").trim();
-  const apartment = String(snapshotAddress.apartment ?? "").trim();
-  const address2 = String(snapshotAddress.address2 ?? "").trim();
-  const city = String(snapshotAddress.city ?? "").trim();
-  const state = String(snapshotAddress.state ?? "").trim();
-  const zipCode = String(snapshotAddress.zipcode ?? "").trim();
-
-  if (!streetAddress && !apartment && !address2 && !city && !state && !zipCode) {
-    return [];
-  }
-
-  return [
-    {
-      id: addressId,
-      streetAddress,
-      apt: apartment || undefined,
-      crossStreet: address2 || undefined,
-      city,
-      state,
-      provinceCountry: String(snapshotAddress.country ?? "").trim(),
-      zipCode,
-      isPrimary: true,
-    },
-  ];
+  return snapshotAddresses.map((address, index) => ({
+    id: address.id?.trim() || createRecordId(),
+    streetAddress: address.address1,
+    apt: address.apartment || undefined,
+    crossStreet: address.address2 || undefined,
+    city: address.city,
+    state: address.state || undefined,
+    provinceCountry: address.country || undefined,
+    zipCode: address.zipcode || undefined,
+    isPrimary: address.isPrimary || index === 0,
+    location: address.location,
+    verification: address.verification,
+  }));
 }
 
 function normalizeApiInvoiceParty(raw: unknown): OrderParty {

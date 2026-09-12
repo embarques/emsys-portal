@@ -5,6 +5,10 @@ import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filte
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
+  CUSTOMER_TYPE_RECEIVER,
+  CUSTOMER_TYPE_SENDER,
+} from "@/lib/customers/customer-type";
+import {
   createRecordId,
   getCustomerAddresses,
   getCustomerPhones,
@@ -640,7 +644,10 @@ export function invoiceLineItemToFormValues(item: InvoiceLineItem): InvoiceLineI
   };
 }
 
-function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
+function orderPartyToInvoiceFormCustomer(
+  party: OrderParty,
+  customerType: number,
+): Customer | null {
   if (!party.name.trim() && !party.clientId && !party.id) return null;
 
   const primaryAddressId = party.orderAddressId;
@@ -657,6 +664,7 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
       ].some((value) => String(value ?? "").trim()),
     )
     .map((address) => ({
+      id: address.id,
       address1: address.streetAddress.trim(),
       address2: address.crossStreet?.trim() ?? "",
       apartment: address.apt?.trim() ?? "",
@@ -664,8 +672,9 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
       state: address.state?.trim() ?? "",
       zipcode: address.zipCode?.trim() ?? "",
       country: address.provinceCountry?.trim() ?? "",
-      location: null,
-      verification: null,
+      // Keep Google metadata from the invoice party snapshot when the API sends it.
+      location: address.location ?? null,
+      verification: address.verification ?? null,
       isPrimary: address.id === primaryAddressId || address.isPrimary,
     }));
 
@@ -683,7 +692,7 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
     id: party.clientId ?? party.id,
     oldID: null,
     name: party.name.trim() || "—",
-    customerType: null,
+    customerType,
     phones: party.phones.map((phone, index) => ({
       type: "mobile",
       number: phone.number,
@@ -721,8 +730,10 @@ function normalizeInvoicePickupSource(
 }
 
 export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
-  const sender = orderPartyToInvoiceFormCustomer(invoice.sender);
-  const receiver = invoice.receiver ? orderPartyToInvoiceFormCustomer(invoice.receiver) : null;
+  const sender = orderPartyToInvoiceFormCustomer(invoice.sender, CUSTOMER_TYPE_SENDER);
+  const receiver = invoice.receiver
+    ? orderPartyToInvoiceFormCustomer(invoice.receiver, CUSTOMER_TYPE_RECEIVER)
+    : null;
 
   return {
     invoiceId: invoice.invoiceId,
@@ -752,6 +763,39 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     createdAt: invoice.createdAt,
     createdBy: invoice.createdBy,
   };
+}
+
+/**
+ * Invoice party snapshots can omit Google verification / customerType.
+ * Prefer the live customer record for edit UI (same idea as pickup → sender hydrate).
+ */
+export async function hydrateInvoiceEditPartyCustomers(
+  values: InvoiceFormValues,
+  loadCustomer: (customerId: string) => Promise<Customer>,
+): Promise<InvoiceFormValues> {
+  let next = values;
+
+  const senderId = values.senderId.trim() || values.sender?.id?.trim() || "";
+  if (senderId) {
+    try {
+      const sender = await loadCustomer(senderId);
+      next = { ...next, senderId: sender.id, sender };
+    } catch {
+      // Keep the invoice snapshot when the live customer cannot be loaded.
+    }
+  }
+
+  const receiverId = values.receiverId.trim() || values.receiver?.id?.trim() || "";
+  if (receiverId) {
+    try {
+      const receiver = await loadCustomer(receiverId);
+      next = { ...next, receiverId: receiver.id, receiver };
+    } catch {
+      // Keep the invoice snapshot when the live customer cannot be loaded.
+    }
+  }
+
+  return next;
 }
 
 export function areInvoiceFormValuesEquivalent(

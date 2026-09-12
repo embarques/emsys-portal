@@ -42,6 +42,7 @@ import {
 import {
   createEmptyInvoiceForm,
   getInvoiceRecordId,
+  hydrateInvoiceEditPartyCustomers,
   invoiceToFormValues,
   areInvoiceFormValuesEquivalent,
   isInvoiceEmployeePickupSource,
@@ -55,6 +56,7 @@ import {
 import type { WorkspaceFormHostProps } from "@/lib/layout/workspace-form-registry";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { useEnsureCustomerDetail } from "@/lib/customers/hooks/use-customers";
 import { fetchCurrentUser } from "@/lib/users/api/users-api";
 
 
@@ -298,15 +300,37 @@ export function InvoiceEditWizard({
   const { printInvoice, isPrinting } = usePrintInvoices();
   const updateMutation = useUpdateInvoice();
   const invoiceQuery = useInvoice(invoiceId);
+  const ensureCustomerDetail = useEnsureCustomerDetail();
+  const [initialValues, setInitialValues] = useState<InvoiceFormValues | null>(null);
+  const [isHydratingParties, setIsHydratingParties] = useState(false);
   const [pendingValues, setPendingValues] = useState<InvoiceFormValues | null>(null);
   const [pendingPlan, setPendingPlan] = useState<InvoiceBarcodeSyncPlan | null>(null);
   const [decreaseOpen, setDecreaseOpen] = useState(false);
   const [isSyncingBarcodes, setIsSyncingBarcodes] = useState(false);
 
-  const initialValues = useMemo(
-    () => (invoiceQuery.data ? invoiceToFormValues(invoiceQuery.data) : null),
-    [invoiceQuery.data],
-  );
+  useEffect(() => {
+    if (!invoiceQuery.data) {
+      setInitialValues(null);
+      setIsHydratingParties(false);
+      return;
+    }
+
+    let cancelled = false;
+    const base = invoiceToFormValues(invoiceQuery.data);
+    setIsHydratingParties(true);
+
+    void hydrateInvoiceEditPartyCustomers(base, (customerId) =>
+      ensureCustomerDetail(customerId, { staleTime: 0 }),
+    ).then((hydrated) => {
+      if (cancelled) return;
+      setInitialValues(hydrated);
+      setIsHydratingParties(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ensureCustomerDetail, invoiceQuery.data]);
 
   async function handlePrint(
     values: InvoiceFormValues,
@@ -391,7 +415,7 @@ export function InvoiceEditWizard({
     }
   }
 
-  if (invoiceQuery.isLoading || !initialValues) {
+  if (invoiceQuery.isLoading || isHydratingParties || !initialValues) {
     return (
       <div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
         <Loader2 className="mr-2 size-4 animate-spin" />

@@ -5,7 +5,7 @@ import type { UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form
 
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
+import { selectFormFieldTextOnFocus, submitFormOnEnterKeyDown } from "@/hooks/use-form-enter-navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -424,6 +424,7 @@ export function RegisterInvoiceTransactionFields({
               return parsed == null ? 0 : parsed;
             },
           })}
+          onFocus={selectFormFieldTextOnFocus}
           onKeyDown={submitFormOnEnterKeyDown}
         />
         <p className="text-xs text-muted-foreground">

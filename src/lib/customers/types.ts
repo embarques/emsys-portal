@@ -140,6 +140,9 @@ export type CustomerAddress = {
   provinceCountry?: string;
   zipCode?: string;
   isPrimary: boolean;
+  /** Present on transaction party snapshots when the API round-trips Google metadata. */
+  location?: AddressGeoLocation | null;
+  verification?: AddressVerification | null;
 };
 
 export type ClientType = "sender" | "receiver";
