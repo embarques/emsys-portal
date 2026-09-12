@@ -15,19 +15,33 @@
     "workspaceShortcuts": "Accesos directos del espacio de trabajo",
     "notifications": "Notificaciones"
   },
+  "notifications": {
+    "title": "Notificaciones",
+    "loading": "Cargando notificaciones…",
+    "empty": "No hay actividad rara ni cheques pendientes por ahora.",
+    "rareActivity": "Actividad rara",
+    "rareActivityFallback": "Actividad de usuario rara",
+    "outstandingCheck": "Cheque pendiente",
+    "outstandingCheckTitle": "Cheque pendiente {{number}}",
+    "outstandingCheckInvoice": "Factura {{invoice}}"
+  },
   "search": {
-    "openMenu": "Abrir menú de búsqueda",
-    "placeholder": "Buscar registros...",
-    "inputPlaceholder": "Buscar clientes, citas, reportes...",
+    "openMenu": "Abrir acciones rápidas",
+    "placeholder": "Acciones rápidas",
+    "inputPlaceholder": "Filtrar acciones rápidas…",
     "quickActions": "Acciones rápidas",
-    "noResults": "No se encontraron resultados.",
-    "findCustomer": {
-      "label": "Buscar cliente",
-      "description": "Buscar registros de clientes"
-    },
+    "noResults": "No se encontraron acciones.",
+    "addTransaction": "Agregar transacción",
+    "addTransactionNeedsOpenCuadre": "Abra el ingreso diario (Cuadre) de hoy antes de agregar una transacción.",
+    "createAppointment": "Crear cita",
     "createCustomer": {
       "label": "Crear cliente",
       "description": "Abrir un formulario de cliente nuevo"
+    },
+    "createInvoice": "Crear factura",
+    "findCustomer": {
+      "label": "Buscar cliente",
+      "description": "Buscar registros de clientes"
     },
     "inventoryLookup": {
       "label": "Consultar inventario",

@@ -15,19 +15,33 @@
     "workspaceShortcuts": "Workspace shortcuts",
     "notifications": "Notifications"
   },
+  "notifications": {
+    "title": "Notifications",
+    "loading": "Loading notifications…",
+    "empty": "No rare activity or outstanding checks right now.",
+    "rareActivity": "Rare activity",
+    "rareActivityFallback": "Rare user activity",
+    "outstandingCheck": "Outstanding check",
+    "outstandingCheckTitle": "Outstanding check {{number}}",
+    "outstandingCheckInvoice": "Invoice {{invoice}}"
+  },
   "search": {
-    "openMenu": "Open search menu",
-    "placeholder": "Search records...",
-    "inputPlaceholder": "Search customers, appointments, reports...",
+    "openMenu": "Open quick actions",
+    "placeholder": "Quick actions",
+    "inputPlaceholder": "Filter quick actions…",
     "quickActions": "Quick actions",
-    "noResults": "No matching entries found.",
-    "findCustomer": {
-      "label": "Find customer",
-      "description": "Search customer records"
-    },
+    "noResults": "No matching actions found.",
+    "addTransaction": "Add transaction",
+    "addTransactionNeedsOpenCuadre": "Open today’s Daily Income (Cuadre) before adding a transaction.",
+    "createAppointment": "Create appointment",
     "createCustomer": {
       "label": "Create customer",
       "description": "Open a new customer form"
+    },
+    "createInvoice": "Create invoice",
+    "findCustomer": {
+      "label": "Find customer",
+      "description": "Search customer records"
     },
     "inventoryLookup": {
       "label": "Inventory lookup",

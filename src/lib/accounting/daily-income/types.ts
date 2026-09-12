@@ -169,9 +169,9 @@ export function matchPaymentMethod(
     const byId = methods.find((method) => method.id === id);
     if (byId) return byId;
   }
-  const normalized = name?.trim().toLowerCase();
+  const normalized = normalizePaymentMethodName(name);
   if (!normalized) return undefined;
-  return methods.find((method) => method.name.trim().toLowerCase() === normalized);
+  return methods.find((method) => normalizePaymentMethodName(method.name) === normalized);
 }
 
 export function withDefaultCashPaymentMethod<T extends { paymentMethodId?: number; paymentMethodName?: string }>(
@@ -186,17 +186,17 @@ export function withDefaultCashPaymentMethod<T extends { paymentMethodId?: numbe
 
 /** Zelle requires extra reconciliation fields to prevent duplicate payment posting. */
 export function isZellePaymentMethod(name?: string | null): boolean {
-  return name?.trim().toLowerCase() === "zelle";
+  return normalizePaymentMethodName(name) === "ZELLE";
 }
 
 /** Check payments require the paper check number for reconciliation. */
 export function isCheckPaymentMethod(name?: string | null): boolean {
-  const normalized = name?.trim().toLowerCase();
-  return normalized === "check" || normalized === "cheque";
+  const normalized = normalizePaymentMethodName(name);
+  return normalized === "CHECK" || normalized === "CHEQUE";
 }
 
 export function requiresBankAccount(name?: string | null): boolean {
-  const normalizedName = name?.trim().toUpperCase();
+  const normalizedName = normalizePaymentMethodName(name);
   return normalizedName === "DEPOSIT" || normalizedName === "ZELLE";
 }
 

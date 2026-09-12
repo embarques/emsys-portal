@@ -4,7 +4,6 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   CircleAlert,
-  DollarSign,
   FileText,
   Filter,
   Plus,
@@ -453,7 +452,7 @@ export function InvoicesWorkspace() {
 
   function openAddForm() {
     if (isDesktopTabs) {
-      openFormTab({ feature: "invoices", baseHref: "/invoices", mode: "add", label: "Add invoice" });
+      openFormTab({ feature: "invoices", baseHref: "/invoices", mode: "add", label: t("invoices.workspace.addInvoice") });
       return;
     }
     setAddFormOpen(true);
@@ -467,7 +466,7 @@ export function InvoicesWorkspace() {
         baseHref: "/invoices",
         mode: "edit",
         entityId: getInvoiceRecordId(invoice),
-        label: formatInvoiceTabLabel(invoice),
+        label: formatInvoiceTabLabel(invoice, t("invoices.workspace.untitledTab")),
       });
       return;
     }
@@ -835,31 +834,6 @@ export function InvoicesWorkspace() {
         { label: "Scope", value: "All invoices" },
       ],
     },
-    {
-      label: "Collected",
-      value: isLoading ? "…" : formatInvoiceMoney(kpis.collected),
-      description: "Paid on this page",
-      icon: DollarSign,
-      details: [
-        {
-          label: "Paid invoices",
-          value: isLoading
-            ? "…"
-            : invoices.filter((invoice) => invoice.amountPaid > 0).length.toString(),
-        },
-        {
-          label: "Average paid",
-          value:
-            isLoading || invoices.every((invoice) => invoice.amountPaid <= 0)
-              ? "…"
-              : formatInvoiceMoney(
-                  kpis.collected /
-                    invoices.filter((invoice) => invoice.amountPaid > 0).length,
-                ),
-        },
-        { label: "Scope", value: "Current page" },
-      ],
-    },
   ];
 
   const tableColumns: DataTableColumn<Invoice>[] = useMemo(
@@ -1072,7 +1046,7 @@ export function InvoicesWorkspace() {
               ) : null}
               <Button onClick={openAddForm} disabled={isSaving}>
                 <Plus className="h-4 w-4" />
-                Add invoice
+                {t("invoices.workspace.addInvoice")}
               </Button>
             </div>
           }
@@ -1470,7 +1444,7 @@ export function InvoicesWorkspace() {
       >
         <DialogContent className={invoiceWizardDialogClassName}>
           <DialogHeader className="hidden shrink-0 border-b border-border px-5 py-4 sm:block sm:px-6">
-            <DialogTitle>Add invoice</DialogTitle>
+            <DialogTitle>{t("invoices.workspace.addInvoice")}</DialogTitle>
           </DialogHeader>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <InvoiceCreateWizard onCancel={() => setAddFormOpen(false)} />
@@ -1488,8 +1462,13 @@ export function InvoicesWorkspace() {
           <DialogHeader className="hidden shrink-0 border-b border-border px-5 py-4 sm:block sm:px-6">
             <DialogTitle>
               {editingInvoice
-                ? `Edit invoice ${formatInvoiceTabLabel(editingInvoice)}`
-                : "Edit invoice"}
+                ? t("invoices.workspace.editInvoiceNamed", {
+                    number: formatInvoiceTabLabel(
+                      editingInvoice,
+                      t("invoices.workspace.untitledTab"),
+                    ),
+                  })
+                : t("invoices.workspace.editInvoice")}
             </DialogTitle>
           </DialogHeader>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

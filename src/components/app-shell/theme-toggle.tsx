@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { updateConfigurationTheme } from "@/lib/configuration/store";
 import { useConfigurationStore, useUpdateUserPreferences } from "@/lib/configuration/use-configuration";
 import type { ThemePreference } from "@/lib/configuration/types";
@@ -31,6 +32,7 @@ export function ThemeToggle() {
   const [mounted, setMounted] = React.useState(false);
   const preferences = useConfigurationStore();
   const updatePreferences = useUpdateUserPreferences();
+  const label = t("shell.theme.change");
 
   React.useEffect(() => setMounted(true), []);
 
@@ -44,11 +46,16 @@ export function ThemeToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button type="button" variant="outline" size="icon" aria-label={t("shell.theme.change")}>
-          <Icon className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline" size="icon" aria-label={label}>
+              <Icon className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{label}</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuLabel>{t("shell.theme.label")}</DropdownMenuLabel>
         <DropdownMenuSeparator />

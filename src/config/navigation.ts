@@ -60,45 +60,8 @@ export const topNavigationItems: NavigationItem[] = [
   { labelKey: "navigation.items.dashboard", href: "/", icon: Home, permission: PERMISSIONS.dashboardView },
 ];
 
-/** Primary workspace shortcuts shown in the dashboard top bar (sorted alphabetically by label). */
-export const topbarNavigationItems: NavigationItem[] = [
-  {
-    labelKey: "navigation.items.orders",
-    href: "/appointments",
-    icon: CalendarClock,
-    permission: PERMISSIONS.pickupsView,
-  },
-  {
-    labelKey: "navigation.items.invoices",
-    href: "/invoices",
-    icon: PackageOpen,
-    permission: PERMISSIONS.invoicesView,
-  },
-  {
-    labelKey: "navigation.items.barcodes",
-    href: "/barcodes",
-    icon: Barcode,
-    permission: PERMISSIONS.packagesView,
-  },
-  {
-    labelKey: "navigation.items.dailyIncome",
-    href: "/accounting/daily-income",
-    icon: HandCoins,
-    permission: PERMISSIONS.incomeView,
-  },
-  {
-    labelKey: "navigation.items.reports",
-    href: "/reports",
-    icon: FileChartColumn,
-    permission: PERMISSIONS.reportsView,
-  },
-  {
-    labelKey: "navigation.items.analytics",
-    href: "/analytics",
-    icon: BarChart3,
-    permission: PERMISSIONS.reportsView,
-  },
-];
+/** Empty — workspace shortcuts live in the sidebar and Quick actions menu. */
+export const topbarNavigationItems: NavigationItem[] = [];
 
 function navigationItemToGroup(item: NavigationItem): NavigationGroup {
   if (item.children?.length === 1) {

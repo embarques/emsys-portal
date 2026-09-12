@@ -61,7 +61,11 @@
     "actionsColumn": "Acciones",
     "viewInvoice": "Ver factura",
     "viewInvoiceFor": "Ver factura {{number}}",
-    "editInvoice": "Editar factura"
+    "editInvoice": "Editar factura",
+    "editInvoiceNamed": "Editar factura {{number}}",
+    "addInvoice": "Agregar factura",
+    "untitledTab": "Factura",
+    "invoiceNotFound": "Factura no encontrada."
   },
   "form": {
     "fields": {

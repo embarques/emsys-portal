@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "@/lib/i18n";
 import {
   useFloatingMemoPad,
@@ -190,21 +191,30 @@ export function MemoPadToggleButton() {
   const { open, toggle } = useMemoPad();
   const hasNotes = useMemoPadHasNotes();
   const { t } = useTranslation();
+  const label = open ? t("shell.memoPad.hide") : t("shell.memoPad.open");
 
   return (
-    <Button
-      type="button"
-      variant={open ? "secondary" : "ghost"}
-      size="icon"
-      aria-label={open ? t("shell.memoPad.hide") : t("shell.memoPad.open")}
-      aria-pressed={open}
-      className="relative shrink-0"
-      onClick={toggle}
-    >
-      <StickyNote className="h-5 w-5" />
-      {hasNotes && !open ? (
-        <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden />
-      ) : null}
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant={open ? "secondary" : "outline"}
+          size="icon"
+          aria-label={label}
+          aria-pressed={open}
+          className="relative shrink-0"
+          onClick={toggle}
+        >
+          <StickyNote className="h-4 w-4" />
+          {hasNotes && !open ? (
+            <span
+              className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary ring-2 ring-background"
+              aria-hidden
+            />
+          ) : null}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   );
 }

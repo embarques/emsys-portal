@@ -8,6 +8,7 @@ import { Bell, KeyRound, LogOut, Settings, UserCircle } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/configuration/change-password-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
@@ -93,26 +94,31 @@ export function UserMenu() {
 
   return (
     <div ref={menuRef} className="relative">
-      <Button
-        type="button"
-        variant="ghost"
-        className="relative h-10 gap-2 rounded-full px-2 sm:rounded-lg sm:pr-3"
-        aria-label={t("shell.userMenu.open")}
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <Avatar className="h-8 w-8 border border-primary/15 bg-primary/10">
-          <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-        <div className="hidden text-left sm:block">
-          <p className="text-sm font-medium leading-tight">{profileName}</p>
-          {profileRole ? (
-            <p className="mt-0.5 text-xs text-muted-foreground">{profileRole}</p>
-          ) : null}
-        </div>
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            className="relative h-10 gap-2 rounded-full px-2 sm:rounded-lg sm:pr-3"
+            aria-label={t("shell.userMenu.open")}
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+          >
+            <Avatar className="h-8 w-8 border border-primary/15 bg-primary/10">
+              <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="hidden text-left sm:block">
+              <p className="text-sm font-medium leading-tight">{profileName}</p>
+              {profileRole ? (
+                <p className="mt-0.5 text-xs text-muted-foreground">{profileRole}</p>
+              ) : null}
+            </div>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{t("shell.userMenu.open")}</TooltipContent>
+      </Tooltip>
 
       {open ? (
         <div className="absolute right-0 top-12 z-[220] w-64 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl">

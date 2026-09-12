@@ -234,6 +234,7 @@ export function InvoiceCreateWizard({
   onCancel,
   submitLabel = "Save invoice",
 }: InvoiceCreateWizardProps) {
+  const { t } = useTranslation();
   const { notifyAdded } = useFeedback();
   const createMutation = useCreateInvoice();
   const initialValues = useMemo(() => createEmptyInvoiceForm(), []);
@@ -272,7 +273,7 @@ export function InvoiceCreateWizard({
 
   return (
     <InvoiceWizardShell
-      title="Add invoice"
+      title={t("invoices.workspace.addInvoice")}
       description="Create a new invoice in five steps: enter invoice details, select the sender and receiver, add line items, optionally link Daily Income (Cuadre) and payment, then review totals and save."
       onCancel={onCancel}
       initialValues={initialValues}
@@ -438,7 +439,9 @@ export function InvoiceEditWizard({
   return (
     <>
       <InvoiceWizardShell
-        title={`Edit invoice ${formatInvoiceTabLabel(invoiceQuery.data)}`}
+        title={t("invoices.workspace.editInvoiceNamed", {
+          number: formatInvoiceTabLabel(invoiceQuery.data, t("invoices.workspace.untitledTab")),
+        })}
         description="Update invoice details, parties, and line items in four steps. Use Next to move forward, Back to revise a step, and the summary panel to apply an optional discount before saving."
         onCancel={onCancel}
         initialValues={initialValues}
@@ -478,15 +481,19 @@ export function InvoiceEditWizard({
 
 export function InvoiceFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
   const isEditing = mode === "edit";
+  const { t } = useTranslation();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
   const updateTabLabel = useUpdateWorkspaceTabLabel();
   const invoiceQuery = useInvoice(isEditing ? (entityId ?? null) : null, isEditing);
 
   useEffect(() => {
     if (isEditing && invoiceQuery.data) {
-      updateTabLabel(tabId, formatInvoiceTabLabel(invoiceQuery.data));
+      updateTabLabel(
+        tabId,
+        formatInvoiceTabLabel(invoiceQuery.data, t("invoices.workspace.untitledTab")),
+      );
     }
-  }, [invoiceQuery.data, isEditing, tabId, updateTabLabel]);
+  }, [invoiceQuery.data, isEditing, t, tabId, updateTabLabel]);
 
   function returnToInvoices() {
     closeFormTabAndReturn(tabId);
@@ -496,7 +503,7 @@ export function InvoiceFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
     if (!entityId) {
       return (
         <div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
-          Invoice not found.
+          {t("invoices.workspace.invoiceNotFound")}
         </div>
       );
     }

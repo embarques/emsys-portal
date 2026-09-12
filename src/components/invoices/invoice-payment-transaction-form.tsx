@@ -10,14 +10,17 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
+import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import {
   useAccountingPaymentMethods,
   useCreateDailyIncomeJournal,
 } from "@/lib/accounting/daily-income/hooks";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
 import {
+  findCashPaymentMethod,
   isCheckPaymentMethod,
   withDefaultCashPaymentMethod,
+  type AccountingLookup,
   type DailyIncomeJournal,
   type DailyIncomeJournalValues,
   type DailyIncomeStatement,
@@ -29,7 +32,12 @@ import { buildInvoiceDailyIncomeAssigneeDefaults } from "@/lib/invoices/schemas/
 import { resolveLineTotal, type InvoiceFormValues } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
+
+const EMPTY_PAYMENT_METHODS: AccountingLookup[] = [];
+const EMPTY_BANK_ACCOUNTS: ChartAccount[] = [];
+const EMPTY_DAILY_ROUTES: ActiveRoute[] = [];
 
 type Props = {
   statement: DailyIncomeStatement;
@@ -105,8 +113,8 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     () => (employeesQuery.data?.items ?? []).filter((employee) => employee.active),
     [employeesQuery.data?.items],
   );
-  const paymentMethods = paymentMethodsQuery.data ?? [];
-  const bankAccounts = bankAccountsQuery.data?.items ?? [];
+  const paymentMethods = paymentMethodsQuery.data ?? EMPTY_PAYMENT_METHODS;
+  const bankAccounts = bankAccountsQuery.data?.items ?? EMPTY_BANK_ACCOUNTS;
   const step1AssigneeSeed = useMemo(
     () => buildInvoiceDailyIncomeAssigneeDefaults(invoice),
     [invoice],
@@ -118,7 +126,7 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     enabled:
       showAssignee || (invoice.pickupSource === "route" && Boolean(invoice.routeId.trim())),
   });
-  const dailyRoutes = pickupRoutesQuery.data?.items ?? [];
+  const dailyRoutes = pickupRoutesQuery.data?.items ?? EMPTY_DAILY_ROUTES;
   const routeNameById = useMemo(
     () => new Map(dailyRoutes.map((route) => [route.id, route.name] as const)),
     [dailyRoutes],
@@ -168,9 +176,9 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     () =>
       withDefaultCashPaymentMethod(
         buildInitialValues(invoice, routeNameById),
-        paymentMethodsQuery.data ?? [],
+        paymentMethods,
       ),
-    [invoice, paymentMethodsQuery.data, routeNameById],
+    [invoice, paymentMethods, routeNameById],
   );
 
   const {
@@ -186,14 +194,32 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     defaultValues: initialValues,
   });
 
+  // Full reset only when the Cuadre statement changes — never wipe payment fields when
+  // routes/payment methods finish loading or when translation identity changes.
+  const paymentMethodsRef = useRef(paymentMethods);
+  paymentMethodsRef.current = paymentMethods;
+  const routeNameByIdRef = useRef(routeNameById);
+  routeNameByIdRef.current = routeNameById;
+
   useEffect(() => {
-    reset({
-      ...withDefaultCashPaymentMethod(
-        buildInitialValues(invoiceRef.current, routeNameById),
-        paymentMethodsQuery.data ?? [],
+    reset(
+      withDefaultCashPaymentMethod(
+        buildInitialValues(invoiceRef.current, routeNameByIdRef.current),
+        paymentMethodsRef.current,
       ),
-      description: t("invoices.wizard.dailyIncome.dialog.initialRegistrationDescription"),
-    });
+    );
+  }, [reset, statement.id]);
+
+  // Keep assignee in sync with invoice step 1 without resetting amount / payment method.
+  useEffect(() => {
+    const assignee = buildInvoiceDailyIncomeAssigneeDefaults(invoiceRef.current, routeNameById);
+    setValue("assigneeSource", assignee.assigneeSource, { shouldValidate: false });
+    setValue("employeeId", assignee.employeeId, { shouldValidate: false });
+    setValue("employeeName", assignee.employeeName ?? "", { shouldValidate: false });
+    setValue("routeId", assignee.routeId, { shouldValidate: false });
+    setValue("routeName", assignee.routeName ?? "", { shouldValidate: false });
+    setValue("routeCrewId", assignee.routeCrewId, { shouldValidate: false });
+    setValue("routeCrewName", assignee.routeCrewName ?? "", { shouldValidate: false });
   }, [
     invoice.pickupEmployeeId,
     invoice.pickupEmployeeName,
@@ -201,12 +227,18 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     invoice.routeCrewId,
     invoice.routeCrewName,
     invoice.routeId,
-    paymentMethodsQuery.data,
-    reset,
     routeNameById,
-    statement.id,
-    t,
+    setValue,
   ]);
+
+  // Default Cash once methods load, only if the user has not chosen a method yet.
+  useEffect(() => {
+    if (getValues("paymentMethodId") || paymentMethods.length === 0) return;
+    const cash = findCashPaymentMethod(paymentMethods);
+    if (!cash) return;
+    setValue("paymentMethodId", cash.id, { shouldValidate: false });
+    setValue("paymentMethodName", cash.name, { shouldValidate: false });
+  }, [getValues, paymentMethods, setValue]);
 
   useEffect(() => {
     setValue("invoiceCost", invoiceLineItemsTotal, { shouldValidate: true });
@@ -238,12 +270,10 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   }, [currentUserQuery.data, employees, getValues, setValue]);
 
   useEffect(() => {
-    setValue(
-      "description",
-      t("invoices.wizard.dailyIncome.dialog.initialRegistrationDescription"),
-      { shouldValidate: false },
-    );
-  }, [setValue, t]);
+    const description = t("invoices.wizard.dailyIncome.dialog.initialRegistrationDescription");
+    if (getValues("description") === description) return;
+    setValue("description", description, { shouldValidate: false });
+  }, [getValues, setValue, t]);
 
   async function submit(values: DailyIncomeJournalValues) {
     try {

@@ -12,6 +12,7 @@ import {
   floatingUtilityPanelStackedPositionClassName,
 } from "@/components/app-shell/floating-utility-panel-styles";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -341,18 +342,24 @@ function CalcButton({
 export function CalculatorToggleButton() {
   const { open, toggle } = useCalculator();
   const { t } = useTranslation();
+  const label = open ? t("shell.calculator.hide") : t("shell.calculator.open");
 
   return (
-    <Button
-      type="button"
-      variant={open ? "secondary" : "ghost"}
-      size="icon"
-      aria-label={open ? t("shell.calculator.hide") : t("shell.calculator.open")}
-      aria-pressed={open}
-      className="shrink-0"
-      onClick={toggle}
-    >
-      <Calculator className="h-5 w-5" />
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant={open ? "secondary" : "outline"}
+          size="icon"
+          aria-label={label}
+          aria-pressed={open}
+          className="shrink-0"
+          onClick={toggle}
+        >
+          <Calculator className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   );
 }

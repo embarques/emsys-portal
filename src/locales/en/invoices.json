@@ -61,7 +61,11 @@
     "actionsColumn": "Actions",
     "viewInvoice": "View invoice",
     "viewInvoiceFor": "View invoice {{number}}",
-    "editInvoice": "Edit invoice"
+    "editInvoice": "Edit invoice",
+    "editInvoiceNamed": "Edit invoice {{number}}",
+    "addInvoice": "Add invoice",
+    "untitledTab": "Invoice",
+    "invoiceNotFound": "Invoice not found."
   },
   "form": {
     "fields": {

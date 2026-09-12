@@ -74,9 +74,12 @@ export function getPaymentMethodLabel(method: InvoicePaymentMethod): string {
   return INVOICE_PAYMENT_METHODS.find((entry) => entry.value === method)?.label ?? method;
 }
 
-export function formatInvoiceTabLabel(invoice: Pick<Invoice, "invoiceNumber">): string {
+export function formatInvoiceTabLabel(
+  invoice: Pick<Invoice, "invoiceNumber">,
+  untitledLabel = "Invoice",
+): string {
   const number = invoice.invoiceNumber.trim();
-  return number ? number : "Invoice";
+  return number ? number : untitledLabel;
 }
 
 export function formatInvoiceDate(date: string): string {
@@ -259,11 +262,9 @@ export function invoiceMatchesQuery(invoice: Invoice, query: string): boolean {
 
 export function computeInvoiceKpis(invoices: Invoice[]) {
   const outstanding = invoices.reduce((sum, invoice) => sum + getInvoiceBalance(invoice), 0);
-  const collected = invoices.reduce((sum, invoice) => sum + invoice.amountPaid, 0);
 
   return {
     total: invoices.length,
     outstanding,
-    collected,
   };
 }
