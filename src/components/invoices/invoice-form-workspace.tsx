@@ -245,20 +245,39 @@ export function InvoiceCreateWizard({
   ): Promise<InvoiceFormSubmitResult> {
     try {
       const context = await buildInvoiceWriteContext(values);
+      const registration = submitContext?.dailyIncomeRegistration ?? null;
       const fallbackIncomeStatementId =
         submitContext?.incomeStatementId ??
-        submitContext?.dailyIncomeRegistration?.incomeStatementId ??
+        registration?.incomeStatementId ??
         0;
       const incomeStatementId = await resolveOpenIncomeStatementId(
         context.branch.id,
         values.date,
         fallbackIncomeStatementId,
       );
+      const registeredInvoiceTotals =
+        registration?.invoice && Number.isFinite(registration.invoice.cost)
+          ? {
+              cost: Number(registration.invoice.cost),
+              payment: Number(
+                registration.invoice.payment ?? registration.amount ?? values.amountPaid ?? 0,
+              ),
+              balance: Number(
+                registration.invoice.balance ??
+                  Math.max(
+                    0,
+                    Number(registration.invoice.cost) -
+                      Number(registration.invoice.payment ?? registration.amount ?? 0),
+                  ),
+              ),
+            }
+          : undefined;
       const created = await createMutation.mutateAsync({
         values,
         context: {
           ...context,
           incomeStatement: incomeStatementId > 0 ? { id: incomeStatementId } : undefined,
+          registeredInvoiceTotals,
         },
       });
       notifyAdded("Invoice", created.invoiceNumber || created.invoiceId);

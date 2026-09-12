@@ -1180,10 +1180,19 @@ export type InvoiceWriteContext = {
   branch: InvoiceBranch;
   container: {
     id: number;
-    name: string;
+  name: string;
   };
   incomeStatement?: {
     id: number;
+  };
+  /**
+   * When completing a PENDING invoice from Daily Income INITIAL-PAYMENT,
+   * use these posted totals instead of line-item-derived cost/payment/balance.
+   */
+  registeredInvoiceTotals?: {
+    cost: number;
+    payment: number;
+    balance: number;
   };
   pickupAssignment?: {
     source: InvoiceFormValues["pickupSource"];
@@ -1430,9 +1439,17 @@ function buildInvoiceWritePayload(
   }
 
   const invoiceDetails = lineItems.map((item, index) => buildInvoiceDetailWriteRef(item, index));
-  const cost = Math.round(invoiceDetails.reduce((sum, item) => sum + item.total, 0) * 100) / 100;
+  const lineItemCost = Math.round(invoiceDetails.reduce((sum, item) => sum + item.total, 0) * 100) / 100;
   const discount = Number(values.discount);
-  const payment = Number(values.amountPaid);
+  const registered = context.registeredInvoiceTotals;
+  const cost =
+    registered && Number.isFinite(registered.cost)
+      ? Math.round(registered.cost * 100) / 100
+      : lineItemCost;
+  const payment =
+    registered && Number.isFinite(registered.payment)
+      ? Math.round(registered.payment * 100) / 100
+      : Number(values.amountPaid);
 
   if (!Number.isFinite(discount) || discount < 0) {
     throw new Error("Discount must be 0 or greater.");
@@ -1442,7 +1459,10 @@ function buildInvoiceWritePayload(
     throw new Error("Amount paid must be 0 or greater.");
   }
 
-  const balance = computeInvoiceBalance(cost, discount, payment);
+  const balance =
+    registered && Number.isFinite(registered.balance)
+      ? Math.round(registered.balance * 100) / 100
+      : computeInvoiceBalance(cost, discount, payment);
   if (balance < 0) {
     throw new Error("Balance cannot be negative.");
   }
