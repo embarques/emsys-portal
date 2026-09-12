@@ -722,7 +722,6 @@ export function OrdersWorkspace() {
     } catch (mutationError) {
       console.error("[clearPickupRoute] UI error", mutationError);
       notifyError(normalizeApiError(mutationError).message);
-      setClearRouteOpen(false);
     }
   }
 
@@ -1739,8 +1738,22 @@ export function OrdersWorkspace() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={clearRouteOpen} onOpenChange={setClearRouteOpen}>
-        <DialogContent className="z-[60]">
+      <Dialog
+        open={clearRouteOpen}
+        onOpenChange={(open) => {
+          if (clearRouteMutation.isPending) return;
+          setClearRouteOpen(open);
+        }}
+      >
+        <DialogContent
+          className="z-[60]"
+          onPointerDownOutside={(event) => {
+            if (clearRouteMutation.isPending) event.preventDefault();
+          }}
+          onEscapeKeyDown={(event) => {
+            if (clearRouteMutation.isPending) event.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{t("orders.dialogs.clearRouteTitle")}</DialogTitle>
             <DialogDescription>
@@ -1763,14 +1776,13 @@ export function OrdersWorkspace() {
             >
               {t("common.actions.cancel")}
             </Button>
-            <Button
-              variant="destructive"
+            <ConfirmDeleteButton
+              isPending={clearRouteMutation.isPending}
               onClick={() => void confirmClearRoute()}
-              disabled={clearRouteMutation.isPending}
-            >
-              <RouteOff className="h-4 w-4" />
-              {t("orders.actions.clearRoute")}
-            </Button>
+              label={t("orders.actions.clearRoute")}
+              pendingLabel={t("orders.actions.clearingRoute")}
+              icon={RouteOff}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Eye, Printer, RouteOff, Sparkles } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -120,7 +121,6 @@ export function PickupRoutesSelectionActions({
       );
     } catch (mutationError) {
       notifyError(normalizeApiError(mutationError).message);
-      setClearRouteOpen(false);
     }
   }
 
@@ -178,8 +178,22 @@ export function PickupRoutesSelectionActions({
         </Button>
       ) : null}
 
-      <Dialog open={clearRouteOpen} onOpenChange={setClearRouteOpen}>
-        <DialogContent className="z-[60]">
+      <Dialog
+        open={clearRouteOpen}
+        onOpenChange={(open) => {
+          if (isClearing) return;
+          setClearRouteOpen(open);
+        }}
+      >
+        <DialogContent
+          className="z-[60]"
+          onPointerDownOutside={(event) => {
+            if (isClearing) event.preventDefault();
+          }}
+          onEscapeKeyDown={(event) => {
+            if (isClearing) event.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{t("routes.pickupRoutes.dialogs.clearRouteTitle")}</DialogTitle>
             <DialogDescription>
@@ -196,14 +210,13 @@ export function PickupRoutesSelectionActions({
             >
               {t("common.actions.cancel")}
             </Button>
-            <Button
-              variant="destructive"
+            <ConfirmDeleteButton
+              isPending={isClearing}
               onClick={() => void confirmClearRoute()}
-              disabled={isClearing}
-            >
-              <RouteOff className="h-4 w-4" />
-              {t("routes.pickupRoutes.actions.clearRoute")}
-            </Button>
+              label={t("routes.pickupRoutes.actions.clearRoute")}
+              pendingLabel={t("routes.pickupRoutes.actions.clearing")}
+              icon={RouteOff}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

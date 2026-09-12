@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckSquare, ListChecks, Loader2, MapPin, Route as RouteIcon, RouteOff, Square, X } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import {
   TableSelectionActionDivider,
   TableSelectionActionGroup,
@@ -577,10 +578,20 @@ export function OrdersMapView({
       <Dialog
         open={unassignOpen}
         onOpenChange={(nextOpen) => {
-          if (!nextOpen) setUnassignOpen(false);
+          if (isUnassigning) return;
+          setUnassignOpen(nextOpen);
         }}
       >
-        <DialogContent className="z-[70]" onOpenAutoFocus={(event) => event.preventDefault()}>
+        <DialogContent
+          className="z-[70]"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => {
+            if (isUnassigning) event.preventDefault();
+          }}
+          onEscapeKeyDown={(event) => {
+            if (isUnassigning) event.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{t("orders.dialogs.clearRouteTitle")}</DialogTitle>
             <DialogDescription>
@@ -596,17 +607,20 @@ export function OrdersMapView({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUnassignOpen(false)}>
-              {t("common.actions.cancel")}
-            </Button>
             <Button
-              variant="destructive"
-              onClick={() => void confirmUnassign()}
+              variant="outline"
+              onClick={() => setUnassignOpen(false)}
               disabled={isUnassigning}
             >
-              <RouteOff className="h-4 w-4" />
-              {t("orders.actions.unassignRoute")}
+              {t("common.actions.cancel")}
             </Button>
+            <ConfirmDeleteButton
+              isPending={isUnassigning}
+              onClick={() => void confirmUnassign()}
+              label={t("orders.actions.unassignRoute")}
+              pendingLabel={t("orders.actions.clearingRoute")}
+              icon={RouteOff}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>
