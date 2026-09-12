@@ -193,6 +193,13 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
                     })}
                   </span>
                   <span>{registration.date || t("invoices.wizard.dailyIncome.previouslyRegistered")}</span>
+                  {registration.invoice?.cost != null && Number.isFinite(registration.invoice.cost) ? (
+                    <span>
+                      {t("invoices.wizard.dailyIncome.invoiceCostRegistered", {
+                        amount: formatInvoiceMoney(registration.invoice.cost),
+                      })}
+                    </span>
+                  ) : null}
                   <span>
                     {t("invoices.wizard.dailyIncome.paymentRecorded", {
                       amount: formatInvoiceMoney(registration.amount),
@@ -209,7 +216,17 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
 
           <div className="rounded-lg border bg-card p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="grid flex-1 gap-5 sm:grid-cols-2">
+              <div className="grid flex-1 gap-5 sm:grid-cols-3">
+                {registration.invoice?.cost != null && Number.isFinite(registration.invoice.cost) ? (
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {t("invoices.wizard.summary.registeredCost")}
+                    </p>
+                    <p className="mt-1 text-xl font-semibold">
+                      {formatInvoiceMoney(registration.invoice.cost)}
+                    </p>
+                  </div>
+                ) : null}
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {t("invoices.wizard.dailyIncome.amount")}

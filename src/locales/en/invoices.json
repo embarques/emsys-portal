@@ -151,6 +151,9 @@
       "removeDiscount": "Remove discount",
       "editDiscount": "Edit discount",
       "payment": "Payment",
+      "registeredCost": "Registered cost",
+      "registeredCostHint": "Invoice cost posted on Daily Income (INITIAL-PAYMENT).",
+      "registeredCostMismatch": "Line items total {{subtotal}} does not match registered cost {{registered}}.",
       "balanceDue": "Balance due",
       "total": "Total",
       "hideDetails": "Hide details"
@@ -200,6 +203,7 @@
       "incomeStatement": "Daily income #{{id}}",
       "previouslyRegistered": "Previously registered",
       "paymentRecorded": "Payment recorded: {{amount}}",
+      "invoiceCostRegistered": "Invoice cost: {{amount}}",
       "paymentRecordedToast": "Payment of {{amount}} recorded for invoice {{invoiceNumber}}.",
       "reference": "Reference: {{ref}}",
       "amount": "Amount",
