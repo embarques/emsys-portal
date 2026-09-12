@@ -1442,6 +1442,14 @@ function buildInvoiceWritePayload(
   const lineItemCost = Math.round(invoiceDetails.reduce((sum, item) => sum + item.total, 0) * 100) / 100;
   const discount = Number(values.discount);
   const registered = context.registeredInvoiceTotals;
+  if (registered && Number.isFinite(registered.cost)) {
+    const registeredCost = Math.round(registered.cost * 100) / 100;
+    if (Math.round(Math.abs(lineItemCost - registeredCost) * 100) / 100 >= 0.01) {
+      throw new Error(
+        `Line items total (${lineItemCost.toFixed(2)}) must match the registered Daily Income cost (${registeredCost.toFixed(2)}).`,
+      );
+    }
+  }
   const cost =
     registered && Number.isFinite(registered.cost)
       ? Math.round(registered.cost * 100) / 100

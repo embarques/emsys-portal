@@ -5,6 +5,7 @@ import {
   hasInvoiceLineItemContent,
   hasPositiveInvoiceLineItemQuantity,
   isInvoiceEmployeePickupSource,
+  resolveLineTotal,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
@@ -147,12 +148,24 @@ export function findInvoiceWizardSaveIssue(options: {
 }): InvoiceWizardIssue | null {
   const { values, dailyIncome, requireDailyIncome, previewStep, t } = options;
   const amountPaid = Number(dailyIncome.registration?.amount ?? values.amountPaid ?? 0) || 0;
+  const registeredCost = dailyIncome.registration?.invoice?.cost;
+  const hasRegisteredCost = registeredCost != null && Number.isFinite(registeredCost);
+  const lineSubtotal = values.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0);
+  const registeredCostMismatch =
+    hasRegisteredCost && Math.round(Math.abs(lineSubtotal - (registeredCost as number)) * 100) / 100 >= 0.01;
 
   return (
     findInvoiceWizardStep1Issue(values, t) ??
     findInvoiceWizardStep2Issue(values, t) ??
     findInvoiceWizardStep3Issue(values, t) ??
     (requireDailyIncome ? findInvoiceWizardPaymentIssue(dailyIncome, t, "save") : null) ??
+    (registeredCostMismatch
+      ? {
+          step: 3,
+          fieldId: INVOICE_WIZARD_FIELDS.lineItems,
+          message: t("invoices.wizard.validation.registeredCostMismatch"),
+        }
+      : null) ??
     (getInvoiceFormBalance(values, amountPaid) < 0
       ? {
           step: previewStep,

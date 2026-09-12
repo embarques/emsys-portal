@@ -192,7 +192,8 @@
       "lineItemQuantityRequired": "Cada artículo necesita una cantidad mayor que 0.",
       "dailyIncomeContinueRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de continuar.",
       "dailyIncomeSaveRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de guardar.",
-      "negativeBalance": "El saldo no puede ser negativo. Reduzca el pago o el descuento para que no superen el total de la factura."
+      "negativeBalance": "El saldo no puede ser negativo. Reduzca el pago o el descuento para que no superen el total de la factura.",
+      "registeredCostMismatch": "El total de artículos debe coincidir con el costo registrado en Ingresos diarios antes de guardar."
     },
     "summary": {
       "title": "Resumen de factura",
