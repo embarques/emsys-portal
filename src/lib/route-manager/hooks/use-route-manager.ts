@@ -148,6 +148,14 @@ function invalidateRoutes(queryClient: ReturnType<typeof useQueryClient>) {
   return queryClient.invalidateQueries({ queryKey: queryKeys.routes.all });
 }
 
+function invalidateRouteCrewDependents(queryClient: ReturnType<typeof useQueryClient>) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.dailyRouteSchedules.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.pickupRouteSchedules.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.deliveryRouteSchedules.all }),
+  ]);
+}
+
 export function useCreateRoute() {
   const queryClient = useQueryClient();
 
@@ -164,10 +172,13 @@ export function useUpdateRoute() {
     mutationFn: ({ recordId, values }: { recordId: string; values: RouteFormValues }) =>
       updateRoute(recordId, values),
     onSuccess: (_data, variables) => {
-      invalidateRoutes(queryClient);
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.routes.detail(variables.recordId),
-      });
+      return Promise.all([
+        invalidateRoutes(queryClient),
+        invalidateRouteCrewDependents(queryClient),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.routes.detail(variables.recordId),
+        }),
+      ]);
     },
   });
 }

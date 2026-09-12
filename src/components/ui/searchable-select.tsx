@@ -184,8 +184,6 @@ const MOBILE_SHEET_SEARCH_THRESHOLD = 8;
  * selection (sections appearing, option lists changing) can loop in Radix
  * PopperContent ("Maximum update depth exceeded").
  */
-let skipOpenOnFocus = false;
-
 function MobileSelectLoading({ message }: { message: string }) {
   return (
     <div
@@ -283,6 +281,7 @@ export function SearchableSelect({
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const anchorRef = React.useRef<HTMLDivElement>(null);
   const suppressNextFocusSearchRef = React.useRef(false);
+  const skipOpenOnFocusRef = React.useRef(false);
   const scrollIsolationRef = useScrollIsolation();
   const isMobile = useIsMobileViewport();
   const [viewportResolved, setViewportResolved] = React.useState(false);
@@ -311,7 +310,7 @@ export function SearchableSelect({
   }, [fitToOptions, options, placeholder]);
 
   function focusSearchInput(shouldSelectAll = false) {
-    if (disabled || skipOpenOnFocus) return;
+    if (disabled || skipOpenOnFocusRef.current) return;
     if (suppressNextFocusSearchRef.current) {
       suppressNextFocusSearchRef.current = false;
       return;
@@ -349,21 +348,21 @@ export function SearchableSelect({
   }
 
   function handleSelect(nextValue: string) {
-    onValueChange(nextValue);
-    changeQuery("");
     setOpen(false);
+    changeQuery("");
+    onValueChange(nextValue);
 
     if (!advanceFocusOnSelect) return;
 
     const focusTarget = searchable ? inputRef.current : triggerRef.current;
-    skipOpenOnFocus = true;
+    skipOpenOnFocusRef.current = true;
     window.setTimeout(() => {
       try {
         if (!focusNextFormField(focusTarget)) {
           focusTarget?.focus();
         }
       } finally {
-        skipOpenOnFocus = false;
+        skipOpenOnFocusRef.current = false;
       }
     }, 0);
   }
