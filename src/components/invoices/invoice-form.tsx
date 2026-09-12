@@ -4,7 +4,7 @@ import { ClipboardList, Pencil, Receipt, UserPlus, Users, Wallet } from "lucide-
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { useFormEnterNavigation, selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { CustomerPartySelect } from "@/components/customers/customer-party-select";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
@@ -1096,6 +1096,7 @@ export function InvoiceForm({
                   min={0}
                   step="0.01"
                   value={values.discount}
+                  onFocus={selectFormFieldTextOnFocus}
                   onChange={(event) => updateField("discount", event.target.value)}
                 />
               </div>

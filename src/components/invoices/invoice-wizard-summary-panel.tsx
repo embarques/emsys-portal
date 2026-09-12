@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Minus, Pencil, Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import { formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -155,6 +156,7 @@ function SummaryDiscountControl({
           inputMode="decimal"
           value={discountValue}
           autoFocus
+          onFocus={selectFormFieldTextOnFocus}
           onChange={(event) => onDiscountChange!(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
