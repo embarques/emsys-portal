@@ -60,7 +60,8 @@
   "workspace": {
     "actionsColumn": "Actions",
     "viewInvoice": "View invoice",
-    "viewInvoiceFor": "View invoice {{number}}"
+    "viewInvoiceFor": "View invoice {{number}}",
+    "editInvoice": "Edit invoice"
   },
   "form": {
     "fields": {
@@ -353,6 +354,20 @@
   },
   "view": {
     "pickupAssignment": "Received by",
+    "fields": {
+      "documentId": "Doc",
+      "phones": "Phones",
+      "address": "Address",
+      "scanned": "Scanned"
+    },
+    "lineItems": {
+      "showBarcodes": "Show barcodes",
+      "hideBarcodes": "Hide barcodes",
+      "showBarcodesCount": "View {{count}} barcode",
+      "showBarcodesCount_plural": "View {{count}} barcodes",
+      "hideBarcodesCount": "Hide {{count}} barcode",
+      "hideBarcodesCount_plural": "Hide {{count}} barcodes"
+    },
     "comments": {
       "title": "Comments ({{count}})",
       "description": "Notes about reaching out, delivery preferences, and other follow-ups. Comments cannot be deleted.",

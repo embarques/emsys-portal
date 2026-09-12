@@ -60,7 +60,8 @@
   "workspace": {
     "actionsColumn": "Acciones",
     "viewInvoice": "Ver factura",
-    "viewInvoiceFor": "Ver factura {{number}}"
+    "viewInvoiceFor": "Ver factura {{number}}",
+    "editInvoice": "Editar factura"
   },
   "form": {
     "fields": {
@@ -353,6 +354,20 @@
   },
   "view": {
     "pickupAssignment": "Recibido por",
+    "fields": {
+      "documentId": "Doc",
+      "phones": "Teléfonos",
+      "address": "Dirección",
+      "scanned": "Escaneado"
+    },
+    "lineItems": {
+      "showBarcodes": "Mostrar códigos de barras",
+      "hideBarcodes": "Ocultar códigos de barras",
+      "showBarcodesCount": "Ver {{count}} código de barras",
+      "showBarcodesCount_plural": "Ver {{count}} códigos de barras",
+      "hideBarcodesCount": "Ocultar {{count}} código de barras",
+      "hideBarcodesCount_plural": "Ocultar {{count}} códigos de barras"
+    },
     "comments": {
       "title": "Comentarios ({{count}})",
       "description": "Notas sobre contacto, preferencias de entrega y otros seguimientos. Los comentarios no se pueden eliminar.",
