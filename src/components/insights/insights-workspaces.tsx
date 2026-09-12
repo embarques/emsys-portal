@@ -87,13 +87,3 @@ export function AnalyticsWorkspace() {
     />
   );
 }
-
-export function SecurityWorkspace() {
-  const { t } = useTranslation();
-  return (
-    <PlaceholderWorkspace
-      title={t("navigation.items.security")}
-      descriptionKey="insights.pages.security"
-    />
-  );
-}

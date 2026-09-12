@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { UserForm } from "@/components/users/user-form";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { createSecondaryFirebaseUser } from "@/lib/auth/firebase/firebase-user-a
 import { useTranslation } from "@/lib/i18n";
 import { useEmployeeLabels } from "@/lib/employees/hooks/use-employee-labels";
 import { useCreateUser, useUsers } from "@/lib/users/hooks/use-users";
+import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { createEmptyUserForm, type User, type UserFormValues } from "@/lib/users/types";
 import {
   EMPLOYEE_DEPARTMENTS,
@@ -30,6 +32,7 @@ import {
   type EmployeeFormValues,
   type EmployeePortalBranch,
 } from "@/lib/employees/types";
+import type { ParsedPlaceAddress } from "@/lib/customers/types";
 
 type EmployeeFormProps = {
   initialValues?: EmployeeFormValues;
@@ -55,12 +58,14 @@ export function EmployeeForm({
   const usersQuery = useUsers({ page: 1, limit: 200, sort: "name:asc", active: true });
   const createUserMutation = useCreateUser();
   const [values, setValues] = useState<EmployeeFormValues>(initialValues ?? createEmptyEmployeeForm());
+  const [manualAddressEntry, setManualAddressEntry] = useState(false);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [createUserError, setCreateUserError] = useState<string | null>(null);
   const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyEmployeeForm());
+    setManualAddressEntry(false);
   }, [initialValues]);
 
   const departmentOptions = useMemo(() => {
@@ -134,6 +139,20 @@ export function EmployeeForm({
     }));
   }
 
+  function applyPlaceToAddress(place: ParsedPlaceAddress) {
+    setValues((current) => ({
+      ...current,
+      address: {
+        ...current.address,
+        address1: place.address1 || current.address.address1,
+        city: place.city || current.address.city,
+        state: place.state || current.address.state,
+        zipcode: place.zipcode || current.address.zipcode,
+        country: place.country || current.address.country,
+      },
+    }));
+  }
+
   function updateBranchPortal(portal: EmployeePortalBranch) {
     const template = createEmployeeBranchFromPortal(portal);
     const config = EMPLOYEE_PORTAL_BRANCHES.find((entry) => entry.portal === portal) ?? EMPLOYEE_PORTAL_BRANCHES[0];
@@ -199,6 +218,51 @@ export function EmployeeForm({
           <FormSection icon={UserIcon} title={t("employees.form.sections.employee")}>
             <div className="space-y-2.5">
               <div className="space-y-1">
+                <Label htmlFor="name">
+                  {t("employees.form.fields.name")} <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={values.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                  placeholder={t("employees.form.placeholders.name")}
+                  required
+                />
+              </div>
+
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="department">
+                    {t("employees.form.fields.department")} <span className="text-destructive">*</span>
+                  </Label>
+                  <SearchableSelect
+                    id="department"
+                    value={values.department}
+                    onValueChange={(next) => updateField("department", next)}
+                    searchPlaceholder={t("employees.form.placeholders.departmentSearch")}
+                    required
+                    options={departmentOptions}
+                    mobileSheet
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="title">
+                    {t("employees.form.fields.title")} <span className="text-destructive">*</span>
+                  </Label>
+                  <SearchableSelect
+                    id="title"
+                    value={values.title}
+                    onValueChange={(next) => updateField("title", next)}
+                    searchPlaceholder={t("employees.form.placeholders.titleSearch")}
+                    required
+                    options={titleOptions}
+                    mobileSheet
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
                 <Label htmlFor="active">
                   {t("employees.form.fields.active")} <span className="text-destructive">*</span>
                 </Label>
@@ -212,99 +276,56 @@ export function EmployeeForm({
                 />
               </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="name">
-                {t("employees.form.fields.name")} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="name"
-                value={values.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                placeholder={t("employees.form.placeholders.name")}
-                required
-              />
-            </div>
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="startDate">{t("employees.form.fields.startDate")}</Label>
+                  <Input
+                    id="startDate"
+                    value={values.startDate}
+                    onChange={(event) => updateField("startDate", event.target.value)}
+                    placeholder={t("employees.form.placeholders.startDate")}
+                  />
+                </div>
 
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="department">
-                  {t("employees.form.fields.department")} <span className="text-destructive">*</span>
-                </Label>
-                <SearchableSelect
-                  id="department"
-                  value={values.department}
-                  onValueChange={(next) => updateField("department", next)}
-                  searchPlaceholder={t("employees.form.placeholders.departmentSearch")}
-                  required
-                  options={departmentOptions}
-                  mobileSheet
-                />
+                <div className="space-y-1">
+                  <Label htmlFor="endDate">{t("employees.form.fields.endDate")}</Label>
+                  <Input
+                    id="endDate"
+                    value={values.endDate}
+                    onChange={(event) => updateField("endDate", event.target.value)}
+                    placeholder={t("employees.form.placeholders.endDate")}
+                  />
+                </div>
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="title">
-                  {t("employees.form.fields.title")} <span className="text-destructive">*</span>
-                </Label>
-                <SearchableSelect
-                  id="title"
-                  value={values.title}
-                  onValueChange={(next) => updateField("title", next)}
-                  searchPlaceholder={t("employees.form.placeholders.titleSearch")}
-                  required
-                  options={titleOptions}
-                  mobileSheet
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="startDate">{t("employees.form.fields.startDate")}</Label>
+                <Label htmlFor="cost">{t("employees.form.fields.cost")}</Label>
                 <Input
-                  id="startDate"
-                  value={values.startDate}
-                  onChange={(event) => updateField("startDate", event.target.value)}
-                  placeholder={t("employees.form.placeholders.startDate")}
+                  id="cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={values.cost}
+                  onChange={(event) => updateField("cost", Number(event.target.value) || 0)}
                 />
               </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="endDate">{t("employees.form.fields.endDate")}</Label>
-                <Input
-                  id="endDate"
-                  value={values.endDate}
-                  onChange={(event) => updateField("endDate", event.target.value)}
-                  placeholder={t("employees.form.placeholders.endDate")}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="cost">{t("employees.form.fields.cost")}</Label>
-              <Input
-                id="cost"
-                type="number"
-                min="0"
-                step="0.01"
-                value={values.cost}
-                onChange={(event) => updateField("cost", Number(event.target.value) || 0)}
-              />
-            </div>
 
               <div className="space-y-1">
                 <Label htmlFor="userId">{t("employees.form.fields.user")}</Label>
-                <div className="flex items-start gap-2">
-                  <SearchableSelect
-                    id="userId"
-                    value={values.user ? String(values.user.id) : ""}
-                    onValueChange={updateUser}
-                    placeholder={t("employees.form.fields.noUser")}
-                    searchPlaceholder={t("employees.form.placeholders.userSearch")}
-                    options={userOptions}
-                    disabled={usersQuery.isLoading}
-                    className="flex-1"
-                    mobileSheet
-                  />
+                <div className="flex w-full items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <SearchableSelect
+                      id="userId"
+                      value={values.user ? String(values.user.id) : ""}
+                      onValueChange={updateUser}
+                      placeholder={t("employees.form.fields.noUser")}
+                      searchPlaceholder={t("employees.form.placeholders.userSearch")}
+                      options={userOptions}
+                      disabled={usersQuery.isLoading}
+                      className="w-full"
+                      mobileSheet
+                    />
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
@@ -338,32 +359,42 @@ export function EmployeeForm({
             </div>
           </FormSection>
 
-        <FormSection icon={MapPin} title={t("employees.form.sections.address")}>
+        <FormSection
+          icon={MapPin}
+          title={t("employees.form.sections.address")}
+          action={
+            <button
+              type="button"
+              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              onClick={() => setManualAddressEntry((current) => !current)}
+            >
+              {manualAddressEntry ? t("common.address.useGoogle") : t("common.address.useManual")}
+            </button>
+          }
+        >
           <div className="space-y-2.5">
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="address-address1">{t("employees.form.fields.address1")}</Label>
-                <Input
+            <div className="flex items-end gap-2">
+              <div className="min-w-0 w-full flex-1 space-y-1">
+                <Label htmlFor="address-address1" className="text-xs text-muted-foreground">
+                  {t("employees.form.fields.address1")}
+                </Label>
+                <AddressAutocompleteInput
                   id="address-address1"
                   value={values.address.address1}
-                  onChange={(event) => updateAddressField("address1", event.target.value)}
+                  onValueChange={(value) => updateAddressField("address1", value)}
+                  onPlaceSelected={applyPlaceToAddress}
                   placeholder={t("employees.form.placeholders.address1")}
+                  allowManualEntry
+                  className="w-full"
+                  manualEntry={manualAddressEntry}
+                  onManualEntryChange={setManualAddressEntry}
+                  manualEntryTogglePosition="none"
                 />
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="address-address2">{t("employees.form.fields.address2")}</Label>
-                <Input
-                  id="address-address2"
-                  value={values.address.address2}
-                  onChange={(event) => updateAddressField("address2", event.target.value)}
-                  placeholder={t("employees.form.placeholders.address2")}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="address-apartment">{t("employees.form.fields.apartment")}</Label>
+              <div className="w-24 shrink-0 space-y-1 sm:w-32">
+                <Label htmlFor="address-apartment" className="text-xs text-muted-foreground">
+                  {t("employees.form.fields.apartment")}
+                </Label>
                 <Input
                   id="address-apartment"
                   value={values.address.apartment}
@@ -371,43 +402,69 @@ export function EmployeeForm({
                   placeholder={t("employees.form.placeholders.apartment")}
                 />
               </div>
+            </div>
+
+            <div className="space-y-1">
+              <Input
+                id="address-address2"
+                value={values.address.address2}
+                onChange={(event) => updateAddressField("address2", event.target.value)}
+                placeholder={t("employees.form.placeholders.address2")}
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               <div className="space-y-1">
-                <Label htmlFor="address-city">{t("employees.form.fields.city")}</Label>
+                <Label htmlFor="address-city" className="text-xs text-muted-foreground">
+                  {t("employees.form.fields.city")}
+                </Label>
                 <Input
                   id="address-city"
                   value={values.address.city}
                   onChange={(event) => updateAddressField("city", event.target.value)}
                   placeholder={t("employees.form.placeholders.city")}
+                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
                 />
               </div>
-            </div>
-
-            <div className="grid gap-2.5 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label htmlFor="address-state">{t("employees.form.fields.state")}</Label>
+                <Label htmlFor="address-state" className="text-xs text-muted-foreground">
+                  {t("employees.form.fields.state")}
+                </Label>
                 <Input
                   id="address-state"
                   value={values.address.state}
                   onChange={(event) => updateAddressField("state", event.target.value.toUpperCase())}
                   placeholder={t("employees.form.placeholders.state")}
+                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="address-zipcode">{t("employees.form.fields.zipcode")}</Label>
+                <Label htmlFor="address-zipcode" className="text-xs text-muted-foreground">
+                  {t("employees.form.fields.zipcode")}
+                </Label>
                 <Input
                   id="address-zipcode"
                   value={values.address.zipcode}
                   onChange={(event) => updateAddressField("zipcode", event.target.value)}
                   placeholder={t("employees.form.placeholders.zipcode")}
+                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="address-country">{t("employees.form.fields.country")}</Label>
+                <Label htmlFor="address-country" className="text-xs text-muted-foreground">
+                  {t("employees.form.fields.country")}
+                </Label>
                 <Input
                   id="address-country"
                   value={values.address.country}
                   onChange={(event) => updateAddressField("country", event.target.value.toUpperCase())}
                   placeholder={t("employees.form.placeholders.country")}
+                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
                 />
               </div>
             </div>
@@ -419,6 +476,7 @@ export function EmployeeForm({
             <PhoneListEditor
               idPrefix="employee-phone"
               phones={values.phones}
+              compact
               onChange={(phones) => updateField("phones", phones)}
             />
 

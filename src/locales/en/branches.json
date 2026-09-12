@@ -57,6 +57,7 @@
     "notFound": "This branch could not be found.",
     "sections": {
       "branch": "Branch",
+      "contact": "Contact",
       "address": "Address",
       "settings": "Settings"
     },

@@ -1,8 +1,7 @@
 {
   "pages": {
     "reports": "Convierta datos operativos y financieros en reportes para la toma de decisiones.",
-    "analytics": "Revise tendencias de operaciones, rutas, ingresos, gastos y volumen de envíos.",
-    "security": "Revise configuración de seguridad, controles de acceso e información de auditoría."
+    "analytics": "Revise tendencias de operaciones, rutas, ingresos, gastos y volumen de envíos."
   },
   "placeholder": {
     "description": "Página de ejemplo de {{title}} dentro del mismo panel adaptable.",

@@ -1,8 +1,7 @@
 {
   "pages": {
     "reports": "Turn operational and financial data into reports that help management make decisions.",
-    "analytics": "Review trends in operations, routes, income, expenses, and shipping volume.",
-    "security": "Review security settings, access controls, and audit information."
+    "analytics": "Review trends in operations, routes, income, expenses, and shipping volume."
   },
   "placeholder": {
     "description": "Sample {{title}} page inside the same responsive dashboard shell.",

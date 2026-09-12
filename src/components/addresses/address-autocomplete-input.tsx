@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { useAddressAutocomplete } from "@/hooks/use-address-autocomplete";
+import { useTranslation } from "@/lib/i18n";
 import type { PlaceSuggestion } from "@/lib/maps/places";
 import type { ParsedPlaceAddress } from "@/lib/customers/types";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,10 @@ type AddressAutocompleteInputProps = {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  allowManualEntry?: boolean;
+  onManualEntryChange?: (manual: boolean) => void;
+  manualEntryTogglePosition?: "below" | "label" | "none";
+  manualEntry?: boolean;
 };
 
 export function AddressAutocompleteInput({
@@ -27,7 +32,12 @@ export function AddressAutocompleteInput({
   placeholder,
   disabled,
   className,
+  allowManualEntry = false,
+  onManualEntryChange,
+  manualEntryTogglePosition = "below",
+  manualEntry: manualEntryOverride,
 }: AddressAutocompleteInputProps) {
+  const { t } = useTranslation();
   const generatedId = useId();
   const listboxId = `${id ?? generatedId}-suggestions`;
   const { enabled, suggestions, isLoading, setQuery, resolveSuggestion } = useAddressAutocomplete();
@@ -35,6 +45,8 @@ export function AddressAutocompleteInput({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [resolving, setResolving] = useState(false);
+  const [internalManualEntry, setInternalManualEntry] = useState(false);
+  const manualEntry = manualEntryOverride ?? internalManualEntry;
   const containerRef = useRef<HTMLDivElement>(null);
   // Suppress reopening the dropdown from the value change triggered by a selection.
   const skipNextQueryRef = useRef(false);
@@ -107,30 +119,45 @@ export function AddressAutocompleteInput({
 
   const showDropdown = enabled && open && (suggestions.length > 0 || isLoading);
 
+  const showAutocomplete = enabled && !manualEntry;
+
   return (
-    <div ref={containerRef} className="relative">
-      <Input
-        id={id}
-        value={value}
-        onChange={(event) => handleChange(event.target.value)}
-        onFocus={() => {
-          if (enabled && suggestions.length > 0) setOpen(true);
-        }}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        disabled={disabled}
-        autoComplete="off"
-        role="combobox"
-        aria-expanded={showDropdown}
-        aria-controls={listboxId}
-        aria-autocomplete="list"
-        className={cn(resolving && "pr-9", className)}
-      />
+    <div ref={containerRef} className={cn(manualEntryTogglePosition === "label" ? "relative" : "space-y-1")}>
+      <div className="relative">
+        {showAutocomplete ? (
+          <Input
+            id={id}
+            value={value}
+            onChange={(event) => handleChange(event.target.value)}
+            onFocus={() => {
+              if (enabled && suggestions.length > 0) setOpen(true);
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={disabled}
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={showDropdown}
+            aria-controls={listboxId}
+            aria-autocomplete="list"
+            className={cn(resolving && "pr-9", className)}
+          />
+        ) : (
+          <Input
+            id={id}
+            value={value}
+            onChange={(event) => onValueChange(event.target.value)}
+            placeholder={placeholder}
+            disabled={disabled}
+            autoComplete="street-address"
+            className={className}
+          />
+        )}
       {resolving ? (
         <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
       ) : null}
 
-      {showDropdown ? (
+      {showAutocomplete && showDropdown ? (
         <ul
           id={listboxId}
           role="listbox"
@@ -169,6 +196,25 @@ export function AddressAutocompleteInput({
             </li>
           ))}
         </ul>
+      ) : null}
+      </div>
+      {allowManualEntry && enabled && manualEntryTogglePosition !== "none" ? (
+        <button
+          type="button"
+          className={cn(
+            "text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline",
+            manualEntryTogglePosition === "label" && "absolute -top-6 right-0",
+          )}
+          onClick={() => {
+            const nextManualEntry = !manualEntry;
+            if (manualEntryOverride === undefined) setInternalManualEntry(nextManualEntry);
+            onManualEntryChange?.(nextManualEntry);
+            setOpen(false);
+            setQuery("");
+          }}
+        >
+          {manualEntry ? t("common.address.useGoogle") : t("common.address.useManual")}
+        </button>
       ) : null}
     </div>
   );

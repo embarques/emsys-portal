@@ -57,6 +57,7 @@
     "notFound": "No se pudo encontrar esta sucursal.",
     "sections": {
       "branch": "Sucursal",
+      "contact": "Contacto",
       "address": "Dirección",
       "settings": "Configuración"
     },

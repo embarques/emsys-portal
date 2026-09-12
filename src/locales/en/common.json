@@ -23,6 +23,10 @@
       "edit": "Edit"
     }
   },
+  "address": {
+    "useManual": "Enter address manually",
+    "useGoogle": "Use Google address search"
+  },
   "stats": {
     "changeMore": "+{{percent}}% vs last {{period}}",
     "changeLess": "-{{percent}}% vs last {{period}}",

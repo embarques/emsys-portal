@@ -23,6 +23,10 @@
       "edit": "Editar"
     }
   },
+  "address": {
+    "useManual": "Ingresar dirección manualmente",
+    "useGoogle": "Usar búsqueda de direcciones de Google"
+  },
   "stats": {
     "changeMore": "+{{percent}}% vs los últimos {{period}}",
     "changeLess": "-{{percent}}% vs los últimos {{period}}",

@@ -1,21 +1,24 @@
 "use client";
 
-import { Building2, MapPin, Settings } from "lucide-react";
+import { Building2, MapPin, Phone, Settings } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { useTranslation } from "@/lib/i18n";
+import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import {
   type BranchAddress,
   type BranchFormValues,
   type BranchSettings,
   createEmptyBranchForm,
 } from "@/lib/branches/types";
+import type { ParsedPlaceAddress } from "@/lib/customers/types";
 
 type BranchFormProps = {
   initialValues?: BranchFormValues;
@@ -38,6 +41,7 @@ export function BranchForm({
 }: BranchFormProps) {
   const { t } = useTranslation();
   const [values, setValues] = useState<BranchFormValues>(initialValues ?? createEmptyBranchForm());
+  const [manualAddressEntry, setManualAddressEntry] = useState(false);
   const handleEnterNavigation = useFormEnterNavigation();
 
   const booleanOptions = useMemo(
@@ -50,6 +54,7 @@ export function BranchForm({
 
   useEffect(() => {
     setValues(initialValues ?? createEmptyBranchForm());
+    setManualAddressEntry(false);
   }, [initialValues]);
 
   function updateField<K extends keyof BranchFormValues>(key: K, value: BranchFormValues[K]) {
@@ -60,6 +65,20 @@ export function BranchForm({
     setValues((current) => ({
       ...current,
       address: { ...current.address, [key]: value },
+    }));
+  }
+
+  function applyPlaceToAddress(place: ParsedPlaceAddress) {
+    setValues((current) => ({
+      ...current,
+      address: {
+        ...current.address,
+        address1: place.address1 || current.address.address1,
+        city: place.city || current.address.city,
+        state: place.state || current.address.state,
+        zipcode: place.zipcode || current.address.zipcode,
+        country: place.country || current.address.country,
+      },
     }));
   }
 
@@ -81,7 +100,7 @@ export function BranchForm({
         <FormSection icon={Building2} title={t("branches.form.sections.branch")}>
           <div className="space-y-2.5">
             <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
+              <div className="min-w-0 w-full flex-1 space-y-1">
                 <Label htmlFor="name">
                   {t("branches.form.fields.name")} <span className="text-destructive">*</span>
                 </Label>
@@ -92,7 +111,7 @@ export function BranchForm({
                   required
                 />
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 flex-1 space-y-1">
                 <Label htmlFor="code">{t("branches.form.fields.code")}</Label>
                 <Input id="code" value={values.code} onChange={(event) => updateField("code", event.target.value)} />
               </div>
@@ -110,16 +129,6 @@ export function BranchForm({
             </div>
 
             <div className="space-y-1">
-              <Label>{t("branches.form.fields.phones")}</Label>
-              <PhoneListEditor
-                idPrefix="branch-phone"
-                compact
-                phones={values.phones}
-                onChange={(phones) => updateField("phones", phones)}
-              />
-            </div>
-
-            <div className="space-y-1">
               <Label htmlFor="disclaimer">{t("branches.form.fields.disclaimer")}</Label>
               <Input
                 id="disclaimer"
@@ -130,72 +139,122 @@ export function BranchForm({
           </div>
         </FormSection>
 
-        <FormSection icon={MapPin} title={t("branches.form.sections.address")}>
+        <FormSection
+          icon={MapPin}
+          title={t("branches.form.sections.address")}
+          action={
+            <button
+              type="button"
+              className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              onClick={() => setManualAddressEntry((current) => !current)}
+            >
+              {manualAddressEntry ? t("common.address.useGoogle") : t("common.address.useManual")}
+            </button>
+          }
+        >
           <div className="space-y-2.5">
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="address-address1">{t("branches.form.fields.address1")}</Label>
-                <Input
+            <div className="flex items-end gap-2">
+              <div className="min-w-0 flex-1 space-y-1">
+                <Label htmlFor="address-address1" className="text-xs text-muted-foreground">
+                  {t("branches.form.fields.address1")}
+                </Label>
+                <AddressAutocompleteInput
                   id="address-address1"
                   value={values.address.address1}
-                  onChange={(event) => updateAddressField("address1", event.target.value)}
+                  onValueChange={(value) => updateAddressField("address1", value)}
+                  onPlaceSelected={applyPlaceToAddress}
+                  placeholder={t("branches.form.fields.address1")}
+                  allowManualEntry
+                  className="w-full"
+                  onManualEntryChange={setManualAddressEntry}
+                  manualEntry={manualAddressEntry}
+                  manualEntryTogglePosition="none"
                 />
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="address-address2">{t("branches.form.fields.address2")}</Label>
-                <Input
-                  id="address-address2"
-                  value={values.address.address2}
-                  onChange={(event) => updateAddressField("address2", event.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="address-apartment">{t("branches.form.fields.apartment")}</Label>
+              <div className="w-24 shrink-0 space-y-1 sm:w-32">
+                <Label htmlFor="address-apartment" className="text-xs text-muted-foreground">
+                  {t("branches.form.fields.apartment")}
+                </Label>
                 <Input
                   id="address-apartment"
                   value={values.address.apartment}
                   onChange={(event) => updateAddressField("apartment", event.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="space-y-1">
+              <Input
+                id="address-address2"
+                value={values.address.address2}
+                onChange={(event) => updateAddressField("address2", event.target.value)}
+                placeholder={t("branches.form.fields.address2")}
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               <div className="space-y-1">
-                <Label htmlFor="address-city">{t("branches.form.fields.city")}</Label>
+                <Label htmlFor="address-city" className="text-xs text-muted-foreground">
+                  {t("branches.form.fields.city")}
+                </Label>
                 <Input
                   id="address-city"
                   value={values.address.city}
                   onChange={(event) => updateAddressField("city", event.target.value)}
+                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
                 />
               </div>
-            </div>
-
-            <div className="grid gap-2.5 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label htmlFor="address-state">{t("branches.form.fields.state")}</Label>
+                <Label htmlFor="address-state" className="text-xs text-muted-foreground">
+                  {t("branches.form.fields.state")}
+                </Label>
                 <Input
                   id="address-state"
                   value={values.address.state}
                   onChange={(event) => updateAddressField("state", event.target.value.toUpperCase())}
+                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="address-zipcode">{t("branches.form.fields.zipcode")}</Label>
+                <Label htmlFor="address-zipcode" className="text-xs text-muted-foreground">
+                  {t("branches.form.fields.zipcode")}
+                </Label>
                 <Input
                   id="address-zipcode"
                   value={values.address.zipcode}
                   onChange={(event) => updateAddressField("zipcode", event.target.value)}
+                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="address-country">{t("branches.form.fields.country")}</Label>
+                <Label htmlFor="address-country" className="text-xs text-muted-foreground">
+                  {t("branches.form.fields.country")}
+                </Label>
                 <Input
                   id="address-country"
                   value={values.address.country}
                   onChange={(event) => updateAddressField("country", event.target.value.toUpperCase())}
+                  disabled={isGoogleMapsConfigured() && !manualAddressEntry}
+                  readOnly={isGoogleMapsConfigured() && !manualAddressEntry}
                 />
               </div>
             </div>
+          </div>
+        </FormSection>
+
+        <FormSection icon={Phone} title={t("branches.form.sections.contact")}>
+          <div className="space-y-1">
+            <Label>{t("branches.form.fields.phones")}</Label>
+            <PhoneListEditor
+              idPrefix="branch-phone"
+              compact
+              phones={values.phones}
+              onChange={(phones) => updateField("phones", phones)}
+            />
           </div>
         </FormSection>
 

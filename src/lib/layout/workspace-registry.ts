@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 
-import { AnalyticsWorkspace, SecurityWorkspace } from "@/components/insights/insights-workspaces";
+import { AnalyticsWorkspace } from "@/components/insights/insights-workspaces";
 import { ReportsWorkspace } from "@/components/reports/reports-workspace";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { DailyIncomeWorkspace } from "@/components/accounting/daily-income-workspace";
@@ -62,7 +62,6 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/roles": RolesWorkspace,
   "/employees": EmployeesWorkspace,
   "/user-activities": UserActivitiesWorkspace,
-  "/security": SecurityWorkspace,
   "/branches": BranchesWorkspace,
   "/settings": ConfigurationWorkspace,
 };

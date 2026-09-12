@@ -3,6 +3,7 @@
 import { Building2, Mail, MapPin, Phone, Plus, Trash2, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
 import { selectFormFieldTextOnFocus, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
@@ -14,6 +15,7 @@ import {
   createEmptySupplierForm,
   type SupplierFormValues,
 } from "@/lib/inventory/types/suppliers";
+import type { ParsedPlaceAddress } from "@/lib/customers/types";
 
 type InventorySupplierFormProps = {
   initialValues?: SupplierFormValues;
@@ -22,6 +24,12 @@ type InventorySupplierFormProps = {
   onCancel: () => void;
   isSubmitting?: boolean;
 };
+
+function formatSelectedAddress(place: ParsedPlaceAddress): string {
+  return [place.address1, place.city, [place.state, place.zipcode].filter(Boolean).join(" "), place.country]
+    .filter(Boolean)
+    .join(", ");
+}
 
 function RepeatableTextList({
   id,
@@ -51,17 +59,36 @@ function RepeatableTextList({
 
         return (
           <div key={`${id}-${index}`} className="flex items-center gap-2">
-            <Input
-              id={`${id}-${index}`}
-              type={type}
-              value={value}
-              placeholder={placeholder}
-              aria-label={entries.length > 1 ? `${label} ${index + 1}` : label}
-              onChange={(event) =>
-                onChange(entries.map((entry, entryIndex) => (entryIndex === index ? event.target.value : entry)))
-              }
-              onFocus={selectFormFieldTextOnFocus}
-            />
+            {id === "address" ? (
+              <AddressAutocompleteInput
+                id={`${id}-${index}`}
+                value={value}
+                placeholder={placeholder}
+                onValueChange={(nextValue) =>
+                  onChange(entries.map((entry, entryIndex) => (entryIndex === index ? nextValue : entry)))
+                }
+                onPlaceSelected={(place) =>
+                  onChange(
+                    entries.map((entry, entryIndex) =>
+                      entryIndex === index ? formatSelectedAddress(place) : entry,
+                    ),
+                  )
+                }
+                allowManualEntry
+              />
+            ) : (
+              <Input
+                id={`${id}-${index}`}
+                type={type}
+                value={value}
+                placeholder={placeholder}
+                aria-label={entries.length > 1 ? `${label} ${index + 1}` : label}
+                onChange={(event) =>
+                  onChange(entries.map((entry, entryIndex) => (entryIndex === index ? event.target.value : entry)))
+                }
+                onFocus={selectFormFieldTextOnFocus}
+              />
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -150,14 +177,20 @@ export function InventorySupplierForm({
         </FormSection>
 
         <FormSection icon={MapPin} title={t("inventory.form.sections.addresses")}>
-          <RepeatableTextList
-            id="address"
-            label={t("inventory.form.fields.addresses")}
-            addLabel={t("inventory.form.addAddress")}
-            removeLabel={t("inventory.form.removeAddress")}
-            values={values.addresses}
+          <AddressAutocompleteInput
+            id="supplier-address"
+            value={values.addresses[0] ?? ""}
             placeholder={t("inventory.form.placeholders.address")}
-            onChange={(addresses) => setValues((current) => ({ ...current, addresses }))}
+            allowManualEntry
+            className="w-full"
+            manualEntryTogglePosition="label"
+            onValueChange={(address) => setValues((current) => ({ ...current, addresses: [address] }))}
+            onPlaceSelected={(place) =>
+              setValues((current) => ({
+                ...current,
+                addresses: [formatSelectedAddress(place)],
+              }))
+            }
           />
         </FormSection>
 

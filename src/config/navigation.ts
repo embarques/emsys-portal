@@ -24,7 +24,6 @@ import {
   ScanBarcode,
   ScrollText,
   Settings,
-  ShieldCheck,
   UserCheck,
   UserCog,
   Users,
@@ -298,12 +297,6 @@ export const navigationSections: NavigationSection[] = [
             href: "/user-activities",
             icon: ClipboardList,
             permission: PERMISSIONS.userActivitiesView,
-          },
-          {
-            labelKey: "navigation.items.security",
-            href: "/security",
-            icon: ShieldCheck,
-            permission: PERMISSIONS.usersView,
           },
           {
             labelKey: "navigation.items.branches",

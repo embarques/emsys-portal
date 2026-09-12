@@ -231,7 +231,7 @@ export function SidebarProfileMenu({ compact = false, onNavigate }: SidebarProfi
 
           <div className="space-y-0.5 px-2 pb-2">
             <Link
-              href="/security"
+              href="/settings"
               role="menuitem"
               onClick={handleNavigate}
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition hover:bg-accent hover:text-accent-foreground"
