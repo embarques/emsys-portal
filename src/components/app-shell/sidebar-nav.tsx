@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import * as React from "react";
 
+import { NavAlertBadge } from "@/components/app-shell/nav-alert-badge";
 import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
 import {
   navigationGroupHasActiveRoute,
@@ -12,8 +13,15 @@ import {
   submenuHasActiveRoute,
 } from "@/lib/navigation/nav-utils";
 import {
-  useNavigation,
+  useNavAlertCount,
+  useNavAlertLabel,
+  useNavItemsAlertCount,
+  useNavItemsAlertLabel,
+} from "@/lib/navigation/use-nav-alert-count";
+import {
+  useNavigationSections,
   useTopNavigation,
+  type TranslatedNavigationGroup,
   type TranslatedNavigationItem,
 } from "@/lib/navigation/use-navigation";
 import { cn } from "@/lib/utils";
@@ -49,6 +57,9 @@ function NavLeafLink({
   onNavigate?: () => void;
   className?: string;
 }) {
+  const alertCount = useNavAlertCount(item.href);
+  const alertLabel = useNavAlertLabel(item.href, alertCount);
+
   if (!item.href) return null;
 
   const active = navigationItemMatchesPath(item, pathname);
@@ -59,10 +70,12 @@ function NavLeafLink({
       href={item.href}
       label={item.label}
       onClick={onNavigate}
+      aria-label={alertLabel ? `${item.label}, ${alertLabel}` : item.label}
       className={cn(navRowClassName(active), className)}
     >
       <Icon className={navIconClassName} />
       <span className={navLabelClassName}>{item.label}</span>
+      <NavAlertBadge count={alertCount} label={alertLabel} />
     </WorkspaceNavLink>
   );
 }
@@ -73,22 +86,31 @@ function NavExpandRow({
   open,
   active,
   onToggle,
+  alertCount = 0,
+  alertLabel = "",
 }: {
   label: string;
   icon?: TranslatedNavigationItem["icon"];
   open: boolean;
   active: boolean;
   onToggle: () => void;
+  alertCount?: number;
+  alertLabel?: string;
 }) {
+  const showAlert = !open && alertCount > 0;
+  const visibleAlertLabel = showAlert ? alertLabel : "";
+
   return (
     <button
       type="button"
       aria-expanded={open}
+      aria-label={visibleAlertLabel ? `${label}, ${visibleAlertLabel}` : undefined}
       onClick={onToggle}
       className={navRowClassName(active)}
     >
       {Icon ? <Icon className={navIconClassName} /> : null}
       <span className={navLabelClassName}>{label}</span>
+      {showAlert ? <NavAlertBadge count={alertCount} label={visibleAlertLabel} /> : null}
       {open ? (
         <ChevronDown className={navChevronClassName} />
       ) : (
@@ -108,6 +130,8 @@ function NavSubmenu({
   onNavigate?: () => void;
 }) {
   const hasActiveChild = submenuHasActiveRoute(item, pathname);
+  const alertCount = useNavItemsAlertCount(item.children ?? []);
+  const alertLabel = useNavItemsAlertLabel(item.children ?? [], alertCount);
   const [open, setOpen] = React.useState(hasActiveChild);
 
   React.useEffect(() => {
@@ -139,6 +163,8 @@ function NavSubmenu({
         icon={item.icon}
         open={open}
         active={hasActiveChild && !open}
+        alertCount={alertCount}
+        alertLabel={alertLabel}
         onToggle={() => setOpen((current) => !current)}
       />
 
@@ -158,17 +184,103 @@ function NavSubmenu({
   );
 }
 
+function NavSectionDivider() {
+  return (
+    <div className="px-3 py-4" role="separator" aria-hidden="true">
+      <div className="h-px bg-border/80" />
+    </div>
+  );
+}
+
+function NavGroup({
+  group,
+  pathname,
+  open,
+  onToggle,
+  onNavigate,
+}: {
+  group: TranslatedNavigationGroup;
+  pathname: string;
+  open: boolean;
+  onToggle: () => void;
+  onNavigate?: () => void;
+}) {
+  const alertCount = useNavItemsAlertCount(group.items);
+  const alertLabel = useNavItemsAlertLabel(group.items, alertCount);
+
+  if (isFlatNavigationGroup(group.items)) {
+    const onlyItem = group.items[0];
+    return (
+      <NavLeafLink
+        item={{
+          ...onlyItem,
+          label: group.title,
+          labelKey: group.titleKey,
+          icon: group.icon ?? onlyItem.icon,
+          children: undefined,
+        }}
+        pathname={pathname}
+        onNavigate={onNavigate}
+      />
+    );
+  }
+
+  const hasActiveRoute = navigationGroupHasActiveRoute(group.items, pathname);
+  const isParentSelected = !open && hasActiveRoute;
+  const GroupIcon = group.icon ?? group.items[0]?.icon;
+
+  return (
+    <div className="space-y-1">
+      <NavExpandRow
+        label={group.title}
+        icon={GroupIcon}
+        open={open}
+        active={isParentSelected}
+        alertCount={alertCount}
+        alertLabel={alertLabel}
+        onToggle={onToggle}
+      />
+
+      {open ? (
+        <div className={navNestedClassName}>
+          {group.items.map((item) =>
+            item.children?.length ? (
+              <NavSubmenu
+                key={item.labelKey}
+                item={item}
+                pathname={pathname}
+                onNavigate={onNavigate}
+              />
+            ) : (
+              <NavLeafLink
+                key={item.href ?? item.labelKey}
+                item={item}
+                pathname={pathname}
+                onNavigate={onNavigate}
+              />
+            ),
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const topNavigation = useTopNavigation();
-  const visibleNavigation = useNavigation();
+  const visibleSections = useNavigationSections();
+  const visibleGroups = React.useMemo(
+    () => visibleSections.flatMap((section) => section.groups),
+    [visibleSections],
+  );
 
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(() => {
-    return Object.fromEntries(visibleNavigation.map((group, index) => [group.titleKey, index === 0]));
+    return Object.fromEntries(visibleGroups.map((group, index) => [group.titleKey, index === 0]));
   });
 
   React.useEffect(() => {
-    const activeGroup = visibleNavigation.find((group) =>
+    const activeGroup = visibleGroups.find((group) =>
       navigationGroupHasActiveRoute(group.items, pathname),
     );
     if (!activeGroup) return;
@@ -177,81 +289,45 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       if (current[activeGroup.titleKey]) return current;
       return { ...current, [activeGroup.titleKey]: true };
     });
-  }, [pathname, visibleNavigation]);
+  }, [pathname, visibleGroups]);
 
   return (
-    <nav className="space-y-1">
-      {topNavigation.map((item) => (
-        <NavLeafLink
-          key={item.href ?? item.labelKey}
-          item={item}
-          pathname={pathname}
-          onNavigate={onNavigate}
-        />
-      ))}
-
-      {topNavigation.length > 0 && visibleNavigation.length > 0 ? <div className="my-2" /> : null}
-
-      {visibleNavigation.map((group) => {
-        if (isFlatNavigationGroup(group.items)) {
-          const onlyItem = group.items[0];
-          return (
+    <nav className="flex flex-col">
+      {topNavigation.length > 0 ? (
+        <div className="flex flex-col gap-1">
+          {topNavigation.map((item) => (
             <NavLeafLink
-              key={group.titleKey}
-              item={{
-                ...onlyItem,
-                label: group.title,
-                labelKey: group.titleKey,
-                icon: group.icon ?? onlyItem.icon,
-                children: undefined,
-              }}
+              key={item.href ?? item.labelKey}
+              item={item}
               pathname={pathname}
               onNavigate={onNavigate}
             />
-          );
-        }
+          ))}
+        </div>
+      ) : null}
 
-        const isOpen = openGroups[group.titleKey] ?? false;
-        const hasActiveRoute = navigationGroupHasActiveRoute(group.items, pathname);
-        const isParentSelected = !isOpen && hasActiveRoute;
-        const GroupIcon = group.icon ?? group.items[0]?.icon;
-
-        return (
-          <div key={group.titleKey} className="space-y-1">
-            <NavExpandRow
-              label={group.title}
-              icon={GroupIcon}
-              open={isOpen}
-              active={isParentSelected}
-              onToggle={() =>
-                setOpenGroups((current) => ({ ...current, [group.titleKey]: !isOpen }))
-              }
-            />
-
-            {isOpen ? (
-              <div className={navNestedClassName}>
-                {group.items.map((item) =>
-                  item.children?.length ? (
-                    <NavSubmenu
-                      key={item.labelKey}
-                      item={item}
-                      pathname={pathname}
-                      onNavigate={onNavigate}
-                    />
-                  ) : (
-                    <NavLeafLink
-                      key={item.href ?? item.labelKey}
-                      item={item}
-                      pathname={pathname}
-                      onNavigate={onNavigate}
-                    />
-                  ),
-                )}
-              </div>
-            ) : null}
+      {visibleSections.map((section, sectionIndex) => (
+        <div key={section.id}>
+          {sectionIndex > 0 || topNavigation.length > 0 ? <NavSectionDivider /> : null}
+          <div className="flex flex-col gap-1">
+            {section.groups.map((group) => (
+              <NavGroup
+                key={group.titleKey}
+                group={group}
+                pathname={pathname}
+                open={openGroups[group.titleKey] ?? false}
+                onToggle={() =>
+                  setOpenGroups((current) => ({
+                    ...current,
+                    [group.titleKey]: !current[group.titleKey],
+                  }))
+                }
+                onNavigate={onNavigate}
+              />
+            ))}
           </div>
-        );
-      })}
+        </div>
+      ))}
     </nav>
   );
 }

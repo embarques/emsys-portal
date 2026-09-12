@@ -1,0 +1,22 @@
+---
+description: EMSYS domain context — door-to-door shipping and logistics. Read APP_CONTEXT.md before changing feature copy, models, or flows.
+alwaysApply: true
+---
+
+# Domain context
+
+EMSYS is a company management system for a **door-to-door shipping and logistics** company: pick up or receive client merchandise, then organize, track, and ship it to the destination the client specifies.
+
+Before changing a workspace, labels, data model, or user flow, read [`APP_CONTEXT.md`](../../APP_CONTEXT.md) for the business meaning of that section.
+
+## Do not confuse
+
+- **Invoices** = digitized **customer merchandise / shipments**, not typical SaaS billing invoices
+- **Items** = optional merchandise shortcuts when creating invoices, not inventory SKUs
+- **Inventory** = the company’s **internal supplies**, not customer merchandise
+- **Appointments** = scheduled client visits (pickup, supplies, payment, estimate)
+- **Barcodes** = labels on individual pieces of merchandise on an invoice (created with the invoice from line items + labels; directory is view/bulk-update only — no standalone create/delete)
+- **Containers** = shipping containers for customer shipments, not inventory bins
+
+Appointments often still appear as `orders` in code (`src/lib/orders`, `/appointments`).
+Barcode Scanner lives at `/label-updater`. Label manager is invoice staging (`Manage invoice items`). Barcode Manager is `/barcodes` + scanner.

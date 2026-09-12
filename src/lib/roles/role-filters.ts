@@ -6,6 +6,7 @@ import {
 } from "@/lib/api/search-query";
 
 const NUMERIC_FIELDS: ReadonlySet<string> = new Set(["id"]);
+const BOOLEAN_FIELDS: ReadonlySet<string> = new Set(["active"]);
 
 function parseRangeValue(raw: string): { start: string; end: string } | null {
   const trimmed = raw.trim();
@@ -57,6 +58,7 @@ function expandRoleLeafFilter(filter: ApiSearchFilter): ApiSearchFilterNode | nu
     default:
       return coerceTypedLeafFilter(filter, {
         numericFields: NUMERIC_FIELDS,
+        booleanFields: BOOLEAN_FIELDS,
       });
   }
 }

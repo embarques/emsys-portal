@@ -1,22 +1,71 @@
 {
   "title": "Invoices",
   "pages": {
-    "description": "Create and manage shipping invoices, line items, charges, and billing documentation linked to orders and customers."
+    "description": "Digitize and track customer merchandise we pick up or receive as part of a shipment."
+  },
+  "stats": {
+    "new": {
+      "label": "New invoices",
+      "periodLabel": "Timeframe",
+      "periods": {
+        "7d": "7 days",
+        "30d": "30 days",
+        "3m": "3 months",
+        "6m": "6 months",
+        "1y": "1 year"
+      }
+    }
   },
   "staging": {
     "tableAction": "Manage invoice items",
     "title": "Select invoice items for processing"
   },
   "columns": {
+    "invoiceNumber": "Invoice number",
+    "date": "Date",
+    "container": "Container",
+    "paidStatus": "Status",
+    "paymentLocation": "Paid at",
     "senderName": "Sender",
     "senderAddress": "Sender address",
     "receiverName": "Receiver",
-    "receiverAddress": "Receiver address"
+    "receiverAddress": "Receiver address",
+    "total": "Invoice total",
+    "discount": "Discount",
+    "amountPaid": "Paid",
+    "balance": "Balance",
+    "pickupAssignment": "Received by",
+    "createdBy": "Created by",
+    "createdAt": "Created at"
+  },
+  "search": {
+    "placeholder": "Search invoices"
+  },
+  "actions": {
+    "syncLegacy": "Sync legacy",
+    "syncingLegacy": "Syncing..."
+  },
+  "loading": {
+    "legacySyncProgress": "Syncing {{current}} out of {{total}}...",
+    "legacySyncStages": {
+      "connecting": "Connecting to the legacy invoice API.",
+      "dependencies": "Syncing customers and containers.",
+      "invoices": "Importing invoice headers.",
+      "refreshing": "Refreshing the invoice list."
+    }
+  },
+  "errors": {
+    "legacySyncPermissionMissing": "Missing permission: Access legacy invoices. Ask an administrator to grant the required permission, then try again."
   },
   "workspace": {
     "actionsColumn": "Actions",
     "viewInvoice": "View invoice",
-    "viewInvoiceFor": "View invoice {{number}}"
+    "viewInvoiceFor": "View invoice {{number}}",
+    "editInvoice": "Edit invoice",
+    "editInvoiceNamed": "Edit invoice {{number}}",
+    "addInvoice": "Add invoice",
+    "untitledTab": "Invoice",
+    "invoiceNotFound": "Invoice not found."
   },
   "form": {
     "fields": {
@@ -24,14 +73,17 @@
       "invoiceNumber": "Invoice number",
       "container": "Container",
       "pending": "Pending",
+      "paymentLocation": "Payment location",
+      "createdAt": "Created at",
+      "createdBy": "Created by",
       "sender": "Sender",
       "receiver": "Receiver",
       "pickupReference": "Pickup Reference",
-      "pickupSource": "Pickup Source",
+      "pickupSource": "Received via",
       "pickupSourceRoute": "Route",
       "pickupSourceWarehouse": "Warehouse",
       "pickupSourceOffice": "Office",
-      "pickupRoute": "Order route",
+      "pickupRoute": "Appointment route",
       "warehouseEmployee": "Warehouse employee",
       "officeEmployee": "Office employee"
     },
@@ -40,12 +92,13 @@
       "selectContainer": "Select a container",
       "searchContainers": "Search containers…",
       "selectSender": "Select sender",
+      "selectReceiver": "Select receiver",
       "noReceiver": "No receiver",
       "noPickupReference": "No pickup reference",
       "searchPickupReferences": "Search pickup references…",
-      "selectPickupRoute": "Select order route",
-      "noPickupRoute": "No order route",
-      "searchPickupRoutes": "Search order routes…",
+      "selectPickupRoute": "Select appointment route",
+      "noPickupRoute": "No appointment route",
+      "searchPickupRoutes": "Search appointment routes…",
       "selectWarehouseEmployee": "Select warehouse employee",
       "selectOfficeEmployee": "Select office employee",
       "searchEmployees": "Search employees…"
@@ -76,7 +129,10 @@
       "cancelEdit": "Cancel edit",
       "addItem": "Add item",
       "itemsSubtotal": "Items subtotal",
-      "emptyTable": "No line items added yet. Fill in the fields above and press Enter on Total to add a line.",
+      "emptyTable": "No line items added yet. Use Add item to start the first line.",
+      "duplicateHint": "A line with this description already exists. Quantity and labels will be added to that line instead of creating a duplicate.",
+      "duplicateMerged": "Updated quantity and labels on the existing line item.",
+      "quantityRequired": "Quantity must be greater than 0.",
       "descriptionPlaceholder": "Type or search catalog items…",
       "moveUp": "Move up",
       "moveDown": "Move down",
@@ -101,6 +157,7 @@
   },
   "wizard": {
     "navAriaLabel": "Invoice steps",
+    "goToStep": "Go to {{label}}",
     "stepEyebrow": "Step {{step}} of {{total}} · {{label}}",
     "steps": {
       "details": "Details",
@@ -125,22 +182,24 @@
       "dateRequired": "Date is required.",
       "invoiceNumberRequired": "Invoice number is required.",
       "containerRequired": "Container is required.",
-      "paymentLocationRequired": "Pending payment location is required.",
-      "pickupRouteRequired": "Order route is required.",
+      "paymentLocationRequired": "Payment location is required.",
+      "pickupRouteRequired": "Appointment route is required.",
       "warehouseEmployeeRequired": "Warehouse employee is required.",
       "officeEmployeeRequired": "Office employee is required.",
       "senderRequired": "Sender is required.",
       "unverifiedSenderAddress": "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.",
       "lineItemRequired": "Add at least one line item.",
-      "dailyIncomeContinueRequired": "Record a payment (amount may be $0) before continuing.",
-      "dailyIncomeSaveRequired": "Record a payment (amount may be $0) before saving."
+      "lineItemQuantityRequired": "Each line item needs a quantity greater than 0.",
+      "dailyIncomeContinueRequired": "Open a Cuadre, then record a payment or check Skip payment before continuing.",
+      "dailyIncomeSaveRequired": "Open a Cuadre, then record a payment or check Skip payment before saving.",
+      "negativeBalance": "Balance cannot be negative. Reduce the payment or discount so it does not exceed the invoice total."
     },
     "summary": {
       "title": "Invoice summary",
       "newInvoice": "New invoice",
       "senderNotSelected": "Sender not selected",
       "pending": "Pending",
-      "orderDetails": "Order details",
+      "orderDetails": "Appointment details",
       "lineItems": "Line items",
       "lineItem": "Line item",
       "paid": "Paid",
@@ -190,11 +249,17 @@
       "table": {
         "item": "Item",
         "qty": "Qty",
+        "labels": "Labels",
         "unitPrice": "Unit price",
         "subtotal": "Subtotal"
       },
       "labels": "{{count}} label",
-      "labels_plural": "{{count}} labels"
+      "labels_plural": "{{count}} labels",
+      "noLabels": "No labels",
+      "zeroLabelsWarning": "1 line item has 0 labels.",
+      "zeroLabelsWarning_plural": "{{count}} line items have 0 labels.",
+      "noPhone": "No phone",
+      "noAddress": "No address"
     },
     "dailyIncome": {
       "checking": "Checking Daily Income registration…",
@@ -205,6 +270,7 @@
       "paymentRecorded": "Payment recorded: {{amount}}",
       "invoiceCostRegistered": "Invoice cost: {{amount}}",
       "paymentRecordedToast": "Payment of {{amount}} recorded for invoice {{invoiceNumber}}.",
+      "checkPaymentRecordedToast": "Check {{checkNumber}} recorded as outstanding. Invoice {{invoiceNumber}} will not show this payment until the check is marked cleared.",
       "reference": "Reference: {{ref}}",
       "amount": "Amount",
       "paymentMethod": "Payment method",
@@ -215,6 +281,8 @@
       "registerRequired": "This invoice cannot be created until it is registered in Daily Income.",
       "noStatement": "No Daily Income exists for today and the current branch. Create it before registering this invoice.",
       "openFullPage": "Open full Daily Income page",
+      "openForInvoiceDate": "Open daily income for this branch and date",
+      "openForInvoiceDateHint": "Opens in a new tab. Create or reopen the statement, then return here and save again.",
       "openAssociated": "Open Cuadre linked",
       "openAssociatedHint": "Today's Daily Income #{{id}} is open. This invoice will be associated with it automatically.",
       "recordPaymentNow": "Record payment",
@@ -225,10 +293,9 @@
       "createOrOpenCuadre": "Create Cuadre",
       "reopenCuadre": "Reopen Cuadre",
       "skipPayment": "Skip payment",
-      "skipPaymentHint": "Leave checked to register this invoice in the open Cuadre with $0 payment (full balance due). Uncheck to enter a payment amount.",
-      "skipWithCuadreHint": "Invoice cost and balance will be registered in Daily Income #{{id}} with $0 payment when you continue.",
+      "skipPaymentHint": "Leave checked to let the backend register this invoice in the open Cuadre with $0 payment. Uncheck to enter payment details.",
+      "skipWithCuadreHint": "Invoice will be linked to Daily Income #{{id}} and registered in the journal with $0 payment.",
       "paymentSkipped": "Payment skipped — no open Cuadre to register against. Create a Cuadre to record cost with $0 payment, or continue without linking.",
-      "openCuadreBeforePayment": "Open or create a Cuadre, then record a payment before continuing.",
       "unpaidContinueHint": "Enter a payment below, or continue to register invoice cost and balance in Daily Income #{{id}} with $0 payment.",
       "recordBeforeContinueHint": "Press Record payment to continue. Amount may be $0.00 for an unpaid invoice.",
       "zeroPaymentDescription": "Initial invoice registration (unpaid)",
@@ -260,6 +327,10 @@
         "exchangeRate": "Exchange rate",
         "backToStatus": "Back to status",
         "creating": "Creating…",
+        "closing": "Closing…",
+        "closeOpenStatement": "Close #{{id}}",
+        "closePreviousCuadre": "Close previous cuadre",
+        "previousOpenStatement": "Previous daily income #{{id}} ({{date}}) is still open. Close it, then try creating today's closeout.",
         "closedPaymentDisabled": "Today's Daily Income is closed. Payment entry remains disabled until it is reopened.",
         "statementMustBeOpen": "Today's Daily Income must be open before registering this invoice.",
         "employeeUnavailable": "Current employee information is not available.",
@@ -281,6 +352,7 @@
         "zelleTransactionName": "Zelle transaction name",
         "checkNumber": "Check number",
         "checkNumberPlaceholder": "e.g. 4521",
+        "checkNumberHint": "Creates an outstanding check. The invoice balance updates when the check is marked cleared.",
         "descriptionField": "Description",
         "initialRegistrationDescription": "Initial invoice registration",
         "registering": "Registering…",
@@ -289,6 +361,21 @@
     }
   },
   "view": {
+    "pickupAssignment": "Received by",
+    "fields": {
+      "documentId": "Doc",
+      "phones": "Phones",
+      "address": "Address",
+      "scanned": "Scanned"
+    },
+    "lineItems": {
+      "showBarcodes": "Show barcodes",
+      "hideBarcodes": "Hide barcodes",
+      "showBarcodesCount": "View {{count}} barcode",
+      "showBarcodesCount_plural": "View {{count}} barcodes",
+      "hideBarcodesCount": "Hide {{count}} barcode",
+      "hideBarcodesCount_plural": "Hide {{count}} barcodes"
+    },
     "comments": {
       "title": "Comments ({{count}})",
       "description": "Notes about reaching out, delivery preferences, and other follow-ups. Comments cannot be deleted.",
@@ -314,6 +401,16 @@
       "referencePlaceholder": "Check #, transaction ID, confirmation code...",
       "checkNumberPlaceholder": "e.g. 4521",
       "searchMethods": "Search methods…",
+      "methods": {
+        "cash": "Cash",
+        "check": "Check",
+        "credit_card": "Credit card",
+        "debit_card": "Debit card",
+        "wire_transfer": "Wire transfer",
+        "zelle": "Zelle",
+        "ach": "ACH",
+        "other": "Other"
+      },
       "fields": {
         "description": "Description",
         "amount": "Amount",
@@ -359,5 +456,151 @@
         "description": "Description"
       }
     }
+  },
+  "filters": {
+    "fields": {
+      "number": {
+        "label": "Invoice number",
+        "placeholder": "Enter invoice number…"
+      },
+      "numberRange": {
+        "label": "Invoice number range",
+        "placeholder": "488800 to 488900"
+      },
+      "date": {
+        "label": "Date",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "dateRange": {
+        "label": "Date range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "paidRegion": {
+        "label": "Paid at"
+      },
+      "paidStatus": {
+        "label": "Status"
+      },
+      "cost": {
+        "label": "Invoice total",
+        "placeholder": "Enter amount…"
+      },
+      "discount": {
+        "label": "Discount",
+        "placeholder": "Enter amount…"
+      },
+      "payment": {
+        "label": "Paid",
+        "placeholder": "Enter amount…"
+      },
+      "balance": {
+        "label": "Balance",
+        "placeholder": "Enter amount…"
+      },
+      "container": {
+        "name": {
+          "label": "Container",
+          "placeholder": "Enter container…"
+        }
+      },
+      "sender": {
+        "name": {
+          "label": "Sender",
+          "placeholder": "Enter sender name…"
+        },
+        "id": {
+          "label": "Sender ID",
+          "placeholder": "Enter sender ID…"
+        },
+        "phone": {
+          "label": "Sender phone",
+          "placeholder": "Enter phone…"
+        },
+        "address": {
+          "label": "Sender address",
+          "placeholder": "Enter address, city, state, or zip…"
+        }
+      },
+      "receiver": {
+        "name": {
+          "label": "Receiver",
+          "placeholder": "Enter receiver name…"
+        },
+        "id": {
+          "label": "Receiver ID",
+          "placeholder": "Enter receiver ID…"
+        },
+        "phone": {
+          "label": "Receiver phone",
+          "placeholder": "Enter phone…"
+        },
+        "address": {
+          "label": "Receiver address",
+          "placeholder": "Enter address, city, state, or zip…"
+        }
+      },
+      "createdBy": {
+        "name": {
+          "label": "Created by"
+        }
+      },
+      "route": {
+        "_id": {
+          "label": "Route"
+        }
+      },
+      "employee": {
+        "id": {
+          "label": "Employee ID",
+          "placeholder": "Enter employee ID…"
+        },
+        "name": {
+          "label": "Employee name",
+          "placeholder": "Enter employee name…"
+        }
+      },
+      "isArchive": {
+        "label": "Archived"
+      },
+      "isVoid": {
+        "label": "Void"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "createdAtRange": {
+        "label": "Created at range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAtRange": {
+        "label": "Updated at range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      }
+    },
+    "options": {
+      "paidRegion": {
+        "NY": "USA",
+        "RD": "DR"
+      },
+      "paidStatus": {
+        "OPEN": "Open",
+        "CLOSED": "Closed"
+      },
+      "boolean": {
+        "true": "Yes",
+        "false": "No"
+      }
+    }
+  },
+  "barcodeSync": {
+    "decreaseTitle": "Select barcodes to remove",
+    "decreaseDescription": "You reduced the label count on one or more line items. Choose which specific barcodes to delete. Remaining barcodes stay on the invoice.",
+    "decreasePick": "Select {{remove}} of {{from}} to delete ({{to}} will remain).",
+    "confirmDelete": "Delete selected barcodes"
   }
 }

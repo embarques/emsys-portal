@@ -6,12 +6,10 @@ const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 /**
  * Advanced filter fields for roles.
  *
- * `id` is numeric server-side — its value is coerced to a number in
- * `expandRoleFilterNode` because the strict API rejects stringified numbers.
+ * `id` is numeric and `active` is boolean server-side — values are coerced in
+ * `expandRoleFilterNode` because the strict API rejects stringified types.
  *
- * `active` and `permissions.*` are intentionally omitted: probing
- * POST /roles/search shows the backend rejects those fields with a 400
- * ("search query validation failed").
+ * `permissions.*` remains omitted until the search contract accepts those fields.
  */
 export const ROLE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
@@ -29,6 +27,16 @@ export const ROLE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter role name…",
   },
   {
+    field: "active",
+    label: "Active",
+    operators: ["eq", "neq"],
+    valueType: "select",
+    options: [
+      { value: "true", label: "Active" },
+      { value: "false", label: "Inactive" },
+    ],
+  },
+  {
     field: "createdBy.name",
     label: "Created by",
     operators: [...TEXT_OPERATORS],
@@ -44,28 +52,28 @@ export const ROLE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "createdAt",
-    label: "Date created",
+    label: "Created at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "createdAtRange",
-    label: "Created date range",
+    label: "Created at range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",
   },
   {
     field: "updatedAt",
-    label: "Date modified",
+    label: "Updated at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "updatedAtRange",
-    label: "Modified date range",
+    label: "Updated at range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",

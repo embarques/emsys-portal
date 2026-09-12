@@ -51,7 +51,7 @@ See **Confirmed decisions (backend must implement)** for full action items.
 - `src/components/label-updater/label-updater-workspace.tsx`
 - `src/lib/labels/api/label-updater-api.ts`
 - `src/lib/labels/api/barcodes-api.ts`
-- `src/lib/labels/types.ts` — `BARCODE_STATUS_OPTIONS` (scanner status catalog)
+- `src/lib/labels/types.ts` — `FALLBACK_BARCODE_STATUS_OPTIONS` (offline status catalog)
 - `src/lib/barcodes/api/barcodes-catalog-api.ts`
 - `src/lib/barcodes/types.ts`
 - `src/lib/barcodes/filter-fields.ts`
@@ -516,6 +516,25 @@ Portal currently passes **vehicle-route ObjectIDs** (e.g. `6a4c498a5b044b685c830
 `API_PAYLOADS.md` and `ReportRequest` examples use **numeric** `/deliveries` ids (e.g. `"1001"`).
 
 Pickup manifest uses pickup **order** ids (`collection: "pickups"`), not vehicle-route ids — verified pattern differs.
+
+### Pickup manifest comment lines (backend PDF)
+
+The portal does not render the pickup manifest. `POST /reports/pickups` returns a PDF URL; comment text on each stop is assembled by the report template.
+
+Live example (2026-09-05): `OTHER PICKUP RECOGER 1 CAJA; OTHER TAKE LLEVAR 2 CAJAS`
+
+Each appointment comment is stored as `{ purpose, unit, quantity, description }` (`purpose` lowercase on the wire: `pickup`, `take`, `payment`, `estimate`, `comment`). The portal already writes a compiled English sentence into `description` (e.g. `Pickup RECOGER 1 CAJA.`).
+
+TODO (backend): format manifest comments for drivers instead of dumping raw fields.
+
+| # | Change | Why |
+| - | ------ | --- |
+| 1 | Drop the raw `OTHER` prefix when `unit` is custom / not a catalog item | Drivers read `OTHER PICKUP …` as noise, not “custom item” |
+| 2 | Print human purpose labels (`Pickup`, `Take`, …), not API enums | Matches the appointment form |
+| 3 | Sentence-case; do not uppercase the whole line | ALL CAPS + mixed Spanish is hard to scan on a route sheet |
+| 4 | Format from `purpose` + `quantity` + `unit`, then the user’s note | `Pickup 1 box` / `Pickup: Recoger 1 caja` — not `unit purpose description` concatenated |
+| 5 | One comment per line (or ` · `), not `; ` on a single blob | Two instructions should not look like one run-on string |
+| 6 | Do not repeat purpose/unit already shown (ignore compiled `description` if you format from fields) | Avoid `PICKUP Pickup RECOGER 1 CAJA` duplication |
 
 ### Questions
 
@@ -1632,43 +1651,33 @@ PUT  /v1/barcodes/{id}
 
 ## VIII.4 Barcode status catalog — **how the scanner gets status options**
 
-**There is no live API endpoint today.** The portal does **not** call `GET /barcode-statuses` (or similar).
+**Live API:** `GET /v1/barcodes/status-options` reads the tenant `barcode_statuses` collection (sorted by `_id`), under labels view permission. Seeded on tenant creation / migration / `db seed --target barcode-statuses` (includes `prevStatus`).
 
 **Current portal implementation:**
 
 | Item | Value |
 | ---- | ----- |
-| Source | **Hard-coded** `BARCODE_STATUS_OPTIONS` in `src/lib/labels/types.ts` |
-| Used by | Barcode scanner (`useBarcodeStatusOptions`), barcodes directory form, invoice label staging |
-| Hook | `useBarcodeStatusOptions()` → maps options to localized labels via `labels.barcodeStatuses.*` |
-| Default scan status | `IN TRANSIT` (`id: 3`) — scanner default when “Change status” is checked |
+| Source | `fetchBarcodeStatusOptions()` → `GET /barcodes/status-options` |
+| Fallback | `FALLBACK_BARCODE_STATUS_OPTIONS` in `src/lib/labels/types.ts` (offline / empty) |
+| Used by | Barcode scanner, barcodes directory form, invoice label staging |
+| Hook | `useBarcodeStatusOptions()` — TanStack Query + localized `labels.barcodeStatuses.*` |
+| Default scan status | `IN TRANSIT` when present in the catalog |
 
-```txt
-// Portal constants — NOT from API (ids 2,3,5,6 are best-guesses)
-BARCODE_STATUS_OPTIONS = [
-  { id: 1, name: "CREATED" },      // confirmed from API payloads
-  { id: 2, name: "PRINTED" },
-  { id: 3, name: "IN TRANSIT" },
-  { id: 4, name: "CONDUCE" },      // confirmed — seen live on id=1
-  { id: 5, name: "DELIVERED" },
-  { id: 6, name: "CANCELLED" },
-]
-```
+Full CRUD `/barcode-statuses` exists on the API for admin; the portal currently only consumes the picker endpoint.
 
 **Scanner write path:** selected `id` → `resolveStatusRef()` → `PUT /barcodes/{id}` with `{ status: { id, name } }`.
 
-### Questions — status catalog (**highest priority for scanner**)
+### Questions — status catalog
 
 | Question | Why the portal needs it |
 | -------- | ----------------------- |
-| **Will there be a `GET /barcode-statuses` (or enum in OpenAPI) listing id + name?** | Replace hard-coded `BARCODE_STATUS_OPTIONS` |
-| **Confirm authoritative id ↔ name mapping** for all six statuses above | Wrong id/name pairs may be rejected or corrupt data |
+| **Confirm seed list of 8 statuses** (ids + names + `prevStatus`) | Locales + badge colors for any new names beyond the original six |
 | Are status **names** case-sensitive (`"IN TRANSIT"` vs `"IN_TRANSIT"`)? | Search/display normalization |
 | Is `CONDUCE` a distinct terminal state or alias for in-transit/delivered? | KPI buckets + badge colors |
-| Should scanner offer only **allowed next statuses** per current `status.id`? | Needs transition matrix from backend |
+| Should scanner offer only **allowed next statuses** per current `status.id` / `prevStatus`? | Transition UX |
 | Who sets `prevStatus` — automatic on `PUT`, or client-supplied? | Read model + audit |
 
-**Requested deliverable:** publish `barcode.BarcodeStatus` catalog (ids, names, optional `prevStatus` rules) in OpenAPI; portal will switch scanner + directory form to API-driven options.
+**Done:** `GET /v1/barcodes/status-options` — portal uses it via `useBarcodeStatusOptions()`.
 
 ---
 
@@ -1760,7 +1769,7 @@ sequenceDiagram
 | Update status / container / route | `PUT /barcodes/{id}` | `applyBarcodeScanUpdate()` → `updateBarcode()` |
 | Route assignment | Same PUT with `route: { id: vehicleRouteMongoId, name }` | Scanner route picker = `useActiveRoutePicker("delivery")` |
 | Container picker | `GET /containers?limit=200` | `useContainerPicker()` |
-| Status options | **Hard-coded** `BARCODE_STATUS_OPTIONS` | `useBarcodeStatusOptions()` — **not API** |
+| Status options | `GET /barcodes/status-options` | `useBarcodeStatusOptions()` |
 
 **Not used by scanner after `2026-07-09`:** in-memory `labels/store.ts`; `PUT /invoices/item/barcode/route/{id}` for catalog rows.
 
@@ -1770,7 +1779,7 @@ sequenceDiagram
 
 | Topic | Portal today | Backend / spec | Action |
 | ----- | ------------ | -------------- | ------ |
-| **Status options** | Hard-coded ids 1–6 | No catalog endpoint | **Backend:** publish status enum endpoint; **Portal:** fetch options |
+| **Status options** | `GET /barcodes/status-options` | Tenant `barcode_statuses` seed | Keep fallback for offline / empty |
 | **Search vs read** | Table shows status, container, route, tripNumber | Search rejects embedded `*.name` fields | **Backend:** extend allowlist OR document as read-only |
 | **`LabelStatus` vs `BarcodeStatus`** | Legacy `LabelStatus` (`pending`, `generated`, …) still in types for old label store / staging UI | API uses `CREATED`, `PRINTED`, `IN TRANSIT`, … | Scanner uses `BarcodeStatus` only; staging may still mix — **confirm one vocabulary** |
 | **Route id type** | Scanner sends vehicle-route `_id` on `PUT` | `PUT /invoices/item/barcode/route/{id}` 404 with same id | Document which endpoints accept which id |
@@ -1845,7 +1854,8 @@ Please confirm as standard for list resources the portal uses today (`customers`
 - canonical `pickup.Pickup`, `invoice.Invoice`, `container.Container`, `route.Route`, `vehicle_route.VehicleRoute`, and `invoicedescription.InvoiceDescription` (customer: see customer confirmation doc)
 - `ContainerRef` embedded DTO per resource (invoice, delivery, vehicle-route, barcode)
 - **`barcode.Barcode` read/write model** — `status`, `route` vs `delivery`, `scanDate`, `prevStatus`
-- **`GET /barcode-statuses` (or equivalent)** — authoritative status catalog for scanner + directory (**portal hard-codes today**)
+- **`GET /barcodes/status-options`** — tenant status catalog for scanner + directory (**wired in portal**)
+- Optional admin CRUD `/barcode-statuses` — not consumed by portal pickers yet
 - `POST /barcodes/search` allowlist — add embedded fields (`status.name`, `container.name`, `route.name`, …) or document as read-only
 - party snapshot DTO used by pickups / invoices
 - `receivers[]` semantics on journal (customer `receivers[]`: see customer confirmation doc)
@@ -1925,7 +1935,7 @@ Please confirm as standard for list resources the portal uses today (`customers`
 
 **Barcodes (`/barcodes`) & scanner**
 
-1. **Status catalog:** publish `GET /barcode-statuses` (or OpenAPI enum) — portal hard-codes ids 1–6 in `BARCODE_STATUS_OPTIONS`; only `CREATED` (1) and `CONDUCE` (4) confirmed live.
+1. **Status catalog:** `GET /barcodes/status-options` is live — confirm the 8 seeded names for localization if any differ from CREATED/PRINTED/IN TRANSIT/CONDUCE/DELIVERED/CANCELLED.
 2. **`route` vs `delivery` on write** — which field should scanner/directory use for delivery-trip assignment?
 3. **Search allowlist** — will `status.name`, `container.name`, `route.name`, `tripNumber` be searchable? (Returned on GET but rejected by `POST /barcodes/search` today.)
 4. **`scanDate`** — sentinel `0001-01-01T00:00:00Z` meaning; should scanner auto-set on scan?
@@ -2088,7 +2098,7 @@ Please confirm as standard for list resources the portal uses today (`customers`
 | `id eq` with JSON string | `POST /barcodes/search` | **400** |
 | Invoice route assign (catalog barcode) | `PUT /invoices/item/barcode/route/{vehicleRouteId}` | **404** — not for catalog rows |
 | Audit on read | list / GET | `createdAt`, `updatedAt`, `createdBy`, `updatedBy` ✅ (`core.User`) |
-| Status catalog API | — | **Does not exist** — portal uses hard-coded `BARCODE_STATUS_OPTIONS` |
+| Status catalog API | `GET /barcodes/status-options` | **Wired** — portal fetches + falls back to local seed |
 | Full CRUD + search | `scripts/probe-barcodes-live.mjs` | **28/28 passed** (`2026-07-09`) |
 
 _Filtered directory lists in the portal use `POST /<resource>/search`, not legacy GET filter params._

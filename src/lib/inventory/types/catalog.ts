@@ -1,91 +1,64 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 
-export type InventoryStatus = "in_stock" | "low_stock" | "out_of_stock" | "reserved" | "review";
-
-export type InventoryLocation = "ny_warehouse" | "rd_warehouse" | "in_transit" | "dock";
-
-export type InventoryCategory = "packaging" | "labels" | "supplies" | "equipment";
-
-/** Catalog record — stock is derived from the movement ledger. */
+/** Catalog record — quantity left is derived from receipts and dispatches. */
 export type InventoryCatalogItem = {
   id: string;
-  sku: string;
-  name: string;
-  category: InventoryCategory;
-  location: InventoryLocation;
-  reorderLevel: number;
-  unit: string;
-  reserved: number;
-  notes?: string;
+  item: string;
+  reorderThreshold: number;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
+  updatedBy: string;
 };
 
-/** Item with computed on-hand stock and derived status. */
+/** Item with computed quantity left and average receipt cost. */
 export type InventoryItem = InventoryCatalogItem & {
   quantity: number;
-  status: InventoryStatus;
+  averageCost: number;
+};
+
+/** On-hand projection — one row per catalog item. */
+export type InventoryStock = {
+  id: string;
+  itemId: string;
+  item?: { id: string; item: string };
+  quantity: number;
+  averageCost: number;
+  reorderThreshold: number;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
 };
 
 export type InventoryFilterState = {
   query: string;
-  status: InventoryStatus | "all";
-  location: InventoryLocation | "all";
-  category: InventoryCategory | "all";
 };
 
 export type InventoryFormValues = {
-  sku: string;
-  name: string;
-  category: InventoryCategory;
-  location: InventoryLocation;
-  reorderLevel: number;
-  unit: string;
-  reserved: number;
-  notes: string;
+  item: string;
+  reorderThreshold: string;
   createdBy: string;
 };
 
-export const INVENTORY_LOCATIONS: { value: InventoryLocation; label: string }[] = [
-  { value: "ny_warehouse", label: "NY Warehouse" },
-  { value: "rd_warehouse", label: "RD Warehouse" },
-  { value: "in_transit", label: "In Transit" },
-  { value: "dock", label: "Loading Dock" },
-];
-
-export const INVENTORY_STATUSES: { value: InventoryStatus; label: string }[] = [
-  { value: "in_stock", label: "In stock" },
-  { value: "low_stock", label: "Low stock" },
-  { value: "out_of_stock", label: "Out of stock" },
-  { value: "reserved", label: "Reserved" },
-  { value: "review", label: "Needs review" },
-];
-
-export const INVENTORY_CATEGORIES: { value: InventoryCategory; label: string }[] = [
-  { value: "packaging", label: "Packaging" },
-  { value: "labels", label: "Labels" },
-  { value: "supplies", label: "Supplies" },
-  { value: "equipment", label: "Equipment" },
-];
-
-export function deriveInventoryStatus(quantity: number, reserved: number, reorderLevel: number): InventoryStatus {
-  if (quantity <= 0) return "out_of_stock";
-  if (reserved >= quantity) return "reserved";
-  if (quantity - reserved <= reorderLevel) return "low_stock";
-  return "in_stock";
+export function parseInventoryFormNumber(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
 }
 
 export function createEmptyInventoryForm(): InventoryFormValues {
   return {
-    sku: "",
-    name: "",
-    category: "supplies",
-    location: "ny_warehouse",
-    reserved: 0,
-    reorderLevel: 10,
-    unit: "units",
-    notes: "",
+    item: "",
+    reorderThreshold: "",
     createdBy: DEFAULT_CREATED_BY,
+  };
+}
+
+export function inventoryItemToFormValues(item: InventoryItem): InventoryFormValues {
+  return {
+    item: item.item,
+    reorderThreshold: item.reorderThreshold > 0 ? String(item.reorderThreshold) : "",
+    createdBy: item.createdBy,
   };
 }

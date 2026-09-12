@@ -4,17 +4,33 @@ const TEXT_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
 const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 const PHONE_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
 
+const SENDER_ADDRESS_QUERY_FIELDS = [
+  "sender.address.address1",
+  "sender.address.address2",
+  "sender.address.city",
+  "sender.address.state",
+  "sender.address.zipcode",
+];
+
+const RECEIVER_ADDRESS_QUERY_FIELDS = [
+  "receivers.address.address1",
+  "receivers.address.address2",
+  "receivers.address.city",
+  "receivers.address.state",
+  "receivers.address.zipcode",
+];
+
 export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   {
     field: "sender.name",
-    label: "Sender name",
+    label: "Name",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
-    placeholder: "Enter sender name…",
+    placeholder: "Enter name…",
   },
   {
     field: "sender.phone",
-    label: "Sender phone",
+    label: "Phone",
     operators: [...PHONE_OPERATORS],
     valueType: "text",
     placeholder: "Enter phone…",
@@ -22,14 +38,36 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "sender.address",
-    label: "Sender address",
+    label: "Address",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
-    placeholder: "Enter sender address…",
+    placeholder: "Enter address, city, state, or zip…",
+    queryFields: SENDER_ADDRESS_QUERY_FIELDS,
+  },
+  {
+    field: "sender.address.city",
+    label: "City",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter city…",
+  },
+  {
+    field: "sender.address.state",
+    label: "State",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter state…",
+  },
+  {
+    field: "sender.address.zipcode",
+    label: "Zip",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter zip code…",
   },
   {
     field: "sender.zipRange",
-    label: "Sender zip range",
+    label: "Zip range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "10001-10282 or 10001 to 10282",
@@ -50,7 +88,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "route.id",
-    label: "Pickup route",
+    label: "Route",
     operators: ["eq", "neq"],
     valueType: "select",
     optionsSource: "pickupRoutes",
@@ -78,7 +116,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "receivers.name",
-    label: "Receiver name",
+    label: "Receiver",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
     placeholder: "Enter receiver name…",
@@ -96,7 +134,29 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     label: "Receiver address",
     operators: [...TEXT_OPERATORS],
     valueType: "text",
-    placeholder: "Enter receiver address…",
+    placeholder: "Enter address, city, state, or zip…",
+    queryFields: RECEIVER_ADDRESS_QUERY_FIELDS,
+  },
+  {
+    field: "receivers.address.city",
+    label: "Receiver city",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter city…",
+  },
+  {
+    field: "receivers.address.state",
+    label: "Receiver state",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter state…",
+  },
+  {
+    field: "receivers.address.zipcode",
+    label: "Receiver zip",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter zip code…",
   },
   {
     field: "createdBy.name",
@@ -107,7 +167,7 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "completed",
-    label: "Completed status",
+    label: "Completed",
     operators: ["eq", "neq"],
     valueType: "select",
     options: [
@@ -117,28 +177,28 @@ export const ORDER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
   },
   {
     field: "date",
-    label: "Order date",
+    label: "Date",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "dateRange",
-    label: "Order date range",
+    label: "Date range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",
   },
   {
     field: "createdAt",
-    label: "Date created",
+    label: "Created at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "createdAtRange",
-    label: "Date created range",
+    label: "Created at range",
     operators: ["eq"],
     valueType: "range",
     placeholder: "2026-01-01 to 2026-06-30",

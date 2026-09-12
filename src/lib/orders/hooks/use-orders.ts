@@ -13,7 +13,10 @@ import {
   fetchOrders,
   fetchPickupsByRoute,
   fetchSenderOrderHistory,
+  previewLegacyPickupSync,
+  retryOrderLegacySync,
   setOrdersCompleted,
+  syncLegacyPickups,
   unassignAllPickupsFromRoute,
   unassignOrdersFromRoutes,
   unassignPickupsFromRoute,
@@ -24,6 +27,8 @@ import {
   buildPendingOrderStatsFilterRows,
   buildPendingPurposeStatsFilterRows,
 } from "@/lib/orders/order-stats";
+import { useInsightsKpis } from "@/lib/insights/hooks/use-insights-kpis";
+import type { NewOrderStatPeriod } from "@/lib/orders/new-order-stats";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
   type Order,
@@ -94,18 +99,19 @@ export function usePickupsByRoute(
   });
 }
 
-/** Load a sender's pickup history via GET /pickups filtered by their customer id. */
+/** Load a sender's appointment history via GET /pickups filtered by their customer id. */
 export function useSenderOrderHistory(
   senderId: string | null | undefined,
-  limit = SENDER_HISTORY_LIMIT,
+  options: { enabled?: boolean; limit?: number } = {},
 ) {
+  const { enabled = true, limit = SENDER_HISTORY_LIMIT } = options;
   const queryEnabled = useOrdersQueryEnabled();
   const id = senderId?.trim() ?? "";
 
   return useWorkspaceQuery({
     queryKey: queryKeys.orders.history(id, limit),
     queryFn: () => fetchSenderOrderHistory(id, { limit }),
-    enabled: queryEnabled && id.length > 0,
+    enabled: queryEnabled && enabled && id.length > 0,
   });
 }
 
@@ -178,6 +184,19 @@ export function useOrderStats(options: OrderStatsOptions = {}) {
   };
 }
 
+/** Count of appointments created within a rolling timeframe, plus prior-period count for % change. */
+export function useNewOrderStats(period: NewOrderStatPeriod) {
+  const query = useInsightsKpis(period, { enabled: useOrdersQueryEnabled() });
+
+  return {
+    total: query.data?.newAppointments.count ?? 0,
+    previousTotal: query.data?.newAppointments.previousCount ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+  };
+}
+
 export function useOrder(orderId: string | null, enabled = true) {
   const queryEnabled = useOrdersQueryEnabled();
 
@@ -189,7 +208,92 @@ export function useOrder(orderId: string | null, enabled = true) {
 }
 
 function invalidateOrders(queryClient: ReturnType<typeof useQueryClient>) {
-  return queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.orders.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.insights.all }),
+  ]);
+}
+
+function isOrderListResult(value: unknown): value is { items: Order[]; total?: number } {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      Array.isArray((value as { items?: unknown }).items),
+  );
+}
+
+/** Remove appointments from cached list/search results after they leave a route filter. */
+function removeOrdersFromListCaches(
+  queryClient: ReturnType<typeof useQueryClient>,
+  orderIds: number[],
+) {
+  const idSet = new Set(orderIds.filter((id) => id > 0));
+  if (idSet.size === 0) return;
+
+  queryClient.setQueriesData({ queryKey: queryKeys.orders.all }, (current) => {
+    if (!isOrderListResult(current)) return current;
+
+    const remaining = current.items.filter((order) => !idSet.has(order.id));
+    if (remaining.length === current.items.length) return current;
+
+    const removed = current.items.length - remaining.length;
+    const total =
+      typeof current.total === "number" ? Math.max(0, current.total - removed) : remaining.length;
+
+    return {
+      ...current,
+      items: remaining,
+      total,
+    };
+  });
+}
+
+/** Drop route fields from cached appointment detail/list rows (unfiltered views). */
+function clearRouteFieldsInOrderCaches(
+  queryClient: ReturnType<typeof useQueryClient>,
+  orderIds: number[],
+) {
+  const idSet = new Set(orderIds.filter((id) => id > 0));
+  if (idSet.size === 0) return;
+
+  const stripRoute = (order: Order): Order =>
+    idSet.has(order.id) ? { ...order, routeId: undefined, routeName: undefined } : order;
+
+  queryClient.setQueriesData({ queryKey: queryKeys.orders.all }, (current) => {
+    if (!current) return current;
+
+    if (isOrderListResult(current)) {
+      return {
+        ...current,
+        items: current.items.map(stripRoute),
+      };
+    }
+
+    if (
+      typeof current === "object" &&
+      "id" in current &&
+      typeof (current as Order).id === "number" &&
+      idSet.has((current as Order).id)
+    ) {
+      return stripRoute(current as Order);
+    }
+
+    return current;
+  });
+}
+
+async function invalidateOrdersAndClearCachedRoutes(
+  queryClient: ReturnType<typeof useQueryClient>,
+  orders: Order[],
+) {
+  const orderIds = orders.map((order) => order.id);
+  // Route-filtered lists should drop these rows immediately.
+  removeOrdersFromListCaches(queryClient, orderIds);
+  clearRouteFieldsInOrderCaches(queryClient, orderIds);
+  await invalidateOrders(queryClient);
+  // Unfiltered lists refill from the network with full party data. Only strip a
+  // stale route label if a refetch still includes the row.
+  clearRouteFieldsInOrderCaches(queryClient, orderIds);
 }
 
 export function useCreateOrder() {
@@ -244,6 +348,35 @@ export function useSetOrdersCompleted() {
   });
 }
 
+export function useSyncLegacyPickups() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => syncLegacyPickups(),
+    onSuccess: () => invalidateOrders(queryClient),
+  });
+}
+
+export function usePreviewLegacyPickupSync() {
+  return useMutation({
+    mutationFn: () => previewLegacyPickupSync(),
+  });
+}
+
+export function useRetryOrderLegacySync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderId: string) => retryOrderLegacySync(orderId),
+    onSuccess: (order) => {
+      invalidateOrders(queryClient);
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.orders.detail(String(order.id)),
+      });
+    },
+  });
+}
+
 /** Assign pickups to a scheduled pickup vehicle route (`PUT /pickups/route/{id}`). */
 export function useAssignPickupsToRoute() {
   const queryClient = useQueryClient();
@@ -255,13 +388,15 @@ export function useAssignPickupsToRoute() {
   });
 }
 
-/** Unassign pickups from their scheduled route (`PUT /pickups/{id}` with `route: null`). */
+/** Unassign pickups from their scheduled route (`DELETE /pickups/{id}/route`). */
 export function useUnassignPickupsFromRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (orders: Order[]) => unassignPickupsFromRoute(orders),
-    onSuccess: () => invalidateOrders(queryClient),
+    onSuccess: async (_data, orders) => {
+      await invalidateOrdersAndClearCachedRoutes(queryClient, orders);
+    },
   });
 }
 
@@ -271,7 +406,9 @@ export function useClearOrdersRouteAssignments() {
 
   return useMutation({
     mutationFn: (orders: Order[]) => unassignOrdersFromRoutes(orders),
-    onSuccess: () => invalidateOrders(queryClient),
+    onSuccess: async (_data, orders) => {
+      await invalidateOrdersAndClearCachedRoutes(queryClient, orders);
+    },
   });
 }
 
@@ -281,6 +418,8 @@ export function useClearPickupRoute() {
 
   return useMutation({
     mutationFn: (routeId: string) => unassignAllPickupsFromRoute(routeId),
-    onSuccess: () => invalidateOrders(queryClient),
+    onSuccess: async () => {
+      await invalidateOrders(queryClient);
+    },
   });
 }

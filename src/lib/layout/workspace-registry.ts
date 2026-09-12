@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 
-import { AnalyticsWorkspace, ReportsWorkspace, SecurityWorkspace } from "@/components/insights/insights-workspaces";
+import { AnalyticsWorkspace, SecurityWorkspace } from "@/components/insights/insights-workspaces";
+import { ReportsWorkspace } from "@/components/reports/reports-workspace";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { DailyIncomeWorkspace } from "@/components/accounting/daily-income-workspace";
 import { ChartOfAccountsWorkspace } from "@/components/accounting/chart-of-accounts-workspace";
@@ -13,8 +14,7 @@ import { EmployeesWorkspace } from "@/components/employees/employees-workspace";
 import { InventoryItemsWorkspace } from "@/components/inventory/inventory-items-workspace";
 import { InventoryReceiptsWorkspace } from "@/components/inventory/inventory-receipts-workspace";
 import { InventoryDispatchesWorkspace } from "@/components/inventory/inventory-dispatches-workspace";
-import { InventoryRecipientsWorkspace } from "@/components/inventory/inventory-recipients-workspace";
-import { InventoryReportsWorkspace } from "@/components/inventory/inventory-reports-workspace";
+import { InventorySuppliersWorkspace } from "@/components/inventory/inventory-suppliers-workspace";
 import { InvoicesWorkspace } from "@/components/invoices/invoices-workspace";
 import { ItemsWorkspace } from "@/components/items/items-workspace";
 import { BarcodesWorkspace } from "@/components/barcodes/barcodes-workspace";
@@ -23,8 +23,8 @@ import { OrdersWorkspace } from "@/components/orders/orders-workspace";
 import { OrdersMapWorkspace } from "@/components/orders/orders-map-workspace";
 import { RolesWorkspace } from "@/components/roles/roles-workspace";
 import { RouteManagerWorkspace } from "@/components/route-manager/route-manager-workspace";
-import { PickupRoutesWorkspace } from "@/components/pickup-delivery-routes/pickup-routes-workspace";
-import { DeliveryRoutesWorkspace } from "@/components/pickup-delivery-routes/delivery-routes-workspace";
+import { DailyRoutesWorkspace } from "@/components/pickup-delivery-routes/daily-routes-workspace";
+import { UserActivitiesWorkspace } from "@/components/user-activities/user-activities-workspace";
 import { UsersWorkspace } from "@/components/users/users-workspace";
 import { VehiclesWorkspace } from "@/components/vehicles/vehicles-workspace";
 import { navigation, topNavigationItems } from "@/config/navigation";
@@ -36,21 +36,22 @@ import { translate, type Locale } from "@/lib/i18n/catalog";
 export const workspaceRegistry: Record<string, ComponentType> = {
   "/": DashboardWorkspace,
   "/customers": CustomersWorkspace,
-  "/orders": OrdersWorkspace,
-  "/orders/map": OrdersMapWorkspace,
+  "/appointments": OrdersWorkspace,
+  "/appointments/map": OrdersMapWorkspace,
   "/invoices": InvoicesWorkspace,
   "/barcodes": BarcodesWorkspace,
   "/label-updater": LabelUpdaterWorkspace,
   "/inventory/items": InventoryItemsWorkspace,
   "/inventory/receipts": InventoryReceiptsWorkspace,
   "/inventory/dispatches": InventoryDispatchesWorkspace,
-  "/inventory/recipients": InventoryRecipientsWorkspace,
-  "/inventory/reports": InventoryReportsWorkspace,
+  "/inventory/suppliers": InventorySuppliersWorkspace,
   "/items": ItemsWorkspace,
   "/containers": ContainersWorkspace,
   "/routes": RouteManagerWorkspace,
-  "/pickup-routes": PickupRoutesWorkspace,
-  "/delivery-routes": DeliveryRoutesWorkspace,
+  "/daily-routes": DailyRoutesWorkspace,
+  "/pickup-routes": DailyRoutesWorkspace,
+  "/appointment-routes": DailyRoutesWorkspace,
+  "/delivery-routes": DailyRoutesWorkspace,
   "/vehicles": VehiclesWorkspace,
   "/accounting/daily-income": DailyIncomeWorkspace,
   "/accounting/checks": ChecksWorkspace,
@@ -60,6 +61,7 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/users": UsersWorkspace,
   "/roles": RolesWorkspace,
   "/employees": EmployeesWorkspace,
+  "/user-activities": UserActivitiesWorkspace,
   "/security": SecurityWorkspace,
   "/branches": BranchesWorkspace,
   "/settings": ConfigurationWorkspace,

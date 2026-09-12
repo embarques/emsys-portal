@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { RouteForm } from "@/components/route-manager/route-form";
 import { RouteViewSheet } from "@/components/route-manager/route-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
@@ -28,8 +29,8 @@ import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useUserError } from "@/lib/errors/use-user-error";
-import { formatBranchCodeOnly, formatBranchFilterLabel, getBranchCodeBadgeClass } from "@/lib/branches/display";
-import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { formatBranchCodeOnly, getBranchCodeBadgeClass } from "@/lib/branches/display";
+import { useDirectoryBranchFilter } from "@/lib/branches/hooks/use-directory-branch-filter";
 import { createApiListTextSearch } from "@/lib/api/search-query";
 import {
   buildTableSelectionResetKey,
@@ -50,33 +51,35 @@ import {
 import {
   DEFAULT_ROUTE_LIST_PARAMS,
   createEmptyRouteForm,
+  getRouteBranchCode,
   routeToFormValues,
   type Route,
-  type RouteFilterState,
   type RouteFormValues,
   areRouteFormValuesEquivalent,
 } from "@/lib/route-manager/types";
 import type { DataTableColumn } from "@/lib/table/types";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTranslation } from "@/lib/i18n";
 
-const PAGE_SIZE = DEFAULT_ROUTE_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
-
-const defaultFilters: RouteFilterState = {
-  query: "",
-  branchCode: "",
-};
 
 export function RouteManagerWorkspace() {
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
-  const [filters, setFilters] = useState<RouteFilterState>(defaultFilters);
-  const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
-  const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
+  const [query, setQuery] = useState("");
+  const {
+    branchCode,
+    selectValue,
+    setBranchCode,
+    isReady: isBranchFilterReady,
+    branchOptions,
+    branches,
+    branchesLoading,
+  } = useDirectoryBranchFilter();
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const [viewAssignment, setViewAssignment] = useState<Route | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
   const [editingAssignment, setEditingAssignment] = useState<Route | null>(null);
@@ -87,34 +90,28 @@ export function RouteManagerWorkspace() {
     () => ({
       ...DEFAULT_ROUTE_LIST_PARAMS,
       page,
-      limit: PAGE_SIZE,
+      limit: pageLimit,
       search: createApiListTextSearch(debouncedQuery),
-      ...(filters.branchCode.trim() ? { branchCode: filters.branchCode.trim() } : {}),
+      ...(branchCode.trim() ? { branchCode: branchCode.trim() } : {}),
     }),
-    [debouncedQuery, filters.branchCode, page],
+    [branchCode, debouncedQuery, page, pageLimit],
   );
 
-  const branchesQuery = useBranchPicker(200);
-  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
-  const branchOptions = useMemo(() => {
-    return [
-      { value: "", label: t("routes.table.allBranches"), keywords: ["all"] },
-      ...branches.map((branch) => ({
-        value: branch.code,
-        label: formatBranchFilterLabel(branch),
-        keywords: [branch.code, branch.name],
-      })),
-    ];
-  }, [branches, t]);
-
-  const { data, isLoading, isError, error, isFetching } = useRoutes(listParams);
+  const { data, isLoading, isError, error, isFetching } = useRoutes(listParams, {
+    enabled: isBranchFilterReady,
+  });
   const createMutation = useCreateRoute();
   const updateMutation = useUpdateRoute();
   const deleteMutation = useDeleteRoutes();
 
-  const assignments = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
+  const assignments = useResolvedPaginatedItems(
+    data?.items,
+    data?.total,
+    isFetching || !isBranchFilterReady,
+  );
   const totalAssignments = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalAssignments / PAGE_SIZE));
+  rememberTotal(totalAssignments);
+  const totalPages = Math.max(1, Math.ceil(totalAssignments / pageLimit));
   const currentPage = Math.min(page, totalPages);
 
   const allPageSelected =
@@ -123,7 +120,7 @@ export function RouteManagerWorkspace() {
     createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   useTableSelectionReset(
-    buildTableSelectionResetKey(debouncedQuery, filters.branchCode),
+    buildTableSelectionResetKey(debouncedQuery, branchCode),
     setSelectedIds,
   );
 
@@ -239,27 +236,28 @@ export function RouteManagerWorkspace() {
       renderCell: (assignment) => formatRouteName(assignment),
     },
     {
+      id: "active",
+      label: t("routes.activeRoute.status"),
+      renderCell: (assignment) =>
+        assignment.active ? t("routes.activeRoute.active") : t("routes.activeRoute.inactive"),
+    },
+    {
       id: "employees",
       label: t("routes.columns.employees"),
       renderCell: (assignment) => getRouteEmployeesLabel(assignment.employees),
     },
     {
-      id: "vehicle.branch",
+      id: "branch",
       label: t("routes.columns.branch"),
       truncateCell: false,
       cellClassName: "overflow-visible",
       renderCell: (assignment) => (
         <TableTagText
-          className={getBranchCodeBadgeClass(assignment.vehicle.branch ?? "", branches)}
+          className={getBranchCodeBadgeClass(getRouteBranchCode(assignment), branches)}
         >
-          {formatBranchCodeOnly(assignment.vehicle.branch ?? "", branches)}
+          {formatBranchCodeOnly(getRouteBranchCode(assignment), branches)}
         </TableTagText>
       ),
-    },
-    {
-      id: "vehicle.name",
-      label: t("routes.columns.vehicle"),
-      renderCell: (assignment) => assignment.vehicle.name || dash,
     },
     {
       id: "createdAt",
@@ -283,20 +281,9 @@ export function RouteManagerWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("routes-v2", tableColumns);
+  const columnVisibility = useColumnVisibility("routes-v4", tableColumns);
 
-  const hasActiveFilters = Boolean(filters.query.trim()) || Boolean(filters.branchCode.trim());
-  const searchSummary = buildToolbarSearchSummary(
-    {
-      isFiltered: hasActiveFilters,
-      query: filters.query,
-      isSearchPending,
-      matched: totalAssignments,
-      noun: t("routes.noun"),
-      isLoading: isFetching && assignments.length === 0,
-    },
-    t,
-  );
+  const hasActiveFilters = Boolean(query.trim()) || Boolean(branchCode.trim());
 
   return (
     <div className="flex min-h-[calc(100vh-11rem)] flex-col">
@@ -316,14 +303,13 @@ export function RouteManagerWorkspace() {
           <TableDirectoryToolbar
             showFilterToggle={false}
             columnLayout={columnVisibility}
-            searchSummary={searchSummary}
             search={
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <div className="min-w-0 flex-1">
                   <TableSearchInput
-                    value={filters.query}
-                    onChange={(query) => {
-                      setFilters((current) => ({ ...current, query }));
+                    value={query}
+                    onChange={(nextQuery) => {
+                      setQuery(nextQuery);
                       setPage(1);
                     }}
                     placeholder={t("routes.table.searchPlaceholder")}
@@ -332,17 +318,19 @@ export function RouteManagerWorkspace() {
                 <SearchableSelect
                   id="routes-branch-filter"
                   aria-label={t("routes.table.branchFilter")}
-                  value={filters.branchCode}
-                  onValueChange={(branchCode) => {
-                    setFilters((current) => ({ ...current, branchCode }));
+                  value={selectValue}
+                  onValueChange={(nextBranchCode) => {
+                    setBranchCode(nextBranchCode);
                     setPage(1);
                   }}
                   options={branchOptions}
-                  loading={branchesQuery.isLoading}
+                  loading={branchesLoading}
                   loadingMessage={t("common.loading")}
-                  placeholder={t("routes.table.branchFilterPlaceholder")}
+                  placeholder={t("routes.table.branchFilter")}
                   searchPlaceholder={t("routes.table.branchFilterSearch")}
-                  className="w-[min(100%,14rem)] shrink-0"
+                  truncateSelection={false}
+                  fitToOptions
+                  className="max-w-full shrink-0"
                 />
               </div>
             }
@@ -374,7 +362,7 @@ export function RouteManagerWorkspace() {
             columns={columnVisibility.columns}
             rows={assignments}
             page={currentPage}
-            isPageDataPending={isFetching}
+            isPageDataPending={isFetching || !isBranchFilterReady}
             rowKey={(assignment) => assignment.id}
             rowLabel={(assignment) => formatRouteName(assignment)}
             columnLayout={columnVisibility}
@@ -411,29 +399,14 @@ export function RouteManagerWorkspace() {
               total: totalAssignments,
             })}
           </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1 || isLoading}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages || isLoading}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={isLoading || !isBranchFilterReady}
+          />
         </div>
       </Card>
 

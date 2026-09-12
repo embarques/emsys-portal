@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 
 import { WorkspaceTabColorMenu } from "@/components/app-shell/workspace-tab-color-menu";
 import {
@@ -65,6 +65,7 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
   const accentColor = resolveWorkspaceTabAccentColor(tab, sectionColorOverrides);
   const tabSection = resolveWorkspaceTabSection(tab);
   const topAccentStyle = getWorkspaceTabTopAccentStyle(accentColor, active);
+  const showEditIcon = tab.form?.mode === "edit";
 
   return (
     <ContextMenu>
@@ -89,18 +90,28 @@ const WorkspaceTabItem = memo(function WorkspaceTabItem({
           ) : null}
           <button
             type="button"
-            className="min-w-0 flex-1 truncate text-left"
+            className="flex min-w-0 flex-1 items-center truncate text-left"
             onClick={() => onActivate(tab.id)}
             title={`${tab.number} · ${displayLabel}`}
           >
-            <span
-              className={cn(
-                "mr-1.5 shrink-0 tabular-nums",
-                active ? "font-semibold text-primary" : "text-muted-foreground",
-              )}
-            >
-              {tab.number}
-            </span>
+            {showEditIcon ? (
+              <Pencil
+                className={cn(
+                  "mr-1.5 size-3.5 shrink-0",
+                  active ? "text-primary" : "text-muted-foreground",
+                )}
+                aria-hidden
+              />
+            ) : (
+              <span
+                className={cn(
+                  "mr-1.5 shrink-0 tabular-nums",
+                  active ? "font-semibold text-primary" : "text-muted-foreground",
+                )}
+              >
+                {tab.number}
+              </span>
+            )}
             <span className="truncate">{displayLabel}</span>
           </button>
           <button

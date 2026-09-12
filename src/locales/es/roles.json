@@ -3,7 +3,7 @@
   "entityPlural": "roles",
   "title": "Roles",
   "pages": {
-    "description": "Defina roles y conjuntos de permisos que controlan lo que los usuarios pueden ver y hacer en el portal."
+    "description": "Defina roles y permisos que controlan lo que los usuarios pueden ver y hacer."
   },
   "noun": "roles",
   "actions": {
@@ -37,7 +37,8 @@
   },
   "table": {
     "permissionsCount": "{{count}} permisos",
-    "actionsFor": "Acciones para {{name}}"
+    "actionsFor": "Acciones para {{name}}",
+    "systemRole": "Sistema"
   },
   "search": {
     "placeholder": "Buscar roles..."
@@ -77,9 +78,19 @@
     "selected": "{{count}} seleccionados",
     "searchPlaceholder": "Buscar permisos…",
     "searchAria": "Buscar permisos",
-    "selectAll": "Seleccionar todos los permisos",
+    "selectAll": "Seleccionar todos",
     "selectAllMatching": "Seleccionar todos los permisos coincidentes",
     "selectAllAria": "Seleccionar todos los permisos",
+    "selectAllCreate": "Seleccionar todos crear",
+    "selectAllView": "Seleccionar todos ver",
+    "selectAllDelete": "Seleccionar todos eliminar",
+    "selectAllPrint": "Seleccionar todos imprimir",
+    "selectAllCreateAria": "Seleccionar todos los permisos de crear",
+    "selectAllViewAria": "Seleccionar todos los permisos de ver",
+    "selectAllDeleteAria": "Seleccionar todos los permisos de eliminar",
+    "selectAllPrintAria": "Seleccionar todos los permisos de imprimir",
+    "checkedTitle": "Permisos seleccionados",
+    "removeAria": "Quitar {{label}}",
     "loading": "Cargando permisos…",
     "noMatch": "Ningún permiso coincide con \"{{query}}\".",
     "groupSelectAllAria": "Seleccionar todos los permisos de {{group}}",
@@ -102,6 +113,12 @@
     "deleteOne": "Esto eliminará permanentemente este rol. {{cannotBeUndone}}",
     "deleteMany": "Esto eliminará permanentemente {{count}} roles seleccionados. {{cannotBeUndone}}"
   },
+  "enums": {
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    }
+  },
   "filters": {
     "fields": {
       "id": {
@@ -111,6 +128,10 @@
       "name": {
         "label": "Nombre del rol",
         "placeholder": "Ingrese el nombre del rol…"
+      },
+      "active": {
+        "label": "Activo",
+        "placeholder": "Seleccionar estado…"
       },
       "createdBy": {
         "name": {
@@ -129,7 +150,7 @@
         "placeholder": "AAAA-MM-DD"
       },
       "createdAtRange": {
-        "label": "Rango de fecha de creación",
+        "label": "Rango de creación",
         "placeholder": "2026-01-01 a 2026-06-30"
       },
       "updatedAt": {
@@ -137,7 +158,7 @@
         "placeholder": "AAAA-MM-DD"
       },
       "updatedAtRange": {
-        "label": "Rango de fecha de modificación",
+        "label": "Rango de actualización",
         "placeholder": "2026-01-01 a 2026-06-30"
       }
     }

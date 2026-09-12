@@ -26,7 +26,7 @@ function localizeFilterOption(
   return option;
 }
 
-export function useActiveRouteFilterFields(routeType: RouteType): TableFilterFieldDefinition[] {
+export function useActiveRouteFilterFields(routeType?: RouteType): TableFilterFieldDefinition[] {
   const { t } = useTranslation();
 
   return useMemo(

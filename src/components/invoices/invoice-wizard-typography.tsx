@@ -1,35 +1,16 @@
-import { DM_Sans, Roboto_Slab } from "next/font/google";
-
-import { cn } from "@/lib/utils";
-
-export const invoiceDisplayFont = Roboto_Slab({
-  subsets: ["latin"],
-  weight: ["700", "800"],
-  variable: "--font-invoice-display",
-});
-
-export const invoiceSansFont = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-invoice-sans",
-});
-
-export const invoiceWizardTypographyRoot = cn(
-  invoiceDisplayFont.variable,
-  invoiceSansFont.variable,
-);
+export const invoiceWizardTypographyRoot = "";
 
 export const invoicePageEyebrowClassName =
-  "font-[family-name:var(--font-invoice-display)] text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground md:text-sm";
+  "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
 
 export const invoicePageTitleClassName =
-  "mt-1 font-[family-name:var(--font-invoice-display)] text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl md:text-[2.5rem] md:leading-none";
+  "mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl";
 
 export const invoicePageDescriptionClassName =
-  "mt-3 max-w-3xl font-[family-name:var(--font-invoice-sans)] text-sm leading-relaxed text-muted-foreground md:text-[0.9375rem] md:leading-7";
+  "mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground";
 
 export const invoiceStepEyebrowClassName =
-  "font-[family-name:var(--font-invoice-display)] text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-muted-foreground sm:text-xs";
+  "text-xs font-medium uppercase tracking-wide text-muted-foreground";
 
 export const invoiceStepTitleClassName =
-  "font-[family-name:var(--font-invoice-display)] text-lg font-extrabold uppercase tracking-wide text-foreground sm:text-2xl";
+  "text-lg font-semibold tracking-tight text-foreground sm:text-2xl";

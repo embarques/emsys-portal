@@ -7,18 +7,11 @@ const DATE_OPERATORS = ["eq", "neq", "gte", "lte"] as const;
 /**
  * Advanced filter fields for barcodes.
  *
- * Probed 2026-07-09: `POST /barcodes/search` accepts only the fields below.
- * Embedded refs (status, container, route, delivery) are returned on GET but are
- * not searchable server-side yet.
+ * Prefer merchandise fields (invoice, description, container, status, route).
+ * Nested refs may require backend search support; scalar audit fields remain as
+ * fallbacks when those nested filters are rejected.
  */
 export const BARCODE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
-  {
-    field: "id",
-    label: "Barcode ID",
-    operators: ["eq", "neq", "gte", "lte", "contains", "startsWith"],
-    valueType: "text",
-    placeholder: "Enter barcode ID…",
-  },
   {
     field: "number",
     label: "Barcode",
@@ -27,22 +20,64 @@ export const BARCODE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter barcode number…",
   },
   {
+    field: "invoice.number",
+    label: "Invoice",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter invoice number…",
+  },
+  {
+    field: "description",
+    label: "Description",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter description…",
+  },
+  {
+    field: "container.name",
+    label: "Container",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter container…",
+  },
+  {
+    field: "status.name",
+    label: "Status",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter status…",
+  },
+  {
+    field: "route.name",
+    label: "Route",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter route…",
+  },
+  {
+    field: "id",
+    label: "#",
+    operators: ["eq", "neq", "gte", "lte", "contains", "startsWith"],
+    valueType: "text",
+    placeholder: "Enter barcode ID…",
+  },
+  {
     field: "scanDate",
-    label: "Scan date",
+    label: "Last scan",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "createdAt",
-    label: "Date created",
+    label: "Created at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",
   },
   {
     field: "updatedAt",
-    label: "Date modified",
+    label: "Updated at",
     operators: [...DATE_OPERATORS],
     valueType: "text",
     placeholder: "YYYY-MM-DD",

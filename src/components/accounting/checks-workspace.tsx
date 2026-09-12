@@ -1,11 +1,9 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Banknote,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Plus,
   XCircle,
 } from "lucide-react";
@@ -13,6 +11,7 @@ import {
 import { CheckForm } from "@/components/accounting/check-form";
 import { CheckViewSheet } from "@/components/accounting/check-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import {
@@ -34,50 +33,67 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatAuditDateTime } from "@/lib/audit/display";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { formatAuditDate, formatAuditDateTime } from "@/lib/audit/display";
+import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getCheckStatusBadgeClass } from "@/lib/accounting/checks/display";
-import { cloneChecks } from "@/lib/accounting/checks/mock-data";
+import {
+  useChecks,
+  useCreateCheck,
+  useDeleteChecks,
+  useUpdateCheck,
+} from "@/lib/accounting/checks/hooks/use-checks";
 import {
   areCheckFormValuesEquivalent,
+  buildCheckListParams,
+  checkStatusI18nKey,
   checkToFormValues,
   createEmptyCheckForm,
-  formValuesToCheck,
+  DEFAULT_CHECK_LIST_PARAMS,
+  todayCheckDateInputValue,
   type Check,
+  type CheckFormValues,
   type CheckStatus,
 } from "@/lib/accounting/checks/types";
+import { normalizeApiError } from "@/lib/api/axios";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useTranslation } from "@/lib/i18n";
-import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
+import {
+  buildTableSelectionResetKey,
+  useResolvedPaginatedItems,
+  useTableSelectionReset,
+} from "@/lib/table/directory-table-state";
+import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/table/list-summary";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
+import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
 
-const PAGE_SIZE = 40;
-
-function matchesQuery(check: Check, query: string): boolean {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) return true;
-
-  return [
-    check.invoiceNumber,
-    check.receiptNumber,
-    check.createdBy,
-    check.depositedOn ?? "",
-    check.depositedBy ?? "",
-    check.status,
-  ].some((value) => value.toLowerCase().includes(normalized));
-}
-
-function createCheckId(): string {
-  return `chk-${Date.now()}`;
-}
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function ChecksWorkspace() {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
   const feedback = useFeedback();
-  const [checks, setChecks] = useState<Check[]>(() => cloneChecks());
-  const [page, setPage] = useState(1);
+  const canViewChecks = hasPermission(PERMISSIONS.checksView.name, PERMISSIONS.checksView.resourceType);
+  const canCreateChecks = hasPermission(
+    PERMISSIONS.checksCreate.name,
+    PERMISSIONS.checksCreate.resourceType,
+  );
+  const canUpdateChecks = hasPermission(
+    PERMISSIONS.checksUpdate.name,
+    PERMISSIONS.checksUpdate.resourceType,
+  );
+  const canDeleteChecks = hasPermission(
+    PERMISSIONS.checksDelete.name,
+    PERMISSIONS.checksDelete.resourceType,
+  );
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
+  const { sort, onSortChange } = useTableSort(DEFAULT_CHECK_LIST_PARAMS.sort, () => setPage(1));
   const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query);
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const hasActiveSearch = Boolean(query.trim());
-  const isSearchPending = query.trim() !== deferredQuery.trim();
+  const isSearchPending = query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewCheck, setViewCheck] = useState<Check | null>(null);
   const [statusExpanded, setStatusExpanded] = useState(false);
@@ -85,24 +101,33 @@ export function ChecksWorkspace() {
   const [editing, setEditing] = useState<Check | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Check | Check[] | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
 
-  const filteredChecks = useMemo(
-    () => checks.filter((check) => matchesQuery(check, deferredQuery)),
-    [checks, deferredQuery],
+  const listParams = useMemo(
+    () =>
+      buildCheckListParams({
+        page,
+        limit: pageLimit,
+        query: debouncedQuery,
+        sort,
+      }),
+    [debouncedQuery, page, pageLimit, sort],
   );
 
-  const total = filteredChecks.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const { data, isLoading, isError, error, isFetching } = useChecks(listParams);
+  const createCheckMutation = useCreateCheck();
+  const updateCheckMutation = useUpdateCheck();
+  const deleteChecksMutation = useDeleteChecks();
+  const checks = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
+  const total = data?.total ?? 0;
+  rememberTotal(total);
+  const totalPages = Math.max(1, Math.ceil(total / pageLimit));
   const currentPage = Math.min(page, totalPages);
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const rows = filteredChecks.slice(pageStart, pageStart + PAGE_SIZE);
-  const pageRowIds = rows.map((check) => check.id);
+  const pageRowIds = checks.map((check) => check.id);
+  const selectedChecks = checks.filter((check) => selectedIds.includes(check.id));
+  const isSaving =
+    createCheckMutation.isPending || updateCheckMutation.isPending || deleteChecksMutation.isPending;
 
-  const selectedChecks = useMemo(
-    () => checks.filter((check) => selectedIds.includes(check.id)),
-    [checks, selectedIds],
-  );
+  useTableSelectionReset(buildTableSelectionResetKey(debouncedQuery, sort), setSelectedIds);
 
   const columns: DataTableColumn<Check>[] = useMemo(
     () => [
@@ -112,53 +137,79 @@ export function ChecksWorkspace() {
         truncateCell: false,
         renderCell: (check) => (
           <TableTagText className={getCheckStatusBadgeClass(check.status)}>
-            {t(`accounting.checks.status.${check.status}`)}
+            {t(`accounting.checks.status.${checkStatusI18nKey(check.status)}`)}
           </TableTagText>
         ),
       },
       {
-        id: "invoiceNumber",
-        label: t("accounting.checks.columns.invoiceNumber"),
+        id: "checkNumber",
+        label: t("accounting.checks.columns.checkNumber"),
         cellClassName: "font-medium",
-        renderCell: (check) => check.invoiceNumber,
+        renderCell: (check) => check.checkNumber || t("common.empty.dash"),
       },
       {
-        id: "receiptNumber",
-        label: t("accounting.checks.columns.receiptNumber"),
-        renderCell: (check) => check.receiptNumber,
+        id: "invoiceNumber",
+        label: t("accounting.checks.columns.invoiceNumber"),
+        sortField: "invoice.number",
+        renderCell: (check) => check.invoice.number || t("common.empty.dash"),
+      },
+      {
+        id: "paymentAmount",
+        label: t("accounting.checks.columns.paymentAmount"),
+        renderCell: (check) => formatAccountingMoney(check.paymentAmount),
+      },
+      {
+        id: "datePosted",
+        label: t("accounting.checks.columns.datePosted"),
+        renderCell: (check) => (check.datePosted ? formatAuditDate(check.datePosted) : t("common.empty.dash")),
+      },
+      {
+        id: "refNumber",
+        label: t("accounting.checks.columns.referenceNumber"),
+        renderCell: (check) => check.refNumber || t("common.empty.dash"),
       },
       {
         id: "createdAt",
         label: t("accounting.checks.columns.createdAt"),
-        renderCell: (check) => formatAuditDateTime(check.createdAt),
+        renderCell: (check) => (check.createdAt ? formatAuditDateTime(check.createdAt) : t("common.empty.dash")),
       },
       {
         id: "createdBy",
         label: t("accounting.checks.columns.createdBy"),
-        renderCell: (check) => check.createdBy,
-      },
-      {
-        id: "depositedAt",
-        label: t("accounting.checks.columns.depositedAt"),
-        renderCell: (check) => (check.depositedAt ? formatAuditDateTime(check.depositedAt) : t("common.empty.dash")),
-      },
-      {
-        id: "depositedOn",
-        label: t("accounting.checks.columns.depositedOn"),
-        renderCell: (check) => check.depositedOn ?? t("common.empty.dash"),
-      },
-      {
-        id: "depositedBy",
-        label: t("accounting.checks.columns.depositedBy"),
-        renderCell: (check) => check.depositedBy ?? t("common.empty.dash"),
+        sortField: "createdBy.name",
+        renderCell: (check) => check.createdBy || t("common.empty.dash"),
       },
     ],
     [t],
   );
 
-  const columnLayout = useColumnVisibility("accounting-checks-v1", columns);
+  const columnLayout = useColumnVisibility("accounting-checks-v3", columns);
+  const searchSummary = buildToolbarSearchSummary(
+    {
+      isFiltered: hasActiveSearch,
+      query,
+      isSearchPending,
+      matched: total,
+      noun: t("accounting.checks.noun"),
+      isLoading: isFetching && checks.length === 0,
+    },
+    t,
+  );
+  const listSummary = formatPaginatedListSummary(
+    {
+      itemCountOnPage: checks.length,
+      page: currentPage,
+      pageSize: pageLimit,
+      total,
+      noun: t("accounting.checks.noun"),
+      isFiltered: hasActiveSearch,
+      isLoading: isFetching,
+    },
+    t,
+  );
 
   function openCreateDialog() {
+    if (!canCreateChecks) return;
     setViewCheck(null);
     setEditing(null);
     setFormError(null);
@@ -166,14 +217,19 @@ export function ChecksWorkspace() {
   }
 
   function openEditDialog(check: Check) {
+    if (!canUpdateChecks) return;
     setViewCheck(null);
     setEditing(check);
     setFormError(null);
     setDialogOpen(true);
   }
 
-  function saveCheck(values: ReturnType<typeof createEmptyCheckForm>) {
-    setIsSaving(true);
+  async function saveCheck(values: CheckFormValues) {
+    if (editing ? !canUpdateChecks : !canCreateChecks) {
+      feedback.notifyError(t("common.errors.api.forbidden"));
+      return;
+    }
+
     setFormError(null);
 
     try {
@@ -184,79 +240,90 @@ export function ChecksWorkspace() {
           setEditing(null);
           return;
         }
-        const updated = formValuesToCheck(editing.id, values, editing.createdAt);
-        setChecks((current) => current.map((check) => (check.id === editing.id ? updated : check)));
+        await updateCheckMutation.mutateAsync({
+          checkId: editing.id,
+          values,
+          journalId: editing.journalId,
+        });
         feedback.notifySuccess(t("accounting.checks.toasts.updated"));
       } else {
-        const created = formValuesToCheck(createCheckId(), values);
-        setChecks((current) => [created, ...current]);
+        await createCheckMutation.mutateAsync({ ...values, status: "OUTSTANDING" });
         feedback.notifySuccess(t("accounting.checks.toasts.created"));
       }
 
       setDialogOpen(false);
       setEditing(null);
-    } finally {
-      setIsSaving(false);
+    } catch (saveError) {
+      setFormError(normalizeApiError(saveError).message);
     }
   }
 
-  function applyStatus(status: CheckStatus) {
-    const now = new Date().toISOString();
+  async function applyStatus(status: CheckStatus) {
+    if (!canUpdateChecks) {
+      feedback.notifyError(t("common.errors.api.forbidden"));
+      return;
+    }
 
-    setChecks((current) =>
-      current.map((check) => {
-        if (!selectedIds.includes(check.id)) return check;
+    const targets = selectedChecks.length > 0
+      ? selectedChecks
+      : checks.filter((check) => selectedIds.includes(check.id));
+    if (targets.length === 0) return;
+    const today = todayCheckDateInputValue();
 
-        if (status === "outstanding") {
-          return {
-            ...check,
+    try {
+      for (const check of targets) {
+        await updateCheckMutation.mutateAsync({
+          checkId: check.id,
+          journalId: check.journalId,
+          values: {
+            ...checkToFormValues(check),
             status,
-            depositedAt: null,
-            depositedOn: null,
-            depositedBy: null,
-          };
-        }
+            clearedAt: status === "CLEARED" ? check.clearedAt.slice(0, 10) || today : "",
+          },
+        });
+      }
 
-        return {
-          ...check,
-          status,
-          depositedAt: check.depositedAt ?? now,
-          depositedOn: check.depositedOn ?? "Wells Fargo · USA Operating",
-          depositedBy: check.depositedBy ?? check.createdBy,
-        };
-      }),
-    );
-
-    const count = selectedIds.length;
-    feedback.notifySuccess(
-      status === "outstanding"
-        ? count === 1
-          ? t("accounting.checks.toasts.markedOutstanding", { count })
-          : t("accounting.checks.toasts.markedOutstanding_plural", { count })
-        : count === 1
-          ? t("accounting.checks.toasts.markedCleared", { count })
-          : t("accounting.checks.toasts.markedCleared_plural", { count }),
-    );
-    setStatusExpanded(false);
-    setSelectedIds([]);
+      const count = targets.length;
+      feedback.notifySuccess(
+        status === "OUTSTANDING"
+          ? count === 1
+            ? t("accounting.checks.toasts.markedOutstanding", { count })
+            : t("accounting.checks.toasts.markedOutstanding_plural", { count })
+          : count === 1
+            ? t("accounting.checks.toasts.markedCleared", { count })
+            : t("accounting.checks.toasts.markedCleared_plural", { count }),
+      );
+      setStatusExpanded(false);
+      setSelectedIds([]);
+    } catch (statusError) {
+      feedback.notifyError(normalizeApiError(statusError).message);
+    }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
+    if (!canDeleteChecks) {
+      feedback.notifyError(t("common.errors.api.forbidden"));
+      return;
+    }
 
     const targets = Array.isArray(deleteTarget) ? deleteTarget : [deleteTarget];
-    const ids = new Set(targets.map((check) => check.id));
+    const ids = targets.map((check) => check.id);
 
-    setChecks((current) => current.filter((check) => !ids.has(check.id)));
-    setSelectedIds((current) => current.filter((id) => !ids.has(id)));
-    setDeleteTarget(null);
+    try {
+      await deleteChecksMutation.mutateAsync(ids);
+      setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+      setDeleteTarget(null);
 
-    const count = targets.length;
-    feedback.notifySuccess(
-      count === 1
-        ? t("accounting.checks.toasts.deleted")
-        : t("accounting.checks.toasts.deleted_plural", { count }),
-    );
+      const count = targets.length;
+      feedback.notifySuccess(
+        count === 1
+          ? t("accounting.checks.toasts.deleted")
+          : t("accounting.checks.toasts.deleted_plural", { count }),
+      );
+    } catch (deleteError) {
+      feedback.notifyError(normalizeApiError(deleteError).message);
+    }
   }
 
   const deleteCount = Array.isArray(deleteTarget) ? deleteTarget.length : deleteTarget ? 1 : 0;
@@ -267,10 +334,12 @@ export function ChecksWorkspace() {
         title={t("accounting.checks.title")}
         description={t("accounting.checks.description")}
         actions={
-          <Button onClick={openCreateDialog}>
-            <Plus className="h-4 w-4" />
-            {t("accounting.checks.addCheck")}
-          </Button>
+          canCreateChecks ? (
+            <Button onClick={openCreateDialog}>
+              <Plus className="h-4 w-4" />
+              {t("accounting.checks.addCheck")}
+            </Button>
+          ) : null
         }
       />
 
@@ -283,23 +352,13 @@ export function ChecksWorkspace() {
           <TableDirectoryToolbar
             showFilterToggle={false}
             columnLayout={columnLayout}
-            searchSummary={buildToolbarSearchSummary(
-              {
-                isFiltered: hasActiveSearch,
-                query,
-                isSearchPending,
-                matched: total,
-                noun: t("accounting.checks.noun"),
-              },
-              t,
-            )}
+            searchSummary={searchSummary}
             search={
               <TableSearchInput
                 value={query}
                 onChange={(value) => {
                   setQuery(value);
                   setPage(1);
-                  setSelectedIds([]);
                 }}
                 placeholder={t("accounting.checks.searchPlaceholder")}
               />
@@ -312,108 +371,115 @@ export function ChecksWorkspace() {
           pageRowIds={pageRowIds}
           totalCount={total}
           onSelectedIdsChange={setSelectedIds}
+          onView={() => {
+            const check = selectedChecks[0];
+            if (check) setViewCheck(check);
+          }}
+          canView={canViewChecks}
           onEdit={() => {
             const check = selectedChecks[0];
             if (check) openEditDialog(check);
           }}
+          canEdit={canUpdateChecks}
           onDelete={() => setDeleteTarget(selectedChecks)}
+          canDelete={canDeleteChecks}
           deleteDisabled={isSaving}
           actions={
-            <>
-              <TableSelectionActionDivider />
-              <TableSelectionExpandableActionGroup
-                label={t("accounting.checks.actions.manageStatus")}
-                icon={Banknote}
-                expanded={statusExpanded}
-                onExpandedChange={setStatusExpanded}
-                aria-label={t("accounting.checks.actions.statusGroup")}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isSaving}
-                  onClick={() => applyStatus("cleared")}
-                  className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
+            canUpdateChecks ? (
+              <>
+                <TableSelectionActionDivider />
+                <TableSelectionExpandableActionGroup
+                  label={t("accounting.checks.actions.manageStatus")}
+                  icon={Banknote}
+                  expanded={statusExpanded}
+                  onExpandedChange={setStatusExpanded}
+                  aria-label={t("accounting.checks.actions.statusGroup")}
                 >
-                  <CheckCircle2 className="h-4 w-4" />
-                  {t("accounting.checks.actions.markCleared")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isSaving}
-                  onClick={() => applyStatus("outstanding")}
-                  className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
-                >
-                  <XCircle className="h-4 w-4" />
-                  {t("accounting.checks.actions.markOutstanding")}
-                </Button>
-              </TableSelectionExpandableActionGroup>
-            </>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isSaving}
+                    onClick={() => applyStatus("CLEARED")}
+                    className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    {t("accounting.checks.actions.markCleared")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isSaving}
+                    onClick={() => applyStatus("OUTSTANDING")}
+                    className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    {t("accounting.checks.actions.markOutstanding")}
+                  </Button>
+                </TableSelectionExpandableActionGroup>
+              </>
+            ) : null
           }
         />
 
-        <DataTable
-          columns={columnLayout.columns}
-          rows={rows}
-          page={currentPage}
-          rowKey={(check) => check.id}
-          rowLabel={(check) => check.receiptNumber}
-          columnLayout={columnLayout}
-          minWidth={1200}
-          selectable
-          selectedIds={selectedIds}
-          allPageSelected={pageRowIds.length > 0 && pageRowIds.every((id) => selectedIds.includes(id))}
-          onToggleSelectAll={(checked) => {
-            if (checked) {
-              setSelectedIds((current) => Array.from(new Set([...current, ...pageRowIds])));
-              return;
-            }
+        {isError ? (
+          <div className="border-b px-6 py-3 text-sm text-destructive">{normalizeApiError(error).message}</div>
+        ) : (
+          <DataTable
+            columns={columnLayout.columns}
+            rows={checks}
+            page={currentPage}
+            isPageDataPending={isFetching}
+            rowKey={(check) => check.id}
+            rowLabel={(check) => check.checkNumber || check.invoice.number}
+            columnLayout={columnLayout}
+            minWidth={1100}
+            sort={sort}
+            onSortChange={onSortChange}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={pageRowIds.length > 0 && pageRowIds.every((id) => selectedIds.includes(id))}
+            onToggleSelectAll={(checked) => {
+              if (checked) {
+                setSelectedIds((current) => Array.from(new Set([...current, ...pageRowIds])));
+                return;
+              }
 
-            setSelectedIds((current) => current.filter((id) => !pageRowIds.includes(id)));
-          }}
-          onToggleSelect={(id, checked) => {
-            setSelectedIds((current) =>
-              checked ? Array.from(new Set([...current, id])) : current.filter((entry) => entry !== id),
-            );
-          }}
-          onRowClick={setViewCheck}
-          onRowDoubleClick={openEditDialog}
-          activeRowId={viewCheck?.id}
-          emptyState={<p className="text-muted-foreground">{t("accounting.checks.empty")}</p>}
-        />
+              setSelectedIds((current) => current.filter((id) => !pageRowIds.includes(id)));
+            }}
+            onToggleSelect={(id, checked) => {
+              setSelectedIds((current) =>
+                checked ? Array.from(new Set([...current, id])) : current.filter((entry) => entry !== id),
+              );
+            }}
+            onRowClick={canViewChecks ? setViewCheck : undefined}
+            onRowDoubleClick={canUpdateChecks ? openEditDialog : undefined}
+            activeRowId={viewCheck?.id}
+            emptyState={
+              <>
+                <p className="text-muted-foreground">
+                  {hasActiveSearch ? t("accounting.checks.empty") : t("accounting.checks.emptyNone")}
+                </p>
+                {canCreateChecks ? (
+                  <Button className="mt-4" onClick={openCreateDialog}>
+                    <Plus className="h-4 w-4" />
+                    {t("accounting.checks.addCheck")}
+                  </Button>
+                ) : null}
+              </>
+            }
+          />
+        )}
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {t("common.pagination.showingOf", {
-              count: rows.length,
-              total,
-              noun: t("accounting.checks.noun"),
-            })}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <p className="text-sm text-muted-foreground">{listSummary}</p>
+          <TablePaginationControls
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={isLoading}
+          />
         </div>
       </Card>
 
@@ -428,6 +494,8 @@ export function ChecksWorkspace() {
           setViewCheck(null);
           setDeleteTarget(check);
         }}
+        canEdit={canUpdateChecks}
+        canDelete={canDeleteChecks}
       />
 
       <Dialog
@@ -474,7 +542,7 @@ export function ChecksWorkspace() {
             <DialogDescription>
               {deleteCount === 1 && !Array.isArray(deleteTarget) && deleteTarget
                 ? t("accounting.checks.delete.description", {
-                    receiptNumber: deleteTarget.receiptNumber,
+                    checkNumber: deleteTarget.checkNumber,
                   })
                 : t("accounting.checks.delete.description_plural", { count: deleteCount })}
             </DialogDescription>
@@ -483,7 +551,7 @@ export function ChecksWorkspace() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("common.actions.cancel")}
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
+            <Button variant="destructive" disabled={isSaving} onClick={confirmDelete}>
               {t("common.actions.delete")}
             </Button>
           </DialogFooter>

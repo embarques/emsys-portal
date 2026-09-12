@@ -69,16 +69,21 @@ export function getBarcodeStatusBadgeClass(statusName: string): string {
   const normalized = statusName.trim().toUpperCase();
 
   switch (normalized) {
-    case "CREATED":
+    case "ALM-NY":
+    case "ALM-RD":
       return "border-transparent bg-primary/15 text-primary";
-    case "PRINTED":
+    case "DEV-NY":
+    case "DEV-RD":
       return "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300";
+    case "EN TRANSITO":
     case "IN TRANSIT":
       return "border-transparent bg-blue-500/15 text-blue-700 dark:text-blue-300";
     case "CONDUCE":
       return "border-transparent bg-violet-500/15 text-violet-700 dark:text-violet-300";
+    case "ENTREGADO":
     case "DELIVERED":
       return "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+    case "SUBASTADO":
     case "CANCELLED":
       return "border-transparent bg-destructive/15 text-destructive";
     default:

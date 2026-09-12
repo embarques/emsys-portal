@@ -17,20 +17,33 @@ function PlaceholderWorkspace({ title, descriptionKey }: PlaceholderWorkspacePro
   const { t } = useTranslation();
 
   return (
-    <div>
-      <PageHeader
-        title={title}
-        description={t(descriptionKey)}
-        actions={
-          <Button>
-            <Plus className="h-4 w-4" /> {t("insights.placeholder.addNew")}
-          </Button>
-        }
-      />
+    <div className="max-w-full overflow-x-hidden">
+      <div className="hidden md:block">
+        <PageHeader
+          title={title}
+          description={t(descriptionKey)}
+          actions={
+            <Button>
+              <Plus className="h-4 w-4" /> {t("insights.placeholder.addNew")}
+            </Button>
+          }
+        />
+      </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <section className="mb-5 flex items-start justify-between gap-3 md:hidden">
+        <div className="min-w-0">
+          <h1 className="text-4xl font-bold tracking-normal text-foreground">{title}</h1>
+          <p className="mt-1 text-base text-muted-foreground">{t(descriptionKey)}</p>
+        </div>
+        <Button type="button" size="icon" className="size-12 shrink-0 rounded-2xl">
+          <Plus className="size-6" />
+          <span className="sr-only">{t("insights.placeholder.addNew")}</span>
+        </Button>
+      </section>
+
+      <div className="grid gap-3 md:gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2 md:pb-6">
             <CardTitle>{t("insights.placeholder.stats.total.label")}</CardTitle>
             <CardDescription>{t("insights.placeholder.stats.total.description")}</CardDescription>
           </CardHeader>
@@ -39,7 +52,7 @@ function PlaceholderWorkspace({ title, descriptionKey }: PlaceholderWorkspacePro
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2 md:pb-6">
             <CardTitle>{t("insights.placeholder.stats.active.label")}</CardTitle>
             <CardDescription>{t("insights.placeholder.stats.active.description")}</CardDescription>
           </CardHeader>
@@ -48,7 +61,7 @@ function PlaceholderWorkspace({ title, descriptionKey }: PlaceholderWorkspacePro
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2 md:pb-6">
             <CardTitle>{t("insights.placeholder.stats.pending.label")}</CardTitle>
             <CardDescription>{t("insights.placeholder.stats.pending.description")}</CardDescription>
           </CardHeader>
@@ -62,16 +75,6 @@ function PlaceholderWorkspace({ title, descriptionKey }: PlaceholderWorkspacePro
         <SampleTable />
       </div>
     </div>
-  );
-}
-
-export function ReportsWorkspace() {
-  const { t } = useTranslation();
-  return (
-    <PlaceholderWorkspace
-      title={t("navigation.items.reports")}
-      descriptionKey="insights.pages.reports"
-    />
   );
 }
 

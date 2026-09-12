@@ -10,6 +10,7 @@
     "newDispatch": "Nuevo despacho",
     "adjustStock": "Ajustar stock",
     "addRecipient": "Agregar destinatario",
+    "addSupplier": "Agregar proveedor",
     "saveReceipt": "Guardar ingreso",
     "saveDispatch": "Guardar despacho",
     "saveAndSend": "Guardar y marcar enviado",
@@ -22,14 +23,14 @@
     "receipts": "Ingresos",
     "dispatches": "Despachos",
     "recipients": "Destinatarios",
-    "reports": "Reportes"
+    "suppliers": "Proveedores"
   },
   "pages": {
-    "items": "Consulte cantidades en mano, estado de stock y ubicaciones de almacén por SKU. Registre ingresos, despachos y ajustes para actualizar los saldos.",
-    "receipts": "Registre entradas de stock de proveedores y devoluciones. Cada ingreso guardado aumenta las cantidades en mano en el libro de movimientos.",
-    "dispatches": "Gestione envíos salientes a clientes, proveedores y sucursales. Controle el estado pendiente, enviado y confirmado.",
-    "recipients": "Administre destinos para stock saliente: clientes, proveedores, sucursales y ubicaciones internas usadas en despachos.",
-    "reports": "Analice stock en mano, actividad de despachos por destinatario y alertas de stock bajo según el rango de fechas y filtros seleccionados."
+    "items": "Controle los insumos y materiales internos de la empresa, aparte de la mercancía del cliente.",
+    "receipts": "Registre entradas de insumos y materiales de la empresa para actualizar existencias.",
+    "dispatches": "Registre salidas de insumos internos, incluidas transferencias y reposición.",
+    "recipients": "Mantenga los destinos usados al enviar insumos internos fuera de inventario.",
+    "suppliers": "Mantenga los proveedores usados al recibir insumos internos en inventario."
   },
   "stats": {
     "totalSkus": {
@@ -38,15 +39,19 @@
     },
     "inStock": {
       "label": "En stock",
-      "description": "Disponibles para despacho"
+      "description": "Artículos con cantidad en mano"
     },
-    "lowStock": {
-      "label": "Stock bajo",
-      "description": "Por debajo del nivel de reorden"
+    "outOfStock": {
+      "label": "Sin stock",
+      "description": "Artículos sin cantidad restante"
     },
-    "needsReview": {
-      "label": "Requiere revisión",
-      "description": "Sin stock o marcados"
+    "totalUnits": {
+      "label": "Unidades totales",
+      "description": "Cantidad en todos los artículos"
+    },
+    "suppliers": {
+      "label": "Proveedores",
+      "description": "Empresas usadas en ingresos"
     },
     "totalReceipts": {
       "label": "Ingresos",
@@ -64,11 +69,18 @@
   "columns": {
     "sku": "SKU",
     "item": "Artículo",
-    "location": "Ubicación",
+    "name": "Nombre",
     "onHand": "En mano",
+    "quantityLeft": "Cantidad restante",
     "available": "Disponible",
     "currentStock": "Stock actual",
     "reorderLevel": "Nivel de reorden",
+    "reorderThreshold": "Umbral de reorden",
+    "unitCost": "Costo unitario",
+    "averageCost": "Costo promedio",
+    "incomeGained": "Ingreso obtenido",
+    "supplier": "Proveedor",
+    "dispatchedTo": "Despachado a",
     "status": "Estado",
     "date": "Fecha",
     "source": "Origen",
@@ -86,19 +98,21 @@
     "createdBy": "Creado por",
     "dateCreated": "Creado el",
     "userCreated": "Usuario creador",
-    "dateModified": "Actualizado el"
+    "dateModified": "Actualizado el",
+    "userModified": "Actualizado por"
   },
   "search": {
     "items": "Buscar inventario…",
     "receipts": "Buscar ingresos…",
     "dispatches": "Buscar despachos…",
     "recipients": "Buscar destinatarios…",
+    "suppliers": "Buscar proveedores…",
     "movements": "Buscar movimientos…"
   },
   "loading": {
     "items": {
       "title": "Cargando inventario",
-      "description": "Contando stock disponible, reservas y ubicaciones…"
+      "description": "Contando stock a partir de ingresos y despachos…"
     },
     "receipts": {
       "title": "Cargando ingresos",
@@ -112,9 +126,9 @@
       "title": "Cargando destinatarios",
       "description": "Obteniendo clientes, proveedores y sucursales…"
     },
-    "reports": {
-      "title": "Cargando reportes",
-      "description": "Calculando stock y resúmenes de despacho…"
+    "suppliers": {
+      "title": "Cargando proveedores",
+      "description": "Obteniendo empresas y contactos de proveedores…"
     }
   },
   "empty": {
@@ -122,17 +136,21 @@
     "receipts": "Ningún ingreso coincide con su búsqueda.",
     "dispatches": "Ningún despacho coincide con su búsqueda.",
     "recipients": "Ningún destinatario coincide con su búsqueda.",
-    "movements": "Aún no hay movimientos para este artículo.",
-    "reports": "No hay datos para los filtros seleccionados."
+    "suppliers": "Ningún proveedor coincide con su búsqueda.",
+    "movements": "Aún no hay movimientos para este artículo."
+  },
+  "nav": {
+    "reorderAlert": "{{count}} artículo necesita reorden",
+    "reorderAlert_plural": "{{count}} artículos necesitan reorden"
   },
   "filters": {
     "allStatuses": "Todos los estados",
-    "allLocations": "Todas las ubicaciones",
+    "allLocations": "Todas las sucursales",
     "allCategories": "Todas las categorías",
     "allTypes": "Todos los tipos",
     "allDirections": "Todas las direcciones",
     "status": "Estado",
-    "location": "Ubicación",
+    "location": "Sucursal",
     "category": "Categoría"
   },
   "form": {
@@ -143,24 +161,47 @@
     "adjustStockTitle": "Ajustar stock",
     "addRecipientTitle": "Agregar destinatario",
     "editRecipientTitle": "Editar destinatario",
+    "addSupplierTitle": "Agregar proveedor",
+    "editSupplierTitle": "Editar proveedor",
     "sections": {
       "identification": "Identificación",
       "stockLevels": "Niveles de stock",
       "notes": "Notas",
       "header": "Detalles del documento",
       "lines": "Líneas",
-      "recipient": "Destinatario"
+      "recipient": "Destinatario",
+      "received": "Recibido",
+      "dispatched": "Despachado",
+      "supplier": "Proveedor"
     },
     "fields": {
       "sku": "SKU",
-      "name": "Nombre del artículo",
+      "name": "Nombre",
       "recipientName": "Nombre",
       "unit": "Unidad",
       "category": "Categoría",
-      "location": "Ubicación",
+      "location": "Sucursal",
       "onHand": "En mano",
+      "quantityLeft": "Cantidad restante",
       "reserved": "Reservado",
       "reorderLevel": "Nivel de reorden",
+      "reorderThreshold": "Umbral de reorden",
+      "unitCost": "Costo unitario",
+      "averageCost": "Costo promedio",
+      "incomeGained": "Ingreso obtenido",
+      "quantityReceived": "Cantidad recibida",
+      "quantityDispatched": "Cantidad despachada",
+      "supplier": "Proveedor",
+      "companyName": "Nombre de la empresa",
+      "contactNames": "Nombres de contacto",
+      "addresses": "Direcciones",
+      "phones": "Teléfonos",
+      "emails": "Correos",
+      "receivedAt": "Fecha",
+      "dispatchedAt": "Fecha",
+      "dispatchedTo": "Despachado a",
+      "employee": "Empleado",
+      "route": "Ruta diaria",
       "currentStock": "Stock actual",
       "availableStock": "Stock disponible",
       "notes": "Notas",
@@ -185,7 +226,31 @@
       "source": "Nombre del proveedor o devolución",
       "invoiceNumber": "Referencia de factura opcional",
       "contactInfo": "Correo o teléfono",
-      "address": "Dirección"
+      "address": "Dirección",
+      "category": "Seleccionar categoría",
+      "branch": "Seleccionar sucursal",
+      "item": "Seleccionar artículo",
+      "supplier": "Seleccionar proveedor",
+      "selectAssigneeSource": "Seleccionar empleado o ruta diaria",
+      "selectEmployee": "Seleccionar empleado",
+      "searchEmployees": "Buscar empleados…",
+      "selectRoute": "Seleccionar una ruta diaria",
+      "searchRoutes": "Buscar rutas diarias…",
+      "contactName": "Nombre de contacto",
+      "email": "nombre@empresa.com"
+    },
+    "validation": {
+      "nameRequired": "El nombre del artículo es obligatorio.",
+      "skuRequired": "El SKU es obligatorio.",
+      "unitRequired": "La unidad es obligatoria.",
+      "categoryRequired": "La categoría es obligatoria.",
+      "branchRequired": "La sucursal es obligatoria.",
+      "itemRequired": "El artículo es obligatorio.",
+      "quantityRequired": "La cantidad es obligatoria.",
+      "supplierRequired": "El proveedor es obligatorio.",
+      "dateRequired": "La fecha es obligatoria.",
+      "dispatchedToRequired": "Despachado a es obligatorio.",
+      "companyNameRequired": "El nombre de la empresa es obligatorio."
     },
     "adjustmentSign": {
       "increase": "Aumentar (+)",
@@ -193,7 +258,10 @@
     },
     "addLine": "Agregar línea",
     "removeLine": "Quitar",
-    "readOnlyStockHint": "El stock se calcula a partir de ingresos, despachos y ajustes."
+    "addContact": "Agregar contacto",
+    "addAddress": "Agregar dirección",
+    "addEmail": "Agregar correo",
+    "readOnlyStockHint": "El stock se calcula a partir de ingresos y despachos."
   },
   "view": {
     "stock": "Stock",
@@ -202,30 +270,18 @@
     "dispatches": "Despachos",
     "lines": "Líneas",
     "movements": "Movimientos generados",
-    "dispatchHistory": "Historial de despachos"
-  },
-  "reports": {
-    "title": "Reportes de inventario",
-    "stockOnHand": "Stock en mano",
-    "dispatchSummary": "Resumen de despachos por destinatario",
-    "lowStockAlerts": "Alertas de stock bajo",
-    "filters": {
-      "dateFrom": "Desde",
-      "dateTo": "Hasta",
-      "item": "Artículo",
-      "recipient": "Destinatario",
-      "allItems": "Todos los artículos",
-      "allRecipients": "Todos los destinatarios"
-    },
-    "asOf": "Al {{date}}",
-    "noLowStock": "Ningún artículo está por debajo del nivel de reorden."
+    "dispatchHistory": "Historial de despachos",
+    "audit": "Auditoría"
   },
   "delete": {
     "itemsTitle": "¿Eliminar artículos de inventario?",
     "itemsDescription": "Esto eliminará permanentemente {{count}} artículos seleccionados del catálogo.",
     "itemDescription": "Esto eliminará permanentemente {{name}} del catálogo.",
     "recipientsTitle": "¿Eliminar destinatarios?",
-    "recipientsDescription": "Esto eliminará permanentemente {{count}} destinatarios seleccionados."
+    "recipientsDescription": "Esto eliminará permanentemente {{count}} destinatarios seleccionados.",
+    "suppliersTitle": "¿Eliminar proveedores?",
+    "suppliersDescription": "Esto eliminará permanentemente {{count}} proveedores seleccionados.",
+    "supplierDescription": "Esto eliminará permanentemente a {{name}} de proveedores."
   },
   "directions": {
     "IN": "Entrada",
@@ -239,7 +295,8 @@
   },
   "errors": {
     "insufficientStock": "Stock insuficiente para una o más líneas.",
-    "saveFailed": "No se pudo guardar. Inténtelo de nuevo."
+    "saveFailed": "No se pudo guardar. Inténtelo de nuevo.",
+    "adjustmentsUnavailable": "Los ajustes de inventario aún no están disponibles. Registre un ingreso o un despacho."
   },
   "statuses": {
     "in_stock": "En stock",

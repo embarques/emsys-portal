@@ -1,72 +1,19 @@
+import { resolvePhoneDisplayValue } from "@/lib/utils/phone";
 import type { TranslateFn } from "@/lib/feedback/messages";
-import type { InventoryCategory, InventoryItem, InventoryLocation, InventoryStatus } from "./types";
-import {
-  INVENTORY_CATEGORIES,
-  INVENTORY_LOCATIONS,
-  INVENTORY_STATUSES,
-} from "./types";
-import type { DispatchStatus } from "./types/documents";
-import { DISPATCH_STATUSES } from "./types/documents";
+import type { InventoryItem } from "./types";
 import type { AdjustmentReason } from "./types/movements";
 import { ADJUSTMENT_REASONS } from "./types/movements";
-import type { RecipientType } from "./types/recipients";
-import { RECIPIENT_TYPES } from "./types/recipients";
+import type { InventoryDispatch, InventoryReceipt } from "./types/documents";
+import { getInventoryDispatchToLabel } from "./types/documents";
+import type { InventorySupplier } from "./types/suppliers";
 
 function translateEnum(t: TranslateFn, key: string, fallback: string): string {
   const translated = t(key);
   return translated === key ? fallback : translated;
 }
 
-export function getLocationLabel(location: InventoryLocation, t: TranslateFn): string {
-  return translateEnum(t, `inventory.locations.${location}`, location);
-}
-
-export function getStatusLabel(status: InventoryStatus, t: TranslateFn): string {
-  return translateEnum(t, `inventory.statuses.${status}`, status);
-}
-
-export function getCategoryLabel(category: InventoryCategory, t: TranslateFn): string {
-  return translateEnum(t, `inventory.categories.${category}`, category);
-}
-
-export function getRecipientTypeLabel(type: RecipientType | string, t: TranslateFn): string {
-  return translateEnum(t, `inventory.recipientTypes.${type}`, type);
-}
-
-export function getDispatchStatusLabel(status: DispatchStatus, t: TranslateFn): string {
-  return translateEnum(t, `inventory.dispatchStatuses.${status}`, status);
-}
-
 export function getAdjustmentReasonLabel(reason: AdjustmentReason, t: TranslateFn): string {
   return translateEnum(t, `inventory.adjustmentReasons.${reason}`, reason);
-}
-
-export function getInventoryStatusOptions(t: TranslateFn) {
-  return INVENTORY_STATUSES.map((option) => ({
-    value: option.value,
-    label: getStatusLabel(option.value, t),
-  }));
-}
-
-export function getInventoryLocationOptions(t: TranslateFn) {
-  return INVENTORY_LOCATIONS.map((option) => ({
-    value: option.value,
-    label: getLocationLabel(option.value, t),
-  }));
-}
-
-export function getInventoryCategoryOptions(t: TranslateFn) {
-  return INVENTORY_CATEGORIES.map((option) => ({
-    value: option.value,
-    label: getCategoryLabel(option.value, t),
-  }));
-}
-
-export function getRecipientTypeOptions(t: TranslateFn) {
-  return RECIPIENT_TYPES.map((option) => ({
-    value: option.value,
-    label: getRecipientTypeLabel(option.value, t),
-  }));
 }
 
 export function getAdjustmentReasonOptions(t: TranslateFn) {
@@ -76,60 +23,130 @@ export function getAdjustmentReasonOptions(t: TranslateFn) {
   }));
 }
 
-export function formatInventoryDate(iso: string): string {
+export function formatInventoryDate(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "—";
+
+  const day = trimmed.slice(0, 10);
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(day)
+    ? new Date(`${day}T00:00:00`)
+    : new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return "—";
+
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(iso));
+  }).format(parsed);
 }
 
-export function getAvailableQuantity(item: InventoryItem): number {
-  return Math.max(item.quantity - item.reserved, 0);
+export function formatInventoryMoney(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 }
 
-export function getStatusBadgeClass(status: InventoryStatus): string {
-  switch (status) {
-    case "in_stock":
-      return "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
-    case "low_stock":
-      return "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300";
-    case "out_of_stock":
-      return "border-transparent bg-destructive/15 text-destructive";
-    case "reserved":
-      return "border-transparent bg-primary/15 text-primary";
-    case "review":
-      return "border-transparent bg-secondary text-secondary-foreground";
-    default:
-      return "";
+export function toDateInputValue(iso?: string): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  if (iso?.trim()) {
+    const match = iso.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1]!;
+    const parsed = new Date(iso);
+    if (!Number.isNaN(parsed.getTime())) {
+      return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`;
+    }
   }
+  const now = new Date();
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-export function inventoryMatchesQuery(item: InventoryItem, query: string, t: TranslateFn): boolean {
+export function getInventoryItemLabel(item: Pick<InventoryItem, "item">): string {
+  return item.item;
+}
+
+export function getReceiptItemLabel(receipt: InventoryReceipt, items: InventoryItem[]): string {
+  if (receipt.item?.item) return receipt.item.item;
+  const item = items.find((entry) => entry.id === receipt.itemId);
+  return item ? getInventoryItemLabel(item) : receipt.itemId;
+}
+
+export function getReceiptSupplierLabel(receipt: InventoryReceipt, suppliers: InventorySupplier[]): string {
+  if (receipt.supplier?.companyName) return receipt.supplier.companyName;
+  return suppliers.find((entry) => entry.id === receipt.supplierId)?.companyName ?? receipt.supplierId;
+}
+
+export function getDispatchItemLabel(dispatch: InventoryDispatch, items: InventoryItem[]): string {
+  if (dispatch.item?.item) return dispatch.item.item;
+  const item = items.find((entry) => entry.id === dispatch.itemId);
+  return item ? getInventoryItemLabel(item) : dispatch.itemId;
+}
+
+export { getInventoryDispatchToLabel };
+
+export function dispatchMatchesQuery(
+  dispatch: InventoryDispatch,
+  itemLabel: string,
+  query: string,
+): boolean {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return true;
+
+  return [itemLabel, getInventoryDispatchToLabel(dispatch.dispatchedTo)]
+    .join(" ")
+    .toLowerCase()
+    .includes(normalized);
+}
+
+export function computeAverageCost(itemId: string, receipts: InventoryReceipt[]): number {
+  let quantity = 0;
+  let cost = 0;
+  for (const receipt of receipts) {
+    if (receipt.itemId !== itemId) continue;
+    quantity += receipt.quantity;
+    cost += receipt.quantity * receipt.averageCost;
+  }
+  return quantity > 0 ? cost / quantity : 0;
+}
+
+export function formatSupplierList(values: string[]): string {
+  return values.filter(Boolean).join(" · ");
+}
+
+export function formatSupplierPhones(supplier: InventorySupplier): string {
+  return formatSupplierList(
+    supplier.phones.map((phone) => resolvePhoneDisplayValue(phone.number, phone.displayNumber)),
+  );
+}
+
+export function supplierMatchesQuery(supplier: InventorySupplier, query: string): boolean {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
 
   return [
-    item.sku,
-    item.name,
-    item.notes ?? "",
-    getLocationLabel(item.location, t),
-    getCategoryLabel(item.category, t),
-    getStatusLabel(item.status, t),
+    supplier.companyName,
+    ...supplier.contactNames,
+    ...supplier.addresses,
+    ...supplier.emails,
+    formatSupplierPhones(supplier),
   ]
     .join(" ")
     .toLowerCase()
     .includes(normalized);
 }
 
+export function inventoryMatchesQuery(item: InventoryItem, query: string): boolean {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return true;
+
+  return item.item.toLowerCase().includes(normalized);
+}
+
 export function computeInventoryKpis(items: InventoryItem[]) {
   return {
     total: items.length,
-    inStock: items.filter((item) => item.status === "in_stock").length,
-    lowStock: items.filter((item) => item.status === "low_stock").length,
-    needsReview: items.filter((item) => item.status === "review" || item.status === "out_of_stock").length,
+    inStock: items.filter((item) => item.quantity > 0).length,
+    outOfStock: items.filter((item) => item.quantity <= 0).length,
     totalUnits: items.reduce((sum, item) => sum + item.quantity, 0),
   };
 }

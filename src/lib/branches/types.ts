@@ -1,8 +1,9 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
-import { normalizeStoredPhone } from "@/lib/utils/phone";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
+import { createDefaultRecordPhones } from "@/lib/phones/phones";
+import type { RecordPhone } from "@/lib/phones/types";
 
 export type BranchAddress = {
   address1: string;
@@ -32,11 +33,10 @@ export type Branch = {
   name: string;
   code: string;
   type: string;
-  phone1: string;
-  phone2: string;
+  phones: RecordPhone[];
   logo: string;
   disclaimer: string;
-  created: string;
+  createdAt: string;
   address: BranchAddress;
   settings: BranchSettings;
 };
@@ -46,11 +46,9 @@ export type BranchFormValues = {
   name: string;
   code: string;
   type: string;
-  phone1: string;
-  phone2: string;
+  phones: RecordPhone[];
   logo: string;
   disclaimer: string;
-  created: string;
   address: BranchAddress;
   settings: BranchSettings;
 };
@@ -60,7 +58,7 @@ export type BranchSearchOperator = "eq" | "neq" | "contains" | "startsWith";
 /**
  * Fields the EMSYS API allows in branch search/filter queries. This list is
  * authoritative — the API rejects any other field with HTTP 400.
- * (e.g. `disclaimer`, `phone1/2`, `address.country`, `settings.labelPrefix`
+ * (e.g. `disclaimer`, `address.country`, `settings.labelPrefix`
  * are NOT searchable; use `phones.number`, `address.zipcode`, etc.)
  */
 export type BranchSearchField =
@@ -156,11 +154,9 @@ export function createEmptyBranchForm(): BranchFormValues {
     name: "",
     code: "",
     type: "",
-    phone1: "",
-    phone2: "",
+    phones: createDefaultRecordPhones(),
     logo: "",
     disclaimer: "",
-    created: "",
     address: createEmptyBranchAddress(),
     settings: createEmptyBranchSettings(),
   };
@@ -203,11 +199,9 @@ export function branchToFormValues(branch: Branch): BranchFormValues {
     name: branch.name,
     code: branch.code,
     type: branch.type,
-    phone1: normalizeStoredPhone(branch.phone1),
-    phone2: normalizeStoredPhone(branch.phone2),
+    phones: branch.phones.map((phone) => ({ ...phone })),
     logo: branch.logo,
     disclaimer: branch.disclaimer,
-    created: branch.created,
     address: { ...branch.address },
     settings: { ...branch.settings },
   };
@@ -219,4 +213,3 @@ export function areBranchFormValuesEquivalent(
 ): boolean {
   return areFormValuesEquivalent(left, right);
 }
-

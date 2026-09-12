@@ -1,17 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
-import { History, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, History, Loader2 } from "lucide-react";
 
-import { RecordViewSheetSection } from "@/components/app-shell/record-view-sheet";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
-import { FormSection } from "@/components/forms/form-shell";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useSenderOrderHistory } from "@/lib/orders/hooks/use-orders";
 import {
+  formatOrderCommentsSummary,
   formatOrderDate,
-  formatPickupCommentSummary,
   formatUserSummary,
   getCustomerAddressLine,
   getCustomerPhone,
@@ -35,8 +33,15 @@ export function SenderOrderHistorySection({
   variant = "form",
 }: SenderOrderHistorySectionProps) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
   const senderId = sender.id.trim();
-  const { data, isLoading, isError, error } = useSenderOrderHistory(senderId);
+  const { data, isLoading, isError, error } = useSenderOrderHistory(senderId, {
+    enabled: open,
+  });
+
+  useEffect(() => {
+    setOpen(false);
+  }, [senderId]);
 
   // The API already sorts by date desc; sort defensively in case that changes.
   const history = useMemo(
@@ -47,9 +52,15 @@ export function SenderOrderHistorySection({
     [data?.items],
   );
   const senderName = sender.name.trim() || t("orders.history.defaultSenderName");
-  const sectionTitle = t("orders.history.title", { name: senderName, count: history.length });
+  const sectionTitle =
+    data != null
+      ? t("orders.history.title", { name: senderName, count: history.length })
+      : t("orders.history.titleCollapsed", { name: senderName });
   const errorMessage = isError ? normalizeApiError(error).message : null;
   const dash = t("common.empty.dash");
+  const toggleLabel = open ? t("orders.history.collapse") : t("orders.history.expand");
+  const sectionId = "sender-appointment-history";
+  const isView = variant === "view";
 
   const content = !senderId ? (
     <p className="text-sm text-muted-foreground">{t("orders.history.pendingSavedSender")}</p>
@@ -116,9 +127,7 @@ export function SenderOrderHistorySection({
                   <td className="px-3 py-2 text-xs">{getCustomerAddressLine(order.sender)}</td>
                   <td className="px-3 py-2 text-xs">{getCustomerPhone(order.sender)}</td>
                   <td className="px-3 py-2 text-xs">
-                    {order.comments.length > 0
-                      ? order.comments.map(formatPickupCommentSummary).join(" · ")
-                      : dash}
+                    {order.comments.length > 0 ? formatOrderCommentsSummary(order) : dash}
                   </td>
                   <td className="px-3 py-2 text-xs">{getReceiverSummary(order)}</td>
                   <td className="px-3 py-2 text-xs">{getReceiverAddressLine(order)}</td>
@@ -137,17 +146,49 @@ export function SenderOrderHistorySection({
     </div>
   );
 
-  if (variant === "view") {
-    return (
-      <RecordViewSheetSection title={sectionTitle} icon={History} padding="relaxed">
-        {content}
-      </RecordViewSheetSection>
-    );
-  }
-
   return (
-    <FormSection icon={History} title={sectionTitle}>
-      {content}
-    </FormSection>
+    <section
+      className={cn(
+        isView && "overflow-hidden rounded-lg border border-border bg-card shadow-sm",
+        !isView && "space-y-2.5",
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        aria-controls={`${sectionId}-panel`}
+        title={toggleLabel}
+        className={cn(
+          "flex w-full items-center justify-between gap-2 text-left transition-colors",
+          isView
+            ? cn(
+                "bg-muted/50 px-4 py-2.5 hover:bg-muted/70",
+                open && "border-b border-border",
+              )
+            : "min-h-7 rounded-md hover:bg-muted/50",
+        )}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <History className="size-4 shrink-0 text-primary" />
+          <span
+            className={cn(
+              "truncate font-semibold uppercase tracking-wide text-muted-foreground",
+              isView ? "text-[11px] tracking-[0.1em] text-foreground/75" : "text-xs",
+            )}
+          >
+            {sectionTitle}
+          </span>
+        </span>
+        <span className="inline-flex size-4 shrink-0 items-center justify-center text-muted-foreground">
+          {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+        </span>
+      </button>
+      {open ? (
+        <div id={`${sectionId}-panel`} className={cn(isView && "p-4")}>
+          {content}
+        </div>
+      ) : null}
+    </section>
   );
 }

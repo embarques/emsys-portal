@@ -311,7 +311,12 @@ createdAt
 
 Global bar search sends one OR group with the same term on name, phone, address, and comments aliases. Phone and address aliases expand server-side (phones.number/phone1/phone2; legacy address.* and addresses.*). Use `receivers.*` (not `receiver.*`), `createdBy.name` (not `user.name`), and `sender.address` / `receivers.address` for address text (not per-subfield paths in the bar). Incomplete pickups only: API adds `completed=false` unless you pass `completed` explicitly.
 
-Example bar search body for `"2490 david"`:
+`sender.phone` / `receivers.phone` digit-strip the value before matching:
+
+- Mixed terms keep digits (`9f3a` → `93`).
+- When stripping leaves no digits, that phone leaf matches zero rows. Portal OR bar search omits those phone leaves so name/address/comments can still match; a dedicated phone-only filter with no digits returns zero rows.
+
+Example bar search body for `"2490 david"` (portal sends digits-only on phone leaves):
 
 ```json
 {
@@ -320,8 +325,8 @@ Example bar search body for `"2490 david"`:
   "filters": [
     { "field": "sender.name", "operator": "contains", "value": "2490 david" },
     { "field": "receivers.name", "operator": "contains", "value": "2490 david" },
-    { "field": "sender.phone", "operator": "contains", "value": "2490 david" },
-    { "field": "receivers.phone", "operator": "contains", "value": "2490 david" },
+    { "field": "sender.phone", "operator": "contains", "value": "2490" },
+    { "field": "receivers.phone", "operator": "contains", "value": "2490" },
     { "field": "sender.address", "operator": "contains", "value": "2490 david" },
     { "field": "receivers.address", "operator": "contains", "value": "2490 david" },
     { "field": "comments", "operator": "contains", "value": "2490 david" }

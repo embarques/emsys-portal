@@ -11,10 +11,18 @@ import {
   Route as RouteIcon,
   Tag,
   Trash2,
+  X,
 } from "lucide-react";
 
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
+import { TableSelectionActionDivider } from "@/components/app-shell/table-selection-action-group";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { AssignBarcodeRouteDialog } from "@/components/invoices/assign-barcode-route-dialog";
+import {
+  LabelChangeOutputTable,
+  type LabelChangeOutputRow,
+} from "@/components/invoices/label-change-output-table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,22 +35,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { truncateBarcode, getBarcodeStatusLabel } from "@/lib/labels/display";
 import {
-  useAssignBarcodesToRoute,
   useGenerateLabels,
   useUpdateBarcodes,
 } from "@/lib/labels/hooks/use-barcodes";
 import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
-import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
-import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useGenerateLabelReport } from "@/lib/reports/hooks/use-reports";
+import { buildSelectedLabelReportRequest } from "@/lib/labels/print-label-report";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import {
-  BARCODE_STATUS_OPTIONS,
+  FALLBACK_BARCODE_STATUS_OPTIONS,
   buildStagedLineItems,
   resolveBarcodeStatusRef,
   type GeneratedLabel,
@@ -51,6 +58,7 @@ import {
 import type { Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 export type InvoiceStagingWorkflowProps = {
@@ -72,13 +80,44 @@ type InvoiceStagingDialogProps = {
 
 type StagingStep = "line-items" | "labels";
 
+function areSameKeySet(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  const rightKeys = new Set(right);
+  return left.every((key) => rightKeys.has(key));
+}
+
+type RemoveConfirmTarget = {
+  kind: "line-items" | "labels" | "label";
+  keys: string[];
+};
+
+function isAbortError(error: unknown): boolean {
+  if (error == null || typeof error !== "object") return false;
+  const name = "name" in error ? String(error.name) : "";
+  const code = "code" in error ? String(error.code) : "";
+  return name === "AbortError" || name === "CanceledError" || code === "ERR_CANCELED";
+}
+
 function getStatusBadgeClass(statusName: string): string {
   const normalized = statusName.trim().toUpperCase();
-  if (normalized.includes("CANCEL")) return "border-transparent bg-destructive/15 text-destructive";
-  if (normalized.includes("DELIVER")) return "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
-  if (normalized.includes("TRANSIT")) return "border-transparent bg-blue-500/15 text-blue-700 dark:text-blue-300";
-  if (normalized.includes("PRINT")) return "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300";
-  if (normalized.includes("CREAT")) return "border-transparent bg-primary/15 text-primary";
+  if (normalized.includes("SUBAST") || normalized.includes("CANCEL")) {
+    return "border-transparent bg-destructive/15 text-destructive";
+  }
+  if (normalized.includes("ENTREG") || normalized.includes("DELIVER")) {
+    return "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+  }
+  if (normalized.includes("TRANSITO") || normalized.includes("TRANSIT")) {
+    return "border-transparent bg-blue-500/15 text-blue-700 dark:text-blue-300";
+  }
+  if (normalized.startsWith("DEV-") || normalized.includes("PRINT")) {
+    return "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300";
+  }
+  if (normalized.startsWith("ALM-") || normalized.includes("CREAT")) {
+    return "border-transparent bg-primary/15 text-primary";
+  }
+  if (normalized.includes("CONDUCE")) {
+    return "border-transparent bg-violet-500/15 text-violet-700 dark:text-violet-300";
+  }
   return "border-transparent bg-muted text-muted-foreground";
 }
 
@@ -122,60 +161,80 @@ function HeaderSelectCheckbox({
 }
 
 type SelectionToolbarProps = {
-  selectedCount: number;
-  total: number;
-  allKeys: string[];
   selectedKeys: string[];
-  onSelectAllOthers: () => void;
+  allKeys: string[];
+  total?: number;
+  onSelectedKeysChange: (keys: string[]) => void;
   onRemoveAll: () => void;
   children?: ReactNode;
 };
 
+/**
+ * Nested-table selection bar aligned with `TableSelectionToolbar`:
+ * left island manages the selection, right side operates on selected rows
+ * with the destructive action last.
+ */
 function SelectionToolbar({
-  selectedCount,
-  total,
-  allKeys,
   selectedKeys,
-  onSelectAllOthers,
+  allKeys,
+  total,
+  onSelectedKeysChange,
   onRemoveAll,
   children,
 }: SelectionToolbarProps) {
   const { t } = useTranslation();
+  const selectedCount = selectedKeys.length;
+
+  if (selectedCount === 0) return null;
+
+  const totalCount = total ?? allKeys.length;
   const othersAvailable = canSelectAllOthers(allKeys, selectedKeys);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b bg-muted/20 px-3 py-2">
-      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
-        {t("common.table.selected", { count: selectedCount, total })}
-      </span>
-
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div
+      role="toolbar"
+      aria-label={`${selectedCount} selected`}
+      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border bg-primary/[0.06] px-3 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-primary/[0.05]"
+    >
+      <div className="flex items-center gap-2">
         <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+          aria-label={t("common.table.clearSelection")}
+          title={t("common.table.clearSelection")}
+          onClick={() => onSelectedKeysChange([])}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+        <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
+          {t("common.table.selected", { count: selectedCount, total: totalCount })}
+        </span>
+        <span className="mx-1 h-5 w-px bg-primary/20" aria-hidden />
+        <Button
+          variant="ghost"
           size="sm"
-          variant="outline"
-          className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+          className="gap-1.5 text-muted-foreground hover:text-foreground"
           disabled={!othersAvailable}
-          onClick={onSelectAllOthers}
+          onClick={() => onSelectedKeysChange(selectAllOthers(allKeys, selectedKeys))}
         >
           <ListChecks className="h-4 w-4" />
-          {t("common.table.selectAllOthers")}
+          <span className="whitespace-nowrap">{t("common.table.selectAllOthers")}</span>
         </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        {children}
+        {children ? <TableSelectionActionDivider /> : null}
         <Button
-          size="sm"
           variant="outline"
-          className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
-          disabled={selectedCount === 0}
+          size="sm"
+          className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
           onClick={onRemoveAll}
         >
           <Trash2 className="h-4 w-4" />
           {t("labels.staging.remove")}
         </Button>
-        {children ? (
-          <>
-            <span className="mx-0.5 hidden h-5 w-px bg-border sm:block" aria-hidden />
-            {children}
-          </>
-        ) : null}
       </div>
     </div>
   );
@@ -190,6 +249,8 @@ export function InvoiceStagingWorkflow({
   onClose,
 }: InvoiceStagingWorkflowProps) {
   const { t } = useTranslation();
+  const { email, displayName } = useAuth();
+  const performedBy = displayName?.trim() || email?.trim() || undefined;
   const { notifyError, notifySuccess, notifyUpdated } = useFeedback();
   const barcodeStatusOptions = useBarcodeStatusOptions();
   const isDialog = presentation === "dialog";
@@ -206,8 +267,9 @@ export function InvoiceStagingWorkflow({
   const containers = containersData?.items ?? [];
   const generateLabelsMutation = useGenerateLabels();
   const updateBarcodesMutation = useUpdateBarcodes();
-  const assignRouteMutation = useAssignBarcodesToRoute();
   const generateLabelReportMutation = useGenerateLabelReport();
+  const generateAbortRef = useRef<AbortController | null>(null);
+  const [generateCancelled, setGenerateCancelled] = useState(false);
 
   const [step, setStep] = useState<StagingStep>("line-items");
 
@@ -215,6 +277,7 @@ export function InvoiceStagingWorkflow({
   const [selectedItemKeys, setSelectedItemKeys] = useState<string[]>([]);
 
   const [generatedLabels, setGeneratedLabels] = useState<GeneratedLabel[]>([]);
+  const [generatedForItemKeys, setGeneratedForItemKeys] = useState<string[]>([]);
   const [selectedLabelKeys, setSelectedLabelKeys] = useState<string[]>([]);
   const [labelQuery, setLabelQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -222,23 +285,25 @@ export function InvoiceStagingWorkflow({
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [containerDialogOpen, setContainerDialogOpen] = useState(false);
   const [routeDialogOpen, setRouteDialogOpen] = useState(false);
-  const [newStatus, setNewStatus] = useState<string>(BARCODE_STATUS_OPTIONS[1].name);
-  const [newContainerId, setNewContainerId] = useState("");
-  const [newRouteId, setNewRouteId] = useState("");
-
-  const { data: routesData, isLoading: routesLoading } = useActiveRoutePicker("delivery", 200, {
-    enabled: routeDialogOpen,
-  });
-  const routes = routesData?.items ?? [];
-  const routeOptions = useMemo(
-    () => buildActiveRouteAssignmentOptions(routes, t),
-    [routes, t],
+  const [removeConfirm, setRemoveConfirm] = useState<RemoveConfirmTarget | null>(null);
+  const [newStatus, setNewStatus] = useState<string>(
+    FALLBACK_BARCODE_STATUS_OPTIONS[0]?.name ?? "ALM-NY",
   );
+  const [newContainerId, setNewContainerId] = useState("");
+  const [changeResults, setChangeResults] = useState<LabelChangeOutputRow[]>([]);
 
-  const isGenerating = generateLabelsMutation.isPending;
+  const isGenerating = generateLabelsMutation.isPending && !generateCancelled;
   const isUpdating = updateBarcodesMutation.isPending;
-  const isAssigningRoute = assignRouteMutation.isPending;
   const isPrinting = generateLabelReportMutation.isPending;
+
+  useEffect(() => {
+    if (barcodeStatusOptions.some((entry) => entry.name === newStatus)) return;
+    setNewStatus(
+      barcodeStatusOptions[0]?.name ??
+        FALLBACK_BARCODE_STATUS_OPTIONS[0]?.name ??
+        "ALM-NY",
+    );
+  }, [barcodeStatusOptions, newStatus]);
 
   // Keep the latest invoices without making them a reset trigger: generating
   // labels invalidates the invoices query, which would otherwise change the
@@ -253,7 +318,11 @@ export function InvoiceStagingWorkflow({
 
   // Reset the whole flow when the dialog opens or the staged invoice set changes.
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      generateAbortRef.current?.abort();
+      generateAbortRef.current = null;
+      return;
+    }
     const current = invoicesRef.current;
     setStep("line-items");
     setLineItems(
@@ -263,10 +332,17 @@ export function InvoiceStagingWorkflow({
       ),
     );
     setSelectedItemKeys([]);
+    generateAbortRef.current?.abort();
+    generateAbortRef.current = null;
+    setGenerateCancelled(false);
     setGeneratedLabels([]);
+    setGeneratedForItemKeys([]);
     setSelectedLabelKeys([]);
     setLabelQuery("");
     setStatusFilter("all");
+    setRouteDialogOpen(false);
+    setRemoveConfirm(null);
+    setChangeResults([]);
   }, [invoiceKey, isActive]);
 
   const itemKeys = useMemo(() => lineItems.map((item) => item.key), [lineItems]);
@@ -297,15 +373,63 @@ export function InvoiceStagingWorkflow({
 
   const filteredLabelKeys = useMemo(() => filteredLabels.map((label) => label.key), [filteredLabels]);
 
+  const selectedLabels = useMemo(
+    () => generatedLabels.filter((label) => selectedLabelKeys.includes(label.key)),
+    [generatedLabels, selectedLabelKeys],
+  );
+  const assignBarcodes = useMemo(
+    () =>
+      selectedLabels
+        .filter((label) => label.number.trim().length > 0)
+        .map((label) => ({
+          number: label.number,
+          barcodeId: label.barcodeId,
+          catalogId: label.catalogId,
+          packageSequence: label.packageSequence,
+          invoiceId: label.invoiceId,
+          currentRouteName: label.routeName,
+        })),
+    [selectedLabels],
+  );
+
+  function recordChangeOutputs(
+    rows: Omit<LabelChangeOutputRow, "id" | "occurredAt" | "createdBy">[],
+  ) {
+    if (rows.length === 0) return;
+    const occurredAt = new Date().toISOString();
+    setChangeResults((current) => [
+      ...rows.map((row) => ({
+        ...row,
+        id: crypto.randomUUID(),
+        occurredAt,
+        createdBy: performedBy,
+      })),
+      ...current,
+    ]);
+  }
+
+  function cancelGenerateLabels() {
+    generateAbortRef.current?.abort();
+    generateAbortRef.current = null;
+    setGenerateCancelled(true);
+  }
+
+  function handleLineItemSelectionChange(keys: string[]) {
+    if (keys.length === 0) {
+      cancelGenerateLabels();
+    }
+    setSelectedItemKeys(keys);
+  }
+
   function toggleItem(key: string, checked: boolean) {
     setSelectedItemKeys((current) =>
       checked ? [...current, key] : current.filter((entry) => entry !== key),
     );
   }
 
-  function removeSelectedLineItems() {
-    setLineItems((current) => current.filter((item) => !selectedItemKeys.includes(item.key)));
-    setSelectedItemKeys([]);
+  function requestRemoveLineItems() {
+    if (selectedItemKeys.length === 0) return;
+    setRemoveConfirm({ kind: "line-items", keys: selectedItemKeys });
   }
 
   async function generateLabels() {
@@ -314,8 +438,26 @@ export function InvoiceStagingWorkflow({
       .map((item) => ({ invoiceId: item.invoiceId, lineItemId: item.lineItemId }));
     if (targets.length === 0) return;
 
+    if (
+      generatedForItemKeys.length > 0 &&
+      areSameKeySet(selectedItemKeys, generatedForItemKeys)
+    ) {
+      setStep("labels");
+      return;
+    }
+
+    cancelGenerateLabels();
+    const controller = new AbortController();
+    generateAbortRef.current = controller;
+    setGenerateCancelled(false);
+
     try {
-      const labels = await generateLabelsMutation.mutateAsync(targets);
+      const labels = await generateLabelsMutation.mutateAsync({
+        targets,
+        signal: controller.signal,
+      });
+
+      if (controller.signal.aborted) return;
 
       if (labels.length === 0) {
         notifyError(t("labels.staging.errors.noneGenerated"));
@@ -326,6 +468,7 @@ export function InvoiceStagingWorkflow({
       const existingCount = labels.length - createdCount;
 
       setGeneratedLabels(labels);
+      setGeneratedForItemKeys([...selectedItemKeys]);
       setSelectedLabelKeys([]);
       setStatusFilter("all");
       setLabelQuery("");
@@ -337,6 +480,7 @@ export function InvoiceStagingWorkflow({
       ].filter(Boolean);
       notifySuccess(t("labels.staging.success.ready", { details: parts.join(", ") }));
     } catch (error) {
+      if (controller.signal.aborted || isAbortError(error)) return;
       notifyError(normalizeApiError(error).message);
     }
   }
@@ -347,14 +491,64 @@ export function InvoiceStagingWorkflow({
     );
   }
 
-  function removeLabelFromView(key: string) {
-    setGeneratedLabels((current) => current.filter((label) => label.key !== key));
-    setSelectedLabelKeys((current) => current.filter((entry) => entry !== key));
+  function requestRemoveLabel(key: string) {
+    setRemoveConfirm({ kind: "label", keys: [key] });
   }
 
-  function removeSelectedLabelsFromView() {
-    setGeneratedLabels((current) => current.filter((label) => !selectedLabelKeys.includes(label.key)));
-    setSelectedLabelKeys([]);
+  function requestRemoveLabels() {
+    if (selectedLabelKeys.length === 0) return;
+    setRemoveConfirm({ kind: "labels", keys: selectedLabelKeys });
+  }
+
+  function confirmRemove() {
+    if (!removeConfirm) return;
+    const keys = new Set(removeConfirm.keys);
+    if (removeConfirm.kind === "line-items") {
+      setLineItems((current) => current.filter((item) => !keys.has(item.key)));
+      setSelectedItemKeys((current) => current.filter((key) => !keys.has(key)));
+    } else {
+      setGeneratedLabels((current) => current.filter((label) => !keys.has(label.key)));
+      setSelectedLabelKeys((current) => current.filter((key) => !keys.has(key)));
+    }
+    setRemoveConfirm(null);
+  }
+
+  function removeDialogCopy(target: RemoveConfirmTarget) {
+    const count = target.keys.length;
+    if (target.kind === "line-items") {
+      return {
+        title: t(
+          count === 1
+            ? "labels.staging.removeDialog.lineItemsTitle"
+            : "labels.staging.removeDialog.lineItemsTitle_plural",
+        ),
+        description: t(
+          count === 1
+            ? "labels.staging.removeDialog.lineItemsDescription"
+            : "labels.staging.removeDialog.lineItemsDescription_plural",
+          { count },
+        ),
+      };
+    }
+    if (target.kind === "label") {
+      return {
+        title: t("labels.staging.removeDialog.oneLabelTitle"),
+        description: t("labels.staging.removeDialog.oneLabelDescription"),
+      };
+    }
+    return {
+      title: t(
+        count === 1
+          ? "labels.staging.removeDialog.labelsTitle"
+          : "labels.staging.removeDialog.labelsTitle_plural",
+      ),
+      description: t(
+        count === 1
+          ? "labels.staging.removeDialog.labelsDescription"
+          : "labels.staging.removeDialog.labelsDescription_plural",
+        { count },
+      ),
+    };
   }
 
   function openStatusDialog() {
@@ -363,48 +557,114 @@ export function InvoiceStagingWorkflow({
   }
 
   async function applyStatusChange() {
-    const option = BARCODE_STATUS_OPTIONS.find((entry) => entry.name === newStatus);
+    const option = barcodeStatusOptions.find((entry) => entry.name === newStatus);
     if (!option) return;
 
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
-    const updates: BarcodeUpdate[] = selected
-      .filter((label) => label.number.trim().length > 0)
-      .map((label) => ({
-        id: label.barcodeId,
-        invoiceId: label.invoiceId,
-        writeTarget: label.writeTarget,
-        payload: {
-          number: label.number,
-          status: { id: option.id, name: option.name },
-          ...(label.containerId != null
-            ? { container: { id: label.containerId, name: label.containerName } }
-            : {}),
-        },
-      }));
+    const newStatusLabel = getBarcodeStatusLabel(option.name, t);
+    const withNumbers = selected.filter((label) => label.number.trim().length > 0);
+    const withoutNumbers = selected.filter((label) => label.number.trim().length === 0);
 
-    if (updates.length === 0) {
-      notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
+    recordChangeOutputs(
+      withoutNumbers.map((label) => ({
+        barcode: label.number.trim() || t("common.empty.dash"),
+        invoiceNumber: label.invoiceNumber,
+        previousValue: getBarcodeStatusLabel(label.statusName, t),
+        newValue: newStatusLabel,
+        message: t("labels.staging.output.missingNumber"),
+        success: false,
+      })),
+    );
+
+    const alreadyCurrent = withNumbers.filter(
+      (label) => label.statusId === option.id || label.statusName.trim() === option.name,
+    );
+    const needsUpdate = withNumbers.filter(
+      (label) => label.statusId !== option.id && label.statusName.trim() !== option.name,
+    );
+
+    if (alreadyCurrent.length > 0) {
+      recordChangeOutputs(
+        alreadyCurrent.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: getBarcodeStatusLabel(label.statusName, t),
+          newValue: newStatusLabel,
+          message: t("labels.staging.output.successStatus"),
+          success: true,
+        })),
+      );
+    }
+
+    if (needsUpdate.length === 0) {
+      if (withNumbers.length > 0) {
+        notifyUpdated(
+          t("labels.staging.entities.labelStatus"),
+          t("labels.staging.entities.labelCount", { count: withNumbers.length }),
+        );
+        setStatusDialogOpen(false);
+      } else {
+        notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
+      }
       return;
     }
 
+    const updates: BarcodeUpdate[] = needsUpdate.map((label) => ({
+      id: label.catalogId ?? 0,
+      barcodeId: label.barcodeId,
+      invoiceId: label.invoiceId,
+      writeTarget: label.writeTarget,
+      payload: {
+        number: label.number,
+        status: { id: option.id, name: option.name },
+        ...(label.containerId != null
+          ? { container: { id: label.containerId, name: label.containerName } }
+          : {}),
+      },
+    }));
+
     try {
-      if (updates.length > 0) {
-        await updateBarcodesMutation.mutateAsync(updates);
-      }
+      await updateBarcodesMutation.mutateAsync(updates);
+      const succeededKeys = new Set(needsUpdate.map((label) => label.key));
       setGeneratedLabels((current) =>
         current.map((label) =>
-          selectedLabelKeys.includes(label.key)
+          succeededKeys.has(label.key)
             ? { ...label, statusId: option.id, statusName: option.name }
             : label,
         ),
       );
+      // Keep updated rows visible if a status filter would hide them.
+      if (statusFilter !== "all" && statusFilter !== option.name) {
+        setStatusFilter("all");
+      }
+      recordChangeOutputs(
+        needsUpdate.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: getBarcodeStatusLabel(label.statusName, t),
+          newValue: newStatusLabel,
+          message: t("labels.staging.output.successStatus"),
+          success: true,
+        })),
+      );
       notifyUpdated(
         t("labels.staging.entities.labelStatus"),
-        t("labels.staging.entities.labelCount", { count: selected.length }),
+        t("labels.staging.entities.labelCount", { count: withNumbers.length }),
       );
       setStatusDialogOpen(false);
     } catch (error) {
-      notifyError(normalizeApiError(error).message);
+      const message = normalizeApiError(error).message;
+      recordChangeOutputs(
+        needsUpdate.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: getBarcodeStatusLabel(label.statusName, t),
+          newValue: newStatusLabel,
+          message,
+          success: false,
+        })),
+      );
+      notifyError(message);
     }
   }
 
@@ -416,46 +676,11 @@ export function InvoiceStagingWorkflow({
 
   function openRouteDialog() {
     if (selectedLabelKeys.length === 0) return;
-    setNewRouteId("");
-    setRouteDialogOpen(true);
-  }
-
-  async function applyRouteAssignment() {
-    const route = routes.find((entry) => entry.id === newRouteId);
-    if (!route) return;
-
-    const barcodeIds = Array.from(
-      new Set(
-        generatedLabels
-          .filter((label) => selectedLabelKeys.includes(label.key))
-          .map((label) => label.barcodeId)
-          .filter((id) => id > 0),
-      ),
-    );
-
-    if (barcodeIds.length === 0) {
+    if (assignBarcodes.length === 0) {
       notifyError(t("labels.staging.errors.missingBarcodesForRoute"));
       return;
     }
-
-    try {
-      const result = await assignRouteMutation.mutateAsync({
-        routeId: newRouteId,
-        barcodeIds,
-      });
-      const routeName = result.routeName || route.name || t("labels.staging.routeDialog.route").toLowerCase();
-      notifySuccess(
-        t("labels.staging.success.assignedToRoute", {
-          count: result.assignedCount,
-          route: routeName,
-          trip: result.tripNumber,
-        }),
-      );
-      setRouteDialogOpen(false);
-      setNewRouteId("");
-    } catch (error) {
-      notifyError(normalizeApiError(error).message);
-    }
+    setRouteDialogOpen(true);
   }
 
   async function applyContainerChange() {
@@ -463,74 +688,189 @@ export function InvoiceStagingWorkflow({
     if (!container) return;
 
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
-    const updates: BarcodeUpdate[] = selected
-      .filter((label) => label.number.trim().length > 0)
-      .map((label) => ({
-        id: label.barcodeId,
-        invoiceId: label.invoiceId,
-        writeTarget: label.writeTarget,
-        payload: {
-          number: label.number,
-          status: resolveBarcodeStatusRef(label.statusId, label.statusName),
-          container: { id: container.id, name: container.name },
-        },
-      }));
-
     const containerLabel = formatContainerLabel(container);
+    const nextContainerName = container.name.trim() || containerLabel;
+    const withNumbers = selected.filter((label) => label.number.trim().length > 0);
+    const withoutNumbers = selected.filter((label) => label.number.trim().length === 0);
 
-    if (updates.length === 0) {
-      notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
+    recordChangeOutputs(
+      withoutNumbers.map((label) => ({
+        barcode: label.number.trim() || t("common.empty.dash"),
+        invoiceNumber: label.invoiceNumber,
+        previousValue: label.containerName,
+        newValue: nextContainerName,
+        message: t("labels.staging.output.missingNumber"),
+        success: false,
+      })),
+    );
+
+    const alreadyCurrent = withNumbers.filter(
+      (label) =>
+        label.containerId === container.id ||
+        label.containerName.trim() === nextContainerName ||
+        label.containerName.trim() === container.name.trim(),
+    );
+    const needsUpdate = withNumbers.filter(
+      (label) =>
+        label.containerId !== container.id &&
+        label.containerName.trim() !== nextContainerName &&
+        label.containerName.trim() !== container.name.trim(),
+    );
+
+    if (alreadyCurrent.length > 0) {
+      recordChangeOutputs(
+        alreadyCurrent.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: label.containerName,
+          newValue: nextContainerName,
+          message: t("labels.staging.output.successContainer"),
+          success: true,
+        })),
+      );
+    }
+
+    if (needsUpdate.length === 0) {
+      if (withNumbers.length > 0) {
+        notifyUpdated(
+          t("labels.staging.entities.labelContainer"),
+          t("labels.staging.entities.labelCount", { count: withNumbers.length }),
+        );
+        setContainerDialogOpen(false);
+      } else {
+        notifyError(t("labels.staging.errors.missingBarcodeNumbers"));
+      }
       return;
     }
 
+    const updates: BarcodeUpdate[] = needsUpdate.map((label) => ({
+      id: label.catalogId ?? 0,
+      barcodeId: label.barcodeId,
+      invoiceId: label.invoiceId,
+      writeTarget: label.writeTarget,
+      payload: {
+        number: label.number,
+        status: resolveBarcodeStatusRef(label.statusId, label.statusName, barcodeStatusOptions),
+        container: { id: container.id, name: container.name },
+      },
+    }));
+
     try {
-      if (updates.length > 0) {
-        await updateBarcodesMutation.mutateAsync(updates);
-      }
+      await updateBarcodesMutation.mutateAsync(updates);
+      const succeededKeys = new Set(needsUpdate.map((label) => label.key));
       setGeneratedLabels((current) =>
         current.map((label) =>
-          selectedLabelKeys.includes(label.key)
-            ? { ...label, containerId: container.id, containerName: containerLabel }
+          succeededKeys.has(label.key)
+            ? {
+                ...label,
+                containerId: container.id,
+                containerName: nextContainerName,
+              }
             : label,
         ),
       );
+      recordChangeOutputs(
+        needsUpdate.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: label.containerName,
+          newValue: nextContainerName,
+          message: t("labels.staging.output.successContainer"),
+          success: true,
+        })),
+      );
       notifyUpdated(
         t("labels.staging.entities.labelContainer"),
-        t("labels.staging.entities.labelCount", { count: selected.length }),
+        t("labels.staging.entities.labelCount", { count: withNumbers.length }),
       );
       setContainerDialogOpen(false);
     } catch (error) {
-      notifyError(normalizeApiError(error).message);
+      const message = normalizeApiError(error).message;
+      recordChangeOutputs(
+        needsUpdate.map((label) => ({
+          barcode: label.number,
+          invoiceNumber: label.invoiceNumber,
+          previousValue: label.containerName,
+          newValue: nextContainerName,
+          message,
+          success: false,
+        })),
+      );
+      notifyError(message);
     }
+  }
+
+  function handleRouteAssignResult(result: { success: boolean; routeName: string; message: string }) {
+    const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
+    const assignable = selected.filter((label) => label.number.trim().length > 0);
+    const skipped = selected.filter((label) => label.number.trim().length === 0);
+    const dash = t("common.empty.dash");
+    const successMessage = t("labels.staging.output.successRoute");
+
+    // Same route as before still counts as success for the barcode changes log.
+    const alreadyCurrent = assignable.filter(
+      (label) => (label.routeName ?? "").trim() === result.routeName.trim(),
+    );
+    const changed = assignable.filter(
+      (label) => (label.routeName ?? "").trim() !== result.routeName.trim(),
+    );
+
+    recordChangeOutputs([
+      ...skipped.map((label) => ({
+        barcode: label.number.trim() || dash,
+        invoiceNumber: label.invoiceNumber,
+        previousValue: label.routeName ?? "",
+        newValue: result.routeName,
+        message: t("labels.staging.output.missingNumber"),
+        success: false,
+      })),
+      ...alreadyCurrent.map((label) => ({
+        barcode: label.number.trim() || dash,
+        invoiceNumber: label.invoiceNumber,
+        previousValue: label.routeName ?? "",
+        newValue: result.routeName,
+        message: successMessage,
+        success: true,
+      })),
+      ...changed.map((label) => ({
+        barcode: label.number.trim() || dash,
+        invoiceNumber: label.invoiceNumber,
+        previousValue: label.routeName ?? "",
+        newValue: result.routeName,
+        message: result.success ? successMessage : result.message,
+        success: result.success,
+      })),
+    ]);
+
+    if (!result.success) return;
+
+    const assignedIds = new Set(assignable.map((label) => label.key));
+    setGeneratedLabels((current) =>
+      current.map((label) =>
+        assignedIds.has(label.key) ? { ...label, routeName: result.routeName } : label,
+      ),
+    );
   }
 
   async function printSelectedLabels() {
     const selected = generatedLabels.filter((label) => selectedLabelKeys.includes(label.key));
     if (selected.length === 0) return;
 
-    const barcodeNumbers = Array.from(
-      new Set(
-        selected
-          .map((label) => label.number.trim())
-          .filter((number) => number.length > 0),
-      ),
+    const barcodeIds = Array.from(
+      new Set(selected.map((label) => label.barcodeId.trim()).filter(Boolean)),
     );
 
-    if (barcodeNumbers.length === 0) {
+    if (barcodeIds.length === 0) {
       notifyError(t("labels.staging.errors.missingBarcodeNumbersPrint"));
       return;
     }
 
     try {
-      const { url } = await generateLabelReportMutation.mutateAsync({
-        type: "label",
-        collection: "barcodes",
-        values: barcodeNumbers,
-        lookupField: "number",
-        expiresInHours: 24,
-      });
+      const { url } = await generateLabelReportMutation.mutateAsync(
+        buildSelectedLabelReportRequest(barcodeIds),
+      );
       window.open(url, "_blank", "noopener,noreferrer");
-      notifySuccess(t("labels.staging.success.readyToPrint", { count: barcodeNumbers.length }));
+      notifySuccess(t("labels.staging.success.readyToPrint", { count: barcodeIds.length }));
     } catch (error) {
       notifyError(normalizeApiError(error).message);
     }
@@ -555,41 +895,39 @@ export function InvoiceStagingWorkflow({
       </>
     );
 
-  const footerActions =
-    step === "line-items" ? (
-      <>
-        <Button variant="outline" onClick={handleClose}>
-          {t("common.actions.cancel")}
-        </Button>
-        <Button onClick={generateLabels} disabled={selectedItemKeys.length === 0 || isGenerating}>
-          <Barcode className="h-4 w-4" />
-          {isGenerating
-            ? t("labels.staging.working")
-            : t("labels.staging.manageLabels", { count: selectedItemKeys.length })}
-        </Button>
-      </>
-    ) : (
-      <>
-        <Button variant="outline" onClick={() => setStep("line-items")}>
-          {t("labels.staging.backToLineItems")}
-        </Button>
-        <Button onClick={handleClose}>{t("labels.staging.done")}</Button>
-      </>
-    );
+  const manageLabelsButton = (
+    <Button
+      size="sm"
+      onClick={generateLabels}
+      disabled={selectedItemKeys.length === 0 || isGenerating}
+    >
+      <Barcode className="h-4 w-4" />
+      {isGenerating
+        ? t("labels.staging.working")
+        : t("labels.staging.manageLabels", { count: selectedItemKeys.length })}
+    </Button>
+  );
+
+  const backToLineItemsButton =
+    step === "labels" ? (
+      <Button variant="outline" onClick={() => setStep("line-items")}>
+        <ArrowLeft className="h-4 w-4" />
+        {t("labels.staging.backToLineItems")}
+      </Button>
+    ) : null;
 
   const workflowPanels =
     step === "line-items" ? (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
             <SelectionToolbar
-              selectedCount={selectedItemKeys.length}
-              total={lineItems.length}
               allKeys={itemKeys}
               selectedKeys={selectedItemKeys}
-              onSelectAllOthers={() =>
-                setSelectedItemKeys(selectAllOthers(itemKeys, selectedItemKeys))
-              }
-              onRemoveAll={removeSelectedLineItems}
-            />
+              total={lineItems.length}
+              onSelectedKeysChange={handleLineItemSelectionChange}
+              onRemoveAll={requestRemoveLineItems}
+            >
+              {manageLabelsButton}
+            </SelectionToolbar>
 
             <div className="min-h-0 flex-1 overflow-auto">
               <table className="w-full text-left text-sm">
@@ -600,7 +938,7 @@ export function InvoiceStagingWorkflow({
                         total={lineItems.length}
                         selectedCount={selectedItemKeys.length}
                         onSelectAll={() => setSelectedItemKeys(itemKeys)}
-                        onDeselectAll={() => setSelectedItemKeys([])}
+                        onDeselectAll={() => handleLineItemSelectionChange([])}
                         label={t("labels.staging.selectAllLineItems")}
                       />
                     </th>
@@ -655,19 +993,21 @@ export function InvoiceStagingWorkflow({
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
-            <div className="flex flex-wrap items-center gap-2 border-b bg-muted/10 px-3 py-2">
+            <div className="flex w-full items-center gap-2 border-b bg-muted/10 px-3 py-2">
               <Input
                 value={labelQuery}
                 onChange={(event) => setLabelQuery(event.target.value)}
                 placeholder={t("labels.staging.filterPlaceholder")}
-                className="h-8 max-w-xs"
+                className="h-8 min-w-0 flex-1"
               />
               <SearchableSelect
                 aria-label={t("labels.staging.filterByStatus")}
-                className="h-8 w-40"
+                className="h-8 max-w-full shrink-0"
                 value={statusFilter}
                 onValueChange={setStatusFilter}
                 searchPlaceholder={t("labels.updater.search.statuses")}
+                truncateSelection={false}
+                fitToOptions
                 options={statusOptions.map((option) => ({
                   value: option,
                   label:
@@ -679,14 +1019,11 @@ export function InvoiceStagingWorkflow({
             </div>
 
             <SelectionToolbar
-              selectedCount={selectedLabelKeys.length}
-              total={filteredLabels.length}
               allKeys={filteredLabelKeys}
               selectedKeys={selectedLabelKeys}
-              onSelectAllOthers={() =>
-                setSelectedLabelKeys(selectAllOthers(filteredLabelKeys, selectedLabelKeys))
-              }
-              onRemoveAll={removeSelectedLabelsFromView}
+              total={filteredLabels.length}
+              onSelectedKeysChange={setSelectedLabelKeys}
+              onRemoveAll={requestRemoveLabels}
             >
               <Button
                 size="sm"
@@ -709,7 +1046,7 @@ export function InvoiceStagingWorkflow({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={selectedLabelKeys.length === 0 || isAssigningRoute}
+                disabled={selectedLabelKeys.length === 0}
                 onClick={openRouteDialog}
               >
                 <RouteIcon className="h-4 w-4" />
@@ -802,7 +1139,7 @@ export function InvoiceStagingWorkflow({
                               size="icon"
                               className="h-7 w-7 text-muted-foreground hover:text-destructive"
                               aria-label={t("labels.staging.removeFromView")}
-                              onClick={() => removeLabelFromView(label.key)}
+                              onClick={() => requestRemoveLabel(label.key)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -816,6 +1153,8 @@ export function InvoiceStagingWorkflow({
             </div>
           </div>
         );
+
+  const removeCopy = removeConfirm ? removeDialogCopy(removeConfirm) : null;
 
   const auxiliaryDialogs = (
     <>
@@ -891,49 +1230,32 @@ export function InvoiceStagingWorkflow({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={routeDialogOpen} onOpenChange={setRouteDialogOpen}>
-        <DialogContent
-          className="z-[70]"
-          onOpenAutoFocus={(event) => event.preventDefault()}
-        >
+      <AssignBarcodeRouteDialog
+        open={routeDialogOpen}
+        onOpenChange={setRouteDialogOpen}
+        barcodes={assignBarcodes}
+        onResult={handleRouteAssignResult}
+      />
+
+      <Dialog
+        open={removeConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoveConfirm(null);
+        }}
+      >
+        <DialogContent className="z-[70]">
           <DialogHeader>
-            <DialogTitle>{t("labels.staging.routeDialog.title")}</DialogTitle>
-            <DialogDescription>
-              {t("labels.staging.routeDialog.description", { count: selectedLabelKeys.length })}
-            </DialogDescription>
+            <DialogTitle>{removeCopy?.title}</DialogTitle>
+            <DialogDescription>{removeCopy?.description}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="staging-new-route">{t("labels.staging.routeDialog.route")}</Label>
-            <SearchableSelect
-              id="staging-new-route"
-              value={newRouteId}
-              onValueChange={setNewRouteId}
-              placeholder={t("labels.staging.routeDialog.selectRoute")}
-              searchPlaceholder={t("labels.updater.search.routes")}
-              contentClassName="z-[80]"
-              loading={routesLoading}
-              emptyMessage={
-                routesLoading
-                  ? t("labels.staging.routeDialog.loadingRoutes")
-                  : t("labels.staging.routeDialog.noRoutes")
-              }
-              options={routeOptions}
-            />
-          </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRouteDialogOpen(false)}
-              disabled={isAssigningRoute}
-            >
+            <Button variant="outline" onClick={() => setRemoveConfirm(null)}>
               {t("common.actions.cancel")}
             </Button>
-            <Button onClick={applyRouteAssignment} disabled={!newRouteId || isAssigningRoute}>
-              <RouteIcon className="h-4 w-4" />
-              {isAssigningRoute
-                ? t("labels.staging.routeDialog.assigning")
-                : t("labels.staging.routeDialog.assign")}
-            </Button>
+            <ConfirmDeleteButton
+              label={t("labels.staging.remove")}
+              onClick={confirmRemove}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -943,7 +1265,7 @@ export function InvoiceStagingWorkflow({
   if (!isDialog) {
     return (
       <>
-        <div className="flex min-h-[calc(100dvh-10rem)] flex-col gap-4">
+        <div className="flex h-[calc(100dvh-10rem)] flex-col gap-4">
           <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -954,16 +1276,18 @@ export function InvoiceStagingWorkflow({
               </h1>
               <p className="text-sm text-muted-foreground">{stagingDescription}</p>
             </div>
-            <Button variant="outline" onClick={handleClose}>
-              <ArrowLeft className="h-4 w-4" />
-              {t("labels.staging.backToInvoices")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {backToLineItemsButton}
+              <Button variant="outline" onClick={handleClose}>
+                <ArrowLeft className="h-4 w-4" />
+                {t("labels.staging.backToInvoices")}
+              </Button>
+            </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4">{workflowPanels}</div>
-
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
-            {footerActions}
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            {workflowPanels}
+            <LabelChangeOutputTable rows={changeResults} />
           </div>
         </div>
         {auxiliaryDialogs}
@@ -976,13 +1300,17 @@ export function InvoiceStagingWorkflow({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="flex max-h-[88vh] w-full max-w-5xl flex-col gap-4 overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">{stagingHeaderTitle}</DialogTitle>
-            <DialogDescription>{stagingDescription}</DialogDescription>
+            <div className="flex items-start justify-between gap-4 pr-8">
+              <div className="space-y-2">
+                <DialogTitle className="flex items-center gap-2">{stagingHeaderTitle}</DialogTitle>
+                <DialogDescription>{stagingDescription}</DialogDescription>
+              </div>
+              {backToLineItemsButton}
+            </div>
           </DialogHeader>
 
           {workflowPanels}
-
-          <DialogFooter className="sm:justify-between">{footerActions}</DialogFooter>
+          <LabelChangeOutputTable rows={changeResults} />
         </DialogContent>
       </Dialog>
       {auxiliaryDialogs}

@@ -1,5 +1,4 @@
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
-import { createMockObjectId } from "@/lib/vehicles/types";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
@@ -10,7 +9,7 @@ export type RouteVehicleRef = {
   branch?: string;
 };
 
-/** Branch a route belongs to. Drives vehicle/crew scoping and is sent on save. */
+/** Branch a route crew belongs to. Scopes the crew list and is sent on save. */
 export type RouteBranchRef = {
   id: number;
   code: string;
@@ -145,6 +144,8 @@ export type Route = {
   name: string;
   date: string;
   tripNumber: number;
+  branch: RouteBranchRef | null;
+  /** Present on older API rows; route crews no longer store a vehicle. */
   vehicle: RouteVehicleRef;
   employees: RouteEmployeeRef[];
   active: boolean;
@@ -159,7 +160,6 @@ export type RouteFormValues = {
   routeId: string;
   name: string;
   branch: RouteBranchRef;
-  vehicle: RouteVehicleRef;
   employees: RouteEmployeeRef[];
   active: boolean;
   createdBy: string;
@@ -194,7 +194,7 @@ export const DEFAULT_ROUTE_LIST_PARAMS = {
 export const ROUTE_BAR_OR_SEARCH_FIELDS = [
   "name",
   "routeId",
-  "vehicle.name",
+  "branch.code",
   "employees.name",
 ] as const;
 
@@ -236,13 +236,39 @@ export function formatRouteEmployeeNames(employees: RouteEmployeeRef[]): string 
     .join(", ");
 }
 
+/**
+ * Seed a scheduled route crew from a route-crew template. Template members
+ * start as helpers; roles already set on an existing schedule are preserved.
+ */
+export function crewFromRouteGroup(
+  groupEmployees: RouteEmployeeRef[],
+  existing?: RouteEmployeeRef[],
+): RouteEmployeeRef[] {
+  const existingById = new Map((existing ?? []).map((employee) => [employee.id, employee]));
+  return groupEmployees.map((employee) => {
+    const previous = existingById.get(employee.id);
+    if (previous) {
+      return {
+        id: employee.id,
+        name: employee.name,
+        role: previous.role,
+        ...(previous.roles?.length ? { roles: previous.roles } : {}),
+      };
+    }
+    return { id: employee.id, name: employee.name, role: "helper" };
+  });
+}
+
+export function getRouteBranchCode(route: Pick<Route, "branch" | "vehicle">): string {
+  return route.branch?.code?.trim() || route.vehicle.branch?.trim() || "";
+}
+
 export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormValues {
   return {
     id: "",
     routeId: "",
     name: "",
     branch: createEmptyRouteBranchRef(),
-    vehicle: createEmptyVehicleRef(),
     employees: [],
     active: true,
     createdBy,
@@ -253,16 +279,18 @@ export function createEmptyRouteForm(createdBy = DEFAULT_CREATED_BY): RouteFormV
 }
 
 export function routeToFormValues(assignment: Route): RouteFormValues {
-  const branchCode = assignment.vehicle.branch?.trim() ?? "";
+  const fallbackCode = assignment.vehicle.branch?.trim() ?? "";
   return {
     id: assignment.id,
     routeId: assignment.routeId,
     name: assignment.name,
-    // Route has no dedicated branch; seed from the vehicle's branch code and
-    // let the form resolve the id/name from the branch list.
-    branch: { id: 0, code: branchCode, name: "" },
-    vehicle: { ...assignment.vehicle },
-    employees: assignment.employees.map((employee) => ({ ...employee })),
+    branch: assignment.branch?.code.trim()
+      ? { ...assignment.branch }
+      : { id: 0, code: fallbackCode, name: "" },
+    employees: assignment.employees.map((employee) => ({
+      id: employee.id,
+      name: employee.name,
+    })),
     active: assignment.active,
     createdBy: assignment.createdBy,
     createdAt: assignment.createdAt,
@@ -276,46 +304,4 @@ export function areRouteFormValuesEquivalent(
   right: RouteFormValues,
 ): boolean {
   return areFormValuesEquivalent(left, right);
-}
-
-
-export function formValuesToRoute(
-  values: RouteFormValues,
-  createdAt?: string,
-  updatedAt?: string,
-  id?: string,
-  existing?: Pick<Route, "date" | "tripNumber" | "routeId" | "name">,
-): Route {
-  if (!values.vehicle.id.trim()) {
-    throw new Error("A vehicle is required.");
-  }
-
-  if (values.employees.length === 0) {
-    throw new Error("Select at least one employee.");
-  }
-
-  const now = new Date().toISOString();
-
-  return {
-    id: id ?? (values.id.trim() || createMockObjectId()),
-    routeId: existing?.routeId ?? values.routeId.trim(),
-    name: existing?.name ?? values.name.trim(),
-    date: existing?.date ?? "",
-    tripNumber: existing?.tripNumber ?? 0,
-    vehicle: {
-      id: values.vehicle.id.trim(),
-      name: values.vehicle.name.trim(),
-      ...(values.vehicle.branch?.trim() ? { branch: values.vehicle.branch.trim() } : {}),
-    },
-    employees: values.employees.map((employee) => ({
-      id: employee.id,
-      name: employee.name.trim(),
-      role: resolveCrewRole(employee.role),
-    })),
-    active: values.active,
-    createdAt: createdAt ?? (values.createdAt || now),
-    createdBy: values.createdBy.trim() || DEFAULT_CREATED_BY,
-    updatedAt: updatedAt ?? (values.updatedAt || now),
-    updatedBy: values.updatedBy?.trim() || DEFAULT_CREATED_BY,
-  };
 }

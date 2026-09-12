@@ -1,10 +1,12 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { axiosInstance } from "@/lib/api/axios";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { buildApiListQuery, resolveApiListSort } from "@/lib/api/list-query";
 import {
   buildApiFilterNodeFromTableRows,
   buildApiSearchPaginationQuery,
+  buildStripeStyleSearchBody,
   createTextSearchFilter,
   hasListTextSearch,
   isApiSearchFilter,
@@ -17,6 +19,7 @@ import {
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { buildApiAddressPayload, buildApiBranchDto, type ApiAddressPayload } from "@/lib/api/payloads";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
+import { normalizeTransactionPartyAddresses } from "@/lib/customers/api/customers-api";
 import { coerceCustomerTypeFromApi } from "@/lib/customers/customer-type";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER, createRecordId, getCustomerPrimaryCoreAddress, type Customer } from "@/lib/customers/types";
 import { getPhoneAtDisplayIndex, getPrimaryPhoneNumber } from "@/lib/phones/phones";
@@ -24,6 +27,7 @@ import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { expandInvoiceFilterNode } from "@/lib/invoices/invoice-filters";
 import { createInvoiceBarSearchFilterGroup } from "@/lib/invoices/search-fields";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
+import { parseLastSyncedAt } from "@/lib/legacy-sync/last-synced";
 import { formatPickupCommentSummary } from "@/lib/orders/display";
 import {
   createEmptyOrderParty,
@@ -31,6 +35,7 @@ import {
 } from "@/lib/orders/types";
 import {
   computeInvoiceBalance,
+  createInvoiceSearchFilter,
   DEFAULT_INVOICE_LIST_PARAMS,
   getInvoiceBalanceAmount,
   mapPaidRegionToPaymentLocation,
@@ -46,6 +51,10 @@ import {
   type InvoiceLineItemBarcode,
   type InvoiceLineItemFormValues,
   type InvoiceListParams,
+  type LegacyInvoiceSyncPreview,
+  type LegacyInvoiceSyncRequest,
+  type LegacyInvoiceSyncResult,
+  type LegacyInvoiceSyncSummary,
 } from "@/lib/invoices/types";
 import type { TableFilterRowState } from "@/lib/table/filter-builder";
 
@@ -61,6 +70,16 @@ type ApiAddress = {
   country?: string;
   zipcode?: string;
   isPrimary?: boolean;
+  location?: {
+    type?: string;
+    coordinates?: unknown;
+  } | null;
+  verification?: {
+    is_verified?: boolean;
+    isVerified?: boolean;
+    verified_at?: string;
+    verifiedAt?: string;
+  } | null;
 };
 
 type ApiInvoicePhone = {
@@ -76,14 +95,24 @@ type ApiInvoiceParty = {
   phones?: ApiInvoicePhone[];
   address?: ApiAddress;
   addresses?: ApiAddress[];
+  email?: string;
+  IDNumber?: string;
 };
 
 type ApiInvoiceUser = {
-  id?: number;
+  id?: number | string;
   name?: string;
   userName?: string;
   fullName?: string;
+  email?: string;
+  uid?: string;
 };
+
+type ApiInvoiceReceivedBy = ApiInvoiceUser &
+  ApiInvoiceRouteRef & {
+    date?: string;
+    routeType?: string;
+  };
 
 type ApiInvoiceContainer = {
   id?: number;
@@ -117,6 +146,15 @@ type ApiInvoiceBarcodeDelivery = {
   name?: string;
 };
 
+type ApiInvoiceRouteRef = {
+  id?: number | string;
+  name?: string;
+  routeId?: string;
+  route?: ApiInvoiceRouteRef;
+};
+
+type ApiInvoiceBarcodeRoute = ApiInvoiceRouteRef;
+
 type ApiInvoiceBarcode = {
   id?: number | string;
   barcodeId?: number | string;
@@ -124,7 +162,10 @@ type ApiInvoiceBarcode = {
   status?: ApiInvoiceBarcodeStatus;
   container?: ApiInvoiceBarcodeContainer;
   delivery?: ApiInvoiceBarcodeDelivery;
+  route?: ApiInvoiceBarcodeRoute;
   scanDate?: string;
+  createdAt?: string;
+  createdBy?: ApiInvoiceUser;
 };
 
 type ApiInvoiceDetail = {
@@ -136,6 +177,7 @@ type ApiInvoiceDetail = {
   price?: number;
   cost?: number;
   total?: number;
+  barcode?: ApiInvoiceBarcode;
   barcodes?: ApiInvoiceBarcode[];
 };
 
@@ -146,6 +188,7 @@ type ApiInvoice = {
   date?: string;
   createdAt?: string;
   updatedAt?: string;
+  legacySyncedAt?: string;
   paidRegion?: string;
   paidStatus?: string;
   cost?: number;
@@ -155,7 +198,16 @@ type ApiInvoice = {
   branch?: InvoiceBranch;
   user?: ApiInvoiceUser;
   employee?: ApiInvoiceUser;
+  receivedBy?: ApiInvoiceReceivedBy;
+  createdBy?: ApiInvoiceUser;
+  updatedBy?: ApiInvoiceUser;
   container?: ApiInvoiceContainer;
+  officeBranch?: InvoiceBranch;
+  pickupEmployee?: ApiInvoiceUser;
+  pickupSource?: string;
+  route?: ApiInvoiceRouteRef;
+  routeCrew?: ApiInvoiceRouteRef;
+  vehicleRoute?: ApiInvoiceRouteRef;
   pickup?: ApiInvoicePickup;
   comments?: ApiInvoiceComment[];
   sender?: ApiInvoiceParty;
@@ -188,36 +240,26 @@ function readInvoiceCreatedBy(user: unknown): string {
 }
 
 function normalizeApiInvoicePartyAddresses(party: ApiInvoiceParty): OrderParty["addresses"] {
-  const snapshotAddress = party.address;
-  if (!snapshotAddress || typeof snapshotAddress !== "object") {
+  // Prefer the create-time `address` snapshot and keep Google verification/location
+  // when the API round-trips them (same helper pickups use).
+  const snapshotAddresses = normalizeTransactionPartyAddresses(party);
+  if (!snapshotAddresses?.length) {
     return [];
   }
 
-  const addressId = readStringId(snapshotAddress.id) ?? createRecordId();
-  const streetAddress = String(snapshotAddress.address1 ?? "").trim();
-  const apartment = String(snapshotAddress.apartment ?? "").trim();
-  const address2 = String(snapshotAddress.address2 ?? "").trim();
-  const city = String(snapshotAddress.city ?? "").trim();
-  const state = String(snapshotAddress.state ?? "").trim();
-  const zipCode = String(snapshotAddress.zipcode ?? "").trim();
-
-  if (!streetAddress && !apartment && !address2 && !city && !state && !zipCode) {
-    return [];
-  }
-
-  return [
-    {
-      id: addressId,
-      streetAddress,
-      apt: apartment || undefined,
-      crossStreet: address2 || undefined,
-      city,
-      state,
-      provinceCountry: String(snapshotAddress.country ?? "").trim(),
-      zipCode,
-      isPrimary: true,
-    },
-  ];
+  return snapshotAddresses.map((address, index) => ({
+    id: address.id?.trim() || createRecordId(),
+    streetAddress: address.address1,
+    apt: address.apartment || undefined,
+    crossStreet: address.address2 || undefined,
+    city: address.city,
+    state: address.state || undefined,
+    provinceCountry: address.country || undefined,
+    zipCode: address.zipcode || undefined,
+    isPrimary: address.isPrimary || index === 0,
+    location: address.location,
+    verification: address.verification,
+  }));
 }
 
 function normalizeApiInvoiceParty(raw: unknown): OrderParty {
@@ -255,10 +297,15 @@ function normalizeApiInvoiceParty(raw: unknown): OrderParty {
         .filter((phone): phone is NonNullable<typeof phone> => phone != null)
     : [];
 
+  const documentId = String(party.IDNumber ?? "").trim();
+  const email = String(party.email ?? "").trim();
+
   return {
     id,
     clientId: id,
     name: String(party.name ?? "").trim() || "—",
+    documentId: documentId || undefined,
+    email: email || undefined,
     phones,
     addresses,
     orderAddressId: addresses.find((address) => address.isPrimary)?.id ?? addresses[0]?.id ?? id,
@@ -274,9 +321,9 @@ function normalizeApiInvoiceReceiver(item: ApiInvoice): OrderParty | null {
 }
 
 function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
-  if (!Array.isArray(raw)) return [];
+  const entries = Array.isArray(raw) ? raw : raw && typeof raw === "object" ? [raw] : [];
 
-  return raw
+  return entries
     .map((entry): InvoiceLineItemBarcode | null => {
       const barcode = entry as ApiInvoiceBarcode;
       const number = String(barcode.number ?? "").trim();
@@ -285,18 +332,30 @@ function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
       const statusName = String(barcode.status?.name ?? "").trim();
       const containerName = String(barcode.container?.name ?? "").trim();
       const deliveryName = String(barcode.delivery?.name ?? "").trim();
+      const routeName = String(barcode.route?.name ?? "").trim();
       const scanDate = String(barcode.scanDate ?? "").trim();
+      const createdAt = String(barcode.createdAt ?? "").trim();
+      const createdBy = readInvoiceCreatedBy(barcode.createdBy);
 
-      const canonicalBarcodeId =
-        barcode.barcodeId != null
-          ? String(barcode.barcodeId)
-          : barcode.id != null
-            ? String(barcode.id)
+      const objectId =
+        barcode.barcodeId != null && String(barcode.barcodeId).trim()
+          ? String(barcode.barcodeId).trim()
+          : typeof barcode.id === "string" &&
+              /^[a-f\d]{24}$/i.test(barcode.id.trim())
+            ? barcode.id.trim()
+            : undefined;
+      const packageSequence =
+        typeof barcode.id === "number" && Number.isFinite(barcode.id)
+          ? barcode.id
+          : typeof barcode.id === "string" && /^\d+$/.test(barcode.id.trim())
+            ? Number(barcode.id.trim())
             : undefined;
 
       return {
-        id: canonicalBarcodeId ?? createRecordId(),
-        barcodeId: barcode.barcodeId != null ? String(barcode.barcodeId) : undefined,
+        id: objectId || (packageSequence != null ? String(packageSequence) : createRecordId()),
+        barcodeId: objectId,
+        packageSequence:
+          packageSequence != null && Number.isFinite(packageSequence) ? packageSequence : undefined,
         number,
         statusId: typeof barcode.status?.id === "number" ? barcode.status.id : undefined,
         statusName: statusName || undefined,
@@ -304,7 +363,11 @@ function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
         containerName: containerName || undefined,
         deliveryId: barcode.delivery?.id != null ? String(barcode.delivery.id) : undefined,
         deliveryName: deliveryName || undefined,
+        routeId: barcode.route?.id != null ? String(barcode.route.id) : undefined,
+        routeName: routeName || undefined,
         scanDate: scanDate || undefined,
+        createdAt: createdAt || undefined,
+        createdBy: createdBy !== DEFAULT_CREATED_BY ? createdBy : undefined,
       };
     })
     .filter((barcode): barcode is InvoiceLineItemBarcode => barcode != null);
@@ -330,19 +393,32 @@ function normalizeInvoiceLineItems(raw: unknown): InvoiceLineItem[] {
           ? Math.round((lineTotal / quantity) * 100) / 100
           : 0;
     const apiId = readStringId(detail.id);
-    const description = String(detail.description ?? "").trim();
-    const itemName = String(detail.name ?? "").trim() || description || "Line item";
+    // Write path stores catalog FK in `description` and human text in `name`.
+    // Never treat a numeric catalog id as display copy.
+    const rawDescription = String(detail.description ?? "").trim();
+    const catalogItemId = /^\d+$/.test(rawDescription) ? rawDescription : undefined;
+    const freeTextDescription = catalogItemId ? undefined : rawDescription || undefined;
+    const itemName =
+      String(detail.name ?? "").trim() || freeTextDescription || "Line item";
 
     return {
       id: apiId ?? createRecordId(),
       apiId,
+      itemId: catalogItemId,
       itemName,
-      description: description || undefined,
+      description:
+        freeTextDescription && freeTextDescription !== itemName
+          ? freeTextDescription
+          : undefined,
       quantity,
       labelCount: Number(detail.labels ?? 0),
       unitPrice,
       lineTotal,
-      barcodes: normalizeInvoiceBarcodes(detail.barcodes),
+      barcodes: normalizeInvoiceBarcodes(
+        Array.isArray(detail.barcodes) && detail.barcodes.length > 0
+          ? detail.barcodes
+          : detail.barcode,
+      ),
     };
   });
 }
@@ -377,6 +453,114 @@ function normalizeInvoiceComments(raw: unknown): InvoiceComment[] {
     .filter((comment): comment is InvoiceComment => comment != null);
 }
 
+function readInvoiceRouteRef(
+  raw?: ApiInvoiceRouteRef | null,
+): { id?: string; name?: string } {
+  if (!raw || typeof raw !== "object") return {};
+  const id = raw.id != null ? String(raw.id).trim() : "";
+  const name = String(raw.name ?? "").trim();
+  return {
+    ...(id ? { id } : {}),
+    ...(name ? { name } : {}),
+  };
+}
+
+function firstInvoiceRouteRef(
+  ...candidates: Array<ApiInvoiceRouteRef | null | undefined>
+): { id?: string; name?: string } {
+  for (const candidate of candidates) {
+    const ref = readInvoiceRouteRef(candidate);
+    if (ref.id || ref.name) return ref;
+  }
+  return {};
+}
+
+function receivedByLooksLikeDailyRoute(raw?: ApiInvoiceReceivedBy | null): boolean {
+  if (!raw || typeof raw !== "object") return false;
+  if (raw.route && typeof raw.route === "object") return true;
+  if (String(raw.routeType ?? "").trim()) return true;
+  if (String(raw.date ?? "").trim()) return true;
+  const id = raw.id != null ? String(raw.id).trim() : "";
+  return /^[a-f\d]{24}$/i.test(id);
+}
+
+function isInvoiceReceivedByEmpty(raw?: ApiInvoiceReceivedBy | null): boolean {
+  if (raw == null || typeof raw !== "object") return true;
+  const id = raw.id != null ? String(raw.id).trim() : "";
+  const name = String(raw.fullName ?? raw.userName ?? raw.name ?? "").trim();
+  const hasNestedRoute = Boolean(raw.route && typeof raw.route === "object");
+  const hasDate = Boolean(String(raw.date ?? "").trim());
+  const hasRouteType = Boolean(String(raw.routeType ?? "").trim());
+  return !id && !name && !hasNestedRoute && !hasDate && !hasRouteType;
+}
+
+function invoiceUserDisplayName(user?: ApiInvoiceUser | null): string | undefined {
+  if (!user || typeof user !== "object") return undefined;
+  const name = String(user.fullName ?? user.userName ?? user.name ?? "").trim();
+  return name || undefined;
+}
+
+function inferEmployeePickupSource(officeBranch?: InvoiceBranch): Invoice["pickupSource"] {
+  const type = String(officeBranch?.type ?? "").trim().toLowerCase();
+  if (type === "warehouse") return "warehouse";
+  return "office";
+}
+
+function resolveInvoiceReceivedBy(item: ApiInvoice): {
+  pickupSource?: Invoice["pickupSource"];
+  routeId?: string;
+  routeName?: string;
+  routeCrewId?: string;
+  routeCrewName?: string;
+  pickupEmployeeId?: string;
+  pickupEmployeeName?: string;
+} {
+  const receivedBy = item.receivedBy;
+  const receivedByEmpty = isInvoiceReceivedByEmpty(receivedBy);
+  const receivedByIsRoute = !receivedByEmpty && receivedByLooksLikeDailyRoute(receivedBy);
+  const receivedByIsEmployee = !receivedByEmpty && !receivedByIsRoute;
+
+  const dailyRoute = receivedByIsRoute
+    ? firstInvoiceRouteRef(receivedBy, item.vehicleRoute, item.route)
+    : firstInvoiceRouteRef(item.vehicleRoute, item.route);
+  const nestedCrew = firstInvoiceRouteRef(
+    receivedByIsRoute ? receivedBy?.route : undefined,
+    item.routeCrew,
+    item.route?.route,
+    item.vehicleRoute?.route,
+  );
+
+  const legacyEmployee = item.pickupEmployee ?? item.employee;
+  const employeeRaw: ApiInvoiceUser | undefined = receivedByIsEmployee
+    ? receivedBy
+    : receivedByEmpty
+      ? legacyEmployee
+      : undefined;
+
+  const employeeName = invoiceUserDisplayName(employeeRaw);
+  const hasEmployee = Boolean(employeeRaw?.id != null || employeeName);
+  const hasDaily = Boolean(dailyRoute.id || nestedCrew.id || dailyRoute.name);
+
+  // Empty receivedBy → use legacy employee for Received by, even if a leftover route is present.
+  const pickupSource = receivedByIsRoute
+    ? "route"
+    : hasEmployee
+      ? inferEmployeePickupSource(item.officeBranch)
+      : hasDaily
+        ? "route"
+        : undefined;
+
+  return {
+    pickupSource,
+    routeId: dailyRoute.id,
+    routeName: dailyRoute.name,
+    routeCrewId: nestedCrew.id,
+    routeCrewName: nestedCrew.name || dailyRoute.name,
+    pickupEmployeeId: employeeRaw?.id != null ? String(employeeRaw.id) : undefined,
+    pickupEmployeeName: employeeName,
+  };
+}
+
 function normalizeInvoice(raw: unknown): Invoice | null {
   if (!raw || typeof raw !== "object") return null;
 
@@ -387,6 +571,9 @@ function normalizeInvoice(raw: unknown): Invoice | null {
   const paidRegion = String(item.paidRegion ?? "").trim();
   const lineItems = normalizeInvoiceLineItems(item.invoiceDetails);
   const { cost, discount, amountPaid, balance } = normalizeApiInvoiceMoney(item);
+  const receivedBy = resolveInvoiceReceivedBy(item);
+  const officeBranchId = item.officeBranch?.id != null ? String(item.officeBranch.id) : undefined;
+  const officeBranchName = String(item.officeBranch?.name ?? "").trim();
 
   return {
     invoiceId,
@@ -400,6 +587,15 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     cost: cost || undefined,
     branch: item.branch,
     pickupId: item.pickup?.id != null ? String(item.pickup.id) : undefined,
+    pickupSource: receivedBy.pickupSource,
+    officeBranchId,
+    officeBranchName: officeBranchName || undefined,
+    pickupEmployeeId: receivedBy.pickupEmployeeId,
+    pickupEmployeeName: receivedBy.pickupEmployeeName,
+    routeId: receivedBy.routeId,
+    routeName: receivedBy.routeName,
+    routeCrewId: receivedBy.routeCrewId,
+    routeCrewName: receivedBy.routeCrewName,
     sender: normalizeApiInvoiceParty(item.sender),
     receiver: normalizeApiInvoiceReceiver(item),
     lineItems,
@@ -410,8 +606,9 @@ function normalizeInvoice(raw: unknown): Invoice | null {
     amountPaid,
     balance,
     createdAt: String(item.createdAt ?? "").trim(),
-    createdBy: readInvoiceCreatedBy(item.employee ?? item.user),
+    createdBy: readInvoiceCreatedBy(item.createdBy ?? item.user),
     updatedAt: String(item.updatedAt ?? "").trim(),
+    legacySyncedAt: parseLastSyncedAt(item),
   };
 }
 
@@ -491,8 +688,48 @@ function shouldUseInvoiceSearch(params: InvoiceListParams): boolean {
   return hasInvoiceListFilters(params);
 }
 
+/**
+ * Table column ids like `createdBy` are not valid /invoices/search sort fields.
+ * The API only accepts nested paths (`createdBy.name`, `createdBy.id`).
+ */
+const INVOICE_SORT_FIELD_ALIASES: Record<string, string> = {
+  createdBy: "createdBy.name",
+  updatedBy: "updatedBy.name",
+};
+
+function aliasInvoiceSortField(field: string): string {
+  const trimmed = field.trim();
+  return INVOICE_SORT_FIELD_ALIASES[trimmed] ?? trimmed;
+}
+
+function aliasInvoiceSort(sort?: InvoiceListParams["sort"]): InvoiceListParams["sort"] {
+  if (!sort) return sort;
+
+  if (typeof sort === "string") {
+    const aliased = sort
+      .split(",")
+      .map((entry) => {
+        const trimmed = entry.trim();
+        if (!trimmed) return "";
+        const [field, direction] = trimmed.split(":");
+        const mapped = aliasInvoiceSortField(field ?? "");
+        if (!mapped) return "";
+        return direction === "asc" || direction === "desc" ? `${mapped}:${direction}` : mapped;
+      })
+      .filter(Boolean)
+      .join(",");
+    return aliased || undefined;
+  }
+
+  const entries = Array.isArray(sort) ? sort : [sort];
+  return entries.map((entry) => ({
+    ...entry,
+    field: aliasInvoiceSortField(entry.field),
+  }));
+}
+
 function resolveInvoicesSort(params: InvoiceListParams): string | undefined {
-  return resolveApiListSort(params.sort);
+  return resolveApiListSort(aliasInvoiceSort(params.sort) ?? params.sort);
 }
 
 function buildInvoicesQuery(params: InvoiceListParams): string {
@@ -508,7 +745,9 @@ function buildInvoicesQuery(params: InvoiceListParams): string {
 function buildInvoiceSearchBody(params: InvoiceListParams): StripeStyleSearchBody {
   const body: StripeStyleSearchBody = {};
 
-  const sortSpecs = resolveApiSearchSort(params.sort ?? DEFAULT_INVOICE_LIST_PARAMS.sort);
+  const sortSpecs = resolveApiSearchSort(
+    aliasInvoiceSort(params.sort ?? DEFAULT_INVOICE_LIST_PARAMS.sort),
+  );
   if (sortSpecs) {
     body.sort = sortSpecs;
   }
@@ -624,6 +863,153 @@ export async function fetchInvoiceById(invoiceId: string): Promise<Invoice> {
   return invoice;
 }
 
+export type InvoiceBarcodeLookup = {
+  invoiceId: string;
+  invoiceNumber: string;
+  barcode: InvoiceLineItemBarcode;
+};
+
+function findBarcodeOnInvoice(
+  invoice: Invoice,
+  barcodeNumber: string,
+): InvoiceBarcodeLookup | null {
+  const needle = barcodeNumber.trim().toUpperCase();
+  if (!needle) {
+    return null;
+  }
+
+  for (const lineItem of invoice.lineItems) {
+    for (const barcode of lineItem.barcodes ?? []) {
+      if (barcode.number.trim().toUpperCase() === needle) {
+        return {
+          invoiceId: invoice.invoiceId,
+          invoiceNumber: invoice.invoiceNumber,
+          barcode,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+async function loadInvoiceWithBarcodes(invoice: Invoice): Promise<Invoice> {
+  // List payloads often omit nested barcodes even when they exist on the detail.
+  try {
+    return await fetchInvoiceById(invoice.invoiceId);
+  } catch {
+    return invoice;
+  }
+}
+
+/**
+ * Locate an invoice-embedded barcode by its printed number.
+ *
+ * Labels created/managed on invoices often live only under `invoiceDetails`
+ * (not `/barcodes`). Nested barcode-number filters are not reliably supported,
+ * so Label manager can show a barcode while the scanner catalog lookup misses.
+ * Fallback order:
+ * 1. Nested search fields (fast path when the API allows them)
+ * 2. Invoice text search for the barcode number
+ * 3. Walk recent invoices and inspect line-item barcodes (same source as Label manager)
+ */
+export async function findInvoiceBarcodeByNumber(
+  barcodeNumber: string,
+): Promise<InvoiceBarcodeLookup | null> {
+  const trimmed = barcodeNumber.trim();
+  if (!trimmed) return null;
+
+  const candidateFields = [
+    "invoiceDetails.barcodes.number",
+    "barcodes.number",
+    "invoiceDetails.barcode.number",
+  ] as const;
+
+  const paginationQuery = buildApiSearchPaginationQuery({
+    page: 1,
+    limit: 5,
+    offset: 0,
+  });
+
+  for (const field of candidateFields) {
+    try {
+      const response = await apiClient.post<PaginatedApiEnvelope<unknown[]>>(
+        `${API_ENDPOINTS.INVOICES}/search?${paginationQuery}`,
+        buildStripeStyleSearchBody({
+          filterGroups: [
+            {
+              operator: "and",
+              filters: [{ field, operator: "eq", value: trimmed }],
+            },
+          ],
+        }),
+      );
+
+      const items = Array.isArray(response.data) ? response.data : [];
+      for (const entry of items) {
+        const summary = normalizeInvoice(entry);
+        if (!summary) continue;
+
+        const invoice = await loadInvoiceWithBarcodes(summary);
+        const match = findBarcodeOnInvoice(invoice, trimmed);
+        if (match) {
+          return match;
+        }
+      }
+    } catch {
+      // Field not allowed or search failed — try the next candidate.
+    }
+  }
+
+  try {
+    const textSearch = await fetchInvoices({
+      page: 1,
+      limit: 25,
+      search: createInvoiceSearchFilter(trimmed),
+    });
+    for (const summary of textSearch.items) {
+      const invoice = await loadInvoiceWithBarcodes(summary);
+      const match = findBarcodeOnInvoice(invoice, trimmed);
+      if (match) {
+        return match;
+      }
+    }
+  } catch {
+    // Fall through to recent-invoice walk.
+  }
+
+  const pageLimit = 20;
+  const maxPages = 10;
+  for (let page = 1; page <= maxPages; page += 1) {
+    let list: Awaited<ReturnType<typeof fetchInvoices>>;
+    try {
+      list = await fetchInvoices({
+        page,
+        limit: pageLimit,
+        sort: DEFAULT_INVOICE_LIST_PARAMS.sort,
+      });
+    } catch {
+      break;
+    }
+
+    const detailedInvoices = await Promise.all(
+      list.items.map((invoice) => loadInvoiceWithBarcodes(invoice)),
+    );
+    for (const invoice of detailedInvoices) {
+      const match = findBarcodeOnInvoice(invoice, trimmed);
+      if (match) {
+        return match;
+      }
+    }
+
+    if (list.items.length < pageLimit || page * pageLimit >= list.total) {
+      break;
+    }
+  }
+
+  return null;
+}
+
 /** Raw invoice record from `GET /invoices/{id}` — suitable for round-trip `PUT`. */
 export async function fetchInvoiceApiRecord(invoiceId: string): Promise<ApiInvoice> {
   const id = parseInvoicePathId(invoiceId);
@@ -635,16 +1021,46 @@ export async function fetchInvoiceApiRecord(invoiceId: string): Promise<ApiInvoi
 }
 
 export type InvoiceEmbeddedBarcodePatch = {
-  barcodeId: number;
+  /** ObjectID `barcodeId`, or legacy numeric package-sequence id as string. */
+  barcodeId: string;
   number: string;
   status: { id: number; name: string };
   container?: { id: number; name: string };
+  route?: { id: string; name: string };
 };
 
-function readInvoiceBarcodeId(value: unknown): number | undefined {
-  if (value == null) return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
+function listInvoiceDetailBarcodes(detail: ApiInvoiceDetail): ApiInvoiceBarcode[] {
+  if (Array.isArray(detail.barcodes) && detail.barcodes.length > 0) {
+    return detail.barcodes;
+  }
+  if (detail.barcode && typeof detail.barcode === "object") {
+    return [detail.barcode];
+  }
+  return [];
+}
+
+function barcodeMatchesEmbeddedPatch(
+  barcode: ApiInvoiceBarcode,
+  patch: Pick<InvoiceEmbeddedBarcodePatch, "barcodeId" | "number">,
+): boolean {
+  const target = patch.barcodeId.trim();
+  const patchNumber = patch.number.trim();
+
+  if (target) {
+    if (barcode.barcodeId != null && String(barcode.barcodeId).trim() === target) {
+      return true;
+    }
+    if (barcode.id != null && String(barcode.id).trim() === target) {
+      return true;
+    }
+  }
+
+  // Last resort: human-readable number (print/report identity when ObjectIDs diverge).
+  if (patchNumber && String(barcode.number ?? "").trim() === patchNumber) {
+    return true;
+  }
+
+  return false;
 }
 
 /** Update barcodes nested under `invoiceDetails` via `PUT /invoices/{id}`. */
@@ -655,24 +1071,26 @@ export async function patchInvoiceEmbeddedBarcodes(
   if (patches.length === 0) return;
 
   const invoice = await fetchInvoiceApiRecord(invoiceId);
-  const patchById = new Map(patches.map((patch) => [patch.barcodeId, patch]));
+  const remaining = [...patches];
   let matched = 0;
 
   for (const detail of invoice.invoiceDetails ?? []) {
-    for (const barcode of detail.barcodes ?? []) {
-      const numericId = readInvoiceBarcodeId(barcode.id);
-      if (numericId == null) continue;
+    for (const barcode of listInvoiceDetailBarcodes(detail)) {
+      const patchIndex = remaining.findIndex((patch) => barcodeMatchesEmbeddedPatch(barcode, patch));
+      if (patchIndex < 0) continue;
 
-      const patch = patchById.get(numericId);
-      if (!patch) continue;
-
+      const patch = remaining[patchIndex]!;
       barcode.number = patch.number;
       barcode.status = patch.status;
       if (patch.container) {
         barcode.container = patch.container;
       }
+      if (patch.route) {
+        barcode.route = patch.route;
+      }
 
       matched += 1;
+      remaining.splice(patchIndex, 1);
     }
   }
 
@@ -689,13 +1107,76 @@ export async function patchInvoiceEmbeddedBarcodes(
   assertMutationSuccess(response, "Unable to update invoice barcodes.");
 }
 
+/**
+ * Remove nested barcodes from an invoice by ObjectID / package-sequence id,
+ * then persist via `PUT /invoices/{id}`.
+ */
+export async function removeInvoiceEmbeddedBarcodes(
+  invoiceId: string,
+  barcodeIds: string[],
+): Promise<number> {
+  const targets = new Set(barcodeIds.map((id) => id.trim()).filter(Boolean));
+  if (targets.size === 0) return 0;
+
+  const invoice = await fetchInvoiceApiRecord(invoiceId);
+  let removed = 0;
+
+  for (const detail of invoice.invoiceDetails ?? []) {
+    const list = listInvoiceDetailBarcodes(detail);
+    if (list.length === 0) continue;
+
+    const kept: ApiInvoiceBarcode[] = [];
+    for (const barcode of list) {
+      const objectId =
+        barcode.barcodeId != null && String(barcode.barcodeId).trim()
+          ? String(barcode.barcodeId).trim()
+          : "";
+      const packageId = barcode.id != null ? String(barcode.id).trim() : "";
+      const hit =
+        (objectId && targets.has(objectId)) ||
+        (packageId && targets.has(packageId)) ||
+        (barcode.number != null && targets.has(String(barcode.number).trim()));
+
+      if (hit) {
+        removed += 1;
+        continue;
+      }
+      kept.push(barcode);
+    }
+
+    if (Array.isArray(detail.barcodes)) {
+      detail.barcodes = kept;
+    }
+    if (detail.barcode && !kept.includes(detail.barcode)) {
+      detail.barcode = kept[0];
+    }
+  }
+
+  if (removed === 0) return 0;
+
+  const id = parseInvoicePathId(invoiceId);
+  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.INVOICES}/${id}`,
+    invoice,
+  );
+  assertMutationSuccess(response, "Unable to remove invoice barcodes.");
+  return removed;
+}
+
+export type InvoiceWriteEmployeeRef = {
+  id: number;
+  name: string;
+  userName?: string;
+  fullName?: string;
+};
+
+export type InvoiceWriteRouteRef = {
+  id: string;
+  name: string;
+};
+
 export type InvoiceWriteContext = {
-  employee: {
-    id: number;
-    name: string;
-    userName?: string;
-    fullName?: string;
-  };
+  employee?: InvoiceWriteEmployeeRef;
   branch: InvoiceBranch;
   container: {
     id: number;
@@ -703,6 +1184,13 @@ export type InvoiceWriteContext = {
   };
   incomeStatement?: {
     id: number;
+  };
+  pickupAssignment?: {
+    source: InvoiceFormValues["pickupSource"];
+    dailyRoute?: InvoiceWriteRouteRef;
+    routeCrew?: InvoiceWriteRouteRef;
+    pickupEmployee?: InvoiceWriteEmployeeRef;
+    officeBranch?: InvoiceBranch;
   };
 };
 
@@ -732,6 +1220,16 @@ type ApiInvoiceDetailWriteRef = {
   total: number;
 };
 
+type ApiInvoiceRouteWriteRef = {
+  id: string;
+  name: string;
+  route?: { id: string; name: string };
+};
+
+type ApiInvoiceReceivedByWrite =
+  | InvoiceWriteEmployeeRef
+  | (InvoiceWriteRouteRef & { route?: InvoiceWriteRouteRef });
+
 type ApiInvoiceWritePayload = {
   number: string;
   date: string;
@@ -744,11 +1242,16 @@ type ApiInvoiceWritePayload = {
   surcharge: number;
   paidRegion: string;
   paidStatus: string;
-  employee: InvoiceWriteContext["employee"];
+  employee?: InvoiceWriteEmployeeRef | null;
+  receivedBy?: ApiInvoiceReceivedByWrite | null;
   container: InvoiceWriteContext["container"];
   sender: ApiInvoiceCustomerWriteRef;
   receiver?: ApiInvoiceCustomerWriteRef;
   pickup?: { id: string | number };
+  route?: ApiInvoiceRouteWriteRef | null;
+  routeCrew?: InvoiceWriteRouteRef | null;
+  pickupEmployee?: InvoiceWriteEmployeeRef | null;
+  officeBranch?: ReturnType<typeof buildApiBranchDto> | null;
   invoiceDetails: ApiInvoiceDetailWriteRef[];
   isVoid?: boolean;
 };
@@ -826,6 +1329,69 @@ function buildInvoiceDetailWriteRef(
   return detail;
 }
 
+function buildInvoiceEmployeeWriteRef(employee: InvoiceWriteEmployeeRef): InvoiceWriteEmployeeRef {
+  return {
+    id: employee.id,
+    name: employee.name.trim() || DEFAULT_CREATED_BY,
+    ...(employee.userName?.trim() ? { userName: employee.userName.trim() } : {}),
+    ...(employee.fullName?.trim() ? { fullName: employee.fullName.trim() } : {}),
+  };
+}
+
+function applyInvoicePickupAssignment(
+  payload: ApiInvoiceWritePayload,
+  assignment: InvoiceWriteContext["pickupAssignment"],
+  isUpdate: boolean,
+) {
+  if (!assignment) return;
+
+  if (assignment.source === "route") {
+    const dailyRoute = assignment.dailyRoute;
+    const routeCrew = assignment.routeCrew;
+    const dailyRouteRef = dailyRoute
+      ? {
+          id: dailyRoute.id,
+          name: dailyRoute.name.trim() || routeCrew?.name.trim() || dailyRoute.id,
+          ...(routeCrew
+            ? { route: { id: routeCrew.id, name: routeCrew.name.trim() || routeCrew.id } }
+            : {}),
+        }
+      : null;
+
+    payload.receivedBy = dailyRouteRef;
+    payload.route = dailyRouteRef;
+    payload.routeCrew = routeCrew
+      ? { id: routeCrew.id, name: routeCrew.name.trim() || routeCrew.id }
+      : isUpdate
+        ? null
+        : undefined;
+
+    if (isUpdate) {
+      payload.employee = null;
+      payload.pickupEmployee = null;
+      payload.officeBranch = null;
+    }
+    return;
+  }
+
+  const employee = assignment.pickupEmployee
+    ? buildInvoiceEmployeeWriteRef(assignment.pickupEmployee)
+    : null;
+  payload.receivedBy = employee;
+  payload.employee = employee;
+  payload.pickupEmployee = employee;
+  payload.officeBranch = assignment.officeBranch
+    ? buildApiBranchDto(assignment.officeBranch)
+    : isUpdate
+      ? null
+      : undefined;
+
+  if (isUpdate) {
+    payload.route = null;
+    payload.routeCrew = null;
+  }
+}
+
 function deriveInvoicePaidStatus(cost: number, discount: number, payment: number, balance: number): string {
   if (payment <= 0) return "UNPAID";
   if (balance <= 0 || payment >= Math.max(0, cost - discount)) return "PAID";
@@ -876,7 +1442,10 @@ function buildInvoiceWritePayload(
     throw new Error("Amount paid must be 0 or greater.");
   }
 
-  const balance = Math.max(0, computeInvoiceBalance(cost, discount, payment));
+  const balance = computeInvoiceBalance(cost, discount, payment);
+  if (balance < 0) {
+    throw new Error("Balance cannot be negative.");
+  }
 
   const payload: ApiInvoiceWritePayload = {
     number: invoiceNumber,
@@ -889,12 +1458,6 @@ function buildInvoiceWritePayload(
     surcharge: 0,
     paidRegion: mapPaymentLocationToPaidRegion(values.paymentLocation),
     paidStatus: deriveInvoicePaidStatus(cost, discount, payment, balance),
-    employee: {
-      id: context.employee.id,
-      name: context.employee.name.trim() || DEFAULT_CREATED_BY,
-      ...(context.employee.userName?.trim() ? { userName: context.employee.userName.trim() } : {}),
-      ...(context.employee.fullName?.trim() ? { fullName: context.employee.fullName.trim() } : {}),
-    },
     container: {
       id: context.container.id,
       name: context.container.name.trim() || String(context.container.id),
@@ -902,6 +1465,12 @@ function buildInvoiceWritePayload(
     sender: buildInvoiceCustomerWriteRef(values.sender, CUSTOMER_TYPE_SENDER),
     invoiceDetails,
   };
+
+  if (context.employee) {
+    payload.employee = buildInvoiceEmployeeWriteRef(context.employee);
+  }
+
+  applyInvoicePickupAssignment(payload, context.pickupAssignment, Boolean(options.isUpdate));
 
   if (incomeStatementId > 0) {
     payload.incomeStatement = { id: incomeStatementId };
@@ -988,4 +1557,65 @@ export async function deleteInvoice(invoiceId: string): Promise<void> {
 
 export async function deleteInvoices(invoiceIds: string[]): Promise<void> {
   await Promise.all(invoiceIds.map((invoiceId) => deleteInvoice(invoiceId)));
+}
+
+function normalizeLegacyInvoiceSyncSummary(raw: unknown): LegacyInvoiceSyncSummary {
+  if (!raw || typeof raw !== "object") {
+    return { imported: 0, updated: 0, skipped: 0, total: 0, processed: 0, start: 0, nextStart: 0, limit: 0 };
+  }
+
+  const item = raw as Record<string, unknown>;
+
+  return {
+    imported: Number(item.imported ?? 0),
+    updated: Number(item.updated ?? 0),
+    skipped: Number(item.skipped ?? 0),
+    total: Number(item.total ?? 0),
+    processed: Number(item.processed ?? 0),
+    start: Number(item.start ?? 0),
+    nextStart: Number(item.nextStart ?? 0),
+    limit: Number(item.limit ?? 0),
+    lastSyncedAt: parseLastSyncedAt(raw),
+  };
+}
+
+function normalizeLegacyInvoiceSyncPreview(raw: unknown): LegacyInvoiceSyncPreview {
+  if (!raw || typeof raw !== "object") {
+    return { total: 0 };
+  }
+
+  const item = raw as Record<string, unknown>;
+  return { total: Number(item.total ?? 0), lastSyncedAt: parseLastSyncedAt(raw) };
+}
+
+export async function previewLegacyInvoiceSync(): Promise<LegacyInvoiceSyncPreview> {
+  const response = await axiosInstance.get<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.INVOICES}/legacy-sync/preview`,
+    { useDirectApi: true },
+  );
+
+  assertMutationSuccess(response.data, "Unable to preview legacy invoice sync.");
+
+  return normalizeLegacyInvoiceSyncPreview(response.data.data);
+}
+
+export async function syncLegacyInvoices(
+  request: LegacyInvoiceSyncRequest = {},
+): Promise<LegacyInvoiceSyncResult> {
+  const params = new URLSearchParams();
+  if (request.start != null) params.set("start", String(request.start));
+  if (request.limit != null) params.set("limit", String(request.limit));
+  const query = params.toString();
+  const response = await axiosInstance.post<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.INVOICES}/legacy-sync${query ? `?${query}` : ""}`,
+    undefined,
+    { useDirectApi: true },
+  );
+
+  assertMutationSuccess(response.data, "Unable to sync legacy invoices.");
+
+  return {
+    message: response.data.message?.trim() || "Legacy invoices synced.",
+    summary: normalizeLegacyInvoiceSyncSummary(response.data.data),
+  };
 }

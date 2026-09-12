@@ -7,11 +7,32 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   step: 1 | 2;
+  appearance?: "default" | "phone";
 };
 
-export function TransactionWizardStepper({ step }: Props) {
+export function TransactionWizardStepper({ step, appearance = "default" }: Props) {
   const { t } = useTranslation();
   const stepOneComplete = step === 2;
+  const currentStepLabel = step === 1
+    ? t("accounting.dailyIncome.wizard.steps.selectType")
+    : t("accounting.dailyIncome.wizard.steps.enterDetails");
+
+  if (appearance === "phone") {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 text-sm font-semibold text-foreground">{currentStepLabel}</p>
+          <p className="shrink-0 text-sm text-muted-foreground">Step {step} of 2</p>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-blue-100">
+          <div
+            className="h-full rounded-full bg-primary transition-[width]"
+            style={{ width: step === 1 ? "50%" : "100%" }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-3 px-1">

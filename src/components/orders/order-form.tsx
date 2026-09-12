@@ -26,6 +26,7 @@ import { OrderCommentsEditor } from "@/components/orders/order-comments-editor";
 import { SenderOrderHistorySection } from "@/components/orders/sender-order-history-section";
 import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
 import {
   useCreateCustomer,
   useEnsureCustomerDetail,
@@ -46,11 +47,13 @@ import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import {
   createEmptyOrderForm,
   customerHasUnverifiedAddressAtIndex,
+  getCustomerContentAddresses,
   getInitialOrderPartyAddressIndex,
+  hasDuplicateOrderCommentItems,
+  isOrderCommentComplete,
   isOrderPartyAddressChosen,
   rematchOrderPartyAddressIndex,
   resetOrderFormForNextEntry,
-  resolveOrderPartyAddressIndex,
   resolveSelectedOrderPartyAddressIndex,
   type OrderFormSubmitResult,
   type OrderFormValues,
@@ -73,7 +76,28 @@ type PartySide = "sender" | "receiver";
 type CustomerDialogState = {
   side: PartySide;
   mode: "add" | "edit";
+  customer: Customer | null;
+  startWithNewAddress?: boolean;
 };
+
+function resolveAddedAddressIndex(
+  previous: Pick<Customer, "addresses">,
+  next: Pick<Customer, "addresses">,
+): number {
+  const previousIds = new Set(
+    getCustomerContentAddresses(previous)
+      .map((address) => address.id?.trim())
+      .filter((id): id is string => Boolean(id)),
+  );
+  const nextAddresses = getCustomerContentAddresses(next);
+  const addedIndex = nextAddresses.findIndex((address) => {
+    const id = address.id?.trim();
+    if (!id) return false;
+    return !previousIds.has(id);
+  });
+  if (addedIndex >= 0) return addedIndex;
+  return Math.max(nextAddresses.length - 1, 0);
+}
 
 function PartyFieldActions({
   hasSelection,
@@ -143,6 +167,52 @@ export function OrderForm({
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
   const [isLoadingEditCustomer, setIsLoadingEditCustomer] = useState(false);
   const handleEnterNavigation = useFormEnterNavigation();
+  const { markPendingPartyEdit, markPendingPartyAdd } = useApplyCustomerOnTabReturn(
+    (side, customer, { mode }) => {
+      setValues((current) => {
+        if (side === "sender") {
+          const currentId = current.senderId?.trim() || current.sender?.id?.trim() || "";
+          // Only skip when a different customer is already selected. An empty
+          // sender (e.g. after a parent re-render reset) must still accept the
+          // customer we just finished editing.
+          if (mode === "edit" && currentId && currentId !== customer.id) {
+            return current;
+          }
+          return {
+            ...current,
+            senderId: customer.id,
+            sender: customer,
+            senderAddressIndex:
+              mode === "edit"
+                ? rematchOrderPartyAddressIndex(
+                    current.sender,
+                    current.senderAddressIndex,
+                    customer,
+                  )
+                : getInitialOrderPartyAddressIndex(customer),
+          };
+        }
+        const currentId = current.receiverId?.trim() || current.receiver?.id?.trim() || "";
+        if (mode === "edit" && currentId && currentId !== customer.id) {
+          return current;
+        }
+        return {
+          ...current,
+          receiverId: customer.id,
+          receiver: customer,
+          receiverAddressIndex:
+            mode === "edit"
+              ? rematchOrderPartyAddressIndex(
+                  current.receiver,
+                  current.receiverAddressIndex,
+                  customer,
+                )
+              : getInitialOrderPartyAddressIndex(customer),
+        };
+      });
+      setFormError(null);
+    },
+  );
   const isSavingCustomer =
     createCustomerMutation.isPending ||
     updateCustomerMutation.isPending ||
@@ -181,23 +251,20 @@ export function OrderForm({
     setFormError(null);
   }
 
-  const dialogCustomer =
-    customerDialog?.side === "sender"
-      ? values.sender
-      : customerDialog?.side === "receiver"
-        ? values.receiver
-        : null;
+  const dialogCustomer = customerDialog?.customer ?? null;
 
   function openAddCustomer(side: PartySide) {
     const isReceiver = side === "receiver";
+    const partyCustomerType = isReceiver ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER;
     // On desktop, open the customer add form in its own workspace tab (party type locked);
     // mobile has no tab bar, so keep the inline dialog.
     if (isDesktopTabs) {
+      markPendingPartyAdd(side, partyCustomerType);
       openFormTab({
         feature: "customers",
         baseHref: "/customers",
         mode: "add",
-        customerType: isReceiver ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+        customerType: partyCustomerType,
         label: isReceiver
           ? t("orders.form.partyActions.addReceiver")
           : t("orders.form.partyActions.addSender"),
@@ -205,12 +272,28 @@ export function OrderForm({
       return;
     }
     setCustomerFormError(null);
-    setCustomerDialog({ side, mode: "add" });
+    setCustomerDialog({ side, mode: "add", customer: null });
   }
 
   async function openEditCustomer(side: PartySide) {
     const current = side === "sender" ? values.sender : values.receiver;
     if (!current?.id) return;
+
+    if (isDesktopTabs) {
+      markPendingPartyEdit(side, current.id);
+      openFormTab({
+        feature: "customers",
+        baseHref: "/customers",
+        mode: "edit",
+        entityId: current.id,
+        customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+        label:
+          side === "receiver"
+            ? t("orders.form.partyActions.editReceiver")
+            : t("orders.form.partyActions.editSender"),
+      });
+      return;
+    }
 
     setCustomerFormError(null);
     setIsLoadingEditCustomer(true);
@@ -243,7 +326,28 @@ export function OrderForm({
           ),
         };
       });
-      setCustomerDialog({ side, mode: "edit" });
+      setCustomerDialog({ side, mode: "edit", customer: fullCustomer });
+    } catch {
+      setCustomerFormError(t("common.errors.fallback"));
+    } finally {
+      setIsLoadingEditCustomer(false);
+    }
+  }
+
+  async function openAddAddress(side: PartySide, customer: Customer) {
+    if (!customer.id) return;
+
+    setCustomerFormError(null);
+    setIsLoadingEditCustomer(true);
+
+    try {
+      const fullCustomer = await ensureCustomerDetail(customer.id);
+      setCustomerDialog({
+        side,
+        mode: "edit",
+        customer: fullCustomer,
+        startWithNewAddress: true,
+      });
     } catch {
       setCustomerFormError(t("common.errors.fallback"));
     } finally {
@@ -257,32 +361,42 @@ export function OrderForm({
   }
 
   // Newly added customers behave like a fresh selection (unset when multi-address);
-  // edits keep the previously chosen address when it is still valid.
-  function nextPartyAddressIndex(
+  // edits rematch the previously chosen address when it is still present.
+  function applyCustomerToSide(
+    side: PartySide,
     customer: Customer,
     mode: "add" | "edit",
-    currentIndex: number,
-  ): number {
-    if (mode === "edit" && currentIndex >= 0) {
-      return resolveOrderPartyAddressIndex(customer, currentIndex);
-    }
-    return getInitialOrderPartyAddressIndex(customer);
-  }
-
-  function applyCustomerToSide(side: PartySide, customer: Customer, mode: "add" | "edit") {
+    addressIndex?: number,
+  ) {
     if (side === "sender") {
       setValues((current) => ({
         ...current,
         senderId: customer.id,
         sender: customer,
-        senderAddressIndex: nextPartyAddressIndex(customer, mode, current.senderAddressIndex),
+        senderAddressIndex:
+          addressIndex ??
+          (mode === "edit"
+            ? rematchOrderPartyAddressIndex(
+                current.sender,
+                current.senderAddressIndex,
+                customer,
+              )
+            : getInitialOrderPartyAddressIndex(customer)),
       }));
     } else {
       setValues((current) => ({
         ...current,
         receiverId: customer.id,
         receiver: customer,
-        receiverAddressIndex: nextPartyAddressIndex(customer, mode, current.receiverAddressIndex),
+        receiverAddressIndex:
+          addressIndex ??
+          (mode === "edit"
+            ? rematchOrderPartyAddressIndex(
+                current.receiver,
+                current.receiverAddressIndex,
+                customer,
+              )
+            : getInitialOrderPartyAddressIndex(customer)),
       }));
     }
     setFormError(null);
@@ -312,7 +426,11 @@ export function OrderForm({
         notifyAdded(t("customers.entity"), customer.name);
       }
 
-      applyCustomerToSide(customerDialog.side, customer, customerDialog.mode);
+      const addedAddressIndex =
+        customerDialog.startWithNewAddress && dialogCustomer
+          ? resolveAddedAddressIndex(dialogCustomer, customer)
+          : undefined;
+      applyCustomerToSide(customerDialog.side, customer, customerDialog.mode, addedAddressIndex);
       closeCustomerDialog();
     } catch (mutationError) {
       setCustomerFormError(
@@ -334,8 +452,8 @@ export function OrderForm({
 
   const hasValidDate = Boolean(values.date.trim()) && !Number.isNaN(new Date(values.date).getTime());
 
-  // The single reason the order can't be saved yet, evaluated in field order:
-  // pickup date → sender → sender address → verified sender → receiver address → comment.
+  // The single reason the appointment can't be saved yet, evaluated in field order:
+  // appointment date → sender → sender address → verified sender → receiver address → comment.
   const blockReason: string | null = (() => {
     if (!hasValidDate) {
       return t("orders.form.validation.pickupDateRequired");
@@ -352,8 +470,11 @@ export function OrderForm({
     if (values.receiver && !isOrderPartyAddressChosen(values.receiver, values.receiverAddressIndex)) {
       return t("orders.form.validation.receiverAddressRequired");
     }
-    if (values.comments.length === 0) {
+    if (!values.comments.some(isOrderCommentComplete)) {
       return t("orders.form.validation.commentRequired");
+    }
+    if (hasDuplicateOrderCommentItems(values.comments)) {
+      return t("orders.form.validation.duplicateCommentItem");
     }
     return null;
   })();
@@ -409,6 +530,7 @@ export function OrderForm({
                   onValueChange={(next) => updateField("branchId", Number(next))}
                   searchPlaceholder={t("orders.form.placeholders.searchBranches")}
                   required
+                  mobileSheet
                   options={branches.map((branch) => ({
                     value: String(branch.id),
                     label: `${branch.name} · ${branch.code}`,
@@ -424,6 +546,7 @@ export function OrderForm({
                   onValueChange={(next) => updateField("employeeId", next ? Number(next) : "")}
                   placeholder={t("orders.form.fields.noEmployee")}
                   searchPlaceholder={t("orders.form.placeholders.searchEmployees")}
+                  mobileSheet
                   options={[
                     { value: "", label: t("orders.form.fields.noEmployee") },
                     ...employees.map((employee) => ({
@@ -434,7 +557,7 @@ export function OrderForm({
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="hidden space-y-1 md:block">
                 <Label htmlFor="sectorId">{t("orders.form.fields.sector")}</Label>
                 <Input
                   id="sectorId"
@@ -470,6 +593,7 @@ export function OrderForm({
               value={values.senderId}
               selectedCustomer={values.sender}
               onValueChange={updateSender}
+              onAddAddress={(customer) => void openAddAddress("sender", customer)}
               placeholder={t("orders.form.placeholders.selectSender")}
               required
               showAddressLabels={false}
@@ -504,7 +628,10 @@ export function OrderForm({
               value={values.receiverId}
               selectedCustomer={values.receiver}
               onValueChange={updateReceiver}
+              onAddAddress={(customer) => void openAddAddress("receiver", customer)}
               placeholder={t("orders.form.placeholders.noReceiver")}
+              pickerTitle={t("orders.form.placeholders.selectReceiver")}
+              searchPlaceholder={t("orders.form.placeholders.selectReceiver")}
               showAddressLabels={false}
             />
             {values.receiver && isOrderPartyAddressChosen(values.receiver, values.receiverAddressIndex) ? (
@@ -564,7 +691,7 @@ export function OrderForm({
           </DialogHeader>
           {customerDialog ? (
             <CustomerForm
-              key={`${customerDialog.side}-${customerDialog.mode}-${dialogCustomer?.id ?? "new"}`}
+              key={`${customerDialog.side}-${customerDialog.mode}-${dialogCustomer?.id ?? "new"}-${customerDialog.startWithNewAddress ? "new-address" : "edit"}`}
               initialValues={
                 customerDialog.mode === "edit" && dialogCustomer
                   ? customerToFormValues(dialogCustomer)
@@ -585,6 +712,7 @@ export function OrderForm({
               isSubmitting={isSavingCustomer}
               externalError={customerFormError}
               lockCustomerType
+              startWithNewAddress={customerDialog.startWithNewAddress}
               onSubmit={handleCustomerSubmit}
               onCancel={closeCustomerDialog}
             />

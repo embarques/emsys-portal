@@ -58,12 +58,17 @@ export const WORKSPACE_TAB_SECTION_COLORS: Record<WorkspaceTabSection, string> =
 const NAV_LABEL_TO_SECTION: Record<string, WorkspaceTabSection> = {
   "navigation.items.dashboard": "dashboard",
   "navigation.items.customers": "customers",
-  "navigation.items.orderManager": "pickups",
-  "navigation.submenus.invoices": "invoices",
+  "navigation.items.orders": "pickups",
+  "navigation.items.invoices": "invoices",
+  "navigation.items.items": "invoices",
+  "navigation.items.containers": "invoices",
+  "navigation.submenus.routes": "pickups",
   "navigation.submenus.barcodeManager": "barcodes",
   "navigation.submenus.inventory": "inventory",
   "navigation.items.vehicles": "vehicles",
   "navigation.groups.accounting": "accounting",
+  "navigation.items.reports": "insights",
+  "navigation.items.analytics": "insights",
   "navigation.groups.insights": "insights",
   "navigation.groups.admin": "admin",
 };
@@ -76,13 +81,14 @@ const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
   customers: "customers",
   orders: "pickups",
   "pickup-routes": "pickups",
-  // Route templates are opened from Order Manager (pickup route create flow).
+  "daily-routes": "pickups",
+  // Route templates are opened from the Routes → Daily routes create flow.
   routes: "pickups",
   invoices: "invoices",
   "invoice-item-staging": "invoices",
   items: "invoices",
   containers: "invoices",
-  "delivery-routes": "invoices",
+  "delivery-routes": "pickups",
   barcodes: "barcodes",
   "label-updater": "barcodes",
   vehicles: "vehicles",
@@ -95,7 +101,7 @@ const WORKSPACE_TAB_FEATURE_SECTIONS: Record<string, WorkspaceTabSection> = {
 
 /** Extra list/map routes not present as nav leaves (or opened outside the sidebar). */
 const WORKSPACE_TAB_PATH_SECTION_EXTRAS: Record<string, WorkspaceTabSection> = {
-  "/orders/map": "pickups",
+  "/appointments/map": "pickups",
   "/inventory": "inventory",
   "/routes": "pickups",
 };

@@ -5,6 +5,10 @@ import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filte
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
+  CUSTOMER_TYPE_RECEIVER,
+  CUSTOMER_TYPE_SENDER,
+} from "@/lib/customers/customer-type";
+import {
   createRecordId,
   getCustomerAddresses,
   getCustomerPhones,
@@ -43,9 +47,21 @@ export function isInvoiceDropoffSource(source: InvoicePickupSource): boolean {
 }
 
 export type InvoiceLineItemBarcode = {
+  /**
+   * Stable UI / map key. Prefers ObjectID `barcodeId`, then legacy numeric `id`
+   * (package sequence), then a generated local id.
+   */
   id: string;
-  /** Canonical `/barcodes` id when the API exposes it separately from the embedded record id. */
+  /**
+   * Unique ObjectID for the barcode document / report lookup
+   * (`POST /reports/labels` with `collection=barcodes`, `lookup_field=id`).
+   */
   barcodeId?: string;
+  /**
+   * Package sequence on the invoice line (`id` in the embedded API model).
+   * Not unique across invoices — do not use for print selection.
+   */
+  packageSequence?: number;
   number: string;
   statusId?: number;
   statusName?: string;
@@ -53,7 +69,11 @@ export type InvoiceLineItemBarcode = {
   containerName?: string;
   deliveryId?: string;
   deliveryName?: string;
+  routeId?: string;
+  routeName?: string;
   scanDate?: string;
+  createdAt?: string;
+  createdBy?: string;
 };
 
 export type InvoiceLineItem = {
@@ -132,15 +152,19 @@ export type Invoice = {
   containerId: string;
   containerName?: string;
   paymentLocation: InvoicePaymentLocation;
-  /** Linked scheduled pickup route id (`vehicle-routes` with `routeType: pickup`). */
+  /** Daily pickup route (`vehicle-routes`) when `receivedBy` is a route. */
   routeId?: string;
   routeName?: string;
+  /** Nested crew on the daily route — shown in the Received by column. */
+  routeCrewId?: string;
+  routeCrewName?: string;
   /** Warehouse/office branch when the pickup was created in-house instead of on a route. */
   officeBranchId?: string;
   officeBranchName?: string;
-  /** Employee who created the pickup when `officeBranchId` is set. */
+  /** Employee who received the merchandise when `receivedBy` is an employee. */
   pickupEmployeeId?: string;
   pickupEmployeeName?: string;
+  /** Frontend-only discriminator derived from `receivedBy` (employee vs daily route). */
   pickupSource?: InvoicePickupSource;
   paidRegion?: string;
   paidStatus?: string;
@@ -156,14 +180,17 @@ export type Invoice = {
   amountPaid: number;
   balance?: number;
   createdAt: string;
+  /** System user who digitized this invoice — not the pickup route or employee. */
   createdBy: string;
   updatedAt: string;
+  legacySyncedAt?: string;
 };
 
 export type InvoiceBranch = {
   id: number;
   name: string;
   code: string;
+  type?: string;
 };
 
 export type InvoiceLineItemFormValues = {
@@ -189,6 +216,8 @@ export type InvoiceFormValues = {
   paymentLocation: InvoicePaymentLocation;
   pickupSource: InvoicePickupSource;
   routeId: string;
+  routeCrewId: string;
+  routeCrewName: string;
   officeBranchId: string;
   officeBranchName: string;
   pickupEmployeeId: string;
@@ -200,6 +229,7 @@ export type InvoiceFormValues = {
   lineItems: InvoiceLineItemFormValues[];
   discount: string;
   amountPaid: string;
+  createdAt: string;
   createdBy: string;
 };
 
@@ -221,11 +251,38 @@ export type InvoiceListParams = {
   paymentLocation?: InvoicePaymentLocation | "all";
 };
 
-/** GET /invoices?page=1&limit=50&offset=0&sort=number:desc */
+export type LegacyInvoiceSyncPreview = {
+  total: number;
+  lastSyncedAt?: string;
+};
+
+export type LegacyInvoiceSyncSummary = {
+  imported: number;
+  updated: number;
+  skipped: number;
+  total: number;
+  processed: number;
+  start: number;
+  nextStart: number;
+  limit: number;
+  lastSyncedAt?: string;
+};
+
+export type LegacyInvoiceSyncResult = {
+  message: string;
+  summary: LegacyInvoiceSyncSummary;
+};
+
+export type LegacyInvoiceSyncRequest = {
+  start?: number;
+  limit?: number;
+};
+
+/** GET /invoices?page=1&limit=50&offset=0&sort=date:desc,number:desc */
 export const DEFAULT_INVOICE_LIST_PARAMS = {
   page: 1,
   limit: 50,
-  sort: "number:desc",
+  sort: "date:desc,number:desc",
 } as const satisfies Pick<InvoiceListParams, "page" | "limit" | "sort">;
 
 export function getInvoiceRecordId(invoice: Pick<Invoice, "invoiceId">): string {
@@ -422,7 +479,7 @@ export function createEmptyInvoiceLineItem(): InvoiceLineItemFormValues {
     itemName: "",
     quantity: "1",
     labelCount: "1",
-    unitPrice: "",
+    unitPrice: "0",
     lineTotal: "",
     labelsManual: false,
     totalManual: false,
@@ -439,6 +496,8 @@ export function createEmptyInvoiceForm(createdBy = DEFAULT_CREATED_BY): InvoiceF
     paymentLocation: "usa",
     pickupSource: "route",
     routeId: "",
+    routeCrewId: "",
+    routeCrewName: "",
     officeBranchId: "",
     officeBranchName: "",
     pickupEmployeeId: "",
@@ -450,20 +509,19 @@ export function createEmptyInvoiceForm(createdBy = DEFAULT_CREATED_BY): InvoiceF
     lineItems: [createEmptyInvoiceLineItem()],
     discount: "0",
     amountPaid: "0",
+    createdAt: "",
     createdBy,
   };
 }
 
 export type InvoiceFormSubmitResult = {
   error: string | null;
-  nextInvoiceNumber?: string;
   savedInvoiceId?: string;
+  /** Stay on the form (e.g. waiting for barcode deletion picker). */
+  deferClose?: boolean;
 };
 
-export function resetInvoiceFormForNextEntry(
-  previous: InvoiceFormValues,
-  nextInvoiceNumber = ""
-): InvoiceFormValues {
+export function resetInvoiceFormForNextEntry(previous: InvoiceFormValues): InvoiceFormValues {
   const empty = createEmptyInvoiceForm(previous.createdBy);
 
   return {
@@ -473,11 +531,12 @@ export function resetInvoiceFormForNextEntry(
     paymentLocation: previous.paymentLocation,
     pickupSource: previous.pickupSource,
     routeId: previous.routeId,
+    routeCrewId: previous.routeCrewId,
+    routeCrewName: previous.routeCrewName,
     officeBranchId: previous.officeBranchId,
     officeBranchName: previous.officeBranchName,
     pickupEmployeeId: previous.pickupEmployeeId,
     pickupEmployeeName: previous.pickupEmployeeName,
-    invoiceNumber: nextInvoiceNumber,
   };
 }
 
@@ -491,6 +550,15 @@ export function computeInvoiceSubtotal(lineItems: InvoiceLineItem[]): number {
 
 export function computeInvoiceBalance(subtotal: number, discount: number, amountPaid: number): number {
   return Math.round((subtotal - discount - amountPaid) * 100) / 100;
+}
+
+/** Running invoice balance from form values. Pass `amountPaid` when payment lives outside the form. */
+export function getInvoiceFormBalance(
+  values: Pick<InvoiceFormValues, "lineItems" | "discount" | "amountPaid">,
+  amountPaid = Number(values.amountPaid) || 0,
+): number {
+  const subtotal = values.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0);
+  return computeInvoiceBalance(subtotal, Number(values.discount) || 0, amountPaid);
 }
 
 /** Total defaults to unit price × quantity but can be overridden directly. */
@@ -510,6 +578,12 @@ export function resolveLineTotal(values: InvoiceLineItemFormValues): number {
 /** Whether a line item row has enough data to count toward invoice validation. */
 export function hasInvoiceLineItemContent(values: InvoiceLineItemFormValues): boolean {
   return Boolean(values.itemName.trim() || values.itemId || resolveLineTotal(values) > 0);
+}
+
+/** Quantity must be greater than 0. Labels may be 0. */
+export function hasPositiveInvoiceLineItemQuantity(values: InvoiceLineItemFormValues): boolean {
+  const quantity = Number(values.quantity);
+  return values.quantity.trim() !== "" && Number.isFinite(quantity) && quantity > 0;
 }
 
 /** Labels default to the quantity but can be overridden directly. */
@@ -570,7 +644,10 @@ export function invoiceLineItemToFormValues(item: InvoiceLineItem): InvoiceLineI
   };
 }
 
-function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
+function orderPartyToInvoiceFormCustomer(
+  party: OrderParty,
+  customerType: number,
+): Customer | null {
   if (!party.name.trim() && !party.clientId && !party.id) return null;
 
   const primaryAddressId = party.orderAddressId;
@@ -587,6 +664,7 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
       ].some((value) => String(value ?? "").trim()),
     )
     .map((address) => ({
+      id: address.id,
       address1: address.streetAddress.trim(),
       address2: address.crossStreet?.trim() ?? "",
       apartment: address.apt?.trim() ?? "",
@@ -594,8 +672,9 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
       state: address.state?.trim() ?? "",
       zipcode: address.zipCode?.trim() ?? "",
       country: address.provinceCountry?.trim() ?? "",
-      location: null,
-      verification: null,
+      // Keep Google metadata from the invoice party snapshot when the API sends it.
+      location: address.location ?? null,
+      verification: address.verification ?? null,
       isPrimary: address.id === primaryAddressId || address.isPrimary,
     }));
 
@@ -613,7 +692,7 @@ function orderPartyToInvoiceFormCustomer(party: OrderParty): Customer | null {
     id: party.clientId ?? party.id,
     oldID: null,
     name: party.name.trim() || "—",
-    customerType: null,
+    customerType,
     phones: party.phones.map((phone, index) => ({
       type: "mobile",
       number: phone.number,
@@ -651,8 +730,10 @@ function normalizeInvoicePickupSource(
 }
 
 export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
-  const sender = orderPartyToInvoiceFormCustomer(invoice.sender);
-  const receiver = invoice.receiver ? orderPartyToInvoiceFormCustomer(invoice.receiver) : null;
+  const sender = orderPartyToInvoiceFormCustomer(invoice.sender, CUSTOMER_TYPE_SENDER);
+  const receiver = invoice.receiver
+    ? orderPartyToInvoiceFormCustomer(invoice.receiver, CUSTOMER_TYPE_RECEIVER)
+    : null;
 
   return {
     invoiceId: invoice.invoiceId,
@@ -663,6 +744,8 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
     paymentLocation: invoice.paymentLocation,
     pickupSource: normalizeInvoicePickupSource(invoice.pickupSource, invoice.officeBranchId),
     routeId: invoice.routeId ?? "",
+    routeCrewId: invoice.routeCrewId ?? "",
+    routeCrewName: invoice.routeCrewName ?? "",
     officeBranchId: invoice.officeBranchId ?? "",
     officeBranchName: invoice.officeBranchName ?? "",
     pickupEmployeeId: invoice.pickupEmployeeId ?? "",
@@ -677,8 +760,42 @@ export function invoiceToFormValues(invoice: Invoice): InvoiceFormValues {
         : [createEmptyInvoiceLineItem()],
     discount: invoice.discount.toFixed(2),
     amountPaid: invoice.amountPaid.toFixed(2),
+    createdAt: invoice.createdAt,
     createdBy: invoice.createdBy,
   };
+}
+
+/**
+ * Invoice party snapshots can omit Google verification / customerType.
+ * Prefer the live customer record for edit UI (same idea as pickup → sender hydrate).
+ */
+export async function hydrateInvoiceEditPartyCustomers(
+  values: InvoiceFormValues,
+  loadCustomer: (customerId: string) => Promise<Customer>,
+): Promise<InvoiceFormValues> {
+  let next = values;
+
+  const senderId = values.senderId.trim() || values.sender?.id?.trim() || "";
+  if (senderId) {
+    try {
+      const sender = await loadCustomer(senderId);
+      next = { ...next, senderId: sender.id, sender };
+    } catch {
+      // Keep the invoice snapshot when the live customer cannot be loaded.
+    }
+  }
+
+  const receiverId = values.receiverId.trim() || values.receiver?.id?.trim() || "";
+  if (receiverId) {
+    try {
+      const receiver = await loadCustomer(receiverId);
+      next = { ...next, receiverId: receiver.id, receiver };
+    } catch {
+      // Keep the invoice snapshot when the live customer cannot be loaded.
+    }
+  }
+
+  return next;
 }
 
 export function areInvoiceFormValuesEquivalent(
@@ -754,6 +871,8 @@ export function formValuesToInvoice(
     paymentLocation: values.paymentLocation,
     pickupSource: values.pickupSource,
     routeId: values.pickupSource === "route" ? values.routeId.trim() || undefined : undefined,
+    routeCrewId: values.pickupSource === "route" ? values.routeCrewId.trim() || undefined : undefined,
+    routeCrewName: values.pickupSource === "route" ? values.routeCrewName.trim() || undefined : undefined,
     officeBranchId: isInvoiceEmployeePickupSource(values.pickupSource) ? values.officeBranchId.trim() || undefined : undefined,
     officeBranchName: isInvoiceEmployeePickupSource(values.pickupSource) ? values.officeBranchName.trim() || undefined : undefined,
     pickupEmployeeId: isInvoiceEmployeePickupSource(values.pickupSource) ? values.pickupEmployeeId.trim() || undefined : undefined,
@@ -770,19 +889,6 @@ export function formValuesToInvoice(
     createdBy: createdBy ?? (values.createdBy.trim() || DEFAULT_CREATED_BY),
     updatedAt: updatedAt ?? new Date().toISOString(),
   };
-}
-
-export function suggestNextInvoiceNumber(existing: Invoice[], date = new Date()): string {
-  const year = date.getFullYear();
-  const prefix = `INV-${year}-`;
-  const sequences = existing
-    .map((invoice) => invoice.invoiceNumber)
-    .filter((number) => number.startsWith(prefix))
-    .map((number) => Number.parseInt(number.slice(prefix.length), 10))
-    .filter((value) => Number.isFinite(value));
-
-  const next = (sequences.length > 0 ? Math.max(...sequences) : 0) + 1;
-  return `${prefix}${String(next).padStart(4, "0")}`;
 }
 
 export { getOrderPartyAddress } from "@/lib/orders/types";

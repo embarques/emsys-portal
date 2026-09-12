@@ -47,7 +47,45 @@ export function focusNextFormField(current: HTMLElement | null): boolean {
   if (!nextField) return false;
 
   nextField.focus();
+  selectFormFieldText(nextField);
   return true;
+}
+
+function isSelectableFormField(
+  element: HTMLElement,
+): element is HTMLInputElement | HTMLTextAreaElement {
+  if (!(element instanceof HTMLInputElement) && !(element instanceof HTMLTextAreaElement)) {
+    return false;
+  }
+
+  const inputType = element instanceof HTMLInputElement ? element.type : "";
+  return !["checkbox", "radio", "button", "submit", "file", "hidden"].includes(inputType);
+}
+
+/** Select the current value so Enter/focus can replace it immediately. */
+export function selectFormFieldText(element: HTMLElement | null) {
+  if (!element || !isSelectableFormField(element)) return;
+  if (!element.value) return;
+
+  window.requestAnimationFrame(() => element.select());
+}
+
+export function selectFormFieldTextOnFocus(
+  event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>,
+) {
+  selectFormFieldText(event.currentTarget);
+}
+
+/** Submit the parent form when Enter is pressed on a field (e.g. amount / reference). */
+export function submitFormOnEnterKeyDown(
+  event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+) {
+  if (event.key !== "Enter") return;
+  if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.nativeEvent.isComposing) return;
+  event.preventDefault();
+  event.stopPropagation();
+  event.currentTarget.form?.requestSubmit();
 }
 
 export type FormEnterNavigationOptions = {
@@ -57,7 +95,36 @@ export type FormEnterNavigationOptions = {
    * instead of submitting. Defaults to `true`.
    */
   submitOnLast?: boolean;
+  /**
+   * Called instead of native form submit when Enter completes the form
+   * (last field, or `shouldComplete`).
+   */
+  onComplete?: () => void;
+  /**
+   * When this returns true, Enter completes immediately instead of moving to
+   * the next field.
+   */
+  shouldComplete?: () => boolean;
 };
+
+function completeForm(
+  form: HTMLFormElement,
+  submitOnLast: boolean,
+  onComplete?: () => void,
+) {
+  if (onComplete) {
+    onComplete();
+    return;
+  }
+
+  if (!submitOnLast) return;
+
+  if (typeof form.requestSubmit === "function") {
+    form.requestSubmit();
+  } else {
+    form.submit();
+  }
+}
 
 /**
  * Returns a form `onKeyDown` handler that turns Enter into "advance to next
@@ -66,7 +133,7 @@ export type FormEnterNavigationOptions = {
  * their own Enter-to-select behavior.
  */
 export function useFormEnterNavigation(options: FormEnterNavigationOptions = {}) {
-  const { submitOnLast = true } = options;
+  const { submitOnLast = true, onComplete, shouldComplete } = options;
 
   return React.useCallback(
     (event: React.KeyboardEvent<HTMLFormElement>) => {
@@ -76,6 +143,8 @@ export function useFormEnterNavigation(options: FormEnterNavigationOptions = {})
 
       const target = event.target as HTMLElement | null;
       if (!target) return;
+
+      if (target.closest('[data-enter-navigation="ignore"]')) return;
 
       const tagName = target.tagName;
 
@@ -96,23 +165,26 @@ export function useFormEnterNavigation(options: FormEnterNavigationOptions = {})
       const currentIndex = fields.indexOf(target);
       if (currentIndex === -1) return;
 
+      if (shouldComplete?.()) {
+        event.preventDefault();
+        completeForm(form, submitOnLast, onComplete);
+        return;
+      }
+
       const nextField = fields[currentIndex + 1];
 
       if (nextField) {
         event.preventDefault();
         nextField.focus();
+        selectFormFieldText(nextField);
         return;
       }
 
-      if (submitOnLast) {
+      if (onComplete || submitOnLast) {
         event.preventDefault();
-        if (typeof form.requestSubmit === "function") {
-          form.requestSubmit();
-        } else {
-          form.submit();
-        }
+        completeForm(form, submitOnLast, onComplete);
       }
     },
-    [submitOnLast],
+    [onComplete, shouldComplete, submitOnLast],
   );
 }

@@ -9,14 +9,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { createChartAccountSchema } from "@/lib/accounting/chart-accounts/schemas/chart-account.schema";
-import type { ChartAccount, ChartAccountType, ChartAccountValues } from "@/lib/accounting/chart-accounts/types";
+import type {
+  ChartAccount,
+  ChartAccountType,
+  ChartAccountValues,
+} from "@/lib/accounting/chart-accounts/types";
 import type { Branch } from "@/lib/branches/types";
 import { useTranslation } from "@/lib/i18n";
 
 const textareaClassName =
-  "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
+  "flex w-full max-w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
-const ACCOUNT_TYPES: ChartAccountType[] = ["ASSET", "EXPENSE", "REVENUE", "BANK", "LOAN"];
+const ACCOUNT_TYPES: ChartAccountType[] = [
+  "ASSET",
+  "EXPENSE",
+  "REVENUE",
+  "BANK",
+  "LOAN",
+];
 
 type Props = {
   initialValues: ChartAccountValues;
@@ -66,7 +76,10 @@ export function ChartAccountForm({
 
   const branchOptions = useMemo(
     () => [
-      { value: "", label: t("accounting.chartOfAccounts.form.options.allBranches") },
+      {
+        value: "",
+        label: t("accounting.chartOfAccounts.form.options.allBranches"),
+      },
       ...branches.map((branch) => ({
         value: String(branch.id),
         label: `${branch.code} — ${branch.name}`,
@@ -78,8 +91,14 @@ export function ChartAccountForm({
 
   const accountOptions = useMemo(
     () => [
-      { value: "", label: t("accounting.chartOfAccounts.form.options.notSubAccount") },
-      ...accounts.map((account) => ({ value: String(account.id), label: account.displayName })),
+      {
+        value: "",
+        label: t("accounting.chartOfAccounts.form.options.notSubAccount"),
+      },
+      ...accounts.map((account) => ({
+        value: String(account.id),
+        label: account.displayName,
+      })),
     ],
     [accounts, t],
   );
@@ -89,23 +108,38 @@ export function ChartAccountForm({
   const parentAccountId = watch("parentAccountId");
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      <div className="space-y-2">
-        <Label htmlFor="account-name">{t("accounting.chartOfAccounts.form.fields.displayName")}</Label>
-        <Input id="account-name" autoFocus {...register("displayName")} />
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-full min-w-0 space-y-5 max-md:[&_label]:text-base">
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor="account-name">
+          {t("accounting.chartOfAccounts.form.fields.displayName")}
+        </Label>
+        <Input
+          id="account-name"
+          autoFocus
+          className="h-12 max-w-full min-w-0 text-base sm:h-9 sm:text-sm"
+          {...register("displayName")}
+        />
         {errors.displayName ? (
-          <p className="text-sm text-destructive">{errors.displayName.message}</p>
+          <p className="text-sm text-destructive">
+            {errors.displayName.message}
+          </p>
         ) : null}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="account-type">{t("accounting.chartOfAccounts.form.fields.type")}</Label>
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor="account-type">
+          {t("accounting.chartOfAccounts.form.fields.type")}
+        </Label>
         <SearchableSelect
           id="account-type"
           value={type ?? ""}
-          onValueChange={(next) => setValue("type", next as ChartAccountType, { shouldValidate: true })}
+          onValueChange={(next) =>
+            setValue("type", next as ChartAccountType, { shouldValidate: true })
+          }
           options={accountTypeOptions}
           placeholder={t("accounting.chartOfAccounts.form.placeholders.type")}
+          className="min-h-12 max-w-full min-w-0 text-base sm:min-h-10 sm:text-sm"
+          mobileSheet
         />
         {isEditing ? (
           <p className="text-xs text-muted-foreground">
@@ -114,8 +148,10 @@ export function ChartAccountForm({
         ) : null}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="account-branch">{t("accounting.chartOfAccounts.form.fields.branch")}</Label>
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor="account-branch">
+          {t("accounting.chartOfAccounts.form.fields.branch")}
+        </Label>
         <SearchableSelect
           id="account-branch"
           value={branchId != null ? String(branchId) : ""}
@@ -126,12 +162,18 @@ export function ChartAccountForm({
           }}
           options={branchOptions}
           placeholder={t("accounting.chartOfAccounts.form.placeholders.branch")}
-          searchPlaceholder={t("accounting.chartOfAccounts.form.placeholders.branchSearch")}
+          searchPlaceholder={t(
+            "accounting.chartOfAccounts.form.placeholders.branchSearch",
+          )}
+          className="min-h-12 max-w-full min-w-0 text-base sm:min-h-10 sm:text-sm"
+          mobileSheet
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="parent-account">{t("accounting.chartOfAccounts.form.fields.parent")}</Label>
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor="parent-account">
+          {t("accounting.chartOfAccounts.form.fields.parent")}
+        </Label>
         <SearchableSelect
           id="parent-account"
           value={parentAccountId != null ? String(parentAccountId) : ""}
@@ -142,27 +184,43 @@ export function ChartAccountForm({
           }}
           options={accountOptions}
           placeholder={t("accounting.chartOfAccounts.form.placeholders.parent")}
-          searchPlaceholder={t("accounting.chartOfAccounts.form.placeholders.parentSearch")}
+          searchPlaceholder={t(
+            "accounting.chartOfAccounts.form.placeholders.parentSearch",
+          )}
+          className="min-h-12 max-w-full min-w-0 text-base sm:min-h-10 sm:text-sm"
+          mobileSheet
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="account-description">{t("accounting.chartOfAccounts.form.fields.description")}</Label>
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor="account-description">
+          {t("accounting.chartOfAccounts.form.fields.description")}
+        </Label>
         <textarea
           id="account-description"
           rows={4}
-          className={`${textareaClassName} h-auto`}
+          className={`${textareaClassName} h-auto min-w-0 rounded-xl text-base sm:rounded-md sm:text-sm`}
           {...register("description")}
         />
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
 
-      <div className="flex justify-end gap-2 border-t pt-4">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+      <div className="sticky bottom-0 -mx-4 grid grid-cols-2 gap-2 border-t bg-background px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 sm:static sm:mx-0 sm:flex sm:justify-end sm:bg-transparent sm:px-0 sm:pb-0">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 rounded-xl text-base sm:h-10 sm:rounded-md sm:text-sm"
+          onClick={onCancel}
+          disabled={isSubmitting}
+        >
           {t("common.actions.cancel")}
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" className="h-12 rounded-xl text-base sm:h-10 sm:rounded-md sm:text-sm" disabled={isSubmitting}>
           {isSubmitting
             ? t("common.actions.saving")
             : isEditing

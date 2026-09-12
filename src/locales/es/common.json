@@ -19,6 +19,12 @@
   "form": {
     "noChanges": "No hay cambios para guardar."
   },
+  "stats": {
+    "changeMore": "+{{percent}}% vs los últimos {{period}}",
+    "changeLess": "-{{percent}}% vs los últimos {{period}}",
+    "changeSame": "0% vs los últimos {{period}}",
+    "changeFromZero": "Subió desde cero vs {{period}}"
+  },
   "empty": {
     "dash": "—",
     "noCarrier": "Sin transportista"
@@ -35,7 +41,15 @@
   },
   "pagination": {
     "pageOf": "Página {{current}} de {{total}}",
-    "showingOf": "Mostrando {{count}} de {{total}} {{noun}}"
+    "showingOf": "Mostrando {{count}} de {{total}} {{noun}}",
+    "view": "Ver",
+    "pageSize": "Filas por página",
+    "pageSizeEmpty": "Sin tamaños de página",
+    "all": "Todos"
+  },
+  "legacySync": {
+    "lastSynced": "Última sincronización {{at}}",
+    "neverSynced": "Nunca sincronizado"
   },
   "listSummary": {
     "searching": "Buscando {{noun}}…",

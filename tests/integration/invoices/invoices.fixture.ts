@@ -1,6 +1,15 @@
-import { expect, type Locator, type Page, type Response } from "@playwright/test";
+import {
+  expect,
+  type Locator,
+  type Page,
+  type Response,
+} from "@playwright/test";
 
-import { attachApiCurlToTest, logApiResponse, waitForApiResponse } from "../workspace.fixture";
+import {
+  attachApiCurlToTest,
+  logApiResponse,
+  waitForApiResponse,
+} from "../workspace.fixture";
 
 export type InvoiceCreateWizardOptions = {
   invoiceNumber?: string;
@@ -17,7 +26,9 @@ function searchableSelectRoot(wizard: Locator, fieldId: string) {
   const label = wizard.locator(`label[for="${fieldId}"]`);
 
   if (fieldId === "senderId" || fieldId === "receiverId") {
-    return label.locator('xpath=ancestor::div[contains(@class,"space-y-1")][1]');
+    return label.locator(
+      'xpath=ancestor::div[contains(@class,"space-y-1")][1]',
+    );
   }
 
   return label.locator("xpath=..");
@@ -38,7 +49,8 @@ function isPlaceholderOption(label: string) {
   const normalized = label.trim();
   if (!normalized) return true;
   if (/^Select /i.test(normalized)) return true;
-  if (/^No (pickup route|pickup|receiver|route)$/i.test(normalized)) return true;
+  if (/^No (pickup route|pickup|receiver|route)$/i.test(normalized))
+    return true;
   return false;
 }
 
@@ -61,7 +73,9 @@ async function selectSearchableOptionByIndex(
   let realIndex = 0;
   const count = await options.count();
   if (count === 0) {
-    throw new Error(`No ${fieldName} options visible after opening ${fieldId}.`);
+    throw new Error(
+      `No ${fieldName} options visible after opening ${fieldId}.`,
+    );
   }
 
   for (let i = 0; i < count; i += 1) {
@@ -78,7 +92,9 @@ async function selectSearchableOptionByIndex(
     realIndex += 1;
   }
 
-  throw new Error(`No ${fieldName} option at index ${optionIndex} (found ${realIndex} selectable option(s)).`);
+  throw new Error(
+    `No ${fieldName} option at index ${optionIndex} (found ${realIndex} selectable option(s)).`,
+  );
 }
 
 async function selectFirstSearchableOption(
@@ -91,22 +107,31 @@ async function selectFirstSearchableOption(
 }
 
 export async function openAddInvoiceWizard(page: Page, main: Locator) {
-  await expect(main.getByRole("heading", { name: "Invoices" })).toBeVisible({ timeout: 30_000 });
+  await expect(main.getByRole("heading", { name: "Invoices" })).toBeVisible({
+    timeout: 30_000,
+  });
   await main.getByRole("button", { name: "Add invoice" }).click();
 
   const wizard = page.getByTestId("invoice-form-wizard");
   await expect(wizard).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByRole("button", { name: "Add invoice" }).first()).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Add invoice" }).first(),
+  ).toBeVisible();
   await expect(wizard.getByText("Step 1 of 5")).toBeVisible();
 
   return wizard;
 }
 
 export async function activateInvoicesDirectoryTab(page: Page) {
-  const invoicesTab = page.locator("[data-tab-id]").filter({ hasText: "Invoices" }).first();
+  const invoicesTab = page
+    .locator("[data-tab-id]")
+    .filter({ hasText: "Invoices" })
+    .first();
   await expect(invoicesTab).toBeVisible({ timeout: 15_000 });
   await invoicesTab.locator("button").first().click();
-  await expect(page.getByRole("heading", { name: "Invoices" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Invoices" })).toBeVisible({
+    timeout: 15_000,
+  });
 }
 
 export async function fillInvoiceWizardStep1(
@@ -124,7 +149,9 @@ export async function fillInvoiceWizardStep1(
   const nextButton = wizard.getByRole("button", { name: "Next" });
   await nextButton.scrollIntoViewIfNeeded();
   await nextButton.click();
-  await expect(wizard.getByText("Step 2 of 5")).toBeVisible({ timeout: 10_000 });
+  await expect(wizard.getByText("Step 2 of 5")).toBeVisible({
+    timeout: 10_000,
+  });
 
   return invoiceNumber;
 }
@@ -132,14 +159,20 @@ export async function fillInvoiceWizardStep1(
 export async function fillInvoiceWizardStep2(page: Page, wizard: Locator) {
   await selectSearchableOptionByIndex(page, wizard, "senderId", 0, "sender");
   await wizard.getByRole("button", { name: "Next" }).click();
-  await expect(wizard.getByText("Step 3 of 5")).toBeVisible({ timeout: 10_000 });
+  await expect(wizard.getByText("Step 3 of 5")).toBeVisible({
+    timeout: 10_000,
+  });
 }
 
 export async function fillInvoiceWizardStep3(
   wizard: Locator,
-  options: Pick<InvoiceCreateWizardOptions, "description" | "quantity" | "unitPrice"> = {},
+  options: Pick<
+    InvoiceCreateWizardOptions,
+    "description" | "quantity" | "unitPrice"
+  > = {},
 ) {
-  const description = options.description ?? "Playwright invoice integration test line item";
+  const description =
+    options.description ?? "Playwright invoice integration test line item";
   const quantity = options.quantity ?? "1";
   const unitPrice = options.unitPrice ?? "10.00";
 
@@ -157,21 +190,30 @@ export async function fillInvoiceWizardStep3(
   await totalInput.press("Enter");
 
   await wizard.getByRole("button", { name: "Next" }).click();
-  await expect(wizard.getByText("Step 4 of 5")).toBeVisible({ timeout: 10_000 });
+  await expect(wizard.getByText("Step 4 of 5")).toBeVisible({
+    timeout: 10_000,
+  });
 }
 
-export async function confirmInvoiceDailyIncomeRegistration(page: Page, wizard: Locator) {
+export async function confirmInvoiceDailyIncomeRegistration(
+  page: Page,
+  wizard: Locator,
+) {
   const foundBanner = wizard.getByText("Daily income entry found");
 
   if (await foundBanner.isVisible().catch(() => false)) {
     const nextButton = wizard.getByRole("button", { name: "Next" });
     await expect(nextButton).toBeEnabled();
     await nextButton.click();
-    await expect(wizard.getByText("Step 5 of 5")).toBeVisible({ timeout: 10_000 });
+    await expect(wizard.getByText("Step 5 of 5")).toBeVisible({
+      timeout: 10_000,
+    });
     return;
   }
 
-  const createCuadreButton = wizard.getByRole("button", { name: /Create Cuadre|Reopen Cuadre/ });
+  const createCuadreButton = wizard.getByRole("button", {
+    name: /Create Cuadre|Reopen Cuadre/,
+  });
   if (await createCuadreButton.isVisible().catch(() => false)) {
     await createCuadreButton.click();
     const dialog = page.getByRole("dialog", { name: "Register daily income" });
@@ -179,9 +221,14 @@ export async function confirmInvoiceDailyIncomeRegistration(page: Page, wizard: 
       const flipButton = dialog.getByTestId("invoice-daily-income-flip-create");
       if (await flipButton.isVisible().catch(() => false)) {
         await flipButton.click();
-        const statementResponse = waitForApiResponse(page, "/income-statements", "POST", {
-          requireOk: false,
-        });
+        const statementResponse = waitForApiResponse(
+          page,
+          "/income-statements",
+          "POST",
+          {
+            requireOk: false,
+          },
+        );
         await dialog.getByTestId("invoice-daily-income-create").click();
         const createdStatement = await statementResponse;
         expect(
@@ -205,44 +252,60 @@ export async function confirmInvoiceDailyIncomeRegistration(page: Page, wizard: 
     await amountInput.fill("0");
   }
 
-  const journalResponse = waitForApiResponse(page, "/journals", "POST", { requireOk: false });
+  const journalResponse = waitForApiResponse(page, "/journals", "POST", {
+    requireOk: false,
+  });
   await recordButton.click();
   const response = await journalResponse;
-  expect(response.ok(), `Daily Income registration failed with HTTP ${response.status()}`).toBe(
-    true,
-  );
+  expect(
+    response.ok(),
+    `Daily Income registration failed with HTTP ${response.status()}`,
+  ).toBe(true);
 
   await expect(foundBanner).toBeVisible({ timeout: 15_000 });
   const nextButton = wizard.getByRole("button", { name: "Next" });
   await expect(nextButton).toBeEnabled({ timeout: 10_000 });
   await nextButton.click();
-  await expect(wizard.getByText("Step 5 of 5")).toBeVisible({ timeout: 10_000 });
+  await expect(wizard.getByText("Step 5 of 5")).toBeVisible({
+    timeout: 10_000,
+  });
 }
 
 export async function saveInvoiceWizard(page: Page, wizard: Locator) {
   const saveButton = wizard.getByRole("button", { name: "Save invoice" });
   await expect(saveButton).toBeEnabled({ timeout: 10_000 });
 
-  const createResponse = waitForApiResponse(page, "/invoices", "POST", { requireOk: false });
+  const createResponse = waitForApiResponse(page, "/invoices", "POST", {
+    requireOk: false,
+  });
   await saveButton.click();
   const response = await createResponse;
 
   if (!response.ok()) {
-    await logApiResponse(response, "create invoice failed", { includeCurl: true });
+    await logApiResponse(response, "create invoice failed", {
+      includeCurl: true,
+    });
   }
 
   return response;
 }
 
-export async function expectInvoiceCreateSuccessToast(page: Page, invoiceNumber: string) {
-  await expect(page.getByText(`Invoice "${invoiceNumber}" was added.`)).toBeVisible({
+export async function expectInvoiceCreateSuccessToast(
+  page: Page,
+  invoiceNumber: string,
+) {
+  await expect(
+    page.getByText(`Invoice "${invoiceNumber}" was added.`),
+  ).toBeVisible({
     timeout: 15_000,
   });
 }
 
 export async function expectInvoiceWizardReadyForNextEntry(wizard: Locator) {
-  await expect(wizard.getByText("Step 1 of 5")).toBeVisible({ timeout: 10_000 });
-  await expect(wizard.locator("#invoiceNumber")).not.toHaveValue("");
+  await expect(wizard.getByText("Step 1 of 5")).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(wizard.locator("#invoiceNumber")).toHaveValue("");
 }
 
 export async function completeInvoiceCreateWizard(
@@ -261,9 +324,7 @@ export async function completeInvoiceCreateWizard(
 }
 
 export async function searchInvoicesDirectory(main: Locator, query: string) {
-  await main
-    .getByPlaceholder("Search by invoice number, sender, receiver, or container…")
-    .fill(query);
+  await main.getByPlaceholder("Search invoices").fill(query);
 }
 
 export async function attachInvoiceCreateCurl(

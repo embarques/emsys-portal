@@ -129,6 +129,7 @@ function invalidateAccounting(queryClient: ReturnType<typeof useQueryClient>) {
 
 function invalidateDailyIncome(queryClient: ReturnType<typeof useQueryClient>) {
   invalidateAccounting(queryClient);
+  queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
   return queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
 }
 

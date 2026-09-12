@@ -1,0 +1,45 @@
+{
+  "metrics": {
+    "allTime": "Histórico",
+    "loadError": "No se pudieron cargar estas métricas. Inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "empty": "Aún no hay registros para graficar.",
+    "truncated": "Se muestran los primeros {{scanned}} de {{total}} registros.",
+    "noAccess": "No tienes permiso para ver estas métricas."
+  },
+  "appointments": {
+    "title": "Citas",
+    "weekday": {
+      "title": "Por día de la semana",
+      "description": "Citas nuevas creadas cada día de la semana frente a citas programadas para cada día de la semana.",
+      "created": "Creadas",
+      "scheduled": "Programadas"
+    },
+    "month": {
+      "title": "Por mes programado",
+      "description": "Citas nuevas programadas para cada mes del calendario, en todos los años."
+    }
+  },
+  "clients": {
+    "title": "Clientes",
+    "weekday": {
+      "title": "Por día de creación",
+      "description": "Clientes nuevos creados cada día de la semana, en todos los registros."
+    },
+    "month": {
+      "title": "Por mes de creación",
+      "description": "Clientes nuevos creados en cada mes del calendario, en todos los años."
+    }
+  },
+  "invoices": {
+    "title": "Facturas",
+    "weekday": {
+      "title": "Por día de creación",
+      "description": "Facturas nuevas creadas cada día de la semana, en todos los registros."
+    },
+    "month": {
+      "title": "Por mes de creación",
+      "description": "Facturas nuevas creadas en cada mes del calendario, en todos los años."
+    }
+  }
+}

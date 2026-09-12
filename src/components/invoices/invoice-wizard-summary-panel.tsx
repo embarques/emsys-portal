@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Minus, Pencil, Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import { formatInvoiceMoney, getPaymentLocationLabel } from "@/lib/invoices/display";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -134,6 +135,7 @@ function SummaryDiscountControl({
     return (
       <button
         type="button"
+        id="invoice-wizard-discount"
         className="text-left text-sm font-medium text-primary hover:underline"
         onClick={() => setEditing(true)}
       >
@@ -149,12 +151,14 @@ function SummaryDiscountControl({
           {t("invoices.wizard.summary.discountAmount")}
         </span>
         <Input
+          id="invoice-wizard-discount"
           type="number"
           min={0}
           step="0.01"
           inputMode="decimal"
           value={discountValue}
           autoFocus
+          onFocus={selectFormFieldTextOnFocus}
           onChange={(event) => onDiscountChange!(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
@@ -196,6 +200,7 @@ function SummaryDiscountControl({
       </span>
       <button
         type="button"
+        id="invoice-wizard-discount"
         aria-label={t("invoices.wizard.summary.editDiscount")}
         className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground"
         onClick={() => setEditing(true)}
@@ -251,7 +256,7 @@ function InvoiceSummaryCard({
                 <p className="text-muted-foreground">{t("invoices.wizard.summary.senderNotSelected")}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                {t("invoices.wizard.summary.pending")} · {getPaymentLocationLabel(values.paymentLocation)}
+                {t("invoices.form.fields.paymentLocation")} · {getPaymentLocationLabel(values.paymentLocation)}
               </p>
             </div>
 

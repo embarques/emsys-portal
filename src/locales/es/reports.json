@@ -1,0 +1,107 @@
+{
+  "page": {
+    "title": "Reportes",
+    "description": "Genere y descargue PDFs de citas, facturas, etiquetas, ingresos diarios, diarios, préstamos y rutas de entrega."
+  },
+  "types": {
+    "pickup": {
+      "title": "Manifiesto de recogida",
+      "description": "Imprima la lista de recogida de una cita o de una ruta diaria."
+    },
+    "delivery": {
+      "title": "Manifiesto de entrega",
+      "description": "Imprima la lista de entrega de una ruta diaria."
+    },
+    "invoice": {
+      "title": "Factura",
+      "description": "Imprima una factura digitalizada."
+    },
+    "label": {
+      "title": "Etiquetas",
+      "description": "Imprima etiquetas de código de barras de una factura o de un código."
+    },
+    "income": {
+      "title": "Ingresos diarios",
+      "description": "Imprima el cierre de una sucursal y fecha."
+    },
+    "journal": {
+      "title": "Diario",
+      "description": "Imprima un asiento de ingresos diarios por referencia."
+    },
+    "loan": {
+      "title": "Préstamos",
+      "description": "Imprima saldos de préstamos de empleados según los filtros."
+    }
+  },
+  "fields": {
+    "reportType": "Tipo de reporte",
+    "source": "Origen",
+    "appointment": "Cita",
+    "dailyRoute": "Ruta diaria",
+    "invoice": "Factura",
+    "barcode": "Código de barras",
+    "branch": "Sucursal",
+    "date": "Fecha",
+    "employee": "Empleado",
+    "allEmployees": "Todos los empleados",
+    "journal": "Diario",
+    "dateFrom": "Desde",
+    "dateTo": "Hasta",
+    "status": "Estado",
+    "allStatuses": "Todos los estados"
+  },
+  "placeholders": {
+    "selectAppointment": "Seleccionar una cita",
+    "searchAppointments": "Buscar citas…",
+    "selectRoute": "Seleccionar una ruta diaria",
+    "searchRoutes": "Buscar rutas diarias…",
+    "selectInvoice": "Seleccionar una factura",
+    "searchInvoices": "Buscar facturas…",
+    "selectBarcode": "Seleccionar un código de barras",
+    "searchBarcodes": "Buscar códigos de barras…",
+    "selectBranch": "Seleccionar una sucursal",
+    "searchBranches": "Buscar sucursales…",
+    "selectEmployee": "Seleccionar un empleado",
+    "searchEmployees": "Buscar empleados…",
+    "selectJournal": "Seleccionar un diario",
+    "searchJournals": "Buscar diarios…",
+    "emptyAppointments": "Ninguna cita coincide con su búsqueda.",
+    "emptyRoutes": "Ninguna ruta diaria coincide con su búsqueda.",
+    "emptyInvoices": "Ninguna factura coincide con su búsqueda.",
+    "emptyBarcodes": "Ningún código de barras coincide con su búsqueda.",
+    "emptyJournals": "No hay diarios para este cierre."
+  },
+  "loanStatuses": {
+    "ACTIVE": "Activo",
+    "PAID": "Pagado",
+    "VOID": "Anulado"
+  },
+  "actions": {
+    "generate": "Generar",
+    "generating": "Generando…",
+    "download": "Descargar",
+    "downloading": "Descargando…",
+    "open": "Abrir PDF"
+  },
+  "result": {
+    "title": "Reporte listo",
+    "expires": "El enlace vence {{at}}",
+    "fileName": "{{name}}"
+  },
+  "errors": {
+    "selectAppointment": "Seleccione una cita para generar este reporte.",
+    "selectRoute": "Seleccione una ruta diaria para generar este reporte.",
+    "noPickupsOnRoute": "Esa ruta diaria no tiene citas para imprimir.",
+    "selectInvoice": "Seleccione una factura para generar este reporte.",
+    "selectBarcode": "Seleccione un código de barras para generar este reporte.",
+    "selectBranch": "Seleccione una sucursal para generar este reporte.",
+    "selectDate": "Seleccione una fecha para generar este reporte.",
+    "closeoutNotFound": "No hay un cierre de ingresos diarios para esa sucursal y fecha.",
+    "selectJournal": "Seleccione un diario para generar este reporte.",
+    "generateFailed": "No se pudo generar el reporte."
+  },
+  "toasts": {
+    "ready": "Reporte listo.",
+    "downloaded": "Reporte descargado."
+  }
+}

@@ -10,18 +10,24 @@ import {
   fetchInvoiceBalanceTotal,
   fetchInvoiceById,
   fetchInvoices,
+  previewLegacyInvoiceSync,
+  syncLegacyInvoices,
   updateInvoice,
   type InvoiceWriteContext,
 } from "@/lib/invoices/api/invoices-api";
+import { fetchJournalsForInvoice } from "@/lib/accounting/daily-income/api";
 import {
   buildInvoiceStatsCountParams,
   buildOutstandingInvoiceStatsFilterRows,
 } from "@/lib/invoices/invoice-stats";
+import { useInsightsKpis } from "@/lib/insights/hooks/use-insights-kpis";
+import type { NewInvoiceStatPeriod } from "@/lib/invoices/new-invoice-stats";
 import {
   DEFAULT_INVOICE_LIST_PARAMS,
   type InvoiceFormValues,
   type InvoiceListParams,
   type InvoiceSearchFilter,
+  type LegacyInvoiceSyncRequest,
 } from "@/lib/invoices/types";
 import { queryKeys } from "@/lib/query/query-keys";
 
@@ -52,6 +58,19 @@ export function useInvoiceStats(options: InvoiceStatsOptions = {}) {
     isLoading: outstandingQuery.isLoading,
     isBalanceLoading: outstandingBalanceQuery.isLoading,
     isError: outstandingQuery.isError || outstandingBalanceQuery.isError,
+  };
+}
+
+/** Count of invoices created within a rolling timeframe, plus prior-period count for % change. */
+export function useNewInvoiceStats(period: NewInvoiceStatPeriod) {
+  const query = useInsightsKpis(period);
+
+  return {
+    total: query.data?.newInvoices.count ?? 0,
+    previousTotal: query.data?.newInvoices.previousCount ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
   };
 }
 
@@ -89,8 +108,27 @@ export function useInvoice(invoiceId: string | null, enabled = true) {
   });
 }
 
+export function useInvoiceJournals(
+  invoiceId: string | null,
+  invoiceNumber?: string,
+  enabled = true,
+) {
+  const id = invoiceId?.trim() ?? "";
+  const number = invoiceNumber?.trim() ?? "";
+
+  return useWorkspaceQuery({
+    queryKey: queryKeys.invoices.journals(id, number),
+    queryFn: () => fetchJournalsForInvoice({ invoiceId: id || undefined, invoiceNumber: number || undefined }),
+    enabled: enabled && Boolean(number),
+  });
+}
+
 function invalidateInvoices(queryClient: ReturnType<typeof useQueryClient>) {
-  return queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.insights.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.containers.stats("average-value") }),
+  ]);
 }
 
 export function useCreateInvoice() {
@@ -131,6 +169,21 @@ export function useDeleteInvoices() {
 
   return useMutation({
     mutationFn: (invoiceIds: string[]) => deleteInvoices(invoiceIds),
+    onSuccess: () => invalidateInvoices(queryClient),
+  });
+}
+
+export function usePreviewLegacyInvoiceSync() {
+  return useMutation({
+    mutationFn: () => previewLegacyInvoiceSync(),
+  });
+}
+
+export function useSyncLegacyInvoices() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: LegacyInvoiceSyncRequest = {}) => syncLegacyInvoices(request),
     onSuccess: () => invalidateInvoices(queryClient),
   });
 }

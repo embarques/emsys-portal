@@ -90,19 +90,16 @@ export function formatCoreAddressLines(address: CustomerCoreAddress): string[] {
   return [streetLine, locationLine].filter((line) => line.trim().length > 0);
 }
 
-/** Single-line query string suitable for Google Maps search/directions URLs. */
+/** Street + city/state/ZIP only — no name, apartment, or extra lines. */
 export function buildCoreAddressMapsQuery(address: CustomerCoreAddress): string {
-  return [
-    address.address1,
-    address.apartment,
-    address.address2,
-    address.city,
-    address.state,
-    address.zipcode,
-    address.country,
-  ]
+  const street = address.address1.trim();
+  const city = address.city.trim();
+  const stateZip = [address.state, address.zipcode]
+    .map((value) => value.trim())
     .filter(Boolean)
-    .join(", ");
+    .join(" ");
+
+  return [street, city, stateZip].filter(Boolean).join(", ");
 }
 
 export function formatAddressLine(address: CustomerAddress): string {

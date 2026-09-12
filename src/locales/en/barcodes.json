@@ -3,13 +3,24 @@
   "entityPlural": "barcodes",
   "title": "Barcodes",
   "pages": {
-    "description": "Browse and manage shipment barcodes across invoices, containers, and routes."
+    "description": "Browse merchandise barcodes created with invoices. Change status, container, or route in bulk. Create and delete labels by editing the invoice."
   },
   "noun": "barcodes",
   "actions": {
     "add": "Add barcode",
     "edit": "Edit barcode",
     "editNamed": "Edit {{number}}"
+  },
+  "bulk": {
+    "changeStatus": "Change status",
+    "changeContainer": "Transfer container",
+    "assignRoute": "Assign route",
+    "statusTitle": "Change barcode status",
+    "statusDescription": "Update status for {{count}} selected barcode(s).",
+    "containerTitle": "Transfer container",
+    "containerDescription": "Move {{count}} selected barcode(s) to another container.",
+    "apply": "Apply",
+    "updatedCount": "{{count}} barcode(s)"
   },
   "stats": {
     "total": {
@@ -36,29 +47,32 @@
   "columns": {
     "id": "#",
     "number": "Barcode",
+    "invoice": "Invoice",
+    "description": "Description",
     "status": "Status",
     "container": "Container",
+    "route": "Route",
     "deliveryRoute": "Delivery route",
     "tripNumber": "Trip #",
     "delivery": "Delivery",
     "scanDate": "Last scan"
   },
   "search": {
-    "placeholder": "Search barcodes..."
+    "placeholder": "Search by invoice, barcode, description, container, status, route…"
   },
   "loading": {
     "title": "Loading barcodes",
-    "description": "Fetching barcode numbers, statuses, containers, and scan activity…",
+    "description": "Fetching barcode numbers, invoices, containers, and routes…",
     "barcode": "Loading barcode…"
   },
   "empty": {
-    "none": "No barcodes yet.",
+    "none": "No barcodes yet. Digitize an invoice with line items and labels to create them.",
     "noMatch": "No barcodes match your filters."
   },
   "form": {
     "addTitle": "Add barcode",
     "editTitle": "Edit barcode",
-    "addDescription": "Create a new shipment barcode.",
+    "addDescription": "Manual add is rare — barcodes normally come from invoice line items and labels.",
     "notFound": "This barcode could not be found.",
     "sections": {
       "barcode": "Barcode",
@@ -89,7 +103,8 @@
       "audit": "Audit"
     },
     "barcodeId": "Barcode ID",
-    "previousStatus": "Previous status"
+    "previousStatus": "Previous status",
+    "manageViaInvoice": "Create, edit, or delete barcodes by editing the related invoice."
   },
   "dialogs": {
     "deleteTitle": "Delete barcode?",
@@ -99,15 +114,74 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "Barcode ID", "placeholder": "Enter barcode ID…" },
-      "number": { "label": "Barcode", "placeholder": "Enter barcode number…" },
-      "scanDate": { "label": "Scan date", "placeholder": "YYYY-MM-DD" },
-      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
-      "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" },
-      "createdBy.name": { "label": "Created by", "placeholder": "Enter creator…" },
-      "updatedBy.name": { "label": "Updated by", "placeholder": "Enter editor…" },
-      "createdBy.id": { "label": "Creator ID", "placeholder": "Enter creator ID…" },
-      "updatedBy.id": { "label": "Editor ID", "placeholder": "Enter editor ID…" }
+      "number": {
+        "label": "Barcode",
+        "placeholder": "Enter barcode number…"
+      },
+      "invoice": {
+        "number": {
+          "label": "Invoice",
+          "placeholder": "Enter invoice number…"
+        }
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Enter description…"
+      },
+      "container": {
+        "name": {
+          "label": "Container",
+          "placeholder": "Enter container…"
+        }
+      },
+      "status": {
+        "name": {
+          "label": "Status",
+          "placeholder": "Enter status…"
+        }
+      },
+      "route": {
+        "name": {
+          "label": "Route",
+          "placeholder": "Enter route…"
+        }
+      },
+      "id": {
+        "label": "#",
+        "placeholder": "Enter barcode ID…"
+      },
+      "scanDate": {
+        "label": "Last scan",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "createdBy": {
+        "name": {
+          "label": "Created by",
+          "placeholder": "Enter creator…"
+        },
+        "id": {
+          "label": "Creator ID",
+          "placeholder": "Enter creator ID…"
+        }
+      },
+      "updatedBy": {
+        "name": {
+          "label": "Updated by",
+          "placeholder": "Enter editor…"
+        },
+        "id": {
+          "label": "Editor ID",
+          "placeholder": "Enter editor ID…"
+        }
+      }
     }
   }
 }

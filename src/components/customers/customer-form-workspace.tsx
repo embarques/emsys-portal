@@ -15,6 +15,7 @@ import {
   useCustomer,
   useUpdateCustomer,
 } from "@/lib/customers/hooks/use-customers";
+import { stashPartyReturnCustomerId } from "@/lib/customers/party-customer-return";
 import {
   areCustomerFormValuesEquivalent,
   createEmptyCustomerForm,
@@ -50,8 +51,8 @@ export function CustomerFormWorkspace({
 
   const editingCustomer = isEditing ? (customerQuery.data ?? null) : null;
   const isSaving = createCustomerMutation.isPending || updateCustomerMutation.isPending;
-  // When opened from the order form's "New sender/receiver", the party type is preset and locked.
-  const hasPresetCustomerType = !isEditing && customerType != null;
+  // When opened from an appointment/invoice New or Edit party action, lock the party type.
+  const hasPresetCustomerType = customerType != null;
 
   useEffect(() => {
     if (isEditing && editingCustomer?.name) {
@@ -81,7 +82,13 @@ export function CustomerFormWorkspace({
 
       const nextCustomer = await createCustomerMutation.mutateAsync(values);
       notifyAdded(t("customers.entity"), nextCustomer.name);
-      // Keep the tab open and reset to a blank template for the next entry.
+      // Opened from appointment/invoice "New" party action: hand the customer
+      // back to the parent form and close. Directory adds stay open for batch entry.
+      if (hasPresetCustomerType) {
+        stashPartyReturnCustomerId(nextCustomer.id);
+        closeFormTabAndReturn(tabId);
+        return;
+      }
       setFormInstance((value) => value + 1);
     } catch (mutationError) {
       const { status, category } = formatError(mutationError);

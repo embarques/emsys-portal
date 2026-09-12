@@ -20,6 +20,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,9 +29,14 @@ import { InvoiceLineItemDescriptionCombobox } from "@/components/invoices/invoic
 import { wizardInputFieldProps } from "@/components/invoices/invoice-wizard-styles";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
 import {
+  commitInvoiceLineItemWithUniqueDescription,
+  findInvoiceLineItemWithDescription,
+} from "@/lib/invoices/merge-duplicate-line-item";
+import {
   computeLineTotal,
   createEmptyInvoiceLineItem,
   hasInvoiceLineItemContent,
+  hasPositiveInvoiceLineItemQuantity,
   resolveLineLabelCount,
   resolveLineTotal,
   type InvoiceLineItemFormValues,
@@ -42,8 +48,9 @@ import { cn } from "@/lib/utils";
 type InvoiceLineItemsEditorProps = {
   lineItems: InvoiceLineItemFormValues[];
   catalogItems: Item[];
-  appearance?: "default" | "wizard";
+  appearance?: "default" | "wizard" | "phoneWizard";
   onChange: (lineItems: InvoiceLineItemFormValues[]) => void;
+  requestFocusKey?: number;
 };
 
 type LineItemFieldHandlers = {
@@ -60,9 +67,11 @@ type LineItemEntryFieldsProps = {
   catalogItems: Item[];
   inputClass: (value: string) => ReturnType<typeof wizardInputFieldProps> | { className?: undefined };
   labelClass?: string;
+  isPhoneWizard?: boolean;
   descriptionPlaceholder: string;
   descriptionLabel: string;
   quantityLabel: string;
+  quantityRequiredMessage: string;
   labelsLabel: string;
   unitPriceLabel: string;
   totalLabel: string;
@@ -82,6 +91,7 @@ type SortableLineItemRowProps = {
   descriptionPlaceholder: string;
   descriptionLabel: string;
   quantityLabel: string;
+  quantityRequiredMessage: string;
   labelsLabel: string;
   unitPriceLabel: string;
   totalLabel: string;
@@ -129,30 +139,54 @@ function focusFieldById(fieldId: string) {
   const element = document.getElementById(fieldId) as HTMLInputElement | null;
   if (!element) return;
   element.focus();
-  element.select?.();
+  // Number inputs often ignore select() in the same turn as focus.
+  window.requestAnimationFrame(() => {
+    element.select?.();
+  });
+}
+
+/** Blank unit price is 0 so a free line can be committed without typing a price. */
+function resolveUnitPriceInput(unitPrice: string): string {
+  return unitPrice.trim() === "" ? "0" : unitPrice;
 }
 
 /** Default total tracks unit price × quantity until the user overrides it. */
 function deriveTotalString(item: InvoiceLineItemFormValues): string {
   const quantity = Number(item.quantity);
-  const unitPrice = Number(item.unitPrice);
+  const unitPrice = Number(resolveUnitPriceInput(item.unitPrice));
   if (!Number.isFinite(quantity) || !Number.isFinite(unitPrice)) return "";
   return computeLineTotal(quantity, unitPrice).toFixed(2);
 }
 
 function finalizeLineItemDraft(item: InvoiceLineItemFormValues): InvoiceLineItemFormValues {
+  const unitPrice = resolveUnitPriceInput(item.unitPrice);
+  const withPrice = { ...item, unitPrice };
   const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
-  const totalValue = item.totalManual ? item.lineTotal : deriveTotalString(item);
+  const totalValue = item.totalManual ? item.lineTotal : deriveTotalString(withPrice);
 
   return {
-    ...item,
+    ...withPrice,
     labelCount: labelsValue,
     lineTotal: totalValue,
   };
 }
 
 function isDraftReadyToCommit(item: InvoiceLineItemFormValues): boolean {
-  return Boolean(item.itemName.trim() && item.quantity.trim() && item.unitPrice.trim());
+  const unitPrice = Number(resolveUnitPriceInput(item.unitPrice));
+  return Boolean(
+    item.itemName.trim() &&
+      hasPositiveInvoiceLineItemQuantity(item) &&
+      Number.isFinite(unitPrice) &&
+      unitPrice >= 0,
+  );
+}
+
+function quantityFieldError(
+  item: InvoiceLineItemFormValues,
+  message: string,
+): string | null {
+  if (!item.quantity.trim() || hasPositiveInvoiceLineItemQuantity(item)) return null;
+  return message;
 }
 
 function buildQuantityPatch(
@@ -208,9 +242,11 @@ function LineItemEntryFields({
   catalogItems,
   inputClass,
   labelClass,
+  isPhoneWizard = false,
   descriptionPlaceholder,
   descriptionLabel,
   quantityLabel,
+  quantityRequiredMessage,
   labelsLabel,
   unitPriceLabel,
   totalLabel,
@@ -226,6 +262,7 @@ function LineItemEntryFields({
 }: LineItemEntryFieldsProps) {
   const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
   const totalValue = item.totalManual ? item.lineTotal : deriveTotalString(item);
+  const quantityError = quantityFieldError(item, quantityRequiredMessage);
 
   const advanceOnEnter =
     (nextFieldId: string) => (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -233,6 +270,15 @@ function LineItemEntryFields({
       event.preventDefault();
       focusFieldById(nextFieldId);
     };
+
+  const advanceFromUnitPrice = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    if (!item.unitPrice.trim()) {
+      onChangeUnitPrice("0");
+    }
+    focusFieldById(`${item.id}-total`);
+  };
 
   return (
     <div className="grid gap-4">
@@ -255,7 +301,7 @@ function LineItemEntryFields({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className={cn("grid gap-4", isPhoneWizard ? "grid-cols-1" : "grid-cols-2 gap-3 md:grid-cols-4")}>
         <div className="min-w-0 space-y-2">
           <Label htmlFor={`${item.id}-quantity`} className={labelClass}>
             {quantityLabel} <span className="text-destructive">*</span>
@@ -268,9 +314,11 @@ function LineItemEntryFields({
             value={item.quantity}
             onChange={(event) => onChangeQuantity(event.target.value)}
             onKeyDown={advanceOnEnter(`${item.id}-labels`)}
+            aria-invalid={Boolean(quantityError)}
             {...inputClass(item.quantity)}
             required
           />
+          {quantityError ? <p className="text-xs text-destructive">{quantityError}</p> : null}
         </div>
 
         <div className="min-w-0 space-y-2">
@@ -302,7 +350,7 @@ function LineItemEntryFields({
             step="0.01"
             value={item.unitPrice}
             onChange={(event) => onChangeUnitPrice(event.target.value)}
-            onKeyDown={advanceOnEnter(`${item.id}-total`)}
+            onKeyDown={advanceFromUnitPrice}
             {...inputClass(item.unitPrice)}
             required
           />
@@ -335,9 +383,7 @@ function LineItemEntryFields({
 function WizardLineItemsMobileCards({
   items,
   editingId,
-  quantityColumn,
   labelsColumn,
-  unitPriceColumn,
   emptyMessage,
   editLabel,
   deleteLabel,
@@ -358,87 +404,82 @@ function WizardLineItemsMobileCards({
   }
 
   return (
-    <div className="space-y-3 md:hidden">
-      {visibleItems.map((item, index) => (
-        <article key={item.id} className="rounded-xl border bg-background p-4 shadow-xs">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="line-clamp-2 text-base font-semibold text-foreground">
-                {item.itemName.trim() || "—"}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {formatInvoiceMoney(resolveLineTotal(item))}
-              </p>
+    <div className="overflow-hidden rounded-xl border bg-background shadow-xs md:hidden">
+      {visibleItems.map((item, index) => {
+        const unitPrice = item.unitPrice.trim() ? Number(item.unitPrice) : 0;
+        const quantity = Number(item.quantity) || 0;
+        const labels = resolveLineLabelCount(item);
+
+        return (
+          <article key={item.id} className="border-b px-4 py-4 last:border-b-0">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+              <div className="min-w-0">
+                <p className="line-clamp-2 text-lg font-semibold leading-snug text-foreground">
+                  {item.itemName.trim() || "—"}
+                </p>
+                <p className="mt-3 text-base tabular-nums text-muted-foreground">
+                  {formatInvoiceMoney(unitPrice)} x {quantity || "—"}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {labelsColumn}: {labels}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-3">
+                <p className="text-lg font-semibold tabular-nums text-foreground">
+                  {formatInvoiceMoney(resolveLineTotal(item))}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 text-foreground hover:bg-muted"
+                    aria-label={editLabel}
+                    onClick={() => onEdit(item.id)}
+                  >
+                    <Pencil className="size-5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    aria-label={deleteLabel}
+                    onClick={() => onRemove(item.id)}
+                  >
+                    <Trash2 className="size-5" />
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div className="flex shrink-0 items-center gap-1">
+
+            <div className="mt-4 flex items-center justify-end gap-2 border-t pt-3">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="size-8"
-                aria-label={editLabel}
-                onClick={() => onEdit(item.id)}
+                className="size-9 rounded-lg text-muted-foreground"
+                disabled={index === 0}
+                aria-label={moveUpLabel}
+                onClick={() => onMove(item.id, "up")}
               >
-                <Pencil className="size-4" />
+                <ArrowUp className="size-5" />
               </Button>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="size-8 text-destructive hover:text-destructive"
-                aria-label={deleteLabel}
-                onClick={() => onRemove(item.id)}
+                className="size-9 rounded-lg text-muted-foreground"
+                disabled={index === visibleItems.length - 1}
+                aria-label={moveDownLabel}
+                onClick={() => onMove(item.id, "down")}
               >
-                <Trash2 className="size-4" />
+                <ArrowDown className="size-5" />
               </Button>
             </div>
-          </div>
-
-          <dl className="mt-4 grid grid-cols-3 gap-3 text-sm">
-            <div className="min-w-0 rounded-lg bg-muted/40 px-3 py-2">
-              <dt className="truncate text-xs text-muted-foreground">{quantityColumn}</dt>
-              <dd className="mt-1 font-semibold tabular-nums text-foreground">
-                {item.quantity || "—"}
-              </dd>
-            </div>
-            <div className="min-w-0 rounded-lg bg-muted/40 px-3 py-2">
-              <dt className="truncate text-xs text-muted-foreground">{labelsColumn}</dt>
-              <dd className="mt-1 font-semibold tabular-nums text-foreground">
-                {resolveLineLabelCount(item)}
-              </dd>
-            </div>
-            <div className="min-w-0 rounded-lg bg-muted/40 px-3 py-2">
-              <dt className="truncate text-xs text-muted-foreground">{unitPriceColumn}</dt>
-              <dd className="mt-1 font-semibold tabular-nums text-foreground">
-                {item.unitPrice.trim() ? formatInvoiceMoney(Number(item.unitPrice)) : "—"}
-              </dd>
-            </div>
-          </dl>
-
-          <div className="mt-3 flex items-center justify-end gap-2 border-t pt-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={index === 0}
-              aria-label={moveUpLabel}
-              onClick={() => onMove(item.id, "up")}
-            >
-              <ArrowUp className="size-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={index === visibleItems.length - 1}
-              aria-label={moveDownLabel}
-              onClick={() => onMove(item.id, "down")}
-            >
-              <ArrowDown className="size-4" />
-            </Button>
-          </div>
-        </article>
-      ))}
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -586,6 +627,7 @@ function SortableLineItemRow({
   descriptionPlaceholder,
   descriptionLabel,
   quantityLabel,
+  quantityRequiredMessage,
   labelsLabel,
   unitPriceLabel,
   totalLabel,
@@ -624,6 +666,7 @@ function SortableLineItemRow({
 
   const labelsValue = item.labelsManual ? item.labelCount : item.quantity;
   const totalValue = item.totalManual ? item.lineTotal : getTotalString(item);
+  const quantityError = quantityFieldError(item, quantityRequiredMessage);
 
   const advanceOnEnter =
     (nextFieldId: string) => (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -631,6 +674,15 @@ function SortableLineItemRow({
       event.preventDefault();
       focusFieldById(nextFieldId);
     };
+
+  const advanceFromUnitPrice = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    if (!item.unitPrice.trim()) {
+      onChangeUnitPrice(index, "0");
+    }
+    focusFieldById(`${item.id}-total`);
+  };
 
   return (
     <div
@@ -745,9 +797,11 @@ function SortableLineItemRow({
               value={item.quantity}
               onChange={(event) => onChangeQuantity(index, event.target.value)}
               onKeyDown={advanceOnEnter(`${item.id}-labels`)}
+              aria-invalid={Boolean(quantityError)}
               {...(inputClass ? inputClass(item.quantity) : {})}
               required
             />
+            {quantityError ? <p className="text-xs text-destructive">{quantityError}</p> : null}
           </div>
 
           <div className="min-w-0 space-y-2">
@@ -779,7 +833,7 @@ function SortableLineItemRow({
               step="0.01"
               value={item.unitPrice}
               onChange={(event) => onChangeUnitPrice(index, event.target.value)}
-              onKeyDown={advanceOnEnter(`${item.id}-total`)}
+              onKeyDown={advanceFromUnitPrice}
               {...(inputClass ? inputClass(item.unitPrice) : {})}
               required
             />
@@ -819,11 +873,14 @@ function useLineItemLabels() {
       editingTitle: t("invoices.form.lineItems.editingTitle"),
       cancelEdit: t("invoices.form.lineItems.cancelEdit"),
       addItem: t("invoices.form.lineItems.addItem"),
+      saveChanges: t("common.actions.saveChanges"),
       itemsSubtotal: t("invoices.form.lineItems.itemsSubtotal"),
       emptyTable: t("invoices.form.lineItems.emptyTable"),
+      duplicateHint: t("invoices.form.lineItems.duplicateHint"),
       descriptionPlaceholder: t("invoices.form.lineItems.descriptionPlaceholder"),
       descriptionLabel: t("invoices.form.lineItems.fields.description"),
       quantityLabel: t("invoices.form.lineItems.fields.quantity"),
+      quantityRequiredMessage: t("invoices.form.lineItems.quantityRequired"),
       labelsLabel: t("invoices.form.lineItems.fields.labels"),
       unitPriceLabel: t("invoices.form.lineItems.fields.unitPrice"),
       totalLabel: t("invoices.form.lineItems.fields.total"),
@@ -846,61 +903,79 @@ function useLineItemLabels() {
 function InvoiceLineItemsWizardEditor({
   lineItems,
   catalogItems,
+  isPhoneWizard = false,
+  requestFocusKey = 0,
   onChange,
-}: Omit<InvoiceLineItemsEditorProps, "appearance">) {
+}: Omit<InvoiceLineItemsEditorProps, "appearance"> & { isPhoneWizard?: boolean }) {
+  const { t } = useTranslation();
+  const { notifySuccess } = useFeedback();
   const labels = useLineItemLabels();
   const wizardInputProps = (value: string) => wizardInputFieldProps(value);
-  const labelClass = "text-xs font-normal text-muted-foreground";
+  const labelClass = isPhoneWizard ? "text-xs font-medium text-muted-foreground" : undefined;
 
   const committedItems = useMemo(
     () => lineItems.filter(hasInvoiceLineItemContent),
     [lineItems],
   );
 
-  const [draft, setDraft] = useState(createEmptyInvoiceLineItem);
+  const [draft, setDraft] = useState<InvoiceLineItemFormValues | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [focusDescription, setFocusDescription] = useState(true);
   const clearFocusDescription = useCallback(() => setFocusDescription(false), []);
+  const activeDraft = draft ?? createEmptyInvoiceLineItem();
+  const isDraftOpen = draft !== null || Boolean(editingId);
 
   useEffect(() => {
-    if (committedItems.length > 0 || editingId) return;
-    setDraft(createEmptyInvoiceLineItem());
+    if (!requestFocusKey) return;
+    setDraft((current) => current ?? createEmptyInvoiceLineItem());
+    setEditingId(null);
     setFocusDescription(true);
-  }, [committedItems.length, editingId]);
+  }, [requestFocusKey]);
+  const duplicateCommittedItem = findInvoiceLineItemWithDescription(
+    committedItems,
+    activeDraft.itemName,
+    editingId ?? activeDraft.id,
+  );
 
   function emitCommittedItems(items: InvoiceLineItemFormValues[]) {
     onChange(items.filter(hasInvoiceLineItemContent));
   }
 
-  function updateDraft(patch: Partial<InvoiceLineItemFormValues>) {
-    setDraft((current) => ({ ...current, ...patch }));
-  }
-
-  function resetDraft() {
+  function openDraftForAdd() {
     setDraft(createEmptyInvoiceLineItem());
     setEditingId(null);
     setFocusDescription(true);
   }
 
+  function updateDraft(patch: Partial<InvoiceLineItemFormValues>) {
+    setDraft((current) => ({ ...(current ?? createEmptyInvoiceLineItem()), ...patch }));
+  }
+
+  function resetDraft() {
+    setDraft(null);
+    setEditingId(null);
+    setFocusDescription(true);
+  }
+
   function commitDraft() {
-    if (!isDraftReadyToCommit(draft)) return;
+    if (!draft || !isDraftReadyToCommit(draft)) return;
 
     const finalized = finalizeLineItemDraft(draft);
+    const { items, mergedIntoId } = commitInvoiceLineItemWithUniqueDescription(
+      committedItems,
+      finalized,
+      editingId,
+    );
 
-    if (editingId) {
-      emitCommittedItems(
-        committedItems.map((item) => (item.id === editingId ? finalized : item)),
-      );
-      resetDraft();
-      return;
+    emitCommittedItems(items);
+    if (mergedIntoId) {
+      notifySuccess(t("invoices.form.lineItems.duplicateMerged"));
     }
-
-    emitCommittedItems([...committedItems, finalized]);
     resetDraft();
   }
 
   function cancelEdit() {
-    if (!editingId) return;
+    if (!editingId && draft === null) return;
     resetDraft();
   }
 
@@ -938,49 +1013,91 @@ function InvoiceLineItemsWizardEditor({
         itemName: catalogItem.description,
         unitPrice,
       };
-      if (!draft.totalManual) {
-        patch.lineTotal = deriveTotalString({ ...draft, unitPrice });
+      if (!activeDraft.totalManual) {
+        patch.lineTotal = deriveTotalString({ ...activeDraft, unitPrice });
       }
       updateDraft(patch);
     },
-    onChangeQuantity: (quantity) => updateDraft(buildQuantityPatch(draft, quantity)),
-    onChangeUnitPrice: (unitPrice) => updateDraft(buildUnitPricePatch(draft, unitPrice)),
-    onChangeTotal: (total) => updateDraft(buildTotalPatch(draft, total)),
+    onChangeQuantity: (quantity) => updateDraft(buildQuantityPatch(activeDraft, quantity)),
+    onChangeUnitPrice: (unitPrice) => updateDraft(buildUnitPricePatch(activeDraft, unitPrice)),
+    onChangeTotal: (total) => updateDraft(buildTotalPatch(activeDraft, total)),
   };
 
   return (
-    <div className="space-y-6">
-      <section className="space-y-4 border-b border-border pb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">
-              {editingId ? labels.editingTitle : labels.addTitle}
-            </h3>
-          </div>
-          {editingId ? (
-            <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>
-              {labels.cancelEdit}
-            </Button>
-          ) : null}
+    <div className={cn("min-w-0 space-y-5", isPhoneWizard && "space-y-4")}>
+      {isPhoneWizard ? (
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("invoices.wizard.steps.lineItems")}
+          </p>
+          <h2 className="mt-1 text-2xl font-semibold leading-tight tracking-tight text-foreground">
+            {labels.addTitle}
+          </h2>
         </div>
+      ) : null}
+      {isDraftOpen ? (
+        <section
+          className={cn(
+            "space-y-4 rounded-xl border bg-muted/20 p-4",
+            isPhoneWizard && "mx-1 border-border/80 bg-background p-3",
+          )}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">
+                {editingId ? labels.editingTitle : labels.addTitle}
+              </h3>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>
+              {editingId ? labels.cancelEdit : t("common.actions.cancel")}
+            </Button>
+          </div>
 
-        <LineItemEntryFields
-          item={draft}
-          catalogItems={catalogItems}
-          inputClass={wizardInputProps}
-          labelClass={labelClass}
-          descriptionPlaceholder={labels.descriptionPlaceholder}
-          descriptionLabel={labels.descriptionLabel}
-          quantityLabel={labels.quantityLabel}
-          labelsLabel={labels.labelsLabel}
-          unitPriceLabel={labels.unitPriceLabel}
-          totalLabel={labels.totalLabel}
-          autoFocusDescription={focusDescription}
-          onDescriptionFocused={clearFocusDescription}
-          onCommitFromTotal={commitDraft}
-          {...draftHandlers}
-        />
-      </section>
+          <LineItemEntryFields
+            item={activeDraft}
+            catalogItems={catalogItems}
+            inputClass={wizardInputProps}
+            labelClass={labelClass}
+            isPhoneWizard={isPhoneWizard}
+            descriptionPlaceholder={labels.descriptionPlaceholder}
+            descriptionLabel={labels.descriptionLabel}
+            quantityLabel={labels.quantityLabel}
+            quantityRequiredMessage={labels.quantityRequiredMessage}
+            labelsLabel={labels.labelsLabel}
+            unitPriceLabel={labels.unitPriceLabel}
+            totalLabel={labels.totalLabel}
+            autoFocusDescription={focusDescription}
+            onDescriptionFocused={clearFocusDescription}
+            onCommitFromTotal={commitDraft}
+            {...draftHandlers}
+          />
+          {duplicateCommittedItem ? (
+            <p className="text-sm text-muted-foreground">{labels.duplicateHint}</p>
+          ) : null}
+          {isPhoneWizard ? (
+            <Button
+              type="button"
+              className="h-12 w-full rounded-xl text-base font-semibold"
+              onClick={commitDraft}
+              disabled={!isDraftReadyToCommit(activeDraft)}
+            >
+              <Plus className="size-5" />
+              {editingId ? labels.saveChanges : labels.addItem}
+            </Button>
+          ) : (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={commitDraft}
+                disabled={!isDraftReadyToCommit(activeDraft)}
+              >
+                <Plus className="size-4" />
+                {editingId ? labels.saveChanges : labels.addItem}
+              </Button>
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <section className="space-y-3">
         <WizardLineItemsMobileCards
@@ -1019,6 +1136,20 @@ function InvoiceLineItemsWizardEditor({
           onRemove={removeCommittedItem}
           onMove={moveCommittedItem}
         />
+        {!isDraftOpen ? (
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(
+              "w-full justify-center border-dashed border-primary/40 bg-card text-primary hover:bg-primary/10 hover:text-primary",
+              isPhoneWizard ? "h-12 rounded-xl text-base font-semibold" : "h-10",
+            )}
+            onClick={openDraftForAdd}
+          >
+            <Plus className="size-4" />
+            {labels.addItem}
+          </Button>
+        ) : null}
       </section>
     </div>
   );
@@ -1029,9 +1160,11 @@ export function InvoiceLineItemsEditor({
   catalogItems,
   appearance = "default",
   onChange,
+  requestFocusKey = 0,
 }: InvoiceLineItemsEditorProps) {
   const labels = useLineItemLabels();
-  const isWizard = appearance === "wizard";
+  const isPhoneWizard = appearance === "phoneWizard";
+  const isWizard = appearance === "wizard" || isPhoneWizard;
   const wizardInputProps = (value: string) =>
     isWizard ? wizardInputFieldProps(value) : { className: undefined };
   const labelClass = isWizard ? "text-xs font-normal text-muted-foreground" : undefined;
@@ -1051,6 +1184,8 @@ export function InvoiceLineItemsEditor({
       <InvoiceLineItemsWizardEditor
         lineItems={lineItems}
         catalogItems={catalogItems}
+        isPhoneWizard={isPhoneWizard}
+        requestFocusKey={requestFocusKey}
         onChange={onChange}
       />
     );
@@ -1146,6 +1281,7 @@ export function InvoiceLineItemsEditor({
                 descriptionPlaceholder={labels.descriptionPlaceholder}
                 descriptionLabel={labels.descriptionLabel}
                 quantityLabel={labels.quantityLabel}
+                quantityRequiredMessage={labels.quantityRequiredMessage}
                 labelsLabel={labels.labelsLabel}
                 unitPriceLabel={labels.unitPriceLabel}
                 totalLabel={labels.totalLabel}

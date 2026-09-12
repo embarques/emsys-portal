@@ -3,7 +3,7 @@
   "entityPlural": "sucursales",
   "title": "Sucursales",
   "pages": {
-    "description": "Administre sucursales de la empresa, códigos, direcciones y configuración regional usada en el portal."
+    "description": "Administre sucursales y la configuración regional usada en las operaciones."
   },
   "noun": "sucursales",
   "actions": {
@@ -22,8 +22,6 @@
     "name": "Nombre",
     "code": "Código",
     "type": "Tipo",
-    "phone1": "Teléfono 1",
-    "phone2": "Teléfono 2",
     "phones": "Teléfonos",
     "address": {
       "city": "Ciudad",
@@ -33,8 +31,7 @@
     },
     "settings": {
       "labelPrefix": "Prefijo de etiqueta"
-    },
-    "created": "Creado el"
+    }
   },
   "search": {
     "placeholder": "Buscar sucursales..."
@@ -68,8 +65,6 @@
       "code": "Código",
       "type": "Tipo",
       "logo": "URL del logo",
-      "phone1": "Teléfono 1",
-      "phone2": "Teléfono 2",
       "disclaimer": "Descargo de responsabilidad",
       "address1": "Dirección línea 1",
       "address2": "Dirección línea 2",
@@ -87,7 +82,8 @@
       "s3BucketFolder": "Carpeta del bucket S3",
       "s3ShareLinkExpireMinutes": "Vencimiento del enlace S3 (minutos)",
       "invoiceCreatedThruIncomeStatement": "Factura creada mediante estado de resultados",
-      "printLabelCount": "Imprimir conteo de etiquetas"
+      "printLabelCount": "Imprimir conteo de etiquetas",
+      "phones": "Teléfonos"
     }
   },
   "view": {
@@ -106,9 +102,6 @@
       "type": "Tipo",
       "logo": "Logo",
       "disclaimer": "Descargo de responsabilidad",
-      "created": "Creado el",
-      "phone1": "Teléfono 1",
-      "phone2": "Teléfono 2",
       "phones": "Teléfonos",
       "address1": "Dirección 1",
       "address2": "Dirección 2",
@@ -127,9 +120,11 @@
       "s3Bucket": "Bucket S3",
       "s3Folder": "Carpeta S3",
       "s3LinkExpiry": "Vencimiento del enlace S3 (min)",
-      "imageResampleBy": "Remuestreo de imagen"
+      "imageResampleBy": "Remuestreo de imagen",
+      "createdAt": "Creado el"
     },
-    "edit": "Editar sucursal"
+    "edit": "Editar sucursal",
+    "phonePrimary": "{{type}} (principal)"
   },
   "dialogs": {
     "deleteTitle": "¿Eliminar sucursal?",
@@ -140,16 +135,37 @@
   },
   "filters": {
     "fields": {
-      "name": { "label": "Nombre", "placeholder": "Ingrese nombre…" },
-      "code": { "label": "Código", "placeholder": "Ingrese código…" },
-      "type": { "label": "Tipo", "placeholder": "Ingrese tipo…" },
+      "name": {
+        "label": "Nombre",
+        "placeholder": "Ingrese nombre…"
+      },
+      "code": {
+        "label": "Código",
+        "placeholder": "Ingrese código…"
+      },
+      "type": {
+        "label": "Tipo",
+        "placeholder": "Ingrese tipo…"
+      },
       "phones": {
-        "number": { "label": "Teléfono", "placeholder": "Ingrese teléfono…" }
+        "number": {
+          "label": "Teléfono",
+          "placeholder": "Ingrese teléfono…"
+        }
       },
       "address": {
-        "city": { "label": "Ciudad", "placeholder": "Ingrese ciudad…" },
-        "state": { "label": "Estado", "placeholder": "Ingrese estado…" },
-        "zipcode": { "label": "Código postal", "placeholder": "Ingrese código postal…" }
+        "city": {
+          "label": "Ciudad",
+          "placeholder": "Ingrese ciudad…"
+        },
+        "state": {
+          "label": "Estado",
+          "placeholder": "Ingrese estado…"
+        },
+        "zipcode": {
+          "label": "Código postal",
+          "placeholder": "Ingrese código postal…"
+        }
       }
     }
   }

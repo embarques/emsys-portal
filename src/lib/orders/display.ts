@@ -13,7 +13,13 @@ import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import type { User } from "@/lib/users/types";
 import type { TranslateFn } from "@/lib/feedback/messages";
 
-import type { Order, PickupComment } from "./types";
+import {
+  compileOrderCommentsParagraph,
+  formatOrderCommentSentence,
+  orderCommentToFormValues,
+  type Order,
+  type PickupComment,
+} from "./types";
 
 type RouteLabelSource = Pick<Route, "name" | "date" | "vehicle">;
 
@@ -71,6 +77,11 @@ export function formatOrderId(order: Pick<Order, "id">): string {
   return String(order.id);
 }
 
+/** Sender full name for appointment toasts; falls back to the appointment id. */
+export function getOrderFeedbackName(order: Pick<Order, "id" | "sender">): string {
+  return order.sender?.name.trim() || formatOrderId(order);
+}
+
 export function formatCustomerPartySummary(customer: Customer): string {
   const addressLine = getCustomerAddressLine(customer);
   return `${customer.name} · ${addressLine}`;
@@ -117,25 +128,15 @@ export function formatOrderRouteName(
 }
 
 export function formatPickupCommentSummary(comment: PickupComment): string {
+  const sentence = formatOrderCommentSentence(orderCommentToFormValues(comment));
+  if (sentence) return sentence;
+
   const description = comment.description.trim();
-  if (description) return description;
-
-  const purpose = comment.purpose.trim();
-  if (purpose && purpose.toLowerCase() !== "comment") return purpose;
-
-  const metadata = [
-    comment.unit ? `unit: ${comment.unit}` : "",
-    comment.quantity > 0 ? `qty: ${comment.quantity}` : "",
-  ].filter(Boolean);
-
-  return metadata.join(" · ") || "—";
+  return description || "—";
 }
 
-export function formatOrderCommentsSummary(order: Order, limit = 2): string {
-  if (order.comments.length === 0) return "—";
-  const visible = order.comments.slice(0, limit).map(formatPickupCommentSummary);
-  const suffix = order.comments.length > limit ? ` (+${order.comments.length - limit})` : "";
-  return `${visible.join("; ")}${suffix}`;
+export function formatOrderCommentsSummary(order: Order): string {
+  return compileOrderCommentsParagraph(order.comments.map(orderCommentToFormValues)) || "—";
 }
 
 export function getOrderCreatedByDisplayName(user: Order["createdBy"]): string {

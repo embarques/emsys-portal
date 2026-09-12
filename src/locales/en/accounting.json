@@ -1,10 +1,13 @@
 {
+  "pages": {
+    "description": "Maintain a centralized financial history of payments, transactions, income, and expenses."
+  },
   "chartOfAccounts": {
     "title": "Chart of Accounts",
-    "description": "Manage the accounts used by daily income transactions.",
+    "description": "Define income, expense, bank, and other categories used to classify financial transactions.",
     "noun": "accounts",
     "entity": "Account",
-    "searchPlaceholder": "Search by account…",
+    "searchPlaceholder": "Search accounts",
     "empty": "No accounts match your search.",
     "addAccount": "Add account",
     "loading": "Loading accounts…",
@@ -31,7 +34,11 @@
     },
     "values": {
       "allBranches": "All",
-      "systemAccount": "System"
+      "systemAccount": "System",
+      "defaultAccount": "Default"
+    },
+    "mobile": {
+      "allTypes": "All types"
     },
     "actions": {
       "edit": "Edit account",
@@ -79,24 +86,29 @@
   },
   "checks": {
     "title": "Checks",
-    "description": "Track outstanding and cleared checks linked to invoices and receipts.",
+    "description": "Track invoice payments made by check. Outstanding checks do not change the invoice balance until they are marked cleared.",
     "noun": "checks",
     "searchPlaceholder": "Search checks…",
     "empty": "No checks match your search.",
+    "emptyNone": "No checks yet.",
     "addCheck": "Add check",
     "columns": {
       "status": "Status",
       "invoiceNumber": "Invoice #",
-      "receiptNumber": "Check #",
+      "checkNumber": "Check #",
+      "paymentAmount": "Amount",
+      "datePosted": "Date posted",
+      "referenceNumber": "Reference #",
       "createdAt": "Created at",
-      "createdBy": "Created by",
-      "depositedAt": "Deposited at",
-      "depositedOn": "Deposited on",
-      "depositedBy": "Deposited by"
+      "createdBy": "Created by"
     },
     "status": {
       "outstanding": "Outstanding",
       "cleared": "Cleared"
+    },
+    "nav": {
+      "outstandingAlert": "{{count}} outstanding check",
+      "outstandingAlert_plural": "{{count}} outstanding checks"
     },
     "actions": {
       "edit": "Edit check",
@@ -107,35 +119,37 @@
     },
     "form": {
       "createTitle": "Add check",
-      "createDescription": "Record a new check payment.",
+      "createDescription": "Record an outstanding check against an invoice. The invoice balance updates when the check is marked cleared.",
       "editTitle": "Edit check",
-      "editDescription": "Update the selected check.",
+      "editDescription": "Update the selected check. Changing a cleared check reverses and re-applies the invoice payment.",
       "sections": {
         "details": "Check details",
-        "deposit": "Deposit details"
+        "clearance": "Clearance"
       },
+      "clearanceHint": "Clearing a check applies the payment to the invoice. Reverting or deleting it reverses that payment.",
       "fields": {
-        "invoiceNumber": "Invoice number",
-        "receiptNumber": "Check number",
+        "invoice": "Invoice",
+        "checkNumber": "Check number",
+        "paymentAmount": "Amount",
+        "datePosted": "Date posted",
+        "referenceNumber": "Reference number",
         "status": "Status",
         "createdBy": "Created by",
-        "depositedAt": "Deposited at",
-        "depositedOn": "Deposited on",
-        "depositedBy": "Deposited by"
+        "clearedAt": "Cleared on"
       },
       "placeholders": {
-        "invoiceNumber": "INV-2026-0001",
-        "receiptNumber": "CHK-8842",
-        "createdBy": "Enter name",
-        "depositedOn": "Bank account",
-        "depositedBy": "Enter name"
+        "invoice": "Select an invoice",
+        "searchInvoices": "Search invoices…",
+        "checkNumber": "4521",
+        "referenceNumber": "REF-1001"
       },
       "selectEmpty": "No matching options.",
       "validation": {
-        "invoiceNumberRequired": "Invoice number is required.",
-        "receiptNumberRequired": "Check number is required.",
-        "createdByRequired": "Created by is required.",
-        "depositRequired": "Deposit details are required for cleared checks."
+        "invoiceRequired": "Invoice is required.",
+        "checkNumberRequired": "Check number is required.",
+        "paymentAmountRequired": "Amount must be greater than zero.",
+        "datePostedRequired": "Date posted is required.",
+        "clearedAtRequired": "Cleared date is required for cleared checks."
       }
     },
     "view": {
@@ -146,8 +160,8 @@
     "delete": {
       "title": "Delete check?",
       "title_plural": "Delete {{count}} checks?",
-      "description": "This removes check {{receiptNumber}} from the list.",
-      "description_plural": "This removes {{count}} checks from the list."
+      "description": "This removes check {{checkNumber}}. If it was cleared, the invoice payment is reversed.",
+      "description_plural": "This removes {{count}} checks. Cleared-check invoice payments are reversed."
     },
     "toasts": {
       "created": "Check added.",
@@ -162,17 +176,28 @@
   },
   "dailyIncome": {
     "title": "Daily Income",
-    "description": "Create and reconcile the daily accounting closeout.",
+    "description": "Record and track the company's daily incoming transactions and revenue.",
     "noun": "transactions",
     "transactionNoun": "transaction",
     "actions": {
       "createCloseout": "Create closeout",
       "editCloseout": "Edit closeout",
+      "printReport": "Print report",
       "closeDay": "Close day",
       "reopenDay": "Reopen day",
       "addTransaction": "Add transaction",
       "editTransaction": "Edit transaction",
       "deleteTransaction": "Delete transaction"
+    },
+    "print": {
+      "title": "Print daily income report",
+      "description": "Print all transactions for this closeout, or filter by employee.",
+      "date": "Date",
+      "employee": "Employee",
+      "allEmployees": "All",
+      "selectEmployee": "Select employee",
+      "searchEmployees": "Search employees…",
+      "confirm": "Print report"
     },
     "filters": {
       "branch": "Branch",
@@ -189,7 +214,8 @@
     },
     "summary": {
       "loadingTotals": "Loading summary totals…",
-      "currencyRate": "{{code}} · rate {{rate}}"
+      "currencyRate": "{{code}} · rate {{rate}}",
+      "totalDeposited": "Total Deposited"
     },
     "currency": {
       "usd": "Dollar",
@@ -203,10 +229,16 @@
       "loadingTitle": "Loading transactions",
       "loadingDescription": "Syncing journal entries, payments, and closeout totals…"
     },
+    "view": {
+      "sections": {
+        "audit": "Audit"
+      }
+    },
     "columns": {
       "date": "Date",
       "accountInvoice": "Account / invoice",
       "employee": "Employee",
+      "assignedTo": "Assigned to",
       "type": "Transaction",
       "reference": "Reference #",
       "paymentMethod": "Payment method",
@@ -217,6 +249,7 @@
       "createTitle": "Create daily income",
       "editTitle": "Edit daily income",
       "description": "Set the branch, date, currency, and exchange rate for this closeout.",
+      "editDescription": "Update the date, currency, and exchange rate for this closeout.",
       "save": "Save daily income",
       "fields": {
         "branch": "Branch",
@@ -239,8 +272,12 @@
       "statementOpened": "Daily income opened.",
       "statementClosed": "Daily income closed.",
       "transactionCreated": "Transaction created.",
+      "transactionCreatedWithType": "Transaction created: {{type}}.",
+      "transactionCreatedWithTarget": "Transaction created: {{type}} - {{target}}.",
       "transactionUpdated": "Transaction updated.",
-      "invoiceRegistered": "New invoice #{{invoiceNumber}} created and payment registered."
+      "invoiceRegistered": "New invoice #{{invoiceNumber}} created and payment registered.",
+      "checkPaymentHeld": "Check {{checkNumber}} recorded as outstanding. Invoice {{invoiceNumber}} will not show this payment until the check is marked cleared.",
+      "reportReady": "Daily income report ready."
     },
     "errors": {
       "noCloseoutLoaded": "No closeout loaded.",
@@ -261,6 +298,7 @@
       "description": "Record an entry in the selected daily closeout.",
       "saving": "Saving transaction…",
       "saveTransaction": "Save transaction",
+      "stepCount": "{{current}} of {{total}}",
       "steps": {
         "selectType": "Select type",
         "enterDetails": "Enter details"
@@ -296,6 +334,12 @@
         "description": "Record income",
         "sectionTitle": "Income information"
       },
+      "inventory": {
+        "label": "Register inventory change",
+        "shortLabel": "Inventory",
+        "description": "Record supplies received or dispatched",
+        "sectionTitle": "Inventory change"
+      },
       "discount": {
         "label": "Apply discount",
         "shortLabel": "Discount",
@@ -323,12 +367,15 @@
     },
     "form": {
       "fields": {
+        "assignedTo": "Assigned to",
         "employee": "Employee",
+        "route": "Daily route",
         "paymentMethod": "Payment method",
         "bankAccount": "Bank account",
         "zelleDate": "Zelle transaction date",
         "zelleName": "Zelle transaction name (as it appears in bank account)",
         "checkNumber": "Check number",
+        "checkNumberHint": "Creates an outstanding check. The invoice balance updates when the check is marked cleared.",
         "invoice": "Invoice",
         "referenceNumber": "Reference number",
         "account": "Account",
@@ -340,11 +387,29 @@
         "includeSender": "Include sender client",
         "senderClient": "Sender client",
         "includeReceiver": "Include receiver client",
-        "receiverClient": "Receiver client"
+        "receiverClient": "Receiver client",
+        "inventoryDirection": "Received or dispatched",
+        "unitPrice": "Unit price",
+        "total": "Total"
+      },
+      "partyActions": {
+        "new": "New",
+        "edit": "Edit"
+      },
+      "inventory": {
+        "received": "Received",
+        "dispatched": "Dispatched",
+        "priceHint": "Fill unit price or total; the other amount updates automatically.",
+        "receivedDescription": "Received {{item}} × {{quantity}} from {{supplier}}",
+        "receivedDescriptionNoSupplier": "Received {{item}} × {{quantity}}",
+        "dispatchedDescription": "Dispatched {{item}} × {{quantity}}"
       },
       "placeholders": {
+        "selectAssigneeSource": "Select employee or daily route",
         "selectEmployee": "Select employee",
         "searchEmployees": "Search employees…",
+        "selectRoute": "Select a daily route",
+        "searchRoutes": "Search daily routes…",
         "selectPaymentMethod": "Select payment method",
         "searchPaymentMethods": "Search payment methods…",
         "selectBankAccount": "Select bank account",
@@ -353,7 +418,7 @@
         "searchAccounts": "Search accounts…",
         "selectSourceAccount": "Select source account",
         "selectInvoice": "Select invoice",
-        "searchInvoices": "Search by invoice #, sender or receiver phone…",
+        "searchInvoices": "Search invoices",
         "enterZelleName": "Enter Zelle transaction name",
         "enterCheckNumber": "Enter check number",
         "enterReferenceNumber": "Enter reference number",
@@ -365,6 +430,7 @@
         "searchReceiver": "Search receiver by name, phone, or address…",
         "searchReceivers": "Search receivers…",
         "selectReceiver": "Select receiver",
+        "selectInventoryDirection": "Select received or dispatched",
         "amount": "0.00"
       },
       "hints": {
@@ -396,7 +462,7 @@
         "zelleNameRequired": "Zelle transaction name is required.",
         "checkNumberRequired": "Check number is required.",
         "bankAccountRequired": "Select a bank account for this payment method.",
-        "employeeRequired": "Employee is required.",
+        "employeeRequired": "Select an employee or a daily route.",
         "invoiceRequired": "Invoice is required.",
         "paymentMethodRequired": "Payment method is required.",
         "amountExceedsCost": "Amount cannot exceed cost.",
@@ -405,6 +471,11 @@
         "amountExceedsBalance": "Amount cannot exceed the invoice balance.",
         "accountRequired": "Account is required.",
         "sourceAccountRequired": "Source account is required.",
+        "inventoryRequired": "Select received or dispatched.",
+        "inventoryItemRequired": "Item is required.",
+        "inventoryQuantityRequired": "Quantity must be greater than zero.",
+        "inventoryPriceRequired": "Enter a unit price or total.",
+        "supplierRequired": "Supplier is required.",
         "balanceNegative": "Balance cannot be negative."
       }
     }

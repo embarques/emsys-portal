@@ -3,7 +3,7 @@
   "entityPlural": "items",
   "title": "Items",
   "pages": {
-    "description": "Maintain the product and service catalog with pricing, descriptions, and details used on invoices and orders."
+    "description": "Optional merchandise shortcuts workers can select when creating invoices."
   },
   "noun": "items",
   "actions": {
@@ -87,13 +87,34 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "Item ID", "placeholder": "Enter item ID…" },
-      "name": { "label": "Description", "placeholder": "Enter description…" },
-      "price": { "label": "Price", "placeholder": "Enter amount…" },
-      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
-      "createdAtRange": { "label": "Date created range", "placeholder": "2026-01-01 to 2026-06-30" },
-      "updatedAt": { "label": "Updated at", "placeholder": "YYYY-MM-DD" },
-      "updatedAtRange": { "label": "Date modified range", "placeholder": "2026-01-01 to 2026-06-30" }
+      "id": {
+        "label": "Item ID",
+        "placeholder": "Enter item ID…"
+      },
+      "name": {
+        "label": "Description",
+        "placeholder": "Enter description…"
+      },
+      "price": {
+        "label": "Price",
+        "placeholder": "Enter amount…"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "createdAtRange": {
+        "label": "Created at range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "updatedAt": {
+        "label": "Updated at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "updatedAtRange": {
+        "label": "Updated at range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      }
     }
   }
 }

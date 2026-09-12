@@ -3,7 +3,7 @@
   "entityPlural": "roles",
   "title": "Roles",
   "pages": {
-    "description": "Define roles and permission sets that control what users can view and do across the portal."
+    "description": "Define roles and permissions that control what users can view and do."
   },
   "noun": "roles",
   "actions": {
@@ -37,7 +37,8 @@
   },
   "table": {
     "permissionsCount": "{{count}} permissions",
-    "actionsFor": "Actions for {{name}}"
+    "actionsFor": "Actions for {{name}}",
+    "systemRole": "System"
   },
   "search": {
     "placeholder": "Search roles..."
@@ -77,9 +78,19 @@
     "selected": "{{count}} selected",
     "searchPlaceholder": "Search permissions…",
     "searchAria": "Search permissions",
-    "selectAll": "Select all permissions",
+    "selectAll": "Select all",
     "selectAllMatching": "Select all matching permissions",
     "selectAllAria": "Select all permissions",
+    "selectAllCreate": "Select all create",
+    "selectAllView": "Select all view",
+    "selectAllDelete": "Select all delete",
+    "selectAllPrint": "Select all print",
+    "selectAllCreateAria": "Select all create permissions",
+    "selectAllViewAria": "Select all view permissions",
+    "selectAllDeleteAria": "Select all delete permissions",
+    "selectAllPrintAria": "Select all print permissions",
+    "checkedTitle": "Selected permissions",
+    "removeAria": "Remove {{label}}",
     "loading": "Loading permissions…",
     "noMatch": "No permissions match \"{{query}}\".",
     "groupSelectAllAria": "Select all {{group}} permissions",
@@ -102,6 +113,12 @@
     "deleteOne": "This will permanently remove this role. {{cannotBeUndone}}",
     "deleteMany": "This will permanently remove {{count}} selected roles. {{cannotBeUndone}}"
   },
+  "enums": {
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    }
+  },
   "filters": {
     "fields": {
       "id": {
@@ -111,6 +128,10 @@
       "name": {
         "label": "Role name",
         "placeholder": "Enter role name…"
+      },
+      "active": {
+        "label": "Active",
+        "placeholder": "Select status…"
       },
       "createdBy": {
         "name": {
@@ -129,7 +150,7 @@
         "placeholder": "YYYY-MM-DD"
       },
       "createdAtRange": {
-        "label": "Created date range",
+        "label": "Created at range",
         "placeholder": "2026-01-01 to 2026-06-30"
       },
       "updatedAt": {
@@ -137,7 +158,7 @@
         "placeholder": "YYYY-MM-DD"
       },
       "updatedAtRange": {
-        "label": "Modified date range",
+        "label": "Updated at range",
         "placeholder": "2026-01-01 to 2026-06-30"
       }
     }

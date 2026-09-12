@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 
 import { TableDirectoryTabs } from "@/components/app-shell/table-directory-tabs";
-import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -16,19 +15,14 @@ import {
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
 import {
-  getAvailableQuantity,
-  getCategoryLabel,
-  getDispatchStatusLabel,
-  getLocationLabel,
+  formatInventoryDate,
+  formatInventoryMoney,
+  getInventoryDispatchToLabel,
   getMovementDirectionLabel,
   getReferenceTypeLabel,
-  getStatusBadgeClass,
-  getStatusLabel,
 } from "@/lib/inventory/display";
-import type { getInventoryStoreSnapshot } from "@/lib/inventory/mock-store";
 import type { InventoryItem } from "@/lib/inventory/types";
-
-type InventorySnapshot = ReturnType<typeof getInventoryStoreSnapshot>;
+import type { InventorySnapshot } from "@/lib/inventory/types/snapshot";
 
 type InventoryViewSheetProps = {
   item: InventoryItem | null;
@@ -62,21 +56,15 @@ export function InventoryViewSheet({
     [item, snapshot.movements],
   );
 
-  const itemReceipts = useMemo(() => {
-    if (!item) return [];
-    const receiptIds = new Set(
-      movements.filter((movement) => movement.referenceType === "receipt").map((movement) => movement.referenceId),
-    );
-    return snapshot.receipts.filter((receipt) => receiptIds.has(receipt.id));
-  }, [item, movements, snapshot.receipts]);
+  const itemReceipts = useMemo(
+    () => (item ? snapshot.receipts.filter((receipt) => receipt.itemId === item.id) : []),
+    [item, snapshot.receipts],
+  );
 
-  const itemDispatches = useMemo(() => {
-    if (!item) return [];
-    const dispatchIds = new Set(
-      movements.filter((movement) => movement.referenceType === "dispatch").map((movement) => movement.referenceId),
-    );
-    return snapshot.dispatches.filter((dispatch) => dispatchIds.has(dispatch.id));
-  }, [item, movements, snapshot.dispatches]);
+  const itemDispatches = useMemo(
+    () => (item ? snapshot.dispatches.filter((dispatch) => dispatch.itemId === item.id) : []),
+    [item, snapshot.dispatches],
+  );
 
   if (!item) return null;
 
@@ -89,40 +77,20 @@ export function InventoryViewSheet({
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
       <RecordViewSheetContent className="sm:max-w-xl">
-        <RecordViewSheetHeader
-          title={item.name}
-          description={item.sku}
-          meta={
-            <>
-              <Badge className={getStatusBadgeClass(item.status)}>{getStatusLabel(item.status, t)}</Badge>
-              <Badge variant="outline">{getCategoryLabel(item.category, t)}</Badge>
-            </>
-          }
-        />
+        <RecordViewSheetHeader title={item.item} description={t("inventory.submenus.items")} />
 
         <RecordViewSheetBody>
           <RecordViewSheetSection title={t("inventory.view.stock")}>
-            <RecordViewSheetDetailRow label={t("inventory.columns.location")} value={getLocationLabel(item.location, t)} />
-            <RecordViewSheetDetailRow label={t("inventory.columns.onHand")} value={`${item.quantity} ${item.unit}`} />
-            <RecordViewSheetDetailRow label={t("inventory.form.fields.reserved")} value={`${item.reserved} ${item.unit}`} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.quantityLeft")} value={String(item.quantity)} />
             <RecordViewSheetDetailRow
-              label={t("inventory.columns.available")}
-              value={`${getAvailableQuantity(item)} ${item.unit}`}
-            />
-            <RecordViewSheetDetailRow
-              label={t("inventory.columns.reorderLevel")}
-              value={`${item.reorderLevel} ${item.unit}`}
+              label={t("inventory.columns.reorderThreshold")}
+              value={String(item.reorderThreshold)}
             />
             <RecordViewSheetDetailRow label={t("inventory.columns.dateCreated")} value={formatAuditDateTime(item.createdAt)} />
             <RecordViewSheetDetailRow label={t("inventory.columns.userCreated")} value={item.createdBy} />
             <RecordViewSheetDetailRow label={t("inventory.columns.dateModified")} value={formatAuditDateTime(item.updatedAt)} />
+            <RecordViewSheetDetailRow label={t("inventory.columns.userModified")} value={item.updatedBy} />
           </RecordViewSheetSection>
-
-          {item.notes ? (
-            <RecordViewSheetSection title={t("inventory.form.sections.notes")} padding="relaxed">
-              <p className="text-sm leading-relaxed text-foreground">{item.notes}</p>
-            </RecordViewSheetSection>
-          ) : null}
 
           <div className="border-b">
             <TableDirectoryTabs tabs={tabs} value={activeTab} onValueChange={setActiveTab} aria-label={t("inventory.view.movementHistory")} />
@@ -144,7 +112,7 @@ export function InventoryViewSheet({
                         </span>
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
-                        {formatAuditDateTime(movement.movementDate)} · {getReferenceTypeLabel(movement.referenceType, t)}
+                        {formatInventoryDate(movement.movementDate)} · {getReferenceTypeLabel(movement.referenceType, t)}
                       </div>
                     </div>
                   ))}
@@ -160,14 +128,14 @@ export function InventoryViewSheet({
               ) : (
                 <div className="space-y-3">
                   {itemReceipts.map((receipt) => {
-                    const line = snapshot.receiptLines.find(
-                      (entry) => entry.receiptId === receipt.id && entry.itemId === item.id,
-                    );
+                    const supplier = receipt.supplier?.companyName
+                      ?? snapshot.suppliers.find((entry) => entry.id === receipt.supplierId)?.companyName
+                      ?? receipt.supplierId;
                     return (
                       <div key={receipt.id} className="rounded-md border border-border px-3 py-2 text-sm">
-                        <div className="font-medium">{receipt.source}</div>
+                        <div className="font-medium">{supplier}</div>
                         <div className="text-xs text-muted-foreground">
-                          {formatAuditDateTime(receipt.receiptDate)} · {line?.quantity ?? 0} {item.unit}
+                          {formatInventoryDate(receipt.receivedAt)} · {receipt.quantity} · {formatInventoryMoney(receipt.averageCost)}
                         </div>
                       </div>
                     );
@@ -184,17 +152,15 @@ export function InventoryViewSheet({
               ) : (
                 <div className="space-y-3">
                   {itemDispatches.map((dispatch) => {
-                    const line = snapshot.dispatchLines.find(
-                      (entry) => entry.dispatchId === dispatch.id && entry.itemId === item.id,
-                    );
-                    const recipient = snapshot.recipients.find((entry) => entry.id === dispatch.recipientId);
+                    const dispatchedTo = getInventoryDispatchToLabel(dispatch.dispatchedTo);
                     return (
-                      <div key={dispatch.id} className="rounded-md border border-border px-3 py-2 text-sm">
-                        <div className="font-medium">{recipient?.name ?? dispatch.recipientId}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatAuditDateTime(dispatch.dispatchDate)} · {line?.quantity ?? 0} {item.unit} · {getDispatchStatusLabel(dispatch.status, t)}
-                        </div>
+                    <div key={dispatch.id} className="rounded-md border border-border px-3 py-2 text-sm">
+                      <div className="font-medium">{formatInventoryMoney(dispatch.incomeGained)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatInventoryDate(dispatch.dispatchedAt)} · {dispatch.quantity}
+                        {dispatchedTo ? ` · ${dispatchedTo}` : ""}
                       </div>
+                    </div>
                     );
                   })}
                 </div>

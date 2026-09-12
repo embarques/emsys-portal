@@ -34,6 +34,11 @@ export type DailyIncomeJournalSchemaMessages = {
   amountExceedsBalance: string;
   accountRequired: string;
   sourceAccountRequired: string;
+  inventoryRequired: string;
+  inventoryItemRequired: string;
+  inventoryQuantityRequired: string;
+  inventoryPriceRequired: string;
+  supplierRequired: string;
 };
 
 export function createDailyIncomeStatementSchema(messages: DailyIncomeStatementSchemaMessages) {
@@ -47,6 +52,22 @@ export function createDailyIncomeStatementSchema(messages: DailyIncomeStatementS
   });
 }
 
+function hasJournalAssignee(values: { employeeId?: number; routeId?: string }) {
+  return Boolean(values.employeeId) || Boolean(values.routeId?.trim());
+}
+
+function addAssigneeRequiredIssue(
+  context: z.RefinementCtx,
+  message: string,
+  source?: "employee" | "route",
+) {
+  context.addIssue({
+    code: "custom",
+    path: source === "route" ? ["routeId"] : ["employeeId"],
+    message,
+  });
+}
+
 export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchemaMessages) {
   return z
     .object({
@@ -57,6 +78,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         "SURCHARGE",
         "EXPENSE",
         "SALES",
+        "INVENTORY",
         "TRANSFER",
         "LOAN",
       ]),
@@ -70,6 +92,11 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       employeeName: z.string().optional(),
       employeeGroupId: z.string().optional(),
       employeeGroupName: z.string().optional(),
+      assigneeSource: z.enum(["employee", "route"]).optional(),
+      routeId: z.string().optional(),
+      routeName: z.string().optional(),
+      routeCrewId: z.string().optional(),
+      routeCrewName: z.string().optional(),
       accountId: z.number().optional(),
       accountName: z.string().optional(),
       accountType: z.string().optional(),
@@ -95,8 +122,58 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       zelleTransactionDate: z.string().optional(),
       zelleTransactionName: z.string().optional(),
       checkNumber: z.string().optional(),
+      inventoryDirection: z.enum(["received", "dispatched"]).optional(),
+      inventoryItemId: z.string().optional(),
+      inventoryItemName: z.string().optional(),
+      inventoryQuantity: z.number().optional(),
+      inventoryUnitPrice: z.number().optional(),
+      inventoryTotal: z.number().optional(),
+      inventorySupplierId: z.string().optional(),
+      inventorySupplierName: z.string().optional(),
     })
     .superRefine((values, context) => {
+      if (values.transactionType === "INVENTORY") {
+        if (!values.inventoryDirection) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventoryDirection"],
+            message: messages.inventoryRequired,
+          });
+        }
+        if (!values.inventoryItemId?.trim()) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventoryItemId"],
+            message: messages.inventoryItemRequired,
+          });
+        }
+        if (!values.inventoryQuantity || values.inventoryQuantity <= 0) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventoryQuantity"],
+            message: messages.inventoryQuantityRequired,
+          });
+        }
+        if (values.inventoryTotal == null || values.inventoryTotal <= 0) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventoryTotal"],
+            message: messages.inventoryPriceRequired,
+          });
+        }
+        if (values.inventoryDirection === "received" && !values.inventorySupplierId?.trim()) {
+          context.addIssue({
+            code: "custom",
+            path: ["inventorySupplierId"],
+            message: messages.supplierRequired,
+          });
+        }
+        if (values.inventoryDirection === "dispatched" && !hasJournalAssignee(values)) {
+          addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
+        }
+        return;
+      }
+
       if (values.amount == null) {
         context.addIssue({
           code: "custom",
@@ -156,12 +233,8 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       }
 
       if (values.transactionType === "INITIAL-PAYMENT") {
-        if (!values.employeeId) {
-          context.addIssue({
-            code: "custom",
-            path: ["employeeId"],
-            message: messages.employeeRequired,
-          });
+        if (!hasJournalAssignee(values)) {
+          addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
         }
         if (!values.invoiceNumber?.trim()) {
           context.addIssue({ code: "custom", path: ["invoiceNumber"], message: messages.invoiceRequired });
@@ -197,12 +270,8 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       }
 
       if (values.transactionType === "PAYMENT") {
-        if (!values.employeeId) {
-          context.addIssue({
-            code: "custom",
-            path: ["employeeId"],
-            message: messages.employeeRequired,
-          });
+        if (!hasJournalAssignee(values)) {
+          addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
         }
         if (!values.invoiceId) {
           context.addIssue({ code: "custom", path: ["invoiceId"], message: messages.invoiceRequired });
@@ -224,12 +293,8 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         return;
       }
 
-      if (!values.employeeId) {
-        context.addIssue({
-          code: "custom",
-          path: ["employeeId"],
-          message: messages.employeeRequired,
-        });
+      if (!hasJournalAssignee(values)) {
+        addAssigneeRequiredIssue(context, messages.employeeRequired, values.assigneeSource);
       }
 
       const invoiceRelated = ["DISCOUNT", "SURCHARGE"].includes(values.transactionType);
@@ -279,7 +344,7 @@ const defaultJournalMessages: DailyIncomeJournalSchemaMessages = {
   zelleNameRequired: "Zelle transaction name is required.",
   checkNumberRequired: "Check number is required.",
   bankAccountRequired: "Select a bank account for this payment method.",
-  employeeRequired: "Employee is required.",
+  employeeRequired: "Select an employee or a daily route.",
   invoiceRequired: "Invoice is required.",
   paymentMethodRequired: "Payment method is required.",
   amountExceedsCost: "Amount cannot exceed cost.",
@@ -288,6 +353,11 @@ const defaultJournalMessages: DailyIncomeJournalSchemaMessages = {
   amountExceedsBalance: "Amount cannot exceed the invoice balance.",
   accountRequired: "Account is required.",
   sourceAccountRequired: "Source account is required.",
+  inventoryRequired: "Select received or dispatched.",
+  inventoryItemRequired: "Item is required.",
+  inventoryQuantityRequired: "Quantity must be greater than zero.",
+  inventoryPriceRequired: "Enter a unit price or total.",
+  supplierRequired: "Supplier is required.",
 };
 
 export const dailyIncomeStatementSchema = createDailyIncomeStatementSchema(defaultStatementMessages);

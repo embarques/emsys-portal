@@ -1,6 +1,6 @@
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
-import { BARCODE_STATUS_OPTIONS } from "@/lib/labels/types";
+import { FALLBACK_BARCODE_STATUS_OPTIONS } from "@/lib/labels/types";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { BARCODE_TABLE_FILTER_FIELDS } from "@/lib/barcodes/filter-fields";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
@@ -40,7 +40,7 @@ export function createEmptyBarcodeForm(): BarcodeFormValues {
   return {
     id: 0,
     number: "",
-    statusId: String(BARCODE_STATUS_OPTIONS[0]?.id ?? 1),
+    statusId: String(FALLBACK_BARCODE_STATUS_OPTIONS[0]?.id ?? 1),
     containerId: "",
   };
 }
@@ -88,9 +88,9 @@ export function barcodeToFormValues(barcode: {
     barcode.status?.id != null && barcode.status.id > 0
       ? String(barcode.status.id)
       : String(
-          BARCODE_STATUS_OPTIONS.find(
+          FALLBACK_BARCODE_STATUS_OPTIONS.find(
             (option) => option.name.toUpperCase() === barcode.status?.name.trim().toUpperCase(),
-          )?.id ?? BARCODE_STATUS_OPTIONS[0]?.id ?? 1,
+          )?.id ?? FALLBACK_BARCODE_STATUS_OPTIONS[0]?.id ?? 1,
         );
 
   return {

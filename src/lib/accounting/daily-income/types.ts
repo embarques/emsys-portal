@@ -3,11 +3,14 @@ export type AccountingLookup = {
   name: string;
   code?: string;
   displayName?: string;
+  type?: string;
 };
 
 export type DailyIncomePartyRef = {
   id: string | number;
   name: string;
+  /** Nested crew/template route when the journal is posted under a daily vehicle-route. */
+  route?: { id: string | number; name: string };
 };
 
 export type IncomeStatementStatus = "OPEN" | "CLOSED";
@@ -60,8 +63,13 @@ export type JournalTransactionType =
   | "SURCHARGE"
   | "EXPENSE"
   | "SALES"
+  | "INVENTORY"
   | "TRANSFER"
   | "LOAN";
+
+export type DailyIncomeAssigneeSource = "employee" | "route";
+
+export type InventoryChangeDirection = "received" | "dispatched";
 
 export type DailyIncomeJournal = {
   id: string;
@@ -75,6 +83,8 @@ export type DailyIncomeJournal = {
   rate: number;
   employee?: AccountingLookup;
   employeeGroup?: DailyIncomePartyRef;
+  /** Daily vehicle-route when the journal is posted under a route instead of an employee. */
+  route?: DailyIncomePartyRef;
   account?: AccountingLookup;
   paymentAccount?: AccountingLookup;
   sourceAccount?: AccountingLookup;
@@ -82,6 +92,7 @@ export type DailyIncomeJournal = {
     id?: string | number;
     number?: string;
     cost?: number;
+    discount?: number;
     payment?: number;
     balance?: number;
     sender?: DailyIncomePartyRef;
@@ -92,6 +103,14 @@ export type DailyIncomeJournal = {
   zelleTransactionName?: string;
   /** Check number when payment method is CHECK. */
   checkNumber?: string;
+  inventoryDirection?: InventoryChangeDirection;
+  inventoryItemId?: string;
+  inventoryItemName?: string;
+  inventoryQuantity?: number;
+  inventoryUnitPrice?: number;
+  inventoryTotal?: number;
+  inventorySupplierId?: string;
+  inventorySupplierName?: string;
   accounts: Array<{
     id: number;
     name: string;
@@ -127,19 +146,57 @@ export type DailyIncomeStatementValues = {
   rate: number;
 };
 
+function normalizePaymentMethodName(name?: string | null): string {
+  return name?.trim().replaceAll("_", "-").toUpperCase() ?? "";
+}
+
+/** Cash is the default method for new invoice and daily-income payments. */
+export function isCashPaymentMethod(name?: string | null): boolean {
+  return normalizePaymentMethodName(name) === "CASH";
+}
+
+export function findCashPaymentMethod(methods: AccountingLookup[]): AccountingLookup | undefined {
+  return methods.find((method) => isCashPaymentMethod(method.name));
+}
+
+/** Resolve a saved payment method by id, then by name (API journals often omit or mismatch ids). */
+export function matchPaymentMethod(
+  methods: AccountingLookup[],
+  id?: number,
+  name?: string,
+): AccountingLookup | undefined {
+  if (id) {
+    const byId = methods.find((method) => method.id === id);
+    if (byId) return byId;
+  }
+  const normalized = normalizePaymentMethodName(name);
+  if (!normalized) return undefined;
+  return methods.find((method) => normalizePaymentMethodName(method.name) === normalized);
+}
+
+export function withDefaultCashPaymentMethod<T extends { paymentMethodId?: number; paymentMethodName?: string }>(
+  values: T,
+  paymentMethods: AccountingLookup[],
+): T {
+  if (values.paymentMethodId) return values;
+  const cash = findCashPaymentMethod(paymentMethods);
+  if (!cash) return values;
+  return { ...values, paymentMethodId: cash.id, paymentMethodName: cash.name };
+}
+
 /** Zelle requires extra reconciliation fields to prevent duplicate payment posting. */
 export function isZellePaymentMethod(name?: string | null): boolean {
-  return name?.trim().toLowerCase() === "zelle";
+  return normalizePaymentMethodName(name) === "ZELLE";
 }
 
 /** Check payments require the paper check number for reconciliation. */
 export function isCheckPaymentMethod(name?: string | null): boolean {
-  const normalized = name?.trim().toLowerCase();
-  return normalized === "check" || normalized === "cheque";
+  const normalized = normalizePaymentMethodName(name);
+  return normalized === "CHECK" || normalized === "CHEQUE";
 }
 
 export function requiresBankAccount(name?: string | null): boolean {
-  const normalizedName = name?.trim().toUpperCase();
+  const normalizedName = normalizePaymentMethodName(name);
   return normalizedName === "DEPOSIT" || normalizedName === "ZELLE";
 }
 
@@ -148,10 +205,16 @@ export type DailyIncomeJournalValues = {
   amount?: number;
   refNumber: string;
   description: string;
+  /** Portal-only: employee vs daily route. Do not persist. */
+  assigneeSource?: DailyIncomeAssigneeSource;
   employeeId?: number;
   employeeName?: string;
   employeeGroupId?: string;
   employeeGroupName?: string;
+  routeId?: string;
+  routeName?: string;
+  routeCrewId?: string;
+  routeCrewName?: string;
   accountId?: number;
   accountName?: string;
   accountType?: string;
@@ -177,6 +240,15 @@ export type DailyIncomeJournalValues = {
   zelleTransactionDate?: string;
   zelleTransactionName?: string;
   checkNumber?: string;
+  /** Inventory change recorded with this journal. Posted with the closeout, not as a separate stock write. */
+  inventoryDirection?: InventoryChangeDirection;
+  inventoryItemId?: string;
+  inventoryItemName?: string;
+  inventoryQuantity?: number;
+  inventoryUnitPrice?: number;
+  inventoryTotal?: number;
+  inventorySupplierId?: string;
+  inventorySupplierName?: string;
 };
 
 export type {

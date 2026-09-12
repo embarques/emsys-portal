@@ -1,5 +1,5 @@
 import type { Route, RouteEmployeeRef, RouteVehicleRef } from "./types";
-import { formatRouteEmployeeNames, toRouteDateInput } from "./types";
+import { formatRouteEmployeeNames, getRouteBranchCode, toRouteDateInput } from "./types";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import type { TableFilterFieldOption } from "@/lib/table/filter-types";
 import { getVehiclePortalBranch } from "@/lib/vehicles/types";
@@ -28,17 +28,12 @@ export function truncateObjectId(id: string): string {
   return id.length > 12 ? `${id.slice(0, 8)}…` : id;
 }
 
-/** Display name for a route: `date - employees - vehicle name`. */
+/** Display name for a route crew: server name, else crew members. */
 export function formatRouteName(assignment: Route): string {
-  const parts = [
-    formatRouteDate(assignment.date),
-    formatRouteEmployeeNames(assignment.employees),
-    assignment.vehicle.name,
-  ]
-    .map((part) => part?.trim())
-    .filter((part): part is string => Boolean(part) && part !== "—");
-
-  return parts.length > 0 ? parts.join(" - ") : assignment.name.trim() || "—";
+  const name = assignment.name.trim();
+  if (name) return name;
+  const crew = formatRouteEmployeeNames(assignment.employees);
+  return crew || assignment.routeId.trim() || "—";
 }
 
 /** Default route name on create: `date · employee names · vehicle`. */
@@ -66,8 +61,8 @@ export function getRouteEmployeesLabel(employees: RouteEmployeeRef[]): string {
 export function formatRouteCopyLabel(assignment: Route): string {
   const parts = [
     assignment.name.trim(),
-    formatRouteDate(assignment.date),
-    getVehicleRefLabel(assignment.vehicle),
+    getRouteEmployeesLabel(assignment.employees),
+    getRouteBranchCode(assignment),
   ].filter((part): part is string => Boolean(part?.trim()) && part !== "—");
 
   if (parts.length > 0) return parts.join(" · ");
@@ -82,13 +77,13 @@ export function formatRouteAssignmentName(assignment: Route): string {
   return assignment.routeId.trim() || assignment.id || "—";
 }
 
-/** Secondary lines for route assignment pickers (date, vehicle). */
+/** Secondary lines for route-crew pickers (branch, crew). */
 export function formatRouteAssignmentDescriptionLines(assignment: Route): string[] {
   const lines: string[] = [];
-  const date = formatRouteDate(assignment.date);
-  if (date && date !== "—") lines.push(date);
-  const vehicle = getVehicleRefLabel(assignment.vehicle);
-  if (vehicle && vehicle !== "—") lines.push(vehicle);
+  const branch = getRouteBranchCode(assignment);
+  if (branch) lines.push(branch);
+  const crew = getRouteEmployeesLabel(assignment.employees);
+  if (crew && crew !== "—") lines.push(crew);
   return lines;
 }
 
@@ -107,9 +102,9 @@ export function buildRouteFilterOptions(routes: Route[]): TableFilterFieldOption
   }));
 }
 
-/** A route belongs to the DR branch when its assigned vehicle is DR. */
+/** A route crew belongs to the DR branch when its branch is DR. */
 export function isDrRoute(assignment: Route): boolean {
-  const branch = assignment.vehicle.branch?.trim();
+  const branch = getRouteBranchCode(assignment);
   if (!branch) return false;
   return getVehiclePortalBranch(branch) === "dr";
 }
@@ -145,6 +140,8 @@ export function routeMatchesSearch(
         return assignment.routeId;
       case "name":
         return assignment.name;
+      case "branch.code":
+        return getRouteBranchCode(assignment);
       case "date":
         return assignment.date;
       case "vehicle.id":
@@ -173,9 +170,9 @@ export function routeMatchesQuery(assignment: Route, query: string): boolean {
     assignment.name,
     assignment.date,
     assignment.createdBy,
+    getRouteBranchCode(assignment),
     assignment.vehicle.id,
     assignment.vehicle.name,
-    getVehicleRefLabel(assignment.vehicle),
     formatRouteEmployeeNames(assignment.employees),
     formatRouteDate(assignment.date),
   ]

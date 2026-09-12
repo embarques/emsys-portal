@@ -8,10 +8,9 @@ export type UserReference = {
   name: string;
 };
 
-/** Branch reference for a user: `{ id, code }` (name kept for display). */
+/** Branch reference for a user: `{ id, name }` (API `user.BranchRef`; empty when omitted). */
 export type UserBranch = {
   id: number;
-  code: string;
   name: string;
 };
 
@@ -137,7 +136,7 @@ export function createEmptyUserForm(): UserFormValues {
     password: "",
     confirmPassword: "",
     active: true,
-    branch: { id: 0, code: "", name: "" },
+    branch: { id: 0, name: "" },
     role: { id: 0, name: "" },
     restrictLoginHours: false,
     startTime: "",

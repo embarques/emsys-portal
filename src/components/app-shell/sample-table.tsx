@@ -1,6 +1,7 @@
 "use client";
 
 import { TableTagText } from "@/components/app-shell/table-tag-text";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
 
@@ -15,8 +16,28 @@ export function SampleTable() {
   const { t } = useTranslation();
 
   return (
-    <Card className="overflow-hidden py-0">
-      <CardContent className="overflow-x-auto p-0">
+    <>
+      <Card className="overflow-hidden py-0 md:hidden">
+        <CardContent className="px-4 py-0">
+          {rows.map((row) => (
+            <article key={row.reference} className="border-b border-border/80 py-5 last:border-b-0">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
+                <div className="min-w-0">
+                  <h2 className="truncate text-xl font-bold leading-tight text-foreground">{row.customer}</h2>
+                  <p className="mt-1 text-base text-muted-foreground">{row.reference}</p>
+                  <Badge className="mt-3 rounded-full border-transparent bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                    {t(`insights.sampleTable.statuses.${row.statusKey}`)}
+                  </Badge>
+                </div>
+                <p className="shrink-0 text-right text-xl font-bold text-foreground">{row.amount}</p>
+              </div>
+            </article>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="hidden overflow-hidden py-0 md:flex">
+        <CardContent className="overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50 text-left text-muted-foreground">
@@ -39,7 +60,8 @@ export function SampleTable() {
             ))}
           </tbody>
         </table>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </>
   );
 }

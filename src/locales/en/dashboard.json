@@ -1,0 +1,45 @@
+{
+  "metrics": {
+    "allTime": "All-time",
+    "loadError": "Could not load these metrics. Please try again.",
+    "retry": "Try again",
+    "empty": "No records to chart yet.",
+    "truncated": "Showing the first {{scanned}} of {{total}} records.",
+    "noAccess": "You do not have permission to view these metrics."
+  },
+  "appointments": {
+    "title": "Appointments",
+    "weekday": {
+      "title": "By weekday",
+      "description": "New appointments created on each weekday versus appointments scheduled for each weekday.",
+      "created": "Created",
+      "scheduled": "Scheduled"
+    },
+    "month": {
+      "title": "By month scheduled",
+      "description": "New appointments scheduled for each calendar month, across all years."
+    }
+  },
+  "clients": {
+    "title": "Clients",
+    "weekday": {
+      "title": "By weekday created",
+      "description": "New clients created on each weekday, across all records."
+    },
+    "month": {
+      "title": "By month created",
+      "description": "New clients created in each calendar month, across all years."
+    }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "weekday": {
+      "title": "By weekday created",
+      "description": "New invoices created on each weekday, across all records."
+    },
+    "month": {
+      "title": "By month created",
+      "description": "New invoices created in each calendar month, across all years."
+    }
+  }
+}

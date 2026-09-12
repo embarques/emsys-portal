@@ -1,22 +1,71 @@
 {
   "title": "Facturas",
   "pages": {
-    "description": "Cree y administre facturas de envío, líneas, cargos y documentación de facturación vinculada a órdenes y clientes."
+    "description": "Digitalice y rastree la mercancía del cliente que recogemos o recibimos como parte de un envío."
+  },
+  "stats": {
+    "new": {
+      "label": "Facturas nuevas",
+      "periodLabel": "Periodo",
+      "periods": {
+        "7d": "7 días",
+        "30d": "30 días",
+        "3m": "3 meses",
+        "6m": "6 meses",
+        "1y": "1 año"
+      }
+    }
   },
   "staging": {
     "tableAction": "Administrar artículos de factura",
     "title": "Seleccionar artículos de factura para procesamiento"
   },
   "columns": {
+    "invoiceNumber": "Número de factura",
+    "date": "Fecha",
+    "container": "Contenedor",
+    "paidStatus": "Estado",
+    "paymentLocation": "Pagado en",
     "senderName": "Remitente",
     "senderAddress": "Dirección del remitente",
     "receiverName": "Destinatario",
-    "receiverAddress": "Dirección del destinatario"
+    "receiverAddress": "Dirección del destinatario",
+    "total": "Total de la factura",
+    "discount": "Descuento",
+    "amountPaid": "Pagado",
+    "balance": "Saldo",
+    "pickupAssignment": "Recibido por",
+    "createdBy": "Creado por",
+    "createdAt": "Creado el"
+  },
+  "search": {
+    "placeholder": "Buscar facturas"
+  },
+  "actions": {
+    "syncLegacy": "Sync legacy",
+    "syncingLegacy": "Sincronizando..."
+  },
+  "loading": {
+    "legacySyncProgress": "Sincronizando {{current}} de {{total}}...",
+    "legacySyncStages": {
+      "connecting": "Conectando con el API legacy de facturas.",
+      "dependencies": "Sincronizando clientes y contenedores.",
+      "invoices": "Importando encabezados de facturas.",
+      "refreshing": "Actualizando la lista de facturas."
+    }
+  },
+  "errors": {
+    "legacySyncPermissionMissing": "Falta el permiso: Access legacy invoices. Pida a un administrador que otorgue el permiso requerido e intente nuevamente."
   },
   "workspace": {
     "actionsColumn": "Acciones",
     "viewInvoice": "Ver factura",
-    "viewInvoiceFor": "Ver factura {{number}}"
+    "viewInvoiceFor": "Ver factura {{number}}",
+    "editInvoice": "Editar factura",
+    "editInvoiceNamed": "Editar factura {{number}}",
+    "addInvoice": "Agregar factura",
+    "untitledTab": "Factura",
+    "invoiceNotFound": "Factura no encontrada."
   },
   "form": {
     "fields": {
@@ -24,14 +73,17 @@
       "invoiceNumber": "Número de factura",
       "container": "Contenedor",
       "pending": "Pendiente",
+      "paymentLocation": "Ubicación de pago",
+      "createdAt": "Creado el",
+      "createdBy": "Creado por",
       "sender": "Remitente",
       "receiver": "Destinatario",
       "pickupReference": "Referencia de recogida",
-      "pickupSource": "Origen de recogida",
+      "pickupSource": "Recibido en",
       "pickupSourceRoute": "Ruta",
       "pickupSourceWarehouse": "Almacén",
       "pickupSourceOffice": "Oficina",
-      "pickupRoute": "Ruta de órdenes",
+      "pickupRoute": "Ruta de citas",
       "warehouseEmployee": "Empleado de almacén",
       "officeEmployee": "Empleado de oficina"
     },
@@ -40,12 +92,13 @@
       "selectContainer": "Seleccionar contenedor",
       "searchContainers": "Buscar contenedores…",
       "selectSender": "Seleccionar remitente",
+      "selectReceiver": "Seleccionar destinatario",
       "noReceiver": "Sin destinatario",
       "noPickupReference": "Sin referencia de recogida",
       "searchPickupReferences": "Buscar referencias de recogida…",
-      "selectPickupRoute": "Seleccionar ruta de órdenes",
-      "noPickupRoute": "Sin ruta de órdenes",
-      "searchPickupRoutes": "Buscar rutas de órdenes…",
+      "selectPickupRoute": "Seleccionar ruta de citas",
+      "noPickupRoute": "Sin ruta de citas",
+      "searchPickupRoutes": "Buscar rutas de citas…",
       "selectWarehouseEmployee": "Seleccionar empleado de almacén",
       "selectOfficeEmployee": "Seleccionar empleado de oficina",
       "searchEmployees": "Buscar empleados…"
@@ -76,7 +129,10 @@
       "cancelEdit": "Cancelar edición",
       "addItem": "Agregar artículo",
       "itemsSubtotal": "Subtotal de artículos",
-      "emptyTable": "Aún no hay artículos. Complete los campos de arriba y presione Enter en Total para agregar una línea.",
+      "emptyTable": "Aún no hay artículos. Use Agregar artículo para comenzar la primera línea.",
+      "duplicateHint": "Ya existe una línea con esta descripción. La cantidad y las etiquetas se sumarán a esa línea en lugar de crear un duplicado.",
+      "duplicateMerged": "Se actualizaron la cantidad y las etiquetas del artículo existente.",
+      "quantityRequired": "La cantidad debe ser mayor que 0.",
       "descriptionPlaceholder": "Escriba o busque artículos del catálogo…",
       "moveUp": "Mover arriba",
       "moveDown": "Mover abajo",
@@ -101,6 +157,7 @@
   },
   "wizard": {
     "navAriaLabel": "Pasos de la factura",
+    "goToStep": "Ir a {{label}}",
     "stepEyebrow": "Paso {{step}} de {{total}} · {{label}}",
     "steps": {
       "details": "Detalles",
@@ -125,22 +182,24 @@
       "dateRequired": "La fecha es obligatoria.",
       "invoiceNumberRequired": "El número de factura es obligatorio.",
       "containerRequired": "El contenedor es obligatorio.",
-      "paymentLocationRequired": "La ubicación de pago pendiente es obligatoria.",
-      "pickupRouteRequired": "La ruta de órdenes es obligatoria.",
+      "paymentLocationRequired": "La ubicación de pago es obligatoria.",
+      "pickupRouteRequired": "La ruta de citas es obligatoria.",
       "warehouseEmployeeRequired": "El empleado de almacén es obligatorio.",
       "officeEmployeeRequired": "El empleado de oficina es obligatorio.",
       "senderRequired": "El remitente es obligatorio.",
       "unverifiedSenderAddress": "Verifique la dirección del remitente antes de guardar. Abra el remitente y actualícela con una dirección sugerida por Google.",
       "lineItemRequired": "Agregue al menos un artículo.",
-      "dailyIncomeContinueRequired": "Registre un pago (el monto puede ser $0) antes de continuar.",
-      "dailyIncomeSaveRequired": "Registre un pago (el monto puede ser $0) antes de guardar."
+      "lineItemQuantityRequired": "Cada artículo necesita una cantidad mayor que 0.",
+      "dailyIncomeContinueRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de continuar.",
+      "dailyIncomeSaveRequired": "Abra un Cuadre y luego registre un pago o marque Omitir pago antes de guardar.",
+      "negativeBalance": "El saldo no puede ser negativo. Reduzca el pago o el descuento para que no superen el total de la factura."
     },
     "summary": {
       "title": "Resumen de factura",
       "newInvoice": "Nueva factura",
       "senderNotSelected": "Remitente no seleccionado",
       "pending": "Pendiente",
-      "orderDetails": "Detalles del pedido",
+      "orderDetails": "Detalles de la cita",
       "lineItems": "Artículos",
       "lineItem": "Artículo",
       "paid": "Pagado",
@@ -190,11 +249,17 @@
       "table": {
         "item": "Artículo",
         "qty": "Cant.",
+        "labels": "Etiquetas",
         "unitPrice": "Precio unitario",
         "subtotal": "Subtotal"
       },
       "labels": "{{count}} etiqueta",
-      "labels_plural": "{{count}} etiquetas"
+      "labels_plural": "{{count}} etiquetas",
+      "noLabels": "Sin etiquetas",
+      "zeroLabelsWarning": "1 artículo tiene 0 etiquetas.",
+      "zeroLabelsWarning_plural": "{{count}} artículos tienen 0 etiquetas.",
+      "noPhone": "Sin teléfono",
+      "noAddress": "Sin dirección"
     },
     "dailyIncome": {
       "checking": "Verificando registro en Ingresos diarios…",
@@ -205,6 +270,7 @@
       "paymentRecorded": "Pago registrado: {{amount}}",
       "invoiceCostRegistered": "Costo de factura: {{amount}}",
       "paymentRecordedToast": "Pago de {{amount}} registrado para la factura {{invoiceNumber}}.",
+      "checkPaymentRecordedToast": "El cheque {{checkNumber}} quedó pendiente. La factura {{invoiceNumber}} no mostrará este pago hasta que el cheque se marque como cobrado.",
       "reference": "Referencia: {{ref}}",
       "amount": "Monto",
       "paymentMethod": "Método de pago",
@@ -215,6 +281,8 @@
       "registerRequired": "Esta factura no se puede crear hasta que se registre en Ingresos diarios.",
       "noStatement": "No existe Ingresos diarios para hoy y la sucursal actual. Créelo antes de registrar esta factura.",
       "openFullPage": "Abrir página completa de Ingresos diarios",
+      "openForInvoiceDate": "Abrir ingresos diarios para esta sucursal y fecha",
+      "openForInvoiceDateHint": "Se abre en una pestaña nueva. Crea o reabre el cierre, luego vuelve aquí y guarda de nuevo.",
       "openAssociated": "Cuadre abierto vinculado",
       "openAssociatedHint": "Los Ingresos diarios #{{id}} de hoy están abiertos. Esta factura se asociará automáticamente.",
       "recordPaymentNow": "Registrar pago",
@@ -225,10 +293,9 @@
       "createOrOpenCuadre": "Crear Cuadre",
       "reopenCuadre": "Reabrir Cuadre",
       "skipPayment": "Omitir pago",
-      "skipPaymentHint": "Déjelo marcado para registrar esta factura en el Cuadre abierto con pago de $0 (saldo completo pendiente). Desmárquelo para ingresar un monto de pago.",
-      "skipWithCuadreHint": "El costo y el saldo de la factura se registrarán en Ingresos diarios #{{id}} con pago de $0 al continuar.",
+      "skipPaymentHint": "Déjelo marcado para que el backend registre esta factura en el Cuadre abierto con pago de $0. Desmárquelo para ingresar detalles de pago.",
+      "skipWithCuadreHint": "La factura se vinculará a Ingresos diarios #{{id}} y se registrará en el diario con pago de $0.",
       "paymentSkipped": "Pago omitido — no hay Cuadre abierto para registrar. Cree un Cuadre para registrar el costo con pago de $0, o continúe sin vincular.",
-      "openCuadreBeforePayment": "Abra o cree un Cuadre y luego registre un pago antes de continuar.",
       "unpaidContinueHint": "Ingrese un pago abajo, o continúe para registrar el costo y el saldo de la factura en Ingresos diarios #{{id}} con pago de $0.",
       "recordBeforeContinueHint": "Presione Registrar pago para continuar. El monto puede ser $0.00 para una factura sin pagar.",
       "zeroPaymentDescription": "Registro inicial de factura (sin pagar)",
@@ -260,6 +327,10 @@
         "exchangeRate": "Tasa de cambio",
         "backToStatus": "Volver al estado",
         "creating": "Creando…",
+        "closing": "Cerrando…",
+        "closeOpenStatement": "Cerrar #{{id}}",
+        "closePreviousCuadre": "Cerrar cuadre anterior",
+        "previousOpenStatement": "El cuadre anterior #{{id}} ({{date}}) sigue abierto. Ciérrelo y luego intente crear el cierre de hoy.",
         "closedPaymentDisabled": "Los Ingresos diarios de hoy están cerrados. La entrada de pagos permanece deshabilitada hasta que se reabra.",
         "statementMustBeOpen": "Los Ingresos diarios de hoy deben estar abiertos antes de registrar esta factura.",
         "employeeUnavailable": "La información del empleado actual no está disponible.",
@@ -281,6 +352,7 @@
         "zelleTransactionName": "Nombre de transacción Zelle",
         "checkNumber": "Número de cheque",
         "checkNumberPlaceholder": "ej. 4521",
+        "checkNumberHint": "Crea un cheque pendiente. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",
         "descriptionField": "Descripción",
         "initialRegistrationDescription": "Registro inicial de factura",
         "registering": "Registrando…",
@@ -289,6 +361,21 @@
     }
   },
   "view": {
+    "pickupAssignment": "Recibido por",
+    "fields": {
+      "documentId": "Doc",
+      "phones": "Teléfonos",
+      "address": "Dirección",
+      "scanned": "Escaneado"
+    },
+    "lineItems": {
+      "showBarcodes": "Mostrar códigos de barras",
+      "hideBarcodes": "Ocultar códigos de barras",
+      "showBarcodesCount": "Ver {{count}} código de barras",
+      "showBarcodesCount_plural": "Ver {{count}} códigos de barras",
+      "hideBarcodesCount": "Ocultar {{count}} código de barras",
+      "hideBarcodesCount_plural": "Ocultar {{count}} códigos de barras"
+    },
     "comments": {
       "title": "Comentarios ({{count}})",
       "description": "Notas sobre contacto, preferencias de entrega y otros seguimientos. Los comentarios no se pueden eliminar.",
@@ -314,6 +401,16 @@
       "referencePlaceholder": "N.º de cheque, ID de transacción, código de confirmación...",
       "checkNumberPlaceholder": "ej. 4521",
       "searchMethods": "Buscar métodos…",
+      "methods": {
+        "cash": "Efectivo",
+        "check": "Cheque",
+        "credit_card": "Tarjeta de crédito",
+        "debit_card": "Tarjeta de débito",
+        "wire_transfer": "Transferencia bancaria",
+        "zelle": "Zelle",
+        "ach": "ACH",
+        "other": "Otro"
+      },
       "fields": {
         "description": "Descripción",
         "amount": "Monto",
@@ -359,5 +456,151 @@
         "description": "Descripción"
       }
     }
+  },
+  "filters": {
+    "fields": {
+      "number": {
+        "label": "Número de factura",
+        "placeholder": "Ingrese el número de factura…"
+      },
+      "numberRange": {
+        "label": "Rango de números de factura",
+        "placeholder": "488800 a 488900"
+      },
+      "date": {
+        "label": "Fecha",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "dateRange": {
+        "label": "Rango de fecha",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "paidRegion": {
+        "label": "Pagado en"
+      },
+      "paidStatus": {
+        "label": "Estado"
+      },
+      "cost": {
+        "label": "Total de la factura",
+        "placeholder": "Ingrese el monto…"
+      },
+      "discount": {
+        "label": "Descuento",
+        "placeholder": "Ingrese el monto…"
+      },
+      "payment": {
+        "label": "Pagado",
+        "placeholder": "Ingrese el monto…"
+      },
+      "balance": {
+        "label": "Saldo",
+        "placeholder": "Ingrese el monto…"
+      },
+      "container": {
+        "name": {
+          "label": "Contenedor",
+          "placeholder": "Ingrese el contenedor…"
+        }
+      },
+      "sender": {
+        "name": {
+          "label": "Remitente",
+          "placeholder": "Ingrese el nombre del remitente…"
+        },
+        "id": {
+          "label": "ID del remitente",
+          "placeholder": "Ingrese el ID del remitente…"
+        },
+        "phone": {
+          "label": "Teléfono del remitente",
+          "placeholder": "Ingrese el teléfono…"
+        },
+        "address": {
+          "label": "Dirección del remitente",
+          "placeholder": "Ingrese dirección, ciudad, estado o código postal…"
+        }
+      },
+      "receiver": {
+        "name": {
+          "label": "Destinatario",
+          "placeholder": "Ingrese el nombre del destinatario…"
+        },
+        "id": {
+          "label": "ID del destinatario",
+          "placeholder": "Ingrese el ID del destinatario…"
+        },
+        "phone": {
+          "label": "Teléfono del destinatario",
+          "placeholder": "Ingrese el teléfono…"
+        },
+        "address": {
+          "label": "Dirección del destinatario",
+          "placeholder": "Ingrese dirección, ciudad, estado o código postal…"
+        }
+      },
+      "createdBy": {
+        "name": {
+          "label": "Creada por"
+        }
+      },
+      "route": {
+        "_id": {
+          "label": "Ruta"
+        }
+      },
+      "employee": {
+        "id": {
+          "label": "ID de empleado",
+          "placeholder": "Ingrese el ID de empleado…"
+        },
+        "name": {
+          "label": "Nombre del empleado",
+          "placeholder": "Ingrese el nombre del empleado…"
+        }
+      },
+      "isArchive": {
+        "label": "Archivada"
+      },
+      "isVoid": {
+        "label": "Anulada"
+      },
+      "createdAt": {
+        "label": "Creado el",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "createdAtRange": {
+        "label": "Rango de creación",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "updatedAt": {
+        "label": "Actualizado el",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAtRange": {
+        "label": "Rango de actualización",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      }
+    },
+    "options": {
+      "paidRegion": {
+        "NY": "USA",
+        "RD": "RD"
+      },
+      "paidStatus": {
+        "OPEN": "Abierta",
+        "CLOSED": "Cerrada"
+      },
+      "boolean": {
+        "true": "Sí",
+        "false": "No"
+      }
+    }
+  },
+  "barcodeSync": {
+    "decreaseTitle": "Seleccione códigos de barras a eliminar",
+    "decreaseDescription": "Redujo el número de etiquetas en uno o más artículos. Elija qué códigos de barras eliminar. Los restantes permanecen en la factura.",
+    "decreasePick": "Seleccione {{remove}} de {{from}} para eliminar (quedarán {{to}}).",
+    "confirmDelete": "Eliminar códigos seleccionados"
   }
 }

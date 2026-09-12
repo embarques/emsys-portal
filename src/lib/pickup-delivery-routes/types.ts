@@ -2,15 +2,30 @@ import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
-import type { RouteCrewRole, RouteEmployeeRef } from "@/lib/route-manager/types";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
+  createEmptyVehicleRef,
   employeeHasRole,
   todayDateInputValue,
   toRouteDateInput,
+  type RouteCrewRole,
+  type RouteEmployeeRef,
+  type RouteVehicleRef,
 } from "@/lib/route-manager/types";
 
 export type RouteType = "pickup" | "delivery";
+
+/** Dominican Republic branch codes. Daily routes at these branches include container and rate. */
+export const DELIVERY_BRANCH_CODES = ["RD", "DR", "DO"] as const;
+
+export function isDeliveryBranchCode(code: string | null | undefined): boolean {
+  const normalized = code?.trim().toUpperCase() ?? "";
+  return (DELIVERY_BRANCH_CODES as readonly string[]).includes(normalized);
+}
+
+export function routeTypeForBranchCode(code: string | null | undefined): RouteType {
+  return isDeliveryBranchCode(code) ? "delivery" : "pickup";
+}
 
 /** A scheduled route is tied to either a calendar date or a recurring weekday. */
 export type RouteScheduleType = "date" | "dayOfWeek";
@@ -61,6 +76,7 @@ export type ActiveRoute = {
   /** Recurring weekdays (`monday`..`sunday`); empty when the route uses a date. */
   dayOfWeek: string[];
   branch: ActiveRouteBranchRef | null;
+  vehicle: RouteVehicleRef;
   active: boolean;
   route: ActiveRouteRouteRef;
   /** Crew members with their role (driver/appraiser/helper). */
@@ -80,6 +96,7 @@ export type ActiveRouteFormValues = {
   dayOfWeek: string[];
   name: string;
   branch: ActiveRouteBranchRef;
+  vehicle: RouteVehicleRef;
   container: ActiveRouteContainerRef | null;
   routeRecordId: string;
   /** Route manager assignment display name (sent as `route.name` on write). */
@@ -108,7 +125,10 @@ export type ActiveRouteListParams = {
   sort?: ApiListSortInput;
   search?: ApiListTextSearch;
   filterRows?: TableFilterRowState[];
+  /** Omit to list pickup and delivery daily routes together. */
   routeType?: RouteType;
+  /** When set, scopes the list to `branch.code`. Empty/omitted lists every branch. */
+  branchCode?: string;
 };
 
 export type ActiveRouteSearchFilter = ApiListTextSearch;
@@ -138,16 +158,25 @@ export function buildActiveRouteListParams(input: {
   limit?: number;
   query: string;
   rows: TableFilterRowState[];
-  routeType: RouteType;
+  routeType?: RouteType;
   sort?: ApiListSortInput;
+  branchCode?: string;
 }): ActiveRouteListParams {
   const params: ActiveRouteListParams = {
     ...DEFAULT_ACTIVE_ROUTE_LIST_PARAMS,
     page: input.page,
     limit: input.limit ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.limit,
     sort: input.sort ?? DEFAULT_ACTIVE_ROUTE_LIST_PARAMS.sort,
-    routeType: input.routeType,
   };
+
+  if (input.routeType) {
+    params.routeType = input.routeType;
+  }
+
+  const branchCode = input.branchCode?.trim();
+  if (branchCode) {
+    params.branchCode = branchCode;
+  }
 
   const search = createApiListTextSearch(input.query);
   if (search) {
@@ -195,6 +224,44 @@ export function getActiveRouteEmployeesByRole(
   return record.employees.filter((employee) => employeeHasRole(employee, role));
 }
 
+export function buildScheduledRouteFormValues(input: {
+  routeType: RouteType;
+  routeRecordId: string;
+  routeAssignmentName: string;
+  date: string;
+  branch: ActiveRouteBranchRef;
+  employees: RouteEmployeeRef[];
+  container?: ActiveRouteContainerRef | null;
+  vehicle?: RouteVehicleRef;
+}): ActiveRouteFormValues {
+  const isDelivery = input.routeType === "delivery";
+  return {
+    ...createEmptyActiveRouteForm(input.routeType),
+    date: input.date.trim().slice(0, 10),
+    branch: { ...input.branch },
+    vehicle: { ...createEmptyVehicleRef(), ...input.vehicle },
+    routeRecordId: input.routeRecordId.trim(),
+    routeAssignmentName: input.routeAssignmentName.trim(),
+    employees: input.employees.map((employee) => ({ ...employee })),
+    container: isDelivery && input.container ? { ...input.container } : null,
+    active: true,
+  };
+}
+
+export function buildAppointmentRouteFormValues(input: {
+  routeRecordId: string;
+  routeAssignmentName: string;
+  date: string;
+  branch: ActiveRouteBranchRef;
+  employees: RouteEmployeeRef[];
+  vehicle: RouteVehicleRef;
+}): ActiveRouteFormValues {
+  return buildScheduledRouteFormValues({
+    ...input,
+    routeType: "pickup",
+  });
+}
+
 export function createEmptyActiveRouteForm(routeType: RouteType = "pickup"): ActiveRouteFormValues {
   return {
     routeType,
@@ -203,6 +270,7 @@ export function createEmptyActiveRouteForm(routeType: RouteType = "pickup"): Act
     dayOfWeek: [],
     name: "",
     branch: { id: 0, code: "" },
+    vehicle: createEmptyVehicleRef(),
     container: null,
     routeRecordId: "",
     routeAssignmentName: "",
@@ -222,6 +290,7 @@ export function activeRouteToFormValues(record: ActiveRoute): ActiveRouteFormVal
     dayOfWeek: [...record.dayOfWeek],
     name: record.name,
     branch: record.branch ? { ...record.branch } : { id: 0, code: "" },
+    vehicle: { ...record.vehicle },
     container: record.container ? { ...record.container } : null,
     routeRecordId: record.route.id,
     routeAssignmentName: record.route.name,
@@ -240,6 +309,7 @@ export function areActiveRouteFormValuesEquivalent(
 
 
 export function assertActiveRouteFormValues(values: ActiveRouteFormValues): void {
+  // TODO(backend): uniqueness + legacy alignment — see APP_CONTEXT.md Routes.
   if (values.scheduleType === "date" && !values.date.trim()) {
     throw new Error("Date is required.");
   }

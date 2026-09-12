@@ -1,5 +1,5 @@
 import type { Branch } from "@/lib/branches/types";
-import { formatPhoneForDisplay } from "@/lib/utils/phone";
+import { formatRecordPhoneList } from "@/lib/phones/phones";
 
 type BranchRef = Pick<Branch, "id" | "name" | "code">;
 type BranchRefWithType = Pick<Branch, "id" | "name" | "code" | "type">;
@@ -81,11 +81,8 @@ export function formatBranchAddress(branch: Pick<Branch, "address">): string {
   return parts.length > 0 ? parts.join(", ") : "—";
 }
 
-export function formatBranchPhones(branch: Pick<Branch, "phone1" | "phone2">): string {
-  const phones = [branch.phone1, branch.phone2]
-    .map((phone) => formatPhoneForDisplay(phone))
-    .filter(Boolean);
-  return phones.length > 0 ? phones.join(" · ") : "—";
+export function formatBranchPhones(branch: Pick<Branch, "phones">): string {
+  return formatRecordPhoneList(branch.phones);
 }
 
 export function getBranchTypeBadgeClass(type: string): string {

@@ -205,13 +205,15 @@ export function buildInvoiceActivityTimeline(invoice: Invoice): InvoiceActivityE
   });
 
   invoice.comments.forEach((comment) => {
+    const timestamp = comment.createdAt.trim() || invoice.createdAt;
+    if (!timestamp) return;
     synthetic.push(
       createInvoiceActivityEntry({
         invoiceId: invoice.invoiceId,
         action: "comment_added",
         message: `Comment added: ${comment.description.length > 120 ? `${comment.description.slice(0, 117).trimEnd()}...` : comment.description}`,
-        timestamp: comment.createdAt,
-        performedBy: comment.createdBy,
+        timestamp,
+        performedBy: comment.createdBy || invoice.createdBy,
       })
     );
   });

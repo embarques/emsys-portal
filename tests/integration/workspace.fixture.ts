@@ -5,12 +5,12 @@ import { ensureAuthenticated, getTestCredentials, injectDevSessionInitScript, si
 const WORKSPACE_TABS_STORAGE_KEY = "emsys-workspace-tabs";
 const WORKSPACE_TAB_PARAM = "tab";
 
-/** Sidebar labels for common workspace routes (icon rail uses title=label). */
+/** Sidebar labels for common workspace routes (icon rail uses aria-label=label). */
 const WORKSPACE_SIDEBAR_LABELS: Record<string, string> = {
   "/accounting/daily-income": "Daily Income",
   "/accounting/accounts": "Chart of Accounts",
   "/customers": "Customers",
-  "/orders": "Orders",
+  "/appointments": "Appointments",
   "/invoices": "Invoices",
 };
 
@@ -49,6 +49,9 @@ export async function waitForWorkspaceShell(page: Page) {
   await expect(page.getByTestId("workspace-empty-tabs")).toHaveCount(0, {
     timeout: 15_000,
   });
+  await expect(page.getByTestId("workspace-default-dashboard")).toHaveCount(0, {
+    timeout: 15_000,
+  });
   await expect(workspaceMain(page).locator("[data-tab-id]").first()).toBeVisible({
     timeout: 15_000,
   });
@@ -72,7 +75,7 @@ export async function openWorkspaceFromSidebar(page: Page, pathname: string) {
   }
 
   const link = page.getByRole("link", { name: label });
-  const iconLink = page.locator(`a[title="${label}"]`);
+  const iconLink = page.locator(`a[aria-label="${label}"]`);
 
   if (await link.isVisible()) {
     await link.click();
@@ -385,7 +388,8 @@ export async function gotoWorkspace(page: Page, pathname: string, options: GotoW
   });
 
   const emptyTabState = page.getByTestId("workspace-empty-tabs");
-  if (await emptyTabState.isVisible()) {
+  const defaultDashboard = page.getByTestId("workspace-default-dashboard");
+  if (pathname !== "/" && ((await emptyTabState.isVisible()) || (await defaultDashboard.isVisible()))) {
     await openWorkspaceFromSidebar(page, pathname);
   }
 

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Command as CommandPrimitive, defaultFilter } from "cmdk";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, LoaderCircle, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { focusNextFormField } from "@/hooks/use-form-enter-navigation";
@@ -59,12 +59,19 @@ type SearchableSelectProps = {
   contentClassName?: string;
   /** When false, the closed trigger grows to show the full selected label instead of truncating. */
   truncateSelection?: boolean;
+  /** Size the trigger to the longest option label so every choice fits without truncating. */
+  fitToOptions?: boolean;
   align?: "start" | "center" | "end";
   autoFocus?: boolean;
   defaultOpen?: boolean;
   onClose?: () => void;
   /** When true, focuses select all visible text so it can be replaced immediately. */
   selectAllOnFocus?: boolean;
+  /**
+   * After selecting an option, move focus to the next form field (default).
+   * Set false when the parent handles post-select focus (e.g. skip an auto-filled field).
+   */
+  advanceFocusOnSelect?: boolean;
   /** Opens options in a bottom sheet on phones. Desktop keeps the normal popover. */
   mobileSheet?: boolean;
   "aria-label"?: string;
@@ -89,39 +96,142 @@ function accentInsensitiveFilter(value: string, search: string, keywords?: strin
   );
 }
 
-/** Empty-value options like "Select invoice" are list placeholders, not real selections. */
-function isPseudoPlaceholderOption(option: SearchableSelectOption): boolean {
+function labelsMatch(left: string, right: string): boolean {
+  return left.localeCompare(right, undefined, { sensitivity: "accent" }) === 0;
+}
+
+/**
+ * Empty-value options that duplicate the closed-state placeholder, or look like
+ * "Select…" / "Seleccionar…" prompts, belong on the trigger, not in the open list.
+ */
+function isPseudoPlaceholderOption(
+  option: SearchableSelectOption,
+  placeholder?: string,
+): boolean {
   if (option.value !== "") return false;
   const label = option.label.trim();
-  if (!label) return true;
-  return /^select\b/i.test(label);
+  if (!label || option.disabled) return true;
+  const placeholderLabel = placeholder?.trim();
+  if (placeholderLabel && labelsMatch(label, placeholderLabel)) return true;
+  return /^(select|seleccionar|seleccione)\b/i.test(label);
 }
 
 function hasSearchableSelectSelection(
   value: string,
   selectedOption: SearchableSelectOption | undefined,
+  placeholder?: string,
 ): boolean {
   if (!selectedOption) return false;
   if (selectedOption.value !== "") return true;
-  return !isPseudoPlaceholderOption(selectedOption);
+  return !isPseudoPlaceholderOption(selectedOption, placeholder);
+}
+
+function optionMatchesQuery(option: SearchableSelectOption, query: string): boolean {
+  if (!query.trim()) return true;
+  return (
+    accentInsensitiveFilter(option.value, query, [option.label, ...(option.keywords ?? [])]) > 0
+  );
+}
+
+function getNavigableOptions(
+  options: SearchableSelectOption[],
+  query: string,
+  shouldClientFilter: boolean,
+  placeholder?: string,
+): SearchableSelectOption[] {
+  return options.filter((option) => {
+    if (isPseudoPlaceholderOption(option, placeholder) || option.disabled) return false;
+    if (!shouldClientFilter) return true;
+    return optionMatchesQuery(option, query);
+  });
+}
+
+function moveHighlight(
+  options: SearchableSelectOption[],
+  current: string,
+  direction: 1 | -1,
+): string {
+  if (options.length === 0) return current;
+  const index = options.findIndex((option) => option.value === current);
+  if (index === -1) {
+    return options[direction === 1 ? 0 : options.length - 1]!.value;
+  }
+  return options[(index + direction + options.length) % options.length]!.value;
 }
 
 const triggerClassName =
-  "relative flex min-h-10 w-full items-center rounded-lg border-2 border-foreground/60 bg-card py-2 pl-3 pr-9 text-sm outline-none transition-[border-color,box-shadow] focus-within:border-foreground data-[state=open]:border-foreground";
+  "relative flex min-h-10 w-full min-w-0 max-w-full items-center rounded-lg border-2 border-foreground/60 bg-card py-2 pl-3 pr-9 text-sm outline-none transition-[border-color,box-shadow] focus-within:border-foreground data-[state=open]:border-foreground max-md:min-h-12 max-md:rounded-xl max-md:border-input max-md:text-base max-md:shadow-xs max-md:focus-within:border-ring max-md:focus-within:ring-[3px] max-md:focus-within:ring-ring/50 max-md:data-[state=open]:border-ring max-md:data-[state=open]:ring-[3px] max-md:data-[state=open]:ring-ring/50";
 
 const chevronButtonClassName =
   "absolute inset-y-0 right-0 flex w-9 shrink-0 items-center justify-center text-foreground/70 disabled:cursor-not-allowed";
 
 const popoverContentClassName =
-  // pointer-events-auto keeps the list interactive when opened inside a Radix modal (Dialog),
+  // pointer-events-auto keeps the list interactive when opened inside a Radix Dialog,
   // which disables pointer events on the body and would otherwise block hover/scroll/click.
-  // z-[80] stacks above DialogContent (often z-[60]/z-[70]) so options are not hidden behind the modal.
+  // z-[80] stacks above DialogContent (often z-[50]/z-[70]) so options are not hidden behind the modal.
+  // Do not use Popover `modal` here: a modal popover nested in a Dialog applies its own
+  // pointer-events lock on the dialog surface and freezes fields/buttons underneath.
   "pointer-events-auto z-[80] w-[var(--radix-popover-trigger-width)] min-w-[12rem] overflow-hidden rounded-lg border border-border bg-popover p-0 shadow-md";
 
 const listItemClassName =
   "cursor-pointer rounded-none px-4 py-3 text-sm data-[selected=true]:bg-muted/60 data-[selected=true]:text-foreground";
 
 const MOBILE_SHEET_SEARCH_THRESHOLD = 8;
+
+/**
+ * After choosing an option we move focus to the next field. That focus must not
+ * reopen a combobox: a new Popper while the parent form is still applying the
+ * selection (sections appearing, option lists changing) can loop in Radix
+ * PopperContent ("Maximum update depth exceeded").
+ */
+let skipOpenOnFocus = false;
+
+function MobileSelectLoading({ message }: { message: string }) {
+  return (
+    <div
+      className="relative overflow-hidden border-b bg-gradient-to-b from-primary/[0.06] via-background to-background px-4 py-6 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-gradient-to-r from-transparent via-primary to-transparent" />
+      <div className="flex flex-col items-center">
+        <div className="relative mb-3 grid size-14 place-items-center">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 blur-xl" />
+          <div className="absolute inset-0 rounded-full border border-primary/15" />
+          <LoaderCircle
+            className="absolute inset-0 size-14 animate-spin text-primary drop-shadow-sm"
+            strokeWidth={2.25}
+            aria-hidden="true"
+          />
+          <div className="relative grid size-10 place-items-center rounded-full border border-primary/25 bg-card shadow-lg shadow-primary/10">
+            <Search className="size-5 text-primary" aria-hidden="true" />
+          </div>
+        </div>
+        <p className="text-sm font-semibold text-foreground">{message}</p>
+        <div className="mt-3 flex items-center gap-1.5" aria-hidden="true">
+          {[0, 1, 2].map((dot) => (
+            <span
+              key={dot}
+              className="size-1.5 animate-bounce rounded-full bg-primary"
+              style={{ animationDelay: `${dot * 140}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="mt-5 overflow-hidden rounded-xl border bg-card/80 shadow-sm" aria-hidden="true">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="border-b px-4 py-3 last:border-b-0">
+            <div className="space-y-2">
+              <div className="h-3.5 w-40 animate-pulse rounded-full bg-muted" />
+              <div className="h-3 w-28 animate-pulse rounded-full bg-muted" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <span className="sr-only">{message}</span>
+    </div>
+  );
+}
 
 /**
  * Keep wheel/touch scrolling working when the list is portaled out of a Radix modal (Dialog).
@@ -156,11 +266,13 @@ export function SearchableSelect({
   className,
   contentClassName,
   truncateSelection = true,
+  fitToOptions = false,
   align = "start",
   autoFocus = false,
   defaultOpen = false,
   onClose,
   selectAllOnFocus = false,
+  advanceFocusOnSelect = true,
   mobileSheet = false,
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
@@ -169,8 +281,15 @@ export function SearchableSelect({
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const anchorRef = React.useRef<HTMLDivElement>(null);
+  const suppressNextFocusSearchRef = React.useRef(false);
   const scrollIsolationRef = useScrollIsolation();
   const isMobile = useIsMobileViewport();
+  const [viewportResolved, setViewportResolved] = React.useState(false);
+
+  React.useEffect(() => {
+    setViewportResolved(true);
+  }, []);
 
   function handleOpenChange(next: boolean) {
     if (disabled) return;
@@ -182,10 +301,24 @@ export function SearchableSelect({
   }
 
   const selectedOption = options.find((option) => option.value === value);
-  const hasSelection = hasSearchableSelectSelection(value, selectedOption);
+  const hasSelection = hasSearchableSelectSelection(value, selectedOption, placeholder);
+  const fitToOptionsLabel = React.useMemo(() => {
+    if (!fitToOptions) return "";
+    return [placeholder, ...options.map((option) => option.label)].reduce(
+      (longest, label) => (label.length > longest.length ? label : longest),
+      "",
+    );
+  }, [fitToOptions, options, placeholder]);
 
   function focusSearchInput(shouldSelectAll = false) {
-    if (disabled) return;
+    if (disabled || skipOpenOnFocus) return;
+    if (suppressNextFocusSearchRef.current) {
+      suppressNextFocusSearchRef.current = false;
+      return;
+    }
+    if (shouldSelectAll && hasSelection && selectedOption && !open) {
+      changeQuery(selectedOption.label);
+    }
     setOpen(true);
     window.requestAnimationFrame(() => {
       const input = inputRef.current;
@@ -220,12 +353,83 @@ export function SearchableSelect({
     changeQuery("");
     setOpen(false);
 
+    if (!advanceFocusOnSelect) return;
+
     const focusTarget = searchable ? inputRef.current : triggerRef.current;
+    skipOpenOnFocus = true;
     window.setTimeout(() => {
-      if (!focusNextFormField(focusTarget)) {
-        focusTarget?.focus();
+      try {
+        if (!focusNextFormField(focusTarget)) {
+          focusTarget?.focus();
+        }
+      } finally {
+        skipOpenOnFocus = false;
       }
     }, 0);
+  }
+
+  const shouldClientFilter = searchable && !manualFiltering;
+  const navigableOptions = React.useMemo(
+    () => getNavigableOptions(options, query, shouldClientFilter, placeholder),
+    [options, query, shouldClientFilter, placeholder],
+  );
+  const [highlight, setHighlight] = React.useState("");
+  const wasOpenRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!open) {
+      wasOpenRef.current = false;
+      return;
+    }
+    const justOpened = !wasOpenRef.current;
+    wasOpenRef.current = true;
+    setHighlight((current) => {
+      if (!justOpened && current && navigableOptions.some((option) => option.value === current)) {
+        return current;
+      }
+      const selected = navigableOptions.find((option) => option.value === value);
+      return selected?.value ?? navigableOptions[0]?.value ?? "";
+    });
+  }, [open, navigableOptions, value]);
+
+  React.useEffect(() => {
+    if (!open || !searchable) return;
+    const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, searchable]);
+
+  function handleComboboxKeyDown(event: React.KeyboardEvent<HTMLElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setOpen(false);
+      changeQuery("");
+      if (searchable) {
+        inputRef.current?.blur();
+      } else {
+        triggerRef.current?.focus();
+      }
+      return;
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      setHighlight((current) => moveHighlight(navigableOptions, current, direction));
+      return;
+    }
+
+    if (event.key !== "Enter" || event.shiftKey) return;
+    if (!open) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const selected =
+      navigableOptions.find((option) => option.value === highlight) ?? navigableOptions[0];
+    if (selected) handleSelect(selected.value);
   }
 
   function toggleOpen() {
@@ -243,8 +447,17 @@ export function SearchableSelect({
     : "whitespace-nowrap text-left";
   const showSelectionLabel =
     !truncateSelection && !open && hasSelection && !query;
+  const canClearSelection = hasSelection && value !== "";
 
-  function renderOptionItems(selectOptions: SearchableSelectOption[]) {
+  function clearSelection() {
+    suppressNextFocusSearchRef.current = true;
+    onValueChange("");
+    changeQuery("");
+    setOpen(false);
+    window.setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function renderOptionItems(selectOptions: SearchableSelectOption[], isMobileSheet = false) {
     return selectOptions.map((option, index) => {
       const detailLines = [option.description, ...(option.descriptionLines ?? [])].filter(
         (line): line is string => Boolean(line && line.trim()),
@@ -257,11 +470,19 @@ export function SearchableSelect({
           keywords={[option.label, ...(option.keywords ?? [])]}
           disabled={option.disabled}
           onMouseDown={(event) => event.preventDefault()}
+          onMouseMove={() => {
+            if (!option.disabled) setHighlight(option.value);
+          }}
           onSelect={() => handleSelect(option.value)}
-          className={cn(listItemClassName, detailLines.length > 0 && "items-start")}
+          className={cn(
+            listItemClassName,
+            detailLines.length > 0 && "items-start",
+            isMobileSheet &&
+              "min-h-14 rounded-none border-b border-border/60 px-4 py-4 text-base last:border-b-0 data-[selected=true]:bg-primary/5",
+          )}
         >
           <span className="flex min-w-0 flex-col">
-            <span className="truncate">{option.label}</span>
+            <span className={fitToOptions ? "whitespace-nowrap" : "truncate"}>{option.label}</span>
             {detailLines.map((line, lineIndex) => (
               <span key={lineIndex} className="truncate text-xs text-muted-foreground">
                 {line}
@@ -273,11 +494,14 @@ export function SearchableSelect({
     });
   }
 
-  const optionItems = renderOptionItems(options);
+  const selectableOptions = options.filter(
+    (option) => !isPseudoPlaceholderOption(option, placeholder),
+  );
+  const optionItems = renderOptionItems(selectableOptions);
 
-  if (mobileSheet && isMobile) {
+  if (mobileSheet && (isMobile || !viewportResolved)) {
     const sheetTitle = ariaLabel ?? placeholder;
-    const mobileOptions = options.filter((option) => !isPseudoPlaceholderOption(option));
+    const mobileOptions = selectableOptions;
     const showMobileSearch = searchable && mobileOptions.length > MOBILE_SHEET_SEARCH_THRESHOLD;
 
     return (
@@ -312,7 +536,8 @@ export function SearchableSelect({
 
           <SheetContent
             side="bottom"
-            className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)]"
+            className="z-[90] flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)] max-md:bottom-[env(safe-area-inset-bottom)] max-md:top-[calc(env(safe-area-inset-top)+0.75rem)] max-md:max-h-none max-md:rounded-2xl max-md:border"
+            onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <SheetHeader className="shrink-0 border-b px-4 py-4 pr-14">
               <SheetTitle>{sheetTitle}</SheetTitle>
@@ -321,24 +546,39 @@ export function SearchableSelect({
               className="flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent"
               shouldFilter={searchable && !manualFiltering}
               filter={accentInsensitiveFilter}
+              value={highlight}
+              onValueChange={(next) => {
+                setHighlight((current) => (current === next ? current : next));
+              }}
+              loop
             >
               {showMobileSearch ? (
                 <div className="shrink-0 border-b px-4 py-3">
-                  <CommandPrimitive.Input
-                    ref={inputRef}
-                    disabled={disabled}
-                    value={query}
-                    onValueChange={changeQuery}
-                    placeholder={searchPlaceholder ?? placeholder}
-                    className="h-11 w-full rounded-lg border bg-background px-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  />
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <CommandPrimitive.Input
+                      ref={inputRef}
+                      disabled={disabled}
+                      value={query}
+                      onValueChange={changeQuery}
+                      onKeyDown={handleComboboxKeyDown}
+                      placeholder={searchPlaceholder}
+                      className="h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                    />
+                  </div>
                 </div>
               ) : null}
               <CommandList ref={scrollIsolationRef} className="max-h-none flex-1 overflow-y-auto p-0">
-                <CommandEmpty className="px-4 py-4 text-sm">
-                  {loading ? loadingMessage : emptyMessage}
-                </CommandEmpty>
-                {renderOptionItems(mobileOptions)}
+                {loading ? (
+                  <MobileSelectLoading message={loadingMessage} />
+                ) : (
+                  <>
+                    <CommandEmpty className="px-4 py-4 text-sm">
+                      {emptyMessage}
+                    </CommandEmpty>
+                    {renderOptionItems(mobileOptions, true)}
+                  </>
+                )}
               </CommandList>
             </Command>
           </SheetContent>
@@ -352,7 +592,7 @@ export function SearchableSelect({
   if (!searchable) {
     return (
       <div className="relative">
-        <Popover open={open} onOpenChange={handleOpenChange} modal>
+        <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
           <PopoverTrigger asChild>
             <button
               ref={triggerRef}
@@ -365,6 +605,7 @@ export function SearchableSelect({
               autoFocus={autoFocus}
               disabled={disabled}
               data-state={open ? "open" : "closed"}
+              onKeyDown={handleComboboxKeyDown}
               className={cn(
                 triggerClassName,
                 "disabled:cursor-not-allowed disabled:opacity-50",
@@ -383,9 +624,16 @@ export function SearchableSelect({
           <PopoverContent
             align={align}
             sideOffset={4}
+            onKeyDown={handleComboboxKeyDown}
             className={cn(popoverContentClassName, contentClassName)}
           >
-            <Command>
+            <Command
+              value={highlight}
+              onValueChange={(next) => {
+                setHighlight((current) => (current === next ? current : next));
+              }}
+              loop
+            >
               <CommandList ref={scrollIsolationRef} className="max-h-60 p-0">
                 <CommandEmpty className="px-4 py-3 text-sm">{emptyMessage}</CommandEmpty>
                 {optionItems}
@@ -400,11 +648,24 @@ export function SearchableSelect({
 
   // Searchable: the trigger itself is a text field; options filter as you type.
   return (
-    <div className="relative">
+    <div className={cn("relative", fitToOptions && "inline-flex max-w-full shrink-0")}>
+      {fitToOptions ? (
+        <span
+          aria-hidden
+          className="invisible inline-flex h-10 items-center whitespace-nowrap pl-3 pr-16 text-sm max-md:min-h-12 max-md:text-base"
+        >
+          {fitToOptionsLabel}
+        </span>
+      ) : null}
       <Command
-        className="overflow-visible bg-transparent"
+        className={cn("overflow-visible bg-transparent", fitToOptions && "absolute inset-0")}
         shouldFilter={!manualFiltering}
         filter={accentInsensitiveFilter}
+        value={highlight}
+        onValueChange={(next) => {
+          setHighlight((current) => (current === next ? current : next));
+        }}
+        loop
       >
         <Popover
           open={open}
@@ -416,10 +677,11 @@ export function SearchableSelect({
               onClose?.();
             }
           }}
-          modal
+          modal={false}
         >
           <PopoverAnchor asChild>
             <div
+              ref={anchorRef}
               data-state={open ? "open" : "closed"}
               onClick={() => {
                 if (disabled) return;
@@ -429,7 +691,7 @@ export function SearchableSelect({
                 triggerClassName,
                 disabled && "cursor-not-allowed opacity-50",
                 className,
-                "pr-9 pl-3",
+                canClearSelection ? "pr-16 pl-3" : "pr-9 pl-3",
               )}
             >
               {showSelectionLabel ? (
@@ -447,20 +709,14 @@ export function SearchableSelect({
                   if (!open) setOpen(true);
                 }}
                 onFocus={() => focusSearchInput(selectAllOnFocus)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    setOpen(false);
-                    changeQuery("");
-                    inputRef.current?.blur();
-                  }
-                }}
+                onKeyDown={handleComboboxKeyDown}
                 role="combobox"
                 aria-expanded={open}
                 aria-label={ariaLabel}
                 aria-labelledby={ariaLabelledBy}
                 placeholder={
                   open
-                    ? (searchPlaceholder ?? placeholder)
+                    ? searchPlaceholder
                     : hasSelection
                       ? undefined
                       : placeholder
@@ -475,6 +731,29 @@ export function SearchableSelect({
                   !hasSelection && !open && "text-muted-foreground",
                 )}
               />
+              {canClearSelection ? (
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  disabled={disabled}
+                  aria-label="Clear selection"
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    clearSelection();
+                  }}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
+                  className="absolute inset-y-0 right-8 flex w-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              ) : null}
               <button
                 type="button"
                 tabIndex={-1}
@@ -496,6 +775,17 @@ export function SearchableSelect({
             sideOffset={4}
             onOpenAutoFocus={(event) => event.preventDefault()}
             onCloseAutoFocus={(event) => event.preventDefault()}
+            onPointerDownOutside={(event) => {
+              if (anchorRef.current?.contains(event.target as Node)) {
+                event.preventDefault();
+              }
+            }}
+            onFocusOutside={(event) => {
+              if (anchorRef.current?.contains(event.target as Node)) {
+                event.preventDefault();
+              }
+            }}
+            onKeyDown={handleComboboxKeyDown}
             className={cn(popoverContentClassName, contentClassName)}
           >
             <CommandList ref={scrollIsolationRef} className="max-h-60 p-0">

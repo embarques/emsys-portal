@@ -1,8 +1,8 @@
 {
   "title": "Escáner de códigos de barras",
   "pages": {
-    "barcodesDescription": "Consulte y administre códigos de barras de envío en facturas, contenedores y rutas.",
-    "description": "Actualice el estado de códigos de barras, transfiera contenedores, asigne rutas y procese escaneos para etiquetas de envío."
+    "barcodesDescription": "Consulte los códigos de barras de mercancía creados con las facturas (artículos + etiquetas).",
+    "description": "Escanee un código de barras de mercancía (etiqueta de factura) para actualizar su estado, contenedor o ruta."
   },
   "statuses": {
     "pending": "Pendiente",
@@ -13,12 +13,14 @@
     "cancelled": "Cancelada"
   },
   "barcodeStatuses": {
-    "CREATED": "Creada",
-    "PRINTED": "Impresa",
-    "IN TRANSIT": "En tránsito",
-    "CONDUCE": "Conduce",
-    "DELIVERED": "Entregada",
-    "CANCELLED": "Cancelada"
+    "ALM-NY": "ALM-NY",
+    "DEV-NY": "DEV-NY",
+    "EN TRANSITO": "EN TRANSITO",
+    "ALM-RD": "ALM-RD",
+    "DEV-RD": "DEV-RD",
+    "CONDUCE": "CONDUCE",
+    "ENTREGADO": "ENTREGADO",
+    "SUBASTADO": "SUBASTADO"
   },
   "activity": {
     "actions": {
@@ -67,8 +69,8 @@
       "routes": "Buscar rutas…"
     },
     "results": {
-      "title": "Resultados de actualización",
-      "description": "Las filas verdes tuvieron éxito; las rojas fallaron. Solo se muestran los campos modificados por fila.",
+      "title": "Cambios de códigos de barras",
+      "description": "Los mensajes verdes tuvieron éxito; los rojos fallaron. Solo se completan los campos modificados por fila.",
       "empty": "Escanee un código de barras para ver los resultados aquí."
     },
     "columns": {
@@ -81,9 +83,8 @@
       "newContainer": "Nuevo contenedor",
       "prevRoute": "Ruta anterior",
       "newRoute": "Nueva ruta",
-      "labels": "Etiquetas",
       "dateCreated": "Creado el",
-      "userCreated": "Usuario creador",
+      "userCreated": "Usuario",
       "dateModified": "Actualizado el",
       "message": "Mensaje"
     },
@@ -94,7 +95,7 @@
       "selectNewContainer": "Seleccione un nuevo contenedor.",
       "selectNewRoute": "Seleccione una nueva ruta.",
       "notFound": "No se encontró código de barras para \"{{barcode}}\".",
-      "noChanges": "No se aplicaron cambios: los valores seleccionados coinciden con la etiqueta actual."
+      "noChanges": "Ya está actualizado: los valores seleccionados coinciden con la etiqueta actual."
     },
     "success": {
       "labelUpdated": "Etiqueta actualizada correctamente.",
@@ -109,7 +110,7 @@
   "staging": {
     "title": "Manejador de etiquetas",
     "lineItemsDescription": "Revise los artículos de las facturas seleccionadas, elija cuáles etiquetar y luego genere las etiquetas.",
-    "labelsDescription": "Se crearon códigos de barras donde faltaban y se recuperaron los existentes. Administre estado, contenedor e impresión a continuación.",
+    "labelsDescription": "Los códigos de barras vienen de la factura (artículos + etiquetas). Se recuperan si ya existen; solo se completan si faltan. Administre estado, contenedor e impresión a continuación.",
     "backToInvoices": "Volver a facturas",
     "backToLineItems": "Volver a artículos",
     "done": "Listo",
@@ -125,6 +126,18 @@
     "print": "Imprimir",
     "remove": "Quitar",
     "removeFromView": "Quitar etiqueta de la vista",
+    "removeDialog": {
+      "lineItemsTitle": "¿Quitar el artículo seleccionado?",
+      "lineItemsTitle_plural": "¿Quitar los artículos seleccionados?",
+      "lineItemsDescription": "¿Quitar {{count}} artículo de esta lista? No se incluirá al generar etiquetas.",
+      "lineItemsDescription_plural": "¿Quitar {{count}} artículos de esta lista? No se incluirán al generar etiquetas.",
+      "labelsTitle": "¿Quitar la etiqueta seleccionada?",
+      "labelsTitle_plural": "¿Quitar las etiquetas seleccionadas?",
+      "labelsDescription": "¿Quitar {{count}} etiqueta de esta lista? Esto no elimina el código de barras del sistema.",
+      "labelsDescription_plural": "¿Quitar {{count}} etiquetas de esta lista? Esto no elimina los códigos de barras del sistema.",
+      "oneLabelTitle": "¿Quitar esta etiqueta?",
+      "oneLabelDescription": "¿Quitar esta etiqueta de la lista? Esto no elimina el código de barras del sistema."
+    },
     "selectAllLineItems": "Seleccionar todos los artículos",
     "selectAllLabels": "Seleccionar todas las etiquetas",
     "selectLineItem": "Seleccionar {{invoice}} · {{description}}",
@@ -147,11 +160,18 @@
     },
     "routeDialog": {
       "title": "Asignar ruta",
-      "description": "Asigne {{count}} etiqueta(s) seleccionada(s) a una ruta. Solo se asignan etiquetas con contenedor.",
-      "route": "Ruta",
-      "selectRoute": "Seleccionar una ruta",
-      "loadingRoutes": "Cargando rutas…",
-      "noRoutes": "No se encontraron rutas.",
+      "description": "Elija una ruta diaria para {{count}} etiqueta seleccionada, o cree una nueva ruta diaria. Solo se asignan etiquetas con contenedor.",
+      "description_plural": "Elija una ruta diaria para {{count}} etiquetas seleccionadas, o cree una nueva ruta diaria. Solo se asignan etiquetas con contenedor.",
+      "dailyRoute": "Ruta diaria",
+      "createDailyRoute": "Crear nueva ruta diaria",
+      "route": "Cuadrilla de ruta",
+      "selectRoute": "Seleccionar una ruta diaria",
+      "searchRoutes": "Buscar rutas diarias…",
+      "selectContainer": "Seleccionar un contenedor",
+      "loadingRoutes": "Cargando rutas diarias…",
+      "loadingContainers": "Cargando contenedores…",
+      "noRoutes": "No se encontraron rutas diarias.",
+      "noContainers": "No se encontraron contenedores.",
       "assigning": "Asignando…",
       "assign": "Asignar ruta"
     },
@@ -181,6 +201,28 @@
       "labelStatus": "Estado de etiqueta",
       "labelContainer": "Contenedor de etiqueta",
       "labelCount": "{{count}} etiqueta(s)"
+    },
+    "output": {
+      "title": "Cambios de códigos de barras",
+      "description": "Los mensajes verdes tuvieron éxito; los rojos fallaron. Solo se completan los campos modificados por fila.",
+      "columns": {
+        "barcode": "Código de barras",
+        "invoice": "Factura",
+        "container": "Contenedor",
+        "prevStatus": "Estado anterior",
+        "newStatus": "Nuevo estado",
+        "prevContainer": "Contenedor anterior",
+        "newContainer": "Nuevo contenedor",
+        "prevRoute": "Ruta anterior",
+        "newRoute": "Nueva ruta",
+        "dateTime": "Marca de tiempo",
+        "userCreated": "Usuario",
+        "message": "Mensaje"
+      },
+      "successStatus": "Estado actualizado correctamente.",
+      "successContainer": "Contenedor actualizado correctamente.",
+      "successRoute": "Ruta asignada correctamente.",
+      "missingNumber": "Falta el número de código de barras."
     }
   }
 }

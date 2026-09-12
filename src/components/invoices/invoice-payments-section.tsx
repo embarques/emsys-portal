@@ -12,7 +12,6 @@ import { InvoiceViewField, InvoiceViewListItem } from "@/components/invoices/inv
 import {
   formatInvoiceCommentDateTime,
   formatInvoiceMoney,
-  getPaymentMethodLabel,
 } from "@/lib/invoices/display";
 import {
   INVOICE_PAYMENT_METHODS,
@@ -26,6 +25,10 @@ type InvoicePaymentsSectionProps = {
   invoice: Invoice;
   onRecordPayment: (input: InvoicePaymentInput) => void;
 };
+
+function paymentMethodLabelKey(method: InvoicePaymentMethod): string {
+  return `invoices.view.payments.methods.${method}`;
+}
 
 export function InvoicePaymentsSection({ invoice, onRecordPayment }: InvoicePaymentsSectionProps) {
   const { t } = useTranslation();
@@ -113,7 +116,7 @@ export function InvoicePaymentsSection({ invoice, onRecordPayment }: InvoicePaym
                 searchPlaceholder={t("invoices.view.payments.searchMethods")}
                 options={INVOICE_PAYMENT_METHODS.map((option) => ({
                   value: option.value,
-                  label: option.label,
+                  label: t(paymentMethodLabelKey(option.value)),
                 }))}
               />
             </div>
@@ -163,7 +166,7 @@ export function InvoicePaymentsSection({ invoice, onRecordPayment }: InvoicePaym
               />
               <InvoiceViewField
                 label={t("invoices.view.payments.fields.method")}
-                value={getPaymentMethodLabel(payment.paymentMethod)}
+                value={t(paymentMethodLabelKey(payment.paymentMethod))}
               />
               <InvoiceViewField
                 label={t("invoices.view.payments.fields.date")}

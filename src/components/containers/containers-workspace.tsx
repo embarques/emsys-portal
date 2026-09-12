@@ -1,27 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  CalendarClock,
-  CalendarDays,
-  CalendarRange,
-  ChevronLeft,
-  ChevronRight,
-  Container,
-  Plus,
-  Ship,
-  Trash2,
-} from "lucide-react";
+import { Container, Plus, Trash2 } from "lucide-react";
 
 import { ContainerForm } from "@/components/containers/container-form";
 import { ContainerViewSheet } from "@/components/containers/container-view-sheet";
+import { AverageContainerValueStatCard } from "@/components/containers/average-container-value-stat-card";
+import { DepartedContainersStatCard } from "@/components/containers/departed-containers-stat-card";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
-import { StatCards } from "@/components/app-shell/stat-cards-carousel";
+import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
+import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableAdvancedFilterBuilder } from "@/components/app-shell/table-advanced-filter-builder";
@@ -52,15 +46,11 @@ import {
 import { useUserError } from "@/lib/errors";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import {
-  DEPARTED_PERIOD_DAYS,
-  computeContainerKpis,
   formatContainerDate,
   formatContainerId,
-  formatDepartedAnnualPace,
   formatOptionalContainerCost,
 } from "@/lib/containers/display";
 import {
-  useContainerKpis,
   useContainerStats,
   useContainers,
   useCreateContainer,
@@ -79,10 +69,10 @@ import {
   areContainerFormValuesEquivalent,
 } from "@/lib/containers/types";
 import type { DataTableColumn } from "@/lib/table/types";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 
-const PAGE_SIZE = DEFAULT_CONTAINER_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: ContainerFilterState = {
@@ -91,7 +81,7 @@ const defaultFilters: ContainerFilterState = {
 };
 
 export function ContainersWorkspace() {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
   const containerFilterFields = useContainerFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
@@ -100,7 +90,7 @@ export function ContainersWorkspace() {
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_CONTAINER_LIST_PARAMS.sort, () => setPage(1));
   const [viewContainer, setViewContainer] = useState<ContainerRecord | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
@@ -112,24 +102,24 @@ export function ContainersWorkspace() {
     () =>
       buildContainerListParams({
         page,
-        limit: PAGE_SIZE,
+        limit: pageLimit,
         query: debouncedQuery,
         rows: filters.rows,
         sort,
       }),
-    [debouncedQuery, filters.rows, page, sort],
+    [debouncedQuery, filters.rows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useContainers(listParams);
   const stats = useContainerStats();
-  const kpiQuery = useContainerKpis();
   const createContainerMutation = useCreateContainer();
   const updateContainerMutation = useUpdateContainer();
   const deleteContainersMutation = useDeleteContainers();
 
   const containers = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalContainers = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalContainers / PAGE_SIZE));
+  rememberTotal(totalContainers);
+  const totalPages = Math.max(1, Math.ceil(totalContainers / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     containers.length > 0 && containers.every((container) => selectedIds.includes(container.id));
@@ -147,8 +137,6 @@ export function ContainersWorkspace() {
     () => suggestNextContainerName(containers),
     [containers],
   );
-
-  const kpis = useMemo(() => computeContainerKpis(kpiQuery.items), [kpiQuery.items]);
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -242,58 +230,6 @@ export function ContainersWorkspace() {
       setDeleteTarget(null);
     }
   }
-
-  function departedPaceDescription(count: number, periodDays: number) {
-    if (kpiQuery.isLoading) return "…";
-    return t("containers.stats.annualPace", {
-      pace: formatDepartedAnnualPace(count, periodDays, locale),
-    });
-  }
-
-  const statCards = [
-    {
-      label: t("containers.stats.total.label"),
-      value: stats.isLoading ? "…" : stats.total.toString(),
-      description: t("containers.stats.total.description"),
-      icon: Container,
-    },
-    {
-      label: t("containers.stats.departedPast30Days"),
-      value: kpiQuery.isLoading ? "…" : kpis.departedPast30Days.toString(),
-      description: departedPaceDescription(
-        kpis.departedPast30Days,
-        DEPARTED_PERIOD_DAYS.past30Days,
-      ),
-      icon: Ship,
-    },
-    {
-      label: t("containers.stats.departedPast90Days"),
-      value: kpiQuery.isLoading ? "…" : kpis.departedPast90Days.toString(),
-      description: departedPaceDescription(
-        kpis.departedPast90Days,
-        DEPARTED_PERIOD_DAYS.past90Days,
-      ),
-      icon: CalendarClock,
-    },
-    {
-      label: t("containers.stats.departedPast180Days"),
-      value: kpiQuery.isLoading ? "…" : kpis.departedPast180Days.toString(),
-      description: departedPaceDescription(
-        kpis.departedPast180Days,
-        DEPARTED_PERIOD_DAYS.past180Days,
-      ),
-      icon: CalendarDays,
-    },
-    {
-      label: t("containers.stats.departedPast360Days"),
-      value: kpiQuery.isLoading ? "…" : kpis.departedPast360Days.toString(),
-      description: departedPaceDescription(
-        kpis.departedPast360Days,
-        DEPARTED_PERIOD_DAYS.past360Days,
-      ),
-      icon: CalendarRange,
-    },
-  ];
 
   const tableColumns: DataTableColumn<ContainerRecord>[] = [
     {
@@ -406,7 +342,16 @@ export function ContainersWorkspace() {
         }
       />
 
-      <StatCards items={statCards} />
+      <StatCardsCarousel>
+        <FlippableStatCard
+          label={t("containers.stats.total.label")}
+          value={stats.isLoading ? "…" : stats.total.toLocaleString()}
+          description={t("containers.stats.total.description")}
+          icon={Container}
+        />
+        <DepartedContainersStatCard />
+        <AverageContainerValueStatCard />
+      </StatCardsCarousel>
 
       <Card className="mt-6 gap-0">
         <CardHeader className="gap-3 border-b py-4 pb-3">
@@ -539,29 +484,14 @@ export function ContainersWorkspace() {
               noun,
             })}
           </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1 || isLoading}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages || isLoading}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={isLoading}
+          />
         </div>
         ) : null}
       </Card>

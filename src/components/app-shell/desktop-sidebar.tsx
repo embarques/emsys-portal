@@ -2,9 +2,18 @@
 
 import { usePathname } from "next/navigation";
 
+import { NavAlertBadge } from "@/components/app-shell/nav-alert-badge";
 import { SidebarBrand } from "@/components/brand/sidebar-brand";
 import { WorkspaceNavLink } from "@/components/app-shell/workspace-nav-link";
-import { useFlatNavigation } from "@/lib/navigation/use-navigation";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  useNavAlertCount,
+  useNavAlertLabel,
+} from "@/lib/navigation/use-nav-alert-count";
+import {
+  useFlatNavigation,
+  type TranslatedNavigationItem,
+} from "@/lib/navigation/use-navigation";
 import { navigationItemMatchesPath } from "@/lib/navigation/nav-utils";
 import { cn } from "@/lib/utils";
 import { SidebarNav } from "./sidebar-nav";
@@ -32,9 +41,72 @@ type DesktopSidebarProps = {
   expanded: boolean;
 };
 
+function CollapsedSidebarIconLink({
+  item,
+  pathname,
+}: {
+  item: TranslatedNavigationItem;
+  pathname: string;
+}) {
+  const alertCount = useNavAlertCount(item.href);
+  const alertLabel = useNavAlertLabel(item.href, alertCount);
+
+  if (!item.href) return null;
+
+  const active = navigationItemMatchesPath(item, pathname);
+  const Icon = item.icon;
+  const linkLabel = alertLabel ? `${item.label}, ${alertLabel}` : item.label;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="relative inline-flex">
+          <WorkspaceNavLink
+            href={item.href}
+            label={item.label}
+            aria-label={linkLabel}
+            className={cn(iconNavLinkClassName, active && iconNavLinkActiveClassName)}
+          >
+            <Icon className="h-6 w-6" aria-hidden />
+          </WorkspaceNavLink>
+          <NavAlertBadge
+            count={alertCount}
+            label={alertLabel}
+            className="pointer-events-none absolute -right-1 -top-1"
+          />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        {linkLabel}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function CollapsedSidebarNav({
+  pathname,
+  className,
+}: {
+  pathname: string;
+  className?: string;
+}) {
+  const flatNavigation = useFlatNavigation();
+
+  return (
+    <nav className={cn("flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-3 py-4", className)}>
+      {flatNavigation.map((item) => (
+        <CollapsedSidebarIconLink
+          key={item.href ?? item.labelKey}
+          item={item}
+          pathname={pathname}
+        />
+      ))}
+    </nav>
+  );
+}
+
 export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
   const pathname = usePathname();
-  const flatNavigation = useFlatNavigation();
 
   if (!expanded) {
     return (
@@ -43,25 +115,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
           <SidebarBrand compact priority />
         </div>
 
-        <nav className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-3 py-4">
-          {flatNavigation.map((item) => {
-            if (!item.href) return null;
-            const active = navigationItemMatchesPath(item, pathname);
-            const Icon = item.icon;
-
-            return (
-              <WorkspaceNavLink
-                key={item.href}
-                href={item.href}
-                label={item.label}
-                title={item.label}
-                className={cn(iconNavLinkClassName, active && iconNavLinkActiveClassName)}
-              >
-                <Icon className="h-6 w-6" />
-              </WorkspaceNavLink>
-            );
-          })}
-        </nav>
+        <CollapsedSidebarNav pathname={pathname} />
 
         <div className={cn("relative flex shrink-0 justify-center border-t p-3", sidebarSectionClassName)}>
           <SidebarProfileMenu compact />
@@ -76,25 +130,7 @@ export function DesktopSidebar({ expanded }: DesktopSidebarProps) {
         <SidebarBrand compact priority />
       </div>
 
-      <nav className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto px-3 py-4 xl:hidden">
-        {flatNavigation.map((item) => {
-          if (!item.href) return null;
-          const active = navigationItemMatchesPath(item, pathname);
-          const Icon = item.icon;
-
-          return (
-            <WorkspaceNavLink
-              key={item.href}
-              href={item.href}
-              label={item.label}
-              title={item.label}
-              className={cn(iconNavLinkClassName, active && iconNavLinkActiveClassName)}
-            >
-              <Icon className="h-6 w-6" />
-            </WorkspaceNavLink>
-          );
-        })}
-      </nav>
+      <CollapsedSidebarNav pathname={pathname} className="xl:hidden" />
 
       <div className={cn("relative flex shrink-0 justify-center border-t p-3 xl:hidden", sidebarSectionClassName)}>
         <SidebarProfileMenu compact />

@@ -9,17 +9,10 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
-import {
-  formatRouteDate,
-  formatRouteTimestamp,
-  getRouteEmployeesLabel,
-  getVehicleRefLabel,
-  truncateObjectId,
-  truncateRouteId,
-} from "@/lib/route-manager/display";
+import { getRouteEmployeesLabel, truncateObjectId, truncateRouteId } from "@/lib/route-manager/display";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
-import type { Route } from "@/lib/route-manager/types";
+import { getRouteBranchCode, type Route } from "@/lib/route-manager/types";
 
 type RouteViewSheetProps = {
   assignment: Route | null;
@@ -40,6 +33,12 @@ export function RouteViewSheet({
   const dash = t("common.empty.dash");
 
   if (!assignment) return null;
+
+  const branchLabel =
+    assignment.branch?.name?.trim() ||
+    assignment.branch?.code?.trim() ||
+    getRouteBranchCode(assignment) ||
+    dash;
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -64,23 +63,16 @@ export function RouteViewSheet({
               value={assignment.name}
             />
             <RecordViewSheetDetailRow
-              label={t("routes.columns.date")}
-              value={formatRouteDate(assignment.date)}
-            />
-          </RecordViewSheetSection>
-
-          <RecordViewSheetSection title={t("routes.viewSheet.sections.vehicle")}>
-            <RecordViewSheetDetailRow
-              label={t("routes.viewSheet.vehicleId")}
-              value={assignment.vehicle.id || dash}
+              label={t("routes.activeRoute.status")}
+              value={
+                assignment.active
+                  ? t("routes.activeRoute.active")
+                  : t("routes.activeRoute.inactive")
+              }
             />
             <RecordViewSheetDetailRow
-              label={t("routes.columns.vehicle")}
-              value={assignment.vehicle.name || dash}
-            />
-            <RecordViewSheetDetailRow
-              label={t("routes.routeDetails.vehicle")}
-              value={getVehicleRefLabel(assignment.vehicle)}
+              label={t("routes.columns.branch")}
+              value={branchLabel}
             />
           </RecordViewSheetSection>
 
@@ -94,7 +86,7 @@ export function RouteViewSheet({
           <RecordViewSheetSection title={t("routes.viewSheet.sections.audit")}>
             <RecordViewSheetDetailRow
               label={t("routes.columns.createdAt")}
-              value={assignment.createdAt ? formatRouteTimestamp(assignment.createdAt) : dash}
+              value={assignment.createdAt ? formatAuditDateTime(assignment.createdAt) : dash}
             />
             <RecordViewSheetDetailRow
               label={t("routes.columns.createdBy")}

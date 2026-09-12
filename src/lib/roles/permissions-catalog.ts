@@ -5,6 +5,11 @@ export type PermissionCatalogEntry = {
   group: string;
 };
 
+const PERMISSION_LABEL_OVERRIDES = new Map<string, string>([
+  ["pickup:canSyncLegacyPickups", "Access legacy pickups"],
+  ["invoice:canSyncLegacyInvoices", "Access legacy invoices"],
+]);
+
 function pluralize(value: string): string {
   const normalized = value.trim();
   if (!normalized || normalized.toLowerCase().endsWith("s")) return normalized;
@@ -27,6 +32,9 @@ export function formatPermissionGroup(resourceType: string): string {
 }
 
 export function formatPermissionLabel(name: string, resourceType: string): string {
+  const override = PERMISSION_LABEL_OVERRIDES.get(`${resourceType.trim()}:${name.trim()}`);
+  if (override) return override;
+
   const group = formatPermissionGroup(resourceType).toLowerCase();
   const actionMatch = name.trim().replace(/^can/, "").match(/^[A-Z][a-z]*/);
   const action = actionMatch?.[0] ?? "Access";
@@ -42,6 +50,35 @@ export function getPermissionsByGroup(
   catalog: PermissionCatalogEntry[],
 ): PermissionCatalogEntry[] {
   return catalog.filter((entry) => entry.group === group);
+}
+
+export const PERMISSION_BULK_ACTIONS = ["create", "view", "delete", "print"] as const;
+
+export type PermissionBulkAction = (typeof PERMISSION_BULK_ACTIONS)[number];
+
+const PERMISSION_ACTION_PREFIX: Record<PermissionBulkAction, string> = {
+  create: "canCreate",
+  view: "canView",
+  delete: "canDelete",
+  print: "canPrint",
+};
+
+export function isPermissionAction(
+  entry: PermissionCatalogEntry,
+  action: PermissionBulkAction,
+): boolean {
+  const name = entry.value.trim();
+  const prefix = PERMISSION_ACTION_PREFIX[action];
+  if (!name.startsWith(prefix)) return false;
+  const remainder = name.slice(prefix.length);
+  return remainder.length === 0 || /^[A-Z]/.test(remainder);
+}
+
+export function getPermissionsByAction(
+  action: PermissionBulkAction,
+  catalog: PermissionCatalogEntry[],
+): PermissionCatalogEntry[] {
+  return catalog.filter((entry) => isPermissionAction(entry, action));
 }
 
 type PermissionCatalogSource = Pick<PermissionCatalogEntry, "id" | "value"> & {

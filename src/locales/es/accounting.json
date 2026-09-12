@@ -1,10 +1,13 @@
 {
+  "pages": {
+    "description": "Mantenga un historial financiero centralizado de pagos, transacciones, ingresos y gastos."
+  },
   "chartOfAccounts": {
     "title": "Catálogo de cuentas",
-    "description": "Administre las cuentas utilizadas por las transacciones de ingresos diarios.",
+    "description": "Defina las categorías de ingresos, gastos, bancos y otras usadas para clasificar transacciones.",
     "noun": "cuentas",
     "entity": "Cuenta",
-    "searchPlaceholder": "Buscar por cuenta…",
+    "searchPlaceholder": "Buscar cuentas",
     "empty": "Ninguna cuenta coincide con su búsqueda.",
     "addAccount": "Agregar cuenta",
     "loading": "Cargando cuentas…",
@@ -31,7 +34,11 @@
     },
     "values": {
       "allBranches": "Todas",
-      "systemAccount": "Sistema"
+      "systemAccount": "Sistema",
+      "defaultAccount": "Predeterminada"
+    },
+    "mobile": {
+      "allTypes": "Todos los tipos"
     },
     "actions": {
       "edit": "Editar cuenta",
@@ -79,24 +86,29 @@
   },
   "checks": {
     "title": "Cheques",
-    "description": "Controle cheques pendientes y cobrados vinculados a facturas y recibos.",
+    "description": "Controle los pagos de facturas hechos con cheque. Los cheques pendientes no cambian el saldo de la factura hasta que se marquen como cobrados.",
     "noun": "cheques",
     "searchPlaceholder": "Buscar cheques…",
     "empty": "Ningún cheque coincide con su búsqueda.",
+    "emptyNone": "Aún no hay cheques.",
     "addCheck": "Agregar cheque",
     "columns": {
       "status": "Estado",
       "invoiceNumber": "Factura #",
-      "receiptNumber": "Cheque #",
+      "checkNumber": "Cheque #",
+      "paymentAmount": "Monto",
+      "datePosted": "Fecha de registro",
+      "referenceNumber": "Referencia #",
       "createdAt": "Creado el",
-      "createdBy": "Creado por",
-      "depositedAt": "Depositado el",
-      "depositedOn": "Depositado en",
-      "depositedBy": "Depositado por"
+      "createdBy": "Creado por"
     },
     "status": {
       "outstanding": "Pendiente",
       "cleared": "Cobrado"
+    },
+    "nav": {
+      "outstandingAlert": "{{count}} cheque pendiente",
+      "outstandingAlert_plural": "{{count}} cheques pendientes"
     },
     "actions": {
       "edit": "Editar cheque",
@@ -107,35 +119,37 @@
     },
     "form": {
       "createTitle": "Agregar cheque",
-      "createDescription": "Registre un nuevo pago con cheque.",
+      "createDescription": "Registre un cheque pendiente contra una factura. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",
       "editTitle": "Editar cheque",
-      "editDescription": "Actualice el cheque seleccionado.",
+      "editDescription": "Actualice el cheque seleccionado. Cambiar un cheque cobrado revierte y vuelve a aplicar el pago de la factura.",
       "sections": {
         "details": "Detalles del cheque",
-        "deposit": "Detalles del depósito"
+        "clearance": "Cobro"
       },
+      "clearanceHint": "Cobrar un cheque aplica el pago a la factura. Revertirlo o eliminarlo revierte ese pago.",
       "fields": {
-        "invoiceNumber": "Número de factura",
-        "receiptNumber": "Número de cheque",
+        "invoice": "Factura",
+        "checkNumber": "Número de cheque",
+        "paymentAmount": "Monto",
+        "datePosted": "Fecha de registro",
+        "referenceNumber": "Número de referencia",
         "status": "Estado",
         "createdBy": "Creado por",
-        "depositedAt": "Depositado el",
-        "depositedOn": "Depositado en",
-        "depositedBy": "Depositado por"
+        "clearedAt": "Cobrado el"
       },
       "placeholders": {
-        "invoiceNumber": "INV-2026-0001",
-        "receiptNumber": "CHK-8842",
-        "createdBy": "Ingrese el nombre",
-        "depositedOn": "Cuenta bancaria",
-        "depositedBy": "Ingrese el nombre"
+        "invoice": "Seleccione una factura",
+        "searchInvoices": "Buscar facturas…",
+        "checkNumber": "4521",
+        "referenceNumber": "REF-1001"
       },
       "selectEmpty": "No hay opciones coincidentes.",
       "validation": {
-        "invoiceNumberRequired": "El número de factura es obligatorio.",
-        "receiptNumberRequired": "El número de cheque es obligatorio.",
-        "createdByRequired": "El campo creado por es obligatorio.",
-        "depositRequired": "Los datos de depósito son obligatorios para cheques cobrados."
+        "invoiceRequired": "La factura es obligatoria.",
+        "checkNumberRequired": "El número de cheque es obligatorio.",
+        "paymentAmountRequired": "El monto debe ser mayor que cero.",
+        "datePostedRequired": "La fecha de registro es obligatoria.",
+        "clearedAtRequired": "La fecha de cobro es obligatoria para cheques cobrados."
       }
     },
     "view": {
@@ -146,8 +160,8 @@
     "delete": {
       "title": "¿Eliminar cheque?",
       "title_plural": "¿Eliminar {{count}} cheques?",
-      "description": "Esto elimina el cheque {{receiptNumber}} de la lista.",
-      "description_plural": "Esto elimina {{count}} cheques de la lista."
+      "description": "Esto elimina el cheque {{checkNumber}}. Si estaba cobrado, se revierte el pago de la factura.",
+      "description_plural": "Esto elimina {{count}} cheques. Los pagos de facturas de cheques cobrados se revierten."
     },
     "toasts": {
       "created": "Cheque agregado.",
@@ -162,17 +176,28 @@
   },
   "dailyIncome": {
     "title": "Ingresos diarios",
-    "description": "Cree y concilie el cierre contable diario.",
+    "description": "Registre y controle las transacciones de ingreso diarias y los ingresos de la empresa.",
     "noun": "transacciones",
     "transactionNoun": "transacción",
     "actions": {
       "createCloseout": "Crear cierre",
       "editCloseout": "Editar cierre",
+      "printReport": "Imprimir reporte",
       "closeDay": "Cerrar día",
       "reopenDay": "Reabrir día",
       "addTransaction": "Agregar transacción",
       "editTransaction": "Editar transacción",
       "deleteTransaction": "Eliminar transacción"
+    },
+    "print": {
+      "title": "Imprimir reporte de ingresos diarios",
+      "description": "Imprima todas las transacciones de este cierre, o filtre por empleado.",
+      "date": "Fecha",
+      "employee": "Empleado",
+      "allEmployees": "Todos",
+      "selectEmployee": "Seleccionar empleado",
+      "searchEmployees": "Buscar empleados…",
+      "confirm": "Imprimir reporte"
     },
     "filters": {
       "branch": "Sucursal",
@@ -189,7 +214,8 @@
     },
     "summary": {
       "loadingTotals": "Cargando totales del resumen…",
-      "currencyRate": "{{code}} · tasa {{rate}}"
+      "currencyRate": "{{code}} · tasa {{rate}}",
+      "totalDeposited": "Total Depositado"
     },
     "currency": {
       "usd": "Dólar",
@@ -203,10 +229,16 @@
       "loadingTitle": "Cargando transacciones",
       "loadingDescription": "Sincronizando asientos, pagos y totales del cierre…"
     },
+    "view": {
+      "sections": {
+        "audit": "Auditoría"
+      }
+    },
     "columns": {
       "date": "Fecha",
       "accountInvoice": "Cuenta / factura",
       "employee": "Empleado",
+      "assignedTo": "Asignado a",
       "type": "Transacción",
       "reference": "Referencia #",
       "paymentMethod": "Método de pago",
@@ -217,6 +249,7 @@
       "createTitle": "Crear ingresos diarios",
       "editTitle": "Editar ingresos diarios",
       "description": "Configure la sucursal, fecha, moneda y tasa de cambio para este cierre.",
+      "editDescription": "Actualice la fecha, moneda y tasa de cambio para este cierre.",
       "save": "Guardar ingresos diarios",
       "fields": {
         "branch": "Sucursal",
@@ -239,8 +272,12 @@
       "statementOpened": "Ingresos diarios abiertos.",
       "statementClosed": "Ingresos diarios cerrados.",
       "transactionCreated": "Transacción creada.",
+      "transactionCreatedWithType": "Transacción creada: {{type}}.",
+      "transactionCreatedWithTarget": "Transacción creada: {{type}} - {{target}}.",
       "transactionUpdated": "Transacción actualizada.",
-      "invoiceRegistered": "Nueva factura #{{invoiceNumber}} creada y pago registrado."
+      "invoiceRegistered": "Nueva factura #{{invoiceNumber}} creada y pago registrado.",
+      "checkPaymentHeld": "El cheque {{checkNumber}} quedó pendiente. La factura {{invoiceNumber}} no mostrará este pago hasta que el cheque se marque como cobrado.",
+      "reportReady": "Reporte de ingresos diarios listo."
     },
     "errors": {
       "noCloseoutLoaded": "No hay cierre cargado.",
@@ -261,6 +298,7 @@
       "description": "Registre un asiento en el cierre diario seleccionado.",
       "saving": "Guardando transacción…",
       "saveTransaction": "Guardar transacción",
+      "stepCount": "{{current}} de {{total}}",
       "steps": {
         "selectType": "Seleccionar tipo",
         "enterDetails": "Ingresar detalles"
@@ -296,6 +334,12 @@
         "description": "Registrar un ingreso",
         "sectionTitle": "Información del ingreso"
       },
+      "inventory": {
+        "label": "Registrar cambio de inventario",
+        "shortLabel": "Inventario",
+        "description": "Registrar insumos recibidos o despachados",
+        "sectionTitle": "Cambio de inventario"
+      },
       "discount": {
         "label": "Aplicar descuento",
         "shortLabel": "Descuento",
@@ -323,12 +367,15 @@
     },
     "form": {
       "fields": {
+        "assignedTo": "Asignado a",
         "employee": "Empleado",
+        "route": "Ruta diaria",
         "paymentMethod": "Método de pago",
         "bankAccount": "Cuenta bancaria",
         "zelleDate": "Fecha de transacción Zelle",
         "zelleName": "Nombre de transacción Zelle (como aparece en la cuenta bancaria)",
         "checkNumber": "Número de cheque",
+        "checkNumberHint": "Crea un cheque pendiente. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",
         "invoice": "Factura",
         "referenceNumber": "Número de referencia",
         "account": "Cuenta",
@@ -340,11 +387,29 @@
         "includeSender": "Incluir cliente remitente",
         "senderClient": "Cliente remitente",
         "includeReceiver": "Incluir cliente destinatario",
-        "receiverClient": "Cliente destinatario"
+        "receiverClient": "Cliente destinatario",
+        "inventoryDirection": "Recibido o despachado",
+        "unitPrice": "Precio unitario",
+        "total": "Total"
+      },
+      "partyActions": {
+        "new": "Nuevo",
+        "edit": "Editar"
+      },
+      "inventory": {
+        "received": "Recibido",
+        "dispatched": "Despachado",
+        "priceHint": "Complete el precio unitario o el total; el otro monto se actualiza automáticamente.",
+        "receivedDescription": "Recibido {{item}} × {{quantity}} de {{supplier}}",
+        "receivedDescriptionNoSupplier": "Recibido {{item}} × {{quantity}}",
+        "dispatchedDescription": "Despachado {{item}} × {{quantity}}"
       },
       "placeholders": {
+        "selectAssigneeSource": "Seleccionar empleado o ruta diaria",
         "selectEmployee": "Seleccionar empleado",
         "searchEmployees": "Buscar empleados…",
+        "selectRoute": "Seleccionar una ruta diaria",
+        "searchRoutes": "Buscar rutas diarias…",
         "selectPaymentMethod": "Seleccionar método de pago",
         "searchPaymentMethods": "Buscar métodos de pago…",
         "selectBankAccount": "Seleccionar cuenta bancaria",
@@ -353,7 +418,7 @@
         "searchAccounts": "Buscar cuentas…",
         "selectSourceAccount": "Seleccionar cuenta origen",
         "selectInvoice": "Seleccionar factura",
-        "searchInvoices": "Buscar por factura #, teléfono del remitente o destinatario…",
+        "searchInvoices": "Buscar facturas",
         "enterZelleName": "Ingrese el nombre de la transacción Zelle",
         "enterCheckNumber": "Ingrese el número de cheque",
         "enterReferenceNumber": "Ingrese el número de referencia",
@@ -365,6 +430,7 @@
         "searchReceiver": "Buscar destinatario por nombre, teléfono o dirección…",
         "searchReceivers": "Buscar destinatarios…",
         "selectReceiver": "Seleccionar destinatario",
+        "selectInventoryDirection": "Seleccione recibido o despachado",
         "amount": "0.00"
       },
       "hints": {
@@ -396,7 +462,7 @@
         "zelleNameRequired": "El nombre de transacción Zelle es obligatorio.",
         "checkNumberRequired": "El número de cheque es obligatorio.",
         "bankAccountRequired": "Seleccione una cuenta bancaria para este método de pago.",
-        "employeeRequired": "El empleado es obligatorio.",
+        "employeeRequired": "Seleccione un empleado o una ruta diaria.",
         "invoiceRequired": "La factura es obligatoria.",
         "paymentMethodRequired": "El método de pago es obligatorio.",
         "amountExceedsCost": "El monto no puede exceder el costo.",
@@ -405,6 +471,11 @@
         "amountExceedsBalance": "El monto no puede exceder el saldo de la factura.",
         "accountRequired": "La cuenta es obligatoria.",
         "sourceAccountRequired": "La cuenta origen es obligatoria.",
+        "inventoryRequired": "Seleccione recibido o despachado.",
+        "inventoryItemRequired": "El artículo es obligatorio.",
+        "inventoryQuantityRequired": "La cantidad debe ser mayor que cero.",
+        "inventoryPriceRequired": "Ingrese un precio unitario o un total.",
+        "supplierRequired": "El proveedor es obligatorio.",
         "balanceNegative": "El saldo no puede ser negativo."
       }
     }

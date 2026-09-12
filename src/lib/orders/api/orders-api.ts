@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
+import { axiosInstance } from "@/lib/api/axios";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@/lib/api/search-query";
 import { ORDER_TABLE_FILTER_FIELDS } from "@/lib/orders/filter-fields";
 import { expandOrderFilterNode } from "@/lib/orders/order-filters";
+import { parseLastSyncedAt } from "@/lib/legacy-sync/last-synced";
 import {
   createPickupBarSearchFilterGroup,
   createPickupTextSearchFilter,
@@ -41,9 +43,9 @@ import type { User } from "@/lib/users/types";
 import {
   DEFAULT_ORDER_LIST_PARAMS,
   deriveOrderPurpose,
+  formatOrderCommentSentence,
   getOrderPartyAddressAtIndex,
   orderCommentPurposeRequiresItem,
-  orderToFormValues,
   resolveOrderCommentUnit,
   toApiCommentPurpose,
   type Order,
@@ -79,6 +81,11 @@ type ApiPickup = {
   createdAt?: string;
   updatedAt?: string;
   completed?: boolean;
+  completedAt?: string;
+  completedBy?: Record<string, unknown>;
+  legacySyncStatus?: string;
+  legacySyncError?: string;
+  legacySyncedAt?: string;
   createdBy?: Record<string, unknown>;
   updatedBy?: Record<string, unknown>;
   branch?: ApiBranchRef;
@@ -90,6 +97,7 @@ type ApiPickup = {
   comments?: ApiComment[];
   sector?: ApiSectorRef;
   route?: ApiRouteRef | null;
+  routeNumber?: number;
   routeAssignmentId?: string;
 };
 
@@ -134,6 +142,24 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
   success?: boolean;
   message?: string;
   error?: string;
+};
+
+export type LegacyPickupSyncSummary = {
+  imported: number;
+  updated: number;
+  skipped: number;
+  total: number;
+  lastSyncedAt?: string;
+};
+
+export type LegacyPickupSyncResult = {
+  message: string;
+  summary: LegacyPickupSyncSummary;
+};
+
+export type LegacyPickupSyncPreview = {
+  total: number;
+  lastSyncedAt?: string;
 };
 
 
@@ -315,6 +341,9 @@ function normalizeOrder(raw: unknown): Order | null {
 
   const receiverRaw = item.receiver ?? (Array.isArray(item.receivers) ? item.receivers[0] : null);
   const comments = Array.isArray(item.comments) ? item.comments.map(normalizePickupComment) : [];
+  // Live pickups expose the scheduled vehicle-route as `route: { id }` only.
+  // Do not fall back to legacy `routeAssignmentId` — that field is for `/routes`
+  // templates and can keep showing a route after `route: null` clears the assignment.
   const routeRef = normalizePickupRouteRef(item.route);
 
   return {
@@ -323,6 +352,9 @@ function normalizeOrder(raw: unknown): Order | null {
     createdAt: normalizeIsoDate(item.createdAt),
     updatedAt: normalizeIsoDate(item.updatedAt),
     completed: item.completed === true,
+    legacySyncStatus: String(item.legacySyncStatus ?? "").trim() || undefined,
+    legacySyncError: String(item.legacySyncError ?? "").trim() || undefined,
+    legacySyncedAt: normalizeIsoDate(item.legacySyncedAt),
     createdBy: normalizePickupUser(item.createdBy),
     updatedBy: normalizePickupUser(item.updatedBy),
     branch: normalizePickupBranch(item.branch),
@@ -333,7 +365,7 @@ function normalizeOrder(raw: unknown): Order | null {
     comments,
     sector: normalizePickupSector(item.sector),
     /** Vehicle-route record id (`GET /vehicle-routes`, `routeType: pickup`), not `/routes`. */
-    routeId: routeRef?.id || String(item.routeAssignmentId ?? "").trim() || undefined,
+    routeId: routeRef?.id || undefined,
     routeName: routeRef?.name || undefined,
   };
 }
@@ -406,8 +438,31 @@ function hasOrderListFilters(params: OrderListParams): boolean {
   });
 }
 
+function aliasOrdersSortField(field: string): string {
+  return field.trim() === "createdBy" ? "createdBy.name" : field.trim();
+}
+
+function aliasOrdersSort(sort?: OrderListParams["sort"]): OrderListParams["sort"] {
+  if (typeof sort !== "string") return sort;
+
+  const aliased = sort
+    .split(",")
+    .map((entry) => {
+      const trimmed = entry.trim();
+      if (!trimmed) return "";
+      const [field, direction] = trimmed.split(":");
+      const mapped = aliasOrdersSortField(field ?? "");
+      if (!mapped) return "";
+      return direction === "asc" || direction === "desc" ? `${mapped}:${direction}` : mapped;
+    })
+    .filter(Boolean)
+    .join(",");
+
+  return aliased || undefined;
+}
+
 function resolveOrdersSort(params: OrderListParams): string | undefined {
-  return resolveApiListSort(params.sort);
+  return resolveApiListSort(aliasOrdersSort(params.sort) ?? params.sort);
 }
 
 function buildOrdersQuery(params: OrderListParams): string {
@@ -421,7 +476,7 @@ function buildOrdersQuery(params: OrderListParams): string {
 
 function buildPickupSearchBody(params: OrderListParams) {
   return buildStripeStyleSearchBody({
-    sort: params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort,
+    sort: aliasOrdersSort(params.sort ?? DEFAULT_ORDER_LIST_PARAMS.sort),
     filterGroups: buildOrderSearchFilterGroups(params),
   });
 }
@@ -558,8 +613,8 @@ function buildRoutePickupsFilter(routeId: string): TableFilterRowState[] {
 }
 
 /**
- * Assign pickups to a scheduled pickup vehicle route via
- * `PUT /pickups/route/{vehicleRouteId}` with `{ pickupIds }`.
+ * Assign appointments to a scheduled vehicle route via
+ * `PUT /pickups/route/{routeId}` with `{ pickupIds }` (Swagger AssignRouteRequest).
  */
 export async function assignPickupsToRoute(
   vehicleRouteId: string,
@@ -567,11 +622,11 @@ export async function assignPickupsToRoute(
 ): Promise<void> {
   const id = vehicleRouteId.trim();
   if (!id) {
-    throw new Error("A valid pickup route is required.");
+    throw new Error("A valid appointment route is required.");
   }
 
   if (pickupIds.length === 0) {
-    throw new Error("Select at least one pickup to assign.");
+    throw new Error("Select at least one appointment to assign.");
   }
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
@@ -579,7 +634,7 @@ export async function assignPickupsToRoute(
     { pickupIds },
   );
 
-  assertMutationSuccess(response, "Unable to assign pickup route.");
+  assertMutationSuccess(response, "Unable to assign appointment route.");
 }
 
 function unwrapPickupApiRecord(response: unknown): ApiPickup {
@@ -610,54 +665,121 @@ export async function fetchPickupApiRecord(orderId: string): Promise<ApiPickup> 
 }
 
 /**
- * Unassign a pickup from its scheduled route via `PUT /pickups/{id}` with `route: null`.
+ * Round-trip the live GET body and apply a small patch for updates that still
+ * send a fuller pickup model (e.g. toggling `completed`).
  *
- * Builds the same `CreatePickupRequest` write payload used by update/mark-complete so the
- * server receives a valid body. PUTting the raw read-shaped GET record does not reliably
- * clear the route assignment.
+ * Route unassign uses `DELETE /pickups/{id}/route` instead — `PUT /pickups/{id}`
+ * is JSON merge-aware (`route: null` also clears), and
+ * `PUT /pickups/route/{routeId}` is additive (empty `pickupIds` is rejected).
  */
-export async function clearPickupRouteAssignment(order: Order): Promise<void> {
-  if (order.id <= 0) {
-    throw new Error("A valid pickup is required.");
+const PICKUP_UPDATE_OMIT_KEYS = new Set([
+  "id",
+  "oldID",
+  "createdAt",
+  "createdBy",
+  "updatedAt",
+  "updatedBy",
+  "legacySyncStatus",
+  "legacySyncError",
+  "legacySyncedAt",
+  "routeAssignmentId",
+  "completedAt",
+  "completedBy",
+]);
+
+function buildPickupUpdatePayloadFromApiRecord(
+  record: ApiPickup,
+  patch: { completed?: boolean } = {},
+): Record<string, unknown> {
+  const raw = record as Record<string, unknown>;
+  const payload: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(raw)) {
+    if (PICKUP_UPDATE_OMIT_KEYS.has(key)) continue;
+    if (value === undefined) continue;
+    payload[key] = value;
   }
 
-  const payload = buildPickupWritePayload(orderToFormValues(order));
-  payload.route = null;
+  // Pickup update model uses `receivers[]`; some reads still expose singular `receiver`.
+  if (!payload.receivers && raw.receiver) {
+    payload.receivers = [raw.receiver];
+  }
+  delete payload.receiver;
+
+  if (!payload.sender || typeof payload.sender !== "object") {
+    throw new Error("Appointment sender is required.");
+  }
+
+  if (typeof patch.completed === "boolean") {
+    payload.completed = patch.completed;
+  }
+
+  return payload;
+}
+
+/** PUT /pickups/{id} using the live Pickup record + patch. */
+async function putPickupWithLiveRecordPatch(
+  orderId: string,
+  patch: { completed?: boolean },
+  fallbackMessage = "Unable to update appointment.",
+): Promise<void> {
+  const pickupId = orderId.trim();
+  const record = await fetchPickupApiRecord(pickupId);
+  const payload = buildPickupUpdatePayloadFromApiRecord(record, patch);
 
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.PICKUPS}/${order.id}`,
+    `${API_ENDPOINTS.PICKUPS}/${pickupId}`,
     payload,
   );
 
-  assertMutationSuccess(response, "Unable to clear pickup route.");
+  assertMutationSuccess(response, fallbackMessage);
 }
 
-/** Remove route assignments from the given pickups. */
+/**
+ * Unassign an appointment from its scheduled route.
+ *
+ * Prefer the dedicated endpoint: `DELETE /pickups/{id}/route` clears `route`
+ * (and `routeNumber`) without rewriting the pickup payload. `PUT` with
+ * `route: null` also works now that updates are JSON merge-aware.
+ */
+export async function clearPickupRouteAssignment(order: Order): Promise<void> {
+  if (order.id <= 0) {
+    throw new Error("A valid appointment is required.");
+  }
+
+  const pickupId = String(order.id);
+  const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/${pickupId}/route`,
+  );
+  assertMutationSuccess(response, "Unable to clear appointment route.");
+}
+
+/** Remove route assignments from the given appointments. */
 export async function clearPickupRouteAssignments(orders: Order[]): Promise<number> {
   const eligibleOrders = orders.filter((order) => order.id > 0);
   if (eligibleOrders.length === 0) {
-    throw new Error("Select at least one pickup to remove from the route.");
+    throw new Error("Select at least one appointment to remove from the route.");
   }
 
   await Promise.all(eligibleOrders.map((order) => clearPickupRouteAssignment(order)));
   return eligibleOrders.length;
 }
 
-/** Remove route assignments from the given pickups. */
+/** Remove route assignments from the given appointments. */
 export async function unassignOrdersFromRoutes(orders: Order[]): Promise<number> {
   return clearPickupRouteAssignments(orders);
 }
 
-/** Remove route assignments from the selected pickups on a route. */
+/** Remove route assignments from the selected appointments on a route. */
 export async function unassignPickupsFromRoute(orders: Order[]): Promise<number> {
   return clearPickupRouteAssignments(orders);
 }
 
-/** Remove every pickup from a scheduled pickup route. */
+/** Remove every appointment from a scheduled appointment route. */
 export async function unassignAllPickupsFromRoute(routeId: string): Promise<number> {
   const trimmedRouteId = routeId.trim();
   if (!trimmedRouteId) {
-    throw new Error("A valid pickup route is required.");
+    throw new Error("A valid appointment route is required.");
   }
 
   const pickups = await fetchAllPickupsByRoute(trimmedRouteId);
@@ -731,7 +853,7 @@ function buildApiCommentsFromFormValues(values: OrderFormValues): ApiComment[] {
       purpose: toApiCommentPurpose(comment.purpose),
       unit: resolveOrderCommentUnit(comment),
       quantity: requiresItem && Number.isFinite(quantity) ? quantity : 0,
-      description: requiresItem ? "" : comment.description.trim(),
+      description: formatOrderCommentSentence(comment),
     };
   });
 }
@@ -883,21 +1005,93 @@ export async function deleteOrders(orderIds: string[]): Promise<void> {
   await Promise.all(orderIds.map((orderId) => deleteOrder(orderId)));
 }
 
-/** Build a full pickup write payload from an existing order with an explicit completed flag. */
-function buildPickupCompletedPayload(order: Order, completed: boolean): ApiPickupWritePayload {
-  const payload = buildPickupWritePayload(orderToFormValues(order));
-  payload.completed = completed;
-  return payload;
-}
-
+/** Mark an appointment complete/incomplete via full live Pickup PUT + `completed` patch. */
 export async function setOrderCompleted(order: Order, completed: boolean): Promise<void> {
-  const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
-    `${API_ENDPOINTS.PICKUPS}/${order.id}`,
-    buildPickupCompletedPayload(order, completed),
+  if (order.id <= 0) {
+    throw new Error("A valid appointment is required.");
+  }
+
+  const pickupId = String(order.id);
+  await putPickupWithLiveRecordPatch(
+    pickupId,
+    { completed },
+    completed ? "Unable to mark appointment complete." : "Unable to mark appointment incomplete.",
   );
-  assertMutationSuccess(response, "Unable to update pickup.");
+
+  const after = await fetchOrderById(pickupId);
+  if (after.completed !== completed) {
+    throw new Error(
+      completed ? "Unable to mark appointment complete." : "Unable to mark appointment incomplete.",
+    );
+  }
 }
 
 export async function setOrdersCompleted(orders: Order[], completed: boolean): Promise<void> {
   await Promise.all(orders.map((order) => setOrderCompleted(order, completed)));
+}
+
+function normalizeLegacySyncSummary(raw: unknown): LegacyPickupSyncSummary {
+  if (!raw || typeof raw !== "object") {
+    return { imported: 0, updated: 0, skipped: 0, total: 0 };
+  }
+
+  const item = raw as Record<string, unknown>;
+
+  return {
+    imported: Number(item.imported ?? 0),
+    updated: Number(item.updated ?? 0),
+    skipped: Number(item.skipped ?? 0),
+    total: Number(item.total ?? 0),
+    lastSyncedAt: parseLastSyncedAt(raw),
+  };
+}
+
+function normalizeLegacySyncPreview(raw: unknown): LegacyPickupSyncPreview {
+  if (!raw || typeof raw !== "object") {
+    return { total: 0 };
+  }
+
+  const item = raw as Record<string, unknown>;
+  return { total: Number(item.total ?? 0), lastSyncedAt: parseLastSyncedAt(raw) };
+}
+
+export async function previewLegacyPickupSync(): Promise<LegacyPickupSyncPreview> {
+  const response = await axiosInstance.get<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/legacy-sync/preview`,
+    { useDirectApi: true },
+  );
+
+  assertMutationSuccess(response.data, "Unable to preview legacy pickup sync.");
+
+  return normalizeLegacySyncPreview(response.data.data);
+}
+
+export async function syncLegacyPickups(): Promise<LegacyPickupSyncResult> {
+  const response = await axiosInstance.post<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/legacy-sync`,
+    undefined,
+    { useDirectApi: true },
+  );
+
+  assertMutationSuccess(response.data, "Unable to sync legacy pickups.");
+
+  return {
+    message: response.data.message?.trim() || "Legacy pickups synced.",
+    summary: normalizeLegacySyncSummary(response.data.data),
+  };
+}
+
+export async function retryOrderLegacySync(orderId: string): Promise<Order> {
+  const response = await apiClient.post<ApiMutationEnvelope<unknown>>(
+    `${API_ENDPOINTS.PICKUPS}/${orderId}/legacy-sync/retry`,
+  );
+
+  assertMutationSuccess(response, "Unable to retry legacy pickup sync.");
+
+  const order = extractOrderFromMutationResponse(response.data);
+  if (order) {
+    return order;
+  }
+
+  return fetchOrderById(orderId);
 }

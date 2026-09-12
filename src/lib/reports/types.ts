@@ -1,11 +1,14 @@
 /** Document types supported by the `/reports/*` endpoints. */
-export type ReportType = "income" | "invoice" | "journal" | "label" | "pickup" | "delivery";
+import type { ApiSearchFilterNode } from "@/lib/api/search-query";
+
+export type ReportType = "income" | "invoice" | "journal" | "loan" | "label" | "pickup" | "delivery";
 
 /** Collections the `values` identifiers can be resolved against. */
 export type ReportCollection =
-  | "income"
+  | "income_statements"
   | "invoices"
   | "journals"
+  | "loans"
   | "barcodes"
   | "pickups"
   | "deliveries";
@@ -24,6 +27,8 @@ export type ReportCollection =
  *   `{ type: "pickup", collection: "pickups", values: ["42"], lookupField: "id" }`
  * - Delivery report (`/reports/deliveries`):
  *   `{ type: "delivery", collection: "deliveries", values: ["1001"], lookupField: "id" }`
+ * - Income statement report (`/reports/income`):
+ *   `{ type: "income", collection: "income_statements", values: ["42"], lookupField: "id" }`
  */
 export type ReportRequest = {
   /** Document type to render. */
@@ -31,9 +36,13 @@ export type ReportRequest = {
   /** Collection the `values` identifiers belong to. */
   collection: ReportCollection;
   /** Identifiers to resolve and render. */
-  values: string[];
+  values?: string[];
   /** Field the API uses to resolve `values` (defaults to `id`). */
   lookupField?: string;
+  /** Advanced filters used by list-level reports such as employee loans. */
+  filters?: ApiSearchFilterNode[];
+  /** Root filter operator for `filters` (defaults to `and`). */
+  operator?: "and" | "or";
   /** How long the returned public URL stays valid (defaults to 24). */
   expiresInHours?: number;
 };
@@ -48,4 +57,45 @@ export type ReportResult = {
   fileName: string;
   /** ISO timestamp marking when the public URL stops working, when provided. */
   expiresAt: string;
+};
+
+export type ReportDefinition = {
+  id: string;
+  key: string;
+  type: string;
+  name: string;
+  description: string;
+  icon?: string;
+  enabled: boolean;
+  sortOrder: number;
+  filters: ReportFilterKey[];
+};
+
+export type ReportFilterKey =
+  | "date-range"
+  | "single-date"
+  | "customer"
+  | "container"
+  | "invoice"
+  | "invoice-status"
+  | "payment-status"
+  | "payment-method"
+  | "employee"
+  | "loan-status"
+  | "driver"
+  | "location"
+  | "port-destination"
+  | "status"
+  | (string & {});
+
+export type ReportFilterValues = Record<string, string>;
+
+export type NormalizedReportRequest = {
+  reportKey: string;
+  filters: ReportFilterValues;
+};
+
+export type ReportGenerationBoundaryResult = {
+  status: "not-implemented";
+  request: NormalizedReportRequest;
 };

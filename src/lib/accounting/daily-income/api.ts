@@ -23,6 +23,7 @@ import {
   type IncomeStatementSummaryDetail,
   type IncomeStatementSummaryTotal,
   type IncomeStatementSummaryTotals,
+  type InventoryChangeDirection,
   type JournalTransactionType,
 } from "@/lib/accounting/daily-income/types";
 
@@ -45,6 +46,12 @@ function objectValue(value: unknown): Record<string, unknown> {
 function numberValue(value: unknown, fallback = 0): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function optionalNumberValue(value: unknown): number | undefined {
+  if (value == null || value === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function stringValue(value: unknown): string {
@@ -77,19 +84,39 @@ function normalizePartyRef(value: unknown): DailyIncomePartyRef | undefined {
   const id = firstDefined(raw.id, raw._id);
   const name = stringValue(firstDefined(raw.name, raw.displayName));
   if (id == null || id === "" || !name) return undefined;
-  return { id: typeof id === "number" ? id : String(id), name };
+  const nestedRoute = objectValue(raw.route);
+  const nestedId = firstDefined(nestedRoute.id, nestedRoute._id);
+  const nestedName = stringValue(firstDefined(nestedRoute.name, nestedRoute.displayName));
+  return {
+    id: typeof id === "number" ? id : String(id),
+    name,
+    ...(nestedId != null && nestedId !== "" && nestedName
+      ? {
+          route: {
+            id: typeof nestedId === "number" ? nestedId : String(nestedId),
+            name: nestedName,
+          },
+        }
+      : {}),
+  };
 }
 
 function normalizeLookup(value: unknown): AccountingLookup | undefined {
+  if (typeof value === "string") {
+    const name = value.trim();
+    return name ? { id: 0, name } : undefined;
+  }
   const raw = objectValue(value);
   const id = numberValue(firstDefined(raw.id, raw._id));
   const name = stringValue(firstDefined(raw.name, raw.displayName, raw.code));
   if (!id && !name) return undefined;
+  const type = stringValue(raw.type) || undefined;
   return {
     id,
     name,
     code: stringValue(raw.code) || undefined,
     displayName: stringValue(raw.displayName) || undefined,
+    ...(type ? { type } : {}),
   };
 }
 
@@ -109,11 +136,57 @@ function normalizeIncomeStatement(value: unknown): DailyIncomeStatement | null {
   };
 }
 
+function looksLikeDailyRouteId(id: unknown): boolean {
+  if (id == null || id === "") return false;
+  return /^[a-f\d]{24}$/i.test(String(id).trim());
+}
+
+function normalizeInventoryDirection(value: unknown): InventoryChangeDirection | undefined {
+  const direction = stringValue(value).toLowerCase();
+  if (direction === "received" || direction === "dispatched") return direction;
+  return undefined;
+}
+
+/**
+ * Resolve the daily-route assignee from API fields.
+ * Prefers `vehicleRoute`, then `route`, then legacy `employeeGroup` when its id
+ * is a 24-char Mongo ObjectID (numeric ids stay employee-side).
+ */
+function normalizeJournalRoute(raw: Record<string, unknown>): DailyIncomePartyRef | undefined {
+  const vehicleRoute = normalizePartyRef(raw.vehicleRoute);
+  if (vehicleRoute && looksLikeDailyRouteId(vehicleRoute.id)) return vehicleRoute;
+
+  const route = normalizePartyRef(raw.route);
+  if (route && looksLikeDailyRouteId(route.id)) return route;
+
+  const employeeGroup = normalizePartyRef(raw.employeeGroup);
+  if (employeeGroup && looksLikeDailyRouteId(employeeGroup.id)) return employeeGroup;
+
+  return undefined;
+}
+
 function normalizeJournal(value: unknown): DailyIncomeJournal | null {
   const raw = objectValue(value);
   const id = stringValue(firstDefined(raw.id, raw._id));
   if (!id) return null;
-  const invoice = objectValue(raw.invoice);
+  const invoiceRaw = objectValue(raw.invoice);
+  const invoiceId = firstDefined(invoiceRaw.id, invoiceRaw._id, raw.invoiceId);
+  const invoiceNumber = stringValue(
+    firstDefined(invoiceRaw.number, invoiceRaw.invoiceNumber, raw.invoiceNumber),
+  );
+  const sender = normalizePartyRef(invoiceRaw.sender) ?? normalizePartyRef(raw.sender);
+  const receiver = normalizePartyRef(invoiceRaw.receiver) ?? normalizePartyRef(raw.receiver);
+  const invoiceCost = optionalNumberValue(firstDefined(invoiceRaw.cost, invoiceRaw.total, invoiceRaw.invoiceCost));
+  const invoiceDiscount = optionalNumberValue(firstDefined(invoiceRaw.discount, invoiceRaw.invoiceDiscount));
+  const invoicePayment = optionalNumberValue(firstDefined(invoiceRaw.payment, invoiceRaw.amountPaid));
+  const invoiceBalance = optionalNumberValue(invoiceRaw.balance);
+  const hasInvoice =
+    invoiceId != null ||
+    Boolean(invoiceNumber) ||
+    sender != null ||
+    receiver != null ||
+    invoiceCost != null ||
+    invoiceDiscount != null;
   const accountLines = Array.isArray(raw.accounts)
     ? raw.accounts.map((value) => {
         const account = objectValue(value);
@@ -128,6 +201,15 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     : [];
   const primaryLine = accountLines.find((account) => !["CASH ON HAND", "ACCOUNTS RECEIVABLE"].includes(account.name));
   const sourceLine = accountLines.find((account) => account.credit > 0 && account.id !== primaryLine?.id);
+  const route = normalizeJournalRoute(raw);
+  const employee = route ? undefined : normalizeLookup(raw.employee);
+  const employeeGroupRaw = normalizePartyRef(raw.employeeGroup);
+  const employeeGroup =
+    route && employeeGroupRaw && looksLikeDailyRouteId(employeeGroupRaw.id)
+      ? employeeGroupRaw
+      : !route
+        ? employeeGroupRaw
+        : undefined;
   return {
     id,
     incomeStatementId: numberValue(firstDefined(raw.incomeStatementId, objectValue(raw.incomeStatement).id)),
@@ -138,8 +220,9 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     description: stringValue(raw.description),
     currency: stringValue(raw.currency),
     rate: numberValue(raw.rate),
-    employee: normalizeLookup(raw.employee),
-    employeeGroup: normalizePartyRef(raw.employeeGroup),
+    employee,
+    employeeGroup,
+    route,
     account: normalizeLookup(raw.account) ?? (primaryLine ? normalizeLookup(primaryLine) : undefined),
     paymentAccount: normalizeLookup(raw.paymentAccount),
     sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
@@ -147,16 +230,53 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     zelleTransactionDate: stringValue(raw.zelleTransactionDate).slice(0, 10) || undefined,
     zelleTransactionName: stringValue(raw.zelleTransactionName) || undefined,
     checkNumber: stringValue(firstDefined(raw.checkNumber, raw.check_number)) || undefined,
+    inventoryDirection: normalizeInventoryDirection(
+      firstDefined(raw.inventoryDirection, objectValue(raw.inventory).direction),
+    ),
+    inventoryItemId: stringValue(
+      firstDefined(
+        raw.inventoryItemId,
+        objectValue(raw.inventoryItem).id,
+        objectValue(raw.item).id,
+        raw.itemId,
+      ),
+    ) || undefined,
+    inventoryItemName: stringValue(
+      firstDefined(
+        raw.inventoryItemName,
+        objectValue(raw.inventoryItem).item,
+        objectValue(raw.inventoryItem).name,
+        objectValue(raw.item).item,
+        objectValue(raw.item).name,
+      ),
+    ) || undefined,
+    inventoryQuantity: optionalNumberValue(firstDefined(raw.inventoryQuantity, raw.quantity, objectValue(raw.inventory).quantity)),
+    inventoryUnitPrice: optionalNumberValue(
+      firstDefined(raw.inventoryUnitPrice, raw.averageCost, objectValue(raw.inventory).unitPrice),
+    ),
+    inventoryTotal: optionalNumberValue(firstDefined(raw.inventoryTotal, raw.incomeGained, objectValue(raw.inventory).total)),
+    inventorySupplierId: stringValue(
+      firstDefined(raw.inventorySupplierId, objectValue(raw.inventorySupplier).id, raw.supplierId, objectValue(raw.supplier).id),
+    ) || undefined,
+    inventorySupplierName: stringValue(
+      firstDefined(
+        raw.inventorySupplierName,
+        objectValue(raw.inventorySupplier).companyName,
+        objectValue(raw.inventorySupplier).name,
+        objectValue(raw.supplier).companyName,
+      ),
+    ) || undefined,
     accounts: accountLines,
-    invoice: Object.keys(invoice).length
+    invoice: hasInvoice
       ? {
-          id: firstDefined(invoice.id, invoice._id) as string | number | undefined,
-          number: stringValue(invoice.number),
-          cost: numberValue(invoice.cost),
-          payment: numberValue(invoice.payment),
-          balance: numberValue(invoice.balance),
-          sender: normalizePartyRef(invoice.sender),
-          receiver: normalizePartyRef(invoice.receiver),
+          id: invoiceId as string | number | undefined,
+          number: invoiceNumber,
+          cost: invoiceCost,
+          discount: invoiceDiscount,
+          payment: invoicePayment,
+          balance: invoiceBalance,
+          sender,
+          receiver,
         }
       : undefined,
     createdAt: stringValue(raw.createdAt) || undefined,
@@ -191,7 +311,10 @@ function computeJournalSummary(items: DailyIncomeJournal[]): DailyIncomeSummary 
     const expenseLines = item.accounts.filter((account) => account.type === "EXPENSE");
     if (expenseLines.length > 0) {
       summary.expense += expenseLines.reduce((total, account) => total + account.debit, 0);
-    } else if (item.transactionType === "EXPENSE") {
+    } else if (
+      item.transactionType === "EXPENSE" ||
+      (item.transactionType === "INVENTORY" && item.inventoryDirection === "received")
+    ) {
       summary.expense += item.amount;
     }
 
@@ -201,7 +324,10 @@ function computeJournalSummary(items: DailyIncomeJournal[]): DailyIncomeSummary 
       }
     }
 
-    if (!["INITIAL-PAYMENT", "PAYMENT", "SALES"].includes(item.transactionType)) {
+    const countsAsIncome =
+      ["INITIAL-PAYMENT", "PAYMENT", "SALES"].includes(item.transactionType) ||
+      (item.transactionType === "INVENTORY" && item.inventoryDirection === "dispatched");
+    if (!countsAsIncome) {
       continue;
     }
 
@@ -332,6 +458,24 @@ export async function fetchIncomeStatement(branchId: number, date: string) {
   return normalizeIncomeStatement(unwrapArray(payload)[0]);
 }
 
+/** Prefer an OPEN closeout for this branch/date; otherwise keep `fallbackId`. */
+export async function resolveOpenIncomeStatementId(
+  branchId: number,
+  date: string,
+  fallbackId = 0,
+): Promise<number> {
+  try {
+    const statement = await fetchIncomeStatement(branchId, date);
+    if (statement?.status === "OPEN" && statement.id > 0) {
+      return statement.id;
+    }
+  } catch {
+    // Keep the previously linked statement when lookup fails.
+  }
+
+  return fallbackId > 0 ? fallbackId : 0;
+}
+
 function incomeStatementPayload(values: DailyIncomeStatementValues) {
   return {
     date: `${values.date}T00:00:00Z`,
@@ -405,7 +549,7 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
   const search = params.query?.trim().toLowerCase();
   if (search) {
     items = items.filter((item) =>
-      [item.refNumber, item.description, item.transactionType, item.employee?.name, item.employeeGroup?.name, item.invoice?.number]
+      [item.refNumber, item.description, item.transactionType, item.employee?.name, item.route?.name, item.employeeGroup?.name, item.invoice?.number]
         .some((value) => value?.toLowerCase().includes(search)),
     );
   }
@@ -421,6 +565,41 @@ export async function fetchDailyIncomeJournals(params: DailyIncomeJournalListPar
     resultsPerPage: limit,
     total,
   };
+}
+
+const INVOICE_PAYMENT_TRANSACTION_TYPES = new Set(["INITIAL-PAYMENT", "PAYMENT"]);
+
+/** Journals posted against an invoice (`PAYMENT` / `INITIAL-PAYMENT`). */
+export async function fetchJournalsForInvoice(params: {
+  invoiceId?: string;
+  invoiceNumber?: string;
+}): Promise<DailyIncomeJournal[]> {
+  const invoiceId = params.invoiceId?.trim();
+  const invoiceNumber = params.invoiceNumber?.trim();
+  if (!invoiceId && !invoiceNumber) return [];
+
+  const identityFilters = invoiceNumber
+    ? [{ field: "invoice.number", operator: "eq" as const, value: invoiceNumber }]
+    : invoiceId
+      ? [{ field: "invoice.id", operator: "eq" as const, value: invoiceId }]
+      : [];
+
+  if (identityFilters.length === 0) return [];
+
+  const payload = await apiClient.post<ApiEnvelope>(
+    `${API_ENDPOINTS.ACCOUNTING_JOURNALS}/search`,
+    buildAdvancedSearchBody({
+      page: 1,
+      limit: 100,
+      sort: { field: "createdAt", direction: "desc" },
+      filterGroups: [{ operator: "and", filters: identityFilters }],
+    }),
+  );
+
+  return parseJournalSearchRows(payload)
+    .map(normalizeJournal)
+    .filter((item): item is DailyIncomeJournal => item != null)
+    .filter((item) => INVOICE_PAYMENT_TRANSACTION_TYPES.has(item.transactionType));
 }
 
 /** Find the initial Daily Income registration that authorizes a new invoice. */
@@ -453,8 +632,13 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   }
 
   const invoiceRelated = ["INITIAL-PAYMENT", "PAYMENT", "DISCOUNT", "SURCHARGE"].includes(values.transactionType);
-  const accountRelated = ["EXPENSE", "SALES", "TRANSFER", "LOAN"].includes(values.transactionType);
-  const sourceAccountRelated = ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType);
+  const isInventory = values.transactionType === "INVENTORY";
+  const inventoryReceived = isInventory && values.inventoryDirection === "received";
+  const inventoryDispatched = isInventory && values.inventoryDirection === "dispatched";
+  const accountRelated =
+    ["EXPENSE", "SALES", "TRANSFER", "LOAN", "INVENTORY"].includes(values.transactionType);
+  const sourceAccountRelated =
+    ["EXPENSE", "TRANSFER", "LOAN"].includes(values.transactionType) || inventoryReceived;
   const bankAccountRequired = requiresBankAccount(values.paymentMethodName);
 
   if (bankAccountRequired && (!values.paymentAccountId || values.paymentAccountType !== "BANK")) {
@@ -470,6 +654,26 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
         }
       : undefined;
 
+  const assignedToRoute = Boolean(values.routeId?.trim());
+  const dailyRouteRef = assignedToRoute
+    ? {
+        id: values.routeId,
+        name: values.routeName?.trim() || values.routeCrewName?.trim() || values.routeId,
+        ...(values.routeCrewId || values.routeCrewName
+          ? {
+              route: {
+                id: values.routeCrewId,
+                name: values.routeCrewName?.trim() || values.routeCrewId,
+              },
+            }
+          : {}),
+      }
+    : null;
+  const employeeRef =
+    !assignedToRoute && values.employeeId
+      ? { id: values.employeeId, name: values.employeeName ?? "" }
+      : null;
+
   return {
     incomeStatementId: statement.id,
     incomeStatement: { id: statement.id },
@@ -480,9 +684,12 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     description: values.description,
     currency: statement.currency,
     rate: statement.rate,
-    employee: values.employeeId
-      ? { id: values.employeeId, name: values.employeeName ?? "" }
-      : undefined,
+    // One assignee family only — do not leave leftover fields from the other.
+    employee: employeeRef,
+    vehicleRoute: dailyRouteRef,
+    route: dailyRouteRef,
+    // Legacy compatibility field for route journals; cleared on employee journals.
+    employeeGroup: dailyRouteRef,
     account: accountRelated && values.accountId
       ? { id: values.accountId, name: values.accountName, type: values.accountType }
       : undefined,
@@ -514,6 +721,42 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
       : {}),
     ...(isCheckPaymentMethod(values.paymentMethodName)
       ? { checkNumber: values.checkNumber?.trim() || undefined }
+      : {}),
+    ...(isInventory
+      ? {
+          inventoryDirection: values.inventoryDirection,
+          inventoryItemId: values.inventoryItemId,
+          inventoryItem: values.inventoryItemId
+            ? { id: values.inventoryItemId, item: values.inventoryItemName ?? "" }
+            : undefined,
+          inventoryQuantity: values.inventoryQuantity,
+          inventoryUnitPrice: values.inventoryUnitPrice,
+          inventoryTotal: values.inventoryTotal,
+          itemId: values.inventoryItemId,
+          quantity: values.inventoryQuantity,
+          ...(inventoryReceived
+            ? {
+                inventorySupplierId: values.inventorySupplierId,
+                inventorySupplier: values.inventorySupplierId
+                  ? { id: values.inventorySupplierId, companyName: values.inventorySupplierName ?? "" }
+                  : undefined,
+                averageCost: values.inventoryUnitPrice,
+                supplierId: values.inventorySupplierId,
+                receivedAt: statement.date,
+              }
+            : {}),
+          ...(inventoryDispatched
+            ? {
+                incomeGained: values.inventoryTotal,
+                dispatchedAt: statement.date,
+                dispatchedTo: assignedToRoute
+                  ? dailyRouteRef
+                  : values.employeeId
+                    ? { id: values.employeeId, name: values.employeeName ?? "" }
+                    : undefined,
+              }
+            : {}),
+        }
       : {}),
   };
 }

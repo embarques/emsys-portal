@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
   Plus,
   Shield,
   UserX,
@@ -12,8 +10,10 @@ import {
 } from "lucide-react";
 
 import { UserForm } from "@/components/users/user-form";
+import { UserMobileList } from "@/components/users/user-mobile-list";
 import { UserViewSheet } from "@/components/users/user-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
@@ -45,6 +45,7 @@ import {
   useResolvedPaginatedItems,
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -84,7 +85,6 @@ import {
   areUserFormValuesEquivalent,
 } from "@/lib/users/types";
 
-const PAGE_SIZE = DEFAULT_USER_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: UserFilterState = {
@@ -102,7 +102,7 @@ export function UsersWorkspace() {
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_USER_LIST_PARAMS.sort, () => setPage(1));
   const [viewUser, setViewUser] = useState<User | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
@@ -114,12 +114,12 @@ export function UsersWorkspace() {
     () =>
       buildUserListParams({
         page,
-        limit: PAGE_SIZE,
+        limit: pageLimit,
         query: debouncedQuery,
         rows: filters.rows,
         sort,
       }),
-    [debouncedQuery, filters.rows, page, sort],
+    [debouncedQuery, filters.rows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useUsers(listParams);
@@ -133,7 +133,8 @@ export function UsersWorkspace() {
 
   const users = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalUsers = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
+  rememberTotal(totalUsers);
+  const totalPages = Math.max(1, Math.ceil(totalUsers / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const pageUsers = users;
   const allPageSelected =
@@ -401,7 +402,7 @@ export function UsersWorkspace() {
     {
       itemCountOnPage: pageUsers.length,
       page: currentPage,
-      pageSize: PAGE_SIZE,
+      pageSize: pageLimit,
       total: totalUsers,
       noun: t("users.noun"),
       isFiltered: hasActiveFilters,
@@ -411,23 +412,84 @@ export function UsersWorkspace() {
   );
 
   const deactivateMany = Array.isArray(deactivateTarget) && deactivateTarget.length > 1;
+  const filtersPanel = (
+    <TableFilterPanel
+      resultSummary={listSummary}
+      presets={{
+        storageKey: "users",
+        rows: filters.rows,
+        fields: userFilterFields,
+        onApply: (rows) => {
+          setFilters((current) => ({ ...current, rows }));
+          setPage(1);
+        },
+      }}
+      onClearAll={
+        hasActiveFilters
+          ? () => {
+              setFilters(defaultFilters);
+              setPage(1);
+            }
+          : undefined
+      }
+    >
+      <TableAdvancedFilterBuilder
+        open={filtersOpen}
+        rows={filters.rows}
+        fields={userFilterFields}
+        dynamicOptions={{
+          branches: branchesLoading ? [] : branchFilterOptions,
+        }}
+        onChange={(rows) => {
+          setFilters((current) => ({ ...current, rows }));
+          setPage(1);
+        }}
+      />
+    </TableFilterPanel>
+  );
 
   return (
-    <div>
-      <PageHeader
-        title={t("users.title")}
-        description={t("users.pages.description")}
-        actions={
-          <Button onClick={openAddForm} disabled={isSaving}>
-            <Plus className="h-4 w-4" />
-            {t("users.actions.add")}
-          </Button>
-        }
+    <div className="max-w-full overflow-x-hidden">
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("users.title")}
+          description={t("users.pages.description")}
+          actions={
+            <Button onClick={openAddForm} disabled={isSaving}>
+              <Plus className="h-4 w-4" />
+              {t("users.actions.add")}
+            </Button>
+          }
+        />
+
+        <StatCards items={statCards} />
+      </div>
+
+      <UserMobileList
+        query={filters.query}
+        users={pageUsers}
+        selectedIds={selectedIds}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        isSaving={isSaving}
+        listErrorMessage={listErrorMessage}
+        emptyMessage={hasActiveFilters ? t("users.empty.noMatch") : t("users.empty.noneYet")}
+        page={currentPage}
+        totalPages={totalPages}
+        activeFilterCount={activeFilterCount}
+        filtersOpen={filtersOpen}
+        filterPanel={filtersPanel}
+        onFiltersOpenChange={setFiltersOpen}
+        onQueryChange={(query) => setFilters((current) => ({ ...current, query }))}
+        onPageChange={setPage}
+        onOpen={setViewUser}
+        onEdit={openEditForm}
+        onDeactivate={setDeactivateTarget}
+        onSelectedIdsChange={setSelectedIds}
+        onAddUser={openAddForm}
       />
 
-      <StatCards items={statCards} />
-
-      <Card className="mt-6 gap-0">
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -445,41 +507,7 @@ export function UsersWorkspace() {
                 placeholder={t("users.search.placeholder")}
               />
             }
-            filterPanel={
-              <TableFilterPanel
-                resultSummary={listSummary}
-                presets={{
-                  storageKey: "users",
-                  rows: filters.rows,
-                  fields: userFilterFields,
-                  onApply: (rows) => {
-                    setFilters((current) => ({ ...current, rows }));
-                    setPage(1);
-                  },
-                }}
-                onClearAll={
-                  hasActiveFilters
-                    ? () => {
-                        setFilters(defaultFilters);
-                        setPage(1);
-                      }
-                    : undefined
-                }
-              >
-                <TableAdvancedFilterBuilder
-                  open={filtersOpen}
-                  rows={filters.rows}
-                  fields={userFilterFields}
-                  dynamicOptions={{
-                    branches: branchesLoading ? [] : branchFilterOptions,
-                  }}
-                  onChange={(rows) => {
-                    setFilters((current) => ({ ...current, rows }));
-                    setPage(1);
-                  }}
-                />
-              </TableFilterPanel>
-            }
+            filterPanel={filtersPanel}
           />
         </CardHeader>
 
@@ -540,29 +568,14 @@ export function UsersWorkspace() {
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">{listSummary}</p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1 || isLoading}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages || isLoading}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={isLoading}
+          />
         </div>
       </Card>
 
@@ -588,8 +601,8 @@ export function UsersWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+        <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
+          <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
             <DialogTitle>
               {formMode === "edit" ? t("users.form.editTitle") : t("users.form.addTitle")}
             </DialogTitle>

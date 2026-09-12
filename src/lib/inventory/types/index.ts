@@ -1,4 +1,6 @@
 export * from "./catalog";
 export * from "./movements";
-export * from "./recipients";
+export * from "./suppliers";
 export * from "./documents";
+export * from "./list";
+export * from "./snapshot";

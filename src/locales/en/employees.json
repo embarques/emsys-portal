@@ -3,13 +3,14 @@
   "entityPlural": "employees",
   "title": "Employees",
   "pages": {
-    "description": "Maintain employee records, branch assignments, titles, and contact information for operational staff."
+    "description": "Maintain employee records used for operations, routes, and assignments."
   },
   "noun": "employees",
   "actions": {
     "add": "Add employee",
     "edit": "Edit employee",
-    "editNamed": "Edit {{name}}"
+    "editNamed": "Edit {{name}}",
+    "addUser": "Add portal user"
   },
   "stats": {
     "total": {
@@ -121,7 +122,9 @@
       "state": "State / province",
       "zipcode": "Zip / postal code",
       "country": "Country",
-      "email": "Email"
+      "email": "Email",
+      "user": "Portal user",
+      "noUser": "No linked user"
     },
     "placeholders": {
       "name": "MIGUEL",
@@ -137,7 +140,8 @@
       "state": "NY",
       "zipcode": "11201",
       "country": "US",
-      "email": "name@emsys.example"
+      "email": "name@emsys.example",
+      "userSearch": "Search users…"
     }
   },
   "view": {
@@ -156,6 +160,8 @@
     "edit": "Edit employee"
   },
   "dialogs": {
+    "createUserTitle": "Add portal user",
+    "createUserDescription": "Create a user and link it to this employee.",
     "deleteTitle": "Delete employee?",
     "deleteTitlePlural": "Delete employees?",
     "deleteOne": "This will permanently remove \"{{name}}\". {{cannotBeUndone}}",

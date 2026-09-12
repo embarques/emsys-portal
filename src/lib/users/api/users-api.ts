@@ -30,40 +30,82 @@ type ApiUser = {
   email?: string;
   name?: string;
   active?: boolean;
-  branch?: ApiBranchReference;
-  role?: ApiReference;
+  branch?: ApiBranchReference | null;
+  role?: ApiReference | null;
   startTime?: string;
   endTime?: string;
   createdAt?: string;
   updatedAt?: string;
-  createdBy?: ApiReference;
-  updatedBy?: ApiReference;
+  createdBy?: ApiReference | null;
+  updatedBy?: ApiReference | null;
 };
 
-type ApiReference = { _id?: number; id?: number; name?: string };
+/** Hydrated refs use `{ id, name }`; legacy may use `_id` / `$id` or omit empty refs. */
+type ApiReference = {
+  _id?: number | string;
+  id?: number | string;
+  $id?: number | string;
+  name?: string;
+};
 type ApiBranchReference = ApiReference & { code?: string };
 type ApiEnvelope<T> = PaginatedApiEnvelope<T> & { success?: boolean; message?: string; error?: string };
 
-function readId(value: number | string | undefined): number | undefined {
-  if (value == null) return undefined;
+const EMPTY_USER_REFERENCE: UserReference = { id: 0, name: "" };
+const EMPTY_USER_BRANCH: UserBranch = { id: 0, name: "" };
+
+function readId(value: unknown): number | undefined {
+  if (value == null || value === "") return undefined;
+  if (typeof value === "object" && !Array.isArray(value)) {
+    const nested = value as Record<string, unknown>;
+    if ("$numberInt" in nested) return readId(nested.$numberInt);
+    if ("$numberLong" in nested) return readId(nested.$numberLong);
+  }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function normalizeReference(raw: ApiReference | undefined): UserReference {
+/** True when the API omitted a ref or returned an empty `{}` placeholder. */
+function isBlankRef(raw: unknown): boolean {
+  if (raw == null) return true;
+  if (typeof raw !== "object" || Array.isArray(raw)) return true;
+  return Object.keys(raw as object).length === 0;
+}
+
+function readRefId(raw: Record<string, unknown>): number | undefined {
+  return readId(raw.id ?? raw._id ?? raw.$id);
+}
+
+function normalizeReference(raw: unknown): UserReference {
+  if (isBlankRef(raw)) return { ...EMPTY_USER_REFERENCE };
+  if (typeof raw === "number" || typeof raw === "string") {
+    return { id: readId(raw) ?? 0, name: "" };
+  }
+
+  const item = raw as ApiReference;
   return {
-    id: readId(raw?._id ?? raw?.id) ?? 0,
-    name: String(raw?.name ?? "").trim(),
+    id: readRefId(item as Record<string, unknown>) ?? 0,
+    name: String(item.name ?? "").trim(),
   };
 }
 
-/** Branch ref for a user: `{ id, code }` (name kept for display fallback). */
-function normalizeUserBranch(raw: ApiBranchReference | undefined): UserBranch {
+/** Branch ref for a user: `{ id, name }` (optional legacy `code`). */
+function normalizeUserBranch(raw: unknown): UserBranch {
+  if (isBlankRef(raw)) return { ...EMPTY_USER_BRANCH };
+  if (typeof raw === "number" || typeof raw === "string") {
+    return { id: readId(raw) ?? 0, name: "" };
+  }
+
+  const item = raw as ApiBranchReference;
   return {
-    id: readId(raw?._id ?? raw?.id) ?? 0,
-    code: String(raw?.code ?? "").trim(),
-    name: String(raw?.name ?? "").trim(),
+    id: readRefId(item as Record<string, unknown>) ?? 0,
+    name: String(item.name ?? "").trim(),
   };
+}
+
+function normalizeOptionalAuditRef(raw: unknown): UserReference | null {
+  if (isBlankRef(raw)) return null;
+  const ref = normalizeReference(raw);
+  return ref.id > 0 || ref.name ? ref : null;
 }
 
 function normalizeUser(raw: unknown): User | null {
@@ -83,8 +125,8 @@ function normalizeUser(raw: unknown): User | null {
     endTime: String(item.endTime ?? "").trim(),
     createdAt: item.createdAt ?? "",
     updatedAt: item.updatedAt ?? "",
-    createdBy: item.createdBy ? normalizeReference(item.createdBy) : null,
-    updatedBy: item.updatedBy ? normalizeReference(item.updatedBy) : null,
+    createdBy: normalizeOptionalAuditRef(item.createdBy),
+    updatedBy: normalizeOptionalAuditRef(item.updatedBy),
   };
 }
 
@@ -151,7 +193,7 @@ function writePayload(values: UserFormValues, uid?: string): UserWritePayload {
     email: values.email.trim(),
     name: values.name.trim(),
     active: values.active,
-    branch: { id: values.branch.id, code: values.branch.code, name: values.branch.name },
+    branch: { id: values.branch.id, name: values.branch.name },
     role: { id: values.role.id, name: values.role.name },
   };
   if (uid) payload.uid = uid;

@@ -3,7 +3,7 @@
   "entityPlural": "artículos",
   "title": "Artículos",
   "pages": {
-    "description": "Mantenga el catálogo de productos y servicios con precios, descripciones y detalles usados en facturas y órdenes."
+    "description": "Atajos opcionales de mercancía que los trabajadores pueden seleccionar al crear facturas."
   },
   "noun": "artículos",
   "actions": {
@@ -87,13 +87,34 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "ID de artículo", "placeholder": "Ingrese el ID del artículo…" },
-      "name": { "label": "Descripción", "placeholder": "Ingrese la descripción…" },
-      "price": { "label": "Precio", "placeholder": "Ingrese el monto…" },
-      "createdAt": { "label": "Creado el", "placeholder": "AAAA-MM-DD" },
-      "createdAtRange": { "label": "Rango de fecha de creación", "placeholder": "2026-01-01 a 2026-06-30" },
-      "updatedAt": { "label": "Actualizado el", "placeholder": "AAAA-MM-DD" },
-      "updatedAtRange": { "label": "Rango de fecha de modificación", "placeholder": "2026-01-01 a 2026-06-30" }
+      "id": {
+        "label": "ID de artículo",
+        "placeholder": "Ingrese el ID del artículo…"
+      },
+      "name": {
+        "label": "Descripción",
+        "placeholder": "Ingrese la descripción…"
+      },
+      "price": {
+        "label": "Precio",
+        "placeholder": "Ingrese el monto…"
+      },
+      "createdAt": {
+        "label": "Creado el",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "createdAtRange": {
+        "label": "Rango de creación",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "updatedAt": {
+        "label": "Actualizado el",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "updatedAtRange": {
+        "label": "Rango de actualización",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      }
     }
   }
 }

@@ -8,6 +8,7 @@ import {
   deleteRole,
   deleteRoles,
   fetchPermissionCatalog,
+  fetchRoleById,
   fetchRoles,
   updateRole,
 } from "@/lib/roles/api/roles-api";
@@ -75,6 +76,15 @@ export function useRolePermissionCatalog() {
   });
 }
 
+/** Load one role via GET /roles/{id} (permissions hydrated like list/search). */
+export function useRole(roleId: string | number | null, enabled = true) {
+  return useWorkspaceQuery({
+    queryKey: queryKeys.roles.detail(String(roleId ?? "")),
+    queryFn: () => fetchRoleById(roleId!),
+    enabled: enabled && roleId != null && String(roleId).trim() !== "",
+  });
+}
+
 function invalidateRoles(queryClient: ReturnType<typeof useQueryClient>) {
   return queryClient.invalidateQueries({ queryKey: queryKeys.roles.all });
 }
@@ -92,7 +102,12 @@ export function useUpdateRole() {
   return useMutation({
     mutationFn: ({ roleId, values }: { roleId: string; values: RoleFormValues }) =>
       updateRole(roleId, values),
-    onSuccess: () => invalidateRoles(queryClient),
+    onSuccess: (_data, variables) => {
+      invalidateRoles(queryClient);
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.roles.detail(String(variables.roleId)),
+      });
+    },
   });
 }
 

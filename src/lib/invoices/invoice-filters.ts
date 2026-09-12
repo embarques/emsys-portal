@@ -15,6 +15,7 @@ const NUMERIC_FIELDS: ReadonlySet<string> = new Set([
   "payment",
   "balance",
   "surcharge",
+  "container.id",
   "employee.id",
   "sender.id",
   "receiver.id",

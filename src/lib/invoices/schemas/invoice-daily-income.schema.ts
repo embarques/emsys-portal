@@ -5,11 +5,22 @@ import {
   isZellePaymentMethod,
   requiresBankAccount,
 } from "@/lib/accounting/daily-income/types";
+import {
+  isInvoiceEmployeePickupSource,
+  type InvoiceFormValues,
+} from "@/lib/invoices/types";
 
 const invoiceDailyIncomeRegistrationBaseSchema = z.object({
   amount: z.number().nonnegative("Payment amount cannot be negative."),
+  assigneeSource: z.enum(["employee", "route"]).optional(),
   employeeId: z.number().optional(),
   employeeName: z.string().optional(),
+  employeeGroupId: z.string().optional(),
+  employeeGroupName: z.string().optional(),
+  routeId: z.string().optional(),
+  routeName: z.string().optional(),
+  routeCrewId: z.string().optional(),
+  routeCrewName: z.string().optional(),
   paymentMethodId: z.number().optional(),
   paymentMethodName: z.string().optional(),
   paymentAccountId: z.number().optional(),
@@ -22,10 +33,19 @@ const invoiceDailyIncomeRegistrationBaseSchema = z.object({
   checkNumber: z.string().optional(),
 });
 
+export type InvoiceDailyIncomeRegistrationSchemaMessages = {
+  assigneeRequired: string;
+};
+
+const DEFAULT_MESSAGES: InvoiceDailyIncomeRegistrationSchemaMessages = {
+  assigneeRequired: "Select an employee or a daily route.",
+};
+
 function refineInvoiceDailyIncomeRegistration(
   values: z.infer<typeof invoiceDailyIncomeRegistrationBaseSchema>,
   context: z.RefinementCtx,
-  invoiceTotal?: number,
+  invoiceTotal: number | undefined,
+  messages: InvoiceDailyIncomeRegistrationSchemaMessages,
 ) {
   if (typeof invoiceTotal === "number" && values.amount > invoiceTotal) {
     context.addIssue({
@@ -35,11 +55,12 @@ function refineInvoiceDailyIncomeRegistration(
     });
   }
 
-  if (!values.employeeId) {
+  const hasAssignee = Boolean(values.employeeId) || Boolean(values.routeId?.trim());
+  if (!hasAssignee) {
     context.addIssue({
       code: "custom",
-      path: ["employeeId"],
-      message: "Employee is required.",
+      path: values.assigneeSource === "route" ? ["routeId"] : ["employeeId"],
+      message: messages.assigneeRequired,
     });
   }
 
@@ -87,18 +108,73 @@ function refineInvoiceDailyIncomeRegistration(
   }
 }
 
-export function createInvoiceDailyIncomeRegistrationSchema(invoiceTotal: number) {
+export function createInvoiceDailyIncomeRegistrationSchema(
+  invoiceTotal: number,
+  messages: InvoiceDailyIncomeRegistrationSchemaMessages = DEFAULT_MESSAGES,
+) {
   return invoiceDailyIncomeRegistrationBaseSchema.superRefine((values, context) => {
-    refineInvoiceDailyIncomeRegistration(values, context, invoiceTotal);
+    refineInvoiceDailyIncomeRegistration(values, context, invoiceTotal, messages);
   });
 }
 
-export const invoiceDailyIncomeRegistrationSchema = invoiceDailyIncomeRegistrationBaseSchema.superRefine(
-  (values, context) => {
-    refineInvoiceDailyIncomeRegistration(values, context);
-  },
+export const invoiceDailyIncomeRegistrationSchema = createInvoiceDailyIncomeRegistrationSchema(
+  Number.POSITIVE_INFINITY,
 );
 
 export type InvoiceDailyIncomeRegistrationValues = z.infer<
-  typeof invoiceDailyIncomeRegistrationSchema
+  typeof invoiceDailyIncomeRegistrationBaseSchema
 >;
+
+/** Prefill payment assignee from invoice step-1 pickup route / employee. */
+export function buildInvoiceDailyIncomeAssigneeDefaults(
+  invoice: InvoiceFormValues,
+  routeNameById?: Map<string, string>,
+): Pick<
+  InvoiceDailyIncomeRegistrationValues,
+  | "assigneeSource"
+  | "employeeId"
+  | "employeeName"
+  | "employeeGroupId"
+  | "employeeGroupName"
+  | "routeId"
+  | "routeName"
+  | "routeCrewId"
+  | "routeCrewName"
+> {
+  if (invoice.pickupSource === "route" && invoice.routeId.trim()) {
+    const routeId = invoice.routeId.trim();
+    const crewName = invoice.routeCrewName.trim();
+    return {
+      assigneeSource: "route",
+      routeId,
+      routeName: routeNameById?.get(routeId)?.trim() || crewName || routeId,
+      routeCrewId: invoice.routeCrewId.trim() || undefined,
+      routeCrewName: crewName || undefined,
+      employeeId: undefined,
+      employeeName: "",
+    };
+  }
+
+  if (isInvoiceEmployeePickupSource(invoice.pickupSource) && invoice.pickupEmployeeId.trim()) {
+    const employeeId = Number(invoice.pickupEmployeeId);
+    return {
+      assigneeSource: "employee",
+      employeeId: Number.isFinite(employeeId) && employeeId > 0 ? employeeId : undefined,
+      employeeName: invoice.pickupEmployeeName.trim() || undefined,
+      routeId: undefined,
+      routeName: "",
+      routeCrewId: undefined,
+      routeCrewName: "",
+    };
+  }
+
+  return {
+    assigneeSource: "employee",
+    employeeId: undefined,
+    employeeName: "",
+    routeId: undefined,
+    routeName: "",
+    routeCrewId: undefined,
+    routeCrewName: "",
+  };
+}

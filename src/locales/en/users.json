@@ -3,7 +3,7 @@
   "entityPlural": "users",
   "title": "Users",
   "pages": {
-    "description": "Administer portal user accounts, company access, roles, and account activation status."
+    "description": "Administer portal user accounts, company access, roles, and permissions."
   },
   "noun": "users",
   "actions": {
@@ -157,20 +157,50 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "User ID", "placeholder": "Enter user ID…" },
-      "name": { "label": "Name", "placeholder": "Enter name…" },
-      "email": { "label": "Email", "placeholder": "Enter email…" },
-      "uid": { "label": "UID", "placeholder": "Enter UID…" },
+      "id": {
+        "label": "User ID",
+        "placeholder": "Enter user ID…"
+      },
+      "name": {
+        "label": "Name",
+        "placeholder": "Enter name…"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Enter email…"
+      },
+      "uid": {
+        "label": "UID",
+        "placeholder": "Enter UID…"
+      },
       "role": {
-        "name": { "label": "Role name", "placeholder": "Enter role name…" },
-        "id": { "label": "Role", "placeholder": "Enter role ID…" }
+        "name": {
+          "label": "Role",
+          "placeholder": "Enter role name…"
+        },
+        "id": {
+          "label": "Role ID",
+          "placeholder": "Enter role ID…"
+        }
       },
       "branch": {
-        "name": { "label": "Branch name", "placeholder": "Enter branch name…" },
-        "id": { "label": "Branch", "placeholder": "Select branch…" }
+        "name": {
+          "label": "Branch name",
+          "placeholder": "Enter branch name…"
+        },
+        "id": {
+          "label": "Branch",
+          "placeholder": "Select branch…"
+        }
       },
-      "active": { "label": "Active", "placeholder": "Select status…" },
-      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" }
+      "active": {
+        "label": "Active",
+        "placeholder": "Select status…"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      }
     }
   }
 }

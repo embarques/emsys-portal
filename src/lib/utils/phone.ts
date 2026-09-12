@@ -89,11 +89,21 @@ export function isPhoneApiField(field: string): boolean {
   return normalized.includes(".phones.") || normalized.endsWith(".phones.number");
 }
 
+/**
+ * Digits kept for phone search/filter values.
+ * Mixed input keeps digits only (`9f3a` → `93`). Letter-only input becomes `""`.
+ * 11-digit NANP values drop a leading `1`, matching stored national numbers.
+ * Aligns with EMSYS `sender.phone` / `receivers.phone` digit-stripping.
+ */
+export function phoneSearchDigits(value: string): string {
+  return normalizeStoredPhone(value);
+}
+
 /** Normalize a search/filter value based on the target API field. */
 export function normalizeApiSearchValueForField(field: string, value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return trimmed;
-  return isPhoneApiField(field) ? normalizeStoredPhone(trimmed) : trimmed;
+  return isPhoneApiField(field) ? phoneSearchDigits(trimmed) : trimmed;
 }
 
 /** Format a phone for tables and detail views, using em dash when empty. */

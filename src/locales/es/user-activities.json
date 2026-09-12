@@ -1,0 +1,25 @@
+{
+  "title": "Actividad de usuarios",
+  "description": "Registro de auditoría de las acciones de los usuarios en EMSYS.",
+  "noun": "actividades",
+  "searchPlaceholder": "Buscar descripción, usuario, origen o ID…",
+  "columns": {
+    "timestamp": "Fecha y hora",
+    "user": "Usuario",
+    "description": "Descripción",
+    "origin": "Origen",
+    "id": "ID",
+    "quantity": "Cantidad",
+    "severity": "Severidad"
+  },
+  "severity": {
+    "common": "Común",
+    "uncommon": "Poco común",
+    "rare": "Rara"
+  },
+  "empty": {
+    "loading": "Cargando actividades…",
+    "noResults": "Aún no hay actividades de usuarios.",
+    "noMatches": "Ninguna actividad coincide con la búsqueda."
+  }
+}

@@ -1,25 +1,62 @@
 "use client";
 
 import { useMemo } from "react";
-import type { UseFormSetValue } from "react-hook-form";
 
+import { EntityFieldActions } from "@/components/accounting/entity-field-actions";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   buildTransactionAssigneeOptions,
+  dailyRoutesForStatement,
   getTransactionAssigneeSelectValue,
+  resolveDailyIncomeAssigneeSource,
 } from "@/lib/accounting/daily-income/assignee";
-import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
+import type {
+  DailyIncomeAssigneeSource,
+} from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
 import { useTranslation } from "@/lib/i18n";
+import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 
 type Props = {
   id?: string;
   employees: Employee[];
+  dailyRoutes?: ActiveRoute[];
+  statementDate?: string;
   employeeId?: number;
+  employeeName?: string;
+  routeId?: string;
+  routeName?: string;
+  assigneeSource?: DailyIncomeAssigneeSource;
   error?: string;
-  setValue: UseFormSetValue<DailyIncomeJournalValues>;
+  setValue: TransactionAssigneeSetValue;
+  /** When false, only the employee picker is shown (invoice payment wizard). */
+  allowDailyRoute?: boolean;
+  onAddEmployee?: () => void;
+  onEditEmployee?: () => void;
+  onAddRoute?: () => void;
+  onEditRoute?: () => void;
 };
+
+type TransactionAssigneeFormValues = {
+  assigneeSource?: DailyIncomeAssigneeSource;
+  employeeId?: number;
+  employeeName?: string;
+  employeeGroupId?: string;
+  employeeGroupName?: string;
+  routeId?: string;
+  routeName?: string;
+  routeCrewId?: string;
+  routeCrewName?: string;
+};
+
+type TransactionAssigneeSetValue = (
+  name: keyof TransactionAssigneeFormValues,
+  value: string | number | undefined,
+  options?: { shouldValidate?: boolean },
+) => void;
 
 function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
   return (
@@ -30,45 +67,177 @@ function RequiredLabel({ htmlFor, children }: { htmlFor: string; children: React
   );
 }
 
+function clearEmployee(setValue: TransactionAssigneeSetValue) {
+  setValue("employeeId", undefined, { shouldValidate: true });
+  setValue("employeeName", "");
+  setValue("employeeGroupId", undefined, { shouldValidate: true });
+  setValue("employeeGroupName", "");
+}
+
+function clearRoute(setValue: TransactionAssigneeSetValue) {
+  setValue("routeId", undefined, { shouldValidate: true });
+  setValue("routeName", "");
+  setValue("routeCrewId", undefined, { shouldValidate: true });
+  setValue("routeCrewName", "");
+}
+
 export function TransactionAssigneeSelect({
   id = "journal-employee",
   employees,
+  dailyRoutes = [],
+  statementDate,
   employeeId,
+  employeeName,
+  routeId,
+  routeName,
+  assigneeSource,
   error,
   setValue,
+  allowDailyRoute = true,
+  onAddEmployee,
+  onEditEmployee,
+  onAddRoute,
+  onEditRoute,
 }: Props) {
   const { t } = useTranslation();
-  const options = useMemo(() => buildTransactionAssigneeOptions(employees), [employees]);
-  const value = getTransactionAssigneeSelectValue(employeeId);
+  const source = allowDailyRoute
+    ? resolveDailyIncomeAssigneeSource({ assigneeSource, employeeId, routeId })
+    : "employee";
+  const employeeOptions = useMemo(
+    () => withPinnedSelectOption(buildTransactionAssigneeOptions(employees), employeeId, employeeName),
+    [employeeId, employeeName, employees],
+  );
+  const routeOptions = useMemo(() => {
+    const scoped = dailyRoutesForStatement(dailyRoutes, statementDate);
+    const selected = routeId ? dailyRoutes.find((item) => item.id === routeId) : undefined;
+    const list =
+      selected && !scoped.some((item) => item.id === selected.id) ? [selected, ...scoped] : scoped;
+    return withPinnedSelectOption(
+      buildActiveRouteAssignmentOptions(list, t).map((option) => ({
+        value: option.value,
+        label: option.label,
+        keywords: (option as { keywords?: string[] }).keywords,
+      })),
+      routeId,
+      routeName,
+    );
+  }, [dailyRoutes, routeId, routeName, statementDate, t]);
+  const employeeValue = getTransactionAssigneeSelectValue(employeeId);
+  const sourceOptions = [
+    { value: "employee", label: t("accounting.dailyIncome.form.fields.employee") },
+    { value: "route", label: t("accounting.dailyIncome.form.fields.route") },
+  ];
 
-  function handleValueChange(next: string) {
+  function handleSourceChange(next: string) {
+    const sourceValue = next === "route" ? "route" : "employee";
+    setValue("assigneeSource", sourceValue, { shouldValidate: true });
+    if (sourceValue === "route") {
+      clearEmployee(setValue);
+      return;
+    }
+    clearRoute(setValue);
+  }
+
+  function handleEmployeeChange(next: string) {
     if (!next) {
-      setValue("employeeId", undefined, { shouldValidate: true });
-      setValue("employeeName", "");
-      setValue("employeeGroupId", undefined, { shouldValidate: true });
-      setValue("employeeGroupName", "");
+      clearEmployee(setValue);
       return;
     }
 
     const employee = employees.find((item) => String(item.id) === next);
+    setValue("assigneeSource", "employee", { shouldValidate: true });
     setValue("employeeId", employee?.id, { shouldValidate: true });
     setValue("employeeName", employee?.name ?? "");
     setValue("employeeGroupId", undefined, { shouldValidate: true });
     setValue("employeeGroupName", "");
+    clearRoute(setValue);
+  }
+
+  function handleRouteChange(next: string) {
+    if (!next) {
+      clearRoute(setValue);
+      return;
+    }
+
+    const route = dailyRoutes.find((item) => item.id === next);
+    const crewName =
+      route?.route?.name.trim() ||
+      route?.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") ||
+      "";
+    setValue("assigneeSource", "route", { shouldValidate: true });
+    setValue("routeId", route?.id ?? next, { shouldValidate: true });
+    setValue("routeName", route?.name.trim() || crewName || next);
+    setValue("routeCrewId", route?.route?.id || undefined, { shouldValidate: true });
+    setValue("routeCrewName", crewName);
+    clearEmployee(setValue);
   }
 
   return (
-    <div className="space-y-2">
-      <RequiredLabel htmlFor={id}>{t("accounting.dailyIncome.form.fields.employee")}</RequiredLabel>
-      <SearchableSelect
-        id={id}
-        value={value}
-        onValueChange={handleValueChange}
-        placeholder={t("accounting.dailyIncome.form.placeholders.selectEmployee")}
-        searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchEmployees")}
-        options={options}
-      />
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+    <div className={allowDailyRoute ? "grid gap-4 sm:grid-cols-2" : "space-y-2"}>
+      {allowDailyRoute ? (
+        <div className="space-y-2">
+          <RequiredLabel htmlFor={`${id}-source`}>
+            {t("accounting.dailyIncome.form.fields.assignedTo")}
+          </RequiredLabel>
+          <SearchableSelect
+            id={`${id}-source`}
+            value={source}
+            onValueChange={handleSourceChange}
+            placeholder={t("accounting.dailyIncome.form.placeholders.selectAssigneeSource")}
+            searchable={false}
+            options={sourceOptions}
+          />
+        </div>
+      ) : null}
+      {source === "route" ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <RequiredLabel htmlFor="journal-route">
+              {t("accounting.dailyIncome.form.fields.route")}
+            </RequiredLabel>
+            {onAddRoute ? (
+              <EntityFieldActions
+                hasSelection={Boolean(routeId)}
+                onAdd={onAddRoute}
+                onEdit={() => onEditRoute?.()}
+              />
+            ) : null}
+          </div>
+          <SearchableSelect
+            id="journal-route"
+            value={routeId ?? ""}
+            onValueChange={handleRouteChange}
+            placeholder={t("accounting.dailyIncome.form.placeholders.selectRoute")}
+            searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchRoutes")}
+            mobileSheet
+            options={routeOptions}
+          />
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <RequiredLabel htmlFor={id}>{t("accounting.dailyIncome.form.fields.employee")}</RequiredLabel>
+            {onAddEmployee ? (
+              <EntityFieldActions
+                hasSelection={Boolean(employeeId)}
+                onAdd={onAddEmployee}
+                onEdit={() => onEditEmployee?.()}
+              />
+            ) : null}
+          </div>
+          <SearchableSelect
+            id={id}
+            value={employeeValue}
+            onValueChange={handleEmployeeChange}
+            placeholder={t("accounting.dailyIncome.form.placeholders.selectEmployee")}
+            searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchEmployees")}
+            mobileSheet
+            options={employeeOptions}
+          />
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </div>
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { ClipboardList, Pencil, Receipt, UserPlus, Users, Wallet } from "lucide-
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { useFormEnterNavigation, selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { CustomerPartySelect } from "@/components/customers/customer-party-select";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
@@ -27,6 +27,7 @@ import { CustomerContactSummary } from "@/components/orders/customer-contact-sum
 import { UnverifiedAddressNotice } from "@/components/addresses/unverified-address-notice";
 import { InvoiceLineItemsEditor } from "@/components/invoices/invoice-line-items-editor";
 import { WizardField } from "@/components/invoices/invoice-wizard-field";
+import { focusInvoiceWizardField } from "@/components/invoices/invoice-wizard-focus";
 import {
   wizardInputFieldProps,
   wizardSelectClassNameFor,
@@ -34,7 +35,9 @@ import {
 } from "@/components/invoices/invoice-wizard-styles";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { formatCustomerMutationError } from "@/lib/customers/customer-create-error";
+import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
 import { useTranslation } from "@/lib/i18n";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import {
@@ -54,6 +57,7 @@ import {
   type CustomerFormValues,
 } from "@/lib/customers/types";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
+import { INVOICE_WIZARD_FIELDS } from "@/lib/invoices/invoice-wizard-validation";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { buildTransactionAssigneeOptions } from "@/lib/accounting/daily-income/assignee";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -83,7 +87,6 @@ type InvoiceFormProps = {
   initialValues?: InvoiceFormValues;
   isEditing?: boolean;
   updatedAt?: string;
-  suggestedInvoiceNumber?: string;
   submitLabel: string;
   externalError?: string | null;
   onSubmit: (values: InvoiceFormValues) => InvoiceFormSubmitResult;
@@ -91,9 +94,15 @@ type InvoiceFormProps = {
   onCancel: () => void;
   /** When set, only the matching section is rendered (wizard mode). */
   wizardStep?: 1 | 2 | 3;
-  appearance?: "default" | "wizard";
+  wizardTotalSteps?: number;
+  appearance?: "default" | "wizard" | "phoneWizard";
   showFooter?: boolean;
   onValuesChange?: (values: InvoiceFormValues) => void;
+  /** Wizard Next: called when Enter is pressed on invoice number or the last field. */
+  onContinue?: () => void;
+  /** Focus this field after a wizard validation error. */
+  focusFieldId?: string | null;
+  focusFieldKey?: number;
 };
 
 type PartySide = "sender" | "receiver";
@@ -101,6 +110,7 @@ type PartySide = "sender" | "receiver";
 type CustomerDialogState = {
   side: PartySide;
   mode: "add" | "edit";
+  startWithNewAddress?: boolean;
 };
 
 /** Sender name, phone, and street let users find a pickup without knowing the order id. */
@@ -207,7 +217,6 @@ function PartyFieldActions({
 export function InvoiceForm({
   initialValues,
   isEditing = false,
-  suggestedInvoiceNumber,
   submitLabel,
   externalError = null,
   onSubmit,
@@ -217,12 +226,17 @@ export function InvoiceForm({
   appearance = "default",
   showFooter = true,
   onValuesChange,
+  onContinue,
+  focusFieldId = null,
+  focusFieldKey = 0,
 }: InvoiceFormProps) {
   const { t } = useTranslation();
-  const isWizard = appearance === "wizard";
+  const isPhoneWizard = appearance === "phoneWizard";
+  const isWizard = appearance === "wizard" || isPhoneWizard;
   const { data: containersData } = useContainerPicker();
   const ordersQuery = useOrders(DEFAULT_ORDER_LIST_PARAMS);
   const { notifyAdded, notifySuccess, notifyUpdated } = useFeedback();
+  const { isDesktopTabs, openFormTab } = useWorkspaceTabs();
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
   const ensureCustomerDetail = useEnsureCustomerDetail();
@@ -232,13 +246,9 @@ export function InvoiceForm({
   const defaultOrders = ordersQuery.data?.items ?? [];
   const catalogItems = itemsData?.items ?? [];
 
-  const [values, setValues] = useState<InvoiceFormValues>(() => {
-    const base = initialValues ?? createEmptyInvoiceForm();
-    if (!isEditing && suggestedInvoiceNumber && !base.invoiceNumber) {
-      return { ...base, invoiceNumber: suggestedInvoiceNumber };
-    }
-    return base;
-  });
+  const [values, setValues] = useState<InvoiceFormValues>(
+    () => initialValues ?? createEmptyInvoiceForm(),
+  );
   const [formError, setFormError] = useState<string | null>(null);
   const [customerDialog, setCustomerDialog] = useState<CustomerDialogState | null>(null);
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
@@ -246,7 +256,33 @@ export function InvoiceForm({
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
   const [pickupEmployeeQuery, setPickupEmployeeQuery] = useState("");
-  const handleEnterNavigation = useFormEnterNavigation();
+  const [pickupAssignmentOpenKey, setPickupAssignmentOpenKey] = useState(0);
+  const navigateOnEnter = useFormEnterNavigation({
+    submitOnLast: !onContinue,
+    onComplete: onContinue,
+  });
+  const handleEnterNavigation = useCallback(
+    (event: React.KeyboardEvent<HTMLFormElement>) => {
+      if (
+        onContinue &&
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.defaultPrevented &&
+        !event.nativeEvent.isComposing &&
+        (event.target as HTMLElement | null)?.id === "invoiceNumber"
+      ) {
+        event.preventDefault();
+        onContinue();
+        return;
+      }
+
+      navigateOnEnter(event);
+    },
+    [navigateOnEnter, onContinue],
+  );
   const isSavingCustomer =
     createCustomerMutation.isPending ||
     updateCustomerMutation.isPending ||
@@ -316,16 +352,56 @@ export function InvoiceForm({
   );
 
   useEffect(() => {
+    if (values.pickupSource !== "route" || !values.routeId || values.routeCrewId) return;
+    const route = pickupRoutes.find((entry) => entry.id === values.routeId);
+    if (!route) return;
+    const crewName =
+      route.route.name.trim() ||
+      route.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ");
+    if (!route.route.id && !crewName) return;
+    commitValues((current) => {
+      if (
+        current.pickupSource !== "route" ||
+        current.routeId !== route.id ||
+        current.routeCrewId
+      ) {
+        return current;
+      }
+      return {
+        ...current,
+        routeCrewId: route.route.id,
+        routeCrewName: crewName,
+      };
+    });
+  }, [commitValues, pickupRoutes, values.pickupSource, values.routeCrewId, values.routeId]);
+
+  const { markPendingPartyEdit } = useApplyCustomerOnTabReturn((side, customer, { mode }) => {
+    if (side === "sender") {
+      commitValues((current) => {
+        const currentId = current.senderId?.trim() || current.sender?.id?.trim() || "";
+        if (mode === "edit" && currentId && currentId !== customer.id) {
+          return current;
+        }
+        return { ...current, senderId: customer.id, sender: customer };
+      });
+    } else {
+      commitValues((current) => {
+        const currentId = current.receiverId?.trim() || current.receiver?.id?.trim() || "";
+        if (mode === "edit" && currentId && currentId !== customer.id) {
+          return current;
+        }
+        return { ...current, receiverId: customer.id, receiver: customer };
+      });
+    }
+    setFormError(null);
+  });
+
+  useEffect(() => {
     if (isWizard) return;
 
-    const base = initialValues ?? createEmptyInvoiceForm();
-    setValues(
-      !isEditing && suggestedInvoiceNumber && !base.invoiceNumber
-        ? { ...base, invoiceNumber: suggestedInvoiceNumber }
-        : base,
-    );
+    setValues(initialValues ?? createEmptyInvoiceForm());
     setFormError(null);
-  }, [initialValues, isEditing, isWizard, suggestedInvoiceNumber]);
+  }, [initialValues, isWizard]);
 
   useEffect(() => {
     onValuesChange?.(values);
@@ -375,18 +451,39 @@ export function InvoiceForm({
   }
 
   function updatePickupSource(next: InvoicePickupSource) {
-    if (next === values.pickupSource) return;
+    if (next !== values.pickupSource) {
+      commitValues((current) => ({
+        ...current,
+        pickupSource: next,
+        routeId: next === "route" ? current.routeId : "",
+        routeCrewId: next === "route" ? current.routeCrewId : "",
+        routeCrewName: next === "route" ? current.routeCrewName : "",
+        officeBranchId: "",
+        officeBranchName: "",
+        pickupEmployeeId: "",
+        pickupEmployeeName: "",
+      }));
+      setPickupEmployeeQuery("");
+    }
+    setFormError(null);
+    if (isWizard) {
+      setPickupAssignmentOpenKey((key) => key + 1);
+    }
+  }
+
+  function updatePickupRoute(routeId: string) {
+    const route = pickupRoutes.find((entry) => entry.id === routeId);
+    const crewName =
+      route?.route.name.trim() ||
+      route?.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") ||
+      "";
     commitValues((current) => ({
       ...current,
-      pickupSource: next,
-      routeId: next === "route" ? current.routeId : "",
-      officeBranchId: "",
-      officeBranchName: "",
-      pickupEmployeeId: "",
-      pickupEmployeeName: "",
+      routeId,
+      routeCrewId: route?.route.id ?? "",
+      routeCrewName: crewName,
     }));
     setFormError(null);
-    setPickupEmployeeQuery("");
   }
 
   function updatePickupEmployee(employeeId: string) {
@@ -403,22 +500,43 @@ export function InvoiceForm({
     setFormError(null);
   }
 
-  function updatePickupReference(next: string) {
+  async function updatePickupReference(next: string) {
     const source = debouncedPickupQuery ? pickupSearchResults : defaultOrders;
     const selectedOrder =
       source.find((order) => String(order.id) === next) ??
       (selectedPickupQuery.data && String(selectedPickupQuery.data.id) === next
         ? selectedPickupQuery.data
         : undefined);
+    const snapshotSender = selectedOrder?.sender ?? null;
+    const senderId = snapshotSender?.id?.trim() ?? "";
 
     commitValues((current) => ({
       ...current,
       pickupId: next,
-      ...(selectedOrder?.sender
-        ? { senderId: selectedOrder.sender.id, sender: selectedOrder.sender }
+      ...(snapshotSender
+        ? { senderId: snapshotSender.id, sender: snapshotSender }
         : {}),
     }));
     setFormError(null);
+
+    // Pickup auto-fills sender — skip sender and open receiver for the next choice.
+    window.setTimeout(() => {
+      focusInvoiceWizardField(senderId ? "receiverId" : "senderId");
+    }, 0);
+
+    if (!senderId) return;
+
+    try {
+      // Pickup parties are a create-time address snapshot and can omit a later
+      // Google verification. Load GET /customers/{id} — same as sender search.
+      const liveSender = await ensureCustomerDetail(senderId, { staleTime: 0 });
+      commitValues((current) => {
+        if (current.pickupId !== next) return current;
+        return { ...current, senderId: liveSender.id, sender: liveSender };
+      });
+    } catch {
+      // Keep the pickup snapshot if the live customer cannot be loaded.
+    }
   }
 
   function updateSender(_senderId: string, sender: Customer) {
@@ -447,6 +565,22 @@ export function InvoiceForm({
     const current = side === "sender" ? values.sender : values.receiver;
     if (!current?.id) return;
 
+    if (isDesktopTabs) {
+      markPendingPartyEdit(side, current.id);
+      openFormTab({
+        feature: "customers",
+        baseHref: "/customers",
+        mode: "edit",
+        entityId: current.id,
+        customerType: side === "receiver" ? CUSTOMER_TYPE_RECEIVER : CUSTOMER_TYPE_SENDER,
+        label:
+          side === "receiver"
+            ? t("invoices.form.partyActions.editReceiver")
+            : t("invoices.form.partyActions.editSender"),
+      });
+      return;
+    }
+
     setCustomerFormError(null);
     setIsLoadingEditCustomer(true);
 
@@ -457,6 +591,24 @@ export function InvoiceForm({
       applyCustomerToSide(side, fullCustomer);
       setEditCustomer(fullCustomer);
       setCustomerDialog({ side, mode: "edit" });
+    } catch {
+      setEditCustomer(null);
+      setCustomerFormError(t("common.errors.fallback"));
+    } finally {
+      setIsLoadingEditCustomer(false);
+    }
+  }
+
+  async function openAddAddress(side: PartySide, customer: Customer) {
+    if (!customer.id) return;
+
+    setCustomerFormError(null);
+    setIsLoadingEditCustomer(true);
+
+    try {
+      const fullCustomer = await ensureCustomerDetail(customer.id);
+      setEditCustomer(fullCustomer);
+      setCustomerDialog({ side, mode: "edit", startWithNewAddress: true });
     } catch {
       setEditCustomer(null);
       setCustomerFormError(t("common.errors.fallback"));
@@ -486,16 +638,17 @@ export function InvoiceForm({
 
     try {
       let customer: Customer;
+      const customerBeingEdited = editCustomer ?? dialogCustomer;
 
-      if (customerDialog.mode === "edit" && dialogCustomer) {
-        if (areCustomerFormValuesEquivalent(formValues, customerToFormValues(dialogCustomer))) {
+      if (customerDialog.mode === "edit" && customerBeingEdited) {
+        if (areCustomerFormValuesEquivalent(formValues, customerToFormValues(customerBeingEdited))) {
           notifySuccess(t("common.form.noChanges"));
           closeCustomerDialog();
           return;
         }
 
         customer = await updateCustomerMutation.mutateAsync({
-          customerId: (editCustomer ?? dialogCustomer).id,
+          customerId: customerBeingEdited.id,
           values: formValues,
         });
         notifyUpdated(t("customers.entity"), customer.name);
@@ -532,6 +685,11 @@ export function InvoiceForm({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
+    if (onContinue) {
+      onContinue();
+      return;
+    }
+
     if (!values.sender) {
       const message = t("invoices.form.validation.senderRequired");
       setFormError(message);
@@ -543,9 +701,7 @@ export function InvoiceForm({
     setFormError(result.error);
     onFormErrorChange?.(result.error);
     if (!result.error && !isEditing) {
-      setValues(
-        resetInvoiceFormForNextEntry(values, result.nextInvoiceNumber ?? suggestedInvoiceNumber ?? ""),
-      );
+      setValues(resetInvoiceFormForNextEntry(values));
     }
   }
 
@@ -559,6 +715,8 @@ export function InvoiceForm({
     values.pickupSource === "warehouse"
       ? t("invoices.form.placeholders.selectWarehouseEmployee")
       : t("invoices.form.placeholders.selectOfficeEmployee");
+  const wizardFieldCol = isPhoneWizard ? undefined : isWizard ? "sm:col-span-1" : undefined;
+  const openPickupAssignment = isWizard && pickupAssignmentOpenKey > 0;
 
   function renderField(
     label: string,
@@ -599,6 +757,7 @@ export function InvoiceForm({
       manualFiltering
       loading={pickupSearch.isFetching}
       onSearchChange={setPickupQuery}
+      advanceFocusOnSelect={false}
       {...(isWizard ? wizardSelectFieldProps(values.pickupId) : {})}
       options={[
         ...(debouncedPickupQuery
@@ -612,8 +771,12 @@ export function InvoiceForm({
   const detailsFields = (
     <div
       className={cn(
-        "grid",
-        isWizard ? "grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5" : "gap-2.5 sm:grid-cols-2",
+        "grid min-w-0",
+        isPhoneWizard
+          ? "grid-cols-1 gap-4"
+          : isWizard
+            ? "grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5"
+            : "gap-2.5 sm:grid-cols-2",
       )}
     >
       {renderField(
@@ -627,21 +790,7 @@ export function InvoiceForm({
           {...(isWizard ? wizardInputFieldProps(values.date, "pl-9 md:pl-8") : {})}
           required
         />,
-        isWizard ? "sm:col-span-1" : undefined,
-      )}
-      {renderField(
-        t("invoices.form.fields.invoiceNumber"),
-        "invoiceNumber",
-        true,
-        <Input
-          id="invoiceNumber"
-          value={values.invoiceNumber}
-          onChange={(event) => updateField("invoiceNumber", event.target.value)}
-          placeholder={t("invoices.form.placeholders.invoiceNumber")}
-          {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
-          required
-        />,
-        isWizard ? "sm:col-span-1" : undefined,
+        wizardFieldCol,
       )}
       {renderField(
         t("invoices.form.fields.container"),
@@ -663,27 +812,7 @@ export function InvoiceForm({
             })),
           ]}
         />,
-        isWizard ? "sm:col-span-2" : undefined,
-      )}
-      {renderField(
-        t("invoices.form.fields.pending"),
-        "paymentLocation",
-        true,
-        <SearchableSelect
-          id="paymentLocation"
-          value={values.paymentLocation}
-          onValueChange={(next) =>
-            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
-          }
-          placeholder={t("invoices.form.fields.pending")}
-          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
-          required
-          options={INVOICE_PAYMENT_LOCATIONS.map((option) => ({
-            value: option.value,
-            label: option.label,
-          }))}
-        />,
-        isWizard ? "sm:col-span-1" : undefined,
+        wizardFieldCol,
       )}
       {renderField(
         t("invoices.form.fields.pickupSource"),
@@ -701,7 +830,7 @@ export function InvoiceForm({
             label: t(option.labelKey),
           }))}
         />,
-        isWizard ? "sm:col-span-1" : undefined,
+        wizardFieldCol,
       )}
       {values.pickupSource === "route"
         ? renderField(
@@ -709,13 +838,16 @@ export function InvoiceForm({
             "routeId",
             true,
             <SearchableSelect
+              key={isWizard ? `routeId-${pickupAssignmentOpenKey}` : "routeId"}
               id="routeId"
               value={values.routeId}
-              onValueChange={(next) => updateField("routeId", next)}
+              onValueChange={updatePickupRoute}
               placeholder={t("invoices.form.placeholders.selectPickupRoute")}
               searchPlaceholder={t("invoices.form.placeholders.searchPickupRoutes")}
               loading={pickupRoutesQuery.isFetching}
               required
+              autoFocus={openPickupAssignment}
+              defaultOpen={openPickupAssignment}
               {...(isWizard ? wizardSelectFieldProps(values.routeId) : {})}
               options={[
                 { value: "", label: t("invoices.form.placeholders.selectPickupRoute") },
@@ -725,13 +857,14 @@ export function InvoiceForm({
                 })),
               ]}
             />,
-            isWizard ? "sm:col-span-2" : undefined,
+            wizardFieldCol,
           )
         : renderField(
             pickupEmployeeFieldLabel,
             "pickupEmployeeId",
             true,
             <SearchableSelect
+              key={isWizard ? `pickupEmployeeId-${pickupAssignmentOpenKey}` : "pickupEmployeeId"}
               id="pickupEmployeeId"
               value={values.pickupEmployeeId}
               onValueChange={updatePickupEmployee}
@@ -741,6 +874,8 @@ export function InvoiceForm({
               loading={pickupEmployeeSearch.isFetching || employeesQuery.isFetching}
               onSearchChange={setPickupEmployeeQuery}
               required
+              autoFocus={openPickupAssignment}
+              defaultOpen={openPickupAssignment}
               {...(isWizard ? wizardSelectFieldProps(values.pickupEmployeeId) : {})}
               options={[
                 ...(debouncedPickupEmployeeQuery
@@ -749,15 +884,59 @@ export function InvoiceForm({
                 ...pickupEmployeeOptions,
               ]}
             />,
-            isWizard ? "sm:col-span-2" : undefined,
+            wizardFieldCol,
           )}
+      {renderField(
+        t("invoices.form.fields.paymentLocation"),
+        "paymentLocation",
+        true,
+        <SearchableSelect
+          id="paymentLocation"
+          value={values.paymentLocation}
+          onValueChange={(next) =>
+            updateField("paymentLocation", next as InvoiceFormValues["paymentLocation"])
+          }
+          placeholder={t("invoices.form.fields.paymentLocation")}
+          {...(isWizard ? wizardSelectFieldProps(values.paymentLocation) : {})}
+          required
+          options={INVOICE_PAYMENT_LOCATIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+        />,
+        wizardFieldCol,
+      )}
+      {renderField(
+        t("invoices.form.fields.invoiceNumber"),
+        "invoiceNumber",
+        true,
+        <Input
+          id="invoiceNumber"
+          value={values.invoiceNumber}
+          onChange={(event) => updateField("invoiceNumber", event.target.value)}
+          placeholder={t("invoices.form.placeholders.invoiceNumber")}
+          {...(isWizard ? wizardInputFieldProps(values.invoiceNumber) : {})}
+          required
+        />,
+        wizardFieldCol,
+      )}
     </div>
   );
 
   const partiesFields = (
-    <div className={cn("grid", isWizard ? "gap-5 md:grid-cols-2" : "gap-2.5 sm:grid-cols-2")}>
-      <div className="sm:col-span-2">{pickupReferenceField}</div>
-      <div className="space-y-1">
+    <div
+      className={cn(
+        "grid min-w-0",
+        isPhoneWizard ? "gap-4" : isWizard ? "gap-5 md:grid-cols-2" : "gap-2.5 sm:grid-cols-2",
+      )}
+    >
+      <div className={isPhoneWizard ? undefined : "sm:col-span-2"}>{pickupReferenceField}</div>
+      <div
+        className={cn(
+          "space-y-2",
+          isPhoneWizard && "border-b border-border/70 px-1 pb-4",
+        )}
+      >
         <div className="flex items-center justify-between gap-2">
           {isWizard ? (
             <Label htmlFor="senderId" className="text-xs font-normal text-muted-foreground">
@@ -780,6 +959,7 @@ export function InvoiceForm({
           value={values.senderId}
           selectedCustomer={values.sender}
           onValueChange={updateSender}
+          onAddAddress={(customer) => void openAddAddress("sender", customer)}
           placeholder={t("invoices.form.placeholders.selectSender")}
           required
           showAddressLabels={false}
@@ -796,7 +976,12 @@ export function InvoiceForm({
         ) : null}
       </div>
 
-      <div className="space-y-1">
+      <div
+        className={cn(
+          "space-y-2",
+          isPhoneWizard && "border-b border-border/70 px-1 pb-4",
+        )}
+      >
         <div className="flex items-center justify-between gap-2">
           {isWizard ? (
             <Label htmlFor="receiverId" className="text-xs font-normal text-muted-foreground">
@@ -817,7 +1002,10 @@ export function InvoiceForm({
           value={values.receiverId}
           selectedCustomer={values.receiver}
           onValueChange={updateReceiver}
+          onAddAddress={(customer) => void openAddAddress("receiver", customer)}
           placeholder={t("invoices.form.placeholders.noReceiver")}
+          pickerTitle={t("invoices.form.placeholders.selectReceiver")}
+          searchPlaceholder={t("invoices.form.placeholders.selectReceiver")}
           showAddressLabels={false}
           triggerClassName={isWizard ? wizardSelectClassNameFor(values.receiverId) : undefined}
         />
@@ -839,13 +1027,19 @@ export function InvoiceForm({
       <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
         <FormBody
           className={
-            isWizard
+            isPhoneWizard
+              ? "min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto bg-background px-4 py-5 pb-[calc(5rem+env(safe-area-inset-bottom))]"
+              : isWizard
               ? "flex-1 space-y-6 overflow-y-auto bg-muted/25 px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:bg-card md:px-8 md:pb-12"
               : undefined
           }
         >
           {showDetailsSection ? (
-            isWizard ? (
+            isPhoneWizard ? (
+              <section className="min-w-0 space-y-5">
+                {detailsFields}
+              </section>
+            ) : isWizard ? (
               detailsFields
             ) : (
               <FormSection icon={Receipt} title={t("invoices.form.sections.invoiceDetails")} required>
@@ -855,7 +1049,11 @@ export function InvoiceForm({
           ) : null}
 
           {showPartiesSection ? (
-            isWizard ? (
+            isPhoneWizard ? (
+              <section className="min-w-0 space-y-4">
+                {partiesFields}
+              </section>
+            ) : isWizard ? (
               partiesFields
             ) : (
               <FormSection icon={Users} title={t("invoices.form.sections.senderReceiver")}>
@@ -869,8 +1067,11 @@ export function InvoiceForm({
               <InvoiceLineItemsEditor
                 lineItems={values.lineItems}
                 catalogItems={catalogItems}
-                appearance="wizard"
+                appearance={isPhoneWizard ? "phoneWizard" : "wizard"}
                 onChange={(lineItems) => updateField("lineItems", lineItems)}
+                requestFocusKey={
+                  focusFieldId === INVOICE_WIZARD_FIELDS.lineItems ? focusFieldKey : 0
+                }
               />
             ) : (
               <FormSection icon={ClipboardList} title={t("invoices.form.sections.description")}>
@@ -895,6 +1096,7 @@ export function InvoiceForm({
                   min={0}
                   step="0.01"
                   value={values.discount}
+                  onFocus={selectFormFieldTextOnFocus}
                   onChange={(event) => updateField("discount", event.target.value)}
                 />
               </div>
@@ -957,7 +1159,7 @@ export function InvoiceForm({
           </DialogHeader>
           {customerDialog ? (
             <CustomerForm
-              key={`${customerDialog.side}-${customerDialog.mode}-${editCustomer?.id ?? dialogCustomer?.id ?? "new"}-${editCustomer?.addresses.length ?? 0}`}
+              key={`${customerDialog.side}-${customerDialog.mode}-${editCustomer?.id ?? dialogCustomer?.id ?? "new"}-${editCustomer?.addresses.length ?? 0}-${customerDialog.startWithNewAddress ? "new-address" : "edit"}`}
               initialValues={
                 customerDialog.mode === "edit" && editCustomer
                   ? customerToFormValues(editCustomer)
@@ -978,6 +1180,7 @@ export function InvoiceForm({
               isSubmitting={isSavingCustomer}
               externalError={customerFormError}
               lockCustomerType
+              startWithNewAddress={customerDialog.startWithNewAddress}
               onSubmit={handleCustomerSubmit}
               onCancel={closeCustomerDialog}
             />

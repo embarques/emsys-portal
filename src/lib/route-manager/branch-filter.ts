@@ -1,6 +1,6 @@
 import { getVehiclePortalBranch } from "@/lib/vehicles/types";
 
-import type { Route } from "./types";
+import { getRouteBranchCode, type Route } from "./types";
 
 export function normalizeRouteBranchCode(branch?: string): string {
   return getVehiclePortalBranch(branch ?? "");
@@ -10,7 +10,7 @@ export function routeMatchesBranchCode(route: Route, branchCode?: string): boole
   const filter = branchCode?.trim();
   if (!filter) return true;
 
-  const routeBranch = normalizeRouteBranchCode(route.vehicle.branch);
+  const routeBranch = normalizeRouteBranchCode(getRouteBranchCode(route));
   const filterBranch = normalizeRouteBranchCode(filter);
   return routeBranch === filterBranch;
 }

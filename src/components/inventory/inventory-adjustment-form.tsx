@@ -9,8 +9,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { useTranslation } from "@/lib/i18n";
-import { getItemStock } from "@/lib/inventory/mock-store";
-import { getAdjustmentReasonOptions } from "@/lib/inventory/display";
+import { getAdjustmentReasonOptions, getInventoryItemLabel } from "@/lib/inventory/display";
 import {
   type AdjustmentFormValues,
 } from "@/lib/inventory/types/movements";
@@ -51,9 +50,9 @@ export function InventoryAdjustmentForm({
     () =>
       items.map((item) => ({
         value: item.id,
-        label: `${item.sku} — ${item.name}`,
-        description: `${t("inventory.form.fields.currentStock")}: ${item.quantity} ${item.unit}`,
-        keywords: [item.sku, item.name],
+        label: getInventoryItemLabel(item),
+        description: `${t("inventory.form.fields.quantityLeft")}: ${item.quantity}`,
+        keywords: [item.item],
       })),
     [items, t],
   );
@@ -62,8 +61,9 @@ export function InventoryAdjustmentForm({
     setValues(createEmptyAdjustmentForm());
   }, []);
 
-  const currentStock = values.itemId ? getItemStock(values.itemId) : 0;
-  const selectedItem = items.find((item) => item.id === values.itemId);
+  const currentStock = values.itemId
+    ? (items.find((item) => item.id === values.itemId)?.quantity ?? 0)
+    : 0;
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -93,7 +93,7 @@ export function InventoryAdjustmentForm({
               <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm sm:col-span-2">
                 <span className="text-muted-foreground">{t("inventory.form.fields.currentStock")}: </span>
                 <span className="font-medium">
-                  {currentStock} {selectedItem?.unit ?? ""}
+                  {currentStock}
                 </span>
               </div>
             ) : null}

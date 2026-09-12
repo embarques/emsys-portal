@@ -55,6 +55,25 @@ export function formatActiveRouteContainerLabel(
   return record?.container?.name?.trim() || emptyValue;
 }
 
+export function formatActiveRouteVehicleLabel(
+  record: ActiveRoute | null | undefined,
+  emptyValue = "—",
+): string {
+  const name = record?.vehicle?.name?.trim();
+  if (name) return name;
+  return record?.vehicle?.id?.trim() || emptyValue;
+}
+
+export function formatPreviousDailyRouteLabel(
+  record: ActiveRoute,
+  emptyValue = "—",
+): string {
+  const date = record.date ? formatRouteDate(record.date) : emptyValue;
+  const branch = record.branch?.code?.trim() || emptyValue;
+  const crew = record.route.name.trim() || emptyValue;
+  return `${date} · ${branch} · ${crew}`;
+}
+
 /** Linked route manager assignment name for the Route table column. */
 export function formatActiveRouteRouteName(
   record: ActiveRoute,
@@ -181,6 +200,8 @@ export function buildActiveRouteAssignmentOptions(
       record.route?.routeId,
       record.date,
       record.container?.name,
+      record.vehicle?.name,
+      record.vehicle?.id,
       ...record.employees.map((employee) => employee.name),
     ].filter((value): value is string => Boolean(value?.trim())),
   }));
@@ -230,6 +251,10 @@ export function activeRouteMatchesSearch(
       case "container.name":
       case "container.number":
         return record.container?.name ?? "";
+      case "vehicle.name":
+        return record.vehicle?.name ?? "";
+      case "vehicle.id":
+        return record.vehicle?.id ?? "";
       case "createdBy":
         return record.createdBy;
       default:
@@ -253,6 +278,8 @@ export function activeRouteMatchesQuery(record: ActiveRoute, query: string): boo
     record.route?.routeId ?? "",
     record.employees.map((employee) => employee.name).join(" "),
     record.container?.name ?? "",
+    record.vehicle?.name ?? "",
+    record.vehicle?.id ?? "",
     record.createdBy,
     record.routeType,
   ]

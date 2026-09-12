@@ -1,83 +1,127 @@
+import type { ApiListSortInput } from "@/lib/api/list-query";
+import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
+import { parseMoneyFormInput } from "@/lib/accounting/daily-income/money-input";
 
-export type CheckStatus = "outstanding" | "cleared";
+export type CheckStatus = "OUTSTANDING" | "CLEARED";
+
+export type CheckInvoiceRef = {
+  id: string;
+  number: string;
+  cost?: number;
+  discount?: number;
+  payment?: number;
+  balance?: number;
+};
 
 export type Check = {
   id: string;
   status: CheckStatus;
-  invoiceNumber: string;
-  receiptNumber: string;
+  checkNumber: string;
+  refNumber: string;
+  paymentAmount: number;
+  datePosted: string;
+  clearedAt: string;
+  invoice: CheckInvoiceRef;
+  journalId?: string;
   createdAt: string;
   createdBy: string;
-  depositedAt: string | null;
-  depositedOn: string | null;
-  depositedBy: string | null;
+  updatedAt?: string;
+  updatedBy?: string;
 };
 
 export type CheckFormValues = {
+  invoiceId: string;
   invoiceNumber: string;
-  receiptNumber: string;
+  checkNumber: string;
+  paymentAmount: string;
+  refNumber: string;
+  datePosted: string;
   status: CheckStatus;
-  createdBy: string;
-  depositedAt: string;
-  depositedOn: string;
-  depositedBy: string;
+  clearedAt: string;
 };
+
+export type CheckSearchFilter = ApiListTextSearch;
+
+export type CheckListParams = {
+  page?: number;
+  limit?: number;
+  offset?: number;
+  sort?: ApiListSortInput;
+  search?: CheckSearchFilter;
+};
+
+export const DEFAULT_CHECK_LIST_PARAMS = {
+  page: 1,
+  limit: 40,
+  sort: "createdAt:desc",
+} as const satisfies Pick<CheckListParams, "page" | "limit" | "sort">;
+
+export function todayCheckDateInputValue(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export function createEmptyCheckForm(): CheckFormValues {
   return {
+    invoiceId: "",
     invoiceNumber: "",
-    receiptNumber: "",
-    status: "outstanding",
-    createdBy: "",
-    depositedAt: "",
-    depositedOn: "",
-    depositedBy: "",
+    checkNumber: "",
+    paymentAmount: "",
+    refNumber: "",
+    datePosted: todayCheckDateInputValue(),
+    status: "OUTSTANDING",
+    clearedAt: "",
   };
 }
 
-function toDateInputValue(iso: string | null): string {
-  if (!iso) return "";
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return iso.slice(0, 10);
-  return parsed.toISOString().slice(0, 10);
+export function checkStatusI18nKey(status: CheckStatus): "outstanding" | "cleared" {
+  return status === "CLEARED" ? "cleared" : "outstanding";
 }
 
 export function checkToFormValues(check: Check): CheckFormValues {
   return {
-    invoiceNumber: check.invoiceNumber,
-    receiptNumber: check.receiptNumber,
+    invoiceId: check.invoice.id,
+    invoiceNumber: check.invoice.number,
+    checkNumber: check.checkNumber,
+    paymentAmount: Number.isFinite(check.paymentAmount) ? String(check.paymentAmount) : "",
+    refNumber: check.refNumber,
+    datePosted: check.datePosted.slice(0, 10),
     status: check.status,
-    createdBy: check.createdBy,
-    depositedAt: toDateInputValue(check.depositedAt),
-    depositedOn: check.depositedOn ?? "",
-    depositedBy: check.depositedBy ?? "",
+    clearedAt: check.clearedAt.slice(0, 10),
   };
 }
 
-export function areCheckFormValuesEquivalent(
-  left: CheckFormValues,
-  right: CheckFormValues,
-): boolean {
+export function areCheckFormValuesEquivalent(left: CheckFormValues, right: CheckFormValues): boolean {
   return areFormValuesEquivalent(left, right);
 }
 
-export function formValuesToCheck(id: string, values: CheckFormValues, createdAt?: string): Check {
-  const cleared = values.status === "cleared";
-  const depositedAt =
-    cleared && values.depositedAt.trim()
-      ? new Date(`${values.depositedAt.trim()}T12:00:00`).toISOString()
-      : null;
+export function parseCheckPaymentAmount(value: string): number | null {
+  const amount = parseMoneyFormInput(value);
+  if (amount == null || amount <= 0) return null;
+  return Math.round(amount * 100) / 100;
+}
 
-  return {
-    id,
-    status: values.status,
-    invoiceNumber: values.invoiceNumber.trim(),
-    receiptNumber: values.receiptNumber.trim(),
-    createdAt: createdAt ?? new Date().toISOString(),
-    createdBy: values.createdBy.trim(),
-    depositedAt,
-    depositedOn: cleared && values.depositedOn.trim() ? values.depositedOn.trim() : null,
-    depositedBy: cleared && values.depositedBy.trim() ? values.depositedBy.trim() : null,
+export function createCheckSearchFilter(value: string): CheckSearchFilter | undefined {
+  return createListTextSearch(value);
+}
+
+export function buildCheckListParams(input: {
+  page: number;
+  limit?: number;
+  query: string;
+  sort?: ApiListSortInput;
+}): CheckListParams {
+  const params: CheckListParams = {
+    ...DEFAULT_CHECK_LIST_PARAMS,
+    page: input.page,
+    limit: input.limit ?? DEFAULT_CHECK_LIST_PARAMS.limit,
+    sort: input.sort ?? DEFAULT_CHECK_LIST_PARAMS.sort,
   };
+
+  const search = createCheckSearchFilter(input.query);
+  if (search) {
+    params.search = search;
+  }
+
+  return params;
 }

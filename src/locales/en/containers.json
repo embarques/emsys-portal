@@ -3,7 +3,7 @@
   "entityPlural": "containers",
   "title": "Containers",
   "pages": {
-    "description": "Track shipping containers, capacity, departure schedules, and costs for outbound freight operations."
+    "description": "Group customer invoices and merchandise into shipping containers for transport."
   },
   "noun": "containers",
   "actions": {
@@ -16,11 +16,23 @@
       "label": "Total containers",
       "description": "Containers on record"
     },
-    "departedPast30Days": "Departed (past 30 days)",
-    "departedPast90Days": "Departed (past 90 days)",
-    "departedPast180Days": "Departed (past 180 days)",
-    "departedPast360Days": "Departed (past 360 days)",
-    "annualPace": "~{{pace}} containers/year at current pace"
+    "departed": {
+      "label": "Departed containers",
+      "periodLabel": "Timeframe",
+      "annualPace": "On pace to ship {{pace}} per year",
+      "periods": {
+        "7d": "7 days",
+        "30d": "30 days",
+        "3m": "3 months",
+        "6m": "6 months",
+        "1y": "1 year"
+      }
+    },
+    "averageValue": {
+      "label": "Average value per container",
+      "periodLabel": "Timeframe",
+      "description": "{{count}} departed containers"
+    }
   },
   "columns": {
     "id": "#",
@@ -102,19 +114,58 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "Container ID", "placeholder": "Enter container ID…" },
-      "name": { "label": "Container", "placeholder": "Enter container…" },
-      "containerNumber": { "label": "Container number", "placeholder": "Enter container number…" },
-      "booking": { "label": "Booking number", "placeholder": "Enter booking number…" },
-      "sealNumber": { "label": "Seal number", "placeholder": "Enter seal number…" },
-      "seal": { "label": "Seal", "placeholder": "Enter seal…" },
-      "broker": { "label": "Broker", "placeholder": "Enter broker…" },
-      "company": { "label": "Transport company", "placeholder": "Enter transport company…" },
-      "cost": { "label": "Cost", "placeholder": "Enter amount…" },
-      "departureDate": { "label": "Departure date", "placeholder": "YYYY-MM-DD" },
-      "departureDateRange": { "label": "Departure date range", "placeholder": "2026-01-01 to 2026-06-30" },
-      "arrivalDate": { "label": "Arrival date", "placeholder": "YYYY-MM-DD" },
-      "arrivalDateRange": { "label": "Arrival date range", "placeholder": "2026-01-01 to 2026-06-30" }
+      "id": {
+        "label": "#",
+        "placeholder": "Enter container ID…"
+      },
+      "name": {
+        "label": "Container",
+        "placeholder": "Enter container…"
+      },
+      "containerNumber": {
+        "label": "Container number",
+        "placeholder": "Enter container number…"
+      },
+      "booking": {
+        "label": "Booking number",
+        "placeholder": "Enter booking number…"
+      },
+      "sealNumber": {
+        "label": "Seal number",
+        "placeholder": "Enter seal number…"
+      },
+      "seal": {
+        "label": "Seal",
+        "placeholder": "Enter seal…"
+      },
+      "broker": {
+        "label": "Broker",
+        "placeholder": "Enter broker…"
+      },
+      "company": {
+        "label": "Transport company",
+        "placeholder": "Enter transport company…"
+      },
+      "cost": {
+        "label": "Cost",
+        "placeholder": "Enter amount…"
+      },
+      "departureDate": {
+        "label": "Departure",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "departureDateRange": {
+        "label": "Departure range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "arrivalDate": {
+        "label": "Arrival",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "arrivalDateRange": {
+        "label": "Arrival range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      }
     }
   }
 }

@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { updateConfigurationLanguage } from "@/lib/configuration/store";
 import { CONFIGURATION_LANGUAGES, type LanguagePreference } from "@/lib/configuration/types";
 import { useConfigurationStore, useUpdateUserPreferences } from "@/lib/configuration/use-configuration";
@@ -21,6 +22,7 @@ export function LanguageToggle() {
   const { t } = useTranslation();
   const preferences = useConfigurationStore();
   const updatePreferences = useUpdateUserPreferences();
+  const label = t("shell.language.change");
 
   function applyLanguage(nextLanguage: LanguagePreference) {
     if (nextLanguage === preferences.language) return;
@@ -30,11 +32,16 @@ export function LanguageToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button type="button" variant="outline" size="icon" aria-label={t("shell.language.change")}>
-          <Languages className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline" size="icon" aria-label={label}>
+              <Languages className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{label}</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuLabel>{t("shell.language.label")}</DropdownMenuLabel>
         <DropdownMenuSeparator />

@@ -1,5 +1,5 @@
-import { InventoryRecipientsWorkspace } from "@/components/inventory/inventory-recipients-workspace";
+import { redirect } from "next/navigation";
 
 export default function InventoryRecipientsPage() {
-  return <InventoryRecipientsWorkspace />;
+  redirect("/inventory/suppliers");
 }

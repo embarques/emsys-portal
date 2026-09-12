@@ -7,7 +7,7 @@ import {
   type TableFilterFieldDefinition,
   type TableFilterRowState,
 } from "@/lib/table/filter-builder";
-import { normalizeApiSearchValueForField } from "@/lib/utils/phone";
+import { normalizeApiSearchValueForField, isPhoneApiField } from "@/lib/utils/phone";
 
 export type ApiSearchOperator =
   | "eq"
@@ -349,7 +349,10 @@ export function createTextSearchFilter(
   const trimmed = value.trim();
   if (!trimmed || !field.trim()) return null;
   const normalizedValue = normalizeApiSearchValueForField(field, trimmed);
-  if (!normalizedValue) return null;
+  if (!normalizedValue) {
+    // Phone fields with no digits match zero rows server-side; keep the leaf.
+    if (!isPhoneApiField(field)) return null;
+  }
 
   return {
     field: field.trim(),
@@ -377,6 +380,7 @@ export function createOrTextSearchFilterGroup(
     if (!normalizedField) continue;
 
     const normalizedValue = normalizeApiSearchValueForField(normalizedField, trimmed);
+    // Skip phone leaves with no digits so OR groups still match name/address/comments.
     if (!normalizedValue) continue;
 
     filters.push({
@@ -386,7 +390,15 @@ export function createOrTextSearchFilterGroup(
     });
   }
 
-  if (filters.length === 0) return null;
+  if (filters.length === 0) {
+    // Every leaf was a phone field that stripped to no digits — match zero rows.
+    const phoneField = fields.map((field) => field.trim()).find((field) => field && isPhoneApiField(field));
+    if (!phoneField) return null;
+    return {
+      operator: "or",
+      filters: [{ field: phoneField, operator, value: "" }],
+    };
+  }
 
   return { operator: "or", filters };
 }
@@ -477,13 +489,32 @@ function resolveTableFilterRowToApiNode(
       }];
     });
 
-    if (filters.length === 0) return null;
+    if (filters.length === 0) {
+      // Phone-only advanced filters with no digits match zero rows server-side.
+      const phoneField = definition.queryFields.find((field) => isPhoneApiField(field));
+      if (phoneField || isPhoneApiField(fieldKey)) {
+        return {
+          field: phoneField ?? fieldKey,
+          operator,
+          value: "",
+        };
+      }
+      return null;
+    }
     if (filters.length === 1) return filters[0];
     return { operator: "or", filters };
   }
 
   const normalizedValue =
     fieldKey === "customerType" ? Number(row.value.trim()) : normalizeApiSearchValueForField(fieldKey, row.value);
+
+  if (
+    typeof normalizedValue === "string" &&
+    !normalizedValue &&
+    !isPhoneApiField(fieldKey)
+  ) {
+    return null;
+  }
 
   return {
     field: fieldKey,

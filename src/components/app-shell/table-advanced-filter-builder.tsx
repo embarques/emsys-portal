@@ -79,7 +79,7 @@ export function TableAdvancedFilterBuilder({
         const canPickValue = Boolean(definition && (usesRange || row.operator));
 
         return (
-          <div key={row.id} className="flex flex-wrap items-center gap-2">
+          <div key={row.id} className="flex min-w-0 items-center gap-2">
             {index === 0 ? (
               <span className="w-14 shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t("common.table.where")}
@@ -87,7 +87,7 @@ export function TableAdvancedFilterBuilder({
             ) : (
               <TableFilterSelect
                 aria-label={`Filter join ${index + 1}`}
-                className="w-[4.75rem] shrink-0 px-2 text-xs font-semibold uppercase tracking-wide"
+                className="w-[4.75rem] shrink-0 flex-none px-2 text-xs font-semibold uppercase tracking-wide"
                 value={row.join}
                 options={filterJoinOptions}
                 onChange={(value) =>
@@ -98,23 +98,22 @@ export function TableAdvancedFilterBuilder({
 
             <TableFilterSelect
               aria-label={`Filter field ${index + 1}`}
-              className="min-w-[8.5rem] max-w-[10rem]"
+              className="w-[7rem] shrink-0 flex-none"
               value={row.field}
               placeholder={t("common.table.field")}
-              placeholderDisabled={false}
               mutedWhenEmpty
               options={fields.map((field) => ({ value: field.field, label: field.label }))}
               onChange={(value) => updateRow(row.id, { field: value })}
             />
 
             {usesRange ? (
-              <span className="inline-flex h-9 min-w-[8.5rem] max-w-[11rem] shrink-0 items-center rounded-md border border-input bg-muted/40 px-3 text-xs font-medium text-muted-foreground">
+              <span className="inline-flex h-9 w-[7.25rem] shrink-0 items-center rounded-md border border-input bg-muted/40 px-3 text-xs font-medium text-muted-foreground">
                 {t("common.table.inRange")}
               </span>
             ) : (
               <TableFilterSelect
                 aria-label={`Filter condition ${index + 1}`}
-                className="min-w-[8.5rem] max-w-[11rem]"
+                className="w-[7.25rem] shrink-0 flex-none"
                 value={row.operator}
                 placeholder={t("common.table.condition")}
                 mutedWhenEmpty
@@ -130,7 +129,7 @@ export function TableAdvancedFilterBuilder({
             {usesSelect ? (
               <TableFilterSelect
                 aria-label={`Filter value ${index + 1}`}
-                className="min-w-[9rem] flex-[2]"
+                className="min-w-0 flex-1"
                 value={row.value}
                 placeholder={t("common.table.value")}
                 mutedWhenEmpty
@@ -141,7 +140,7 @@ export function TableAdvancedFilterBuilder({
             ) : (
               <Input
                 aria-label={`Filter value ${index + 1}`}
-                className="h-9 min-w-[9rem] flex-[2] shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-9 min-w-0 flex-1 shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
                 value={row.value}
                 disabled={!canPickValue}
                 placeholder={canPickValue ? (definition?.placeholder ?? t("common.table.enterValue")) : t("common.table.value")}

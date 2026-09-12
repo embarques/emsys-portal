@@ -19,6 +19,12 @@
   "form": {
     "noChanges": "No changes to save."
   },
+  "stats": {
+    "changeMore": "+{{percent}}% vs last {{period}}",
+    "changeLess": "-{{percent}}% vs last {{period}}",
+    "changeSame": "0% vs last {{period}}",
+    "changeFromZero": "Up from zero last {{period}}"
+  },
   "empty": {
     "dash": "—",
     "noCarrier": "No carrier"
@@ -35,7 +41,15 @@
   },
   "pagination": {
     "pageOf": "Page {{current}} of {{total}}",
-    "showingOf": "Showing {{count}} of {{total}} {{noun}}"
+    "showingOf": "Showing {{count}} of {{total}} {{noun}}",
+    "view": "View",
+    "pageSize": "Rows per page",
+    "pageSizeEmpty": "No page sizes",
+    "all": "All"
+  },
+  "legacySync": {
+    "lastSynced": "Last synced {{at}}",
+    "neverSynced": "Never synced"
   },
   "listSummary": {
     "searching": "Searching {{noun}}…",

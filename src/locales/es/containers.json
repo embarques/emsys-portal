@@ -3,7 +3,7 @@
   "entityPlural": "contenedores",
   "title": "Contenedores",
   "pages": {
-    "description": "Controle contenedores de envío, capacidad, programación de salidas y costos de operaciones de carga saliente."
+    "description": "Agrupe facturas y mercancía del cliente en contenedores de envío para su transporte."
   },
   "noun": "contenedores",
   "actions": {
@@ -16,11 +16,23 @@
       "label": "Total de contenedores",
       "description": "Contenedores registrados"
     },
-    "departedPast30Days": "Salidos (últimos 30 días)",
-    "departedPast90Days": "Salidos (últimos 90 días)",
-    "departedPast180Days": "Salidos (últimos 180 días)",
-    "departedPast360Days": "Salidos (últimos 360 días)",
-    "annualPace": "~{{pace}} contenedores/año al ritmo actual"
+    "departed": {
+      "label": "Contenedores salidos",
+      "periodLabel": "Periodo",
+      "annualPace": "A este ritmo, {{pace}} al año",
+      "periods": {
+        "7d": "7 días",
+        "30d": "30 días",
+        "3m": "3 meses",
+        "6m": "6 meses",
+        "1y": "1 año"
+      }
+    },
+    "averageValue": {
+      "label": "Valor promedio por contenedor",
+      "periodLabel": "Periodo",
+      "description": "{{count}} contenedores salidos"
+    }
   },
   "columns": {
     "id": "#",
@@ -102,19 +114,58 @@
   },
   "filters": {
     "fields": {
-      "id": { "label": "ID de contenedor", "placeholder": "Ingrese ID de contenedor…" },
-      "name": { "label": "Contenedor", "placeholder": "Ingrese contenedor…" },
-      "containerNumber": { "label": "Número de contenedor", "placeholder": "Ingrese número de contenedor…" },
-      "booking": { "label": "Número de reserva", "placeholder": "Ingrese número de reserva…" },
-      "sealNumber": { "label": "Número de sello", "placeholder": "Ingrese número de sello…" },
-      "seal": { "label": "Sello", "placeholder": "Ingrese sello…" },
-      "broker": { "label": "Agente aduanal", "placeholder": "Ingrese agente aduanal…" },
-      "company": { "label": "Empresa de transporte", "placeholder": "Ingrese empresa de transporte…" },
-      "cost": { "label": "Costo", "placeholder": "Ingrese monto…" },
-      "departureDate": { "label": "Fecha de salida", "placeholder": "AAAA-MM-DD" },
-      "departureDateRange": { "label": "Rango de fecha de salida", "placeholder": "2026-01-01 a 2026-06-30" },
-      "arrivalDate": { "label": "Fecha de llegada", "placeholder": "AAAA-MM-DD" },
-      "arrivalDateRange": { "label": "Rango de fecha de llegada", "placeholder": "2026-01-01 a 2026-06-30" }
+      "id": {
+        "label": "#",
+        "placeholder": "Ingrese ID de contenedor…"
+      },
+      "name": {
+        "label": "Contenedor",
+        "placeholder": "Ingrese contenedor…"
+      },
+      "containerNumber": {
+        "label": "Número de contenedor",
+        "placeholder": "Ingrese número de contenedor…"
+      },
+      "booking": {
+        "label": "Número de reserva",
+        "placeholder": "Ingrese número de reserva…"
+      },
+      "sealNumber": {
+        "label": "Número de sello",
+        "placeholder": "Ingrese número de sello…"
+      },
+      "seal": {
+        "label": "Sello",
+        "placeholder": "Ingrese sello…"
+      },
+      "broker": {
+        "label": "Agente aduanal",
+        "placeholder": "Ingrese agente aduanal…"
+      },
+      "company": {
+        "label": "Empresa de transporte",
+        "placeholder": "Ingrese empresa de transporte…"
+      },
+      "cost": {
+        "label": "Costo",
+        "placeholder": "Ingrese monto…"
+      },
+      "departureDate": {
+        "label": "Salida",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "departureDateRange": {
+        "label": "Rango de salida",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      },
+      "arrivalDate": {
+        "label": "Llegada",
+        "placeholder": "AAAA-MM-DD"
+      },
+      "arrivalDateRange": {
+        "label": "Rango de llegada",
+        "placeholder": "2026-01-01 a 2026-06-30"
+      }
     }
   }
 }

@@ -3,16 +3,15 @@
 import { useMemo, useState } from "react";
 import {
   Building2,
-  ChevronLeft,
-  ChevronRight,
   Plus,
-  Trash2,
   Users,
 } from "lucide-react";
 
 import { EmployeeForm } from "@/components/employees/employee-form";
+import { EmployeeMobileList } from "@/components/employees/employee-mobile-list";
 import { EmployeeViewSheet } from "@/components/employees/employee-view-sheet";
 import { DataTable } from "@/components/app-shell/data-table";
+import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
@@ -46,6 +45,7 @@ import {
   useResolvedPaginatedItems,
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
+import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -82,7 +82,6 @@ import {
 } from "@/lib/employees/types";
 import type { DataTableColumn } from "@/lib/table/types";
 
-const PAGE_SIZE = DEFAULT_EMPLOYEE_LIST_PARAMS.limit;
 const SEARCH_DEBOUNCE_MS = 300;
 
 const defaultFilters: EmployeeFilterState = {
@@ -100,7 +99,7 @@ export function EmployeesWorkspace() {
   const debouncedQuery = useDebouncedValue(filters.query, SEARCH_DEBOUNCE_MS);
   const isSearchPending = filters.query.trim() !== debouncedQuery.trim();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_EMPLOYEE_LIST_PARAMS.sort, () => setPage(1));
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
   const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
@@ -112,12 +111,12 @@ export function EmployeesWorkspace() {
     () =>
       buildEmployeeListParams({
         page,
-        limit: PAGE_SIZE,
+        limit: pageLimit,
         query: debouncedQuery,
         rows: filters.rows,
         sort,
       }),
-    [debouncedQuery, filters.rows, page, sort],
+    [debouncedQuery, filters.rows, page, pageLimit, sort],
   );
 
   const { data, isLoading, isError, error, isFetching } = useEmployees(listParams);
@@ -131,7 +130,8 @@ export function EmployeesWorkspace() {
 
   const employees = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const totalEmployees = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalEmployees / PAGE_SIZE));
+  rememberTotal(totalEmployees);
+  const totalPages = Math.max(1, Math.ceil(totalEmployees / pageLimit));
   const currentPage = Math.min(page, totalPages);
   const allPageSelected =
     employees.length > 0 && employees.every((employee) => selectedIds.includes(String(employee.id)));
@@ -450,7 +450,7 @@ export function EmployeesWorkspace() {
     {
       itemCountOnPage: employees.length,
       page: currentPage,
-      pageSize: PAGE_SIZE,
+      pageSize: pageLimit,
       total: totalEmployees,
       noun: t("employees.noun"),
       isFiltered: hasActiveFilters,
@@ -461,20 +461,65 @@ export function EmployeesWorkspace() {
 
   return (
     <div>
-      <PageHeader
+      <div className="hidden md:block">
+        <PageHeader
+          title={t("employees.title")}
+          description={t("employees.pages.description")}
+          actions={
+            <Button onClick={openAddForm} disabled={isSaving}>
+              <Plus className="h-4 w-4" />
+              {t("employees.actions.add")}
+            </Button>
+          }
+        />
+      </div>
+
+      <StatCards className="hidden md:block" items={statCards} />
+
+      <EmployeeMobileList
+        employees={employees}
         title={t("employees.title")}
-        description={t("employees.pages.description")}
-        actions={
-          <Button onClick={openAddForm} disabled={isSaving}>
-            <Plus className="h-4 w-4" />
-            {t("employees.actions.add")}
-          </Button>
+        listSummary={listSummary}
+        totalCount={totalEmployees}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        isLoading={isLoading}
+        isSaving={isSaving}
+        showInitialLoading={isLoading && employees.length === 0}
+        listErrorMessage={listErrorMessage}
+        filters={filters}
+        filtersOpen={filtersOpen}
+        activeFilterCount={activeFilterCount}
+        hasActiveFilters={hasActiveFilters}
+        employeeFilterFields={employeeFilterFields}
+        branchFilterOptions={branchFilterOptions}
+        branchesLoading={branchesLoading}
+        selectedIds={selectedIds}
+        onAdd={openAddForm}
+        onSearchChange={(query) => {
+          setFilters((current) => ({ ...current, query }));
+          setPage(1);
+        }}
+        onFiltersOpenChange={setFiltersOpen}
+        onFilterRowsChange={(rows) => {
+          setFilters((current) => ({ ...current, rows }));
+          setPage(1);
+        }}
+        onClearFilters={() => {
+          setFilters(defaultFilters);
+          setPage(1);
+        }}
+        onPageChange={setPage}
+        onToggleSelect={toggleSelect}
+        onClearSelection={() => setSelectedIds([])}
+        onView={setViewEmployee}
+        onEdit={openEditForm}
+        onDeleteSelected={() =>
+          setDeleteTarget(employees.filter((employee) => selectedIds.includes(String(employee.id))))
         }
       />
 
-      <StatCards items={statCards} />
-
-      <Card className="mt-6 gap-0">
+      <Card className="mt-6 hidden gap-0 md:flex">
         <CardHeader className="gap-3 border-b py-4 pb-3">
           <TableDirectoryToolbar
             filtersOpen={filtersOpen}
@@ -589,29 +634,14 @@ export function EmployeesWorkspace() {
 
         <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">{listSummary}</p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1 || isLoading}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("common.actions.previous")}
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {t("common.pagination.pageOf", { current: currentPage, total: totalPages })}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages || isLoading}
-              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-            >
-              {t("common.actions.next")}
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <TablePaginationControls
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+            disabled={isLoading}
+          />
         </div>
       </Card>
 
@@ -637,9 +667,9 @@ export function EmployeesWorkspace() {
           }
         }}
       >
-        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
-            <DialogTitle>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl max-md:inset-0 max-md:h-[100dvh] max-md:max-h-none max-md:w-screen max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:border-0">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4 max-md:border-primary/70 max-md:bg-primary max-md:py-6">
+            <DialogTitle className="max-md:text-3xl max-md:font-bold max-md:text-primary-foreground">
               {formMode === "edit" ? t("employees.form.editTitle") : t("employees.form.addTitle")}
             </DialogTitle>
           </DialogHeader>

@@ -1,8 +1,8 @@
 {
   "pages": {
-    "reports": "Consulte reportes operativos y de negocio de clientes, órdenes, ingresos y cumplimiento.",
-    "analytics": "Explore tendencias, métricas de rendimiento y vistas analíticas de la actividad del portal.",
-    "security": "Revise configuración de seguridad, controles de acceso e información de auditoría del portal."
+    "reports": "Convierta datos operativos y financieros en reportes para la toma de decisiones.",
+    "analytics": "Revise tendencias de operaciones, rutas, ingresos, gastos y volumen de envíos.",
+    "security": "Revise configuración de seguridad, controles de acceso e información de auditoría."
   },
   "placeholder": {
     "description": "Página de ejemplo de {{title}} dentro del mismo panel adaptable.",

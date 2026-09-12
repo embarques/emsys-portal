@@ -1,6 +1,7 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 import { useWorkspaceTabQueriesEnabled } from "@/lib/layout/workspace-tab-scope";
 
@@ -28,6 +29,8 @@ import {
   type CustomerSearchFilter,
 } from "@/lib/customers/types";
 import { isCustomerTypeFilterActive } from "@/lib/customers/customer-type";
+import { useInsightsKpis } from "@/lib/insights/hooks/use-insights-kpis";
+import type { NewCustomerStatPeriod } from "@/lib/customers/new-customer-stats";
 import { queryKeys } from "@/lib/query/query-keys";
 
 function hasCustomerChipFilters(params: CustomerListParams): boolean {
@@ -121,6 +124,19 @@ export function useCustomerStats() {
   };
 }
 
+/** Count of customers created within a rolling timeframe, plus prior-period count for % change. */
+export function useNewCustomerStats(period: NewCustomerStatPeriod) {
+  const query = useInsightsKpis(period);
+
+  return {
+    total: query.data?.newCustomers.count ?? 0,
+    previousTotal: query.data?.newCustomers.previousCount ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+  };
+}
+
 export function useCustomer(customerId: string | null, enabled = true) {
   return useWorkspaceQuery({
     queryKey: queryKeys.customers.detail(customerId ?? ""),
@@ -132,13 +148,16 @@ export function useCustomer(customerId: string | null, enabled = true) {
 export function useEnsureCustomerDetail() {
   const queryClient = useQueryClient();
 
-  return async (customerId: string) => {
-    return queryClient.fetchQuery({
-      queryKey: queryKeys.customers.detail(customerId),
-      queryFn: () => fetchCustomerById(customerId),
-      staleTime: 60_000,
-    });
-  };
+  return useCallback(
+    async (customerId: string, options?: { staleTime?: number }) => {
+      return queryClient.fetchQuery({
+        queryKey: queryKeys.customers.detail(customerId),
+        queryFn: () => fetchCustomerById(customerId),
+        staleTime: options?.staleTime ?? 60_000,
+      });
+    },
+    [queryClient],
+  );
 }
 
 export function useCustomerDetailsBatch(customerIds: string[], enabled = true) {
@@ -162,7 +181,10 @@ export function useCustomerPicker(limit = 200) {
 }
 
 function invalidateCustomers(queryClient: ReturnType<typeof useQueryClient>) {
-  return queryClient.invalidateQueries({ queryKey: queryKeys.customers.all });
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.customers.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.insights.all }),
+  ]);
 }
 
 export function useCreateCustomer() {

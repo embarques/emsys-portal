@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
+import { fetchAverageContainerValueStats } from "@/lib/containers/api/average-container-value-api";
 import {
   createContainer,
   deleteContainer,
@@ -20,6 +21,8 @@ import {
   type ContainerListParams,
   type ContainerSearchFilter,
 } from "@/lib/containers/types";
+import type { DepartedContainerStatPeriod } from "@/lib/containers/departed-container-stats";
+import { useInsightsKpis } from "@/lib/insights/hooks/use-insights-kpis";
 import { queryKeys } from "@/lib/query/query-keys";
 
 function isContainerListFiltered(params: ContainerListParams): boolean {
@@ -73,6 +76,37 @@ export function useContainerStats() {
   };
 }
 
+/** Count of containers that departed within a rolling timeframe. */
+export function useDepartedContainerStats(period: DepartedContainerStatPeriod) {
+  const query = useInsightsKpis(period);
+
+  return {
+    total: query.data?.departedContainers.count ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+  };
+}
+
+/** Average invoice merchandise value per container that departed in the window. */
+export function useAverageContainerValueStats(period: DepartedContainerStatPeriod) {
+  const query = useWorkspaceQuery({
+    queryKey: queryKeys.containers.stats("average-value", period),
+    queryFn: () => fetchAverageContainerValueStats(period),
+    staleTime: 60_000,
+  });
+
+  return {
+    average: query.data?.average ?? 0,
+    previousAverage: query.data?.previousAverage ?? 0,
+    containerCount: query.data?.containerCount ?? 0,
+    totalValue: query.data?.totalValue ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+  };
+}
+
 export function useContainerKpis() {
   const query = useWorkspaceQuery({
     queryKey: queryKeys.containers.stats("kpis"),
@@ -105,7 +139,10 @@ export function useContainerPicker(limit = 200, options: { enabled?: boolean } =
 }
 
 function invalidateContainers(queryClient: ReturnType<typeof useQueryClient>) {
-  return queryClient.invalidateQueries({ queryKey: queryKeys.containers.all });
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.containers.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.insights.all }),
+  ]);
 }
 
 export function useCreateContainer() {

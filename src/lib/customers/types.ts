@@ -140,6 +140,9 @@ export type CustomerAddress = {
   provinceCountry?: string;
   zipCode?: string;
   isPrimary: boolean;
+  /** Present on transaction party snapshots when the API round-trips Google metadata. */
+  location?: AddressGeoLocation | null;
+  verification?: AddressVerification | null;
 };
 
 export type ClientType = "sender" | "receiver";
@@ -361,12 +364,12 @@ export const CUSTOMER_GET_SEARCH_CAPABILITIES: {
   label: string;
   operators: CustomerSearchOperator[];
 }[] = [
-  { field: "name", label: "Name", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "name", label: "Customer", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "phones.number", label: "Phone", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "email", label: "Email", operators: ["startsWith", "contains", "eq", "neq"] },
   { field: "IDNumber", label: "ID number", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "address.address1", label: "Address 1", operators: ["startsWith", "contains", "eq", "neq"] },
-  { field: "customerType", label: "Customer type", operators: ["eq", "neq"] },
+  { field: "address.address1", label: "Address", operators: ["startsWith", "contains", "eq", "neq"] },
+  { field: "customerType", label: "Type", operators: ["eq", "neq"] },
   { field: "id", label: "Customer ID", operators: ["eq", "neq"] },
   { field: "createdAt", label: "Created at", operators: ["eq", "neq"] },
   { field: "updatedAt", label: "Updated at", operators: ["eq", "neq"] },

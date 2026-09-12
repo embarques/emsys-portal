@@ -3,7 +3,7 @@
   "entityPlural": "usuarios",
   "title": "Usuarios",
   "pages": {
-    "description": "Administre cuentas de usuario del portal, acceso por empresa, roles y estado de activación."
+    "description": "Administre cuentas de usuario del portal, acceso por empresa, roles y permisos."
   },
   "noun": "usuarios",
   "actions": {
@@ -162,8 +162,8 @@
       "email": { "label": "Correo electrónico", "placeholder": "Ingrese correo electrónico…" },
       "uid": { "label": "UID", "placeholder": "Ingrese UID…" },
       "role": {
-        "name": { "label": "Nombre de rol", "placeholder": "Ingrese nombre de rol…" },
-        "id": { "label": "Rol", "placeholder": "Ingrese ID de rol…" }
+        "name": { "label": "Rol", "placeholder": "Ingrese nombre de rol…" },
+        "id": { "label": "ID de rol", "placeholder": "Ingrese ID de rol…" }
       },
       "branch": {
         "name": { "label": "Nombre de sucursal", "placeholder": "Ingrese nombre de sucursal…" },

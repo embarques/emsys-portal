@@ -1,11 +1,11 @@
 {
-  "entity": "Order",
-  "entityPlural": "orders",
-  "title": "Orders",
+  "entity": "Appointment",
+  "entityPlural": "appointments",
+  "title": "Appointments",
   "pages": {
-    "description": "Coordinate pickup orders, assign routes, track verification and completion, and manage daily pickup operations."
+    "description": "Schedule client visits for pickup, supply deliveries, payment collection, or estimates."
   },
-  "noun": "orders",
+  "noun": "appointments",
   "workspace": {
     "actionsColumn": "Actions",
     "viewOrder": "View pickup",
@@ -14,20 +14,24 @@
   "pickup": "Pickup",
   "pickupNamed": "Pickup {{id}}",
   "actions": {
-    "add": "Add order",
-    "edit": "Edit order",
+    "add": "Add appointment",
+    "edit": "Edit appointment",
     "editNamed": "Edit {{name}}",
-    "editPickup": "Edit pickup",
-    "selectAtLeastOne": "Select at least one order to print.",
+    "editPickup": "Edit appointment",
+    "selectAtLeastOne": "Select at least one appointment to print.",
     "print": "Print",
     "preparing": "Preparing…",
+    "sync": "Sync",
+    "syncLegacy": "Sync legacy",
+    "syncingLegacy": "Syncing…",
+    "retryLegacySync": "Retry legacy sync",
     "markComplete": "Mark complete",
     "markIncomplete": "Mark incomplete",
     "assignRoute": "Assign route",
     "unassignRoute": "Unassign route",
     "clearRoute": "Clear route",
     "clearingRoute": "Clearing…",
-    "noAssignedRoute": "None of the selected orders are assigned to a route.",
+    "noAssignedRoute": "None of the selected appointments are assigned to a route.",
     "map": "Map",
     "manageCompletion": "Manage completion",
     "manageRoutes": "Manage routes",
@@ -36,7 +40,7 @@
   },
   "stats": {
     "pendingOrders": {
-      "label": "Pending orders"
+      "label": "Pending appointments"
     },
     "pendingPickups": {
       "label": "Pending pickups"
@@ -49,6 +53,17 @@
     },
     "pendingPayments": {
       "label": "Pending payments"
+    },
+    "new": {
+      "label": "New appointments",
+      "periodLabel": "Timeframe",
+      "periods": {
+        "7d": "7 days",
+        "30d": "30 days",
+        "3m": "3 months",
+        "6m": "6 months",
+        "1y": "1 year"
+      }
     }
   },
   "status": {
@@ -63,6 +78,7 @@
     "senderName": "Name",
     "senderAddress": "Address",
     "senderCity": "City",
+    "senderState": "State",
     "senderZip": "Zip",
     "senderPhone": "Phone",
     "comments": "Comments",
@@ -73,7 +89,7 @@
     "sectorName": "Sector name",
     "employee": "Employee",
     "createdBy": "Created by",
-    "orderId": "Order ID",
+    "orderId": "Appointment ID",
     "branchId": "Branch ID",
     "branchCode": "Branch code",
     "sender": "Sender",
@@ -83,28 +99,35 @@
     "receiverAddress": "Receiver address"
   },
   "search": {
-    "placeholder": "Search by sender/receiver name, phone, address, or comments…"
+    "placeholder": "Search for appointments"
   },
   "loading": {
-    "title": "Loading orders",
+    "title": "Loading appointments",
     "description": "Coordinating customers, routes, packages, and delivery status…",
-    "order": "Loading order…",
-    "columns": "Order, Date, Sender, Receiver, Status",
-    "pickupHistory": "Loading pickup history…"
+    "order": "Loading appointment…",
+    "columns": "Appointment, Date, Sender, Receiver, Status",
+    "pickupHistory": "Loading appointment history…",
+    "legacySyncProgress": "Syncing {{current}} out of {{total}}...",
+    "legacySyncStages": {
+      "prepare": "Preparing the legacy pickup sync.",
+      "fetch": "Reading open pickups from the legacy API.",
+      "apply": "Adding new pickups and updating existing ones.",
+      "refresh": "Refreshing the appointments list."
+    }
   },
   "empty": {
-    "noMatch": "No orders match your search or filters.",
+    "noMatch": "No appointments match your search or filters.",
     "noReceiver": "No receiver on this pickup.",
     "noComments": "No comments yet.",
-    "noPickupHistory": "No pickup history yet."
+    "noPickupHistory": "No appointment history yet."
   },
   "form": {
-    "addTitle": "Add order",
-    "editTitle": "Edit order",
-    "addDescription": "Create a new order.",
-    "notFound": "This order could not be found.",
+    "addTitle": "Add appointment",
+    "editTitle": "Edit appointment",
+    "addDescription": "Create a new appointment.",
+    "notFound": "This appointment could not be found.",
     "sections": {
-      "pickupDate": "Pickup date",
+      "pickupDate": "Appointment date",
       "senderReceiver": "Sender & receiver"
     },
     "fields": {
@@ -121,8 +144,9 @@
       "searchBranches": "Search branches…",
       "searchEmployees": "Search employees…",
       "selectSender": "Select sender",
+      "selectReceiver": "Select receiver",
       "noReceiver": "No receiver",
-      "searchParty": "Search by name, phone, or address…",
+      "searchParty": "Search appointments",
       "selectAddress": "Select address",
       "searchAddress": "Search addresses…"
     },
@@ -135,12 +159,13 @@
       "editReceiver": "Edit receiver"
     },
     "validation": {
-      "pickupDateRequired": "Select a valid pickup date.",
+      "pickupDateRequired": "Select a valid appointment date.",
       "senderRequired": "Select a sender.",
       "senderAddressRequired": "Select the sender's address.",
       "receiverAddressRequired": "Select the receiver's address.",
       "unverifiedSenderAddress": "Verify the sender's address before saving. Open the sender and update it with a Google-suggested address.",
-      "commentRequired": "Add at least one comment."
+      "commentRequired": "Add at least one comment.",
+      "duplicateCommentItem": "Each Take/Pickup item can only be used once (for example one Take Other and one Pickup Other)."
     }
   },
   "comments": {
@@ -156,6 +181,8 @@
     "placeholders": {
       "purpose": "Purpose",
       "item": "Item",
+      "searchPurpose": "Purpose",
+      "searchItem": "Item",
       "customItem": "Describe the item and quantity",
       "note": "Add a comment, press Enter to add another",
       "addComment": "Add a comment"
@@ -188,59 +215,79 @@
     "idNumber": "ID number"
   },
   "history": {
-    "title": "{{name}} pickup history ({{count}})",
-    "pendingSavedSender": "Pickup history appears once the sender is saved.",
+    "title": "{{name}} appointment history ({{count}})",
+    "titleCollapsed": "{{name}} appointment history",
+    "pendingSavedSender": "Appointment history appears once the sender is saved.",
+    "expand": "Show appointment history",
+    "collapse": "Hide appointment history",
     "current": "Current",
     "defaultSenderName": "Sender"
   },
   "dialogs": {
     "assignRouteTitle": "Assign route",
-    "assignRouteDescription": "Assign {{count}} selected order to a route.",
-    "assignRouteDescription_plural": "Assign {{count}} selected orders to a route.",
+    "assignRouteDescription": "Choose a daily route for {{count}} selected appointment, or create a new daily route.",
+    "assignRouteDescription_plural": "Choose a daily route for {{count}} selected appointments, or create a new daily route.",
     "clearRouteTitle": "Clear route?",
-    "clearRouteDescription": "This will remove the route assignment from {{count}} selected order. {{cannotBeUndone}}",
-    "clearRouteDescription_plural": "This will remove the route assignment from {{count}} selected orders. {{cannotBeUndone}}",
+    "clearRouteDescription": "This will remove the route assignment from {{count}} selected appointment. {{cannotBeUndone}}",
+    "clearRouteDescription_plural": "This will remove the route assignment from {{count}} selected appointments. {{cannotBeUndone}}",
     "markCompleteTitle": "Mark complete?",
-    "markCompleteDescription": "Mark {{count}} selected order as complete?",
-    "markCompleteDescription_plural": "Mark {{count}} selected orders as complete?",
+    "markCompleteDescription": "Mark {{count}} selected appointment as complete?",
+    "markCompleteDescription_plural": "Mark {{count}} selected appointments as complete?",
     "markIncompleteTitle": "Mark incomplete?",
-    "markIncompleteDescription": "Mark {{count}} selected order as incomplete?",
-    "markIncompleteDescription_plural": "Mark {{count}} selected orders as incomplete?",
-    "selectRoute": "Select a route",
-    "searchRoutes": "Search routes…",
-    "loadingRoutes": "Loading routes…",
-    "noRoutesFound": "No routes found.",
-    "deleteTitle": "Delete order?",
-    "deleteTitlePlural": "Delete orders?",
-    "deleteOne": "This will permanently remove this order. {{cannotBeUndone}}",
-    "deleteMany": "This will permanently remove {{count}} selected orders. {{cannotBeUndone}}"
+    "markIncompleteDescription": "Mark {{count}} selected appointment as incomplete?",
+    "markIncompleteDescription_plural": "Mark {{count}} selected appointments as incomplete?",
+    "dailyRoute": "Daily route",
+    "createDailyRoute": "Create new daily route",
+    "selectRoute": "Select a daily route",
+    "searchRoutes": "Search daily routes…",
+    "loadingRoutes": "Loading daily routes…",
+    "noRoutesFound": "No daily routes found.",
+    "selectRouteGroup": "Select a route crew",
+    "searchRouteGroups": "Search route crews…",
+    "loadingRouteGroups": "Loading route crews…",
+    "noRouteGroupsFound": "No route crews found.",
+    "assignmentDate": "Assignment date",
+    "selectCrewRoles": "Assign crew roles",
+    "selectRouteGroupFirst": "Select a route crew to assign driver, appraiser, and helper roles.",
+    "branchRequired": "This route crew needs a branch before it can be assigned.",
+    "crewRequired": "This route crew has no crew members.",
+    "deleteTitle": "Delete appointment?",
+    "deleteTitlePlural": "Delete appointments?",
+    "deleteOne": "This will permanently remove this appointment. {{cannotBeUndone}}",
+    "deleteMany": "This will permanently remove {{count}} selected appointments. {{cannotBeUndone}}"
   },
   "toasts": {
-    "markedComplete": "{{count}} order marked complete.",
-    "markedComplete_plural": "{{count}} orders marked complete.",
-    "markedIncomplete": "{{count}} order marked incomplete.",
-    "markedIncomplete_plural": "{{count}} orders marked incomplete.",
-    "assignedToRoute": "{{count}} order assigned{{routeSuffix}}.",
-    "assignedToRoute_plural": "{{count}} orders assigned{{routeSuffix}}.",
+    "addedFor": "Appointment for \"{{name}}\" was added.",
+    "markedComplete": "{{count}} appointment marked complete.",
+    "markedComplete_plural": "{{count}} appointments marked complete.",
+    "markedIncomplete": "{{count}} appointment marked incomplete.",
+    "markedIncomplete_plural": "{{count}} appointments marked incomplete.",
+    "assignedToRoute": "{{count}} appointment assigned{{routeSuffix}}.",
+    "assignedToRoute_plural": "{{count}} appointments assigned{{routeSuffix}}.",
     "assignedToRouteNamed": " to {{routeName}}",
-    "routeCleared": "Cleared route assignment from {{count}} order.",
-    "routeCleared_plural": "Cleared route assignment from {{count}} orders.",
-    "manifestReady": "Pickup manifest ready for {{count}} order.",
-    "manifestReady_plural": "Pickup manifest ready for {{count}} orders.",
+    "routeCleared": "Cleared route assignment from {{count}} appointment.",
+    "routeCleared_plural": "Cleared route assignment from {{count}} appointments.",
+    "manifestReady": "Pickup manifest ready for {{count}} appointment.",
+    "manifestReady_plural": "Pickup manifest ready for {{count}} appointments.",
+    "legacySyncSynced": "{{count}} pickup synced ({{imported}} imported, {{updated}} updated).",
+    "legacySyncSynced_plural": "{{count}} pickups synced ({{imported}} imported, {{updated}} updated).",
+    "legacyRetrySynced": "Pickup {{id}} synced to legacy.",
     "comingSoon": "{{label}} is coming soon."
   },
   "errors": {
-    "missingCompanyContext": "Company context is missing for this account. EMSYS API requests require the x-company-id header. Add companyId to your Firebase user profile or JWT custom claim, then sign in again."
+    "missingCompanyContext": "Company context is missing for this account. EMSYS API requests require the x-company-id header. Add companyId to your Firebase user profile or JWT custom claim, then sign in again.",
+    "pickupAccessUnavailable": "Pickup access unavailable. Your user is not linked to a pickup employee, and you do not have permission to view all pickups.",
+    "legacySyncPermissionMissing": "Missing permission: Access legacy pickups. Ask an administrator to grant the required permission, then try again."
   },
   "map": {
     "title": "Pickup map",
-    "description": "Only multi-selected verified pickup stops are plotted on the map. Select pickups in the orders list or use Select all.",
+    "description": "Only multi-selected verified pickup stops are plotted on the map. Select pickups in the appointments list or use Select all.",
     "loading": "Loading verified pickup stops…",
     "empty": "No verified pickup stops match the current filters.",
     "stopsShown": "{{count}} on map",
     "selected": "{{count}} selected",
     "noMappableStops": "None of the selected pickups have a verified address with map coordinates, so there is nothing to map.",
-    "selectToMap": "Multi-select pickups in the orders list or click Select all to map {{count}} verified stops.",
+    "selectToMap": "Multi-select pickups in the appointments list or click Select all to map {{count}} verified stops.",
     "clickToSelect": "Select stops to assign or unassign routes",
     "clearSelection": "Clear selection",
     "mappedStopsTitle": "Mapped stops",
@@ -260,45 +307,126 @@
   "filters": {
     "fields": {
       "sender": {
-        "name": { "label": "Sender name", "placeholder": "Enter sender name…" },
-        "phone": { "label": "Sender phone", "placeholder": "Enter phone…" },
-        "address": {
-          "address1": { "label": "Sender address 1", "placeholder": "Enter address line 1…" },
-          "address2": { "label": "Sender address 2", "placeholder": "Enter address line 2…" },
-          "city": { "label": "Sender city", "placeholder": "Enter city…" },
-          "state": { "label": "Sender state", "placeholder": "Enter state…" },
-          "zipcode": { "label": "Sender zip", "placeholder": "Enter zip code…" }
+        "name": {
+          "label": "Name",
+          "placeholder": "Enter name…"
         },
-        "zipRange": { "label": "Sender zip range", "placeholder": "10001-10282 or 10001 to 10282" }
+        "phone": {
+          "label": "Phone",
+          "placeholder": "Enter phone…"
+        },
+        "address": {
+          "label": "Address",
+          "placeholder": "Enter address, city, state, or zip…",
+          "address1": {
+            "label": "Address 1",
+            "placeholder": "Enter address line 1…"
+          },
+          "address2": {
+            "label": "Address 2",
+            "placeholder": "Enter address line 2…"
+          },
+          "city": {
+            "label": "City",
+            "placeholder": "Enter city…"
+          },
+          "state": {
+            "label": "State",
+            "placeholder": "Enter state…"
+          },
+          "zipcode": {
+            "label": "Zip",
+            "placeholder": "Enter zip code…"
+          }
+        },
+        "zipRange": {
+          "label": "Zip range",
+          "placeholder": "10001-10282 or 10001 to 10282"
+        }
       },
-      "purpose": { "label": "Purpose", "placeholder": "Enter purpose…" },
+      "purpose": {
+        "label": "Purpose",
+        "placeholder": "Enter purpose…"
+      },
+      "comments": {
+        "label": "Comments",
+        "placeholder": "Enter comment text…"
+      },
       "route": {
-        "id": { "label": "Order route" }
+        "id": {
+          "label": "Route"
+        }
       },
       "branch": {
-        "id": { "label": "Branch" },
-        "code": { "label": "Branch code" },
-        "name": { "label": "Branch name", "placeholder": "Enter branch name…" }
+        "id": {
+          "label": "Branch"
+        },
+        "code": {
+          "label": "Branch code"
+        },
+        "name": {
+          "label": "Branch name",
+          "placeholder": "Enter branch name…"
+        }
       },
-      "receiver": {
-        "name": { "label": "Receiver name", "placeholder": "Enter receiver name…" },
-        "phone": { "label": "Receiver phone", "placeholder": "Enter phone…" },
+      "receivers": {
+        "name": {
+          "label": "Receiver",
+          "placeholder": "Enter receiver name…"
+        },
+        "phone": {
+          "label": "Receiver phone",
+          "placeholder": "Enter phone…"
+        },
         "address": {
-          "address1": { "label": "Receiver address 1", "placeholder": "Enter address line 1…" },
-          "address2": { "label": "Receiver address 2", "placeholder": "Enter address line 2…" },
-          "city": { "label": "Receiver city", "placeholder": "Enter city…" },
-          "state": { "label": "Receiver state", "placeholder": "Enter state…" },
-          "zipcode": { "label": "Receiver zip", "placeholder": "Enter zip code…" }
+          "label": "Receiver address",
+          "placeholder": "Enter address, city, state, or zip…",
+          "address1": {
+            "label": "Receiver address 1",
+            "placeholder": "Enter address line 1…"
+          },
+          "address2": {
+            "label": "Receiver address 2",
+            "placeholder": "Enter address line 2…"
+          },
+          "city": {
+            "label": "Receiver city",
+            "placeholder": "Enter city…"
+          },
+          "state": {
+            "label": "Receiver state",
+            "placeholder": "Enter state…"
+          },
+          "zipcode": {
+            "label": "Receiver zip",
+            "placeholder": "Enter zip code…"
+          }
         }
       },
       "createdBy": {
-        "name": { "label": "Created by" }
+        "name": {
+          "label": "Created by"
+        }
       },
-      "completed": { "label": "Completed status" },
-      "date": { "label": "Order date", "placeholder": "YYYY-MM-DD" },
-      "dateRange": { "label": "Order date range", "placeholder": "2026-01-01 to 2026-06-30" },
-      "createdAt": { "label": "Created at", "placeholder": "YYYY-MM-DD" },
-      "createdAtRange": { "label": "Date created range", "placeholder": "2026-01-01 to 2026-06-30" }
+      "completed": {
+        "label": "Completed"
+      },
+      "date": {
+        "label": "Date",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "dateRange": {
+        "label": "Date range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      },
+      "createdAt": {
+        "label": "Created at",
+        "placeholder": "YYYY-MM-DD"
+      },
+      "createdAtRange": {
+        "label": "Created at range",
+        "placeholder": "2026-01-01 to 2026-06-30"
+      }
     }
   }
 }

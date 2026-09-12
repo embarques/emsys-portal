@@ -13,27 +13,37 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  useDailyRoutePicker,
   useUpsertActiveRoute,
 } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import {
   activeRouteToFormValues,
   areActiveRouteFormValuesEquivalent,
   createEmptyActiveRouteForm,
-  DAYS_OF_WEEK,
+  isDeliveryBranchCode,
+  routeTypeForBranchCode,
   type ActiveRoute,
   type ActiveRouteFormValues,
-  type RouteScheduleType,
-  type RouteType,
 } from "@/lib/pickup-delivery-routes/types";
 import { formatContainerLabel, formatContainerRouteNumber } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
-import { formatBranchFilterLabel } from "@/lib/branches/display";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
+import { useVehiclePicker } from "@/lib/vehicles/hooks/use-vehicles";
+import type { SearchableSelectOption } from "@/components/ui/searchable-select";
+import {
+  buildFormBranchOptions,
+  findBranchByCodeOrId,
+  resolveUserBranchRef,
+} from "@/lib/branches/user-branch";
 import { useTranslation } from "@/lib/i18n";
 import { useUserError } from "@/lib/errors/use-user-error";
 import {
+  formatPreviousDailyRouteLabel,
+} from "@/lib/pickup-delivery-routes/display";
+import {
   formatRouteAssignmentDescriptionLines,
   formatRouteAssignmentName,
+  getVehicleRefLabel,
 } from "@/lib/route-manager/display";
 import {
   useCreateRoute,
@@ -42,10 +52,11 @@ import {
 } from "@/lib/route-manager/hooks/use-route-manager";
 import {
   createEmptyRouteForm,
-  resolveCrewRole,
+  createEmptyVehicleRef,
+  crewFromRouteGroup,
+  getRouteBranchCode,
   setVehicleRouteCrewRole,
   type RouteCrewRole,
-  type RouteEmployeeRef,
   type RouteFormValues,
 } from "@/lib/route-manager/types";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
@@ -56,24 +67,21 @@ import { useCurrentUser } from "@/lib/users/hooks/use-users";
 type ActiveRouteSectionProps = {
   initialRecord?: ActiveRoute | null;
   variant?: ActiveRoutesDirectoryVariant;
-  onSaved?: () => void;
+  defaultDate?: string;
+  onSaved?: (record?: ActiveRoute) => void;
   onCancel?: () => void;
 };
 
 export function ActiveRouteSection({
   initialRecord = null,
   variant,
+  defaultDate,
   onSaved,
   onCancel,
 }: ActiveRouteSectionProps) {
-  const fixedRouteType = variant?.routeType;
-  const showRouteTypeField = variant?.showRouteTypeField ?? true;
-  const showContainerField = variant?.showContainerField;
-  const fixedBranchCode = variant?.fixedBranchCode;
-
   const { t } = useTranslation();
   const { toErrorMessage } = useUserError();
-  const copyPrefix = variant?.copyPrefix;
+  const copyPrefix = variant?.copyPrefix ?? "dailyRoutes";
   const { displayName } = useAuth();
   const { notifySuccess } = useFeedback();
   const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
@@ -82,74 +90,63 @@ export function ActiveRouteSection({
   const branchesQuery = useBranchPicker(200);
   const branches = branchesQuery.data?.items ?? [];
   const currentUserQuery = useCurrentUser();
+  const isEditing = Boolean(initialRecord);
 
   const [values, setValues] = useState<ActiveRouteFormValues>(() =>
     initialRecord
-      ? activeRouteToFormValues(initialRecord)
-      : createEmptyActiveRouteForm(fixedRouteType ?? "pickup"),
+      ? {
+          ...activeRouteToFormValues(initialRecord),
+          scheduleType: "date",
+          dayOfWeek: [],
+        }
+      : {
+          ...createEmptyActiveRouteForm("pickup"),
+          ...(defaultDate?.trim() ? { date: defaultDate.trim() } : {}),
+        },
   );
+  const [previousRouteId, setPreviousRouteId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createFormError, setCreateFormError] = useState<string | null>(null);
-  const defaultBranchAppliedRef = useRef(false);
   const syncedRouteRecordIdRef = useRef("");
-  const effectiveRouteType = fixedRouteType ?? values.routeType;
-  const branchCode = fixedBranchCode ?? values.branch.code;
+  const branchCode = values.branch.code;
+  const isDeliveryBranch = isDeliveryBranchCode(branchCode);
+  const effectiveRouteType = routeTypeForBranchCode(branchCode);
 
   const routesQuery = useRoutePicker(200, {
     branchCode: branchCode.trim() || undefined,
     enabled: Boolean(branchCode.trim()),
   });
+  const vehiclesQuery = useVehiclePicker(200, {
+    branchCode: branchCode.trim() || undefined,
+    enabled: Boolean(branchCode.trim()),
+  });
+  const vehicles = vehiclesQuery.data?.items ?? [];
+  const previousRoutesQuery = useDailyRoutePicker(200, { enabled: !isEditing });
 
-  // Lock the branch to the variant's fixed code (e.g. delivery routes → RD).
   useEffect(() => {
-    if (!fixedBranchCode || initialRecord) return;
-    const match = branches.find(
-      (branch) => branch.code.toLowerCase() === fixedBranchCode.toLowerCase(),
-    );
-    if (!match) return;
+    const resolved = resolveUserBranchRef(currentUserQuery.data?.branch, branches);
+    if (!resolved) return;
     setValues((current) =>
-      current.branch.id === match.id && current.branch.code === match.code
-        ? current
-        : { ...current, branch: { id: match.id, code: match.code, name: match.name } },
-    );
-  }, [branches, fixedBranchCode, initialRecord]);
-
-  // Default the branch to the current user's branch for new schedules that do
-  // not lock the branch (e.g. pickup routes). Applied once and never overrides
-  // a branch the user picked or an existing record's branch.
-  useEffect(() => {
-    if (fixedBranchCode || initialRecord) return;
-    if (defaultBranchAppliedRef.current) return;
-    const userBranch = currentUserQuery.data?.branch;
-    if (!userBranch || !(userBranch.id > 0)) return;
-    defaultBranchAppliedRef.current = true;
-    setValues((current) =>
-      current.branch.id > 0
+      current.branch.id > 0 && current.branch.code.trim()
         ? current
         : {
             ...current,
-            branch: {
-              id: userBranch.id,
-              code: userBranch.code,
-              name: userBranch.name || "",
-            },
+            branch: resolved,
+            routeType: routeTypeForBranchCode(resolved.code),
           },
     );
-  }, [currentUserQuery.data?.branch, fixedBranchCode, initialRecord]);
+  }, [branches, currentUserQuery.data?.branch]);
 
-  // Keep branch name in sync with the branch directory (required on API write).
   useEffect(() => {
     const code = values.branch.code.trim();
     if (!code || branches.length === 0) return;
 
-    const match = branches.find(
-      (branch) => branch.code.trim().toLowerCase() === code.toLowerCase(),
-    );
+    const match = findBranchByCodeOrId(branches, values.branch);
     if (!match) return;
 
     setValues((current) => {
-      const name = match.name.trim();
+      const name = match.name?.trim() ?? "";
       if (
         current.branch.id === match.id &&
         current.branch.code === match.code &&
@@ -161,9 +158,10 @@ export function ActiveRouteSection({
       return {
         ...current,
         branch: { id: match.id, code: match.code, name },
+        routeType: routeTypeForBranchCode(match.code),
       };
     });
-  }, [branches, values.branch.code]);
+  }, [branches, values.branch]);
 
   const upsertMutation = useUpsertActiveRoute();
   const createRouteMutation = useCreateRoute();
@@ -172,7 +170,12 @@ export function ActiveRouteSection({
   useEffect(() => {
     if (initialRecord) {
       syncedRouteRecordIdRef.current = "";
-      setValues(activeRouteToFormValues(initialRecord));
+      setValues({
+        ...activeRouteToFormValues(initialRecord),
+        scheduleType: "date",
+        dayOfWeek: [],
+      });
+      setPreviousRouteId("");
     }
   }, [initialRecord]);
 
@@ -189,70 +192,68 @@ export function ActiveRouteSection({
         keywords: [
           route.name,
           route.routeId,
-          route.vehicle.name,
-          route.vehicle.branch ?? "",
+          getRouteBranchCode(route),
+          ...route.employees.map((employee) => employee.name),
         ],
       }));
   }, [routesQuery.data?.items]);
 
   const selectedRoute = selectedRouteQuery.data ?? null;
 
-  // Sync crew from the selected route template when the user picks a route.
-  // Runs once per routeRecordId so role edits are not overwritten on re-render.
   useEffect(() => {
     const routeRecordId = values.routeRecordId.trim();
     if (!routeRecordId || selectedRouteQuery.isLoading) return;
     if (!selectedRoute) return;
 
-    const alreadySynced = syncedRouteRecordIdRef.current === routeRecordId;
-    if (alreadySynced && values.employees.length > 0) return;
-
-    syncedRouteRecordIdRef.current = routeRecordId;
     const crew = selectedRoute.employees;
 
     setValues((current) => {
-      const existingById = new Map(current.employees.map((employee) => [employee.id, employee]));
-      const templateIds = new Set(crew.map((employee) => employee.id));
-      const employeesFromTemplate = crew.map((employee) => {
-        const existing = existingById.get(employee.id);
-        return {
-          id: employee.id,
-          name: employee.name,
-          role: existing?.role ?? resolveCrewRole(employee.role),
-          ...(existing?.roles ? { roles: existing.roles } : {}),
-        };
-      });
-      const extraEmployees = current.employees.filter((employee) => !templateIds.has(employee.id));
+      const alreadySynced = syncedRouteRecordIdRef.current === routeRecordId;
+      const nextEmployees = crewFromRouteGroup(crew, current.employees);
+      const crewIds = nextEmployees.map((employee) => employee.id).join(",");
+      const currentIds = current.employees.map((employee) => employee.id).join(",");
+      const nextName = formatRouteAssignmentName(selectedRoute);
+      if (
+        alreadySynced &&
+        crewIds === currentIds &&
+        current.routeAssignmentName === nextName
+      ) {
+        return current;
+      }
+
+      syncedRouteRecordIdRef.current = routeRecordId;
       return {
         ...current,
-        routeAssignmentName: formatRouteAssignmentName(selectedRoute),
-        employees: [...employeesFromTemplate, ...extraEmployees],
+        routeAssignmentName: nextName,
+        employees: nextEmployees,
       };
     });
-  }, [
-    selectedRoute,
-    selectedRouteQuery.isLoading,
-    values.employees.length,
-    values.routeRecordId,
-  ]);
+  }, [selectedRoute, selectedRouteQuery.isLoading, values.routeRecordId]);
 
   const branchOptions = useMemo(
-    () =>
-      branches.map((branch) => ({
-        value: branch.code,
-        label: formatBranchFilterLabel(branch),
-        keywords: [branch.code, branch.name],
-      })),
-    [branches],
+    () => buildFormBranchOptions(branches, values.branch.code.trim() ? values.branch : null),
+    [branches, values.branch],
   );
+  const selectBranchCode =
+    findBranchByCodeOrId(branches, values.branch)?.code || values.branch.code;
 
-  const dayOfWeekOptions = useMemo(
+  const previousRoutes = previousRoutesQuery.data?.items ?? [];
+  const previousRouteOptions = useMemo(
     () =>
-      DAYS_OF_WEEK.map((day) => ({
-        value: day,
-        label: t(`routes.activeRoute.days.${day}`),
-      })),
-    [t],
+      [...previousRoutes]
+        .sort((left, right) => right.date.localeCompare(left.date))
+        .map((record) => ({
+          value: record.id,
+          label: formatPreviousDailyRouteLabel(record, t("common.empty.dash")),
+          keywords: [
+            record.date,
+            record.branch?.code ?? "",
+            record.route.name,
+            record.vehicle.name,
+            ...record.employees.map((employee) => employee.name),
+          ],
+        })),
+    [previousRoutes, t],
   );
 
   const containerOptions = useMemo(() => {
@@ -275,20 +276,36 @@ export function ActiveRouteSection({
     return options;
   }, [containers, values.container]);
 
-  const isSaving = upsertMutation.isPending;
-  const isDelivery = effectiveRouteType === "delivery";
-  const isEditing = Boolean(initialRecord);
-  const scheduleFilled =
-    values.scheduleType === "date"
-      ? Boolean(values.date.trim())
-      : values.dayOfWeek.length > 0;
-  const submitDisabled =
-    !scheduleFilled ||
-    !(values.branch.id > 0) ||
-    (isDelivery && (!values.container || values.container.id <= 0)) ||
-    !values.routeRecordId.trim();
+  const vehicleOptions = useMemo(() => {
+    const options: SearchableSelectOption[] = [...vehicles]
+      .sort((left, right) => left.name.localeCompare(right.name))
+      .map((vehicle) => ({
+        value: vehicle.id,
+        label: vehicle.name,
+        ...(vehicle.licensePlate ? { description: vehicle.licensePlate } : {}),
+        keywords: [vehicle.name, vehicle.vehicleId, vehicle.licensePlate, vehicle.vin],
+      }));
 
-  function resetSchedule(partial: Partial<ActiveRouteFormValues>) {
+    if (values.vehicle.id && !options.some((option) => option.value === values.vehicle.id)) {
+      options.unshift({
+        value: values.vehicle.id,
+        label: getVehicleRefLabel(values.vehicle),
+        keywords: [values.vehicle.name, values.vehicle.id],
+      });
+    }
+
+    return options;
+  }, [vehicles, values.vehicle]);
+
+  const isSaving = upsertMutation.isPending;
+  const submitDisabled =
+    !values.date.trim() ||
+    !(values.branch.id > 0) ||
+    !values.vehicle.id.trim() ||
+    !values.routeRecordId.trim() ||
+    (isDeliveryBranch && (!values.container || values.container.id <= 0));
+
+  function resetCrew(partial: Partial<ActiveRouteFormValues>) {
     syncedRouteRecordIdRef.current = "";
     setValues((current) => ({
       ...current,
@@ -300,43 +317,50 @@ export function ActiveRouteSection({
     setFormError(null);
   }
 
-  function handleRouteTypeChange(routeType: RouteType) {
-    if (fixedRouteType) return;
-    resetSchedule({
-      routeType,
-      // Delivery routes are always date-based.
-      scheduleType: routeType === "delivery" ? "date" : values.scheduleType,
-      dayOfWeek: routeType === "delivery" ? [] : values.dayOfWeek,
-      container: routeType === "delivery" ? values.container : null,
-      rate: routeType === "delivery" ? values.rate : "",
-    });
-  }
-
-  function handleScheduleTypeChange(scheduleType: RouteScheduleType) {
-    resetSchedule({ scheduleType });
-  }
-
   function handleBranchChange(nextBranchCode: string) {
     const normalized = nextBranchCode.trim().toLowerCase();
     const branch = branches.find((entry) => entry.code.trim().toLowerCase() === normalized);
-    resetSchedule({
+    const nextIsDelivery = isDeliveryBranchCode(branch?.code ?? nextBranchCode);
+    resetCrew({
       branch: {
         id: branch?.id ?? 0,
         code: branch?.code ?? nextBranchCode,
         name: branch?.name ?? "",
       },
+      routeType: routeTypeForBranchCode(branch?.code ?? nextBranchCode),
+      container: nextIsDelivery ? values.container : null,
+      rate: nextIsDelivery ? values.rate : "",
+      vehicle: createEmptyVehicleRef(),
     });
+    setPreviousRouteId("");
+  }
+
+  function handlePreviousRouteChange(routeId: string) {
+    const record = previousRoutes.find((entry) => entry.id === routeId);
+    if (!record) return;
+    syncedRouteRecordIdRef.current = record.route.id;
+    setPreviousRouteId(routeId);
+    setValues((current) => ({
+      ...activeRouteToFormValues(record),
+      date: current.date,
+      scheduleType: "date",
+      dayOfWeek: [],
+      routeType: routeTypeForBranchCode(record.branch?.code),
+    }));
+    setFormError(null);
   }
 
   function updateContainer(nextValue: string) {
     const container = containers.find((entry) => String(entry.id) === nextValue);
     if (!container) return;
-    resetSchedule({
+    setValues((current) => ({
+      ...current,
       container: {
         id: container.id,
         name: formatContainerRouteNumber(container),
       },
-    });
+    }));
+    setFormError(null);
   }
 
   function handleRoleChange(employeeId: number, role: RouteCrewRole) {
@@ -347,35 +371,22 @@ export function ActiveRouteSection({
     setFormError(null);
   }
 
-  function handleEmployeesChange(employees: RouteEmployeeRef[]) {
-    setValues((current) => ({ ...current, employees }));
-    setFormError(null);
-  }
-
-  function handleRemoveEmployee(employeeId: number) {
-    setValues((current) => ({
-      ...current,
-      employees: current.employees.filter((employee) => employee.id !== employeeId),
-    }));
-    setFormError(null);
-  }
-
   async function saveActiveRoute() {
     setFormError(null);
 
-    if (!scheduleFilled) {
-      setFormError(
-        values.scheduleType === "date"
-          ? t("routes.activeRoute.errors.date")
-          : t("routes.activeRoute.errors.dayOfWeek"),
-      );
+    if (!values.date.trim()) {
+      setFormError(t("routes.activeRoute.errors.date"));
       return;
     }
     if (!(values.branch.id > 0)) {
       setFormError(t("routes.activeRoute.errors.branch"));
       return;
     }
-    if (effectiveRouteType === "delivery" && (!values.container || values.container.id <= 0)) {
+    if (!values.vehicle.id.trim()) {
+      setFormError(t("routes.activeRoute.errors.vehicle"));
+      return;
+    }
+    if (isDeliveryBranch && (!values.container || values.container.id <= 0)) {
       setFormError(t("routes.activeRoute.errors.container"));
       return;
     }
@@ -387,26 +398,32 @@ export function ActiveRouteSection({
     try {
       const payload = {
         ...values,
+        scheduleType: "date" as const,
+        dayOfWeek: [],
         routeType: effectiveRouteType,
-        container: isDelivery ? values.container : null,
+        container: isDeliveryBranch ? values.container : null,
+        active: true,
       };
       if (
         initialRecord &&
-        areActiveRouteFormValuesEquivalent(payload, activeRouteToFormValues(initialRecord))
+        areActiveRouteFormValuesEquivalent(payload, {
+          ...activeRouteToFormValues(initialRecord),
+          scheduleType: "date",
+          dayOfWeek: [],
+          active: true,
+        })
       ) {
         notifySuccess(t("common.form.noChanges"));
-        onSaved?.();
+        onSaved?.(initialRecord ?? undefined);
         return;
       }
 
-      await upsertMutation.mutateAsync({
+      const saved = await upsertMutation.mutateAsync({
         values: payload,
         existingId: initialRecord?.id,
       });
-      notifySuccess(
-        copyPrefix ? t(`routes.${copyPrefix}.form.saved`) : t("routes.activeRoute.saved"),
-      );
-      onSaved?.();
+      notifySuccess(t(`routes.${copyPrefix}.form.saved`));
+      onSaved?.(saved);
     } catch (error) {
       setFormError(toErrorMessage(error));
     }
@@ -418,6 +435,7 @@ export function ActiveRouteSection({
       form.branch = {
         id: values.branch.id,
         code: values.branch.code,
+        name: values.branch.name,
       };
     }
     return form;
@@ -427,10 +445,12 @@ export function ActiveRouteSection({
     setCreateFormError(null);
     try {
       const created = await createRouteMutation.mutateAsync(routeValues);
+      syncedRouteRecordIdRef.current = created.id;
       setValues((current) => ({
         ...current,
         routeRecordId: created.id,
         routeAssignmentName: created.name,
+        employees: crewFromRouteGroup(created.employees),
       }));
       setCreateDialogOpen(false);
       notifySuccess(t("routes.activeRoute.routeCreated"));
@@ -444,41 +464,46 @@ export function ActiveRouteSection({
       <ActiveRouteForm
         values={{ ...values, routeType: effectiveRouteType }}
         isEditing={isEditing}
-        isDelivery={isDelivery}
+        isDeliveryBranch={isDeliveryBranch}
         copyPrefix={copyPrefix}
-        showRouteTypeField={showRouteTypeField}
-        showContainerField={showContainerField}
-        showBranchField={!fixedBranchCode}
+        showPreviousRouteField={!isEditing}
         submitLabel={
-          isEditing
-            ? t("common.actions.saveChanges")
-            : copyPrefix
-              ? t(`routes.${copyPrefix}.form.save`)
-              : t("routes.activeRoute.save")
+          isEditing ? t("common.actions.saveChanges") : t(`routes.${copyPrefix}.form.save`)
         }
         isSubmitting={isSaving}
         externalError={formError}
         routeOptions={routeOptions}
         containerOptions={containerOptions}
         branchOptions={branchOptions}
-        dayOfWeekOptions={dayOfWeekOptions}
-        branchCode={branchCode}
+        vehicleOptions={vehicleOptions}
+        previousRouteOptions={previousRouteOptions}
+        previousRouteId={previousRouteId}
+        branchCode={selectBranchCode}
         branchesLoading={branchesQuery.isLoading}
+        vehiclesLoading={vehiclesQuery.isLoading}
         routesLoading={routesQuery.isLoading}
+        previousRoutesLoading={previousRoutesQuery.isLoading}
         selectedRouteLoading={selectedRouteQuery.isLoading}
         submitDisabled={submitDisabled}
-        onRouteTypeChange={handleRouteTypeChange}
-        onScheduleTypeChange={handleScheduleTypeChange}
+        onPreviousRouteChange={handlePreviousRouteChange}
         onBranchChange={handleBranchChange}
         onDateChange={(date) => {
-          resetSchedule({ date });
-        }}
-        onDayOfWeekChange={(dayOfWeek) => {
-          setValues((current) => ({ ...current, dayOfWeek }));
+          setValues((current) => ({ ...current, date, scheduleType: "date", dayOfWeek: [] }));
           setFormError(null);
         }}
-        onNameChange={(name) => {
-          setValues((current) => ({ ...current, name }));
+        onVehicleChange={(vehicleId) => {
+          const vehicle = vehicles.find((entry) => entry.id === vehicleId);
+          setValues((current) => ({
+            ...current,
+            vehicle: vehicle
+              ? {
+                  id: vehicle.id,
+                  name: vehicle.name.trim(),
+                  ...(vehicle.branch.code.trim() ? { branch: vehicle.branch.code } : {}),
+                }
+              : createEmptyVehicleRef(),
+          }));
+          setFormError(null);
         }}
         onContainerChange={updateContainer}
         onRateChange={(rate) => {
@@ -492,16 +517,11 @@ export function ActiveRouteSection({
             ...current,
             routeRecordId,
             routeAssignmentName: assignment ? formatRouteAssignmentName(assignment) : "",
-            employees: [],
+            employees: assignment ? crewFromRouteGroup(assignment.employees) : [],
           }));
           setFormError(null);
         }}
         onRoleChange={handleRoleChange}
-        onEmployeesChange={handleEmployeesChange}
-        onRemoveEmployee={handleRemoveEmployee}
-        onActiveChange={(active) => {
-          setValues((current) => ({ ...current, active }));
-        }}
         onCreateRouteClick={() => {
           if (isDesktopTabs) {
             openFormTab({
@@ -517,7 +537,7 @@ export function ActiveRouteSection({
         }}
         onSubmit={saveActiveRoute}
         onCancel={onCancel}
-        vehicleRouteId={isEditing && !isDelivery ? initialRecord?.id : undefined}
+        vehicleRouteId={isEditing && !isDeliveryBranch ? initialRecord?.id : undefined}
       />
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -525,7 +545,7 @@ export function ActiveRouteSection({
           <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
             <DialogTitle>{t("routes.createDialog.title")}</DialogTitle>
             <DialogDescription>
-              {t("routes.createDialog.description", { date: values.date })}
+              {t("routes.createDialog.description")}
             </DialogDescription>
           </DialogHeader>
           {createDialogOpen ? (

@@ -11,12 +11,12 @@ import {
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
-import { formatPhoneDisplayOrDash } from "@/lib/utils/phone";
+import { PhoneActionRow } from "@/components/phones/phone-action-row";
+import { formatRecordPhoneTypeLabel, getOrderedRecordPhones } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
 import {
   formatBranchAddress,
   formatBranchId,
-  formatBranchPhones,
   getBranchTypeBadgeClass,
 } from "@/lib/branches/display";
 import type { Branch } from "@/lib/branches/types";
@@ -75,24 +75,30 @@ export function BranchViewSheet({ branch, open, onOpenChange, onEdit, onDelete }
               value={branch.disclaimer || dash}
             />
             <RecordViewSheetDetailRow
-              label={t("branches.view.fields.created")}
-              value={branch.created ? formatAuditDateTime(branch.created) : dash}
+              label={t("branches.view.fields.createdAt")}
+              value={branch.createdAt ? formatAuditDateTime(branch.createdAt) : dash}
             />
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("branches.view.sections.contact")}>
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.phone1")}
-              value={formatPhoneDisplayOrDash(branch.phone1)}
-            />
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.phone2")}
-              value={formatPhoneDisplayOrDash(branch.phone2)}
-            />
-            <RecordViewSheetDetailRow
-              label={t("branches.view.fields.phones")}
-              value={formatBranchPhones(branch)}
-            />
+            {getOrderedRecordPhones(branch.phones).length === 0 ? (
+              <RecordViewSheetDetailRow label={t("branches.view.fields.phones")} value={dash} />
+            ) : (
+              getOrderedRecordPhones(branch.phones).map((phone, index) => (
+                <PhoneActionRow
+                  key={`phone-${index}`}
+                  label={
+                    phone.isPrimary
+                      ? t("branches.view.phonePrimary", {
+                          type: formatRecordPhoneTypeLabel(phone.type),
+                        })
+                      : formatRecordPhoneTypeLabel(phone.type)
+                  }
+                  number={phone.number}
+                  displayNumber={phone.displayNumber}
+                />
+              ))
+            )}
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("branches.view.sections.address")}>

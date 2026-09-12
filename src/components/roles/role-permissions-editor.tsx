@@ -1,19 +1,46 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, X } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "@/lib/i18n";
 import {
   getPermissionCatalogGroups,
+  getPermissionsByAction,
   getPermissionsByGroup,
+  PERMISSION_BULK_ACTIONS,
+  type PermissionBulkAction,
   type PermissionCatalogEntry,
 } from "@/lib/roles/permissions-catalog";
 import {
   type RolePermissionFormValues,
 } from "@/lib/roles/types";
+
+const BULK_ACTION_LABEL_KEYS: Record<
+  PermissionBulkAction,
+  { label: string; aria: string }
+> = {
+  create: {
+    label: "roles.permissions.selectAllCreate",
+    aria: "roles.permissions.selectAllCreateAria",
+  },
+  view: {
+    label: "roles.permissions.selectAllView",
+    aria: "roles.permissions.selectAllViewAria",
+  },
+  delete: {
+    label: "roles.permissions.selectAllDelete",
+    aria: "roles.permissions.selectAllDeleteAria",
+  },
+  print: {
+    label: "roles.permissions.selectAllPrint",
+    aria: "roles.permissions.selectAllPrintAria",
+  },
+};
 
 type RolePermissionsEditorProps = {
   permissions: RolePermissionFormValues[];
@@ -110,6 +137,15 @@ export function RolePermissionsEditor({
   const allSelected =
     filteredCatalog.length > 0 && filteredCatalog.every((entry) => isEntryAssigned(entry));
 
+  const selectedEntries = useMemo(
+    () => catalog.filter((entry) => assignedIds.has(entry.id) || assignedValues.has(entry.value)),
+    [assignedIds, assignedValues, catalog],
+  );
+  const selectedGroups = useMemo(
+    () => getPermissionCatalogGroups(selectedEntries),
+    [selectedEntries],
+  );
+
   function toggleGroup(group: string) {
     setExpandedGroups((current) => {
       const next = new Set(current);
@@ -152,23 +188,83 @@ export function RolePermissionsEditor({
         </div>
       ) : null}
 
-      {!readOnly && catalogGroups.length > 0 ? (
-        <label
-          htmlFor="permission-select-all"
-          className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-dashed px-4 py-2.5 transition-colors hover:bg-muted/30"
-        >
-          <span className="text-sm font-medium">
-            {normalizedSearch
-              ? t("roles.permissions.selectAllMatching")
-              : t("roles.permissions.selectAll")}
-          </span>
-          <Switch
-            id="permission-select-all"
-            checked={allSelected}
-            onCheckedChange={(checked) => setEntriesAssigned(filteredCatalog, checked)}
-            aria-label={t("roles.permissions.selectAllAria")}
-          />
-        </label>
+      {!readOnly ? (
+        <div className="space-y-2">
+          {selectedEntries.length > 0 ? (
+            <div className="overflow-hidden rounded-xl border">
+              <div className="bg-muted/40 px-4 py-2.5">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t("roles.permissions.checkedTitle")}
+                </h4>
+              </div>
+              <div className="max-h-56 divide-y overflow-y-auto">
+                {selectedGroups.map((group) => {
+                  const groupEntries = getPermissionsByGroup(group, selectedEntries);
+                  return (
+                    <div key={group} className="px-4 py-3">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {group}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {groupEntries.map((entry) => (
+                          <Badge key={entry.value} variant="secondary" className="gap-1 pr-1">
+                            {entry.label}
+                            <button
+                              type="button"
+                              className="rounded-sm p-0.5 hover:bg-muted"
+                              onClick={() => togglePermission(entry, false)}
+                              aria-label={t("roles.permissions.removeAria", { label: entry.label })}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {catalogGroups.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={allSelected ? "secondary" : "outline"}
+                aria-pressed={allSelected}
+                aria-label={
+                  normalizedSearch
+                    ? t("roles.permissions.selectAllMatching")
+                    : t("roles.permissions.selectAllAria")
+                }
+                onClick={() => setEntriesAssigned(filteredCatalog, !allSelected)}
+              >
+                {t("roles.permissions.selectAll")}
+              </Button>
+              {PERMISSION_BULK_ACTIONS.map((action) => {
+                const entries = getPermissionsByAction(action, filteredCatalog);
+                if (entries.length === 0) return null;
+                const allActionSelected = entries.every((entry) => isEntryAssigned(entry));
+                const keys = BULK_ACTION_LABEL_KEYS[action];
+                return (
+                  <Button
+                    key={action}
+                    type="button"
+                    size="sm"
+                    variant={allActionSelected ? "secondary" : "outline"}
+                    aria-pressed={allActionSelected}
+                    aria-label={t(keys.aria)}
+                    onClick={() => setEntriesAssigned(entries, !allActionSelected)}
+                  >
+                    {t(keys.label)}
+                  </Button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="overflow-hidden rounded-xl border">

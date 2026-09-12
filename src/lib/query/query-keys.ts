@@ -12,8 +12,12 @@ import type { RouteListParams, RouteSearchFilter } from "@/lib/route-manager/typ
 import type { CustomerListParams, CustomerSearchFilter } from "@/lib/customers/types";
 import type { MemoPadListParams, MemoPadSearchFilter } from "@/lib/memo-pads/types";
 import type { EmployeeListParams, EmployeeSearchFilter } from "@/lib/employees/types";
+import type { CheckListParams } from "@/lib/accounting/checks/types";
+import type { LoanListParams } from "@/lib/accounting/loans/types";
 import type { OrderListParams, OrderSearchFilter } from "@/lib/orders/types";
 import type { RoleListParams, RoleSearchFilter } from "@/lib/roles/types";
+import type { InventoryListParams } from "@/lib/inventory/types/list";
+import type { UserActivityListParams } from "@/lib/user-activities/types";
 import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOperator } from "@/lib/users/types";
 
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
@@ -21,6 +25,19 @@ type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId
 export const queryKeys = {
   api: {
     health: () => ["api", "health"] as const,
+  },
+  dashboard: {
+    all: ["dashboard"] as const,
+  },
+  insights: {
+    all: ["insights"] as const,
+    kpis: (period: string) => [...queryKeys.insights.all, "kpis", period] as const,
+    histogram: (resource: "appointments" | "clients" | "invoices") =>
+      [...queryKeys.insights.all, "histogram", resource] as const,
+  },
+  reports: {
+    all: ["reports"] as const,
+    definitions: () => [...queryKeys.reports.all, "definitions"] as const,
   },
   permissions: {
     all: ["permissions"] as const,
@@ -77,6 +94,32 @@ export const queryKeys = {
       [...queryKeys.pickupRouteSchedules.all, "detail", date] as const,
     byId: (recordId: string) =>
       [...queryKeys.pickupRouteSchedules.all, "by-id", recordId] as const,
+    byCrewAndDate: (routeRecordId: string, date: string, vehicleId?: string) =>
+      [
+        ...queryKeys.pickupRouteSchedules.all,
+        "by-crew-date",
+        routeRecordId,
+        date,
+        vehicleId?.trim() || "none",
+      ] as const,
+    byGroupAndDate: (routeRecordId: string, date: string, vehicleId?: string) =>
+      [
+        ...queryKeys.pickupRouteSchedules.all,
+        "by-crew-date",
+        routeRecordId,
+        date,
+        vehicleId?.trim() || "none",
+      ] as const,
+  },
+  dailyRouteSchedules: {
+    all: ["daily-routes"] as const,
+    lists: () => [...queryKeys.dailyRouteSchedules.all, "list"] as const,
+    list: (params: ActiveRouteListParams) =>
+      [...queryKeys.dailyRouteSchedules.lists(), params] as const,
+    detail: (date: string) =>
+      [...queryKeys.dailyRouteSchedules.all, "detail", date] as const,
+    byId: (recordId: string) =>
+      [...queryKeys.dailyRouteSchedules.all, "by-id", recordId] as const,
   },
   deliveryRouteSchedules: {
     all: ["delivery-routes"] as const,
@@ -92,6 +135,14 @@ export const queryKeys = {
       ] as const,
     byId: (recordId: string) =>
       [...queryKeys.deliveryRouteSchedules.all, "by-id", recordId] as const,
+    byCrewAndDate: (routeRecordId: string, date: string, containerId?: number) =>
+      [
+        ...queryKeys.deliveryRouteSchedules.all,
+        "by-crew-date",
+        routeRecordId,
+        date,
+        containerId ?? "none",
+      ] as const,
   },
   barcodes: {
     all: ["barcodes"] as const,
@@ -101,6 +152,7 @@ export const queryKeys = {
       [...queryKeys.barcodes.all, "search", search, limit] as const,
     stats: (scope: "all" | "kpis") => [...queryKeys.barcodes.all, "stats", scope] as const,
     detail: (barcodeId: number) => [...queryKeys.barcodes.all, "detail", barcodeId] as const,
+    statusOptions: () => [...queryKeys.barcodes.all, "status-options"] as const,
   },
   containers: {
     all: ["containers"] as const,
@@ -108,7 +160,10 @@ export const queryKeys = {
     list: (params: ContainerListParams) => [...queryKeys.containers.lists(), params] as const,
     search: (search: ContainerSearchFilter | undefined, limit: number) =>
       [...queryKeys.containers.all, "search", search, limit] as const,
-    stats: (scope: "all" | "kpis") => [...queryKeys.containers.all, "stats", scope] as const,
+    stats: (scope: "all" | "kpis" | "departed" | "average-value", period?: string) =>
+      period
+        ? ([...queryKeys.containers.all, "stats", scope, period] as const)
+        : ([...queryKeys.containers.all, "stats", scope] as const),
     detail: (containerId: number) => [...queryKeys.containers.all, "detail", containerId] as const,
   },
   invoices: {
@@ -117,9 +172,16 @@ export const queryKeys = {
     list: (params: InvoiceListParams) => [...queryKeys.invoices.lists(), params] as const,
     search: (search: InvoiceSearchFilter | undefined, limit: number) =>
       [...queryKeys.invoices.all, "search", search, limit] as const,
-    stats: (scope: "outstanding" | "outstanding-balance") =>
-      [...queryKeys.invoices.all, "stats", scope] as const,
+    stats: (
+      scope: "outstanding" | "outstanding-balance" | "new" | "new-previous",
+      period?: string,
+    ) =>
+      period
+        ? ([...queryKeys.invoices.all, "stats", scope, period] as const)
+        : ([...queryKeys.invoices.all, "stats", scope] as const),
     detail: (invoiceId: string) => [...queryKeys.invoices.all, "detail", invoiceId] as const,
+    journals: (invoiceId: string, invoiceNumber?: string) =>
+      [...queryKeys.invoices.all, "journals", invoiceId, invoiceNumber ?? ""] as const,
   },
   accounting: {
     all: ["accounting"] as const,
@@ -130,6 +192,13 @@ export const queryKeys = {
     summaryTotals: (incomeStatementId: number) =>
       [...queryKeys.accounting.all, "income-statement-summary-total", incomeStatementId] as const,
     journals: (params: unknown) => [...queryKeys.accounting.all, "journals", params] as const,
+    loans: (params: LoanListParams) => [...queryKeys.accounting.all, "loans", params] as const,
+    loan: (id: string) => [...queryKeys.accounting.all, "loan", id] as const,
+    checks: (params: CheckListParams) => [...queryKeys.accounting.all, "checks", params] as const,
+    check: (id: string) => [...queryKeys.accounting.all, "check", id] as const,
+    checksOutstanding: () => [...queryKeys.accounting.all, "checks-outstanding"] as const,
+    loanTransactions: (id: string) =>
+      [...queryKeys.accounting.all, "loan-transactions", id] as const,
     invoiceRegistration: (invoiceNumber: string) =>
       [...queryKeys.accounting.all, "invoice-registration", invoiceNumber] as const,
     journalById: (id: string) => [...queryKeys.accounting.all, "journal", id] as const,
@@ -161,10 +230,14 @@ export const queryKeys = {
         | "pending-pickups"
         | "pending-takes"
         | "pending-estimates"
-        | "pending-payments",
-      branchId?: number,
+        | "pending-payments"
+        | "new"
+        | "new-previous",
+      period?: string,
     ) =>
-      [...queryKeys.orders.all, "stats", scope, branchId] as const,
+      period
+        ? ([...queryKeys.orders.all, "stats", scope, period] as const)
+        : ([...queryKeys.orders.all, "stats", scope] as const),
     detail: (orderId: string) => [...queryKeys.orders.all, "detail", orderId] as const,
   },
   items: {
@@ -185,8 +258,13 @@ export const queryKeys = {
       limit: number,
       scope: { customerType?: number | "all"; orFields?: readonly string[] } = {},
     ) => [...queryKeys.customers.all, "search", search, limit, scope] as const,
-    stats: (scope: "all" | "active" | "inactive" | "senders" | "receivers") =>
-      [...queryKeys.customers.all, "stats", scope] as const,
+    stats: (
+      scope: "all" | "active" | "inactive" | "senders" | "receivers" | "new" | "new-previous",
+      period?: string,
+    ) =>
+      period
+        ? ([...queryKeys.customers.all, "stats", scope, period] as const)
+        : ([...queryKeys.customers.all, "stats", scope] as const),
     detail: (customerId: string) => [...queryKeys.customers.all, "detail", customerId] as const,
     autocomplete: (query: string, customerType: "sender" | "receiver", limit: number) =>
       [...queryKeys.customers.all, "autocomplete", query, customerType, limit] as const,
@@ -211,6 +289,11 @@ export const queryKeys = {
     detail: (userId: string) => [...queryKeys.users.all, "detail", userId] as const,
     current: () => [...queryKeys.users.all, "current"] as const,
   },
+  userActivities: {
+    all: ["user-activities"] as const,
+    lists: () => [...queryKeys.userActivities.all, "list"] as const,
+    list: (params: UserActivityListParams) => [...queryKeys.userActivities.lists(), params] as const,
+  },
   filterPresets: {
     all: ["filter-presets"] as const,
     lists: () => [...queryKeys.filterPresets.all, "list"] as const,
@@ -228,18 +311,22 @@ export const queryKeys = {
   inventory: {
     all: ["inventory"] as const,
     snapshot: () => [...queryKeys.inventory.all, "snapshot"] as const,
-    items: () => [...queryKeys.inventory.all, "items"] as const,
+    items: (params?: InventoryListParams) => [...queryKeys.inventory.all, "items", params ?? {}] as const,
+    item: (itemId: string) => [...queryKeys.inventory.all, "item", itemId] as const,
     movements: (itemId?: string) =>
       [...queryKeys.inventory.all, "movements", itemId ?? "all"] as const,
-    receipts: () => [...queryKeys.inventory.all, "receipts"] as const,
-    dispatches: () => [...queryKeys.inventory.all, "dispatches"] as const,
-    recipients: () => [...queryKeys.inventory.all, "recipients"] as const,
+    receipts: (params?: InventoryListParams) =>
+      [...queryKeys.inventory.all, "receipts", params ?? {}] as const,
+    dispatches: (params?: InventoryListParams) =>
+      [...queryKeys.inventory.all, "dispatches", params ?? {}] as const,
+    suppliers: (params?: InventoryListParams) =>
+      [...queryKeys.inventory.all, "suppliers", params ?? {}] as const,
     stock: (itemId: string) => [...queryKeys.inventory.all, "stock", itemId] as const,
   },
 } as const;
 
-export function getScheduledRouteQueryKeys(routeType: RouteType) {
-  return routeType === "delivery"
-    ? queryKeys.deliveryRouteSchedules
-    : queryKeys.pickupRouteSchedules;
+export function getScheduledRouteQueryKeys(routeType?: RouteType) {
+  if (routeType === "delivery") return queryKeys.deliveryRouteSchedules;
+  if (routeType === "pickup") return queryKeys.pickupRouteSchedules;
+  return queryKeys.dailyRouteSchedules;
 }

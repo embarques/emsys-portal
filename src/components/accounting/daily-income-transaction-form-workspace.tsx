@@ -16,10 +16,11 @@ import {
   useIncomeStatementById,
   useUpdateDailyIncomeJournal,
 } from "@/lib/accounting/daily-income/hooks";
-import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
+import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import type { DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
+import { useDailyRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import {
   useUpdateWorkspaceTabLabel,
   useWorkspaceTabs,
@@ -46,6 +47,8 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
     () => (employeesQuery.data?.items ?? []).filter((employee) => employee.active),
     [employeesQuery.data?.items],
   );
+  const dailyRoutesQuery = useDailyRoutePicker(200);
+  const dailyRoutes = dailyRoutesQuery.data?.items ?? [];
   const invoicesQuery = useInvoices({ page: 1, limit: 200, sort: "number:desc" });
   const accountsQuery = useChartAccounts({ page: 1, limit: 500 }, true);
   const bankAccountsQuery = useChartAccounts({ page: 1, limit: 500, type: "BANK" }, true);
@@ -55,7 +58,10 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
 
   const statement = statementQuery.data ?? null;
   const editingJournal = journalQuery.data ?? null;
-  const initialValues = isEditing && editingJournal ? journalToFormValues(editingJournal) : undefined;
+  const initialValues = useMemo(
+    () => (isEditing && editingJournal ? journalToFormValues(editingJournal) : undefined),
+    [editingJournal, isEditing],
+  );
   const typeLabel = initialValues ? transactionTypeLabel(initialValues.transactionType, t) : null;
   const isSubmitting = createJournal.isPending || updateJournal.isPending;
 
@@ -84,14 +90,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
       }
 
       await createJournal.mutateAsync({ statement, values });
-
-      if (values.transactionType === "INITIAL-PAYMENT") {
-        const invoiceNumber = values.invoiceNumber?.trim() || "invoice";
-        notifySuccess(t("accounting.dailyIncome.toasts.invoiceRegistered", { invoiceNumber }));
-        return;
-      }
-
-      notifySuccess(t("accounting.dailyIncome.toasts.transactionCreated"));
+      notifySuccess(journalCreatedToastMessage(values, t));
     } catch (error) {
       const message = normalizeApiError(error).message;
       setFormError(message);
@@ -174,6 +173,8 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
           mode="edit"
           initialValues={initialValues}
           employees={employees}
+          dailyRoutes={dailyRoutes}
+          statementDate={statement.date}
           accounts={accountsQuery.data?.items ?? []}
           bankAccounts={bankAccountsQuery.data?.items ?? []}
           invoices={invoicesQuery.data?.items ?? []}
@@ -189,6 +190,8 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
           open
           mode="add"
           employees={employees}
+          dailyRoutes={dailyRoutes}
+          statementDate={statement.date}
           accounts={accountsQuery.data?.items ?? []}
           bankAccounts={bankAccountsQuery.data?.items ?? []}
           invoices={invoicesQuery.data?.items ?? []}

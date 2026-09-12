@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { InvoiceViewCollapsibleSection } from "@/components/invoices/invoice-view-collapsible-section";
 import { InvoiceViewField, InvoiceViewListItem } from "@/components/invoices/invoice-view-field";
-import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { formatInvoiceCommentDateTime } from "@/lib/invoices/display";
 import type { InvoiceComment } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
@@ -79,7 +78,7 @@ export function InvoiceCommentsSection({ comments, onAddComment }: InvoiceCommen
               />
               <InvoiceViewField
                 label={t("invoices.view.comments.fields.createdBy")}
-                value={comment.createdBy || DEFAULT_CREATED_BY}
+                value={comment.createdBy || undefined}
               />
             </InvoiceViewListItem>
           ))}

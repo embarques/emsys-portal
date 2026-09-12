@@ -11,7 +11,7 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCreateRole,
-  useRoleKpis,
+  useRole,
   useRolePermissionCatalog,
   useUpdateRole,
 } from "@/lib/roles/hooks/use-roles";
@@ -38,32 +38,26 @@ export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
   const permissionCatalogQuery = useRolePermissionCatalog();
-  // Roles has no get-by-id; the KPI query loads the full role set (with permissions).
-  const kpiQuery = useRoleKpis();
+  const detailQuery = useRole(isEditing ? (entityId ?? null) : null);
 
   const [formError, setFormError] = useState<string | null>(null);
   const [formInstance, setFormInstance] = useState(0);
 
-  const editing = useMemo(
-    () => (isEditing ? (kpiQuery.items.find((role) => role.roleId === entityId) ?? null) : null),
-    [entityId, isEditing, kpiQuery.items],
-  );
+  const editing = isEditing ? (detailQuery.data ?? null) : null;
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const assignedPermissionCatalog = useMemo(() => {
-    const entries = kpiQuery.items.flatMap((role) =>
-      role.permissions
-        .filter((permission) => permission.group)
-        .map((permission) => ({
-          id: permission.id,
-          value: permission.value,
-          label: permission.label ?? permission.value,
-          group: permission.group!,
-        })),
-    );
+    if (!editing) return [];
 
-    return Array.from(new Map(entries.map((entry) => [entry.id, entry])).values());
-  }, [kpiQuery.items]);
+    return editing.permissions
+      .filter((permission) => permission.group)
+      .map((permission) => ({
+        id: permission.id,
+        value: permission.value,
+        label: permission.label ?? permission.value,
+        group: permission.group!,
+      }));
+  }, [editing]);
 
   const basePermissionCatalog = useMemo(() => {
     if (permissionCatalogQuery.data) return permissionCatalogQuery.data;
@@ -107,7 +101,7 @@ export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
     }
   }
 
-  if (isEditing && kpiQuery.isLoading) {
+  if (isEditing && detailQuery.isLoading) {
     return (
       <FormTabShell title={t("roles.form.editTitle")}>
         <div className="flex flex-1 items-center justify-center gap-2 px-5 py-16 text-sm text-muted-foreground">
@@ -118,8 +112,10 @@ export function RoleFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostPr
     );
   }
 
-  if (isEditing && (kpiQuery.isError || !editing)) {
-    const message = kpiQuery.isError ? t("roles.form.loadError") : t("roles.form.notFound");
+  if (isEditing && (detailQuery.isError || !editing)) {
+    const message = detailQuery.isError
+      ? normalizeApiError(detailQuery.error).message
+      : t("roles.form.notFound");
     return (
       <FormTabShell title={t("roles.form.editTitle")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-16 text-center">

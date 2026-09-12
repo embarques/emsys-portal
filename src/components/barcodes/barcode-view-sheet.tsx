@@ -5,7 +5,6 @@ import { ScanBarcode } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
-  RecordViewSheetActions,
   RecordViewSheetBody,
   RecordViewSheetContent,
   RecordViewSheetDetailRow,
@@ -14,12 +13,9 @@ import {
 } from "@/components/app-shell/record-view-sheet";
 import {
   formatBarcodeContainer,
-  formatBarcodeDelivery,
   formatBarcodeDeliveryRoute,
   formatBarcodeId,
-  formatBarcodeScanDate,
   formatBarcodeStatus,
-  formatBarcodeTripNumber,
   getBarcodeStatusBadgeClass,
 } from "@/lib/barcodes/display";
 import { formatAuditDateTime } from "@/lib/audit/display";
@@ -30,18 +26,10 @@ type BarcodeViewSheetProps = {
   barcode: Barcode | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (barcode: Barcode) => void;
-  onDelete: (barcode: Barcode) => void;
 };
 
-export function BarcodeViewSheet({
-  barcode,
-  open,
-  onOpenChange,
-  onEdit,
-  onDelete,
-}: BarcodeViewSheetProps) {
-  const { t, locale } = useTranslation();
+export function BarcodeViewSheet({ barcode, open, onOpenChange }: BarcodeViewSheetProps) {
+  const { t } = useTranslation();
 
   if (!barcode) return null;
 
@@ -69,6 +57,14 @@ export function BarcodeViewSheet({
               value={formatBarcodeId(barcode.id)}
             />
             <RecordViewSheetDetailRow
+              label={t("barcodes.columns.invoice")}
+              value={barcode.invoiceNumber?.trim() || dash}
+            />
+            <RecordViewSheetDetailRow
+              label={t("barcodes.columns.description")}
+              value={barcode.description?.trim() || dash}
+            />
+            <RecordViewSheetDetailRow
               label={t("barcodes.columns.status")}
               value={formatBarcodeStatus(barcode.status, t)}
             />
@@ -77,55 +73,31 @@ export function BarcodeViewSheet({
               value={formatBarcodeContainer(barcode.container, t)}
             />
             <RecordViewSheetDetailRow
-              label={t("barcodes.columns.deliveryRoute")}
+              label={t("barcodes.columns.route")}
               value={formatBarcodeDeliveryRoute(barcode.route, t)}
             />
-            <RecordViewSheetDetailRow
-              label={t("barcodes.columns.tripNumber")}
-              value={formatBarcodeTripNumber(barcode.tripNumber, t)}
-            />
-            <RecordViewSheetDetailRow
-              label={t("barcodes.columns.delivery")}
-              value={formatBarcodeDelivery(barcode.delivery, t)}
-            />
-            <RecordViewSheetDetailRow
-              label={t("barcodes.columns.scanDate")}
-              value={formatBarcodeScanDate(barcode.scanDate, locale)}
-            />
-            {barcode.status?.prevStatus ? (
-              <RecordViewSheetDetailRow
-                label={t("barcodes.view.previousStatus")}
-                value={formatBarcodeStatus({ name: barcode.status.prevStatus }, t)}
-              />
-            ) : null}
+            <p className="pt-2 text-xs text-muted-foreground">{t("barcodes.view.manageViaInvoice")}</p>
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("barcodes.view.sections.audit")}>
             <RecordViewSheetDetailRow
-              label={t("common.audit.dateCreated")}
-              value={barcode.createdAt ? formatAuditDateTime(barcode.createdAt) : dash}
+              label={t("common.audit.createdAt")}
+              value={formatAuditDateTime(barcode.createdAt ?? "") || dash}
             />
             <RecordViewSheetDetailRow
               label={t("common.audit.createdBy")}
-              value={barcode.createdBy || dash}
+              value={barcode.createdBy?.trim() || dash}
             />
             <RecordViewSheetDetailRow
-              label={t("common.audit.dateModified")}
-              value={barcode.updatedAt ? formatAuditDateTime(barcode.updatedAt) : dash}
+              label={t("common.audit.updatedAt")}
+              value={formatAuditDateTime(barcode.updatedAt ?? "") || dash}
             />
             <RecordViewSheetDetailRow
               label={t("common.audit.updatedBy")}
-              value={barcode.updatedBy || dash}
+              value={barcode.updatedBy?.trim() || dash}
             />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
-
-        <RecordViewSheetActions
-          editLabel={t("barcodes.actions.edit")}
-          deleteLabel={t("common.actions.delete")}
-          onEdit={() => onEdit(barcode)}
-          onDelete={() => onDelete(barcode)}
-        />
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

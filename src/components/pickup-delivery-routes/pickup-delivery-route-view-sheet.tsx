@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import {
   RecordViewSheet,
   RecordViewSheetActions,
@@ -21,9 +20,10 @@ import {
   formatActiveRouteRateLabel,
   formatActiveRouteRowLabel,
   formatActiveRouteTypeLabel,
+  formatActiveRouteVehicleLabel,
 } from "@/lib/pickup-delivery-routes/display";
 import type { ActiveRoutesDirectoryVariant } from "@/lib/pickup-delivery-routes/directory-variant";
-import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
+import { isDeliveryBranchCode, type ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { formatRouteDate, truncateObjectId } from "@/lib/route-manager/display";
 
 type ActiveRouteViewSheetProps = {
@@ -66,6 +66,8 @@ export function ActiveRouteViewSheet({
   if (!record) return null;
 
   const title = formatActiveRouteRowLabel(record, dash, t);
+  const showDeliveryFields =
+    record.routeType === "delivery" || isDeliveryBranchCode(record.branch?.code);
 
   return (
     <RecordViewSheet open={open} onOpenChange={onOpenChange}>
@@ -76,11 +78,6 @@ export function ActiveRouteViewSheet({
             record.route.name ? (
               <span className="text-sm text-muted-foreground">{record.route.name}</span>
             ) : undefined
-          }
-          meta={
-            <Badge variant={record.active ? "default" : "secondary"}>
-              {record.active ? t("routes.activeRoute.active") : t("routes.activeRoute.inactive")}
-            </Badge>
           }
         />
 
@@ -106,7 +103,7 @@ export function ActiveRouteViewSheet({
               label={t("routes.viewSheet.recordId")}
               value={truncateObjectId(record.id)}
             />
-            {variant.showContainerField ? (
+            {variant.showContainerField && showDeliveryFields ? (
               <RecordViewSheetDetailRow
                 label={t("routes.columns.container")}
                 value={formatActiveRouteContainerLabel(record, dash)}
@@ -117,10 +114,14 @@ export function ActiveRouteViewSheet({
               value={record.branch?.code || dash}
             />
             <RecordViewSheetDetailRow
+              label={t("routes.columns.vehicle")}
+              value={formatActiveRouteVehicleLabel(record, dash)}
+            />
+            <RecordViewSheetDetailRow
               label={t("routes.columns.route")}
               value={record.route.name || dash}
             />
-            {record.routeType === "delivery" ? (
+            {showDeliveryFields ? (
               <RecordViewSheetDetailRow
                 label={t("routes.columns.rate")}
                 value={formatActiveRouteRateLabel(record, dash)}

@@ -14,7 +14,7 @@ import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { useUserError } from "@/lib/errors";
 import { useApplyBarcodeScan, useApplyBarcodeScanBulk } from "@/lib/labels/hooks/use-label-updater";
 import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
-import { BARCODE_STATUS_OPTIONS, type LabelUpdateResult } from "@/lib/labels/types";
+import { FALLBACK_BARCODE_STATUS_OPTIONS, type LabelUpdateResult } from "@/lib/labels/types";
 import { useTranslation } from "@/lib/i18n";
 import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
@@ -25,7 +25,8 @@ function ResultCell({ value }: { value?: string | number }) {
   return <span>{value}</span>;
 }
 
-const DEFAULT_SCAN_STATUS_ID = BARCODE_STATUS_OPTIONS.find((entry) => entry.name === "IN TRANSIT")?.id ?? 3;
+const FALLBACK_SCAN_STATUS_ID =
+  FALLBACK_BARCODE_STATUS_OPTIONS.find((entry) => entry.name === "EN TRANSITO")?.id ?? 3;
 
 export function LabelUpdaterWorkspace() {
   const { t } = useTranslation();
@@ -42,7 +43,7 @@ export function LabelUpdaterWorkspace() {
   const [changeStatus, setChangeStatus] = useState(true);
   const [changeContainer, setChangeContainer] = useState(false);
   const [changeRoute, setChangeRoute] = useState(false);
-  const [newStatusId, setNewStatusId] = useState(String(DEFAULT_SCAN_STATUS_ID));
+  const [newStatusId, setNewStatusId] = useState(String(FALLBACK_SCAN_STATUS_ID));
   const [newContainerId, setNewContainerId] = useState("");
   const [newRouteRecordId, setNewRouteRecordId] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -80,6 +81,15 @@ export function LabelUpdaterWorkspace() {
     }
   }, [routes, newRouteRecordId]);
 
+  useEffect(() => {
+    if (barcodeStatusOptions.some((entry) => String(entry.id) === newStatusId)) return;
+    const inTransit = barcodeStatusOptions.find((entry) => {
+      const name = entry.name.toUpperCase();
+      return name === "EN TRANSITO" || name === "IN TRANSIT";
+    });
+    setNewStatusId(String(inTransit?.id ?? barcodeStatusOptions[0]?.id ?? FALLBACK_SCAN_STATUS_ID));
+  }, [barcodeStatusOptions, newStatusId]);
+
   function focusBarcodeInput() {
     requestAnimationFrame(() => barcodeInputRef.current?.focus());
   }
@@ -102,6 +112,7 @@ export function LabelUpdaterWorkspace() {
       newContainerId: changeContainer ? newContainerId : undefined,
       changeRoute,
       newRouteRecordId: changeRoute ? newRouteRecordId : undefined,
+      statusOptions: barcodeStatusOptions,
       resolveRouteLabel,
       resolveContainerLabel,
     };
@@ -109,9 +120,12 @@ export function LabelUpdaterWorkspace() {
 
   async function submitBarcode(rawBarcode: string) {
     const barcode = rawBarcode.trim();
-    if (!barcode || isSubmitting) return;
+    if (!barcode) return;
 
     setFormError(null);
+    // Clear immediately so the next scan/Enter is not blocked by in-flight state.
+    setBarcodeInput("");
+    focusBarcodeInput();
 
     try {
       const result = await applyScanMutation.mutateAsync({
@@ -119,7 +133,6 @@ export function LabelUpdaterWorkspace() {
         options: buildScannerOptions(),
       });
       setResults((current) => [result, ...current]);
-      setBarcodeInput("");
       focusBarcodeInput();
     } catch (error) {
       setFormError(toErrorMessage(error));
@@ -130,7 +143,8 @@ export function LabelUpdaterWorkspace() {
   function handleBarcodeKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter") return;
     event.preventDefault();
-    void submitBarcode(barcodeInput);
+    // Read from the DOM value — scanner wedges fire Enter before React state catches up.
+    void submitBarcode(event.currentTarget.value);
   }
 
   async function applyBulkBarcodes() {
@@ -321,7 +335,6 @@ export function LabelUpdaterWorkspace() {
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.newContainer")}</th>
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.prevRoute")}</th>
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.newRoute")}</th>
-                    <th className="px-3 py-2 font-medium">{t("labels.updater.columns.labels")}</th>
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.dateCreated")}</th>
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.userCreated")}</th>
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.dateModified")}</th>
@@ -361,9 +374,6 @@ export function LabelUpdaterWorkspace() {
                       </td>
                       <td className="px-3 py-2">
                         <ResultCell value={result.newRoute} />
-                      </td>
-                      <td className="px-3 py-2">
-                        <ResultCell value={result.totalLabels} />
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">
                         <ResultCell value={result.dateTime} />
