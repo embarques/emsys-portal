@@ -302,7 +302,6 @@ export function InvoiceEditWizard({
   const invoiceQuery = useInvoice(invoiceId);
   const ensureCustomerDetail = useEnsureCustomerDetail();
   const [initialValues, setInitialValues] = useState<InvoiceFormValues | null>(null);
-  const [isHydratingParties, setIsHydratingParties] = useState(false);
   const [pendingValues, setPendingValues] = useState<InvoiceFormValues | null>(null);
   const [pendingPlan, setPendingPlan] = useState<InvoiceBarcodeSyncPlan | null>(null);
   const [decreaseOpen, setDecreaseOpen] = useState(false);
@@ -311,21 +310,22 @@ export function InvoiceEditWizard({
   useEffect(() => {
     if (!invoiceQuery.data) {
       setInitialValues(null);
-      setIsHydratingParties(false);
       return;
     }
 
     let cancelled = false;
     const base = invoiceToFormValues(invoiceQuery.data);
-    setIsHydratingParties(true);
 
     void hydrateInvoiceEditPartyCustomers(base, (customerId) =>
       ensureCustomerDetail(customerId, { staleTime: 0 }),
-    ).then((hydrated) => {
-      if (cancelled) return;
-      setInitialValues(hydrated);
-      setIsHydratingParties(false);
-    });
+    )
+      .then((hydrated) => {
+        if (!cancelled) setInitialValues(hydrated);
+      })
+      .catch(() => {
+        // Fall back to the invoice snapshot if live customer loads fail.
+        if (!cancelled) setInitialValues(base);
+      });
 
     return () => {
       cancelled = true;
@@ -415,7 +415,7 @@ export function InvoiceEditWizard({
     }
   }
 
-  if (invoiceQuery.isLoading || isHydratingParties || !initialValues) {
+  if (invoiceQuery.isLoading || !initialValues) {
     return (
       <div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
         <Loader2 className="mr-2 size-4 animate-spin" />

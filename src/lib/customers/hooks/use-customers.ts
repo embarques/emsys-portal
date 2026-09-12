@@ -1,6 +1,7 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 import { useWorkspaceTabQueriesEnabled } from "@/lib/layout/workspace-tab-scope";
 
@@ -147,13 +148,16 @@ export function useCustomer(customerId: string | null, enabled = true) {
 export function useEnsureCustomerDetail() {
   const queryClient = useQueryClient();
 
-  return async (customerId: string, options?: { staleTime?: number }) => {
-    return queryClient.fetchQuery({
-      queryKey: queryKeys.customers.detail(customerId),
-      queryFn: () => fetchCustomerById(customerId),
-      staleTime: options?.staleTime ?? 60_000,
-    });
-  };
+  return useCallback(
+    async (customerId: string, options?: { staleTime?: number }) => {
+      return queryClient.fetchQuery({
+        queryKey: queryKeys.customers.detail(customerId),
+        queryFn: () => fetchCustomerById(customerId),
+        staleTime: options?.staleTime ?? 60_000,
+      });
+    },
+    [queryClient],
+  );
 }
 
 export function useCustomerDetailsBatch(customerIds: string[], enabled = true) {
