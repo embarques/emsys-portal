@@ -323,7 +323,7 @@ export function LabelUpdaterWorkspace() {
             <p className="text-sm text-muted-foreground">{t("labels.updater.results.empty")}</p>
           ) : (
             <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[1200px] text-left text-sm">
+              <table className="w-full min-w-[1100px] text-left text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.barcode")}</th>
@@ -335,9 +335,8 @@ export function LabelUpdaterWorkspace() {
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.newContainer")}</th>
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.prevRoute")}</th>
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.newRoute")}</th>
-                    <th className="px-3 py-2 font-medium">{t("labels.updater.columns.dateCreated")}</th>
-                    <th className="px-3 py-2 font-medium">{t("labels.updater.columns.userCreated")}</th>
-                    <th className="px-3 py-2 font-medium">{t("labels.updater.columns.dateModified")}</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.updater.columns.updatedAt")}</th>
+                    <th className="px-3 py-2 font-medium">{t("labels.updater.columns.updatedBy")}</th>
                     <th className="px-3 py-2 font-medium">{t("labels.updater.columns.message")}</th>
                   </tr>
                 </thead>
@@ -381,7 +380,6 @@ export function LabelUpdaterWorkspace() {
                       <td className="px-3 py-2">
                         <ResultCell value={result.createdBy} />
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">—</td>
                       <td className="px-3 py-2">{result.message}</td>
                     </tr>
                   ))}

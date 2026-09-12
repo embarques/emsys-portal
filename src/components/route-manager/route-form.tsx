@@ -15,9 +15,12 @@ import {
   buildFormBranchOptions,
   findBranchByCodeOrId,
   resolveUserBranchRef,
+  type BranchRef,
 } from "@/lib/branches/user-branch";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
+
+const EMPTY_BRANCHES: BranchRef[] = [];
 
 type RouteFormProps = {
   initialValues?: RouteFormValues;
@@ -45,7 +48,7 @@ export function RouteForm({
   const [employeeError, setEmployeeError] = useState<string | null>(null);
   const branchCode = values.branch.code.trim();
   const branchesQuery = useBranchPicker(200);
-  const branches = useMemo(() => branchesQuery.data?.items ?? [], [branchesQuery.data?.items]);
+  const branches = branchesQuery.data?.items ?? EMPTY_BRANCHES;
   const currentUserQuery = useCurrentUser();
   const handleEnterNavigation = useFormEnterNavigation();
 
@@ -60,7 +63,11 @@ export function RouteForm({
   useEffect(() => {
     if (!branchCode || branches.length === 0) return;
 
-    const match = findBranchByCodeOrId(branches, values.branch);
+    const match = findBranchByCodeOrId(branches, {
+      id: values.branch.id,
+      code: values.branch.code,
+      name: values.branch.name,
+    });
     if (!match) return;
 
     setValues((current) => {
@@ -78,14 +85,22 @@ export function RouteForm({
         branch: { id: match.id, code: match.code, name },
       };
     });
-  }, [branches, branchCode, values.branch]);
+  }, [branches, branchCode, values.branch.id, values.branch.code, values.branch.name]);
 
   useEffect(() => {
+    // Wait until the branch catalog can resolve a real code to avoid update loops.
     const resolved = resolveUserBranchRef(currentUserQuery.data?.branch, branches);
-    if (!resolved) return;
+    if (!resolved?.code.trim()) return;
 
     setValues((current) => {
       if (current.branch.id > 0 && current.branch.code.trim()) return current;
+      if (
+        current.branch.id === resolved.id &&
+        current.branch.code === resolved.code &&
+        (current.branch.name?.trim() ?? "") === resolved.name
+      ) {
+        return current;
+      }
       return { ...current, branch: resolved };
     });
   }, [branches, currentUserQuery.data?.branch]);

@@ -107,8 +107,8 @@ export function LabelChangeOutputTable({
                 <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.newContainer")}</th>
                 <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.prevRoute")}</th>
                 <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.newRoute")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.dateTime")}</th>
-                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.userCreated")}</th>
+                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.updatedAt")}</th>
+                <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.updatedBy")}</th>
                 <th className="px-3 py-2 font-medium">{t("labels.staging.output.columns.message")}</th>
               </tr>
             </thead>

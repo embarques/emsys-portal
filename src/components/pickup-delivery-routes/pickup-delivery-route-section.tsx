@@ -39,6 +39,7 @@ import {
   buildFormBranchOptions,
   findBranchByCodeOrId,
   resolveUserBranchRef,
+  type BranchRef,
 } from "@/lib/branches/user-branch";
 import { useTranslation } from "@/lib/i18n";
 import { useUserError } from "@/lib/errors/use-user-error";
@@ -69,6 +70,8 @@ import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useAuth } from "@/providers/auth-provider";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 
+const EMPTY_BRANCHES: BranchRef[] = [];
+
 type ActiveRouteSectionProps = {
   initialRecord?: ActiveRoute | null;
   variant?: ActiveRoutesDirectoryVariant;
@@ -93,7 +96,7 @@ export function ActiveRouteSection({
   const containersQuery = useContainerPicker(200);
   const containers = containersQuery.data?.items ?? [];
   const branchesQuery = useBranchPicker(200);
-  const branches = branchesQuery.data?.items ?? [];
+  const branches = branchesQuery.data?.items ?? EMPTY_BRANCHES;
   const currentUserQuery = useCurrentUser();
   const isEditing = Boolean(initialRecord);
 
@@ -132,24 +135,36 @@ export function ActiveRouteSection({
   const previousRoutesQuery = useDailyRoutePicker(200, { enabled: !isEditing });
 
   useEffect(() => {
+    // Wait until the branch catalog can resolve a real code. Applying a
+    // code-less user branch keeps failing the "already set" guard and loops.
     const resolved = resolveUserBranchRef(currentUserQuery.data?.branch, branches);
-    if (!resolved) return;
-    setValues((current) =>
-      current.branch.id > 0 && current.branch.code.trim()
-        ? current
-        : {
-            ...current,
-            branch: resolved,
-            routeType: routeTypeForBranchCode(resolved.code),
-          },
-    );
+    if (!resolved?.code.trim()) return;
+    setValues((current) => {
+      if (current.branch.id > 0 && current.branch.code.trim()) return current;
+      if (
+        current.branch.id === resolved.id &&
+        current.branch.code === resolved.code &&
+        (current.branch.name?.trim() ?? "") === resolved.name
+      ) {
+        return current;
+      }
+      return {
+        ...current,
+        branch: resolved,
+        routeType: routeTypeForBranchCode(resolved.code),
+      };
+    });
   }, [branches, currentUserQuery.data?.branch]);
 
   useEffect(() => {
     const code = values.branch.code.trim();
     if (!code || branches.length === 0) return;
 
-    const match = findBranchByCodeOrId(branches, values.branch);
+    const match = findBranchByCodeOrId(branches, {
+      id: values.branch.id,
+      code: values.branch.code,
+      name: values.branch.name,
+    });
     if (!match) return;
 
     setValues((current) => {
@@ -168,7 +183,7 @@ export function ActiveRouteSection({
         routeType: routeTypeForBranchCode(match.code),
       };
     });
-  }, [branches, values.branch]);
+  }, [branches, values.branch.id, values.branch.code, values.branch.name]);
 
   const upsertMutation = useUpsertActiveRoute();
   const createRouteMutation = useCreateRoute();

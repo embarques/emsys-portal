@@ -83,9 +83,8 @@
       "newContainer": "New container",
       "prevRoute": "Prev route",
       "newRoute": "New route",
-      "dateCreated": "Created at",
-      "userCreated": "User",
-      "dateModified": "Updated at",
+      "updatedAt": "Updated at",
+      "updatedBy": "Updated by",
       "message": "Message"
     },
     "errors": {
@@ -218,8 +217,8 @@
         "newContainer": "New container",
         "prevRoute": "Prev route",
         "newRoute": "New route",
-        "dateTime": "Timestamp",
-        "userCreated": "User",
+        "updatedAt": "Updated at",
+        "updatedBy": "Updated by",
         "message": "Message"
       },
       "successStatus": "Status updated successfully.",

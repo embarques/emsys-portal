@@ -1013,11 +1013,12 @@ export function InvoiceStagingWorkflow({
       size="sm"
       onClick={() => void refreshStagingData()}
       disabled={isRefreshing || isGenerating || isUpdating}
-      aria-label={t("labels.staging.refresh")}
-      title={t("labels.staging.refresh")}
+      aria-label={
+        isRefreshing ? t("labels.staging.refreshing") : t("labels.staging.refresh")
+      }
+      title={isRefreshing ? t("labels.staging.refreshing") : t("labels.staging.refresh")}
     >
       <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-      {isRefreshing ? t("labels.staging.refreshing") : t("labels.staging.refresh")}
     </Button>
   );
 
@@ -1384,13 +1385,13 @@ export function InvoiceStagingWorkflow({
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t("invoices.staging.tableAction")}
               </p>
-              <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+              <h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight">
                 {stagingHeaderTitle}
+                {refreshButton}
               </h1>
               <p className="text-sm text-muted-foreground">{stagingDescription}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {refreshButton}
               {backToLineItemsButton}
               <Button variant="outline" onClick={handleClose}>
                 <ArrowLeft className="h-4 w-4" />
@@ -1416,13 +1417,17 @@ export function InvoiceStagingWorkflow({
           <DialogHeader>
             <div className="flex items-start justify-between gap-4 pr-8">
               <div className="space-y-2">
-                <DialogTitle className="flex items-center gap-2">{stagingHeaderTitle}</DialogTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  <DialogTitle className="flex items-center gap-2">{stagingHeaderTitle}</DialogTitle>
+                  {refreshButton}
+                </div>
                 <DialogDescription>{stagingDescription}</DialogDescription>
               </div>
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                {refreshButton}
-                {backToLineItemsButton}
-              </div>
+              {backToLineItemsButton ? (
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {backToLineItemsButton}
+                </div>
+              ) : null}
             </div>
           </DialogHeader>
 

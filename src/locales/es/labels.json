@@ -83,9 +83,8 @@
       "newContainer": "Nuevo contenedor",
       "prevRoute": "Ruta anterior",
       "newRoute": "Nueva ruta",
-      "dateCreated": "Creado el",
-      "userCreated": "Usuario",
-      "dateModified": "Actualizado el",
+      "updatedAt": "Actualizado el",
+      "updatedBy": "Actualizado por",
       "message": "Mensaje"
     },
     "errors": {
@@ -218,8 +217,8 @@
         "newContainer": "Nuevo contenedor",
         "prevRoute": "Ruta anterior",
         "newRoute": "Nueva ruta",
-        "dateTime": "Marca de tiempo",
-        "userCreated": "Usuario",
+        "updatedAt": "Actualizado el",
+        "updatedBy": "Actualizado por",
         "message": "Mensaje"
       },
       "successStatus": "Estado actualizado correctamente.",

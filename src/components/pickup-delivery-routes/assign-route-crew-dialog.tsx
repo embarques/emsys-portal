@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
-import { findBranchByCodeOrId, resolveUserBranchRef } from "@/lib/branches/user-branch";
+import { findBranchByCodeOrId, resolveUserBranchRef, type BranchRef } from "@/lib/branches/user-branch";
 import { formatContainerLabel, formatContainerRouteNumber } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
 import { useTranslation } from "@/lib/i18n";
@@ -37,6 +37,8 @@ import {
   type ActiveRouteContainerRef,
   type RouteType,
 } from "@/lib/pickup-delivery-routes/types";
+
+const EMPTY_BRANCHES: BranchRef[] = [];
 import {
   formatRouteAssignmentName,
   formatRouteAssignmentOptionLabel,
@@ -134,7 +136,7 @@ export function AssignRouteCrewDialog({
     () => (routesQuery.data?.items ?? []).filter((route) => route.active),
     [routesQuery.data?.items],
   );
-  const branches = branchesQuery.data?.items ?? [];
+  const branches = branchesQuery.data?.items ?? EMPTY_BRANCHES;
   const containers = containersQuery.data?.items ?? [];
   const selectedCrew =
     selectedRouteQuery.data ??
@@ -164,7 +166,7 @@ export function AssignRouteCrewDialog({
   useEffect(() => {
     if (!open || isDelivery) return;
     const resolved = resolveUserBranchRef(currentUserQuery.data?.branch, branches);
-    if (!resolved) return;
+    if (!resolved?.code.trim()) return;
     setBranchCode((current) => current.trim() || resolved.code);
   }, [open, isDelivery, branches, currentUserQuery.data?.branch]);
 
