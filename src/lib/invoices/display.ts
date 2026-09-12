@@ -76,7 +76,7 @@ export function getPaymentMethodLabel(method: InvoicePaymentMethod): string {
 
 export function formatInvoiceTabLabel(invoice: Pick<Invoice, "invoiceNumber">): string {
   const number = invoice.invoiceNumber.trim();
-  return number ? `#${number}` : "Invoice";
+  return number ? number : "Invoice";
 }
 
 export function formatInvoiceDate(date: string): string {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -62,8 +62,12 @@ export function WorkspaceTabOverflowMenu({
                   aria-hidden
                 />
               ) : null}
-              <span className={cn("min-w-0 flex-1 truncate", active && "font-medium")}>
-                <span className="mr-1.5 tabular-nums text-muted-foreground">{tab.number}</span>
+              <span className={cn("flex min-w-0 flex-1 items-center truncate", active && "font-medium")}>
+                {tab.form?.mode === "edit" ? (
+                  <Pencil className="mr-1.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                ) : (
+                  <span className="mr-1.5 tabular-nums text-muted-foreground">{tab.number}</span>
+                )}
                 {displayLabel}
               </span>
               {active ? <Check className="h-4 w-4 shrink-0 opacity-70" /> : null}
