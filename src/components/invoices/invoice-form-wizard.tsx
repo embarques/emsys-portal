@@ -374,6 +374,7 @@ export function InvoiceFormWizard({
     requireDailyIncomeRegistration && dailyIncomeContext.registration
       ? undefined
       : handleDiscountChange;
+  const registeredCost = dailyIncomeContext.registration?.invoice?.cost ?? null;
 
   const stepLabelKey =
     !requireDailyIncomeRegistration && step === 4
@@ -569,6 +570,7 @@ export function InvoiceFormWizard({
             values={values}
             onDiscountChange={summaryDiscountChange}
             showPayment={requireDailyIncomeRegistration}
+            registeredCost={registeredCost}
             className="shrink-0 border-t border-border/70 bg-card px-3 py-2"
           />
         ) : null}
@@ -639,6 +641,7 @@ export function InvoiceFormWizard({
             values={values}
             onDiscountChange={summaryDiscountChange}
             showPayment={requireDailyIncomeRegistration}
+            registeredCost={registeredCost}
           />
         </div>
 
@@ -646,6 +649,7 @@ export function InvoiceFormWizard({
           values={values}
           onDiscountChange={summaryDiscountChange}
           showPayment={requireDailyIncomeRegistration}
+          registeredCost={registeredCost}
         />
       </div>
 

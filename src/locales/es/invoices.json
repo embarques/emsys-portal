@@ -210,6 +210,9 @@
       "removeDiscount": "Quitar descuento",
       "editDiscount": "Editar descuento",
       "payment": "Pago",
+      "registeredCost": "Costo registrado",
+      "registeredCostHint": "Costo de factura publicado en Ingresos diarios (INITIAL-PAYMENT).",
+      "registeredCostMismatch": "El total de artículos {{subtotal}} no coincide con el costo registrado {{registered}}.",
       "balanceDue": "Saldo pendiente",
       "total": "Total",
       "hideDetails": "Ocultar detalles"
@@ -265,6 +268,7 @@
       "incomeStatement": "Ingresos diarios #{{id}}",
       "previouslyRegistered": "Registrado previamente",
       "paymentRecorded": "Pago registrado: {{amount}}",
+      "invoiceCostRegistered": "Costo de factura: {{amount}}",
       "paymentRecordedToast": "Pago de {{amount}} registrado para la factura {{invoiceNumber}}.",
       "checkPaymentRecordedToast": "El cheque {{checkNumber}} quedó pendiente. La factura {{invoiceNumber}} no mostrará este pago hasta que el cheque se marque como cobrado.",
       "reference": "Referencia: {{ref}}",

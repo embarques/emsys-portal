@@ -19,6 +19,8 @@ type Props = {
   className?: string;
   onDiscountChange?: (discount: string) => void;
   showPayment?: boolean;
+  /** Invoice cost posted by INITIAL-PAYMENT on Daily Income, when already registered. */
+  registeredCost?: number | null;
 };
 
 const summaryPanelClassName =
@@ -213,6 +215,7 @@ function InvoiceSummaryCard({
   values,
   onDiscountChange,
   showPayment = false,
+  registeredCost = null,
   defaultExpanded = true,
 }: Props & { defaultExpanded?: boolean }) {
   const { t } = useTranslation();
@@ -222,6 +225,9 @@ function InvoiceSummaryCard({
   const { lineRows, subtotal, discount, amountPaid, balance } = useInvoiceTotals(values);
   const invoiceLabel = values.invoiceNumber.trim() || t("invoices.wizard.summary.newInvoice");
   const showPaidAdjustment = amountPaid > 0;
+  const hasRegisteredCost = registeredCost != null && Number.isFinite(registeredCost);
+  const registeredCostMismatch =
+    hasRegisteredCost && Math.round(Math.abs(subtotal - (registeredCost as number)) * 100) / 100 >= 0.01;
 
   return (
     <div className="space-y-3">
@@ -296,6 +302,25 @@ function InvoiceSummaryCard({
 
             <div className={cn("space-y-3 pt-1", summaryDividerClassName)}>
               <SummaryLineRow label={t("invoices.wizard.summary.subtotal")} value={formatInvoiceMoney(subtotal)} />
+              {hasRegisteredCost ? (
+                <div className="space-y-1">
+                  <SummaryLineRow
+                    label={t("invoices.wizard.summary.registeredCost")}
+                    value={formatInvoiceMoney(registeredCost as number)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("invoices.wizard.summary.registeredCostHint")}
+                  </p>
+                  {registeredCostMismatch ? (
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      {t("invoices.wizard.summary.registeredCostMismatch", {
+                        subtotal: formatInvoiceMoney(subtotal),
+                        registered: formatInvoiceMoney(registeredCost as number),
+                      })}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               <SummaryDiscountControl
                 discountValue={values.discount}
                 discountAmount={discount}
@@ -339,6 +364,7 @@ export function InvoiceWizardSummarySidebar({
   className,
   onDiscountChange,
   showPayment,
+  registeredCost,
 }: Props) {
   return (
     <aside
@@ -352,6 +378,7 @@ export function InvoiceWizardSummarySidebar({
         values={values}
         onDiscountChange={onDiscountChange}
         showPayment={showPayment}
+        registeredCost={registeredCost}
       />
     </aside>
   );
@@ -363,6 +390,7 @@ export function InvoiceWizardSummaryMobileBar({
   className,
   onDiscountChange,
   showPayment,
+  registeredCost,
 }: Props) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
@@ -379,6 +407,7 @@ export function InvoiceWizardSummaryMobileBar({
             values={values}
             onDiscountChange={onDiscountChange}
             showPayment={showPayment}
+            registeredCost={registeredCost}
             defaultExpanded
           />
           <button
