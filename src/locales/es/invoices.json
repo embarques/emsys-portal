@@ -393,6 +393,16 @@
       "referencePlaceholder": "N.º de cheque, ID de transacción, código de confirmación...",
       "checkNumberPlaceholder": "ej. 4521",
       "searchMethods": "Buscar métodos…",
+      "methods": {
+        "cash": "Efectivo",
+        "check": "Cheque",
+        "credit_card": "Tarjeta de crédito",
+        "debit_card": "Tarjeta de débito",
+        "wire_transfer": "Transferencia bancaria",
+        "zelle": "Zelle",
+        "ach": "ACH",
+        "other": "Otro"
+      },
       "fields": {
         "description": "Descripción",
         "amount": "Monto",

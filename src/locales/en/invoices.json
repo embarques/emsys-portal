@@ -393,6 +393,16 @@
       "referencePlaceholder": "Check #, transaction ID, confirmation code...",
       "checkNumberPlaceholder": "e.g. 4521",
       "searchMethods": "Search methods…",
+      "methods": {
+        "cash": "Cash",
+        "check": "Check",
+        "credit_card": "Credit card",
+        "debit_card": "Debit card",
+        "wire_transfer": "Wire transfer",
+        "zelle": "Zelle",
+        "ach": "ACH",
+        "other": "Other"
+      },
       "fields": {
         "description": "Description",
         "amount": "Amount",

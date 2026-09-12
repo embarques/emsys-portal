@@ -3,6 +3,10 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
+import { InvoiceActivitySection } from "@/components/invoices/invoice-activity-section";
+import { InvoiceBarcodeStatusSection } from "@/components/invoices/invoice-barcode-status-section";
+import { InvoiceCommentsSection } from "@/components/invoices/invoice-comments-section";
+import { InvoicePackageTrackerSection } from "@/components/invoices/invoice-package-tracker-section";
 import { InvoicePaymentsSection } from "@/components/invoices/invoice-payments-section";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +20,7 @@ import {
   RecordViewSheetHeader,
   RecordViewSheetSection,
 } from "@/components/app-shell/record-view-sheet";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { formatAddressLine, formatPartyPhoneList } from "@/lib/customers/display";
 import {
   formatInvoiceDate,
@@ -291,7 +296,7 @@ export function InvoiceViewSheet({
   onOpenChange,
   onEdit,
   onDelete,
-  onAddComment: _onAddComment,
+  onAddComment,
   onRecordPayment,
 }: InvoiceViewSheetProps) {
   const { t } = useTranslation();
@@ -332,7 +337,7 @@ export function InvoiceViewSheet({
         />
 
         <RecordViewSheetBody>
-          {/* Mirrors invoice wizard steps 1–4 fields only. */}
+          {/* Creation-workflow fields first (aligned with wizard), then view-only sections. */}
           <RecordViewSheetSection title={t("invoices.form.sections.invoiceDetails")}>
             <RecordViewSheetDetailRow
               label={t("invoices.form.fields.invoiceNumber")}
@@ -361,6 +366,18 @@ export function InvoiceViewSheet({
             <RecordViewSheetDetailRow
               label={t("invoices.form.fields.paymentLocation")}
               value={getPaymentLocationLabel(invoice.paymentLocation)}
+            />
+            <RecordViewSheetDetailRow
+              label={t("invoices.columns.createdBy")}
+              value={invoice.createdBy || empty}
+            />
+            <RecordViewSheetDetailRow
+              label={t("common.audit.createdAt")}
+              value={formatAuditDateTime(invoice.createdAt) || empty}
+            />
+            <RecordViewSheetDetailRow
+              label={t("common.audit.updatedAt")}
+              value={formatAuditDateTime(invoice.updatedAt) || empty}
             />
           </RecordViewSheetSection>
 
@@ -437,10 +454,21 @@ export function InvoiceViewSheet({
             </div>
           </RecordViewSheetSection>
 
+          <InvoiceCommentsSection
+            comments={invoice.comments}
+            onAddComment={(description) => onAddComment(invoice.invoiceId, description)}
+          />
+
           <InvoicePaymentsSection
             invoice={invoice}
             onRecordPayment={(input) => onRecordPayment(invoice.invoiceId, input)}
           />
+
+          <InvoiceBarcodeStatusSection invoice={invoice} />
+
+          <InvoicePackageTrackerSection invoice={invoice} />
+
+          <InvoiceActivitySection invoice={invoice} />
         </RecordViewSheetBody>
 
         <RecordViewSheetActions
