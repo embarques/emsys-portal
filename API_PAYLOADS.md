@@ -518,7 +518,7 @@ At least one of `states`, `cities`, `zipCodes`, `zipRanges` is required.
 
 Same shape. `{id}` = ObjectID hex. Body: `{ "pickupIds": [1, 2, 3] }` assigns pickups to the scheduled route.
 
-To unassign, use `PUT /v1/pickups/{pickupId}` with `"route": null` on each pickup (the API does not support `DELETE` on this path).
+To unassign, prefer `DELETE /v1/pickups/{pickupId}/route` (clears `route` / `routeNumber` without a full pickup rewrite). `PUT /v1/pickups/{pickupId}` with `"route": null` also clears now that updates are JSON merge-aware. `PUT /v1/pickups/route/{id}` is additive only — an empty `pickupIds` list is rejected and does not clear assignments.
 
 ### `GET /v1/pickups/search-by-route`
 

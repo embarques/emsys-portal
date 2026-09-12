@@ -388,7 +388,7 @@ export function useAssignPickupsToRoute() {
   });
 }
 
-/** Unassign pickups from their scheduled route (`PUT /pickups/{id}` with `route: null`). */
+/** Unassign pickups from their scheduled route (`DELETE /pickups/{id}/route`). */
 export function useUnassignPickupsFromRoute() {
   const queryClient = useQueryClient();
 
