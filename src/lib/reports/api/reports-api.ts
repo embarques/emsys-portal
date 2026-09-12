@@ -1,3 +1,5 @@
+import { isAxiosError } from "axios";
+
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { getConfiguredApiBaseUrl } from "@/lib/api/base-url";
@@ -44,7 +46,7 @@ function extractReportUrl(data: ReportData): string {
  * public URL pointing at the generated PDF.
  */
 async function postReport(endpoint: string, request: ReportRequest): Promise<ReportResult> {
-  const response = await apiClient.post<ApiMutationEnvelope<ReportData>>(endpoint, {
+  const payload = {
     type: request.type,
     collection: request.collection,
     values: request.values ?? [],
@@ -52,7 +54,35 @@ async function postReport(endpoint: string, request: ReportRequest): Promise<Rep
     filters: request.filters,
     operator: request.operator,
     expiresInHours: request.expiresInHours ?? 24,
-  });
+  };
+
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[Reports Portal] Sending report request", { endpoint, payload });
+  }
+
+  let response: ApiMutationEnvelope<ReportData>;
+  try {
+    response = await apiClient.post<ApiMutationEnvelope<ReportData>>(endpoint, payload);
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[Reports Portal] Report request failed", {
+        endpoint,
+        payload,
+        error: isAxiosError(error)
+          ? {
+              message: error.message,
+              status: error.response?.status,
+              responseData: error.response?.data,
+            }
+          : error,
+      });
+    }
+    throw error;
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[Reports Portal] Received report response", { endpoint, response });
+  }
 
   if (response.success === false) {
     throw new Error(
@@ -63,6 +93,12 @@ async function postReport(endpoint: string, request: ReportRequest): Promise<Rep
   const data = response.data;
   const url = extractReportUrl(data);
   if (!url) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[Reports Portal] Report response did not include a URL", {
+        endpoint,
+        response,
+      });
+    }
     throw new Error("The report did not return a download URL.");
   }
 

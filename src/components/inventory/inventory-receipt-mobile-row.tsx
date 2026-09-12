@@ -1,6 +1,7 @@
 "use client";
 
-import { PackageCheck } from "lucide-react";
+import { Edit, PackageCheck, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import { formatInventoryDate, formatInventoryMoney, getReceiptItemLabel, getReceiptSupplierLabel } from "@/lib/inventory/display";
 import type { InventoryItem } from "@/lib/inventory/types/catalog";
@@ -13,9 +14,11 @@ type InventoryReceiptMobileRowProps = {
   item?: InventoryItem;
   supplier?: InventorySupplier;
   onOpen: (receipt: InventoryReceipt) => void;
+  onEdit?: (receipt: InventoryReceipt) => void;
+  onDelete?: (receipt: InventoryReceipt) => void;
 };
 
-export function InventoryReceiptMobileRow({ receipt, item, supplier, onOpen }: InventoryReceiptMobileRowProps) {
+export function InventoryReceiptMobileRow({ receipt, item, supplier, onOpen, onEdit, onDelete }: InventoryReceiptMobileRowProps) {
   const { t } = useTranslation();
   const dash = t("common.empty.dash");
 
@@ -39,6 +42,12 @@ export function InventoryReceiptMobileRow({ receipt, item, supplier, onOpen }: I
           <span className="mt-1 block text-xs text-muted-foreground">{formatInventoryMoney(receipt.averageCost)}</span>
         </span>
       </button>
+      {onEdit || onDelete ? (
+        <div className="mt-4 flex justify-end gap-2">
+          {onEdit ? <Button variant="outline" onClick={() => onEdit(receipt)}><Edit className="size-4" />{t("common.actions.edit")}</Button> : null}
+          {onDelete ? <Button variant="outline" className="text-destructive" onClick={() => onDelete(receipt)}><Trash2 className="size-4" />{t("common.actions.delete")}</Button> : null}
+        </div>
+      ) : null}
     </article>
   );
 }

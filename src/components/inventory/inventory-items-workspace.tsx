@@ -31,6 +31,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useTranslation } from "@/lib/i18n";
@@ -67,6 +69,7 @@ type DocumentDialog = "receipt" | "dispatch" | "adjustment" | null;
 
 export function InventoryItemsWorkspace() {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const { data: items = [], isLoading, isError, error } = useInventoryItems();
@@ -79,6 +82,9 @@ export function InventoryItemsWorkspace() {
   const createReceipt = useCreateReceipt();
   const createDispatch = useCreateDispatch();
   const createAdjustment = useCreateAdjustment();
+  const canCreate = hasPermission(PERMISSIONS.inventoryItemsCreate.name, PERMISSIONS.inventoryItemsCreate.resourceType);
+  const canUpdate = hasPermission(PERMISSIONS.inventoryItemsUpdate.name, PERMISSIONS.inventoryItemsUpdate.resourceType);
+  const canDelete = hasPermission(PERMISSIONS.inventoryItemsDelete.name, PERMISSIONS.inventoryItemsDelete.resourceType);
 
   const [filters, setFilters] = useState<InventoryFilterState>(defaultFilters);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -106,11 +112,13 @@ export function InventoryItemsWorkspace() {
   useTableSelectionReset(buildTableSelectionResetKey(filters.query), setSelectedIds);
 
   function openAddForm() {
+    if (!canCreate) return;
     setEditingItem(null);
     setFormMode("add");
   }
 
   function openEditForm(item: InventoryItem) {
+    if (!canUpdate) return;
     setEditingItem(item);
     setFormMode("edit");
     setViewItem(null);
@@ -231,10 +239,10 @@ export function InventoryItemsWorkspace() {
                 <SlidersHorizontal className="h-4 w-4" />
                 {t("inventory.actions.adjustStock")}
               </Button>
-              <Button onClick={openAddForm}>
+              {canCreate ? <Button onClick={openAddForm}>
                 <Plus className="h-4 w-4" />
                 {t("inventory.actions.addItem")}
-              </Button>
+              </Button> : null}
             </div>
           }
         />
@@ -290,11 +298,11 @@ export function InventoryItemsWorkspace() {
           pageRowIds={pageItems.map((item) => item.id)}
           totalCount={filteredItems.length}
           onSelectedIdsChange={setSelectedIds}
-          onEdit={() => {
+          onEdit={canUpdate ? () => {
             const item = pageItems.find((entry) => entry.id === selectedIds[0]);
             if (item) openEditForm(item);
-          }}
-          onDelete={() => setDeleteTarget(items.filter((item) => selectedIds.includes(item.id)))}
+          } : undefined}
+          onDelete={canDelete ? () => setDeleteTarget(items.filter((item) => selectedIds.includes(item.id))) : undefined}
         />
 
         {listErrorMessage ? (
@@ -334,7 +342,7 @@ export function InventoryItemsWorkspace() {
               setSelectedIds((current) => (checked ? [...current, id] : current.filter((entry) => entry !== id)));
             }}
             onRowClick={setViewItem}
-            onRowDoubleClick={openEditForm}
+            onRowDoubleClick={canUpdate ? openEditForm : undefined}
             activeRowId={viewItem?.id}
             emptyState={<p className="text-muted-foreground">{t("inventory.empty.items")}</p>}
           />
@@ -365,8 +373,8 @@ export function InventoryItemsWorkspace() {
         snapshot={snapshot}
         open={Boolean(viewItem)}
         onOpenChange={(open) => !open && setViewItem(null)}
-        onEdit={openEditForm}
-        onDelete={(item) => setDeleteTarget(item)}
+        onEdit={canUpdate ? openEditForm : undefined}
+        onDelete={canDelete ? (item) => setDeleteTarget(item) : undefined}
       />
 
       <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>

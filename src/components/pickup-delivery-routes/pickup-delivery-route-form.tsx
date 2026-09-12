@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { CrewRolePicker } from "@/components/route-manager/crew-role-picker";
+import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { PickupRouteOrdersSection } from "@/components/pickup-delivery-routes/pickup-route-orders-section";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
@@ -57,7 +58,9 @@ type ActiveRouteFormProps = {
   onRouteRecordChange: (routeRecordId: string) => void;
   onRoleChange: (employeeId: number, role: RouteCrewRole) => void;
   onCreateVehicleClick: () => void;
+  onEditVehicleClick?: () => void;
   onCreateRouteClick: () => void;
+  onEditRouteClick?: () => void;
   onSubmit: () => void;
   onCancel?: () => void;
   vehicleRouteId?: string;
@@ -94,7 +97,9 @@ export function ActiveRouteForm({
   onRouteRecordChange,
   onRoleChange,
   onCreateVehicleClick,
+  onEditVehicleClick,
   onCreateRouteClick,
+  onEditRouteClick,
   onSubmit,
   onCancel,
   vehicleRouteId,
@@ -162,10 +167,13 @@ export function ActiveRouteForm({
           title={t("routes.activeRoute.vehicle")}
           required
           action={
-            <Button type="button" variant="outline" size="sm" onClick={onCreateVehicleClick}>
-              <Plus className="size-4" />
-              {t("routes.activeRoute.createVehicle")}
-            </Button>
+            <FieldEntityActions
+              onAdd={onCreateVehicleClick}
+              onEdit={onEditVehicleClick}
+              hasSelection={Boolean(values.vehicle.id)}
+              addIcon={Plus}
+              newLabel={t("routes.activeRoute.createVehicle")}
+            />
           }
         >
           <SearchableSelect
@@ -196,10 +204,13 @@ export function ActiveRouteForm({
           title={t("routes.activeRoute.route")}
           required
           action={
-            <Button type="button" variant="outline" size="sm" onClick={onCreateRouteClick}>
-              <Plus className="size-4" />
-              {t("routes.activeRoute.createRoute")}
-            </Button>
+            <FieldEntityActions
+              onAdd={onCreateRouteClick}
+              onEdit={onEditRouteClick}
+              hasSelection={Boolean(values.routeRecordId)}
+              addIcon={Plus}
+              newLabel={t("routes.activeRoute.createRoute")}
+            />
           }
         >
           <SearchableSelect

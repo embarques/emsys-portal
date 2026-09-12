@@ -27,6 +27,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useUserError } from "@/lib/errors";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { useTranslation } from "@/lib/i18n";
@@ -52,6 +54,7 @@ import { resolveClientTablePageLimit } from "@/lib/table/page-size";
 
 export function InventorySuppliersWorkspace() {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
   const dash = t("common.empty.dash");
   const { toErrorMessage } = useUserError();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
@@ -60,6 +63,9 @@ export function InventorySuppliersWorkspace() {
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const deleteSuppliers = useDeleteSuppliers();
+  const canCreate = hasPermission(PERMISSIONS.inventorySuppliersCreate.name, PERMISSIONS.inventorySuppliersCreate.resourceType);
+  const canUpdate = hasPermission(PERMISSIONS.inventorySuppliersUpdate.name, PERMISSIONS.inventorySuppliersUpdate.resourceType);
+  const canDelete = hasPermission(PERMISSIONS.inventorySuppliersDelete.name, PERMISSIONS.inventorySuppliersDelete.resourceType);
 
   const [query, setQuery] = useState("");
   const { page, setPage, pageSize, changePageSize } = useTablePageSize();
@@ -122,11 +128,13 @@ export function InventorySuppliersWorkspace() {
   });
 
   function openAddForm() {
+    if (!canCreate) return;
     setEditingSupplier(null);
     setFormMode("add");
   }
 
   function openEditForm(supplier: InventorySupplier) {
+    if (!canUpdate) return;
     setEditingSupplier(supplier);
     setFormMode("edit");
     setViewSupplier(null);
@@ -187,10 +195,10 @@ export function InventorySuppliersWorkspace() {
           title={t("inventory.submenus.suppliers")}
           description={t("inventory.pages.suppliers")}
           actions={
-            <Button onClick={openAddForm}>
+            canCreate ? <Button onClick={openAddForm}>
               <Plus className="h-4 w-4" />
               {t("inventory.actions.addSupplier")}
-            </Button>
+            </Button> : null
           }
         />
       </div>
@@ -206,8 +214,8 @@ export function InventorySuppliersWorkspace() {
         onQueryChange={setQuery}
         onPageChange={setPage}
         onOpen={setViewSupplier}
-        onEdit={openEditForm}
-        onDelete={setDeleteTarget}
+        onEdit={canUpdate ? openEditForm : undefined}
+        onDelete={canDelete ? setDeleteTarget : undefined}
         onSelectedIdsChange={setSelectedIds}
         onAddSupplier={openAddForm}
       />
@@ -238,11 +246,11 @@ export function InventorySuppliersWorkspace() {
           pageRowIds={pageRows.map((row) => row.id)}
           totalCount={filtered.length}
           onSelectedIdsChange={setSelectedIds}
-          onEdit={() => {
+          onEdit={canUpdate ? () => {
             const supplier = pageRows.find((row) => row.id === selectedIds[0]);
             if (supplier) openEditForm(supplier);
-          }}
-          onDelete={() => setDeleteTarget(suppliers.filter((row) => selectedIds.includes(row.id)))}
+          } : undefined}
+          onDelete={canDelete ? () => setDeleteTarget(suppliers.filter((row) => selectedIds.includes(row.id))) : undefined}
         />
 
         {listErrorMessage ? (
@@ -282,7 +290,7 @@ export function InventorySuppliersWorkspace() {
               setSelectedIds((current) => (checked ? [...current, id] : current.filter((entry) => entry !== id)));
             }}
             onRowClick={setViewSupplier}
-            onRowDoubleClick={openEditForm}
+            onRowDoubleClick={canUpdate ? openEditForm : undefined}
             activeRowId={viewSupplier?.id}
             emptyState={<p className="text-muted-foreground">{t("inventory.empty.suppliers")}</p>}
           />

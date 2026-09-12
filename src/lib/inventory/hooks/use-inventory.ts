@@ -9,7 +9,9 @@ import {
   createInventoryItem,
   createInventoryReceipt,
   createInventorySupplier,
+  deleteInventoryDispatches,
   deleteInventoryItems,
+  deleteInventoryReceipts,
   deleteInventorySuppliers,
   fetchInventoryDispatches,
   fetchInventoryItemById,
@@ -18,6 +20,8 @@ import {
   fetchInventoryStockById,
   fetchInventorySuppliers,
   updateInventoryItem,
+  updateInventoryDispatch,
+  updateInventoryReceipt,
   updateInventorySupplier,
 } from "@/lib/inventory/api/inventory-api";
 import { queryKeys } from "@/lib/query/query-keys";
@@ -184,6 +188,38 @@ export function useCreateDispatch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (values: DispatchFormValues) => createInventoryDispatch(values),
+    onSuccess: () => invalidateInventory(queryClient),
+  });
+}
+
+export function useUpdateDispatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, values }: { id: string; values: DispatchFormValues }) => updateInventoryDispatch(id, values),
+    onSuccess: () => invalidateInventory(queryClient),
+  });
+}
+
+export function useDeleteDispatches() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteInventoryDispatches(ids),
+    onSuccess: () => invalidateInventory(queryClient),
+  });
+}
+
+export function useUpdateReceipt() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, values }: { id: string; values: ReceiptFormValues }) => updateInventoryReceipt(id, values),
+    onSuccess: () => invalidateInventory(queryClient),
+  });
+}
+
+export function useDeleteReceipts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteInventoryReceipts(ids),
     onSuccess: () => invalidateInventory(queryClient),
   });
 }

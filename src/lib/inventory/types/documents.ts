@@ -79,6 +79,16 @@ export function createEmptyReceiptForm(receivedAt = ""): ReceiptFormValues {
   };
 }
 
+export function receiptToFormValues(receipt: InventoryReceipt): ReceiptFormValues {
+  return {
+    itemId: receipt.itemId,
+    quantity: String(receipt.quantity),
+    averageCost: receipt.averageCost > 0 ? String(receipt.averageCost) : "",
+    supplierId: receipt.supplierId,
+    receivedAt: receipt.receivedAt.slice(0, 10),
+  };
+}
+
 export function createEmptyDispatchForm(dispatchedAt = ""): DispatchFormValues {
   return {
     itemId: "",
@@ -92,6 +102,28 @@ export function createEmptyDispatchForm(dispatchedAt = ""): DispatchFormValues {
     routeName: "",
     routeCrewId: "",
     routeCrewName: "",
+  };
+}
+
+export function dispatchToFormValues(dispatch: InventoryDispatch): DispatchFormValues {
+  const isRoute = isInventoryDispatchToRoute(dispatch.dispatchedTo);
+  return {
+    ...createEmptyDispatchForm(dispatch.dispatchedAt.slice(0, 10)),
+    itemId: dispatch.itemId,
+    quantity: String(dispatch.quantity),
+    incomeGained: dispatch.incomeGained > 0 ? String(dispatch.incomeGained) : "",
+    assigneeSource: isRoute ? "route" : "employee",
+    ...(isRoute
+      ? {
+          routeId: String(dispatch.dispatchedTo.id),
+          routeName: dispatch.dispatchedTo.name,
+          routeCrewId: dispatch.dispatchedTo.route ? String(dispatch.dispatchedTo.route.id) : "",
+          routeCrewName: dispatch.dispatchedTo.route?.name ?? "",
+        }
+      : {
+          employeeId: String(dispatch.dispatchedTo.id),
+          employeeName: dispatch.dispatchedTo.name,
+        }),
   };
 }
 

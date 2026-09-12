@@ -141,6 +141,7 @@
     },
     "actions": {
       "selectAtLeastOne": "Select at least one delivery route to print.",
+      "noDeliveriesOnRoute": "No deliveries are assigned to the selected route.",
       "print": "Print",
       "preparing": "Preparing…"
     },

@@ -21,6 +21,8 @@ type InventoryDispatchMobileListProps = {
   onPageChange: (page: number) => void;
   onOpen: (dispatch: InventoryDispatch) => void;
   onAddDispatch: () => void;
+  onEdit?: (dispatch: InventoryDispatch) => void;
+  onDelete?: (dispatch: InventoryDispatch) => void;
 };
 
 export function InventoryDispatchMobileList({
@@ -34,6 +36,8 @@ export function InventoryDispatchMobileList({
   onPageChange,
   onOpen,
   onAddDispatch,
+  onEdit,
+  onDelete,
 }: InventoryDispatchMobileListProps) {
   const { t } = useTranslation();
 
@@ -105,6 +109,8 @@ export function InventoryDispatchMobileList({
               dispatch={dispatch}
               item={items.find((entry) => entry.id === dispatch.itemId)}
               onOpen={onOpen}
+              onEdit={onEdit}
+              onDelete={onDelete}
             />
           ))
         ) : (

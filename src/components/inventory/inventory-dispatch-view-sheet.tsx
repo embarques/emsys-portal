@@ -7,6 +7,7 @@ import {
   RecordViewSheetDetailRow,
   RecordViewSheetHeader,
   RecordViewSheetSection,
+  RecordViewSheetActions,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
@@ -19,6 +20,8 @@ type InventoryDispatchViewSheetProps = {
   items: InventoryItem[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: (dispatch: InventoryDispatch) => void;
+  onDelete?: (dispatch: InventoryDispatch) => void;
 };
 
 export function InventoryDispatchViewSheet({
@@ -26,6 +29,8 @@ export function InventoryDispatchViewSheet({
   items,
   open,
   onOpenChange,
+  onEdit,
+  onDelete,
 }: InventoryDispatchViewSheetProps) {
   const { t } = useTranslation();
   if (!dispatch) return null;
@@ -56,6 +61,12 @@ export function InventoryDispatchViewSheet({
             <RecordViewSheetDetailRow label={t("inventory.columns.userModified")} value={dispatch.updatedBy} />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
+        <RecordViewSheetActions
+          editLabel={t("common.actions.edit")}
+          deleteLabel={t("common.actions.delete")}
+          onEdit={onEdit ? () => onEdit(dispatch) : undefined}
+          onDelete={onDelete ? () => onDelete(dispatch) : undefined}
+        />
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

@@ -28,7 +28,10 @@ import {
   type InventoryFormValues,
   type InventoryItem,
 } from "@/lib/inventory/types/catalog";
-import { createEmptyReceiptForm, type ReceiptFormValues } from "@/lib/inventory/types/documents";
+import {
+  createEmptyReceiptForm,
+  type ReceiptFormValues,
+} from "@/lib/inventory/types/documents";
 import {
   createEmptySupplierForm,
   supplierToFormValues,
@@ -41,6 +44,7 @@ type EntityDialog = "item" | "supplier" | null;
 type InventoryReceiptFormProps = {
   items: InventoryItem[];
   suppliers: InventorySupplier[];
+  initialValues?: ReceiptFormValues;
   submitLabel: string;
   onSubmit: (values: ReceiptFormValues) => void;
   onCancel: () => void;
@@ -50,6 +54,7 @@ type InventoryReceiptFormProps = {
 export function InventoryReceiptForm({
   items,
   suppliers,
+  initialValues,
   submitLabel,
   onSubmit,
   onCancel,
@@ -103,11 +108,11 @@ export function InventoryReceiptForm({
   );
 
   useEffect(() => {
-    setValues(createEmptyReceiptForm(toDateInputValue()));
+    setValues(initialValues ?? createEmptyReceiptForm(toDateInputValue()));
     setValidationError(null);
     setPinnedItemLabel("");
     setPinnedSupplierLabel("");
-  }, []);
+  }, [initialValues]);
 
   function getValidationError(): string | null {
     if (!values.itemId) return t("inventory.form.validation.itemRequired");

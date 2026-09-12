@@ -29,8 +29,8 @@ type InventoryViewSheetProps = {
   snapshot: InventorySnapshot;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (item: InventoryItem) => void;
-  onDelete: (item: InventoryItem) => void;
+  onEdit?: (item: InventoryItem) => void;
+  onDelete?: (item: InventoryItem) => void;
 };
 
 type DetailTab = "movements" | "receipts" | "dispatches";

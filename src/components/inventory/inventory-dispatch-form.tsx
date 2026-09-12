@@ -48,6 +48,7 @@ type EntityDialog = "item" | "employee" | "route" | null;
 
 type InventoryDispatchFormProps = {
   items: InventoryItem[];
+  initialValues?: DispatchFormValues;
   submitLabel: string;
   onSubmit: (values: DispatchFormValues) => void;
   onCancel: () => void;
@@ -56,6 +57,7 @@ type InventoryDispatchFormProps = {
 
 export function InventoryDispatchForm({
   items,
+  initialValues,
   submitLabel,
   onSubmit,
   onCancel,
@@ -103,10 +105,10 @@ export function InventoryDispatchForm({
   );
 
   useEffect(() => {
-    setValues(createEmptyDispatchForm(toDateInputValue()));
+    setValues(initialValues ?? createEmptyDispatchForm(toDateInputValue()));
     setValidationError(null);
     setPinnedItemLabel("");
-  }, []);
+  }, [initialValues]);
 
   const available = values.itemId
     ? (items.find((item) => item.id === values.itemId)?.quantity ?? selectedItem?.quantity ?? 0)

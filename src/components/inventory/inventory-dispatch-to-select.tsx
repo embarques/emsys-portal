@@ -119,7 +119,7 @@ export function InventoryDispatchToSelect({
   }
 
   return (
-    <div className="grid gap-2.5 sm:col-span-2 sm:grid-cols-2">
+    <div className="grid gap-3 sm:col-span-2 sm:grid-cols-1">
       <div className="space-y-1">
         <Label htmlFor="dispatchedTo-source">{t("inventory.form.fields.dispatchedTo")}</Label>
         <SearchableSelect

@@ -7,6 +7,7 @@ import {
   RecordViewSheetDetailRow,
   RecordViewSheetHeader,
   RecordViewSheetSection,
+  RecordViewSheetActions,
 } from "@/components/app-shell/record-view-sheet";
 import { formatAuditDateTime } from "@/lib/audit/display";
 import { useTranslation } from "@/lib/i18n";
@@ -21,6 +22,8 @@ type InventoryReceiptViewSheetProps = {
   suppliers: InventorySupplier[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: (receipt: InventoryReceipt) => void;
+  onDelete?: (receipt: InventoryReceipt) => void;
 };
 
 export function InventoryReceiptViewSheet({
@@ -29,6 +32,8 @@ export function InventoryReceiptViewSheet({
   suppliers,
   open,
   onOpenChange,
+  onEdit,
+  onDelete,
 }: InventoryReceiptViewSheetProps) {
   const { t } = useTranslation();
   if (!receipt) return null;
@@ -57,6 +62,12 @@ export function InventoryReceiptViewSheet({
             <RecordViewSheetDetailRow label={t("inventory.columns.userModified")} value={receipt.updatedBy} />
           </RecordViewSheetSection>
         </RecordViewSheetBody>
+        <RecordViewSheetActions
+          editLabel={t("common.actions.edit")}
+          deleteLabel={t("common.actions.delete")}
+          onEdit={onEdit ? () => onEdit(receipt) : undefined}
+          onDelete={onDelete ? () => onDelete(receipt) : undefined}
+        />
       </RecordViewSheetContent>
     </RecordViewSheet>
   );

@@ -141,6 +141,7 @@
     },
     "actions": {
       "selectAtLeastOne": "Seleccione al menos una ruta de entrega para imprimir.",
+      "noDeliveriesOnRoute": "No hay entregas asignadas a la ruta seleccionada.",
       "print": "Imprimir",
       "preparing": "Preparando…"
     },

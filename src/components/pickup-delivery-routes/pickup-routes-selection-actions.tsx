@@ -56,9 +56,32 @@ export function PickupRoutesSelectionActions({
       return;
     }
 
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[Reports Portal] Pickup route print selection", {
+        selectedIds,
+        resolvedRouteIds: routeIds,
+        routes: activeRoutes
+          .filter((route) => selectedIds.includes(route.id))
+          .map((route) => ({
+            id: route.id,
+            routeType: route.routeType,
+            branchCode: route.branch?.code,
+            routeName: route.route?.name,
+          })),
+      });
+    }
+
     try {
       const pickups = await fetchAllPickupsByRoutes(routeIds);
       const pickupIds = pickups.map((order) => getOrderRecordId(order)).filter(Boolean);
+
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[Reports Portal] Pickup route appointments resolved", {
+          routeIds,
+          pickupIds,
+          pickupCount: pickupIds.length,
+        });
+      }
 
       if (pickupIds.length === 0) {
         notifyError(t("routes.pickupRoutes.actions.noPickupsOnRoute"));
@@ -78,6 +101,9 @@ export function PickupRoutesSelectionActions({
           : t("routes.pickupRoutes.toasts.manifestReady_plural", { count: pickupIds.length }),
       );
     } catch (mutationError) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[Reports Portal] Pickup route print failed", mutationError);
+      }
       notifyError(normalizeApiError(mutationError).message);
     }
   }

@@ -19,8 +19,8 @@ type InventorySupplierViewSheetProps = {
   snapshot: InventorySnapshot;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (supplier: InventorySupplier) => void;
-  onDelete: (supplier: InventorySupplier) => void;
+  onEdit?: (supplier: InventorySupplier) => void;
+  onDelete?: (supplier: InventorySupplier) => void;
 };
 
 export function InventorySupplierViewSheet({
@@ -79,8 +79,8 @@ export function InventorySupplierViewSheet({
         </RecordViewSheetBody>
         <RecordViewSheetActions
           editLabel={t("inventory.form.editSupplierTitle")}
-          onEdit={() => onEdit(supplier)}
-          onDelete={() => onDelete(supplier)}
+          onEdit={onEdit ? () => onEdit(supplier) : undefined}
+          onDelete={onDelete ? () => onDelete(supplier) : undefined}
         />
       </RecordViewSheetContent>
     </RecordViewSheet>

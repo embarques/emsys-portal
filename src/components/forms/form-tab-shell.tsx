@@ -18,7 +18,7 @@ type FormTabShellProps = {
 export function FormTabShell({ title, description, children, className }: FormTabShellProps) {
   return (
     <div className={cn("mx-auto w-full max-w-3xl", className)}>
-      <div className="flex max-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="flex h-auto max-h-[calc(100vh-8rem)] min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <div className="shrink-0 border-b border-border px-5 py-3">
           <h2 className="text-base font-semibold leading-tight">{title}</h2>
           {description ? (

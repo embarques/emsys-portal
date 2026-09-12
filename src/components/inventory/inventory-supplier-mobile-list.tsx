@@ -21,8 +21,8 @@ type InventorySupplierMobileListProps = {
   onQueryChange: (query: string) => void;
   onPageChange: (page: number) => void;
   onOpen: (supplier: InventorySupplier) => void;
-  onEdit: (supplier: InventorySupplier) => void;
-  onDelete: (supplier: InventorySupplier | InventorySupplier[]) => void;
+  onEdit?: (supplier: InventorySupplier) => void;
+  onDelete?: (supplier: InventorySupplier | InventorySupplier[]) => void;
   onSelectedIdsChange: (ids: string[]) => void;
   onAddSupplier: () => void;
 };
@@ -80,9 +80,9 @@ export function InventorySupplierMobileList({
         onClear={() => onSelectedIdsChange([])}
         onEdit={() => {
           const supplier = selectedSuppliers[0];
-          if (supplier) onEdit(supplier);
+          if (supplier && onEdit) onEdit(supplier);
         }}
-        onDelete={() => onDelete(selectedSuppliers)}
+        onDelete={() => onDelete?.(selectedSuppliers)}
       />
 
       <div className="flex items-center justify-between gap-3">
@@ -131,8 +131,8 @@ export function InventorySupplierMobileList({
               selected={selectedIds.includes(supplier.id)}
               selectionMode={selectionMode}
               onOpen={onOpen}
-              onEdit={onEdit}
-              onDelete={onDelete}
+              onEdit={onEdit ?? (() => undefined)}
+              onDelete={onDelete ?? (() => undefined)}
               onToggleSelected={toggleSelected}
             />
           ))

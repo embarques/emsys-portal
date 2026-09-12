@@ -9,6 +9,8 @@ import { InventoryReceiptViewSheet } from "@/components/inventory/inventory-rece
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
@@ -16,34 +18,49 @@ import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-to
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
+import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import { formatInventoryDate, formatInventoryMoney, getReceiptItemLabel, getReceiptSupplierLabel } from "@/lib/inventory/display";
 import { useUserError } from "@/lib/errors";
 import { useTranslation } from "@/lib/i18n";
 import {
   useCreateReceipt,
+  useDeleteReceipts,
   useInventoryItems,
   useInventoryReceipts,
   useInventorySuppliers,
+  useUpdateReceipt,
 } from "@/lib/inventory/hooks/use-inventory";
-import type { InventoryReceipt } from "@/lib/inventory/types/documents";
+import { receiptToFormValues, type InventoryReceipt, type ReceiptFormValues } from "@/lib/inventory/types/documents";
 import type { DataTableColumn } from "@/lib/table/types";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { resolveClientTablePageLimit } from "@/lib/table/page-size";
+import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
 
 export function InventoryReceiptsWorkspace() {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
   const { toErrorMessage } = useUserError();
-  const { notifyAdded } = useFeedback();
+  const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess } = useFeedback();
   const { data: receipts = [], isLoading, isError, error } = useInventoryReceipts();
   const { data: items = [] } = useInventoryItems();
   const { data: suppliers = [] } = useInventorySuppliers();
   const createReceipt = useCreateReceipt();
+  const updateReceipt = useUpdateReceipt();
+  const deleteReceipts = useDeleteReceipts();
+  const canCreate = hasPermission(PERMISSIONS.inventoryReceiptsCreate.name, PERMISSIONS.inventoryReceiptsCreate.resourceType);
+  const canUpdate = hasPermission(PERMISSIONS.inventoryReceiptsUpdate.name, PERMISSIONS.inventoryReceiptsUpdate.resourceType);
+  const canDelete = hasPermission(PERMISSIONS.inventoryReceiptsDelete.name, PERMISSIONS.inventoryReceiptsDelete.resourceType);
 
   const [query, setQuery] = useState("");
   const { page, setPage, pageSize, changePageSize } = useTablePageSize();
-  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"add" | "edit" | null>(null);
+  const [editingReceipt, setEditingReceipt] = useState<InventoryReceipt | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<InventoryReceipt | InventoryReceipt[] | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewReceipt, setViewReceipt] = useState<InventoryReceipt | null>(null);
 
   const filtered = useMemo(() => {
@@ -62,6 +79,56 @@ export function InventoryReceiptsWorkspace() {
   const currentPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((currentPage - 1) * pageLimit, currentPage * pageLimit);
   const listErrorMessage = isError ? toErrorMessage(error) : null;
+  const allPageSelected = pageRows.length > 0 && pageRows.every((row) => selectedIds.includes(row.id));
+  useTableSelectionReset(buildTableSelectionResetKey(query), setSelectedIds);
+
+  function openAddForm() {
+    if (!canCreate) return;
+    setEditingReceipt(null);
+    setFormMode("add");
+  }
+
+  function openEditForm(receipt: InventoryReceipt) {
+    if (!canUpdate) return;
+    setEditingReceipt(receipt);
+    setViewReceipt(null);
+    setFormMode("edit");
+  }
+
+  async function saveReceipt(values: ReceiptFormValues) {
+    try {
+      if (formMode === "edit" && editingReceipt) {
+        if (areFormValuesEquivalent(values, receiptToFormValues(editingReceipt))) {
+          notifySuccess(t("common.form.noChanges"));
+          setFormMode(null);
+          return;
+        }
+        const updated = await updateReceipt.mutateAsync({ id: editingReceipt.id, values });
+        notifyUpdated(t("inventory.references.receipt"), getReceiptItemLabel(updated, items));
+      } else {
+        const created = await createReceipt.mutateAsync(values);
+        notifyAdded(t("inventory.references.receipt"), getReceiptItemLabel(created, items));
+      }
+      setFormMode(null);
+      setEditingReceipt(null);
+    } catch (mutationError) {
+      window.alert(toErrorMessage(mutationError));
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const ids = Array.isArray(deleteTarget) ? deleteTarget.map((row) => row.id) : [deleteTarget.id];
+    try {
+      const result = await deleteReceipts.mutateAsync(ids);
+      notifyDeleted(t("inventory.references.receipt"), result.succeededIds.length);
+      setSelectedIds((current) => current.filter((id) => !result.succeededIds.includes(id)));
+      setDeleteTarget(null);
+      setViewReceipt(null);
+    } catch (mutationError) {
+      window.alert(toErrorMessage(mutationError));
+    }
+  }
 
   const columns: DataTableColumn<InventoryReceipt>[] = [
     {
@@ -95,10 +162,10 @@ export function InventoryReceiptsWorkspace() {
           title={t("inventory.submenus.receipts")}
           description={t("inventory.pages.receipts")}
           actions={
-            <Button onClick={() => setFormOpen(true)}>
+          canCreate ? <Button onClick={openAddForm}>
               <Plus className="h-4 w-4" />
               {t("inventory.actions.newReceipt")}
-            </Button>
+            </Button> : null
           }
         />
       </div>
@@ -114,7 +181,9 @@ export function InventoryReceiptsWorkspace() {
         onQueryChange={setQuery}
         onPageChange={setPage}
         onOpen={setViewReceipt}
-        onAddReceipt={() => setFormOpen(true)}
+        onAddReceipt={openAddForm}
+        onEdit={canUpdate ? openEditForm : undefined}
+        onDelete={canDelete ? setDeleteTarget : undefined}
       />
 
       {listErrorMessage ? <p className="mt-4 text-sm text-destructive md:hidden">{listErrorMessage}</p> : null}
@@ -140,6 +209,18 @@ export function InventoryReceiptsWorkspace() {
           />
         </CardHeader>
 
+        <TableSelectionToolbar
+          selectedIds={selectedIds}
+          pageRowIds={pageRows.map((row) => row.id)}
+          totalCount={filtered.length}
+          onSelectedIdsChange={setSelectedIds}
+          onEdit={canUpdate ? () => {
+            const row = pageRows.find((entry) => entry.id === selectedIds[0]);
+            if (row) openEditForm(row);
+          } : undefined}
+          onDelete={canDelete ? () => setDeleteTarget(receipts.filter((row) => selectedIds.includes(row.id))) : undefined}
+        />
+
         {listErrorMessage ? (
           <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">{listErrorMessage}</div>
         ) : isLoading ? (
@@ -159,7 +240,21 @@ export function InventoryReceiptsWorkspace() {
             columnLayout={columnVisibility}
             sortUnavailable
             minWidth={800}
+            selectable
+            selectedIds={selectedIds}
+            allPageSelected={allPageSelected}
+            onToggleSelectAll={(checked) =>
+              setSelectedIds((current) =>
+                checked
+                  ? Array.from(new Set([...current, ...pageRows.map((row) => row.id)]))
+                  : current.filter((id) => !pageRows.some((row) => row.id === id)),
+              )
+            }
+            onToggleSelect={(id, checked) =>
+              setSelectedIds((current) => (checked ? [...current, id] : current.filter((entry) => entry !== id)))
+            }
             onRowClick={setViewReceipt}
+            onRowDoubleClick={canUpdate ? openEditForm : undefined}
             activeRowId={viewReceipt?.id}
             emptyState={<p className="text-muted-foreground">{t("inventory.empty.receipts")}</p>}
           />
@@ -187,30 +282,42 @@ export function InventoryReceiptsWorkspace() {
         suppliers={suppliers}
         open={Boolean(viewReceipt)}
         onOpenChange={(open) => !open && setViewReceipt(null)}
+        onEdit={canUpdate ? openEditForm : undefined}
+        onDelete={canDelete ? setDeleteTarget : undefined}
       />
 
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+      <Dialog open={formMode !== null} onOpenChange={(open) => !open && setFormMode(null)}>
         <DialogContent className="inset-x-0 bottom-0 top-auto flex h-[calc(100dvh-4rem)] max-h-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
           <DialogHeader className="shrink-0 border-b border-border bg-primary px-6 py-5 text-primary-foreground sm:bg-background sm:py-4 sm:text-foreground">
-            <DialogTitle>{t("inventory.form.newReceiptTitle")}</DialogTitle>
+            <DialogTitle>{formMode === "edit" ? t("common.actions.edit") : t("inventory.form.newReceiptTitle")}</DialogTitle>
           </DialogHeader>
           <InventoryReceiptForm
             items={items}
             suppliers={suppliers}
-            submitLabel={t("inventory.actions.saveReceipt")}
-            isSubmitting={createReceipt.isPending}
-            onCancel={() => setFormOpen(false)}
-            onSubmit={async (values) => {
-              try {
-                await createReceipt.mutateAsync(values);
-                const item = items.find((entry) => entry.id === values.itemId);
-                notifyAdded(t("inventory.references.receipt"), item?.item ?? values.itemId);
-                setFormOpen(false);
-              } catch (error) {
-                window.alert(toErrorMessage(error));
-              }
-            }}
+            initialValues={editingReceipt ? receiptToFormValues(editingReceipt) : undefined}
+            submitLabel={formMode === "edit" ? t("common.actions.saveChanges") : t("inventory.actions.saveReceipt")}
+            isSubmitting={createReceipt.isPending || updateReceipt.isPending}
+            onCancel={() => setFormMode(null)}
+            onSubmit={saveReceipt}
           />
+        </DialogContent>
+      </Dialog>
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("common.actions.delete")}</DialogTitle>
+            <DialogDescription>
+              {Array.isArray(deleteTarget)
+                ? `${deleteTarget.length} ${t("inventory.submenus.receipts").toLowerCase()}`
+                : deleteTarget
+                  ? getReceiptItemLabel(deleteTarget, items)
+                  : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t("common.actions.cancel")}</Button>
+            <ConfirmDeleteButton isPending={deleteReceipts.isPending} onClick={confirmDelete} />
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

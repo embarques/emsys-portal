@@ -529,6 +529,39 @@ export async function fetchBarcodeByNumber(number: string): Promise<Barcode> {
   throw new Error("Barcode not found.");
 }
 
+/** Resolve numeric delivery ids from barcodes assigned to a vehicle route. */
+export async function fetchDeliveryIdsByRoute(routeId: string): Promise<number[]> {
+  const trimmedRouteId = routeId.trim();
+  if (!trimmedRouteId) return [];
+
+  const deliveryIds = new Set<number>();
+  const limit = 100;
+  let page = 1;
+
+  while (true) {
+    const response = await apiClient.get<PaginatedApiEnvelope<unknown[]>>(
+      `${API_ENDPOINTS.BARCODES}?page=${page}&limit=${limit}`,
+    );
+    const entries = Array.isArray(response.data) ? response.data : [];
+
+    for (const entry of entries) {
+      const barcode = normalizeBarcode(entry);
+      if (barcode?.route?.id !== trimmedRouteId) continue;
+
+      const deliveryId = barcode.delivery?.id;
+      if (deliveryId != null && Number.isInteger(deliveryId) && deliveryId > 0) {
+        deliveryIds.add(deliveryId);
+      }
+    }
+
+    const total = response.total ?? entries.length;
+    if (entries.length === 0 || page * limit >= total) break;
+    page += 1;
+  }
+
+  return [...deliveryIds];
+}
+
 async function resolveBarcodeIdForCatalogWrite(number: string): Promise<number> {
   const trimmedNumber = number.trim();
   if (!trimmedNumber) {

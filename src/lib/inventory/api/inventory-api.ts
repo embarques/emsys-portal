@@ -535,6 +535,11 @@ export async function deleteInventoryReceipt(receiptId: string): Promise<void> {
   assertMutationSuccess(response, "Unable to delete inventory receipt.");
 }
 
+export async function deleteInventoryReceipts(receiptIds: string[]): Promise<BulkSettledResult<string>> {
+  const uniqueIds = [...new Set(receiptIds.map((id) => id.trim()).filter(Boolean))];
+  return runSettledIdsWithConcurrency(uniqueIds, deleteInventoryReceipt);
+}
+
 export async function fetchInventoryDispatches(
   params: InventoryListParams = {},
 ): Promise<PaginatedResult<InventoryDispatch>> {
@@ -595,6 +600,11 @@ export async function deleteInventoryDispatch(dispatchId: string): Promise<void>
   const id = parseInventoryPathId(dispatchId);
   const response = await apiClient.delete<ApiMutationEnvelope<unknown>>(`${API_ENDPOINTS.INVENTORY_DISPATCHES}/${id}`);
   assertMutationSuccess(response, "Unable to delete inventory dispatch.");
+}
+
+export async function deleteInventoryDispatches(dispatchIds: string[]): Promise<BulkSettledResult<string>> {
+  const uniqueIds = [...new Set(dispatchIds.map((id) => id.trim()).filter(Boolean))];
+  return runSettledIdsWithConcurrency(uniqueIds, deleteInventoryDispatch);
 }
 
 export async function fetchInventorySuppliers(

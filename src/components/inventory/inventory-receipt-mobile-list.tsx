@@ -23,6 +23,8 @@ type InventoryReceiptMobileListProps = {
   onPageChange: (page: number) => void;
   onOpen: (receipt: InventoryReceipt) => void;
   onAddReceipt: () => void;
+  onEdit?: (receipt: InventoryReceipt) => void;
+  onDelete?: (receipt: InventoryReceipt) => void;
 };
 
 export function InventoryReceiptMobileList({
@@ -37,6 +39,8 @@ export function InventoryReceiptMobileList({
   onPageChange,
   onOpen,
   onAddReceipt,
+  onEdit,
+  onDelete,
 }: InventoryReceiptMobileListProps) {
   const { t } = useTranslation();
 
@@ -109,6 +113,8 @@ export function InventoryReceiptMobileList({
               item={items.find((entry) => entry.id === receipt.itemId)}
               supplier={suppliers.find((entry) => entry.id === receipt.supplierId)}
               onOpen={onOpen}
+              onEdit={onEdit}
+              onDelete={onDelete}
             />
           ))
         ) : (

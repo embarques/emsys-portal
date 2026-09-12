@@ -1,6 +1,7 @@
 "use client";
 
-import { Truck } from "lucide-react";
+import { Edit, Trash2, Truck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import { formatInventoryDate, formatInventoryMoney, getInventoryDispatchToLabel, getDispatchItemLabel } from "@/lib/inventory/display";
 import type { InventoryItem } from "@/lib/inventory/types/catalog";
@@ -11,9 +12,11 @@ type InventoryDispatchMobileRowProps = {
   dispatch: InventoryDispatch;
   item?: InventoryItem;
   onOpen: (dispatch: InventoryDispatch) => void;
+  onEdit?: (dispatch: InventoryDispatch) => void;
+  onDelete?: (dispatch: InventoryDispatch) => void;
 };
 
-export function InventoryDispatchMobileRow({ dispatch, item, onOpen }: InventoryDispatchMobileRowProps) {
+export function InventoryDispatchMobileRow({ dispatch, item, onOpen, onEdit, onDelete }: InventoryDispatchMobileRowProps) {
   const { t } = useTranslation();
 
   return (
@@ -37,6 +40,12 @@ export function InventoryDispatchMobileRow({ dispatch, item, onOpen }: Inventory
           <span className="mt-1 block text-xs text-muted-foreground">{formatInventoryMoney(dispatch.incomeGained)}</span>
         </span>
       </button>
+      {onEdit || onDelete ? (
+        <div className="mt-4 flex justify-end gap-2">
+          {onEdit ? <Button variant="outline" onClick={() => onEdit(dispatch)}><Edit className="size-4" />{t("common.actions.edit")}</Button> : null}
+          {onDelete ? <Button variant="outline" className="text-destructive" onClick={() => onDelete(dispatch)}><Trash2 className="size-4" />{t("common.actions.delete")}</Button> : null}
+        </div>
+      ) : null}
     </article>
   );
 }

@@ -589,6 +589,16 @@ export function ActiveRouteSection({
           setCreateVehicleFormError(null);
           setCreateVehicleDialogOpen(true);
         }}
+        onEditVehicleClick={() => {
+          if (!values.vehicle.id) return;
+          openFormTab({
+            feature: "vehicles",
+            baseHref: "/vehicles",
+            mode: "edit",
+            entityId: values.vehicle.id,
+            label: t("vehicles.actions.edit"),
+          });
+        }}
         onCreateRouteClick={() => {
           if (isDesktopTabs) {
             openFormTab({
@@ -601,6 +611,16 @@ export function ActiveRouteSection({
           }
           setCreateFormError(null);
           setCreateDialogOpen(true);
+        }}
+        onEditRouteClick={() => {
+          if (!values.routeRecordId) return;
+          openFormTab({
+            feature: "routes",
+            baseHref: "/routes",
+            mode: "edit",
+            entityId: values.routeRecordId,
+            label: t("routes.form.editTabLabel"),
+          });
         }}
         onSubmit={saveActiveRoute}
         onCancel={onCancel}
