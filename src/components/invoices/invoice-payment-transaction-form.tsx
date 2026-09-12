@@ -25,8 +25,10 @@ import {
 import { normalizeApiError } from "@/lib/api/axios";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { formatInvoiceMoney } from "@/lib/invoices/display";
+import { buildInvoiceDailyIncomeAssigneeDefaults } from "@/lib/invoices/schemas/invoice-daily-income.schema";
 import { resolveLineTotal, type InvoiceFormValues } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
+import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 
 type Props = {
@@ -35,7 +37,10 @@ type Props = {
   onRegistered: (journal: DailyIncomeJournal) => void | Promise<void>;
 };
 
-function buildInitialValues(invoice: InvoiceFormValues): DailyIncomeJournalValues {
+function buildInitialValues(
+  invoice: InvoiceFormValues,
+  routeNameById?: Map<string, string>,
+): DailyIncomeJournalValues {
   const invoiceSubtotal = invoice.lineItems.reduce((sum, item) => sum + resolveLineTotal(item), 0);
   const discount = Number(invoice.discount) || 0;
 
@@ -53,6 +58,7 @@ function buildInitialValues(invoice: InvoiceFormValues): DailyIncomeJournalValue
     includeReceiver: Boolean(invoice.receiver),
     receiverId: invoice.receiver?.id || undefined,
     receiverName: invoice.receiver?.name || undefined,
+    ...buildInvoiceDailyIncomeAssigneeDefaults(invoice, routeNameById),
   };
 }
 
@@ -80,6 +86,10 @@ function getFirstValidationMessage(errors: FieldErrors<DailyIncomeJournalValues>
   return null;
 }
 
+function hasJournalAssignee(values: Pick<DailyIncomeJournalValues, "employeeId" | "routeId">) {
+  return Boolean(values.employeeId) || Boolean(values.routeId?.trim());
+}
+
 export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered }: Props) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
@@ -97,6 +107,22 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   );
   const paymentMethods = paymentMethodsQuery.data ?? [];
   const bankAccounts = bankAccountsQuery.data?.items ?? [];
+  const step1AssigneeSeed = useMemo(
+    () => buildInvoiceDailyIncomeAssigneeDefaults(invoice),
+    [invoice],
+  );
+  const hasStep1Assignee = hasJournalAssignee(step1AssigneeSeed);
+  // Desktop hides assignee when step 1 already chose one; load routes when the picker is shown.
+  const showAssignee = isMobileLayout || !hasStep1Assignee;
+  const pickupRoutesQuery = useActiveRoutePicker("pickup", 200, {
+    enabled:
+      showAssignee || (invoice.pickupSource === "route" && Boolean(invoice.routeId.trim())),
+  });
+  const dailyRoutes = pickupRoutesQuery.data?.items ?? [];
+  const routeNameById = useMemo(
+    () => new Map(dailyRoutes.map((route) => [route.id, route.name] as const)),
+    [dailyRoutes],
+  );
 
   const schema = useMemo(
     () =>
@@ -139,8 +165,12 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
   invoiceRef.current = invoice;
 
   const initialValues = useMemo(
-    () => withDefaultCashPaymentMethod(buildInitialValues(invoice), paymentMethodsQuery.data ?? []),
-    [invoice, paymentMethodsQuery.data],
+    () =>
+      withDefaultCashPaymentMethod(
+        buildInitialValues(invoice, routeNameById),
+        paymentMethodsQuery.data ?? [],
+      ),
+    [invoice, paymentMethodsQuery.data, routeNameById],
   );
 
   const {
@@ -158,10 +188,25 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
 
   useEffect(() => {
     reset({
-      ...withDefaultCashPaymentMethod(buildInitialValues(invoiceRef.current), paymentMethodsQuery.data ?? []),
+      ...withDefaultCashPaymentMethod(
+        buildInitialValues(invoiceRef.current, routeNameById),
+        paymentMethodsQuery.data ?? [],
+      ),
       description: t("invoices.wizard.dailyIncome.dialog.initialRegistrationDescription"),
     });
-  }, [statement.id, reset, t]);
+  }, [
+    invoice.pickupEmployeeId,
+    invoice.pickupEmployeeName,
+    invoice.pickupSource,
+    invoice.routeCrewId,
+    invoice.routeCrewName,
+    invoice.routeId,
+    paymentMethodsQuery.data,
+    reset,
+    routeNameById,
+    statement.id,
+    t,
+  ]);
 
   useEffect(() => {
     setValue("invoiceCost", invoiceLineItemsTotal, { shouldValidate: true });
@@ -169,11 +214,25 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     setValue("invoiceNumber", invoice.invoiceNumber);
   }, [invoice.invoiceNumber, invoiceDiscount, invoiceLineItemsTotal, setValue]);
 
+  // Enrich route label once daily routes finish loading.
+  useEffect(() => {
+    const selectedRouteId = getValues("routeId")?.trim();
+    if (!selectedRouteId) return;
+    const route = dailyRoutes.find((item) => item.id === selectedRouteId);
+    const nextName = route?.name.trim();
+    if (!nextName || getValues("routeName")?.trim() === nextName) return;
+    setValue("routeName", nextName, { shouldValidate: false });
+  }, [dailyRoutes, getValues, setValue]);
+
+  // Fallback only when step 1 left assignee empty.
   useEffect(() => {
     const user = currentUserQuery.data;
-    if (!user || employees.length === 0 || getValues("employeeId")) return;
+    if (!user || employees.length === 0) return;
+    if (getValues("employeeId") || getValues("routeId")?.trim()) return;
+    if (getValues("assigneeSource") === "route") return;
     const employee = resolveEmployeeForCurrentUser(user, employees);
     if (!employee) return;
+    setValue("assigneeSource", "employee", { shouldValidate: true });
     setValue("employeeId", employee.id, { shouldValidate: true });
     setValue("employeeName", employee.name, { shouldValidate: true });
   }, [currentUserQuery.data, employees, getValues, setValue]);
@@ -190,14 +249,15 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
     try {
       setSubmitError(null);
 
+      const assignedToRoute = Boolean(values.routeId?.trim());
       const user = currentUserQuery.data;
       const employee =
-        (values.employeeId
+        (!assignedToRoute && values.employeeId
           ? employees.find((item) => item.id === values.employeeId)
           : null) ??
-        (user ? resolveEmployeeForCurrentUser(user, employees) : null);
+        (!assignedToRoute && user ? resolveEmployeeForCurrentUser(user, employees) : null);
 
-      if (!employee) {
+      if (!assignedToRoute && !employee) {
         const message = t("invoices.wizard.dailyIncome.dialog.employeeUnavailable");
         setSubmitError(message);
         notifyError(message);
@@ -213,8 +273,13 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
           ...values,
           transactionType: "INITIAL-PAYMENT",
           amount,
-          employeeId: employee.id,
-          employeeName: employee.name,
+          assigneeSource: assignedToRoute ? "route" : "employee",
+          employeeId: assignedToRoute ? undefined : employee?.id,
+          employeeName: assignedToRoute ? undefined : employee?.name,
+          routeId: assignedToRoute ? values.routeId : undefined,
+          routeName: assignedToRoute ? values.routeName : undefined,
+          routeCrewId: assignedToRoute ? values.routeCrewId : undefined,
+          routeCrewName: assignedToRoute ? values.routeCrewName : undefined,
           invoiceNumber: invoice.invoiceNumber,
           invoiceCost: invoiceLineItemsTotal,
           invoiceDiscount,
@@ -269,13 +334,15 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
       <form id={formId} className="space-y-4" onSubmit={handleSubmit(submit, handleInvalid)}>
         <RegisterInvoiceTransactionFields
           employees={employees}
+          dailyRoutes={dailyRoutes}
           bankAccounts={bankAccounts}
           paymentMethods={paymentMethods}
           errors={errors}
           register={register}
           setValue={setValue}
           watch={watch}
-          showEmployee={isMobileLayout}
+          showEmployee={showAssignee}
+          allowDailyRoute={showAssignee}
           showInvoiceNumber={false}
           showParties={false}
           invoiceCostReadOnly
