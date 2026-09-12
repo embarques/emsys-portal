@@ -115,6 +115,8 @@
     "backToLineItems": "Back to line items",
     "done": "Done",
     "working": "Working…",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
     "manageLabels": "Manage labels ({{count}})",
     "filterPlaceholder": "Filter by invoice, barcode, status, container, description…",
     "filterByStatus": "Filter by status",
@@ -195,7 +197,8 @@
       "createdCount": "{{count}} created",
       "retrievedCount": "{{count}} retrieved",
       "assignedToRoute": "{{count}} label(s) assigned to {{route}} (trip {{trip}}).",
-      "readyToPrint": "Labels ready for {{count}} barcode(s)."
+      "readyToPrint": "Labels ready for {{count}} barcode(s).",
+      "refreshed": "Label manager data refreshed."
     },
     "entities": {
       "labelStatus": "Label status",

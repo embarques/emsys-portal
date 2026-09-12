@@ -9,16 +9,28 @@ type WizardFieldProps = {
   htmlFor?: string;
   required?: boolean;
   className?: string;
+  /** Optional create/edit control aligned with the label (e.g. FieldEntityActions). */
+  action?: React.ReactNode;
   children: React.ReactNode;
 };
 
-export function WizardField({ label, htmlFor, required, className, children }: WizardFieldProps) {
+export function WizardField({
+  label,
+  htmlFor,
+  required,
+  className,
+  action,
+  children,
+}: WizardFieldProps) {
   return (
     <div className={cn("space-y-2 md:space-y-2", className)}>
-      <Label htmlFor={htmlFor} className={wizardLabelClassName(required)}>
-        {label}
-        {required ? <span className="req"> *</span> : null}
-      </Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={htmlFor} className={wizardLabelClassName(required)}>
+          {label}
+          {required ? <span className="req"> *</span> : null}
+        </Label>
+        {action}
+      </div>
       {children}
     </div>
   );

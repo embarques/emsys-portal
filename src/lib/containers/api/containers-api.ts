@@ -62,6 +62,7 @@ type ApiContainer = {
   booking?: string;
   sealNumber?: string;
   seal?: string;
+  itn?: string;
   broker?: string;
   company?: string;
   cost?: number;
@@ -79,6 +80,7 @@ type ApiContainerWritePayload = {
   booking: string;
   containerNumber?: string;
   sealNumber?: string;
+  itn?: string;
   broker?: string;
   company?: string;
   cost?: number;
@@ -137,6 +139,7 @@ function normalizeContainer(raw: unknown): Container | null {
   );
   const booking = readContainerString(item, "booking", "bookingNumber", "booking_number", "numeroBooking");
   const sealValue = readContainerString(item, "sealNumber", "seal_number", "seal", "numeroSello", "numero_sello");
+  const itn = readContainerString(item, "itn", "ITN", "internalTransactionNumber", "internal_transaction_number");
   const broker = readContainerString(item, "broker", "customsBroker", "customs_broker", "agenteAduanal");
   const company = readContainerString(
     item,
@@ -163,6 +166,7 @@ function normalizeContainer(raw: unknown): Container | null {
     booking,
     sealNumber: sealValue,
     seal: sealValue,
+    itn,
     broker,
     company,
     cost: readContainerNumber(item, "cost", "containerCost", "container_cost"),
@@ -208,6 +212,7 @@ function buildContainerWritePayload(
 
   const containerNumber = values.containerNumber.trim().toUpperCase();
   const sealNumber = values.sealNumber.trim();
+  const itn = values.itn.trim();
   const broker = values.broker.trim();
   const company = values.company.trim();
   const costValue = values.cost.trim();
@@ -227,6 +232,10 @@ function buildContainerWritePayload(
 
   if (sealNumber) {
     payload.sealNumber = sealNumber;
+  }
+
+  if (itn) {
+    payload.itn = itn;
   }
 
   if (broker) {

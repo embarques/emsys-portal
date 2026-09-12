@@ -352,6 +352,7 @@ Same shape. `{id}` = numeric.
   "booking": "BK-1001",
   "containerNumber": "MSCU1234567",
   "sealNumber": "SEAL-99",
+  "itn": "X20260101234567",
   "broker": "Broker Co",
   "company": "Shipping Co",
   "cost": 1500.0,

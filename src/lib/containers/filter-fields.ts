@@ -56,6 +56,13 @@ export const CONTAINER_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter seal…",
   },
   {
+    field: "itn",
+    label: "ITN",
+    operators: [...TEXT_OPERATORS],
+    valueType: "text",
+    placeholder: "Enter ITN…",
+  },
+  {
     field: "broker",
     label: "Broker",
     operators: [...TEXT_OPERATORS],

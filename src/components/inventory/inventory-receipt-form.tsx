@@ -1,10 +1,10 @@
 "use client";
 
-import { PackagePlus } from "lucide-react";
+import { Building2, PackagePlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { EntityFieldActions } from "@/components/accounting/entity-field-actions";
 import { selectFormFieldTextOnFocus, useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
+import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { InventoryItemForm } from "@/components/inventory/inventory-item-form";
 import { InventorySupplierForm } from "@/components/inventory/inventory-supplier-form";
@@ -198,10 +198,11 @@ export function InventoryReceiptForm({
               <div className="space-y-1 sm:col-span-2">
                 <div className="flex items-center justify-between gap-2">
                   <Label htmlFor="itemId">{t("inventory.form.fields.item")}</Label>
-                  <EntityFieldActions
+                  <FieldEntityActions
                     hasSelection={Boolean(values.itemId)}
                     onAdd={openAddItem}
                     onEdit={openEditItem}
+                    addIcon={PackagePlus}
                   />
                 </div>
                 <SearchableSelect
@@ -247,10 +248,11 @@ export function InventoryReceiptForm({
               <div className="space-y-1 sm:col-span-2">
                 <div className="flex items-center justify-between gap-2">
                   <Label htmlFor="supplierId">{t("inventory.form.fields.supplier")}</Label>
-                  <EntityFieldActions
+                  <FieldEntityActions
                     hasSelection={Boolean(values.supplierId)}
                     onAdd={openAddSupplier}
                     onEdit={openEditSupplier}
+                    addIcon={Building2}
                   />
                 </div>
                 <SearchableSelect

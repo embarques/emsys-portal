@@ -17,7 +17,11 @@
     "dismissNotification": "Dismiss notification"
   },
   "form": {
-    "noChanges": "No changes to save."
+    "noChanges": "No changes to save.",
+    "fieldActions": {
+      "new": "New",
+      "edit": "Edit"
+    }
   },
   "stats": {
     "changeMore": "+{{percent}}% vs last {{period}}",

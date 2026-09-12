@@ -40,6 +40,7 @@
     "containerNumber": "Container number",
     "booking": "Booking number",
     "sealNumber": "Seal number",
+    "itn": "ITN",
     "broker": "Broker",
     "company": "Transport company",
     "cost": "Cost",
@@ -75,6 +76,7 @@
       "containerNumber": "Container number",
       "booking": "Booking number",
       "sealNumber": "Seal number",
+      "itn": "ITN",
       "broker": "Broker",
       "company": "Transport company",
       "cost": "Cost",
@@ -86,6 +88,7 @@
       "containerNumber": "SMLUD320939203",
       "booking": "BKG-2026-00421",
       "sealNumber": "SL-884921",
+      "itn": "X20260101234567",
       "broker": "Customs broker name",
       "company": "Shipping line or carrier",
       "cost": "0.00"
@@ -137,6 +140,10 @@
       "seal": {
         "label": "Seal",
         "placeholder": "Enter seal…"
+      },
+      "itn": {
+        "label": "ITN",
+        "placeholder": "Enter ITN…"
       },
       "broker": {
         "label": "Broker",

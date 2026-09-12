@@ -17,7 +17,11 @@
     "dismissNotification": "Descartar notificación"
   },
   "form": {
-    "noChanges": "No hay cambios para guardar."
+    "noChanges": "No hay cambios para guardar.",
+    "fieldActions": {
+      "new": "Nuevo",
+      "edit": "Editar"
+    }
   },
   "stats": {
     "changeMore": "+{{percent}}% vs los últimos {{period}}",

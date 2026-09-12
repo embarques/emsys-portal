@@ -100,10 +100,71 @@ function formatRouteLabel(
   route: Barcode["route"],
   resolveRouteLabel?: (routeRecordId: string) => string,
 ): string {
-  if (!route?.id) return "—";
-  const embedded = route.name?.trim();
-  if (embedded && embedded !== route.id) return embedded;
-  return resolveRouteLabel?.(route.id) ?? embedded ?? route.id;
+  const id = route?.id?.trim() || route?.routeId?.trim() || "";
+  const embedded = route?.name?.trim() || "";
+  if (!id && !embedded) return "—";
+  if (embedded && embedded !== id) return embedded;
+  if (!id) return embedded;
+  return resolveRouteLabel?.(id) ?? (embedded || id);
+}
+
+/** Previous route label for the change log (route first, legacy delivery name fallback). */
+function formatPreviousRouteLabel(
+  existing: Barcode,
+  resolveRouteLabel?: (routeRecordId: string) => string,
+): string {
+  const fromRoute = formatRouteLabel(existing.route, resolveRouteLabel);
+  if (fromRoute !== "—") return fromRoute;
+  return existing.delivery?.name?.trim() || "—";
+}
+
+/** Map an invoice-embedded barcode into the scanner `Barcode` shape. */
+function barcodeFromInvoiceEmbed(barcode: InvoiceLineItemBarcode): Barcode {
+  const routeId = barcode.routeId?.trim() || "";
+  const routeName = barcode.routeName?.trim() || "";
+
+  return {
+    id: barcode.packageSequence ?? 0,
+    barcodeId: barcode.barcodeId,
+    number: barcode.number,
+    status: barcode.statusName
+      ? { id: barcode.statusId, name: barcode.statusName }
+      : null,
+    container: barcode.containerName
+      ? {
+          id: Number(barcode.containerId) || undefined,
+          name: barcode.containerName,
+        }
+      : null,
+    // Name-only embeds are display-only (empty id) so we do not write a fake route id.
+    route: routeId
+      ? { id: routeId, name: routeName || routeId }
+      : routeName
+        ? { id: "", name: routeName }
+        : null,
+    delivery: barcode.deliveryName
+      ? {
+          id: Number(barcode.deliveryId) || undefined,
+          name: barcode.deliveryName,
+        }
+      : null,
+  };
+}
+
+/**
+ * Prefer invoice-embed fields; fill gaps from the `/barcodes` catalog mirror.
+ * Route often lives only on the catalog after earlier scanner / assign writes.
+ */
+function mergeCatalogGaps(existing: Barcode, catalog: Barcode): Barcode {
+  return {
+    ...existing,
+    id: existing.id > 0 ? existing.id : catalog.id,
+    barcodeId: existing.barcodeId || catalog.barcodeId,
+    status: existing.status ?? catalog.status,
+    container: existing.container ?? catalog.container,
+    route: existing.route ?? catalog.route,
+    delivery: existing.delivery ?? catalog.delivery,
+  };
 }
 
 function buildBarcodeWritePayload(
@@ -131,10 +192,10 @@ function buildBarcodeWritePayload(
     };
   }
 
-  if (existing.route?.id) {
+  if (existing.route?.id?.trim()) {
     payload.route = {
-      id: existing.route.id,
-      name: existing.route.name?.trim() || existing.route.id,
+      id: existing.route.id.trim(),
+      name: existing.route.name?.trim() || existing.route.id.trim(),
     };
   }
 
@@ -232,32 +293,15 @@ export async function applyBarcodeScanUpdate(
 
   embedded = await findInvoiceBarcodeByNumber(barcode);
   if (embedded) {
-    existing = {
-      id: embedded.barcode.packageSequence ?? 0,
-      barcodeId: embedded.barcode.barcodeId,
-      number: embedded.barcode.number,
-      status: embedded.barcode.statusName
-        ? { id: embedded.barcode.statusId, name: embedded.barcode.statusName }
-        : null,
-      container: embedded.barcode.containerName
-        ? {
-            id: Number(embedded.barcode.containerId) || undefined,
-            name: embedded.barcode.containerName,
-          }
-        : null,
-      route: embedded.barcode.routeId
-        ? {
-            id: embedded.barcode.routeId,
-            name: embedded.barcode.routeName ?? embedded.barcode.routeId,
-          }
-        : null,
-      delivery: embedded.barcode.deliveryName
-        ? {
-            id: Number(embedded.barcode.deliveryId) || undefined,
-            name: embedded.barcode.deliveryName,
-          }
-        : null,
-    };
+    existing = barcodeFromInvoiceEmbed(embedded.barcode);
+    // Invoice embeds can omit route on read even when the catalog mirror has it
+    // (prior scanner / assign-route writes). Fill gaps so Prev route is accurate.
+    try {
+      const catalog = await fetchBarcodeByNumber(barcode);
+      existing = mergeCatalogGaps(existing, catalog);
+    } catch {
+      // Invoice embed remains authoritative when catalog has no row.
+    }
   } else {
     try {
       existing = await fetchBarcodeByNumber(barcode);
@@ -273,7 +317,7 @@ export async function applyBarcodeScanUpdate(
 
   const previousStatus = formatStatusLabel(existing.status, t);
   const previousContainer = formatContainerLabel(existing.container, options.resolveContainerLabel);
-  const previousRoute = formatRouteLabel(existing.route, options.resolveRouteLabel);
+  const previousRoute = formatPreviousRouteLabel(existing, options.resolveRouteLabel);
 
   let payload: BarcodeWritePayload;
   let changed = false;

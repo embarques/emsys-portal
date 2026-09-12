@@ -1,14 +1,18 @@
 "use client";
 
-import { ClipboardList, Pencil, Receipt, UserPlus, Users, Wallet } from "lucide-react";
+import { ClipboardList, Container as ContainerIcon, Receipt, Route, UserPlus, Users, Wallet } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFormEnterNavigation, selectFormFieldTextOnFocus } from "@/hooks/use-form-enter-navigation";
+import { ContainerForm } from "@/components/containers/container-form";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { CustomerPartySelect } from "@/components/customers/customer-party-select";
+import { EmployeeForm } from "@/components/employees/employee-form";
+import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,8 +42,13 @@ import { formatCustomerMutationError } from "@/lib/customers/customer-create-err
 import { useApplyCustomerOnTabReturn } from "@/lib/customers/hooks/use-apply-customer-on-tab-return";
 import { useTranslation } from "@/lib/i18n";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
+import { normalizeApiError } from "@/lib/api/axios";
 import { formatContainerLabel } from "@/lib/containers/display";
-import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
+import { useContainerPicker, useCreateContainer } from "@/lib/containers/hooks/use-containers";
+import {
+  createEmptyContainerForm,
+  type ContainerFormValues,
+} from "@/lib/containers/types";
 import {
   useCreateCustomer,
   useEnsureCustomerDetail,
@@ -62,8 +71,17 @@ import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { buildTransactionAssigneeOptions } from "@/lib/accounting/daily-income/assignee";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
 import type { Branch } from "@/lib/branches/types";
-import { useEmployeeSearch, useEmployees } from "@/lib/employees/hooks/use-employees";
-import { DEFAULT_EMPLOYEE_LIST_PARAMS, type Employee } from "@/lib/employees/types";
+import {
+  useCreateEmployee,
+  useEmployeeSearch,
+  useEmployees,
+} from "@/lib/employees/hooks/use-employees";
+import {
+  createEmptyEmployeeForm,
+  DEFAULT_EMPLOYEE_LIST_PARAMS,
+  type Employee,
+  type EmployeeFormValues,
+} from "@/lib/employees/types";
 import {
   INVOICE_PAYMENT_LOCATIONS,
   INVOICE_PICKUP_SOURCES,
@@ -77,8 +95,10 @@ import {
   type InvoicePickupSource,
 } from "@/lib/invoices/types";
 import { useItemPicker } from "@/lib/items/hooks/use-items";
+import { PICKUP_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
+import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { DEFAULT_ORDER_LIST_PARAMS, type Order } from "@/lib/orders/types";
 import { useOrder, useOrderSearch, useOrders } from "@/lib/orders/hooks/use-orders";
 import { cn } from "@/lib/utils";
@@ -184,33 +204,13 @@ function PartyFieldActions({
   onAdd: () => void;
   onEdit: () => void;
 }) {
-  const { t } = useTranslation();
-
   return (
-    <div className="flex items-center gap-1">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-        onClick={onAdd}
-      >
-        <UserPlus className="size-3.5" />
-        {t("invoices.form.partyActions.new")}
-      </Button>
-      {hasSelection ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-          onClick={onEdit}
-        >
-          <Pencil className="size-3.5" />
-          {t("invoices.form.partyActions.edit")}
-        </Button>
-      ) : null}
-    </div>
+    <FieldEntityActions
+      hasSelection={hasSelection}
+      onAdd={onAdd}
+      onEdit={onEdit}
+      addIcon={UserPlus}
+    />
   );
 }
 
@@ -254,6 +254,8 @@ export function InvoiceForm({
   const [customerFormError, setCustomerFormError] = useState<string | null>(null);
   const [isLoadingEditCustomer, setIsLoadingEditCustomer] = useState(false);
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
+  const [entityDialog, setEntityDialog] = useState<"container" | "employee" | "route" | null>(null);
+  const [entityError, setEntityError] = useState<string | null>(null);
   const [pickupQuery, setPickupQuery] = useState("");
   const [pickupEmployeeQuery, setPickupEmployeeQuery] = useState("");
   const [pickupAssignmentOpenKey, setPickupAssignmentOpenKey] = useState(0);
@@ -287,6 +289,8 @@ export function InvoiceForm({
     createCustomerMutation.isPending ||
     updateCustomerMutation.isPending ||
     isLoadingEditCustomer;
+  const createContainerMutation = useCreateContainer();
+  const createEmployeeMutation = useCreateEmployee();
 
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200);
   const pickupRoutes = pickupRoutesQuery.data?.items ?? [];
@@ -497,6 +501,78 @@ export function InvoiceForm({
         ? `${employee.branch.code} — ${employee.branch.name}`.trim()
         : "",
     }));
+    setFormError(null);
+  }
+
+  function openAddContainer() {
+    setEntityError(null);
+    setEntityDialog("container");
+  }
+
+  function openAddEmployee() {
+    setEntityError(null);
+    setEntityDialog("employee");
+  }
+
+  function openAddRoute() {
+    setEntityError(null);
+    setEntityDialog("route");
+  }
+
+  async function saveContainer(formValues: ContainerFormValues) {
+    try {
+      setEntityError(null);
+      const saved = await createContainerMutation.mutateAsync(formValues);
+      updateField("containerId", String(saved.id));
+      setEntityDialog(null);
+    } catch (error) {
+      setEntityError(normalizeApiError(error).message);
+    }
+  }
+
+  async function saveEmployee(formValues: EmployeeFormValues) {
+    try {
+      setEntityError(null);
+      const saved = await createEmployeeMutation.mutateAsync(formValues);
+      commitValues((current) => ({
+        ...current,
+        pickupSource: current.pickupSource === "route" ? "office" : current.pickupSource,
+        pickupEmployeeId: String(saved.id),
+        pickupEmployeeName: saved.name,
+        officeBranchId: String(saved.branch.id),
+        officeBranchName: `${saved.branch.code} — ${saved.branch.name}`.trim(),
+        routeId: "",
+        routeCrewId: "",
+        routeCrewName: "",
+      }));
+      setEntityDialog(null);
+      setFormError(null);
+    } catch (error) {
+      setEntityError(normalizeApiError(error).message);
+    }
+  }
+
+  function selectCreatedRoute(route?: ActiveRoute) {
+    if (!route) {
+      setEntityDialog(null);
+      return;
+    }
+    const crewName =
+      route.route?.name.trim() ||
+      route.employees.map((employee) => employee.name.trim()).filter(Boolean).join(", ") ||
+      "";
+    commitValues((current) => ({
+      ...current,
+      pickupSource: "route",
+      routeId: route.id,
+      routeCrewId: route.route?.id ?? "",
+      routeCrewName: crewName,
+      pickupEmployeeId: "",
+      pickupEmployeeName: "",
+      officeBranchId: "",
+      officeBranchName: "",
+    }));
+    setEntityDialog(null);
     setFormError(null);
   }
 
@@ -724,10 +800,17 @@ export function InvoiceForm({
     required: boolean | undefined,
     control: React.ReactNode,
     fieldClassName?: string,
+    action?: React.ReactNode,
   ) {
     if (isWizard) {
       return (
-        <WizardField label={label} htmlFor={htmlFor} required={required} className={fieldClassName}>
+        <WizardField
+          label={label}
+          htmlFor={htmlFor}
+          required={required}
+          className={fieldClassName}
+          action={action}
+        >
           {control}
         </WizardField>
       );
@@ -735,10 +818,13 @@ export function InvoiceForm({
 
     return (
       <div className="space-y-1">
-        <Label htmlFor={htmlFor}>
-          {label}
-          {required ? <span className="text-destructive"> *</span> : null}
-        </Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor={htmlFor}>
+            {label}
+            {required ? <span className="text-destructive"> *</span> : null}
+          </Label>
+          {action}
+        </div>
         {control}
       </div>
     );
@@ -813,6 +899,7 @@ export function InvoiceForm({
           ]}
         />,
         wizardFieldCol,
+        <FieldEntityActions onAdd={openAddContainer} addIcon={ContainerIcon} />,
       )}
       {renderField(
         t("invoices.form.fields.pickupSource"),
@@ -858,6 +945,7 @@ export function InvoiceForm({
               ]}
             />,
             wizardFieldCol,
+            <FieldEntityActions onAdd={openAddRoute} addIcon={Route} />,
           )
         : renderField(
             pickupEmployeeFieldLabel,
@@ -885,6 +973,7 @@ export function InvoiceForm({
               ]}
             />,
             wizardFieldCol,
+            <FieldEntityActions onAdd={openAddEmployee} addIcon={UserPlus} />,
           )}
       {renderField(
         t("invoices.form.fields.paymentLocation"),
@@ -1185,6 +1274,57 @@ export function InvoiceForm({
               onCancel={closeCustomerDialog}
             />
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={entityDialog === "container"} onOpenChange={(open) => !open && setEntityDialog(null)}>
+        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+            <DialogTitle>{t("containers.form.addTitle")}</DialogTitle>
+          </DialogHeader>
+          <ContainerForm
+            key="new-container"
+            initialValues={createEmptyContainerForm()}
+            submitLabel={t("containers.actions.add")}
+            isSubmitting={createContainerMutation.isPending}
+            externalError={entityError}
+            onSubmit={saveContainer}
+            onCancel={() => setEntityDialog(null)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={entityDialog === "employee"} onOpenChange={(open) => !open && setEntityDialog(null)}>
+        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+            <DialogTitle>{t("employees.form.addTitle")}</DialogTitle>
+          </DialogHeader>
+          <EmployeeForm
+            key="new-employee"
+            initialValues={createEmptyEmployeeForm()}
+            submitLabel={t("employees.actions.add")}
+            isSubmitting={createEmployeeMutation.isPending}
+            externalError={entityError}
+            onSubmit={saveEmployee}
+            onCancel={() => setEntityDialog(null)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={entityDialog === "route"} onOpenChange={(open) => !open && setEntityDialog(null)}>
+        <DialogContent className="z-[70] flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+            <DialogTitle>{t("routes.pickupRoutes.addTabLabel")}</DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <ActiveRouteSection
+              key="new-pickup-route"
+              variant={PICKUP_ROUTES_DIRECTORY_VARIANT}
+              defaultDate={values.date.slice(0, 10) || undefined}
+              onSaved={selectCreatedRoute}
+              onCancel={() => setEntityDialog(null)}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </>

@@ -11,6 +11,7 @@ export type Container = {
   booking: string;
   sealNumber: string;
   seal: string;
+  itn: string;
   broker: string;
   company: string;
   cost: number;
@@ -31,6 +32,7 @@ export type ContainerFormValues = {
   containerNumber: string;
   booking: string;
   sealNumber: string;
+  itn: string;
   broker: string;
   company: string;
   cost: string;
@@ -47,6 +49,7 @@ export type ContainerSearchField =
   | "booking"
   | "sealNumber"
   | "seal"
+  | "itn"
   | "broker"
   | "company";
 
@@ -78,6 +81,7 @@ export const CONTAINER_SEARCH_FIELDS: { value: ContainerSearchField; label: stri
   { value: "containerNumber", label: "Container number" },
   { value: "booking", label: "Booking number" },
   { value: "sealNumber", label: "Seal number" },
+  { value: "itn", label: "ITN" },
   { value: "broker", label: "Broker" },
   { value: "company", label: "Transport company" },
   { value: "id", label: "Container ID" },
@@ -97,6 +101,7 @@ export function createEmptyContainerForm(): ContainerFormValues {
     containerNumber: "",
     booking: "",
     sealNumber: "",
+    itn: "",
     broker: "",
     company: "",
     cost: "",
@@ -145,6 +150,7 @@ export function containerToFormValues(container: Container): ContainerFormValues
     containerNumber: container.containerNumber,
     booking: container.booking,
     sealNumber: container.sealNumber,
+    itn: container.itn,
     broker: container.broker,
     company: container.company,
     cost: container.cost > 0 ? container.cost.toFixed(2) : "",

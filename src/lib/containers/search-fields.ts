@@ -10,6 +10,7 @@ export const CONTAINER_BAR_OR_SEARCH_FIELDS = [
   "booking",
   "sealNumber",
   "seal",
+  "itn",
   "broker",
   "company",
   "id",

@@ -216,27 +216,23 @@ export async function confirmInvoiceDailyIncomeRegistration(
   });
   if (await createCuadreButton.isVisible().catch(() => false)) {
     await createCuadreButton.click();
-    const dialog = page.getByRole("dialog", { name: "Register daily income" });
+    const dialog = page.getByRole("dialog", { name: "Create daily income" });
     if (await dialog.isVisible().catch(() => false)) {
-      const flipButton = dialog.getByTestId("invoice-daily-income-flip-create");
-      if (await flipButton.isVisible().catch(() => false)) {
-        await flipButton.click();
-        const statementResponse = waitForApiResponse(
-          page,
-          "/income-statements",
-          "POST",
-          {
-            requireOk: false,
-          },
-        );
-        await dialog.getByTestId("invoice-daily-income-create").click();
-        const createdStatement = await statementResponse;
-        expect(
-          createdStatement.ok(),
-          `Daily Income creation failed with HTTP ${createdStatement.status()}`,
-        ).toBe(true);
-      }
-      // Close dialog if still open after creating statement without registering payment there.
+      const statementResponse = waitForApiResponse(
+        page,
+        "/income-statements",
+        "POST",
+        {
+          requireOk: false,
+        },
+      );
+      await dialog.getByTestId("invoice-daily-income-create").click();
+      const createdStatement = await statementResponse;
+      expect(
+        createdStatement.ok(),
+        `Daily Income creation failed with HTTP ${createdStatement.status()}`,
+      ).toBe(true);
+      // Dialog closes after create; dismiss if still open on error.
       if (await dialog.isVisible().catch(() => false)) {
         await page.keyboard.press("Escape");
       }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Barcode,
@@ -39,6 +40,7 @@ import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { normalizeApiError } from "@/lib/api/axios";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
+import { fetchInvoiceById } from "@/lib/invoices/api/invoices-api";
 import { truncateBarcode, getBarcodeStatusLabel } from "@/lib/labels/display";
 import {
   useGenerateLabels,
@@ -57,6 +59,7 @@ import {
 } from "@/lib/labels/types";
 import type { Invoice } from "@/lib/invoices/types";
 import { useTranslation } from "@/lib/i18n";
+import { queryKeys } from "@/lib/query/query-keys";
 import { canSelectAllOthers, selectAllOthers } from "@/lib/table/selection";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
@@ -249,6 +252,7 @@ export function InvoiceStagingWorkflow({
   onClose,
 }: InvoiceStagingWorkflowProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { email, displayName } = useAuth();
   const performedBy = displayName?.trim() || email?.trim() || undefined;
   const { notifyError, notifySuccess, notifyUpdated } = useFeedback();
@@ -291,6 +295,7 @@ export function InvoiceStagingWorkflow({
   );
   const [newContainerId, setNewContainerId] = useState("");
   const [changeResults, setChangeResults] = useState<LabelChangeOutputRow[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const isGenerating = generateLabelsMutation.isPending && !generateCancelled;
   const isUpdating = updateBarcodesMutation.isPending;
@@ -412,6 +417,88 @@ export function InvoiceStagingWorkflow({
     generateAbortRef.current?.abort();
     generateAbortRef.current = null;
     setGenerateCancelled(true);
+  }
+
+  /**
+   * Reload invoice + barcode data from the API so edits made outside Label
+   * manager (invoice form, scanner, Barcode Manager, etc.) show up here.
+   */
+  async function refreshStagingData() {
+    if (isRefreshing || isGenerating || isUpdating) return;
+
+    const invoiceIds = invoicesRef.current.map((invoice) => invoice.invoiceId).filter(Boolean);
+    if (invoiceIds.length === 0) return;
+
+    const refreshLabels =
+      step === "labels" && generatedForItemKeys.length > 0 ? [...generatedForItemKeys] : [];
+    const previousSelectedItemKeys = selectedItemKeys;
+    const previousSelectedLabelKeys = selectedLabelKeys;
+
+    setIsRefreshing(true);
+    cancelGenerateLabels();
+
+    try {
+      const freshInvoices = await Promise.all(invoiceIds.map((id) => fetchInvoiceById(id)));
+      invoicesRef.current = freshInvoices;
+
+      for (const invoice of freshInvoices) {
+        queryClient.setQueryData(queryKeys.invoices.detail(invoice.invoiceId), invoice);
+      }
+
+      const nextLineItems = buildStagedLineItems(invoiceIds, freshInvoices);
+      const nextLineItemKeys = new Set(nextLineItems.map((item) => item.key));
+      setLineItems(nextLineItems);
+      setSelectedItemKeys(previousSelectedItemKeys.filter((key) => nextLineItemKeys.has(key)));
+
+      if (refreshLabels.length === 0) {
+        // Invalidate any cached label snapshot so the next "Manage labels" re-fetches.
+        setGeneratedLabels([]);
+        setGeneratedForItemKeys([]);
+        setSelectedLabelKeys([]);
+        notifySuccess(t("labels.staging.success.refreshed"));
+        return;
+      }
+
+      const targets = nextLineItems
+        .filter((item) => refreshLabels.includes(item.key))
+        .map((item) => ({ invoiceId: item.invoiceId, lineItemId: item.lineItemId }));
+
+      if (targets.length === 0) {
+        setGeneratedLabels([]);
+        setGeneratedForItemKeys([]);
+        setSelectedLabelKeys([]);
+        setStep("line-items");
+        notifySuccess(t("labels.staging.success.refreshed"));
+        return;
+      }
+
+      const controller = new AbortController();
+      generateAbortRef.current = controller;
+      setGenerateCancelled(false);
+
+      const labels = await generateLabelsMutation.mutateAsync({
+        targets,
+        signal: controller.signal,
+      });
+
+      if (controller.signal.aborted) return;
+
+      const nextLabelKeys = new Set(labels.map((label) => label.key));
+      setGeneratedLabels(labels);
+      setGeneratedForItemKeys(
+        nextLineItems
+          .filter((item) => refreshLabels.includes(item.key))
+          .map((item) => item.key),
+      );
+      setSelectedLabelKeys(previousSelectedLabelKeys.filter((key) => nextLabelKeys.has(key)));
+      notifySuccess(t("labels.staging.success.refreshed"));
+    } catch (error) {
+      if (isAbortError(error)) return;
+      notifyError(normalizeApiError(error).message);
+    } finally {
+      generateAbortRef.current = null;
+      setIsRefreshing(false);
+    }
   }
 
   function handleLineItemSelectionChange(keys: string[]) {
@@ -569,8 +656,9 @@ export function InvoiceStagingWorkflow({
       withoutNumbers.map((label) => ({
         barcode: label.number.trim() || t("common.empty.dash"),
         invoiceNumber: label.invoiceNumber,
-        previousValue: getBarcodeStatusLabel(label.statusName, t),
-        newValue: newStatusLabel,
+        container: label.containerName,
+        previousStatus: getBarcodeStatusLabel(label.statusName, t),
+        newStatus: newStatusLabel,
         message: t("labels.staging.output.missingNumber"),
         success: false,
       })),
@@ -588,8 +676,9 @@ export function InvoiceStagingWorkflow({
         alreadyCurrent.map((label) => ({
           barcode: label.number,
           invoiceNumber: label.invoiceNumber,
-          previousValue: getBarcodeStatusLabel(label.statusName, t),
-          newValue: newStatusLabel,
+          container: label.containerName,
+          previousStatus: getBarcodeStatusLabel(label.statusName, t),
+          newStatus: newStatusLabel,
           message: t("labels.staging.output.successStatus"),
           success: true,
         })),
@@ -641,8 +730,9 @@ export function InvoiceStagingWorkflow({
         needsUpdate.map((label) => ({
           barcode: label.number,
           invoiceNumber: label.invoiceNumber,
-          previousValue: getBarcodeStatusLabel(label.statusName, t),
-          newValue: newStatusLabel,
+          container: label.containerName,
+          previousStatus: getBarcodeStatusLabel(label.statusName, t),
+          newStatus: newStatusLabel,
           message: t("labels.staging.output.successStatus"),
           success: true,
         })),
@@ -658,8 +748,9 @@ export function InvoiceStagingWorkflow({
         needsUpdate.map((label) => ({
           barcode: label.number,
           invoiceNumber: label.invoiceNumber,
-          previousValue: getBarcodeStatusLabel(label.statusName, t),
-          newValue: newStatusLabel,
+          container: label.containerName,
+          previousStatus: getBarcodeStatusLabel(label.statusName, t),
+          newStatus: newStatusLabel,
           message,
           success: false,
         })),
@@ -697,8 +788,9 @@ export function InvoiceStagingWorkflow({
       withoutNumbers.map((label) => ({
         barcode: label.number.trim() || t("common.empty.dash"),
         invoiceNumber: label.invoiceNumber,
-        previousValue: label.containerName,
-        newValue: nextContainerName,
+        container: label.containerName,
+        previousContainer: label.containerName,
+        newContainer: nextContainerName,
         message: t("labels.staging.output.missingNumber"),
         success: false,
       })),
@@ -722,8 +814,9 @@ export function InvoiceStagingWorkflow({
         alreadyCurrent.map((label) => ({
           barcode: label.number,
           invoiceNumber: label.invoiceNumber,
-          previousValue: label.containerName,
-          newValue: nextContainerName,
+          container: nextContainerName,
+          previousContainer: label.containerName,
+          newContainer: nextContainerName,
           message: t("labels.staging.output.successContainer"),
           success: true,
         })),
@@ -773,8 +866,9 @@ export function InvoiceStagingWorkflow({
         needsUpdate.map((label) => ({
           barcode: label.number,
           invoiceNumber: label.invoiceNumber,
-          previousValue: label.containerName,
-          newValue: nextContainerName,
+          container: nextContainerName,
+          previousContainer: label.containerName,
+          newContainer: nextContainerName,
           message: t("labels.staging.output.successContainer"),
           success: true,
         })),
@@ -790,8 +884,9 @@ export function InvoiceStagingWorkflow({
         needsUpdate.map((label) => ({
           barcode: label.number,
           invoiceNumber: label.invoiceNumber,
-          previousValue: label.containerName,
-          newValue: nextContainerName,
+          container: label.containerName,
+          previousContainer: label.containerName,
+          newContainer: nextContainerName,
           message,
           success: false,
         })),
@@ -819,24 +914,27 @@ export function InvoiceStagingWorkflow({
       ...skipped.map((label) => ({
         barcode: label.number.trim() || dash,
         invoiceNumber: label.invoiceNumber,
-        previousValue: label.routeName ?? "",
-        newValue: result.routeName,
+        container: label.containerName,
+        previousRoute: label.routeName ?? "",
+        newRoute: result.routeName,
         message: t("labels.staging.output.missingNumber"),
         success: false,
       })),
       ...alreadyCurrent.map((label) => ({
         barcode: label.number.trim() || dash,
         invoiceNumber: label.invoiceNumber,
-        previousValue: label.routeName ?? "",
-        newValue: result.routeName,
+        container: label.containerName,
+        previousRoute: label.routeName ?? "",
+        newRoute: result.routeName,
         message: successMessage,
         success: true,
       })),
       ...changed.map((label) => ({
         barcode: label.number.trim() || dash,
         invoiceNumber: label.invoiceNumber,
-        previousValue: label.routeName ?? "",
-        newValue: result.routeName,
+        container: label.containerName,
+        previousRoute: label.routeName ?? "",
+        newRoute: result.routeName,
         message: result.success ? successMessage : result.message,
         success: result.success,
       })),
@@ -899,7 +997,7 @@ export function InvoiceStagingWorkflow({
     <Button
       size="sm"
       onClick={generateLabels}
-      disabled={selectedItemKeys.length === 0 || isGenerating}
+      disabled={selectedItemKeys.length === 0 || isGenerating || isRefreshing}
     >
       <Barcode className="h-4 w-4" />
       {isGenerating
@@ -908,9 +1006,24 @@ export function InvoiceStagingWorkflow({
     </Button>
   );
 
+  const refreshButton = (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={() => void refreshStagingData()}
+      disabled={isRefreshing || isGenerating || isUpdating}
+      aria-label={t("labels.staging.refresh")}
+      title={t("labels.staging.refresh")}
+    >
+      <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+      {isRefreshing ? t("labels.staging.refreshing") : t("labels.staging.refresh")}
+    </Button>
+  );
+
   const backToLineItemsButton =
     step === "labels" ? (
-      <Button variant="outline" onClick={() => setStep("line-items")}>
+      <Button variant="outline" onClick={() => setStep("line-items")} disabled={isRefreshing}>
         <ArrowLeft className="h-4 w-4" />
         {t("labels.staging.backToLineItems")}
       </Button>
@@ -1277,6 +1390,7 @@ export function InvoiceStagingWorkflow({
               <p className="text-sm text-muted-foreground">{stagingDescription}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              {refreshButton}
               {backToLineItemsButton}
               <Button variant="outline" onClick={handleClose}>
                 <ArrowLeft className="h-4 w-4" />
@@ -1305,7 +1419,10 @@ export function InvoiceStagingWorkflow({
                 <DialogTitle className="flex items-center gap-2">{stagingHeaderTitle}</DialogTitle>
                 <DialogDescription>{stagingDescription}</DialogDescription>
               </div>
-              {backToLineItemsButton}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {refreshButton}
+                {backToLineItemsButton}
+              </div>
             </div>
           </DialogHeader>
 

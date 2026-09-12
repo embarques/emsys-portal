@@ -137,6 +137,17 @@ export function ContainerForm({
                 placeholder={t("containers.form.placeholders.sealNumber")}
               />
             </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="itn">{t("containers.form.fields.itn")}</Label>
+              <Input
+                id="itn"
+                value={values.itn}
+                onChange={(event) => updateField("itn", event.target.value)}
+                placeholder={t("containers.form.placeholders.itn")}
+                className="font-mono text-xs"
+              />
+            </div>
           </div>
         </FormSection>
 

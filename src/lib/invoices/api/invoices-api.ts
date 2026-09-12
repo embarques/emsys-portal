@@ -324,6 +324,29 @@ function normalizeApiInvoiceReceiver(item: ApiInvoice): OrderParty | null {
   return normalizeApiInvoiceParty(item.receiver);
 }
 
+/** Normalize nested invoice-barcode `route` (id / routeId / name / nested crew). */
+function normalizeInvoiceBarcodeRoute(raw: ApiInvoiceBarcodeRoute | undefined): {
+  routeId?: string;
+  routeName?: string;
+} {
+  if (!raw || typeof raw !== "object") return {};
+
+  const id = String(raw.id ?? "").trim();
+  const routeId = String(raw.routeId ?? "").trim();
+  const nestedId = String(raw.route?.id ?? "").trim();
+  const name = String(raw.name ?? "").trim();
+  const nestedName = String(raw.route?.name ?? "").trim();
+
+  const resolvedId = id || routeId || nestedId;
+  const resolvedName = name || nestedName;
+  if (!resolvedId && !resolvedName) return {};
+
+  return {
+    routeId: resolvedId || undefined,
+    routeName: resolvedName || resolvedId || undefined,
+  };
+}
+
 function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
   const entries = Array.isArray(raw) ? raw : raw && typeof raw === "object" ? [raw] : [];
 
@@ -336,7 +359,7 @@ function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
       const statusName = String(barcode.status?.name ?? "").trim();
       const containerName = String(barcode.container?.name ?? "").trim();
       const deliveryName = String(barcode.delivery?.name ?? "").trim();
-      const routeName = String(barcode.route?.name ?? "").trim();
+      const route = normalizeInvoiceBarcodeRoute(barcode.route);
       const scanDate = String(barcode.scanDate ?? "").trim();
       const createdAt = String(barcode.createdAt ?? "").trim();
       const createdBy = readInvoiceCreatedBy(barcode.createdBy);
@@ -367,8 +390,8 @@ function normalizeInvoiceBarcodes(raw: unknown): InvoiceLineItemBarcode[] {
         containerName: containerName || undefined,
         deliveryId: barcode.delivery?.id != null ? String(barcode.delivery.id) : undefined,
         deliveryName: deliveryName || undefined,
-        routeId: barcode.route?.id != null ? String(barcode.route.id) : undefined,
-        routeName: routeName || undefined,
+        routeId: route.routeId,
+        routeName: route.routeName,
         scanDate: scanDate || undefined,
         createdAt: createdAt || undefined,
         createdBy: createdBy !== DEFAULT_CREATED_BY ? createdBy : undefined,

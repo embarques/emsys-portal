@@ -115,6 +115,8 @@
     "backToLineItems": "Volver a artículos",
     "done": "Listo",
     "working": "Procesando…",
+    "refresh": "Actualizar",
+    "refreshing": "Actualizando…",
     "manageLabels": "Administrar etiquetas ({{count}})",
     "filterPlaceholder": "Filtrar por factura, código, estado, contenedor, descripción…",
     "filterByStatus": "Filtrar por estado",
@@ -195,7 +197,8 @@
       "createdCount": "{{count}} creadas",
       "retrievedCount": "{{count}} recuperadas",
       "assignedToRoute": "{{count}} etiqueta(s) asignada(s) a {{route}} (viaje {{trip}}).",
-      "readyToPrint": "Etiquetas listas para {{count}} código(s) de barras."
+      "readyToPrint": "Etiquetas listas para {{count}} código(s) de barras.",
+      "refreshed": "Datos del manejador de etiquetas actualizados."
     },
     "entities": {
       "labelStatus": "Estado de etiqueta",

@@ -1,10 +1,11 @@
 "use client";
 
-import { CalendarDays, Pencil, UserPlus, Users } from "lucide-react";
+import { CalendarDays, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { CustomerForm } from "@/components/customers/customer-form";
+import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -108,33 +109,13 @@ function PartyFieldActions({
   onAdd: () => void;
   onEdit: () => void;
 }) {
-  const { t } = useTranslation();
-
   return (
-    <div className="flex items-center gap-1">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-        onClick={onAdd}
-      >
-        <UserPlus className="size-3.5" />
-        {t("orders.form.partyActions.new")}
-      </Button>
-      {hasSelection ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-          onClick={onEdit}
-        >
-          <Pencil className="size-3.5" />
-          {t("orders.form.partyActions.edit")}
-        </Button>
-      ) : null}
-    </div>
+    <FieldEntityActions
+      hasSelection={hasSelection}
+      onAdd={onAdd}
+      onEdit={onEdit}
+      addIcon={UserPlus}
+    />
   );
 }
 

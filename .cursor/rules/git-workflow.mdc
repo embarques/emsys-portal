@@ -1,0 +1,11 @@
+---
+description: Work on the current branch (usually dev); never auto-create feature branches
+alwaysApply: true
+---
+
+# Git branch default
+
+- Work on the **currently checked-out branch**. Prefer **`dev`** when starting fresh.
+- Do **not** create a new `codex/feat-*` (or any) branch for each chat or task.
+- Only create, switch, or delete branches when the user **explicitly** asks.
+- Commit / push / PR only when the user asks; do not invent a feature-branch workflow.

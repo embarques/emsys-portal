@@ -1,11 +1,12 @@
 "use client";
 
+import { Building2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
 
-import { EntityFieldActions } from "@/components/accounting/entity-field-actions";
 import { TransactionAssigneeSelect } from "@/components/accounting/transaction-assignee-select";
 import { EmployeeForm } from "@/components/employees/employee-form";
+import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { InventorySupplierForm } from "@/components/inventory/inventory-supplier-form";
 import { ActiveRouteSection } from "@/components/pickup-delivery-routes/pickup-delivery-route-section";
 import { Input } from "@/components/ui/input";
@@ -307,10 +308,11 @@ export function RegisterInventoryChangeFields({
             <RequiredLabel htmlFor="journal-inventory-supplier">
               {t("inventory.form.fields.supplier")}
             </RequiredLabel>
-            <EntityFieldActions
+            <FieldEntityActions
               hasSelection={Boolean(supplierId)}
               onAdd={openAddSupplier}
               onEdit={openEditSupplier}
+              addIcon={Building2}
             />
           </div>
           <SearchableSelect

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Route as RouteIcon } from "lucide-react";
+import { Route as RouteIcon } from "lucide-react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
+import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -167,16 +168,11 @@ export function AssignBarcodeRouteDialog({
               <Label htmlFor="assign-barcode-daily-route">
                 {t("labels.staging.routeDialog.dailyRoute")}
               </Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={openCreateDailyRoute}
+              <FieldEntityActions
+                onAdd={openCreateDailyRoute}
+                addIcon={RouteIcon}
                 disabled={isSaving}
-              >
-                <Plus className="h-4 w-4" />
-                {t("labels.staging.routeDialog.createDailyRoute")}
-              </Button>
+              />
             </div>
             <SearchableSelect
               id="assign-barcode-daily-route"

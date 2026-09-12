@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import { Route, UserPlus } from "lucide-react";
 
-import { EntityFieldActions } from "@/components/accounting/entity-field-actions";
+import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
@@ -196,10 +197,11 @@ export function TransactionAssigneeSelect({
               {t("accounting.dailyIncome.form.fields.route")}
             </RequiredLabel>
             {onAddRoute ? (
-              <EntityFieldActions
+              <FieldEntityActions
                 hasSelection={Boolean(routeId)}
                 onAdd={onAddRoute}
-                onEdit={() => onEditRoute?.()}
+                onEdit={onEditRoute}
+                addIcon={Route}
               />
             ) : null}
           </div>
@@ -219,10 +221,11 @@ export function TransactionAssigneeSelect({
           <div className="flex items-center justify-between gap-2">
             <RequiredLabel htmlFor={id}>{t("accounting.dailyIncome.form.fields.employee")}</RequiredLabel>
             {onAddEmployee ? (
-              <EntityFieldActions
+              <FieldEntityActions
                 hasSelection={Boolean(employeeId)}
                 onAdd={onAddEmployee}
-                onEdit={() => onEditEmployee?.()}
+                onEdit={onEditEmployee}
+                addIcon={UserPlus}
               />
             ) : null}
           </div>

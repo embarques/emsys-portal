@@ -277,6 +277,12 @@ export function ContainersWorkspace() {
       renderCell: (container) => container.sealNumber || t("common.empty.dash"),
     },
     {
+      id: "itn",
+      label: t("containers.columns.itn"),
+      cellClassName: "font-mono text-xs",
+      renderCell: (container) => container.itn || t("common.empty.dash"),
+    },
+    {
       id: "broker",
       label: t("containers.columns.broker"),
       renderCell: (container) => container.broker || t("common.empty.dash"),

@@ -64,6 +64,7 @@ export function ContainerViewSheet({
         <RecordViewSheetBody>
           <RecordViewSheetSection icon={ContainerIcon} title={t("containers.form.sections.container")}>
             <RecordViewSheetDetailRow label={t("containers.form.fields.sealNumber")} value={container.sealNumber || dash} />
+            <RecordViewSheetDetailRow label={t("containers.form.fields.itn")} value={container.itn || dash} />
             <RecordViewSheetDetailRow label={t("containers.view.containerId")} value={formatContainerId(container.id)} />
             <RecordViewSheetDetailRow
               label={t("containers.view.barcodeSequence")}

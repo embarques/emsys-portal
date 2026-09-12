@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import { Route, UserPlus } from "lucide-react";
 
+import { FieldEntityActions } from "@/components/forms/field-entity-actions";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
@@ -20,6 +22,10 @@ type InventoryDispatchToSelectProps = {
   employees: Employee[];
   dailyRoutes: ActiveRoute[];
   onChange: (patch: Partial<DispatchFormValues>) => void;
+  onAddEmployee?: () => void;
+  onEditEmployee?: () => void;
+  onAddRoute?: () => void;
+  onEditRoute?: () => void;
 };
 
 function emptyEmployeeFields(): Pick<DispatchFormValues, "employeeId" | "employeeName"> {
@@ -35,6 +41,10 @@ export function InventoryDispatchToSelect({
   employees,
   dailyRoutes,
   onChange,
+  onAddEmployee,
+  onEditEmployee,
+  onAddRoute,
+  onEditRoute,
 }: InventoryDispatchToSelectProps) {
   const { t } = useTranslation();
   const source: InventoryDispatchAssigneeSource = values.assigneeSource === "route" ? "route" : "employee";
@@ -123,7 +133,17 @@ export function InventoryDispatchToSelect({
       </div>
       {source === "route" ? (
         <div className="space-y-1">
-          <Label htmlFor="dispatchedTo-route">{t("inventory.form.fields.route")}</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="dispatchedTo-route">{t("inventory.form.fields.route")}</Label>
+            {onAddRoute ? (
+              <FieldEntityActions
+                hasSelection={Boolean(values.routeId)}
+                onAdd={onAddRoute}
+                onEdit={onEditRoute}
+                addIcon={Route}
+              />
+            ) : null}
+          </div>
           <SearchableSelect
             id="dispatchedTo-route"
             value={values.routeId}
@@ -138,7 +158,17 @@ export function InventoryDispatchToSelect({
         </div>
       ) : (
         <div className="space-y-1">
-          <Label htmlFor="dispatchedTo-employee">{t("inventory.form.fields.employee")}</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="dispatchedTo-employee">{t("inventory.form.fields.employee")}</Label>
+            {onAddEmployee ? (
+              <FieldEntityActions
+                hasSelection={Boolean(values.employeeId)}
+                onAdd={onAddEmployee}
+                onEdit={onEditEmployee}
+                addIcon={UserPlus}
+              />
+            ) : null}
+          </div>
           <SearchableSelect
             id="dispatchedTo-employee"
             value={values.employeeId}

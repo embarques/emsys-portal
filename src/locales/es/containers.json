@@ -40,6 +40,7 @@
     "containerNumber": "Número de contenedor",
     "booking": "Número de reserva",
     "sealNumber": "Número de sello",
+    "itn": "ITN",
     "broker": "Agente aduanal",
     "company": "Empresa de transporte",
     "cost": "Costo",
@@ -75,6 +76,7 @@
       "containerNumber": "Número de contenedor",
       "booking": "Número de reserva",
       "sealNumber": "Número de sello",
+      "itn": "ITN",
       "broker": "Agente aduanal",
       "company": "Empresa de transporte",
       "cost": "Costo",
@@ -86,6 +88,7 @@
       "containerNumber": "SMLUD320939203",
       "booking": "BKG-2026-00421",
       "sealNumber": "SL-884921",
+      "itn": "X20260101234567",
       "broker": "Nombre del agente aduanal",
       "company": "Naviera o transportista",
       "cost": "0.00"
@@ -137,6 +140,10 @@
       "seal": {
         "label": "Sello",
         "placeholder": "Ingrese sello…"
+      },
+      "itn": {
+        "label": "ITN",
+        "placeholder": "Ingrese ITN…"
       },
       "broker": {
         "label": "Agente aduanal",
