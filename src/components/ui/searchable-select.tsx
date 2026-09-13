@@ -178,6 +178,16 @@ const listItemClassName =
 
 const MOBILE_SHEET_SEARCH_THRESHOLD = 8;
 
+type CloseSearchableSelect = () => void;
+
+const openSearchableSelects = new Set<CloseSearchableSelect>();
+
+function closeOtherSearchableSelects(current: CloseSearchableSelect) {
+  for (const close of openSearchableSelects) {
+    if (close !== current) close();
+  }
+}
+
 function MobileSelectLoading({ message }: { message: string }) {
   return (
     <div
@@ -280,17 +290,38 @@ export function SearchableSelect({
   const isMobile = useIsMobileViewport();
   const [viewportResolved, setViewportResolved] = React.useState(false);
 
+  const closeDropdown = React.useCallback(() => {
+    setOpen((current) => {
+      if (!current) return current;
+      setQuery("");
+      onClose?.();
+      return false;
+    });
+  }, [onClose]);
+
+  const openDropdown = React.useCallback(() => {
+    closeOtherSearchableSelects(closeDropdown);
+    setOpen(true);
+  }, [closeDropdown]);
+
+  React.useEffect(() => {
+    openSearchableSelects.add(closeDropdown);
+    return () => {
+      openSearchableSelects.delete(closeDropdown);
+    };
+  }, [closeDropdown]);
+
   React.useEffect(() => {
     setViewportResolved(true);
   }, []);
 
   function handleOpenChange(next: boolean) {
     if (disabled) return;
-    setOpen(next);
-    if (!next) {
-      setQuery("");
-      onClose?.();
+    if (next) {
+      openDropdown();
+      return;
     }
+    closeDropdown();
   }
 
   const selectedOption = options.find((option) => option.value === value);
@@ -315,7 +346,7 @@ export function SearchableSelect({
     if (shouldSelectAll && hasSelection && selectedOption && !open) {
       changeQuery(selectedOption.label);
     }
-    setOpen(true);
+    openDropdown();
     window.requestAnimationFrame(() => {
       const input = inputRef.current;
       input?.focus();
@@ -345,7 +376,7 @@ export function SearchableSelect({
   }
 
   function handleSelect(nextValue: string) {
-    setOpen(false);
+    closeDropdown();
     changeQuery("");
     onValueChange(nextValue);
 
@@ -397,8 +428,7 @@ export function SearchableSelect({
   function handleComboboxKeyDown(event: React.KeyboardEvent<HTMLElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
-      setOpen(false);
-      changeQuery("");
+      closeDropdown();
       if (searchable) {
         inputRef.current?.blur();
       } else {
@@ -411,7 +441,7 @@ export function SearchableSelect({
       event.preventDefault();
       event.stopPropagation();
       if (!open) {
-        setOpen(true);
+        openDropdown();
         return;
       }
       const direction = event.key === "ArrowDown" ? 1 : -1;
@@ -449,7 +479,7 @@ export function SearchableSelect({
     suppressNextFocusSearchRef.current = true;
     onValueChange("");
     changeQuery("");
-    setOpen(false);
+    closeDropdown();
     window.setTimeout(() => inputRef.current?.focus(), 0);
   }
 
@@ -665,14 +695,7 @@ export function SearchableSelect({
       >
         <Popover
           open={open}
-          onOpenChange={(next) => {
-            if (disabled) return;
-            setOpen(next);
-            if (!next) {
-              changeQuery("");
-              onClose?.();
-            }
-          }}
+          onOpenChange={handleOpenChange}
           modal={false}
         >
           <PopoverAnchor asChild>
@@ -702,7 +725,7 @@ export function SearchableSelect({
                 value={open ? query : hasSelection ? query || selectedOption?.label || "" : query}
                 onValueChange={(next) => {
                   changeQuery(next);
-                  if (!open) setOpen(true);
+                  if (!open) openDropdown();
                 }}
                 onFocus={() => focusSearchInput(selectAllOnFocus)}
                 onKeyDown={handleComboboxKeyDown}
