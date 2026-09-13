@@ -51,6 +51,7 @@
     "employees": "Employees",
     "userActivities": "User Activity",
     "branches": "Branches",
+    "barcodeStatuses": "Barcode statuses",
     "settings": "Settings"
   }
 }

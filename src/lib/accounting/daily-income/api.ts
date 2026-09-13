@@ -1,3 +1,4 @@
+import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { buildApiListQuery } from "@/lib/api/list-query";
@@ -217,6 +218,8 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     transactionType: (stringValue(firstDefined(raw.transactionType, raw.transType)) || "SALES") as JournalTransactionType,
     amount: numberValue(firstDefined(raw.transactionAmount, raw.amount)),
     refNumber: stringValue(raw.refNumber),
+    externalReferenceNumber: stringValue(raw.external_reference_number ?? raw.externalReferenceNumber),
+    duplicatePaymentOverride: raw.duplicatePaymentOverride === true,
     description: stringValue(raw.description),
     currency: stringValue(raw.currency),
     rate: numberValue(raw.rate),
@@ -626,7 +629,7 @@ export async function fetchDailyIncomeInvoiceRegistration(
   return row ? normalizeJournal(row) : null;
 }
 
-function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJournalValues) {
+function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options: JournalWriteOptions = {}) {
   if (!statement.id) {
     throw new Error("A daily closeout id is required to save a transaction.");
   }
@@ -681,6 +684,7 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     transactionType: values.transactionType,
     amount: values.amount,
     refNumber: values.refNumber,
+    ...journalPaymentFields(values, options),
     description: values.description,
     currency: statement.currency,
     rate: statement.rate,
@@ -761,16 +765,16 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
   };
 }
 
-export async function createDailyIncomeJournal(statement: DailyIncomeStatement, values: DailyIncomeJournalValues) {
-  const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_JOURNAL, journalPayload(statement, values));
+export async function createDailyIncomeJournal(statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
+  const payload = await apiClient.post<ApiEnvelope>(API_ENDPOINTS.ACCOUNTING_JOURNAL, journalPayload(statement, values, options));
   assertMutation(payload, "Unable to create transaction.");
   return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));
 }
 
-export async function updateDailyIncomeJournal(id: string, statement: DailyIncomeStatement, values: DailyIncomeJournalValues) {
+export async function updateDailyIncomeJournal(id: string, statement: DailyIncomeStatement, values: DailyIncomeJournalValues, options?: JournalWriteOptions) {
   const payload = await apiClient.put<ApiEnvelope>(
     `${API_ENDPOINTS.ACCOUNTING_JOURNAL}/${encodeURIComponent(id)}`,
-    { id, ...journalPayload(statement, values) },
+    { id, ...journalPayload(statement, values, options) },
   );
   assertMutation(payload, "Unable to update transaction.");
   return normalizeJournal(unwrapArray(payload)[0] ?? unwrap(payload));

@@ -7,6 +7,7 @@ import { AddTransactionWizard } from "@/components/accounting/add-transaction-wi
 import { FormTabShell } from "@/components/forms/form-tab-shell";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
+import { isDuplicatePaymentWarning, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
 import { normalizeApiError } from "@/lib/api/axios";
 import {
   useAccountingPaymentMethods,
@@ -71,7 +72,7 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
     }
   }, [isEditing, tabId, t, typeLabel, updateTabLabel]);
 
-  async function saveJournal(values: DailyIncomeJournalValues): Promise<void> {
+  async function saveJournal(values: DailyIncomeJournalValues, options?: JournalWriteOptions): Promise<void> {
     if (!statement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
     setFormError(null);
 
@@ -83,15 +84,16 @@ export function DailyIncomeTransactionFormWorkspace({ tabId, mode, entityId }: W
           return;
         }
 
-        await updateJournal.mutateAsync({ id: editingJournal.id, statement, values });
+        await updateJournal.mutateAsync({ id: editingJournal.id, statement, values, options });
         notifySuccess(t("accounting.dailyIncome.toasts.transactionUpdated"));
         closeFormTabAndReturn(tabId);
         return;
       }
 
-      await createJournal.mutateAsync({ statement, values });
+      await createJournal.mutateAsync({ statement, values, options });
       notifySuccess(journalCreatedToastMessage(values, t));
     } catch (error) {
+      if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;
       const message = normalizeApiError(error).message;
       setFormError(message);
       return Promise.reject(error);

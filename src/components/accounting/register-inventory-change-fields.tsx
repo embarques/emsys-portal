@@ -272,8 +272,8 @@ export function RegisterInventoryChangeFields({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <div className="space-y-2 sm:col-span-2">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-2 sm:col-span-2 lg:col-span-3">
         <RequiredLabel htmlFor="journal-inventory-direction">
           {t("accounting.dailyIncome.form.fields.inventoryDirection")}
         </RequiredLabel>
@@ -303,7 +303,7 @@ export function RegisterInventoryChangeFields({
       </div>
 
       {direction === "received" ? (
-        <div className="space-y-2 sm:col-span-2">
+        <div className="space-y-2 sm:col-span-2 lg:col-span-3">
           <div className="flex items-center justify-between gap-2">
             <RequiredLabel htmlFor="journal-inventory-supplier">
               {t("inventory.form.fields.supplier")}
@@ -335,7 +335,7 @@ export function RegisterInventoryChangeFields({
       ) : null}
 
       {direction === "dispatched" ? (
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 lg:col-span-3">
           <TransactionAssigneeSelect
             employees={employees}
             dailyRoutes={dailyRoutes}
@@ -355,7 +355,7 @@ export function RegisterInventoryChangeFields({
         </div>
       ) : null}
 
-      <div className="space-y-2 sm:col-span-2">
+      <div className="space-y-2 sm:col-span-2 lg:col-span-3">
         <RequiredLabel htmlFor="journal-inventory-item">{t("inventory.form.fields.item")}</RequiredLabel>
         <SearchableSelect
           id="journal-inventory-item"
@@ -410,7 +410,7 @@ export function RegisterInventoryChangeFields({
         />
       </div>
 
-      <div className="space-y-2 sm:col-span-2">
+      <div className="space-y-2 sm:col-span-2 lg:col-span-1">
         <RequiredLabel htmlFor="journal-inventory-total">{t("accounting.dailyIncome.form.fields.total")}</RequiredLabel>
         <Input
           id="journal-inventory-total"

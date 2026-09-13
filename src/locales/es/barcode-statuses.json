@@ -1,0 +1,21 @@
+{
+  "entity": "estado de código de barras",
+  "description": "Administre el catálogo de estados usado por los selectores y flujos de etiquetas.",
+  "empty": "Aún no hay estados de códigos de barras.",
+  "confirmDelete": "¿Eliminar el estado {{name}}?",
+  "validation": {
+    "nameRequired": "El nombre es obligatorio."
+  },
+  "fields": {
+    "name": "Nombre",
+    "previousStatus": "Estado anterior"
+  },
+  "actions": {
+    "add": "Agregar estado"
+  },
+  "form": {
+    "addTitle": "Agregar estado de código de barras",
+    "editTitle": "Editar estado de código de barras",
+    "description": "Cree o actualice un estado del catálogo de códigos de barras."
+  }
+}

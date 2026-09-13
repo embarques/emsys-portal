@@ -181,6 +181,10 @@ export function DailyIncomeTransactionViewSheet({
               }
             />
             <RecordViewSheetDetailRow
+              label={t("accounting.dailyIncome.form.fields.externalReferenceNumber")}
+              value={resolved.externalReferenceNumber}
+            />
+            <RecordViewSheetDetailRow
               label={t("accounting.dailyIncome.form.fields.referenceNumber")}
               value={resolved.refNumber}
             />
@@ -191,6 +195,12 @@ export function DailyIncomeTransactionViewSheet({
           </RecordViewSheetSection>
 
           <RecordViewSheetSection title={t("accounting.dailyIncome.view.sections.audit")}>
+            {resolved.duplicatePaymentOverride ? (
+              <RecordViewSheetDetailRow
+                label={t("accounting.dailyIncome.duplicatePayment.auditLabel")}
+                value={t("accounting.dailyIncome.duplicatePayment.auditConfirmed")}
+              />
+            ) : null}
             <RecordViewSheetDetailRow
               label={t("common.audit.createdAt")}
               value={resolved.createdAt ? formatAuditDateTime(resolved.createdAt) : undefined}

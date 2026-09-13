@@ -264,6 +264,8 @@ API assignee rules (`POST` / `PUT` `/v1/journals`):
   - route journals keep `vehicleRoute`, `route`, and compatibility `employeeGroup`, with `employee` cleared
 - Responses and searchable fields include the route assignee fields.
 
+**Payment references and duplicate confirmation:** Daily Income transaction forms keep the internal `refNumber` separate from the optional payment reference (`external_reference_number`). The API returns HTTP 409 with `message: "Duplicate payment warning"` for a possible duplicate. The portal offers an explicit confirmation and resubmits the same values with `allowDuplicatePayment: true` only after confirmation. Other conflicts remain normal errors. The override is not a form default and never carries into another payment. Transaction details display the saved payment reference and `duplicatePaymentOverride` audit flag.
+
 ### Checks
 
 Checks manages invoice payments made by check.
@@ -336,12 +338,12 @@ Replaces the legacy screen at `tenares.embarqueros.com` → `#menu/useractivitie
 
 Portal route: `/user-activities` (Admin sidebar). The portal is a **read-only consumer** of activities recorded by the API.
 
-**Probe (api.embarqueros.com Swagger, 2026-09-11):** there is **no** user-activity / audit-log API yet.
+The API exposes normalized user activity rows for the current company tenant through
+`GET /v1/user-activities` and advanced search through
+`POST /v1/user-activities/search`.
 
-- Swagger has **121** paths and tags for invoice, user, role, journal, income_statement, etc.
-- **Zero** paths or tags for `user-activities`, `activities`, `audits`, or `audit-logs`
-- Invoice models have **no** `activity` / `severity` fields
-- Portal invoice “activity” timelines are **frontend-synthetic** (built from invoice create/payment/comment data) — not a system-wide audit log
+- Activities include timestamp, user, description, origin, entity `id`, quantity, and API-owned severity.
+- Portal invoice “activity” timelines are **frontend-synthetic** (built from invoice create/payment/comment data) — not a system-wide audit log.
 
 Do not confuse:
 
@@ -350,9 +352,7 @@ Do not confuse:
 | Admin → User Activity | Company-wide audit of user actions (`origin` + entity `id`) |
 | Invoice view → Activity | Per-invoice synthetic timeline in the portal only |
 
-##### Backend TODO (adjusted: build from scratch)
-
-Nothing to reuse for list/search of user activities. Implement the full surface:
+##### Backend activity contract
 
 1. **Data model** (every activity):
    - `timestamp` — when it occurred
@@ -381,8 +381,8 @@ Nothing to reuse for list/search of user activities. Implement the full surface:
 5. **List API** (portal directory):
    - `GET /v1/user-activities` — paginated list (default sort `timestamp:desc`)
    - `POST /v1/user-activities/search` — Stripe-style search (user, description, origin, entity `id`, severity, date range)
-   - Permission seed (recommended): `user_activity` / `canViewUserActivity` (portal currently gates with user view until seeded)
-   - OpenAPI/Swagger docs for model + endpoints
+   - Permission: `canViewUserActivity`, granted to `Administrador`
+   - OpenAPI/Swagger documents the model and endpoints
 
 6. **Portal** consumes severity for display only: common = default, uncommon = yellow, rare = red.
 

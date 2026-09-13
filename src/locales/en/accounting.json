@@ -251,6 +251,9 @@
       "description": "Set the branch, date, currency, and exchange rate for this closeout.",
       "editDescription": "Update the date, currency, and exchange rate for this closeout.",
       "save": "Save daily income",
+      "closePreviousCuadre": "Close previous cuadre",
+      "closing": "Closing…",
+      "previousOpenStatement": "Previous daily income #{{id}} ({{date}}) is still open. Close it, then try creating today's closeout.",
       "fields": {
         "branch": "Branch",
         "date": "Date",
@@ -390,7 +393,9 @@
         "receiverClient": "Receiver client",
         "inventoryDirection": "Received or dispatched",
         "unitPrice": "Unit price",
-        "total": "Total"
+        "total": "Total",
+        "externalReferenceNumber": "Payment reference",
+        "externalReferenceHint": "Optional bank, card, check, or receipt reference used to identify this payment."
       },
       "partyActions": {
         "new": "New",
@@ -431,7 +436,8 @@
         "searchReceivers": "Search receivers…",
         "selectReceiver": "Select receiver",
         "selectInventoryDirection": "Select received or dispatched",
-        "amount": "0.00"
+        "amount": "0.00",
+        "externalReferenceNumber": "Enter the payment reference"
       },
       "hints": {
         "amountZeroAllowed": "Zero is allowed for unpaid initial registration.",
@@ -478,6 +484,14 @@
         "supplierRequired": "Supplier is required.",
         "balanceNegative": "Balance cannot be negative."
       }
+    },
+    "duplicatePayment": {
+      "title": "Possible duplicate payment",
+      "description": "A payment with this reference, or a similar cash payment, already exists. Review the existing payment before continuing. Confirming will post another payment and record your override.",
+      "review": "Go back and review",
+      "confirm": "Post duplicate payment",
+      "auditLabel": "Duplicate payment",
+      "auditConfirmed": "Explicitly confirmed"
     }
   }
 }

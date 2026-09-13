@@ -78,6 +78,7 @@ export type DailyIncomeJournal = {
   transactionType: JournalTransactionType;
   amount: number;
   refNumber: string;
+  externalReferenceNumber?: string;
   description: string;
   currency: string;
   rate: number;
@@ -118,6 +119,7 @@ export type DailyIncomeJournal = {
     debit: number;
     credit: number;
   }>;
+  duplicatePaymentOverride?: boolean;
   createdAt?: string;
 };
 
@@ -204,6 +206,7 @@ export type DailyIncomeJournalValues = {
   transactionType: JournalTransactionType;
   amount?: number;
   refNumber: string;
+  externalReferenceNumber?: string;
   description: string;
   /** Portal-only: employee vs daily route. Do not persist. */
   assigneeSource?: DailyIncomeAssigneeSource;

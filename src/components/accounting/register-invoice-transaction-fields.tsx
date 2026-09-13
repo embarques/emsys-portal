@@ -425,6 +425,17 @@ export function RegisterInvoiceTransactionFields({
       ) : null}
 
       <div className="space-y-2 sm:col-span-2">
+        <Label htmlFor="journal-external-reference">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</Label>
+        <Input
+          id="journal-external-reference"
+          autoComplete="off"
+          placeholder={t("accounting.dailyIncome.form.placeholders.externalReferenceNumber")}
+          {...register("externalReferenceNumber")}
+        />
+        <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceHint")}</p>
+      </div>
+
+      <div className="space-y-2 sm:col-span-2">
         <Label htmlFor="journal-reference">{t("accounting.dailyIncome.form.fields.referenceNumber")}</Label>
         <Input
           id="journal-reference"

@@ -8,10 +8,6 @@ import {
 } from "@/lib/api/search-query";
 import type { PaginatedApiEnvelope, PaginatedResult } from "@/lib/api/types";
 import { resolvePaginatedListTotal } from "@/lib/api/types";
-import {
-  fetchMockUserActivities,
-  USE_USER_ACTIVITY_MOCK,
-} from "@/lib/user-activities/mock-data";
 import { USER_ACTIVITY_BAR_OR_SEARCH_FIELDS } from "@/lib/user-activities/search-fields";
 import {
   DEFAULT_USER_ACTIVITY_LIST_PARAMS,
@@ -169,11 +165,6 @@ function normalizePaginatedUserActivities(
 export async function fetchUserActivities(
   params: UserActivityListParams = {},
 ): Promise<PaginatedResult<UserActivity>> {
-  // API has no user-activities endpoints yet — serve mock until wired.
-  if (USE_USER_ACTIVITY_MOCK) {
-    return fetchMockUserActivities(params);
-  }
-
   return fetchPaginatedResourceList({
     endpoint: API_ENDPOINTS.USER_ACTIVITIES,
     page: params.page ?? DEFAULT_USER_ACTIVITY_LIST_PARAMS.page,

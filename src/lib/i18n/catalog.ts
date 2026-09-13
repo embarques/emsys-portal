@@ -17,6 +17,7 @@ import enRoutes from "@/locales/en/routes.json";
 import enSettings from "@/locales/en/settings.json";
 import enShell from "@/locales/en/shell.json";
 import enBarcodes from "@/locales/en/barcodes.json";
+import enBarcodeStatuses from "@/locales/en/barcode-statuses.json";
 import enAccounting from "@/locales/en/accounting.json";
 import enBranches from "@/locales/en/branches.json";
 import enVehicles from "@/locales/en/vehicles.json";
@@ -41,6 +42,7 @@ import esRoutes from "@/locales/es/routes.json";
 import esSettings from "@/locales/es/settings.json";
 import esShell from "@/locales/es/shell.json";
 import esBarcodes from "@/locales/es/barcodes.json";
+import esBarcodeStatuses from "@/locales/es/barcode-statuses.json";
 import esAccounting from "@/locales/es/accounting.json";
 import esBranches from "@/locales/es/branches.json";
 import esUserActivities from "@/locales/es/user-activities.json";
@@ -57,6 +59,7 @@ const catalogs: Record<Locale, MessageTree> = {
   en: {
     accounting: enAccounting,
     barcodes: enBarcodes,
+    barcodeStatuses: enBarcodeStatuses,
     common: enCommon,
     containers: enContainers,
     customers: enCustomers,
@@ -83,6 +86,7 @@ const catalogs: Record<Locale, MessageTree> = {
   es: {
     accounting: esAccounting,
     barcodes: esBarcodes,
+    barcodeStatuses: esBarcodeStatuses,
     common: esCommon,
     containers: esContainers,
     customers: esCustomers,

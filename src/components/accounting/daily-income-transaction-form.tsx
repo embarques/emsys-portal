@@ -570,69 +570,91 @@ export function DailyIncomeTransactionForm({
               </div>
             ) : null}
 
-            {needsAccount ? (
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="journal-account">{t("accounting.dailyIncome.form.fields.account")}</RequiredLabel>
-                <SearchableSelect
-                  id="journal-account"
-                  value={accountId != null ? String(accountId) : ""}
-                  onValueChange={(next) => {
-                    const account = accountSelectAccounts.find((item) => item.id === Number(next));
-                    setValue("accountId", account?.id, { shouldValidate: true });
-                    setValue("accountName", account?.displayName ?? "");
-                    setValue("accountType", account?.type);
-                  }}
-                  placeholder={t("accounting.dailyIncome.form.placeholders.selectAccount")}
-                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
-                  selectAllOnFocus
-                  mobileSheet
-                  options={accountOptions}
-                />
-                {errors.accountId ? (
-                  <p className="text-sm text-destructive">{errors.accountId.message}</p>
-                ) : null}
-              </div>
-            ) : null}
+            <div
+              className={cn(
+                "grid gap-4 sm:col-span-2",
+                needsAccount && needsSourceAccount
+                  ? "sm:grid-cols-2 lg:grid-cols-3"
+                  : needsAccount || needsSourceAccount
+                    ? "sm:grid-cols-2"
+                    : "sm:grid-cols-1",
+              )}
+            >
+              {needsAccount ? (
+                <div className="space-y-2">
+                  <RequiredLabel htmlFor="journal-account">{t("accounting.dailyIncome.form.fields.account")}</RequiredLabel>
+                  <SearchableSelect
+                    id="journal-account"
+                    value={accountId != null ? String(accountId) : ""}
+                    onValueChange={(next) => {
+                      const account = accountSelectAccounts.find((item) => item.id === Number(next));
+                      setValue("accountId", account?.id, { shouldValidate: true });
+                      setValue("accountName", account?.displayName ?? "");
+                      setValue("accountType", account?.type);
+                    }}
+                    placeholder={t("accounting.dailyIncome.form.placeholders.selectAccount")}
+                    searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
+                    selectAllOnFocus
+                    mobileSheet
+                    options={accountOptions}
+                  />
+                  {errors.accountId ? (
+                    <p className="text-sm text-destructive">{errors.accountId.message}</p>
+                  ) : null}
+                </div>
+              ) : null}
 
-            {needsSourceAccount ? (
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="journal-source">{t("accounting.dailyIncome.form.fields.sourceAccount")}</RequiredLabel>
-                <SearchableSelect
-                  id="journal-source"
-                  value={sourceAccountId != null ? String(sourceAccountId) : ""}
-                  onValueChange={(next) => {
-                    setSourceAccountDefaultCleared(next === "");
-                    const account = sourceAccountSelectAccounts.find((item) => item.id === Number(next));
-                    setValue("sourceAccountId", account?.id, { shouldValidate: true });
-                    setValue("sourceAccountName", account?.displayName ?? "");
-                    setValue("sourceAccountType", account?.type);
-                  }}
-                  placeholder={t("accounting.dailyIncome.form.placeholders.selectSourceAccount")}
-                  searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
-                  selectAllOnFocus
-                  mobileSheet
-                  options={sourceAccountOptions}
-                />
-                {errors.sourceAccountId ? (
-                  <p className="text-sm text-destructive">{errors.sourceAccountId.message}</p>
-                ) : null}
-              </div>
-            ) : null}
+              {needsSourceAccount ? (
+                <div className="space-y-2">
+                  <RequiredLabel htmlFor="journal-source">{t("accounting.dailyIncome.form.fields.sourceAccount")}</RequiredLabel>
+                  <SearchableSelect
+                    id="journal-source"
+                    value={sourceAccountId != null ? String(sourceAccountId) : ""}
+                    onValueChange={(next) => {
+                      setSourceAccountDefaultCleared(next === "");
+                      const account = sourceAccountSelectAccounts.find((item) => item.id === Number(next));
+                      setValue("sourceAccountId", account?.id, { shouldValidate: true });
+                      setValue("sourceAccountName", account?.displayName ?? "");
+                      setValue("sourceAccountType", account?.type);
+                    }}
+                    placeholder={t("accounting.dailyIncome.form.placeholders.selectSourceAccount")}
+                    searchPlaceholder={t("accounting.dailyIncome.form.placeholders.searchAccounts")}
+                    selectAllOnFocus
+                    mobileSheet
+                    options={sourceAccountOptions}
+                  />
+                  {errors.sourceAccountId ? (
+                    <p className="text-sm text-destructive">{errors.sourceAccountId.message}</p>
+                  ) : null}
+                </div>
+              ) : null}
 
-            <div className="space-y-2">
-              <RequiredLabel htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</RequiredLabel>
-              <Input
-                id="journal-amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
-                {...register("amount", { setValueAs: moneyFormSetValueAs })}
-              />
-              {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
+              <div className="space-y-2">
+                <RequiredLabel htmlFor="journal-amount">{t("accounting.dailyIncome.form.fields.amount")}</RequiredLabel>
+                <Input
+                  id="journal-amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder={t("accounting.dailyIncome.form.placeholders.amount")}
+                  {...register("amount", { setValueAs: moneyFormSetValueAs })}
+                />
+                {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
+              </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="journal-external-reference">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</Label>
+              <Input
+                id="journal-external-reference"
+                autoComplete="off"
+                placeholder={t("accounting.dailyIncome.form.placeholders.externalReferenceNumber")}
+                {...register("externalReferenceNumber")}
+              />
+              <p className="text-xs text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceHint")}</p>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="journal-reference">{t("accounting.dailyIncome.form.fields.referenceNumber")}</Label>
               <Input
                 id="journal-reference"

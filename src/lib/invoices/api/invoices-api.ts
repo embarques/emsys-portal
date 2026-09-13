@@ -878,13 +878,45 @@ function unwrapInvoiceApiRecord(response: unknown): ApiInvoice {
 
 export async function fetchInvoiceById(invoiceId: string): Promise<Invoice> {
   const id = parseInvoicePathId(invoiceId);
+  if (process.env.NODE_ENV === "development") {
+    console.info("[invoice:get] request", {
+      invoiceId: id,
+      endpoint: `${API_ENDPOINTS.INVOICES}/${id}`,
+    });
+  }
+
   const response = await apiClient.get<ApiInvoice | PaginatedApiEnvelope<ApiInvoice>>(
     `${API_ENDPOINTS.INVOICES}/${id}`,
   );
 
-  const invoice = normalizeInvoice(unwrapInvoiceApiRecord(response));
+  const apiRecord = unwrapInvoiceApiRecord(response);
+  const invoice = normalizeInvoice(apiRecord);
   if (!invoice) {
     throw new Error("Invoice not found.");
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("[invoice:get] response", {
+      invoiceId: id,
+      rawInvoiceDetails: Array.isArray(apiRecord.invoiceDetails)
+        ? apiRecord.invoiceDetails.map((detail) => ({
+            id: detail.id,
+            name: detail.name,
+            quantity: detail.quantity,
+            labels: detail.labels,
+            price: detail.price,
+            total: detail.total,
+          }))
+        : apiRecord.invoiceDetails,
+      normalizedLineItems: invoice.lineItems.map((item) => ({
+        id: item.id,
+        itemName: item.itemName,
+        quantity: item.quantity,
+        labels: item.labels,
+        price: item.unitPrice,
+        total: item.total,
+      })),
+    });
   }
 
   return invoice;
@@ -1591,10 +1623,34 @@ export async function updateInvoice(
   context: InvoiceWriteContext,
 ): Promise<Invoice> {
   const id = parseInvoicePathId(invoiceId);
+  const payload = buildInvoiceWritePayload(values, context, { isUpdate: true });
+
+  if (process.env.NODE_ENV === "development") {
+    // Temporary diagnostics for verifying invoice line-item persistence.
+    console.info("[invoice:update] request", {
+      invoiceId: id,
+      invoiceDetails: payload.invoiceDetails.map((detail) => ({
+        id: detail.id,
+        name: detail.name,
+        quantity: detail.quantity,
+        labels: detail.labels,
+        price: detail.price,
+        total: detail.total,
+      })),
+    });
+  }
+
   const response = await apiClient.put<ApiMutationEnvelope<unknown>>(
     `${API_ENDPOINTS.INVOICES}/${id}`,
-    buildInvoiceWritePayload(values, context, { isUpdate: true }),
+    payload,
   );
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("[invoice:update] response", {
+      invoiceId: id,
+      response,
+    });
+  }
 
   assertMutationSuccess(response, "Unable to update invoice.");
 

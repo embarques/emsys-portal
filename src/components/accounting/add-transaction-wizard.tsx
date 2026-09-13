@@ -7,7 +7,9 @@ import { DailyIncomeTransactionForm } from "@/components/accounting/daily-income
 import { TransactionTypeSelector } from "@/components/accounting/transaction-type-selector";
 import { TransactionWizardStepper } from "@/components/accounting/transaction-wizard-stepper";
 import { Button } from "@/components/ui/button";
-import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { SubmitJournal } from "@/lib/accounting/daily-income/duplicate-payment";
+import { useDuplicatePaymentConfirmation } from "@/lib/accounting/daily-income/use-duplicate-payment-confirmation";
 import { findCashPaymentMethod, withDefaultCashPaymentMethod, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import type { Employee } from "@/lib/employees/types";
 import type { Invoice } from "@/lib/invoices/types";
@@ -28,7 +30,7 @@ type SharedProps = {
   paymentMethods: AccountingLookup[];
   isSubmitting: boolean;
   error?: string | null;
-  onSubmit: (values: DailyIncomeJournalValues) => void | Promise<void>;
+  onSubmit: SubmitJournal;
   onCancel: () => void;
 };
 
@@ -51,6 +53,7 @@ function emptyTransaction(
   const values: DailyIncomeJournalValues = {
     transactionType: type,
     refNumber: "",
+    externalReferenceNumber: "",
     description: "",
     includeSender: false,
     includeReceiver: false,
@@ -96,6 +99,8 @@ function clearTypeSpecificFields(
 export function AddTransactionWizard(props: Props) {
   const { t } = useTranslation();
   const formId = useId();
+  const confirmation = useDuplicatePaymentConfirmation(props.open);
+  const isSubmitting = props.isSubmitting || confirmation.isSubmitting;
   const presentation = props.presentation ?? "dialog";
   const appearance = props.appearance ?? "default";
   const isPhone = appearance === "phone";
@@ -142,7 +147,8 @@ export function AddTransactionWizard(props: Props) {
 
   async function handleFormSubmit(values: DailyIncomeJournalValues) {
     try {
-      await props.onSubmit(values);
+      const saved = await confirmation.submit(values, props.onSubmit);
+      if (!saved) return;
       if (!isEdit && selectedType) {
         setDetailValues(continueTransactionValues(selectedType, values, props.paymentMethods));
         setFormSessionKey((key) => key + 1);
@@ -228,7 +234,7 @@ export function AddTransactionWizard(props: Props) {
 
         {selectedType ? (
           <div className={cn("relative min-h-0 min-w-0 flex-1 flex-col", step === 2 ? "flex" : "hidden")}>
-            {props.isSubmitting && step === 2 ? (
+            {isSubmitting && step === 2 ? (
               <div
                 className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-[1px]"
                 aria-live="polite"
@@ -270,10 +276,10 @@ export function AddTransactionWizard(props: Props) {
       >
         {step === 1 ? (
           <div className={cn("flex items-center justify-between gap-3", isPhone && "grid grid-cols-2")}>
-            <Button type="button" variant="outline" onClick={props.onCancel} disabled={props.isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
+            <Button type="button" variant="outline" onClick={props.onCancel} disabled={isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
               {t("common.actions.cancel")}
             </Button>
-            <Button type="button" onClick={handleNext} disabled={!selectedType || props.isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
+            <Button type="button" onClick={handleNext} disabled={!selectedType || isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
               {t("common.actions.next")}
               <ArrowRight className="size-4" />
             </Button>
@@ -282,7 +288,7 @@ export function AddTransactionWizard(props: Props) {
           <div className={cn("flex items-center justify-between gap-3", isPhone && "flex-col items-stretch")}>
             <div className="flex min-w-0 flex-1 items-center">
               {!isEdit ? (
-                <Button type="button" variant="outline" onClick={handleBack} disabled={props.isSubmitting} className={cn(isPhone && "hidden")}>
+                <Button type="button" variant="outline" onClick={handleBack} disabled={isSubmitting} className={cn(isPhone && "hidden")}>
                   <ArrowLeft className="size-4" />
                   {t("common.actions.previous")}
                 </Button>
@@ -299,7 +305,7 @@ export function AddTransactionWizard(props: Props) {
               </p>
             ) : null}
             <div className={cn("flex shrink-0 items-center gap-2", isPhone && "grid grid-cols-2")}>
-              <Button type="button" variant="outline" onClick={isPhone && !isEdit ? handleBack : props.onCancel} disabled={props.isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
+              <Button type="button" variant="outline" onClick={isPhone && !isEdit ? handleBack : props.onCancel} disabled={isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
                 {isPhone && !isEdit ? (
                   <>
                     <ArrowLeft className="size-4" />
@@ -309,9 +315,9 @@ export function AddTransactionWizard(props: Props) {
                   t("common.actions.cancel")
                 )}
               </Button>
-              <Button type="submit" form={formId} disabled={props.isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
-                {props.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                {props.isSubmitting ? t("common.actions.saving") : t("accounting.dailyIncome.wizard.saveTransaction")}
+              <Button type="submit" form={formId} disabled={isSubmitting} className={cn(isPhone && "h-12 rounded-xl text-base")}>
+                {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                {isSubmitting ? t("common.actions.saving") : t("accounting.dailyIncome.wizard.saveTransaction")}
               </Button>
             </div>
           </div>
@@ -320,6 +326,35 @@ export function AddTransactionWizard(props: Props) {
           <p className="mt-2 text-sm text-destructive">{props.error}</p>
         ) : null}
       </div>
+      <Dialog open={Boolean(confirmation.pendingValues)} onOpenChange={(open) => { if (!open) confirmation.respond(false); }}>
+        <DialogContent onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          document.getElementById(`${formId}-duplicate-cancel`)?.focus();
+        }}>
+          <DialogHeader>
+            <DialogTitle>{t("accounting.dailyIncome.duplicatePayment.title")}</DialogTitle>
+            <DialogDescription>{t("accounting.dailyIncome.duplicatePayment.description")}</DialogDescription>
+          </DialogHeader>
+          <dl className="grid grid-cols-2 gap-2 text-sm">
+            <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.invoice")}</dt>
+            <dd>{confirmation.pendingValues?.invoiceNumber || props.invoices.find((invoice) => invoice.invoiceId === confirmation.pendingValues?.invoiceId)?.invoiceNumber || t("common.empty.dash")}</dd>
+            <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.paymentMethod")}</dt>
+            <dd>{confirmation.pendingValues?.paymentMethodName}</dd>
+            <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.amount")}</dt>
+            <dd>{confirmation.pendingValues?.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</dd>
+            <dt className="text-muted-foreground">{t("accounting.dailyIncome.form.fields.externalReferenceNumber")}</dt>
+            <dd className="break-all">{confirmation.pendingValues?.externalReferenceNumber || t("common.empty.dash")}</dd>
+          </dl>
+          <DialogFooter>
+            <Button id={`${formId}-duplicate-cancel`} type="button" variant="outline" onClick={() => confirmation.respond(false)}>
+              {t("accounting.dailyIncome.duplicatePayment.review")}
+            </Button>
+            <Button type="button" onClick={() => confirmation.respond(true)}>
+              {t("accounting.dailyIncome.duplicatePayment.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

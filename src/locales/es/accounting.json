@@ -251,6 +251,9 @@
       "description": "Configure la sucursal, fecha, moneda y tasa de cambio para este cierre.",
       "editDescription": "Actualice la fecha, moneda y tasa de cambio para este cierre.",
       "save": "Guardar ingresos diarios",
+      "closePreviousCuadre": "Cerrar cuadre anterior",
+      "closing": "Cerrando…",
+      "previousOpenStatement": "El cuadre anterior #{{id}} ({{date}}) sigue abierto. Ciérrelo y luego intente crear el cierre de hoy.",
       "fields": {
         "branch": "Sucursal",
         "date": "Fecha",
@@ -390,7 +393,9 @@
         "receiverClient": "Cliente destinatario",
         "inventoryDirection": "Recibido o despachado",
         "unitPrice": "Precio unitario",
-        "total": "Total"
+        "total": "Total",
+        "externalReferenceNumber": "Referencia del pago",
+        "externalReferenceHint": "Referencia opcional del banco, tarjeta, cheque o recibo para identificar este pago."
       },
       "partyActions": {
         "new": "Nuevo",
@@ -431,7 +436,8 @@
         "searchReceivers": "Buscar destinatarios…",
         "selectReceiver": "Seleccionar destinatario",
         "selectInventoryDirection": "Seleccione recibido o despachado",
-        "amount": "0.00"
+        "amount": "0.00",
+        "externalReferenceNumber": "Ingresa la referencia del pago"
       },
       "hints": {
         "amountZeroAllowed": "Se permite cero para el registro inicial sin pago.",
@@ -478,6 +484,14 @@
         "supplierRequired": "El proveedor es obligatorio.",
         "balanceNegative": "El saldo no puede ser negativo."
       }
+    },
+    "duplicatePayment": {
+      "title": "Posible pago duplicado",
+      "description": "Ya existe un pago con esta referencia o un pago en efectivo similar. Revisa el pago existente antes de continuar. Al confirmar, se registrará otro pago y quedará constancia de tu autorización.",
+      "review": "Volver y revisar",
+      "confirm": "Registrar pago duplicado",
+      "auditLabel": "Pago duplicado",
+      "auditConfirmed": "Confirmado explícitamente"
     }
   }
 }

@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
   BARCODES: "/barcodes",
   /** Tenant barcode status catalog for pickers (labels:view). */
   BARCODES_STATUS_OPTIONS: "/barcodes/status-options",
+  BARCODE_STATUSES: "/barcode-statuses",
   VEHICLES: "/vehicles",
   ROUTES: "/routes",
   /** Scheduled pickup/delivery route (unified endpoint; `routeType` in payload). */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronUp, Edit, Lock, LockOpen, Plus, Printer, ScrollText, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronUp, Edit, Loader2, Lock, LockOpen, Plus, Printer, ScrollText, Trash2 } from "lucide-react";
 
 import { AddTransactionWizard } from "@/components/accounting/add-transaction-wizard";
 import { DailyIncomePrintDialog, type DailyIncomePrintSelection } from "@/components/accounting/daily-income-print-dialog";
@@ -43,6 +43,7 @@ import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import { buildIncomeReportRequest, openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
 import { fetchIncomeStatement } from "@/lib/accounting/daily-income/api";
+import { parseSingleOpenIncomeStatement, type OpenIncomeStatementRef } from "@/lib/accounting/daily-income/open-statement-error";
 import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
@@ -51,6 +52,7 @@ import {
   getDailyIncomeCurrencyIcon,
 } from "@/lib/accounting/daily-income/display";
 import { formatAccountingDate } from "@/lib/accounting/display";
+import { isDuplicatePaymentWarning, type JournalWriteOptions } from "@/lib/accounting/daily-income/duplicate-payment";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { useBranchPicker } from "@/lib/branches/hooks/use-branches";
@@ -350,6 +352,7 @@ export function DailyIncomeWorkspace() {
   const [deleteJournal, setDeleteJournal] = useState<DailyIncomeJournal | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [previousOpenStatement, setPreviousOpenStatement] = useState<OpenIncomeStatementRef | null>(null);
   const [openCreateOnLoad, setOpenCreateOnLoad] = useState(false);
 
   const branchesQuery = useBranchPicker(200);
@@ -484,15 +487,44 @@ export function DailyIncomeWorkspace() {
 
   function saveStatement(values: DailyIncomeStatementValues) {
     setFormError(null);
+    setPreviousOpenStatement(null);
     if (statement && areFormValuesEquivalent(values, statementValues)) {
       feedback.notifySuccess(t("common.form.noChanges"));
       setStatementDialog(false);
       return;
     }
     const action = statement ? updateStatement.mutateAsync({ id: statement.id, values }) : createStatement.mutateAsync(values);
-    action.then(() => { setStatementDialog(false); setBranchCode(values.branchCode); setDate(values.date); feedback.notifySuccess(statement ? t("accounting.dailyIncome.toasts.statementUpdated") : t("accounting.dailyIncome.toasts.statementCreated")); }).catch((error) => setFormError(normalizeApiError(error).message));
+    action.then(() => { setStatementDialog(false); setBranchCode(values.branchCode); setDate(values.date); feedback.notifySuccess(statement ? t("accounting.dailyIncome.toasts.statementUpdated") : t("accounting.dailyIncome.toasts.statementCreated")); }).catch((error) => {
+      const message = normalizeApiError(error).message;
+      setFormError(message);
+      setPreviousOpenStatement(parseSingleOpenIncomeStatement(message));
+    });
   }
-  function saveJournal(values: DailyIncomeJournalValues): Promise<void> {
+  async function closePreviousStatement() {
+    if (!previousOpenStatement) return;
+    try {
+      await statusMutation.mutateAsync({
+        statement: {
+          id: previousOpenStatement.id,
+          date: previousOpenStatement.date,
+          status: "OPEN",
+          branch: selectedBranch
+            ? { id: selectedBranch.id, code: selectedBranch.code, name: selectedBranch.name }
+            : undefined,
+          currency: statementValues.currency,
+          rate: statementValues.rate,
+        },
+        open: false,
+      });
+      setFormError(null);
+      setPreviousOpenStatement(null);
+    } catch (error) {
+      const message = normalizeApiError(error).message;
+      setFormError(message);
+      setPreviousOpenStatement(parseSingleOpenIncomeStatement(message));
+    }
+  }
+  function saveJournal(values: DailyIncomeJournalValues, options?: JournalWriteOptions): Promise<void> {
     if (!statement) return Promise.reject(new Error(t("accounting.dailyIncome.errors.noCloseoutLoaded")));
     setFormError(null);
     if (
@@ -505,8 +537,8 @@ export function DailyIncomeWorkspace() {
       return Promise.resolve();
     }
     return (editingJournal
-      ? updateJournal.mutateAsync({ id: editingJournal.id, statement, values })
-      : createJournal.mutateAsync({ statement, values })
+      ? updateJournal.mutateAsync({ id: editingJournal.id, statement, values, options })
+      : createJournal.mutateAsync({ statement, values, options })
     )
       .then(() => {
         if (editingJournal) {
@@ -519,6 +551,7 @@ export function DailyIncomeWorkspace() {
         feedback.notifySuccess(journalCreatedToastMessage(values, t));
       })
       .catch((error) => {
+        if (isDuplicatePaymentWarning(error) && !options?.allowDuplicatePayment) throw error;
         setFormError(normalizeApiError(error).message);
         return Promise.reject(error);
       });
@@ -899,7 +932,48 @@ export function DailyIncomeWorkspace() {
     </> : null}
     </div>
 
-    <Dialog open={statementDialog} onOpenChange={(open) => { setStatementDialog(open); if (!open) setFormError(null); }}><DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90dvh] sm:w-[calc(100vw-2rem)] sm:max-w-xl sm:overflow-visible sm:rounded-xl sm:p-6"><DialogHeader className="shrink-0 border-b border-primary/20 bg-primary px-4 pb-4 pt-5 text-primary-foreground sm:border-0 sm:bg-transparent sm:p-0 sm:text-foreground"><div className="flex items-center justify-between gap-4"><DialogTitle className="text-2xl font-bold text-primary-foreground sm:text-lg sm:text-foreground">{statement ? t("accounting.dailyIncome.statement.editTitle") : t("accounting.dailyIncome.statement.createTitle")}</DialogTitle><button type="button" className="font-semibold text-primary-foreground sm:hidden" onClick={() => setStatementDialog(false)}>{t("common.actions.cancel")}</button></div><DialogDescription className="break-words text-primary-foreground/85 sm:text-muted-foreground">{statement ? t("accounting.dailyIncome.statement.editDescription") : t("accounting.dailyIncome.statement.description")}</DialogDescription></DialogHeader><div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:overflow-visible sm:p-0"><DailyIncomeStatementForm branches={branches} initialValues={statementValues} lockBranch={Boolean(statement)} isSubmitting={mutationPending} error={formError} onSubmit={saveStatement} onCancel={() => setStatementDialog(false)} /></div></DialogContent></Dialog>
+    <Dialog open={statementDialog} onOpenChange={(open) => { setStatementDialog(open); if (!open) { setFormError(null); setPreviousOpenStatement(null); } }}>
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+        <DialogHeader className="border-b px-6 py-5">
+          <DialogTitle>{statement ? t("accounting.dailyIncome.statement.editTitle") : t("accounting.dailyIncome.statement.createTitle")}</DialogTitle>
+          <DialogDescription>{statement ? t("accounting.dailyIncome.statement.editDescription") : t("accounting.dailyIncome.statement.description")}</DialogDescription>
+        </DialogHeader>
+        <div className="min-h-0 overflow-y-auto px-6 py-5">
+          {!statement && previousOpenStatement ? (
+            <div className="mb-5 space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+              <p className="break-words leading-snug">
+                {t("accounting.dailyIncome.statement.previousOpenStatement", {
+                  id: previousOpenStatement.id,
+                  date: previousOpenStatement.date,
+                })}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 border-destructive/30 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={closePreviousStatement}
+                disabled={statusMutation.isPending}
+              >
+                {statusMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />}
+                {statusMutation.isPending
+                  ? t("accounting.dailyIncome.statement.closing")
+                  : t("accounting.dailyIncome.statement.closePreviousCuadre")}
+              </Button>
+            </div>
+          ) : null}
+          <DailyIncomeStatementForm
+            branches={branches}
+            initialValues={statementValues}
+            lockBranch={Boolean(statement)}
+            isSubmitting={mutationPending}
+            error={previousOpenStatement ? null : formError}
+            onSubmit={saveStatement}
+            onCancel={() => setStatementDialog(false)}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
     <DailyIncomePrintDialog
       open={printDialog}
       onOpenChange={setPrintDialog}

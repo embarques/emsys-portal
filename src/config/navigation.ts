@@ -2,6 +2,7 @@ import {
   Banknote,
   BarChart3,
   Barcode,
+  Tags,
   BookOpenText,
   Boxes,
   Briefcase,
@@ -303,6 +304,12 @@ export const navigationSections: NavigationSection[] = [
             href: "/branches",
             icon: Building2,
             permission: PERMISSIONS.branchesView,
+          },
+          {
+            labelKey: "navigation.items.barcodeStatuses",
+            href: "/barcode-statuses",
+            icon: Tags,
+            permission: PERMISSIONS.barcodeStatusesView,
           },
           {
             labelKey: "navigation.items.settings",

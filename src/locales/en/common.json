@@ -14,7 +14,8 @@
     "close": "Close",
     "previous": "Previous",
     "next": "Next",
-    "dismissNotification": "Dismiss notification"
+    "dismissNotification": "Dismiss notification",
+    "actions": "Actions"
   },
   "form": {
     "noChanges": "No changes to save.",

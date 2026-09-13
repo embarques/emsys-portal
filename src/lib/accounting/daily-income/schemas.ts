@@ -87,6 +87,7 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
         .nonnegative(messages.amountNonNegative)
         .optional(),
       refNumber: z.string().trim().max(20, messages.refNumberTooLong),
+      externalReferenceNumber: z.string().trim().optional(),
       description: z.string().trim().max(500, messages.descriptionTooLong),
       employeeId: z.number().optional(),
       employeeName: z.string().optional(),

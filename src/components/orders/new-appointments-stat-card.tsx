@@ -38,11 +38,13 @@ export function NewAppointmentsStatCard() {
         </CardHeader>
         <CardContent className="pr-28">
           <div className="text-2xl font-bold">
-            {stats.isLoading ? "…" : stats.total.toLocaleString()}
+            {stats.isLoading ? "…" : stats.isError ? "—" : stats.total.toLocaleString()}
           </div>
           <CardDescription className="mt-1">
             {stats.isLoading ? (
               "…"
+            ) : stats.isError ? (
+              <span className="text-destructive">{t("orders.stats.new.error")}</span>
             ) : (
               <PeriodChangeDescription
                 current={stats.total}

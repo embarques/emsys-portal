@@ -21,6 +21,7 @@ export const PERMISSIONS = {
   containersView: { name: "canViewContainer", resourceType: "container" },
   deliveriesView: { name: "canViewDelivery", resourceType: "delivery" },
   packagesView: { name: "canViewLabels", resourceType: "labels" },
+  barcodeStatusesView: { name: "canViewLabels", resourceType: "labels" },
   /**
    * Inventory — dedicated CRUD + list per resource. Until the API seeds these,
    * aliases still accept delivery/inventory view grants.

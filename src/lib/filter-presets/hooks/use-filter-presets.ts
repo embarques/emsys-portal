@@ -40,27 +40,34 @@ export function useFilterPresets(scope: string): UseFilterPresetsResult {
   const queryClient = useQueryClient();
   const { loading } = useAuth();
   const idToken = useAppSelector((state) => state.auth.idToken);
-  const queryEnabled = !loading && Boolean(idToken) && Boolean(scope);
+  const normalizedScope = scope.trim();
+  const queryEnabled = !loading && Boolean(idToken) && Boolean(normalizedScope);
 
   const presetsQuery = useWorkspaceQuery({
-    queryKey: queryKeys.filterPresets.list(scope),
-    queryFn: () => fetchFilterPresets(scope),
+    queryKey: queryKeys.filterPresets.list(normalizedScope),
+    queryFn: () => fetchFilterPresets(normalizedScope),
     enabled: queryEnabled,
   });
 
-  const presets = presetsQuery.data ? sortByName(presetsQuery.data) : [];
+  const presets = presetsQuery.data
+    ? sortByName(
+        presetsQuery.data.filter((preset) => preset.scope.trim() === normalizedScope),
+      )
+    : [];
 
   function invalidate() {
-    return queryClient.invalidateQueries({ queryKey: queryKeys.filterPresets.list(scope) });
+    return queryClient.invalidateQueries({ queryKey: queryKeys.filterPresets.list(normalizedScope) });
   }
 
   const saveMutation = useMutation({
     mutationFn: ({ name, rows }: { name: string; rows: TableFilterRowState[] }) => {
       const trimmedName = name.trim();
       const existing = (presetsQuery.data ?? []).find(
-        (preset) => preset.name.toLowerCase() === trimmedName.toLowerCase(),
+        (preset) =>
+          preset.scope.trim() === normalizedScope &&
+          preset.name.toLowerCase() === trimmedName.toLowerCase(),
       );
-      const input = { scope, name: trimmedName, rows };
+      const input = { scope: normalizedScope, name: trimmedName, rows };
 
       return existing
         ? updateFilterPreset(existing.id, input)

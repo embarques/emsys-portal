@@ -154,6 +154,11 @@ export const queryKeys = {
     detail: (barcodeId: number) => [...queryKeys.barcodes.all, "detail", barcodeId] as const,
     statusOptions: () => [...queryKeys.barcodes.all, "status-options"] as const,
   },
+  barcodeStatuses: {
+    all: ["barcode-statuses"] as const,
+    list: () => [...queryKeys.barcodeStatuses.all, "list"] as const,
+    detail: (id: number) => [...queryKeys.barcodeStatuses.all, "detail", id] as const,
+  },
   containers: {
     all: ["containers"] as const,
     lists: () => [...queryKeys.containers.all, "list"] as const,

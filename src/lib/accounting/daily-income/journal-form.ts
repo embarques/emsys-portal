@@ -109,6 +109,7 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     transactionType: row.transactionType,
     amount: row.amount,
     refNumber: row.refNumber ?? "",
+    externalReferenceNumber: row.externalReferenceNumber ?? "",
     description: row.description ?? "",
     assigneeSource: assignedToRoute ? "route" : "employee",
     employeeId: assignedToRoute ? undefined : lookupId(row.employee?.id),

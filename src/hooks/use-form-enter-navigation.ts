@@ -7,6 +7,13 @@ const FIELD_SELECTOR = [
   "[role='combobox']",
 ].join(",");
 
+const automaticSelectionFocus = new WeakSet<HTMLElement>();
+
+/** A select is handing focus forward while its own popup is closing. */
+export function isAutomaticSelectionFocus(element: HTMLElement | null): boolean {
+  return element !== null && automaticSelectionFocus.has(element);
+}
+
 function isVisible(element: HTMLElement) {
   return Boolean(
     element.offsetWidth ||
@@ -33,7 +40,10 @@ export function getNavigableFormFields(container: ParentNode): HTMLElement[] {
 }
 
 /** Focus the next navigable field in the same form. Returns true when focus moved. */
-export function focusNextFormField(current: HTMLElement | null): boolean {
+export function focusNextFormField(
+  current: HTMLElement | null,
+  options: { suppressComboboxOpen?: boolean } = {},
+): boolean {
   if (!current) return false;
 
   const form = current.closest("form");
@@ -46,7 +56,12 @@ export function focusNextFormField(current: HTMLElement | null): boolean {
   const nextField = fields[currentIndex + 1];
   if (!nextField) return false;
 
-  nextField.focus();
+  if (options.suppressComboboxOpen) automaticSelectionFocus.add(nextField);
+  try {
+    nextField.focus();
+  } finally {
+    automaticSelectionFocus.delete(nextField);
+  }
   selectFormFieldText(nextField);
   return true;
 }

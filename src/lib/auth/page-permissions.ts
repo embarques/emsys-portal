@@ -33,6 +33,7 @@ export const PAGE_PERMISSIONS: Record<string, Permission> = {
   "/employees": PERMISSIONS.employeesView,
   "/settings": PERMISSIONS.accountSettingsView,
   "/branches": PERMISSIONS.branchesView,
+  "/barcode-statuses": PERMISSIONS.barcodeStatusesView,
 };
 
 export function permissionForPath(pathname: string): Permission | null {

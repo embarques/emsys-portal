@@ -14,7 +14,8 @@
     "close": "Cerrar",
     "previous": "Anterior",
     "next": "Siguiente",
-    "dismissNotification": "Descartar notificación"
+    "dismissNotification": "Descartar notificación",
+    "actions": "Acciones"
   },
   "form": {
     "noChanges": "No hay cambios para guardar.",

@@ -1,5 +1,7 @@
 "use client";
 
+import type { JournalWriteOptions } from "./duplicate-payment";
+
 import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
@@ -162,8 +164,9 @@ export function useSetIncomeStatementStatus() {
 export function useCreateDailyIncomeJournal() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ statement, values }: { statement: DailyIncomeStatement; values: DailyIncomeJournalValues }) =>
-      createDailyIncomeJournal(statement, values),
+    mutationFn: ({ statement, values, options }: { statement: DailyIncomeStatement; values: DailyIncomeJournalValues; options?: JournalWriteOptions }) =>
+      createDailyIncomeJournal(statement, values, options),
+    retry: false,
     onSuccess: () => invalidateDailyIncome(queryClient),
   });
 }
@@ -171,8 +174,9 @@ export function useCreateDailyIncomeJournal() {
 export function useUpdateDailyIncomeJournal() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, statement, values }: { id: string; statement: DailyIncomeStatement; values: DailyIncomeJournalValues }) =>
-      updateDailyIncomeJournal(id, statement, values),
+    mutationFn: ({ id, statement, values, options }: { id: string; statement: DailyIncomeStatement; values: DailyIncomeJournalValues; options?: JournalWriteOptions }) =>
+      updateDailyIncomeJournal(id, statement, values, options),
+    retry: false,
     onSuccess: () => invalidateDailyIncome(queryClient),
   });
 }

@@ -1,0 +1,21 @@
+{
+  "entity": "barcode status",
+  "description": "Manage the barcode status catalog used by barcode pickers and label workflows.",
+  "empty": "No barcode statuses yet.",
+  "confirmDelete": "Delete barcode status {{name}}?",
+  "validation": {
+    "nameRequired": "Name is required."
+  },
+  "fields": {
+    "name": "Name",
+    "previousStatus": "Previous status"
+  },
+  "actions": {
+    "add": "Add status"
+  },
+  "form": {
+    "addTitle": "Add barcode status",
+    "editTitle": "Edit barcode status",
+    "description": "Create or update a status in the barcode catalog."
+  }
+}

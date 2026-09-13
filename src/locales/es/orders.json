@@ -57,6 +57,7 @@
     "new": {
       "label": "Citas nuevas",
       "periodLabel": "Periodo",
+      "error": "No se pudo cargar",
       "periods": {
         "7d": "7 días",
         "30d": "30 días",

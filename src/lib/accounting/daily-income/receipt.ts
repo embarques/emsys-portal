@@ -171,6 +171,7 @@ function buildReceiptHtml(journal: DailyIncomeJournal, options: PaymentReceiptOp
       ${field("Invoice # / Factura", journal.invoice?.number || "—")}
       ${field("Employee / Empleado", journal.employee?.name || "—")}
       ${field("Reference # / Referencia", journal.refNumber || "—")}
+      ${field("Payment reference / Referencia del pago", journal.externalReferenceNumber || "—")}
       ${field("Payment method / Método de pago", journal.paymentMethod?.name || "—")}
       ${zelleFields}
       ${checkFields}

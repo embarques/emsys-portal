@@ -57,6 +57,7 @@
     "new": {
       "label": "New appointments",
       "periodLabel": "Timeframe",
+      "error": "Unable to load",
       "periods": {
         "7d": "7 days",
         "30d": "30 days",

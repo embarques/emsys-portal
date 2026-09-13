@@ -5,7 +5,7 @@ import { Command as CommandPrimitive, defaultFilter } from "cmdk";
 import { ChevronDown, ChevronUp, LoaderCircle, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { focusNextFormField } from "@/hooks/use-form-enter-navigation";
+import { focusNextFormField, isAutomaticSelectionFocus } from "@/hooks/use-form-enter-navigation";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import {
   Command,
@@ -178,12 +178,6 @@ const listItemClassName =
 
 const MOBILE_SHEET_SEARCH_THRESHOLD = 8;
 
-/**
- * After choosing an option we move focus to the next field. That focus must not
- * reopen a combobox: a new Popper while the parent form is still applying the
- * selection (sections appearing, option lists changing) can loop in Radix
- * PopperContent ("Maximum update depth exceeded").
- */
 function MobileSelectLoading({ message }: { message: string }) {
   return (
     <div
@@ -311,6 +305,9 @@ export function SearchableSelect({
 
   function focusSearchInput(shouldSelectAll = false) {
     if (disabled || skipOpenOnFocusRef.current) return;
+    // Deposit/Zelle mount a bank selector during selection. Focus it without
+    // opening another Popper while the first popup and form are still settling.
+    if (isAutomaticSelectionFocus(inputRef.current ?? triggerRef.current)) return;
     if (suppressNextFocusSearchRef.current) {
       suppressNextFocusSearchRef.current = false;
       return;
@@ -358,7 +355,7 @@ export function SearchableSelect({
     skipOpenOnFocusRef.current = true;
     window.setTimeout(() => {
       try {
-        if (!focusNextFormField(focusTarget)) {
+        if (!focusNextFormField(focusTarget, { suppressComboboxOpen: true })) {
           focusTarget?.focus();
         }
       } finally {

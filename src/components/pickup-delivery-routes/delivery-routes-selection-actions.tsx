@@ -6,7 +6,6 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useTranslation } from "@/lib/i18n";
-import { fetchDeliveryIdsByRoute } from "@/lib/labels/api/barcodes-api";
 import { resolveActiveRouteReportIds } from "@/lib/pickup-delivery-routes/display";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { useGenerateDeliveryReport } from "@/lib/reports/hooks/use-reports";
@@ -50,34 +49,24 @@ export function DeliveryRoutesSelectionActions({
     }
 
     try {
-      const deliveryIds = (
-        await Promise.all(routeIds.map((routeId) => fetchDeliveryIdsByRoute(routeId)))
-      ).flat();
-
       if (process.env.NODE_ENV !== "production") {
-        console.info("[Reports Portal] Delivery route records resolved", {
+        console.info("[Reports Portal] Sending delivery route report request", {
           routeIds,
-          deliveryIds,
-          deliveryCount: deliveryIds.length,
+          routeCount: routeIds.length,
         });
-      }
-
-      if (deliveryIds.length === 0) {
-        notifyError(t("routes.deliveryRoutes.actions.noDeliveriesOnRoute"));
-        return;
       }
 
       const report = await generateDeliveryReportMutation.mutateAsync({
         type: "delivery",
         collection: "deliveries",
-        values: deliveryIds.map(String),
+        values: routeIds,
         lookupField: "id",
       });
       window.open(report.url, "_blank", "noopener,noreferrer");
       notifySuccess(
-        deliveryIds.length === 1
-          ? t("routes.deliveryRoutes.toasts.reportReady", { count: deliveryIds.length })
-          : t("routes.deliveryRoutes.toasts.reportReady_plural", { count: deliveryIds.length }),
+        routeIds.length === 1
+          ? t("routes.deliveryRoutes.toasts.reportReady", { count: routeIds.length })
+          : t("routes.deliveryRoutes.toasts.reportReady_plural", { count: routeIds.length }),
       );
     } catch (mutationError) {
       if (process.env.NODE_ENV !== "production") {

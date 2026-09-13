@@ -10,6 +10,7 @@
     "start": "next start -p 3000",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "test:unit": "node --experimental-strip-types --test tests/unit/*.test.mjs",
     "pretest:integration": "playwright install chromium",
     "clean:playwright": "node scripts/clean-playwright-artifacts.mjs",
     "clean:playwright:ui": "node scripts/clean-playwright-artifacts.mjs --fresh-auth",
