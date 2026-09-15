@@ -41,7 +41,7 @@ import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { DEFAULT_INVOICE_LIST_PARAMS } from "@/lib/invoices/types";
 import { useReportDefinitions, useRequestReportGeneration } from "@/lib/reports/hooks/use-reports";
-import { openReportUrl } from "@/lib/reports/open-report";
+import { openReportUrl, downloadReportFile } from "@/lib/reports/open-report";
 import { normalizeApiError } from "@/lib/api/axios";
 import type {
   NormalizedReportRequest,
@@ -196,6 +196,14 @@ export function ReportsWorkspace() {
     try {
       const response = await generation.mutateAsync(request);
       if (response.status === "generated") {
+        if (selectedReport.key === "customs-form") {
+          await downloadReportFile(
+            response.result.url,
+            response.result.fileName || "reporte-aduana.xlsx",
+          );
+          feedback.notifySuccess("Excel report downloaded.");
+          return;
+        }
         openReportUrl(response.result.url);
         feedback.notifySuccess("Report generated.");
         return;
