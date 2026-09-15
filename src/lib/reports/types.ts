@@ -9,7 +9,8 @@ export type ReportType =
   | "label"
   | "pickup"
   | "delivery"
-  | "customs-form";
+  | "customs-form"
+  | "customs-sender";
 
 /** Collections the `values` identifiers can be resolved against. */
 export type ReportCollection =
@@ -21,6 +22,8 @@ export type ReportCollection =
   | "pickups"
   | "deliveries"
   | "containers";
+
+export type ReportOutputFormat = "pdf" | "excel";
 
 /**
  * Shared payload structure accepted by every `POST /reports/*` endpoint.
@@ -40,6 +43,8 @@ export type ReportCollection =
  *   `{ type: "income", collection: "income_statements", values: ["42"], lookupField: "id" }`
  * - Customs form (`/reports/custom/form`):
  *   `{ type: "customs-form", collection: "containers", values: ["1001"], lookupField: "id" }`
+ * - Customs sender (`/reports/custom/sender`):
+ *   `{ type: "customs-sender", collection: "containers", values: ["1001"], lookupField: "id", format: "pdf" }`
  */
 export type ReportRequest = {
   /** Document type to render. */
@@ -54,6 +59,8 @@ export type ReportRequest = {
   filters?: ApiSearchFilterNode[];
   /** Root filter operator for `filters` (defaults to `and`). */
   operator?: "and" | "or";
+  /** Output format for dual PDF/Excel reports. */
+  format?: ReportOutputFormat;
   /** How long the returned public URL stays valid (defaults to 24). */
   expiresInHours?: number;
 };
@@ -82,6 +89,7 @@ export type ReportDefinition = {
   enabled: boolean;
   sortOrder: number;
   filters: ReportFilterKey[];
+  outputs: ReportOutputFormat[];
 };
 
 export type ReportFilterKey =
@@ -106,6 +114,7 @@ export type ReportFilterValues = Record<string, string>;
 export type NormalizedReportRequest = {
   reportKey: string;
   filters: ReportFilterValues;
+  format?: ReportOutputFormat;
 };
 
 export type ReportGenerationBoundaryResult =
