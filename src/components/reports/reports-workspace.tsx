@@ -44,6 +44,8 @@ import { DEFAULT_EMPLOYEE_LIST_PARAMS } from "@/lib/employees/types";
 import { useInvoices } from "@/lib/invoices/hooks/use-invoices";
 import { DEFAULT_INVOICE_LIST_PARAMS } from "@/lib/invoices/types";
 import { useReportDefinitions, useRequestReportGeneration } from "@/lib/reports/hooks/use-reports";
+import { openReportUrl, downloadReportFile } from "@/lib/reports/open-report";
+import { normalizeApiError } from "@/lib/api/axios";
 import type {
   NormalizedReportRequest,
   ReportDefinition,
@@ -194,8 +196,25 @@ export function ReportsWorkspace() {
     }
 
     const request = normalizeReportRequest(selectedReport, selectedValues);
-    await generation.mutateAsync(request);
-    feedback.notifySuccess("Report request is ready for Phase 2 generation.");
+    try {
+      const response = await generation.mutateAsync(request);
+      if (response.status === "generated") {
+        if (selectedReport.key === "customs-form") {
+          await downloadReportFile(
+            response.result.url,
+            response.result.fileName || "reporte-aduana.xlsx",
+          );
+          feedback.notifySuccess("Excel report downloaded.");
+          return;
+        }
+        openReportUrl(response.result.url);
+        feedback.notifySuccess("Report generated.");
+        return;
+      }
+      feedback.notifySuccess("Report request is ready for Phase 2 generation.");
+    } catch (error) {
+      feedback.notifyError(normalizeApiError(error).message);
+    }
   }
 
   const filtersPanel = (
@@ -877,6 +896,9 @@ function validateReportFilters(report: ReportDefinition, values: ReportFilterVal
   }
   if (report.key === "invoices-by-customer" && !values.customerId) {
     errors.customerId = "Customer is required for this report.";
+  }
+  if (report.key === "customs-form" && !values.containerId) {
+    errors.containerId = "Container is required for this report.";
   }
   return { valid: Object.keys(errors).length === 0, errors };
 }

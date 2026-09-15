@@ -149,6 +149,11 @@ export function generateDeliveryReport(request: ReportRequest): Promise<ReportRe
   return postReport(API_ENDPOINTS.REPORTS_DELIVERIES, request);
 }
 
+/** Generate a customs form report (`POST /reports/custom/form`). */
+export function generateCustomsFormReport(request: ReportRequest): Promise<ReportResult> {
+  return postReport(API_ENDPOINTS.REPORTS_CUSTOM_FORM, request);
+}
+
 function normalizeReportDefinition(raw: unknown): ReportDefinition | null {
   if (!raw || typeof raw !== "object") return null;
   const item = raw as ApiReportDefinition;
@@ -186,10 +191,46 @@ export async function requestReportGeneration(
   request: NormalizedReportRequest,
 ): Promise<ReportGenerationBoundaryResult> {
   if (process.env.NODE_ENV !== "production") {
-    console.info("[Reports Portal] Phase 1 normalized report request", request);
+    console.info("[Reports Portal] Normalized report request", request);
+  }
+
+  if (request.reportKey === "customs-form") {
+    const payload = buildCustomsFormReportRequest(request);
+    const result = await generateCustomsFormReport(payload);
+    return { status: "generated", request, result };
   }
 
   return { status: "not-implemented", request };
+}
+
+function buildCustomsFormReportRequest(request: NormalizedReportRequest): ReportRequest {
+  const containerId = request.filters.containerId?.trim();
+  if (!containerId) {
+    throw new Error("Container is required for the customs form report.");
+  }
+
+  const filters: NonNullable<ReportRequest["filters"]> = [];
+  const customerId = request.filters.customerId?.trim();
+  if (customerId) {
+    filters.push({ field: "customer.id", operator: "eq", value: customerId });
+  }
+  const locationId = request.filters.locationId?.trim();
+  if (locationId) {
+    filters.push({ field: "branch.id", operator: "eq", value: Number(locationId) || locationId });
+  }
+  const paymentStatus = request.filters.paymentStatus?.trim();
+  if (paymentStatus) {
+    filters.push({ field: "paidStatus", operator: "eq", value: paymentStatus });
+  }
+
+  return {
+    type: "customs-form",
+    collection: "containers",
+    values: [containerId],
+    lookupField: "id",
+    operator: filters.length > 0 ? "and" : undefined,
+    filters: filters.length > 0 ? filters : undefined,
+  };
 }
 
 /**
@@ -209,6 +250,7 @@ const REPORT_GENERATORS: Record<ReportType, (request: ReportRequest) => Promise<
   label: generateLabelReport,
   pickup: generatePickupReport,
   delivery: generateDeliveryReport,
+  "customs-form": generateCustomsFormReport,
 };
 
 /** Dispatch a generate request to the matching `POST /reports/{type}` endpoint. */
