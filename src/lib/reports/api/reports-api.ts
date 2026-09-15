@@ -32,6 +32,7 @@ type ApiReportDefinition = {
   enabled?: boolean;
   sortOrder?: number;
   filters?: unknown;
+  outputs?: unknown;
 };
 
 function extractReportUrl(data: ReportData): string {
@@ -43,7 +44,7 @@ function extractReportUrl(data: ReportData): string {
 /**
  * Shared poster for every `POST /reports/*` endpoint. They all accept the same
  * `{ type, collection, values, lookup_field }` body and return a temporary
- * public URL pointing at the generated PDF.
+ * public URL pointing at the generated file.
  */
 async function postReport(endpoint: string, request: ReportRequest): Promise<ReportResult> {
   const payload = {
@@ -53,6 +54,7 @@ async function postReport(endpoint: string, request: ReportRequest): Promise<Rep
     lookup_field: request.lookupField ?? "id",
     filters: request.filters,
     operator: request.operator,
+    format: request.format,
     expiresInHours: request.expiresInHours ?? 24,
   };
 
@@ -152,6 +154,29 @@ export function generateCustomsFormReport(request: ReportRequest): Promise<Repor
   return postReport(API_ENDPOINTS.REPORTS_CUSTOM_FORM, request);
 }
 
+/** Generate a customs sender report (`POST /reports/custom/sender`). */
+export function generateCustomsSenderReport(request: ReportRequest): Promise<ReportResult> {
+  return postReport(API_ENDPOINTS.REPORTS_CUSTOM_SENDER, request);
+}
+
+function defaultReportOutputs(key: string): ReportDefinition["outputs"] {
+  if (key === "customs-form") return ["excel"];
+  if (key === "customs-invoices") return ["pdf", "excel"];
+  return ["pdf"];
+}
+
+function normalizeReportOutputs(raw: unknown, key: string): ReportDefinition["outputs"] {
+  if (!Array.isArray(raw)) return defaultReportOutputs(key);
+  const outputs: ReportDefinition["outputs"] = [];
+  for (const item of raw) {
+    const value = String(item ?? "").trim().toLowerCase();
+    if (value === "pdf" || value === "excel") {
+      if (!outputs.includes(value)) outputs.push(value);
+    }
+  }
+  return outputs.length > 0 ? outputs : defaultReportOutputs(key);
+}
+
 function normalizeReportDefinition(raw: unknown): ReportDefinition | null {
   if (!raw || typeof raw !== "object") return null;
   const item = raw as ApiReportDefinition;
@@ -171,6 +196,7 @@ function normalizeReportDefinition(raw: unknown): ReportDefinition | null {
     filters: Array.isArray(item.filters)
       ? item.filters.map((filter) => String(filter ?? "").trim()).filter(Boolean)
       : [],
+    outputs: normalizeReportOutputs(item.outputs, key),
   };
 }
 
@@ -196,6 +222,12 @@ export async function requestReportGeneration(
     return { status: "generated", request, result };
   }
 
+  if (request.reportKey === "customs-invoices") {
+    const payload = buildCustomsSenderReportRequest(request);
+    const result = await generateCustomsSenderReport(payload);
+    return { status: "generated", request, result };
+  }
+
   return { status: "not-implemented", request };
 }
 
@@ -205,27 +237,26 @@ function buildCustomsFormReportRequest(request: NormalizedReportRequest): Report
     throw new Error("Container is required for the customs form report.");
   }
 
-  const filters: NonNullable<ReportRequest["filters"]> = [];
-  const customerId = request.filters.customerId?.trim();
-  if (customerId) {
-    filters.push({ field: "customer.id", operator: "eq", value: customerId });
-  }
-  const locationId = request.filters.locationId?.trim();
-  if (locationId) {
-    filters.push({ field: "branch.id", operator: "eq", value: Number(locationId) || locationId });
-  }
-  const paymentStatus = request.filters.paymentStatus?.trim();
-  if (paymentStatus) {
-    filters.push({ field: "paidStatus", operator: "eq", value: paymentStatus });
-  }
-
   return {
     type: "customs-form",
     collection: "containers",
     values: [containerId],
     lookupField: "id",
-    operator: filters.length > 0 ? "and" : undefined,
-    filters: filters.length > 0 ? filters : undefined,
+  };
+}
+
+function buildCustomsSenderReportRequest(request: NormalizedReportRequest): ReportRequest {
+  const containerId = request.filters.containerId?.trim();
+  if (!containerId) {
+    throw new Error("Container is required for the customs sender report.");
+  }
+
+  return {
+    type: "customs-sender",
+    collection: "containers",
+    values: [containerId],
+    lookupField: "id",
+    format: request.format ?? "pdf",
   };
 }
 
@@ -247,6 +278,7 @@ const REPORT_GENERATORS: Record<ReportType, (request: ReportRequest) => Promise<
   pickup: generatePickupReport,
   delivery: generateDeliveryReport,
   "customs-form": generateCustomsFormReport,
+  "customs-sender": generateCustomsSenderReport,
 };
 
 /** Dispatch a generate request to the matching `POST /reports/{type}` endpoint. */

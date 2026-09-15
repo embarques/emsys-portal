@@ -19,6 +19,7 @@ import {
   PackageCheck,
   ReceiptText,
   SearchX,
+  Sheet,
   User,
   UsersRound,
   X,
@@ -48,6 +49,7 @@ import type {
   ReportDefinition,
   ReportFilterKey,
   ReportFilterValues,
+  ReportOutputFormat,
 } from "@/lib/reports/types";
 import { cn } from "@/lib/utils";
 
@@ -183,7 +185,14 @@ export function ReportsWorkspace() {
     setErrors({});
   }
 
-  async function generateSelectedReport() {
+  function resolveGenerateFormat(report: ReportDefinition, format?: ReportOutputFormat): ReportOutputFormat {
+    if (format) return format;
+    if (report.outputs.includes("pdf")) return "pdf";
+    if (report.outputs.includes("excel")) return "excel";
+    return "pdf";
+  }
+
+  async function generateSelectedReport(format?: ReportOutputFormat) {
     if (!selectedReport) return;
     const validation = validateReportFilters(selectedReport, selectedValues);
     setErrors(validation.errors);
@@ -192,14 +201,15 @@ export function ReportsWorkspace() {
       return;
     }
 
-    const request = normalizeReportRequest(selectedReport, selectedValues);
+    const resolvedFormat = resolveGenerateFormat(selectedReport, format);
+    const request = normalizeReportRequest(selectedReport, selectedValues, resolvedFormat);
     try {
       const response = await generation.mutateAsync(request);
       if (response.status === "generated") {
-        if (selectedReport.key === "customs-form") {
+        if (resolvedFormat === "excel") {
           await downloadReportFile(
             response.result.url,
-            response.result.fileName || "reporte-aduana.xlsx",
+            response.result.fileName || "report.xlsx",
           );
           feedback.notifySuccess("Excel report downloaded.");
           return;
@@ -214,6 +224,9 @@ export function ReportsWorkspace() {
     }
   }
 
+  const supportsDualOutputs =
+    !!selectedReport?.outputs.includes("pdf") && !!selectedReport.outputs.includes("excel");
+
   const filtersPanel = (
     <ReportConfigurationPanel
       report={selectedReport}
@@ -222,7 +235,8 @@ export function ReportsWorkspace() {
       generating={generation.isPending}
       onValueChange={setSelectedFilterValue}
       onClear={clearFilters}
-      onGenerate={generateSelectedReport}
+      onGenerate={() => generateSelectedReport()}
+      onDownloadExcel={supportsDualOutputs ? () => generateSelectedReport("excel") : undefined}
     />
   );
 
@@ -485,6 +499,7 @@ function ReportConfigurationPanel({
   onValueChange,
   onClear,
   onGenerate,
+  onDownloadExcel,
 }: {
   report: ReportDefinition | null;
   values: ReportFilterValues;
@@ -493,6 +508,7 @@ function ReportConfigurationPanel({
   onValueChange: (key: string, value: string) => void;
   onClear: () => void;
   onGenerate: () => void;
+  onDownloadExcel?: () => void;
 }) {
   if (!report) {
     return (
@@ -547,15 +563,25 @@ function ReportConfigurationPanel({
               <X className="size-4" />
               Clear Filters
             </Button>
+            {onDownloadExcel ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={onDownloadExcel}
+                disabled={generating}
+                className="h-11 w-11"
+                aria-label="Download Excel report"
+                title="Download Excel"
+              >
+                {generating ? <LoaderCircle className="size-4 animate-spin" /> : <Sheet className="size-4" />}
+              </Button>
+            ) : null}
             <Button type="button" onClick={onGenerate} disabled={generating} className="h-11">
               {generating ? <LoaderCircle className="size-4 animate-spin" /> : <FileText className="size-4" />}
               Generate Report
             </Button>
           </div>
-        </div>
-
-        <div className="mt-5 rounded-lg border border-primary/20 bg-primary/10 p-4 text-sm text-primary">
-          This report request will be sent through the Phase 1 service boundary. Phase 2 will generate the final report.
         </div>
       </CardContent>
     </Card>
@@ -878,12 +904,16 @@ function validateReportFilters(report: ReportDefinition, values: ReportFilterVal
   if (report.key === "customs-form" && !values.containerId) {
     errors.containerId = "Container is required for this report.";
   }
+  if (report.key === "customs-invoices" && !values.containerId) {
+    errors.containerId = "Container is required for this report.";
+  }
   return { valid: Object.keys(errors).length === 0, errors };
 }
 
 function normalizeReportRequest(
   report: ReportDefinition,
   values: ReportFilterValues,
+  format?: ReportOutputFormat,
 ): NormalizedReportRequest {
   const allowedKeys = new Set(report.filters.flatMap((filter) => FILTER_VALUE_KEYS[filter] ?? []));
   const filters = Object.entries(values).reduce<ReportFilterValues>((current, [key, value]) => {
@@ -896,5 +926,6 @@ function normalizeReportRequest(
   return {
     reportKey: report.key,
     filters,
+    format,
   };
 }
