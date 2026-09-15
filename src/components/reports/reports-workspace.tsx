@@ -588,13 +588,7 @@ function ReportConfigurationPanel({
               type="button"
               onClick={onGenerate}
               disabled={generating}
-              className={cn(
-                "h-11",
-                generateIsPdf &&
-                  "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600/40",
-                generateIsExcelOnly &&
-                  "border border-emerald-600/40 bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-600/40",
-              )}
+              className="h-11"
               aria-label={generateIsPdf ? "Generate PDF report" : generateIsExcelOnly ? "Generate Excel report" : "Generate report"}
               title={generateIsPdf ? "Generate PDF" : generateIsExcelOnly ? "Generate Excel" : "Generate Report"}
             >
