@@ -33,6 +33,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 import {
+  canContinueInvoiceDailyIncomeStep,
   emptyInvoiceDailyIncomeContext,
   toInvoiceFormSubmitContext,
   type InvoiceDailyIncomeContext,
@@ -172,6 +173,10 @@ export function InvoiceFormWizard({
 
   const handleDailyIncomeContextChange = useCallback((context: InvoiceDailyIncomeContext) => {
     setDailyIncomeContext(context);
+    if (requireDailyIncomeRegistration && canContinueInvoiceDailyIncomeStep(context)) {
+      setStepError(null);
+      setSubmitError(null);
+    }
     setValues((current) => {
       const next = {
         ...current,
@@ -180,7 +185,7 @@ export function InvoiceFormWizard({
       valuesRef.current = next;
       return next;
     });
-  }, []);
+  }, [requireDailyIncomeRegistration]);
 
   function handleDiscountChange(discount: string) {
     setValues((current) => {
