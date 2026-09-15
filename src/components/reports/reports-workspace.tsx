@@ -13,13 +13,14 @@ import {
   CircleDollarSign,
   ClipboardList,
   Container,
+  FileSpreadsheet,
   FileText,
+  FileType,
   LoaderCircle,
   MapPin,
   PackageCheck,
   ReceiptText,
   SearchX,
-  FileSpreadsheet,
   User,
   UsersRound,
   X,
@@ -525,6 +526,8 @@ function ReportConfigurationPanel({
   }
 
   const context: FilterContext = { values, errors, setValue: onValueChange };
+  const generateIsPdf = report.outputs.includes("pdf");
+  const generateIsExcelOnly = !generateIsPdf && report.outputs.includes("excel");
 
   return (
     <Card className="overflow-hidden">
@@ -581,9 +584,30 @@ function ReportConfigurationPanel({
                 Excel
               </Button>
             ) : null}
-            <Button type="button" onClick={onGenerate} disabled={generating} className="h-11">
-              {generating ? <LoaderCircle className="size-4 animate-spin" /> : <FileText className="size-4" />}
-              Generate Report
+            <Button
+              type="button"
+              onClick={onGenerate}
+              disabled={generating}
+              className={cn(
+                "h-11",
+                generateIsPdf &&
+                  "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600/40",
+                generateIsExcelOnly &&
+                  "border border-emerald-600/40 bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-600/40",
+              )}
+              aria-label={generateIsPdf ? "Generate PDF report" : generateIsExcelOnly ? "Generate Excel report" : "Generate report"}
+              title={generateIsPdf ? "Generate PDF" : generateIsExcelOnly ? "Generate Excel" : "Generate Report"}
+            >
+              {generating ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : generateIsPdf ? (
+                <FileType className="size-4" />
+              ) : generateIsExcelOnly ? (
+                <FileSpreadsheet className="size-4" />
+              ) : (
+                <FileText className="size-4" />
+              )}
+              {generateIsPdf ? "Generate PDF" : generateIsExcelOnly ? "Generate Excel" : "Generate Report"}
             </Button>
           </div>
         </div>
