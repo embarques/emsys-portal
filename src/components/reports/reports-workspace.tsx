@@ -19,7 +19,7 @@ import {
   PackageCheck,
   ReceiptText,
   SearchX,
-  Sheet,
+  FileSpreadsheet,
   User,
   UsersRound,
   X,
@@ -567,14 +567,18 @@ function ReportConfigurationPanel({
               <Button
                 type="button"
                 variant="outline"
-                size="icon"
                 onClick={onDownloadExcel}
                 disabled={generating}
-                className="h-11 w-11"
+                className="h-11 border-emerald-600/40 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-500/40 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
                 aria-label="Download Excel report"
                 title="Download Excel"
               >
-                {generating ? <LoaderCircle className="size-4 animate-spin" /> : <Sheet className="size-4" />}
+                {generating ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="size-4 text-emerald-600 dark:text-emerald-400" />
+                )}
+                Excel
               </Button>
             ) : null}
             <Button type="button" onClick={onGenerate} disabled={generating} className="h-11">
