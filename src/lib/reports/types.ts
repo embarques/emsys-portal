@@ -1,7 +1,15 @@
 /** Document types supported by the `/reports/*` endpoints. */
 import type { ApiSearchFilterNode } from "@/lib/api/search-query";
 
-export type ReportType = "income" | "invoice" | "journal" | "loan" | "label" | "pickup" | "delivery";
+export type ReportType =
+  | "income"
+  | "invoice"
+  | "journal"
+  | "loan"
+  | "label"
+  | "pickup"
+  | "delivery"
+  | "customs-form";
 
 /** Collections the `values` identifiers can be resolved against. */
 export type ReportCollection =
@@ -11,7 +19,8 @@ export type ReportCollection =
   | "loans"
   | "barcodes"
   | "pickups"
-  | "deliveries";
+  | "deliveries"
+  | "containers";
 
 /**
  * Shared payload structure accepted by every `POST /reports/*` endpoint.
@@ -29,6 +38,8 @@ export type ReportCollection =
  *   `{ type: "delivery", collection: "deliveries", values: ["1001"], lookupField: "id" }`
  * - Income statement report (`/reports/income`):
  *   `{ type: "income", collection: "income_statements", values: ["42"], lookupField: "id" }`
+ * - Customs form (`/reports/custom/form`):
+ *   `{ type: "customs-form", collection: "containers", values: ["1001"], lookupField: "id" }`
  */
 export type ReportRequest = {
   /** Document type to render. */
@@ -95,7 +106,13 @@ export type NormalizedReportRequest = {
   filters: ReportFilterValues;
 };
 
-export type ReportGenerationBoundaryResult = {
-  status: "not-implemented";
-  request: NormalizedReportRequest;
-};
+export type ReportGenerationBoundaryResult =
+  | {
+      status: "not-implemented";
+      request: NormalizedReportRequest;
+    }
+  | {
+      status: "generated";
+      request: NormalizedReportRequest;
+      result: ReportResult;
+    };

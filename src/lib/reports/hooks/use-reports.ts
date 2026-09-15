@@ -5,6 +5,7 @@ import { useWorkspaceQuery } from "@/lib/query/use-workspace-query";
 
 import {
   fetchReportDefinitions,
+  generateCustomsFormReport,
   generateIncomeReport,
   generateInvoiceReport,
   generateJournalReport,
@@ -70,6 +71,12 @@ export function useGeneratePickupReport() {
 export function useGenerateDeliveryReport() {
   return useMutation({
     mutationFn: (request: ReportRequest) => generateDeliveryReport(request),
+  });
+}
+
+export function useGenerateCustomsFormReport() {
+  return useMutation({
+    mutationFn: (request: ReportRequest) => generateCustomsFormReport(request),
   });
 }
 
