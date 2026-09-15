@@ -32,11 +32,13 @@ import { cn } from "@/lib/utils";
 type PickupRoutesSelectionActionsProps = {
   activeRoutes: ActiveRoute[];
   selectedIds: string[];
+  printDisabled?: boolean;
 };
 
 export function PickupRoutesSelectionActions({
   activeRoutes,
   selectedIds,
+  printDisabled = false,
 }: PickupRoutesSelectionActionsProps) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
@@ -193,7 +195,7 @@ export function PickupRoutesSelectionActions({
         size="sm"
         className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
         onClick={() => void printSelectedPickupRoutes()}
-        disabled={isPrinting || isClearing}
+        disabled={printDisabled || isPrinting || isClearing}
       >
         <Printer className="h-4 w-4" />
         {isPrinting

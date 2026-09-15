@@ -27,9 +27,19 @@ type BranchViewSheetProps = {
   onOpenChange: (open: boolean) => void;
   onEdit: (branch: Branch) => void;
   onDelete: (branch: Branch) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
-export function BranchViewSheet({ branch, open, onOpenChange, onEdit, onDelete }: BranchViewSheetProps) {
+export function BranchViewSheet({
+  branch,
+  open,
+  onOpenChange,
+  onEdit,
+  onDelete,
+  canEdit = true,
+  canDelete = true,
+}: BranchViewSheetProps) {
   const { t } = useTranslation();
 
   if (!branch) return null;
@@ -182,8 +192,8 @@ export function BranchViewSheet({ branch, open, onOpenChange, onEdit, onDelete }
 
         <RecordViewSheetActions
           editLabel={t("branches.view.edit")}
-          onEdit={() => onEdit(branch)}
-          onDelete={() => onDelete(branch)}
+          onEdit={canEdit ? () => onEdit(branch) : undefined}
+          onDelete={canDelete ? () => onDelete(branch) : undefined}
         />
       </RecordViewSheetContent>
     </RecordViewSheet>

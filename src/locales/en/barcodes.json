@@ -45,6 +45,7 @@
     }
   },
   "columns": {
+    "barcodeId": "Barcode ID",
     "id": "#",
     "number": "Barcode",
     "invoice": "Invoice",
@@ -55,7 +56,11 @@
     "deliveryRoute": "Delivery route",
     "tripNumber": "Trip #",
     "delivery": "Delivery",
-    "scanDate": "Last scan"
+    "scanDate": "Last scan",
+    "createdAt": "Created at",
+    "createdBy": "Created by",
+    "updatedAt": "Updated at",
+    "updatedBy": "Updated by"
   },
   "search": {
     "placeholder": "Search by invoice, barcode, description, container, status, route…"
@@ -141,9 +146,9 @@
         }
       },
       "route": {
-        "name": {
+        "id": {
           "label": "Route",
-          "placeholder": "Enter route…"
+          "placeholder": "Select a DR daily route…"
         }
       },
       "id": {

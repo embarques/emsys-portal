@@ -1,10 +1,22 @@
 "use client";
 
-import { Building2, MapPin, Phone, User as UserIcon } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { employeeFormSchema } from "@/lib/employees/schemas/employee.schema";
+import { getEmployeeTitleOptions } from "@/lib/employee-titles/utils/title-options";
+import { useAllBranchOptions } from "@/lib/branches/hooks/use-branches";
+import { Building2, MapPin, Phone, Plus, Pencil, User as UserIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { PermissionGuard } from "@/lib/auth/guards/permission-guard";
+import { PERMISSIONS } from "@/lib/auth/permissions";
+import { EmployeeDepartmentDialog } from "@/components/employee-departments/employee-department-dialog";
+import { EmployeeTitleDialog } from "@/components/employee-titles/employee-title-dialog";
+import { useDepartmentWorkspace } from "@/lib/employee-departments/hooks/use-department-workspace";
+import { useTitleWorkspace } from "@/lib/employee-titles/hooks/use-title-workspace";
 import { UserForm } from "@/components/users/user-form";
-import { FieldEntityActions } from "@/components/forms/field-entity-actions";
+import { FieldEntityActions, fieldEntityActionClassName } from "@/components/forms/field-entity-actions";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { useFormEnterNavigation } from "@/hooks/use-form-enter-navigation";
 import { AddressAutocompleteInput } from "@/components/addresses/address-autocomplete-input";
@@ -12,25 +24,20 @@ import { FormBody, FormFooter, FormSection } from "@/components/forms/form-shell
 import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
+import { employeeDateToInputValue } from "@/lib/employees/utils/employee-date";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
 import { createSecondaryFirebaseUser } from "@/lib/auth/firebase/firebase-user-admin";
 import { useTranslation } from "@/lib/i18n";
-import { useEmployeeLabels } from "@/lib/employees/hooks/use-employee-labels";
 import { useCreateUser, useUpdateUser, useUsers } from "@/lib/users/hooks/use-users";
 import { isGoogleMapsConfigured } from "@/lib/maps/load-google-maps";
 import { createEmptyUserForm, type User, type UserFormValues, userToFormValues } from "@/lib/users/types";
 import {
-  EMPLOYEE_DEPARTMENTS,
-  EMPLOYEE_PORTAL_BRANCHES,
-  EMPLOYEE_TITLES,
-  createEmployeeBranchFromPortal,
   createEmptyEmployeeForm,
-  getEmployeePortalBranch,
   type EmployeeAddress,
   type EmployeeFormValues,
-  type EmployeePortalBranch,
 } from "@/lib/employees/types";
 import type { ParsedPlaceAddress } from "@/lib/customers/types";
 
@@ -54,11 +61,27 @@ export function EmployeeForm({
 }: EmployeeFormProps) {
   const { t } = useTranslation();
   const { notifyAdded } = useFeedback();
-  const employeeLabels = useEmployeeLabels();
   const usersQuery = useUsers({ page: 1, limit: 200, sort: "name:asc", active: true });
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
-  const [values, setValues] = useState<EmployeeFormValues>(initialValues ?? createEmptyEmployeeForm());
+  const branchesQuery = useAllBranchOptions();
+  const { control, reset, setValue, getValues, handleSubmit, formState: { errors } } = useForm<EmployeeFormValues>({
+    defaultValues: initialValues ?? createEmptyEmployeeForm(),
+    resolver: zodResolver(employeeFormSchema),
+  });
+  const values = useWatch({ control }) as EmployeeFormValues;
+  const departmentEditor = useDepartmentWorkspace({
+    onSaved: (item) => setValue("department", item.name, { shouldDirty: true, shouldValidate: true }),
+  });
+  const titleEditor = useTitleWorkspace({
+    onSaved: (item) => setValue("title", item.name, { shouldDirty: true, shouldValidate: true }),
+  });
+  const departmentsQuery = departmentEditor.query;
+  const titlesQuery = titleEditor.query;
+  // Employee references are names; never guess an ID when catalog names collide.
+  const selectedDepartments = (departmentsQuery.data ?? []).filter((item) => item.name === values.department);
+  const selectedTitles = (titlesQuery.data ?? []).filter((item) => item.name === values.title);
+
   const [manualAddressEntry, setManualAddressEntry] = useState(false);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -66,25 +89,19 @@ export function EmployeeForm({
   const handleEnterNavigation = useFormEnterNavigation();
 
   useEffect(() => {
-    setValues(initialValues ?? createEmptyEmployeeForm());
+    reset(initialValues ?? createEmptyEmployeeForm());
     setManualAddressEntry(false);
-  }, [initialValues]);
+  }, [initialValues, reset]);
 
   const departmentOptions = useMemo(() => {
-    const departments = Array.from(new Set([...EMPLOYEE_DEPARTMENTS, values.department].filter(Boolean)));
-    return departments.map((department) => ({
-      value: department,
-      label: employeeLabels.department(department),
-    }));
-  }, [employeeLabels, values.department]);
+    const names = (departmentsQuery.data ?? []).filter((item) => item.active).map((item) => item.name);
+    return Array.from(new Set([...names, values.department].filter(Boolean))).map((name) => ({ value: name, label: name }));
+  }, [departmentsQuery.data, values.department]);
 
-  const titleOptions = useMemo(() => {
-    const titles = Array.from(new Set([...EMPLOYEE_TITLES, values.title].filter(Boolean)));
-    return titles.map((title) => ({
-      value: title,
-      label: employeeLabels.title(title),
-    }));
-  }, [employeeLabels, values.title]);
+  const titleOptions = useMemo(
+    () => getEmployeeTitleOptions(titlesQuery.data ?? [], values.title),
+    [titlesQuery.data, values.title],
+  );
 
   const activeOptions = useMemo(
     () => [
@@ -94,14 +111,12 @@ export function EmployeeForm({
     [t],
   );
 
-  const branchOptions = useMemo(
-    () =>
-      EMPLOYEE_PORTAL_BRANCHES.map((option) => ({
-        value: option.portal,
-        label: t(`employees.enums.branch.${option.portal}`),
-      })),
-    [t],
-  );
+  const branchOptions = useMemo(() => {
+    const branches = branchesQuery.data ?? [];
+    const selected = values.branch;
+    const items = selected.id && !branches.some((branch) => branch.id === selected.id) ? [selected, ...branches] : branches;
+    return items.map((branch) => ({ value: String(branch.id), label: [branch.name, branch.code].filter(Boolean).join(" · ") || String(branch.id) }));
+  }, [branchesQuery.data, values.branch]);
   const users = useMemo(() => usersQuery.data?.items ?? [], [usersQuery.data?.items]);
   const userOptions = useMemo(() => {
     const selectedUser = values.user;
@@ -128,45 +143,29 @@ export function EmployeeForm({
     [values.email, values.name],
   );
 
-  const selectedPortalBranch = getEmployeePortalBranch({ branch: values.branch, address: values.address });
-
   function updateField<K extends keyof EmployeeFormValues>(key: K, value: EmployeeFormValues[K]) {
-    setValues((current) => ({ ...current, [key]: value }));
+    setValue<keyof EmployeeFormValues>(key, value, { shouldDirty: true, shouldValidate: true });
   }
 
   function updateAddressField<K extends keyof EmployeeAddress>(key: K, value: EmployeeAddress[K]) {
-    setValues((current) => ({
-      ...current,
-      address: { ...current.address, [key]: value },
-    }));
+    updateField("address", { ...getValues("address"), [key]: value });
   }
 
   function applyPlaceToAddress(place: ParsedPlaceAddress) {
-    setValues((current) => ({
+    const current = getValues("address");
+    updateField("address", {
       ...current,
-      address: {
-        ...current.address,
-        address1: place.address1 || current.address.address1,
-        city: place.city || current.address.city,
-        state: place.state || current.address.state,
-        zipcode: place.zipcode || current.address.zipcode,
-        country: place.country || current.address.country,
-      },
-    }));
+      address1: place.address1 || current.address1,
+      city: place.city || current.city,
+      state: place.state || current.state,
+      zipcode: place.zipcode || current.zipcode,
+      country: place.country || current.country,
+    });
   }
 
-  function updateBranchPortal(portal: EmployeePortalBranch) {
-    const template = createEmployeeBranchFromPortal(portal);
-    const config = EMPLOYEE_PORTAL_BRANCHES.find((entry) => entry.portal === portal) ?? EMPLOYEE_PORTAL_BRANCHES[0];
-
-    setValues((current) => ({
-      ...current,
-      branch: template,
-      address: {
-        ...current.address,
-        country: config.country,
-      },
-    }));
+  function updateBranch(id: string) {
+    const branch = branchesQuery.data?.find((item) => String(item.id) === id);
+    if (branch) updateField("branch", { id: branch.id, code: branch.code, name: branch.name });
   }
 
   function updateUser(userId: string) {
@@ -238,15 +237,13 @@ export function EmployeeForm({
     }
   }
 
-  function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    onSubmit(values);
-  }
-
   return (
     <>
-      <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+      <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
         <FormBody isBusy={isSubmitting}>
+          {departmentsQuery.isError || titlesQuery.isError || branchesQuery.isError ? (
+            <p role="alert" className="text-sm text-destructive">{normalizeApiError(departmentsQuery.error || titlesQuery.error || branchesQuery.error).message}</p>
+          ) : null}
           <FormSection icon={UserIcon} title={t("employees.form.sections.employee")}>
             <div className="space-y-2.5">
               <div className="space-y-1">
@@ -264,9 +261,26 @@ export function EmployeeForm({
 
               <div className="grid gap-2.5 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label htmlFor="department">
-                    {t("employees.form.fields.department")} <span className="text-destructive">*</span>
-                  </Label>
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <Label htmlFor="department">
+                      {t("employees.form.fields.department")} <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="flex items-center gap-1">
+                      <PermissionGuard permission={PERMISSIONS.employeeDepartmentsCreate}>
+                        <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
+                          disabled={isSubmitting || departmentEditor.busy} onClick={() => departmentEditor.edit(null)}>
+                          <Plus className="size-3.5" />{t("common.actions.add")}
+                        </Button>
+                      </PermissionGuard>
+                      <PermissionGuard permission={PERMISSIONS.employeeDepartmentsUpdate}>
+                        <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
+                          disabled={isSubmitting || departmentEditor.busy || departmentsQuery.isFetching || departmentsQuery.isError || selectedDepartments.length !== 1}
+                          onClick={() => { if (selectedDepartments.length === 1) departmentEditor.edit(selectedDepartments[0]); }}>
+                          <Pencil className="size-3.5" />{t("common.actions.edit")}
+                        </Button>
+                      </PermissionGuard>
+                    </div>
+                  </div>
                   <SearchableSelect
                     id="department"
                     value={values.department}
@@ -274,14 +288,32 @@ export function EmployeeForm({
                     searchPlaceholder={t("employees.form.placeholders.departmentSearch")}
                     required
                     options={departmentOptions}
+                    disabled={departmentsQuery.isLoading}
                     mobileSheet
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="title">
-                    {t("employees.form.fields.title")} <span className="text-destructive">*</span>
-                  </Label>
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <Label htmlFor="title">
+                      {t("employees.form.fields.title")} <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="flex items-center gap-1">
+                      <PermissionGuard permission={PERMISSIONS.employeeTitlesCreate}>
+                        <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
+                          disabled={isSubmitting || titleEditor.busy} onClick={() => titleEditor.edit(null)}>
+                          <Plus className="size-3.5" />{t("common.actions.add")}
+                        </Button>
+                      </PermissionGuard>
+                      <PermissionGuard permission={PERMISSIONS.employeeTitlesUpdate}>
+                        <Button type="button" variant="ghost" size="sm" className={fieldEntityActionClassName}
+                          disabled={isSubmitting || titleEditor.busy || titlesQuery.isFetching || titlesQuery.isError || selectedTitles.length !== 1}
+                          onClick={() => { if (selectedTitles.length === 1) titleEditor.edit(selectedTitles[0]); }}>
+                          <Pencil className="size-3.5" />{t("common.actions.edit")}
+                        </Button>
+                      </PermissionGuard>
+                    </div>
+                  </div>
                   <SearchableSelect
                     id="title"
                     value={values.title}
@@ -289,6 +321,7 @@ export function EmployeeForm({
                     searchPlaceholder={t("employees.form.placeholders.titleSearch")}
                     required
                     options={titleOptions}
+                    disabled={titlesQuery.isLoading}
                     mobileSheet
                   />
                 </div>
@@ -311,21 +344,21 @@ export function EmployeeForm({
               <div className="grid gap-2.5 sm:grid-cols-2">
                 <div className="space-y-1">
                   <Label htmlFor="startDate">{t("employees.form.fields.startDate")}</Label>
-                  <Input
+                  <DateInput
                     id="startDate"
-                    value={values.startDate}
+                    value={employeeDateToInputValue(values.startDate)}
                     onChange={(event) => updateField("startDate", event.target.value)}
-                    placeholder={t("employees.form.placeholders.startDate")}
+                    aria-invalid={Boolean(errors.startDate)}
                   />
                 </div>
 
                 <div className="space-y-1">
                   <Label htmlFor="endDate">{t("employees.form.fields.endDate")}</Label>
-                  <Input
+                  <DateInput
                     id="endDate"
-                    value={values.endDate}
+                    value={employeeDateToInputValue(values.endDate)}
                     onChange={(event) => updateField("endDate", event.target.value)}
-                    placeholder={t("employees.form.placeholders.endDate")}
+                    aria-invalid={Boolean(errors.endDate)}
                   />
                 </div>
               </div>
@@ -376,11 +409,12 @@ export function EmployeeForm({
               </Label>
               <SearchableSelect
                 id="branch-portal"
-                value={selectedPortalBranch}
-                onValueChange={(next) => updateBranchPortal(next as EmployeePortalBranch)}
+                value={values.branch.id ? String(values.branch.id) : ""}
+                onValueChange={updateBranch}
                 searchPlaceholder={t("employees.form.placeholders.branchSearch")}
                 required
                 options={branchOptions}
+                disabled={branchesQuery.isLoading}
                 mobileSheet
               />
             </div>
@@ -522,12 +556,15 @@ export function EmployeeForm({
       </FormBody>
 
         <FormFooter
-          error={externalError}
+          error={externalError || errors.startDate?.message || errors.endDate?.message || errors.name?.message || errors.department?.message || errors.title?.message || errors.branch?.message}
           submitLabel={submitLabel}
           isSubmitting={isSubmitting}
           onCancel={onCancel}
         />
       </form>
+
+      <EmployeeDepartmentDialog state={departmentEditor} />
+      <EmployeeTitleDialog state={titleEditor} />
 
       <Dialog open={createUserOpen} onOpenChange={updateCreateUserOpen}>
         <DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 max-md:[&>button.absolute]:hidden sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-3xl sm:rounded-xl">

@@ -1,3 +1,4 @@
+import { normalizeEmployeeDate } from "@/lib/employees/utils/employee-date";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
@@ -202,29 +203,6 @@ export const EMPLOYEE_ACTIVE_OPTIONS: { value: boolean; label: string }[] = [
   { value: false, label: "Inactive" },
 ];
 
-export const EMPLOYEE_DEPARTMENTS = [
-  "Operations",
-  "Warehouse",
-  "Fleet",
-  "Customer Service",
-  "Administration",
-  "Accounting",
-  "driver",
-] as const;
-
-export const EMPLOYEE_TITLES = [
-  "dispatcher",
-  "warehouse",
-  "driver",
-  "support",
-  "planner",
-  "admin",
-  "manager",
-  "supervisor",
-] as const;
-
-/** @deprecated Use EMPLOYEE_TITLES */
-export const EMPLOYEE_ROLES = EMPLOYEE_TITLES;
 
 export function getEmployeeSearchOperatorsForField(field: EmployeeSearchField): EmployeeSearchOperator[] {
   return EMPLOYEE_GET_SEARCH_CAPABILITIES.find((entry) => entry.field === field)?.operators ?? ["eq"];
@@ -348,13 +326,13 @@ export function portalBranchToId(portal: EmployeePortalBranch): number {
 }
 
 export function createEmptyEmployeeForm(): EmployeeFormValues {
-  const branch = createEmployeeBranchFromPortal("usa");
+  const branch = { id: 0, name: "", code: "" };
 
   return {
     id: 0,
     name: "",
-    department: EMPLOYEE_DEPARTMENTS[0],
-    title: EMPLOYEE_TITLES[0],
+    department: "",
+    title: "",
     active: true,
     startDate: "",
     endDate: "",
@@ -382,11 +360,7 @@ export function getEmployeeLabel(employee: Employee): string {
 }
 
 export function formatEmployeeBranchLabel(employee: Employee): string {
-  const portalBranch = getEmployeePortalBranch(employee);
-  const branchLabel =
-    EMPLOYEE_PORTAL_BRANCHES.find((entry) => entry.portal === portalBranch)?.label ?? portalBranch.toUpperCase();
-  const details = [employee.branch.name, employee.branch.code].filter(Boolean).join(" · ");
-  return details ? `${branchLabel} (${details})` : branchLabel;
+  return [employee.branch.name, employee.branch.code].filter(Boolean).join(" · ") || "—";
 }
 
 export function formatEmployeePhones(employee: Employee): string {
@@ -426,6 +400,11 @@ export function areEmployeeFormValuesEquivalent(
   left: EmployeeFormValues,
   right: EmployeeFormValues,
 ): boolean {
-  return areFormValuesEquivalent(left, right);
+  try {
+    return areFormValuesEquivalent(
+      { ...left, startDate: normalizeEmployeeDate(left.startDate), endDate: normalizeEmployeeDate(left.endDate) },
+      { ...right, startDate: normalizeEmployeeDate(right.startDate), endDate: normalizeEmployeeDate(right.endDate) },
+    );
+  } catch { return false; }
 }
 

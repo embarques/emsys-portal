@@ -1,5 +1,8 @@
 "use client";
 
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { branchFormSchema } from "@/lib/branches/schemas/branch.schema";
 import { Building2, MapPin, Phone, Settings } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -32,7 +35,6 @@ type BranchFormProps = {
 
 export function BranchForm({
   initialValues,
-  isEditing = false,
   submitLabel,
   isSubmitting = false,
   externalError = null,
@@ -40,7 +42,10 @@ export function BranchForm({
   onCancel,
 }: BranchFormProps) {
   const { t } = useTranslation();
-  const [values, setValues] = useState<BranchFormValues>(initialValues ?? createEmptyBranchForm());
+  const { control, reset, setValue, getValues, handleSubmit, formState: { errors } } = useForm<BranchFormValues>({
+    defaultValues: initialValues ?? createEmptyBranchForm(), resolver: zodResolver(branchFormSchema),
+  });
+  const values = useWatch({ control }) as BranchFormValues;
   const [manualAddressEntry, setManualAddressEntry] = useState(false);
   const handleEnterNavigation = useFormEnterNavigation();
 
@@ -53,49 +58,26 @@ export function BranchForm({
   );
 
   useEffect(() => {
-    setValues(initialValues ?? createEmptyBranchForm());
+    reset(initialValues ?? createEmptyBranchForm());
     setManualAddressEntry(false);
-  }, [initialValues]);
+  }, [initialValues, reset]);
 
   function updateField<K extends keyof BranchFormValues>(key: K, value: BranchFormValues[K]) {
-    setValues((current) => ({ ...current, [key]: value }));
+    setValue<keyof BranchFormValues>(key, value, { shouldDirty: true, shouldValidate: true });
   }
-
   function updateAddressField<K extends keyof BranchAddress>(key: K, value: BranchAddress[K]) {
-    setValues((current) => ({
-      ...current,
-      address: { ...current.address, [key]: value },
-    }));
+    updateField("address", { ...getValues("address"), [key]: value });
   }
-
   function applyPlaceToAddress(place: ParsedPlaceAddress) {
-    setValues((current) => ({
-      ...current,
-      address: {
-        ...current.address,
-        address1: place.address1 || current.address.address1,
-        city: place.city || current.address.city,
-        state: place.state || current.address.state,
-        zipcode: place.zipcode || current.address.zipcode,
-        country: place.country || current.address.country,
-      },
-    }));
+    const address = getValues("address");
+    updateField("address", { ...address, address1: place.address1 || address.address1, city: place.city || address.city, state: place.state || address.state, zipcode: place.zipcode || address.zipcode, country: place.country || address.country });
   }
-
   function updateSettingsField<K extends keyof BranchSettings>(key: K, value: BranchSettings[K]) {
-    setValues((current) => ({
-      ...current,
-      settings: { ...current.settings, [key]: value },
-    }));
-  }
-
-  function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    onSubmit(values);
+    updateField("settings", { ...getValues("settings"), [key]: value });
   }
 
   return (
-    <form onSubmit={handleSubmit} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
+    <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleEnterNavigation} className="flex min-h-0 flex-1 flex-col">
       <FormBody isBusy={isSubmitting}>
         <FormSection icon={Building2} title={t("branches.form.sections.branch")}>
           <div className="space-y-2.5">
@@ -373,7 +355,7 @@ export function BranchForm({
       </FormBody>
 
       <FormFooter
-        error={externalError}
+        error={externalError || errors.name?.message || (Object.keys(values.settings) as Array<keyof BranchSettings>).map((key) => errors.settings?.[key]?.message).find(Boolean)}
         submitLabel={submitLabel}
         isSubmitting={isSubmitting}
         onCancel={onCancel}

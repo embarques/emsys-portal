@@ -1,3 +1,4 @@
+import { useEmployeeDepartments } from "@/lib/employee-departments/hooks/use-employee-departments";
 import { useMemo } from "react";
 
 import { useTranslation } from "@/lib/i18n";
@@ -31,6 +32,7 @@ function localizeFilterOption(
 
 export function useEmployeeFilterFields(): TableFilterFieldDefinition[] {
   const { t } = useTranslation();
+  const departmentsQuery = useEmployeeDepartments();
 
   return useMemo(
     () =>
@@ -42,12 +44,12 @@ export function useEmployeeFilterFields(): TableFilterFieldDefinition[] {
           : {}),
         ...(field.options
           ? {
-              options: field.options.map((option) =>
+              options: field.field === "department" ? (departmentsQuery.data ?? []).map((item) => ({ value: item.name, label: item.name })) : field.options.map((option) =>
                 localizeFilterOption(field.field, option, t),
               ),
             }
           : {}),
       })),
-    [t],
+    [t, departmentsQuery.data],
   );
 }

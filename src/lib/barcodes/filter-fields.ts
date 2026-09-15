@@ -48,11 +48,11 @@ export const BARCODE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     placeholder: "Enter status…",
   },
   {
-    field: "route.name",
+    field: "route.id",
     label: "Route",
-    operators: [...TEXT_OPERATORS],
-    valueType: "text",
-    placeholder: "Enter route…",
+    operators: ["eq"],
+    valueType: "select",
+    placeholder: "Select a DR daily route…",
   },
   {
     field: "id",

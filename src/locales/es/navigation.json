@@ -52,6 +52,8 @@
     "userActivities": "Actividad de usuarios",
     "branches": "Sucursales",
     "barcodeStatuses": "Estados de códigos de barras",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "employeeDepartments": "Departamentos de empleados",
+    "employeeTitles": "Cargos de empleados"
   }
 }

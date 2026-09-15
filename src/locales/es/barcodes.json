@@ -45,6 +45,7 @@
     }
   },
   "columns": {
+    "barcodeId": "ID del código",
     "id": "#",
     "number": "Código de barras",
     "invoice": "Factura",
@@ -55,7 +56,11 @@
     "deliveryRoute": "Ruta de entrega",
     "tripNumber": "Viaje #",
     "delivery": "Entrega",
-    "scanDate": "Último escaneo"
+    "scanDate": "Último escaneo",
+    "createdAt": "Creado el",
+    "createdBy": "Creado por",
+    "updatedAt": "Actualizado el",
+    "updatedBy": "Actualizado por"
   },
   "search": {
     "placeholder": "Buscar por factura, código, descripción, contenedor, estado, ruta…"
@@ -141,9 +146,9 @@
         }
       },
       "route": {
-        "name": {
+        "id": {
           "label": "Ruta",
-          "placeholder": "Ingrese la ruta…"
+          "placeholder": "Seleccione una ruta diaria de RD…"
         }
       },
       "id": {

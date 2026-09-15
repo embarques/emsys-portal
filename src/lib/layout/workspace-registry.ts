@@ -1,3 +1,5 @@
+import { EmployeeTitlesWorkspace } from "@/components/employee-titles/employee-titles-workspace";
+import { EmployeeDepartmentsWorkspace } from "@/components/employee-departments/employee-departments-workspace";
 import type { ComponentType } from "react";
 
 import { AnalyticsWorkspace } from "@/components/insights/insights-workspaces";
@@ -64,6 +66,8 @@ export const workspaceRegistry: Record<string, ComponentType> = {
   "/roles": RolesWorkspace,
   "/employees": EmployeesWorkspace,
   "/user-activities": UserActivitiesWorkspace,
+  "/employee-titles": EmployeeTitlesWorkspace,
+  "/employee-departments": EmployeeDepartmentsWorkspace,
   "/branches": BranchesWorkspace,
   "/settings": ConfigurationWorkspace,
 };

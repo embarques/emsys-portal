@@ -85,8 +85,6 @@ import {
   useSyncLegacyInvoices,
 } from "@/lib/invoices/hooks/use-invoices";
 import { usePrintInvoices } from "@/lib/invoices/hooks/use-print-invoices";
-import { useRoutePicker } from "@/lib/route-manager/hooks/use-route-manager";
-import { formatRouteCopyLabel } from "@/lib/route-manager/display";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { useInvoiceFilterFields } from "@/lib/invoices/hooks/use-invoice-filter-fields";
 import { buildOrderCreatedByFilterOptions } from "@/lib/orders/display";
@@ -503,9 +501,6 @@ export function InvoicesWorkspace() {
   const previewLegacyInvoiceSyncMutation = usePreviewLegacyInvoiceSync();
   const syncLegacyInvoicesMutation = useSyncLegacyInvoices();
   const { printInvoiceIds, isPrinting } = usePrintInvoices();
-  const { data: routesData } = useRoutePicker(undefined, {
-    enabled: desktopFiltersOpen || mobileFiltersOpen,
-  });
   const { data: detailInvoice } = useInvoice(viewInvoiceId, Boolean(viewInvoiceId));
   const invoices = useResolvedPaginatedItems(data?.items, data?.total, isFetching);
   const viewedInvoiceNumber =
@@ -599,18 +594,6 @@ export function InvoicesWorkspace() {
   const selectedCount = selectedInvoices.length;
   const mobileInvoiceGroups = useMemo(() => groupInvoicesByMonth(invoices), [invoices]);
 
-  const routes = useMemo(
-    () => routesData?.items ?? [],
-    [routesData?.items],
-  );
-  const routeOptions = useMemo(
-    () =>
-      routes.map((assignment) => ({
-        value: assignment.id,
-        label: formatRouteCopyLabel(assignment),
-      })),
-    [routes],
-  );
   const userFilterOptions = useMemo(
     () => buildOrderCreatedByFilterOptions(usersData?.items ?? []),
     [usersData?.items],
@@ -1138,7 +1121,6 @@ export function InvoicesWorkspace() {
               fields={invoiceFilterFields}
               dynamicOptions={{
                 users: usersLoading ? [] : userFilterOptions,
-                routes: routeOptions,
               }}
               onChange={(rows) => {
                 setFilters((current) => ({ ...current, rows }));
@@ -1321,7 +1303,6 @@ export function InvoicesWorkspace() {
                   fields={invoiceFilterFields}
                   dynamicOptions={{
                     users: usersLoading ? [] : userFilterOptions,
-                    routes: routeOptions,
                   }}
                   onChange={(rows) => {
                     setFilters((current) => ({ ...current, rows }));

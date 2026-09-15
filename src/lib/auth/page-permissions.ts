@@ -30,9 +30,11 @@ export const PAGE_PERMISSIONS: Record<string, Permission> = {
   "/analytics": PERMISSIONS.reportsView,
   "/users": PERMISSIONS.usersView,
   "/roles": PERMISSIONS.rolesView,
+  "/employee-titles": PERMISSIONS.employeeTitlesView,
+  "/employee-departments": PERMISSIONS.employeeDepartmentsView,
   "/employees": PERMISSIONS.employeesView,
   "/settings": PERMISSIONS.accountSettingsView,
-  "/branches": PERMISSIONS.branchesView,
+  "/branches": PERMISSIONS.branchesList,
   "/barcode-statuses": PERMISSIONS.barcodeStatusesView,
 };
 

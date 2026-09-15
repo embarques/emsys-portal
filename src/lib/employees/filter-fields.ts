@@ -1,4 +1,3 @@
-import { EMPLOYEE_DEPARTMENTS } from "@/lib/employees/types";
 import type { TableFilterFieldDefinition } from "@/lib/table/filter-builder";
 
 const TEXT_OPERATORS = ["startsWith", "contains", "eq", "neq"] as const;
@@ -84,7 +83,7 @@ export const EMPLOYEE_TABLE_FILTER_FIELDS: TableFilterFieldDefinition[] = [
     label: "Department",
     operators: ["eq", "neq"],
     valueType: "select",
-    options: EMPLOYEE_DEPARTMENTS.map((department) => ({ value: department, label: department })),
+    options: [],
   },
   {
     field: "active",

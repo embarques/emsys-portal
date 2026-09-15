@@ -9,6 +9,8 @@ export const API_ENDPOINTS = {
   USER_ACTIVITIES: "/user-activities",
   ROLES: "/roles",
   PERMISSIONS: "/permissions",
+  EMPLOYEE_TITLES: "/employee-titles",
+  EMPLOYEE_DEPARTMENTS: "/employee-departments",
   EMPLOYEES: "/employees",
   CUSTOMERS: "/customers",
   CUSTOMERS_AUTOCOMPLETE: "/customers/autocomplete",

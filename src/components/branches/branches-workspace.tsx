@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import {
   Building2,
   Plus,
-  Trash2,
 } from "lucide-react";
 
 import { BranchForm } from "@/components/branches/branch-form";
@@ -37,6 +36,8 @@ import {
 } from "@/components/app-shell/table-directory-toolbar";
 import { useBranchFilterFields } from "@/lib/branches/hooks/use-branch-filter-fields";
 import { useTranslation } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
+import { PERMISSIONS } from "@/lib/auth/permissions";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import {
@@ -83,6 +84,10 @@ const defaultFilters: BranchFilterState = {
 
 export function BranchesWorkspace() {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission(PERMISSIONS.branchesCreate.name, PERMISSIONS.branchesCreate.resourceType);
+  const canUpdate = hasPermission(PERMISSIONS.branchesUpdate.name, PERMISSIONS.branchesUpdate.resourceType);
+  const canDelete = hasPermission(PERMISSIONS.branchesDelete.name, PERMISSIONS.branchesDelete.resourceType);
   const branchFilterFields = useBranchFilterFields();
   const { notifyAdded, notifyUpdated, notifyDeleted, notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<BranchFilterState>(defaultFilters);
@@ -349,10 +354,12 @@ export function BranchesWorkspace() {
         title={t("branches.title")}
         description={t("branches.pages.description")}
         actions={
-          <Button onClick={openAddForm} disabled={isSaving}>
-            <Plus className="h-4 w-4" />
-            {t("branches.actions.add")}
-          </Button>
+          canCreate ? (
+            <Button onClick={openAddForm} disabled={isSaving}>
+              <Plus className="h-4 w-4" />
+              {t("branches.actions.add")}
+            </Button>
+          ) : undefined
         }
       />
 
@@ -434,6 +441,8 @@ export function BranchesWorkspace() {
             if (branch) openEditForm(branch);
           }}
           onDelete={() => setDeleteTarget(branches.filter((branch) => selectedIds.includes(branch.id)))}
+          canEdit={canUpdate}
+          canDelete={canDelete}
           deleteDisabled={isSaving}
         />
 
@@ -466,10 +475,12 @@ export function BranchesWorkspace() {
                 <p className="text-muted-foreground">
                   {hasActiveFilters ? t("branches.empty.noMatch") : t("branches.empty.noneYet")}
                 </p>
-                <Button className="mt-4" onClick={openAddForm}>
-                  <Plus className="h-4 w-4" />
-                  {t("branches.actions.add")}
-                </Button>
+                {canCreate ? (
+                  <Button className="mt-4" onClick={openAddForm}>
+                    <Plus className="h-4 w-4" />
+                    {t("branches.actions.add")}
+                  </Button>
+                ) : null}
               </>
             }
           />
@@ -499,6 +510,8 @@ export function BranchesWorkspace() {
           setViewBranch(null);
           setDeleteTarget(branch);
         }}
+        canEdit={canUpdate}
+        canDelete={canDelete}
       />
 
       <Dialog

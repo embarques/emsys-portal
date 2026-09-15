@@ -54,10 +54,13 @@ import { normalizeApiError } from "@/lib/api/axios";
 import {
   computeBarcodeKpis,
   formatBarcodeContainer,
+  formatBarcodeDelivery,
   formatBarcodeDeliveryRoute,
+  formatBarcodeTripNumber,
   formatBarcodeStatus,
   getBarcodeStatusBadgeClass,
 } from "@/lib/barcodes/display";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { useBarcodeKpis, useBarcodeStats, useBarcodes } from "@/lib/barcodes/hooks/use-barcodes";
 import {
   DEFAULT_BARCODE_LIST_PARAMS,
@@ -326,6 +329,21 @@ export function BarcodesWorkspace() {
 
   const tableColumns: DataTableColumn<Barcode>[] = [
     {
+      id: "barcodeId",
+      label: t("barcodes.columns.barcodeId"),
+      defaultVisible: false,
+      cellClassName: "font-mono text-xs text-muted-foreground",
+      renderCell: (barcode) => barcode.barcodeId?.trim() || t("common.empty.dash"),
+    },
+    {
+      id: "id",
+      label: t("barcodes.columns.id"),
+      sortField: "id",
+      defaultVisible: false,
+      cellClassName: "font-mono text-xs text-muted-foreground",
+      renderCell: (barcode) => (barcode.id > 0 ? String(barcode.id) : t("common.empty.dash")),
+    },
+    {
       id: "number",
       label: t("barcodes.columns.number"),
       sortField: "number",
@@ -365,6 +383,53 @@ export function BarcodesWorkspace() {
       label: t("barcodes.columns.route"),
       sortField: "route.name",
       renderCell: (barcode) => formatBarcodeDeliveryRoute(barcode.route, t),
+    },
+    {
+      id: "delivery",
+      label: t("barcodes.columns.delivery"),
+      defaultVisible: false,
+      renderCell: (barcode) => formatBarcodeDelivery(barcode.delivery, t),
+    },
+    {
+      id: "tripNumber",
+      label: t("barcodes.columns.tripNumber"),
+      defaultVisible: false,
+      renderCell: (barcode) => formatBarcodeTripNumber(barcode.tripNumber, t),
+    },
+    {
+      id: "scanDate",
+      label: t("barcodes.columns.scanDate"),
+      defaultVisible: false,
+      cellClassName: "text-muted-foreground",
+      renderCell: (barcode) => formatAuditDateTime(barcode.scanDate ?? ""),
+    },
+    {
+      id: "createdAt",
+      label: t("barcodes.columns.createdAt"),
+      defaultVisible: false,
+      cellClassName: "text-muted-foreground",
+      renderCell: (barcode) => formatAuditDateTime(barcode.createdAt ?? ""),
+    },
+    {
+      id: "createdBy",
+      label: t("barcodes.columns.createdBy"),
+      defaultVisible: false,
+      cellClassName: "text-muted-foreground",
+      renderCell: (barcode) => barcode.createdBy?.trim() || t("common.empty.dash"),
+    },
+    {
+      id: "updatedAt",
+      label: t("barcodes.columns.updatedAt"),
+      defaultVisible: false,
+      cellClassName: "text-muted-foreground",
+      renderCell: (barcode) => formatAuditDateTime(barcode.updatedAt ?? ""),
+    },
+    {
+      id: "updatedBy",
+      label: t("barcodes.columns.updatedBy"),
+      defaultVisible: false,
+      cellClassName: "text-muted-foreground",
+      renderCell: (barcode) => barcode.updatedBy?.trim() || t("common.empty.dash"),
     },
   ];
 

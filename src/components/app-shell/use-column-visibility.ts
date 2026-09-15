@@ -4,7 +4,6 @@ import { useCallback, useMemo, useState } from "react";
 
 import {
   buildDefaultOrder,
-  buildDefaultVisibility,
   buildDefaultWidths,
   clampColumnWidth,
   DEFAULT_COLUMN_WIDTH,
@@ -135,13 +134,13 @@ export function useColumnVisibility<T extends ColumnVisibilityDefinition>(
   const showAllColumns = useCallback(() => {
     persist({
       ...preferences,
-      visibility: buildDefaultVisibility(hideableColumns),
+      visibility: Object.fromEntries(hideableColumns.map((column) => [column.id, true])),
     });
   }, [hideableColumns, persist, preferences]);
 
   const resetColumns = useCallback(() => {
     persist({
-      visibility: buildDefaultVisibility(hideableColumns),
+      visibility: Object.fromEntries(hideableColumns.map((column) => [column.id, true])),
       order: buildDefaultOrder(columns),
       widths: buildDefaultWidths(columns),
     });

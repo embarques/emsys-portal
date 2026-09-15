@@ -1,0 +1,13 @@
+{
+  "title": "Cargos de empleados",
+  "entity": "Cargo",
+  "description": "Administra los cargos disponibles en los formularios de empleados.",
+  "add": "Agregar cargo",
+  "edit": "Editar cargo",
+  "name": "Nombre",
+  "active": "Activo",
+  "inactive": "Inactivo",
+  "empty": "No se encontraron cargos.",
+  "confirmDelete": "¿Eliminar el cargo {name}?",
+  "retry": "Reintentar"
+}

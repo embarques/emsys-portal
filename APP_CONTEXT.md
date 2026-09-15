@@ -85,7 +85,7 @@ Our workers digitize the information from our physical invoices into the system 
 
 An invoice represents the merchandise collected as part of a client's shipment.
 
-**Received by** (`receivedBy`) is who took in the merchandise. It replaces legacy `employee` (`core.User`). The value is either the selected **daily route** or a **single employee**. **Received via** (route / warehouse / office) is portal-only so the form can pick which of those to save; do not persist it.
+**Received by** (`receivedBy`) is who took in the merchandise. It replaces legacy `employee` (`core.User`). The value is either the selected **non-DR daily route** or a **single employee from a non-DR branch**, defined when creating or editing the invoice. The invoice table shows Received by, not a separate Route field. **Received via** (route / warehouse / office) is portal-only so the form can pick which of those to save; do not persist it.
 
 TODO (backend) — invoice `receivedBy` (portal now follows this; align API + legacy data):
 
@@ -120,6 +120,8 @@ Invoice (line items + labels count)
 | **Barcodes table** | Browse / filter / bulk status·container·route (no standalone create/delete) |
 
 Lookups and updates should prefer **invoice-embedded** barcodes when the number lives on an invoice. The `/barcodes` catalog may mirror or denormalize the same labels for directory search and reports; keep both stores in sync when the portal updates status, container, or route.
+
+Barcode **route** is the **DR branch daily vehicle-route**, separate from invoice `receivedBy`. The barcode Route filter uses only **Equals** against `route.id`, with a dropdown of DR daily routes.
 
 Barcode **status** is a manual location flag in the logistics process (where the piece is now), not an automatic workflow stage. Workers assign it via the scanner, label staging, or barcode forms. Status options come from the tenant `barcode_statuses` collection via `GET /v1/barcodes/status-options` (labels:view). Typical values include `ALM-NY`, `DEV-NY`, `EN TRANSITO`, `ALM-RD`, `DEV-RD`, `CONDUCE`, `ENTREGADO`, `SUBASTADO`.
 
@@ -326,6 +328,8 @@ This includes:
 
 - System settings
 - Employees
+- Employee titles (`/employee-titles`): tenant job-title catalog with a name and active status; employees reference the title name.
+- Employee departments (`/employee-departments`): tenant department catalog with a name and active status; employees reference the department name.
 - Users
 - Roles and permissions
 - **User Activity** (audit log of who did what across the system)

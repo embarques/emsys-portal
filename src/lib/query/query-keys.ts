@@ -23,6 +23,16 @@ import type { UserListParams, UserSearchField, UserSearchFilter, UserSearchOpera
 type UserSearchQueryOptions = Pick<UserListParams, "branch" | "active" | "roleId">;
 
 export const queryKeys = {
+  employeeTitles: {
+    all: ["employee-titles"] as const,
+    list: () => ["employee-titles", "list"] as const,
+    detail: (id: number) => ["employee-titles", "detail", id] as const,
+  },
+  employeeDepartments: {
+    all: ["employee-departments"] as const,
+    list: () => ["employee-departments", "list"] as const,
+    detail: (id: number) => ["employee-departments", "detail", id] as const,
+  },
   api: {
     health: () => ["api", "health"] as const,
   },

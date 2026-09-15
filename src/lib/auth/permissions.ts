@@ -75,7 +75,19 @@ export const PERMISSIONS = {
   userActivitiesView: { name: "canViewUserActivity", resourceType: "user_activity" },
   employeesView: { name: "canViewEmployee", resourceType: "employee" },
   accountSettingsView: { name: "canViewSettings", resourceType: "settings" },
+  employeeTitlesView: { name: "canViewEmployeeTitle", resourceType: "employee_title" },
+  employeeTitlesCreate: { name: "canCreateEmployeeTitle", resourceType: "employee_title" },
+  employeeTitlesUpdate: { name: "canUpdateEmployeeTitle", resourceType: "employee_title" },
+  employeeTitlesDelete: { name: "canDeleteEmployeeTitle", resourceType: "employee_title" },
+  employeeDepartmentsView: { name: "canViewEmployeeDepartment", resourceType: "employee_department" },
+  employeeDepartmentsCreate: { name: "canCreateEmployeeDepartment", resourceType: "employee_department" },
+  employeeDepartmentsUpdate: { name: "canUpdateEmployeeDepartment", resourceType: "employee_department" },
+  employeeDepartmentsDelete: { name: "canDeleteEmployeeDepartment", resourceType: "employee_department" },
+  branchesList: { name: "canListBranch", resourceType: "branch" },
   branchesView: { name: "canViewBranch", resourceType: "branch" },
+  branchesCreate: { name: "canCreateBranch", resourceType: "branch" },
+  branchesUpdate: { name: "canUpdateBranch", resourceType: "branch" },
+  branchesDelete: { name: "canDeleteBranch", resourceType: "branch" },
 } satisfies Record<string, Permission>;
 
 export function permissionKey(permission: Permission): string {
@@ -164,6 +176,7 @@ const PERMISSION_GRANT_ALIASES: Record<string, readonly string[]> = {
   "delivery:canviewdelivery": ["inventory:canviewinventory"],
   "user:canviewuser": ["role:canviewrole"],
   "user_activity:canviewuseractivity": ["user:canviewuser"],
+  "branch:canlistbranch": ["branch:canviewbranch"],
   "branch:canviewbranch": ["settings:canviewsettings"],
 };
 
@@ -193,6 +206,7 @@ const VIEW_NAME_ALIASES: Record<string, readonly string[]> = {
   canviewdelivery: ["canviewinventory"],
   canviewuser: ["canviewrole"],
   canviewuseractivity: ["canviewuser", "canviewuseractivity"],
+  canlistbranch: ["canlistbranch", "canviewbranch"],
   canviewbranch: ["canviewsettings", "canviewbranch"],
 };
 

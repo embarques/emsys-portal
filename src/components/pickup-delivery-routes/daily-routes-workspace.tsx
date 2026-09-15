@@ -20,12 +20,17 @@ export function DailyRoutesWorkspace() {
         return (
           <>
             {pickupIds.length > 0 ? (
-              <PickupRoutesSelectionActions activeRoutes={activeRoutes} selectedIds={pickupIds} />
+              <PickupRoutesSelectionActions
+                activeRoutes={activeRoutes}
+                selectedIds={pickupIds}
+                printDisabled={selectedIds.length !== 1}
+              />
             ) : null}
             {deliveryIds.length > 0 ? (
               <DeliveryRoutesSelectionActions
                 activeRoutes={activeRoutes}
                 selectedIds={deliveryIds}
+                printDisabled={selectedIds.length !== 1}
               />
             ) : null}
           </>

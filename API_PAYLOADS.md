@@ -281,7 +281,12 @@ Same shape.
 
 ---
 
-## Branches — permission: `settings`
+## Branches — resource: `branch`
+
+The API exposes list/search plus GET, POST, PUT, and DELETE by numeric ID.
+The portal uses the existing `/branches` workspace. Writes use the `phones` array
+and camelCase `settings`. Updates include cleared fields and explicit false/zero
+settings so disabling or clearing a value is not lost through omission.
 
 ### `POST /v1/branches`
 
@@ -290,8 +295,7 @@ Same shape.
   "name": "New York Office",
   "type": "office",
   "code": "NYC",
-  "phone1": "555-1000",
-  "phone2": "",
+  "phones": [{ "number": "555-1000", "type": "work", "isPrimary": true }],
   "disclaimer": "",
   "logo": "",
   "address": {
@@ -315,6 +319,39 @@ Same shape. `{id}` = numeric.
 
 ---
 
+## Employee titles — resource: `employee_title`
+
+Verified against the published Swagger contract on 2026-09-14.
+
+- `GET /v1/employee-titles` — paginated list (`page`, `limit`, `sort`); response `data` is an array.
+- `GET /v1/employee-titles/{id}` — numeric ID, response `data` is a title.
+- `POST /v1/employee-titles` and `PUT /v1/employee-titles/{id}` — `{ "name": "Driver", "active": true }`.
+- `DELETE /v1/employee-titles/{id}` — delete title.
+- `POST /v1/employee-titles/search` — nested AND/OR search.
+
+Title records contain `id`, `name`, `active`, `createdAt`, and `updatedAt`.
+Employees store the title **name** as a string. The employee picker loads active
+options while retaining an existing inactive or legacy selection for editing.
+The Admin → Employee titles workspace supports list, create, edit, and delete.
+
+---
+
+## Employee departments — resource: `employee_department`
+
+Verified against the published Swagger contract on 2026-09-14.
+
+- `GET /v1/employee-departments` — paginated list (`page`, `limit`, `sort`); response `data` is an array.
+- `GET /v1/employee-departments/{id}` — numeric ID, response `data` is a department.
+- `POST /v1/employee-departments` and `PUT /v1/employee-departments/{id}` — `{ "name": "Operations", "active": true }`.
+- `DELETE /v1/employee-departments/{id}` — delete department.
+- `POST /v1/employee-departments/search` — nested AND/OR search.
+
+Department records contain `id`, `name`, `active`, `createdAt`, and `updatedAt`.
+Employees store the department **name** as a string. The employee picker loads active
+options while retaining an existing inactive or legacy selection for editing.
+
+---
+
 ## Employees — permission: `employee`
 
 ### `POST /v1/employees`
@@ -335,6 +372,12 @@ Same shape. `{id}` = numeric.
   }
 }
 ```
+
+Optional employee `startDate` and `endDate` form values accept `YYYY-MM-DD` or
+RFC3339 timestamps with a timezone. The portal validates calendar dates, treats
+date-only input as midnight UTC, and sends normalized UTC timestamps without losing
+fractional precision. Equivalent date representations do not trigger unchanged saves.
+Employee branch choices come from `/v1/branches` and send `{ id, code }`.
 
 ### `PUT /v1/employees/{id}`
 

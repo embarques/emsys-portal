@@ -97,6 +97,7 @@ import {
 import { useItemPicker } from "@/lib/items/hooks/use-items";
 import { PICKUP_ROUTES_DIRECTORY_VARIANT } from "@/lib/pickup-delivery-routes/directory-variant";
 import { buildActiveRouteAssignmentOptions } from "@/lib/pickup-delivery-routes/display";
+import { isDeliveryBranchCode } from "@/lib/pickup-delivery-routes/types";
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import type { ActiveRoute } from "@/lib/pickup-delivery-routes/types";
 import { DEFAULT_ORDER_LIST_PARAMS, type Order } from "@/lib/orders/types";
@@ -177,7 +178,7 @@ function employeeMatchesPickupSource(
   pickupSource: InvoicePickupSource,
   branchesById: Map<number, Pick<Branch, "type">>,
 ): boolean {
-  if (!employee.active) return false;
+  if (!employee.active || isDeliveryBranchCode(employee.branch.code)) return false;
 
   const branchType = branchesById.get(employee.branch.id)?.type.trim().toLowerCase() ?? "";
   const department = employee.department.trim().toLowerCase();
@@ -293,7 +294,12 @@ export function InvoiceForm({
   const createEmployeeMutation = useCreateEmployee();
 
   const pickupRoutesQuery = useActiveRoutePicker("pickup", 200);
-  const pickupRoutes = pickupRoutesQuery.data?.items ?? [];
+  const pickupRoutes = useMemo(
+    () => (pickupRoutesQuery.data?.items ?? []).filter(
+      (route) => !isDeliveryBranchCode(route.branch?.code),
+    ),
+    [pickupRoutesQuery.data?.items],
+  );
   const { data: branchesData } = useBranchPicker();
   const branches = branchesData?.items ?? [];
   const branchesById = useMemo(
@@ -326,7 +332,11 @@ export function InvoiceForm({
       employeeMatchesPickupSource(employee, values.pickupSource, branchesById),
     );
 
-    return filtered.length > 0 ? filtered : source.filter((employee) => employee.active);
+    return filtered.length > 0
+      ? filtered
+      : source.filter(
+          (employee) => employee.active && !isDeliveryBranchCode(employee.branch.code),
+        );
   }, [
     branchesById,
     debouncedPickupEmployeeQuery,

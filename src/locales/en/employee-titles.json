@@ -1,0 +1,13 @@
+{
+  "title": "Employee titles",
+  "entity": "Title",
+  "description": "Manage the titles available in employee forms.",
+  "add": "Add title",
+  "edit": "Edit title",
+  "name": "Name",
+  "active": "Active",
+  "inactive": "Inactive",
+  "empty": "No titles found.",
+  "confirmDelete": "Delete title {name}?",
+  "retry": "Retry"
+}

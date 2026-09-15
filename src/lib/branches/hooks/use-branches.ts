@@ -137,3 +137,18 @@ export function useDeleteBranches() {
     onSuccess: () => invalidateBranches(queryClient),
   });
 }
+
+/** Load every page so the employee picker never silently omits branches. */
+export function useAllBranchOptions() {
+  return useWorkspaceQuery({
+    queryKey: [...queryKeys.branches.all, "options"],
+    queryFn: async () => {
+      const items = [];
+      for (let page = 1; ; page++) {
+        const result = await fetchBranches({ page, limit: 200, sort: "name:asc" });
+        items.push(...result.items);
+        if (!result.items.length || items.length >= result.total) return items;
+      }
+    },
+  });
+}

@@ -1,3 +1,4 @@
+import { branchFormSchema } from "@/lib/branches/schemas/branch.schema";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -147,7 +148,7 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
 function readNumericId(value: number | string | undefined): number | undefined {
   if (value == null) return undefined;
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
+  return Number.isInteger(parsed) ? parsed : undefined;
 }
 
 function normalizeAddress(raw?: ApiAddress): BranchAddress {
@@ -219,56 +220,21 @@ function normalizePaginatedBranches(payload: PaginatedApiEnvelope<unknown[]>): P
   };
 }
 
-function buildBranchSettingsPayload(settings: BranchSettings): ApiBranchSettingsPayload | undefined {
-  const payload: ApiBranchSettingsPayload = {};
-
-  if (settings.labelPrefix.trim()) {
-    payload.labelPrefix = settings.labelPrefix.trim();
-  }
-
-  if (settings.roundDecimalPlaces > 0) {
-    payload.roundDecimalPlaces = settings.roundDecimalPlaces;
-  }
-
-  if (settings.defaultLabelStatus > 0) {
-    payload.defaultLabelStatus = settings.defaultLabelStatus;
-  }
-
-  if (settings.invoiceCreatedThruIncomeStatement) {
-    payload.invoiceCreatedThruIncomeStatement = true;
-  }
-
-  if (settings.printLabelCount) {
-    payload.printLabelCount = true;
-  }
-
-  if (settings.imageResampleBy > 0) {
-    payload.imageResampleBy = settings.imageResampleBy;
-  }
-
-  if (settings.s3Profile.trim()) {
-    payload.s3Profile = settings.s3Profile.trim();
-  }
-
-  if (settings.s3BucketName.trim()) {
-    payload.s3BucketName = settings.s3BucketName.trim();
-  }
-
-  if (settings.s3BucketFolder.trim()) {
-    payload.s3BucketFolder = settings.s3BucketFolder.trim();
-  }
-
-  if (settings.s3ShareLinkExpireMinutes > 0) {
-    payload.s3ShareLinkExpireMinutes = settings.s3ShareLinkExpireMinutes;
-  }
-
-  return Object.keys(payload).length > 0 ? payload : undefined;
+function buildBranchSettingsPayload(settings: BranchSettings): ApiBranchSettingsPayload {
+  return {
+    ...settings,
+    labelPrefix: settings.labelPrefix.trim(),
+    s3Profile: settings.s3Profile.trim(),
+    s3BucketName: settings.s3BucketName.trim(),
+    s3BucketFolder: settings.s3BucketFolder.trim(),
+  };
 }
 
 function buildBranchWritePayload(
   values: BranchFormValues,
   options: { branchId?: number } = {},
 ): ApiBranchWritePayload {
+  branchFormSchema.parse(values);
   const name = values.name.trim();
   if (!name) throw new Error("Branch name is required.");
 
@@ -289,19 +255,21 @@ function buildBranchWritePayload(
     payload.id = options.branchId;
   }
 
-  if (phones.length > 0) {
+  if (options.branchId != null || phones.length > 0) {
     payload.phones = phones;
   }
 
-  if (disclaimer) {
+  if (options.branchId != null || disclaimer) {
     payload.disclaimer = disclaimer;
   }
 
-  if (logo) {
+  if (options.branchId != null || logo) {
     payload.logo = logo;
   }
 
-  if (address) {
+  if (options.branchId != null) {
+    payload.address = Object.fromEntries(Object.entries(values.address).map(([key, value]) => [key, value.trim()]));
+  } else if (address) {
     payload.address = address;
   }
 

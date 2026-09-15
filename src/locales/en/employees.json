@@ -128,8 +128,8 @@
     },
     "placeholders": {
       "name": "MIGUEL",
-      "startDate": "2026-06-09T00:00:00Z",
-      "endDate": "2026-06-09T00:00:00Z",
+      "startDate": "YYYY-MM-DD / 2026-06-09T00:00:00Z",
+      "endDate": "YYYY-MM-DD / 2026-06-09T00:00:00Z",
       "departmentSearch": "Search departments…",
       "titleSearch": "Search titles…",
       "branchSearch": "Search branches…",

@@ -1,3 +1,4 @@
+import { normalizeEmployeeDate } from "@/lib/employees/utils/employee-date";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -283,11 +284,11 @@ function buildEmployeeWritePayload(
   }
 
   if (values.startDate.trim()) {
-    payload.startDate = values.startDate;
+    payload.startDate = normalizeEmployeeDate(values.startDate);
   }
 
   if (values.endDate.trim()) {
-    payload.endDate = values.endDate;
+    payload.endDate = normalizeEmployeeDate(values.endDate);
   }
 
   if (values.loanAmountOwed !== 0) {

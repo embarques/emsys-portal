@@ -39,10 +39,12 @@ type ApiRoleUser = {
 };
 
 type ApiPermission = {
-  id?: number;
-  _id?: number;
+  id?: number | string;
+  _id?: number | string;
   name?: string;
+  permissionName?: string;
   resourceType?: string;
+  resource_type?: string;
 };
 
 type ApiRole = {
@@ -83,8 +85,8 @@ function normalizePermission(raw: unknown): RolePermission | null {
 
   const item = raw as ApiPermission;
   const id = readNumericId(item.id ?? item._id);
-  const name = String(item.name ?? "").trim();
-  const resourceType = String(item.resourceType ?? "").trim();
+  const name = String(item.name ?? item.permissionName ?? "").trim();
+  const resourceType = String(item.resourceType ?? item.resource_type ?? "").trim();
   if (id == null || !name) return null;
 
   return {
@@ -260,8 +262,8 @@ export async function fetchPermissionCatalog(): Promise<PermissionCatalogEntry[]
       if (!raw || typeof raw !== "object") return null;
       const item = raw as ApiPermission;
       const id = readNumericId(item.id ?? item._id);
-      const name = String(item.name ?? "").trim();
-      const resourceType = String(item.resourceType ?? "").trim();
+      const name = String(item.name ?? item.permissionName ?? "").trim();
+      const resourceType = String(item.resourceType ?? item.resource_type ?? "").trim();
       if (id == null || !name || !resourceType) return null;
 
       return {

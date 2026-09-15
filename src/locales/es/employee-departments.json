@@ -1,0 +1,13 @@
+{
+  "title": "Departamentos de empleados",
+  "entity": "Departamento",
+  "description": "Administra los departamentos disponibles en los formularios de empleados.",
+  "add": "Agregar departamento",
+  "edit": "Editar departamento",
+  "name": "Nombre",
+  "active": "Activo",
+  "inactive": "Inactivo",
+  "empty": "No se encontraron departamentos.",
+  "confirmDelete": "¿Eliminar el departamento {name}?",
+  "retry": "Reintentar"
+}

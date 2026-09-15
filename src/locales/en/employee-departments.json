@@ -1,0 +1,13 @@
+{
+  "title": "Employee departments",
+  "entity": "Department",
+  "description": "Manage the departments available in employee forms.",
+  "add": "Add department",
+  "edit": "Edit department",
+  "name": "Name",
+  "active": "Active",
+  "inactive": "Inactive",
+  "empty": "No departments found.",
+  "confirmDelete": "Delete department {name}?",
+  "retry": "Retry"
+}

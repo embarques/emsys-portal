@@ -15,11 +15,13 @@ import { cn } from "@/lib/utils";
 type DeliveryRoutesSelectionActionsProps = {
   activeRoutes: ActiveRoute[];
   selectedIds: string[];
+  printDisabled?: boolean;
 };
 
 export function DeliveryRoutesSelectionActions({
   activeRoutes,
   selectedIds,
+  printDisabled = false,
 }: DeliveryRoutesSelectionActionsProps) {
   const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
@@ -82,7 +84,7 @@ export function DeliveryRoutesSelectionActions({
       size="sm"
       className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
       onClick={printSelectedDeliveryRoutes}
-      disabled={isPrinting}
+      disabled={printDisabled || isPrinting}
     >
       <Printer className="h-4 w-4" />
       {isPrinting

@@ -294,6 +294,18 @@ export const navigationSections: NavigationSection[] = [
             permission: PERMISSIONS.employeesView,
           },
           {
+            labelKey: "navigation.items.employeeTitles",
+            href: "/employee-titles",
+            icon: IdCard,
+            permission: PERMISSIONS.employeeTitlesView,
+          },
+          {
+            labelKey: "navigation.items.employeeDepartments",
+            href: "/employee-departments",
+            icon: IdCard,
+            permission: PERMISSIONS.employeeDepartmentsView,
+          },
+          {
             labelKey: "navigation.items.userActivities",
             href: "/user-activities",
             icon: ClipboardList,
