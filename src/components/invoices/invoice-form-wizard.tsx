@@ -28,11 +28,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { useIsMobileViewport } from "@/hooks/use-is-mobile-viewport";
 import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/workspace-href";
+import { PERMISSIONS } from "@/lib/auth/permissions";
+import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { isMissingOpenIncomeStatementError } from "@/lib/invoices/missing-open-income-statement";
 import { useTranslation } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 import {
+  canContinueInvoiceDailyIncomeStep,
   emptyInvoiceDailyIncomeContext,
   toInvoiceFormSubmitContext,
   type InvoiceDailyIncomeContext,
@@ -95,6 +98,7 @@ export function InvoiceFormWizard({
   onCancel,
 }: Props) {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
   const isMobileLayout = useIsMobileViewport();
   const currentUserQuery = useCurrentUser();
   const [step, setStep] = useState<InvoiceWizardStep>(1);
@@ -172,6 +176,10 @@ export function InvoiceFormWizard({
 
   const handleDailyIncomeContextChange = useCallback((context: InvoiceDailyIncomeContext) => {
     setDailyIncomeContext(context);
+    if (requireDailyIncomeRegistration && canContinueInvoiceDailyIncomeStep(context)) {
+      setStepError(null);
+      setSubmitError(null);
+    }
     setValues((current) => {
       const next = {
         ...current,
@@ -180,7 +188,7 @@ export function InvoiceFormWizard({
       valuesRef.current = next;
       return next;
     });
-  }, []);
+  }, [requireDailyIncomeRegistration]);
 
   function handleDiscountChange(discount: string) {
     setValues((current) => {
@@ -386,6 +394,10 @@ export function InvoiceFormWizard({
     requireDailyIncomeRegistration && dailyIncomeContext.registration
       ? undefined
       : handleDiscountChange;
+  const canApplyInvoiceDiscount = hasPermission(
+    PERMISSIONS.invoicesApplyDiscount.name,
+    PERMISSIONS.invoicesApplyDiscount.resourceType,
+  );
 
   const stepLabelKey =
     !requireDailyIncomeRegistration && step === 4
@@ -437,6 +449,8 @@ export function InvoiceFormWizard({
           : undefined
       }
       onEditPayment={requireDailyIncomeRegistration ? () => setStep(4) : undefined}
+      canApplyInvoiceDiscount={canApplyInvoiceDiscount}
+      onDiscountChange={canApplyInvoiceDiscount ? handleDiscountChange : undefined}
     />
   );
 

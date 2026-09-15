@@ -1,9 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { CustomerContactSummary } from "@/components/orders/customer-contact-summary";
 import { FormBody, FormSection } from "@/components/forms/form-shell";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   InvoiceWizardReviewOptionalMissing,
   InvoiceWizardReviewSection,
@@ -27,7 +38,7 @@ import { formatActiveRouteAssignmentLabel } from "@/lib/pickup-delivery-routes/d
 import { useActiveRoutePicker } from "@/lib/pickup-delivery-routes/hooks/use-pickup-delivery-routes";
 import { DEFAULT_ORDER_LIST_PARAMS } from "@/lib/orders/types";
 import { useOrder, useOrders } from "@/lib/orders/hooks/use-orders";
-import { ClipboardList, Eye, Receipt, Users, Wallet } from "lucide-react";
+import { ClipboardList, Eye, Minus, Plus, Receipt, Users, Wallet } from "lucide-react";
 import type { InvoiceWizardFormStep } from "@/components/invoices/invoice-wizard-stepper";
 import type { DailyIncomeJournal } from "@/lib/accounting/daily-income/types";
 
@@ -44,6 +55,8 @@ type Props = {
   showPaymentSection?: boolean;
   paymentSummary?: InvoicePreviewPaymentSummary;
   onEditPayment?: () => void;
+  canApplyInvoiceDiscount?: boolean;
+  onDiscountChange?: (discount: string) => void;
   errorMessage?: string | null;
 };
 
@@ -194,16 +207,56 @@ function ReviewPriceTotals({
   amountPaid,
   balance,
   showPayment,
+  canApplyInvoiceDiscount = false,
+  onDiscountChange,
 }: {
   subtotal: number;
   discount: number;
   amountPaid: number;
   balance: number;
   showPayment: boolean;
+  canApplyInvoiceDiscount?: boolean;
+  onDiscountChange?: (discount: string) => void;
 }) {
   const { t } = useTranslation();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [discountInput, setDiscountInput] = useState(discount > 0 ? String(discount) : "");
+  const [discountValidationError, setDiscountValidationError] = useState<string | null>(null);
   const invoiceTotal = Math.round((subtotal - discount) * 100) / 100;
   const isNegativeBalance = balance < 0;
+  const canEditDiscount = canApplyInvoiceDiscount && Boolean(onDiscountChange);
+  const maximumDiscount = Math.max(0, Math.round((subtotal - amountPaid) * 100) / 100);
+
+  function openDiscountDialog() {
+    setDiscountInput(discount > 0 ? String(discount) : "");
+    setDiscountValidationError(null);
+    setDialogOpen(true);
+  }
+
+  function applyDiscount() {
+    const amount = Number(discountInput);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setDiscountValidationError(t("invoices.wizard.summary.discountPositiveRequired"));
+      return;
+    }
+    const rounded = Math.round(amount * 100) / 100;
+    if (rounded > maximumDiscount) {
+      setDiscountValidationError(
+        t("invoices.wizard.summary.discountExceedsBalance", {
+          max: formatInvoiceMoney(maximumDiscount),
+        }),
+      );
+      return;
+    }
+    onDiscountChange?.(String(rounded));
+    setDialogOpen(false);
+  }
+
+  function removeDiscount() {
+    onDiscountChange?.("0");
+    setDialogOpen(false);
+    setDiscountValidationError(null);
+  }
 
   return (
     <div className="space-y-2 border-t border-border pt-3 text-sm">
@@ -211,16 +264,39 @@ function ReviewPriceTotals({
         <span className="text-muted-foreground">{t("invoices.wizard.summary.subtotal")}</span>
         <ReviewWarningMoney amount={subtotal} warn={subtotal === 0} />
       </div>
-      {discount > 0 ? (
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-muted-foreground">{t("invoices.wizard.summary.discount")}</span>
-          <span className="tabular-nums">−{formatInvoiceMoney(discount)}</span>
-        </div>
-      ) : null}
       {showPayment ? (
         <div className="flex items-center justify-between gap-3">
           <span className="text-muted-foreground">{t("invoices.wizard.summary.payment")}</span>
           <ReviewWarningMoney amount={amountPaid} warn={amountPaid === 0} />
+        </div>
+      ) : null}
+      {canApplyInvoiceDiscount ? (
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            id="invoice-wizard-preview-discount"
+            className="group flex min-w-0 items-center gap-2 text-left text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={discount > 0 ? removeDiscount : openDiscountDialog}
+            disabled={!canEditDiscount}
+          >
+            <span
+              className={
+                discount > 0
+                  ? "flex size-5 shrink-0 items-center justify-center rounded-full bg-destructive text-white"
+                  : "flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
+              }
+              aria-hidden
+            >
+              {discount > 0 ? <Minus className="size-3" /> : <Plus className="size-3" />}
+            </span>
+            <span className="min-w-0">{t("invoices.wizard.summary.discount")}</span>
+          </button>
+          <span className="tabular-nums">{discount > 0 ? `−${formatInvoiceMoney(discount)}` : formatInvoiceMoney(0)}</span>
+        </div>
+      ) : discount > 0 ? (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-muted-foreground">{t("invoices.wizard.summary.discount")}</span>
+          <span className="tabular-nums">−{formatInvoiceMoney(discount)}</span>
         </div>
       ) : null}
       <div className="flex items-center justify-between gap-3 text-base font-semibold">
@@ -231,6 +307,55 @@ function ReviewPriceTotals({
           error={isNegativeBalance}
         />
       </div>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="z-[70] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("invoices.wizard.summary.discount")}</DialogTitle>
+            <DialogDescription>
+              {t("invoices.wizard.summary.discountDialogDescription", {
+                max: formatInvoiceMoney(maximumDiscount),
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="invoice-preview-discount-amount">
+              {t("invoices.wizard.summary.discountAmount")}
+            </Label>
+            <Input
+              id="invoice-preview-discount-amount"
+              type="number"
+              min={0}
+              max={maximumDiscount}
+              step="0.01"
+              inputMode="decimal"
+              value={discountInput}
+              autoFocus
+              onChange={(event) => {
+                setDiscountInput(event.target.value);
+                setDiscountValidationError(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  applyDiscount();
+                }
+              }}
+              placeholder="0.00"
+            />
+            {discountValidationError ? (
+              <p className="text-sm text-destructive">{discountValidationError}</p>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              {t("common.actions.cancel")}
+            </Button>
+            <Button type="button" onClick={applyDiscount}>
+              {t("common.actions.apply")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -242,11 +367,19 @@ function InvoiceWizardCheckoutReview({
   showPaymentSection,
   paymentSummary,
   onEditPayment,
+  canApplyInvoiceDiscount,
+  onDiscountChange,
   errorMessage,
 }: Required<Pick<Props, "values">> &
   Pick<
     Props,
-    "onEditStep" | "showPaymentSection" | "paymentSummary" | "onEditPayment" | "errorMessage"
+    | "onEditStep"
+    | "showPaymentSection"
+    | "paymentSummary"
+    | "onEditPayment"
+    | "canApplyInvoiceDiscount"
+    | "onDiscountChange"
+    | "errorMessage"
   > & { isPhoneWizard?: boolean }) {
   const { t } = useTranslation();
   const {
@@ -639,6 +772,8 @@ function InvoiceWizardCheckoutReview({
               amountPaid={recordedPaymentAmount}
               balance={computeInvoiceBalance(subtotal, discount, recordedPaymentAmount)}
               showPayment={Boolean(showPaymentSection)}
+              canApplyInvoiceDiscount={canApplyInvoiceDiscount}
+              onDiscountChange={onDiscountChange}
             />
           </div>
         </div>
@@ -654,6 +789,8 @@ export function InvoiceFormPreviewStep({
   showPaymentSection = false,
   paymentSummary,
   onEditPayment,
+  canApplyInvoiceDiscount = false,
+  onDiscountChange,
   errorMessage = null,
 }: Props) {
   const { t } = useTranslation();
@@ -671,6 +808,8 @@ export function InvoiceFormPreviewStep({
         showPaymentSection={showPaymentSection}
         paymentSummary={paymentSummary}
         onEditPayment={onEditPayment}
+        canApplyInvoiceDiscount={canApplyInvoiceDiscount}
+        onDiscountChange={onDiscountChange}
         errorMessage={errorMessage}
       />
     );

@@ -912,9 +912,9 @@ export async function fetchInvoiceById(invoiceId: string): Promise<Invoice> {
         id: item.id,
         itemName: item.itemName,
         quantity: item.quantity,
-        labels: item.labels,
+        labels: item.labelCount,
         price: item.unitPrice,
-        total: item.total,
+        total: item.lineTotal,
       })),
     });
   }
@@ -1306,7 +1306,7 @@ type ApiInvoiceWritePayload = {
   cost: number;
   payment: number;
   balance: number;
-  discount: number;
+  discount?: number;
   surcharge: number;
   paidRegion: string;
   paidStatus: string;
@@ -1526,13 +1526,11 @@ function buildInvoiceWritePayload(
     throw new Error("Amount paid must be 0 or greater.");
   }
 
-  const balance =
-    registered && Number.isFinite(registered.balance)
-      ? Math.round(registered.balance * 100) / 100
-      : computeInvoiceBalance(cost, discount, payment);
+  const balance = computeInvoiceBalance(cost, discount, payment);
   if (balance < 0) {
     throw new Error("Balance cannot be negative.");
   }
+  const roundedDiscount = Math.round(discount * 100) / 100;
 
   const payload: ApiInvoiceWritePayload = {
     number: invoiceNumber,
@@ -1541,7 +1539,6 @@ function buildInvoiceWritePayload(
     cost,
     payment: Math.round(payment * 100) / 100,
     balance,
-    discount: Math.round(discount * 100) / 100,
     surcharge: 0,
     paidRegion: mapPaymentLocationToPaidRegion(values.paymentLocation),
     paidStatus: deriveInvoicePaidStatus(cost, discount, payment, balance),
@@ -1552,6 +1549,9 @@ function buildInvoiceWritePayload(
     sender: buildInvoiceCustomerWriteRef(values.sender, CUSTOMER_TYPE_SENDER),
     invoiceDetails,
   };
+  if (roundedDiscount > 0) {
+    payload.discount = roundedDiscount;
+  }
 
   if (context.employee) {
     payload.employee = buildInvoiceEmployeeWriteRef(context.employee);
