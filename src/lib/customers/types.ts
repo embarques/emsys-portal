@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import {
@@ -96,7 +97,7 @@ export type CustomerAuditActor = {
   name: string;
 };
 
-export type Customer = {
+export type Customer = ApiTableRecord & {
   id: string;
   /** Legacy numeric customer ID from the EMSYS API. */
   oldID: number | null;

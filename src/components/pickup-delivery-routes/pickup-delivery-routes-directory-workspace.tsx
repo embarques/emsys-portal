@@ -11,7 +11,8 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { ACTIVE_ROUTE_API_TABLE_FIELDS } from "@/lib/pickup-delivery-routes/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -361,10 +362,7 @@ export function ActiveRoutesDirectoryWorkspace({
     variant.showRouteTypeField,
   ]);
 
-  const activeRouteColumnVisibility = useColumnVisibility(
-    variant.columnVisibilityKey,
-    activeRouteTableColumns,
-  );
+  const activeRouteColumnVisibility = useApiTableColumns(variant.columnVisibilityKey, activeRouteTableColumns, ACTIVE_ROUTE_API_TABLE_FIELDS);
 
   const advancedFilterCount = countCompleteFilterRows(
     activeRouteFilters.rows,

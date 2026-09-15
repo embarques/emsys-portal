@@ -26,7 +26,8 @@ import {
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
 import { AssignBarcodeRouteDialog } from "@/components/invoices/assign-barcode-route-dialog";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { BARCODE_API_TABLE_FIELDS } from "@/lib/barcodes/table-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -433,7 +434,7 @@ export function BarcodesWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("barcodes-v2", tableColumns);
+  const columnVisibility = useApiTableColumns("barcodes-v2", tableColumns, BARCODE_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, barcodeFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const noun = t("barcodes.noun");

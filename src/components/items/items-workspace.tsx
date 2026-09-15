@@ -26,7 +26,8 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { ITEM_API_TABLE_FIELDS } from "@/lib/items/table-fields";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -302,7 +303,7 @@ export function ItemsWorkspace() {
     [dash, t],
   );
 
-  const columnVisibility = useColumnVisibility("items-v2", tableColumns);
+  const columnVisibility = useApiTableColumns("items-v2", tableColumns, ITEM_API_TABLE_FIELDS);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, itemFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;
   const searchSummary = buildToolbarSearchSummary(

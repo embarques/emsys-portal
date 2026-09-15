@@ -49,7 +49,8 @@ import {
   TableSelectionExpandableActionGroup,
 } from "@/components/app-shell/table-selection-action-group";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { ORDER_API_TABLE_FIELDS } from "@/lib/orders/table-fields";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -1011,7 +1012,7 @@ export function OrdersWorkspace() {
     [pickupRouteLookup, t],
   );
 
-  const columnVisibility = useColumnVisibility("orders-v7", tableColumns);
+  const columnVisibility = useApiTableColumns("orders-v7", tableColumns, ORDER_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, ORDER_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const isSearchPending = filters.query.trim() !== deferredQuery.trim();

@@ -19,7 +19,8 @@ import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { VEHICLE_API_TABLE_FIELDS } from "@/lib/vehicles/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -357,7 +358,7 @@ export function VehiclesWorkspace() {
     [branches, dash, t, vehicleLabels],
   );
 
-  const columnVisibility = useColumnVisibility("vehicles-v2", tableColumns);
+  const columnVisibility = useApiTableColumns("vehicles-v2", tableColumns, VEHICLE_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, vehicleFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const searchSummary = buildToolbarSearchSummary(

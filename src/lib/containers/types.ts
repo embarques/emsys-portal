@@ -1,10 +1,11 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
 import { CONTAINER_TABLE_FILTER_FIELDS } from "@/lib/containers/filter-fields";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 
-export type Container = {
+export type Container = ApiTableRecord & {
   id: number;
   name: string;
   containerNumber: string;

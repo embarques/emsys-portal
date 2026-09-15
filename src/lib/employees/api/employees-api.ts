@@ -1,3 +1,5 @@
+import { EMPLOYEE_API_TABLE_FIELDS } from "@/lib/employees/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { normalizeEmployeeDate } from "@/lib/employees/utils/employee-date";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -199,6 +201,7 @@ function normalizeEmployee(raw: unknown): Employee | null {
   const user = item.user != null ? normalizeApiUser(item.user) : null;
 
   return {
+    ...captureApiTableFields(raw, EMPLOYEE_API_TABLE_FIELDS),
     id: employeeId,
     name: String(item.name ?? "").trim(),
     department: String(item.department ?? "").trim(),

@@ -33,7 +33,8 @@ import {
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTranslation } from "@/lib/i18n";
 import { reportBulkSettled } from "@/lib/api/report-bulk-settled";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { CONTAINER_API_TABLE_FIELDS } from "@/lib/containers/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -332,7 +333,7 @@ export function ContainersWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("containers-v2", tableColumns);
+  const columnVisibility = useApiTableColumns("containers-v2", tableColumns, CONTAINER_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, containerFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const noun = t("containers.noun");

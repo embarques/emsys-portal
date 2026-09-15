@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
@@ -66,7 +67,7 @@ export type ActiveRouteBranchRef = {
   name?: string;
 };
 
-export type ActiveRoute = {
+export type ActiveRoute = ApiTableRecord & {
   id: string;
   name: string;
   routeType: RouteType;

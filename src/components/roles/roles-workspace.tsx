@@ -36,7 +36,8 @@ import {
   useTableSelectionReset,
 } from "@/lib/table/directory-table-state";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { ROLE_API_TABLE_FIELDS } from "@/lib/roles/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -375,7 +376,7 @@ export function RolesWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("roles", tableColumns);
+  const columnVisibility = useApiTableColumns("roles", tableColumns, ROLE_API_TABLE_FIELDS);
   const activeFilterCount = countCompleteFilterRows(filters.rows, roleFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const searchSummary = buildToolbarSearchSummary(

@@ -12,7 +12,8 @@ import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-butto
 import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { ROUTE_API_TABLE_FIELDS } from "@/lib/route-manager/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -294,7 +295,7 @@ export function RouteManagerWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("routes-v4", tableColumns);
+  const columnVisibility = useApiTableColumns("routes-v4", tableColumns, ROUTE_API_TABLE_FIELDS);
 
   const hasActiveFilters = Boolean(query.trim()) || Boolean(branchCode.trim());
 

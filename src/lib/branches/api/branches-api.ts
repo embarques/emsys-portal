@@ -1,3 +1,5 @@
+import { BRANCH_API_TABLE_FIELDS } from "@/lib/branches/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { branchFormSchema } from "@/lib/branches/schemas/branch.schema";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -194,6 +196,7 @@ function normalizeBranch(raw: unknown): Branch | null {
   if (id == null || id <= 0) return null;
 
   return {
+    ...captureApiTableFields(raw, BRANCH_API_TABLE_FIELDS),
     id,
     name: String(item.name ?? "").trim(),
     code: String(item.code ?? "").trim(),

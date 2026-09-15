@@ -1,3 +1,5 @@
+import { ACTIVE_ROUTE_API_TABLE_FIELDS } from "@/lib/pickup-delivery-routes/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -273,6 +275,7 @@ export function normalizeApiVehicleRoute(raw: unknown): ActiveRoute | null {
   const dateRaw = String(item.date ?? "").trim();
 
   return {
+    ...captureApiTableFields(raw, ACTIVE_ROUTE_API_TABLE_FIELDS),
     id,
     name: String(item.name ?? "").trim() || route.name || id,
     routeType,

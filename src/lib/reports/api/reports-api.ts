@@ -23,6 +23,8 @@ type ApiMutationEnvelope<T = unknown> = PaginatedApiEnvelope<T> & {
 type ReportData = string | Partial<ReportResult> | null | undefined;
 
 type ApiReportDefinition = {
+  createdAt?: string;
+  updatedAt?: string;
   id?: string;
   key?: string;
   type?: string;
@@ -155,6 +157,8 @@ function normalizeReportDefinition(raw: unknown): ReportDefinition | null {
   if (!key || !name) return null;
 
   return {
+    createdAt: String(item.createdAt ?? "").trim(),
+    updatedAt: String(item.updatedAt ?? "").trim(),
     id: String(item.id ?? key).trim() || key,
     key,
     type: String(item.type ?? "").trim(),

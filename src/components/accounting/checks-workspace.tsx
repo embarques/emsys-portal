@@ -21,7 +21,8 @@ import {
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { CHECK_API_TABLE_FIELDS } from "@/lib/accounting/checks/table-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -184,7 +185,7 @@ export function ChecksWorkspace() {
     [t],
   );
 
-  const columnLayout = useColumnVisibility("accounting-checks-v3", columns);
+  const columnLayout = useApiTableColumns("accounting-checks-v3", columns, CHECK_API_TABLE_FIELDS);
   const searchSummary = buildToolbarSearchSummary(
     {
       isFiltered: hasActiveSearch,

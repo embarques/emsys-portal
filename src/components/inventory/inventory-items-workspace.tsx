@@ -19,7 +19,8 @@ import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { INVENTORY_ITEM_API_TABLE_FIELDS } from "@/lib/inventory/items/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -210,7 +211,7 @@ export function InventoryItemsWorkspace() {
     },
   ];
 
-  const columnVisibility = useColumnVisibility("inventory-items", tableColumns);
+  const columnVisibility = useApiTableColumns("inventory-items", tableColumns, INVENTORY_ITEM_API_TABLE_FIELDS);
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: Boolean(filters.query.trim()),
     query: filters.query,

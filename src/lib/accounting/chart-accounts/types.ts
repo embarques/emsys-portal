@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
 
@@ -10,7 +11,7 @@ export type ChartAccountRef = {
   displayName?: string;
 };
 
-export type ChartAccount = {
+export type ChartAccount = ApiTableRecord & {
   id: number;
   name: string;
   displayName: string;

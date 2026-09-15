@@ -1,4 +1,5 @@
 "use client";
+import { formatAuditDateTime } from "@/lib/audit/display";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { EmployeeDepartmentDialog } from "@/components/employee-departments/employee-department-dialog";
 import { PageHeader } from "@/components/app-shell/page-header";
@@ -24,10 +25,11 @@ export function EmployeeDepartmentsWorkspace() {
         !state.query.data?.length ? <p className="p-6">{t("employeeDepartments.empty")}</p> :
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/40 text-left"><tr>
-            <th className="px-4 py-3">ID</th><th className="px-4 py-3">{t("employeeDepartments.name")}</th><th className="px-4 py-3">{t("employeeDepartments.active")}</th><th className="px-4 py-3 text-right">{t("common.actions.actions")}</th>
+            <th className="px-4 py-3">ID</th><th className="px-4 py-3">{t("employeeDepartments.name")}</th><th className="px-4 py-3">{t("employeeDepartments.active")}</th><th className="px-4 py-3">{t("common.apiColumns.createdAt")}</th><th className="px-4 py-3">{t("common.apiColumns.updatedAt")}</th><th className="px-4 py-3 text-right">{t("common.actions.actions")}</th>
           </tr></thead>
           <tbody>{state.query.data.map((item) => <tr key={item.id} className="border-b last:border-0">
             <td className="px-4 py-3">{item.id}</td><td className="px-4 py-3 font-medium">{item.name}</td><td className="px-4 py-3">{t(item.active ? "employeeDepartments.active" : "employeeDepartments.inactive")}</td>
+            <td className="px-4 py-3">{item.createdAt ? formatAuditDateTime(item.createdAt) : t("common.empty.dash")}</td><td className="px-4 py-3">{item.updatedAt ? formatAuditDateTime(item.updatedAt) : t("common.empty.dash")}</td>
             <td className="px-4 py-3"><div className="flex justify-end gap-1">
               <PermissionGuard permission={PERMISSIONS.employeeDepartmentsUpdate}><Button variant="ghost" size="icon" disabled={state.busy} onClick={() => state.edit(item)} aria-label={t("common.actions.edit")}><Pencil className="size-4" /></Button></PermissionGuard>
               <PermissionGuard permission={PERMISSIONS.employeeDepartmentsDelete}><Button variant="ghost" size="icon" disabled={state.busy} onClick={() => void state.remove(item)} aria-label={t("common.actions.delete")}><Trash2 className="size-4" /></Button></PermissionGuard>

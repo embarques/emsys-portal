@@ -1,3 +1,5 @@
+import { ROLE_API_TABLE_FIELDS } from "@/lib/roles/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import {
@@ -143,6 +145,7 @@ function normalizeRole(raw: unknown): Role | null {
     : [];
 
   return {
+    ...captureApiTableFields(raw, ROLE_API_TABLE_FIELDS),
     roleId: String(id),
     name: String(item.name ?? "").trim(),
     active: item.active !== false,

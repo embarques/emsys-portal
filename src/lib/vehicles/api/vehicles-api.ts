@@ -1,3 +1,5 @@
+import { VEHICLE_API_TABLE_FIELDS } from "@/lib/vehicles/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -151,6 +153,7 @@ function normalizeVehicle(raw: unknown): Vehicle | null {
   if (!id) return null;
 
   return {
+    ...captureApiTableFields(raw, VEHICLE_API_TABLE_FIELDS),
     id,
     vehicleId: String(item.vehicleId ?? "").trim(),
     name: String(item.name ?? "").trim(),

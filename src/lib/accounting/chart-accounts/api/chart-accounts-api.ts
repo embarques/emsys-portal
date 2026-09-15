@@ -1,3 +1,5 @@
+import { CHART_ACCOUNT_API_TABLE_FIELDS } from "@/lib/accounting/chart-accounts/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -125,6 +127,7 @@ function normalizeChartAccount(raw: unknown): ChartAccount | null {
   const name = String(item.name ?? displayName).trim();
 
   return {
+    ...captureApiTableFields(raw, CHART_ACCOUNT_API_TABLE_FIELDS),
     id,
     name: name || displayName || String(id),
     displayName: displayName || name || String(id),

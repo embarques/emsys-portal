@@ -117,6 +117,7 @@ export function BarcodeStatusesWorkspace() {
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/40 text-left">
               <tr>
+                <th className="px-4 py-3 font-medium">{t("common.apiColumns.id")}</th>
                 <th className="px-4 py-3 font-medium">{t("barcodeStatuses.fields.name")}</th>
                 <th className="px-4 py-3 font-medium">{t("barcodeStatuses.fields.previousStatus")}</th>
                 <th className="w-28 px-4 py-3 text-right font-medium">{t("common.actions.actions")}</th>
@@ -125,6 +126,7 @@ export function BarcodeStatusesWorkspace() {
             <tbody>
               {statuses.map((status) => (
                 <tr key={status.id} className="border-b last:border-0">
+                  <td className="px-4 py-3">{status.id}</td>
                   <td className="px-4 py-3 font-medium">{status.name}</td>
                   <td className="px-4 py-3 text-muted-foreground">{status.prevStatus || "—"}</td>
                   <td className="px-4 py-3">

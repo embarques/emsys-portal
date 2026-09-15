@@ -1,3 +1,5 @@
+import { CONTAINER_API_TABLE_FIELDS } from "@/lib/containers/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -160,6 +162,7 @@ function normalizeContainer(raw: unknown): Container | null {
   const arrivalDate = readContainerString(item, "arrivalDate", "arrival_date", "fechaLlegada", "fecha_llegada");
 
   return {
+    ...captureApiTableFields(raw, CONTAINER_API_TABLE_FIELDS),
     id,
     name: readContainerString(item, "name", "containerName", "container_name") || String(item.name ?? "").trim(),
     containerNumber: containerNumber.toUpperCase(),

@@ -1,3 +1,5 @@
+import { INVOICE_API_TABLE_FIELDS } from "@/lib/invoices/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { axiosInstance } from "@/lib/api/axios";
@@ -603,6 +605,7 @@ function normalizeInvoice(raw: unknown): Invoice | null {
   const officeBranchName = String(item.officeBranch?.name ?? "").trim();
 
   return {
+    ...captureApiTableFields(raw, INVOICE_API_TABLE_FIELDS),
     invoiceId,
     invoiceNumber: String(item.number ?? "").trim(),
     date: toInvoiceDateValue(String(item.date ?? "")),

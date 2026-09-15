@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 export type StagedLineItem = {
   key: string;
   invoiceId: string;
@@ -73,7 +74,7 @@ export type BarcodeDeliveryRef = {
 };
 
 /** Normalized barcode record from the EMSYS `/barcodes` API. */
-export type Barcode = {
+export type Barcode = ApiTableRecord & {
   id: number;
   /**
    * ObjectID when present (catalog Mongo id or invoice-embedded `barcodeId`).

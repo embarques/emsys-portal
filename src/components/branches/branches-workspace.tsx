@@ -17,7 +17,8 @@ import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { BRANCH_API_TABLE_FIELDS } from "@/lib/branches/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -316,7 +317,7 @@ export function BranchesWorkspace() {
     [dash, t],
   );
 
-  const columnVisibility = useColumnVisibility("branches", tableColumns);
+  const columnVisibility = useApiTableColumns("branches", tableColumns, BRANCH_API_TABLE_FIELDS);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows, branchFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;

@@ -1,3 +1,5 @@
+import { BARCODE_API_TABLE_FIELDS } from "@/lib/barcodes/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -220,6 +222,7 @@ export function normalizeBarcode(raw: unknown): Barcode | null {
     String(item.description ?? item.name ?? "").trim() || undefined;
 
   return {
+    ...captureApiTableFields(raw, BARCODE_API_TABLE_FIELDS),
     id,
     barcodeId: barcodeId || undefined,
     number,

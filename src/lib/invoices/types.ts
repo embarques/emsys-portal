@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
@@ -143,7 +144,7 @@ export type InvoicePaymentInput = {
   referenceNumber: string;
 };
 
-export type Invoice = {
+export type Invoice = ApiTableRecord & {
   invoiceId: string;
   invoiceNumber: string;
   date: string;

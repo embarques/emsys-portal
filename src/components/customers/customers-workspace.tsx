@@ -24,7 +24,8 @@ import { FlippableStatCard } from "@/components/app-shell/flippable-stat-card";
 import { StatCardsCarousel } from "@/components/app-shell/stat-cards-carousel";
 import { NewCustomersStatCard } from "@/components/customers/new-customers-stat-card";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { CUSTOMER_API_TABLE_FIELDS } from "@/lib/customers/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -503,7 +504,7 @@ export function CustomersWorkspace() {
     t,
   );
 
-  const columnVisibility = useColumnVisibility(CUSTOMERS_TABLE_COLUMN_STORAGE_KEY, tableColumns);
+  const columnVisibility = useApiTableColumns(CUSTOMERS_TABLE_COLUMN_STORAGE_KEY, tableColumns, CUSTOMER_API_TABLE_FIELDS);
   const listErrorMessage = isError ? toErrorMessage(error) : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;

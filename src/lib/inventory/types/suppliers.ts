@@ -1,7 +1,8 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import { createDefaultRecordPhones } from "@/lib/phones/phones";
 import type { RecordPhone } from "@/lib/phones/types";
 
-export type InventorySupplier = {
+export type InventorySupplier = ApiTableRecord & {
   id: string;
   companyName: string;
   contactNames: string[];

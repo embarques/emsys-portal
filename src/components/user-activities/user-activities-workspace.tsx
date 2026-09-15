@@ -8,7 +8,8 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { USER_ACTIVITY_API_TABLE_FIELDS } from "@/lib/user-activities/table-fields";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -151,7 +152,7 @@ export function UserActivitiesWorkspace() {
     [dash, t],
   );
 
-  const columnLayout = useColumnVisibility("user-activities-v1", columns);
+  const columnLayout = useApiTableColumns("user-activities-v1", columns, USER_ACTIVITY_API_TABLE_FIELDS);
   const searchSummary = buildToolbarSearchSummary(
     {
       isFiltered: hasActiveSearch,

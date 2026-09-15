@@ -1,3 +1,5 @@
+import { ORDER_API_TABLE_FIELDS } from "@/lib/orders/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { axiosInstance } from "@/lib/api/axios";
@@ -352,6 +354,7 @@ function normalizeOrder(raw: unknown): Order | null {
   const routeRef = normalizePickupRouteRef(item.route);
 
   return {
+    ...captureApiTableFields(raw, ORDER_API_TABLE_FIELDS),
     id,
     date: normalizeIsoDate(item.date),
     createdAt: normalizeIsoDate(item.createdAt),

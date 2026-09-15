@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
@@ -16,7 +17,7 @@ export type UserBranch = {
 
 export type UserAuditActor = UserReference;
 
-export type User = {
+export type User = ApiTableRecord & {
   id: number;
   uid: string;
   email: string;

@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { isCompleteFilterRow, type TableFilterRowState } from "@/lib/table/filter-builder";
@@ -11,7 +12,7 @@ export type VehicleBranch = {
   code: string;
 };
 
-export type Vehicle = {
+export type Vehicle = ApiTableRecord & {
   id: string;
   vehicleId: string;
   name: string;

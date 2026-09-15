@@ -1,3 +1,5 @@
+import { ROUTE_API_TABLE_FIELDS } from "@/lib/route-manager/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -173,6 +175,7 @@ export function normalizeApiRoute(raw: unknown): Route | null {
     (vehicle.branch ? { id: 0, code: vehicle.branch } : null);
 
   return {
+    ...captureApiTableFields(raw, ROUTE_API_TABLE_FIELDS),
     id,
     routeId: String(item.routeId ?? item.routeAssignmentId ?? "").trim(),
     name: String(item.name ?? "").trim(),

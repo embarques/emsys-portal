@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
@@ -6,7 +7,7 @@ import type { TableFilterRowState } from "@/lib/table/filter-types";
 import { ITEM_TABLE_FILTER_FIELDS } from "@/lib/items/filter-fields";
 
 /** EMSYS invoice description (a.k.a. item) from GET /invoice-descriptions. */
-export type Item = {
+export type Item = ApiTableRecord & {
   /** Stringified numeric API id. */
   itemId: string;
   /** API `name` field — the item description shown in the catalog. */

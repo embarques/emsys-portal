@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
@@ -14,7 +15,7 @@ export type CheckInvoiceRef = {
   balance?: number;
 };
 
-export type Check = {
+export type Check = ApiTableRecord & {
   id: string;
   status: CheckStatus;
   checkNumber: string;

@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import type { ApiListTextSearch } from "@/lib/api/search-query";
@@ -138,7 +139,7 @@ export function setVehicleRouteCrewRole(
   });
 }
 
-export type Route = {
+export type Route = ApiTableRecord & {
   id: string;
   routeId: string;
   name: string;

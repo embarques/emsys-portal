@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 
 /** Catalog record — quantity left is derived from receipts and dispatches. */
@@ -12,7 +13,7 @@ export type InventoryCatalogItem = {
 };
 
 /** Item with computed quantity left and average receipt cost. */
-export type InventoryItem = InventoryCatalogItem & {
+export type InventoryItem = ApiTableRecord & InventoryCatalogItem & {
   quantity: number;
   averageCost: number;
 };

@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
@@ -12,7 +13,7 @@ export type RolePermission = {
   group?: string;
 };
 
-export type Role = {
+export type Role = ApiTableRecord & {
   roleId: string;
   name: string;
   active: boolean;

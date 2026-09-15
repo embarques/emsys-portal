@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import { normalizeEmployeeDate } from "@/lib/employees/utils/employee-date";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createApiListTextSearch, createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
@@ -28,7 +29,7 @@ export type EmployeeBranch = {
   code: string;
 };
 
-export type Employee = {
+export type Employee = ApiTableRecord & {
   id: number;
   name: string;
   title: string;

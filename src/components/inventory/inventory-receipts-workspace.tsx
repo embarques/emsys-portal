@@ -15,7 +15,8 @@ import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { PageHeader } from "@/components/app-shell/page-header";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { INVENTORY_RECEIPT_API_TABLE_FIELDS } from "@/lib/inventory/receipts/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -146,7 +147,7 @@ export function InventoryReceiptsWorkspace() {
     { id: "date", label: t("inventory.columns.date"), renderCell: (row) => formatInventoryDate(row.receivedAt) },
   ];
 
-  const columnVisibility = useColumnVisibility("inventory-receipts", columns);
+  const columnVisibility = useApiTableColumns("inventory-receipts", columns, INVENTORY_RECEIPT_API_TABLE_FIELDS);
   const searchSummary = buildToolbarSearchSummary({
     isFiltered: Boolean(query.trim()),
     query,

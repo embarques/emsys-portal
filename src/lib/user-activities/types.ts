@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 
@@ -16,7 +17,7 @@ export type UserActivityUser = {
  * The activity document’s own key is normalized to `activityId` so it does not
  * collide with the entity `id`.
  */
-export type UserActivity = {
+export type UserActivity = ApiTableRecord & {
   activityId: string;
   timestamp: string;
   user: UserActivityUser;

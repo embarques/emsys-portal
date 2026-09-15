@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 export type AccountingLookup = {
   id: number;
   name: string;
@@ -71,7 +72,7 @@ export type DailyIncomeAssigneeSource = "employee" | "route";
 
 export type InventoryChangeDirection = "received" | "dispatched";
 
-export type DailyIncomeJournal = {
+export type DailyIncomeJournal = ApiTableRecord & {
   id: string;
   incomeStatementId: number;
   date: string;

@@ -1,5 +1,8 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n";
+import { formatAuditDateTime } from "@/lib/audit/display";
+
 import { useMemo, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
 import {
@@ -353,6 +356,7 @@ function ReportCatalogContent({
   error,
   onSelect,
 }: ReportCatalogProps) {
+  const { t } = useTranslation();
   if (loading) return <ReportLoadingState />;
   if (error) return <ReportEmptyState title="Unable to load reports" description="Refresh the page and try again." />;
   if (total === 0) {
@@ -369,13 +373,22 @@ function ReportCatalogContent({
 
   return (
     <>
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs font-semibold text-muted-foreground">
             <tr>
               <th className="px-3 py-2">Type</th>
               <th className="px-3 py-2">Report Name</th>
               <th className="px-3 py-2">Description</th>
+              <th className="px-3 py-2">{t("common.apiColumns.id")}</th>
+              <th className="px-3 py-2">{t("common.apiColumns.key")}</th>
+              <th className="px-3 py-2">{t("common.apiColumns.icon")}</th>
+              <th className="px-3 py-2">{t("common.apiColumns.enabled")}</th>
+              <th className="px-3 py-2">{t("common.apiColumns.sortOrder")}</th>
+              <th className="px-3 py-2">{t("common.apiColumns.filters")}</th>
+              <th className="px-3 py-2">{t("common.apiColumns.createdAt")}</th>
+              <th className="px-3 py-2">{t("common.apiColumns.updatedAt")}</th>
+
             </tr>
           </thead>
           <tbody>
@@ -396,6 +409,15 @@ function ReportCatalogContent({
                 </td>
                 <td className="px-3 py-2 font-medium text-foreground">{report.name}</td>
                 <td className="px-3 py-2 text-muted-foreground">{report.description}</td>
+                <td className="px-3 py-2">{report.id}</td>
+                <td className="px-3 py-2">{report.key}</td>
+                <td className="px-3 py-2">{report.icon || t("common.empty.dash")}</td>
+                <td className="px-3 py-2">{t(report.enabled ? "common.apiColumns.yes" : "common.apiColumns.no")}</td>
+                <td className="px-3 py-2">{report.sortOrder}</td>
+                <td className="px-3 py-2">{report.filters.join(", ") || t("common.empty.dash")}</td>
+                <td className="px-3 py-2">{report.createdAt ? formatAuditDateTime(report.createdAt) : t("common.empty.dash")}</td>
+                <td className="px-3 py-2">{report.updatedAt ? formatAuditDateTime(report.updatedAt) : t("common.empty.dash")}</td>
+
               </tr>
             ))}
           </tbody>

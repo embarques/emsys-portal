@@ -1,3 +1,5 @@
+import { CUSTOMER_API_TABLE_FIELDS } from "@/lib/customers/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { logApiErrorDev, normalizeApiError } from "@/lib/api/api-error";
@@ -369,6 +371,7 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
   const branch = normalizeBranch(item.branch);
 
   return {
+    ...captureApiTableFields(raw, CUSTOMER_API_TABLE_FIELDS),
     id,
     oldID: readNumericId(item.oldID) ?? null,
     name: String(item.name ?? "").trim(),

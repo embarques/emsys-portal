@@ -16,7 +16,8 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { CHART_ACCOUNT_API_TABLE_FIELDS } from "@/lib/accounting/chart-accounts/table-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -337,7 +338,7 @@ export function ChartOfAccountsWorkspace() {
     ],
     [dash, t],
   );
-  const columnLayout = useColumnVisibility("chart-of-accounts-v1", columns);
+  const columnLayout = useApiTableColumns("chart-of-accounts-v1", columns, CHART_ACCOUNT_API_TABLE_FIELDS);
 
   const searchSummary = buildToolbarSearchSummary(
     {

@@ -1,3 +1,5 @@
+import { DAILY_INCOME_JOURNAL_API_TABLE_FIELDS } from "@/lib/accounting/daily-income/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { journalPaymentFields, type JournalWriteOptions } from "./duplicate-payment";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -212,6 +214,7 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
         ? employeeGroupRaw
         : undefined;
   return {
+    ...captureApiTableFields(value, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS),
     id,
     incomeStatementId: numberValue(firstDefined(raw.incomeStatementId, objectValue(raw.incomeStatement).id)),
     date: stringValue(raw.date).slice(0, 10),

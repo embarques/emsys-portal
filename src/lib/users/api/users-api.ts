@@ -1,3 +1,5 @@
+import { USER_API_TABLE_FIELDS } from "@/lib/users/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -114,6 +116,7 @@ function normalizeUser(raw: unknown): User | null {
   const id = readId(item._id ?? item.id);
   if (id == null) return null;
   return {
+    ...captureApiTableFields(raw, USER_API_TABLE_FIELDS),
     id,
     uid: String(item.uid ?? "").trim(),
     email: String(item.email ?? "").trim(),

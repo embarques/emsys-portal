@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 import type { ApiListSortInput } from "@/lib/api/list-query";
 import { createListTextSearch, type ApiListTextSearch } from "@/lib/api/search-query";
 import type { Customer, CustomerAddress, CustomerCoreAddress, CustomerPhone } from "@/lib/customers/types";
@@ -36,7 +37,7 @@ export type PickupComment = {
 };
 
 /** EMSYS pickup record from GET /pickups. */
-export type Order = {
+export type Order = ApiTableRecord & {
   id: number;
   date: string;
   createdAt: string;

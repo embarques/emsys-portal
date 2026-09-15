@@ -1,3 +1,4 @@
+import type { ApiTableRecord } from "@/lib/table/api-table-fields";
 export type InventoryItemRef = {
   id: string;
   item: string;
@@ -16,7 +17,7 @@ export type ReceiptFormValues = {
   receivedAt: string;
 };
 
-export type InventoryReceipt = {
+export type InventoryReceipt = ApiTableRecord & {
   id: string;
   itemId: string;
   item?: InventoryItemRef;
@@ -55,7 +56,7 @@ export type DispatchFormValues = {
   routeCrewName: string;
 };
 
-export type InventoryDispatch = {
+export type InventoryDispatch = ApiTableRecord & {
   id: string;
   itemId: string;
   item?: InventoryItemRef;

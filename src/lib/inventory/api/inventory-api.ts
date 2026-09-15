@@ -1,3 +1,8 @@
+import { INVENTORY_DISPATCH_API_TABLE_FIELDS } from "@/lib/inventory/dispatches/table-fields";
+import { INVENTORY_RECEIPT_API_TABLE_FIELDS } from "@/lib/inventory/receipts/table-fields";
+import { INVENTORY_SUPPLIER_API_TABLE_FIELDS } from "@/lib/inventory/suppliers/table-fields";
+import { INVENTORY_ITEM_API_TABLE_FIELDS } from "@/lib/inventory/items/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -225,6 +230,7 @@ function normalizeInventoryItem(raw: unknown): InventoryItem | null {
   if (!id) return null;
 
   return {
+    ...captureApiTableFields(raw, INVENTORY_ITEM_API_TABLE_FIELDS),
     id,
     item: String(entry.item ?? "").trim(),
     reorderThreshold: readNumber(entry.reorderThreshold),
@@ -268,6 +274,7 @@ function normalizeInventoryReceipt(raw: unknown): InventoryReceipt | null {
   if (!id || !itemId || !supplierId) return null;
 
   return {
+    ...captureApiTableFields(raw, INVENTORY_RECEIPT_API_TABLE_FIELDS),
     id,
     itemId,
     item: normalizeItemRef(entry.item, itemId),
@@ -292,6 +299,7 @@ function normalizeInventoryDispatch(raw: unknown): InventoryDispatch | null {
   if (!id || !itemId || !dispatchedTo) return null;
 
   return {
+    ...captureApiTableFields(raw, INVENTORY_DISPATCH_API_TABLE_FIELDS),
     id,
     itemId,
     item: normalizeItemRef(entry.item, itemId),
@@ -313,6 +321,7 @@ function normalizeInventorySupplier(raw: unknown): InventorySupplier | null {
   if (!id) return null;
 
   return {
+    ...captureApiTableFields(raw, INVENTORY_SUPPLIER_API_TABLE_FIELDS),
     id,
     companyName: String(entry.companyName ?? "").trim(),
     contactNames: Array.isArray(entry.contactNames)

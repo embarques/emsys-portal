@@ -22,7 +22,8 @@ import { PageHeader } from "@/components/app-shell/page-header";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
 
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { USER_API_TABLE_FIELDS } from "@/lib/users/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -381,7 +382,7 @@ export function UsersWorkspace() {
     [dash, t, userLabels],
   );
 
-  const columnVisibility = useColumnVisibility("users", tableColumns);
+  const columnVisibility = useApiTableColumns("users", tableColumns, USER_API_TABLE_FIELDS);
   const listErrorMessage = isError ? normalizeApiError(error).message : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows, userFilterFields);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;

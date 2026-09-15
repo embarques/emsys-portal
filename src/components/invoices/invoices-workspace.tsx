@@ -37,7 +37,8 @@ import {
   TableDirectoryToolbar,
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { INVOICE_API_TABLE_FIELDS } from "@/lib/invoices/table-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
@@ -977,7 +978,7 @@ export function InvoicesWorkspace() {
     [t],
   );
 
-  const columnVisibility = useColumnVisibility("invoices-v7", tableColumns);
+  const columnVisibility = useApiTableColumns("invoices-v7", tableColumns, INVOICE_API_TABLE_FIELDS);
   const advancedFilterCount = countCompleteFilterRows(filters.rows, INVOICE_TABLE_FILTER_FIELDS);
   const activeFilterCount = advancedFilterCount;
   const hasActiveFilters = Boolean(filters.query.trim()) || advancedFilterCount > 0;

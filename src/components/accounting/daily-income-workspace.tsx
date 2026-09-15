@@ -16,7 +16,8 @@ import { StatCards, type StatCardItem } from "@/components/app-shell/stat-cards-
 import { TableDirectoryToolbar } from "@/components/app-shell/table-directory-toolbar";
 import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
-import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
+import { useApiTableColumns } from "@/components/app-shell/use-api-table-columns";
+import { DAILY_INCOME_JOURNAL_API_TABLE_FIELDS } from "@/lib/accounting/daily-income/table-fields";
 import { TableTagText } from "@/components/app-shell/table-tag-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -474,7 +475,7 @@ export function DailyIncomeWorkspace() {
     { id: "paymentMethod", label: t("accounting.dailyIncome.columns.paymentMethod"), renderCell: (row) => row.paymentMethod?.name ?? t("common.empty.dash") },
     { id: "amount", label: t("accounting.dailyIncome.columns.amount"), cellClassName: "font-medium tabular-nums", renderCell: (row) => formatDailyIncomeMoney(row.amount, displayCurrency) },
   ], [displayCurrency, t]);
-  const columnLayout = useColumnVisibility("daily-income-v1", columns);
+  const columnLayout = useApiTableColumns("daily-income-v1", columns, DAILY_INCOME_JOURNAL_API_TABLE_FIELDS);
   const statementValues: DailyIncomeStatementValues = {
     date: statement?.date ?? date,
     branchId: statement?.branch?.id ?? selectedBranch?.id ?? 0,

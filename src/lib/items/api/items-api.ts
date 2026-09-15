@@ -1,3 +1,5 @@
+import { ITEM_API_TABLE_FIELDS } from "@/lib/items/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -79,6 +81,7 @@ function normalizeItem(raw: unknown): Item | null {
   if (id == null || id <= 0) return null;
 
   return {
+    ...captureApiTableFields(raw, ITEM_API_TABLE_FIELDS),
     itemId: String(id),
     description: String(item.name ?? "").trim(),
     price: Number(item.price ?? 0),

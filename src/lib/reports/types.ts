@@ -60,6 +60,8 @@ export type ReportResult = {
 };
 
 export type ReportDefinition = {
+  createdAt?: string;
+  updatedAt?: string;
   id: string;
   key: string;
   type: string;

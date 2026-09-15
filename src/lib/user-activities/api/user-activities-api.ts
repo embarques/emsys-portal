@@ -1,3 +1,5 @@
+import { USER_ACTIVITY_API_TABLE_FIELDS } from "@/lib/user-activities/table-fields";
+import { captureApiTableFields } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { fetchPaginatedResourceList } from "@/lib/api/fetch-paginated-resource";
 import { buildApiListQuery } from "@/lib/api/list-query";
@@ -132,6 +134,7 @@ export function normalizeUserActivity(raw: unknown): UserActivity | null {
     readString(item.description) || readString(item.details) || readString(item.activity);
 
   return {
+    ...captureApiTableFields(raw, USER_ACTIVITY_API_TABLE_FIELDS),
     activityId,
     timestamp: readString(item.timestamp ?? item.createdAt),
     user: normalizeUser(item.user),
