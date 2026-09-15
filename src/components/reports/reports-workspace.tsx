@@ -225,8 +225,8 @@ export function ReportsWorkspace() {
     }
   }
 
-  const supportsDualOutputs =
-    !!selectedReport?.outputs.includes("pdf") && !!selectedReport.outputs.includes("excel");
+  const supportsExcelDownload = !!selectedReport?.outputs.includes("excel");
+  const supportsPdfGenerate = !!selectedReport?.outputs.includes("pdf");
 
   const filtersPanel = (
     <ReportConfigurationPanel
@@ -236,8 +236,8 @@ export function ReportsWorkspace() {
       generating={generation.isPending}
       onValueChange={setSelectedFilterValue}
       onClear={clearFilters}
-      onGenerate={() => generateSelectedReport()}
-      onDownloadExcel={supportsDualOutputs ? () => generateSelectedReport("excel") : undefined}
+      onGenerate={supportsPdfGenerate ? () => generateSelectedReport("pdf") : undefined}
+      onDownloadExcel={supportsExcelDownload ? () => generateSelectedReport("excel") : undefined}
     />
   );
 
@@ -508,7 +508,7 @@ function ReportConfigurationPanel({
   generating: boolean;
   onValueChange: (key: string, value: string) => void;
   onClear: () => void;
-  onGenerate: () => void;
+  onGenerate?: () => void;
   onDownloadExcel?: () => void;
 }) {
   if (!report) {
@@ -526,8 +526,6 @@ function ReportConfigurationPanel({
   }
 
   const context: FilterContext = { values, errors, setValue: onValueChange };
-  const generateIsPdf = report.outputs.includes("pdf");
-  const generateIsExcelOnly = !generateIsPdf && report.outputs.includes("excel");
 
   return (
     <Card className="overflow-hidden">
@@ -581,28 +579,22 @@ function ReportConfigurationPanel({
                 ) : (
                   <FileSpreadsheet className="size-4 text-emerald-600 dark:text-emerald-400" />
                 )}
-                Excel
+                Download Excel
               </Button>
             ) : null}
-            <Button
-              type="button"
-              onClick={onGenerate}
-              disabled={generating}
-              className="h-11"
-              aria-label={generateIsPdf ? "Generate PDF report" : generateIsExcelOnly ? "Generate Excel report" : "Generate report"}
-              title={generateIsPdf ? "Generate PDF" : generateIsExcelOnly ? "Generate Excel" : "Generate Report"}
-            >
-              {generating ? (
-                <LoaderCircle className="size-4 animate-spin" />
-              ) : generateIsPdf ? (
-                <FileType className="size-4" />
-              ) : generateIsExcelOnly ? (
-                <FileSpreadsheet className="size-4" />
-              ) : (
-                <FileText className="size-4" />
-              )}
-              {generateIsPdf ? "Generate PDF" : generateIsExcelOnly ? "Generate Excel" : "Generate Report"}
-            </Button>
+            {onGenerate ? (
+              <Button
+                type="button"
+                onClick={onGenerate}
+                disabled={generating}
+                className="h-11"
+                aria-label="Generate PDF report"
+                title="Generate PDF"
+              >
+                {generating ? <LoaderCircle className="size-4 animate-spin" /> : <FileType className="size-4" />}
+                Generate PDF
+              </Button>
+            ) : null}
           </div>
         </div>
       </CardContent>
