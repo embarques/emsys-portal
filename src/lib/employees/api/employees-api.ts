@@ -1,6 +1,6 @@
 import { EMPLOYEE_API_TABLE_FIELDS } from "@/lib/employees/table-fields";
 import { captureApiTableFields } from "@/lib/table/api-table-fields";
-import { normalizeEmployeeDate } from "@/lib/employees/utils/employee-date";
+import { normalizeEmployeeDate, resolveEmployeeActiveForEndDate } from "@/lib/employees/utils/employee-date";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -265,7 +265,7 @@ function buildEmployeeWritePayload(
     title,
     department,
     phones,
-    active: values.active,
+    active: resolveEmployeeActiveForEndDate(values.active, values.endDate),
     branch: buildApiBranchRef(values.branch),
   };
 

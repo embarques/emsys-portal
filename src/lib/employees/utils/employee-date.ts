@@ -31,3 +31,28 @@ export function employeeDateToInputValue(value: string): string {
     return "";
   }
 }
+
+function employeeDateOnlyUtc(value: Date): string {
+  return value.toISOString().slice(0, 10);
+}
+
+/**
+ * True when endDate's UTC calendar day is strictly before today's UTC calendar day.
+ * Matches API `employeeEndDatePassed` so today remains active.
+ */
+export function isEmployeeEndDateBeforeToday(endDate: string, now: Date = new Date()): boolean {
+  const trimmed = endDate.trim();
+  if (!trimmed) return false;
+  try {
+    const normalized = normalizeEmployeeDate(trimmed);
+    return employeeDateOnlyUtc(new Date(normalized)) < employeeDateOnlyUtc(now);
+  } catch {
+    return false;
+  }
+}
+
+/** Force inactive when the end date is already in the past. */
+export function resolveEmployeeActiveForEndDate(active: boolean, endDate: string, now: Date = new Date()): boolean {
+  if (isEmployeeEndDateBeforeToday(endDate, now)) return false;
+  return active;
+}
