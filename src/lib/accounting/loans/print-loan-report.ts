@@ -30,7 +30,7 @@ export function buildSelectedLoanReportRequest(loan: Loan): ReportRequest {
 
 /**
  * Build print/export payload for selected loans.
- * PDF uses the same employee + date-range filters as the Reports workspace.
+ * PDF matches the Reports workspace exactly (employee + date range only).
  * Excel uses selected numeric loan ids.
  */
 export function buildSelectedLoansReportRequest(
@@ -67,16 +67,10 @@ export function buildSelectedLoansReportRequest(
     filters.push({ field: "transactionDate", operator: "lte", value: end });
   }
 
-  // Keep selected ids when printing one or more loans so the API can scope the PDF.
-  if (values.length === 1) {
-    filters.push({ field: "id", operator: "eq", value: Number(values[0]) || values[0] });
-  }
-
+  // Same payload shape as Reports — no `values`, so production uses the working filter path.
   return {
     type: "loan",
     collection: "loans",
-    values,
-    lookupField: "id",
     filters,
     operator: "and",
     format: "pdf",
