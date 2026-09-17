@@ -30,7 +30,7 @@
     },
     "loan": {
       "title": "Préstamos",
-      "description": "Imprima saldos de préstamos de empleados según los filtros."
+      "description": "Imprima el estado de préstamos de un empleado por rango de fechas."
     }
   },
   "fields": {

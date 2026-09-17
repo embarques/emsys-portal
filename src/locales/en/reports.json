@@ -30,7 +30,7 @@
     },
     "loan": {
       "title": "Loans",
-      "description": "Print employee loan balances for the selected filters."
+      "description": "Print employee loan statements for a date range."
     }
   },
   "fields": {
