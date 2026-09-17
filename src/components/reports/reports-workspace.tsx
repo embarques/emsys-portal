@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
 import {
   Anchor,
@@ -52,9 +52,18 @@ import type {
   ReportFilterValues,
   ReportOutputFormat,
 } from "@/lib/reports/types";
+import { useCurrentUser } from "@/lib/users/hooks/use-users";
 import { cn } from "@/lib/utils";
 
 const ALL_CATEGORY = "All";
+const LOANS_REPORT_CATEGORY = "Loans";
+
+function reportDisplayType(report: Pick<ReportDefinition, "key" | "type">): string {
+  if (report.key === "loan-statement" || report.key === "employee-loans") {
+    return LOANS_REPORT_CATEGORY;
+  }
+  return report.type;
+}
 
 const FILTER_VALUE_KEYS: Record<string, string[]> = {
   "date-range": ["dateFrom", "dateTo"],
@@ -100,7 +109,6 @@ const LOAN_STATUS_OPTIONS = [
   { value: "", label: "[All Status]" },
   { value: "open", label: "Open" },
   { value: "paid", label: "Paid" },
-  { value: "overdue", label: "Overdue" },
 ];
 
 const STATUS_OPTIONS = [
@@ -124,10 +132,41 @@ type FilterContext = {
   setValue: (key: string, value: string) => void;
 };
 
+function todayInputValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function defaultReportFilterValues(
+  report: ReportDefinition,
+  userBranchId?: number,
+): ReportFilterValues {
+  const defaults: ReportFilterValues = {};
+  const today = todayInputValue();
+
+  if (report.filters.includes("date-range")) {
+    defaults.dateFrom = today;
+    defaults.dateTo = today;
+  }
+  if (report.filters.includes("single-date")) {
+    defaults.date = today;
+  }
+  if (report.filters.includes("location") && userBranchId && userBranchId > 0) {
+    defaults.locationId = String(userBranchId);
+  }
+
+  return defaults;
+}
+
 export function ReportsWorkspace() {
   const feedback = useFeedback();
   const reportsQuery = useReportDefinitions();
   const generation = useRequestReportGeneration();
+  const currentUserQuery = useCurrentUser();
+  const userBranchId = currentUserQuery.data?.branch?.id;
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState(ALL_CATEGORY);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -137,15 +176,18 @@ export function ReportsWorkspace() {
 
   const reports = reportsQuery.data ?? [];
   const categories = useMemo(() => {
-    const unique = Array.from(new Set(reports.map((report) => report.type).filter(Boolean)));
+    const unique = Array.from(
+      new Set(reports.map((report) => reportDisplayType(report)).filter(Boolean)),
+    );
     return [ALL_CATEGORY, ...unique];
   }, [reports]);
 
   const filteredReports = useMemo(() => {
     const query = normalizeSearch(search);
     return reports.filter((report) => {
-      const matchesCategory = category === ALL_CATEGORY || report.type === category;
-      const haystack = normalizeSearch(`${report.name} ${report.type} ${report.description}`);
+      const type = reportDisplayType(report);
+      const matchesCategory = category === ALL_CATEGORY || type === category;
+      const haystack = normalizeSearch(`${report.name} ${type} ${report.description}`);
       return matchesCategory && (!query || haystack.includes(query));
     });
   }, [category, reports, search]);
@@ -157,10 +199,34 @@ export function ReportsWorkspace() {
 
   const selectedValues = selectedReport ? filterValuesByReport[selectedReport.key] ?? {} : {};
 
+  useEffect(() => {
+    if (!selectedReport?.filters.includes("location") || !userBranchId || userBranchId <= 0) {
+      return;
+    }
+    setFilterValuesByReport((current) => {
+      const existing = current[selectedReport.key];
+      if (existing?.locationId !== undefined) return current;
+      return {
+        ...current,
+        [selectedReport.key]: {
+          ...(existing ?? {}),
+          locationId: String(userBranchId),
+        },
+      };
+    });
+  }, [selectedReport, userBranchId]);
+
   function selectReport(report: ReportDefinition) {
     setSelectedKey(report.key);
     setErrors({});
     setMobileConfigOpen(true);
+    setFilterValuesByReport((current) => {
+      if (current[report.key]) return current;
+      return {
+        ...current,
+        [report.key]: defaultReportFilterValues(report, userBranchId),
+      };
+    });
   }
 
   function setSelectedFilterValue(key: string, value: string) {
@@ -182,7 +248,10 @@ export function ReportsWorkspace() {
 
   function clearFilters() {
     if (!selectedReport) return;
-    setFilterValuesByReport((current) => ({ ...current, [selectedReport.key]: {} }));
+    setFilterValuesByReport((current) => ({
+      ...current,
+      [selectedReport.key]: defaultReportFilterValues(selectedReport, userBranchId),
+    }));
     setErrors({});
   }
 
@@ -219,7 +288,7 @@ export function ReportsWorkspace() {
         feedback.notifySuccess("Report generated.");
         return;
       }
-      feedback.notifySuccess("Report request is ready for Phase 2 generation.");
+      feedback.notifyError("This report is not available yet.");
     } catch (error) {
       feedback.notifyError(normalizeApiError(error).message);
     }
@@ -424,8 +493,8 @@ function ReportCatalogContent({
               >
                 <td className="px-3 py-2">
                   <span className="inline-flex items-center gap-2 font-medium text-primary">
-                    <ReportIcon icon={report.icon} type={report.type} className="size-4" />
-                    {report.type}
+                    <ReportIcon icon={report.icon} type={reportDisplayType(report)} className="size-4" />
+                    {reportDisplayType(report)}
                   </span>
                 </td>
                 <td className="px-3 py-2 font-medium text-foreground">{report.name}</td>
@@ -475,12 +544,12 @@ function ReportMobileCatalog(props: ReportCatalogProps) {
             onClick={() => onSelect(report)}
           >
             <span className="grid size-10 shrink-0 place-items-center text-primary">
-              <ReportIcon icon={report.icon} type={report.type} className="size-7" />
+              <ReportIcon icon={report.icon} type={reportDisplayType(report)} className="size-7" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold leading-snug text-foreground">{report.name}</span>
               <Badge variant="secondary" className="mt-1 bg-primary/10 text-primary hover:bg-primary/10">
-                {report.type}
+                {reportDisplayType(report)}
               </Badge>
               <span className="mt-1 block text-sm leading-snug text-muted-foreground">{report.description}</span>
             </span>
@@ -532,13 +601,13 @@ function ReportConfigurationPanel({
       <CardContent className="p-4 md:p-6">
         <div className="flex items-start gap-4">
           <div className="grid size-16 shrink-0 place-items-center rounded-lg border bg-primary/10 text-primary">
-            <ReportIcon icon={report.icon} type={report.type} className="size-9" />
+            <ReportIcon icon={report.icon} type={reportDisplayType(report)} className="size-9" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-bold leading-tight text-foreground">{report.name}</h2>
               <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/10">
-                {report.type}
+                {reportDisplayType(report)}
               </Badge>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{report.description}</p>
@@ -921,7 +990,7 @@ function validateReportFilters(report: ReportDefinition, values: ReportFilterVal
   if (report.key === "customs-invoices" && !values.containerId) {
     errors.containerId = "Container is required for this report.";
   }
-  if (report.key === "loan-statement") {
+  if (report.key === "loan-statement" || report.key === "employee-loans") {
     if (!values.employeeId?.trim()) {
       errors.employeeId = "Employee is required for this report.";
     }

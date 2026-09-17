@@ -931,15 +931,15 @@ useState
 
 # Git Workflow
 
-Default to working on `dev` (or whatever branch is already checked out). Do **not** create a new feature branch per chat or task.
+`dev` is the integration baseline. Do **not** commit feature work directly on `dev`.
 
 Rules:
 
-1. Stay on the current branch. If none is specified and you need a baseline, use `dev`.
-2. Do **not** create, switch, or rename branches unless the user explicitly asks.
+1. If the current branch is already a feature branch **related** to the task, stay on it.
+2. If you are on `dev`, or on a feature branch **unrelated** to the task, create a new feature branch from `dev` before editing.
 3. Commit only when the user asks. Push only when the user asks.
-4. When the user asks to push or open a PR, follow their target (`dev` by default).
-5. Create a feature branch / PR only when the user explicitly requests that workflow.
+4. When the user asks to push or open a PR, target `dev` by default unless they specify otherwise.
+5. Do not invent merge/push workflows beyond what the user requested.
 
 ---
 

@@ -496,5 +496,52 @@
       "auditLabel": "Duplicate payment",
       "auditConfirmed": "Explicitly confirmed"
     }
+  },
+  "loans": {
+    "payments": {
+      "title": "Payments",
+      "subtitle": "All payment entries for this loan",
+      "view": "View",
+      "viewAria": "View payments for {{name}}",
+      "back": "Back to loans",
+      "paidLabel": "Paid",
+      "balanceLabel": "Balance",
+      "empty": "No payments found for this loan.",
+      "loading": "Loading payments…",
+      "loadError": "Unable to load loan payments.",
+      "noneRecorded": "No payments recorded.",
+      "refLabel": "Ref",
+      "createdBy": "Recorded by {{name}}",
+      "selectLoanToPrint": "Select a loan to print its statement.",
+      "selectSameEmployeeToPrint": "Print requires loans for the same employee.",
+      "print": "Print",
+      "printPreparing": "Preparing…",
+      "printSuccess": "Loan report generated.",
+      "printError": "Unable to generate loan report.",
+      "excel": "Excel",
+      "excelPreparing": "Preparing…",
+      "excelSuccess": "Excel download started.",
+      "excelError": "Unable to export loans to Excel.",
+      "selectLoansToExport": "Select one or more loans to export."
+    },
+    "closeout": {
+      "selectAccountFirst": "Select a loan account and date to link an open Daily Income closeout.",
+      "checking": "Checking Daily Income closeout…",
+      "unableToCheck": "Unable to check the Daily Income closeout.",
+      "unknownBranch": "this loan account branch",
+      "openTitle": "Open closeout linked",
+      "openHint": "Daily Income #{{id}} is open for {{branch}} on {{date}}. This loan will post to it.",
+      "incomeStatement": "Cuadre #{{id}}",
+      "noOpenTitle": "No open closeout",
+      "noStatement": "No Daily Income exists for {{branch}} on {{date}}.",
+      "closedStatement": "Daily Income #{{id}} for {{branch}} on {{date}} is closed. Reopen it to create this loan.",
+      "createHint": "Create the closeout here without leaving the loan form.",
+      "dateHint": "Choose today or a past closeout date. This also updates the loan date.",
+      "create": "Create closeout",
+      "reopen": "Reopen closeout",
+      "refresh": "Refresh",
+      "singleOpenBlocking": "Another open closeout (#{{id}} on {{date}}) is blocking create. Close it first, then try again.",
+      "closeOther": "Close other open closeout"
+    }
   }
 }

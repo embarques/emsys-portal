@@ -58,6 +58,7 @@ async function postReport(endpoint: string, request: ReportRequest): Promise<Rep
     operator: request.operator,
     format: request.format,
     expiresInHours: request.expiresInHours ?? 24,
+    language: request.language,
   };
 
   if (process.env.NODE_ENV !== "production") {
@@ -161,10 +162,14 @@ export function generateCustomsSenderReport(request: ReportRequest): Promise<Rep
   return postReport(API_ENDPOINTS.REPORTS_CUSTOM_SENDER, request);
 }
 
+function isLoanStatementReportKey(key: string): boolean {
+  return key === "loan-statement" || key === "employee-loans";
+}
+
 function defaultReportOutputs(key: string): ReportDefinition["outputs"] {
   if (key === "customs-form") return ["excel"];
   if (key === "customs-invoices") return ["pdf", "excel"];
-  if (key === "loan-statement") return ["pdf"];
+  if (isLoanStatementReportKey(key)) return ["pdf"];
   return ["pdf"];
 }
 
@@ -233,7 +238,7 @@ export async function requestReportGeneration(
     return { status: "generated", request, result };
   }
 
-  if (request.reportKey === "loan-statement") {
+  if (isLoanStatementReportKey(request.reportKey)) {
     const payload = buildLoanStatementReportRequest(request);
     const result = await generateLoanReport(payload);
     return { status: "generated", request, result };
@@ -307,6 +312,7 @@ function buildLoanStatementReportRequest(request: NormalizedReportRequest): Repo
     filters,
     operator: "and",
     format: "pdf",
+    language: "es",
   };
 }
 

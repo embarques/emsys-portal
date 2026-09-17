@@ -45,7 +45,7 @@ export type ReportOutputFormat = "pdf" | "excel";
  *   `{ type: "customs-form", collection: "containers", values: ["1001"], lookupField: "id" }`
  * - Customs sender (`/reports/custom/sender`):
  *   `{ type: "customs-sender", collection: "containers", values: ["1001"], lookupField: "id", format: "pdf" }`
- * - Loan statement (`/reports/loans` via portal key `loan-statement`):
+ * - Loan statement (`/reports/loans` via portal keys `loan-statement` or `employee-loans`):
  *   `{ type: "loan", collection: "loans", filters: [{ field: "employee.id", operator: "eq", value: 12 }, { field: "transactionDate", operator: "gte", value: "2026-06-01" }, { field: "transactionDate", operator: "lte", value: "2026-09-15" }] }`
  */
 export type ReportRequest = {
@@ -65,6 +65,8 @@ export type ReportRequest = {
   format?: ReportOutputFormat;
   /** How long the returned public URL stays valid (defaults to 24). */
   expiresInHours?: number;
+  /** UI language for localized report labels (`en` or `es`). */
+  language?: "en" | "es";
 };
 
 /** Normalized result returned by the `POST /reports/*` endpoints. */
