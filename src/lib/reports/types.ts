@@ -65,6 +65,8 @@ export type ReportRequest = {
   format?: ReportOutputFormat;
   /** How long the returned public URL stays valid (defaults to 24). */
   expiresInHours?: number;
+  /** UI language for localized report labels (`en` or `es`). */
+  language?: "en" | "es";
 };
 
 /** Normalized result returned by the `POST /reports/*` endpoints. */

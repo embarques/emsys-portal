@@ -69,6 +69,7 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useGenerateLoanReport } from "@/lib/reports/hooks/use-reports";
 import { openLoanReportUrl } from "@/lib/accounting/loans/print-loan-report";
+import { getConfigurationSnapshot } from "@/lib/configuration/store";
 import { LoanCloseoutPanel } from "@/components/accounting/loan-closeout-panel";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
@@ -1012,6 +1013,7 @@ export function LoansWorkspace() {
         collection: "loans",
         filters: buildLoanReportFilters(listParams),
         operator: "and",
+        language: getConfigurationSnapshot().language === "es" ? "es" : "en",
       });
       openLoanReportUrl(report.url);
       notifySuccess("Loan report generated.");

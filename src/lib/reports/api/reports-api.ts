@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { getConfiguredApiBaseUrl } from "@/lib/api/base-url";
 import type { PaginatedApiEnvelope } from "@/lib/api/types";
+import { getConfigurationSnapshot } from "@/lib/configuration/store";
 import type {
   NormalizedReportRequest,
   ReportDefinition,
@@ -58,6 +59,7 @@ async function postReport(endpoint: string, request: ReportRequest): Promise<Rep
     operator: request.operator,
     format: request.format,
     expiresInHours: request.expiresInHours ?? 24,
+    language: request.language,
   };
 
   if (process.env.NODE_ENV !== "production") {
@@ -311,6 +313,7 @@ function buildLoanStatementReportRequest(request: NormalizedReportRequest): Repo
     filters,
     operator: "and",
     format: "pdf",
+    language: getConfigurationSnapshot().language === "es" ? "es" : "en",
   };
 }
 
