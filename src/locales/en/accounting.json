@@ -493,5 +493,25 @@
       "auditLabel": "Duplicate payment",
       "auditConfirmed": "Explicitly confirmed"
     }
+  },
+  "loans": {
+    "closeout": {
+      "selectAccountFirst": "Select a loan account and date to link an open Daily Income closeout.",
+      "checking": "Checking Daily Income closeout…",
+      "unableToCheck": "Unable to check the Daily Income closeout.",
+      "unknownBranch": "this loan account branch",
+      "openTitle": "Open closeout linked",
+      "openHint": "Daily Income #{{id}} is open for {{branch}} on {{date}}. This loan will post to it.",
+      "incomeStatement": "Cuadre #{{id}}",
+      "noOpenTitle": "No open closeout",
+      "noStatement": "No Daily Income exists for {{branch}} on {{date}}.",
+      "closedStatement": "Daily Income #{{id}} for {{branch}} on {{date}} is closed. Reopen it to create this loan.",
+      "createHint": "Create the closeout here without leaving the loan form.",
+      "create": "Create closeout",
+      "reopen": "Reopen closeout",
+      "refresh": "Refresh",
+      "singleOpenBlocking": "Another open closeout (#{{id}} on {{date}}) is blocking create. Close it first, then try again.",
+      "closeOther": "Close other open closeout"
+    }
   }
 }

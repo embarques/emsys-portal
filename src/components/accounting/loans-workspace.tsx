@@ -69,8 +69,7 @@ import { normalizeApiError } from "@/lib/api/axios";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useGenerateLoanReport } from "@/lib/reports/hooks/use-reports";
 import { openLoanReportUrl } from "@/lib/accounting/loans/print-loan-report";
-import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/workspace-href";
-import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
+import { LoanCloseoutPanel } from "@/components/accounting/loan-closeout-panel";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -84,7 +83,7 @@ const LOANS_TABLE_COLUMN_STORAGE_KEY = "accounting-loans-v1";
 function loanMutationErrorMessage(error: unknown): string {
   const message = normalizeApiError(error).message;
   if (/open (daily )?income (statement|closeout)/i.test(message)) {
-    return "An open Daily Income closeout is required for this loan account's branch on the selected date. Open Daily Income, create or reopen that closeout, then try again.";
+    return "An open Daily Income closeout is required for this loan account's branch on the selected date. Open or create that closeout below, then try again.";
   }
   return message;
 }
@@ -173,51 +172,6 @@ function LoanJournalPreview({
   );
 }
 
-function DailyIncomeCloseoutNotice({
-  branchId,
-  branchName,
-  date,
-}: {
-  branchId?: number;
-  branchName?: string;
-  date: string;
-}) {
-  const { openTab, isDesktopTabs } = useWorkspaceTabs();
-  const href = buildDailyIncomeWorkspaceHref({
-    date,
-    branchId: branchId && branchId > 0 ? branchId : 0,
-    create: true,
-  });
-  const branchLabel = branchName?.trim() || (branchId && branchId > 0 ? `branch #${branchId}` : "the loan account branch");
-
-  function openCloseout() {
-    if (isDesktopTabs) {
-      openTab(href, "Daily Income");
-      return;
-    }
-    window.location.assign(href);
-  }
-
-  return (
-    <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-50 sm:col-span-2">
-      <p>
-        Loans post to the <span className="font-semibold">open Daily Income</span> closeout for{" "}
-        <span className="font-semibold">{branchLabel}</span>
-        {date ? (
-          <>
-            {" "}
-            on <span className="font-semibold">{date}</span>
-          </>
-        ) : null}
-        . There is no separate income-statement picker on this form.
-      </p>
-      <Button type="button" variant="outline" size="sm" className="h-8" onClick={openCloseout}>
-        Open or create closeout
-      </Button>
-    </div>
-  );
-}
-
 function CreateLoanDialog({
   open,
   onOpenChange,
@@ -254,6 +208,7 @@ function CreateLoanDialog({
       description: "",
     },
   });
+  const [closeoutReady, setCloseoutReady] = useState(false);
   const amount = watch("principalAmount") ?? 0;
   const loanAccountId = watch("loanAccountId");
   const transactionDate = watch("transactionDate") ?? "";
@@ -264,6 +219,7 @@ function CreateLoanDialog({
   function closeDialog(nextOpen: boolean) {
     onOpenChange(nextOpen);
     if (!nextOpen) {
+      setCloseoutReady(false);
       reset({
         transactionDate: todayInputValue(),
         employeeId: 0,
@@ -378,6 +334,14 @@ function CreateLoanDialog({
               {errors.transactionDate ? <p className="text-sm text-destructive">{errors.transactionDate.message}</p> : null}
             </div>
 
+            <LoanCloseoutPanel
+              branchId={selectedLoanAccount?.branch?.id}
+              branchCode={selectedLoanAccount?.branch?.code}
+              branchName={selectedLoanAccount?.branch?.name}
+              date={transactionDate.slice(0, 10)}
+              onReadyChange={setCloseoutReady}
+            />
+
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="loan-reference">Reference number</Label>
               <Input id="loan-reference" placeholder="Optional" {...register("referenceNumber")} />
@@ -395,14 +359,6 @@ function CreateLoanDialog({
               />
               {errors.description ? <p className="text-sm text-destructive">{errors.description.message}</p> : null}
             </div>
-
-            {selectedLoanAccount ? (
-              <DailyIncomeCloseoutNotice
-                branchId={selectedLoanAccount.branch?.id}
-                branchName={selectedLoanAccount.branch?.name}
-                date={transactionDate.slice(0, 10)}
-              />
-            ) : null}
           </div>
           <LoanJournalPreview
             debitAccount={loanAccountName}
@@ -415,7 +371,7 @@ function CreateLoanDialog({
           <Button type="button" variant="outline" onClick={() => closeDialog(false)}>
             Cancel
           </Button>
-          <Button type="submit" form="create-loan-form" disabled={pending}>
+          <Button type="submit" form="create-loan-form" disabled={pending || !closeoutReady}>
             Create loan
           </Button>
         </DialogFooter>

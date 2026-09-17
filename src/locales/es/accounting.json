@@ -493,5 +493,25 @@
       "auditLabel": "Pago duplicado",
       "auditConfirmed": "Confirmado explícitamente"
     }
+  },
+  "loans": {
+    "closeout": {
+      "selectAccountFirst": "Seleccione la cuenta de préstamo y la fecha para vincular un cuadre de ingresos diario abierto.",
+      "checking": "Verificando el cuadre de ingresos diario…",
+      "unableToCheck": "No se pudo verificar el cuadre de ingresos diario.",
+      "unknownBranch": "la sucursal de la cuenta de préstamo",
+      "openTitle": "Cuadre abierto vinculado",
+      "openHint": "El ingreso diario #{{id}} está abierto para {{branch}} el {{date}}. Este préstamo se registrará en ese cuadre.",
+      "incomeStatement": "Cuadre #{{id}}",
+      "noOpenTitle": "No hay cuadre abierto",
+      "noStatement": "No existe un ingreso diario para {{branch}} el {{date}}.",
+      "closedStatement": "El ingreso diario #{{id}} de {{branch}} el {{date}} está cerrado. Reábralo para crear este préstamo.",
+      "createHint": "Cree el cuadre aquí sin salir del formulario de préstamo.",
+      "create": "Crear cuadre",
+      "reopen": "Reabrir cuadre",
+      "refresh": "Actualizar",
+      "singleOpenBlocking": "Otro cuadre abierto (#{{id}} el {{date}}) impide crear uno nuevo. Ciérrelo primero e intente de nuevo.",
+      "closeOther": "Cerrar el otro cuadre abierto"
+    }
   }
 }
