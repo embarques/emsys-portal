@@ -219,7 +219,7 @@ export function ReportsWorkspace() {
         feedback.notifySuccess("Report generated.");
         return;
       }
-      feedback.notifySuccess("Report request is ready for Phase 2 generation.");
+      feedback.notifyError("This report is not available yet.");
     } catch (error) {
       feedback.notifyError(normalizeApiError(error).message);
     }
@@ -921,7 +921,7 @@ function validateReportFilters(report: ReportDefinition, values: ReportFilterVal
   if (report.key === "customs-invoices" && !values.containerId) {
     errors.containerId = "Container is required for this report.";
   }
-  if (report.key === "loan-statement") {
+  if (report.key === "loan-statement" || report.key === "employee-loans") {
     if (!values.employeeId?.trim()) {
       errors.employeeId = "Employee is required for this report.";
     }
