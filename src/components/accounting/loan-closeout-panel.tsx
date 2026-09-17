@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -22,6 +23,7 @@ type LoanCloseoutPanelProps = {
   branchCode?: string;
   branchName?: string;
   date: string;
+  onDateChange?: (date: string) => void;
   onReadyChange?: (ready: boolean) => void;
 };
 
@@ -30,6 +32,7 @@ export function LoanCloseoutPanel({
   branchCode = "",
   branchName = "",
   date,
+  onDateChange,
   onReadyChange,
 }: LoanCloseoutPanelProps) {
   const { t } = useTranslation();
@@ -129,6 +132,30 @@ export function LoanCloseoutPanel({
     }
   }
 
+  function renderDateFields() {
+    return (
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>{t("accounting.dailyIncome.statement.fields.branch")}</Label>
+          <Input value={branchLabel} readOnly disabled />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="loan-closeout-date">
+            {t("accounting.dailyIncome.statement.fields.date")}
+          </Label>
+          <DateInput
+            id="loan-closeout-date"
+            value={date}
+            onChange={(event) => onDateChange?.(event.target.value.slice(0, 10))}
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("accounting.loans.closeout.dateHint")}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!branchId || !date) {
     return (
       <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground sm:col-span-2">
@@ -139,9 +166,12 @@ export function LoanCloseoutPanel({
 
   if (statementQuery.isLoading && !localStatement) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground sm:col-span-2">
-        <Loader2 className="size-4 animate-spin" />
-        {t("accounting.loans.closeout.checking")}
+      <div className="space-y-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2">
+        {renderDateFields()}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" />
+          {t("accounting.loans.closeout.checking")}
+        </div>
       </div>
     );
   }
@@ -149,6 +179,7 @@ export function LoanCloseoutPanel({
   if (statementQuery.isError && !localStatement) {
     return (
       <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3 sm:col-span-2">
+        {renderDateFields()}
         <div className="flex items-start gap-2">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
           <div className="space-y-1">
@@ -170,7 +201,7 @@ export function LoanCloseoutPanel({
 
   if (statementOpen && statement) {
     return (
-      <div className="rounded-lg border bg-card p-3 sm:col-span-2">
+      <div className="space-y-3 rounded-lg border bg-card p-3 sm:col-span-2">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-start gap-2">
             <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
@@ -199,6 +230,7 @@ export function LoanCloseoutPanel({
             {t("accounting.loans.closeout.refresh")}
           </Button>
         </div>
+        {renderDateFields()}
       </div>
     );
   }
@@ -224,6 +256,7 @@ export function LoanCloseoutPanel({
             <RefreshCw className="size-4" />
           </Button>
         </div>
+        {renderDateFields()}
         <Button
           type="button"
           size="sm"
@@ -281,8 +314,17 @@ export function LoanCloseoutPanel({
           <Input value={branchLabel} readOnly disabled />
         </div>
         <div className="space-y-2">
-          <Label>{t("accounting.dailyIncome.statement.fields.date")}</Label>
-          <Input value={date} readOnly disabled />
+          <Label htmlFor="loan-closeout-date-create">
+            {t("accounting.dailyIncome.statement.fields.date")}
+          </Label>
+          <DateInput
+            id="loan-closeout-date-create"
+            value={date}
+            onChange={(event) => onDateChange?.(event.target.value.slice(0, 10))}
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("accounting.loans.closeout.dateHint")}
+          </p>
         </div>
         <div className="space-y-2">
           <Label>{t("accounting.dailyIncome.statement.fields.currency")}</Label>
@@ -321,7 +363,7 @@ export function LoanCloseoutPanel({
         type="button"
         size="sm"
         onClick={handleCreate}
-        disabled={createStatement.isPending}
+        disabled={createStatement.isPending || !date}
       >
         {createStatement.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
         {t("accounting.loans.closeout.create")}

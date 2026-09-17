@@ -339,6 +339,9 @@ function CreateLoanDialog({
               branchCode={selectedLoanAccount?.branch?.code}
               branchName={selectedLoanAccount?.branch?.name}
               date={transactionDate.slice(0, 10)}
+              onDateChange={(next) =>
+                setValue("transactionDate", next, { shouldValidate: true, shouldDirty: true })
+              }
               onReadyChange={setCloseoutReady}
             />
 

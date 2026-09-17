@@ -507,6 +507,7 @@
       "noStatement": "No Daily Income exists for {{branch}} on {{date}}.",
       "closedStatement": "Daily Income #{{id}} for {{branch}} on {{date}} is closed. Reopen it to create this loan.",
       "createHint": "Create the closeout here without leaving the loan form.",
+      "dateHint": "Choose today or a past closeout date. This also updates the loan date.",
       "create": "Create closeout",
       "reopen": "Reopen closeout",
       "refresh": "Refresh",
