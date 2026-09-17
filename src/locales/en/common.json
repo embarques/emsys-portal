@@ -123,6 +123,8 @@
       "noResults": "No presets found.",
       "savedHeading": "Saved presets",
       "deleteAria": "Delete preset {{name}}",
+      "deleteTitle": "Delete preset?",
+      "deleteDescription": "This will permanently remove \"{{name}}\". {{cannotBeUndone}}",
       "emptyState": "No saved presets yet. Build a filter and use “Save preset”."
     }
   },

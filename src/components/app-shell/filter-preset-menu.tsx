@@ -3,7 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bookmark, BookmarkPlus, Check, ChevronDown, Trash2 } from "lucide-react";
 
+import { ConfirmDeleteButton } from "@/components/app-shell/confirm-delete-button";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Command,
@@ -17,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { createFilterRowId, countCompleteFilterRows } from "@/lib/table/filter-builder";
 import type { TableFilterFieldDefinition, TableFilterRowState } from "@/lib/table/filter-types";
 import { useFilterPresets } from "@/lib/filter-presets/hooks/use-filter-presets";
+import type { FilterPreset } from "@/lib/filter-presets/types";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +57,7 @@ export function FilterPresetMenu({
   const [loadOpen, setLoadOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [draftName, setDraftName] = useState("");
+  const [presetPendingDelete, setPresetPendingDelete] = useState<FilterPreset | null>(null);
   const saveInputRef = useRef<HTMLInputElement>(null);
 
   const completeRowCount = countCompleteFilterRows(rows, fields);
@@ -84,6 +95,22 @@ export function FilterPresetMenu({
     savePreset(name, rows);
     setDraftName("");
     setSaveOpen(false);
+  }
+
+  function requestDeletePreset(preset: FilterPreset) {
+    setLoadOpen(false);
+    setPresetPendingDelete(preset);
+  }
+
+  function closeDeleteDialog() {
+    if (isMutating) return;
+    setPresetPendingDelete(null);
+  }
+
+  function confirmDeletePreset() {
+    if (!presetPendingDelete) return;
+    deletePreset(presetPendingDelete.id);
+    setPresetPendingDelete(null);
   }
 
   return (
@@ -210,7 +237,7 @@ export function FilterPresetMenu({
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
-                          deletePreset(preset.id);
+                          requestDeletePreset(preset);
                         }}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -227,6 +254,31 @@ export function FilterPresetMenu({
           )}
         </PopoverContent>
       </Popover>
+
+      <Dialog
+        open={presetPendingDelete !== null}
+        onOpenChange={(open) => !open && closeDeleteDialog()}
+      >
+        <DialogContent className="z-[60]">
+          <DialogHeader>
+            <DialogTitle>{t("common.table.filterPresets.deleteTitle")}</DialogTitle>
+            <DialogDescription>
+              {presetPendingDelete
+                ? t("common.table.filterPresets.deleteDescription", {
+                    name: presetPendingDelete.name,
+                    cannotBeUndone: t("common.dialogs.cannotBeUndone"),
+                  })
+                : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDeleteDialog} disabled={isMutating}>
+              {t("common.actions.cancel")}
+            </Button>
+            <ConfirmDeleteButton isPending={isMutating} onClick={confirmDeletePreset} />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

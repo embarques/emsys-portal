@@ -123,6 +123,8 @@
       "noResults": "No se encontraron preajustes.",
       "savedHeading": "Preajustes guardados",
       "deleteAria": "Eliminar preajuste {{name}}",
+      "deleteTitle": "¿Eliminar preajuste?",
+      "deleteDescription": "Esto eliminará permanentemente \"{{name}}\". {{cannotBeUndone}}",
       "emptyState": "Aún no hay preajustes guardados. Configure un filtro y use «Guardar preajuste»."
     }
   },
