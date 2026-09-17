@@ -17,5 +17,7 @@ export function useInsightsKpis(period: InsightsKpiPeriod, options: UseInsightsK
     queryFn: () => fetchInsightsKpis(period),
     enabled: options.enabled,
     staleTime: INSIGHTS_KPI_STALE_TIME_MS,
+    // One hung/reset attempt is enough — surface "—" + error instead of retrying into more dots.
+    retry: false,
   });
 }
