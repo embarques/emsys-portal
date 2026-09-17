@@ -5,7 +5,7 @@ export const API_ENDPOINTS = {
   USERS: "/users",
   CURRENT_USER: "/users/current",
   CURRENT_USER_PREFERENCES: "/users/me/preferences",
-  /** Company-wide user activity / audit log (Admin → User Activity). */
+  /** Company-wide user activity / audit log (Users → User Activity). */
   USER_ACTIVITIES: "/user-activities",
   ROLES: "/roles",
   PERMISSIONS: "/permissions",

@@ -4,6 +4,18 @@
     "description": "Digitize and track customer merchandise we pick up or receive as part of a shipment."
   },
   "stats": {
+    "total": {
+      "label": "Total invoices",
+      "description": "Invoices on record"
+    },
+    "outstandingCount": {
+      "label": "Outstanding invoices",
+      "description": "Invoices with open balance"
+    },
+    "outstandingBalance": {
+      "label": "Outstanding",
+      "description": "Balance across all invoices"
+    },
     "new": {
       "label": "New invoices",
       "periodLabel": "Timeframe",

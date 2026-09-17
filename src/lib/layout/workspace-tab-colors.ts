@@ -71,6 +71,8 @@ const NAV_LABEL_TO_SECTION: Record<string, WorkspaceTabSection> = {
   "navigation.items.analytics": "insights",
   "navigation.groups.insights": "insights",
   "navigation.groups.admin": "admin",
+  "navigation.items.users": "admin",
+  "navigation.items.employees": "admin",
 };
 
 /**

@@ -86,18 +86,6 @@ function sortTranslatedNavItems(
     }));
 }
 
-function sortTranslatedNavGroups(
-  groups: TranslatedNavigationGroup[],
-  locale: string,
-): TranslatedNavigationGroup[] {
-  return [...groups]
-    .sort((a, b) => a.title.localeCompare(b.title, locale, { sensitivity: "base" }))
-    .map((group) => ({
-      ...group,
-      items: sortTranslatedNavItems(group.items, locale),
-    }));
-}
-
 function translateAndSortNavItems(
   items: NavigationItem[],
   t: (key: string) => string,
@@ -127,9 +115,12 @@ export function useTopbarNavigation(): TranslatedNavigationItem[] {
   );
 }
 
-/** Sidebar sections keep usage-band order; items within each section are alphabetical. */
+/**
+ * Sidebar sections keep usage-band order.
+ * Groups and items within each section keep `navigation.ts` order.
+ */
 export function useNavigationSections(): TranslatedNavigationSection[] {
-  const { locale, t } = useTranslation();
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
 
   return useMemo(
@@ -137,19 +128,16 @@ export function useNavigationSections(): TranslatedNavigationSection[] {
       navigationSections
         .map((section) => ({
           id: section.id,
-          groups: sortTranslatedNavGroups(
-            section.groups
-              .map((group) => ({
-                ...group,
-                title: t(group.titleKey),
-                items: translateNavItems(group.items, t, hasPermission),
-              }))
-              .filter((group) => group.items.length > 0),
-            locale,
-          ),
+          groups: section.groups
+            .map((group) => ({
+              ...group,
+              title: t(group.titleKey),
+              items: translateNavItems(group.items, t, hasPermission),
+            }))
+            .filter((group) => group.items.length > 0),
         }))
         .filter((section) => section.groups.length > 0),
-    [hasPermission, locale, t],
+    [hasPermission, t],
   );
 }
 

@@ -3,6 +3,11 @@
 import { PageHeader } from "@/components/app-shell/page-header";
 import { DashboardChartCard } from "@/components/dashboard/dashboard-chart-card";
 import {
+  DashboardAppointmentsStats,
+  DashboardCustomersStats,
+  DashboardInvoicesStats,
+} from "@/components/dashboard/dashboard-section-stats";
+import {
   emptyMonthCounts,
   emptyWeekdayCounts,
   formatMonthLabels,
@@ -56,6 +61,7 @@ export function DashboardWorkspace() {
       <div className="space-y-10">
         <section className="space-y-4">
           <h3 className="text-lg font-semibold">{t("dashboard.appointments.title")}</h3>
+          <DashboardAppointmentsStats />
           <div className="grid gap-6 xl:grid-cols-2">
             <DashboardChartCard
               title={t("dashboard.appointments.weekday.title")}
@@ -94,53 +100,8 @@ export function DashboardWorkspace() {
         </section>
 
         <section className="space-y-4">
-          <h3 className="text-lg font-semibold">{t("dashboard.clients.title")}</h3>
-          <div className="grid gap-6 xl:grid-cols-2">
-            <DashboardChartCard
-              title={t("dashboard.clients.weekday.title")}
-              description={t("dashboard.clients.weekday.description")}
-              allTimeLabel={allTimeLabel}
-              errorLabel={errorLabel}
-              retryLabel={retryLabel}
-              onRetry={() => void clients.refetch()}
-              emptyLabel={emptyLabel}
-              categories={weekdayLabels}
-              series={[
-                {
-                  key: "created",
-                  label: t("dashboard.clients.title"),
-                  values: weekdayValues(clients.data?.createdByWeekday ?? emptyWeekdayCounts()),
-                  barClassName: "bg-primary",
-                },
-              ]}
-              isLoading={clients.isPending || clients.isFetching}
-              isError={clients.isError && !clients.isFetching}
-            />
-            <DashboardChartCard
-              title={t("dashboard.clients.month.title")}
-              description={t("dashboard.clients.month.description")}
-              allTimeLabel={allTimeLabel}
-              errorLabel={errorLabel}
-              retryLabel={retryLabel}
-              onRetry={() => void clients.refetch()}
-              emptyLabel={emptyLabel}
-              categories={monthLabels}
-              series={[
-                {
-                  key: "created",
-                  label: t("dashboard.clients.title"),
-                  values: monthValues(clients.data?.createdByMonth ?? emptyMonthCounts()),
-                  barClassName: "bg-primary",
-                },
-              ]}
-              isLoading={clients.isPending || clients.isFetching}
-              isError={clients.isError && !clients.isFetching}
-            />
-          </div>
-        </section>
-
-        <section className="space-y-4">
           <h3 className="text-lg font-semibold">{t("dashboard.invoices.title")}</h3>
+          <DashboardInvoicesStats />
           <div className="grid gap-6 xl:grid-cols-2">
             <DashboardChartCard
               title={t("dashboard.invoices.weekday.title")}
@@ -181,6 +142,53 @@ export function DashboardWorkspace() {
               ]}
               isLoading={invoices.isPending || invoices.isFetching}
               isError={invoices.isError && !invoices.isFetching}
+            />
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold">{t("dashboard.clients.title")}</h3>
+          <DashboardCustomersStats />
+          <div className="grid gap-6 xl:grid-cols-2">
+            <DashboardChartCard
+              title={t("dashboard.clients.weekday.title")}
+              description={t("dashboard.clients.weekday.description")}
+              allTimeLabel={allTimeLabel}
+              errorLabel={errorLabel}
+              retryLabel={retryLabel}
+              onRetry={() => void clients.refetch()}
+              emptyLabel={emptyLabel}
+              categories={weekdayLabels}
+              series={[
+                {
+                  key: "created",
+                  label: t("dashboard.clients.title"),
+                  values: weekdayValues(clients.data?.createdByWeekday ?? emptyWeekdayCounts()),
+                  barClassName: "bg-primary",
+                },
+              ]}
+              isLoading={clients.isPending || clients.isFetching}
+              isError={clients.isError && !clients.isFetching}
+            />
+            <DashboardChartCard
+              title={t("dashboard.clients.month.title")}
+              description={t("dashboard.clients.month.description")}
+              allTimeLabel={allTimeLabel}
+              errorLabel={errorLabel}
+              retryLabel={retryLabel}
+              onRetry={() => void clients.refetch()}
+              emptyLabel={emptyLabel}
+              categories={monthLabels}
+              series={[
+                {
+                  key: "created",
+                  label: t("dashboard.clients.title"),
+                  values: monthValues(clients.data?.createdByMonth ?? emptyMonthCounts()),
+                  barClassName: "bg-primary",
+                },
+              ]}
+              isLoading={clients.isPending || clients.isFetching}
+              isError={clients.isError && !clients.isFetching}
             />
           </div>
         </section>

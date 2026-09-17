@@ -234,6 +234,8 @@ Vehicles can also be associated with employees, routes, and deliveries where app
 
 ### Accounting
 
+Accounting lives in the daily sidebar band with Appointments and Invoices (frequent use).
+
 Accounting manages financial activity both inside and outside of the system.
 
 It includes:
@@ -330,6 +332,13 @@ Employees groups the employee directory and its supporting catalogs in one sideb
 - Employee titles (`/employee-titles`): tenant job-title catalog with a name and active status; employees reference the title name.
 - Employee departments (`/employee-departments`): tenant department catalog with a name and active status; employees reference the department name.
 
+### Users
+
+Users groups portal login accounts and the company-wide audit log in one sidebar section:
+
+- Users (`/users`)
+- User Activity (`/user-activities`): audit log of who did what across the system
+
 ### Admin
 
 Admin manages the company's system configuration and administrative information.
@@ -337,17 +346,15 @@ Admin manages the company's system configuration and administrative information.
 This includes:
 
 - System settings
-- Users
 - Roles and permissions
-- **User Activity** (audit log of who did what across the system)
 - Company configuration
 - Other administrative controls
 
-#### User Activity (Admin)
+#### User Activity (Users)
 
 Replaces the legacy screen at `tenares.embarqueros.com` → `#menu/useractivities`.
 
-Portal route: `/user-activities` (Admin sidebar). The portal is a **read-only consumer** of activities recorded by the API.
+Portal route: `/user-activities` (Users sidebar). The portal is a **read-only consumer** of activities recorded by the API.
 
 The API exposes normalized user activity rows for the current company tenant through
 `GET /v1/user-activities` and advanced search through
@@ -360,7 +367,7 @@ Do not confuse:
 
 | Concept | Means |
 | --- | --- |
-| Admin → User Activity | Company-wide audit of user actions (`origin` + entity `id`) |
+| Users → User Activity | Company-wide audit of user actions (`origin` + entity `id`) |
 | Invoice view → Activity | Per-invoice synthetic timeline in the portal only |
 
 ##### Backend activity contract
@@ -399,13 +406,15 @@ Do not confuse:
 
 ### Reports
 
+Reports lives in the operations sidebar band with Barcodes, Inventory, Containers, and Routes.
+
 Reports generates printable PDFs from operational records (pickup manifests, invoices, labels, income statements, journals, loans, and delivery manifests). The Reports workspace is the generate-and-download hub; print actions also live on those source workspaces.
 
 The API only exposes generate endpoints (`POST /reports/{type}`) plus a public download (`GET /public/reports/{token}`). There is no list or CRUD collection of saved reports.
 
 ### Insights
 
-Insights provides analytics and business intelligence that can help management improve operations and make better decisions.
+Insights provides analytics and business intelligence that can help management improve operations and make better decisions. The Dashboard already surfaces these KPIs, so Analytics is not listed in the sidebar (the `/analytics` route may still exist for deep links).
 
 Dashboard KPI cards and all-time weekday/month charts use `dashboard:view`:
 

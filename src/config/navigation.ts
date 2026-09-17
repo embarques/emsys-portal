@@ -1,6 +1,5 @@
 import {
   Banknote,
-  BarChart3,
   Barcode,
   Tags,
   BookOpenText,
@@ -218,27 +217,59 @@ const reportsItem: NavigationItem = {
   permission: PERMISSIONS.reportsView,
 };
 
-const analyticsItem: NavigationItem = {
-  labelKey: "navigation.items.analytics",
-  href: "/analytics",
-  icon: BarChart3,
-  permission: PERMISSIONS.reportsView,
+const accountingGroup: NavigationGroup = {
+  titleKey: "navigation.groups.accounting",
+  icon: Calculator,
+  items: [
+    {
+      labelKey: "navigation.items.dailyIncome",
+      href: "/accounting/daily-income",
+      icon: HandCoins,
+      permission: PERMISSIONS.incomeView,
+    },
+    {
+      labelKey: "navigation.items.loans",
+      href: "/accounting/loans",
+      icon: Banknote,
+      permission: PERMISSIONS.incomeView,
+    },
+    {
+      labelKey: "navigation.items.checks",
+      href: "/accounting/checks",
+      icon: ScrollText,
+      permission: PERMISSIONS.checksList,
+    },
+    {
+      labelKey: "navigation.items.chartOfAccounts",
+      href: "/accounting/accounts",
+      icon: BookOpenText,
+      permission: PERMISSIONS.accountsView,
+    },
+  ],
 };
 
 /**
  * Sidebar sections in usage order.
  * Dashboard stays in `topNavigationItems` above these bands.
+ * Analytics is omitted — Dashboard already covers those insights.
  */
 export const navigationSections: NavigationSection[] = [
   {
     id: "daily",
-    groups: [appointmentsItem, invoicesItem].map(navigationItemToGroup),
+    groups: [
+      ...[appointmentsItem, invoicesItem].map(navigationItemToGroup),
+      accountingGroup,
+    ],
   },
   {
     id: "operations",
-    groups: [barcodesItem, inventoryItem, containersItem, routesItem].map(
-      navigationItemToGroup,
-    ),
+    groups: [
+      barcodesItem,
+      inventoryItem,
+      containersItem,
+      routesItem,
+      reportsItem,
+    ].map(navigationItemToGroup),
   },
   {
     id: "reference",
@@ -248,56 +279,14 @@ export const navigationSections: NavigationSection[] = [
     id: "admin",
     groups: [
       {
-        titleKey: "navigation.groups.accounting",
-        icon: Calculator,
-        items: [
-          {
-            labelKey: "navigation.items.dailyIncome",
-            href: "/accounting/daily-income",
-            icon: HandCoins,
-            permission: PERMISSIONS.incomeView,
-          },
-          {
-            labelKey: "navigation.items.loans",
-            href: "/accounting/loans",
-            icon: Banknote,
-            permission: PERMISSIONS.incomeView,
-          },
-          {
-            labelKey: "navigation.items.checks",
-            href: "/accounting/checks",
-            icon: ScrollText,
-            permission: PERMISSIONS.checksList,
-          },
-          {
-            labelKey: "navigation.items.chartOfAccounts",
-            href: "/accounting/accounts",
-            icon: BookOpenText,
-            permission: PERMISSIONS.accountsView,
-          },
-        ],
-      },
-      {
         titleKey: "navigation.groups.admin",
         icon: Briefcase,
         items: [
-          {
-            labelKey: "navigation.items.users",
-            href: "/users",
-            icon: UserCog,
-            permission: PERMISSIONS.usersView,
-          },
           {
             labelKey: "navigation.items.roles",
             href: "/roles",
             icon: KeyRound,
             permission: PERMISSIONS.rolesView,
-          },
-          {
-            labelKey: "navigation.items.userActivities",
-            href: "/user-activities",
-            icon: ClipboardList,
-            permission: PERMISSIONS.userActivitiesView,
           },
           {
             labelKey: "navigation.items.branches",
@@ -310,6 +299,24 @@ export const navigationSections: NavigationSection[] = [
             href: "/settings",
             icon: Settings,
             permission: PERMISSIONS.accountSettingsView,
+          },
+        ],
+      },
+      {
+        titleKey: "navigation.items.users",
+        icon: UserCog,
+        items: [
+          {
+            labelKey: "navigation.items.users",
+            href: "/users",
+            icon: UserCog,
+            permission: PERMISSIONS.usersView,
+          },
+          {
+            labelKey: "navigation.items.userActivities",
+            href: "/user-activities",
+            icon: ClipboardList,
+            permission: PERMISSIONS.userActivitiesView,
           },
         ],
       },
@@ -337,8 +344,6 @@ export const navigationSections: NavigationSection[] = [
           },
         ],
       },
-      navigationItemToGroup(reportsItem),
-      navigationItemToGroup(analyticsItem),
     ],
   },
 ];

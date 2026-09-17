@@ -4,6 +4,18 @@
     "description": "Digitalice y rastree la mercancía del cliente que recogemos o recibimos como parte de un envío."
   },
   "stats": {
+    "total": {
+      "label": "Total de facturas",
+      "description": "Facturas registradas"
+    },
+    "outstandingCount": {
+      "label": "Facturas pendientes",
+      "description": "Facturas con saldo abierto"
+    },
+    "outstandingBalance": {
+      "label": "Saldo pendiente",
+      "description": "Saldo en todas las facturas"
+    },
     "new": {
       "label": "Facturas nuevas",
       "periodLabel": "Periodo",
