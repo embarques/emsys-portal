@@ -164,6 +164,7 @@ export function generateCustomsSenderReport(request: ReportRequest): Promise<Rep
 function defaultReportOutputs(key: string): ReportDefinition["outputs"] {
   if (key === "customs-form") return ["excel"];
   if (key === "customs-invoices") return ["pdf", "excel"];
+  if (key === "loan-statement") return ["pdf"];
   return ["pdf"];
 }
 
@@ -232,6 +233,12 @@ export async function requestReportGeneration(
     return { status: "generated", request, result };
   }
 
+  if (request.reportKey === "loan-statement") {
+    const payload = buildLoanStatementReportRequest(request);
+    const result = await generateLoanReport(payload);
+    return { status: "generated", request, result };
+  }
+
   return { status: "not-implemented", request };
 }
 
@@ -261,6 +268,45 @@ function buildCustomsSenderReportRequest(request: NormalizedReportRequest): Repo
     values: [containerId],
     lookupField: "id",
     format: request.format ?? "pdf",
+  };
+}
+
+function buildLoanStatementReportRequest(request: NormalizedReportRequest): ReportRequest {
+  const employeeId = request.filters.employeeId?.trim();
+  if (!employeeId) {
+    throw new Error("Employee is required for the loan statement report.");
+  }
+
+  const dateFrom = request.filters.dateFrom?.trim().slice(0, 10) ?? "";
+  const dateTo = request.filters.dateTo?.trim().slice(0, 10) ?? "";
+  if (!dateFrom && !dateTo) {
+    throw new Error("Date range is required for the loan statement report.");
+  }
+
+  const start = dateFrom || dateTo;
+  const end = dateTo || dateFrom;
+  const employeeValue = Number(employeeId);
+  const filters: NonNullable<ReportRequest["filters"]> = [
+    {
+      field: "employee.id",
+      operator: "eq",
+      value: Number.isFinite(employeeValue) && employeeValue > 0 ? employeeValue : employeeId,
+    },
+  ];
+
+  if (start === end) {
+    filters.push({ field: "transactionDate", operator: "eq", value: start });
+  } else {
+    filters.push({ field: "transactionDate", operator: "gte", value: start });
+    filters.push({ field: "transactionDate", operator: "lte", value: end });
+  }
+
+  return {
+    type: "loan",
+    collection: "loans",
+    filters,
+    operator: "and",
+    format: "pdf",
   };
 }
 

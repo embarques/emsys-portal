@@ -887,7 +887,7 @@ function ReportIcon({ icon, type, className }: { icon?: string; type: string; cl
         ? BadgeDollarSign
         : normalized.includes("conduce") || normalized.includes("delivery")
           ? Container
-          : normalized.includes("empleado") || normalized.includes("employee")
+          : normalized.includes("empleado") || normalized.includes("employee") || normalized.includes("loan") || normalized.includes("prestamo")
             ? UsersRound
             : normalized.includes("cliente") || normalized.includes("customer")
               ? UsersRound
@@ -920,6 +920,15 @@ function validateReportFilters(report: ReportDefinition, values: ReportFilterVal
   }
   if (report.key === "customs-invoices" && !values.containerId) {
     errors.containerId = "Container is required for this report.";
+  }
+  if (report.key === "loan-statement") {
+    if (!values.employeeId?.trim()) {
+      errors.employeeId = "Employee is required for this report.";
+    }
+    if (!values.dateFrom?.trim() && !values.dateTo?.trim()) {
+      errors.dateFrom = "Date range is required for this report.";
+      errors.dateTo = "Date range is required for this report.";
+    }
   }
   return { valid: Object.keys(errors).length === 0, errors };
 }
