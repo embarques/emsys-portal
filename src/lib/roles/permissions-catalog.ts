@@ -12,8 +12,15 @@ const PERMISSION_LABEL_OVERRIDES = new Map<string, string>([
 
 function pluralize(value: string): string {
   const normalized = value.trim();
-  if (!normalized || normalized.toLowerCase().endsWith("s")) return normalized;
-  if (normalized.toLowerCase().endsWith("y")) return `${normalized.slice(0, -1)}ies`;
+  if (!normalized) return normalized;
+
+  const lower = normalized.toLowerCase();
+  if (lower.endsWith("s")) return normalized;
+  if (lower.endsWith("y") && !/[aeiou]y$/.test(lower)) {
+    return `${normalized.slice(0, -1)}ies`;
+  }
+  // branch → branches, dispatch → dispatches, etc.
+  if (/(?:s|x|z|ch|sh)$/.test(lower)) return `${normalized}es`;
   return `${normalized}s`;
 }
 

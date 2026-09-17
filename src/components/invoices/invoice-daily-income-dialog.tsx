@@ -26,7 +26,7 @@ import {
   useCreateIncomeStatement,
   useSetIncomeStatementStatus,
 } from "@/lib/accounting/daily-income/hooks";
-import { parseSingleOpenIncomeStatement, type OpenIncomeStatementRef } from "@/lib/accounting/daily-income/open-statement-error";
+import { parseOpenIncomeStatements, type OpenIncomeStatementRef } from "@/lib/accounting/daily-income/open-statement-error";
 import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import {
   findCashPaymentMethod,
@@ -82,7 +82,7 @@ export function InvoiceDailyIncomeDialog({
   const { t } = useTranslation();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [statementError, setStatementError] = useState<string | null>(null);
-  const [singleOpenStatement, setSingleOpenStatement] = useState<OpenIncomeStatementRef | null>(null);
+  const [openStatements, setOpenStatements] = useState<OpenIncomeStatementRef[]>([]);
   const [activeStatement, setActiveStatement] = useState(statement);
   const currentUserQuery = useCurrentUser();
   const branchesQuery = useBranchPicker(200, { enabled: open });
@@ -159,7 +159,7 @@ export function InvoiceDailyIncomeDialog({
     );
     setSubmitError(null);
     setStatementError(null);
-    setSingleOpenStatement(null);
+    setOpenStatements([]);
     setActiveStatement(statement);
     // Only re-seed when the dialog opens or the invoice assignee inputs change.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- payment/route catalogs enrich via later effects
@@ -272,43 +272,51 @@ export function InvoiceDailyIncomeDialog({
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
       setStatementError(null);
-      setSingleOpenStatement(null);
+      setOpenStatements([]);
       const created = await createStatement.mutateAsync(values);
       await onStatementCreated(created);
       onOpenChange(false);
     } catch (error) {
       const message = normalizeApiError(error).message;
       setStatementError(message);
-      setSingleOpenStatement(parseSingleOpenIncomeStatement(message));
+      setOpenStatements(parseOpenIncomeStatements(message));
     }
   }
 
-  async function closeSingleOpenStatement() {
-    if (!singleOpenStatement) return;
+  async function closeOpenStatements() {
+    if (openStatements.length === 0) return;
+    const remaining = [...openStatements];
     try {
-      await closeStatement.mutateAsync({
-        statement: {
-          id: singleOpenStatement.id,
-          date: singleOpenStatement.date,
-          status: "OPEN",
-          branch: selectedStatementBranch
-            ? {
-                id: selectedStatementBranch.id,
-                code: selectedStatementBranch.code,
-                name: selectedStatementBranch.name,
-              }
-            : undefined,
-          currency: statementCurrency,
-          rate: statementForm.getValues("rate") || 1,
-        },
-        open: false,
-      });
+      while (remaining.length > 0) {
+        const next = remaining[0];
+        await closeStatement.mutateAsync({
+          statement: {
+            id: next.id,
+            date: next.date,
+            status: "OPEN",
+            branch: selectedStatementBranch
+              ? {
+                  id: selectedStatementBranch.id,
+                  code: selectedStatementBranch.code,
+                  name: selectedStatementBranch.name,
+                }
+              : undefined,
+            currency: statementCurrency,
+            rate: statementForm.getValues("rate") || 1,
+          },
+          open: false,
+        });
+        remaining.shift();
+        setOpenStatements([...remaining]);
+      }
       setStatementError(null);
-      setSingleOpenStatement(null);
+      setOpenStatements([]);
     } catch (error) {
       const message = normalizeApiError(error).message;
+      setOpenStatements(remaining);
       setStatementError(message);
-      setSingleOpenStatement(parseSingleOpenIncomeStatement(message));
+      const stillOpen = parseOpenIncomeStatements(message);
+      if (stillOpen.length > 0) setOpenStatements(stillOpen);
     }
   }
 
@@ -376,7 +384,7 @@ export function InvoiceDailyIncomeDialog({
           isCreating ? "sm:max-w-lg" : "sm:max-w-2xl",
         )}
       >
-        <DialogHeader>
+        <DialogHeader className="pr-8">
           <DialogTitle>
             {isCreating
               ? t("invoices.wizard.dailyIncome.dialog.createDailyIncomeTitle")
@@ -390,16 +398,20 @@ export function InvoiceDailyIncomeDialog({
         </DialogHeader>
 
         {isCreating ? (
-          <form className="space-y-5" onSubmit={statementForm.handleSubmit(createDailyIncome)}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+          <form className="space-y-4" onSubmit={statementForm.handleSubmit(createDailyIncome)}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="min-w-0 space-y-2">
                 <Label htmlFor="invoice-statement-date">{t("invoices.form.fields.date")}</Label>
-                <DateInput id="invoice-statement-date" {...statementForm.register("date")} />
+                <DateInput
+                  id="invoice-statement-date"
+                  className="h-10"
+                  {...statementForm.register("date")}
+                />
                 {statementErrors.date ? (
                   <p className="text-sm text-destructive">{statementErrors.date.message}</p>
                 ) : null}
               </div>
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <Label htmlFor="invoice-statement-branch">{t("invoices.wizard.dailyIncome.dialog.branch")}</Label>
                 <SearchableSelect
                   id="invoice-statement-branch"
@@ -419,7 +431,7 @@ export function InvoiceDailyIncomeDialog({
                   <p className="text-sm text-destructive">{statementErrors.branchId.message}</p>
                 ) : null}
               </div>
-              <div className="space-y-2">
+              <div className={cn("min-w-0 space-y-2", !showExchangeRate && "sm:col-span-2")}>
                 <Label htmlFor="invoice-statement-currency">{t("invoices.wizard.dailyIncome.dialog.currency")}</Label>
                 <SearchableSelect
                   id="invoice-statement-currency"
@@ -433,13 +445,14 @@ export function InvoiceDailyIncomeDialog({
                 />
               </div>
               {showExchangeRate ? (
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="invoice-statement-rate">{t("invoices.wizard.dailyIncome.dialog.exchangeRate")}</Label>
                   <Input
                     id="invoice-statement-rate"
                     type="number"
                     min={0}
                     step="0.01"
+                    className="h-10"
                     {...statementForm.register("rate", { valueAsNumber: true })}
                   />
                   {statementErrors.rate ? (
@@ -451,22 +464,40 @@ export function InvoiceDailyIncomeDialog({
 
             {statementError ? (
               <div className="space-y-2 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                <p className="leading-snug break-words">
-                  {singleOpenStatement
-                    ? t("invoices.wizard.dailyIncome.dialog.previousOpenStatement", {
-                        id: singleOpenStatement.id,
-                        date: singleOpenStatement.date,
-                      })
-                    : statementError}
-                </p>
-                {singleOpenStatement ? (
+                {openStatements.length === 1 ? (
+                  <p className="leading-snug break-words">
+                    {t("invoices.wizard.dailyIncome.dialog.previousOpenStatement", {
+                      id: openStatements[0].id,
+                      date: openStatements[0].date,
+                    })}
+                  </p>
+                ) : openStatements.length > 1 ? (
+                  <div className="space-y-2">
+                    <p className="leading-snug break-words">
+                      {t("invoices.wizard.dailyIncome.dialog.previousOpenStatements")}
+                    </p>
+                    <ul className="list-disc space-y-1 pl-5 leading-snug">
+                      {openStatements.map((item) => (
+                        <li key={item.id}>
+                          {t("invoices.wizard.dailyIncome.dialog.previousOpenStatementItem", {
+                            id: item.id,
+                            date: item.date,
+                          })}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="leading-snug break-words">{statementError}</p>
+                )}
+                {openStatements.length > 0 ? (
                   <Button
                     data-testid="invoice-daily-income-close-previous"
                     type="button"
                     variant="outline"
                     size="sm"
                     className="h-8 border-destructive/30 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={closeSingleOpenStatement}
+                    onClick={closeOpenStatements}
                     disabled={closeStatement.isPending}
                   >
                     {closeStatement.isPending ? (
@@ -476,19 +507,22 @@ export function InvoiceDailyIncomeDialog({
                     )}
                     {closeStatement.isPending
                       ? t("invoices.wizard.dailyIncome.dialog.closing")
-                      : t("invoices.wizard.dailyIncome.dialog.closePreviousCuadre")}
+                      : openStatements.length > 1
+                        ? t("invoices.wizard.dailyIncome.dialog.closeAllPreviousCuadres")
+                        : t("invoices.wizard.dailyIncome.dialog.closePreviousCuadre")}
                   </Button>
                 ) : null}
               </div>
             ) : null}
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <DialogFooter className="gap-2 border-t pt-4 sm:justify-end">
+              <Button type="button" variant="outline" className="h-9" onClick={() => onOpenChange(false)}>
                 {t("common.actions.cancel")}
               </Button>
               <Button
                 data-testid="invoice-daily-income-create"
                 type="submit"
+                className="h-9"
                 disabled={
                   createStatement.isPending ||
                   closeStatement.isPending ||

@@ -252,8 +252,11 @@
       "editDescription": "Update the date, currency, and exchange rate for this closeout.",
       "save": "Save daily income",
       "closePreviousCuadre": "Close previous cuadre",
+      "closeAllPreviousCuadres": "Close all previous cuadres",
       "closing": "Closing…",
       "previousOpenStatement": "Previous daily income #{{id}} ({{date}}) is still open. Close it, then try creating today's closeout.",
+      "previousOpenStatements": "Previous income statements are still open. Close them, then try creating today's closeout.",
+      "previousOpenStatementItem": "#{{id}} ({{date}})",
       "fields": {
         "branch": "Branch",
         "date": "Date",

@@ -44,7 +44,7 @@ import { getTransactionAssigneeDisplayName } from "@/lib/accounting/daily-income
 import { journalToFormValues, areDailyIncomeJournalValuesEquivalent, journalCreatedToastMessage, transactionTypeLabel } from "@/lib/accounting/daily-income/journal-form";
 import { buildIncomeReportRequest, openIncomeReportUrl } from "@/lib/accounting/daily-income/print-income-report";
 import { fetchIncomeStatement } from "@/lib/accounting/daily-income/api";
-import { parseSingleOpenIncomeStatement, type OpenIncomeStatementRef } from "@/lib/accounting/daily-income/open-statement-error";
+import { parseOpenIncomeStatements, type OpenIncomeStatementRef } from "@/lib/accounting/daily-income/open-statement-error";
 import type { DailyIncomeJournal, DailyIncomeJournalValues, DailyIncomeStatementValues } from "@/lib/accounting/daily-income/types";
 import { areFormValuesEquivalent } from "@/lib/forms/are-form-values-equivalent";
 import {
@@ -353,7 +353,7 @@ export function DailyIncomeWorkspace() {
   const [deleteJournal, setDeleteJournal] = useState<DailyIncomeJournal | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
-  const [previousOpenStatement, setPreviousOpenStatement] = useState<OpenIncomeStatementRef | null>(null);
+  const [previousOpenStatements, setPreviousOpenStatements] = useState<OpenIncomeStatementRef[]>([]);
   const [openCreateOnLoad, setOpenCreateOnLoad] = useState(false);
 
   const branchesQuery = useBranchPicker(200);
@@ -488,7 +488,7 @@ export function DailyIncomeWorkspace() {
 
   function saveStatement(values: DailyIncomeStatementValues) {
     setFormError(null);
-    setPreviousOpenStatement(null);
+    setPreviousOpenStatements([]);
     if (statement && areFormValuesEquivalent(values, statementValues)) {
       feedback.notifySuccess(t("common.form.noChanges"));
       setStatementDialog(false);
@@ -498,31 +498,39 @@ export function DailyIncomeWorkspace() {
     action.then(() => { setStatementDialog(false); setBranchCode(values.branchCode); setDate(values.date); feedback.notifySuccess(statement ? t("accounting.dailyIncome.toasts.statementUpdated") : t("accounting.dailyIncome.toasts.statementCreated")); }).catch((error) => {
       const message = normalizeApiError(error).message;
       setFormError(message);
-      setPreviousOpenStatement(parseSingleOpenIncomeStatement(message));
+      setPreviousOpenStatements(parseOpenIncomeStatements(message));
     });
   }
-  async function closePreviousStatement() {
-    if (!previousOpenStatement) return;
+  async function closePreviousStatements() {
+    if (previousOpenStatements.length === 0) return;
+    const remaining = [...previousOpenStatements];
     try {
-      await statusMutation.mutateAsync({
-        statement: {
-          id: previousOpenStatement.id,
-          date: previousOpenStatement.date,
-          status: "OPEN",
-          branch: selectedBranch
-            ? { id: selectedBranch.id, code: selectedBranch.code, name: selectedBranch.name }
-            : undefined,
-          currency: statementValues.currency,
-          rate: statementValues.rate,
-        },
-        open: false,
-      });
+      while (remaining.length > 0) {
+        const next = remaining[0];
+        await statusMutation.mutateAsync({
+          statement: {
+            id: next.id,
+            date: next.date,
+            status: "OPEN",
+            branch: selectedBranch
+              ? { id: selectedBranch.id, code: selectedBranch.code, name: selectedBranch.name }
+              : undefined,
+            currency: statementValues.currency,
+            rate: statementValues.rate,
+          },
+          open: false,
+        });
+        remaining.shift();
+        setPreviousOpenStatements([...remaining]);
+      }
       setFormError(null);
-      setPreviousOpenStatement(null);
+      setPreviousOpenStatements([]);
     } catch (error) {
       const message = normalizeApiError(error).message;
+      setPreviousOpenStatements(remaining);
       setFormError(message);
-      setPreviousOpenStatement(parseSingleOpenIncomeStatement(message));
+      const stillOpen = parseOpenIncomeStatements(message);
+      if (stillOpen.length > 0) setPreviousOpenStatements(stillOpen);
     }
   }
   function saveJournal(values: DailyIncomeJournalValues, options?: JournalWriteOptions): Promise<void> {
@@ -933,33 +941,53 @@ export function DailyIncomeWorkspace() {
     </> : null}
     </div>
 
-    <Dialog open={statementDialog} onOpenChange={(open) => { setStatementDialog(open); if (!open) { setFormError(null); setPreviousOpenStatement(null); } }}>
+    <Dialog open={statementDialog} onOpenChange={(open) => { setStatementDialog(open); if (!open) { setFormError(null); setPreviousOpenStatements([]); } }}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
         <DialogHeader className="border-b px-6 py-5">
           <DialogTitle>{statement ? t("accounting.dailyIncome.statement.editTitle") : t("accounting.dailyIncome.statement.createTitle")}</DialogTitle>
           <DialogDescription>{statement ? t("accounting.dailyIncome.statement.editDescription") : t("accounting.dailyIncome.statement.description")}</DialogDescription>
         </DialogHeader>
         <div className="min-h-0 overflow-y-auto px-6 py-5">
-          {!statement && previousOpenStatement ? (
+          {!statement && previousOpenStatements.length > 0 ? (
             <div className="mb-5 space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              <p className="break-words leading-snug">
-                {t("accounting.dailyIncome.statement.previousOpenStatement", {
-                  id: previousOpenStatement.id,
-                  date: previousOpenStatement.date,
-                })}
-              </p>
+              {previousOpenStatements.length === 1 ? (
+                <p className="break-words leading-snug">
+                  {t("accounting.dailyIncome.statement.previousOpenStatement", {
+                    id: previousOpenStatements[0].id,
+                    date: previousOpenStatements[0].date,
+                  })}
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <p className="break-words leading-snug">
+                    {t("accounting.dailyIncome.statement.previousOpenStatements")}
+                  </p>
+                  <ul className="list-disc space-y-1 pl-5 leading-snug">
+                    {previousOpenStatements.map((item) => (
+                      <li key={item.id}>
+                        {t("accounting.dailyIncome.statement.previousOpenStatementItem", {
+                          id: item.id,
+                          date: item.date,
+                        })}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="h-8 border-destructive/30 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={closePreviousStatement}
+                onClick={closePreviousStatements}
                 disabled={statusMutation.isPending}
               >
                 {statusMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />}
                 {statusMutation.isPending
                   ? t("accounting.dailyIncome.statement.closing")
-                  : t("accounting.dailyIncome.statement.closePreviousCuadre")}
+                  : previousOpenStatements.length > 1
+                    ? t("accounting.dailyIncome.statement.closeAllPreviousCuadres")
+                    : t("accounting.dailyIncome.statement.closePreviousCuadre")}
               </Button>
             </div>
           ) : null}
@@ -968,7 +996,7 @@ export function DailyIncomeWorkspace() {
             initialValues={statementValues}
             lockBranch={Boolean(statement)}
             isSubmitting={mutationPending}
-            error={previousOpenStatement ? null : formError}
+            error={previousOpenStatements.length > 0 ? null : formError}
             onSubmit={saveStatement}
             onCancel={() => setStatementDialog(false)}
           />

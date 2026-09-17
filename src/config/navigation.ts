@@ -138,6 +138,12 @@ const barcodesItem: NavigationItem = {
       icon: ScanBarcode,
       permission: PERMISSIONS.packagesView,
     },
+    {
+      labelKey: "navigation.items.barcodeStatuses",
+      href: "/barcode-statuses",
+      icon: Tags,
+      permission: PERMISSIONS.barcodeStatusesView,
+    },
   ],
 };
 
@@ -288,6 +294,30 @@ export const navigationSections: NavigationSection[] = [
             permission: PERMISSIONS.rolesView,
           },
           {
+            labelKey: "navigation.items.userActivities",
+            href: "/user-activities",
+            icon: ClipboardList,
+            permission: PERMISSIONS.userActivitiesView,
+          },
+          {
+            labelKey: "navigation.items.branches",
+            href: "/branches",
+            icon: Building2,
+            permission: PERMISSIONS.branchesView,
+          },
+          {
+            labelKey: "navigation.items.settings",
+            href: "/settings",
+            icon: Settings,
+            permission: PERMISSIONS.accountSettingsView,
+          },
+        ],
+      },
+      {
+        titleKey: "navigation.items.employees",
+        icon: IdCard,
+        items: [
+          {
             labelKey: "navigation.items.employees",
             href: "/employees",
             icon: IdCard,
@@ -304,30 +334,6 @@ export const navigationSections: NavigationSection[] = [
             href: "/employee-departments",
             icon: IdCard,
             permission: PERMISSIONS.employeeDepartmentsView,
-          },
-          {
-            labelKey: "navigation.items.userActivities",
-            href: "/user-activities",
-            icon: ClipboardList,
-            permission: PERMISSIONS.userActivitiesView,
-          },
-          {
-            labelKey: "navigation.items.branches",
-            href: "/branches",
-            icon: Building2,
-            permission: PERMISSIONS.branchesView,
-          },
-          {
-            labelKey: "navigation.items.barcodeStatuses",
-            href: "/barcode-statuses",
-            icon: Tags,
-            permission: PERMISSIONS.barcodeStatusesView,
-          },
-          {
-            labelKey: "navigation.items.settings",
-            href: "/settings",
-            icon: Settings,
-            permission: PERMISSIONS.accountSettingsView,
           },
         ],
       },

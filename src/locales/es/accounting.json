@@ -252,8 +252,11 @@
       "editDescription": "Actualice la fecha, moneda y tasa de cambio para este cierre.",
       "save": "Guardar ingresos diarios",
       "closePreviousCuadre": "Cerrar cuadre anterior",
+      "closeAllPreviousCuadres": "Cerrar todos los cuadres anteriores",
       "closing": "Cerrando…",
       "previousOpenStatement": "El cuadre anterior #{{id}} ({{date}}) sigue abierto. Ciérrelo y luego intente crear el cierre de hoy.",
+      "previousOpenStatements": "Hay cuadres anteriores abiertos. Ciérrelos y luego intente crear el cierre de hoy.",
+      "previousOpenStatementItem": "#{{id}} ({{date}})",
       "fields": {
         "branch": "Sucursal",
         "date": "Fecha",

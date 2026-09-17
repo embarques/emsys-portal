@@ -4,10 +4,8 @@ import { assertMutationSuccess } from "@/lib/api/mutation-response";
 import { unwrapApiData, type ApiSuccessEnvelope } from "@/lib/auth/utils/api-response";
 import type { BarcodeStatusOption } from "@/lib/labels/types";
 
-export type BarcodeStatusFormValues = {
-  name: string;
-  prevStatus: string;
-};
+import { barcodeStatusFormSchema, type BarcodeStatusFormValues } from "@/lib/barcodes/schemas/barcode-status.schema";
+export type { BarcodeStatusFormValues } from "@/lib/barcodes/schemas/barcode-status.schema";
 
 function normalizeStatus(raw: unknown): BarcodeStatusOption | null {
   if (!raw || typeof raw !== "object") return null;
@@ -20,7 +18,7 @@ function normalizeStatus(raw: unknown): BarcodeStatusOption | null {
 }
 
 function extractStatusList(data: unknown): BarcodeStatusOption[] {
-  const value = unwrapApiData({ data } as ApiSuccessEnvelope<unknown>);
+  const value = unwrapApiData(data);
   const items = Array.isArray(value)
     ? value
     : value && typeof value === "object" && Array.isArray((value as { items?: unknown }).items)
@@ -30,15 +28,24 @@ function extractStatusList(data: unknown): BarcodeStatusOption[] {
 }
 
 export async function fetchBarcodeStatuses(): Promise<BarcodeStatusOption[]> {
-  const response = await apiClient.get<ApiSuccessEnvelope<unknown>>(API_ENDPOINTS.BARCODE_STATUSES);
-  return extractStatusList(response);
+  const statuses: BarcodeStatusOption[] = [];
+  const limit = 40;
+  for (let page = 1, offset = 0; ; page++) {
+    const response = await apiClient.get<ApiSuccessEnvelope<unknown> & { total?: number }>(
+      `${API_ENDPOINTS.BARCODE_STATUSES}?page=${page}&offset=${offset}&limit=${limit}`,
+    );
+    assertMutationSuccess(response, "Unable to load barcode statuses.");
+    const items = extractStatusList(response);
+    statuses.push(...items);
+    offset += items.length;
+    if (!items.length || (response.total != null ? offset >= response.total : items.length < limit)) {
+      return statuses;
+    }
+  }
 }
 
 function buildPayload(values: BarcodeStatusFormValues) {
-  return {
-    name: values.name.trim(),
-    ...(values.prevStatus.trim() ? { prevStatus: values.prevStatus.trim() } : {}),
-  };
+  return barcodeStatusFormSchema.parse(values);
 }
 
 export async function createBarcodeStatus(values: BarcodeStatusFormValues): Promise<BarcodeStatusOption> {

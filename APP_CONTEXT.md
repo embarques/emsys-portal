@@ -127,6 +127,8 @@ Barcode **status** is a manual location flag in the logistics process (where the
 
 **Default on create:** every newly created barcode / invoice line-item label should start as **`ALM-NY`**. The API should set this when status is omitted (including barcodes created with the invoice). The portal also sends `ALM-NY` when it must gap-fill a missing label so creates are never empty. Later location changes stay manual.
 
+**Barcode statuses** (`/barcode-statuses`) belongs under the Barcodes sidebar group. Its list, create, update, and delete UI is wired for the forthcoming barcode-status catalog API.
+
 **Barcodes table (Barcode Manager):**
 
 - View: barcode, invoice, description, container, status, route (when assigned)
@@ -320,6 +322,14 @@ That aggregation:
 4. Averages across every departed container in the window. Containers with no invoices count as `$0`.
 5. Returns `average`, `previousAverage`, `containerCount`, `totalValue`, plus `period` / `timezone` / window metadata.
 
+### Employees
+
+Employees groups the employee directory and its supporting catalogs in one sidebar section:
+
+- Employees (`/employees`)
+- Employee titles (`/employee-titles`): tenant job-title catalog with a name and active status; employees reference the title name.
+- Employee departments (`/employee-departments`): tenant department catalog with a name and active status; employees reference the department name.
+
 ### Admin
 
 Admin manages the company's system configuration and administrative information.
@@ -327,9 +337,6 @@ Admin manages the company's system configuration and administrative information.
 This includes:
 
 - System settings
-- Employees
-- Employee titles (`/employee-titles`): tenant job-title catalog with a name and active status; employees reference the title name.
-- Employee departments (`/employee-departments`): tenant department catalog with a name and active status; employees reference the department name.
 - Users
 - Roles and permissions
 - **User Activity** (audit log of who did what across the system)

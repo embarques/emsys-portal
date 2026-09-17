@@ -8,7 +8,7 @@
   },
   "fields": {
     "name": "Name",
-    "previousStatus": "Previous status"
+    "previousStatus": "Valid previous statuses"
   },
   "actions": {
     "add": "Add status"

@@ -19,7 +19,7 @@ import {
   useIncomeStatement,
   useSetIncomeStatementStatus,
 } from "@/lib/accounting/daily-income/hooks";
-import { parseSingleOpenIncomeStatement } from "@/lib/accounting/daily-income/open-statement-error";
+import { parseOpenIncomeStatements, type OpenIncomeStatementRef } from "@/lib/accounting/daily-income/open-statement-error";
 import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/schemas";
 import type {
   DailyIncomeJournal,
@@ -61,7 +61,7 @@ function MobileCreateDailyIncomePage({
 }) {
   const { t } = useTranslation();
   const [statementError, setStatementError] = useState<string | null>(null);
-  const [singleOpenStatement, setSingleOpenStatement] = useState<{ id: number; date: string } | null>(null);
+  const [openStatements, setOpenStatements] = useState<OpenIncomeStatementRef[]>([]);
   const currentUserQuery = useCurrentUser();
   const branchesQuery = useBranchPicker(200);
   const createStatement = useCreateIncomeStatement();
@@ -122,42 +122,50 @@ function MobileCreateDailyIncomePage({
   async function createDailyIncome(values: DailyIncomeStatementValues) {
     try {
       setStatementError(null);
-      setSingleOpenStatement(null);
+      setOpenStatements([]);
       const created = await createStatement.mutateAsync(values);
       await onCreated(created);
     } catch (error) {
       const message = normalizeApiError(error).message;
       setStatementError(message);
-      setSingleOpenStatement(parseSingleOpenIncomeStatement(message));
+      setOpenStatements(parseOpenIncomeStatements(message));
     }
   }
 
-  async function closeSingleOpenStatement() {
-    if (!singleOpenStatement) return;
+  async function closeOpenStatements() {
+    if (openStatements.length === 0) return;
+    const remaining = [...openStatements];
     try {
       setStatementError(null);
-      await closeStatement.mutateAsync({
-        statement: {
-          id: singleOpenStatement.id,
-          date: singleOpenStatement.date,
-          status: "OPEN",
-          branch: selectedStatementBranch
-            ? {
-                id: selectedStatementBranch.id,
-                code: selectedStatementBranch.code,
-                name: selectedStatementBranch.name,
-              }
-            : undefined,
-          currency: statementCurrency,
-          rate: form.getValues("rate") || 1,
-        },
-        open: false,
-      });
-      setSingleOpenStatement(null);
+      while (remaining.length > 0) {
+        const next = remaining[0];
+        await closeStatement.mutateAsync({
+          statement: {
+            id: next.id,
+            date: next.date,
+            status: "OPEN",
+            branch: selectedStatementBranch
+              ? {
+                  id: selectedStatementBranch.id,
+                  code: selectedStatementBranch.code,
+                  name: selectedStatementBranch.name,
+                }
+              : undefined,
+            currency: statementCurrency,
+            rate: form.getValues("rate") || 1,
+          },
+          open: false,
+        });
+        remaining.shift();
+        setOpenStatements([...remaining]);
+      }
+      setOpenStatements([]);
     } catch (error) {
       const message = normalizeApiError(error).message;
+      setOpenStatements(remaining);
       setStatementError(message);
-      setSingleOpenStatement(parseSingleOpenIncomeStatement(message));
+      const stillOpen = parseOpenIncomeStatements(message);
+      if (stillOpen.length > 0) setOpenStatements(stillOpen);
     }
   }
 
@@ -236,14 +244,37 @@ function MobileCreateDailyIncomePage({
 
         {statementError ? (
           <div className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            <p>{statementError}</p>
-            {singleOpenStatement ? (
+            {openStatements.length === 1 ? (
+              <p>
+                {t("invoices.wizard.dailyIncome.dialog.previousOpenStatement", {
+                  id: openStatements[0].id,
+                  date: openStatements[0].date,
+                })}
+              </p>
+            ) : openStatements.length > 1 ? (
+              <div className="space-y-2">
+                <p>{t("invoices.wizard.dailyIncome.dialog.previousOpenStatements")}</p>
+                <ul className="list-disc space-y-1 pl-5">
+                  {openStatements.map((item) => (
+                    <li key={item.id}>
+                      {t("invoices.wizard.dailyIncome.dialog.previousOpenStatementItem", {
+                        id: item.id,
+                        date: item.date,
+                      })}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p>{statementError}</p>
+            )}
+            {openStatements.length > 0 ? (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="h-10 rounded-xl border-destructive/30 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={closeSingleOpenStatement}
+                onClick={closeOpenStatements}
                 disabled={closeStatement.isPending}
               >
                 {closeStatement.isPending ? (
@@ -251,9 +282,13 @@ function MobileCreateDailyIncomePage({
                 ) : (
                   <Lock className="size-4" />
                 )}
-                {t("invoices.wizard.dailyIncome.dialog.closeOpenStatement", {
-                  id: singleOpenStatement.id,
-                })}
+                {closeStatement.isPending
+                  ? t("invoices.wizard.dailyIncome.dialog.closing")
+                  : openStatements.length > 1
+                    ? t("invoices.wizard.dailyIncome.dialog.closeAllPreviousCuadres")
+                    : t("invoices.wizard.dailyIncome.dialog.closeOpenStatement", {
+                        id: openStatements[0].id,
+                      })}
               </Button>
             ) : null}
           </div>
@@ -748,45 +783,53 @@ export function InvoiceDailyIncomeStep({ values, onContextChange }: Props) {
             </>
           ) : (
             <div className="rounded-lg border border-amber-300 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/30">
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1 space-y-1">
-                  <p className="text-sm font-semibold text-amber-950 dark:text-amber-100">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="min-w-0 text-sm font-semibold text-amber-950 dark:text-amber-100">
                     {t("invoices.wizard.dailyIncome.noOpenTitle")}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    {statement?.status === "CLOSED"
-                      ? t("invoices.wizard.dailyIncome.closedStatementOptional")
-                      : t("invoices.wizard.dailyIncome.noStatementOptional")}
-                  </p>
-                  {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 shrink-0"
+                    onClick={refreshStatus}
+                  >
+                    <RefreshCw className="size-4" />
+                    {t("invoices.wizard.dailyIncome.refresh")}
+                  </Button>
                 </div>
-                <Button type="button" variant="ghost" size="sm" onClick={refreshStatus}>
-                  <RefreshCw className="size-4" />
-                  {t("invoices.wizard.dailyIncome.refresh")}
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {statement?.status === "CLOSED" ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={reopenDailyIncome}
-                    disabled={reopenMutation.isPending}
-                    data-invoice-wizard-focus="daily-income"
-                  >
-                    {reopenMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                    {t("invoices.wizard.dailyIncome.reopenCuadre")}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => setDialogOpen(true)}
-                    data-invoice-wizard-focus="daily-income"
-                  >
-                    {t("invoices.wizard.dailyIncome.createOrOpenCuadre")}
-                  </Button>
-                )}
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {statement?.status === "CLOSED"
+                    ? t("invoices.wizard.dailyIncome.closedStatementOptional")
+                    : t("invoices.wizard.dailyIncome.noStatementOptional")}
+                </p>
+                {statusError ? <p className="text-sm text-destructive">{statusError}</p> : null}
+                <div className="flex flex-wrap items-center gap-2">
+                  {statement?.status === "CLOSED" ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8"
+                      onClick={reopenDailyIncome}
+                      disabled={reopenMutation.isPending}
+                      data-invoice-wizard-focus="daily-income"
+                    >
+                      {reopenMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                      {t("invoices.wizard.dailyIncome.reopenCuadre")}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => setDialogOpen(true)}
+                      data-invoice-wizard-focus="daily-income"
+                    >
+                      {t("invoices.wizard.dailyIncome.createOrOpenCuadre")}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}
