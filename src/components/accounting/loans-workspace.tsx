@@ -63,10 +63,14 @@ import {
   type LoanTransaction,
 } from "@/lib/accounting/loans/types";
 import { useChartAccounts } from "@/lib/accounting/chart-accounts/hooks/use-chart-accounts";
+import type { ChartAccount } from "@/lib/accounting/chart-accounts/types";
 import { createApiListTextSearch } from "@/lib/api/search-query";
+import { normalizeApiError } from "@/lib/api/axios";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useGenerateLoanReport } from "@/lib/reports/hooks/use-reports";
 import { openLoanReportUrl } from "@/lib/accounting/loans/print-loan-report";
+import { buildDailyIncomeWorkspaceHref } from "@/lib/accounting/daily-income/workspace-href";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -76,6 +80,14 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 const LOANS_TABLE_COLUMN_STORAGE_KEY = "accounting-loans-v1";
+
+function loanMutationErrorMessage(error: unknown): string {
+  const message = normalizeApiError(error).message;
+  if (/open (daily )?income (statement|closeout)/i.test(message)) {
+    return "An open Daily Income closeout is required for this loan account's branch on the selected date. Open Daily Income, create or reopen that closeout, then try again.";
+  }
+  return message;
+}
 
 type LoanFilterState = {
   query: string;
@@ -161,6 +173,51 @@ function LoanJournalPreview({
   );
 }
 
+function DailyIncomeCloseoutNotice({
+  branchId,
+  branchName,
+  date,
+}: {
+  branchId?: number;
+  branchName?: string;
+  date: string;
+}) {
+  const { openTab, isDesktopTabs } = useWorkspaceTabs();
+  const href = buildDailyIncomeWorkspaceHref({
+    date,
+    branchId: branchId && branchId > 0 ? branchId : 0,
+    create: true,
+  });
+  const branchLabel = branchName?.trim() || (branchId && branchId > 0 ? `branch #${branchId}` : "the loan account branch");
+
+  function openCloseout() {
+    if (isDesktopTabs) {
+      openTab(href, "Daily Income");
+      return;
+    }
+    window.location.assign(href);
+  }
+
+  return (
+    <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-50 sm:col-span-2">
+      <p>
+        Loans post to the <span className="font-semibold">open Daily Income</span> closeout for{" "}
+        <span className="font-semibold">{branchLabel}</span>
+        {date ? (
+          <>
+            {" "}
+            on <span className="font-semibold">{date}</span>
+          </>
+        ) : null}
+        . There is no separate income-statement picker on this form.
+      </p>
+      <Button type="button" variant="outline" size="sm" className="h-8" onClick={openCloseout}>
+        Open or create closeout
+      </Button>
+    </div>
+  );
+}
+
 function CreateLoanDialog({
   open,
   onOpenChange,
@@ -173,8 +230,8 @@ function CreateLoanDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employees: Array<{ id: number; name: string }>;
-  loanAccounts: Array<{ id: number; name: string; displayName: string; type?: string }>;
-  assetAccounts: Array<{ id: number; name: string; displayName: string; type?: string }>;
+  loanAccounts: ChartAccount[];
+  assetAccounts: ChartAccount[];
   onSubmit: (values: LoanCreateValues) => Promise<void>;
   pending: boolean;
 }) {
@@ -198,8 +255,11 @@ function CreateLoanDialog({
     },
   });
   const amount = watch("principalAmount") ?? 0;
+  const loanAccountId = watch("loanAccountId");
+  const transactionDate = watch("transactionDate") ?? "";
   const loanAccountName = watch("loanAccountName") ?? "";
   const sourceAccountName = watch("sourceAccountName") ?? "";
+  const selectedLoanAccount = loanAccounts.find((account) => account.id === loanAccountId);
 
   function closeDialog(nextOpen: boolean) {
     onOpenChange(nextOpen);
@@ -264,8 +324,10 @@ function CreateLoanDialog({
                 }}
                 options={loanAccounts.map((account) => ({
                   value: String(account.id),
-                  label: accountLabel(account),
-                  keywords: [account.name, account.displayName],
+                  label: account.branch?.name
+                    ? `${accountLabel(account)} (${account.branch.name})`
+                    : accountLabel(account),
+                  keywords: [account.name, account.displayName, account.branch?.name ?? ""],
                 }))}
                 placeholder="Select loan account"
                 searchPlaceholder="Search loan accounts"
@@ -333,6 +395,14 @@ function CreateLoanDialog({
               />
               {errors.description ? <p className="text-sm text-destructive">{errors.description.message}</p> : null}
             </div>
+
+            {selectedLoanAccount ? (
+              <DailyIncomeCloseoutNotice
+                branchId={selectedLoanAccount.branch?.id}
+                branchName={selectedLoanAccount.branch?.name}
+                date={transactionDate.slice(0, 10)}
+              />
+            ) : null}
           </div>
           <LoanJournalPreview
             debitAccount={loanAccountName}
@@ -368,7 +438,7 @@ function RecordPaymentDialog({
   onOpenChange: (open: boolean) => void;
   employees: Array<{ id: number; name: string }>;
   loans: Loan[];
-  assetAccounts: Array<{ id: number; name: string; displayName: string; type?: string }>;
+  assetAccounts: ChartAccount[];
   onSubmit: (values: LoanPaymentValues) => Promise<void>;
   pending: boolean;
   initialLoan: Loan | null;
@@ -961,7 +1031,7 @@ export function LoansWorkspace() {
       setPage(1);
       setCreateOpen(false);
     } catch (error) {
-      notifyError(error instanceof Error ? error.message : "Unable to create loan.");
+      notifyError(loanMutationErrorMessage(error));
     }
   }
 
@@ -972,7 +1042,7 @@ export function LoansWorkspace() {
       setPaymentOpen(false);
       setPaymentInitialLoan(null);
     } catch (error) {
-      notifyError(error instanceof Error ? error.message : "Unable to record loan payment.");
+      notifyError(loanMutationErrorMessage(error));
     }
   }
 
