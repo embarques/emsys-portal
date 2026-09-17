@@ -31,7 +31,6 @@ import { createDailyIncomeStatementSchema } from "@/lib/accounting/daily-income/
 import {
   findCashPaymentMethod,
   isCheckPaymentMethod,
-  isZellePaymentMethod,
   requiresBankAccount,
   withDefaultCashPaymentMethod,
   type DailyIncomeJournal,
@@ -204,7 +203,6 @@ export function InvoiceDailyIncomeDialog({
   const assigneeSource = watch("assigneeSource");
   const paymentRequired = amount > 0;
   const needsBankAccount = paymentRequired && requiresBankAccount(paymentMethodName);
-  const isZelle = paymentRequired && isZellePaymentMethod(paymentMethodName);
   const isCheck = paymentRequired && isCheckPaymentMethod(paymentMethodName);
   const paymentMethods = paymentMethodsQuery.data ?? [];
   const bankAccounts = bankAccountsQuery.data?.items ?? [];
@@ -362,8 +360,6 @@ export function InvoiceDailyIncomeDialog({
           paymentAccountId: needsBankAccount ? values.paymentAccountId : undefined,
           paymentAccountName: needsBankAccount ? values.paymentAccountName : undefined,
           paymentAccountType: needsBankAccount ? values.paymentAccountType : undefined,
-          zelleTransactionDate: isZelle ? values.zelleTransactionDate : undefined,
-          zelleTransactionName: isZelle ? values.zelleTransactionName : undefined,
           checkNumber: isCheck ? values.checkNumber : undefined,
         },
       });
@@ -670,10 +666,6 @@ export function InvoiceDailyIncomeDialog({
                       if (!requiresBankAccount(method?.name)) {
                         setValue("paymentAccountId", undefined, { shouldValidate: true });
                       }
-                      if (!isZellePaymentMethod(method?.name)) {
-                        setValue("zelleTransactionDate", undefined, { shouldValidate: true });
-                        setValue("zelleTransactionName", undefined, { shouldValidate: true });
-                      }
                       if (!isCheckPaymentMethod(method?.name)) {
                         setValue("checkNumber", undefined, { shouldValidate: true });
                       }
@@ -723,29 +715,6 @@ export function InvoiceDailyIncomeDialog({
                   />
                   {errors.refNumber ? <p className="text-xs text-destructive">{errors.refNumber.message}</p> : null}
                 </div>
-
-                {isZelle ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="daily-income-zelle-date">
-                        {t("invoices.wizard.dailyIncome.dialog.zelleTransactionDate")}
-                      </Label>
-                      <Input id="daily-income-zelle-date" type="date" {...register("zelleTransactionDate")} />
-                      {errors.zelleTransactionDate ? (
-                        <p className="text-xs text-destructive">{errors.zelleTransactionDate.message}</p>
-                      ) : null}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="daily-income-zelle-name">
-                        {t("invoices.wizard.dailyIncome.dialog.zelleTransactionName")}
-                      </Label>
-                      <Input id="daily-income-zelle-name" {...register("zelleTransactionName")} />
-                      {errors.zelleTransactionName ? (
-                        <p className="text-xs text-destructive">{errors.zelleTransactionName.message}</p>
-                      ) : null}
-                    </div>
-                  </>
-                ) : null}
 
                 {isCheck ? (
                   <div className="space-y-2 sm:col-span-2">

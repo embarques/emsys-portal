@@ -355,8 +355,6 @@
         "selectBankAccount": "Select bank account",
         "searchBankAccounts": "Search bank accounts…",
         "referenceNumber": "Reference number",
-        "zelleTransactionDate": "Zelle transaction date",
-        "zelleTransactionName": "Zelle transaction name",
         "checkNumber": "Check number",
         "checkNumberPlaceholder": "e.g. 4521",
         "checkNumberHint": "Creates an outstanding check. The invoice balance updates when the check is marked cleared.",

@@ -15,7 +15,7 @@ import { isCustomerReceiverType, isCustomerSenderType } from "@/lib/customers/cu
 import type { Customer } from "@/lib/customers/types";
 import { getCustomerPrimaryCoreAddress } from "@/lib/customers/types";
 import { CUSTOMER_TYPE_RECEIVER, CUSTOMER_TYPE_SENDER } from "@/lib/customers/types";
-import { findCashPaymentMethod, isCheckPaymentMethod, isZellePaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues } from "@/lib/accounting/daily-income/types";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import {
   formatMoneyFormDisplayValue,
@@ -104,7 +104,6 @@ export function RegisterInvoiceTransactionFields({
   const assigneeSource = watch("assigneeSource");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
-  const isZelle = isZellePaymentMethod(paymentMethodName);
   const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
   const paymentAccountId = watch("paymentAccountId");
@@ -299,10 +298,6 @@ export function RegisterInvoiceTransactionFields({
               setValue("paymentAccountName", undefined, { shouldValidate: true });
               setValue("paymentAccountType", undefined, { shouldValidate: true });
             }
-            if (!isZellePaymentMethod(method?.name)) {
-              setValue("zelleTransactionDate", undefined, { shouldValidate: true });
-              setValue("zelleTransactionName", undefined, { shouldValidate: true });
-            }
             if (!isCheckPaymentMethod(method?.name)) {
               setValue("checkNumber", undefined, { shouldValidate: true });
             }
@@ -347,42 +342,6 @@ export function RegisterInvoiceTransactionFields({
           />
           {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
         </div>
-      ) : null}
-
-      {isZelle ? (
-        <>
-          <div className="space-y-2 sm:col-span-2">
-            {paymentDetailsRequired ? (
-              <RequiredLabel htmlFor="journal-zelle-date">
-                {t("accounting.dailyIncome.form.fields.zelleDate")}
-              </RequiredLabel>
-            ) : (
-              <Label htmlFor="journal-zelle-date">{t("accounting.dailyIncome.form.fields.zelleDate")}</Label>
-            )}
-            <Input id="journal-zelle-date" type="date" {...register("zelleTransactionDate")} />
-            {errors.zelleTransactionDate ? (
-              <p className="text-sm text-destructive">{errors.zelleTransactionDate.message}</p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2 sm:col-span-2">
-            {paymentDetailsRequired ? (
-              <RequiredLabel htmlFor="journal-zelle-name">
-                {t("accounting.dailyIncome.form.fields.zelleName")}
-              </RequiredLabel>
-            ) : (
-              <Label htmlFor="journal-zelle-name">{t("accounting.dailyIncome.form.fields.zelleName")}</Label>
-            )}
-            <Input
-              id="journal-zelle-name"
-              placeholder={t("accounting.dailyIncome.form.placeholders.enterZelleName")}
-              {...register("zelleTransactionName")}
-            />
-            {errors.zelleTransactionName ? (
-              <p className="text-sm text-destructive">{errors.zelleTransactionName.message}</p>
-            ) : null}
-          </div>
-        </>
       ) : null}
 
       {isCheck ? (

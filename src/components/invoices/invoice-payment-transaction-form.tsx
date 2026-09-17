@@ -142,8 +142,6 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
         descriptionTooLong: t("accounting.dailyIncome.form.validation.descriptionTooLong"),
         costPositive: t("accounting.dailyIncome.form.validation.costPositive"),
         discountNonNegative: t("accounting.dailyIncome.form.validation.discountNonNegative"),
-        zelleDateRequired: t("accounting.dailyIncome.form.validation.zelleDateRequired"),
-        zelleNameRequired: t("accounting.dailyIncome.form.validation.zelleNameRequired"),
         checkNumberRequired: t("accounting.dailyIncome.form.validation.checkNumberRequired"),
         bankAccountRequired: t("accounting.dailyIncome.form.validation.bankAccountRequired"),
         employeeRequired: t("accounting.dailyIncome.form.validation.employeeRequired"),
@@ -324,8 +322,6 @@ export function InvoicePaymentTransactionForm({ statement, invoice, onRegistered
           paymentAccountId: paymentDetailsRequired ? values.paymentAccountId : undefined,
           paymentAccountName: paymentDetailsRequired ? values.paymentAccountName : undefined,
           paymentAccountType: paymentDetailsRequired ? values.paymentAccountType : undefined,
-          zelleTransactionDate: paymentDetailsRequired ? values.zelleTransactionDate : undefined,
-          zelleTransactionName: paymentDetailsRequired ? values.zelleTransactionName : undefined,
           checkNumber: paymentDetailsRequired ? values.checkNumber : undefined,
         },
       });

@@ -355,8 +355,6 @@
         "selectBankAccount": "Seleccionar cuenta bancaria",
         "searchBankAccounts": "Buscar cuentas bancarias…",
         "referenceNumber": "Número de referencia",
-        "zelleTransactionDate": "Fecha de transacción Zelle",
-        "zelleTransactionName": "Nombre de transacción Zelle",
         "checkNumber": "Número de cheque",
         "checkNumberPlaceholder": "ej. 4521",
         "checkNumberHint": "Crea un cheque pendiente. El saldo de la factura se actualiza cuando el cheque se marca como cobrado.",

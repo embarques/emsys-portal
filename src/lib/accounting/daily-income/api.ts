@@ -11,7 +11,6 @@ import {
 } from "@/lib/api/search-query";
 import {
   EMPTY_DAILY_INCOME_SUMMARY,
-  isZellePaymentMethod,
   isCheckPaymentMethod,
   requiresBankAccount,
   type AccountingLookup,
@@ -233,8 +232,6 @@ function normalizeJournal(value: unknown): DailyIncomeJournal | null {
     paymentAccount: normalizeLookup(raw.paymentAccount),
     sourceAccount: normalizeLookup(raw.sourceAccount) ?? (sourceLine ? normalizeLookup(sourceLine) : undefined),
     paymentMethod: normalizeLookup(raw.paymentMethod),
-    zelleTransactionDate: stringValue(raw.zelleTransactionDate).slice(0, 10) || undefined,
-    zelleTransactionName: stringValue(raw.zelleTransactionName) || undefined,
     checkNumber: stringValue(firstDefined(raw.checkNumber, raw.check_number)) || undefined,
     inventoryDirection: normalizeInventoryDirection(
       firstDefined(raw.inventoryDirection, objectValue(raw.inventory).direction),
@@ -720,12 +717,6 @@ function journalPayload(statement: DailyIncomeStatement, values: DailyIncomeJour
     paymentMethod: values.paymentMethodId
       ? { id: values.paymentMethodId, name: values.paymentMethodName }
       : undefined,
-    ...(isZellePaymentMethod(values.paymentMethodName)
-      ? {
-          zelleTransactionDate: values.zelleTransactionDate,
-          zelleTransactionName: values.zelleTransactionName,
-        }
-      : {}),
     ...(isCheckPaymentMethod(values.paymentMethodName)
       ? { checkNumber: values.checkNumber?.trim() || undefined }
       : {}),

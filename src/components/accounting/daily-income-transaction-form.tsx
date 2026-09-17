@@ -18,7 +18,7 @@ import { formatAccountingMoney } from "@/lib/accounting/display";
 import { getTransactionTypeOption, getTransactionFormSecondFieldId } from "@/lib/accounting/daily-income/transaction-type-config";
 import { withPinnedSelectOption } from "@/lib/accounting/daily-income/journal-form";
 import { createDailyIncomeJournalSchema } from "@/lib/accounting/daily-income/schemas";
-import { findCashPaymentMethod, isCheckPaymentMethod, isZellePaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
+import { findCashPaymentMethod, isCheckPaymentMethod, matchPaymentMethod, requiresBankAccount, type AccountingLookup, type ChartAccount, type DailyIncomeJournalValues, type JournalTransactionType } from "@/lib/accounting/daily-income/types";
 import { moneyFormSetValueAs } from "@/lib/accounting/daily-income/money-input";
 import { queryKeys } from "@/lib/query/query-keys";
 import type { Employee } from "@/lib/employees/types";
@@ -98,8 +98,6 @@ export function DailyIncomeTransactionForm({
         descriptionTooLong: t("accounting.dailyIncome.form.validation.descriptionTooLong"),
         costPositive: t("accounting.dailyIncome.form.validation.costPositive"),
         discountNonNegative: t("accounting.dailyIncome.form.validation.discountNonNegative"),
-        zelleDateRequired: t("accounting.dailyIncome.form.validation.zelleDateRequired"),
-        zelleNameRequired: t("accounting.dailyIncome.form.validation.zelleNameRequired"),
         checkNumberRequired: t("accounting.dailyIncome.form.validation.checkNumberRequired"),
         bankAccountRequired: t("accounting.dailyIncome.form.validation.bankAccountRequired"),
         employeeRequired: t("accounting.dailyIncome.form.validation.employeeRequired"),
@@ -167,7 +165,6 @@ export function DailyIncomeTransactionForm({
   const sourceAccountName = watch("sourceAccountName");
   const paymentMethodId = watch("paymentMethodId");
   const paymentMethodName = watch("paymentMethodName");
-  const isZelle = isZellePaymentMethod(paymentMethodName);
   const isCheck = isCheckPaymentMethod(paymentMethodName);
   const needsBankAccount = requiresBankAccount(paymentMethodName);
   const selectedInvoice = invoiceId ? invoices.find((item) => item.invoiceId === invoiceId) : undefined;
@@ -484,10 +481,6 @@ export function DailyIncomeTransactionForm({
                   const method = paymentMethods.find((item) => item.id === Number(next));
                   setValue("paymentMethodId", method?.id, { shouldValidate: true });
                   setValue("paymentMethodName", method?.name ?? "", { shouldValidate: true });
-                  if (!isZellePaymentMethod(method?.name)) {
-                    setValue("zelleTransactionDate", undefined, { shouldValidate: true });
-                    setValue("zelleTransactionName", undefined, { shouldValidate: true });
-                  }
                   if (!isCheckPaymentMethod(method?.name)) {
                     setValue("checkNumber", undefined, { shouldValidate: true });
                   }
@@ -521,32 +514,6 @@ export function DailyIncomeTransactionForm({
                 />
                 {errors.paymentAccountId ? <p className="text-sm text-destructive">{errors.paymentAccountId.message}</p> : null}
               </div>
-            ) : null}
-
-            {isZelle ? (
-              <>
-                <div className="space-y-2 sm:col-span-2">
-                  <RequiredLabel htmlFor="journal-zelle-date">{t("accounting.dailyIncome.form.fields.zelleDate")}</RequiredLabel>
-                  <Input id="journal-zelle-date" type="date" {...register("zelleTransactionDate")} />
-                  {errors.zelleTransactionDate ? (
-                    <p className="text-sm text-destructive">{errors.zelleTransactionDate.message}</p>
-                  ) : null}
-                </div>
-
-                <div className="space-y-2 sm:col-span-2">
-                  <RequiredLabel htmlFor="journal-zelle-name">
-                    {t("accounting.dailyIncome.form.fields.zelleName")}
-                  </RequiredLabel>
-                  <Input
-                    id="journal-zelle-name"
-                    placeholder={t("accounting.dailyIncome.form.placeholders.enterZelleName")}
-                    {...register("zelleTransactionName")}
-                  />
-                  {errors.zelleTransactionName ? (
-                    <p className="text-sm text-destructive">{errors.zelleTransactionName.message}</p>
-                  ) : null}
-                </div>
-              </>
             ) : null}
 
             {isCheck ? (

@@ -161,14 +161,6 @@ export function DailyIncomeTransactionViewSheet({
               value={resolved.paymentMethod?.name}
             />
             <RecordViewSheetDetailRow
-              label={t("accounting.dailyIncome.form.fields.zelleDate")}
-              value={resolved.zelleTransactionDate ? formatAccountingDate(resolved.zelleTransactionDate) : undefined}
-            />
-            <RecordViewSheetDetailRow
-              label={t("accounting.dailyIncome.form.fields.zelleName")}
-              value={resolved.zelleTransactionName}
-            />
-            <RecordViewSheetDetailRow
               label={t("accounting.dailyIncome.form.fields.checkNumber")}
               value={resolved.checkNumber}
             />

@@ -101,8 +101,6 @@ export type DailyIncomeJournal = ApiTableRecord & {
     receiver?: DailyIncomePartyRef;
   };
   paymentMethod?: AccountingLookup;
-  zelleTransactionDate?: string;
-  zelleTransactionName?: string;
   /** Check number when payment method is CHECK. */
   checkNumber?: string;
   inventoryDirection?: InventoryChangeDirection;
@@ -187,7 +185,7 @@ export function withDefaultCashPaymentMethod<T extends { paymentMethodId?: numbe
   return { ...values, paymentMethodId: cash.id, paymentMethodName: cash.name };
 }
 
-/** Zelle requires extra reconciliation fields to prevent duplicate payment posting. */
+/** Zelle payments require a bank account; duplicate detection uses externalReferenceNumber. */
 export function isZellePaymentMethod(name?: string | null): boolean {
   return normalizePaymentMethodName(name) === "ZELLE";
 }
@@ -241,8 +239,6 @@ export type DailyIncomeJournalValues = {
   receiverName?: string;
   paymentMethodId?: number;
   paymentMethodName?: string;
-  zelleTransactionDate?: string;
-  zelleTransactionName?: string;
   checkNumber?: string;
   /** Inventory change recorded with this journal. Posted with the closeout, not as a separate stock write. */
   inventoryDirection?: InventoryChangeDirection;

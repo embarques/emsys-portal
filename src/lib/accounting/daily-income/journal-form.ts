@@ -146,8 +146,6 @@ export function journalToFormValues(row: DailyIncomeJournal): DailyIncomeJournal
     receiverName: row.invoice?.receiver?.name,
     paymentMethodId: lookupId(row.paymentMethod?.id),
     paymentMethodName: row.paymentMethod?.name,
-    zelleTransactionDate: row.zelleTransactionDate,
-    zelleTransactionName: row.zelleTransactionName,
     checkNumber: row.checkNumber,
     inventoryDirection: row.inventoryDirection,
     inventoryItemId: row.inventoryItemId,

@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import {
   isCheckPaymentMethod,
-  isZellePaymentMethod,
   requiresBankAccount,
 } from "@/lib/accounting/daily-income/types";
 import {
@@ -28,8 +27,6 @@ const invoiceDailyIncomeRegistrationBaseSchema = z.object({
   paymentAccountType: z.string().optional(),
   refNumber: z.string().trim().max(20, "Reference number is too long."),
   description: z.string().trim().max(500, "Description is too long."),
-  zelleTransactionDate: z.string().optional(),
-  zelleTransactionName: z.string().optional(),
   checkNumber: z.string().optional(),
 });
 
@@ -80,23 +77,6 @@ function refineInvoiceDailyIncomeRegistration(
       path: ["paymentAccountId"],
       message: "Select a bank account for this payment method.",
     });
-  }
-
-  if (isZellePaymentMethod(values.paymentMethodName)) {
-    if (!values.zelleTransactionDate?.trim()) {
-      context.addIssue({
-        code: "custom",
-        path: ["zelleTransactionDate"],
-        message: "Zelle transaction date is required.",
-      });
-    }
-    if (!values.zelleTransactionName?.trim()) {
-      context.addIssue({
-        code: "custom",
-        path: ["zelleTransactionName"],
-        message: "Zelle transaction name is required.",
-      });
-    }
   }
 
   if (isCheckPaymentMethod(values.paymentMethodName) && !values.checkNumber?.trim()) {

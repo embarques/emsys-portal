@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import {
   isCheckPaymentMethod,
-  isZellePaymentMethod,
   requiresBankAccount,
 } from "@/lib/accounting/daily-income/types";
 
@@ -21,8 +20,6 @@ export type DailyIncomeJournalSchemaMessages = {
   descriptionTooLong: string;
   costPositive: string;
   discountNonNegative: string;
-  zelleDateRequired: string;
-  zelleNameRequired: string;
   checkNumberRequired: string;
   bankAccountRequired: string;
   employeeRequired: string;
@@ -120,8 +117,6 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       receiverName: z.string().optional(),
       paymentMethodId: z.number().optional(),
       paymentMethodName: z.string().optional(),
-      zelleTransactionDate: z.string().optional(),
-      zelleTransactionName: z.string().optional(),
       checkNumber: z.string().optional(),
       inventoryDirection: z.enum(["received", "dispatched"]).optional(),
       inventoryItemId: z.string().optional(),
@@ -191,23 +186,6 @@ export function createDailyIncomeJournalSchema(messages: DailyIncomeJournalSchem
       }
 
       const paymentDetailsRequired = (values.amount ?? 0) > 0;
-
-      if (paymentDetailsRequired && isZellePaymentMethod(values.paymentMethodName)) {
-        if (!values.zelleTransactionDate?.trim()) {
-          context.addIssue({
-            code: "custom",
-            path: ["zelleTransactionDate"],
-            message: messages.zelleDateRequired,
-          });
-        }
-        if (!values.zelleTransactionName?.trim()) {
-          context.addIssue({
-            code: "custom",
-            path: ["zelleTransactionName"],
-            message: messages.zelleNameRequired,
-          });
-        }
-      }
 
       if (
         paymentDetailsRequired &&
@@ -341,8 +319,6 @@ const defaultJournalMessages: DailyIncomeJournalSchemaMessages = {
   descriptionTooLong: "Description is too long.",
   costPositive: "Cost must be greater than zero.",
   discountNonNegative: "Discount cannot be negative.",
-  zelleDateRequired: "Zelle transaction date is required.",
-  zelleNameRequired: "Zelle transaction name is required.",
   checkNumberRequired: "Check number is required.",
   bankAccountRequired: "Select a bank account for this payment method.",
   employeeRequired: "Select an employee or a daily route.",
