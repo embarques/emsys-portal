@@ -1202,16 +1202,19 @@ export function LoansWorkspace() {
       notifyError(t("accounting.loans.payments.selectLoanToPrint"));
       return;
     }
-    const employeeIds = new Set(
-      selectedLoansOnPage.map((loan) => loan.employee.id).filter((id) => id > 0),
-    );
-    if (selectedLoansOnPage.length === selectedIds.length && employeeIds.size > 1) {
+    const loansForPrint = selectedLoansOnPage.filter((loan) => selectedIds.includes(loan.id));
+    if (loansForPrint.length === 0) {
+      notifyError(t("accounting.loans.payments.selectLoanToPrint"));
+      return;
+    }
+    const employeeIds = new Set(loansForPrint.map((loan) => loan.employee.id).filter((id) => id > 0));
+    if (employeeIds.size !== 1) {
       notifyError(t("accounting.loans.payments.selectSameEmployeeToPrint"));
       return;
     }
     try {
       const report = await generateLoanReportMutation.mutateAsync(
-        buildSelectedLoansReportRequest(selectedIds, "pdf"),
+        buildSelectedLoansReportRequest(loansForPrint, "pdf"),
       );
       openLoanReportUrl(report.url);
       notifySuccess(t("accounting.loans.payments.printSuccess"));
@@ -1226,8 +1229,18 @@ export function LoansWorkspace() {
       return;
     }
     try {
+      const loansForExport = selectedLoansOnPage.filter((loan) => selectedIds.includes(loan.id));
       const report = await generateLoanReportMutation.mutateAsync(
-        buildSelectedLoansReportRequest(selectedIds, "excel"),
+        loansForExport.length > 0
+          ? buildSelectedLoansReportRequest(loansForExport, "excel")
+          : {
+              type: "loan" as const,
+              collection: "loans" as const,
+              values: selectedIds,
+              lookupField: "id",
+              format: "excel" as const,
+              language: "es" as const,
+            },
       );
       await downloadLoanExcelReport(report);
       notifySuccess(t("accounting.loans.payments.excelSuccess"));

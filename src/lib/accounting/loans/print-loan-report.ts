@@ -7,42 +7,79 @@ function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** Build the loan-statement payload for one selected loan (employee + period + loan id). */
-export function buildSelectedLoanReportRequest(loan: Loan): ReportRequest {
+function dateRangeFromLoans(loans: Loan[]): { start: string; end: string } {
   const today = todayIsoDate();
-  const start = (loan.openedAt || loan.lastActivityAt || today).slice(0, 10);
-  const activityEnd = (loan.lastActivityAt || today).slice(0, 10);
-  const end = activityEnd > today ? activityEnd : today;
+  let start = today;
+  let end = today;
 
-  return {
-    type: "loan",
-    collection: "loans",
-    values: [loan.id],
-    lookupField: "id",
-    filters: [
-      { field: "employee.id", operator: "eq", value: loan.employee.id },
-      { field: "id", operator: "eq", value: Number(loan.id) || loan.id },
-      { field: "transactionDate", operator: "gte", value: start },
-      { field: "transactionDate", operator: "lte", value: end },
-    ],
-    operator: "and",
-    format: "pdf",
-    language: "es",
-  };
+  for (const loan of loans) {
+    const opened = (loan.openedAt || loan.lastActivityAt || today).slice(0, 10);
+    const activity = (loan.lastActivityAt || loan.openedAt || today).slice(0, 10);
+    if (opened && opened < start) start = opened;
+    if (activity && activity > end) end = activity;
+  }
+
+  if (end < today) end = today;
+  return { start, end };
 }
 
-/** Build print/export payload for one or more selected loan numeric ids. */
+/** Build the loan-statement payload for one selected loan (same shape as Reports). */
+export function buildSelectedLoanReportRequest(loan: Loan): ReportRequest {
+  return buildSelectedLoansReportRequest([loan], "pdf");
+}
+
+/**
+ * Build print/export payload for selected loans.
+ * PDF uses the same employee + date-range filters as the Reports workspace.
+ * Excel uses selected numeric loan ids.
+ */
 export function buildSelectedLoansReportRequest(
-  loanIds: string[],
+  loans: Loan[],
   format: ReportOutputFormat = "pdf",
 ): ReportRequest {
-  const values = loanIds.map((id) => String(id).trim()).filter(Boolean);
+  const values = loans.map((loan) => String(loan.id).trim()).filter(Boolean);
+
+  if (format === "excel") {
+    return {
+      type: "loan",
+      collection: "loans",
+      values,
+      lookupField: "id",
+      format: "excel",
+      language: "es",
+    };
+  }
+
+  const employeeId = loans[0]?.employee.id;
+  if (!employeeId) {
+    throw new Error("Employee is required for the loan statement report.");
+  }
+
+  const { start, end } = dateRangeFromLoans(loans);
+  const filters: NonNullable<ReportRequest["filters"]> = [
+    { field: "employee.id", operator: "eq", value: employeeId },
+  ];
+
+  if (start === end) {
+    filters.push({ field: "transactionDate", operator: "eq", value: start });
+  } else {
+    filters.push({ field: "transactionDate", operator: "gte", value: start });
+    filters.push({ field: "transactionDate", operator: "lte", value: end });
+  }
+
+  // Keep selected ids when printing one or more loans so the API can scope the PDF.
+  if (values.length === 1) {
+    filters.push({ field: "id", operator: "eq", value: Number(values[0]) || values[0] });
+  }
+
   return {
     type: "loan",
     collection: "loans",
     values,
     lookupField: "id",
-    format,
+    filters,
+    operator: "and",
+    format: "pdf",
     language: "es",
   };
 }
@@ -51,12 +88,19 @@ export async function printSelectedLoanReport(loan: Loan): Promise<ReportResult>
   return generateLoanReport(buildSelectedLoanReportRequest(loan));
 }
 
-export async function printSelectedLoansReport(loanIds: string[]): Promise<ReportResult> {
-  return generateLoanReport(buildSelectedLoansReportRequest(loanIds, "pdf"));
+export async function printSelectedLoansReport(loans: Loan[]): Promise<ReportResult> {
+  return generateLoanReport(buildSelectedLoansReportRequest(loans, "pdf"));
 }
 
 export async function exportSelectedLoansExcel(loanIds: string[]): Promise<ReportResult> {
-  return generateLoanReport(buildSelectedLoansReportRequest(loanIds, "excel"));
+  return generateLoanReport({
+    type: "loan",
+    collection: "loans",
+    values: loanIds.map((id) => String(id).trim()).filter(Boolean),
+    lookupField: "id",
+    format: "excel",
+    language: "es",
+  });
 }
 
 export function openLoanReportUrl(url: string) {
