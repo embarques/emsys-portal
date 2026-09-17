@@ -130,7 +130,7 @@ function LoanJournalPreview({
 }) {
   return (
     <div className="rounded-lg border bg-muted/20 p-4">
-      <p className="text-sm font-semibold">Journal preview</p>
+      <p className="text-sm font-semibold">Summary</p>
       <div className="mt-3 space-y-3 text-sm">
         <div className="flex items-start justify-between gap-4 border-b pb-3">
           <div>
