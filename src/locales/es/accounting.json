@@ -495,6 +495,32 @@
     }
   },
   "loans": {
+    "payments": {
+      "title": "Pagos",
+      "subtitle": "Todos los pagos de este préstamo",
+      "view": "Ver",
+      "viewAria": "Ver pagos de {{name}}",
+      "back": "Volver a préstamos",
+      "paidLabel": "Pagado",
+      "balanceLabel": "Saldo",
+      "empty": "No se encontraron pagos para este préstamo.",
+      "loading": "Cargando pagos…",
+      "loadError": "No se pudieron cargar los pagos del préstamo.",
+      "noneRecorded": "No hay pagos registrados.",
+      "refLabel": "Ref",
+      "createdBy": "Registrado por {{name}}",
+      "selectLoanToPrint": "Seleccione un préstamo para imprimir su estado.",
+      "selectSameEmployeeToPrint": "La impresión requiere préstamos del mismo empleado.",
+      "print": "Imprimir",
+      "printPreparing": "Preparando…",
+      "printSuccess": "Reporte de préstamo generado.",
+      "printError": "No se pudo generar el reporte de préstamo.",
+      "excel": "Excel",
+      "excelPreparing": "Preparando…",
+      "excelSuccess": "Descarga de Excel iniciada.",
+      "excelError": "No se pudo exportar los préstamos a Excel.",
+      "selectLoansToExport": "Seleccione uno o más préstamos para exportar."
+    },
     "closeout": {
       "selectAccountFirst": "Seleccione la cuenta de préstamo y la fecha para vincular un cuadre de ingresos diario abierto.",
       "checking": "Verificando el cuadre de ingresos diario…",

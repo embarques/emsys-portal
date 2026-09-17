@@ -132,14 +132,33 @@ type FilterContext = {
   setValue: (key: string, value: string) => void;
 };
 
+function todayInputValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function defaultReportFilterValues(
   report: ReportDefinition,
   userBranchId?: number,
 ): ReportFilterValues {
-  if (!report.filters.includes("location") || !userBranchId || userBranchId <= 0) {
-    return {};
+  const defaults: ReportFilterValues = {};
+  const today = todayInputValue();
+
+  if (report.filters.includes("date-range")) {
+    defaults.dateFrom = today;
+    defaults.dateTo = today;
   }
-  return { locationId: String(userBranchId) };
+  if (report.filters.includes("single-date")) {
+    defaults.date = today;
+  }
+  if (report.filters.includes("location") && userBranchId && userBranchId > 0) {
+    defaults.locationId = String(userBranchId);
+  }
+
+  return defaults;
 }
 
 export function ReportsWorkspace() {

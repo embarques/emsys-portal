@@ -495,6 +495,32 @@
     }
   },
   "loans": {
+    "payments": {
+      "title": "Payments",
+      "subtitle": "All payment entries for this loan",
+      "view": "View",
+      "viewAria": "View payments for {{name}}",
+      "back": "Back to loans",
+      "paidLabel": "Paid",
+      "balanceLabel": "Balance",
+      "empty": "No payments found for this loan.",
+      "loading": "Loading payments…",
+      "loadError": "Unable to load loan payments.",
+      "noneRecorded": "No payments recorded.",
+      "refLabel": "Ref",
+      "createdBy": "Recorded by {{name}}",
+      "selectLoanToPrint": "Select a loan to print its statement.",
+      "selectSameEmployeeToPrint": "Print requires loans for the same employee.",
+      "print": "Print",
+      "printPreparing": "Preparing…",
+      "printSuccess": "Loan report generated.",
+      "printError": "Unable to generate loan report.",
+      "excel": "Excel",
+      "excelPreparing": "Preparing…",
+      "excelSuccess": "Excel download started.",
+      "excelError": "Unable to export loans to Excel.",
+      "selectLoansToExport": "Select one or more loans to export."
+    },
     "closeout": {
       "selectAccountFirst": "Select a loan account and date to link an open Daily Income closeout.",
       "checking": "Checking Daily Income closeout…",

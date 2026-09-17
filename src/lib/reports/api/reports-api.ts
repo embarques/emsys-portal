@@ -4,7 +4,6 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { getConfiguredApiBaseUrl } from "@/lib/api/base-url";
 import type { PaginatedApiEnvelope } from "@/lib/api/types";
-import { getConfigurationSnapshot } from "@/lib/configuration/store";
 import type {
   NormalizedReportRequest,
   ReportDefinition,
@@ -313,7 +312,7 @@ function buildLoanStatementReportRequest(request: NormalizedReportRequest): Repo
     filters,
     operator: "and",
     format: "pdf",
-    language: getConfigurationSnapshot().language === "es" ? "es" : "en",
+    language: "es",
   };
 }
 

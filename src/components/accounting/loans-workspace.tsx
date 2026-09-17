@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  FileSpreadsheet,
   FileText,
   MoreHorizontal,
   Plus,
@@ -26,6 +27,7 @@ import {
   TableFilterPanel,
 } from "@/components/app-shell/table-directory-toolbar";
 import { TableSearchInput } from "@/components/app-shell/table-search-input";
+import { TableSelectionToolbar } from "@/components/app-shell/table-selection-toolbar";
 import { useColumnVisibility } from "@/components/app-shell/use-column-visibility";
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { StatCards } from "@/components/app-shell/stat-cards-carousel";
@@ -46,7 +48,6 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useCreateLoan, useLoans, useLoanTransactions, useRecordLoanPayment } from "@/lib/accounting/loans/hooks";
-import { buildLoanReportFilters } from "@/lib/accounting/loans/api";
 import {
   formatLoanDate,
   formatLoanMoney,
@@ -68,10 +69,15 @@ import { createApiListTextSearch } from "@/lib/api/search-query";
 import { normalizeApiError } from "@/lib/api/axios";
 import { useEmployees } from "@/lib/employees/hooks/use-employees";
 import { useGenerateLoanReport } from "@/lib/reports/hooks/use-reports";
-import { openLoanReportUrl } from "@/lib/accounting/loans/print-loan-report";
-import { getConfigurationSnapshot } from "@/lib/configuration/store";
+import {
+  buildSelectedLoansReportRequest,
+  downloadLoanExcelReport,
+  openLoanReportUrl,
+} from "@/lib/accounting/loans/print-loan-report";
 import { LoanCloseoutPanel } from "@/components/accounting/loan-closeout-panel";
+import { useTranslation } from "@/lib/i18n";
 import { countCompleteFilterRows } from "@/lib/table/filter-builder";
+import { buildTableSelectionResetKey, useTableSelectionReset } from "@/lib/table/directory-table-state";
 import { formatPaginatedListSummary } from "@/lib/table/list-summary";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import type { DataTableColumn } from "@/lib/table/types";
@@ -734,6 +740,99 @@ function LoanMobileCard({
   );
 }
 
+function LoanPaymentEntries({
+  payments,
+  loading,
+  error,
+  emptyMessage,
+  loadingMessage,
+  refLabel,
+  createdByTemplate,
+  compact = false,
+}: {
+  payments: LoanTransaction[];
+  loading: boolean;
+  error: string | null;
+  emptyMessage: string;
+  loadingMessage: string;
+  refLabel: string;
+  createdByTemplate: (name: string) => string;
+  compact?: boolean;
+}) {
+  if (error) {
+    return (
+      <div
+        className={cn(
+          "text-sm text-destructive",
+          compact ? "mt-3" : "rounded-2xl border border-destructive/30 bg-destructive/5 p-4",
+        )}
+      >
+        {error}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <p className={cn("text-sm text-muted-foreground", compact ? "mt-3" : "rounded-2xl border bg-card p-5")}>
+        {loadingMessage}
+      </p>
+    );
+  }
+
+  if (payments.length === 0) {
+    return (
+      <p className={cn("text-sm text-muted-foreground", compact ? "mt-3" : "rounded-2xl border bg-card p-5")}>
+        {emptyMessage}
+      </p>
+    );
+  }
+
+  return (
+    <div className={cn(compact ? "mt-3 space-y-3" : "space-y-3")}>
+      {payments.map((payment) => (
+        <div
+          key={payment.id}
+          className={cn(
+            "border bg-card",
+            compact ? "rounded-lg bg-muted/20 p-3" : "rounded-2xl p-4 shadow-sm",
+          )}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className={cn(compact ? "text-sm font-medium" : "font-semibold")}>
+                {formatLoanDate(payment.transactionDate) || "-"}
+              </p>
+              <p className={cn("mt-1 truncate text-muted-foreground", compact ? "text-xs" : "text-sm")}>
+                {payment.assetAccount?.displayName ?? payment.assetAccount?.name ?? "Payment"}
+              </p>
+            </div>
+            <p className={cn("shrink-0", compact ? "text-sm font-semibold" : "font-bold")}>
+              {formatLoanMoney(payment.amount)}
+            </p>
+          </div>
+          {payment.referenceNumber || payment.description || payment.createdBy ? (
+            <div className={cn("space-y-1", compact ? "mt-2 text-xs" : "mt-3 text-sm")}>
+              {payment.referenceNumber ? (
+                <p>
+                  <span className="text-muted-foreground">{refLabel} </span>
+                  <span className="font-medium">{payment.referenceNumber}</span>
+                </p>
+              ) : null}
+              {payment.description ? (
+                <p className={cn("text-muted-foreground", compact && "line-clamp-2")}>{payment.description}</p>
+              ) : null}
+              {!compact && payment.createdBy ? (
+                <p className="text-muted-foreground">{createdByTemplate(payment.createdBy)}</p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function LoanPaymentsMobileView({
   loan,
   payments,
@@ -741,6 +840,7 @@ function LoanPaymentsMobileView({
   error,
   onBack,
   onRecordPayment,
+  labels,
 }: {
   loan: Loan;
   payments: LoanTransaction[];
@@ -748,6 +848,15 @@ function LoanPaymentsMobileView({
   error: string | null;
   onBack: () => void;
   onRecordPayment: (loan: Loan) => void;
+  labels: {
+    title: string;
+    paidLabel: string;
+    balanceLabel: string;
+    empty: string;
+    loading: string;
+    refLabel: string;
+    createdBy: (name: string) => string;
+  };
 }) {
   return (
     <div className="space-y-4 px-4 pb-8">
@@ -757,17 +866,17 @@ function LoanPaymentsMobileView({
         </Button>
         <div className="min-w-0">
           <h2 className="truncate text-xl font-bold tracking-normal">{loan.employee.name}</h2>
-          <p className="text-sm text-muted-foreground">Payments</p>
+          <p className="text-sm text-muted-foreground">{labels.title}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Paid</p>
+          <p className="text-xs text-muted-foreground">{labels.paidLabel}</p>
           <p className="mt-1 text-lg font-bold">{formatLoanMoney(loan.paidAmount)}</p>
         </div>
         <div className="rounded-2xl border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Balance</p>
+          <p className="text-xs text-muted-foreground">{labels.balanceLabel}</p>
           <p className="mt-1 text-lg font-bold">{formatLoanMoney(loan.balance)}</p>
         </div>
       </div>
@@ -777,54 +886,107 @@ function LoanPaymentsMobileView({
         Record payment
       </Button>
 
-      {error ? (
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-          {error}
-        </div>
-      ) : null}
-
-      {loading ? (
-        <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">Loading payments...</div>
-      ) : payments.length === 0 ? (
-        <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">No payments found for this loan.</div>
-      ) : (
-        <div className="space-y-3">
-          {payments.map((payment) => (
-            <div key={payment.id} className="rounded-2xl border bg-card p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-semibold">{formatLoanDate(payment.transactionDate) || "-"}</p>
-                  <p className="mt-1 truncate text-sm text-muted-foreground">
-                    {payment.assetAccount?.displayName ?? payment.assetAccount?.name ?? "Payment"}
-                  </p>
-                </div>
-                <p className="shrink-0 font-bold">{formatLoanMoney(payment.amount)}</p>
-              </div>
-              {payment.referenceNumber || payment.description ? (
-                <div className="mt-3 space-y-1 text-sm">
-                  {payment.referenceNumber ? (
-                    <p>
-                      <span className="text-muted-foreground">Ref </span>
-                      <span className="font-medium">{payment.referenceNumber}</span>
-                    </p>
-                  ) : null}
-                  {payment.description ? <p className="text-muted-foreground">{payment.description}</p> : null}
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      )}
+      <LoanPaymentEntries
+        payments={payments}
+        loading={loading}
+        error={error}
+        emptyMessage={labels.empty}
+        loadingMessage={labels.loading}
+        refLabel={labels.refLabel}
+        createdByTemplate={labels.createdBy}
+      />
     </div>
   );
 }
 
+function LoanPaymentsDesktopPanel({
+  loan,
+  payments,
+  loading,
+  error,
+  onBack,
+  onRecordPayment,
+  labels,
+}: {
+  loan: Loan;
+  payments: LoanTransaction[];
+  loading: boolean;
+  error: string | null;
+  onBack: () => void;
+  onRecordPayment: (loan: Loan) => void;
+  labels: {
+    title: string;
+    subtitle: string;
+    back: string;
+    paidLabel: string;
+    balanceLabel: string;
+    empty: string;
+    loading: string;
+    refLabel: string;
+    createdBy: (name: string) => string;
+  };
+}) {
+  return (
+    <>
+      <CardHeader className="gap-3 border-b py-4 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button type="button" variant="outline" size="sm" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4" />
+              {labels.back}
+            </Button>
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold">{loan.employee.name}</p>
+              <p className="truncate text-sm text-muted-foreground">
+                {loan.description || labels.title} · {labels.subtitle}
+              </p>
+            </div>
+          </div>
+          <Button type="button" onClick={() => onRecordPayment(loan)} disabled={loan.status !== "ACTIVE"}>
+            <ReceiptText className="h-4 w-4" />
+            Record payment
+          </Button>
+        </div>
+      </CardHeader>
+
+      <div className="space-y-4 px-6 py-4">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border bg-muted/20 p-3">
+            <p className="text-xs text-muted-foreground">{labels.paidLabel}</p>
+            <p className="mt-1 text-lg font-semibold">{formatLoanMoney(loan.paidAmount)}</p>
+          </div>
+          <div className="rounded-lg border bg-muted/20 p-3">
+            <p className="text-xs text-muted-foreground">{labels.balanceLabel}</p>
+            <p className="mt-1 text-lg font-semibold">{formatLoanMoney(loan.balance)}</p>
+          </div>
+          <div className="rounded-lg border bg-muted/20 p-3">
+            <p className="text-xs text-muted-foreground">{labels.title}</p>
+            <p className="mt-1 text-lg font-semibold">{payments.length}</p>
+          </div>
+        </div>
+
+        <LoanPaymentEntries
+          payments={payments}
+          loading={loading}
+          error={error}
+          emptyMessage={labels.empty}
+          loadingMessage={labels.loading}
+          refLabel={labels.refLabel}
+          createdByTemplate={labels.createdBy}
+        />
+      </div>
+    </>
+  );
+}
+
 export function LoansWorkspace() {
+  const { t } = useTranslation();
   const { notifySuccess, notifyError } = useFeedback();
   const [filters, setFilters] = useState<LoanFilterState>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentInitialLoan, setPaymentInitialLoan] = useState<Loan | null>(null);
@@ -857,6 +1019,13 @@ export function LoansWorkspace() {
   const summary = loansQuery.data?.summary ?? EMPTY_LOAN_SUMMARY;
   const totalLoans = loansQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalLoans / PAGE_SIZE));
+  const pageRowIds = useMemo(() => loans.map((loan) => loan.id), [loans]);
+  const allPageSelected = pageRowIds.length > 0 && pageRowIds.every((id) => selectedIds.includes(id));
+  const selectedLoansOnPage = useMemo(
+    () => loans.filter((loan) => selectedIds.includes(loan.id)),
+    [loans, selectedIds],
+  );
+  useTableSelectionReset(buildTableSelectionResetKey(debouncedQuery, filters.rows, sort), setSelectedIds);
   const paymentTransactions = useMemo(
     () =>
       (loanTransactionsQuery.data ?? [])
@@ -864,6 +1033,28 @@ export function LoansWorkspace() {
         .sort((left, right) => right.transactionDate.localeCompare(left.transactionDate)),
     [loanTransactionsQuery.data],
   );
+  const paymentLabels = useMemo(
+    () => ({
+      title: t("accounting.loans.payments.title"),
+      subtitle: t("accounting.loans.payments.subtitle"),
+      view: t("accounting.loans.payments.view"),
+      back: t("accounting.loans.payments.back"),
+      paidLabel: t("accounting.loans.payments.paidLabel"),
+      balanceLabel: t("accounting.loans.payments.balanceLabel"),
+      empty: t("accounting.loans.payments.empty"),
+      loading: t("accounting.loans.payments.loading"),
+      loadError: t("accounting.loans.payments.loadError"),
+      noneRecorded: t("accounting.loans.payments.noneRecorded"),
+      refLabel: t("accounting.loans.payments.refLabel"),
+      createdBy: (name: string) => t("accounting.loans.payments.createdBy", { name }),
+    }),
+    [t],
+  );
+  const paymentHistoryError = loanTransactionsQuery.isError
+    ? loanTransactionsQuery.error instanceof Error
+      ? loanTransactionsQuery.error.message
+      : paymentLabels.loadError
+    : null;
   const activeFilterCount = countCompleteFilterRows(filters.rows, LOAN_TABLE_FILTER_FIELDS);
   const hasActiveFilters = Boolean(filters.query.trim()) || activeFilterCount > 0;
   const employees = employeesQuery.data?.items ?? [];
@@ -1006,20 +1197,67 @@ export function LoansWorkspace() {
     }
   }
 
-  async function handlePrintReport() {
-    try {
-      const report = await generateLoanReportMutation.mutateAsync({
-        type: "loan",
-        collection: "loans",
-        filters: buildLoanReportFilters(listParams),
-        operator: "and",
-        language: getConfigurationSnapshot().language === "es" ? "es" : "en",
-      });
-      openLoanReportUrl(report.url);
-      notifySuccess("Loan report generated.");
-    } catch (error) {
-      notifyError(error instanceof Error ? error.message : "Unable to generate loan report.");
+  async function handlePrintSelected() {
+    if (selectedIds.length === 0) {
+      notifyError(t("accounting.loans.payments.selectLoanToPrint"));
+      return;
     }
+    const employeeIds = new Set(
+      selectedLoansOnPage.map((loan) => loan.employee.id).filter((id) => id > 0),
+    );
+    if (selectedLoansOnPage.length === selectedIds.length && employeeIds.size > 1) {
+      notifyError(t("accounting.loans.payments.selectSameEmployeeToPrint"));
+      return;
+    }
+    try {
+      const report = await generateLoanReportMutation.mutateAsync(
+        buildSelectedLoansReportRequest(selectedIds, "pdf"),
+      );
+      openLoanReportUrl(report.url);
+      notifySuccess(t("accounting.loans.payments.printSuccess"));
+    } catch (error) {
+      notifyError(normalizeApiError(error).message || t("accounting.loans.payments.printError"));
+    }
+  }
+
+  async function handleExportExcelSelected() {
+    if (selectedIds.length === 0) {
+      notifyError(t("accounting.loans.payments.selectLoansToExport"));
+      return;
+    }
+    try {
+      const report = await generateLoanReportMutation.mutateAsync(
+        buildSelectedLoansReportRequest(selectedIds, "excel"),
+      );
+      await downloadLoanExcelReport(report);
+      notifySuccess(t("accounting.loans.payments.excelSuccess"));
+    } catch (error) {
+      notifyError(normalizeApiError(error).message || t("accounting.loans.payments.excelError"));
+    }
+  }
+
+  function openPaymentsForSelected() {
+    const loan = selectedLoansOnPage[0] ?? (selectedLoan && selectedIds.includes(selectedLoan.id) ? selectedLoan : null);
+    if (!loan) {
+      notifyError(t("accounting.loans.payments.selectLoanToPrint"));
+      return;
+    }
+    setSelectedLoan(loan);
+    setPaymentHistoryLoan(loan);
+  }
+
+  function toggleSelectAll(checked: boolean) {
+    if (checked) {
+      setSelectedIds((current) => Array.from(new Set([...current, ...pageRowIds])));
+      return;
+    }
+    setSelectedIds((current) => current.filter((id) => !pageRowIds.includes(id)));
+  }
+
+  function toggleSelect(id: string, checked: boolean) {
+    setSelectedIds((current) =>
+      checked ? Array.from(new Set([...current, id])) : current.filter((value) => value !== id),
+    );
   }
 
   function resetFilters() {
@@ -1035,10 +1273,6 @@ export function LoansWorkspace() {
           description="Track employee loan balances, payments, and journal activity."
           actions={
             <>
-              <Button variant="outline" onClick={handlePrintReport} disabled={generateLoanReportMutation.isPending}>
-                <Printer className="h-4 w-4" />
-                Print report
-              </Button>
               <Button variant="outline" onClick={() => openPaymentForLoan(selectedLoan)}>
                 <ReceiptText className="h-4 w-4" />
                 Record payment
@@ -1055,6 +1289,18 @@ export function LoansWorkspace() {
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <Card className="gap-0">
+            {paymentHistoryLoan ? (
+              <LoanPaymentsDesktopPanel
+                loan={paymentHistoryLoan}
+                payments={paymentTransactions}
+                loading={loanTransactionsQuery.isPending}
+                error={paymentHistoryError}
+                onBack={() => setPaymentHistoryLoan(null)}
+                onRecordPayment={openPaymentForLoan}
+                labels={paymentLabels}
+              />
+            ) : (
+              <>
             <CardHeader className="gap-3 border-b py-4 pb-3">
               <TableDirectoryToolbar
                 filtersOpen={filtersOpen}
@@ -1101,6 +1347,42 @@ export function LoansWorkspace() {
               />
             </CardHeader>
 
+            <TableSelectionToolbar
+              selectedIds={selectedIds}
+              pageRowIds={pageRowIds}
+              totalCount={totalLoans}
+              onSelectedIdsChange={setSelectedIds}
+              onView={openPaymentsForSelected}
+              canEdit={false}
+              canDelete={false}
+              actions={
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrintSelected}
+                    disabled={generateLoanReportMutation.isPending || selectedIds.length === 0}
+                  >
+                    <Printer className="h-4 w-4" />
+                    {generateLoanReportMutation.isPending
+                      ? t("accounting.loans.payments.printPreparing")
+                      : t("accounting.loans.payments.print")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportExcelSelected}
+                    disabled={generateLoanReportMutation.isPending || selectedIds.length === 0}
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    {generateLoanReportMutation.isPending
+                      ? t("accounting.loans.payments.excelPreparing")
+                      : t("accounting.loans.payments.excel")}
+                  </Button>
+                </>
+              }
+            />
+
             {loansQuery.isError ? (
               <div className="border-b bg-destructive/5 px-6 py-3 text-sm text-destructive">
                 {loansQuery.error instanceof Error ? loansQuery.error.message : "Unable to load loans."}
@@ -1126,7 +1408,15 @@ export function LoansWorkspace() {
                 minWidth={1320}
                 sort={sort}
                 onSortChange={onSortChange}
-                onRowClick={setSelectedLoan}
+                selectable
+                selectedIds={selectedIds}
+                allPageSelected={allPageSelected}
+                onToggleSelectAll={toggleSelectAll}
+                onToggleSelect={toggleSelect}
+                onRowClick={(loan) => {
+                  setSelectedLoan(loan);
+                  setPaymentHistoryLoan((current) => (current ? loan : current));
+                }}
                 activeRowId={selectedLoan?.id}
                 emptyState={
                   <div className="py-10 text-center">
@@ -1156,6 +1446,8 @@ export function LoansWorkspace() {
                 </Button>
               </div>
             </div>
+              </>
+            )}
           </Card>
 
           <Card className="h-fit gap-0">
@@ -1200,51 +1492,41 @@ export function LoansWorkspace() {
                   <div className="border-t pt-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold">Payments</p>
+                        <p className="text-sm font-semibold">{paymentLabels.title}</p>
                         <p className="text-xs text-muted-foreground">{formatLoanMoney(selectedLoan.paidAmount)} paid</p>
                       </div>
-                      {selectedLoan.paidAmount > 0 ? (
-                        <Badge variant="outline">{paymentTransactions.length}</Badge>
-                      ) : null}
+                      <div className="flex items-center gap-2">
+                        {selectedLoan.paidAmount > 0 ? (
+                          <Badge variant="outline">{paymentTransactions.length}</Badge>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedIds([selectedLoan.id]);
+                            setPaymentHistoryLoan(selectedLoan);
+                          }}
+                          aria-label={t("accounting.loans.payments.viewAria", { name: selectedLoan.employee.name })}
+                        >
+                          {paymentLabels.view}
+                        </Button>
+                      </div>
                     </div>
 
                     {selectedLoan.paidAmount <= 0 ? (
-                      <p className="mt-3 text-sm text-muted-foreground">No payments recorded.</p>
-                    ) : loanTransactionsQuery.isPending ? (
-                      <p className="mt-3 text-sm text-muted-foreground">Loading payments...</p>
-                    ) : loanTransactionsQuery.isError ? (
-                      <p className="mt-3 text-sm text-destructive">
-                        {loanTransactionsQuery.error instanceof Error
-                          ? loanTransactionsQuery.error.message
-                          : "Unable to load loan payments."}
-                      </p>
-                    ) : paymentTransactions.length === 0 ? (
-                      <p className="mt-3 text-sm text-muted-foreground">No payments found for this loan.</p>
+                      <p className="mt-3 text-sm text-muted-foreground">{paymentLabels.noneRecorded}</p>
                     ) : (
-                      <div className="mt-3 space-y-3">
-                        {paymentTransactions.map((payment) => (
-                          <div key={payment.id} className="rounded-lg border bg-muted/20 p-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium">{formatLoanDate(payment.transactionDate) || "-"}</p>
-                                <p className="mt-1 truncate text-xs text-muted-foreground">
-                                  {payment.assetAccount?.displayName ?? payment.assetAccount?.name ?? "Payment"}
-                                </p>
-                              </div>
-                              <p className="shrink-0 text-sm font-semibold">{formatLoanMoney(payment.amount)}</p>
-                            </div>
-                            {payment.referenceNumber ? (
-                              <p className="mt-2 text-xs">
-                                <span className="text-muted-foreground">Ref </span>
-                                <span className="font-medium">{payment.referenceNumber}</span>
-                              </p>
-                            ) : null}
-                            {payment.description ? (
-                              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{payment.description}</p>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
+                      <LoanPaymentEntries
+                        payments={paymentTransactions}
+                        loading={loanTransactionsQuery.isPending}
+                        error={paymentHistoryError}
+                        emptyMessage={paymentLabels.empty}
+                        loadingMessage={paymentLabels.loading}
+                        refLabel={paymentLabels.refLabel}
+                        createdByTemplate={paymentLabels.createdBy}
+                        compact
+                      />
                     )}
                   </div>
                 </>
@@ -1264,7 +1546,13 @@ export function LoansWorkspace() {
               <p className="mt-1 text-sm text-primary-foreground/80">Employee balances and payments</p>
             </div>
             <div className="flex gap-2">
-              <Button size="icon" variant="secondary" onClick={handlePrintReport} disabled={generateLoanReportMutation.isPending} aria-label="Print report">
+              <Button
+                size="icon"
+                variant="secondary"
+                onClick={handlePrintSelected}
+                disabled={selectedIds.length === 0 || generateLoanReportMutation.isPending}
+                aria-label={t("accounting.loans.payments.print")}
+              >
                 <Printer className="h-4 w-4" />
               </Button>
               <Button size="icon" variant="secondary" onClick={() => setCreateOpen(true)} aria-label="New loan">
@@ -1279,15 +1567,10 @@ export function LoansWorkspace() {
             loan={paymentHistoryLoan}
             payments={paymentTransactions}
             loading={loanTransactionsQuery.isPending}
-            error={
-              loanTransactionsQuery.isError
-                ? loanTransactionsQuery.error instanceof Error
-                  ? loanTransactionsQuery.error.message
-                  : "Unable to load loan payments."
-                : null
-            }
+            error={paymentHistoryError}
             onBack={() => setPaymentHistoryLoan(null)}
             onRecordPayment={openPaymentForLoan}
+            labels={paymentLabels}
           />
         ) : (
           <>
