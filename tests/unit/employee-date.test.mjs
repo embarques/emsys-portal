@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeEmployeeDate, employeeDateToInputValue } from "../../src/lib/employees/utils/employee-date.ts";
+import {
+  normalizeEmployeeDate,
+  employeeDateToInputValue,
+  isEmployeeEndDateBeforeToday,
+  resolveEmployeeActiveForEndDate,
+} from "../../src/lib/employees/utils/employee-date.ts";
 
 test("employee dates accept date-only and RFC3339 values", () => {
   assert.equal(normalizeEmployeeDate(" 2024-02-29 "), "2024-02-29T00:00:00.000Z");
@@ -41,4 +46,17 @@ test("calendar input accepts existing timestamps without a host-timezone shift",
   assert.equal(employeeDateToInputValue("2024-03-01T00:30:00+02:00"), "2024-02-29");
   assert.equal(employeeDateToInputValue(""), "");
   assert.equal(employeeDateToInputValue("2024-02-30"), "");
+});
+
+test("past end dates force inactive while today stays active", () => {
+  const now = new Date("2026-09-17T15:00:00.000Z");
+  assert.equal(isEmployeeEndDateBeforeToday("2026-09-16", now), true);
+  assert.equal(isEmployeeEndDateBeforeToday("2026-09-17", now), false);
+  assert.equal(isEmployeeEndDateBeforeToday("2026-09-18", now), false);
+  assert.equal(isEmployeeEndDateBeforeToday("", now), false);
+  assert.equal(isEmployeeEndDateBeforeToday("not-a-date", now), false);
+
+  assert.equal(resolveEmployeeActiveForEndDate(true, "2026-09-16", now), false);
+  assert.equal(resolveEmployeeActiveForEndDate(true, "2026-09-17", now), true);
+  assert.equal(resolveEmployeeActiveForEndDate(false, "2026-09-18", now), false);
 });

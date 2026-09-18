@@ -25,7 +25,7 @@ import { PhoneListEditor } from "@/components/phones/phone-list-editor";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
-import { employeeDateToInputValue } from "@/lib/employees/utils/employee-date";
+import { employeeDateToInputValue, isEmployeeEndDateBeforeToday } from "@/lib/employees/utils/employee-date";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { normalizeApiError } from "@/lib/api/axios";
@@ -145,6 +145,13 @@ export function EmployeeForm({
 
   function updateField<K extends keyof EmployeeFormValues>(key: K, value: EmployeeFormValues[K]) {
     setValue<keyof EmployeeFormValues>(key, value, { shouldDirty: true, shouldValidate: true });
+  }
+
+  function updateEndDate(next: string) {
+    updateField("endDate", next);
+    if (isEmployeeEndDateBeforeToday(next)) {
+      updateField("active", false);
+    }
   }
 
   function updateAddressField<K extends keyof EmployeeAddress>(key: K, value: EmployeeAddress[K]) {
@@ -357,7 +364,7 @@ export function EmployeeForm({
                   <DateInput
                     id="endDate"
                     value={employeeDateToInputValue(values.endDate)}
-                    onChange={(event) => updateField("endDate", event.target.value)}
+                    onChange={(event) => updateEndDate(event.target.value)}
                     aria-invalid={Boolean(errors.endDate)}
                   />
                 </div>
