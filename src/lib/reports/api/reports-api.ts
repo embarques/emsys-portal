@@ -179,6 +179,15 @@ function defaultReportOutputs(key: string): ReportDefinition["outputs"] {
   return ["pdf"];
 }
 
+/** Report-specific filter sets when the catalog still has legacy extras. */
+function normalizeReportFilters(raw: unknown, key: string): ReportDefinition["filters"] {
+  if (key === "shipment-relation") {
+    return ["container", "payment-status", "customer-type", "customer"];
+  }
+  if (!Array.isArray(raw)) return [];
+  return raw.map((filter) => String(filter ?? "").trim()).filter(Boolean);
+}
+
 function normalizeReportOutputs(raw: unknown, key: string): ReportDefinition["outputs"] {
   if (!Array.isArray(raw)) return defaultReportOutputs(key);
   const outputs: ReportDefinition["outputs"] = [];
@@ -209,9 +218,7 @@ function normalizeReportDefinition(raw: unknown): ReportDefinition | null {
     icon: String(item.icon ?? "").trim() || undefined,
     enabled: item.enabled !== false,
     sortOrder: Number.isFinite(Number(item.sortOrder)) ? Number(item.sortOrder) : 0,
-    filters: Array.isArray(item.filters)
-      ? item.filters.map((filter) => String(filter ?? "").trim()).filter(Boolean)
-      : [],
+    filters: normalizeReportFilters(item.filters, key),
     outputs: normalizeReportOutputs(item.outputs, key),
   };
 }
