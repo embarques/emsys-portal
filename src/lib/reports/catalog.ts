@@ -10,4 +10,5 @@ export const REPORT_TYPE_ORDER = [
   "loan",
   "customs-form",
   "customs-sender",
+  "shipment-relation",
 ] as const satisfies readonly ReportType[];

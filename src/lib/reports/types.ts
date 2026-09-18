@@ -10,7 +10,8 @@ export type ReportType =
   | "pickup"
   | "delivery"
   | "customs-form"
-  | "customs-sender";
+  | "customs-sender"
+  | "shipment-relation";
 
 /** Collections the `values` identifiers can be resolved against. */
 export type ReportCollection =
@@ -45,6 +46,8 @@ export type ReportOutputFormat = "pdf" | "excel";
  *   `{ type: "customs-form", collection: "containers", values: ["1001"], lookupField: "id" }`
  * - Customs sender (`/reports/custom/sender`):
  *   `{ type: "customs-sender", collection: "containers", values: ["1001"], lookupField: "id", format: "pdf" }`
+ * - Shipment relation (`/reports/custom/relation`):
+ *   `{ type: "shipment-relation", collection: "containers", values: ["1001"], lookupField: "id", filters: [...] }`
  * - Loan statement (`/reports/loans` via portal keys `loan-statement` or `employee-loans`):
  *   `{ type: "loan", collection: "loans", filters: [{ field: "employee.id", operator: "eq", value: 12 }, { field: "transactionDate", operator: "gte", value: "2026-06-01" }, { field: "transactionDate", operator: "lte", value: "2026-09-15" }] }`
  */
@@ -111,6 +114,7 @@ export type ReportFilterKey =
   | "location"
   | "port-destination"
   | "status"
+  | "customer-type"
   | (string & {});
 
 export type ReportFilterValues = Record<string, string>;

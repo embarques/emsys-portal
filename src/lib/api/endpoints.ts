@@ -57,6 +57,7 @@ export const API_ENDPOINTS = {
   REPORTS_DELIVERIES: "/reports/deliveries",
   REPORTS_CUSTOM_FORM: "/reports/custom/form",
   REPORTS_CUSTOM_SENDER: "/reports/custom/sender",
+  REPORTS_CUSTOM_RELATION: "/reports/custom/relation",
   /** Public PDF download; append `/{token}`. */
   REPORTS_PUBLIC: "/public/reports",
   FILTER_PRESETS: "/filter-presets",

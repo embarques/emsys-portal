@@ -162,15 +162,30 @@ export function generateCustomsSenderReport(request: ReportRequest): Promise<Rep
   return postReport(API_ENDPOINTS.REPORTS_CUSTOM_SENDER, request);
 }
 
+/** Generate a shipment relation report (`POST /reports/custom/relation`). */
+export function generateShipmentRelationReport(request: ReportRequest): Promise<ReportResult> {
+  return postReport(API_ENDPOINTS.REPORTS_CUSTOM_RELATION, request);
+}
+
 function isLoanStatementReportKey(key: string): boolean {
   return key === "loan-statement" || key === "employee-loans";
 }
 
 function defaultReportOutputs(key: string): ReportDefinition["outputs"] {
   if (key === "customs-form") return ["excel"];
+  if (key === "shipment-relation") return ["excel"];
   if (key === "customs-invoices") return ["pdf", "excel"];
   if (isLoanStatementReportKey(key)) return ["pdf"];
   return ["pdf"];
+}
+
+/** Report-specific filter sets when the catalog still has legacy extras. */
+function normalizeReportFilters(raw: unknown, key: string): ReportDefinition["filters"] {
+  if (key === "shipment-relation") {
+    return ["container", "payment-status", "customer-type", "customer"];
+  }
+  if (!Array.isArray(raw)) return [];
+  return raw.map((filter) => String(filter ?? "").trim()).filter(Boolean);
 }
 
 function normalizeReportOutputs(raw: unknown, key: string): ReportDefinition["outputs"] {
@@ -203,9 +218,7 @@ function normalizeReportDefinition(raw: unknown): ReportDefinition | null {
     icon: String(item.icon ?? "").trim() || undefined,
     enabled: item.enabled !== false,
     sortOrder: Number.isFinite(Number(item.sortOrder)) ? Number(item.sortOrder) : 0,
-    filters: Array.isArray(item.filters)
-      ? item.filters.map((filter) => String(filter ?? "").trim()).filter(Boolean)
-      : [],
+    filters: normalizeReportFilters(item.filters, key),
     outputs: normalizeReportOutputs(item.outputs, key),
   };
 }
@@ -235,6 +248,12 @@ export async function requestReportGeneration(
   if (request.reportKey === "customs-invoices") {
     const payload = buildCustomsSenderReportRequest(request);
     const result = await generateCustomsSenderReport(payload);
+    return { status: "generated", request, result };
+  }
+
+  if (request.reportKey === "shipment-relation") {
+    const payload = buildShipmentRelationReportRequest(request);
+    const result = await generateShipmentRelationReport(payload);
     return { status: "generated", request, result };
   }
 
@@ -273,6 +292,36 @@ function buildCustomsSenderReportRequest(request: NormalizedReportRequest): Repo
     values: [containerId],
     lookupField: "id",
     format: request.format ?? "pdf",
+  };
+}
+
+function buildShipmentRelationReportRequest(request: NormalizedReportRequest): ReportRequest {
+  const containerId = request.filters.containerId?.trim();
+  if (!containerId) {
+    throw new Error("Container is required for the shipment relation report.");
+  }
+
+  const filters: NonNullable<ReportRequest["filters"]> = [];
+  const paymentStatus = request.filters.paymentStatus?.trim();
+  if (paymentStatus) {
+    filters.push({ field: "paidStatus", operator: "eq", value: paymentStatus });
+  }
+  const customerType = request.filters.customerType?.trim();
+  if (customerType) {
+    filters.push({ field: "customerParty", operator: "eq", value: customerType });
+  }
+  const customerId = request.filters.customerId?.trim();
+  if (customerId) {
+    filters.push({ field: "customer.id", operator: "eq", value: customerId });
+  }
+
+  return {
+    type: "shipment-relation",
+    collection: "containers",
+    values: [containerId],
+    lookupField: "id",
+    format: "excel",
+    ...(filters.length > 0 ? { filters, operator: "and" as const } : {}),
   };
 }
 
@@ -335,6 +384,7 @@ const REPORT_GENERATORS: Record<ReportType, (request: ReportRequest) => Promise<
   delivery: generateDeliveryReport,
   "customs-form": generateCustomsFormReport,
   "customs-sender": generateCustomsSenderReport,
+  "shipment-relation": generateShipmentRelationReport,
 };
 
 /** Dispatch a generate request to the matching `POST /reports/{type}` endpoint. */
