@@ -80,6 +80,7 @@ const FILTER_VALUE_KEYS: Record<string, string[]> = {
   location: ["locationId"],
   "port-destination": ["portDestination"],
   status: ["status"],
+  "customer-type": ["customerType"],
 };
 
 const INVOICE_STATUS_OPTIONS = [
@@ -95,6 +96,18 @@ const PAYMENT_STATUS_OPTIONS = [
   { value: "paid", label: "Paid" },
   { value: "pending", label: "Pending" },
   { value: "partial", label: "Partial" },
+];
+
+const SHIPMENT_PAYMENT_STATUS_OPTIONS = [
+  { value: "", label: "[All Status]" },
+  { value: "OPEN", label: "Open" },
+  { value: "CLOSED", label: "Closed" },
+];
+
+const CUSTOMER_TYPE_OPTIONS = [
+  { value: "", label: "[All]" },
+  { value: "sender", label: "Sender" },
+  { value: "receiver", label: "Receiver" },
 ];
 
 const PAYMENT_METHOD_OPTIONS = [
@@ -623,7 +636,7 @@ function ReportConfigurationPanel({
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           {report.filters.map((filter) => (
-            <DynamicReportFilter key={filter} filter={filter} context={context} />
+            <DynamicReportFilter key={filter} filter={filter} reportKey={report.key} context={context} />
           ))}
         </div>
 
@@ -671,7 +684,15 @@ function ReportConfigurationPanel({
   );
 }
 
-function DynamicReportFilter({ filter, context }: { filter: ReportFilterKey; context: FilterContext }) {
+function DynamicReportFilter({
+  filter,
+  reportKey,
+  context,
+}: {
+  filter: ReportFilterKey;
+  reportKey: string;
+  context: FilterContext;
+}) {
   switch (filter) {
     case "date-range":
       return <DateRangeFilter context={context} />;
@@ -679,6 +700,8 @@ function DynamicReportFilter({ filter, context }: { filter: ReportFilterKey; con
       return <SingleDateFilter context={context} />;
     case "customer":
       return <CustomerFilter context={context} />;
+    case "customer-type":
+      return <StaticSelectFilter context={context} icon={UsersRound} label="Customer Type" valueKey="customerType" options={CUSTOMER_TYPE_OPTIONS} />;
     case "container":
       return <ContainerFilter context={context} />;
     case "invoice":
@@ -686,7 +709,15 @@ function DynamicReportFilter({ filter, context }: { filter: ReportFilterKey; con
     case "invoice-status":
       return <StaticSelectFilter context={context} icon={FileText} label="Invoice Status" valueKey="invoiceStatus" options={INVOICE_STATUS_OPTIONS} />;
     case "payment-status":
-      return <StaticSelectFilter context={context} icon={ReceiptText} label="Payment Status" valueKey="paymentStatus" options={PAYMENT_STATUS_OPTIONS} />;
+      return (
+        <StaticSelectFilter
+          context={context}
+          icon={ReceiptText}
+          label="Payment Status"
+          valueKey="paymentStatus"
+          options={reportKey === "shipment-relation" ? SHIPMENT_PAYMENT_STATUS_OPTIONS : PAYMENT_STATUS_OPTIONS}
+        />
+      );
     case "payment-method":
       return <StaticSelectFilter context={context} icon={CircleDollarSign} label="Payment Method" valueKey="paymentMethod" options={PAYMENT_METHOD_OPTIONS} />;
     case "employee":
@@ -988,6 +1019,9 @@ function validateReportFilters(report: ReportDefinition, values: ReportFilterVal
     errors.containerId = "Container is required for this report.";
   }
   if (report.key === "customs-invoices" && !values.containerId) {
+    errors.containerId = "Container is required for this report.";
+  }
+  if (report.key === "shipment-relation" && !values.containerId) {
     errors.containerId = "Container is required for this report.";
   }
   if (report.key === "loan-statement" || report.key === "employee-loans") {
