@@ -15,5 +15,6 @@ export function useInsightsHistogram(resource: InsightsHistogramResource) {
     staleTime: INSIGHTS_HISTOGRAM_STALE_TIME_MS,
     gcTime: INSIGHTS_HISTOGRAM_GC_TIME_MS,
     refetchOnWindowFocus: false,
+    retry: false,
   });
 }

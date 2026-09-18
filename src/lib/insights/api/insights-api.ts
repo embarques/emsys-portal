@@ -1,5 +1,5 @@
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
-import { apiClient } from "@/lib/api/client";
+import { axiosInstance } from "@/lib/api/axios";
 import { unwrapApiData, type ApiSuccessEnvelope } from "@/lib/auth/utils/api-response";
 import { isRollingStatPeriod } from "@/lib/stats/rolling-period";
 import {
@@ -14,6 +14,9 @@ import {
   type InsightsKpis,
   type InsightsWindow,
 } from "@/lib/insights/types";
+
+/** Fail before endless proxy/upstream hangs keep dashboard cards on “…”. */
+const INSIGHTS_KPI_TIMEOUT_MS = 20_000;
 
 function asFiniteNumber(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -106,17 +109,26 @@ function normalizeHistogram(
 
 export async function fetchInsightsKpis(period: InsightsKpiPeriod): Promise<InsightsKpis> {
   const query = new URLSearchParams({ period });
-  const response = await apiClient.get<ApiSuccessEnvelope<unknown>>(
+  const response = await axiosInstance.get<ApiSuccessEnvelope<unknown>>(
     `${API_ENDPOINTS.INSIGHTS_KPIS}?${query.toString()}`,
+    {
+      timeout: INSIGHTS_KPI_TIMEOUT_MS,
+      // Dev proxy rewrites can hang/reset on slow KPI aggregates; call the API host directly.
+      useDirectApi: true,
+    },
   );
-  return normalizeKpis(unwrapApiData(response));
+  return normalizeKpis(unwrapApiData(response.data));
 }
 
 export async function fetchInsightsHistogram(
   resource: InsightsHistogramResource,
 ): Promise<InsightsHistogram> {
-  const response = await apiClient.get<ApiSuccessEnvelope<unknown>>(
+  const response = await axiosInstance.get<ApiSuccessEnvelope<unknown>>(
     `${API_ENDPOINTS.INSIGHTS_HISTOGRAMS}/${resource}`,
+    {
+      timeout: INSIGHTS_KPI_TIMEOUT_MS,
+      useDirectApi: true,
+    },
   );
-  return normalizeHistogram(unwrapApiData(response), resource);
+  return normalizeHistogram(unwrapApiData(response.data), resource);
 }
