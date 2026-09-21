@@ -2,7 +2,7 @@ import { INVENTORY_DISPATCH_API_TABLE_FIELDS } from "@/lib/inventory/dispatches/
 import { INVENTORY_RECEIPT_API_TABLE_FIELDS } from "@/lib/inventory/receipts/table-fields";
 import { INVENTORY_SUPPLIER_API_TABLE_FIELDS } from "@/lib/inventory/suppliers/table-fields";
 import { INVENTORY_ITEM_API_TABLE_FIELDS } from "@/lib/inventory/items/table-fields";
-import { captureApiTableFields } from "@/lib/table/api-table-fields";
+import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -239,7 +239,7 @@ function normalizeInventoryItem(raw: unknown): InventoryItem | null {
     createdAt: String(entry.createdAt ?? "").trim(),
     createdBy: readUserName(entry.createdBy),
     updatedAt: String(entry.updatedAt ?? "").trim(),
-    updatedBy: readUserName(entry.updatedBy),
+    updatedBy: readApiUserUsername(entry.updatedBy),
   };
 }
 
@@ -260,7 +260,7 @@ function normalizeInventoryStock(raw: unknown): InventoryStock | null {
     createdAt: String(entry.createdAt ?? "").trim(),
     createdBy: readUserName(entry.createdBy),
     updatedAt: String(entry.updatedAt ?? "").trim(),
-    updatedBy: readUserName(entry.updatedBy),
+    updatedBy: readApiUserUsername(entry.updatedBy),
   };
 }
 
@@ -286,7 +286,7 @@ function normalizeInventoryReceipt(raw: unknown): InventoryReceipt | null {
     createdAt: String(entry.createdAt ?? "").trim(),
     createdBy: readUserName(entry.createdBy),
     updatedAt: String(entry.updatedAt ?? "").trim(),
-    updatedBy: readUserName(entry.updatedBy),
+    updatedBy: readApiUserUsername(entry.updatedBy),
   };
 }
 
@@ -310,7 +310,7 @@ function normalizeInventoryDispatch(raw: unknown): InventoryDispatch | null {
     createdAt: String(entry.createdAt ?? "").trim(),
     createdBy: readUserName(entry.createdBy),
     updatedAt: String(entry.updatedAt ?? "").trim(),
-    updatedBy: readUserName(entry.updatedBy),
+    updatedBy: readApiUserUsername(entry.updatedBy),
   };
 }
 
@@ -335,7 +335,7 @@ function normalizeInventorySupplier(raw: unknown): InventorySupplier | null {
     createdAt: String(entry.createdAt ?? "").trim(),
     createdBy: readUserName(entry.createdBy),
     updatedAt: String(entry.updatedAt ?? "").trim(),
-    updatedBy: readUserName(entry.updatedBy),
+    updatedBy: readApiUserUsername(entry.updatedBy),
   };
 }
 

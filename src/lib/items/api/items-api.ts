@@ -1,5 +1,5 @@
 import { ITEM_API_TABLE_FIELDS } from "@/lib/items/table-fields";
-import { captureApiTableFields } from "@/lib/table/api-table-fields";
+import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -88,7 +88,7 @@ function normalizeItem(raw: unknown): Item | null {
     createdAt: String(item.createdAt ?? "").trim(),
     updatedAt: String(item.updatedAt ?? "").trim(),
     createdBy: readUserName(item.createdBy),
-    updatedBy: readUserName(item.updatedBy),
+    updatedBy: readApiUserUsername(item.updatedBy),
   };
 }
 

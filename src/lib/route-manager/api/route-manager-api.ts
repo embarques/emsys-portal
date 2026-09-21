@@ -1,5 +1,5 @@
 import { ROUTE_API_TABLE_FIELDS } from "@/lib/route-manager/table-fields";
-import { captureApiTableFields } from "@/lib/table/api-table-fields";
+import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { DEFAULT_CREATED_BY } from "@/lib/audit/constants";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
@@ -188,7 +188,7 @@ export function normalizeApiRoute(raw: unknown): Route | null {
     createdAt: String(item.createdAt ?? "").trim(),
     createdBy: readUserName(item.createdBy) || DEFAULT_CREATED_BY,
     updatedAt: String(item.updatedAt ?? "").trim(),
-    updatedBy: readUserName(item.updatedBy) || "",
+    updatedBy: readApiUserUsername(item.updatedBy) || "",
   };
 }
 

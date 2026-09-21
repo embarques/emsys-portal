@@ -1,5 +1,5 @@
 import { CHECK_API_TABLE_FIELDS } from "@/lib/accounting/checks/table-fields";
-import { captureApiTableFields } from "@/lib/table/api-table-fields";
+import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -174,7 +174,7 @@ export function normalizeCheck(raw: unknown): Check | null {
     createdAt: String(item.createdAt ?? "").trim(),
     createdBy: readUserName(item.createdBy),
     updatedAt: String(item.updatedAt ?? "").trim() || undefined,
-    updatedBy: readUserName(item.updatedBy) || undefined,
+    updatedBy: readApiUserUsername(item.updatedBy) || undefined,
   };
 }
 

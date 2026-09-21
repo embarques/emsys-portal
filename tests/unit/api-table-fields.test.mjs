@@ -11,15 +11,22 @@ const formatters = {
 
 test("response-only values survive normalization and appear in visible, copyable columns", () => {
   const fields = [{ field: "id" }, { field: "updatedBy" }, { field: "surcharge" }, { field: "isVoid" }, { field: "updatedAt", format: "date" }];
-  const raw = { id: 42, updatedBy: { id: 9, name: "Ana" }, surcharge: 0, isVoid: false, updatedAt: "2026-09-14T12:00:00Z" };
+  const raw = { id: 42, updatedBy: { id: 9, userName: "ana.lopez", name: "Ana" }, surcharge: 0, isVoid: false, updatedAt: "2026-09-14T12:00:00Z" };
   const row = { ...captureApiTableFields(raw, fields), id: "42" };
   const columns = completeApiTableColumns([], fields, formatters);
-  assert.deepEqual(columns.map(c => c.renderCell(row)), ["42", "id: 9 · name: Ana", "0", "No", "date:2026-09-14T12:00:00Z"]);
+  assert.deepEqual(columns.map(c => c.renderCell(row)), ["42", "ana.lopez", "0", "No", "date:2026-09-14T12:00:00Z"]);
   for (const column of columns) {
     assert.equal(column.defaultVisible, true);
     assert.equal(column.copyValue(row), column.renderCell(row));
     assert.equal(column.sortable, false);
   }
+});
+
+test("updatedBy columns prefer username over dumping the full user object", () => {
+  const [column] = completeApiTableColumns([], [{ field: "updatedBy" }], formatters);
+  assert.equal(column.renderCell({ apiTableValues: { updatedBy: { id: 9, userName: "ana", name: "Ana Lopez", email: "a@x.com" } } }), "ana");
+  assert.equal(column.renderCell({ apiTableValues: { updatedBy: { id: 9, name: "Ana" } } }), "Ana");
+  assert.equal(column.renderCell({ updatedBy: "legacy-user" }), "legacy-user");
 });
 
 test("existing business renderers and API aliases remain one column per concept", () => {

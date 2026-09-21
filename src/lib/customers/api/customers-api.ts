@@ -209,7 +209,7 @@ function readAccountBalance(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function readAuditActor(value: unknown) {
+function readAuditActor(value: unknown, options?: { preferUsername?: boolean }) {
   if (value == null) return null;
 
   // Legacy plain-string actor → `name` (docs target is core.User, not bare strings).
@@ -228,8 +228,10 @@ function readAuditActor(value: unknown) {
 
   const user = value as ApiUser;
   const id = String(user.id ?? "").trim();
-  // Canonical field is `name`; fold compatibility aliases into that field.
-  const name = String(user.name ?? user.fullName ?? user.userName ?? "").trim();
+  // Updated-by columns prefer `userName`; created-by keeps canonical `name`.
+  const name = options?.preferUsername
+    ? String(user.userName ?? user.name ?? user.fullName ?? "").trim()
+    : String(user.name ?? user.fullName ?? user.userName ?? "").trim();
 
   if (!id && !name) return null;
 
@@ -386,7 +388,7 @@ export function normalizeApiCustomer(raw: unknown): Customer | null {
     accountBalance: readAccountBalance(item.accountBalance),
     branch,
     createdBy: readAuditActor(item.createdBy) ?? readLegacyCreatedById(item.createdByID),
-    updatedBy: readAuditActor(item.updatedBy),
+    updatedBy: readAuditActor(item.updatedBy, { preferUsername: true }),
     addresses,
     receivers: normalizeReceivers(item.receivers),
   };

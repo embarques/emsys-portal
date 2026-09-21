@@ -151,7 +151,14 @@ export function normalizeLoan(value: unknown): Loan | null {
     createdAt: stringValue(raw.createdAt),
     createdBy: stringValue(firstDefined(objectValue(raw.createdBy).name, raw.createdBy)) || undefined,
     updatedAt: stringValue(raw.updatedAt) || undefined,
-    updatedBy: stringValue(firstDefined(objectValue(raw.updatedBy).name, raw.updatedBy)) || undefined,
+    updatedBy: stringValue(
+      firstDefined(
+        objectValue(raw.updatedBy).userName,
+        objectValue(raw.updatedBy).username,
+        objectValue(raw.updatedBy).name,
+        raw.updatedBy,
+      ),
+    ) || undefined,
   };
 }
 

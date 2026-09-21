@@ -1,5 +1,5 @@
 import { BARCODE_API_TABLE_FIELDS } from "@/lib/barcodes/table-fields";
-import { captureApiTableFields } from "@/lib/table/api-table-fields";
+import { captureApiTableFields, readApiUserUsername } from "@/lib/table/api-table-fields";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { apiClient } from "@/lib/api/client";
 import { assertMutationSuccess } from "@/lib/api/mutation-response";
@@ -213,7 +213,7 @@ export function normalizeBarcode(raw: unknown): Barcode | null {
   const containerName = String(item.container?.name ?? "").trim();
   const tripNumber = readNumericId(item.tripNumber);
   const createdBy = readUserName(item.createdBy);
-  const updatedBy = readUserName(item.updatedBy);
+  const updatedBy = readApiUserUsername(item.updatedBy);
   const invoiceId =
     String(item.invoice?.id ?? item.invoiceId ?? "").trim() || undefined;
   const invoiceNumber =

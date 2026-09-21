@@ -27,6 +27,26 @@ function sanitizeValue(value: unknown): unknown {
   return value;
 }
 
+/**
+ * Display label for API `updatedBy` / user refs.
+ * Prefer `userName` (core.User) over dumping the whole actor object.
+ */
+export function readApiUserUsername(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value).trim();
+  if (typeof value !== "object" || Array.isArray(value)) return "";
+
+  const entry = value as Record<string, unknown>;
+  const username = String(entry.userName ?? entry.username ?? "").trim();
+  if (username) return username;
+
+  const name = String(entry.name ?? entry.fullName ?? "").trim();
+  if (name) return name;
+
+  if (entry.id != null && entry.id !== "") return String(entry.id).trim();
+  return "";
+}
+
 /** Preserve documented response fields that the feature's form model may omit. */
 export function captureApiTableFields(raw: unknown, fields: readonly ApiTableField[]): ApiTableRecord {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
@@ -68,6 +88,10 @@ export function formatApiTableValue(value: unknown, formatters: ApiTableFormatte
     return value.map((entry) => formatApiTableValue(entry, formatters)).join("; ") || formatters.empty;
   }
   if (typeof value === "object") {
+    // Updated-by columns must show the actor username, not the full user payload.
+    if (field === "updatedBy") {
+      return readApiUserUsername(value) || formatters.empty;
+    }
     return Object.entries(value)
       .filter(([key, entry]) => !PRIVATE_FIELDS.test(key) && entry != null && entry !== "")
       .map(([key, entry]) => `${formatters.label(key)}: ${formatApiTableValue(entry, formatters, key)}`)
