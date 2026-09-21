@@ -8,6 +8,8 @@ import type { InventoryItem } from "@/lib/inventory/types/catalog";
 import type { InventoryReceipt } from "@/lib/inventory/types/documents";
 import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { cn } from "@/lib/utils";
 
 type InventoryReceiptMobileRowProps = {
   receipt: InventoryReceipt;
@@ -44,8 +46,26 @@ export function InventoryReceiptMobileRow({ receipt, item, supplier, onOpen, onE
       </button>
       {onEdit || onDelete ? (
         <div className="mt-4 flex justify-end gap-2">
-          {onEdit ? <Button variant="outline" onClick={() => onEdit(receipt)}><Edit className="size-4" />{t("common.actions.edit")}</Button> : null}
-          {onDelete ? <Button variant="outline" className="text-destructive" onClick={() => onDelete(receipt)}><Trash2 className="size-4" />{t("common.actions.delete")}</Button> : null}
+          {onEdit ? (
+            <Button
+              variant="outline"
+              className={tableSelectionActionStyles.edit}
+              onClick={() => onEdit(receipt)}
+            >
+              <Edit className="size-4" />
+              {t("common.actions.edit")}
+            </Button>
+          ) : null}
+          {onDelete ? (
+            <Button
+              variant="outline"
+              className={cn(tableSelectionActionStyles.delete)}
+              onClick={() => onDelete(receipt)}
+            >
+              <Trash2 className="size-4" />
+              {t("common.actions.delete")}
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </article>

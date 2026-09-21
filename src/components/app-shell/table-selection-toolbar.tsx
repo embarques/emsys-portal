@@ -21,6 +21,11 @@ type TableSelectionToolbarProps = {
   onDelete?: () => void;
   /** Feature-specific bulk actions rendered before View/Edit/Delete. */
   actions?: ReactNode;
+  /**
+   * Hide View/Edit/Delete. Prefer hiding only actions to the left of an
+   * expanded group so View/Edit/Delete (to the right) stay available.
+   */
+  hideStandardActions?: boolean;
   canView?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
@@ -46,6 +51,7 @@ export function TableSelectionToolbar({
   onEdit,
   onDelete,
   actions,
+  hideStandardActions = false,
   canView = true,
   canEdit = true,
   canDelete = true,
@@ -58,11 +64,11 @@ export function TableSelectionToolbar({
 
   const total = totalCount ?? pageRowIds.length;
 
-  const showView = Boolean(onView && canView);
+  const showView = Boolean(onView && canView && !hideStandardActions);
   const viewDisabled = selectedIds.length !== 1;
-  const showEdit = Boolean(onEdit && canEdit);
+  const showEdit = Boolean(onEdit && canEdit && !hideStandardActions);
   const editDisabled = selectedIds.length !== 1;
-  const showDelete = Boolean(onDelete && canDelete);
+  const showDelete = Boolean(onDelete && canDelete && !hideStandardActions);
   const othersAvailable = canSelectAllOthers(pageRowIds, selectedIds);
   const hasRecordActions = Boolean(showView || showEdit || actions || showDelete);
 
@@ -106,7 +112,12 @@ export function TableSelectionToolbar({
 
       {/* Record actions: operate on the selected rows */}
       {hasRecordActions ? (
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div
+          className={cn(
+            "flex items-center gap-1.5",
+            hideStandardActions ? "flex-nowrap" : "flex-wrap",
+          )}
+        >
           {actions}
           {actions && (showView || showEdit || showDelete) ? <TableSelectionActionDivider /> : null}
           {showView ? (

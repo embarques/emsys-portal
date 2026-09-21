@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { formatPermissionsSummary, truncateRoleId } from "@/lib/roles/display";
 import type { Role } from "@/lib/roles/types";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type RoleMobileRowProps = {
@@ -80,14 +81,19 @@ export function RoleMobileRow({
       </div>
 
       <div className={cn("mt-5 flex justify-end gap-2", selectionMode && "hidden")}>
-        <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => onEdit(role)}>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.edit)}
+          onClick={() => onEdit(role)}
+        >
           <Edit className="size-4" />
           {t("common.actions.edit")}
         </Button>
         <Button
           type="button"
           variant="outline"
-          className="h-11 rounded-xl text-destructive"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.delete)}
           disabled={role.systemRole}
           onClick={() => onDelete(role)}
         >

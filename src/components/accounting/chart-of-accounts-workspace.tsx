@@ -64,6 +64,7 @@ import {
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
 const EMPTY_ACCOUNT: ChartAccountValues = {
   displayName: "",
@@ -169,7 +170,7 @@ function MobileChartAccountRow({
         <Button
           type="button"
           variant="outline"
-          className="h-11 rounded-xl"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.edit)}
           onClick={() => onEdit(account)}
         >
           <Edit className="size-4" />
@@ -178,7 +179,7 @@ function MobileChartAccountRow({
         <Button
           type="button"
           variant="outline"
-          className="h-11 rounded-xl text-destructive"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.delete)}
           disabled={!canDelete}
           onClick={() => onDelete(account)}
         >

@@ -70,6 +70,7 @@ import { buildToolbarSearchSummary, formatPaginatedListSummary } from "@/lib/tab
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import type { DataTableColumn } from "@/lib/table/types";
 import { cn } from "@/lib/utils";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
 const toolbarFieldControlClassName =
   "h-10 w-auto rounded-lg border-2 border-foreground/60 bg-card shadow-none focus-visible:border-foreground focus-visible:ring-0";
@@ -321,11 +322,23 @@ function DailyIncomeMobileTransactionRow({
       </button>
       {canModify ? (
         <div className="mt-3 flex justify-end gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onEdit}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={tableSelectionActionStyles.edit}
+            onClick={onEdit}
+          >
             <Edit className="size-4" />
             {t("common.actions.edit")}
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={onDelete} className="text-destructive">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onDelete}
+            className={tableSelectionActionStyles.delete}
+          >
             <Trash2 className="size-4" />
             {t("common.actions.delete")}
           </Button>

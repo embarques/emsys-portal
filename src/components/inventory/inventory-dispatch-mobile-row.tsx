@@ -7,6 +7,8 @@ import { formatInventoryDate, formatInventoryMoney, getInventoryDispatchToLabel,
 import type { InventoryItem } from "@/lib/inventory/types/catalog";
 import type { InventoryDispatch } from "@/lib/inventory/types/documents";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { cn } from "@/lib/utils";
 
 type InventoryDispatchMobileRowProps = {
   dispatch: InventoryDispatch;
@@ -42,8 +44,26 @@ export function InventoryDispatchMobileRow({ dispatch, item, onOpen, onEdit, onD
       </button>
       {onEdit || onDelete ? (
         <div className="mt-4 flex justify-end gap-2">
-          {onEdit ? <Button variant="outline" onClick={() => onEdit(dispatch)}><Edit className="size-4" />{t("common.actions.edit")}</Button> : null}
-          {onDelete ? <Button variant="outline" className="text-destructive" onClick={() => onDelete(dispatch)}><Trash2 className="size-4" />{t("common.actions.delete")}</Button> : null}
+          {onEdit ? (
+            <Button
+              variant="outline"
+              className={tableSelectionActionStyles.edit}
+              onClick={() => onEdit(dispatch)}
+            >
+              <Edit className="size-4" />
+              {t("common.actions.edit")}
+            </Button>
+          ) : null}
+          {onDelete ? (
+            <Button
+              variant="outline"
+              className={cn(tableSelectionActionStyles.delete)}
+              onClick={() => onDelete(dispatch)}
+            >
+              <Trash2 className="size-4" />
+              {t("common.actions.delete")}
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </article>

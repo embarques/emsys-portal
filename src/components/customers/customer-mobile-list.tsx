@@ -39,6 +39,7 @@ import {
 import { isCustomerReceiverType } from "@/lib/customers/customer-type";
 import { getPrimaryPhoneDisplayNumber } from "@/lib/phones/phones";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type FilterField = ComponentProps<typeof TableAdvancedFilterBuilder>["fields"][number];
@@ -315,7 +316,7 @@ export function CustomerMobileList({
               <Button
                 variant="outline"
                 size="icon"
-                className="size-10"
+                className={cn("size-10", tableSelectionActionStyles.view)}
                 onClick={() => onView(singleSelectedCustomer)}
                 aria-label={t("common.actions.view")}
               >
@@ -326,7 +327,7 @@ export function CustomerMobileList({
               <Button
                 variant="outline"
                 size="icon"
-                className="size-10"
+                className={cn("size-10", tableSelectionActionStyles.edit)}
                 onClick={() => onEdit(singleSelectedCustomer)}
                 aria-label={t("common.actions.edit")}
               >
@@ -337,7 +338,7 @@ export function CustomerMobileList({
               <Button
                 variant="outline"
                 size="icon"
-                className="size-10 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className={cn("size-10", tableSelectionActionStyles.delete)}
                 onClick={onDeleteSelected}
                 disabled={isSaving}
                 aria-label={t("common.actions.delete")}

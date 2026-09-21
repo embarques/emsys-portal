@@ -5,6 +5,8 @@ import { Eye, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Employee } from "@/lib/employees/types";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { cn } from "@/lib/utils";
 
 type EmployeeMobileSelectionToolbarProps = {
   selectedIds: string[];
@@ -46,7 +48,7 @@ export function EmployeeMobileSelectionToolbar({
             <Button
               variant="outline"
               size="icon"
-              className="size-10"
+              className={cn("size-10", tableSelectionActionStyles.view)}
               onClick={() => onView(singleSelectedEmployee)}
               aria-label={t("common.actions.view")}
             >
@@ -55,7 +57,7 @@ export function EmployeeMobileSelectionToolbar({
             <Button
               variant="outline"
               size="icon"
-              className="size-10"
+              className={cn("size-10", tableSelectionActionStyles.edit)}
               onClick={() => onEdit(singleSelectedEmployee)}
               aria-label={t("common.actions.edit")}
             >
@@ -66,7 +68,7 @@ export function EmployeeMobileSelectionToolbar({
         <Button
           variant="outline"
           size="icon"
-          className="size-10 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          className={cn("size-10", tableSelectionActionStyles.delete)}
           onClick={onDeleteSelected}
           disabled={isSaving}
           aria-label={t("common.actions.delete")}

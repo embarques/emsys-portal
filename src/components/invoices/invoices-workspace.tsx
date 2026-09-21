@@ -123,6 +123,7 @@ import { PERMISSIONS } from "@/lib/auth/permissions";
 import { useAuth } from "@/lib/auth/hooks/use-auth";
 import type { OrderParty } from "@/lib/orders/types";
 import { cn } from "@/lib/utils";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { useTranslation } from "@/lib/i18n";
 
 const LEGACY_SYNC_PERMISSION_ERROR_NAMES = ["canSyncLegacyInvoices"] as const;
@@ -1343,6 +1344,7 @@ export function InvoicesWorkspace() {
                 size="sm"
                 onClick={printSelectedInvoices}
                 disabled={isPrinting}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
               >
                 <Printer className="h-4 w-4" />
                 {isPrinting ? "Preparing…" : "Print"}

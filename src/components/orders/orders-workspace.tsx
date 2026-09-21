@@ -132,6 +132,7 @@ import {
 } from "@/lib/customers/utils/address-utils";
 import type { Customer } from "@/lib/customers/types";
 import { cn } from "@/lib/utils";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -318,7 +319,12 @@ function MobileOrderRow({
         </button>
       </div>
       <div className={cn("mt-5 flex justify-end gap-2", selectionMode && "hidden")}>
-        <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => onEdit(order)}>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.edit)}
+          onClick={() => onEdit(order)}
+        >
           <Edit className="size-4" />
           {t("common.actions.edit")}
         </Button>
@@ -339,7 +345,7 @@ function MobileOrderRow({
         <Button
           type="button"
           variant="outline"
-          className="h-11 rounded-xl text-destructive"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.delete)}
           onClick={() => onDelete(order)}
         >
           <Trash2 className="size-4" />
@@ -1212,7 +1218,10 @@ export function OrdersWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                className={cn(
+                  "min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal",
+                  tableSelectionActionStyles.view,
+                )}
                 disabled={selectedCount !== 1}
                 onClick={() => {
                   const order = selectedOrders[0];
@@ -1226,7 +1235,10 @@ export function OrdersWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                className={cn(
+                  "min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal",
+                  tableSelectionActionStyles.edit,
+                )}
                 disabled={selectedCount !== 1 || isSaving}
                 onClick={() => {
                   const order = selectedOrders[0];
@@ -1249,7 +1261,11 @@ export function OrdersWorkspace() {
               <Button
                 type="button"
                 size="sm"
-                className="min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal"
+                className={cn(
+                  "min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal",
+                  tableSelectionActionStyles.print,
+                )}
+                variant="outline"
                 onClick={printSelectedOrders}
                 disabled={isPrinting}
               >
@@ -1306,7 +1322,10 @@ export function OrdersWorkspace() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="col-span-2 min-h-10 rounded-lg px-2 text-xs leading-tight text-destructive whitespace-normal hover:text-destructive"
+                className={cn(
+                  "col-span-2 min-h-10 rounded-lg px-2 text-xs leading-tight whitespace-normal",
+                  tableSelectionActionStyles.delete,
+                )}
                 disabled={isSaving}
                 onClick={() => setDeleteTarget(selectedOrders)}
               >
@@ -1506,54 +1525,67 @@ export function OrdersWorkspace() {
           deleteDisabled={isSaving}
           actions={
             <>
-              <Button variant="outline" size="sm" onClick={openMapView}>
-                <MapIcon className="h-4 w-4" />
-                {t("orders.actions.map")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={printSelectedOrders}
-                disabled={isPrinting}
-              >
-                <Printer className="h-4 w-4" />
-                {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
-              </Button>
-              <TableSelectionActionDivider />
-              <TableSelectionExpandableActionGroup
-                label={t("orders.actions.manageCompletion")}
-                icon={CheckCircle2}
-                expanded={completionExpanded}
-                onExpandedChange={setCompletionExpanded}
-                aria-label={t("orders.actions.completionGroup")}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isSaving}
-                  onClick={() => openCompletionConfirm(true)}
-                  className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  {t("orders.actions.markComplete")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isSaving}
-                  onClick={() => openCompletionConfirm(false)}
-                  className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
-                >
-                  <XCircle className="h-4 w-4" />
-                  {t("orders.actions.markIncomplete")}
-                </Button>
-              </TableSelectionExpandableActionGroup>
-              <TableSelectionActionDivider />
+              {!completionExpanded && !routesExpanded ? (
+                <>
+                  <Button variant="outline" size="sm" onClick={openMapView}>
+                    <MapIcon className="h-4 w-4" />
+                    {t("orders.actions.map")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={printSelectedOrders}
+                    disabled={isPrinting}
+                    className={cn("whitespace-nowrap", tableSelectionActionStyles.print)}
+                  >
+                    <Printer className="h-4 w-4" />
+                    {isPrinting ? t("orders.actions.preparing") : t("orders.actions.print")}
+                  </Button>
+                  <TableSelectionActionDivider />
+                </>
+              ) : null}
+              {!routesExpanded ? (
+                <>
+                  <TableSelectionExpandableActionGroup
+                    label={t("orders.actions.manageCompletion")}
+                    icon={CheckCircle2}
+                    expanded={completionExpanded}
+                    onExpandedChange={setCompletionExpanded}
+                    aria-label={t("orders.actions.completionGroup")}
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isSaving}
+                      onClick={() => openCompletionConfirm(true)}
+                      className="bg-emerald-500/5 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-300"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      {t("orders.actions.markComplete")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isSaving}
+                      onClick={() => openCompletionConfirm(false)}
+                      className="bg-amber-500/5 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-300"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      {t("orders.actions.markIncomplete")}
+                    </Button>
+                  </TableSelectionExpandableActionGroup>
+                  <TableSelectionActionDivider />
+                </>
+              ) : null}
               <TableSelectionExpandableActionGroup
                 label={t("orders.actions.manageRoutes")}
                 icon={RouteIcon}
                 expanded={routesExpanded}
-                onExpandedChange={setRoutesExpanded}
+                onExpandedChange={(expanded) => {
+                  setRoutesExpanded(expanded);
+                  // Completion sits to the left — collapse it when routes takes the row.
+                  if (expanded) setCompletionExpanded(false);
+                }}
                 aria-label={t("orders.actions.routeGroup")}
               >
                 <Button

@@ -87,6 +87,7 @@ import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
 import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { cn } from "@/lib/utils";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -601,7 +602,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={tableSelectionActionStyles.view}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.view)}
                 disabled={!selectedInvoiceTarget || isUpdating}
                 onClick={() => openSelectedInvoice()}
               >
@@ -612,7 +613,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={tableSelectionActionStyles.edit}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
                 disabled={!selectedInvoiceTarget || isUpdating}
                 onClick={() =>
                   openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })
@@ -625,7 +626,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={tableSelectionActionStyles.delete}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.delete)}
                 disabled={!selectedInvoiceTarget || isUpdating}
                 onClick={() =>
                   openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })
@@ -638,7 +639,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={tableSelectionActionStyles.edit}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
                 disabled={selectedIds.length === 0 || isUpdating}
                 onClick={() => {
                   setBulkError(null);
@@ -657,7 +658,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={tableSelectionActionStyles.edit}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
                 disabled={selectedIds.length === 0 || isUpdating}
                 onClick={() => {
                   setBulkError(null);
@@ -672,7 +673,7 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
-                className={tableSelectionActionStyles.edit}
+                className={cn("whitespace-nowrap", tableSelectionActionStyles.edit)}
                 disabled={assignRouteBarcodes.length === 0 || isUpdating}
                 onClick={() => setRouteDialogOpen(true)}
               >

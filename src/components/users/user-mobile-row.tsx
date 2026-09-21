@@ -13,6 +13,7 @@ import {
 } from "@/lib/users/display";
 import type { User } from "@/lib/users/types";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type UserMobileRowProps = {
@@ -96,14 +97,19 @@ export function UserMobileRow({
       </div>
 
       <div className={cn("mt-5 flex justify-end gap-2", selectionMode && "hidden")}>
-        <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => onEdit(user)}>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.edit)}
+          onClick={() => onEdit(user)}
+        >
           <Edit className="size-4" />
           {t("common.actions.edit")}
         </Button>
         <Button
           type="button"
           variant="outline"
-          className="h-11 rounded-xl text-destructive"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.delete)}
           onClick={() => onDeactivate(user)}
         >
           <UserX className="size-4" />

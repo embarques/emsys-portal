@@ -400,7 +400,7 @@ export function ChecksWorkspace() {
           actions={
             canUpdateChecks ? (
               <>
-                <TableSelectionActionDivider />
+                {!statusExpanded ? <TableSelectionActionDivider /> : null}
                 <TableSelectionExpandableActionGroup
                   label={t("accounting.checks.actions.manageStatus")}
                   icon={Banknote}

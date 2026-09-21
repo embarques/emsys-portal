@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatSupplierList, formatSupplierPhones } from "@/lib/inventory/display";
 import type { InventorySupplier } from "@/lib/inventory/types/suppliers";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type InventorySupplierMobileRowProps = {
@@ -82,14 +83,19 @@ export function InventorySupplierMobileRow({
       </div>
 
       <div className={cn("mt-5 flex justify-end gap-2", selectionMode && "hidden")}>
-        <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => onEdit(supplier)}>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.edit)}
+          onClick={() => onEdit(supplier)}
+        >
           <Edit className="size-4" />
           {t("common.actions.edit")}
         </Button>
         <Button
           type="button"
           variant="outline"
-          className="h-11 rounded-xl text-destructive"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.delete)}
           onClick={() => onDelete(supplier)}
         >
           <Trash2 className="size-4" />

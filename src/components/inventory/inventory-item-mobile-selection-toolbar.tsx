@@ -4,6 +4,8 @@ import { Edit, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { cn } from "@/lib/utils";
 
 type InventoryItemMobileSelectionToolbarProps = {
   selectedCount: number;
@@ -35,11 +37,24 @@ export function InventoryItemMobileSelectionToolbar({
             <X className="size-5" />
             <span className="sr-only">{t("common.table.clearSelection")}</span>
           </Button>
-          <Button type="button" variant="outline" size="icon" className="size-11 rounded-xl" disabled={!canEdit} onClick={onEdit}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn("size-11 rounded-xl", tableSelectionActionStyles.edit)}
+            disabled={!canEdit}
+            onClick={onEdit}
+          >
             <Edit className="size-5" />
             <span className="sr-only">{t("common.actions.edit")}</span>
           </Button>
-          <Button type="button" variant="outline" size="icon" className="size-11 rounded-xl text-destructive" onClick={onDelete}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn("size-11 rounded-xl", tableSelectionActionStyles.delete)}
+            onClick={onDelete}
+          >
             <Trash2 className="size-5" />
             <span className="sr-only">{t("common.actions.delete")}</span>
           </Button>

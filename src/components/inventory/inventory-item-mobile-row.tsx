@@ -5,6 +5,7 @@ import { Check, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { InventoryItem } from "@/lib/inventory/types";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 import { cn } from "@/lib/utils";
 
 type InventoryItemMobileRowProps = {
@@ -65,14 +66,19 @@ export function InventoryItemMobileRow({
       </div>
 
       <div className={cn("mt-5 flex justify-end gap-2", selectionMode && "hidden")}>
-        <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => onEdit(item)}>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.edit)}
+          onClick={() => onEdit(item)}
+        >
           <Edit className="size-4" />
           {t("common.actions.edit")}
         </Button>
         <Button
           type="button"
           variant="outline"
-          className="h-11 rounded-xl text-destructive"
+          className={cn("h-11 rounded-xl", tableSelectionActionStyles.delete)}
           onClick={() => onDelete(item)}
         >
           <Trash2 className="size-4" />

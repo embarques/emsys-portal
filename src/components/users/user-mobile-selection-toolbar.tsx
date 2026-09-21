@@ -4,6 +4,8 @@ import { Edit, UserX, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
+import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
+import { cn } from "@/lib/utils";
 
 type UserMobileSelectionToolbarProps = {
   selectedCount: number;
@@ -37,11 +39,25 @@ export function UserMobileSelectionToolbar({
             <X className="size-5" />
             <span className="sr-only">{t("common.table.clearSelection")}</span>
           </Button>
-          <Button type="button" variant="outline" size="icon" className="size-11 rounded-xl" disabled={!canEdit || disabled} onClick={onEdit}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn("size-11 rounded-xl", tableSelectionActionStyles.edit)}
+            disabled={!canEdit || disabled}
+            onClick={onEdit}
+          >
             <Edit className="size-5" />
             <span className="sr-only">{t("common.actions.edit")}</span>
           </Button>
-          <Button type="button" variant="outline" size="icon" className="size-11 rounded-xl text-destructive" disabled={disabled} onClick={onDeactivate}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn("size-11 rounded-xl", tableSelectionActionStyles.delete)}
+            disabled={disabled}
+            onClick={onDeactivate}
+          >
             <UserX className="size-5" />
             <span className="sr-only">{t("users.view.deactivate")}</span>
           </Button>
