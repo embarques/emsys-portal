@@ -259,19 +259,23 @@ function ReviewPriceTotals({
   }
 
   return (
-    <div className="space-y-2 border-t border-border pt-3 text-sm">
-      <div className="flex items-center justify-between gap-3">
+    <div className="mt-1 space-y-3 border-t border-border pt-4 text-sm">
+      <div className="flex items-center justify-between gap-4">
         <span className="text-muted-foreground">{t("invoices.wizard.summary.subtotal")}</span>
-        <ReviewWarningMoney amount={subtotal} warn={subtotal === 0} />
+        <span className="inline-flex min-w-[5.5rem] justify-end">
+          <ReviewWarningMoney amount={subtotal} warn={subtotal === 0} />
+        </span>
       </div>
       {showPayment ? (
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-4">
           <span className="text-muted-foreground">{t("invoices.wizard.summary.payment")}</span>
-          <ReviewWarningMoney amount={amountPaid} warn={amountPaid === 0} />
+          <span className="inline-flex min-w-[5.5rem] justify-end">
+            <ReviewWarningMoney amount={amountPaid} warn={amountPaid === 0} />
+          </span>
         </div>
       ) : null}
       {canApplyInvoiceDiscount ? (
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-4">
           <button
             type="button"
             id="invoice-wizard-preview-discount"
@@ -291,21 +295,27 @@ function ReviewPriceTotals({
             </span>
             <span className="min-w-0">{t("invoices.wizard.summary.discount")}</span>
           </button>
-          <span className="tabular-nums">{discount > 0 ? `−${formatInvoiceMoney(discount)}` : formatInvoiceMoney(0)}</span>
+          <span className="inline-flex min-w-[5.5rem] justify-end tabular-nums">
+            {discount > 0 ? `−${formatInvoiceMoney(discount)}` : formatInvoiceMoney(0)}
+          </span>
         </div>
       ) : discount > 0 ? (
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-4">
           <span className="text-muted-foreground">{t("invoices.wizard.summary.discount")}</span>
-          <span className="tabular-nums">−{formatInvoiceMoney(discount)}</span>
+          <span className="inline-flex min-w-[5.5rem] justify-end tabular-nums">
+            −{formatInvoiceMoney(discount)}
+          </span>
         </div>
       ) : null}
-      <div className="flex items-center justify-between gap-3 text-base font-semibold">
+      <div className="flex items-center justify-between gap-4 pt-1 text-base font-semibold">
         <span>{showPayment ? t("invoices.wizard.summary.balanceDue") : t("invoices.wizard.summary.total")}</span>
-        <ReviewWarningMoney
-          amount={showPayment ? balance : invoiceTotal}
-          warn={invoiceTotal === 0 || balance > 0}
-          error={isNegativeBalance}
-        />
+        <span className="inline-flex min-w-[5.5rem] justify-end">
+          <ReviewWarningMoney
+            amount={showPayment ? balance : invoiceTotal}
+            warn={invoiceTotal === 0 || balance > 0}
+            error={isNegativeBalance}
+          />
+        </span>
       </div>
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="z-[70] sm:max-w-sm">
@@ -687,21 +697,19 @@ function InvoiceWizardCheckoutReview({
                     const lineTotal = resolveLineTotal(item);
 
                     return (
-                      <article key={item.id} className="py-4 first:pt-0 last:pb-0">
-                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
-                          <div className="min-w-0">
+                      <article key={item.id} className="py-5 first:pt-1 last:pb-1">
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+                          <div className="min-w-0 space-y-2">
                             <p className="whitespace-normal break-words text-lg font-semibold leading-snug text-foreground">
                               {label}
                             </p>
-                            <p className="mt-3 text-base tabular-nums text-muted-foreground">
+                            <p className="text-base tabular-nums text-muted-foreground">
                               <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} /> x{" "}
                               {quantity || t("common.empty.dash")}
                             </p>
-                            <div className="mt-1">
-                              <ReviewLineItemLabels count={resolveLineLabelCount(item)} />
-                            </div>
+                            <ReviewLineItemLabels count={resolveLineLabelCount(item)} />
                           </div>
-                          <p className="shrink-0 text-lg font-semibold tabular-nums text-foreground">
+                          <p className="shrink-0 self-center text-lg font-semibold tabular-nums text-foreground">
                             <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
                           </p>
                         </div>
@@ -711,14 +719,29 @@ function InvoiceWizardCheckoutReview({
                 </div>
               ) : (
                 <div className="overflow-x-auto rounded-lg border">
-                  <table className="w-full min-w-[36rem] table-fixed text-sm">
-                    <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <table className="w-full min-w-[36rem] text-sm">
+                    <colgroup>
+                      <col className="w-auto" />
+                      <col className="w-[4.5rem]" />
+                      <col className="w-[5.5rem]" />
+                      <col className="w-[7.5rem]" />
+                      <col className="w-[7.5rem]" />
+                    </colgroup>
+                    <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                       <tr>
-                        <th className="w-[44%] px-4 py-3 font-medium">{t("invoices.wizard.review.table.item")}</th>
-                        <th className="w-[10%] px-4 py-3 font-medium">{t("invoices.wizard.review.table.qty")}</th>
-                        <th className="w-[14%] px-4 py-3 font-medium">{t("invoices.wizard.review.table.labels")}</th>
-                        <th className="w-[16%] px-4 py-3 font-medium">{t("invoices.wizard.review.table.unitPrice")}</th>
-                        <th className="w-[16%] px-4 py-3 font-medium text-right">
+                        <th className="px-4 py-3 text-left font-medium">
+                          {t("invoices.wizard.review.table.item")}
+                        </th>
+                        <th className="px-3 py-3 text-right font-medium">
+                          {t("invoices.wizard.review.table.qty")}
+                        </th>
+                        <th className="px-3 py-3 text-right font-medium">
+                          {t("invoices.wizard.review.table.labels")}
+                        </th>
+                        <th className="px-3 py-3 text-right font-medium">
+                          {t("invoices.wizard.review.table.unitPrice")}
+                        </th>
+                        <th className="px-4 py-3 text-right font-medium">
                           {t("invoices.wizard.review.table.subtotal")}
                         </th>
                       </tr>
@@ -735,15 +758,15 @@ function InvoiceWizardCheckoutReview({
                         const lineTotal = resolveLineTotal(item);
                         return (
                           <tr key={item.id} className="border-b last:border-b-0">
-                            <td className="px-4 py-3 align-top">
+                            <td className="px-4 py-4 align-middle">
                               <p className="whitespace-normal break-words font-medium leading-snug text-foreground">
                                 {label}
                               </p>
                             </td>
-                            <td className="whitespace-nowrap px-4 py-3 align-top text-muted-foreground">
+                            <td className="whitespace-nowrap px-3 py-4 align-middle text-right tabular-nums text-muted-foreground">
                               {item.quantity || t("common.empty.dash")}
                             </td>
-                            <td className="whitespace-nowrap px-4 py-3 align-top text-muted-foreground">
+                            <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-muted-foreground">
                               {labelCount > 0 ? (
                                 <span className="tabular-nums">{labelCount}</span>
                               ) : (
@@ -752,10 +775,10 @@ function InvoiceWizardCheckoutReview({
                                 </InvoiceWizardReviewOptionalMissing>
                               )}
                             </td>
-                            <td className="whitespace-nowrap px-4 py-3 align-top text-muted-foreground">
+                            <td className="whitespace-nowrap px-3 py-4 align-middle text-right tabular-nums text-muted-foreground">
                               <ReviewWarningMoney amount={unitPrice} warn={unitPrice === 0} />
                             </td>
-                            <td className="whitespace-nowrap px-4 py-3 align-top text-right font-medium">
+                            <td className="whitespace-nowrap px-4 py-4 align-middle text-right font-medium tabular-nums">
                               <ReviewWarningMoney amount={lineTotal} warn={lineTotal === 0} />
                             </td>
                           </tr>
