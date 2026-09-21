@@ -15,6 +15,8 @@
     "changeStatus": "Change status",
     "changeContainer": "Transfer container",
     "assignRoute": "Assign route",
+    "openInvoice": "Open invoice",
+    "noInvoice": "This barcode is not linked to an invoice.",
     "statusTitle": "Change barcode status",
     "statusDescription": "Update status for {{count}} selected barcode(s).",
     "containerTitle": "Transfer container",
@@ -109,6 +111,7 @@
     },
     "barcodeId": "Barcode ID",
     "previousStatus": "Previous status",
+    "manageViaInvoiceTitle": "Managed from the invoice",
     "manageViaInvoice": "Create, edit, or delete barcodes by editing the related invoice."
   },
   "dialogs": {

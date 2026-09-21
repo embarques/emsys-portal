@@ -73,6 +73,10 @@ type Props = {
    * before continuing — same click-Next-then-error pattern as other steps.
    */
   requireDailyIncomeRegistration?: boolean;
+  /** Open on this wizard step (1–5). Defaults to 1. */
+  initialWizardStep?: number;
+  /** Open the matching line item in edit mode when landing on step 3. */
+  requestEditLineItemId?: string | null;
   onSubmit: (
     values: InvoiceFormValues,
     context?: InvoiceFormSubmitContext,
@@ -83,6 +87,16 @@ type Props = {
   onCancel: () => void;
 };
 
+function resolveInitialWizardStep(
+  step: number | undefined,
+  requireDailyIncomeRegistration: boolean,
+): InvoiceWizardStep {
+  if (step == null || !Number.isFinite(step)) return 1;
+  const max = requireDailyIncomeRegistration ? 5 : 4;
+  const clamped = Math.min(Math.max(Math.trunc(step), 1), max);
+  return clamped as InvoiceWizardStep;
+}
+
 export function InvoiceFormWizard({
   initialValues,
   submitLabel,
@@ -91,6 +105,8 @@ export function InvoiceFormWizard({
   isSubmitting = false,
   resetAfterSave = true,
   requireDailyIncomeRegistration = false,
+  initialWizardStep,
+  requestEditLineItemId = null,
   onSubmit,
   onSaved,
   onPrint,
@@ -101,7 +117,9 @@ export function InvoiceFormWizard({
   const { hasPermission } = useAuth();
   const isMobileLayout = useIsMobileViewport();
   const currentUserQuery = useCurrentUser();
-  const [step, setStep] = useState<InvoiceWizardStep>(1);
+  const [step, setStep] = useState<InvoiceWizardStep>(() =>
+    resolveInitialWizardStep(initialWizardStep, requireDailyIncomeRegistration),
+  );
   const [values, setValues] = useState<InvoiceFormValues>(
     initialValues ?? createEmptyInvoiceForm(),
   );
@@ -423,6 +441,7 @@ export function InvoiceFormWizard({
       onCancel={onCancel}
       focusFieldId={focusFieldId}
       focusFieldKey={focusFieldKey}
+      requestEditLineItemId={step === 3 ? requestEditLineItemId : null}
     />
   );
 

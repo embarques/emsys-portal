@@ -3,15 +3,19 @@
 import { useMemo, useState } from "react";
 import {
   Container as ContainerIcon,
+  FileText,
   PackageCheck,
+  Pencil,
   Printer,
   Route as RouteIcon,
   ScanBarcode,
   Tag,
+  Trash2,
   Truck,
 } from "lucide-react";
 
 import { BarcodeViewSheet } from "@/components/barcodes/barcode-view-sheet";
+import { InvoiceEditWizard } from "@/components/invoices/invoice-form-workspace";
 import { DataTable } from "@/components/app-shell/data-table";
 import { TablePaginationControls } from "@/components/app-shell/table-pagination-controls";
 import { DirectoryTableLoader } from "@/components/app-shell/directory-table-loader";
@@ -71,11 +75,13 @@ import {
 } from "@/lib/barcodes/types";
 import { formatContainerLabel } from "@/lib/containers/display";
 import { useContainerPicker } from "@/lib/containers/hooks/use-containers";
+import { formatInvoiceTabLabel } from "@/lib/invoices/display";
 import type { BarcodeUpdate } from "@/lib/labels/api/barcodes-api";
 import { useUpdateBarcodes } from "@/lib/labels/hooks/use-barcodes";
 import { useBarcodeStatusOptions } from "@/lib/labels/hooks/use-label-display";
 import { getBarcodeStatusLabel } from "@/lib/labels/display";
 import { FALLBACK_BARCODE_STATUS_OPTIONS } from "@/lib/labels/types";
+import { useWorkspaceTabs } from "@/lib/layout/hooks/use-workspace-tabs";
 import type { DataTableColumn } from "@/lib/table/types";
 import { useTablePageSize } from "@/lib/table/hooks/use-table-page-size";
 import { useTableSort } from "@/lib/table/use-table-sort";
@@ -83,6 +89,9 @@ import { buildToolbarSearchSummary } from "@/lib/table/list-summary";
 import { tableSelectionActionStyles } from "@/lib/table/selection-action-styles";
 
 const SEARCH_DEBOUNCE_MS = 300;
+
+const invoiceWizardDialogClassName =
+  "left-0 top-0 flex h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none border-0 p-0 max-sm:[&>button:last-child]:hidden sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border";
 
 const defaultFilters: BarcodeFilterState = {
   query: "",
@@ -94,6 +103,7 @@ export function BarcodesWorkspace() {
   const { toErrorMessage } = useUserError();
   const barcodeFilterFields = useBarcodeFilterFields();
   const { notifyUpdated, notifyError } = useFeedback();
+  const { openFormTab, isDesktopTabs } = useWorkspaceTabs();
   const barcodeStatusOptions = useBarcodeStatusOptions();
   const { data: containersData } = useContainerPicker(200);
   const containers = containersData?.items ?? [];
@@ -107,6 +117,12 @@ export function BarcodesWorkspace() {
   const { page, setPage, pageSize, pageLimit, changePageSize, rememberTotal } = useTablePageSize();
   const { sort, onSortChange } = useTableSort(DEFAULT_BARCODE_LIST_PARAMS.sort, () => setPage(1));
   const [viewBarcode, setViewBarcode] = useState<Barcode | null>(null);
+  const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
+  const [editInvoiceInitialStep, setEditInvoiceInitialStep] = useState<number | undefined>(undefined);
+  const [editInvoiceFocusBarcodeId, setEditInvoiceFocusBarcodeId] = useState<string | undefined>(
+    undefined,
+  );
+  const [editInvoiceFormNonce, setEditInvoiceFormNonce] = useState(0);
 
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [containerDialogOpen, setContainerDialogOpen] = useState(false);
@@ -185,6 +201,63 @@ export function BarcodesWorkspace() {
         })),
     [selectedBarcodes],
   );
+
+  const selectedInvoiceTarget = useMemo(() => {
+    if (selectedBarcodes.length !== 1) return null;
+    const barcode = selectedBarcodes[0];
+    const invoiceId = barcode.invoiceId?.trim();
+    if (!invoiceId) return null;
+    const focusBarcodeId =
+      barcode.barcodeId?.trim() ||
+      barcode.number.trim() ||
+      (barcode.id > 0 ? String(barcode.id) : "");
+    return {
+      invoiceId,
+      invoiceNumber: barcode.invoiceNumber?.trim() || "",
+      focusBarcodeId: focusBarcodeId || undefined,
+    };
+  }, [selectedBarcodes]);
+
+  function openSelectedInvoice(options?: {
+    initialWizardStep?: number;
+    focusBarcode?: boolean;
+  }) {
+    if (!selectedInvoiceTarget) {
+      notifyError(t("barcodes.bulk.noInvoice"));
+      return;
+    }
+
+    setViewBarcode(null);
+
+    const focusBarcodeId = options?.focusBarcode
+      ? selectedInvoiceTarget.focusBarcodeId
+      : undefined;
+    const initialWizardStep = options?.initialWizardStep;
+    const formNonce = Date.now();
+
+    const label = formatInvoiceTabLabel(
+      { invoiceNumber: selectedInvoiceTarget.invoiceNumber },
+      t("invoices.workspace.untitledTab"),
+    );
+
+    if (isDesktopTabs) {
+      openFormTab({
+        feature: "invoices",
+        baseHref: "/invoices",
+        mode: "edit",
+        entityId: selectedInvoiceTarget.invoiceId,
+        label,
+        ...(initialWizardStep != null ? { initialWizardStep } : {}),
+        ...(focusBarcodeId ? { focusBarcodeId } : {}),
+      });
+      return;
+    }
+
+    setEditInvoiceInitialStep(initialWizardStep);
+    setEditInvoiceFocusBarcodeId(focusBarcodeId);
+    setEditInvoiceFormNonce(formNonce);
+    setEditInvoiceId(selectedInvoiceTarget.invoiceId);
+  }
 
   function toggleSelectAll(checked: boolean) {
     if (checked) {
@@ -528,6 +601,43 @@ export function BarcodesWorkspace() {
                 type="button"
                 size="sm"
                 variant="outline"
+                className={tableSelectionActionStyles.view}
+                disabled={!selectedInvoiceTarget || isUpdating}
+                onClick={() => openSelectedInvoice()}
+              >
+                <FileText className="h-4 w-4" />
+                {t("barcodes.bulk.openInvoice")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className={tableSelectionActionStyles.edit}
+                disabled={!selectedInvoiceTarget || isUpdating}
+                onClick={() =>
+                  openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })
+                }
+              >
+                <Pencil className="h-4 w-4" />
+                {t("common.actions.edit")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className={tableSelectionActionStyles.delete}
+                disabled={!selectedInvoiceTarget || isUpdating}
+                onClick={() =>
+                  openSelectedInvoice({ initialWizardStep: 3, focusBarcode: true })
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+                {t("common.actions.delete")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
                 className={tableSelectionActionStyles.edit}
                 disabled={selectedIds.length === 0 || isUpdating}
                 onClick={() => {
@@ -722,6 +832,47 @@ export function BarcodesWorkspace() {
           }
         }}
       />
+
+      <Dialog
+        open={editInvoiceId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditInvoiceId(null);
+            setEditInvoiceInitialStep(undefined);
+            setEditInvoiceFocusBarcodeId(undefined);
+          }
+        }}
+      >
+        <DialogContent className={invoiceWizardDialogClassName}>
+          <DialogHeader className="hidden shrink-0 border-b border-border px-5 py-4 sm:block sm:px-6">
+            <DialogTitle>
+              {selectedInvoiceTarget?.invoiceNumber
+                ? t("invoices.workspace.editInvoiceNamed", {
+                    number: formatInvoiceTabLabel(
+                      { invoiceNumber: selectedInvoiceTarget.invoiceNumber },
+                      t("invoices.workspace.untitledTab"),
+                    ),
+                  })
+                : t("invoices.workspace.editInvoice")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {editInvoiceId ? (
+              <InvoiceEditWizard
+                invoiceId={editInvoiceId}
+                onCancel={() => {
+                  setEditInvoiceId(null);
+                  setEditInvoiceInitialStep(undefined);
+                  setEditInvoiceFocusBarcodeId(undefined);
+                }}
+                initialWizardStep={editInvoiceInitialStep}
+                focusBarcodeId={editInvoiceFocusBarcodeId}
+                formNonce={editInvoiceFormNonce}
+              />
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

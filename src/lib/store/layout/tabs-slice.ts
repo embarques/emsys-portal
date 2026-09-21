@@ -207,6 +207,18 @@ const tabsSlice = createSlice({
       tab.label = action.payload.label;
       persistTabs(state);
     },
+    patchWorkspaceTabForm(
+      state,
+      action: PayloadAction<{
+        id: string;
+        form: Partial<Pick<WorkspaceTabForm, "initialWizardStep" | "focusBarcodeId" | "formNonce">>;
+      }>,
+    ) {
+      const tab = state.tabs.find((entry) => entry.id === action.payload.id);
+      if (!tab?.form) return;
+      tab.form = { ...tab.form, ...action.payload.form };
+      persistTabs(state);
+    },
     updateWorkspaceTabColor(
       state,
       action: PayloadAction<{ id: string; color: string | null; swapWithSections?: boolean }>,
@@ -306,6 +318,7 @@ export const {
   openWorkspaceTab,
   setActiveWorkspaceTab,
   updateWorkspaceTabLabel,
+  patchWorkspaceTabForm,
   updateWorkspaceTabColor,
   closeWorkspaceTab,
   closeOtherWorkspaceTabs,

@@ -46,6 +46,7 @@ import {
   invoiceToFormValues,
   areInvoiceFormValuesEquivalent,
   isInvoiceEmployeePickupSource,
+  type Invoice,
   type InvoiceFormSubmitResult,
   type InvoiceFormValues,
 } from "@/lib/invoices/types";
@@ -70,6 +71,9 @@ type InvoiceWizardShellProps = {
   resetAfterSave?: boolean;
   requireDailyIncomeRegistration?: boolean;
   isSubmitting?: boolean;
+  initialWizardStep?: number;
+  requestEditLineItemId?: string | null;
+  formNonce?: number;
   onSubmit: (
     values: InvoiceFormValues,
     context?: InvoiceFormSubmitContext,
@@ -89,6 +93,9 @@ function InvoiceWizardShell({
   resetAfterSave = true,
   requireDailyIncomeRegistration = false,
   isSubmitting = false,
+  initialWizardStep,
+  requestEditLineItemId,
+  formNonce,
   onSubmit,
   onSaved,
   onPrint,
@@ -113,13 +120,15 @@ function InvoiceWizardShell({
       <div className="mx-auto flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-x-hidden md:block md:max-w-6xl">
         <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden overflow-x-hidden bg-card md:max-h-[calc(100vh-11rem)] md:rounded-xl md:border md:border-border md:shadow-sm">
           <InvoiceFormWizard
-            key={initialValues.invoiceId || "new"}
+            key={`${initialValues.invoiceId || "new"}:${formNonce ?? 0}:${initialWizardStep ?? 1}`}
             initialValues={initialValues}
             submitLabel={submitLabel}
             allowPrint={allowPrint}
             resetAfterSave={resetAfterSave}
             requireDailyIncomeRegistration={requireDailyIncomeRegistration}
             isSubmitting={isSubmitting}
+            initialWizardStep={initialWizardStep}
+            requestEditLineItemId={requestEditLineItemId}
             onSubmit={onSubmit}
             onSaved={onSaved}
             onPrint={onPrint}
@@ -308,12 +317,33 @@ type InvoiceEditWizardProps = {
   invoiceId: string;
   onCancel: () => void;
   submitLabel?: string;
+  initialWizardStep?: number;
+  focusBarcodeId?: string;
+  formNonce?: number;
 };
+
+function findLineItemIdForBarcodeFocus(invoice: Invoice, focusBarcodeId: string): string | null {
+  const target = focusBarcodeId.trim();
+  if (!target) return null;
+
+  for (const item of invoice.lineItems) {
+    for (const barcode of item.barcodes ?? []) {
+      const objectId = barcode.barcodeId?.trim();
+      if (objectId && objectId === target) return item.id;
+      if (barcode.id.trim() === target) return item.id;
+      if (barcode.number.trim() === target) return item.id;
+    }
+  }
+  return null;
+}
 
 export function InvoiceEditWizard({
   invoiceId,
   onCancel,
   submitLabel = "Save changes",
+  initialWizardStep,
+  focusBarcodeId,
+  formNonce,
 }: InvoiceEditWizardProps) {
   const { t } = useTranslation();
   const { notifyUpdated, notifySuccess, notifyError } = useFeedback();
@@ -468,6 +498,13 @@ export function InvoiceEditWizard({
         allowPrint
         resetAfterSave={false}
         isSubmitting={updateMutation.isPending || isSyncingBarcodes}
+        initialWizardStep={initialWizardStep}
+        requestEditLineItemId={
+          focusBarcodeId
+            ? findLineItemIdForBarcodeFocus(invoiceQuery.data, focusBarcodeId)
+            : null
+        }
+        formNonce={formNonce}
         onSubmit={handleSubmit}
         onSaved={onCancel}
         onPrint={handlePrint}
@@ -498,7 +535,14 @@ export function InvoiceEditWizard({
   );
 }
 
-export function InvoiceFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHostProps) {
+export function InvoiceFormWorkspace({
+  tabId,
+  mode,
+  entityId,
+  initialWizardStep,
+  focusBarcodeId,
+  formNonce,
+}: WorkspaceFormHostProps) {
   const isEditing = mode === "edit";
   const { t } = useTranslation();
   const { closeFormTabAndReturn } = useWorkspaceTabs();
@@ -527,7 +571,15 @@ export function InvoiceFormWorkspace({ tabId, mode, entityId }: WorkspaceFormHos
       );
     }
 
-    return <InvoiceEditWizard invoiceId={entityId} onCancel={returnToInvoices} />;
+    return (
+      <InvoiceEditWizard
+        invoiceId={entityId}
+        onCancel={returnToInvoices}
+        initialWizardStep={initialWizardStep}
+        focusBarcodeId={focusBarcodeId}
+        formNonce={formNonce}
+      />
+    );
   }
 
   return <InvoiceCreateWizard onCancel={returnToInvoices} />;

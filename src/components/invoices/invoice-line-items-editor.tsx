@@ -18,7 +18,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useFeedback } from "@/components/app-shell/feedback-provider";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,8 @@ type InvoiceLineItemsEditorProps = {
   appearance?: "default" | "wizard" | "phoneWizard";
   onChange: (lineItems: InvoiceLineItemFormValues[]) => void;
   requestFocusKey?: number;
+  /** Open this committed line item in the edit draft when set. */
+  requestEditLineItemId?: string | null;
 };
 
 type LineItemFieldHandlers = {
@@ -905,6 +907,7 @@ function InvoiceLineItemsWizardEditor({
   catalogItems,
   isPhoneWizard = false,
   requestFocusKey = 0,
+  requestEditLineItemId = null,
   onChange,
 }: Omit<InvoiceLineItemsEditorProps, "appearance"> & { isPhoneWizard?: boolean }) {
   const { t } = useTranslation();
@@ -920,7 +923,7 @@ function InvoiceLineItemsWizardEditor({
 
   const [draft, setDraft] = useState<InvoiceLineItemFormValues | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [focusDescription, setFocusDescription] = useState(true);
+  const [focusDescription, setFocusDescription] = useState(false);
   const clearFocusDescription = useCallback(() => setFocusDescription(false), []);
   const activeDraft = draft ?? createEmptyInvoiceLineItem();
   const isDraftOpen = draft !== null || Boolean(editingId);
@@ -931,6 +934,24 @@ function InvoiceLineItemsWizardEditor({
     setEditingId(null);
     setFocusDescription(true);
   }, [requestFocusKey]);
+
+  const appliedEditRequestRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const targetId = requestEditLineItemId?.trim() || null;
+    if (!targetId) {
+      appliedEditRequestRef.current = null;
+      return;
+    }
+    if (appliedEditRequestRef.current === targetId) return;
+    const item = committedItems.find((entry) => entry.id === targetId);
+    if (!item) return;
+    appliedEditRequestRef.current = targetId;
+    setDraft({ ...item });
+    setEditingId(item.id);
+    setFocusDescription(false);
+  }, [committedItems, requestEditLineItemId]);
+
   const duplicateCommittedItem = findInvoiceLineItemWithDescription(
     committedItems,
     activeDraft.itemName,
@@ -954,7 +975,7 @@ function InvoiceLineItemsWizardEditor({
   function resetDraft() {
     setDraft(null);
     setEditingId(null);
-    setFocusDescription(true);
+    setFocusDescription(false);
   }
 
   function commitDraft() {
@@ -984,7 +1005,7 @@ function InvoiceLineItemsWizardEditor({
     if (!item) return;
     setDraft({ ...item });
     setEditingId(id);
-    setFocusDescription(true);
+    setFocusDescription(false);
   }
 
   function removeCommittedItem(id: string) {
@@ -1161,6 +1182,7 @@ export function InvoiceLineItemsEditor({
   appearance = "default",
   onChange,
   requestFocusKey = 0,
+  requestEditLineItemId = null,
 }: InvoiceLineItemsEditorProps) {
   const labels = useLineItemLabels();
   const isPhoneWizard = appearance === "phoneWizard";
@@ -1186,6 +1208,7 @@ export function InvoiceLineItemsEditor({
         catalogItems={catalogItems}
         isPhoneWizard={isPhoneWizard}
         requestFocusKey={requestFocusKey}
+        requestEditLineItemId={requestEditLineItemId}
         onChange={onChange}
       />
     );

@@ -23,6 +23,17 @@ export type WorkspaceTabForm = {
    * the tab is opened from the order form's "New" party actions.
    */
   customerType?: number;
+  /**
+   * Invoice wizard step to open on (1 details, 2 parties, 3 line items, …).
+   * Used when deep-linking from barcodes into the line-items step.
+   */
+  initialWizardStep?: number;
+  /**
+   * Prefer focusing / editing the line item that owns this barcode id or number.
+   */
+  focusBarcodeId?: string;
+  /** Bumped when re-opening an existing form tab so the wizard remounts at a new step. */
+  formNonce?: number;
 };
 
 export type WorkspaceTab = {

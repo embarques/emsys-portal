@@ -18,6 +18,7 @@ import {
   findFormTab,
   findTabByHref,
   openWorkspaceTab,
+  patchWorkspaceTabForm,
   resetWorkspaceTabs,
   setActiveWorkspaceTab,
   updateWorkspaceTabColor,
@@ -119,6 +120,10 @@ export function useWorkspaceTabs() {
       label: string;
       /** Preset/locked customer type when opening the customers add form for a party. */
       customerType?: number;
+      /** Invoice wizard step to land on (e.g. 3 = line items). */
+      initialWizardStep?: number;
+      /** Focus the line item that owns this barcode id/number when editing an invoice. */
+      focusBarcodeId?: string;
     }) => {
       if (!isDesktopTabs) {
         router.push(params.baseHref);
@@ -134,6 +139,25 @@ export function useWorkspaceTabs() {
         params.customerType,
       );
       if (existing) {
+        if (
+          params.initialWizardStep != null ||
+          params.focusBarcodeId != null
+        ) {
+          dispatch(
+            patchWorkspaceTabForm({
+              id: existing.id,
+              form: {
+                ...(params.initialWizardStep != null
+                  ? { initialWizardStep: params.initialWizardStep }
+                  : {}),
+                ...(params.focusBarcodeId != null
+                  ? { focusBarcodeId: params.focusBarcodeId }
+                  : { focusBarcodeId: undefined }),
+                formNonce: Date.now(),
+              },
+            }),
+          );
+        }
         dispatch(setActiveWorkspaceTab(existing.id));
         navigateToTab(existing);
         return;
@@ -154,6 +178,13 @@ export function useWorkspaceTabs() {
             entityId: params.entityId,
             returnToTabId,
             ...(params.customerType != null ? { customerType: params.customerType } : {}),
+            ...(params.initialWizardStep != null
+              ? { initialWizardStep: params.initialWizardStep }
+              : {}),
+            ...(params.focusBarcodeId != null
+              ? { focusBarcodeId: params.focusBarcodeId }
+              : {}),
+            formNonce: Date.now(),
           },
         }),
       );

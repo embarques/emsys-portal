@@ -124,6 +124,8 @@ type InvoiceFormProps = {
   /** Focus this field after a wizard validation error. */
   focusFieldId?: string | null;
   focusFieldKey?: number;
+  /** Open this line item in edit mode when the line-items step mounts. */
+  requestEditLineItemId?: string | null;
 };
 
 type PartySide = "sender" | "receiver";
@@ -230,6 +232,7 @@ export function InvoiceForm({
   onContinue,
   focusFieldId = null,
   focusFieldKey = 0,
+  requestEditLineItemId = null,
 }: InvoiceFormProps) {
   const { t } = useTranslation();
   const isPhoneWizard = appearance === "phoneWizard";
@@ -1171,6 +1174,7 @@ export function InvoiceForm({
                 requestFocusKey={
                   focusFieldId === INVOICE_WIZARD_FIELDS.lineItems ? focusFieldKey : 0
                 }
+                requestEditLineItemId={requestEditLineItemId}
               />
             ) : (
               <FormSection icon={ClipboardList} title={t("invoices.form.sections.description")}>
