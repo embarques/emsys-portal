@@ -745,7 +745,7 @@ export function CustomersWorkspace() {
         }}
       >
         <DialogContent
-          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl max-md:inset-0 max-md:h-[100dvh] max-md:max-h-none max-md:w-screen max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:border-0"
+          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-6xl max-md:inset-0 max-md:h-[100dvh] max-md:max-h-none max-md:w-screen max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:border-0"
           onOpenAutoFocus={
             formMode === "edit" ? (event) => event.preventDefault() : undefined
           }

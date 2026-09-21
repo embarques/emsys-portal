@@ -113,6 +113,14 @@
     "addDescription": "Crear un nuevo registro de cliente.",
     "noChanges": "No hay cambios de cliente para guardar.",
     "notFound": "No se encontró este cliente.",
+    "workflow": {
+      "requiredHint": "* Campos obligatorios",
+      "keyboardHint": "Enter avanza al siguiente campo · Tab recorre los controles",
+      "contactTitle": "Cliente y contacto",
+      "contactHint": "Confirma el nombre del cliente y su teléfono de contacto.",
+      "addressHint": "Agrega una dirección cuando sea necesario. Marca la principal con la estrella.",
+      "additionalTitle": "Detalles adicionales · Opcionales"
+    },
     "sections": {
       "general": "General",
       "phones": "Teléfonos",

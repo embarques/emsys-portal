@@ -133,6 +133,7 @@ export function CustomerFormWorkspace({
 
   return (
     <FormTabShell
+      className="max-w-6xl"
       title={isEditing ? t("customers.form.editTitle") : t("customers.form.addTitle")}
       description={
         isEditing && editingCustomer ? editingCustomer.name : t("customers.form.addDescription")
