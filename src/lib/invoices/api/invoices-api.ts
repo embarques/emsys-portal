@@ -32,6 +32,7 @@ import { getPhoneAtDisplayIndex, getPrimaryPhoneNumber } from "@/lib/phones/phon
 import { INVOICE_TABLE_FILTER_FIELDS } from "@/lib/invoices/filter-fields";
 import { expandInvoiceFilterNode } from "@/lib/invoices/invoice-filters";
 import { createInvoiceBarSearchFilterGroup } from "@/lib/invoices/search-fields";
+import type { InvoiceRemoveBarcodeIdsByDetail } from "@/lib/invoices/barcode-sync";
 import { isCompleteFilterRow } from "@/lib/table/filter-builder";
 import { parseLastSyncedAt } from "@/lib/legacy-sync/last-synced";
 import { formatPickupCommentSummary } from "@/lib/orders/display";
@@ -1289,6 +1290,11 @@ type ApiInvoiceDetailWriteRef = {
   labels: number;
   price: number;
   total: number;
+  /**
+   * ObjectID `barcodeId` values to delete when `labels` is lowered.
+   * Required by the API: length must equal currentCount - labels.
+   */
+  removeBarcodeIds?: string[];
 };
 
 type ApiInvoiceRouteWriteRef = {
@@ -1360,6 +1366,7 @@ function buildInvoiceCustomerWriteRef(
 function buildInvoiceDetailWriteRef(
   lineItem: InvoiceLineItemFormValues,
   index: number,
+  removeBarcodeIdsByDetail?: InvoiceRemoveBarcodeIdsByDetail,
 ): ApiInvoiceDetailWriteRef {
   const name = lineItem.itemName.trim();
   if (!name) {
@@ -1395,6 +1402,14 @@ function buildInvoiceDetailWriteRef(
   const persistedId = lineItem.id.trim();
   if (/^[a-f\d]{24}$/i.test(persistedId)) {
     detail.id = persistedId;
+  }
+
+  const removalKey = detail.id ?? persistedId;
+  const removeBarcodeIds = removalKey
+    ? removeBarcodeIdsByDetail?.[removalKey]?.map((id) => id.trim()).filter(Boolean)
+    : undefined;
+  if (removeBarcodeIds && removeBarcodeIds.length > 0) {
+    detail.removeBarcodeIds = removeBarcodeIds;
   }
 
   return detail;
@@ -1472,7 +1487,11 @@ function deriveInvoicePaidStatus(cost: number, discount: number, payment: number
 function buildInvoiceWritePayload(
   values: InvoiceFormValues,
   context: InvoiceWriteContext,
-  options: { isUpdate?: boolean; requireIncomeStatement?: boolean } = {},
+  options: {
+    isUpdate?: boolean;
+    requireIncomeStatement?: boolean;
+    removeBarcodeIdsByDetail?: InvoiceRemoveBarcodeIdsByDetail;
+  } = {},
 ): ApiInvoiceWritePayload {
   const invoiceNumber = values.invoiceNumber.trim();
   if (!invoiceNumber) {
@@ -1500,7 +1519,9 @@ function buildInvoiceWritePayload(
     throw new Error("At least one line item is required.");
   }
 
-  const invoiceDetails = lineItems.map((item, index) => buildInvoiceDetailWriteRef(item, index));
+  const invoiceDetails = lineItems.map((item, index) =>
+    buildInvoiceDetailWriteRef(item, index, options.removeBarcodeIdsByDetail),
+  );
   const lineItemCost = Math.round(invoiceDetails.reduce((sum, item) => sum + item.total, 0) * 100) / 100;
   const discount = Number(values.discount);
   const registered = context.registeredInvoiceTotals;
@@ -1624,9 +1645,13 @@ export async function updateInvoice(
   invoiceId: string,
   values: InvoiceFormValues,
   context: InvoiceWriteContext,
+  options: { removeBarcodeIdsByDetail?: InvoiceRemoveBarcodeIdsByDetail } = {},
 ): Promise<Invoice> {
   const id = parseInvoicePathId(invoiceId);
-  const payload = buildInvoiceWritePayload(values, context, { isUpdate: true });
+  const payload = buildInvoiceWritePayload(values, context, {
+    isUpdate: true,
+    removeBarcodeIdsByDetail: options.removeBarcodeIdsByDetail,
+  });
 
   if (process.env.NODE_ENV === "development") {
     // Temporary diagnostics for verifying invoice line-item persistence.
@@ -1639,6 +1664,7 @@ export async function updateInvoice(
         labels: detail.labels,
         price: detail.price,
         total: detail.total,
+        removeBarcodeIds: detail.removeBarcodeIds,
       })),
     });
   }

@@ -145,8 +145,15 @@ export function useUpdateInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { invoiceId: string; values: InvoiceFormValues; context: InvoiceWriteContext }) =>
-      updateInvoice(input.invoiceId, input.values, input.context),
+    mutationFn: (input: {
+      invoiceId: string;
+      values: InvoiceFormValues;
+      context: InvoiceWriteContext;
+      removeBarcodeIdsByDetail?: Record<string, string[]>;
+    }) =>
+      updateInvoice(input.invoiceId, input.values, input.context, {
+        removeBarcodeIdsByDetail: input.removeBarcodeIdsByDetail,
+      }),
     onSuccess: (invoice) =>
       Promise.all([
         invalidateInvoices(queryClient),

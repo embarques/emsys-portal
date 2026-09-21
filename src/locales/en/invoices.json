@@ -618,6 +618,7 @@
     "decreaseTitle": "Select barcodes to remove",
     "decreaseDescription": "You reduced the label count on one or more line items. Choose which specific barcodes to delete. Remaining barcodes stay on the invoice.",
     "decreasePick": "Select {{remove}} of {{from}} to delete ({{to}} will remain).",
-    "confirmDelete": "Delete selected barcodes"
+    "confirmDelete": "Delete selected barcodes",
+    "missingObjectIds": "This line item is missing ObjectID barcode ids, so labels cannot be reduced until barcodes are reloaded from the invoice."
   }
 }

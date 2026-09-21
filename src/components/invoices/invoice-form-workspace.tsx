@@ -29,10 +29,7 @@ import {
 } from "@/lib/invoices/hooks/use-invoices";
 import { usePrintInvoices } from "@/lib/invoices/hooks/use-print-invoices";
 import type { InvoiceWriteContext, InvoiceWriteEmployeeRef } from "@/lib/invoices/api/invoices-api";
-import {
-  applyInvoiceBarcodeCreatesAndDescriptionSync,
-  applyInvoiceBarcodeDeletions,
-} from "@/lib/invoices/api/invoice-barcode-sync-api";
+import { resolveInvoiceRemoveBarcodeIds } from "@/lib/invoices/api/invoice-barcode-sync-api";
 import {
   invoiceBarcodeSyncNeedsUserInput,
   planInvoiceBarcodeSync,
@@ -403,23 +400,19 @@ export function InvoiceEditWizard({
 
     setIsSyncingBarcodes(true);
     try {
-      await applyInvoiceBarcodeDeletions({
-        invoiceId: invoiceQuery.data.invoiceId,
-        plan,
-        deletions,
-      });
+      // API owns mint/delete/description sync. Portal only sends removeBarcodeIds
+      // when lowering labels (ObjectID barcodeId per removed label on that detail).
+      const removeBarcodeIdsByDetail =
+        plan.decreases.length > 0
+          ? resolveInvoiceRemoveBarcodeIds({ plan, deletions })
+          : undefined;
 
       const context = await buildInvoiceWriteContext(values);
       const updated = await updateMutation.mutateAsync({
         invoiceId: getInvoiceRecordId({ invoiceId: values.invoiceId }),
         values,
         context,
-      });
-
-      await applyInvoiceBarcodeCreatesAndDescriptionSync({
-        invoice: updated,
-        plan,
-        container: context.container,
+        removeBarcodeIdsByDetail,
       });
 
       notifyUpdated("Invoice", updated.invoiceNumber || updated.invoiceId);

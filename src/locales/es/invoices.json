@@ -618,6 +618,7 @@
     "decreaseTitle": "Seleccione códigos de barras a eliminar",
     "decreaseDescription": "Redujo el número de etiquetas en uno o más artículos. Elija qué códigos de barras eliminar. Los restantes permanecen en la factura.",
     "decreasePick": "Seleccione {{remove}} de {{from}} para eliminar (quedarán {{to}}).",
-    "confirmDelete": "Eliminar códigos seleccionados"
+    "confirmDelete": "Eliminar códigos seleccionados",
+    "missingObjectIds": "Este artículo no tiene IDs ObjectID de código de barras, por lo que no se pueden reducir las etiquetas hasta recargar los códigos desde la factura."
   }
 }

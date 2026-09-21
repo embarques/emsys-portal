@@ -16,7 +16,12 @@ import type {
   InvoiceBarcodeDecreaseNeed,
   InvoiceBarcodeDeletionSelection,
 } from "@/lib/invoices/barcode-sync";
-import { areBarcodeDecreaseSelectionsComplete } from "@/lib/invoices/barcode-sync";
+import {
+  areBarcodeDecreaseSelectionsComplete,
+  canSubmitBarcodeDecreases,
+  invoiceBarcodeObjectId,
+  invoiceBarcodeSelectionKey,
+} from "@/lib/invoices/barcode-sync";
 import { cn } from "@/lib/utils";
 
 type InvoiceBarcodeDecreaseDialogProps = {
@@ -25,10 +30,6 @@ type InvoiceBarcodeDecreaseDialogProps = {
   onOpenChange: (open: boolean) => void;
   onConfirm: (selections: InvoiceBarcodeDeletionSelection) => void;
 };
-
-function barcodeKey(barcode: InvoiceBarcodeDecreaseNeed["barcodes"][number]): string {
-  return barcode.barcodeId?.trim() || barcode.id.trim() || barcode.number.trim();
-}
 
 export function InvoiceBarcodeDecreaseDialog({
   open,
@@ -55,7 +56,15 @@ export function InvoiceBarcodeDecreaseDialog({
     () => ({ decreases, increases: [], descriptionUpdates: [], deletedLineItems: [] }),
     [decreases],
   );
-  const canConfirm = areBarcodeDecreaseSelectionsComplete(plan, selections);
+  const canConfirm =
+    areBarcodeDecreaseSelectionsComplete(plan, selections) &&
+    canSubmitBarcodeDecreases(plan, selections);
+  const missingObjectIds = decreases.some(
+    (entry) =>
+      entry.removeCount > 0 &&
+      entry.barcodes.filter((barcode) => invoiceBarcodeObjectId(barcode)).length <
+        entry.removeCount,
+  );
 
   function toggle(lineItemId: string, barcodeId: string, checked: boolean, removeCount: number) {
     setSelections((current) => {
@@ -76,9 +85,16 @@ export function InvoiceBarcodeDecreaseDialog({
           <DialogDescription>{t("invoices.barcodeSync.decreaseDescription")}</DialogDescription>
         </DialogHeader>
 
+        {missingObjectIds ? (
+          <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            {t("invoices.barcodeSync.missingObjectIds")}
+          </p>
+        ) : null}
+
         <div className="max-h-[50vh] space-y-4 overflow-y-auto pr-1">
           {decreases.map((entry) => {
             const selected = selections[entry.lineItemId] ?? [];
+            const selectable = entry.barcodes.filter((barcode) => invoiceBarcodeObjectId(barcode));
             return (
               <div key={entry.lineItemId} className="space-y-2 rounded-lg border p-3">
                 <div className="space-y-0.5">
@@ -92,8 +108,8 @@ export function InvoiceBarcodeDecreaseDialog({
                   </p>
                 </div>
                 <ul className="space-y-1">
-                  {entry.barcodes.map((barcode) => {
-                    const id = barcodeKey(barcode);
+                  {selectable.map((barcode) => {
+                    const id = invoiceBarcodeSelectionKey(barcode);
                     const checked = selected.includes(id);
                     const disableUnchecked = !checked && selected.length >= entry.removeCount;
                     return (
