@@ -1,4 +1,7 @@
-@import "tailwindcss";
+/* Limit class detection to src/ — auto-scan of the repo root can pick up
+   corrupted class fragments from Next/Turbopack cache binaries. */
+@import "tailwindcss" source(none);
+@source "..";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
